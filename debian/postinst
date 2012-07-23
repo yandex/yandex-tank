@@ -1,0 +1,8 @@
+#!/bin/sh
+
+ln -sf /usr/lib/lunapark/lunapark /usr/local/bin/
+ln -sf /usr/lib/lunapark/prd.pl /usr/local/bin/
+ln -sf /usr/lib/lunapark/preproc.pl /usr/local/bin/
+
+ln -sf /usr/lib/lunapark/stepper.py /usr/local/bin/
+ln -sf /usr/lib/lunapark/fantom.py /usr/local/bin/

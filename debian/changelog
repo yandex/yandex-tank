@@ -1,0 +1,36 @@
+yandex-load-tank-base (0.1.7) common; urgency=low
+
+  * remove API host 
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 07 Jun 2012 16:50:35 +0400
+
+yandex-load-tank-base (0.1.6) common; urgency=low
+
+  * lunapark -c creates default config
+  * man pages shipped
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 06 Jun 2012 19:06:05 +0400
+
+yandex-load-tank-base (0.1.5) common; urgency=low
+
+  * fixed: phout import does not pass load scheme to API
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 04 Jun 2012 15:34:09 +0400
+
+yandex-load-tank-base (0.1.4) common; urgency=low
+
+  * reverted db.conf
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 01 Jun 2012 20:50:46 +0400
+
+yandex-load-tank-base (0.1.3) common; urgency=low
+
+  * rebuild for common
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 01 Jun 2012 20:05:26 +0400
+
+yandex-load-tank-base (0.1.0) hardy; urgency=low
+
+  * Initial release of internal Yandex code
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 22 May 2012 15:32:02 +0400
