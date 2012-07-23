@@ -3,3 +3,9 @@ debian/yandex-load-tank-base.debhelper.log
 debian/yandex-load-tank-base.substvars
 build-stamp
 lp.conf
+dummy.ammo
+ammo.stpd
+configure-stamp
+load.conf
+mon.conf
+dummy.ammo
