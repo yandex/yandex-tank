@@ -408,7 +408,7 @@ load.conf example:
 instances=10
 address=23.23.23.23:80 #Target's address and port
 load = const (10,10m) #Load scheme
-tank_type=2 # Parameter Nonna is commented for compatibility reasons.
+tank_type=2
 ```
 ### Gatling
 If server with Yandex.Tank have several IPs, they may be used to avoid outcome port shortage. Use ```gatling_ip``` parameter for that.
