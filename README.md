@@ -1,51 +1,51 @@
-{{toc}}
-===Description===
+# Yandex Tank
+## Description
 Yandex.Tank is a console HTTP load testing instrument.
 
-====Installation and Configuration====
+### Installation and Configuration
 
 You should add proper repository to source.list on Debian-based environment. 
 
 For instance, on Lucid:
-%%
+```
 deb http://dist.yandex.ru/phantom lucid/amd64/
 # on 32bit system use i386 instead of amd64
 #deb http://dist.yandex.ru/phantom lucid/i386/
 deb http://dist.yandex.ru/phantom common/all/
-%%
-%%sudo apt-get update && sudo apt-get install yandex-load-tank-base%%
+```
+```sudo apt-get update && sudo apt-get install yandex-load-tank-base```
 All needed packets will be installed.
 
 For a mild load tests (less then 1000rps) an average laptop with 34/64bit Ubuntu (Lucid/Precise) will be sufficient. The tank could be easily used in virtual machine if queries aren't heavy and the load isn't big.
 Otherwise it is recommended to request from your admin a physical server or a more capable virtual machine.
 
-====Firewall====
+### Firewall
 
 Before test execution, please, check service availability. If service is running on server with IP x.x.x.x and listen TCP port zz, check instructions are:
-%%telnet x.x.x.x zz%%
+```telnet x.x.x.x zz```
 If everything OK, you'll see:
-%%$ telnet 23.23.23.23 80
+```$ telnet 23.23.23.23 80
 Trying 23.23.23.23...
 Connected to 23.23.23.23.
-Escape character is '^]'.%%
+Escape character is '^]'.```
 
 Otherwise:
-%%$ telnet 8.8.8.8 80
+```$ telnet 8.8.8.8 80
 Trying 8.8.8.8...
-telnet: Unable to connect to remote host: Connection timed out%%
+telnet: Unable to connect to remote host: Connection timed out```
 (it's just example, programs nc/nmap/wget/curl could be used as well, but not ping!)
-====Routing====
+### Routing
 OK, service is reachable, the next thing you should know is how far the Yandex.Tank is located from testing service. Heavy load can hang up, reboot switch, or at least lead to losses in network, so test results would be distorted. Be careful. Path estimation could be done by execution of 'tracepath' command or it analogs (tracert/traceroute) on server with Yandex.Tank.
 
-%%$ tracepath 23.23.23.24
+```$ tracepath 23.23.23.24
  1:  tank.example.com (23.23.23.23)            0.084ms pmtu 1450
  1:  target.load.example.com (23.23.23.24)           20.919ms reached
  1:  target.example.com (23.23.23.24)            0.128ms reached
      Resume: pmtu 1450 hops 1 back 64
-%%
+```
 hops 1 means that tank and target are in closest location.
 
-%%$ tracepath 24.24.24.24
+```$ tracepath 24.24.24.24
  1:  1.example.com (124.24.24.24)                 0.084ms pmtu 1450
  1:  2.example.com (24.124.24.24)          0.276ms 
  1:  3.example.com (24.24.124.24)          0.411ms 
@@ -55,10 +55,10 @@ hops 1 means that tank and target are in closest location.
  5:  7.example.com (24.24.241.24)                 0.512ms 
  6:  8.example.com (24.24.24.241)                 0.525ms asymm  5 
  7:  no reply
-%%
+```
 In that example it is better to find another, more closer located tank.
 
-====Tunning====
+### Tunning
 For the top most performance the source server should have tuned system limits 
 ulimit -n 30000
 
@@ -78,18 +78,18 @@ net.ipv4.tcp_fin_timeout = 10
 net.ipv4.tcp_low_latency = 1
 net.ipv4.tcp_syncookies = 0
 
-===Usage===
+## Usage
 So, you've installed Yandex.Tank to a proper server, close to target, access is permitted.
 How to make a test?
 
-====First Step====
+### First Step
 Create on server with Yandex.Tank file, e.g. load.conf
 
-%% > load.conf%%
+``` > load.conf```
 Write into it
-%%
+```
 address=23.23.23.23:80 #Target's address and port .
-load =  #load scheme %%!!Attention: IP address allowed only, not FQDN!!
+load =  #load scheme ```!!Attention: IP address allowed only, not FQDN!!
 Yandex.Tank have 3 primitives for describing load scheme:
    1. [step (a,b,step,dur)] #Makes stepped load, where a,b are start/end load values, step - increment value, dur - step duration.
    2. [line (a,b,dur)] #Makes linear load, where a,b are start/end load, dur - the time for linear load increase from a to b.
@@ -107,19 +107,19 @@ Yandex.Tank have 3 primitives for describing load scheme:
   Time duration could be defined in second (without dimension), minutes (m) and hours (h). For example: 27h103m645
 
 For a test with constant load at 10rps for 10 minutes, load.conf should have next lines:
-%%
+```
 address=23.23.23.23:80 #Target's address and port
 load = const (10,10m) #Load scheme
-%%
+```
 Voilà, Yandex.Tank setup is done
 
-====Requests prepairing====
+### Requests prepairing
 There are two ways of requests declaration
-=====Urls listed in load.conf or in separate file (so called uri-style)===== 
+#### Urls listed in load.conf or in separate file (so called uri-style) 
 
-======Requests in load.conf======
+##### Requests in load.conf
 Update configuration file with HTTP headers and URIs:
-%%
+```
 address=23.23.23.23:80 #Target's address and port
 load = const (10,10m) #Load scheme
 # Headers and URIs for GET requests
@@ -130,13 +130,13 @@ uri = /
 uri = /buy
 uri = /sdfg?sdf=rwerf
 uri = /sdfbv/swdfvs/ssfsf
-%%
+```
 Parameters **header_*** define headers values.
  **uri** contain uri, which should be used for requests generation.
 
-======Requests in file======
+##### Requests in file
 File ammo.txt with declared requests:
-%%
+```
 [Connection: close]
 [Host: target.example.com]
 [Cookies: None]
@@ -144,11 +144,11 @@ File ammo.txt with declared requests:
 /
 /buy
 /buy/?rt=0&station_to=7&station_from=9
-%%
+```
 
 File begins with optional lines [...], containing headers which will be added to every request. After that section there is URI list. Every URI must be in a new line, with leading '/'.
 
-===== Request "as-is" in file =====
+#### Request "as-is" in file
 For more complex requests, like POST, you'll have to create special file. 
 File format is:
 [size_of_request] [tag]\n
@@ -175,7 +175,7 @@ User-Agent: xxx (shell 1)
 ...
 }>
 <{**Example POST:**
-%%904
+```904
 POST /upload/2 HTTP/1.0
 Content-Length: 801
 Host: xxxxxxxxx.dev.example.com
@@ -194,10 +194,10 @@ User-Agent: xxx (shell 1)
 
 
 ^.^........QMO.0^.++^zJw.ر^$^.^Ѣ.^V.J....vM.8r&.T+...{@pk%~C.G../z顲^.7....l...-.^W"cR..... .&^?u.U^^.^.....{^.^..8.^.^.I.EĂ.p...'^.3.Tq..@R8....RAiBU..1.Bd*".7+.
-.Ol.j=^.3..n....wp..,Wg.y^.T..~^..%%
+.Ol.j=^.3..n....wp..,Wg.y^.T..~^..```
 }>
 <{**Example POST multipart:**
-%%533
+```533
 POST /updateShopStatus? HTTP/1.0
 User-Agent: xxx/1.2.3
 Host: xxxxxxxxx.dev.example.com
@@ -219,35 +219,35 @@ Content-Disposition: form-data; name="wsw-fields"
 <wsw-fields><wsw-field name="moderate-code"><wsw-value>disable</wsw-value></wsw-field></wsw-fields>
 --AGHTUNG--
 
-Connection: Close%%
+Connection: Close```
 }>
 size_of_request – request size in bytes, that amount of data will be send over network. '\r\n' symbols after body_requests are ignored and not sent anywhere.
 
-====Run Test!====
+### Run Test!
 
 1. Uri are in load.conf
-%%
+```
 lunapark
-%%
+```
 
 2. Uri are in ammo.txt
-%%
+```
 lunapark ammo.txt
-%%
+```
 Yandex.Tank detects requests format and generates ultimate requests versions.
 
 'lunapark' here - inherited name of Yandex.Tank.
 
 If Yandex.Tank has been installed properly and configuration file is correct, the load will be given in next few seconds.
 
-====Results====
+### Results
 During test execution you are shown HTTP and net errors, answers time distribution, progressbar and other interesting data.
 At the same time file phout.txt is being written, which could be analyzed later.
 
-==== Tags====
+### Tags
 Requests could be grouped and marked by some word named 'tag'
 Example of file with requests and tags:
-%%
+```
 73 good
 GET / HTTP/1.0
 Host: xxx.tanks.example.com
@@ -262,18 +262,18 @@ User-Agent: xxx (shell 1)
 GET /ab ra HTTP/1.0
 Host: xxx.tanks.example.com
 User-Agent: xxx (shell 1)
-%%
+```
 RESTRICTION: latin letters allowed only.
 
-==== SSL ====
+### SSL
 For SSL activation add 'ssl = 1' to load.conf. Don't forget to change port number to appropriate value.
 Now, our basic config looks like that: 
-%%
+```
 address=23.23.23.23:443 #Target's address and port
 load = const (10,10m) #Load scheme
 ssl=1
-%%
-==== Autostop ====
+```
+### Autostop
 Autostop is ability to automatically halt test execution if some conditions are reached.
  HTTP and Net codes conditions:
     There is an option to define specific codes (404,503,100) as well as code groups (3xx, 5xx, xx).
@@ -288,13 +288,13 @@ Autostop is ability to automatically halt test execution if some conditions are 
     [autostop = time(1500,15)] – stop test, if average answer time exceeds 1500ms
 
 So, if we want to stop test when all answers in 1 second period are 5xx, add autostop line to load.conf:
-%%
+```
 address=23.23.23.23:443 #Target's address and port
 load = const (10,10m) #Load schemessl=1
 autostop = http(5xx,100%,1)
-%%
+```
 
-==== Logging ====
+### Logging
 Looking into target's answers is quite useful in debugging. For doing that add 'writelog = 1' to load.conf.
 ATTENTION: Writing answers on high load leads to intensive disk i/o usage and can affect test accuracy.
 Log format:
@@ -306,7 +306,7 @@ Where metrics are:
   size_in size_out response_time(interval_real) interval_event net_code 
   (request size, answer size, response time, time to wait for response from the server, answer network code)
 Example:
-%%
+```
 user@tank:~$ head answ_*.txt 
 553 572 8056 8043 0
 GET /create-issue HTTP/1.1
@@ -318,25 +318,25 @@ Connection: close
 
 HTTP/1.1 200 OK
 Content-Type: application/javascript;charset=UTF-8
-%%
+```
 
 Current load.conf is:
-%%
+```
 instances=10
 address=23.23.23.23:443 #Target's address and port
 load = const (10,10m) #Load scheme
 ssl=1
 autostop = http(5xx,100%,1)
 writelog=1
-%%
+```
 
-==== Results in phout ====
+### Results in phout
 phout.txt - is a phantom written per-request log. It could be used for separate analyze (Excel/gnuplot/etc)
 
 14th phantom writes next fields to phout.txt: time, tag, interval_real, connect_time, send_time, latency, receive_time, interval_event, size_out, size_in, net_code proto_code
 
 Phout example:
-%%
+```
 1326453006.582          1510    934     52      384     140     1249    37      478     0       404
 1326453006.582   others       1301    674     58      499     70      1116    37      478     0       404
 1326453006.587   heavy       377     76      33      178     90      180     37      478     0       404
@@ -349,14 +349,14 @@ Phout example:
 1326453006.598          257     58      32      106     61      110     37      478     0       404
 1326453006.602          315     59      27      160     69      161     37      478     0       404
 1326453006.603          256     59      33      107     57      110     53      476     0       404
-1326453006.605          241     53      26      130     32      131     37      478     0       404%%
+1326453006.605          241     53      26      130     32      131     37      478     0       404```
 
-==== Graph and statistics ====
+### Graph and statistics
 Under construction, not implemented yet
 
-==== Custom timings ====
+### Custom timings
 time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s is considered as connect timeout.
-%%
+```
 instances=10
 address=23.23.23.23:443 #Target's address and port
 load = const (10,10m) #Load scheme
@@ -364,46 +364,46 @@ ssl=1
 autostop = http(5xx,100%,1)
 writelog=1
 time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s is considered as connect timeout.
-%%
+```
 
-==== Threads limit ====
+### Threads limit
 instances=N limits number of connects/threads.
 Test with 10 threads:
-%%
+```
 instances=10
 address=23.23.23.23:443 #Target's address and port
 load = const (10,10m) #Load scheme
 ssl=1
 autostop = http(5xx,100%,1)
-%%
+```
 
-==== Threads manipulating ====
+### Threads manipulating
 instances_schedule = <instances increasing scheme># Test with active instances schedule will be performed if load scheme is not defined. Bear in mind that active instances number cannot be decreased and final number of them must be equal to general instances number.
 load.conf example:
-%%instances=10
+```instances=10
 instances_schedule = line(1,10,10m)
 address=23.23.23.23:443 #Target's address and port
 #load = const (10,10m) #Load scheme
 ssl=1
-autostop = http(5xx,100%,1)%%
+autostop = http(5xx,100%,1)```
 
-==== Custom stateless protocol ====
+### Custom stateless protocol
 In necessity of testing stateless HTTP-like protocol, Yandex.Tank's HTTP parser could be switched off, providing ability to generate load with any data, receiving any answer in return.
 To do that add 'tank_type = 2'. !!Indispensable condition: Connection close must be initiated by remote side!!
 load.conf example:
-%%
+```
 instances=10
 address=23.23.23.23:443 #Target's address and port
 load = const (10,10m) #Load scheme
 ssl=1
 autostop = http(5xx,100%,1)
 #tank_type=2 # Parameter Nonna is commented for compatibility reasons.
-%%
-==== Gatling ====
+```
+### Gatling
 If server with installed Yandex.Tank have several IPs, they could be used to avoid outcome port shortage.
 gatling_ip = 23.23.23.24 23.23.23.25
 Load.conf:
-%%instances=10
+```instances=10
 address=23.23.23.23:443 #Target's address and port
 load = const (10,10m) #Load scheme
 ssl=1
@@ -412,13 +412,13 @@ writelog=1
 time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s is considered as connect timeout.
 #gatling_ip = 23.23.23.24 23.23.23.26 # Commented, ips are listed as example
 #tank_type=2 # Parameter Nonna is commented for compatibility reasons.
-%%
+```
 **exec with -g key**
 
-==== Sources ====
+### Sources
 Yandex.Tank sources ((https://github.com/yandex-load/yandex-tank here)).
-==== load.conf.example ====
-%%
+### load.conf.example
+```
 # Lunapark config file
 address=23.23.23.23:443 #Target's address and port
 load = const (10,10m) #Load scheme
@@ -439,4 +439,4 @@ uri = /
 #tank_type=2
 #gatling_ip = 141.8.153.82 141.8.153.81
 
-%%
+```
