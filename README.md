@@ -49,7 +49,8 @@ $ tracepath 23.23.23.24
 ```
 Hops count = 1 means that tank and target are in closest location.
 
-```$ tracepath 24.24.24.24
+```
+$ tracepath 24.24.24.24
  1:  1.example.com (124.24.24.24)                 0.084ms pmtu 1450
  1:  2.example.com (24.124.24.24)          0.276ms 
  1:  3.example.com (24.24.124.24)          0.411ms 
