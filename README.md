@@ -8,10 +8,16 @@ You should add proper repositories on Debian-based environment.
 
 For instance, add following repos to ```sources.list``` on Lucid:
 ```
-deb http://dist.yandex.ru/phantom lucid/amd64/
-# on 32bit system use i386 instead of amd64
-deb http://dist.yandex.ru/phantom lucid/i386/
-deb http://dist.yandex.ru/phantom common/all/
+# Ubuntu Lucid 
+deb http://mirror.yandex.ru/mirrors/tank common main
+deb http://mirror.yandex.ru/mirrors/tank lucid main
+```
+on Precise:
+```
+# Ubuntu Precise
+deb http://mirror.yandex.ru/mirrors/tank common main
+deb http://mirror.yandex.ru/mirrors/tank precise main
+
 ```
 Then update package list and install ```yandex-load-tank-base``` package:
 ```sudo apt-get update && sudo apt-get install yandex-load-tank-base```
