@@ -446,3 +446,7 @@ uri = /
 #gatling_ip = 141.8.153.82 141.8.153.81
 
 ```
+
+### See also
+Gregory Komissarov [firebat](https://github.com/greggyNapalm/firebat-console) test tool based on Phantom
+Andrey Pohilko [loadosophia](http://loadosophia.org/) service for storing and analysing performance test results
