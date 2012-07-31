@@ -63,8 +63,8 @@ Simple configuration file making requests to / with constant rate 10 requests pe
     address=127.0.0.1:80 #Target's address and port
     load = const (10,10m) #Load scheme
     header_http = 1.1
-    header_connection = close
-    header_host = target.yandex.net
+    header = [Host: www.target.example.com]
+    header = [Connection: close]
     uri = /
     #### END ####
 
