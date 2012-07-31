@@ -138,14 +138,14 @@ address=23.23.23.23:80 # Target's address and port
 load = const (10,10m) # Load scheme
 # Headers and URIs for GET requests
 header_http = 1.1
-header_connection = close
-header_host = target.example.com
+header = [Host: www.ru]
+header = [Connection: close]
 uri = /
 uri = /buy
 uri = /sdfg?sdf=rwerf
 uri = /sdfbv/swdfvs/ssfsf
 ```
-Parameters like ```header_``` define headers values.
+Parameters ```header``` define headers values.
 ```uri``` contains uri, which should be used for requests generation.
 
 ##### URIs in file
