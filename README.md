@@ -454,8 +454,8 @@ uri = /
 ```
 
 ### See also
-Evgeniy Mamchits [phantom](https://github.com/mamchits/phantom) - Phantom IO Engine
+Evgeniy Mamchits' [phantom](https://github.com/mamchits/phantom) - Phantom scalable IO Engine
 
-Gregory Komissarov [firebat](https://github.com/greggyNapalm/firebat-console) - test tool based on Phantom
+Gregory Komissarov's [firebat](https://github.com/greggyNapalm/firebat-console) - test tool based on Phantom
 
-Andrey Pohilko [loadosophia](http://loadosophia.org/) - service for storing and analysing performance test results
+Andrey Pohilko's [loadosophia](http://loadosophia.org/) - service for storing and analysing performance test results
