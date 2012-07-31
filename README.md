@@ -138,7 +138,7 @@ address=23.23.23.23:80 # Target's address and port
 load = const (10,10m) # Load scheme
 # Headers and URIs for GET requests
 header_http = 1.1
-header = [Host: www.ru]
+header = [Host: www.target.example.com]
 header = [Connection: close]
 uri = /
 uri = /buy
@@ -436,17 +436,14 @@ address=23.23.23.23:443 #Target's address and port
 load = const (10,10m) #Load scheme
 #  Headers and URIs for GET requests
 header_http = 1.1
-header_connection = close
-header_host = target.example.com
+header = [Host: www.target.example.com]
+header = [Connection: close]
 uri = /
-
-
 #ssl=1
 #autostop = http(5xx,100%,1)
 #instances=10
 #writelog=1
 #time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s is considered as connect timeout.
-
 #instances_schedule = line (1,1000,10m)
 #tank_type=2
 #gatling_ip = 141.8.153.82 141.8.153.81
