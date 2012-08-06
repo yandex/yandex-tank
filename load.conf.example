@@ -7,8 +7,8 @@ address=127.0.0.1:80
 load = const (10,10m) 
 # Перечисление заголовков и GET запросов
 header_http = 1.1
-header_connection = close
-header_host = target.yandex.net
+header = [Host: www.target.example.com]
+header = [Connection: close]
 uri = /
 
 ## Advanced Section ##
