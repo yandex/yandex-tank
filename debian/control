@@ -11,6 +11,6 @@ Depends: perl, perl-base, perl-modules, libjson-perl, libconfig-general-perl, li
     phantom(>=0.14.0~pre29), phantom-ssl,
     python (>=2.6), python-simplejson, python-progressbar,
 Suggests: yandex-load-monitoring(>=0.1-30)
-Description: Yandex.Lunapark (Load Testing) Tank part,
+Description: Yandex.Tank (Load Testing Tool)
   turns common Debian compatible computer into heavy machinegun
 

@@ -1,3 +1,9 @@
+yandex-load-tank-base (0.2.0) precise; urgency=low
+
+  * first build for public
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 25 Jul 2012 16:42:34 +0400
+
 yandex-load-tank-base (0.1.7) common; urgency=low
 
   * remove API host 

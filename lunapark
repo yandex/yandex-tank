@@ -132,14 +132,7 @@ sub exit_kill() {
     exit $rc;
 }
 
-sub get_phantom_ver() {
-    my $v = `dpkg -l | grep phantom`;
-    my @v = split( /\s+/, $v );
-    return $v[2] ? $v[2] : "N/A";
-}
-
 sub makePhantomConf($) {
-    my $ver = get_phantom_ver();
     my $l   = shift;
     my $out = "setup_t module_setup = setup_module_t {\n";
     $out .= "\tdir = \"/usr/lib/phantom\"\n\tlist = {\n";
@@ -227,13 +220,8 @@ sub makePhantomConf($) {
         $out .= "\t\tproto_t none_proto = proto_none_t { }\n";
         $out .= "\t\tproto = none_proto\n";
     }
-    unless ( $ver =~ /^0\.13/ ) {
-        $out .= "\t\taddress = $l->{target_ip}\n";
-        $out .= "\t\tport = $l->{target_port}\n";
-    }
-    else {
-        $out .= "\t\taddress = $l->{target_ip}:$l->{target_port}\n";
-    }
+    $out .= "\t\taddress = $l->{target_ip}\n";
+    $out .= "\t\tport = $l->{target_port}\n";
     $out .= "\t\tbind = { $l->{aliaces} }\n" if $l->{gatling};
     $out .= "\t\ttimeout = $l->{timeout}\n";
     $out .= "\t\tsource = source_log\n\t}\n";
@@ -1061,35 +1049,15 @@ if ( $load{make_phantom_conf} ) {
     exit 0;
 }
 
-### Cheking tank version amd user
-lp_log("Detecting versions of phantom, tank and user...\n");
-$_ = `dpkg -l phantom | grep phantom`;
-if (/(\d+\.\d+\.\d+)/) {
-    $load{phantom} = $1;
-}
-else {
-    print "WARNING: Unable to detect phantom version\n";
-    $load{phantom} = "N/A";
-}
-
-$_ = `dpkg -l | grep yandex-load-tank`;
-if (/yandex-load-tank\s+((\d+).(\d+)-(\d+))\s+(.+)/) {
-    $load{tank_version} = $1;
-}
-else {
-    $load{tank_version} = "N/A";
-}
-
 $load{person} = get_tank_operator();
 
 $_ = `hostname -f`;
 chomp;
 $load{tank} = $_;
-lp_log("Detecting versions of phantom, tank and user... Done");
 ###
 
 print
-"$load{tank} ($load{person})\nphantom=$load{phantom}\nyandex-load-tank=$load{tank_version}\n";
+"$load{tank} ($load{person})\n";
 
 ## Checking task status
 check_task_status( $load{task} );

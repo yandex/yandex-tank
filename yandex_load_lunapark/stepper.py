@@ -230,7 +230,7 @@ def make_steps_element(l):
                if m:
                   [st, ls, cnt] = constf(m.group(1), m.group(2))
                else:
-                  print "[Warning] Wrong load format: '%s'. Ignoring." % (l)
+                  raise RuntimeError("[Warning] Wrong load format: '%s'. Aborting." % (l))
       if ls:
          steps += st
          loadscheme += ls
