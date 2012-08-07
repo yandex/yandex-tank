@@ -20,11 +20,12 @@ use JSON qw/to_json from_json/;
 use Encode;
 use File::Which qw(which);
 use File::Copy;
+use File::Temp qw/ tempfile tempdir /;
 
 $| = 1;
 
-our $MAXDISK = 90;
-our $MAXCPU  = 90;
+our $MINDISK = 10;
+our $MAXCPU  = 80;
 
 ### db connect params
 my $db_conf = getconfig("/etc/lunapark/db.conf");
@@ -849,8 +850,8 @@ my $conf = getconfig( $load{config} );
 if ( $conf->{ammofile} && !$load{ammo} ) { $load{ammo} = $conf->{ammofile}; }
 
 if ( $conf->{uri} ) {
-    my $ammo_tmp = "ammo_" . formatFn(time) . ".txt";
-    open( my $F, ">" . $ammo_tmp );
+	my ($F, $ammo_tmp) = tempfile(SUFFIX => '.ammo');
+ 
     if ( ref( $conf->{uri} ) eq 'ARRAY' ) {
         print $F $_ . "\n" for ( @{ $conf->{uri} } );
     }
@@ -1059,28 +1060,29 @@ $load{tank} = $_;
 print
 "$load{tank} ($load{person})\n";
 
-## Checking task status
-check_task_status( $load{task} );
-
 ### Cheking Tank Usage
-my $cmd = `df -hl -x fuse`;
+my $cmd = `df -l -BG -x fuse -x tmpfs -x devtmpfs | tail -n-1 | awk 'BEGIN {FS="G"} \$3<$MINDISK'`;
 while ( $cmd =~ /(\d+)%\s(.*)/g ) {
-    if ( $1 > $MAXDISK && $load{script} == 0 ) {
-        print "\nWarning!\n";
-        print "Disk $2 (Usage: $1%)\n";
-        exit 6;
+    print "\nWarning!\n";
+    print "Disk $2 (Usage: $1%)\n";
+    if ($load{script} == 0) {
+    	exit 6;
     }
 }
 
-$cmd = `ps -A -o %c%u%C`;
-while ( $cmd =~ /([\w\/\-]*)\s*(\w+)\s*(\d+)\.(\d+)\s*/g ) {
-    if ( $3 > $MAXCPU && $load{script} == 0 ) {
-        print "\nWarning!\n";
-        print "Process: $2 ($1 $3% CPU) \n";
-        exit 6;
-    }
+$cmd=`top -n1 -d1 -b | grep -A 5 'PID' | tail -n6 | awk '\$9>$MAXCPU'`;
+if ($cmd) {
+        print "WARNING: System is busy!\n";
+        print `top -n1 -d1 -b | grep -A 5 'PID' | head -n1`;
+        print $cmd." \n";
+        if ($load{script} == 0) { 
+        	exit 6;
+        }
 }
 ###
+
+## Checking task status
+check_task_status( $load{task} );
 
 ### Check gatling mode
 if ( $load{gatling} ) {

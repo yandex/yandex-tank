@@ -7,6 +7,7 @@ import operator
 import os
 import re
 import time
+import tempfile
 
 # FIXME: remove this hack
 import sys
@@ -22,7 +23,7 @@ from progressbar import ProgressBar
 def make_load_ammo(file):
    pattern = re.compile("^\s*(header|uri)\s*=\s*(.+)")
    dt = datetime.datetime.now()
-   filename = "ammo_load_%s" % int(time.mktime(dt.timetuple()))
+   filename = tempfile.mkstemp('.ammo', 'uri_')
    conf = open(file, "r")
    tmp_ammo = open(filename, "w")
    for line in conf:
