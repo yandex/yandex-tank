@@ -23,7 +23,7 @@ from progressbar import ProgressBar
 def make_load_ammo(file):
    pattern = re.compile("^\s*(header|uri)\s*=\s*(.+)")
    dt = datetime.datetime.now()
-   filename = tempfile.mkstemp('.ammo', 'uri_')
+   fd, filename = tempfile.mkstemp('.ammo', 'uri_')
    conf = open(file, "r")
    tmp_ammo = open(filename, "w")
    for line in conf:
@@ -265,7 +265,7 @@ def expand_load_spec(l):
                if m:
                   [st, ls, cnt] = constf(m.group(1), m.group(2))
                else:
-                  print "[Warning] Wrong load format: '%s'. Ignoring." % (l)
+                  raise RuntimeError("[Warning] Wrong load format: '%s'. Aborting." % (l))
       return st, ls, cnt, max
 
 def make_steps(file):

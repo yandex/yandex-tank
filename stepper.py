@@ -434,7 +434,7 @@ elif (ammo_type == "uri"):
                 looping = 0
                 break
             step_ammo_num, looping = 0, 1
-            count, duration = step[0], step[1]
+            count, duration = int(step[0]), int(step[1])
             if count == 0:
                 base_time += duration * 1000
                 continue

@@ -1070,7 +1070,7 @@ while ( $cmd =~ /(\d+)%\s(.*)/g ) {
     }
 }
 
-$cmd=`top -n1 -d1 -b | grep -A 5 'PID' | tail -n6 | awk '\$9>$MAXCPU'`;
+$cmd=`top -n1 -d2 -b | grep -A 5 'PID' | tail -n6 | awk '\$9>$MAXCPU'`;
 if ($cmd) {
         print "WARNING: System is busy!\n";
         print `top -n1 -d1 -b | grep -A 5 'PID' | head -n1`;
