@@ -2,8 +2,8 @@ Source: yandex-load-tank-base
 Section: yandex
 Priority: extra
 Maintainer: Yandex Load Testing Team <load@yandex-team.ru>
-Build-Depends: debhelper (>= 7)
-Standards-Version: 3.8.3
+Build-Depends: debhelper (>= 7), python | python-all | python-dev | python-all-dev
+Standards-Version: 3.9.3
 
 Package: yandex-load-tank-base
 Architecture: all
