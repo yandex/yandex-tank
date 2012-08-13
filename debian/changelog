@@ -1,10 +1,11 @@
-yandex-load-tank-base (0.2.2) precise; urgency=low
+yandex-load-tank-base (0.2.5) precise; urgency=low
 
   * eliminate dpkg calls
   * fix issue #6
   * change CPU and disk warning criteria
+  * fix lintian warnings
 
- -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 13 Aug 2012 16:04:03 +0400
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 13 Aug 2012 17:45:59 +0400
 
 yandex-load-tank-base (0.2.0) precise; urgency=low
 
