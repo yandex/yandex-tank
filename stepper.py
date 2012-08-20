@@ -402,7 +402,7 @@ elif (ammo_type == "uri"):
         input_ammo = open(ammo_file, "r")
         for l in range(1, loop + 1):
             for line in input_ammo:
-                m = re.match("^\/", line)
+                m = re.match("^(http|\/)", line)
                 if m:
                     real_case = stepper.get_prepared_case(line.rstrip(), cases_done, pattern)
                     chunk = stepper.chunk_by_uri(line.rstrip(), http, 1000, real_case, header_common, header_config)
@@ -410,6 +410,8 @@ elif (ammo_type == "uri"):
                     cur_progress += 1
                     pbar.update(cur_progress)
                     #sleep(1)
+            if cur_progress==0:
+                raise RuntimeError("Eternal loop detected")
             input_ammo.seek(0)
         stepped_ammo.write("0\n")
         pbar.finish()
@@ -442,7 +444,7 @@ elif (ammo_type == "uri"):
 #            print "marked: %s" % marked
             while looping:
                 for line in input_ammo:
-                    m = re.match("^\/", line)
+                    m = re.match("^(http|\/)", line)
                     if m:
                         time = marked[step_ammo_num]
                         real_case = stepper.get_prepared_case(line.rstrip(), cases_done, pattern)
@@ -458,6 +460,8 @@ elif (ammo_type == "uri"):
                             looping = 0
                             break
                 if not step_ammo_num == count*duration:
+                    if cur_progress==0:
+                        raise RuntimeError("Eternal loop detected")
                     input_ammo.seek(0)
             base_time += duration*1000
 
