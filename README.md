@@ -6,18 +6,12 @@ Yandex.Tank is a console HTTP load testing instrument.
 
 You should add proper repositories on Debian-based environment. 
 
-For instance, add following repos to ```sources.list``` on Lucid:
-```
-# Ubuntu Lucid 
-deb http://mirror.yandex.ru/mirrors/tank common main
-deb http://mirror.yandex.ru/mirrors/tank lucid main
-```
-on Precise:
-```
-# Ubuntu Precise
-deb http://mirror.yandex.ru/mirrors/tank common main
-deb http://mirror.yandex.ru/mirrors/tank precise main
+For instance, add following repos to ```sources.list``` :
 
+```
+# Ubuntu Lucid/Precise
+deb http://ppa.launchpad.net/yandex-load/main/ubuntu precise main 
+deb-src http://ppa.launchpad.net/yandex-load/main/ubuntu precise main
 ```
 Then update package list and install ```yandex-load-tank-base``` package:
 ```sudo apt-get update && sudo apt-get install yandex-load-tank-base```
