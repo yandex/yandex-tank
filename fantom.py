@@ -8,7 +8,7 @@ import datetime
 import os
 import ConfigParser
 import logging
-import simplejson as json
+import json
 import urllib2
 
 # FIXME: remove this hack

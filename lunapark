@@ -435,7 +435,7 @@ sub close_job($$) {
 
         if ( !$result->[0]->{success} ) {
             lp_log("Job is already closed!");
-            print "WARNING: Task is already closed: " . $job . "\n";
+            print "WARNING: Job is already closed: " . $job . "\n";
             return 17;
         }
     }
@@ -779,6 +779,29 @@ sub acquire_lock($$$$) {
     close LOCK;
 }
 
+sub check_tank_status($) {
+    my ($ignore) = @_;
+
+	my $cmd = `df -l -BG -x fuse -x tmpfs -x devtmpfs \`pwd\` | tail -n-1 | awk 'BEGIN {FS="G"} \$3<$MINDISK'`;
+	while ( $cmd =~ /(\d+)%\s(.*)/g ) {
+	    print "\nWarning!\n";
+	    print "Disk $2 (Usage: $1%)\n";
+	    if ($ignore == 0) {
+	    	exit 6;
+	    }
+	}
+	
+	$cmd=`top -n1 -d2 -b | grep -A 5 'PID' | tail -n6 | awk '\$9>$MAXCPU'`;
+	if ($cmd) {
+	        print "WARNING: System is busy!\n";
+	        print `top -n1 -d1 -b | grep -A 5 'PID' | head -n1`;
+	        print $cmd." \n";
+	        if ($ignore == 0) { 
+	        	exit 6;
+	        }
+	}
+}
+
 #== START WORK
 $SIG{INT}  = \&exit_kill;
 $SIG{QUIT} = \&exit_kill;
@@ -1060,26 +1083,8 @@ $load{tank} = $_;
 print
 "$load{tank} ($load{person})\n";
 
-### Cheking Tank Usage
-my $cmd = `df -l -BG -x fuse -x tmpfs -x devtmpfs | tail -n-1 | awk 'BEGIN {FS="G"} \$3<$MINDISK'`;
-while ( $cmd =~ /(\d+)%\s(.*)/g ) {
-    print "\nWarning!\n";
-    print "Disk $2 (Usage: $1%)\n";
-    if ($load{script} == 0) {
-    	exit 6;
-    }
-}
-
-$cmd=`top -n1 -d2 -b | grep -A 5 'PID' | tail -n6 | awk '\$9>$MAXCPU'`;
-if ($cmd) {
-        print "WARNING: System is busy!\n";
-        print `top -n1 -d1 -b | grep -A 5 'PID' | head -n1`;
-        print $cmd." \n";
-        if ($load{script} == 0) { 
-        	exit 6;
-        }
-}
-###
+### Checking Tank Usage
+check_tank_status($load{script});
 
 ## Checking task status
 check_task_status( $load{task} );
