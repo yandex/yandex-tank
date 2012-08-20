@@ -457,7 +457,7 @@ if API_ADDR:
             if v:
                 times_time.update({int(float(v)): 1})
     except Exception, e:
-        logging.warning("Error sending data to server: %s", e);
+        logging.warning("Error getting SLA data: %s", e);
         
 # loadscheme
 load_multi = stepper.get_config_multiple(options.config)
@@ -818,6 +818,7 @@ while 1:
             except Exception, e:
                 logging.error("Error sending data to server: %s", e);
                 logging.info("Retry in 30 seconds")
+                print ("Error sending data to server, retry in 30 seconds")
                 time.sleep(30)
                 try:
                     can_send = send_data_to_storage(api_data)
