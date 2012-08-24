@@ -8,7 +8,7 @@ Standards-Version: 3.9.3
 Package: yandex-load-tank-base
 Architecture: all
 Depends: perl, perl-base, perl-modules, libjson-perl, libconfig-general-perl, libxml-simple-perl, libnet-ip-perl, libfile-which-perl, libterm-readkey-perl,
-    phantom(>=0.14.0~pre29), phantom-ssl,
+    phantom(>=0.14.0), phantom-ssl,
     python (>=2.6), python-progressbar, 
     ${misc:Depends}
 Suggests: yandex-load-monitoring(>=0.1-30)
