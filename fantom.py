@@ -66,7 +66,6 @@ class Widget(object):
             if not self.error:
                 out = "text:\n%s\n" % text
                 out += "\n\nid: %s" % self.id
-                send_mail("LUNAPARK-910", out)
                 self.error = 1
 
 class Screen(object):

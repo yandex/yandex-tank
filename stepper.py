@@ -77,10 +77,11 @@ try:
     instances = configuration_file.get('DEFAULT', 'instances_schedule')
     sched_parts=instances.split(" ")
     for sched_part in sched_parts:
-        [expanded_sched, skip, skip, max_val]=stepper.expand_load_spec(sched_part)
-        instances_schedule += expanded_sched
-        if max_val > instances_schedule_count:
-            instances_schedule_count = max_val
+        if sched_part:
+            [expanded_sched, skip, skip, max_val]=stepper.expand_load_spec(sched_part)
+            instances_schedule += expanded_sched
+            if max_val > instances_schedule_count:
+                instances_schedule_count = max_val
     instances_schedule = stepper.collapse_schedule(instances_schedule)
 except ConfigParser.NoOptionError:
     pass

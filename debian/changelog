@@ -1,3 +1,9 @@
+yandex-load-tank-base (0.2.6) precise; urgency=low
+
+  * lower phantom version requirements
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 24 Aug 2012 14:34:39 +0400
+
 yandex-load-tank-base (0.2.5) precise; urgency=low
 
   * eliminate dpkg calls

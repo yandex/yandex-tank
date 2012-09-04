@@ -29,6 +29,7 @@ sub checkReader() {
 ### Return 1 if phantom.log contains 'phantom Exit' in last 5 lines. Otherwise - 0.
 sub checkPhantomStop($) {
     my $f = shift;
+    if (! -r $f) { return 0; }
     open( my $T, "tail -n 5 $f |" );
     while (<$T>) {
         return 1 if (/phantom Exit/);
@@ -52,6 +53,7 @@ sub getFlines($) {
 ### Return array of last $c lines from file $f
 sub getFtail($$) {
     my ( $f, $c ) = @_;
+    if (! -r $f) { return 0; }
     open( my $T, "tail -n $c $f | " );
     my @t;
     while (<$T>) {

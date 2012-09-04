@@ -4,6 +4,7 @@ use Lunapark;
 use POSIX;
 use List::Util qw(max);
 use Data::Dumper;
+use FileHandle;
 
 use strict;
 use warnings;
@@ -186,7 +187,6 @@ else { lp_log( "Out file:" . $prconf{preproc_log_name} ); }
 
 open( my $DS, ">$prconf{preproc_log_name}" )
   or die "Cannot create '$prconf{preproc_log_name}'.";
-close($DS);
 
 if ($errstep) { push @errs, $errstep; }
 if ($errph)   { push @errs, $errph; }
@@ -464,9 +464,7 @@ if ($confout) {
     lp_log("Print config information... ");
     $out .= "tank_type=$prconf{tank_type}\n";
     $out .= "job_n=$prconf{jobno}\n" if $prconf{jobno};
-    open( $DS, ">>$prconf{preproc_log_name}" );
     print $DS $out;
-    close($DS);
     $confout = 0;
 }
 
@@ -769,9 +767,8 @@ while (<STDIN>) {
         );
         $status = 1;
 
-        open( $DS, ">>$prconf{preproc_log_name}" );
         print $DS $out;
-        close($DS);
+        $DS->autoflush(1);
     }
 
     if ($status) {
@@ -804,9 +801,8 @@ if ($out1) {
     sleep(0.1);
 }
 
-open( $DS, ">>$prconf{preproc_log_name}" );
 print $DS $out1;
-close($DS);
+$DS->autorflush(1);
 
 #print $out1;
 
