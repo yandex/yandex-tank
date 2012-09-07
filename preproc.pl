@@ -155,8 +155,8 @@ if (@ARGV) {
 
 lp_log("Starting preproc...");
 my $PATH = ".";
-my ( $lastsec, $cur, $seconds, $count, $out, $tag, $ts, $confout, $start, $ts2 )
-  = ( 0, 0, 0, 0, "", "", 0, 1, 0, 0 );
+my ( $lastsec, $cur, $seconds, $count, $out, $tag, $ts, $start, $ts2 )
+  = ( 0, 0, 0, 0, "", "", 0, 0, 0 );
 my %agg;
 my @errs;
 my $overall;
@@ -354,7 +354,7 @@ sub printSec($$$$) {
     $ref->{selfload} = 0 + sprintf( "%.2f", $ref->{selfload} / $ref->{count} );
 
     # Output http codes if tank type: http (1)
-    $out .= proutCodes( $ref->{http}, 'http' ) if $prconf->{tank_type} ne '2';
+    $out .= proutCodes( $ref->{http}, 'http' ) if defined $prconf->{tank_type} && $prconf->{tank_type} ne '2';
 
     # Output net codes
     $out .= proutCodes( $ref->{net}, 'net' );
@@ -459,14 +459,6 @@ my ( $task_ts, %task_data );
 #    'net'     => $12,
 #    'http'    => $13,
 #);
-
-if ($confout) {
-    lp_log("Print config information... ");
-    $out .= "tank_type=$prconf{tank_type}\n";
-    $out .= "job_n=$prconf{jobno}\n" if $prconf{jobno};
-    print $DS $out;
-    $confout = 0;
-}
 
 lp_log (Dumper(\%ENV));
     
@@ -802,7 +794,7 @@ if ($out1) {
 }
 
 print $DS $out1;
-$DS->autorflush(1);
+$DS->autoflush(1);
 
 #print $out1;
 
