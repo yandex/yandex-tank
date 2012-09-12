@@ -35,6 +35,8 @@ PYTHONPATH=''
 			<arg value="-I" />
 			<arg value="-us" />
 			<arg value="-uc" />
+			<arg value="--lintian-opts"/>
+			<arg value="--fail-on-warnings"/>
 		</exec>
 		<move todir=".">
 			<fileset dir=".." includes="yandex-load-*" />

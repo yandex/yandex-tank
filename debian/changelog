@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.0.0) precise; urgency=low
+
+  * begin migrating to new yandex-tank tool
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 12 Sep 2012 17:43:43 +0400
+
 yandex-load-tank-base (0.2.7) precise; urgency=low
 
   * less error messages from prd.pl

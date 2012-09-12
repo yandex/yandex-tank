@@ -9,3 +9,5 @@ configure-stamp
 .project
 *.log
 *.pyc
+.*
+debian/files
