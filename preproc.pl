@@ -4,10 +4,11 @@ use Lunapark;
 use POSIX;
 use List::Util qw(max);
 use Data::Dumper;
-use FileHandle;
 
 use strict;
 use warnings;
+
+$| = 1; # disable buffering
 
 lp_log("Started");
 
@@ -187,6 +188,7 @@ else { lp_log( "Out file:" . $prconf{preproc_log_name} ); }
 
 open( my $DS, ">$prconf{preproc_log_name}" )
   or die "Cannot create '$prconf{preproc_log_name}'.";
+close($DS);
 
 if ($errstep) { push @errs, $errstep; }
 if ($errph)   { push @errs, $errph; }
@@ -759,8 +761,9 @@ while (<STDIN>) {
         );
         $status = 1;
 
+        open( $DS, ">>$prconf{preproc_log_name}" );
         print $DS $out;
-        $DS->autoflush(1);
+        close($DS);
     }
 
     if ($status) {
@@ -793,8 +796,9 @@ if ($out1) {
     sleep(0.1);
 }
 
+open( $DS, ">>$prconf{preproc_log_name}" );
 print $DS $out1;
-$DS->autoflush(1);
+close($DS);
 
 #print $out1;
 

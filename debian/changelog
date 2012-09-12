@@ -1,3 +1,10 @@
+yandex-load-tank-base (0.2.7) precise; urgency=low
+
+  * less error messages from prd.pl
+  * some code cleanup
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 07 Sep 2012 11:55:33 +0400
+
 yandex-load-tank-base (0.2.6) precise; urgency=low
 
   * lower phantom version requirements

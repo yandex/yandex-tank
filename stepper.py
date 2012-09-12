@@ -195,7 +195,9 @@ if not configuration_file.has_option('DEFAULT', 'loop'):
         loop = -1
 else:
     loop = configuration_file.getint('DEFAULT', 'loop')
-    #print "loop: %s" % loop
+
+#print "loop: %s" % loop
+
 
 base_loop = loop
 stop_loop_count = 0
