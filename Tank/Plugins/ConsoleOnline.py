@@ -8,6 +8,7 @@ import struct
 import sys
 import termios
 import traceback
+import datetime
 
 # TODO: add avg times: parts & by case
     
@@ -154,7 +155,6 @@ class Screen(object):
             else:
                 codes_line = self.current_http_block.lines.pop(0)
             clean_http = self.markup.clean_markup(codes_line)
-            self.log.debug("Clean HTTP: %s / %s / %s", len(codes_line), len(clean_http), self.current_http_block.width)
             codes_line += ' ' * (self.current_http_block.width - len(clean_http))
 
         left_line = times_line + ' ' * (self.left_panel_width - len(times_line) - max(self.current_http_block.width, self.current_net_block.width)) + codes_line
@@ -256,6 +256,7 @@ class CurrentTimesBlock(AbstractBlock):
         AbstractBlock.__init__(self, screen)
         self.current_codes = {}
         self.current_rps = -1
+        self.current_duration = 0
         self.current_count = 0
         self.current_max_rt = 0
 
@@ -283,6 +284,7 @@ class CurrentTimesBlock(AbstractBlock):
             self.current_count = 0
             self.current_max_rt = 0
             self.current_codes = {}
+            self.current_duration=0
         for item in times_dist:
             self.current_count += item['count']
             self.current_max_rt = max(self.current_max_rt, item['to'])
@@ -290,6 +292,7 @@ class CurrentTimesBlock(AbstractBlock):
                 self.current_codes[item['from']]['count'] += item['count']
             else:
                 self.current_codes[item['from']] = item
+        self.current_duration+=1
         self.log.debug("Current rps dist: %s", self.current_codes)
       
     def format_line(self, current_times, quan):
@@ -340,7 +343,7 @@ class CurrentHTTPBlock(AbstractBlock):
       
     def render(self):
         self.lines = [self.TITLE] 
-        self.width = len(self.lines[0])
+        #self.width = len(self.lines[0])
         for code, count in sorted(self.current_codes.iteritems()):        
             line = self.format_line(code, count)
             self.width = max(self.width, len(self.screen.markup.clean_markup(line)))

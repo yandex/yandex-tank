@@ -17,7 +17,13 @@ import tempfile
 import time
 import datetime
 
+# TODO: req/answ sizes in widget - last sec and curRPS
 # TODO: implement phout import
+        #TODO: chosen cases
+        # TODO: gatling
+# TODO: implement reply limits
+# TODO: if instances_schedule enabled - pass to phantom the top count as instances limit
+# TODO: eliminate old stepper this with new object-style stepper
 class PhantomPlugin(AbstractPlugin):
 
     OPTION_TEST_DURATION = 'test_duration'
@@ -90,7 +96,6 @@ class PhantomPlugin(AbstractPlugin):
         self.use_caching = int(self.core.get_option(self.SECTION, "use_caching", '1'))
         self.cache_dir = self.core.get_option(self.SECTION, "cache_dir", os.getcwd())
         self.force_stepping = int(self.core.get_option(self.SECTION, "force_stepping", '0'))
-        #TODO: chosen cases
         
         # phantom part
         self.phantom_path = self.core.get_option(self.SECTION, "phantom_path", 'phantom')
@@ -121,7 +126,6 @@ class PhantomPlugin(AbstractPlugin):
 
         self.check_address()
             
-        # TODO: gatling
 
 
     def compose_config(self):
@@ -138,8 +142,8 @@ class PhantomPlugin(AbstractPlugin):
         kwargs['comment_answ'] = "# " if self.answ_log_level == 'none' else ''
         kwargs['phout'] = self.phout_file
         kwargs['stpd'] = self.stpd
-        kwargs['reply_limits'] = "" # TODO: implement reply limits
-        kwargs['bind'] = "" # TODO: implement gatling mode
+        kwargs['reply_limits'] = "" 
+        kwargs['bind'] = "" 
         kwargs['ip'] = self.address
         kwargs['port'] = self.port
         kwargs['timeout'] = self.timeout
@@ -161,7 +165,6 @@ class PhantomPlugin(AbstractPlugin):
         self.stpd = self.get_stpd_filename()
         
         self.core.set_option(self.SECTION, self.OPTION_STPD, self.stpd)
-        # TODO: if instances_schedule enabled - pass to phantom the top count as instances limit
         
         if self.use_caching and os.path.exists(self.stpd) and not self.force_stepping:
             self.log.info("Using cached stpd-file: %s", self.stpd)
@@ -264,7 +267,6 @@ class PhantomPlugin(AbstractPlugin):
     
 
     def move_old_out_options_into_new(self, old_stepper_out_options):
-        # TODO: eliminate this with new object-style stepper
         self.log.debug("Move old out options to new from file: %s", old_stepper_out_options)
         self.external_stepper_conf.read(old_stepper_out_options)
         self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES, self.external_stepper_conf.get('DEFAULT', AggregatorPlugin.OPTION_CASES))
@@ -302,8 +304,6 @@ class PhantomPlugin(AbstractPlugin):
         
         self.args = self.tools_path + "/stepper.py -a " + self.ammo_file + " -c " + stepper_config
         
-        #self.core.config.set_out_file("lp.conf") # TODO: remove this after preproc rewriting
-
         self.log.info("Yet calling old external stepper.py")
         rc = CommonUtils.execute(self.args, shell=True)
         if rc:
@@ -367,7 +367,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         self.ammo_progress += second_aggregate_data.overall.RPS
 
 
-# TODO: widget data: loadscheme?    current step duration
+# TODO: widget data: loadscheme?    
 class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
     def get_index(self):
@@ -383,6 +383,7 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.selfload = 0
         self.time_lag = 0
         self.ammo_count = int(self.owner.core.get_option(self.owner.SECTION, self.owner.OPTION_AMMO_COUNT))
+        self.planned_rps_duration = 0
 
     def render(self, screen):
         template = "Hosts: %s => %s:%s\n Ammo: %s\nCount: %s"
@@ -399,7 +400,7 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         else:
             res += str(self.instances)
         
-        res += "\nPlanned requests: %s\nActual responses: " % (self.planned)
+        res += "\nPlanned requests: %s    %s\nActual responses: " % (self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
         if not self.planned == self.RPS:
             res += screen.markup.YELLOW + str(self.RPS) + screen.markup.RESET
         else:
@@ -425,11 +426,15 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
     def aggregate_second(self, second_aggregate_data):
         self.instances = second_aggregate_data.overall.active_threads
-        self.planned = second_aggregate_data.overall.planned_requests
+        if self.planned == second_aggregate_data.overall.planned_requests:
+            self.planned_rps_duration += 1
+        else:
+            self.planned = second_aggregate_data.overall.planned_requests
+            self.planned_rps_duration = 1
+        
         self.RPS = second_aggregate_data.overall.RPS
         self.selfload = second_aggregate_data.overall.selfload
         self.log.debug("%s %s", second_aggregate_data.time.timetuple(), self.owner.phantom_start_time)
         self.time_lag = int((datetime.datetime.now() - second_aggregate_data.time).total_seconds())
     
     
-# TODO: req/answ sizes in widget - last sec and curRPS

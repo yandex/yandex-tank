@@ -13,7 +13,7 @@ from Tank.Plugins.Autostop import AutostopPlugin
 import time
 
 # TODO: implement interactive metainfo querying
-
+# TODO: implement task=dir
 class DataUploaderPlugin(AbstractPlugin, AggregateResultListener):
     SECTION = 'meta'
     
