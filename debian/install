@@ -7,3 +7,7 @@ Lunapark.pm usr/share/perl5
 db.conf /etc/lunapark
 load.conf.example /etc/lunapark
 yandex_load_lunapark usr/lib/lunapark
+
+yandex-tank.conf etc/lunapark
+Tank usr/lib/lunapark
+tank.py usr/lib/lunapark

@@ -4,3 +4,5 @@
 
 /usr/lib/lunapark/stepper.py /usr/bin/stepper.py
 /usr/lib/lunapark/fantom.py /usr/bin/fantom.py
+
+/usr/lib/lunapark/tank.py /usr/bin/yandex-tank
