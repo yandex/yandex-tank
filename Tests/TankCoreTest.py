@@ -35,7 +35,7 @@ class  TankCoreTestCase(TankTestCase):
         self.foo.plugins_end_test(0)
 
     def test_find_plugin(self):
-        self.foo.plugins={'test.pyc': TankCore()}
+        self.foo.plugins = {'test.pyc': TankCore()}
         self.foo.get_plugin_by_key('test.py')
         
 

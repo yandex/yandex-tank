@@ -74,7 +74,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
             try:
                 self.screen.add_second_data(second_aggregate_data)    
                 console_view = self.screen.render_screen()
-                self.log.debug("Console view:\n%s", console_view)
+                self.log.debug("Console view:\n%s", self.console_markup.clean_markup(console_view))
                 sys.stdout.write(self.console_markup.clear)
                 sys.stdout.write(console_view.encode('utf-8'))
             except Exception, ex:

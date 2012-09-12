@@ -19,11 +19,11 @@ if __name__ == "__main__":
     options, ammofile = parser.parse_args()
 
     # @type worker ConsoleTank
-    worker=ConsoleTank(options, ammofile)
+    worker = ConsoleTank(options, ammofile)
     worker.init_logging()
     try:     
         worker.configure()
-        rc=worker.perform_test()
+        rc = worker.perform_test()
         exit(rc)
     except Exception, ex:
         logging.error("Exception: %s", ex)

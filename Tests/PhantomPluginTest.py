@@ -31,7 +31,7 @@ class  PhantomPluginTestCase(TankTestCase):
         while self.foo.is_test_finished() < 0:
             self.foo.log.debug("Not finished")
             time.sleep(1)
-        if self.foo.is_test_finished()!=0:
+        if self.foo.is_test_finished() != 0:
             raise RuntimeError("RC: %s" % self.foo.is_test_finished())
         self.foo.end_test(0)
 
@@ -43,7 +43,7 @@ class  PhantomPluginTestCase(TankTestCase):
         while self.foo.is_test_finished() < 0:
             self.foo.log.debug("Not finished")
             time.sleep(1)
-        if self.foo.is_test_finished()!=0:
+        if self.foo.is_test_finished() != 0:
             raise RuntimeError("RC: %s" % self.foo.is_test_finished())
         self.foo.end_test(0)
         

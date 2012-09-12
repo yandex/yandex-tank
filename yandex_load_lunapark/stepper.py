@@ -102,7 +102,7 @@ def get_headers_list(line):
          cases = re.split('\]\s*\[', line)
          for case in cases:
             case = re.sub("\[|\]", "", case)
-            c  = re.match("^\s*(\S+)\s*:\s*(.+?)\s*$", case)
+            c = re.match("^\s*(\S+)\s*:\s*(.+?)\s*$", case)
             if c:
                list[c.group(1)] = c.group(2)
    return list 
@@ -151,25 +151,25 @@ def load_const(req, duration):
    dur = str2sec(duration)
    steps = []
    steps.append([req, dur])
-   ls = "%s,const,%s,%s,(%s,%s)\n" % (dur,req,req,req,duration)
-   time = dur*int(req)
+   ls = "%s,const,%s,%s,(%s,%s)\n" % (dur, req, req, req, duration)
+   time = dur * int(req)
    if int(req) == 0:
       time = dur
    return [steps, ls, time]
 
 def load_line(start, end, duration):
    dur = str2sec(duration)
-   k = float((end-start)/float(dur-1))
+   k = float((end - start) / float(dur - 1))
    cnt, last_x, total = 1, start, 0
-   ls = "%s,line,%s,%s,(%s,%s,%s)\n" % (dur,start,end,start,end,duration)
+   ls = "%s,line,%s,%s,(%s,%s,%s)\n" % (dur, start, end, start, end, duration)
    steps = []
-   for i in range(1,dur+1):
-      cur_x = int(start + k*i)
+   for i in range(1, dur + 1):
+      cur_x = int(start + k * i)
       if (cur_x == last_x):
          cnt += 1
       else:
          steps.append([last_x, cnt])
-         total += cnt*last_x
+         total += cnt * last_x
          cnt, last_x = 1, cur_x
    return [steps, ls, total]
 
@@ -177,20 +177,20 @@ def load_step(start, end, step, duration):
    dur = str2sec(duration)
    steps, ls, total = [], "", 0
    if end > start:
-      for x in range(start, end+1, step):
+      for x in range(start, end + 1, step):
          steps.append([x, dur])
-         ls += "%s,step,%s,%s,(%s,%s,%s,%s)\n" % (dur,x,x,start,end,step,duration)
-         total += x*dur
+         ls += "%s,step,%s,%s,(%s,%s,%s,%s)\n" % (dur, x, x, start, end, step, duration)
+         total += x * dur
    else:
-      for x in range(start, end-1, -step):
+      for x in range(start, end - 1, -step):
          steps.append([x, dur])
-         ls += "%s,step,%s,%s,(%s,%s,%s,%s)\n" % (dur,x,x,start,end,step,duration)
-         total += x*dur
+         ls += "%s,step,%s,%s,(%s,%s,%s,%s)\n" % (dur, x, x, start, end, step, duration)
+         total += x * dur
    return [steps, ls, total]
 
 # for instances
 def collapse_schedule(schedule):
-    res=[]
+    res = []
     prev_item = []
     rolling_count = 0
     base_time = 0
@@ -204,7 +204,7 @@ def collapse_schedule(schedule):
                 continue
             res += [[prev_item[0] - rolling_count, prev_item[1]]]
             rolling_count = prev_item[0]
-        prev_item=item
+        prev_item = item
     if prev_item:
         res += [prev_item]
     return res
@@ -242,24 +242,24 @@ def expand_load_spec(l):
       st, ls, cnt, max = [], "", 0, 0
       m = re.match("^const\s*\(\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
       if m:
-         val=int(m.group(1))
+         val = int(m.group(1))
          st, ls, cnt = load_const(val, m.group(2))
-         if val>max:
-             max=val
+         if val > max:
+             max = val
       else:
          m = re.match("^line\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
          if m:
-            val=int(m.group(2))
+            val = int(m.group(2))
             [st, ls, cnt] = load_line(int(m.group(1)), val, m.group(3))
-            if val>max:
-                max=val
+            if val > max:
+                max = val
          else:
             m = re.match("^step\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*\)\s*", l)
             if m:
-               val=int(m.group(2))
+               val = int(m.group(2))
                [st, ls, cnt] = load_step(int(m.group(1)), val, int(m.group(3)), m.group(4))
-               if val>max:
-                   max=val
+               if val > max:
+                   max = val
             else:
                m = re.match("^const\s*\(\s*(\d+\/\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
                if m:
@@ -280,10 +280,10 @@ def make_steps(file):
    return (steps, loadscheme, load_ammo)
 
 def mark_sec(cnt, dur):
-   k = 1000/float(cnt)
+   k = 1000 / float(cnt)
    times = [0]
-   for i in range(1, cnt*dur):
-      times.append(int(i*k))
+   for i in range(1, cnt * dur):
+      times.append(int(i * k))
    return times
 
 ### Fractional rps ###
@@ -293,15 +293,15 @@ def constf(req, duration):
    m = re.match("(\d+)\/(\d+)", req)
    if m:
       a, b = int(m.group(1)), int(m.group(2))
-      dur, e = str2sec(duration), int(a/b)
+      dur, e = str2sec(duration), int(a / b)
 
-      fr = "%.3f" % (float(a)/b)
+      fr = "%.3f" % (float(a) / b)
       ls = "%s,const,%s,%s,(%s,%s)\n" % (dur, fr, fr, req, duration)
       a = a % b
       req = "%s/%s" % (a, b)
       out = []
       tail = dur % b
-      for x in range(1, int(dur/b) + 1):
+      for x in range(1, int(dur / b) + 1):
          out += frps(req)
       if tail:
          out += frps_cut(tail, req)
@@ -321,21 +321,21 @@ def frps(req):
       if num1 == 0:
          out = []
          for x in range(0, num0):
-            out.append([0,1])
+            out.append([0, 1])
          return out
       if num1 > num0:
-         c["per_chunk"], c["space"], c["first"] = int(num1/num0), num1 % num0, '1'
+         c["per_chunk"], c["space"], c["first"] = int(num1 / num0), num1 % num0, '1'
          c["chunks"] = int(num0)
          c["num1"], c["num0"] = num1, num0
       else :
-         c["per_chunk"], c["space"], c["first"] = int(num0/num1), num0 % num1, '0'
+         c["per_chunk"], c["space"], c["first"] = int(num0 / num1), num0 % num1, '0'
          c["chunks"] = int(num1)
          c["num1"], c["num0"] = num0, num1
       return frps_scheme(c)
    else :
       return 0
 
-def frps_print(s,t):
+def frps_print(s, t):
    out = []
    for x in range(0, t):
       out.append([s, 1])
@@ -486,8 +486,8 @@ def accesslog2phout(access_file, phout_file):
    pattern = re.compile("\[(.+)\s(.+)\].+?\"(.+?)\"\s(\d+)\s.+?(\d+)$")
 
    access = open(access_file, "r")
-   phout  = open(phout_file, "w")
-   error  = open("access.error", "w")
+   phout = open(phout_file, "w")
+   error = open("access.error", "w")
 
    byte_cnt = 0
    chunk = ""
@@ -497,7 +497,7 @@ def accesslog2phout(access_file, phout_file):
       pbar.update(byte_cnt)
       m = pattern.search(line)
       if m:
-         t = str(time.mktime(time.strptime(m.group(1),'%d/%b/%Y:%H:%M:%S')))+"00"
+         t = str(time.mktime(time.strptime(m.group(1), '%d/%b/%Y:%H:%M:%S'))) + "00"
          s = "%s\t\t%s\t%s\t0\t0\t0\t%s\n" % (t, m.group(5), m.group(5), m.group(4)) 
          phout.write(s)
       else :
@@ -514,22 +514,22 @@ def make_autocases_top(l1, l2, l3, total_cnt, tree):
    total_done, n = 0, 0
    output = ""
    cases_done = defaultdict(int)
-   sl1 = sorted(l1.iteritems(), key=operator.itemgetter(1), reverse = True)
-   sl2 = sorted(l2.iteritems(), key=operator.itemgetter(1), reverse = True)
-   sl3 = sorted(l3.iteritems(), key=operator.itemgetter(1), reverse = True)
+   sl1 = sorted(l1.iteritems(), key=operator.itemgetter(1), reverse=True)
+   sl2 = sorted(l2.iteritems(), key=operator.itemgetter(1), reverse=True)
+   sl3 = sorted(l3.iteritems(), key=operator.itemgetter(1), reverse=True)
    n = 0
    output += "level 1\n"
    for s in sl1:
-      t = float(100*s[1])/float(total_cnt)
+      t = float(100 * s[1]) / float(total_cnt)
       if t >= alpha and n < N:
          cases_done[s[0]] = s[1]
          total_done += s[1]
          n += 1
-         output += "\t%s. [level 1]\t%s\t%.2f%s\n" % (n,s[0],t,'%')
+         output += "\t%s. [level 1]\t%s\t%.2f%s\n" % (n, s[0], t, '%')
    n = 0
    output += "level 2:\n"
    for s in sl2:
-      t = float(100*s[1])/float(total_cnt)
+      t = float(100 * s[1]) / float(total_cnt)
       if t >= alpha and n < N:
          if len(cases_done) < N:
             cases_done[s[0]] = s[1]
@@ -541,11 +541,11 @@ def make_autocases_top(l1, l2, l3, total_cnt, tree):
                del cases_done[tree[s[0]]]
                n -= 1
          n += 1
-         output += "\t%s. [level 2]\t%s\t%.2f%s [%s]\n" % (n,s[0],t,'%',tree[s[0]])
+         output += "\t%s. [level 2]\t%s\t%.2f%s [%s]\n" % (n, s[0], t, '%', tree[s[0]])
    output += "level 3:\n"
    n = 0
    for s in sl3:
-      t = float(100*s[1])/float(total_cnt)
+      t = float(100 * s[1]) / float(total_cnt)
       if t >= alpha and n < N:
          if len(cases_done) < N:
             cases_done[s[0]] = s[1]
@@ -557,15 +557,15 @@ def make_autocases_top(l1, l2, l3, total_cnt, tree):
                del cases_done[tree[s[0]]]
                n -= 1
          n += 1
-         output += "\t%s. [level 3]\t%s\t%.2f%s [%s]\n" % (n,s[0],t,'%',tree[s[0]])
+         output += "\t%s. [level 3]\t%s\t%.2f%s [%s]\n" % (n, s[0], t, '%', tree[s[0]])
    n = 0
    if total_done < total_cnt:
       cases_done['other'] = total_cnt - total_done
-   csds = sorted(cases_done.iteritems(), key=operator.itemgetter(1), reverse = True)
-   output +=  "cases done:\n"
+   csds = sorted(cases_done.iteritems(), key=operator.itemgetter(1), reverse=True)
+   output += "cases done:\n"
    for s in csds:
       n += 1
-      t = float(100*s[1])/float(total_cnt)
+      t = float(100 * s[1]) / float(total_cnt)
       output += "\t%s. [done]\t%s\t%s\t%.2f%s [%s]\n" % (n, s[1], s[0], t, '%', tree[s[0]])
    return (cases_done, output)
 
@@ -578,9 +578,9 @@ def str2sec(st):
    if m:
       el = m.groups()
       if el[1] == 'h':
-         return int(el[0])*3600
+         return int(el[0]) * 3600
       elif el[1] == 'm':
-         return int(el[0])*60
+         return int(el[0]) * 60
       elif el[1] == 's':
          return int(el[0])
       else:

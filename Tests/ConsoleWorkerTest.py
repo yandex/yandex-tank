@@ -32,27 +32,27 @@ class  ConsoleWorkerTestCase(TankTests.TankTestCase):
     def test_perform(self):
         self.foo.configure()
 
-        uploader=self.foo.core.get_plugin_of_type(DataUploaderPlugin)
-        uploader.api_client=FakeAPICLient()
+        uploader = self.foo.core.get_plugin_of_type(DataUploaderPlugin)
+        uploader.api_client = FakeAPICLient()
         uploader.api_client.get_results.append('[{"closed":"", "name": "test task"}]')
         uploader.api_client.get_results.append('[{"success":1}]')
-        uploader.api_client.post_results.append('[{"job":'+str(time.time())+'}]')
+        uploader.api_client.post_results.append('[{"job":' + str(time.time()) + '}]')
         for n in range(1, 120):
             uploader.api_client.post_results.append('[{"success":1}]')
 
-        console=self.foo.core.get_plugin_of_type(ConsoleOnlinePlugin)
-        console.console_markup=FakeConsoleMarkup()
+        console = self.foo.core.get_plugin_of_type(ConsoleOnlinePlugin)
+        console.console_markup = FakeConsoleMarkup()
         
         if self.foo.perform_test() != 0:
             raise RuntimeError()
         
     def test_option_override(self):
-        options=FakeOptions()
-        options.config=["config/old-style.conf"]
-        options.option=["owner.address=overridden"]
+        options = FakeOptions()
+        options.config = ["config/old-style.conf"]
+        options.option = ["owner.address=overridden"]
         self.foo = ConsoleTank(options, None)
         self.foo.configure()
-        res=self.foo.core.get_option("owner", "address")
+        res = self.foo.core.get_option("owner", "address")
         logging.debug(res)
         self.assertEquals("overridden", res)
 

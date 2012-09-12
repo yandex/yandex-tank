@@ -117,7 +117,7 @@ class ConsoleTank:
             self.log.warning("Config failed INI format test, consider upgrading it: %s", config)
             fd, corrected_file = tempfile.mkstemp(".conf", "corrected_")
             self.log.debug("Creating corrected INI config for it: %s", corrected_file)
-            os.write(fd, "["+self.MIGRATE_SECTION+"]\n")
+            os.write(fd, "[" + self.MIGRATE_SECTION + "]\n")
             old_config = open(config, 'r').read()
             os.write(fd, old_config)
             return corrected_file

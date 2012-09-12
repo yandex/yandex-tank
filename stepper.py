@@ -23,10 +23,10 @@ print "==== Stepper ===="
 ### Command line argumentd
 parser = OptionParser()
 
-parser.add_option("-c", "--config", dest="config", 
+parser.add_option("-c", "--config", dest="config",
         help="use custom config FILE, insted of load.conf", metavar="FILE", default='load.conf')
 
-parser.add_option("-a", "--ammo", dest="ammo", 
+parser.add_option("-a", "--ammo", dest="ammo",
         help="FILE with requests", metavar="FILE")
 
 parser.add_option("-s", "--stats", dest="stats", action="store_true",
@@ -49,9 +49,9 @@ pattern = re.compile('^(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK
 
 ### Defaults params for config file
 default = {}
-default["header_http"]        = "1.0"
-default["autocases"]          = "1"
-default["tank_type"]          = "1"
+default["header_http"] = "1.0"
+default["autocases"] = "1"
+default["tank_type"] = "1"
 
 ### Parse config
 ### using FakeSecHead class for creating fake section [default] in config-file
@@ -75,10 +75,10 @@ try:
     instances_schedule = []
     instances_chunk_cnt = 0
     instances = configuration_file.get('DEFAULT', 'instances_schedule')
-    sched_parts=instances.split(" ")
+    sched_parts = instances.split(" ")
     for sched_part in sched_parts:
         if sched_part:
-            [expanded_sched, skip, skip, max_val]=stepper.expand_load_spec(sched_part)
+            [expanded_sched, skip, skip, max_val] = stepper.expand_load_spec(sched_part)
             instances_schedule += expanded_sched
             if max_val > instances_schedule_count:
                 instances_schedule_count = max_val
@@ -92,9 +92,9 @@ if options.loadscheme:
     exit(0)
 
 ### Use ammo defined ammo file or creating temp ammo file from config
-ammo_file =  options.ammo
+ammo_file = options.ammo
 if not ammo_file:
-    ammo_file=configuration_file.get('DEFAULT', 'ammofile')
+    ammo_file = configuration_file.get('DEFAULT', 'ammofile')
 ammo_type = ""
 ammo_delete = ""
 
@@ -221,11 +221,11 @@ if loop > 0:
 if load_count > 0:
     if loop == 0 and load_count <= ammo_count:
         case = 3
-    if loop > 0 and load_count <= loop*ammo_count:
+    if loop > 0 and load_count <= loop * ammo_count:
         case = 3
-    if loop > 0 and loop*ammo_count < load_count:
-        print "Looped ammo count (%s * %s = %s) is less than load scheme (%s). Using loop count." % (loop, ammo_count, loop*ammo_count, load_count)
-        stop_loop_count = loop*ammo_count
+    if loop > 0 and loop * ammo_count < load_count:
+        print "Looped ammo count (%s * %s = %s) is less than load scheme (%s). Using loop count." % (loop, ammo_count, loop * ammo_count, load_count)
+        stop_loop_count = loop * ammo_count
         case = 3
     if loop == -1:
         case = 3
@@ -237,8 +237,8 @@ already_cases = defaultdict(int)
 ### Ammo Generating
 if ammo_type == 'request':
     if case == 2:
-        max_progress = loop*ammo_count
-        load_steps = [[0,0]]
+        max_progress = loop * ammo_count
+        load_steps = [[0, 0]]
     elif case == 3:
         if stop_loop_count:
             max_progress = stop_loop_count
@@ -269,11 +269,11 @@ if ammo_type == 'request':
         count, duration = step[0], step[1]
         if case == 3:
             if int(count) == 0:
-                base_time += duration*1000
+                base_time += duration * 1000
                 continue
             marked = stepper.mark_sec(count, duration)
         while looping:
-            chunk_start  = input_ammo.readline()
+            chunk_start = input_ammo.readline()
 #            print chunk_start
             if not chunk_start:
                 if not cur_progress:
@@ -324,7 +324,7 @@ if ammo_type == 'request':
                                 [instances_chunk_cnt, instances_chunk_time] = instances_schedule.pop(0)
                                 base_time += instances_chunk_time * 1000
                             instances_chunk_cnt -= 1
-                            time=base_time
+                            time = base_time
                             
                     else:
                         time = 1000
@@ -347,7 +347,7 @@ if ammo_type == 'request':
                 if case == 3:
                     if stop_loop_count > 0 and  cur_progress == stop_loop_count:
                         break
-                    if step_ammo_num == count*duration:
+                    if step_ammo_num == count * duration:
                         break
             # meta information of new chunk - FALSE
             else:
@@ -381,13 +381,13 @@ if ammo_type == 'request':
             if case == 3:
                 if stop_loop_count > 0 and cur_progress == stop_loop_count:
                     break
-                if step_ammo_num == count*duration:
+                if step_ammo_num == count * duration:
                     break
-                if not step_ammo_num == count*duration:
+                if not step_ammo_num == count * duration:
                     pass
                 if step_ammo_num == load_count:
                     looping = 0
-        base_time += duration*1000
+        base_time += duration * 1000
 
     stepped_ammo.write("0\n")
     pbar.finish()
@@ -397,7 +397,7 @@ elif (ammo_type == "uri"):
     if case == 2:
         print "Looping '%s' for %s time(s):" % (ammo_file, loop)
         print
-        max_progress = loop*ammo_count  
+        max_progress = loop * ammo_count  
         widgets = ['Ammo Generating: ', Percentage(), ' ', Bar(), ' ', ETA(), ' ' ]
         pbar = ProgressBar(widgets=widgets, maxval=max_progress).start()
    
@@ -413,7 +413,7 @@ elif (ammo_type == "uri"):
                     cur_progress += 1
                     pbar.update(cur_progress)
                     #sleep(1)
-            if cur_progress==0:
+            if cur_progress == 0:
                 raise RuntimeError("Eternal loop detected")
             input_ammo.seek(0)
         stepped_ammo.write("0\n")
@@ -459,14 +459,14 @@ elif (ammo_type == "uri"):
                         if stop_loop_count > 0 and cur_progress == stop_loop_count:
                             looping = 0
                             break
-                        if step_ammo_num == count*duration:
+                        if step_ammo_num == count * duration:
                             looping = 0
                             break
-                if not step_ammo_num == count*duration:
-                    if cur_progress==0:
+                if not step_ammo_num == count * duration:
+                    if cur_progress == 0:
                         raise RuntimeError("Eternal loop detected")
                     input_ammo.seek(0)
-            base_time += duration*1000
+            base_time += duration * 1000
 
         stepped_ammo.write("0\n")
         pbar.finish()

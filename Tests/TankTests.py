@@ -14,8 +14,8 @@ class TankTestCase(unittest.TestCase):
 
 
 class FakeOptions(object):
-    log=''
-    verbose=True
-    config=[]
-    option=['testsection.testoption=testvalue']
-    ignore_lock=True
+    log = ''
+    verbose = True
+    config = []
+    option = ['testsection.testoption=testvalue']
+    ignore_lock = True

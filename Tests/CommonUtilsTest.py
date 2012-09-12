@@ -5,13 +5,13 @@ import unittest
 
 class CommonUtilsTest(TankTestCase):
 	def setUp(self):
-		self.stest=[
-				('5s', 5), 
-				('1w1s', 604801), 
-				('1w2d3h4m5s', 788645), 
+		self.stest = [
+				('5s', 5),
+				('1w1s', 604801),
+				('1w2d3h4m5s', 788645),
 				('1w2d3h4m6', 788646),
 				]
-		self.mstest=[('1w2d3h4m5s6ms', 788645006), ('1w2d3h4m5s6', 788645006)]
+		self.mstest = [('1w2d3h4m5s6ms', 788645006), ('1w2d3h4m5s6', 788645006)]
 
 	def test_expand_to_seconds(self):
 		for i in self.stest:

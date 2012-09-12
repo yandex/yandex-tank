@@ -16,10 +16,10 @@ class  DataUploaderPluginTestCase(TankTestCase):
         core.load_configs(['config/uploader.conf'])
         core.load_plugins()
         self.foo = DataUploaderPlugin(core)
-        self.foo.api_client=FakeAPICLient()
+        self.foo.api_client = FakeAPICLient()
         self.foo.api_client.get_results.append('[{"closed":"", "name": "test task"}]')
         self.foo.api_client.get_results.append('[{"success":1}]')
-        self.foo.api_client.post_results.append('[{"job":'+str(time.time())+'}]')
+        self.foo.api_client.post_results.append('[{"job":' + str(time.time()) + '}]')
         self.foo.api_client.post_results.append('[{"success":1}]')
 
     def tearDown(self):
