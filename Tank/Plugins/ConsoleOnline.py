@@ -76,7 +76,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
                 console_view = self.screen.render_screen()
                 self.log.debug("Console view:\n%s", console_view)
                 sys.stdout.write(self.console_markup.clear)
-                sys.stdout.write(console_view)
+                sys.stdout.write(console_view.encode('utf-8'))
             except Exception, ex:
                 self.log.warn("Exception inside render: %s", traceback.format_exc(ex))
             # TODO: add a way to send console view to remote API, via listener notification (avoid DataUploader dependency
