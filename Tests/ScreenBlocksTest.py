@@ -1,3 +1,4 @@
+from Tank.Plugins.ConsoleOnline import Screen, CurrentHTTPBlock, CurrentNetBlock
 from Tests.ConsoleOnlinePluginTest import FakeConsoleMarkup
 from Tests.TankTests import TankTestCase
 import logging
@@ -24,7 +25,7 @@ class BlocksTestCase(TankTestCase):
 
     def test_Net(self):
         screen = Screen(50, FakeConsoleMarkup())
-        block = CurrentHTTPBlock(screen)
+        block = CurrentNetBlock(screen)
         block.render()
         print block.lines
         self.assertEquals('NET for current RPS:', block.lines[0].strip())

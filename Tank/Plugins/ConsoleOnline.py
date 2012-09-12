@@ -220,6 +220,7 @@ class Screen(object):
     def add_second_data(self, data):
         self.current_times_block.add_second(data.overall.planned_requests, data.overall.times_dist)
         self.current_http_block.add_second(data.overall.planned_requests, data.overall.http_codes)
+        self.log.debug("Net codes: %s", data.overall.net_codes)
         self.current_net_block.add_second(data.overall.planned_requests, data.overall.net_codes)
         #self.recalc_total_quantiles() # TODO: get them from aggregator
         
@@ -321,6 +322,7 @@ class CurrentHTTPBlock(AbstractBlock):
         self.current_count = 0
 
     def add_second(self, rps, codes_dist):
+        self.log.debug("Arrived codes data: %s", codes_dist)
         self.highlight_codes = []
         if not self.current_rps == rps:
             self.current_rps = rps
