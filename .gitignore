@@ -1,11 +1,9 @@
 debian/yandex-load-tank-base
-debian/yandex-load-tank-base.debhelper.log
 debian/yandex-load-tank-base.substvars
 build-stamp
 *.ammo
 *.stpd
 configure-stamp
-*.conf
 .project
 *.log
 *.pyc
