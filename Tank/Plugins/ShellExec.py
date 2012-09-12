@@ -1,13 +1,19 @@
+'''
+Contains shellexec plugin
+'''
 from Tank.Core import AbstractPlugin
 from Tank.Utils import CommonUtils
 import logging
 
+'''
+ShellExec plugin
+allows executing shell scripts before/after test
+'''
 class ShellExecPlugin(AbstractPlugin):
     SECTION = 'shellexec'
     
     def __init__(self, core):
-        self.log = logging.getLogger(__name__)
-        self.core = core
+        AbstractPlugin.__init__(self, core)
         self.end = None
         self.poll = None
         self.prepare = None
@@ -19,11 +25,11 @@ class ShellExecPlugin(AbstractPlugin):
         return __file__
     
     def configure(self):
-        self.prepare = self.core.get_option(self.SECTION, "prepare", '')
-        self.start = self.core.get_option(self.SECTION, "start", '')
-        self.end = self.core.get_option(self.SECTION, "end", '')
-        self.poll = self.core.get_option(self.SECTION, "poll", '')
-        self.postprocess = self.core.get_option(self.SECTION, "post_process", '')
+        self.prepare = self.get_option("prepare", '')
+        self.start = self.get_option("start", '')
+        self.end = self.get_option("end", '')
+        self.poll = self.get_option("poll", '')
+        self.postprocess = self.get_option("post_process", '')
 
     def prepare_test(self):
         if self.prepare:
@@ -38,10 +44,10 @@ class ShellExecPlugin(AbstractPlugin):
         if self.poll:
             self.execute(self.poll)
             
-    def end_test(self, rc):
+    def end_test(self, retcode):
         if self.end:
             self.execute(self.end)
-        return rc
+        return retcode
 
     def post_process(self, rc):
         if self.postprocess:
@@ -49,6 +55,7 @@ class ShellExecPlugin(AbstractPlugin):
         return rc
 
     def execute(self, cmd):
-        rc = CommonUtils.execute(cmd, shell=True, poll_period=0.1)
-        if rc:
+        self.log.debug("Executing: %s", cmd)
+        retcode = CommonUtils.execute(cmd, shell=True, poll_period=0.1)
+        if retcode:
             raise RuntimeError("Subprocess returned %s",)    

@@ -131,7 +131,7 @@ class AggregatorPlugin(AbstractPlugin):
             self.second_data_draft += [self.buffer]
             self.buffer = []
 
-    def end_test(self, rc):
+    def end_test(self, retcode):
         time.sleep(1)
         if self.process:
             self.log.debug("Reading rests of preproc out")
@@ -153,7 +153,7 @@ class AggregatorPlugin(AbstractPlugin):
         else:
             self.log.warn("Seems the preproc has been finished")
 
-        return rc        
+        return retcode        
         
         
     def add_result_listener(self, listener):

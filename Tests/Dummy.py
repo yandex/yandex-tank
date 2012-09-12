@@ -19,7 +19,7 @@ class DummyPlugin(AbstractPlugin):
     def start_test(self):
         self.log.debug("Start2")
         time.sleep(1)
-    def end_test(self, rc):
+    def end_test(self, retcode):
         self.log.debug("End2")
         
     def is_test_finished(self):

@@ -1,3 +1,6 @@
+'''
+helper module to find http and net codes descriptions
+'''
 import httplib
 
 ### HTTP codes

@@ -61,8 +61,8 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
     def start_test(self):
         pass
 
-    def end_test(self, rc):
-        return rc
+    def end_test(self, retcode):
+        return retcode
 
     def is_test_finished(self):
         if self.cause_criteria:

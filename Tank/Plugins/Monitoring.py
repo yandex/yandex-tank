@@ -80,7 +80,7 @@ class MonitoringPlugin(AbstractPlugin):
             return -1
             
             
-    def end_test(self, rc):
+    def end_test(self, retcode):
         if self.process and self.process.poll() == None:
             self.log.debug("Terminating monitoring process with PID %s", self.process.pid)
             try:
@@ -95,6 +95,6 @@ class MonitoringPlugin(AbstractPlugin):
             CommonUtils.log_stdout_stderr(self.log, self.process.stdout, None, self.SECTION)
             CommonUtils.log_stdout_stderr(self.log, self.process.stderr, None, self.SECTION + " err")
 
-        return rc
+        return retcode
     
 # TODO: add widget with current metrics

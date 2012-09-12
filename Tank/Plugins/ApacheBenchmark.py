@@ -56,7 +56,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
             CommonUtils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
 
             
-    def end_test(self, rc):
+    def end_test(self, retcode):
         if self.process and self.process.poll() == None:
             self.log.warn("Terminating ab process with PID %s", self.process.pid)
             self.process.terminate()
@@ -65,7 +65,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
 
         if self.process:
             CommonUtils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
-        return rc
+        return retcode
             
 
  

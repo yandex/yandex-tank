@@ -255,8 +255,9 @@ class AbstractPlugin:
     @staticmethod
     def get_key():
         raise TypeError("Abstract method needs to be overridden")
-    def __init__(self):
-        pass
+    def __init__(self, core):
+        self.log = logging.getLogger(__name__)
+        self.core = core
     def configure(self):
         raise TypeError("Abstract method needs to be overridden")
     def prepare_test(self):
@@ -265,8 +266,10 @@ class AbstractPlugin:
         raise TypeError("Abstract method needs to be overridden")
     def is_test_finished(self):
         return -1;
-    def end_test(self, rc):
+    def end_test(self, retcode):
         raise TypeError("Abstract method needs to be overridden")
     def post_process(self, rc):
         return rc;
 
+    def get_option(self, option_name, default_value):
+        return self.core.get_option(self.SECTION, option_name, default_value)

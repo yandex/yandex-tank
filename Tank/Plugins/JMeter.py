@@ -34,7 +34,7 @@ class JMeterPlugin(AbstractPlugin):
         self.log.debug("Starting %s with arguments: %s", self.jmeter_path, self.args)
         self.jmeter_process = subprocess.Popen(self.args, executable=self.jmeter_path, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     
-    def end_test(self, rc):
+    def end_test(self, retcode):
         if self.jmeter_process.poll() == None:
             self.log.warn("Terminating jmeter process with PID %s", self.jmeter_process.pid)
             self.jmeter_process.terminate()
@@ -46,7 +46,7 @@ class JMeterPlugin(AbstractPlugin):
             self.log.debug("Seems JMeter finished OK")
         
         self.core.add_artifact_file(self.jmeter_log)
-        return rc
+        return retcode
             
     def is_test_finished(self):
         CommonUtils.log_stdout_stderr(self.log, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")

@@ -27,7 +27,10 @@ class RealConsoleMarkup(object):
     BG_GREEN = '\033[1;42m'
     
     def clean_markup(self, orig_str):
-        for val in [self.YELLOW, self.RED, self.RESET, self.CYAN, self.BG_MAGENTA, self.BG_GREEN, self.GREEN, self.RED_DARK, self.MAGENTA]:
+        for val in [self.YELLOW, self.RED, self.RESET, 
+                    self.CYAN, self.BG_MAGENTA, 
+                    self.BG_GREEN, self.GREEN, 
+                    self.RED_DARK, self.MAGENTA]:
             orig_str = orig_str.replace(val, '')
         return orig_str
 
@@ -57,10 +60,10 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
     def start_test(self):
         pass
     
-    def end_test(self, rc):
+    def end_test(self, retcode):
         #if not self.short_only:
         #    sys.stdout.write(self.console_markup.clear)
-        return rc
+        return retcode
 
     def execute(self, cmd):
         pass

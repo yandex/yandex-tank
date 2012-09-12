@@ -230,13 +230,13 @@ class PhantomPlugin(AbstractPlugin):
             return -1
 
     
-    def end_test(self, rc):
+    def end_test(self, retcode):
         if self.process and self.process.poll() == None:
             self.log.warn("Terminating phantom process with PID %s", self.process.pid)
             self.process.terminate()
         else:
             self.log.debug("Seems phantom finished OK")
-        return rc
+        return retcode
             
             
     def get_stpd_filename(self):

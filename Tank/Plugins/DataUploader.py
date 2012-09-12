@@ -104,8 +104,8 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener):
                 self.version_tested, self.is_regression, self.regression_component,
                 tank_type, " ".join(sys.argv), 0)
     
-    def end_test(self, rc):
-        return rc
+    def end_test(self, retcode):
+        return retcode
     
     def post_process(self, rc):
         if self.jobno:
