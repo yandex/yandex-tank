@@ -10,6 +10,7 @@ import time
 import traceback
 
 # TODO: --manual-start
+# TODO: add system resources busy check
 class ConsoleTank:
     """
     Worker class that runs tank core accepting cmdline params
