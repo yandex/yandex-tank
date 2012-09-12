@@ -1,0 +1,19 @@
+54 0 
+GET / HTTP/1.0
+Host: www.ya.ru
+Connection: close
+
+
+58 1000 
+GET /test HTTP/1.0
+Host: www.ya.ru
+Connection: close
+
+
+59 2000 
+GET /test2 HTTP/1.0
+Host: www.ya.ru
+Connection: close
+
+
+0
