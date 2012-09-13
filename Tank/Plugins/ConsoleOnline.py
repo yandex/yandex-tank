@@ -336,7 +336,7 @@ class CurrentHTTPBlock(AbstractBlock):
         if not self.current_rps == rps:
             self.current_rps = rps
             self.current_count = 0
-            self.current_codes = {}
+            self.current_codes = {} # TODO: don't clear, just zero it
         for code, count in codes_dist.items():
             self.current_count += count
             self.highlight_codes.append(code)

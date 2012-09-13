@@ -10,7 +10,7 @@ import logging
 def make_load_ammo(uris, headers, httpver):
     filename = tempfile.mkstemp('.ammo', 'uri_')[1]
     tmp_ammo = open(filename, 'w')
-    for line in headers:
+    for line in uris:
         tmp_ammo.write(line + '\n')
     return filename
 
