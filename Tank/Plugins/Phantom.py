@@ -92,7 +92,7 @@ class PhantomPlugin(AbstractPlugin):
         self.http_ver = self.get_option("header_http", '1.1')
         self.autocases = self.get_option("autocases", '0')
         self.use_caching = int(self.get_option("use_caching", '1'))
-        self.cache_dir = self.get_option("cache_dir", os.getcwd())
+        self.cache_dir = os.path.expanduser(self.get_option("cache_dir", os.getcwd()))
         self.force_stepping = int(self.get_option("force_stepping", '0'))
         
         # phantom part
@@ -265,6 +265,7 @@ class PhantomPlugin(AbstractPlugin):
             self.log.debug("stpd-hash source: %s", hashed_str)
             hasher.update(hashed_str)            
             
+            os.makedirs(self.cache_dir)
             stpd = self.cache_dir + '/' + os.path.basename(self.ammo_file) + "_" + hasher.hexdigest() + ".stpd"
             self.log.debug("Generated cache file name: %s", stpd)
         else:

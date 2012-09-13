@@ -1,12 +1,9 @@
-from Tank import Utils
+from Monitoring.collector import MonitoringCollector
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.DataUploader import DataUploaderPlugin
 from Tank.Plugins.Phantom import PhantomPlugin
 import os
-import signal
-import subprocess
 import tempfile
-from Monitoring.monitor import MonitoringCollector
 
 # TODO: wait for first monitoring data
 class MonitoringPlugin(AbstractPlugin):
@@ -47,8 +44,7 @@ class MonitoringPlugin(AbstractPlugin):
             
     # TODO: add unit tests: disabled, default, and set config            
     def start_test(self):
-        # TODO: change subprocess to direct object manipulation
-        if self.config=='none':
+        if self.config == 'none':
             self.log.info("Monitoring has been disabled")
         else:
             uploader = None
@@ -60,15 +56,15 @@ class MonitoringPlugin(AbstractPlugin):
                 self.jobno = uploader.jobno
     
             self.log.info("Starting monitoring with config: %s", self.config)
-            self.monitoring=MonitoringCollector(self.config, self.data_file)
+            self.monitoring = MonitoringCollector(self.config, self.data_file)
             if self.jobno:
-                self.monitoring.jobno=self.jobno
+                self.monitoring.jobno = self.jobno
             if self.default_target:
-                self.monitoring.default_target=self.default_target
+                self.monitoring.default_target = self.default_target
             self.monitoring.start()
 
     def is_test_finished(self):
-        if self.monitoring.is_online():
+        if not self.monitoring.poll():
             # FIXME: don't interrupt test if we have default config
             self.log.error("Monitoring died unexpectedly",)
             return 1
@@ -77,20 +73,9 @@ class MonitoringPlugin(AbstractPlugin):
             
             
     def end_test(self, retcode):
-        if self.process and self.process.poll() == None:
-            self.log.debug("Terminating monitoring process with PID %s", self.process.pid)
-            try:
-                os.killpg(self.process.pid, signal.SIGKILL)
-                self.process.terminate()
-            except Exception, ex:
-                self.log.warning("Failed to kill monitoring process with pid %s: %s", self.process.pid, ex)
-        else:
-            self.log.warn("Seems the monitoring has been finished")
-
-        if self.process:
-            Utils.log_stdout_stderr(self.log, self.process.stdout, None, self.SECTION)
-            Utils.log_stdout_stderr(self.log, self.process.stderr, None, self.SECTION + " err")
-
+        self.log.info("Finishing monitoring")
+        if self.monitoring:
+            self.monitoring.stop()
         return retcode
     
 # TODO: add widget with current metrics

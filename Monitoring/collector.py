@@ -1,28 +1,23 @@
 from collections import defaultdict
 from lxml import etree
-from optparse import OptionParser
 from string import join, lower
 from subprocess import PIPE, Popen
 import ConfigParser
 import base64
 import logging
-import os
 import os.path
 import pwd
 import re
 import select
 import signal
-import socket
 import sys
 import tempfile
 import time
 import urllib2
 
 class Config(object):
-    def __init__(self, **kwargs):
-        for key, value in kwargs.iteritems():
-            setattr(self, key, value)
-        setattr(self, 'tree', etree.parse(self.config))
+    def __init__(self, config):
+        self.tree = etree.parse(config)
 
     def loglevel(self):
         '''Get log level from config file. Possible values: info, debug'''
@@ -34,9 +29,9 @@ class Config(object):
         return log_level
 
 
-class Agent(object):
+class AgentClient(object):
     def __init__(self, **kwargs):
-        self.run=[]
+        self.run = []
         setattr(self, 'port', '22')
         for key, value in kwargs.iteritems():
             setattr(self, key, value)
@@ -61,17 +56,6 @@ class Agent(object):
         
         self.scp_opts = self.ssh_opts + ['-P', self.port]
         self.ssh_opts = self.ssh_opts + ['-p', self.port]
-
-    def info(self):
-        """Output info about agent"""
-
-        """
-        print "host:\t%s:%s" % (self.host, self.port)
-        print "metric:\t%s" % self.metric
-        print "interval:\t%s" % self.interval
-        print "path:\t%s" % self.path
-        print "run:\t%s" % self.run
-        """
 
     def start(self):
         logging.debug('Start monitoring: %s' % self.host)
@@ -126,9 +110,9 @@ class Agent(object):
 
         pipe = Popen(cmd, stdout=PIPE, bufsize=0)
         pipe.wait()
-        logging.debug("Agent copy exitcode: %s", pipe.returncode)
+        logging.debug("AgentClient copy exitcode: %s", pipe.returncode)
         if pipe.returncode != 0:
-            logging.error("Agent copy exitcode: %s", pipe.returncode)
+            logging.error("AgentClient copy exitcode: %s", pipe.returncode)
             return pipe.returncode
 
         # Copy config
@@ -137,9 +121,9 @@ class Agent(object):
             
         pipe = Popen(cmd, stdout=PIPE, bufsize=0)
         pipe.wait()
-        logging.debug("Agent copy config exitcode: %s", pipe.returncode)
+        logging.debug("AgentClient copy config exitcode: %s", pipe.returncode)
         if pipe.returncode != 0:
-            logging.error("Agent copy config exitcode: %s", pipe.returncode)
+            logging.error("AgentClient copy config exitcode: %s", pipe.returncode)
             return pipe.returncode
 
         # Copy metric
@@ -177,38 +161,6 @@ class Agent(object):
         logging.debug("Uninstall agent from %s: %s" % (self.host, cmd))
         remove = Popen(cmd, stdout=PIPE, bufsize=0)
         remove.wait()
-
-class MonitoringCollector:
-    def __init__(self):
-        self.reported_ok = 0
-
-    def send_data(self, send_data):
-        ''' Handle HTTP data send'''
-        if not send_data:
-            logging.debug("Nothing to send to server")
-            time.sleep(0.5)
-            return        
-        addr = SEND_HOST + SEND_URI #+"&offline=1&debug=1" # FIXME: remove it
-        logging.debug('HTTP Request: %s\tlength: %s' % (addr, len(send_data)))
-        logging.debug('HTTP Request data: %s' % send_data.strip())
-        req = urllib2.Request(addr, send_data)
-        resp = urllib2.urlopen(req).read()
-        logging.debug('HTTP Response: %s' % resp)
-        if not self.reported_ok:
-            logging.info("Sent first data OK")
-            self.reported_ok = 1    
-    
-
-def exit_hand(signum, frame):
-    """ Process safe exit after catching SIGTERM or SIGINT """
-
-    logging.info('Signal handler called with signal %s at %s', signum, frame)
-    for pipe in agent_pipes:
-        logging.debug("Killing %s with %s", pipe.pid, signum)
-        os.kill(pipe.pid, signum)
-    group_op('uninstall', agents, '')
-    logging.info('Exit code: 0')
-    exit(0)
 
 def group_op(command, agents, loglevel):
     """ Group install and uninstall for list of agents"""
@@ -250,14 +202,14 @@ def filtering(mask, list):
 #    print join(res, ";")
     return join(res, ";")
         
-def filter_unused_data(filter, filter_mask, data):
+def filter_unused_data(filter_conf, filter_mask, data):
     out = ''
     # Filtering data
     keys = data.rstrip().split(';')
-    if re.match('^start;', data): # make filter mask
+    if re.match('^start;', data): # make filter_conf mask
         host = keys[1]
         for i in xrange(3, len(keys)):
-            if keys[i] in filter[host]:
+            if keys[i] in filter_conf[host]:
                 filter_mask[host].append(i - 1)
         
         out = 'start;'
@@ -316,291 +268,286 @@ def get_agent_name(metric, param):
         return ''
 
 
-def getconfig(file, target_hint):
-    default = {
-        'System': 'csw,int',
-        'CPU': 'user,system,iowait',
-        'Memory': 'free,used',
-        'Disk': 'read,write',
-        'Net': 'recv,send',
-    }
-
-    default_metric = ['CPU', 'Memory', 'Disk', 'Net']
-
-    try:
-        tree = etree.parse(file)
-    except IOError, e:
-        logging.error("Error loading config: %s", e)
-        raise RuntimeError ("Can't read monitoring config %s" % file)
-
-    hosts = tree.xpath('/Monitoring/Host')
-    names = defaultdict()
-    config = []
-    hostname = ''
-    filter = defaultdict(str)
-    for host in hosts:
-        hostname = host.get('address')
-        if hostname == '[target]':
-            if not target_hint:
-                raise ValueError("Can't use [target] keyword with no target parameter specified")
-            logging.info("Using target hint: %s", target_hint)
-            hostname = target_hint
-        stats = []
-        custom = {'tail': [], 'call': [], }
-        metrics_count = 0
-        for metric in host:
-            # known metrics
-            if metric.tag in default.keys():
-                metrics_count += 1
-                m = default[metric.tag].split(',')
-                if metric.get('measure'):
-                    m = metric.get('measure').split(',')
-                for el in m:
-                    if not el:
-                        continue;
-                    stat = "%s_%s" % (metric.tag, el)
-                    stats.append(stat)
-                    agent_name = get_agent_name(metric.tag, el)
-                    if agent_name:
-                        names[agent_name] = 1
-            # custom metric ('call' and 'tail' methods)
-            if lower(str(metric.tag)) == 'custom':
-                metrics_count += 1
-                isdiff = metric.get('diff')
-                if not isdiff:
-                    isdiff = 0
-                stat = "%s:%s:%s" % (base64.b64encode(metric.get('label')), base64.b64encode(metric.text), isdiff)
-                stats.append('Custom:' + stat)
-                custom[metric.get('measure')].append(stat)
-
-        logging.debug("Metrics count: %s" % metrics_count)
-        logging.debug("Host len: %s" % len(host))
-        logging.debug("keys: %s" % host.keys())
-        logging.debug("values: %s" % host.values())
-
-        # use default metrics for host
-        if metrics_count == 0:
-            for metric in default_metric:
-                m = default[metric].split(',')
-                for el in m:
-                    stat = "%s_%s" % (metric, el)
-                    stats.append(stat)
-                    agent_name = get_agent_name(metric, el)
-                    if agent_name:
-                        names[agent_name] = 1
-
-        metric = join(names.keys(), ',')
-        tmp = {}
-
-        if metric:
-            tmp.update({'metric': metric})
-        else:
-            tmp.update({'metric': 'cpu-stat'}) 
-
-        if host.get('interval'):
-            tmp.update({'interval': host.get('interval')})
-        else:
-            tmp.update({'interval': 1})
-                
-        if host.get('priority'):
-            tmp.update({'priority': host.get('priority')})
-        else:
-            tmp.update({'priority': 0})
-
-        if host.get('port'):
-            tmp.update({'port': host.get('port')})
-        else:
-            tmp.update({'port': '22'})
-
-        if host.get('python'):
-            tmp.update({'python': host.get('python')})
-        else:
-            tmp.update({'python': '/usr/bin/python'})
-            
-
-        tmp.update({'custom': custom})
-
-        tmp.update({'host': hostname})
-        filter[hostname] = stats
-        config.append(tmp)
-
-    return [config, filter]
-
-# Signal handling
-signal.signal(signal.SIGINT, exit_hand)
-signal.signal(signal.SIGQUIT, exit_hand)
-signal.signal(signal.SIGTERM, exit_hand)
-
-options = parse_cmdline_args()
-
-setup_logging()
-
-collector = MonitoringCollector()
-
-# Defining local storage
-store = sys.stdout
-if options.output:
-    store = open(options.output, 'w')
-
-# Start time
-start_time = time.time()
-
-# Agents list
-agents = []
-
-# Parse config
-agent_config = []
-filter = {}
-if options.config:
-    [agent_config, filter] = getconfig(options.config, options.target)
-else:
-    logging.error("Cannot find config for monitoring: %s", options.config)
-    exit(1)
-
-conf = Config(config=options.config)
-logging.info('Logging level: %s' % conf.loglevel()) 
-
-send_data = ''
-able2send = 1
-
-# Params for web storage
-config_file = '/etc/yandex-load-monitoring/config'
-config = ConfigParser.SafeConfigParser()
-config.read(config_file)
-
-try:
-    SEND_TIME = config.getint('main', 'SEND_TIME')
-    SEND_URI = config.get('main', 'SEND_URI') 
-except Exception, e:
-    logging.exception(e)
-    logging.error("Seems we have problem with " + config_file)
-    able2send = 1
-
-try:
-    SEND_HOST = config.get('main', 'SEND_HOST')
-except ConfigParser.NoOptionError, e:
-    tank_config_file = '/etc/lunapark/db.conf'
-    logging.warn("Seems we have no monitoring host setup, trying lunapark config: "+tank_config_file)
-    tank_config = ConfigParser.SafeConfigParser()
-    tank_config.read(tank_config_file)
-    try:
-        SEND_HOST = tank_config.get('DEFAULT', 'http_base')
-    except ConfigParser.NoSectionError, e:
-        logging.exception(e)
-        logging.error("Seems we have one more problem with config, giving up.")
-        able2send = 1
-
-if options.job:
-    logging.info('jobno: %s' % options.job)
-    SEND_URI += '?job_id=' + options.job
-    if conf.loglevel() == 'debug':
-        SEND_URI += '&debug=1'
-#    if options.debug:
-#        SEND_URI += '&debug=1'
-else:
-    logging.info('jobno: empty')
-    able2send = 0
-
-# Filtering
-filter_mask = defaultdict(str)
-for host in filter:
-    filter_mask[host] = []
-# Creating agent for hosts
-logging.debug('Creating agents')
-for adr in agent_config:
-    logging.debug('Creating agent: %s' % adr)
-    adr.update({'jobno': options.job})
-    agent = Agent(**adr)
-    agents.append(agent)
-    agent.info()
-
-# Mass agents install
-logging.debug("Agents: %s" % agents)
-agents_cnt_before = len(agents)
-group_op('install', agents, conf.loglevel())
-
-if len(agents) != agents_cnt_before:
-    logging.warn("Some targets can't be monitored")
-else:
-    logging.info("All agents installed OK")
-
-#sleep(100)
-
-# Nothing installed
-if not agents:
-    logging.info("No agents was installed. Stop monitoring.")
-    exit(1)
-
-inputs, outputs, excepts = [], [], []
-
-agent_pipes = []
-# Start N parallel agents 
-for a in agents:
-    pipe = a.start()
-    agent_pipes.append(pipe)
-    outputs.append(pipe.stdout)
-    excepts.append(pipe.stderr)     
+class MonitoringSender:
+    jobno = None
     
-logging.debug("Pipes: %s", agent_pipes)
-while (outputs):    
-    if not able2send:
-        logging.info("Not able to send data anymore, finishing work")
-        # Shut down
-        for pipe in agent_pipes:
+    # TODO: move it to data uploader
+    def send_data(self, send_data):
+        ''' Handle HTTP data send'''
+        if not send_data:
+            logging.debug("Nothing to send to server")
+            time.sleep(0.5)
+            return        
+        addr = self.SEND_HOST + self.SEND_URI #+"&offline=1&debug=1" # FIXME: remove it
+        logging.debug('HTTP Request: %s\tlength: %s' % (addr, len(send_data)))
+        logging.debug('HTTP Request data: %s' % send_data.strip())
+        req = urllib2.Request(addr, send_data)
+        resp = urllib2.urlopen(req).read()
+        logging.debug('HTTP Response: %s' % resp)
+        if not self.reported_ok:
+            logging.info("Sent first data OK")
+            self.reported_ok = 1    
+
+    def some_trash1(self):
+        # Params for web storage
+        config_file = '/etc/yandex-load-monitoring/config'
+        config = ConfigParser.SafeConfigParser()
+        config.read(config_file)
+        
+        try:
+            SEND_TIME = config.getint('main', 'SEND_TIME')
+            SEND_URI = config.get('main', 'SEND_URI') 
+        except Exception, e:
+            logging.exception(e)
+            logging.error("Seems we have problem with " + config_file)
+            able2send = 1
+        
+        try:
+            SEND_HOST = config.get('main', 'SEND_HOST')
+        except ConfigParser.NoOptionError, e:
+            tank_config_file = '/etc/lunapark/db.conf'
+            logging.warn("Seems we have no monitoring host setup, trying lunapark config: " + tank_config_file)
+            tank_config = ConfigParser.SafeConfigParser()
+            tank_config.read(tank_config_file)
+            try:
+                SEND_HOST = tank_config.get('DEFAULT', 'http_base')
+            except ConfigParser.NoSectionError, e:
+                logging.exception(e)
+                logging.error("Seems we have one more problem with config, giving up.")
+                able2send = 1
+        
+    def some_trash2(self, send_data):
+        able2send = 1
+        if able2send:
+            try:
+                self.send_data(send_data)
+                send_data = ''
+            except Exception, e:
+                logging.warn("Recoverable error sending data to server: %s", e);
+                try:
+                    logging.info("Waiting 30 sec before retry...")
+                    time.sleep(30)
+                    self.send_data(send_data)
+                    send_data = ''
+                except Exception, e2:
+                    logging.error("Fatal error sending data to server: %s", e2);
+                    able2send = 0
+    
+
+class MonitoringCollector:
+    def __init__(self, config, out_file):
+        self.reported_ok = 0
+        self.config = config
+        self.out_file = out_file
+        self.default_target = None
+
+    def main(self):
+        # Defining local storage
+        self.store = sys.stdout
+        if self.out_file:
+            self.store = open(self.out_file, 'w')
+        
+        # Agents list
+        agents = []
+        
+        # Parse config
+        agent_config = []
+        filter_conf = {}
+        if self.config:
+            [agent_config, filter_conf] = self.getconfig(self.config, self.default_target)
+        
+        conf = Config(self.config)
+        logging.info('Logging level: %s' % conf.loglevel()) 
+        
+        # Filtering
+        filter_mask = defaultdict(str)
+        for host in filter_conf:
+            filter_mask[host] = []
+        # Creating agent for hosts
+        logging.debug('Creating agents')
+        for adr in agent_config:
+            logging.debug('Creating agent: %s' % adr)
+            agent = AgentClient(**adr)
+            agents.append(agent)
+        
+        # Mass agents install
+        logging.debug("Agents: %s" % agents)
+        agents_cnt_before = len(agents)
+        group_op('install', agents, conf.loglevel())
+        
+        if len(agents) != agents_cnt_before:
+            logging.warn("Some targets can't be monitored")
+        else:
+            logging.info("All agents installed OK")
+        
+        # Nothing installed
+        if not agents:
+            raise RuntimeError("No agents was installed. Stop monitoring.")
+        
+        self.inputs, self.outputs, self.excepts = [], [], []
+        
+        agent_pipes = []
+        # Start N parallel agents 
+        for a in agents:
+            pipe = a.start()
+            agent_pipes.append(pipe)
+            self.outputs.append(pipe.stdout)
+            self.excepts.append(pipe.stderr)     
+            
+        logging.debug("Pipes: %s", agent_pipes)
+        
+    def poll(self):
+        send_data=''
+        readable, writable, exceptional = select.select(self.outputs, self.inputs, self.excepts, 0)
+        logging.debug("Streams: %s %s %s", readable, writable, exceptional)
+        
+        # if empty run - check children
+        if (not readable) or exceptional:
+            for pipe in self.agent_pipes:
+                if pipe.returncode:
+                    logging.debug("Child died returncode: %s", pipe.returncode)
+                    self.outputs.remove(pipe.stdout)
+                    self.agent_pipes.remove(pipe)
+        
+        # Handle exceptions
+        for s in exceptional:
+                data = s.readline()
+                while data:
+                    logging.error("Got exception [%s]: %s", s, data)
+                    data = s.readline()                
+    
+        for s in readable:
+            # Handle outputs
+            data = s.readline()
+            readable.remove(s)
+            if not data:
+                continue
+            logging.debug("Got data: %s", data.strip())
+    
+            send_data += filter_unused_data(self.filter_conf, self.filter_mask, data)
+    
+            self.store.write(self.send_data)
+            self.store.flush()
+        
+        #TODO: notify liseners
+        
+        
+        return len(self.outputs)            
+    
+    def stop(self):
+        logging.info("Initiating normal finish")
+        for pipe in self.agent_pipes:
             logging.debug("Killing %s with %s", pipe.pid, signal.SIGINT)
             os.kill(pipe.pid, signal.SIGINT)
-        agent_pipes.remove(pipe)
-        break
-
-    readable, writable, exceptional = select.select(outputs, inputs, excepts, 1)
-    logging.debug("Streams: %s %s %s", readable, writable, exceptional)
+        group_op('uninstall', self.agents, '')
+        
+    def getconfig(self, filename, target_hint):
+        default = {
+            'System': 'csw,int',
+            'CPU': 'user,system,iowait',
+            'Memory': 'free,used',
+            'Disk': 'read,write',
+            'Net': 'recv,send',
+        }
     
-    # if empty run - check children
-    if (not readable) or exceptional:
-        for pipe in agent_pipes:
-            if pipe.returncode:
-                logging.debug("Child died returncode: %s", pipe.returncode)
-                outputs.remove(pipe.stdout)
-                agent_pipes.remove(pipe)
+        default_metric = ['CPU', 'Memory', 'Disk', 'Net']
     
-    # Handle exceptions
-    for s in exceptional:
-            data = s.readline()
-            while data:
-                logging.error("Got exception [%s]: %s", s, data)
-                data = s.readline()                
-
-    for s in readable:
-        # Handle outputs
-        data = s.readline()
-        readable.remove(s)
-        if not data:
-            continue
-        logging.debug("Got data: %s", data.strip())
-
-        send_data += filter_unused_data(filter, filter_mask, data)
-
-        store.write(send_data)
-        store.flush()            
-
-    if able2send:
         try:
-            collector.send_data(send_data)
-            send_data = ''
-        except Exception, e:
-            logging.warn("Recoverable error sending data to server: %s", e);
-            try:
-                logging.info("Waiting 30 sec before retry...")
-                time.sleep(30)
-                collector.send_data(send_data)
-                send_data = ''
-            except Exception, e2:
-                logging.error("Fatal error sending data to server: %s", e2);
-                able2send = 0
-
-logging.info("Initiating normal finish")
-for pipe in agent_pipes:
-    logging.debug("Killing %s with %s", pipe.pid, signal.SIGINT)
-    os.kill(pipe.pid, signal.SIGINT)
-group_op('uninstall', agents, '')
-exit(0)
+            tree = etree.parse(filename)
+        except IOError, e:
+            logging.error("Error loading config: %s", e)
+            raise RuntimeError ("Can't read monitoring config %s" % filename)
+    
+        hosts = tree.xpath('/Monitoring/Host')
+        names = defaultdict()
+        config = []
+        hostname = ''
+        filter = defaultdict(str)
+        for host in hosts:
+            hostname = host.get('address')
+            if hostname == '[target]':
+                if not target_hint:
+                    raise ValueError("Can't use [target] keyword with no target parameter specified")
+                logging.info("Using target hint: %s", target_hint)
+                hostname = target_hint
+            stats = []
+            custom = {'tail': [], 'call': [], }
+            metrics_count = 0
+            for metric in host:
+                # known metrics
+                if metric.tag in default.keys():
+                    metrics_count += 1
+                    m = default[metric.tag].split(',')
+                    if metric.get('measure'):
+                        m = metric.get('measure').split(',')
+                    for el in m:
+                        if not el:
+                            continue;
+                        stat = "%s_%s" % (metric.tag, el)
+                        stats.append(stat)
+                        agent_name = get_agent_name(metric.tag, el)
+                        if agent_name:
+                            names[agent_name] = 1
+                # custom metric ('call' and 'tail' methods)
+                if lower(str(metric.tag)) == 'custom':
+                    metrics_count += 1
+                    isdiff = metric.get('diff')
+                    if not isdiff:
+                        isdiff = 0
+                    stat = "%s:%s:%s" % (base64.b64encode(metric.get('label')), base64.b64encode(metric.text), isdiff)
+                    stats.append('Custom:' + stat)
+                    custom[metric.get('measure')].append(stat)
+    
+            logging.debug("Metrics count: %s" % metrics_count)
+            logging.debug("Host len: %s" % len(host))
+            logging.debug("keys: %s" % host.keys())
+            logging.debug("values: %s" % host.values())
+    
+            # use default metrics for host
+            if metrics_count == 0:
+                for metric in default_metric:
+                    m = default[metric].split(',')
+                    for el in m:
+                        stat = "%s_%s" % (metric, el)
+                        stats.append(stat)
+                        agent_name = get_agent_name(metric, el)
+                        if agent_name:
+                            names[agent_name] = 1
+    
+            metric = join(names.keys(), ',')
+            tmp = {}
+    
+            if metric:
+                tmp.update({'metric': metric})
+            else:
+                tmp.update({'metric': 'cpu-stat'}) 
+    
+            if host.get('interval'):
+                tmp.update({'interval': host.get('interval')})
+            else:
+                tmp.update({'interval': 1})
+                    
+            if host.get('priority'):
+                tmp.update({'priority': host.get('priority')})
+            else:
+                tmp.update({'priority': 0})
+    
+            if host.get('port'):
+                tmp.update({'port': host.get('port')})
+            else:
+                tmp.update({'port': '22'})
+    
+            if host.get('python'):
+                tmp.update({'python': host.get('python')})
+            else:
+                tmp.update({'python': '/usr/bin/python'})
+                
+    
+            tmp.update({'custom': custom})
+    
+            tmp.update({'host': hostname})
+            filter[hostname] = stats
+            config.append(tmp)
+    
+        return [config, filter]
+    

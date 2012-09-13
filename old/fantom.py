@@ -158,10 +158,10 @@ class Screen(object):
                 print mt 
             print line
 
-def getconfig(file):
+def getconfig(filename):
     config = defaultdict(str)
 
-    f = open(file, 'r')
+    f = open(filename, 'r')
     for line in f:
         if re.match("^\s*#", line):
             continue
