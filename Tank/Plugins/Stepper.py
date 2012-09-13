@@ -23,7 +23,7 @@ def get_ammo_type(filename):
     elif re.match("^\d", first_line):
         return 'request'
     else:
-        raise RuntimeError("Unsupported ammo filename format in %s", filename)
+        raise RuntimeError("Unsupported ammo format in %s", filename)
 
 
 def detect_case_file(filename):
@@ -37,6 +37,7 @@ def detect_case_file(filename):
 
 
 def get_ammo_count(filename, stop_count):
+    logging.info("Getting ammo count from %s ...", filename)
     ammo_type = get_ammo_type(filename)
     ammo_cnt = 0
     pattern = \
@@ -429,7 +430,7 @@ def get_prepared_case(uri, cases_done, pattern):
 
 
 def get_autocases_tree(filename):
-
+    logging.debug("get_autocases_tree")    
     pattern = \
         re.compile('^(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK\s+)?\s*\/(.*?)(/(.*?))?(/(.*?))?(\.|/|\?|$|\s)'
                    )
@@ -458,6 +459,7 @@ def get_autocases_tree(filename):
 
 
 def get_autocases_tree_access(filename):
+    logging.debug("get_autocases_tree_access")
     pattern = \
         re.compile('(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK\s+)\s*\/(.*?)(/(.*?))?(/(.*?))?(\.|/|\?|$|\s)'
                    )
@@ -490,7 +492,7 @@ def make_autocases_top(
     total_cnt,
     tree,
     ):
-
+    logging.debug("make autocases top")
     (N, alpha) = (9, 1)
     (total_done) = (0)
     output = ''
@@ -628,7 +630,7 @@ class Stepper:
 
     HTTP_REQUEST_LINE = '^(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK|PROPFIND|PROPPATCH|MKCOL|COPY|MOVE|LOCK|UNLOCK\s+)?\s*\/(.*?)(/(.*?))?(/(.*?))?(\.|/|\?|$|\s)'
 
-    def __init__(self):
+    def __init__(self, stpd_filename):
         self.log = logging.getLogger(__name__)
         self.ammofile = None
         self.autocases = 0
@@ -639,10 +641,18 @@ class Stepper:
         self.headers = []
         self.loop_limit = 0
         self.uris = []
-        self.stpd_file = None
+        self.stpd_file = stpd_filename
+        # output
+        self.loadscheme = None
+        self.cases = None
+        self.steps = None
+        self.loop_count = None
+        self.ammo_count = None
 
-    def main(self):
+    def generate_stpd(self):
         self.log.info("Generating stpd file: %s", self.stpd_file)
+        self.log.debug("Autocases: %s", self.autocases)
+        self.log.debug("Ammofile: %s", self.ammofile)
         
         pattern = re.compile(self.HTTP_REQUEST_LINE)
 
@@ -671,14 +681,12 @@ class Stepper:
         ammo_delete = ''
 
         if tank_type == 1:
-            if self.uris:
-
+            if not ammo_file and self.uris:
                 ammo_file = make_load_ammo(self.uris, self.headers,
                         self.header_http)
                 ammo_type = 'uri'
                 ammo_delete = ammo_file
             else:
-
                 ammo_type = get_ammo_type(ammo_file)
                 if ammo_type == 'unknown':
                     raise RuntimeError('[Error] Unknown type of ammo file'

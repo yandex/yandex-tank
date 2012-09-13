@@ -2,6 +2,7 @@ from Tank import Utils
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+from Tank.Plugins.Stepper import Stepper
 from ipaddr import AddressValueError
 import ConfigParser
 import datetime
@@ -9,7 +10,6 @@ import hashlib
 import ipaddr
 import multiprocessing
 import os
-import shutil
 import socket
 import string
 import subprocess
@@ -41,7 +41,6 @@ class PhantomPlugin(AbstractPlugin):
     
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
-        self.external_stepper_conf = ConfigParser.ConfigParser()
         self.process = None
         self.timeout = 1000
         self.answ_log = None
@@ -51,6 +50,7 @@ class PhantomPlugin(AbstractPlugin):
         self.config = None
         self.instances = None
         self.use_caching = None
+        self.http_ver = None
     
     @staticmethod
     def get_key():
@@ -89,6 +89,7 @@ class PhantomPlugin(AbstractPlugin):
         self.schedule = " ".join(self.get_option(self.OPTION_SCHEDULE, '').split("\n"))
         self.uris = self.get_option("uris", '').split("\n")
         self.headers = self.get_option("headers", '').split("\n")
+        self.http_ver = self.get_option("header_http", '1.1')
         self.autocases = self.get_option("autocases", '0')
         self.use_caching = int(self.get_option("use_caching", '1'))
         self.cache_dir = self.get_option("cache_dir", os.getcwd())
@@ -158,20 +159,30 @@ class PhantomPlugin(AbstractPlugin):
         os.write(handle, config)
         return filename
         
-    def prepare_test(self):
+
+    def prepare_stepper(self):
         self.stpd = self.get_stpd_filename()
-        
         self.core.set_option(self.SECTION, self.OPTION_STPD, self.stpd)
-        
-        if self.use_caching and os.path.exists(self.stpd) and not self.force_stepping:
+        if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.stpd + ".conf"):
             self.log.info("Using cached stpd-file: %s", self.stpd)
-            old_stepper_out_options = self.stpd + ".conf"
+            stepper = Stepper(self.stpd) # just to store cached data
+            self.read_cached_options(self.stpd + ".conf", stepper)
         else:
-            shutil.copy(self.core.config.file, 'lp.conf')
-            self.core.add_artifact_file("lp.conf")
-            old_stepper_out_options = self.make_stpd_file()
+            stepper = self.make_stpd_file(self.stpd)
         
-        self.move_old_out_options_into_new(old_stepper_out_options)        
+        self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES, stepper.cases)
+        self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_STEPS, stepper.steps)
+        self.core.set_option(self.SECTION, self.OPTION_LOADSCHEME, stepper.loadscheme)
+        self.core.set_option(self.SECTION, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
+        self.core.set_option(self.SECTION, self.OPTION_AMMO_COUNT, str(stepper.ammo_count))
+        self.calculate_test_duration(stepper.steps)
+                
+        self.core.config.flush(self.stpd + ".conf")
+        
+
+
+    def prepare_test(self):
+        self.prepare_stepper()     
                 
         aggregator = None
         try:
@@ -263,55 +274,43 @@ class PhantomPlugin(AbstractPlugin):
         return stpd
     
 
-    def move_old_out_options_into_new(self, old_stepper_out_options):
-        self.log.debug("Move old out options to new from file: %s", old_stepper_out_options)
-        self.external_stepper_conf.read(old_stepper_out_options)
-        self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES, self.external_stepper_conf.get('DEFAULT', AggregatorPlugin.OPTION_CASES))
-        self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_STEPS, self.external_stepper_conf.get('DEFAULT', AggregatorPlugin.OPTION_STEPS))
-        self.core.set_option(self.SECTION, self.OPTION_LOADSCHEME, self.external_stepper_conf.get('DEFAULT', self.OPTION_LOADSCHEME))
-        self.core.set_option(self.SECTION, self.OPTION_LOOP_COUNT, self.external_stepper_conf.get('DEFAULT', self.OPTION_LOOP_COUNT))
-        self.core.set_option(self.SECTION, self.OPTION_AMMO_COUNT, self.external_stepper_conf.get('DEFAULT', self.OPTION_AMMO_COUNT))
-        
+
+    def calculate_test_duration(self, steps):
         # calc total test duration
+        steps = steps.split(' ')
         duration = 0
-        steps = self.external_stepper_conf.get('DEFAULT', AggregatorPlugin.OPTION_STEPS).split(' ')
         for step in steps:
-            duration += int(step[1:-1].split(';')[1])
-        self.core.set_option(self.SECTION, self.OPTION_TEST_DURATION, str(duration))     
+            if step.strip():
+                duration += int(step[1:-1].split(';')[1])
+        
+        self.core.set_option(self.SECTION, self.OPTION_TEST_DURATION, str(duration))
+
+    def read_cached_options(self, cached_config, stepper):
+        self.log.debug("Reading cached stepper options: %s", cached_config)
+        external_stepper_conf = ConfigParser.ConfigParser()
+        external_stepper_conf.read(cached_config)
+        stepper.cases = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES)
+        stepper.steps = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_STEPS)
+        stepper.loadscheme = external_stepper_conf.get(self.SECTION, self.OPTION_LOADSCHEME)
+        stepper.loop_count = external_stepper_conf.get(self.SECTION, self.OPTION_LOOP_COUNT)
+        stepper.ammo_count = external_stepper_conf.get(self.SECTION, self.OPTION_AMMO_COUNT)
 
 
-    def make_stpd_file(self):
+    def make_stpd_file(self, stpd):
         self.log.info("Making stpd-file: %s", self.stpd)
-        (handler, stepper_config) = tempfile.mkstemp()
-        os.write(handler, "autocases=" + self.autocases + "\n")
-        if self.schedule:
-            os.write(handler, "load=" + self.schedule + "\n")
-        if self.instances_schedule:
-            os.write(handler, "instances_schedule=" + self.instances_schedule + "\n")
-        if self.loop_limit > 0:
-            os.write(handler, "loop=" + str(self.loop_limit) + "\n")
-        
-        for uri in self.uris:
-            if uri:
-                os.write(handler, "uri=" + uri.strip() + "\n")
-            
-        for header in self.headers:
-            if header:
-                os.write(handler, "header=[" + header.strip() + "]\n")
-        
-        self.args = self.tools_path + "/stepper.py -a " + self.ammo_file + " -c " + stepper_config
-        
-        self.log.info("Yet calling old external stepper.py")
-        rc = Utils.execute(self.args, shell=True)
-        if rc:
-            raise RuntimeError("Subprocess returned %s",)    
-        old_stepper_out_options = "lp.conf"
-        if self.use_caching:
-            self.log.debug("Copying %s to %s", old_stepper_out_options, self.stpd + ".conf")
-            shutil.move(old_stepper_out_options, self.stpd + ".conf")
-            shutil.move(os.path.realpath("ammo.stpd"), self.stpd)
-        return self.stpd + ".conf"
+        stepper = Stepper(stpd)
+        stepper.autocases = int(self.autocases)
+        stepper.rps_schedule = self.schedule
+        stepper.instances_schedule = self.instances_schedule
+        stepper.loop_limit = self.loop_limit
+        stepper.uris = self.uris
+        stepper.headers = self.headers
+        stepper.header_http = self.http_ver
+        stepper.ammofile = self.ammo_file
 
+        stepper.generate_stpd()
+        return stepper
+        
 
 class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
     def get_index(self):

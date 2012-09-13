@@ -154,7 +154,7 @@ class TankCore:
             self.config.config.add_section(section)
             
         try:
-            self.log.debug("Gettint option: %s.%s", section, option)
+            self.log.debug("Getting option: %s.%s", section, option)
             return self.config.config.get(section, option)
         except ConfigParser.NoOptionError as ex:
             if default != None:

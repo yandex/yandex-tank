@@ -53,6 +53,11 @@ class  PhantomPluginTestCase(TankTestCase):
         self.foo.start_test()
         time.sleep(2)
         self.foo.end_test(0)
+
+    def test_run_stepper_cache(self):
+        self.foo.configure()
+        self.foo.prepare_test()
+        self.foo.prepare_test()
         
     def test_domain_name(self):
         self.foo.core.set_option('phantom', 'address', 'yandex.ru')
