@@ -39,8 +39,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
     SECTION = 'console'
     
     def __init__(self, core):
-        self.log = logging.getLogger(__name__)
-        self.core = core
+        AbstractPlugin.__init__(self, core)
         self.console_markup = RealConsoleMarkup()
         self.screen = None
 
@@ -51,8 +50,8 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
     def configure(self):
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
-        self.info_panel_width = self.core.get_option(self.SECTION, "info_panel_width", '33')
-        self.short_only = int(self.core.get_option(self.SECTION, "short_only", '0'))
+        self.info_panel_width = self.get_option("info_panel_width", '33')
+        self.short_only = int(self.get_option("short_only", '0'))
         self.screen = Screen(self.info_panel_width, self.console_markup)
     
     def prepare_test(self):

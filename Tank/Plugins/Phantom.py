@@ -41,9 +41,8 @@ class PhantomPlugin(AbstractPlugin):
     SECTION = 'phantom'
     
     def __init__(self, core):
-        self.log = logging.getLogger(__name__)
+        AbstractPlugin.__init__(self, core)
         self.external_stepper_conf = ConfigParser.ConfigParser()
-        self.core = core
         self.process = None
         self.timeout = 1000
         self.answ_log = None
@@ -58,7 +57,6 @@ class PhantomPlugin(AbstractPlugin):
     def get_key():
         return __file__;
     
-
     def check_address(self):
         try:
             ipaddr.IPv6Address(self.address)
@@ -84,39 +82,39 @@ class PhantomPlugin(AbstractPlugin):
 
     def configure(self):
         # stepper part
-        self.tools_path = self.core.get_option(self.SECTION, "tools_path", '/usr/bin')
-        self.ammo_file = self.core.get_option(self.SECTION, self.OPTION_AMMOFILE, '')
-        self.instances_schedule = self.core.get_option(self.SECTION, "instances_schedule", '')
-        self.loop_limit = int(self.core.get_option(self.SECTION, self.OPTION_LOOP, "-1"))
-        self.ammo_limit = int(self.core.get_option(self.SECTION, "ammo_limit", "-1"))
-        self.schedule = " ".join(self.core.get_option(self.SECTION, self.OPTION_SCHEDULE, '').split("\n"))
-        self.uris = self.core.get_option(self.SECTION, "uris", '').split("\n")
-        self.headers = self.core.get_option(self.SECTION, "headers", '').split("\n")
-        self.autocases = self.core.get_option(self.SECTION, "autocases", '0')
-        self.use_caching = int(self.core.get_option(self.SECTION, "use_caching", '1'))
-        self.cache_dir = self.core.get_option(self.SECTION, "cache_dir", os.getcwd())
-        self.force_stepping = int(self.core.get_option(self.SECTION, "force_stepping", '0'))
+        self.tools_path = self.get_option("tools_path", '/usr/bin')
+        self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
+        self.instances_schedule = self.get_option("instances_schedule", '')
+        self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
+        self.ammo_limit = int(self.get_option("ammo_limit", "-1"))
+        self.schedule = " ".join(self.get_option(self.OPTION_SCHEDULE, '').split("\n"))
+        self.uris = self.get_option("uris", '').split("\n")
+        self.headers = self.get_option("headers", '').split("\n")
+        self.autocases = self.get_option("autocases", '0')
+        self.use_caching = int(self.get_option("use_caching", '1'))
+        self.cache_dir = self.get_option("cache_dir", os.getcwd())
+        self.force_stepping = int(self.get_option("force_stepping", '0'))
         
         # phantom part
-        self.phantom_path = self.core.get_option(self.SECTION, "phantom_path", 'phantom')
-        self.config = self.core.get_option(self.SECTION, "config", '')
-        self.phantom_modules_path = self.core.get_option(self.SECTION, "phantom_modules_path", "/usr/lib/phantom")
-        self.ssl = self.core.get_option(self.SECTION, "ssl", '')
-        self.address = self.core.get_option(self.SECTION, self.OPTION_IP, '127.0.0.1')
-        self.port = self.core.get_option(self.SECTION, self.OPTION_PORT, '80')
-        self.tank_type = self.core.get_option(self.SECTION, "tank_type", 'http')
-        self.answ_log = self.core.get_option(self.SECTION, "answ_log", tempfile.mkstemp(".log", "answ_")[1])
-        self.answ_log_level = self.core.get_option(self.SECTION, "writelog", "none")
+        self.phantom_path = self.get_option("phantom_path", 'phantom')
+        self.config = self.get_option("config", '')
+        self.phantom_modules_path = self.get_option("phantom_modules_path", "/usr/lib/phantom")
+        self.ssl = self.get_option("ssl", '')
+        self.address = self.get_option(self.OPTION_IP, '127.0.0.1')
+        self.port = self.get_option(self.OPTION_PORT, '80')
+        self.tank_type = self.get_option("tank_type", 'http')
+        self.answ_log = self.get_option("answ_log", tempfile.mkstemp(".log", "answ_")[1])
+        self.answ_log_level = self.get_option("writelog", "none")
         if self.answ_log_level == '0':
             self.answ_log_level = 'none' 
         elif self.answ_log_level == '1':
             self.answ_log_level = 'all' 
-        self.phout_file = self.core.get_option(self.SECTION, "phout_file", tempfile.mkstemp(".log", "phout_")[1])
-        self.stat_log = self.core.get_option(self.SECTION, "stat_log", tempfile.mkstemp(".log", "phantom_stat_")[1])
-        self.phantom_log = self.core.get_option(self.SECTION, "phantom_log", tempfile.mkstemp(".log", "phantom_")[1])
-        self.stpd = self.core.get_option(self.SECTION, self.OPTION_STPD, '')
-        self.threads = self.core.get_option(self.SECTION, "threads", int(multiprocessing.cpu_count() / 2) + 1)
-        self.instances = int(self.core.get_option(self.SECTION, self.OPTION_INSTANCES_LIMIT, '1000'))
+        self.phout_file = self.get_option("phout_file", tempfile.mkstemp(".log", "phout_")[1])
+        self.stat_log = self.get_option("stat_log", tempfile.mkstemp(".log", "phantom_stat_")[1])
+        self.phantom_log = self.get_option("phantom_log", tempfile.mkstemp(".log", "phantom_")[1])
+        self.stpd = self.get_option(self.OPTION_STPD, '')
+        self.threads = self.get_option("threads", int(multiprocessing.cpu_count() / 2) + 1)
+        self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
 
         self.core.add_artifact_file(self.answ_log)        
         self.core.add_artifact_file(self.phout_file)

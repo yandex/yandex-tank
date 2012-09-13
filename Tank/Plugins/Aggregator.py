@@ -33,8 +33,7 @@ class AggregatorPlugin(AbstractPlugin):
         return __file__
         
     def __init__(self, core):
-        self.log = logging.getLogger(__name__)
-        self.core = core
+        AbstractPlugin.__init__(self, core)
         self.process = None
         self.second_data_listeners = []
         self.preproc_out_offset = 0
@@ -43,19 +42,18 @@ class AggregatorPlugin(AbstractPlugin):
         self.preproc_out_filename = None
     
     def configure(self):
-        self.tools_path = self.core.get_option(self.SECTION, "tools_path", '/usr/bin')
-        self.phout_file = self.core.get_option(self.SECTION, self.OPTION_SOURCE_FILE, '')
-        self.threads_file = self.core.get_option(self.SECTION, self.OPTION_STAT_FILE, '')
-        periods = self.core.get_option(self.SECTION, "time_periods", self.default_time_periods).split(" ")
+        self.tools_path = self.get_option("tools_path", '/usr/bin')
+        self.phout_file = self.get_option(self.OPTION_SOURCE_FILE, '')
+        self.threads_file = self.get_option(self.OPTION_STAT_FILE, '')
+        periods = self.get_option("time_periods", self.default_time_periods).split(" ")
         self.time_periods = " ".join([ str(CommonUtils.expand_to_milliseconds(x)) for x in periods ])
         self.core.set_option(self.SECTION, "time_periods", self.time_periods)
 #        self.tank_type = self.core.get_option(self.SECTION, "tank_type") 
-        self.preproc_out_filename = self.core.get_option(self.SECTION, "preproc_log_name", tempfile.mkstemp(".log", "preproc_")[1])
+        self.preproc_out_filename = self.get_option("preproc_log_name", tempfile.mkstemp(".log", "preproc_")[1])
         self.core.add_artifact_file(self.preproc_out_filename)
-        self.preproc_cases = self.core.get_option(self.SECTION, self.OPTION_CASES, "")
-        self.detailed_field = self.core.get_option(self.SECTION, self.OPTION_DETAILED_FIELD, 'interval_real')
-        self.preproc_steps = self.core.get_option(self.SECTION, self.OPTION_STEPS, "")
-        self.core.set_option(self.SECTION, self.OPTION_STEPS, self.preproc_steps)
+        self.preproc_cases = self.get_option(self.OPTION_CASES, "")
+        self.detailed_field = self.get_option(self.OPTION_DETAILED_FIELD, 'interval_real')
+        self.preproc_steps = self.get_option(self.OPTION_STEPS, "")
         self.core.add_artifact_file(os.path.realpath("lunapark.log"))
 
     def prepare_test(self):

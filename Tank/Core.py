@@ -271,5 +271,5 @@ class AbstractPlugin:
     def post_process(self, rc):
         return rc;
 
-    def get_option(self, option_name, default_value):
+    def get_option(self, option_name, default_value=None):
         return self.core.get_option(self.SECTION, option_name, default_value)

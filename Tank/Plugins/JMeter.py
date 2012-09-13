@@ -10,8 +10,7 @@ class JMeterPlugin(AbstractPlugin):
     SECTION = 'jmeter'
     
     def __init__(self, core):
-        self.log = logging.getLogger(__name__)
-        self.core = core
+        AbstractPlugin.__init__(self, core)
         self.jmeter_process = None
         self.args = None
 
@@ -20,11 +19,11 @@ class JMeterPlugin(AbstractPlugin):
         return __file__;
     
     def configure(self):
-        self.jmx = self.core.get_option(self.SECTION, "jmx")
+        self.jmx = self.get_option("jmx")
         self.log.debug("JMX: %s", os.path.realpath(self.jmx))
-        self.user_args = self.core.get_option(self.SECTION, "args", '')
-        self.jmeter_path = self.core.get_option(self.SECTION, "jmeter_path", 'jmeter')
-        self.jmeter_log = self.core.get_option(self.SECTION, "jmeter_log", 'jmeter.log')
+        self.user_args = self.get_option("args", '')
+        self.jmeter_path = self.get_option("jmeter_path", 'jmeter')
+        self.jmeter_log = self.get_option("jmeter_log", 'jmeter.log')
 
     def prepare_test(self):
         self.args = [self.jmeter_path, "-n", "-t", self.jmx, '-j', self.jmeter_log]

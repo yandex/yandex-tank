@@ -13,8 +13,7 @@ class MonitoringPlugin(AbstractPlugin):
     SECTION = 'monitoring'
     
     def __init__(self, core):
-        self.log = logging.getLogger(__name__)
-        self.core = core
+        AbstractPlugin.__init__(self, core)
         self.jobno = None
         self.default_target = None
         self.config = None
@@ -27,7 +26,7 @@ class MonitoringPlugin(AbstractPlugin):
     def configure(self):
         self.data_file = tempfile.mkstemp('.data', 'monitoring_')[1]
         self.core.add_artifact_file(self.data_file)
-        self.config = self.core.get_option(self.SECTION, "config", '')
+        self.config = self.get_option("config", '')
         if self.config.lower() == 'none':
             self.config = ''
         self.core.add_artifact_file("monitoring.log")

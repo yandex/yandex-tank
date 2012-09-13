@@ -18,8 +18,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener):
     SECTION = 'meta'
     
     def __init__(self, core):
-        self.log = logging.getLogger(__name__)
-        self.core = core
+        AbstractPlugin.__init__(self, core)
         self.api_client = KSHMAPIClient()
         self.jobno = None
         self.logs_basedir = None
@@ -34,16 +33,16 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener):
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
 
-        self.api_client.set_api_address(self.core.get_option(self.SECTION, "api_address"))
-        self.task = self.core.get_option(self.SECTION, "task", 'dir')
-        self.job_name = self.core.get_option(self.SECTION, "job_name", 'none')
-        self.job_dsc = self.core.get_option(self.SECTION, "job_dsc", '')
-        self.notify_list = self.core.get_option(self.SECTION, "notify", '').split(' ')
-        self.version_tested = self.core.get_option(self.SECTION, "ver", '')
-        self.regression_component = self.core.get_option(self.SECTION, "component", '')
-        self.is_regression = self.core.get_option(self.SECTION, "regress", '0')
-        self.logs_basedir = self.core.get_option(self.SECTION, "logs_dir", 'logs')
-        self.operator = self.core.get_option(self.SECTION, "operator", self.operator)
+        self.api_client.set_api_address(self.get_option("api_address"))
+        self.task = self.get_option("task", 'dir')
+        self.job_name = self.get_option("job_name", 'none')
+        self.job_dsc = self.get_option("job_dsc", '')
+        self.notify_list = self.get_option("notify", '').split(' ')
+        self.version_tested = self.get_option("ver", '')
+        self.regression_component = self.get_option("component", '')
+        self.is_regression = self.get_option("regress", '0')
+        self.logs_basedir = self.get_option("logs_dir", 'logs')
+        self.operator = self.get_option("operator", self.operator)
 
     def check_task_is_open(self, task):
         self.log.debug("Check if task %s is open", task)

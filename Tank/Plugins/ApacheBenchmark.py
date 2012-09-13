@@ -1,7 +1,6 @@
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin
 from Tank.Utils import CommonUtils
-import logging
 import subprocess
 import tempfile
 
@@ -11,8 +10,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
     SECTION = 'ab'
     
     def __init__(self, core):
-        self.log = logging.getLogger(__name__)
-        self.core = core
+        AbstractPlugin.__init__(self, core)
         self.end = None
         self.out_file = None
         self.process = None
@@ -22,10 +20,10 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
         return __file__;
     
     def configure(self):
-        self.options = self.core.get_option(self.SECTION, "options", '')
-        self.url = self.core.get_option(self.SECTION, "url", 'http://localhost/')
-        self.requests = self.core.get_option(self.SECTION, "requests", '100')
-        self.concurrency = self.core.get_option(self.SECTION, "concurrency", '1')
+        self.options = self.get_option("options", '')
+        self.url = self.get_option("url", 'http://localhost/')
+        self.requests = self.get_option("requests", '100')
+        self.concurrency = self.get_option("concurrency", '1')
         self.out_file = tempfile.mkstemp('.log', 'ab_')[1]
         self.core.add_artifact_file(self.out_file)
 
@@ -40,7 +38,9 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
             aggregator.set_source_files(self.out_file, None)
             
     def start_test(self):
-        args = ['ab', '-r', '-g', self.out_file, '-n', self.requests, '-c', self.concurrency, self.url]
+        args = ['ab', '-r', '-g', self.out_file, 
+                '-n', self.requests, 
+                '-c', self.concurrency, self.url]
         self.log.debug("Starting ab with arguments: %s", args)
         self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
            

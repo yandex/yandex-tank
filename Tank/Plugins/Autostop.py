@@ -10,8 +10,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
     SECTION = 'autostop'
 
     def __init__(self, core):
-        self.log = logging.getLogger(__name__)
-        self.core = core
+        AbstractPlugin.__init__(self, core)
         self.cause_criteria = None
         self.criterias = []
         self.custom_criterias = []
@@ -34,7 +33,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
     def configure(self):
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
-        self.criteria_str = " ".join(self.core.get_option(self.SECTION, "autostop", '').split("\n"))
+        self.criteria_str = " ".join(self.get_option("autostop", '').split("\n"))
         self.add_criteria_class(AvgTimeCriteria)
         self.add_criteria_class(NetCodesCriteria)
         self.add_criteria_class(HTTPCodesCriteria)
