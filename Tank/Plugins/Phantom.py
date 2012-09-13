@@ -265,7 +265,8 @@ class PhantomPlugin(AbstractPlugin):
             self.log.debug("stpd-hash source: %s", hashed_str)
             hasher.update(hashed_str)            
             
-            os.makedirs(self.cache_dir)
+            if not os.path.exists(self.cache_dir):
+                os.makedirs(self.cache_dir)
             stpd = self.cache_dir + '/' + os.path.basename(self.ammo_file) + "_" + hasher.hexdigest() + ".stpd"
             self.log.debug("Generated cache file name: %s", stpd)
         else:

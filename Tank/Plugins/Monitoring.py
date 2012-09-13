@@ -1,9 +1,9 @@
-from Monitoring.collector import MonitoringCollector
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.DataUploader import DataUploaderPlugin
 from Tank.Plugins.Phantom import PhantomPlugin
 import os
 import tempfile
+from MonCollector.collector import MonitoringCollector
 
 # TODO: wait for first monitoring data
 class MonitoringPlugin(AbstractPlugin):

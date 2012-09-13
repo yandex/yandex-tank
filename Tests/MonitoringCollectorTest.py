@@ -1,7 +1,7 @@
-from Monitoring.collector import MonitoringCollector
 from Tests.TankTests import TankTestCase
 import tempfile
 import time
+from MonCollector.collector import MonitoringCollector
 
 class  MonitoringCollectorTestCase(TankTestCase):
     data = None
