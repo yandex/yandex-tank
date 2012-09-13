@@ -34,14 +34,15 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
     def configure(self):
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
-        self.criteria_str = self.core.get_option(self.SECTION, "autostop", '')
+        self.criteria_str = " ".join(self.core.get_option(self.SECTION, "autostop", '').split("\n"))
         self.add_criteria_class(AvgTimeCriteria)
         self.add_criteria_class(NetCodesCriteria)
         self.add_criteria_class(HTTPCodesCriteria)
         self.add_criteria_class(UsedInstancesCriteria)
 
     def prepare_test(self):
-        for criteria_str in self.criteria_str.split("\n"):
+        # FIXME: whole parsing is broken now!
+        for criteria_str in self.criteria_str.strip().split(")"):
             if not criteria_str: 
                 continue
             self.log.debug("Criteria string: %s", criteria_str)

@@ -1,3 +1,7 @@
+'''
+Commonly used utilities contained here
+'''
+
 import errno
 import logging
 import os
@@ -6,9 +10,15 @@ import select
 import subprocess
 import time
 
+'''
+Trash code collection class
+'''
 class CommonUtils(object):
     @staticmethod
     def log_stdout_stderr(log, stdout, stderr, comment=""):
+        '''
+        This function polls stdout and stderr streams and writes their contents to log
+        '''
         readable = select.select([stdout], [], [] , 0)[0]
         if stderr:
             exceptional = select.select([stderr], [], [] , 0)[0]
@@ -32,16 +42,25 @@ class CommonUtils(object):
     
     @staticmethod
     def expand_to_milliseconds(str_time):
+        '''
+        converts 1d2s into milliseconds
+        '''
         return CommonUtils.expand_time(str_time, 'ms', 1000)
     
     @staticmethod
     def expand_to_seconds(str_time):
+        '''
+        converts 1d2s into seconds
+        '''
         return CommonUtils.expand_time(str_time, 's', 1)
     
     @staticmethod
     def expand_time(str_time, default_unit='s', multiplier=1):
-        p = re.compile('(\d+)([a-zA-Z]*)')
-        parts = p.findall(str_time)
+        '''
+        helper for above functions
+        '''
+        parser = re.compile('(\d+)([a-zA-Z]*)')
+        parts = parser.findall(str_time)
         result = 0.0
         for value, unit in parts:
             value = int(value)

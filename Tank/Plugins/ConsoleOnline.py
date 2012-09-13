@@ -8,11 +8,12 @@ import struct
 import sys
 import termios
 import traceback
-import datetime
 
-# TODO: add avg times: parts & by case
-    
+# TODO: add avg times: parts & by case    
 class RealConsoleMarkup(object):
+    '''    
+    Took colors from here: https://www.siafoo.net/snippet/88
+    '''
     clear = "\x1b[2J\x1b[H"
     new_line = "\n"
     
@@ -94,7 +95,9 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
 # ======================================================
 
 class Screen(object):
-
+    '''
+    Console screen renderer class
+    '''
     RIGHT_PANEL_SEPARATOR = ' . '
     
     def __init__(self, info_panel_width, markup_provider):
@@ -147,6 +150,7 @@ class Screen(object):
 
 
     def get_left_line(self):
+        # TODO: spread empty space around blocks
         times_line = ''
         if self.current_times_block.lines:
             times_line = self.current_times_block.lines.pop(0)

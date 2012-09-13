@@ -91,6 +91,13 @@ class AutostopTestCase(TankTestCase):
             raise RuntimeError()
         self.foo.end_test(0)
 
+    def test_run_multiconf(self):
+        self.foo.core.set_option(self.foo.SECTION, "autostop", "instances (5, 5)\ninstances (90%, 10m) instances (90%, 10m)")
+        
+        self.foo.configure()
+        self.foo.prepare_test()
+        self.assertEquals(3, len(self.foo.criterias))
+        
 if __name__ == '__main__':
     unittest.main()
 

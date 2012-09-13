@@ -89,7 +89,7 @@ class PhantomPlugin(AbstractPlugin):
         self.instances_schedule = self.core.get_option(self.SECTION, "instances_schedule", '')
         self.loop_limit = int(self.core.get_option(self.SECTION, self.OPTION_LOOP, "-1"))
         self.ammo_limit = int(self.core.get_option(self.SECTION, "ammo_limit", "-1"))
-        self.schedule = self.core.get_option(self.SECTION, self.OPTION_SCHEDULE, '')
+        self.schedule = " ".join(self.core.get_option(self.SECTION, self.OPTION_SCHEDULE, '').split("\n"))
         self.uris = self.core.get_option(self.SECTION, "uris", '').split("\n")
         self.headers = self.core.get_option(self.SECTION, "headers", '').split("\n")
         self.autocases = self.core.get_option(self.SECTION, "autocases", '0')
@@ -224,7 +224,7 @@ class PhantomPlugin(AbstractPlugin):
 
         rc = self.process.poll()
         if rc != None:
-            self.log.debug("Phantom exit code: %s", rc)
+            self.log.info("Phantom done its work with exit code: %s", rc)
             return rc
         else:
             return -1
