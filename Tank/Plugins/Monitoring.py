@@ -26,8 +26,6 @@ class MonitoringPlugin(AbstractPlugin):
         self.data_file = tempfile.mkstemp('.data', 'monitoring_')[1]
         self.core.add_artifact_file(self.data_file)
         self.config = self.get_option("config", '')
-        if self.config.lower() == 'none':
-            self.config = ''
         self.core.add_artifact_file("monitoring.log")
     
     def prepare_test(self):
@@ -45,18 +43,20 @@ class MonitoringPlugin(AbstractPlugin):
 
         self.core.add_artifact_file(self.config, True)
             
-            
+    # TODO: add unit tests: disabled, default, and set config            
     def start_test(self):
-        uploader = None
-        try:
-            uploader = self.core.get_plugin_of_type(DataUploaderPlugin)
-        except KeyError, ex:
-            self.log.debug("Uploader plugin not found: %s", ex)
-        if uploader:
-            self.jobno = uploader.jobno
-
         # TODO: change subprocess to direct object manipulation
-        if self.config:
+        if self.config=='none':
+            self.log.info("Monitoring has been disabled")
+        else:
+            uploader = None
+            try:
+                uploader = self.core.get_plugin_of_type(DataUploaderPlugin)
+            except KeyError, ex:
+                self.log.debug("Uploader plugin not found: %s", ex)
+            if uploader:
+                self.jobno = uploader.jobno
+    
             self.log.info("Starting monitoring with config: %s", self.config)
             args = ["load-monitor", "--config=" + self.config, "--output=" + self.data_file]
             if self.jobno:
@@ -65,14 +65,12 @@ class MonitoringPlugin(AbstractPlugin):
                 args += ["-t", self.default_target]
             self.log.debug("Starting: %s", args)
             self.process = subprocess.Popen(args, preexec_fn=os.setsid, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-        else:
-            self.log.info("Monitoring has been disabled")
-
 
     def is_test_finished(self):
         rc = self.process.poll()
         if rc != None:
-            self.log.warning("Monitoring died unexpectedly with RC: %s", rc)
+            # FIXME: don't interrupt test if we have default config
+            self.log.error("Monitoring died unexpectedly with RC: %s", rc)
             return rc
         else:
             return -1

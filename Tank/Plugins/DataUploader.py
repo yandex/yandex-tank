@@ -11,6 +11,7 @@ import urllib2
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.Autostop import AutostopPlugin
 import time
+from urllib2 import HTTPError
 
 # TODO: implement interactive metainfo querying
 # TODO: implement task=dir
@@ -46,7 +47,11 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener):
 
     def check_task_is_open(self, task):
         self.log.debug("Check if task %s is open", task)
-        task_data = self.api_client.get_task_data(task)
+        try:
+            task_data = self.api_client.get_task_data(task)
+        except HTTPError, ex:
+            self.log.error("Failed to check task status for '%s': %s", task, ex)
+            raise ex
         if  task_data[0]['closed']:
             raise RuntimeError("Task %s is closed: %s" % (task, task_data[0].closed))
         self.log.info("Task %s is ok", task)
