@@ -1,5 +1,5 @@
+from Tank import Utils
 from Tank.Core import AbstractPlugin
-from Tank.Utils import CommonUtils
 import datetime
 import logging
 import os
@@ -46,7 +46,7 @@ class AggregatorPlugin(AbstractPlugin):
         self.phout_file = self.get_option(self.OPTION_SOURCE_FILE, '')
         self.threads_file = self.get_option(self.OPTION_STAT_FILE, '')
         periods = self.get_option("time_periods", self.default_time_periods).split(" ")
-        self.time_periods = " ".join([ str(CommonUtils.expand_to_milliseconds(x)) for x in periods ])
+        self.time_periods = " ".join([ str(Utils.expand_to_milliseconds(x)) for x in periods ])
         self.core.set_option(self.SECTION, "time_periods", self.time_periods)
 #        self.tank_type = self.core.get_option(self.SECTION, "tank_type") 
         self.preproc_out_filename = self.get_option("preproc_log_name", tempfile.mkstemp(".log", "preproc_")[1])

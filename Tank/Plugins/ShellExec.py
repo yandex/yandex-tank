@@ -2,14 +2,13 @@
 Contains shellexec plugin
 '''
 from Tank.Core import AbstractPlugin
-from Tank.Utils import CommonUtils
-import logging
+from Tank import Utils
 
-'''
-ShellExec plugin
-allows executing shell scripts before/after test
-'''
 class ShellExecPlugin(AbstractPlugin):
+    '''
+    ShellExec plugin
+    allows executing shell scripts before/after test
+    '''
     SECTION = 'shellexec'
     
     def __init__(self, core):
@@ -56,6 +55,6 @@ class ShellExecPlugin(AbstractPlugin):
 
     def execute(self, cmd):
         self.log.debug("Executing: %s", cmd)
-        retcode = CommonUtils.execute(cmd, shell=True, poll_period=0.1)
+        retcode = Utils.execute(cmd, shell=True, poll_period=0.1)
         if retcode:
             raise RuntimeError("Subprocess returned %s",)    

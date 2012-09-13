@@ -1,6 +1,6 @@
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin
-from Tank.Utils import CommonUtils
+from Tank import Utils
 import subprocess
 import tempfile
 
@@ -38,8 +38,8 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
             aggregator.set_source_files(self.out_file, None)
             
     def start_test(self):
-        args = ['ab', '-r', '-g', self.out_file, 
-                '-n', self.requests, 
+        args = ['ab', '-r', '-g', self.out_file,
+                '-n', self.requests,
                 '-c', self.concurrency, self.url]
         self.log.debug("Starting ab with arguments: %s", args)
         self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -53,7 +53,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
             return -1
 
         if self.process:
-            CommonUtils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
+            Utils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
 
             
     def end_test(self, retcode):
@@ -64,7 +64,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
             self.log.debug("Seems ab finished OK")
 
         if self.process:
-            CommonUtils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
+            Utils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
         return retcode
             
 

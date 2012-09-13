@@ -1,11 +1,9 @@
 from Tank.Core import AbstractPlugin
-import logging
 import time
 
 class DummyPlugin(AbstractPlugin):
     def __init__(self, core):
-        #super(AbstractPlugin, self).__init__(core)
-        self.log = logging.getLogger(__name__)
+        AbstractPlugin.__init__(self, core)
         self.count = 0
         
     @staticmethod

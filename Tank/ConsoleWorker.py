@@ -1,5 +1,5 @@
 from Tank.Core import TankCore
-from Tank.Utils import CommonUtils
+from Tank import Utils 
 import ConfigParser
 import fnmatch
 import logging
@@ -151,7 +151,7 @@ class ConsoleTank:
                     info = ConfigParser.ConfigParser()
                     info.read(full_name)
                     pid = info.get(TankCore.SECTION, self.PID_OPTION)
-                    if not CommonUtils.pid_exists(int(pid)):
+                    if not Utils.pid_exists(int(pid)):
                         self.log.debug("Lock PID %s not exists, ignoring and trying to remove", pid)
                         try:
                             os.remove(full_name)

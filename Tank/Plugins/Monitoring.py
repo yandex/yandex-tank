@@ -1,8 +1,7 @@
+from Tank import Utils
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.DataUploader import DataUploaderPlugin
 from Tank.Plugins.Phantom import PhantomPlugin
-from Tank.Utils import CommonUtils
-import logging
 import os
 import signal
 import subprocess
@@ -91,8 +90,8 @@ class MonitoringPlugin(AbstractPlugin):
             self.log.warn("Seems the monitoring has been finished")
 
         if self.process:
-            CommonUtils.log_stdout_stderr(self.log, self.process.stdout, None, self.SECTION)
-            CommonUtils.log_stdout_stderr(self.log, self.process.stderr, None, self.SECTION + " err")
+            Utils.log_stdout_stderr(self.log, self.process.stdout, None, self.SECTION)
+            Utils.log_stdout_stderr(self.log, self.process.stderr, None, self.SECTION + " err")
 
         return retcode
     

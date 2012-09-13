@@ -1,10 +1,10 @@
+from Tank import Utils
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
+from Tank.Plugins.ConsoleOnline import AbstractInfoWidget, ConsoleOnlinePlugin
 from Tank.Plugins.Phantom import PhantomPlugin
-from Tank.Utils import CommonUtils
 import logging
 import re
-from Tank.Plugins.ConsoleOnline import AbstractInfoWidget, ConsoleOnlinePlugin
 
 class AutostopPlugin(AbstractPlugin, AggregateResultListener):
     SECTION = 'autostop'
@@ -130,8 +130,8 @@ class AvgTimeCriteria(AbstractCriteria):
     def __init__(self, autostop, param_str):
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
-        self.rt_limit = CommonUtils.expand_to_milliseconds(param_str.split(',')[0])
-        self.seconds_limit = CommonUtils.expand_to_seconds(param_str.split(',')[1])
+        self.rt_limit = Utils.expand_to_milliseconds(param_str.split(',')[0])
+        self.seconds_limit = Utils.expand_to_seconds(param_str.split(',')[1])
         self.autostop = autostop
     
     def notify(self, aggregate_second):
@@ -181,7 +181,7 @@ class HTTPCodesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = CommonUtils.expand_to_seconds(param_str.split(',')[2])
+        self.seconds_limit = Utils.expand_to_seconds(param_str.split(',')[2])
     
 
     def notify(self, aggregate_second):
@@ -246,7 +246,7 @@ class NetCodesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = CommonUtils.expand_to_seconds(param_str.split(',')[2])
+        self.seconds_limit = Utils.expand_to_seconds(param_str.split(',')[2])
     
 
     def notify(self, aggregate_second):
@@ -311,7 +311,7 @@ class UsedInstancesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = CommonUtils.expand_to_seconds(param_str.split(',')[1])
+        self.seconds_limit = Utils.expand_to_seconds(param_str.split(',')[1])
         
         phantom = autostop.core.get_plugin_of_type(PhantomPlugin)
         self.threads_limit = phantom.instances
@@ -340,8 +340,6 @@ class UsedInstancesCriteria(AbstractCriteria):
 
     def get_rc(self):
         return self.RC_INST
-
-
 
     def get_level_str(self):
         if self.is_relative:

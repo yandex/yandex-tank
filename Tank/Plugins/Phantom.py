@@ -1,12 +1,12 @@
+from Tank import Utils
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
-from Tank.Utils import CommonUtils
 from ipaddr import AddressValueError
 import ConfigParser
+import datetime
 import hashlib
 import ipaddr
-import logging
 import multiprocessing
 import os
 import shutil
@@ -15,7 +15,6 @@ import string
 import subprocess
 import tempfile
 import time
-import datetime
 
 # TODO: req/answ sizes in widget - last sec and curRPS
 # TODO: implement phout import
@@ -188,7 +187,7 @@ class PhantomPlugin(AbstractPlugin):
             self.config = self.compose_config()
         args = [self.phantom_path, 'check', self.config]
         
-        rc = CommonUtils.execute(args, catch_out=True)
+        rc = Utils.execute(args, catch_out=True)
         if rc:
             raise RuntimeError("Subprocess returned %s",)    
 
@@ -218,7 +217,7 @@ class PhantomPlugin(AbstractPlugin):
     
 
     def is_test_finished(self):
-        CommonUtils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
+        Utils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
 
         rc = self.process.poll()
         if rc != None:
@@ -303,7 +302,7 @@ class PhantomPlugin(AbstractPlugin):
         self.args = self.tools_path + "/stepper.py -a " + self.ammo_file + " -c " + stepper_config
         
         self.log.info("Yet calling old external stepper.py")
-        rc = CommonUtils.execute(self.args, shell=True)
+        rc = Utils.execute(self.args, shell=True)
         if rc:
             raise RuntimeError("Subprocess returned %s",)    
         old_stepper_out_options = "lp.conf"
