@@ -26,7 +26,7 @@ PYTHONPATH=''
 			<arg value="${package}" />
 		</exec>
 	</target>
-	<target name="debian" depends="pylint,test">
+	<target name="debian" depends="loc,pylint,test">
 		<exec executable="dch" dir='.' failonerror="true">
 			<arg value="-n" />
 			<arg value="Jenkins CI build" />
@@ -41,5 +41,14 @@ PYTHONPATH=''
 		<move todir=".">
 			<fileset dir=".." includes="yandex-load-*" />
 		</move>
+	</target>
+	
+	<target name="loc">
+		<exec executable="sloccount" dir='.' failonerror="true" output="sloccount.sc">
+			<arg value="--duplicates" />
+			<arg value="--wide" />
+			<arg value="--details" />
+			<arg value="." />
+		</exec>
 	</target>
 </project>
