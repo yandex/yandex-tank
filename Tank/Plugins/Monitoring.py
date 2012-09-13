@@ -6,6 +6,7 @@ import os
 import signal
 import subprocess
 import tempfile
+from Monitoring.monitor import MonitoringCollector
 
 # TODO: wait for first monitoring data
 class MonitoringPlugin(AbstractPlugin):
@@ -17,6 +18,7 @@ class MonitoringPlugin(AbstractPlugin):
         self.default_target = None
         self.config = None
         self.process = None
+        self.monitoring = None
 
     @staticmethod
     def get_key():
@@ -58,20 +60,18 @@ class MonitoringPlugin(AbstractPlugin):
                 self.jobno = uploader.jobno
     
             self.log.info("Starting monitoring with config: %s", self.config)
-            args = ["load-monitor", "--config=" + self.config, "--output=" + self.data_file]
+            self.monitoring=MonitoringCollector(self.config, self.data_file)
             if self.jobno:
-                args += ["-j", str(self.jobno)]
+                self.monitoring.jobno=self.jobno
             if self.default_target:
-                args += ["-t", self.default_target]
-            self.log.debug("Starting: %s", args)
-            self.process = subprocess.Popen(args, preexec_fn=os.setsid, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+                self.monitoring.default_target=self.default_target
+            self.monitoring.start()
 
     def is_test_finished(self):
-        rc = self.process.poll()
-        if rc != None:
+        if self.monitoring.is_online():
             # FIXME: don't interrupt test if we have default config
-            self.log.error("Monitoring died unexpectedly with RC: %s", rc)
-            return rc
+            self.log.error("Monitoring died unexpectedly",)
+            return 1
         else:
             return -1
             

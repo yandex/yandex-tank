@@ -59,15 +59,6 @@ def get_ammo_count(filename, stop_count):
         return ammo_cnt
 
 
-# TODO: remove unused
-def get_header(line):
-    header = ''
-    get_headers_list(line)
-    for (h, v) in list.iteritems():
-        header += '%s: %s\r\n' % (h, v)
-    return header
-
-
 def header_print(list):
     header = ''
     for (h, v) in list.iteritems():

@@ -1,0 +1,6 @@
+<Monitoring>
+    <Host address="localhost">
+        <Custom label="diffEx" measure="call" diff="1">ifconfig -s eth0 | awk '$1=="eth0" {print $4}'</Custom>
+        <Custom label="diffEx2" measure="call">ifconfig -s eth0 | awk '$1=="eth0" {print $4}'</Custom>
+    </Host>
+</Monitoring>

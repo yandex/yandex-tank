@@ -180,7 +180,6 @@ class PhantomPlugin(AbstractPlugin):
         self.core.config.flush(self.stpd + ".conf")
         
 
-
     def prepare_test(self):
         self.prepare_stepper()     
                 
