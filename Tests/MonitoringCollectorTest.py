@@ -7,7 +7,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
     data = None
     
     def test_regular(self):
-        mon = MonitoringCollector("config/mon1.conf", tempfile.mkdtemp()[1])
+        mon = MonitoringCollector("config/mon1.conf", tempfile.mkstemp()[1])
         mon.prepare()
         mon.start()
         mon.poll()
