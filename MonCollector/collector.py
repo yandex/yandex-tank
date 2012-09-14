@@ -15,6 +15,9 @@ import tempfile
 import time
 import urllib2
 
+
+# FIXME: synchronize times between agent and collector better
+
 class Config(object):
     def __init__(self, config):
         self.tree = etree.parse(config)
@@ -227,10 +230,9 @@ class MonitoringSender:
     
 
 class MonitoringCollector:
-    def __init__(self, config, out_file):
+    def __init__(self, config):
         self.log = logging.getLogger(__name__)
         self.config = config
-        self.out_file = out_file
         self.default_target = None
         self.agents = []
         self.agent_pipes = []
@@ -550,14 +552,8 @@ class MonitoringCollector:
 class MonitoringDataListener:
     def monitoring_data(self, data_string):
         raise RuntimeError("Abstract method needs to be overridden")
-    
-class SaveMonToFile(MonitoringDataListener):
-    def __init__(self, out_file):
-        # Defining local storage
-        self.store = sys.stdout
-        if out_file:
-            self.store = open(self.out_file, 'w')
-    
+
+
+class StdOutPrintMon(MonitoringDataListener):
     def monitoring_data(self, data_string):
-            self.store.write(data_string)
-            self.store.flush()
+            sys.stdout.write(data_string)

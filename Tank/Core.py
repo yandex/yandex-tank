@@ -61,7 +61,7 @@ class TankCore:
         self.log.debug("Instantiated: %s", res);
         return res
 
-    def plugins_check_config(self):
+    def plugins_configure(self):
         self.log.info("Configuring plugins...")
         for plugin_key in self.plugins_order:
             plugin = self.get_plugin_by_key(plugin_key)

@@ -3,7 +3,8 @@ from Tank.Plugins.DataUploader import DataUploaderPlugin
 from Tank.Plugins.Phantom import PhantomPlugin
 import os
 import tempfile
-from MonCollector.collector import MonitoringCollector
+from MonCollector.collector import MonitoringCollector, MonitoringDataListener
+from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 
 # TODO: wait for first monitoring data
 class MonitoringPlugin(AbstractPlugin):
@@ -22,10 +23,7 @@ class MonitoringPlugin(AbstractPlugin):
         return __file__;
     
     def configure(self):
-        self.data_file = tempfile.mkstemp('.data', 'monitoring_')[1]
-        self.core.add_artifact_file(self.data_file)
         self.config = self.get_option("config", 'auto')
-        self.core.add_artifact_file("monitoring.log")
     
     def prepare_test(self):
         phantom = None
@@ -37,35 +35,54 @@ class MonitoringPlugin(AbstractPlugin):
             self.default_target = phantom.address
             # TODO: resolve virtual to host address
         
-        if self.config=='auto':
+        if self.config == 'auto':
             self.config = os.path.dirname(__file__) + '/monitoring_default_config.xml'
 
         self.core.add_artifact_file(self.config, True)
-            
-    def start_test(self):
+        
+
         if not self.config or self.config == 'none':
             self.log.info("Monitoring has been disabled")
         else:
-            uploader = None
+            self.log.info("Starting monitoring with config: %s", self.config)
+            self.monitoring = MonitoringCollector(self.config)
+            if self.default_target:
+                self.monitoring.default_target = self.default_target
+            
+            data_file = tempfile.mkstemp('.data', 'monitoring_')[1]
+            self.monitoring.add_listener(SaveMonToFile(data_file))
+            self.core.add_artifact_file(data_file)
+
+            try:
+                console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+            except Exception, ex:
+                self.log.debug("Console not found: %s", ex)
+                console = None
+            if console:    
+                console.add_info_widget(MonitoringWidget(self))
+
             try:
                 uploader = self.core.get_plugin_of_type(DataUploaderPlugin)
             except KeyError, ex:
                 self.log.debug("Uploader plugin not found: %s", ex)
+                uploader = None
             if uploader:
-                self.jobno = uploader.jobno
+                self.monitoring.add_listener(uploader)
     
-            self.log.info("Starting monitoring with config: %s", self.config)
-            self.monitoring = MonitoringCollector(self.config, self.data_file)
-            if self.jobno:
-                self.monitoring.jobno = self.jobno
-            if self.default_target:
-                self.monitoring.default_target = self.default_target
+            self.monitoring.prepare()
+            
+    def start_test(self):
+        if self.monitoring:
             self.monitoring.start()
-
+            
     def is_test_finished(self):
         if self.monitoring and not self.monitoring.poll():
             # FIXME: don't interrupt test if we have default config
-            raise RuntimeError("Monitoring died unexpectedly")
+            if self.config and self.config != 'none':
+                raise RuntimeError("Monitoring died unexpectedly")
+            else:
+                self.log.warn("Monitoring died unexpectedly")
+                self.monitoring = None
         else:
             return -1
             
@@ -76,4 +93,24 @@ class MonitoringPlugin(AbstractPlugin):
             self.monitoring.stop()
         return retcode
     
+
+class SaveMonToFile(MonitoringDataListener):
+    def __init__(self, out_file):
+        if out_file:
+            self.store = open(out_file, 'w')
+    
+    def monitoring_data(self, data_string):
+            self.store.write(data_string)
+            self.store.flush()
+
+
 # TODO: add widget with current metrics
+class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
+    def get_index(self):
+        return 50
+
+    def monitoring_data(self, data_string):
+        self.log.debug("Mon data: %s", data_string)
+    
+    def render(self, screen):
+        return AbstractInfoWidget.render(self, screen)

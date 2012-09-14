@@ -10,7 +10,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
     data = None
     
     def test_collector(self):
-        mon = MonitoringCollector("config/mon1.conf", tempfile.mkstemp()[1])
+        mon = MonitoringCollector("config/mon1.conf")
         listener = TestMonListener()
         mon.add_listener(listener)
         mon.prepare()
@@ -35,7 +35,6 @@ class  MonitoringCollectorTestCase(TankTestCase):
         listener.data=[]
         mon.stop()
 
-    # TODO: add unit tests: disabled, default, and set config            
     def test_plugin_disabled(self):
         core = TankCore()
         mon = MonitoringPlugin(core)
@@ -50,6 +49,36 @@ class  MonitoringCollectorTestCase(TankTestCase):
         mon.end_test(0)
         mon.post_process(0)
 
+    def test_plugin_default(self):
+        core = TankCore()
+        mon = MonitoringPlugin(core)
+        mon.configure()
+        mon.prepare_test()
+        mon.start_test()
+        self.assertEquals(-1, mon.is_test_finished())
+        self.assertEquals(None, mon.monitoring)
+        time.sleep(1)
+        self.assertEquals(-1, mon.is_test_finished())
+        mon.end_test(0)
+        mon.post_process(0)
+
+    def test_plugin_config(self):
+        core = TankCore()
+        core.load_configs(['config/monitoring.conf'])
+        core.load_plugins()
+        core.plugins_configure()
+        core.plugins_prepare_test()
+        mon = MonitoringPlugin(core)
+        core.set_option(mon.SECTION, 'config', "config/mon1.conf")
+        mon.configure()
+        mon.prepare_test()
+        mon.start_test()
+        self.assertEquals(-1, mon.is_test_finished())
+        self.assertNotEquals(None, mon.monitoring)
+        time.sleep(1)
+        self.assertEquals(-1, mon.is_test_finished())
+        mon.end_test(0)
+        mon.post_process(0)
 
 class TestMonListener(MonitoringDataListener):
     def __init__(self):

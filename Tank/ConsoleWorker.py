@@ -237,7 +237,7 @@ class ConsoleTank:
         self.log.info("Performing test")
         rc = 1
         try:
-            self.core.plugins_check_config()
+            self.core.plugins_configure()
             self.core.plugins_prepare_test()
             self.core.plugins_start_test()
             rc = self.core.wait_for_finish()
@@ -251,7 +251,7 @@ class ConsoleTank:
                 rc = self.graceful_shutdown()
             except KeyboardInterrupt as ex:
                 self.log.debug("Caught KeyboardInterrupt again: %s", traceback.format_exc(ex))
-                self.log.info("User insists on exiting, aborting process.")
+                self.log.info("User insists on exiting, aborting graceful shutdown...")
                 rc = 1
                                 
         except Exception as ex:

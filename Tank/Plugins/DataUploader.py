@@ -12,10 +12,14 @@ from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.Autostop import AutostopPlugin
 import time
 from urllib2 import HTTPError
+from MonCollector.collector import MonitoringDataListener
 
 # TODO: implement interactive metainfo querying
 # TODO: implement task=dir
-class DataUploaderPlugin(AbstractPlugin, AggregateResultListener):
+class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
+    '''
+    API Client class for Yandex KSHM web service
+    '''
     SECTION = 'meta'
     
     def __init__(self, core):
@@ -144,6 +148,9 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener):
     def get_sla_by_task(self):
         return self.api_client.get_sla_by_task(self.regression_component)
         
+    def monitoring_data(self, data_string):
+        # TODO: implement it
+        pass 
         
 class KSHMAPIClient():
     def __init__(self):

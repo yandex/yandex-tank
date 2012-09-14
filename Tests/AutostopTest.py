@@ -10,11 +10,11 @@ import unittest
 class AutostopTestCase(TankTestCase):
     def setUp(self):
         core = TankCore()
-        (handler, name) = tempfile.mkstemp()
+        name = tempfile.mkstemp()[1]
         core.config.set_out_file(name)
         core.load_configs(['config/autostop.conf'])
         core.load_plugins()
-        core.plugins_check_config()
+        core.plugins_configure()
         self.foo = AutostopPlugin(core)
 
     def tearDown(self):

@@ -13,7 +13,7 @@ class  PhantomPluginTestCase(TankTestCase):
         core.config.set_out_file(name)
         core.load_configs(['config/phantom.conf'])
         core.load_plugins()
-        core.plugins_check_config()
+        core.plugins_configure()
         core.plugins_prepare_test()
         self.foo = PhantomPlugin(core)
 

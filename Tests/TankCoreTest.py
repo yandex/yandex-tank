@@ -27,7 +27,7 @@ class  TankCoreTestCase(TankTestCase):
         paths = ['config/load.conf']
         self.foo.load_configs(paths)
         self.foo.load_plugins()
-        self.foo.plugins_check_config()
+        self.foo.plugins_configure()
         self.foo.plugins_prepare_test()
         self.foo.plugins_start_test()
         self.foo.wait_for_finish()
