@@ -144,13 +144,18 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                     if value == '':
                         value = self.NA
                         self.sign[host][metric] = -1
+                        self.data[host][metric] = value
                     else:
-                        if not self.data[host][metric] == self.NA and  not value == self.NA:
-                            self.sign[host][metric] = math.copysign(float(value), float(self.data[host][metric]))
-                if not value==self.NA:
-                    self.data[host][metric] = "%.2f" % float(value) 
-                else:
-                    self.data[host][metric] = value
+                        if self.data[host][metric] == self.NA:
+                            self.sign[host][metric] = 1
+                        else:
+                            if float(value)>float(self.data[host][metric]):
+                                self.sign[host][metric] = 1
+                            elif float(value)<float(self.data[host][metric]):
+                                self.sign[host][metric] = -1
+                            else:
+                                self.sign[host][metric] = 0
+                        self.data[host][metric] = "%.2f" % float(value) 
                 
     
     def render(self, screen):
@@ -159,8 +164,8 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         else:
             res = "Monitoring is " + screen.markup.WHITE + "online" + screen.markup.RESET + ":\n"
             for hostname, metrics in self.data.items():
-                res += "   %s:\n" % hostname
-                for metric, value in metrics.items():
+                res += ("   "+screen.markup.CYAN+"%s"+screen.markup.RESET+":\n") % hostname
+                for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.GREEN + value + screen.markup.RESET
                     elif self.sign[hostname][metric] < 0:

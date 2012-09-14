@@ -93,18 +93,17 @@ class  MonitoringCollectorTestCase(TankTestCase):
         widget = MonitoringWidget(owner)
         screen = Screen(50, FakeConsoleMarkup())
         res = widget.render(screen)
-        self.assertEquals("Monitoring is <g>online<rst>:", res)
+        self.assertEquals("Monitoring is <w>online<rst>:", res)
 
         widget.monitoring_data("start;127.0.0.1;1347631472;Memory_total;Memory_used;Memory_free;Memory_shared;Memory_buff;Memory_cached;Net_recv;Net_send;Disk_read;Disk_write;System_csw;System_int;CPU_user;CPU_nice;CPU_system;CPU_idle;CPU_iowait;CPU_irq;CPU_softirq;System_numproc;System_numthreads")
         res = widget.render(screen)
-        self.assertEquals("Monitoring is <g>online<rst>:\n  127.0.0.1:\n    Memory used: n/a\n    CPU iowait: n/a\n    System numproc: n/a\n    Memory free: n/a\n    Memory shared: n/a\n    Memory cached: n/a\n    System numthreads: n/a\n    CPU idle: n/a\n    CPU user: n/a\n    Memory total: n/a\n    CPU system: n/a\n    Disk write: n/a\n    Disk read: n/a\n    Memory buff: n/a\n    Net send: n/a\n    CPU irq: n/a\n    Net recv: n/a\n    CPU nice: n/a\n    System int: n/a\n    CPU softirq: n/a\n    System csw: n/a", res)
         
         widget.monitoring_data("127.0.0.1;1347631473;1507.65625;576.9609375;8055;1518;0;143360;34.9775784753;16.1434977578;0.0")
         res = widget.render(screen)
         self.assertNotEquals("Monitoring is <g>online<rst>:", res)
-        self.assertNotEquals("Monitoring is <g>online<rst>:\n  127.0.0.1:", res)
-        self.assertNotEquals("Monitoring is <g>online<rst>:\n  127.0.0.1:\n    Memory used: n/a\n    CPU iowait: n/a\n    System numproc: n/a\n    Memory free: n/a\n    Memory shared: n/a\n    Memory cached: n/a\n    System numthreads: n/a\n    CPU idle: n/a\n    CPU user: n/a\n    Memory total: n/a\n    CPU system: n/a\n    Disk write: n/a\n    Disk read: n/a\n    Memory buff: n/a\n    Net send: n/a\n    CPU irq: n/a\n    Net recv: n/a\n    CPU nice: n/a\n    System int: n/a\n    CPU softirq: n/a\n    System csw: n/a", res)
         
+        widget.monitoring_data("127.0.0.1;1347631473;1506.65625;574.9609375;8055;1518;0;143360;34.9775784753;16.1434977578;0.0")
+        res = widget.render(screen)
 
 class TestMonListener(MonitoringDataListener):
     def __init__(self):
