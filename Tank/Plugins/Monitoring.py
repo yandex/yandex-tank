@@ -106,6 +106,10 @@ class SaveMonToFile(MonitoringDataListener):
 
 # TODO: add widget with current metrics
 class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
+    def __init__(self, owner):
+        AbstractInfoWidget.__init__(self)
+        self.owner=owner
+    
     def get_index(self):
         return 50
 

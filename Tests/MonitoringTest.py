@@ -51,12 +51,16 @@ class  MonitoringCollectorTestCase(TankTestCase):
 
     def test_plugin_default(self):
         core = TankCore()
+        core.load_configs(['config/monitoring.conf'])
+        core.load_plugins()
+        core.plugins_configure()
+        core.plugins_prepare_test()
         mon = MonitoringPlugin(core)
         mon.configure()
         mon.prepare_test()
         mon.start_test()
         self.assertEquals(-1, mon.is_test_finished())
-        self.assertEquals(None, mon.monitoring)
+        self.assertNotEquals(None, mon.monitoring)
         time.sleep(1)
         self.assertEquals(-1, mon.is_test_finished())
         mon.end_test(0)
