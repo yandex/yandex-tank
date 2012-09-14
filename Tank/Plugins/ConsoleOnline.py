@@ -23,14 +23,15 @@ class RealConsoleMarkup(object):
     RESET = '\033[1;m'
     CYAN = "\033[1;36m"
     GREEN = "\033[1;32m"
+    WHITE = "\033[1;37m"
     MAGENTA = '\033[1;35m'
     BG_MAGENTA = '\033[1;45m'
     BG_GREEN = '\033[1;42m'
     
     def clean_markup(self, orig_str):
-        for val in [self.YELLOW, self.RED, self.RESET, 
-                    self.CYAN, self.BG_MAGENTA, 
-                    self.BG_GREEN, self.GREEN, 
+        for val in [self.YELLOW, self.RED, self.RESET,
+                    self.CYAN, self.BG_MAGENTA, self.WHITE,
+                    self.BG_GREEN, self.GREEN,
                     self.RED_DARK, self.MAGENTA]:
             orig_str = orig_str.replace(val, '')
         return orig_str
@@ -290,7 +291,7 @@ class CurrentTimesBlock(AbstractBlock):
             self.current_count = 0
             self.current_max_rt = 0
             self.current_codes = {}
-            self.current_duration=0
+            self.current_duration = 0
         for item in times_dist:
             self.current_count += item['count']
             self.current_max_rt = max(self.current_max_rt, item['to'])
@@ -298,7 +299,7 @@ class CurrentTimesBlock(AbstractBlock):
                 self.current_codes[item['from']]['count'] += item['count']
             else:
                 self.current_codes[item['from']] = item
-        self.current_duration+=1
+        self.current_duration += 1
         self.log.debug("Current rps dist: %s", self.current_codes)
       
     def format_line(self, current_times, quan):

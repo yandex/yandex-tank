@@ -10,12 +10,24 @@ import unittest
 
 class FakeConsoleMarkup(RealConsoleMarkup):
     clear = "\n[clear]\n"
+    new_line = "\n"
+    
+    YELLOW = '<y>'
+    RED = '<r>'
+    RED_DARK = '<rd>'
+    RESET = '<rst>'
+    CYAN = "<c>"
+    WHITE="<w>"
+    GREEN = "<g>"
+    MAGENTA = '<m>'
+    BG_MAGENTA = '<M>'
+    BG_GREEN = '<G>'
 
 
 class ConsoleOnlinePluginTestCase(TankTestCase):
     def setUp(self):
         core = TankCore()
-        (handler, name) = tempfile.mkstemp()
+        name = tempfile.mkstemp()[1]
         core.config.set_out_file(name)
         core.load_configs(['config/console.conf'])
         core.load_plugins()
