@@ -86,8 +86,7 @@ class TankCore:
     def wait_for_finish(self):
         self.log.info("Waiting for test to finish...")
         if not self.plugins:
-            self.log.warn("It's strange: we have no plugins loaded...")
-            return 1;
+            raise RuntimeError("It's strange: we have no plugins loaded...")
         
         while True:
             begin_time = time.time()

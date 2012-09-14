@@ -8,6 +8,7 @@ import sys
 import tempfile
 import time
 import traceback
+from Tank.Plugins.ConsoleOnline import RealConsoleMarkup
 
 # TODO: --manual-start
 # TODO: add system resources busy check
@@ -255,7 +256,9 @@ class ConsoleTank:
                                 
         except Exception as ex:
             self.log.debug("Exception: %s", traceback.format_exc(ex))
+            sys.stdout.write(RealConsoleMarkup.RED)
             self.log.error("%s", ex)
+            sys.stdout.write(RealConsoleMarkup.RESET)
             rc = self.graceful_shutdown()
         
         self.log.info("Done performing test with code %s", rc)
