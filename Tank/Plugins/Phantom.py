@@ -18,11 +18,10 @@ import time
 
 # TODO: req/answ sizes in widget - last sec and curRPS
 # TODO: implement phout import
-        #TODO: chosen cases
-        # TODO: gatling
+#TODO: chosen cases
+# TODO: gatling
 # TODO: implement reply limits
 # TODO: if instances_schedule enabled - pass to phantom the top count as instances limit
-# TODO: eliminate old stepper this with new object-style stepper
 class PhantomPlugin(AbstractPlugin):
 
     OPTION_TEST_DURATION = 'test_duration'

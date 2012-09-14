@@ -40,7 +40,6 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         self.add_criteria_class(UsedInstancesCriteria)
 
     def prepare_test(self):
-        # FIXME: whole parsing is broken now!
         for criteria_str in self.criteria_str.strip().split(")"):
             if not criteria_str: 
                 continue

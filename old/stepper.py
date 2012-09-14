@@ -7,10 +7,6 @@ from optparse import OptionParser
 import os
 import re
 
-# FIXME: remove this hack
-import sys
-sys.path.append("/usr/lib/python2.5")
-
 from progressbar import Bar
 from progressbar import ETA
 from progressbar import Percentage

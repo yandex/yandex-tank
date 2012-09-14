@@ -11,10 +11,6 @@ import logging
 import json
 import urllib2
 
-# FIXME: remove this hack
-import sys
-sys.path.append("/usr/lib/python2.5")
-
 from collections import defaultdict
 from optparse import OptionParser
 from subprocess import Popen, PIPE

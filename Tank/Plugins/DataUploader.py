@@ -14,9 +14,9 @@ import time
 from urllib2 import HTTPError
 from MonCollector.collector import MonitoringDataListener
 from Tank.Plugins.Monitoring import MonitoringPlugin
+import re
 
 # TODO: implement interactive metainfo querying
-# TODO: implement task=dir
 class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     '''
     API Client class for Yandex KSHM web service
@@ -62,7 +62,29 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         self.log.info("Task %s is ok", task)
         self.task_name = task_data[0]['name']
     
+
+    def search_task_from_cwd(self):
+        issue = re.compile("^([A-Z]+-[0-9]+).*")
+        cwd = os.getcwd()
+        while cwd:
+            self.log.debug("Checking if dir is named like JIRA issue: %s", cwd)
+            if issue.match(os.path.basename(cwd)):
+                res=re.search(issue, os.path.basename(cwd))
+                self.task = res.group(0)
+                return                
+            
+            newdir = os.path.abspath(os.path.join(cwd, os.path.pardir))
+            if newdir == cwd:
+                break
+            else:
+                cwd = newdir
+
+        raise RuntimeError("task=dir requested, but no JIRA issue name in cwd: %s" % os.getcwd())
+    
     def prepare_test(self):
+        if self.task == 'dir':
+            self.search_task_from_cwd()
+            
         self.check_task_is_open(self.task)
 
         try:
@@ -195,7 +217,7 @@ class KSHMAPIClient():
         
     def post(self, addr, data):
         json_data = json.dumps(data)
-        resp= self.post_raw(addr, json_data)
+        resp = self.post_raw(addr, json_data)
         response = json.loads(resp)
         return response
     
