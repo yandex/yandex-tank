@@ -1,5 +1,4 @@
 from Tank.Core import AbstractPlugin
-from Tank.Plugins.DataUploader import DataUploaderPlugin
 from Tank.Plugins.Phantom import PhantomPlugin
 import os
 import tempfile
@@ -61,14 +60,6 @@ class MonitoringPlugin(AbstractPlugin):
             if console:    
                 console.add_info_widget(MonitoringWidget(self))
 
-            try:
-                uploader = self.core.get_plugin_of_type(DataUploaderPlugin)
-            except KeyError, ex:
-                self.log.debug("Uploader plugin not found: %s", ex)
-                uploader = None
-            if uploader:
-                self.monitoring.add_listener(uploader)
-    
             self.monitoring.prepare()
             
     def start_test(self):
@@ -108,7 +99,7 @@ class SaveMonToFile(MonitoringDataListener):
 class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
     def __init__(self, owner):
         AbstractInfoWidget.__init__(self)
-        self.owner=owner
+        self.owner = owner
     
     def get_index(self):
         return 50
@@ -117,4 +108,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         self.log.debug("Mon data: %s", data_string)
     
     def render(self, screen):
-        return AbstractInfoWidget.render(self, screen)
+        if not self.owner.monitoring:
+            return "Monitoring is " + screen.markup.RED + "offline" + screen.markup.RESET
+        else:
+            return "Monitoring is " + screen.markup.GREEN + "online" + screen.markup.RESET + ":"

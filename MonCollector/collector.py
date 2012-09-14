@@ -2,7 +2,6 @@ from collections import defaultdict
 from lxml import etree
 from string import join, lower
 from subprocess import PIPE, Popen
-import ConfigParser
 import base64
 import logging
 import os.path
@@ -13,7 +12,6 @@ import signal
 import sys
 import tempfile
 import time
-import urllib2
 
 
 # FIXME: don't put agent logs in current dir, place somewhere else
@@ -30,7 +28,6 @@ class Config(object):
         if log_level_raw in ('info', 'debug'):
             log_level = log_level_raw
         return log_level
-
 
 class AgentClient(object):
     def __init__(self, **kwargs):
@@ -85,7 +82,7 @@ class AgentClient(object):
 
     def install(self, loglevel):
         """ Create folder and copy agent and metrics scripts to remote host """
-
+        logging.info("Installing monitoring agent at %s...", self.host)
         self.create_agent_config(loglevel)
 
         # getting remote temp dir
@@ -105,7 +102,7 @@ class AgentClient(object):
         remote_dir = pipe.stdout.read().strip()
         if (remote_dir):
             self.path['AGENT_REMOTE_FOLDER'] = remote_dir
-        logging.info("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER']);
+        logging.debug("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER']);
 
         # Copy agent
         cmd = ['scp'] + self.scp_opts + [self.path['AGENT_LOCAL_FOLDER'] + 'agent.py', self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.py']
@@ -156,7 +153,7 @@ class AgentClient(object):
         remove = Popen(cmd, stdout=PIPE, bufsize=0)
         remove.wait()
         
-        logging.info("Remove: %s" % self.path['TEMP_CONFIG'])
+        logging.info("Removing agent from: %s..." % self.host)
         if os.path.isfile(self.path['TEMP_CONFIG']):
             os.remove(self.path['TEMP_CONFIG'])
 
@@ -164,70 +161,6 @@ class AgentClient(object):
         logging.debug("Uninstall agent from %s: %s" % (self.host, cmd))
         remove = Popen(cmd, stdout=PIPE, bufsize=0)
         remove.wait()
-
-class MonitoringSender:
-    # TODO: move it to data uploader
-    def send_data(self, send_data):
-        ''' Handle HTTP data send'''
-        if not send_data:
-            logging.debug("Nothing to send to server")
-            time.sleep(0.5)
-            return        
-        addr = self.SEND_HOST + self.SEND_URI #+"&offline=1&debug=1" # FIXME: remove it
-        logging.debug('HTTP Request: %s\tlength: %s' % (addr, len(send_data)))
-        logging.debug('HTTP Request data: %s' % send_data.strip())
-        req = urllib2.Request(addr, send_data)
-        resp = urllib2.urlopen(req).read()
-        logging.debug('HTTP Response: %s' % resp)
-        if not self.reported_ok:
-            logging.info("Sent first data OK")
-            self.reported_ok = 1    
-
-    def some_trash1(self):
-        # Params for web storage
-        config_file = '/etc/yandex-load-monitoring/config'
-        config = ConfigParser.SafeConfigParser()
-        config.read(config_file)
-        
-        try:
-            SEND_TIME = config.getint('main', 'SEND_TIME')
-            SEND_URI = config.get('main', 'SEND_URI') 
-        except Exception, e:
-            logging.exception(e)
-            logging.error("Seems we have problem with " + config_file)
-            able2send = 1
-        
-        try:
-            SEND_HOST = config.get('main', 'SEND_HOST')
-        except ConfigParser.NoOptionError, e:
-            tank_config_file = '/etc/lunapark/db.conf'
-            logging.warn("Seems we have no monitoring host setup, trying lunapark config: " + tank_config_file)
-            tank_config = ConfigParser.SafeConfigParser()
-            tank_config.read(tank_config_file)
-            try:
-                SEND_HOST = tank_config.get('DEFAULT', 'http_base')
-            except ConfigParser.NoSectionError, e:
-                logging.exception(e)
-                logging.error("Seems we have one more problem with config, giving up.")
-                able2send = 1
-        
-    def some_trash2(self, send_data):
-        able2send = 1
-        if able2send:
-            try:
-                self.send_data(send_data)
-                send_data = ''
-            except Exception, e:
-                logging.warn("Recoverable error sending data to server: %s", e);
-                try:
-                    logging.info("Waiting 30 sec before retry...")
-                    time.sleep(30)
-                    self.send_data(send_data)
-                    send_data = ''
-                except Exception, e2:
-                    logging.error("Fatal error sending data to server: %s", e2);
-                    able2send = 0
-    
 
 class MonitoringCollector:
     def __init__(self, config):
@@ -250,7 +183,6 @@ class MonitoringCollector:
 
         self.log.debug("filter_conf: %s", self.filter_conf)        
         conf = Config(self.config)
-        logging.info('Logging level: %s' % conf.loglevel()) 
         
         # Filtering
         self.filter_mask = defaultdict(str)
@@ -327,7 +259,7 @@ class MonitoringCollector:
         return len(self.outputs)            
     
     def stop(self):
-        logging.info("Initiating normal finish")
+        logging.debug("Initiating normal finish")
         for pipe in self.agent_pipes:
             logging.debug("Killing %s with %s", pipe.pid, signal.SIGINT)
             os.kill(pipe.pid, signal.SIGINT)
@@ -360,7 +292,7 @@ class MonitoringCollector:
             if hostname == '[target]':
                 if not target_hint:
                     raise ValueError("Can't use [target] keyword with no target parameter specified")
-                logging.info("Using target hint: %s", target_hint)
+                logging.debug("Using target hint: %s", target_hint)
                 hostname = target_hint
             stats = []
             custom = {'tail': [], 'call': [], }
@@ -451,7 +383,7 @@ class MonitoringCollector:
             for agent in agents:
                 logging.debug('Uninstall monitoring agent. Host: %s' % agent.host)
                 agent.uninstall()
-                logging.info("Remove: %s" % agent.path['TEMP_CONFIG'])
+                logging.debug("Remove: %s" % agent.path['TEMP_CONFIG'])
                 if os.path.isfile(agent.path['TEMP_CONFIG']):
                     logging.warning("Seems uninstall failed to remove %s", agent.path['TEMP_CONFIG'])
                     os.remove(agent.path['TEMP_CONFIG'])
@@ -460,7 +392,7 @@ class MonitoringCollector:
                 logging.debug('Install monitoring agent. Host: %s' % agent.host)
                 if agent.install(loglevel):
                     logging.debug("[%s] Cannot install. Remove: %s" % (agent.host, agent))
-                    logging.info("Remove: %s" % agent.path['TEMP_CONFIG'])
+                    logging.debug("Remove: %s" % agent.path['TEMP_CONFIG'])
                     if os.path.isfile(agent.path['TEMP_CONFIG']):
                         os.remove(agent.path['TEMP_CONFIG'])
                     agents.remove(agent)

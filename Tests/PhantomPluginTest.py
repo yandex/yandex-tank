@@ -70,6 +70,11 @@ class  PhantomPluginTestCase(TankTestCase):
             raise RuntimeError()
         except:
             pass
-
+    
+    def test_multiload_parsing(self):
+        self.foo.core.set_option('phantom', 'rps_schedule', 'const(1,1) line(1,100,60)\nstep(1,10,1,10)')
+        self.foo.configure()
+        self.assertEquals(['const(1,1)', 'line(1,100,60)', 'step(1,10,1,10)'], self.foo.rps_schedule)
+        
 if __name__ == '__main__':
     unittest.main()

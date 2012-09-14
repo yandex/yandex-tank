@@ -268,8 +268,8 @@ def expand_load_spec(l):
                   raise RuntimeError("[Warning] Wrong load format: '%s'. Aborting." % (l))
       return st, ls, cnt, max
 
-def make_steps(file):
-   params = get_config_multiple(file)
+def make_steps(load_spec):
+   params = get_config_multiple(load_spec)
    steps, loadscheme, load_ammo = [], "", 0
    for l in params['load']:
       st, ls, cnt, skip = expand_load_spec(l)

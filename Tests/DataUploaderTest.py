@@ -1,7 +1,6 @@
 from Tank.Core import TankCore
 from Tank.Plugins.DataUploader import DataUploaderPlugin, KSHMAPIClient
 from Tests.TankTests import TankTestCase
-import os
 import tempfile
 import unittest
 import logging
@@ -11,7 +10,7 @@ import time
 class  DataUploaderPluginTestCase(TankTestCase):
     def setUp(self):
         core = TankCore()
-        (handler, name) = tempfile.mkstemp()
+        name = tempfile.mkstemp()[1]
         core.config.set_out_file(name)
         core.load_configs(['config/uploader.conf'])
         core.load_plugins()

@@ -86,7 +86,13 @@ class PhantomPlugin(AbstractPlugin):
         self.instances_schedule = self.get_option("instances_schedule", '')
         self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
         self.ammo_limit = int(self.get_option("ammo_limit", "-1"))
-        self.schedule = " ".join(self.get_option(self.OPTION_SCHEDULE, '').split("\n"))
+        sched=self.get_option(self.OPTION_SCHEDULE, '')
+        sched=" ".join(sched.split("\n"))
+        sched=sched.split(')')
+        self.rps_schedule =[] 
+        for x in sched:
+            if x.strip():
+                self.rps_schedule.append(x.strip()+')')
         self.uris = self.get_option("uris", '').split("\n")
         self.headers = self.get_option("headers", '').split("\n")
         self.http_ver = self.get_option("header_http", '1.1')
@@ -251,7 +257,7 @@ class PhantomPlugin(AbstractPlugin):
             sep = "|"
             hasher = hashlib.md5()
             hashed_str = os.path.realpath(self.ammo_file) + sep + self.instances_schedule + sep + str(self.loop_limit)
-            hashed_str += sep + str(self.ammo_limit) + sep + self.schedule + sep + self.autocases
+            hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(self.rps_schedule) + sep + self.autocases
             hashed_str += sep + ";".join(self.uris) + sep + ";".join(self.headers)
             
             if not self.ammo_file:
@@ -301,7 +307,7 @@ class PhantomPlugin(AbstractPlugin):
         self.log.info("Making stpd-file: %s", self.stpd)
         stepper = Stepper(stpd)
         stepper.autocases = int(self.autocases)
-        stepper.rps_schedule = self.schedule
+        stepper.rps_schedule = self.rps_schedule
         stepper.instances_schedule = self.instances_schedule
         stepper.loop_limit = self.loop_limit
         stepper.uris = self.uris

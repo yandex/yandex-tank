@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-
 import commands
+import logging
 
 
 class NetTxRx(object):
@@ -20,6 +19,7 @@ class NetTxRx(object):
         statistic beter to change that behavior.
         '''
         data = commands.getoutput("ifconfig -s | awk '{rx+=$4; tx+=$8} END {print rx, tx}'")
+        logging.debug("TXRX output: %s", data)
         (rx,tx)=data.split(" ")
         rx=int(rx)
         tx=int(tx)

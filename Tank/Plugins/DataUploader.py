@@ -13,6 +13,7 @@ from Tank.Plugins.Autostop import AutostopPlugin
 import time
 from urllib2 import HTTPError
 from MonCollector.collector import MonitoringDataListener
+from Tank.Plugins.Monitoring import MonitoringPlugin
 
 # TODO: implement interactive metainfo querying
 # TODO: implement task=dir
@@ -72,8 +73,17 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
             
         if console:    
             console.add_info_widget(JobInfoWidget(self))
-        
+
     def start_test(self):
+        try:
+            mon = self.core.get_plugin_of_type(MonitoringPlugin)
+        except Exception, ex:
+            self.log.debug("Monitoring not found: %s", ex)
+            mon = None
+            
+        if mon:    
+            mon.monitoring.add_listener(self)
+        
         try:
             phantom = self.core.get_plugin_of_type(PhantomPlugin)
             address = phantom.address
@@ -149,8 +159,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         return self.api_client.get_sla_by_task(self.regression_component)
         
     def monitoring_data(self, data_string):
-        # TODO: implement it
-        pass 
+        self.api_client.push_monitoring_data(self.jobno, data_string)
         
 class KSHMAPIClient():
     def __init__(self):
@@ -172,17 +181,22 @@ class KSHMAPIClient():
         self.log.debug("Response: %s", response)
         return response
 
-    def post(self, addr, data):
+
+    def post_raw(self, addr, json_data):
         if not self.address:
             raise ValueError("Can't request unknown address")
 
-        json_data = json.dumps(data)
         addr = self.address + addr
         self.log.debug("Making request to: %s => %s", addr, json_data)
         req = urllib2.Request(addr, json_data)
         resp = urllib2.urlopen(req).read()
+        self.log.debug("Response: %s", resp)
+        return resp
+        
+    def post(self, addr, data):
+        json_data = json.dumps(data)
+        resp= self.post_raw(addr, json_data)
         response = json.loads(resp)
-        self.log.debug("Response: %s", response)
         return response
     
     def get_task_data(self, task):
@@ -307,6 +321,17 @@ class KSHMAPIClient():
             sla.append((sla_item['prcnt'], sla_item['time']))
     
         return sla                
+
+    def push_monitoring_data(self, jobno, send_data):
+        if send_data:
+            addr = "api/monitoring/receiver/push?job_id=%s" % jobno
+            try:
+                self.post_raw(addr, send_data)
+            except HTTPError, ex:
+                self.log.warning('Problems sending monitoring data, retry in 30s: %s', ex)
+                time.sleep(30)
+                self.post_raw(addr, send_data)
+    
 
 class JobInfoWidget(AbstractInfoWidget):
     def __init__(self, sender):

@@ -263,9 +263,9 @@ def expand_load_spec(l):
     return (st, ls, cnt, max)
 
 
-def make_steps(file):
+def make_steps(load_spec):
     (steps, loadscheme, load_ammo) = ([], '', 0)
-    for l in file:
+    for l in load_spec:
         if not l:
             continue
         (st, ls, cnt, skip) = expand_load_spec(l)
@@ -650,7 +650,7 @@ class Stepper:
         tank_type = self.tank_type
 
         (load_steps, load_scheme, load_count) = \
-            make_steps([self.rps_schedule])
+            make_steps(self.rps_schedule)
 
         instances_schedule_count = 0
         instances_schedule = []
