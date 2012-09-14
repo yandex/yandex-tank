@@ -228,20 +228,19 @@ class MonitoringSender:
 
 class MonitoringCollector:
     def __init__(self, config, out_file):
-        self.log=logging.getLogger(__name__)
+        self.log = logging.getLogger(__name__)
         self.config = config
         self.out_file = out_file
         self.default_target = None
         self.agents = []
         self.agent_pipes = []
         self.filter_conf = {}
+        self.listeners = []
 
-    def prepare(self):
-        # Defining local storage
-        self.store = sys.stdout
-        if self.out_file:
-            self.store = open(self.out_file, 'w')
-        
+    def add_listener(self, obj):
+        self.listeners.append(obj)
+
+    def prepare(self):        
         # Parse config
         agent_config = []
         if self.config:
@@ -311,21 +310,18 @@ class MonitoringCollector:
                     logging.error("Got exception [%s]: %s", s, data)
                     data = s.readline()                
     
-        for s in readable:
+        while readable:
+            s = readable.pop()
             # Handle outputs
             data = s.readline()
-            readable.remove(s)
             if not data:
                 continue
-            logging.debug("Got data: %s", data.strip())
-    
+            logging.debug("Got data from agent: %s", data.strip())    
             send_data += self.filter_unused_data(self.filter_conf, self.filter_mask, data)
-
-            # TODO: make store one more data listener    
-            self.store.write(send_data)
-            self.store.flush()
+            logging.debug("Data after filtering: %s", send_data)
+            for listener in self.listeners:
+                listener.monitoring_data(send_data)
         
-        #TODO: notify liseners        
         return len(self.outputs)            
     
     def stop(self):
@@ -356,7 +352,7 @@ class MonitoringCollector:
         names = defaultdict()
         config = []
         hostname = ''
-        filter = defaultdict(str)
+        filter_obj = defaultdict(str)
         for host in hosts:
             hostname = host.get('address')
             if hostname == '[target]':
@@ -440,10 +436,10 @@ class MonitoringCollector:
             tmp.update({'custom': custom})
     
             tmp.update({'host': hostname})
-            filter[hostname] = stats
+            filter_obj[hostname] = stats
             config.append(tmp)
     
-        return [config, filter]
+        return [config, filter_obj]
     
     def group_op(self, command, agents, loglevel):
         """ Group install and uninstall for list of agents"""
@@ -550,6 +546,18 @@ class MonitoringCollector:
         else:
             return ''
 
-    
-    
             
+class MonitoringDataListener:
+    def monitoring_data(self, data_string):
+        raise RuntimeError("Abstract method needs to be overridden")
+    
+class SaveMonToFile(MonitoringDataListener):
+    def __init__(self, out_file):
+        # Defining local storage
+        self.store = sys.stdout
+        if out_file:
+            self.store = open(self.out_file, 'w')
+    
+    def monitoring_data(self, data_string):
+            self.store.write(data_string)
+            self.store.flush()

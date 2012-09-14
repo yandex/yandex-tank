@@ -24,7 +24,7 @@ class MonitoringPlugin(AbstractPlugin):
     def configure(self):
         self.data_file = tempfile.mkstemp('.data', 'monitoring_')[1]
         self.core.add_artifact_file(self.data_file)
-        self.config = self.get_option("config", '')
+        self.config = self.get_option("config", 'auto')
         self.core.add_artifact_file("monitoring.log")
     
     def prepare_test(self):
@@ -37,14 +37,13 @@ class MonitoringPlugin(AbstractPlugin):
             self.default_target = phantom.address
             # TODO: resolve virtual to host address
         
-        if not self.config:
+        if self.config=='auto':
             self.config = os.path.dirname(__file__) + '/monitoring_default_config.xml'
 
         self.core.add_artifact_file(self.config, True)
             
-    # TODO: add unit tests: disabled, default, and set config            
     def start_test(self):
-        if self.config == 'none':
+        if not self.config or self.config == 'none':
             self.log.info("Monitoring has been disabled")
         else:
             uploader = None
@@ -64,10 +63,9 @@ class MonitoringPlugin(AbstractPlugin):
             self.monitoring.start()
 
     def is_test_finished(self):
-        if not self.monitoring.poll():
+        if self.monitoring and not self.monitoring.poll():
             # FIXME: don't interrupt test if we have default config
-            self.log.error("Monitoring died unexpectedly",)
-            return 1
+            raise RuntimeError("Monitoring died unexpectedly")
         else:
             return -1
             
