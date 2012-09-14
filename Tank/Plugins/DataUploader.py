@@ -81,7 +81,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
             self.log.debug("Monitoring not found: %s", ex)
             mon = None
             
-        if mon:    
+        if mon and mon.monitoring:    
             mon.monitoring.add_listener(self)
         
         try:

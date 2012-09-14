@@ -51,6 +51,7 @@ class PhantomPlugin(AbstractPlugin):
         self.instances = None
         self.use_caching = None
         self.http_ver = None
+        self.rps_schedule = []
     
     @staticmethod
     def get_key():

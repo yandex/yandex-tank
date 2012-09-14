@@ -9,7 +9,7 @@ class  StepperTestCase(TankTestCase):
     def test_regular(self):
         stepper = Stepper(tempfile.mkstemp()[1])
         stepper.ammofile = "data/dummy.ammo"
-        stepper.rps_schedule = "const(1,10)"
+        stepper.rps_schedule = ["const(1,10)"]
         stepper.generate_stpd()
         res = open(stepper.stpd_file, 'r').read()
         self.assertNotEquals("", res)
@@ -17,7 +17,7 @@ class  StepperTestCase(TankTestCase):
 
     def test_uri(self):
         stepper = Stepper(tempfile.mkstemp()[1])
-        stepper.rps_schedule = "const(1,10)"
+        stepper.rps_schedule = ["const(1,10)"]
         stepper.uris = ["/", "/test"]
         stepper.header_http = "1.1"
         stepper.headers = ["[Host: ya.ru]", "[Connection: close]"]        
