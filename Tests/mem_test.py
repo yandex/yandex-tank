@@ -1,7 +1,6 @@
 import unittest
+from MonCollector.agent.metric.mem import Mem
 
-from mem import Mem
-import time
 
 class  Mem_TestCase(unittest.TestCase):
     def setUp(self):

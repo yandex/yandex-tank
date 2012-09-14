@@ -16,8 +16,8 @@ import time
 import urllib2
 
 
+# FIXME: don't put agent logs in current dir, place somewhere else
 # FIXME: synchronize times between agent and collector better
-
 class Config(object):
     def __init__(self, config):
         self.tree = etree.parse(config)

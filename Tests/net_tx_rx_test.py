@@ -1,7 +1,6 @@
-import unittest
-
-from monitoring.agent.metric.net_tx_rx import NetTxRx
+from MonCollector.agent.metric.net_tx_rx import NetTxRx
 import time
+import unittest
 
 class  Net_tx_rx_TestCase(unittest.TestCase):
     def setUp(self):

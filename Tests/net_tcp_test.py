@@ -1,6 +1,5 @@
+from MonCollector.agent.metric.net_tcp import NetTcp
 import unittest
-
-from monitoring.agent.metric.net_tcp import NetTcp
 
 class  Net_tcp_TestCase(unittest.TestCase):
     def setUp(self):
