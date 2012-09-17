@@ -36,6 +36,7 @@ class TankCore:
         self.log.debug("sys.path: %s", sys.path)
 
         self.artifacts_base_dir = self.get_option(self.SECTION, "artifacts_base_dir", tempfile.gettempdir())
+        self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
 
         for (plugin_name, plugin_path) in self.config.get_options(self.SECTION, self.PLUGIN_PREFIX):
             if not plugin_path:
