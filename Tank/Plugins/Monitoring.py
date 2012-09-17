@@ -6,6 +6,7 @@ from MonCollector.collector import MonitoringCollector, MonitoringDataListener
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 import copy
 import base64
+import time
 
 # TODO: wait for first monitoring data
 class MonitoringPlugin(AbstractPlugin):
@@ -65,10 +66,13 @@ class MonitoringPlugin(AbstractPlugin):
                 self.monitoring.add_listener(widget)
 
             self.monitoring.prepare()
+            self.monitoring.start()
+            while not self.monitoring.first_data_received:
+                time.sleep(0.2)
+                self.monitoring.poll()
             
     def start_test(self):
-        if self.monitoring:
-            self.monitoring.start()
+        pass
             
     def is_test_finished(self):
         if self.monitoring and not self.monitoring.poll():

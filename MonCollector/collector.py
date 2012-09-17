@@ -31,7 +31,7 @@ class SSHWrapper:
     separate SSH calls to be able to unit test the collector
     '''
     def __init__(self):
-        self.log=logging.getLogger(__name__)
+        self.log = logging.getLogger(__name__)
         self.ssh_opts = ['-q', '-o', 'StrictHostKeyChecking=no', '-o', 'PasswordAuthentication=no', '-o', 'NumberOfPasswordPrompts=0', '-o', 'ConnectTimeout=5']        
         self.host = None
         self.port = None
@@ -187,6 +187,8 @@ class MonitoringCollector:
         self.filter_conf = {}
         self.listeners = []
         self.ssh_wrapper_class = SSHWrapper
+        self.first_data_received = False
+        self.send_data = ''
 
     def add_listener(self, obj):
         self.listeners.append(obj)
@@ -234,7 +236,6 @@ class MonitoringCollector:
         logging.debug("Pipes: %s", self.agent_pipes)
         
     def poll(self):
-        send_data = ''
         readable, writable, exceptional = select.select(self.outputs, self.inputs, self.excepts, 0)
         logging.debug("Streams: %s %s %s", readable, writable, exceptional)
         
@@ -260,11 +261,17 @@ class MonitoringCollector:
             if not data:
                 continue
             logging.debug("Got data from agent: %s", data.strip())    
-            send_data += self.filter_unused_data(self.filter_conf, self.filter_mask, data)
-            logging.debug("Data after filtering: %s", send_data)
+            self.send_data += self.filter_unused_data(self.filter_conf, self.filter_mask, data)
+            logging.debug("Data after filtering: %s", self.send_data)
+
+        if not self.first_data_received and self.send_data:
+            self.first_data_received = True
+            self.log.info("Monitoring received first data")
+        else:
             for listener in self.listeners:
-                listener.monitoring_data(send_data)
-        
+                listener.monitoring_data(self.send_data)
+            self.send_data=''
+            
         return len(self.outputs)            
     
     def stop(self):

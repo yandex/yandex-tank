@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.0.2) precise; urgency=low
+
+  * added monitoring to new console
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 17 Sep 2012 13:32:12 +0400
+
 yandex-load-tank-base (1.0.1) precise; urgency=low
 
   * many changes on the way of new tool development

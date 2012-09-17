@@ -1,20 +1,20 @@
+from MonCollector.collector import MonitoringDataListener
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
+from Tank.Plugins.Autostop import AutostopPlugin
+from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+from Tank.Plugins.Monitoring import MonitoringPlugin
 from Tank.Plugins.Phantom import PhantomPlugin
+from urllib2 import HTTPError
 import json
 import logging
 import os
 import pwd
+import re
 import socket
 import sys
-import urllib2
-from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
-from Tank.Plugins.Autostop import AutostopPlugin
 import time
-from urllib2 import HTTPError
-from MonCollector.collector import MonitoringDataListener
-from Tank.Plugins.Monitoring import MonitoringPlugin
-import re
+import urllib2
 
 # TODO: implement interactive metainfo querying
 class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
@@ -52,6 +52,15 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         self.logs_basedir = self.get_option("logs_dir", 'logs')
         self.operator = self.get_option("operator", self.operator)
 
+        try:
+            mon = self.core.get_plugin_of_type(MonitoringPlugin)
+        except Exception, ex:
+            self.log.debug("Monitoring not found: %s", ex)
+            mon = None
+            
+        if mon and mon.monitoring:    
+            mon.monitoring.add_listener(self)
+        
     def check_task_is_open(self, task):
         self.log.debug("Check if task %s is open", task)
         try:
@@ -99,15 +108,6 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
             console.add_info_widget(JobInfoWidget(self))
 
     def start_test(self):
-        try:
-            mon = self.core.get_plugin_of_type(MonitoringPlugin)
-        except Exception, ex:
-            self.log.debug("Monitoring not found: %s", ex)
-            mon = None
-            
-        if mon and mon.monitoring:    
-            mon.monitoring.add_listener(self)
-        
         try:
             phantom = self.core.get_plugin_of_type(PhantomPlugin)
             address = phantom.address
