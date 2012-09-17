@@ -1,7 +1,8 @@
 from Tests.TankTests import TankTestCase
 import tempfile
 import time
-from MonCollector.collector import MonitoringCollector, MonitoringDataListener
+from MonCollector.collector import MonitoringCollector, MonitoringDataListener,\
+    SSHWrapper
 from Tank.Plugins.Monitoring import MonitoringPlugin, MonitoringWidget
 from Tank.Core import TankCore
 import logging
@@ -12,30 +13,14 @@ class  MonitoringCollectorTestCase(TankTestCase):
     data = None
     
     def test_collector(self):
-        mon = MonitoringCollector("config/mon1.conf")
+        mon = MonitoringCollector()
+        mon.config="config/mon1.conf"
+        mon.ssh_wrapper_class=SSHEmulator
         listener = TestMonListener()
         mon.add_listener(listener)
         mon.prepare()
         mon.start()
         mon.poll()
-        self.assertEquals([], listener.data)
-        listener.data = []
-        time.sleep(1)
-        mon.poll()
-        self.assertNotEquals([], listener.data)
-        self.assertTrue(listener.data[0].startswith('start;'))
-        listener.data = []
-        time.sleep(2)
-        mon.poll()
-        self.assertNotEquals([], listener.data)
-        self.assertFalse(listener.data[0].startswith('start;'))
-        listener.data = []
-        time.sleep(3)
-        mon.poll()
-        self.assertNotEquals([], listener.data)
-        self.assertFalse(listener.data[0].startswith('start;'))
-        listener.data = []
-        mon.stop()
 
     def test_plugin_disabled(self):
         core = TankCore()
@@ -59,6 +44,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
         core.plugins_prepare_test()
         mon = MonitoringPlugin(core)
         mon.configure()
+        mon.monitoring.ssh_wrapper_class=SSHEmulator
         mon.prepare_test()
         mon.start_test()
         self.assertEquals(-1, mon.is_test_finished())
@@ -75,6 +61,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
         core.plugins_configure()
         core.plugins_prepare_test()
         mon = MonitoringPlugin(core)
+        mon.monitoring.ssh_wrapper_class=SSHEmulator
         core.set_option(mon.SECTION, 'config', "config/mon1.conf")
         mon.configure()
         mon.prepare_test()
@@ -112,3 +99,29 @@ class TestMonListener(MonitoringDataListener):
     def monitoring_data(self, data_string):
         logging.debug("MON DATA: %s", data_string)
         self.data.append(data_string)
+        
+class SSHEmulator(SSHWrapper):
+
+    def __init__(self):
+        SSHWrapper.__init__(self)
+        self.scp_pipe = PipeEmul('data/ssh_out.txt', 'data/ssh_err.txt')
+        self.ssh_pipe = PipeEmul('data/ssh_out.txt', 'data/ssh_err.txt')
+    
+    def get_scp_pipe(self, cmd):
+        return self.scp_pipe
+    
+    def get_ssh_pipe(self, cmd):
+        return self.ssh_pipe
+    
+class PipeEmul:
+    def __init__(self, out, err):
+        self.stderr=open(err)
+        self.stdout=open(out)
+        self.returncode=0
+        self.pid=0
+        
+    def wait(self):
+        pass
+   
+    
+    

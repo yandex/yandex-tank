@@ -22,6 +22,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
     API Client class for Yandex KSHM web service
     '''
     SECTION = 'meta'
+    RC_STOP_FROM_WEB = 8
     
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
@@ -30,6 +31,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         self.logs_basedir = None
         self.operator = pwd.getpwuid(os.geteuid())[0]
         self.task_name = ''
+        self.rc = -1
     
     @staticmethod
     def get_key():
@@ -69,7 +71,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         while cwd:
             self.log.debug("Checking if dir is named like JIRA issue: %s", cwd)
             if issue.match(os.path.basename(cwd)):
-                res=re.search(issue, os.path.basename(cwd))
+                res = re.search(issue, os.path.basename(cwd))
                 self.task = res.group(0)
                 return                
             
@@ -144,6 +146,9 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
                 self.version_tested, self.is_regression, self.regression_component,
                 tank_type, " ".join(sys.argv), 0)
     
+    def is_test_finished(self):
+        return self.rc
+    
     def end_test(self, retcode):
         return retcode
     
@@ -175,7 +180,9 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         """
         @second_aggregate_data: SecondAggregateData
         """
-        self.api_client.push_test_data(self.jobno, second_aggregate_data)
+        if not self.api_client.push_test_data(self.jobno, second_aggregate_data):
+            self.log.warn("The test was stopped from Web interface")
+            self.rc = self.RC_STOP_FROM_WEB
     
     def get_sla_by_task(self):
         return self.api_client.get_sla_by_task(self.regression_component)
@@ -322,13 +329,16 @@ class KSHMAPIClient():
             case_data = self.second_data_to_push_item(case)
             self.post(uri, case_data)
         overall = self.second_data_to_push_item(data.overall)
+        
+        res = [{'success': 0}]
         try:
-            self.post(uri, overall)
+            res = self.post(uri, overall)
         except Exception, e:
             self.log.warn("Failed to push second data to API, retry in 30 sec: %s", e)
             time.sleep(30)
-            self.post(uri, overall)
-            
+            res = self.post(uri, overall)
+
+        return int(res[0]['success'])            
             
     def get_sla_by_task(self, component):
         if not component or component == '0':

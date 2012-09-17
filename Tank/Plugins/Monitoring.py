@@ -5,7 +5,6 @@ import tempfile
 from MonCollector.collector import MonitoringCollector, MonitoringDataListener
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 import copy
-import math
 import base64
 
 # TODO: wait for first monitoring data
@@ -18,7 +17,7 @@ class MonitoringPlugin(AbstractPlugin):
         self.default_target = None
         self.config = None
         self.process = None
-        self.monitoring = None
+        self.monitoring = MonitoringCollector()
 
     @staticmethod
     def get_key():
@@ -47,7 +46,7 @@ class MonitoringPlugin(AbstractPlugin):
             self.log.info("Monitoring has been disabled")
         else:
             self.log.info("Starting monitoring with config: %s", self.config)
-            self.monitoring = MonitoringCollector(self.config)
+            self.monitoring.config = self.config
             if self.default_target:
                 self.monitoring.default_target = self.default_target
             
@@ -149,9 +148,9 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                         if self.data[host][metric] == self.NA:
                             self.sign[host][metric] = 1
                         else:
-                            if float(value)>float(self.data[host][metric]):
+                            if float(value) > float(self.data[host][metric]):
                                 self.sign[host][metric] = 1
-                            elif float(value)<float(self.data[host][metric]):
+                            elif float(value) < float(self.data[host][metric]):
                                 self.sign[host][metric] = -1
                             else:
                                 self.sign[host][metric] = 0
@@ -164,7 +163,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         else:
             res = "Monitoring is " + screen.markup.WHITE + "online" + screen.markup.RESET + ":\n"
             for hostname, metrics in self.data.items():
-                res += ("   "+screen.markup.CYAN+"%s"+screen.markup.RESET+":\n") % hostname
+                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET + ":\n") % hostname
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.GREEN + value + screen.markup.RESET

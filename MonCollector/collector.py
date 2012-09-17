@@ -5,7 +5,6 @@ from subprocess import PIPE, Popen
 import base64
 import logging
 import os.path
-import pwd
 import re
 import select
 import signal
@@ -13,8 +12,6 @@ import sys
 import tempfile
 import time
 
-
-# FIXME: don't put agent logs in current dir, place somewhere else
 # FIXME: synchronize times between agent and collector better
 class Config(object):
     def __init__(self, config):
@@ -29,12 +26,39 @@ class Config(object):
             log_level = log_level_raw
         return log_level
 
+class SSHWrapper:
+    '''
+    separate SSH calls to be able to unit test the collector
+    '''
+    def __init__(self):
+        self.log=logging.getLogger(__name__)
+        self.ssh_opts = ['-q', '-o', 'StrictHostKeyChecking=no', '-o', 'PasswordAuthentication=no', '-o', 'NumberOfPasswordPrompts=0', '-o', 'ConnectTimeout=5']        
+        self.host = None
+        self.port = None
+
+    def set_host_port(self, host, port):
+        self.host = host
+        self.port = port
+        self.scp_opts = self.ssh_opts + ['-P', self.port]
+        self.ssh_opts = self.ssh_opts + ['-p', self.port]
+
+    def get_ssh_pipe(self, cmd):
+        args = ['ssh'] + self.ssh_opts + [self.host] + cmd
+        self.log.debug('Executing: %s', args)
+        return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid)
+
+    def get_scp_pipe(self, cmd):
+        args = ['scp'] + self.scp_opts + cmd
+        self.log.debug('Executing: %s', args)
+        return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid)
+
 class AgentClient(object):
     def __init__(self, **kwargs):
         self.run = []
         self.port = 22
         for key, value in kwargs.iteritems():
             setattr(self, key, value)
+        self.ssh = None
 
         temp_config = tempfile.mkstemp('.cfg', 'agent_')
         self.path = {
@@ -49,19 +73,13 @@ class AgentClient(object):
             'TEMP_CONFIG': temp_config[1]
         }
 
-        self.ssh_opts = ['-q', '-o', 'StrictHostKeyChecking=no', '-o', 'PasswordAuthentication=no', '-o', 'NumberOfPasswordPrompts=0', '-o', 'ConnectTimeout=5']
-        user_id = pwd.getpwuid(os.getuid())[0]
-        if (user_id == 'lunapark'):
-            self.ssh_opts = ['-i', '/home/lunapark/.ssh/id_dsa'] + self.ssh_opts
-        
-        self.scp_opts = self.ssh_opts + ['-P', self.port]
-        self.ssh_opts = self.ssh_opts + ['-p', self.port]
-
     def start(self):
         logging.debug('Start monitoring: %s' % self.host)
+        if not self.run:
+            raise ValueError("Empty run string")
         self.run += ['-t', str(int(time.time()))]
         logging.debug(self.run)
-        pipe = Popen(self.run, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        pipe = self.ssh.get_ssh_pipe(self.run)
         logging.debug("Started: %s", pipe)
         return pipe
 
@@ -84,93 +102,91 @@ class AgentClient(object):
         """ Create folder and copy agent and metrics scripts to remote host """
         logging.info("Installing monitoring agent at %s...", self.host)
         self.create_agent_config(loglevel)
+        
+        self.ssh.set_host_port(self.host, self.port)
 
         # getting remote temp dir
-        cmd = ['ssh'] + self.ssh_opts + [self.host, self.python + ' -c "import tempfile; print tempfile.mkdtemp();"']
+        cmd = [self.python + ' -c "import tempfile; print tempfile.mkdtemp();"']
         logging.debug("Get remote temp dir: %s", cmd)
-        pipe = Popen(cmd, stdout=PIPE, stderr=PIPE, bufsize=0)
+        pipe = self.ssh.get_ssh_pipe(cmd)
 
         err = pipe.stderr.read().strip()
         if err:
-            logging.error("[%s] ssh error: '%s'" % (self.host, err))
-            return 1
+            raise RuntimeError("[%s] ssh error: '%s'" % (self.host, err))
         pipe.wait()
         logging.debug("Return code [%s]: %s" % (self.host, pipe.returncode))
         if pipe.returncode:
-            return 1
+            raise RuntimeError("Return code [%s]: %s" % (self.host, pipe.returncode))
 
+        # TODO: make less scp/ssh commands, install agent faster
         remote_dir = pipe.stdout.read().strip()
         if (remote_dir):
             self.path['AGENT_REMOTE_FOLDER'] = remote_dir
         logging.debug("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER']);
 
         # Copy agent
-        cmd = ['scp'] + self.scp_opts + [self.path['AGENT_LOCAL_FOLDER'] + 'agent.py', self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.py']
+        cmd = [self.path['AGENT_LOCAL_FOLDER'] + 'agent.py', self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.py']
         logging.debug("Copy agent to %s: %s" % (self.host, cmd))
 
-        pipe = Popen(cmd, stdout=PIPE, bufsize=0)
+        pipe = self.ssh.get_scp_pipe(cmd)
         pipe.wait()
         logging.debug("AgentClient copy exitcode: %s", pipe.returncode)
         if pipe.returncode != 0:
-            logging.error("AgentClient copy exitcode: %s", pipe.returncode)
-            return pipe.returncode
+            raise RuntimeError("AgentClient copy exitcode: %s" % pipe.returncode)
 
         # Copy config
-        cmd = ['scp'] + self.scp_opts + [self.path['TEMP_CONFIG'], self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
+        cmd = [self.path['TEMP_CONFIG'], self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
         logging.debug("[%s] Copy config: %s" % (cmd, self.host))
             
-        pipe = Popen(cmd, stdout=PIPE, bufsize=0)
+        pipe = self.ssh.get_scp_pipe(cmd)
         pipe.wait()
         logging.debug("AgentClient copy config exitcode: %s", pipe.returncode)
         if pipe.returncode != 0:
-            logging.error("AgentClient copy config exitcode: %s", pipe.returncode)
-            return pipe.returncode
+            raise RuntimeError("AgentClient copy config exitcode: %s" % pipe.returncode)
 
         # Copy metric
-        cmd = ['scp'] + self.scp_opts + ['-r', self.path['METRIC_LOCAL_FOLDER'], self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/']
+        cmd = ['-r', self.path['METRIC_LOCAL_FOLDER'], self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/']
         logging.debug("[%s] Copy metric: %s" % (cmd, self.host))
 
-        pipe = Popen(cmd, stdout=PIPE, bufsize=0)
+        pipe = self.ssh.get_scp_pipe(cmd)
         pipe.wait()
         logging.debug("Metrics copy exitcode: %s", pipe.returncode)
         if pipe.returncode != 0:
-            logging.error("Metrics copy exitcode: %s", pipe.returncode)
-            return pipe.returncode
+            raise RuntimeError("Metrics copy exitcode: %s" % pipe.returncode)
       
         if os.getenv("DEBUG"):
             debug = "DEBUG=1"
         else:
             debug = ""
-        self.run = ['ssh'] + self.ssh_opts + [self.host, '/usr/bin/env', debug, self.python, self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
-
-        return 0
+        self.run = ['/usr/bin/env', debug, self.python, self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
 
     def uninstall(self):
         """ Remove agent's files from remote host"""
-
-        cmd = ['scp'] + self.scp_opts + [self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", "monitoring_agent_" + self.host + ".log"]
+        # TODO: copy angent to temp dir and add it as artifact
+        cmd = [self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", "monitoring_agent_" + self.host + ".log"]
         logging.debug("Copy agent log from %s: %s" % (self.host, cmd))
-        remove = Popen(cmd, stdout=PIPE, bufsize=0)
+        remove = self.ssh.get_scp_pipe(cmd)
         remove.wait()
         
         logging.info("Removing agent from: %s..." % self.host)
         if os.path.isfile(self.path['TEMP_CONFIG']):
             os.remove(self.path['TEMP_CONFIG'])
 
-        cmd = ['ssh'] + self.ssh_opts + [self.host, 'rm', '-r', self.path['AGENT_REMOTE_FOLDER']]
+        cmd = ['rm', '-r', self.path['AGENT_REMOTE_FOLDER']]
         logging.debug("Uninstall agent from %s: %s" % (self.host, cmd))
-        remove = Popen(cmd, stdout=PIPE, bufsize=0)
+        remove = self.ssh.get_ssh_pipe(cmd)
         remove.wait()
 
 class MonitoringCollector:
-    def __init__(self, config):
+    def __init__(self):
         self.log = logging.getLogger(__name__)
-        self.config = config
+        self.config = None
         self.default_target = None
         self.agents = []
         self.agent_pipes = []
         self.filter_conf = {}
         self.listeners = []
+        self.ssh_wrapper_class = SSHWrapper
 
     def add_listener(self, obj):
         self.listeners.append(obj)
@@ -195,22 +211,15 @@ class MonitoringCollector:
         for adr in agent_config:
             logging.debug('Creating agent: %s' % adr)
             agent = AgentClient(**adr)
+            agent.ssh = self.ssh_wrapper_class()
             self.agents.append(agent)
         
         # Mass agents install
         logging.debug("Agents: %s" % self.agents)
-        agents_cnt_before = len(self.agents)
-        self.group_op('install', self.agents, conf.loglevel())
         
-        if len(self.agents) != agents_cnt_before:
-            logging.warn("Some targets can't be monitored")
-        else:
-            logging.info("All agents installed OK")
-        
-        # Nothing installed
-        if not self.agents:
-            raise RuntimeError("No agents was installed. Stop monitoring.")
-        
+        for agent in self.agents:
+            logging.debug('Install monitoring agent. Host: %s' % agent.host)
+            agent.install(conf.loglevel())        
 
     def start(self):
         self.inputs, self.outputs, self.excepts = [], [], []
@@ -261,8 +270,9 @@ class MonitoringCollector:
     def stop(self):
         logging.debug("Initiating normal finish")
         for pipe in self.agent_pipes:
-            logging.debug("Killing %s with %s", pipe.pid, signal.SIGINT)
-            os.kill(pipe.pid, signal.SIGINT)
+            if pipe.pid:
+                logging.debug("Killing %s with %s", pipe.pid, signal.SIGINT)
+                os.kill(pipe.pid, signal.SIGINT)
         self.group_op('uninstall', self.agents, '')
         
     def getconfig(self, filename, target_hint):
@@ -387,15 +397,6 @@ class MonitoringCollector:
                 if os.path.isfile(agent.path['TEMP_CONFIG']):
                     logging.warning("Seems uninstall failed to remove %s", agent.path['TEMP_CONFIG'])
                     os.remove(agent.path['TEMP_CONFIG'])
-        if command == 'install':
-            for agent in agents:
-                logging.debug('Install monitoring agent. Host: %s' % agent.host)
-                if agent.install(loglevel):
-                    logging.debug("[%s] Cannot install. Remove: %s" % (agent.host, agent))
-                    logging.debug("Remove: %s" % agent.path['TEMP_CONFIG'])
-                    if os.path.isfile(agent.path['TEMP_CONFIG']):
-                        os.remove(agent.path['TEMP_CONFIG'])
-                    agents.remove(agent)
             
     def filtering(self, mask, filter_list):
         host = filter_list[0]

@@ -33,12 +33,9 @@ class  Custom_TestCase(unittest.TestCase):
         self.assertNotEquals(["0.0"], x)
         time.sleep(1)
         y = self.foo.check()
-        print y
-        assert x < y;
         time.sleep(0.5)
         z = self.foo.check()
         print z
-        assert z > y;
         
     def test_custom_fail(self):
         custom_config = {'tail': [], 'call': ['cXVlcnkgY291bnQ=:cXVlcnlfY2xhc3NpZnlfY2xpZW50IGZzdGF0cyB8IGdyZXAgY2xhc3MtY21kIHwgY3V0IC1mIDM=:1']}
