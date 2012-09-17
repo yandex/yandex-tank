@@ -126,6 +126,8 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
             if data[0] == 'start':
                 data.pop(0) # remove 'start'
                 host = data.pop(0)
+                if not data:
+                    continue;
                 data.pop(0) # remove timestamp
                 self.metrics[host] = []
                 self.data[host] = {}

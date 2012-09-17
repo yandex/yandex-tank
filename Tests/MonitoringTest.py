@@ -104,24 +104,26 @@ class SSHEmulator(SSHWrapper):
 
     def __init__(self):
         SSHWrapper.__init__(self)
-        self.scp_pipe = PipeEmul('data/ssh_out.txt', 'data/ssh_err.txt')
-        self.ssh_pipe = PipeEmul('data/ssh_out.txt', 'data/ssh_err.txt')
     
     def get_scp_pipe(self, cmd):
+        self.scp_pipe = PipeEmul('data/ssh_out.txt', 'data/ssh_err.txt')
         return self.scp_pipe
     
     def get_ssh_pipe(self, cmd):
+        self.ssh_pipe = PipeEmul('data/ssh_out.txt', 'data/ssh_err.txt')
         return self.ssh_pipe
     
 class PipeEmul:
     def __init__(self, out, err):
-        self.stderr=open(err)
-        self.stdout=open(out)
+        self.stderr=open(err, 'rU')
+        self.stdout=open(out, 'rU')
         self.returncode=0
         self.pid=0
         
     def wait(self):
         pass
    
+    def readline(self):
+        return self.stdout.readline()
     
     

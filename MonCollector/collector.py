@@ -244,7 +244,7 @@ class MonitoringCollector:
                     data = s.readline()                
     
         while readable:
-            s = readable.pop()
+            s = readable.pop(0)
             # Handle outputs
             data = s.readline()
             if not data:
@@ -259,7 +259,7 @@ class MonitoringCollector:
         else:
             for listener in self.listeners:
                 listener.monitoring_data(self.send_data)
-            self.send_data=''
+            self.send_data = ''
             
         return len(self.outputs)            
     
@@ -393,22 +393,17 @@ class MonitoringCollector:
                     logging.warning("Seems uninstall failed to remove %s", agent.path['TEMP_CONFIG'])
                     os.remove(agent.path['TEMP_CONFIG'])
             
+    # FIXME: simplify this filtering hell with built-in filter()
     def filtering(self, mask, filter_list):
         host = filter_list[0]
         initial = [0, 1]
         out = ''
-    #    print "mask: %s" % mask
-    #    print "filter_list: %s " % filter_list
         res = []
         if mask[host]:
             keys = initial + mask[host]
             for key in keys:
                 res.append(filter_list[key])
-    #            print "key: %s, value: -%s-" % (key, filter_list[key])
                 out += filter_list[key] + ';'
-    #        print "res: %s" % res
-    #    print res
-    #    print join(res, ";")
         return join(res, ";")
             
     def filter_unused_data(self, filter_conf, filter_mask, data):
@@ -429,7 +424,6 @@ class MonitoringCollector:
             filtered = self.filtering(filter_mask, keys)
             if filtered:
                 out = filtered + '\n' # filtering values
-        #                    filtered = filtering(filter_mask, keys).rstrip(';')
         return out
     
     def get_agent_name(self, metric, param):
