@@ -118,14 +118,13 @@ class AgentClient(object):
         if pipe.returncode:
             raise RuntimeError("Return code [%s]: %s" % (self.host, pipe.returncode))
 
-        # TODO: make less scp/ssh commands, install agent faster
         remote_dir = pipe.stdout.read().strip()
         if (remote_dir):
             self.path['AGENT_REMOTE_FOLDER'] = remote_dir
         logging.debug("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER']);
 
         # Copy agent
-        cmd = [self.path['AGENT_LOCAL_FOLDER'] + 'agent.py', self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.py']
+        cmd = ['-r', self.path['AGENT_LOCAL_FOLDER'], self.host + ':' + self.path['AGENT_REMOTE_FOLDER']]
         logging.debug("Copy agent to %s: %s" % (self.host, cmd))
 
         pipe = self.ssh.get_scp_pipe(cmd)
@@ -144,21 +143,11 @@ class AgentClient(object):
         if pipe.returncode != 0:
             raise RuntimeError("AgentClient copy config exitcode: %s" % pipe.returncode)
 
-        # Copy metric
-        cmd = ['-r', self.path['METRIC_LOCAL_FOLDER'], self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/']
-        logging.debug("[%s] Copy metric: %s" % (cmd, self.host))
-
-        pipe = self.ssh.get_scp_pipe(cmd)
-        pipe.wait()
-        logging.debug("Metrics copy exitcode: %s", pipe.returncode)
-        if pipe.returncode != 0:
-            raise RuntimeError("Metrics copy exitcode: %s" % pipe.returncode)
-      
         if os.getenv("DEBUG"):
             debug = "DEBUG=1"
         else:
             debug = ""
-        self.run = ['/usr/bin/env', debug, self.python, self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
+        self.run = ['/usr/bin/env', debug, self.python, self.path['AGENT_REMOTE_FOLDER'] + '/agent/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
 
     def uninstall(self):
         """ Remove agent's files from remote host"""
