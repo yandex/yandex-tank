@@ -398,7 +398,6 @@ class MonitoringCollector:
     
         if command == 'uninstall':
             for agent in agents:
-                logging.debug('Uninstall monitoring agent. Host: %s' % agent.host)
                 agent.uninstall()
                 logging.debug("Remove: %s" % agent.path['TEMP_CONFIG'])
                 if os.path.isfile(agent.path['TEMP_CONFIG']):

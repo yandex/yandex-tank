@@ -19,3 +19,4 @@ class FakeOptions(object):
     config = []
     option = ['testsection.testoption=testvalue']
     ignore_lock = True
+    lock_fail=False

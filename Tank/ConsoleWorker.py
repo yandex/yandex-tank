@@ -183,6 +183,8 @@ class ConsoleTank:
     def configure(self):
         if not self.options.ignore_lock:
             while self.there_is_locks():
+                if self.options.lock_fail:
+                    raise RuntimeError("Lock file present, cannot continue")
                 self.log.info("Waiting for 5s for retry...")
                 time.sleep(5)
         else:
