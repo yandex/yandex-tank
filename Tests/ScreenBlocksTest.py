@@ -1,8 +1,6 @@
-from Tank.Plugins.ConsoleOnline import Screen, CurrentHTTPBlock, CurrentNetBlock
 from Tests.ConsoleOnlinePluginTest import FakeConsoleMarkup
 from Tests.TankTests import TankTestCase
-import logging
-import os
+from Tank.Plugins.ConsoleScreen import Screen, CurrentHTTPBlock, CurrentNetBlock
 
 class BlocksTestCase(TankTestCase):
     def test_HTTP(self):

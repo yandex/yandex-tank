@@ -1,3 +1,11 @@
+yandex-load-tank-base (1.0.3) precise; urgency=low
+
+  * implemented gatling and request limits for phantom
+  * beautified console
+  * added missing mon files
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 17 Sep 2012 22:09:59 +0400
+
 yandex-load-tank-base (1.0.2) precise; urgency=low
 
   * added monitoring to new console
