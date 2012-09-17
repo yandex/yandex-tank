@@ -33,6 +33,8 @@ class MonitoringPlugin(AbstractPlugin):
         if self.config == 'none' or self.config == 'auto':
             self.die_on_fail = False         
             
+        if self.config == 'none':
+            self.monitoring = None
     
     def prepare_test(self):
         phantom = None

@@ -52,6 +52,7 @@ class ConsoleOnlinePluginTestCase(TankTestCase):
         for i in range(1, 10):
             self.foo.aggregate_second(self.data)
         self.foo.end_test(0)
+        self.assertFalse(self.foo.render_exception)
         
     def callback(self, data):
         self.data = SecondAggregateData(data)
