@@ -16,11 +16,8 @@ import subprocess
 import tempfile
 import time
 
-# TODO: req/answ sizes in widget - last sec and curRPS
 # TODO: implement phout import
-#TODO: chosen cases
-# TODO: gatling
-# TODO: implement reply limits
+# TODO: chosen cases
 # TODO: if instances_schedule enabled - pass to phantom the top count as instances limit
 class PhantomPlugin(AbstractPlugin):
 
@@ -86,13 +83,13 @@ class PhantomPlugin(AbstractPlugin):
         self.instances_schedule = self.get_option("instances_schedule", '')
         self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
         self.ammo_limit = int(self.get_option("ammo_limit", "-1"))
-        sched=self.get_option(self.OPTION_SCHEDULE, '')
-        sched=" ".join(sched.split("\n"))
-        sched=sched.split(')')
-        self.rps_schedule =[] 
+        sched = self.get_option(self.OPTION_SCHEDULE, '')
+        sched = " ".join(sched.split("\n"))
+        sched = sched.split(')')
+        self.rps_schedule = [] 
         for x in sched:
             if x.strip():
-                self.rps_schedule.append(x.strip()+')')
+                self.rps_schedule.append(x.strip() + ')')
         self.uris = self.get_option("uris", '').split("\n")
         self.headers = self.get_option("headers", '').split("\n")
         self.http_ver = self.get_option("header_http", '1.1')
@@ -121,6 +118,12 @@ class PhantomPlugin(AbstractPlugin):
         self.stpd = self.get_option(self.OPTION_STPD, '')
         self.threads = self.get_option("threads", int(multiprocessing.cpu_count() / 2) + 1)
         self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
+        self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
+        
+        self.phantom_http_line = self.get_option("phantom_http_line", "")
+        self.phantom_http_field_num = self.get_option("phantom_http_field_num", "")
+        self.phantom_http_field = self.get_option("phantom_http_field", "")
+        self.phantom_http_entity = self.get_option("phantom_http_entity", "")
 
         self.core.add_artifact_file(self.answ_log)        
         self.core.add_artifact_file(self.phout_file)
@@ -146,14 +149,30 @@ class PhantomPlugin(AbstractPlugin):
         kwargs['comment_answ'] = "# " if self.answ_log_level == 'none' else ''
         kwargs['phout'] = self.phout_file
         kwargs['stpd'] = self.stpd
-        kwargs['reply_limits'] = "" 
-        kwargs['bind'] = "" 
+        if self.gatling:
+            kwargs['bind'] = 'bind={ ' + self.gatling + ' }'
+        else: 
+            kwargs['bind'] = '' 
         kwargs['ip'] = self.address
         kwargs['port'] = self.port
         kwargs['timeout'] = self.timeout
         kwargs['instances'] = self.instances
         kwargs['stat_log'] = self.stat_log
         kwargs['phantom_log'] = self.phantom_log
+        tune = ''
+        if self.phantom_http_entity:
+            tune += "entity = " + self.phantom_http_entity + "\n"
+        if self.phantom_http_field:
+            tune += "field = " + self.phantom_http_field + "\n"
+        if self.phantom_http_field_num:
+            tune += "field_num = " + self.phantom_http_field_num + "\n"
+        if self.phantom_http_line:
+            tune += "line = " + self.phantom_http_line + "\n"
+        if tune:
+            kwargs['reply_limits'] = 'reply_limits = {\n' + tune + "}"
+        else:
+            kwargs['reply_limits'] = ''
+
         
         handle, filename = tempfile.mkstemp(".conf", "phantom_")
         self.core.add_artifact_file(filename)
@@ -327,7 +346,6 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         AbstractInfoWidget.__init__(self)
         self.owner = sender 
         self.ammo_progress = 0
-        # FIXME: replace option getting with direct class field access?
         self.ammo_count = int(self.owner.core.get_option(self.owner.SECTION, self.owner.OPTION_AMMO_COUNT))
         self.test_duration = int(self.owner.core.get_option(self.owner.SECTION, self.owner.OPTION_TEST_DURATION))
 
@@ -371,6 +389,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
 
 
 # TODO: widget data: loadscheme?    
+# TODO: req/answ sizes in widget - last sec and curRPS
 class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
     def get_index(self):

@@ -141,7 +141,6 @@ class ConsoleTank:
             
     
     def there_is_locks(self):
-        # TODO: https://jira.yandex-team.ru/browse/LUNAPARK-1466
         rc = False
         for filename in os.listdir(self.LOCK_DIR):
             if fnmatch.fnmatch(filename, 'lunapark_*.lock'):

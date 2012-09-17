@@ -73,13 +73,13 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
         if self.short_only:
             tpl = "Time: %s\tExpected RPS: %s\tActual RPS: %s\tActive Threads: %s\tAvg RT: %s"
             o = second_aggregate_data.overall # just to see the next line in IDE
-            data = (second_aggregate_data.time, o.planned_requests, o.RPS, o.active_threads, o.avg_response_time)
+            data = (second_aggregate_data.time, o.planned_requests, o.RPS, 
+                    o.active_threads, o.avg_response_time)
             self.log.info(tpl % data)
         else:
             try:
                 self.screen.add_second_data(second_aggregate_data)    
                 console_view = self.screen.render_screen()
-                self.log.debug("Console view:\n%s", self.console_markup.clean_markup(console_view))
                 sys.stdout.write(self.console_markup.clear)
                 sys.stdout.write(console_view.encode('utf-8'))
             except Exception, ex:
