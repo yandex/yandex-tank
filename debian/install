@@ -10,4 +10,5 @@ old/yandex_load_lunapark usr/lib/lunapark
 
 yandex-tank.conf etc/lunapark
 Tank usr/lib/lunapark
+MonCollector usr/lib/lunapark
 tank.py usr/lib/lunapark

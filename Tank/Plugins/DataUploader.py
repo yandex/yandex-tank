@@ -171,7 +171,8 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
                 rps = autostop.cause_criteria.cause_second.overall.planned_requests
                 if not rps:
                     rps = autostop.cause_criteria.cause_second.overall.RPS
-                self.api_client.set_imbalance(self.jobno, rps)
+                self.api_client.set_imbalance(self.jobno, rps, autostop.cause_criteria.explain())
+                
             else:
                 self.log.debug("No autostop cause detected")
         return rc    
@@ -246,6 +247,10 @@ class KSHMAPIClient():
         response = self.post("api/job/create.json", data)
         return response[0]['job']
     
+    def get_job_summary(self, jobno):
+        result = self.get('api/job/' + str(jobno) + '/summary.json')
+        return result[0]
+    
     def close_job(self, jobno, rc):
         result = self.get('api/job/' + str(jobno) + '/close.json?exitcode=' + str(rc))
         return result[0]['success']
@@ -267,9 +272,13 @@ class KSHMAPIClient():
         response = self.post('api/job/' + str(jobno) + '/edit.json', data)
         return response
 
-
-    def set_imbalance(self, jobno, rps):
+    def set_imbalance(self, jobno, rps, comment):
         data = {'imbalance': rps}
+        if comment:
+            res = self.get_job_summary(jobno)
+            data['description']=(res['dsc']+"\n"+comment).strip()
+            
+        
         response = self.post('api/job/' + str(jobno) + '/edit.json', data)
         return response
     

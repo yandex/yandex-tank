@@ -364,7 +364,7 @@ class AutostopWidget(AbstractInfoWidget):
         self.owner = sender        
     
     def get_index(self):
-        return 100
+        return 25
 
     def render(self, screen):
         res = []
