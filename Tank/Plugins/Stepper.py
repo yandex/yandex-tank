@@ -1,10 +1,14 @@
 from collections import defaultdict
+import logging
 import operator
 import os
 import re
 import tempfile
 import time
-import logging
+
+# TODO: eliminate double ammo file pass
+# TODO: add progress and ETA
+# TODO: add stpd file size estimation 
 
 
 def make_load_ammo(uris, headers, httpver):

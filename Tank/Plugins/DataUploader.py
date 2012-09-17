@@ -16,7 +16,6 @@ import sys
 import time
 import urllib2
 
-# TODO: implement interactive metainfo querying
 class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     '''
     API Client class for Yandex KSHM web service
@@ -44,6 +43,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         self.api_client.set_api_address(self.get_option("api_address"))
         self.task = self.get_option("task", 'dir')
         self.job_name = self.get_option("job_name", 'none')
+        # TODO: implement interactive metainfo querying?
         self.job_dsc = self.get_option("job_dsc", '')
         self.notify_list = self.get_option("notify", '').split(' ')
         self.version_tested = self.get_option("ver", '')

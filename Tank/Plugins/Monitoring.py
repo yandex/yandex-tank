@@ -1,14 +1,13 @@
+from MonCollector.collector import MonitoringCollector, MonitoringDataListener
 from Tank.Core import AbstractPlugin
+from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.Phantom import PhantomPlugin
+import base64
+import copy
 import os
 import tempfile
-from MonCollector.collector import MonitoringCollector, MonitoringDataListener
-from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
-import copy
-import base64
 import time
 
-# TODO: wait for first monitoring data
 class MonitoringPlugin(AbstractPlugin):
     SECTION = 'monitoring'
     
@@ -19,6 +18,7 @@ class MonitoringPlugin(AbstractPlugin):
         self.config = None
         self.process = None
         self.monitoring = MonitoringCollector()
+        self.die_on_fail = True
 
     @staticmethod
     def get_key():
@@ -26,6 +26,13 @@ class MonitoringPlugin(AbstractPlugin):
     
     def configure(self):
         self.config = self.get_option("config", 'auto')
+        if self.config == 'auto':
+            self.config = os.path.dirname(__file__) + '/monitoring_default_config.xml'
+        self.core.add_artifact_file(self.config, True)
+        
+        if self.config == 'none' or self.config == 'auto':
+            self.die_on_fail = False         
+            
     
     def prepare_test(self):
         phantom = None
@@ -37,12 +44,6 @@ class MonitoringPlugin(AbstractPlugin):
             self.default_target = phantom.address
             # TODO: resolve virtual to host address
         
-        if self.config == 'auto':
-            self.config = os.path.dirname(__file__) + '/monitoring_default_config.xml'
-
-        self.core.add_artifact_file(self.config, True)
-        
-
         if not self.config or self.config == 'none':
             self.log.info("Monitoring has been disabled")
         else:
@@ -76,8 +77,7 @@ class MonitoringPlugin(AbstractPlugin):
             
     def is_test_finished(self):
         if self.monitoring and not self.monitoring.poll():
-            # FIXME: don't interrupt test if we have default config
-            if self.config and self.config != 'none':
+            if self.die_on_fail:
                 raise RuntimeError("Monitoring died unexpectedly")
             else:
                 self.log.warn("Monitoring died unexpectedly")
@@ -103,7 +103,6 @@ class SaveMonToFile(MonitoringDataListener):
             self.store.flush()
 
 
-# TODO: add widget with current metrics
 class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
 
     NA = 'n/a'
