@@ -1,6 +1,6 @@
+from Tank.Plugins.ConsoleScreen import Screen, CurrentHTTPBlock, CurrentNetBlock
 from Tests.ConsoleOnlinePluginTest import FakeConsoleMarkup
 from Tests.TankTests import TankTestCase
-from Tank.Plugins.ConsoleScreen import Screen, CurrentHTTPBlock, CurrentNetBlock
 
 class BlocksTestCase(TankTestCase):
     def test_HTTP(self):
@@ -11,12 +11,16 @@ class BlocksTestCase(TankTestCase):
         self.assertEquals('HTTP for current RPS:', block.lines[0].strip())
         self.assertEquals(1, len(block.lines))
     
-        block.add_second(100, {'400': 10})
+        data = self.get_aggregate_data('data/preproc_single.txt')
+        data.overall.planned_requests = 100
+        data.overall.http_codes = {'400': 10}
+        block.add_second(data)
         block.render()
         print block.lines
         self.assertEquals(2, len(block.lines))
 
-        block.add_second(100, {'200': 4})
+        data.overall.http_codes = {'200': 4}
+        block.add_second(data)
         block.render()
         print block.lines
         self.assertEquals(3, len(block.lines))
@@ -29,12 +33,16 @@ class BlocksTestCase(TankTestCase):
         self.assertEquals('NET for current RPS:', block.lines[0].strip())
         self.assertEquals(1, len(block.lines))
     
-        block.add_second(100, {'0': 10})
+        data = self.get_aggregate_data('data/preproc_single.txt')
+        data.overall.planned_requests = 100
+        data.overall.net_codes = {'0': 10}
+        block.add_second(data)
         block.render()
         print block.lines
         self.assertEquals(2, len(block.lines))
 
-        block.add_second(100, {'71': 4})
+        data.overall.net_codes = {'71': 4}
+        block.add_second(data)
         block.render()
         print block.lines
         self.assertEquals(3, len(block.lines))

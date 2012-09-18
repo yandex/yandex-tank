@@ -1,6 +1,7 @@
 import logging
 import unittest
 import sys
+from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData
 
 class TankTestCase(unittest.TestCase):
     formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s\t%(message)s")
@@ -12,6 +13,16 @@ class TankTestCase(unittest.TestCase):
     logger.addHandler(ch)
     logger.debug("Starting Unit Test")
 
+    def get_aggregate_data(self, filename):
+        fh = open(filename, 'r')
+        aggregator = AggregatorPlugin(None)
+        
+        aggregator.read_preproc_lines(fh, self.callback)
+        return self.data
+        
+    def callback(self, data):
+        self.data = SecondAggregateData(data)
+
 
 class FakeOptions(object):
     log = ''
@@ -19,4 +30,5 @@ class FakeOptions(object):
     config = []
     option = ['testsection.testoption=testvalue']
     ignore_lock = True
-    lock_fail=False
+    lock_fail = False
+    
