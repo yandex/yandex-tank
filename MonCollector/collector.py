@@ -151,8 +151,8 @@ class AgentClient(object):
 
     def uninstall(self):
         """ Remove agent's files from remote host"""
-        # TODO: copy angent to temp dir and add it as artifact
-        cmd = [self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", "monitoring_agent_" + self.host + ".log"]
+        log_file=tempfile.mkstemp('.log', "agent_" + self.host+"_")[1]
+        cmd = [self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_file]
         logging.debug("Copy agent log from %s: %s" % (self.host, cmd))
         remove = self.ssh.get_scp_pipe(cmd)
         remove.wait()
@@ -165,6 +165,7 @@ class AgentClient(object):
         logging.debug("Uninstall agent from %s: %s" % (self.host, cmd))
         remove = self.ssh.get_ssh_pipe(cmd)
         remove.wait()
+        return log_file
 
 class MonitoringCollector:
     def __init__(self):
@@ -178,6 +179,7 @@ class MonitoringCollector:
         self.ssh_wrapper_class = SSHWrapper
         self.first_data_received = False
         self.send_data = ''
+        self.agent_logs = []
 
     def add_listener(self, obj):
         self.listeners.append(obj)
@@ -269,7 +271,14 @@ class MonitoringCollector:
             if pipe.pid:
                 logging.debug("Killing %s with %s", pipe.pid, signal.SIGINT)
                 os.kill(pipe.pid, signal.SIGINT)
-        self.group_op('uninstall', self.agents, '')
+
+        self.agent_logs=[]
+        for agent in self.agents:
+            self.agent_logs.append(agent.uninstall())
+            logging.debug("Remove: %s" % agent.path['TEMP_CONFIG'])
+            if os.path.isfile(agent.path['TEMP_CONFIG']):
+                logging.warning("Seems uninstall failed to remove %s", agent.path['TEMP_CONFIG'])
+                os.remove(agent.path['TEMP_CONFIG'])
         
     def getconfig(self, filename, target_hint):
         default = {
@@ -381,18 +390,6 @@ class MonitoringCollector:
     
         return [config, filter_obj]
     
-    def group_op(self, command, agents, loglevel):
-        """ Group install and uninstall for list of agents"""
-        logging.debug("Group operation %s on agents: %s", command, agents);
-    
-        if command == 'uninstall':
-            for agent in agents:
-                agent.uninstall()
-                logging.debug("Remove: %s" % agent.path['TEMP_CONFIG'])
-                if os.path.isfile(agent.path['TEMP_CONFIG']):
-                    logging.warning("Seems uninstall failed to remove %s", agent.path['TEMP_CONFIG'])
-                    os.remove(agent.path['TEMP_CONFIG'])
-            
     # FIXME: simplify this filtering hell with built-in filter()
     def filtering(self, mask, filter_list):
         host = filter_list[0]
