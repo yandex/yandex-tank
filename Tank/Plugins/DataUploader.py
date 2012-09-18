@@ -36,6 +36,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
     def get_key():
         return __file__
     
+
     def configure(self):
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
@@ -43,8 +44,11 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         self.api_client.set_api_address(self.get_option("api_address"))
         self.task = self.get_option("task", 'dir')
         self.job_name = self.get_option("job_name", 'none')
-        # TODO: implement interactive metainfo querying?
+        if self.job_name == 'ask':
+            self.job_name = raw_input('Please, enter job_name: ')        
         self.job_dsc = self.get_option("job_dsc", '')
+        if self.job_dsc == 'ask':
+            self.job_name = raw_input('Please, enter job_dsc: ')
         self.notify_list = self.get_option("notify", '').split(' ')
         self.version_tested = self.get_option("ver", '')
         self.regression_component = self.get_option("component", '')
@@ -60,7 +64,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
             
         if mon and mon.monitoring:    
             mon.monitoring.add_listener(self)
-        
+            
     def check_task_is_open(self, task):
         self.log.debug("Check if task %s is open", task)
         try:
@@ -276,7 +280,7 @@ class KSHMAPIClient():
         data = {'imbalance': rps}
         if comment:
             res = self.get_job_summary(jobno)
-            data['description']=(res['dsc']+"\n"+comment).strip()
+            data['description'] = (res['dsc'] + "\n" + comment).strip()
             
         
         response = self.post('api/job/' + str(jobno) + '/edit.json', data)
