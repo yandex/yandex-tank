@@ -16,9 +16,9 @@ import subprocess
 import tempfile
 import time
 
-# TODO: implement phout import
-# TODO: chosen cases
-# TODO: if instances_schedule enabled - pass to phantom the top count as instances limit
+# TODO: 1 implement phout import
+# TODO: 3  chosen cases
+# TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
 class PhantomPlugin(AbstractPlugin):
 
     OPTION_TEST_DURATION = 'test_duration'
@@ -371,7 +371,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
 
         return res
 
-    # TODO: change PB to use time when it is present, switch to ammo count otherwise
+    # TODO: 1 change PB to use time when it is present, switch to ammo count otherwise
     def get_progressbar(self, width, markup):
         progress = float(self.ammo_progress) / float(self.ammo_count)
         perc = float(int(1000 * progress)) / 10
@@ -388,8 +388,8 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         self.ammo_progress += second_aggregate_data.overall.RPS
 
 
-# TODO: widget data: loadscheme?    
-# TODO: req/answ sizes in widget - last sec and curRPS
+# TODO: 3 widget data: loadscheme?    
+# TODO: 1 req/answ sizes in widget - last sec and curRPS
 class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
     def get_index(self):

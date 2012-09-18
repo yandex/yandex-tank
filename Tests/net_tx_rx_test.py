@@ -1,4 +1,4 @@
-from MonCollector.agent.metric.net_tx_rx import NetTxRx
+from Tank.MonCollector.agent.metric.net_tx_rx import NetTxRx
 import time
 import unittest
 

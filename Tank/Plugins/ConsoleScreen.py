@@ -142,7 +142,7 @@ class Screen(object):
         for row in self.block_rows:
             for block in row:
                 block.add_second(data)        
-        #self.recalc_total_quantiles() # TODO: get them from aggregator
+        #self.recalc_total_quantiles() # TODO: 2 get them from aggregator
         
 
 # ======================================================

@@ -1,13 +1,12 @@
-from Tests.TankTests import TankTestCase
-import tempfile
-import time
-from MonCollector.collector import MonitoringCollector, MonitoringDataListener,\
-    SSHWrapper
-from Tank.Plugins.Monitoring import MonitoringPlugin, MonitoringWidget
 from Tank.Core import TankCore
-import logging
+from Tank.MonCollector.collector import MonitoringCollector, \
+    MonitoringDataListener, SSHWrapper
 from Tank.Plugins.ConsoleOnline import Screen
+from Tank.Plugins.Monitoring import MonitoringPlugin, MonitoringWidget
 from Tests.ConsoleOnlinePluginTest import FakeConsoleMarkup
+from Tests.TankTests import TankTestCase
+import logging
+import time
 
 class  MonitoringCollectorTestCase(TankTestCase):
     data = None

@@ -1,4 +1,4 @@
-from MonCollector.agent.metric.net import Net
+from Tank.MonCollector.agent.metric.net import Net
 import logging
 import time
 import unittest

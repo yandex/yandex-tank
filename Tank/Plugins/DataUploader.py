@@ -1,5 +1,5 @@
-from MonCollector.collector import MonitoringDataListener
 from Tank.Core import AbstractPlugin
+from Tank.MonCollector.collector import MonitoringDataListener
 from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
 from Tank.Plugins.Autostop import AutostopPlugin
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
@@ -134,7 +134,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
             self.log.warning("No phantom plugin to get target info: %s", ex)
             detailed_field = "interval_real"
 
-        #TODO: copy old stepper logic to this class            
+        #TODO: 3 copy old stepper logic to this class            
         loadscheme = self.core.get_option(PhantomPlugin.SECTION, PhantomPlugin.OPTION_SCHEDULE, '')
         loadscheme_expanded = self.core.get_option(PhantomPlugin.SECTION, PhantomPlugin.OPTION_LOADSCHEME, '')         
         loop_count = self.core.get_option(PhantomPlugin.SECTION, PhantomPlugin.OPTION_LOOP_COUNT, '-1')        

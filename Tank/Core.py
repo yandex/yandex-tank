@@ -1,4 +1,4 @@
-# TODO: distinct private from public in classes
+# TODO: 3 distinct private from public in classes
 from ConfigParser import NoSectionError
 import ConfigParser
 import logging
@@ -205,7 +205,7 @@ class TankCore:
             return
         
         if os.path.exists(dest):
-            # FIXME: find a way to store artifacts anyway
+            # FIXME: 2 find a way to store artifacts anyway
             self.log.warning("File already exists: %s", dest)
             return
                 

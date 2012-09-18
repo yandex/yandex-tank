@@ -1,4 +1,4 @@
-from MonCollector.agent.metric.disk import Disk
+from Tank.MonCollector.agent.metric.disk import Disk
 import time
 import unittest
 

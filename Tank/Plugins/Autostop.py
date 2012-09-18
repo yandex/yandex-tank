@@ -6,8 +6,8 @@ from Tank.Plugins.Phantom import PhantomPlugin
 import logging
 import re
 
-# TODO: add quantile criteria
-# TODO: find solution for melfa's case
+# TODO: 1 add quantile criteria
+# TODO: 2 find solution for melfa's case
 class AutostopPlugin(AbstractPlugin, AggregateResultListener):
     SECTION = 'autostop'
 

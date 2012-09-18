@@ -10,8 +10,8 @@ import time
 import traceback
 from Tank.Plugins.ConsoleOnline import RealConsoleMarkup
 
-# TODO: --manual-start
-# TODO: add system resources busy check
+# TODO: 2 --manual-start
+# TODO: 2 add system resources busy check
 class ConsoleTank:
     """
     Worker class that runs tank core accepting cmdline params

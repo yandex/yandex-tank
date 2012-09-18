@@ -1,4 +1,4 @@
-from MonCollector.collector import MonitoringCollector, MonitoringDataListener
+from Tank.MonCollector.collector import MonitoringCollector, MonitoringDataListener
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.Phantom import PhantomPlugin
@@ -44,7 +44,7 @@ class MonitoringPlugin(AbstractPlugin):
             self.log.debug("Phantom plugin not found: %s", ex)
         if phantom:
             self.default_target = phantom.address
-            # TODO: resolve virtual to host address
+            # TODO: 2 resolve virtual to host address
         
         if not self.config or self.config == 'none':
             self.log.info("Monitoring has been disabled")

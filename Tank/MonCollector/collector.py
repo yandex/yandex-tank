@@ -12,7 +12,7 @@ import sys
 import tempfile
 import time
 
-# FIXME: synchronize times between agent and collector better
+# FIXME: 2 synchronize times between agent and collector better
 class Config(object):
     def __init__(self, config):
         self.tree = etree.parse(config)
@@ -390,7 +390,7 @@ class MonitoringCollector:
     
         return [config, filter_obj]
     
-    # FIXME: simplify this filtering hell with built-in filter()
+    # FIXME: 3 simplify this filtering hell with built-in filter()
     def filtering(self, mask, filter_list):
         host = filter_list[0]
         initial = [0, 1]

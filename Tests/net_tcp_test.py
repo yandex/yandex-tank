@@ -1,4 +1,4 @@
-from MonCollector.agent.metric.net_tcp import NetTcp
+from Tank.MonCollector.agent.metric.net_tcp import NetTcp
 import unittest
 
 class  Net_tcp_TestCase(unittest.TestCase):

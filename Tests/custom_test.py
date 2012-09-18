@@ -1,4 +1,4 @@
-from MonCollector.agent.metric.custom import Custom
+from Tank.MonCollector.agent.metric.custom import Custom
 import time
 import unittest
 

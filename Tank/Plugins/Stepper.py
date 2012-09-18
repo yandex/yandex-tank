@@ -6,9 +6,9 @@ import re
 import tempfile
 import time
 
-# TODO: eliminate double ammo file pass
-# TODO: add progress and ETA
-# TODO: add stpd file size estimation 
+# TODO: 2 eliminate double ammo file pass
+# TODO: 1 add progress and ETA
+# TODO: 3 add stpd file size estimation 
 
 
 def make_load_ammo(uris, headers, httpver):
@@ -890,7 +890,7 @@ class Stepper:
                                         raise RuntimeError("Wrong case format for '%s'"
          % m.group(2))
 
-                            # TODO: add more info to locate problem chunk
+                            # 2 TODO: add more info to locate problem chunk
                             raise RuntimeError('Wrong chunk size')
 
                     if int(cur_progress) == int(max_progress):

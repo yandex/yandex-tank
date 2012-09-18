@@ -5,7 +5,7 @@ import traceback
 import sys
 import logging
 
-# TODO: add avg times: parts & by case    
+# TODO: 1 add avg times: parts & by case    
 class RealConsoleMarkup(object):
     '''    
     Took colors from here: https://www.siafoo.net/snippet/88
@@ -97,7 +97,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
             except Exception, ex:
                 self.log.warn("Exception inside render: %s", traceback.format_exc(ex))
                 self.render_exception=ex
-            # TODO: add a way to send console view to remote API, via listener notification (avoid DataUploader dependency
+            # TODO: 3 add a way to send console view to remote API, via listener notification (avoid DataUploader dependency
 
     def add_info_widget(self, widget):
         if not self.screen:
