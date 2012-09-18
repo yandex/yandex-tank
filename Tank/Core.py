@@ -281,3 +281,6 @@ class AbstractPlugin:
 
     def get_option(self, option_name, default_value=None):
         return self.core.get_option(self.SECTION, option_name, default_value)
+
+    def set_option(self, option_name, value):
+        return self.core.set_option(self.SECTION, option_name, value)

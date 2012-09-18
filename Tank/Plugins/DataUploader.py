@@ -27,7 +27,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         AbstractPlugin.__init__(self, core)
         self.api_client = KSHMAPIClient()
         self.jobno = None
-        self.operator = pwd.getpwuid(os.geteuid())[0]
+        self.operator = ''
         self.task_name = ''
         self.rc = -1
     
@@ -53,6 +53,8 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         self.regression_component = self.get_option("component", '')
         self.is_regression = self.get_option("regress", '0')
         self.operator = self.get_option("operator", self.operator)
+        if not self.operator:
+            self.operator = pwd.getpwuid(os.geteuid())[0]
 
         try:
             mon = self.core.get_plugin_of_type(MonitoringPlugin)

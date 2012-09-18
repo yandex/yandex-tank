@@ -31,6 +31,10 @@ class  DataUploaderPluginTestCase(TankTestCase):
         self.foo.start_test()
         self.foo.end_test(0)
 
+    def test_run_no_operator(self):
+        self.foo.set_option("operator", '')
+        self.foo.configure()
+        self.assertNotEquals('', self.foo.operator)
 
 if __name__ == '__main__':
     unittest.main()
