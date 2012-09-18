@@ -19,6 +19,7 @@ import time
 # TODO: 1 implement phout import
 # TODO: 3  chosen cases
 # TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
+# FIXME: 2 sometimes cache not used
 class PhantomPlugin(AbstractPlugin):
 
     OPTION_TEST_DURATION = 'test_duration'

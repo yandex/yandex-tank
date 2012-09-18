@@ -645,7 +645,7 @@ class Stepper:
         self.ammo_count = None
 
     def generate_stpd(self):
-        self.log.info("Generating stpd file: %s", self.stpd_file)
+        self.log.debug("Generating stpd file: %s", self.stpd_file)
         self.log.debug("Autocases: %s", self.autocases)
         self.log.debug("Ammofile: %s", self.ammofile)
         

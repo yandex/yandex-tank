@@ -27,7 +27,6 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         AbstractPlugin.__init__(self, core)
         self.api_client = KSHMAPIClient()
         self.jobno = None
-        self.logs_basedir = None
         self.operator = pwd.getpwuid(os.geteuid())[0]
         self.task_name = ''
         self.rc = -1
@@ -53,7 +52,6 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         self.version_tested = self.get_option("ver", '')
         self.regression_component = self.get_option("component", '')
         self.is_regression = self.get_option("regress", '0')
-        self.logs_basedir = self.get_option("logs_dir", 'logs')
         self.operator = self.get_option("operator", self.operator)
 
         try:
@@ -142,7 +140,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         self.jobno = self.api_client.new_job(self.task, self.operator, socket.gethostname(),
                 address, port, loadscheme, loadscheme_expanded.split(';'), detailed_field, self.notify_list)
         self.log.info("Web link: %s%s", self.api_client.address, self.jobno)
-        self.core.artifacts_dir = self.logs_basedir + '/' + str(self.jobno)
+        self.core.artifacts_dir = self.core.artifacts_base_dir + '/' + str(self.jobno)
         
         
         self.api_client.edit_job_metainfo(self.jobno,

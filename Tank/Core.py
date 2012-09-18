@@ -35,10 +35,10 @@ class TankCore:
         self.log.info("Loading plugins...")
         self.log.debug("sys.path: %s", sys.path)
 
-        self.artifacts_base_dir = self.get_option(self.SECTION, "artifacts_base_dir", tempfile.gettempdir())
+        self.artifacts_base_dir = os.path.expanduser(self.get_option(self.SECTION, "artifacts_base_dir", tempfile.gettempdir()))
         self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
         if self.artifacts_dir:
-            self.artifacts_dir=os.path.expanduser(self.artifacts_dir)
+            self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
 
         for (plugin_name, plugin_path) in self.config.get_options(self.SECTION, self.PLUGIN_PREFIX):
             if not plugin_path:
@@ -198,7 +198,7 @@ class TankCore:
             self.log.warning("No artifacts dir configured")
             return            
         
-        dest=self.artifacts_dir + '/' + os.path.basename(filename)
+        dest = self.artifacts_dir + '/' + os.path.basename(filename)
         self.log.debug("Collecting file: %s to %s", filename, dest)
         if not filename or not os.path.exists(filename):
             self.log.warning("File not found to collect: %s", filename)
