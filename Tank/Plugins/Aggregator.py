@@ -41,6 +41,7 @@ class AggregatorPlugin(AbstractPlugin):
         self.buffer = []
         self.second_data_draft = []
         self.preproc_out_filename = None
+        self.cumulative_data = SecondAggregateDataTotalItem()
     
     def configure(self):
         self.tools_path = self.get_option("tools_path", '/usr/bin')
@@ -62,7 +63,7 @@ class AggregatorPlugin(AbstractPlugin):
     
     def process_listeners_callback(self, draft_data):
         try:
-            second_data = SecondAggregateData(draft_data)
+            second_data = SecondAggregateData(draft_data, self.cumulative_data)
         except RuntimeError, ex:
             self.log.error("Can't parse second data: %s", ex)
             return
@@ -168,16 +169,18 @@ class AggregatorPlugin(AbstractPlugin):
         return self.time_periods.split(' ')[-1:][0]
 
 class SecondAggregateData:
-    def __init__(self, cases_draft):
+    def __init__(self, cases_draft, cimulative_item):
         self.cases = {}
         self.time = None
         # @type self.overall: SecondAggregateDataItem
         self.overall = None
+        self.cumulative = cimulative_item
         for lines in cases_draft:
             #logging.debug("Draft lines: %s", lines)
             data_item = SecondAggregateDataItem(lines)
             if data_item.overall:
                 self.overall = data_item
+                self.cumulative.add_data(data_item)
             else:
                 self.cases[data_item.case] = data_item
                 
@@ -187,7 +190,6 @@ class SecondAggregateData:
                     raise RuntimeError("Several seconds in preproc records group: %s != %s" % (self.time, data_item.time))
         if not self.overall:
                 raise RuntimeError("Cannot go without overall info")                
-            
 
 class SecondAggregateDataItem:
     T_OVERALL = "overall="
@@ -301,4 +303,24 @@ class SecondAggregateDataItem:
             self.parse_quantiles(line)
         self.RPS = sum(self.net_codes.values())
 
-# TODO: 2 add cumulative values to items
+class SecondAggregateDataTotalItem:
+    def __init__(self):
+        self.avg_connect_time = 0
+        self.avg_send_time = 0
+        self.avg_latency = 0
+        self.avg_receive_time = 0
+        self.avg_response_time = 0
+        self.total_count = 0
+        self.times_dist = {}
+    
+    def add_data(self, overall_item):
+        for time_item in overall_item.times_dist:
+            self.total_count += time_item['count']
+            if time_item['from'] in self.times_dist.keys():
+                self.times_dist[time_item['from']]['count'] += time_item['count']
+            else:
+                self.times_dist[time_item['from']] = time_item
+
+
+
+

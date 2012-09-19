@@ -12,6 +12,7 @@ from Tank.Plugins.ConsoleOnline import RealConsoleMarkup
 
 # TODO: 2 --manual-start
 # TODO: 2 add system resources busy check
+# TODO: 1 convert old multiline config values to new format
 class ConsoleTank:
     """
     Worker class that runs tank core accepting cmdline params
@@ -133,8 +134,12 @@ class ConsoleTank:
         # override config options from command line
         if self.options.option: 
             for option_str in self.options.option:
-                section = option_str[:option_str.index('.')]
-                option = option_str[option_str.index('.') + 1:option_str.index('=')]
+                try:
+                    section = option_str[:option_str.index('.')]
+                    option = option_str[option_str.index('.') + 1:option_str.index('=')]
+                except ValueError:
+                    section = self.MIGRATE_SECTION
+                    option = option_str[:option_str.index('=')]
                 value = option_str[option_str.index('=') + 1:]    
                 self.log.debug("Override option: %s => [%s] %s=%s", option_str, section, option, value)
                 self.core.set_option(section, option, value)
