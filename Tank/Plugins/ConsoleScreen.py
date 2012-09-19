@@ -64,8 +64,8 @@ class Screen(object):
 
     def render_left_panel(self):
         lines = []
-        space_left = self.left_panel_width
         for row in self.block_rows:
+            space_left = self.left_panel_width
             # render blocks
             for block in row:
                 block.render()

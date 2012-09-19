@@ -21,15 +21,8 @@ class AutostopTestCase(TankTestCase):
         del self.foo
         self.foo = None 
 
-    def callback(self, data):
-        self.data = SecondAggregateData(data)
-
     def get_test_second(self):
-        fh = open(os.path.realpath('data/preproc_single2.txt'), 'r')
-        aggregator = AggregatorPlugin(None)
-        aggregator.read_preproc_lines(fh, self.callback)
-        return self.data
-    
+        return self.get_aggregate_data('data/preproc_single2.txt')    
     
     def test_run(self):
         data = self.get_test_second()

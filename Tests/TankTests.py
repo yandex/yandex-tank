@@ -1,7 +1,8 @@
 import logging
 import unittest
 import sys
-from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData
+from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData,\
+    SecondAggregateDataTotalItem
 
 class TankTestCase(unittest.TestCase):
     formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s\t%(message)s")
@@ -21,7 +22,7 @@ class TankTestCase(unittest.TestCase):
         return self.data
         
     def callback(self, data):
-        self.data = SecondAggregateData(data)
+        self.data = SecondAggregateData(data, SecondAggregateDataTotalItem())
 
 
 class FakeOptions(object):

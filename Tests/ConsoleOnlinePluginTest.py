@@ -6,6 +6,7 @@ from Tests.TankTests import TankTestCase
 import os
 import tempfile
 import unittest
+from Tests import TankTests
 
 
 class FakeConsoleMarkup(RealConsoleMarkup):
@@ -39,9 +40,7 @@ class ConsoleOnlinePluginTestCase(TankTestCase):
         self.foo = None 
 
     def test_run(self):
-        fh = open('data/preproc_single2.txt', 'r')
-        aggregator = AggregatorPlugin(None)
-        aggregator.read_preproc_lines(fh, self.callback)
+        self.data=self.get_aggregate_data('data/preproc_single2.txt')
         
         self.foo.configure()
         self.foo.prepare_test()
@@ -53,9 +52,6 @@ class ConsoleOnlinePluginTestCase(TankTestCase):
             self.foo.aggregate_second(self.data)
         self.foo.end_test(0)
         self.assertFalse(self.foo.render_exception)
-        
-    def callback(self, data):
-        self.data = SecondAggregateData(data)
         
 class TestWidget(AbstractInfoWidget):
     def render(self, screen):
