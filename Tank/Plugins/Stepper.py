@@ -63,9 +63,9 @@ def get_ammo_count(filename, stop_count):
         return ammo_cnt
 
 
-def header_print(list):
+def header_print(values_list):
     header = ''
-    for (h, v) in list.iteritems():
+    for (h, v) in values_list.iteritems():
         header += '%s: %s\r\n' % (h, v)
     return header
 
@@ -73,7 +73,7 @@ def header_print(list):
 def get_headers_list(line):
     """return a dict of {header: value}, parsed from string"""
 
-    list = defaultdict(str)
+    values_list = defaultdict(str)
     h = re.match("^\[", line)
     if h:
         m = re.match("^\[(.+)\]", line)
@@ -83,16 +83,16 @@ def get_headers_list(line):
                 case = re.sub("\[|\]", '', case)
                 c = re.match("^\s*(\S+)\s*:\s*(.+?)\s*$", case)
                 if c:
-                    list[c.group(1)] = c.group(2)
-    return list
+                    values_list[c.group(1)] = c.group(2)
+    return values_list
 
 
-def get_common_header(file):
-    input_ammo = open(file, 'r')
-    list = {}
+def get_common_header(filename):
+    input_ammo = open(filename, 'r')
+    values_list = {}
     for line in input_ammo:
-        list.update(get_headers_list(line))
-    return list
+        values_list.update(get_headers_list(line))
+    return values_list
 
 
 def load_const(req, duration):
@@ -229,13 +229,13 @@ def make_steps_element(l):
 
 
 def expand_load_spec(l):
-    (st, ls, cnt, max) = ([], '', 0, 0)
+    (st, ls, cnt, max_val) = ([], '', 0, 0)
     m = re.match("^const\s*\(\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
     if m:
         val = int(m.group(1))
         (st, ls, cnt) = load_const(val, m.group(2))
-        if val > max:
-            max = val
+        if val > max_val:
+            max_val = val
     else:
         m = \
             re.match("^line\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*"
@@ -243,8 +243,8 @@ def expand_load_spec(l):
         if m:
             val = int(m.group(2))
             [st, ls, cnt] = load_line(int(m.group(1)), val, m.group(3))
-            if val > max:
-                max = val
+            if val > max_val:
+                max_val = val
         else:
             m = \
                 re.match("^step\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*\)\s*"
@@ -253,8 +253,8 @@ def expand_load_spec(l):
                 val = int(m.group(2))
                 [st, ls, cnt] = load_step(int(m.group(1)), val,
                         int(m.group(3)), m.group(4))
-                if val > max:
-                    max = val
+                if val > max_val:
+                    max_val = val
             else:
                 m = \
                     re.match("^const\s*\(\s*(\d+\/\d+)\s*,\s*((\d+[hms]?)+)\s*"
@@ -264,7 +264,7 @@ def expand_load_spec(l):
                 else:
                     raise RuntimeError("[Warning] Wrong load format: '%s'. Aborting."
                              % l)
-    return (st, ls, cnt, max)
+    return (st, ls, cnt, max_val)
 
 
 def make_steps(load_spec):
@@ -365,7 +365,7 @@ def frps_scheme(c):
 def frps_cut(c, r):
     m = re.match("(\d+)\/(\d+)", r)
     if m:
-        (a, b) = (int(m.group(1)), int(m.group(2)))
+        b = int(m.group(2))
         if c < b:
             frs = frps(r)
             out = []
@@ -786,7 +786,6 @@ class Stepper:
                            )
 
             chunk_case = ''
-            last_added_chunk = ''
 
             input_ammo = open(ammo_file, 'rb')
             stepped_ammo = open(self.stpd_file, 'wb')
@@ -864,7 +863,6 @@ class Stepper:
                             stepped_ammo.write('\n')
                             step_ammo_num += 1
                             cur_progress += 1
-                            last_added_chunk = chunk
 
                         if int(cur_progress) == int(max_progress):
                             looping = 0
