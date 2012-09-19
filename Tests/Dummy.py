@@ -8,7 +8,7 @@ class DummyPlugin(AbstractPlugin):
         
     @staticmethod
     def get_key():
-        return __file__;
+        return __file__
     
     def configure(self):
         self.log.debug("Configure2")

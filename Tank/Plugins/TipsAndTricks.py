@@ -13,10 +13,11 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
         line = random.choice(lines)
         self.section = line[:line.index(':')]
         self.tip = line[line.index(':')+1:].strip()
+        self.disable = 0
         
     @staticmethod
     def get_key():
-        return __file__;
+        return __file__
     
     def configure(self):
         self.disable = int(self.get_option('disable', '0'))
@@ -25,7 +26,7 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
         if not self.disable:
             try:
                 console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
-            except Exception, ex:
+            except KeyError, ex:
                 self.log.debug("Console not found: %s", ex)
                 console = None
                 
