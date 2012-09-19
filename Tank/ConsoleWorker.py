@@ -88,24 +88,24 @@ class ConsoleTank:
 
         # create file handler which logs even debug messages
         if (self.log_filename):
-            fh = logging.FileHandler(self.log_filename)
-            fh.setLevel(logging.DEBUG)
-            fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s"))
-            logger.addHandler(fh)
+            file_handler = logging.FileHandler(self.log_filename)
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s"))
+            logger.addHandler(file_handler)
             
         # create console handler with a higher log level
-        ch = logging.StreamHandler(sys.stdout)
+        console_handler = logging.StreamHandler(sys.stdout)
         
         if self.options.verbose:
-            ch.setLevel(logging.DEBUG)
-            ch.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s"))
+            console_handler.setLevel(logging.DEBUG)
+            console_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s"))
         elif self.options.quiet:
-            ch.setLevel(logging.WARNING)
-            ch.setFormatter(logging.Formatter("%(asctime)s %(levelname)s: %(message)s", "%H:%M:%S"))
+            console_handler.setLevel(logging.WARNING)
+            console_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s: %(message)s", "%H:%M:%S"))
         else:
-            ch.setLevel(logging.INFO)
-            ch.setFormatter(logging.Formatter("%(asctime)s %(levelname)s: %(message)s", "%H:%M:%S"))
-        logger.addHandler(ch)
+            console_handler.setLevel(logging.INFO)
+            console_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s: %(message)s", "%H:%M:%S"))
+        logger.addHandler(console_handler)
 
 
 
@@ -117,11 +117,11 @@ class ConsoleTank:
             return config
         except Exception, ex:
             self.log.warning("Config failed INI format test, consider upgrading it: %s", config)
-            fd, corrected_file = tempfile.mkstemp(".conf", "corrected_")
+            file_handle, corrected_file = tempfile.mkstemp(".conf", "corrected_")
             self.log.debug("Creating corrected INI config for it: %s", corrected_file)
-            os.write(fd, "[" + self.MIGRATE_SECTION + "]\n")
+            os.write(file_handle, "[" + self.MIGRATE_SECTION + "]\n")
             old_config = open(config, 'r').read()
-            os.write(fd, old_config)
+            os.write(file_handle, old_config)
             return corrected_file
 
     def add_adapted_config(self, configs, conf_file):
@@ -146,7 +146,7 @@ class ConsoleTank:
             
     
     def there_is_locks(self):
-        rc = False
+        retcode = False
         for filename in os.listdir(self.LOCK_DIR):
             if fnmatch.fnmatch(filename, 'lunapark_*.lock'):
                 full_name = self.LOCK_DIR + os.sep + filename
@@ -163,11 +163,11 @@ class ConsoleTank:
                         except Exception, e:
                             self.log.debug("Failed to delete lock %s: %s", full_name, e)
                     else:
-                        rc = True        
+                        retcode = True        
                 except Exception, e:
                     self.log.warn("Failed to load info from lock %s: %s", full_name, e)
-                    rc = True        
-        return rc
+                    retcode = True        
+        return retcode
     
     
     def translate_old_options(self):
@@ -231,43 +231,43 @@ class ConsoleTank:
         
 
     def graceful_shutdown(self):
-        rc = 1
+        retcode = 1
         self.log.info("Trying to shutdown gracefully...")
-        rc = self.core.plugins_end_test(rc)
-        rc = self.core.plugins_post_process(rc)
+        retcode = self.core.plugins_end_test(retcode)
+        retcode = self.core.plugins_post_process(retcode)
         self.log.info("Done graceful shutdown.")
-        return rc
+        return retcode
     
     
     def perform_test(self):
         self.log.info("Performing test")
-        rc = 1
+        retcode = 1
         try:
             self.core.plugins_configure()
             self.core.plugins_prepare_test()
             self.core.plugins_start_test()
-            rc = self.core.wait_for_finish()
-            rc = self.core.plugins_end_test(rc)
-            rc = self.core.plugins_post_process(rc)
+            retcode = self.core.wait_for_finish()
+            retcode = self.core.plugins_end_test(retcode)
+            retcode = self.core.plugins_post_process(retcode)
         
         except KeyboardInterrupt as ex:
             self.signal_count += 1
             self.log.debug("Caught KeyboardInterrupt: %s", traceback.format_exc(ex))
             try:
-                rc = self.graceful_shutdown()
+                retcode = self.graceful_shutdown()
             except KeyboardInterrupt as ex:
                 self.log.debug("Caught KeyboardInterrupt again: %s", traceback.format_exc(ex))
                 self.log.info("User insists on exiting, aborting graceful shutdown...")
-                rc = 1
+                retcode = 1
                                 
         except Exception as ex:
             self.log.debug("Exception: %s", traceback.format_exc(ex))
             sys.stdout.write(RealConsoleMarkup.RED)
             self.log.error("%s", ex)
             sys.stdout.write(RealConsoleMarkup.RESET)
-            rc = self.graceful_shutdown()
+            retcode = self.graceful_shutdown()
         
-        self.log.info("Done performing test with code %s", rc)
-        return rc
+        self.log.info("Done performing test with code %s", retcode)
+        return retcode
 
 

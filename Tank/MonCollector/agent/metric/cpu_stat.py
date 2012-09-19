@@ -17,8 +17,8 @@ class CpuStat(object):
         self.check_last = None
         
         # csw, int data
-        self.current    = None
-        self.last       = None
+        self.current = None
+        self.last = None
 
     def columns(self,):
         columns = ['System_csw', 'System_int',
@@ -37,7 +37,7 @@ class CpuStat(object):
 
         # Context switches and interrups. Check.
         try:
-            output = Popen('cat /proc/stat | grep -E "^(ctxt|intr|cpu) "', 
+            output = Popen('cat /proc/stat | grep -E "^(ctxt|intr|cpu) "',
                             shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         except Exception, e:
 #            logger.error("%s: %s" % (e.__class__, str(e)))

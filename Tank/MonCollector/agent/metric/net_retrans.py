@@ -10,7 +10,7 @@ class NetRetrans(object):
         self.retr_first = None
 
     def columns(self,):
-        return ['Net_retransmit',]
+        return ['Net_retransmit', ]
 
     def check(self,):
         self.fetch = lambda: int(commands.getoutput('netstat -s | grep "segments retransmited" | awk \'{print $1}\''))
@@ -23,5 +23,5 @@ class NetRetrans(object):
         else:
             # first check
             self.retr_second = self.fetch()
-            return ['0',]
+            return ['0', ]
 

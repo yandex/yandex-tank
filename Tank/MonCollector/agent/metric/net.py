@@ -13,11 +13,11 @@ class Net(object):
     def columns(self,):
         return ['Net_recv', 'Net_send']
 
-    def check(self, ):
+    def check(self,):
         # Current data
         recv, send = 0, 0
 
-        cmd="cat /proc/net/dev | tail -n +3 | cut -d':' -f 1,2 --output-delimiter=' ' | awk '{print $1, $2, $10}'"
+        cmd = "cat /proc/net/dev | tail -n +3 | cut -d':' -f 1,2 --output-delimiter=' ' | awk '{print $1, $2, $10}'"
         logging.debug("Starting: %s", cmd)
         try:
             stat = Popen([cmd], stdout=PIPE, stderr=PIPE, shell=True)

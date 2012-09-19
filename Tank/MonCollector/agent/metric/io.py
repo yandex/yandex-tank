@@ -16,7 +16,7 @@ class Io(object):
             columns.extend([dev_name + '-rsec', dev_name + '-wsec'])
         return columns
 
-    def fetch(self, ):
+    def fetch(self,):
         tmp_data = []
         result = {}
         for dev_name in self.block_devs:
@@ -24,7 +24,7 @@ class Io(object):
             result[dev_name] = tmp_data[0], tmp_data[4]
         return result
 
-    def check(self, ):
+    def check(self,):
         if self.check_prev is not None:
             self.check_last = self.fetch()
             delta = []

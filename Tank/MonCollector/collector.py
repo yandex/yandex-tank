@@ -55,6 +55,8 @@ class SSHWrapper:
 class AgentClient(object):
     def __init__(self, **kwargs):
         self.run = []
+        self.host = None
+        
         self.port = 22
         for key, value in kwargs.iteritems():
             setattr(self, key, value)
@@ -151,7 +153,7 @@ class AgentClient(object):
 
     def uninstall(self):
         """ Remove agent's files from remote host"""
-        log_file=tempfile.mkstemp('.log', "agent_" + self.host+"_")[1]
+        log_file = tempfile.mkstemp('.log', "agent_" + self.host + "_")[1]
         cmd = [self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_file]
         logging.debug("Copy agent log from %s: %s" % (self.host, cmd))
         remove = self.ssh.get_scp_pipe(cmd)
@@ -272,7 +274,7 @@ class MonitoringCollector:
                 logging.debug("Killing %s with %s", pipe.pid, signal.SIGINT)
                 os.kill(pipe.pid, signal.SIGINT)
 
-        self.agent_logs=[]
+        self.agent_logs = []
         for agent in self.agents:
             self.agent_logs.append(agent.uninstall())
             logging.debug("Remove: %s" % agent.path['TEMP_CONFIG'])

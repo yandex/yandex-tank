@@ -16,7 +16,7 @@ class Mem(object):
 #        self.open('/proc/meminfo')
 
     def columns(self):
-        columns =  ['Memory_total', 'Memory_used', 'Memory_free', 'Memory_shared', 'Memory_buff', 'Memory_cached']
+        columns = ['Memory_total', 'Memory_used', 'Memory_free', 'Memory_shared', 'Memory_buff', 'Memory_cached']
         logging.info("Start. Columns: %s" % columns)
         return columns
 
@@ -36,7 +36,7 @@ class Mem(object):
                 
                 data = {}
                 for name in self.vars:
-                    data[name]=0
+                    data[name] = 0
                 
                 for l in info.splitlines():
                     if len(l) < 2: continue

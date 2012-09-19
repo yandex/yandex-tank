@@ -96,7 +96,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
                 sys.stdout.write(console_view.encode('utf-8'))
             except Exception, ex:
                 self.log.warn("Exception inside render: %s", traceback.format_exc(ex))
-                self.render_exception=ex
+                self.render_exception = ex
             # TODO: 3 add a way to send console view to remote API, via listener notification (avoid DataUploader dependency
 
     def add_info_widget(self, widget):

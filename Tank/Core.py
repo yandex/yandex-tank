@@ -96,9 +96,9 @@ class TankCore:
             for plugin_key in self.plugins_order:
                 plugin = self.get_plugin_by_key(plugin_key)
                 self.log.debug("Polling %s", plugin)
-                rc = plugin.is_test_finished()
-                if rc >= 0:
-                    return rc;
+                retcode = plugin.is_test_finished()
+                if retcode >= 0:
+                    return retcode;
             end_time = time.time()
             diff = end_time - begin_time
             self.log.debug("Polling took %s", diff)
@@ -276,8 +276,8 @@ class AbstractPlugin:
         return -1;
     def end_test(self, retcode):
         raise TypeError("Abstract method needs to be overridden")
-    def post_process(self, rc):
-        return rc;
+    def post_process(self, retcode):
+        return retcode;
 
     def get_option(self, option_name, default_value=None):
         return self.core.get_option(self.SECTION, option_name, default_value)
