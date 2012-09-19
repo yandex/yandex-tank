@@ -10,7 +10,9 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         lines = open(os.path.dirname(__file__) + '/tips.txt').readlines()
-        self.tip = random.choice(lines)
+        line = random.choice(lines)
+        self.section = line[:line.index(':')]
+        self.tip = line[line.index(':')+1:].strip()
         
     @staticmethod
     def get_key():
@@ -41,7 +43,7 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
         
 
     def render(self, screen):
-        line = screen.markup.WHITE + "Tips & Tricks" + screen.markup.RESET + ":\n  "
-        line += "\n  ".join(textwrap.wrap(self.tip, screen.right_panel_width))
+        line = screen.markup.WHITE + "Tips & Tricks > " + self.section + screen.markup.RESET + ":\n  "
+        line += "\n  ".join(textwrap.wrap(self.tip, screen.right_panel_width-1))
         return line
         
