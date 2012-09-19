@@ -11,7 +11,7 @@ autostop: An 'instances' criteria, used with phantom module is the most efficien
 autostop: You can easily write your standalone autostop criteria class and plug it into Autostop module, consult with developers for details 
 console: Disable full screen console with console.short_only=1 option 
 console: You can change relative width of right panel in full screen console with console.info_panel_width=50 option (value is percents of width) 
-monitoring: use monitoring.config=none option to disable monitoring
+monitoring: Use monitoring.config=none option to disable monitoring
 phantom: Use phantom.stpd_file option to set pre-generated source data file and avoid genetating (stepping) process
 phantom: Use phantom.config option to set predefined phantom run config (e.g. to work with multiple targets)
 phantom: Use phantom.writelog=proto_warning to record only non-successful requests
@@ -22,4 +22,4 @@ phantom: Green progressbar means progress measured by schedule, light-blue means
 phantom: Use phantom.phout_file option for pre-existing phantom results file import
 shellexec: Avoid commands that run too long (a second and more) in shellexec.poll
 shellexec: Use shell command hooks to run test set-up and tear-down actions, like ssh calls to target or test data generation. See module help for details.
-tips: Disable these tips with tips.disable=1
+tips: Disable these tips with tips.disable=1 option

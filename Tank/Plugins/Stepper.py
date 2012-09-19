@@ -753,6 +753,7 @@ class Stepper:
 
         already_cases = defaultdict(int)
 
+        self.log.info("Generating stpd-file...")
         if ammo_type == 'request':
             if case == 2:
                 max_progress = loop * ammo_count
