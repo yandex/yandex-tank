@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import base64
-import logging
 from subprocess import Popen, PIPE
 
 def is_number(s):

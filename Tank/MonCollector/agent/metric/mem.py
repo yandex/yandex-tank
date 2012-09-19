@@ -3,7 +3,7 @@
 import logging
 
 from subprocess import Popen, PIPE
-
+EMPTY = ''
 class Mem(object):
     """
     Memory statistics
@@ -21,6 +21,7 @@ class Mem(object):
         return columns
 
     def check(self):
+        result = []
         try:
             output = Popen('cat /proc/meminfo', shell=True, stdout=PIPE, stderr=PIPE)
         except Exception, e:

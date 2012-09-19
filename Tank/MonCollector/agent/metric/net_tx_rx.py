@@ -1,7 +1,6 @@
 import commands
 import logging
 
-
 class NetTxRx(object):
     ''' Get upped iface names and read they Tx/Rx counters in bytes '''
     def __init__(self,):

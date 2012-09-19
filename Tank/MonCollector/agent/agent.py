@@ -1,27 +1,22 @@
-#! /usr/bin/python
-# -*- coding: utf-8 -*-
-
-import os
-import sys
-import time
-import socket
-import ConfigParser
-import signal
-import logging
-
-from optparse import OptionParser
-
-from metric.process import check_cpu_mem
 from metric.cpu_la import CpuLa
 from metric.cpu_stat import CpuStat
-from metric.mem import Mem
-from metric.net_retrans import NetRetrans
-from metric.net_tx_rx import NetTxRx
-from metric.net_tcp import NetTcp
-from metric.io import Io
 from metric.custom import Custom
 from metric.disk import Disk
+from metric.io import Io
+from metric.mem import Mem
 from metric.net import Net
+from metric.net_retrans import NetRetrans
+from metric.net_tcp import NetTcp
+from metric.net_tx_rx import NetTxRx
+from metric.process import check_cpu_mem
+from optparse import OptionParser
+import ConfigParser
+import logging
+import os
+import signal
+import socket
+import sys
+import time
 
 def write(msg):
     sys.stdout.write('%s\n' % msg)

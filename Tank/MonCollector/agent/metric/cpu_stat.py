@@ -1,11 +1,4 @@
-# -*- coding: utf-8 -*-
-
-import logging
-
 from subprocess import Popen, PIPE
-#from logger import logger
-
-#logger.setLevel(logging.INFO)
 
 class CpuStat(object):
     ''' read /proc/stat and calculate amount of time
@@ -24,7 +17,6 @@ class CpuStat(object):
         columns = ['System_csw', 'System_int',
                    'CPU_user', 'CPU_nice', 'CPU_system', 'CPU_idle', 'CPU_iowait',
                    'CPU_irq', 'CPU_softirq', 'System_numproc', 'System_numthreads']
-#        logger.info("Start. Columns: %s" % columns)
         return columns 
 
     def check(self,):
@@ -39,7 +31,7 @@ class CpuStat(object):
         try:
             output = Popen('cat /proc/stat | grep -E "^(ctxt|intr|cpu) "',
                             shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        except Exception, e:
+        except Exception:
 #            logger.error("%s: %s" % (e.__class__, str(e)))
             result.append([EMPTY] * 9)
         else: 
@@ -83,7 +75,7 @@ class CpuStat(object):
                 if self.check_prev is not None:
                     self.check_last = fetch_cpu()
                     delta = []
-                    cnt, sum = 0, 0
+                    cnt = 0
                     for v in self.check_last:
                         column_delta = self.check_last[cnt] - self.check_prev[cnt]
                         sum += column_delta
@@ -101,22 +93,16 @@ class CpuStat(object):
 #                logger.debug("Result: %s" % result)
                     
         # Numproc, numthreads 
-#        logger.debug("Numproc start.")
         command = ['ps axf | wc -l', 'ps -eLf | wc -l']
         for cmd in command:
             try:
                 output = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-            except Exception, e:
-#                logger.error("%s: %s" % (e.__class__, str(e)))
+            except Exception:
                 result.append(EMPTY)
             else:
                 err = output.stderr.read()
                 if err:
                     result.append(EMPTY)
-#                    logger.error(err.rstrip())
                 else:
                     result.append(str(int(output.stdout.read().strip()) - 1))
-#        logger.debug("Result: %s" % result)
-
-#        logger.debug("Return")
         return result

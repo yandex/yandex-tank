@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
-
-import re
 from subprocess import Popen, PIPE
 import logging
+import re
 
 class Net(object):
     def __init__(self):
