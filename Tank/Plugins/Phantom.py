@@ -352,8 +352,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
 
     def render(self, screen):
         res = ""
-        res += self.get_progressbar(screen.right_panel_width, screen.markup)
-        res += "\n"
+
         dur_seconds = int(time.time()) - int(self.owner.phantom_start_time)
         duration = datetime.timedelta(seconds=dur_seconds)
         dur = 'Duration: %s' % str(duration)
@@ -361,28 +360,30 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         eta_time = 'N/A' 
         
         if self.test_duration and self.test_duration >= dur_seconds:
+            color_bg = screen.markup.BG_GREEN
+            color_fg = screen.markup.GREEN
             eta_time = datetime.timedelta(seconds=self.test_duration - dur_seconds)
+            progress = float(dur_seconds) / self.test_duration
         elif self.ammo_progress:
+            color_bg = screen.markup.BG_CYAN
+            color_fg = screen.markup.CYAN
             left_part = self.ammo_count - self.ammo_progress
             secs = int(float(dur_seconds) / float(self.ammo_progress) * float(left_part))
             eta_time = datetime.timedelta(seconds=secs)
+            progress = float(self.ammo_progress) / float(self.ammo_count)
+
+        perc = float(int(1000 * progress)) / 10
+        str_perc = str(perc) + "%"
+        
+        pb_width = screen.right_panel_width - 1 - len(str_perc)
+        
+        res += color_bg + ' ' * int(pb_width * progress) + screen.markup.RESET + color_fg + '-' * (pb_width - int(pb_width * progress)) + screen.markup.RESET + ' '
+        res += str_perc + "\n"
+
         eta = 'ETA: %s' % eta_time
         spaces = ' ' * (screen.right_panel_width - len(eta) - len(dur) - 1)
         res += dur + ' ' + spaces + eta
 
-        return res
-
-    # TODO: 1 change PB to use time when it is present, switch to ammo count otherwise
-    def get_progressbar(self, width, markup):
-        progress = float(self.ammo_progress) / float(self.ammo_count)
-        perc = float(int(1000 * progress)) / 10
-        str_perc = str(perc) + "%"
-        self.log.debug("PB: count %s progr %s perc %s", self.ammo_count, self.ammo_progress, perc)
-        
-        pb_width = width - 1 - len(str_perc)
-        
-        res = markup.BG_GREEN + ' ' * int(pb_width * progress) + markup.RESET + markup.GREEN + '-' * (pb_width - int(pb_width * progress)) + markup.RESET + ' '
-        res += str_perc
         return res
 
     def aggregate_second(self, second_aggregate_data):

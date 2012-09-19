@@ -23,12 +23,14 @@ class RealConsoleMarkup(object):
     MAGENTA = '\033[1;35m'
     BG_MAGENTA = '\033[1;45m'
     BG_GREEN = '\033[1;42m'
+    BG_BROWN = '\033[1;43m'
+    BG_CYAN = '\033[1;46m'
     
     def clean_markup(self, orig_str):
         for val in [self.YELLOW, self.RED, self.RESET,
                     self.CYAN, self.BG_MAGENTA, self.WHITE,
-                    self.BG_GREEN, self.GREEN,
-                    self.RED_DARK, self.MAGENTA]:
+                    self.BG_GREEN, self.GREEN, self.BG_BROWN,
+                    self.RED_DARK, self.MAGENTA, self.BG_CYAN]:
             orig_str = orig_str.replace(val, '')
         return orig_str
 

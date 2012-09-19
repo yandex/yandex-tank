@@ -44,7 +44,7 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
         
 
     def render(self, screen):
-        line = screen.markup.WHITE + "Tips & Tricks > " + self.section + screen.markup.RESET + ":\n  "
+        line = screen.markup.WHITE + "Tips & Tricks => " + self.section + screen.markup.RESET + ":\n  "
         line += "\n  ".join(textwrap.wrap(self.tip, screen.right_panel_width-1))
         return line
         

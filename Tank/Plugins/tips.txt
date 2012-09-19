@@ -6,7 +6,7 @@ tank: Place your favorite config options in ~/.yandex-tank file and they will be
 tank: Press Ctrl+C to initiate test shutdown, press it again to interrupt shutdown itself (may cause problems)
 tank: Use tank.artifacts_base_dir=~/yandex-tank-artifacts option to have all test logs saved under that directory, this helps cleaning old and unnecessary data
 tank: You can specify durations and timeouts in mixed units like 1d5h46m or 13s187ms
-ab: Apache Benchmark module for Yandex.Tank kinda creep, but it exists
+ab: Apache Benchmark module for Yandex.Tank kinda creepy, but it exists!
 autostop: An 'instances' criteria, used with phantom module is the most efficient way to tell if the service is already overloaded
 autostop: You can easily write your standalone autostop criteria class and plug it into Autostop module, consult with developers for details 
 console: Disable full screen console with console.short_only=1 option 
@@ -18,6 +18,7 @@ phantom: Use phantom.writelog=proto_warning to record only non-successful reques
 phantom: Disable stepping cache with phantom.use_caching=0 option
 phantom: Force stepping with phantom.force_stepping=1 option
 phantom: Set phantom.cache_dir=~/yandex-tank-artifacts option to get most of stepping cache, this also helps cleaning old stepped files
+phantom: Green progressbar means progress measured by schedule, light-blue means progress measured by source data
 shellexec: Avoid commands that run too long (a second and more) in shellexec.poll
 shellexec: Use shell command hooks to run test set-up and tear-down actions, like ssh calls to target or test data generation. See module help for details.
 tips: Disable these tips with tips.disable=1
