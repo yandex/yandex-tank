@@ -16,10 +16,11 @@ import subprocess
 import tempfile
 import time
 
-# TODO: 1 implement phout import
 # TODO: 3  chosen cases
 # TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
 # FIXME: 2 sometimes cache not used
+# FIXME: 2 phout import does not import cases info
+# FIXME: 3 disable monitoring on phout import
 class PhantomPlugin(AbstractPlugin):
 
     OPTION_TEST_DURATION = 'test_duration'
@@ -49,6 +50,8 @@ class PhantomPlugin(AbstractPlugin):
         self.use_caching = None
         self.http_ver = None
         self.rps_schedule = []
+        self.phout_import_mode = 0
+        self.did_phout_import_try = False
     
     @staticmethod
     def get_key():
@@ -113,7 +116,12 @@ class PhantomPlugin(AbstractPlugin):
             self.answ_log_level = 'none' 
         elif self.answ_log_level == '1':
             self.answ_log_level = 'all' 
-        self.phout_file = self.get_option("phout_file", tempfile.mkstemp(".log", "phout_")[1])
+        self.phout_file = self.get_option("phout_file", '')
+        if not self.phout_file:
+            self.phout_file = tempfile.mkstemp(".log", "phout_")[1]
+            self.core.add_artifact_file(self.phout_file)
+        else:
+            self.phout_import_mode = 1
         self.stat_log = self.get_option("stat_log", tempfile.mkstemp(".log", "phantom_stat_")[1])
         self.phantom_log = self.get_option("phantom_log", tempfile.mkstemp(".log", "phantom_")[1])
         self.stpd = self.get_option(self.OPTION_STPD, '')
@@ -127,13 +135,11 @@ class PhantomPlugin(AbstractPlugin):
         self.phantom_http_entity = self.get_option("phantom_http_entity", "")
 
         self.core.add_artifact_file(self.answ_log)        
-        self.core.add_artifact_file(self.phout_file)
         self.core.add_artifact_file(self.stat_log)
         self.core.add_artifact_file(self.phantom_log)
         self.core.add_artifact_file(self.config)        
 
-        self.check_address()
-            
+        self.check_address()            
 
 
     def compose_config(self):
@@ -207,8 +213,6 @@ class PhantomPlugin(AbstractPlugin):
         
 
     def prepare_test(self):
-        self.prepare_stepper()     
-                
         aggregator = None
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
@@ -219,49 +223,63 @@ class PhantomPlugin(AbstractPlugin):
             aggregator.set_source_files(self.phout_file, self.stat_log)
             self.timeout = aggregator.get_timeout()
 
-        if not self.config:
-            self.config = self.compose_config()
-        args = [self.phantom_path, 'check', self.config]
-        
-        rc = Utils.execute(args, catch_out=True)
-        if rc:
-            raise RuntimeError("Subprocess returned %s",)    
-
-        try:
-            console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
-        except Exception, ex:
-            self.log.debug("Console not found: %s", ex)
-            console = None
+        if not self.phout_import_mode:
+            self.prepare_stepper()     
+                
+            if not self.config:
+                self.config = self.compose_config()
+            args = [self.phantom_path, 'check', self.config]
             
-        if console:    
-            widget = PhantomProgressBarWidget(self)
-            console.add_info_widget(widget)
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-            aggregator.add_result_listener(widget)
+            rc = Utils.execute(args, catch_out=True)
+            if rc:
+                raise RuntimeError("Subprocess returned %s",)    
 
-            widget = PhantomInfoWidget(self)
-            console.add_info_widget(widget)
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-            aggregator.add_result_listener(widget)
-
+            try:
+                console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+            except Exception, ex:
+                self.log.debug("Console not found: %s", ex)
+                console = None
+                
+            if console:    
+                widget = PhantomProgressBarWidget(self)
+                console.add_info_widget(widget)
+                aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+                aggregator.add_result_listener(widget)
+    
+                widget = PhantomInfoWidget(self)
+                console.add_info_widget(widget)
+                aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+                aggregator.add_result_listener(widget)
+    
         
     def start_test(self):
-        args = [self.phantom_path, 'run', self.config]
-        self.log.debug("Starting %s with arguments: %s", self.phantom_path, args)
-        self.phantom_start_time = time.time()
-        self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        if not self.phout_import_mode:
+            args = [self.phantom_path, 'run', self.config]
+            self.log.debug("Starting %s with arguments: %s", self.phantom_path, args)
+            self.phantom_start_time = time.time()
+            self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        else:
+            if not os.path.exists(self.phout_file):
+                raise RuntimeError("Phout file not exists for import: %s", self.phout_file)
     
 
     def is_test_finished(self):
-        Utils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
-
-        rc = self.process.poll()
-        if rc != None:
-            self.log.info("Phantom done its work with exit code: %s", rc)
-            return rc
+        if not self.phout_import_mode:
+            Utils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
+    
+            rc = self.process.poll()
+            if rc != None:
+                self.log.info("Phantom done its work with exit code: %s", rc)
+                return rc
+            else:
+                return -1
         else:
-            return -1
-
+            if not self.did_phout_import_try:
+                self.did_phout_import_try=True
+                return -1
+            else:
+                return 0
+    
     
     def end_test(self, retcode):
         if self.process and self.process.poll() == None:

@@ -6,7 +6,6 @@ from Tank.Plugins.Phantom import PhantomPlugin
 import logging
 import re
 
-# TODO: 2 find solution for melfa's case
 class AutostopPlugin(AbstractPlugin, AggregateResultListener):
     SECTION = 'autostop'
 
@@ -340,11 +339,13 @@ class UsedInstancesCriteria(AbstractCriteria):
             self.is_relative = False
         self.seconds_limit = Utils.expand_to_seconds(param_str.split(',')[1])
         
-        phantom = autostop.core.get_plugin_of_type(PhantomPlugin)
-        self.threads_limit = phantom.instances
-        if not self.threads_limit:
-            raise ValueError("Cannot create 'instances' criteria with zero instances limit")
-    
+        try:
+            phantom = autostop.core.get_plugin_of_type(PhantomPlugin)
+            self.threads_limit = phantom.instances
+            if not self.threads_limit:
+                raise ValueError("Cannot create 'instances' criteria with zero instances limit")
+        except KeyError:
+            self.log.warning("No phantom module, 'instances' autostop disabled")
 
     def notify(self, aggregate_second):
         threads = aggregate_second.overall.active_threads

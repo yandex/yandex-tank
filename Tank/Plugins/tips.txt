@@ -19,6 +19,7 @@ phantom: Disable stepping cache with phantom.use_caching=0 option
 phantom: Force stepping with phantom.force_stepping=1 option
 phantom: Set phantom.cache_dir=~/yandex-tank-artifacts option to get most of stepping cache, this also helps cleaning old stepped files
 phantom: Green progressbar means progress measured by schedule, light-blue means progress measured by source data
+phantom: Use phantom.phout_file option for pre-existing phantom results file import
 shellexec: Avoid commands that run too long (a second and more) in shellexec.poll
 shellexec: Use shell command hooks to run test set-up and tear-down actions, like ssh calls to target or test data generation. See module help for details.
 tips: Disable these tips with tips.disable=1
