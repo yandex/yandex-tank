@@ -1,0 +1,13 @@
+[tank] Use  '#! /usr/bin/tank -c' header in configs and run 'chmod +x' on them to have self-starting configs
+[tank] You can override any config option with command-line --option switch, like this: -o "tank.artifacts_base_dir=/tmp" 
+[tank] You can make console logger more or less verbose with -v and -q command-line switches
+[tank] Lock files can be ignored with -i command-line switch, or they will fail test with -f
+[tank] Place your favorite config options in ~/.yandex-tank file and they will be applied for every tool run
+[tank] Press Ctrl+C to initiate test shutdown, press it again to interrupt shutdown itself (may cause problems)
+[tank] Use tank.artifacts_base_dir=~/yandex-tank-artifacts option to have all test logs saved under that directory, this helps cleaning old and unnecessary data
+[tank] You can specify durations and timeouts in mixed units like 1d5h46m or 13s187ms
+[ab] Apache Benchmark module for Yandex.Tank kinda creep, but it exists
+[autostop] An 'instances' criteria, used with phantom module is the most efficient way to tell if the service is already overloaded
+[autostop] You can easily write your own autostop criteria and add it to Autostop module, consult with developers for details 
+[console] Disable full screen console with console.short_only=1 option 
+[console] You can change relative width of right panel in full screen console with console.info_panel_width=50 option (value is percents of width) 

@@ -5,6 +5,7 @@ import os
 import re
 import tempfile
 import time
+from Tank import Utils
 
 # TODO: 2 eliminate double ammo file pass
 # TODO: 1 add progress and ETA
@@ -96,7 +97,7 @@ def get_common_header(filename):
 
 
 def load_const(req, duration):
-    dur = str2sec(duration)
+    dur = Utils.expand_to_seconds(duration)
     steps = []
     steps.append([req, dur])
     ls = '%s,const,%s,%s,(%s,%s)\n' % (dur, req, req, req, duration)
@@ -107,7 +108,7 @@ def load_const(req, duration):
 
 
 def load_line(start, end, duration):
-    dur = str2sec(duration)
+    dur = Utils.expand_to_seconds(duration)
     k = float((end - start) / float(dur - 1))
     (cnt, last_x, total) = (1, start, 0)
     ls = '%s,line,%s,%s,(%s,%s,%s)\n' % (
@@ -136,7 +137,7 @@ def load_step(
     step,
     duration,
     ):
-    dur = str2sec(duration)
+    dur = Utils.expand_to_seconds(duration)
     (steps, ls, total) = ([], '', 0)
     if end > start:
         for x in range(start, end + 1, step):
@@ -292,7 +293,7 @@ def constf(req, duration):
     m = re.match("(\d+)\/(\d+)", req)
     if m:
         (a, b) = (int(m.group(1)), int(m.group(2)))
-        (dur, e) = (str2sec(duration), int(a / b))
+        (dur, e) = (Utils.expand_to_seconds(duration), int(a / b))
 
         fr = '%.3f' % (float(a) / b)
         ls = '%s,const,%s,%s,(%s,%s)\n' % (dur, fr, fr, req, duration)
@@ -560,23 +561,6 @@ def make_autocases_top(
             tree[s[0]],
             )
     return (cases_done, output)
-
-
-def str2sec(st):
-    pattern = re.compile('(\d+)(h|m|s|)')
-    m = pattern.match(str(st))
-    if m:
-        el = m.groups()
-        if el[1] == 'h':
-            return int(el[0]) * 3600
-        elif el[1] == 'm':
-            return int(el[0]) * 60
-        elif el[1] == 's':
-            return int(el[0])
-        else:
-            return int(el[0])
-    return ''
-
 
 def parse_uri(line):
     (uri, header_list) = ('', {})

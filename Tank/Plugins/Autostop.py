@@ -6,7 +6,6 @@ from Tank.Plugins.Phantom import PhantomPlugin
 import logging
 import re
 
-# TODO: 1 add quantile criteria
 # TODO: 2 find solution for melfa's case
 class AutostopPlugin(AbstractPlugin, AggregateResultListener):
     SECTION = 'autostop'
@@ -40,6 +39,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         self.add_criteria_class(NetCodesCriteria)
         self.add_criteria_class(HTTPCodesCriteria)
         self.add_criteria_class(UsedInstancesCriteria)
+        self.add_criteria_class(QuantileCriteria)
 
     def prepare_test(self):
         for criteria_str in self.criteria_str.strip().split(")"):
@@ -89,6 +89,32 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
                 self.log.debug("Autostop criteria requested test stop: %s", criteria)
                 self.cause_criteria = criteria
     
+class AutostopWidget(AbstractInfoWidget):
+    def __init__(self, sender):
+        AbstractInfoWidget.__init__(self)
+        self.owner = sender        
+    
+    def get_index(self):
+        return 25
+
+    def render(self, screen):
+        res = []
+        candidates = self.owner.get_counting()
+        for candidate in candidates:
+            text, perc = candidate.widget_explain()
+            if perc >= 0.95:
+                res += [screen.markup.RED_DARK + text + screen.markup.RESET]
+            elif perc >= 0.8:
+                res += [screen.markup.RED + text + screen.markup.RESET]
+            elif perc >= 0.5:
+                res += [screen.markup.YELLOW + text + screen.markup.RESET]
+            else:
+                res += [text]
+        
+        if res:
+            return "Autostop:\n  " + ("\n  ".join(res))
+        else:
+            return ''
 
 class AbstractCriteria:
     RC_TIME = 21
@@ -357,31 +383,46 @@ class UsedInstancesCriteria(AbstractCriteria):
         items = (self.get_level_str(), self.seconds_count, self.seconds_limit)
         return ("Instances >%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
 
-
-class AutostopWidget(AbstractInfoWidget):
-    def __init__(self, sender):
-        AbstractInfoWidget.__init__(self)
-        self.owner = sender        
+class QuantileCriteria(AbstractCriteria):
+    @staticmethod
+    def get_type_string():
+        return 'quantile'
     
-    def get_index(self):
-        return 25
-
-    def render(self, screen):
-        res = []
-        candidates = self.owner.get_counting()
-        for candidate in candidates:
-            text, perc = candidate.widget_explain()
-            if perc >= 0.95:
-                res += [screen.markup.RED_DARK + text + screen.markup.RESET]
-            elif perc >= 0.8:
-                res += [screen.markup.RED + text + screen.markup.RESET]
-            elif perc >= 0.5:
-                res += [screen.markup.YELLOW + text + screen.markup.RESET]
-            else:
-                res += [text]
-        
-        if res:
-            return "Autostop:\n  " + ("\n  ".join(res))
+    def __init__(self, autostop, param_str):
+        AbstractCriteria.__init__(self)
+        self.seconds_count = 0
+        self.quantile = param_str.split(',')[0]
+        self.rt_limit = Utils.expand_to_milliseconds(param_str.split(',')[1])
+        self.seconds_limit = Utils.expand_to_seconds(param_str.split(',')[2])
+        self.autostop = autostop
+    
+    def notify(self, aggregate_second):
+        if not (self.quantile in aggregate_second.overall.quantiles.keys()):
+            self.log.warning("No qunatile %s in %s", self.quantile, aggregate_second.overall.quantiles)
+        if self.quantile in aggregate_second.overall.quantiles.keys() \
+                and aggregate_second.overall.quantiles[self.quantile] > self.rt_limit:
+            if not self.seconds_count:
+                self.cause_second = aggregate_second
+            
+            self.log.debug(self.explain())
+            
+            self.seconds_count += 1
+            self.autostop.add_counting(self)
+            if self.seconds_count >= self.seconds_limit:
+                return True
         else:
-            return ''
+            self.seconds_count = 0
+            
+        return False
 
+    def get_rc(self):
+        return self.RC_TIME
+
+    def explain(self):
+        items = (self.quantile, self.rt_limit, self.seconds_count, self.cause_second.overall.time)
+        return "Percentile %s higher than %sms for %ss, started at: %s" % items
+
+    def widget_explain(self):
+        items = (self.quantile, self.rt_limit, self.seconds_count, self.seconds_limit)
+        return ("%s%% >%sms for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
+   
