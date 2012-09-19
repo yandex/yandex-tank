@@ -5,6 +5,8 @@ import random
 import textwrap
 
 class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
+    SECTION = 'tips'
+    
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         lines = open(os.path.dirname(__file__) + '/tips.txt').readlines()
@@ -15,17 +17,18 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
         return __file__;
     
     def configure(self):
-        pass
+        self.disable = int(self.get_option('disable', '0'))
     
     def prepare_test(self):
-        try:
-            console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
-        except Exception, ex:
-            self.log.debug("Console not found: %s", ex)
-            console = None
-            
-        if console:    
-            console.add_info_widget(self)        
+        if not self.disable:
+            try:
+                console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+            except Exception, ex:
+                self.log.debug("Console not found: %s", ex)
+                console = None
+                
+            if console:    
+                console.add_info_widget(self)        
     
     def start_test(self):
         pass
@@ -38,7 +41,7 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
         
 
     def render(self, screen):
-        line=screen.markup.WHITE+"Tips & Tricks"+screen.markup.RESET+":\n  "
-        line+="\n  ".join(textwrap.wrap(self.tip, screen.right_panel_width))
+        line = screen.markup.WHITE + "Tips & Tricks" + screen.markup.RESET + ":\n  "
+        line += "\n  ".join(textwrap.wrap(self.tip, screen.right_panel_width))
         return line
         
