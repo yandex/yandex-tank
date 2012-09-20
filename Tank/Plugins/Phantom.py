@@ -25,6 +25,7 @@ import select
 # FIXME: 3 disable monitoring on phout import
 class PhantomPlugin(AbstractPlugin):
 
+    OPTION_STEPS = 'steps'
     OPTION_TEST_DURATION = 'test_duration'
     OPTION_INSTANCES_LIMIT = 'instances'
     OPTION_AMMO_COUNT = 'ammo_count'
@@ -205,7 +206,7 @@ class PhantomPlugin(AbstractPlugin):
             stepper = self.make_stpd_file(self.stpd)
         
         #self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES, stepper.cases)
-        self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_STEPS, stepper.steps)
+        self.core.set_option(self.SECTION, self.OPTION_STEPS, stepper.steps)
         self.core.set_option(self.SECTION, self.OPTION_LOADSCHEME, stepper.loadscheme)
         self.core.set_option(self.SECTION, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
         self.core.set_option(self.SECTION, self.OPTION_AMMO_COUNT, str(stepper.ammo_count))
@@ -337,7 +338,7 @@ class PhantomPlugin(AbstractPlugin):
         external_stepper_conf = ConfigParser.ConfigParser()
         external_stepper_conf.read(cached_config)
         #stepper.cases = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES)
-        stepper.steps = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_STEPS)
+        stepper.steps = external_stepper_conf.get(self.SECTION, self.OPTION_STEPS)
         stepper.loadscheme = external_stepper_conf.get(self.SECTION, self.OPTION_LOADSCHEME)
         stepper.loop_count = external_stepper_conf.get(self.SECTION, self.OPTION_LOOP_COUNT)
         stepper.ammo_count = external_stepper_conf.get(self.SECTION, self.OPTION_AMMO_COUNT)

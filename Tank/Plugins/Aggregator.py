@@ -32,8 +32,8 @@ class AggregatorPlugin(AbstractPlugin):
     
     def configure(self):
         periods = self.get_option("time_periods", self.default_time_periods).split(" ")
-        self.time_periods = [ str(Utils.expand_to_milliseconds(x)) for x in periods ]
-        self.core.set_option(self.SECTION, "time_periods", " ".join(self.time_periods))
+        self.time_periods = [ Utils.expand_to_milliseconds(x) for x in periods ]
+        self.core.set_option(self.SECTION, "time_periods", " ".join([ str(x) for x in periods ]))
 
     def prepare_test(self):
         pass
@@ -169,14 +169,29 @@ class AbstractReader:
             count = 0.0
             quantiles = copy.copy(SecondAggregateDataItem.QUANTILES)
             times = copy.copy(self.aggregator.time_periods)
+            time_from = 0
+            time_to = 0
+            times_dist_draft = []
+            times_dist_item = {}
             for timing in item.times_dist:
                 count += 1
                 if quantiles and (count / item.RPS) >= quantiles[0]:
                     level = quantiles.pop(0)
                     item.quantiles[level * 100] = timing
+                
+                while times and timing > time_to:
+                    time_from = time_to
+                    time_to = times.pop(0)
+                    if times_dist_item and times_dist_item['count']:
+                        times_dist_draft.append(times_dist_item)
+                    times_dist_item = {'from': time_from, 'to': time_to, 'count':0}                    
+                    
+                times_dist_item['count'] += 1                    
+            if times_dist_item and times_dist_item['count']:
+                times_dist_draft.append(times_dist_item)
                      
-            item.dispersion = 0
-            item.times_dist = []        
+            item.dispersion = 0 # TODO: will someone miss this dispersion?
+            item.times_dist = times_dist_draft        
 
         
     def append_sample(self, result, item):

@@ -392,6 +392,7 @@ class TotalQuantilesBlock(AbstractBlock):
             quan += perc 
 
             while quantiles and quan >= quantiles[0]:
+                # FIXME break here could resolve problem
                 line = self.format_line(quantiles.pop(0), item['to'])
                 self.width = max(self.width, len(line))
                 self.lines.append(line)
