@@ -73,7 +73,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
             self.log.error("Failed to check task status for '%s': %s", task, ex)
             raise ex
         if  task_data[0]['closed']:
-            raise RuntimeError("Task %s is closed: %s" % (task, task_data[0].closed))
+            raise RuntimeError("Task %s is closed: %s" % (task, task_data[0]['closed']))
         self.log.info("Task %s is ok", task)
         self.task_name = task_data[0]['name']
     

@@ -127,7 +127,7 @@ class AbstractCriteria:
     def count_matched_codes(self, codes_regex, codes_dict):
         total = 0
         for code, count in codes_dict.items():
-            if codes_regex.match(code):
+            if codes_regex.match(str(code)):
                 total += count
         return total
     
@@ -180,7 +180,7 @@ class AvgTimeCriteria(AbstractCriteria):
         return self.RC_TIME
 
     def explain(self):
-        items = (self.rt_limit, self.seconds_count, self.cause_second.overall.time)
+        items = (self.rt_limit, self.seconds_count, self.cause_second.time)
         return "Average response time higher than %sms for %ss, started at: %s" % items
 
     def widget_explain(self):
@@ -245,7 +245,7 @@ class HTTPCodesCriteria(AbstractCriteria):
         return level_str
 
     def explain(self):
-        items = (self.codes_mask, self.get_level_str(), self.seconds_count, self.cause_second.overall.time)
+        items = (self.codes_mask, self.get_level_str(), self.seconds_count, self.cause_second.time)
         return "%s codes count higher than %s for %ss, started at: %s" % items 
     
     def widget_explain(self):
@@ -312,7 +312,7 @@ class NetCodesCriteria(AbstractCriteria):
         return level_str
 
     def explain(self):
-        items = (self.codes_mask, self.get_level_str(), self.seconds_count, self.cause_second.overall.time)
+        items = (self.codes_mask, self.get_level_str(), self.seconds_count, self.cause_second.time)
         return "%s net codes count higher than %s for %ss, started at: %s" % items 
     
     def widget_explain(self):
@@ -377,7 +377,7 @@ class UsedInstancesCriteria(AbstractCriteria):
         return level_str
 
     def explain(self):
-        items = (self.get_level_str(), self.seconds_count, self.cause_second.overall.time)
+        items = (self.get_level_str(), self.seconds_count, self.cause_second.time)
         return "Testing threads (instances) utilization higher than %s for %ss, started at: %s" % items                 
 
     def widget_explain(self):
@@ -392,7 +392,7 @@ class QuantileCriteria(AbstractCriteria):
     def __init__(self, autostop, param_str):
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
-        self.quantile = param_str.split(',')[0]
+        self.quantile = float(param_str.split(',')[0])
         self.rt_limit = Utils.expand_to_milliseconds(param_str.split(',')[1])
         self.seconds_limit = Utils.expand_to_seconds(param_str.split(',')[2])
         self.autostop = autostop
@@ -420,7 +420,7 @@ class QuantileCriteria(AbstractCriteria):
         return self.RC_TIME
 
     def explain(self):
-        items = (self.quantile, self.rt_limit, self.seconds_count, self.cause_second.overall.time)
+        items = (self.quantile, self.rt_limit, self.seconds_count, self.cause_second.time)
         return "Percentile %s higher than %sms for %ss, started at: %s" % items
 
     def widget_explain(self):

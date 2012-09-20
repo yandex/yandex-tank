@@ -71,7 +71,7 @@ class AggregatorPlugin(AbstractPlugin):
         return self.time_periods[-1:][0]
 
 class SecondAggregateData:
-    def __init__(self, cimulative_item):
+    def __init__(self, cimulative_item=None):
         self.cases = {}
         self.time = None
         # @type self.overall: SecondAggregateDataItem
@@ -158,7 +158,8 @@ class AbstractReader:
 
     def calculate_aggregates(self, item):
         if item.RPS:
-            item.selfload = 100 * float(item.selfload) / item.avg_response_time
+            if item.avg_response_time:
+                item.selfload = 100 * float(item.selfload) / item.avg_response_time
             item.avg_connect_time /= item.RPS 
             item.avg_send_time /= item.RPS 
             item.avg_latency /= item.RPS
@@ -172,7 +173,7 @@ class AbstractReader:
             time_from = 0
             time_to = 0
             times_dist_draft = []
-            times_dist_item = {}
+            times_dist_item = {'from': time_from, 'to': time_to, 'count':0}
             for timing in item.times_dist:
                 count += 1
                 if quantiles and (count / item.RPS) >= quantiles[0]:
@@ -182,15 +183,17 @@ class AbstractReader:
                 while times and timing > time_to:
                     time_from = time_to
                     time_to = times.pop(0)
-                    if times_dist_item and times_dist_item['count']:
+                    if times_dist_item['count']:
                         times_dist_draft.append(times_dist_item)
                     times_dist_item = {'from': time_from, 'to': time_to, 'count':0}                    
                     
-                times_dist_item['count'] += 1                    
-            if times_dist_item and times_dist_item['count']:
+                times_dist_item['count'] += 1
+                
+                                    
+            if  times_dist_item['count']:
                 times_dist_draft.append(times_dist_item)
                      
-            item.dispersion = 0 # TODO: will someone miss this dispersion?
+            item.dispersion = 0 # TODO: will someone miss this so-called 'dispersion'?
             item.times_dist = times_dist_draft        
 
         

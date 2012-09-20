@@ -307,7 +307,12 @@ class PhantomPlugin(AbstractPlugin):
             if not os.path.exists(self.ammo_file):
                 raise RuntimeError("Ammo file not found: %s", self.ammo_file)
             
-            for stat_option in os.stat(self.ammo_file):
+            stat=os.stat(self.ammo_file)
+            cnt=0
+            for stat_option in stat:
+                if cnt==7: # skip access time
+                    continue
+                cnt+=1
                 hashed_str += ";" + str(stat_option)
             self.log.debug("stpd-hash source: %s", hashed_str)
             hasher.update(hashed_str)            

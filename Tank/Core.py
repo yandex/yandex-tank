@@ -11,7 +11,7 @@ import traceback
 
 class TankCore:
     """
-    JMeter+Dstat inspired :)
+    JMeter + dstat inspired :)
     """
     SECTION = 'tank'
     PLUGIN_PREFIX = 'plugin_'

@@ -21,12 +21,9 @@ class AutostopTestCase(TankTestCase):
         del self.foo
         self.foo = None 
 
-    def get_test_second(self):
-        return self.get_aggregate_data('data/preproc_single2.txt')    
-    
     def test_run(self):
-        data = self.get_test_second()
-        
+        data = SecondAggregateData()
+        data.overall.avg_response_time = 11
         self.foo.core.set_option(self.foo.SECTION, "autostop", "time(1,10)")
         
         self.foo.configure()
@@ -40,8 +37,8 @@ class AutostopTestCase(TankTestCase):
         self.foo.end_test(0)
         
     def test_run_http(self):
-        data = self.get_test_second()
-        
+        data = SecondAggregateData()
+        data.overall.http_codes = {'200':11}
         self.foo.core.set_option(self.foo.SECTION, "autostop", "http (200, 10, 5 )\nhttp (3xx, 1.5%, 10m)")
         
         self.foo.configure()
@@ -55,8 +52,8 @@ class AutostopTestCase(TankTestCase):
         self.foo.end_test(0)
         
     def test_run_net(self):
-        data = self.get_test_second()
-        
+        data = SecondAggregateData()
+        data.overall.net_codes = {71:11}
         self.foo.core.set_option(self.foo.SECTION, "autostop", "net (71, 1, 5)\nnet (xx, 1.5%, 10m )")
         
         self.foo.configure()
@@ -70,8 +67,8 @@ class AutostopTestCase(TankTestCase):
         self.foo.end_test(0)
         
     def test_run_inst(self):
-        data = self.get_test_second()
-        
+        data = SecondAggregateData()
+        data.overall.active_threads = 10
         self.foo.core.set_option(self.foo.SECTION, "autostop", "instances (5, 5)\ninstances (90%, 10m)")
         
         self.foo.configure()
@@ -85,8 +82,8 @@ class AutostopTestCase(TankTestCase):
         self.foo.end_test(0)
 
     def test_run_quan(self):
-        data = self.get_test_second()
-        
+        data = SecondAggregateData()
+        data.overall.quantiles = {99.0:11}
         self.foo.core.set_option(self.foo.SECTION, "autostop", "quantile(99,2,3)")
         
         self.foo.configure()
