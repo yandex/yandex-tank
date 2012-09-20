@@ -45,27 +45,22 @@ class AggregatorPlugin(AbstractPlugin):
     def start_test(self):
         if not self.reader:
             self.log.warning("No one set reader for aggregator yet")
-
-
-    def get_next_second(self):
-        data = self.reader.get_next_sample()
-        while data:
-            self.log.info("Data: %s", data)
-            data = self.reader.get_next_sample()
     
-        
-    def is_test_finished(self):
+    def read_samples(self, limit=0, force=False):
         if self.reader:
             self.reader.check_open_files()
-            data = self.get_next_second()
+            data = self.reader.get_next_sample(force)
             count = 0
-            while data and count < 5: # up to 5 aggregate seconds for one try
+            while data and (limit < 1 or count < limit):
                 self.notify_listeners(data)
-                data = self.get_next_second()
-                    
+                data = self.reader.get_next_sample(force)
+        
+    def is_test_finished(self):
+        self.read_samples(5)                    
         return -1
 
     def end_test(self, retcode):
+        self.read_samples(force=True)
         return retcode                
         
     def add_result_listener(self, listener):
@@ -83,7 +78,7 @@ class SecondAggregateData:
         self.cases = {}
         self.time = None
         # @type self.overall: SecondAggregateDataItem
-        self.overall = None
+        self.overall = SecondAggregateDataItem()
         self.cumulative = cimulative_item
 
 class SecondAggregateDataItem:
@@ -152,30 +147,24 @@ class SecondAggregateDataItem:
             level_parts = parts[0].split("_q")
             self.quantiles[level_parts[1]] = int(parts[1]) / 1000
     
-    def __init__(self, lines):
+    def __init__(self):
         self.log = logging.getLogger(__name__)
-        self.overall = None
         self.case = None
-        self.time = None
         self.planned_requests = None
-        self.active_threads = None
+        self.active_threads = 0
         self.selfload = None
         self.RPS = None
-
         self.http_codes = {}
         self.net_codes = {}
         self.times_dist = []
         self.quantiles = {}
-        for line in lines:
-            line = line.strip()
-            #self.log.debug("Parsing line: %s", line)
-            self.parse_singles(line)
-            self.parse_avg_times(line)
-            self.parse_distributions(line)
-            self.parse_quantiles(line)
-        self.RPS = sum(self.net_codes.values())
         self.dispersion = None
         self.input = None
+        self.avg_connect_time = 0
+        self.avg_send_time = 0
+        self.avg_latency = 0
+        self.avg_receive_time = 0
+        self.avg_response_time = 0
 
 class SecondAggregateDataTotalItem:
     def __init__(self):
@@ -209,5 +198,47 @@ class AbstractReader:
     def check_open_files(self):
         pass
 
-    def get_next_sample(self):
+    def get_next_sample(self, force):
         pass
+
+
+    def append_sample(self, result, item):
+        (marker, threads, overall_rt, http_code, net_code, sent_bytes, received_bytes, connect, send, latency, receive, accuracy) = item
+        result.case = marker
+        result.active_threads = threads
+        result.planned_requests = None
+        result.RPS += 1
+        result.http_codes = {}
+        result.net_codes = {}
+        result.times_dist = []
+        
+        result.quantiles = {}
+        result.dispersion = None
+
+        result.input += received_bytes
+        result.output += sent_bytes
+        
+        result.avg_connect_time += connect 
+        result.avg_send_time += send 
+        result.avg_latency += latency
+        result.avg_receive_time += receive
+        result.avg_response_time += overall_rt
+        result.selfload += accuracy
+
+    
+    
+    def parse_second(self, next_time, data):
+        self.log.debug("Parsing second: %s", next_time)
+        result = SecondAggregateData(self.cumulative)
+        result.time = datetime.datetime.fromtimestamp(next_time)
+        for item in data:
+            self.append_sample(result.overall, item)
+            marker = item[0]
+            if marker:
+                if not marker in result.cases.keys:
+                    result.cases[marker] = SecondAggregateDataItem()
+                self.append_sample(result.cases[marker], item)
+            
+        return result
+    
+

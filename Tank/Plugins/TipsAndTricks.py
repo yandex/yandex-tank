@@ -12,7 +12,7 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
         lines = open(os.path.dirname(__file__) + '/tips.txt').readlines()
         line = random.choice(lines)
         self.section = line[:line.index(':')]
-        self.tip = line[line.index(':')+1:].strip()
+        self.tip = line[line.index(':') + 1:].strip()
         self.disable = 0
         
     @staticmethod
@@ -37,7 +37,7 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
         pass
         
     def end_test(self, retcode):
-        self.log.debug("End2")
+        pass
         
     def get_index(self):
         return 10000 # really last index    
@@ -45,6 +45,6 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
 
     def render(self, screen):
         line = screen.markup.WHITE + "Tips & Tricks => " + self.section + screen.markup.RESET + ":\n  "
-        line += "\n  ".join(textwrap.wrap(self.tip, screen.right_panel_width-1))
+        line += "\n  ".join(textwrap.wrap(self.tip, screen.right_panel_width - 1))
         return line
         

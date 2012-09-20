@@ -377,7 +377,8 @@ class TotalQuantilesBlock(AbstractBlock):
     def add_second(self, data):
         self.times_dist = data.cumulative.times_dist
         self.total_count = data.cumulative.total_count
-        self.current_max_rt = data.cumulative.times_dist[max(data.cumulative.times_dist.keys())]['to']
+        if data.cumulative.times_dist:
+            self.current_max_rt = data.cumulative.times_dist[max(data.cumulative.times_dist.keys())]['to']
       
     def render(self):
         self.lines = []

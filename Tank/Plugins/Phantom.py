@@ -1,7 +1,7 @@
 from Tank import Utils
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener, \
-    AbstractReader
+    AbstractReader, SecondAggregateData, SecondAggregateDataTotalItem
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.Stepper import Stepper
 from ipaddr import AddressValueError
@@ -379,14 +379,15 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
 
         eta_time = 'N/A' 
         
+        progress = 0
+        color_bg = screen.markup.BG_CYAN
+        color_fg = screen.markup.CYAN
         if self.test_duration and self.test_duration >= dur_seconds:
             color_bg = screen.markup.BG_GREEN
             color_fg = screen.markup.GREEN
             eta_time = datetime.timedelta(seconds=self.test_duration - dur_seconds)
             progress = float(dur_seconds) / self.test_duration
         elif self.ammo_progress:
-            color_bg = screen.markup.BG_CYAN
-            color_fg = screen.markup.CYAN
             left_part = self.ammo_count - self.ammo_progress
             secs = int(float(dur_seconds) / float(self.ammo_progress) * float(left_part))
             eta_time = datetime.timedelta(seconds=secs)
@@ -496,6 +497,8 @@ class PhantomReader(AbstractReader):
         self.stat_data = {}
         self.pending_datetime = None
         self.data_queue = []
+        self.data_buffer = {}
+        self.cumulative = SecondAggregateDataTotalItem()
   
     def check_open_files(self):
         if not self.phout and os.path.exists(self.phout_file):
@@ -506,16 +509,15 @@ class PhantomReader(AbstractReader):
             self.log.debug("Opening stat file: %s", self.stat_file)
             self.stat = open(self.stat_file, 'r')
 
-    def get_next_sample(self):
+    def get_next_sample(self, force):
         self.read_stat_data()
-        return self.read_phout_data()
+        return self.read_phout_data(force)
 
     def read_stat_data(self):
         stat_ready = select.select([self.stat], [], [], 0)[0]
         if stat_ready:
-            stat = stat_ready.pop(0)
-            lines = stat.readlines()
-            for line in lines:
+            stat = stat_ready.pop(0).readlines()
+            for line in stat:
                 if line.startswith('time\t'):
                     date_str = line[len('time:\t') - 1:].strip()[:-5].strip()
                     date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
@@ -526,25 +528,49 @@ class PhantomReader(AbstractReader):
                     self.stat_data[self.pending_datetime] = int(line[len('tasks\t'):])
                     self.log.debug("Active instances: %s=>%s", self.pending_datetime, self.stat_data[self.pending_datetime])
 
-    def read_phout_data(self):
-        phout_ready = select.select([self.phout], [], [], 0)[0]
-        if phout_ready:
-            phout = phout_ready.pop(0)
-            line = phout.readline().strip()
-            if not line:
-                return None 
-            self.log.debug("Phout line: %s", line)
-            data = line.split("\t")
-            time = int(float(data[0]))
-            try:
-                active = self.stat_data[time]
-            except KeyError:
-                self.log.warn("No tasks info for second yet: %s", time)
-                active = 0
 
-            
-                
-            if len(self.data_queue) > 2:
-                return self.data_queue.pop(0) 
-            else:
-                return None
+    def read_phout_data(self, force):
+        phout_ready = select.select([self.phout], [], [], 0)[0]
+        self.log.debug("Selected phout: %s", phout_ready)
+        if phout_ready:
+            phout = phout_ready.pop(0).readlines()
+            for line in phout:
+                if not line:
+                    return None 
+                self.log.debug("Phout line: %s", line)
+                #1346949510.514        74420    66    78    65409    8867    74201    18    15662    0    200
+                data = line.split("\t")
+                cur_time = int(float(data[0]))
+                try:
+                    active = self.stat_data[cur_time]
+                except KeyError:
+                    self.log.debug("No tasks info for second yet: %s", cur_time)
+                    active = 0
+    
+                if not cur_time in self.data_buffer.keys():
+                    self.data_buffer[cur_time] = []
+                    self.data_queue.append(cur_time)
+                #        marker, threads, overallRT, httpCode, netCode
+                data_item = [data[1], active, int(data[2]) / 1000, data[11], data[10]]
+                # bytes:     sent    received
+                data_item += [int(data[8]), int(data[9])]
+                #        connect    send    latency    receive
+                data_item += [int(data[3]) / 1000, int(data[4]) / 1000, int(data[5]) / 1000, int(data[6]) / 1000]
+                #        accuracy
+                data_item += [int(data[7])]
+                self.data_buffer[cur_time].append(data_item)
+                    
+        if len(self.data_queue) > 2:
+            return self.pop_second()
+        
+        if force and self.data_queue:
+            return self.pop_second()
+        else:
+            return None 
+
+    def pop_second(self):
+        next_time = self.data_queue.pop(0)
+        data = self.data_buffer[next_time]
+        del self.data_buffer[next_time]
+        return self.parse_second(next_time, data)
+        
