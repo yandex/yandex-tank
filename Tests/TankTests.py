@@ -15,11 +15,7 @@ class TankTestCase(unittest.TestCase):
     logger.debug("Starting Unit Test")
 
     def get_aggregate_data(self, filename):
-        fh = open(filename, 'r')
-        aggregator = AggregatorPlugin(None)
-        
-        aggregator.read_preproc_lines(fh, self.callback)
-        return self.data
+        return SecondAggregateData(SecondAggregateDataTotalItem())
         
     def callback(self, data):
         self.data = SecondAggregateData(data, SecondAggregateDataTotalItem())

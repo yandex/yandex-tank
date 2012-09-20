@@ -3,6 +3,7 @@ import os
 import subprocess
 import signal
 from Tank import Utils
+from Tank.Plugins.Aggregator import AbstractReader
 
 # TODO: 2 make it work with all other plugins
 
@@ -54,3 +55,9 @@ class JMeterPlugin(AbstractPlugin):
         self.core.add_artifact_file(self.jmeter_log)
         return retcode
             
+class JMeterReader(AbstractReader):
+    '''
+    Adapter to read jtl files
+    '''
+    pass
+    

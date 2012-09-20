@@ -1,6 +1,7 @@
 from Tank import Utils
 from Tank.Core import AbstractPlugin
-from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
+from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener, \
+    AbstractReader
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.Stepper import Stepper
 from ipaddr import AddressValueError
@@ -15,6 +16,7 @@ import string
 import subprocess
 import tempfile
 import time
+import select
 
 # TODO: 3  chosen cases
 # TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
@@ -202,7 +204,7 @@ class PhantomPlugin(AbstractPlugin):
         else:
             stepper = self.make_stpd_file(self.stpd)
         
-        self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES, stepper.cases)
+        #self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES, stepper.cases)
         self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_STEPS, stepper.steps)
         self.core.set_option(self.SECTION, self.OPTION_LOADSCHEME, stepper.loadscheme)
         self.core.set_option(self.SECTION, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
@@ -220,7 +222,7 @@ class PhantomPlugin(AbstractPlugin):
             self.log.warning("No aggregator found: %s", ex)
 
         if aggregator:
-            aggregator.set_source_files(self.phout_file, self.stat_log)
+            aggregator.reader = PhantomReader(aggregator, self.phout_file, self.stat_log)
             self.timeout = aggregator.get_timeout()
 
         if not self.phout_import_mode:
@@ -275,7 +277,7 @@ class PhantomPlugin(AbstractPlugin):
                 return -1
         else:
             if not self.did_phout_import_try:
-                self.did_phout_import_try=True
+                self.did_phout_import_try = True
                 return -1
             else:
                 return 0
@@ -334,7 +336,7 @@ class PhantomPlugin(AbstractPlugin):
         self.log.debug("Reading cached stepper options: %s", cached_config)
         external_stepper_conf = ConfigParser.ConfigParser()
         external_stepper_conf.read(cached_config)
-        stepper.cases = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES)
+        #stepper.cases = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES)
         stepper.steps = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_STEPS)
         stepper.loadscheme = external_stepper_conf.get(self.SECTION, self.OPTION_LOADSCHEME)
         stepper.loop_count = external_stepper_conf.get(self.SECTION, self.OPTION_LOOP_COUNT)
@@ -480,3 +482,63 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.time_lag = int((datetime.datetime.now() - second_aggregate_data.time).total_seconds())
     
     
+class PhantomReader(AbstractReader):
+    '''
+    Adapter to read phout files
+    '''
+
+    def __init__(self, owner, phout_file, threads_file):
+        AbstractReader.__init__(self, owner)
+        self.phout_file = phout_file
+        self.stat_file = threads_file
+        self.phout = None
+        self.stat = None
+        self.stat_data = {}
+        self.pending_datetime = None
+  
+    def check_open_files(self):
+        if not self.phout and os.path.exists(self.phout_file):
+            self.log.debug("Opening phout file: %s", self.phout_file)
+            self.phout = open(self.phout_file, 'r')
+    
+        if not self.stat and self.stat_file and os.path.exists(self.stat_file):
+            self.log.debug("Opening stat file: %s", self.stat_file)
+            self.stat = open(self.stat_file, 'r')
+
+    def get_next_sample(self):
+        self.read_stat_data()
+        return self.read_phout_data()
+
+    def read_stat_data(self):
+        stat_ready = select.select([self.stat], [], [], 0)[0]
+        if stat_ready:
+            stat = stat_ready.pop(0)
+            lines = stat.readlines()
+            for line in lines:
+                if line.startswith('time\t'):
+                    date_str = line[len('time:\t') - 1:].strip()[:-5].strip()
+                    date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+                    self.pending_datetime = int(time.mktime(date_obj.timetuple()))
+                if line.startswith('tasks\t'):
+                    if not self.pending_datetime:
+                        raise RuntimeError("Can't have tasks without timestamp")
+                    self.stat_data[self.pending_datetime] = int(line[len('tasks\t'):])
+                    self.log.debug("Active instances: %s=>%s", self.pending_datetime, self.stat_data[self.pending_datetime])
+
+    def read_phout_data(self):
+        phout_ready = select.select([self.phout], [], [], 0)[0]
+        if phout_ready:
+            phout = phout_ready.pop(0)
+            line=phout.readline().strip()
+            if not line:
+                return False 
+            self.log.debug("Phout line: %s", line)
+            data = line.split("\t")
+            time=int(float(data[0]))
+            try:
+                active=self.stat_data[time]
+            except KeyError:
+                self.log.warn("No tasks info for second yet: %s", time)
+                active=0
+                
+            return time, active

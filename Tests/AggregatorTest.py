@@ -5,6 +5,7 @@ import os
 import tempfile
 import time
 import unittest
+from Tank.Plugins.Phantom import PhantomReader
 
 
 class  AggregatorPluginTestCase(TankTestCase):
@@ -15,15 +16,12 @@ class  AggregatorPluginTestCase(TankTestCase):
 
     def tearDown(self):
         del self.foo
-        self.foo = None
-        os.remove("lp.conf")
-        os.remove("lunapark.log")
-        
+        self.foo = None        
 
     def test_run(self):
         self.foo.configure()
-        (drop, self.foo.preproc_out_filename) = tempfile.mkstemp()
         self.foo.prepare_test()
+        self.foo.reader=PhantomReader(self.foo, 'data/phout_example.txt', 'data/phantom_stat.txt')
         self.foo.start_test()
         retry = 0
         while self.foo.is_test_finished() < 0 and retry < 5:
@@ -34,7 +32,6 @@ class  AggregatorPluginTestCase(TankTestCase):
         
     def test_run_interrupt(self):
         self.foo.configure()
-        (drop, self.foo.preproc_out_filename) = tempfile.mkstemp()
         self.foo.prepare_test()
         self.foo.start_test()
         time.sleep(2)

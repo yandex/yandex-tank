@@ -1,0 +1,80 @@
+time	2012-09-06 20:38:25 +0400
+
+** benchmark_io
+HTTP
+network
+times
+overall	1000	0	100.00%	0	0	0	0	0	0
+tasks	0
+source_log	0
+
+time	2012-09-06 20:38:26 +0400
+
+** benchmark_io
+HTTP	200:42
+network	0:42
+times	9:3	10:23	11:11	12:3	13:2
+overall	1000	41	  0.19%	756	755	657804	657802	42	41
+tasks	5
+source_log	960
+
+time	2012-09-06 20:38:27 +0400
+
+** benchmark_io
+HTTP	200:56
+network	0:56
+times	9:4	10:13	11:22	12:10	13:7
+overall	1000	55	  0.23%	1008	1007	877072	877069	56	55
+tasks	5
+source_log	1988
+
+time	2012-09-06 20:38:28 +0400
+
+** benchmark_io
+HTTP	200:69
+network	0:69
+times	10:4	11:40	12:20	13:5
+overall	1000	68	  0.29%	1242	1241	1080678	1080444	69	68
+tasks	5
+source_log	2991
+
+time	2012-09-06 20:38:29 +0400
+
+** benchmark_io
+HTTP	200:67
+network	0:67
+times	10:8	11:33	12:16	13:10
+overall	999	67	  0.27%	1206	1206	1049354	1049560	67	67
+tasks	5
+source_log	3987
+
+time	2012-09-06 20:38:30 +0400
+
+** benchmark_io
+HTTP	200:67
+network	0:67
+times	10:9	11:32	12:21	13:5
+overall	1000	66	  0.28%	1206	1205	1049354	1049344	67	66
+tasks	5
+source_log	4987
+
+time	2012-09-06 20:38:30 +0400
+
+** benchmark_io
+HTTP	200:16
+network	0:16
+times	10:3	11:11	12:2
+overall	269	59	  0.24%	288	1070	250592	931160	16	59
+tasks	5
+source_log	5260
+
+time	2012-09-06 20:38:30 +0400
+
+** benchmark_io
+HTTP
+network
+times
+overall	0	0	100.00%	0	0	0	0	0	0
+tasks	5
+source_log	0
+

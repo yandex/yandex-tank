@@ -83,16 +83,9 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
     def execute(self, cmd):
         pass
     
-    def aggregate_second(self, second_aggregate_data):
-        if self.short_only:
-            tpl = "Time: %s\tExpected RPS: %s\tActual RPS: %s\tActive Threads: %s\tAvg RT: %s"
-            o = second_aggregate_data.overall # just to see the next line in IDE
-            data = (second_aggregate_data.time, o.planned_requests, o.RPS,
-                    o.active_threads, o.avg_response_time)
-            self.log.info(tpl % data)
-        else:
+    def is_test_finished(self):
+        if not self.short_only:
             try:
-                self.screen.add_second_data(second_aggregate_data)    
                 console_view = self.screen.render_screen()
                 sys.stdout.write(self.console_markup.clear)
                 sys.stdout.write(console_view.encode('utf-8'))
@@ -101,6 +94,19 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
                 self.render_exception = ex
             # TODO: 3 add a way to send console view to remote API, via listener notification (avoid DataUploader dependency
 
+        return -1
+    
+    def aggregate_second(self, second_aggregate_data):
+        if self.short_only:
+            tpl = "Time: %s\tExpected RPS: %s\tActual RPS: %s\tActive Threads: %s\tAvg RT: %s"
+            o = second_aggregate_data.overall # just to see the next line in IDE
+            data = (second_aggregate_data.time, o.planned_requests, o.RPS,
+                    o.active_threads, o.avg_response_time)
+            self.log.info(tpl % data)
+        else:
+            self.screen.add_second_data(second_aggregate_data)    
+
+    
     def add_info_widget(self, widget):
         if not self.screen:
             self.log.warn("No screen instance to add widget")

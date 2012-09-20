@@ -1,9 +1,10 @@
 from Tank.Core import AbstractPlugin
-from Tank.Plugins.Aggregator import AggregatorPlugin
+from Tank.Plugins.Aggregator import AggregatorPlugin, AbstractReader
 from Tank import Utils
 import subprocess
 import tempfile
 
+# TODO: 3 make it work with new aggregator
 
 class ApacheBenchmarkPlugin(AbstractPlugin):
 
@@ -69,3 +70,8 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
             
 
  
+class ABReader(AbstractReader):
+    '''
+    Adapter to read AB files
+    '''
+    pass
