@@ -61,7 +61,7 @@ class TankCore:
         script = "res=" + classname + "." + classname + "Plugin(self)"
         self.log.debug("Exec: " + script)
         exec (script)
-        self.log.debug("Instantiated: %s", res);
+        self.log.debug("Instantiated: %s", res)
         return res
 
     def plugins_configure(self):
@@ -98,7 +98,7 @@ class TankCore:
                 self.log.debug("Polling %s", plugin)
                 retcode = plugin.is_test_finished()
                 if retcode >= 0:
-                    return retcode;
+                    return retcode
             end_time = time.time()
             diff = end_time - begin_time
             self.log.debug("Polling took %s", diff)
@@ -117,7 +117,7 @@ class TankCore:
                 plugin.end_test(rc)
             except Exception, ex:
                 self.log.error("Failed finishing plugin %s: %s", plugin, ex)
-                self.log.debug("Failed finishing plugin: %s", traceback.format_exc(ex));
+                self.log.debug("Failed finishing plugin: %s", traceback.format_exc(ex))
                 if not rc:
                     rc = 1
 
@@ -140,7 +140,7 @@ class TankCore:
                 plugin.post_process(rc)
             except Exception, ex:
                 self.log.error("Failed post-processing plugin %s: %s", plugin, ex)
-                self.log.debug("Failed post-processing plugin: %s", traceback.format_exc(ex));
+                self.log.debug("Failed post-processing plugin: %s", traceback.format_exc(ex))
                 del self.plugins[plugin_key]
                 if not rc:
                     rc = 1
@@ -256,10 +256,13 @@ class ConfigManager:
         except NoSectionError, ex:
             self.log.debug("No section: %s", ex)
                 
-        self.log.debug("Found options: %s", res);
+        self.log.debug("Found options: %s", res)
         return res
 
 class AbstractPlugin:
+
+    SECTION = 'DEFAULT'
+    
     @staticmethod
     def get_key():
         raise TypeError("Abstract method needs to be overridden")
@@ -273,11 +276,11 @@ class AbstractPlugin:
     def start_test(self):
         raise TypeError("Abstract method needs to be overridden")
     def is_test_finished(self):
-        return -1;
+        return -1
     def end_test(self, retcode):
         raise TypeError("Abstract method needs to be overridden")
     def post_process(self, retcode):
-        return retcode;
+        return retcode
 
     def get_option(self, option_name, default_value=None):
         return self.core.get_option(self.SECTION, option_name, default_value)

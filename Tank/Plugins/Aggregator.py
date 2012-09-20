@@ -29,6 +29,7 @@ class AggregatorPlugin(AbstractPlugin):
         self.preproc_out_filename = None
         self.cumulative_data = SecondAggregateDataTotalItem()
         self.reader = None
+        self.time_periods = []
     
     def configure(self):
         periods = self.get_option("time_periods", self.default_time_periods).split(" ")
@@ -201,7 +202,7 @@ class AbstractReader:
         (marker, threads, overall_rt, http_code, net_code, sent_bytes, received_bytes, connect, send, latency, receive, accuracy) = item
         result.case = marker
         result.active_threads = threads
-        result.planned_requests = 0
+        result.planned_requests = 0 # FIXME: implement this
         result.RPS += 1
         
         if http_code and http_code != '0':
