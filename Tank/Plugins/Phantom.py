@@ -495,6 +495,7 @@ class PhantomReader(AbstractReader):
         self.stat = None
         self.stat_data = {}
         self.pending_datetime = None
+        self.data_queue = []
   
     def check_open_files(self):
         if not self.phout and os.path.exists(self.phout_file):
@@ -521,7 +522,7 @@ class PhantomReader(AbstractReader):
                     self.pending_datetime = int(time.mktime(date_obj.timetuple()))
                 if line.startswith('tasks\t'):
                     if not self.pending_datetime:
-                        raise RuntimeError("Can't have tasks without timestamp")
+                        raise RuntimeError("Can't have tasks info without timestamp")
                     self.stat_data[self.pending_datetime] = int(line[len('tasks\t'):])
                     self.log.debug("Active instances: %s=>%s", self.pending_datetime, self.stat_data[self.pending_datetime])
 
@@ -529,16 +530,21 @@ class PhantomReader(AbstractReader):
         phout_ready = select.select([self.phout], [], [], 0)[0]
         if phout_ready:
             phout = phout_ready.pop(0)
-            line=phout.readline().strip()
+            line = phout.readline().strip()
             if not line:
-                return False 
+                return None 
             self.log.debug("Phout line: %s", line)
             data = line.split("\t")
-            time=int(float(data[0]))
+            time = int(float(data[0]))
             try:
-                active=self.stat_data[time]
+                active = self.stat_data[time]
             except KeyError:
                 self.log.warn("No tasks info for second yet: %s", time)
-                active=0
+                active = 0
+
+            
                 
-            return time, active
+            if len(self.data_queue) > 2:
+                return self.data_queue.pop(0) 
+            else:
+                return None

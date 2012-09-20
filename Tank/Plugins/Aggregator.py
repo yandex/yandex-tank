@@ -2,12 +2,6 @@ from Tank import Utils
 from Tank.Core import AbstractPlugin
 import datetime
 import logging
-import os
-import shutil
-import signal
-import subprocess
-import tempfile
-import time
 
 class AggregateResultListener:
     def aggregate_second(self, second_aggregate_data):
@@ -54,10 +48,10 @@ class AggregatorPlugin(AbstractPlugin):
 
 
     def get_next_second(self):
-        data=self.reader.get_next_sample()
+        data = self.reader.get_next_sample()
         while data:
             self.log.info("Data: %s", data)
-            data=self.reader.get_next_sample()
+            data = self.reader.get_next_sample()
     
         
     def is_test_finished(self):
