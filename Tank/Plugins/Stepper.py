@@ -4,7 +4,6 @@ import operator
 import os
 import re
 import tempfile
-import time
 from Tank import Utils
 
 # TODO: 2 eliminate double ammo file pass

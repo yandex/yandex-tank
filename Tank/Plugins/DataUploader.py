@@ -29,7 +29,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         self.jobno = None
         self.operator = ''
         self.task_name = ''
-        self.rc = -1
+        self.retcode = -1
     
     @staticmethod
     def get_key():
@@ -150,7 +150,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
                 tank_type, " ".join(sys.argv), 0)
     
     def is_test_finished(self):
-        return self.rc
+        return self.retcode
     
     def end_test(self, retcode):
         return retcode
@@ -186,7 +186,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         """
         if not self.api_client.push_test_data(self.jobno, second_aggregate_data):
             self.log.warn("The test was stopped from Web interface")
-            self.rc = self.RC_STOP_FROM_WEB
+            self.retcode = self.RC_STOP_FROM_WEB
     
     def get_sla_by_task(self):
         return self.api_client.get_sla_by_task(self.regression_component)
@@ -307,7 +307,7 @@ class KSHMAPIClient():
                     'resps': int(data.RPS),
                     'expect': float(data.avg_response_time),
                     'disper': float(data.dispersion),
-                    'self_load': 100-float(data.selfload),
+                    'self_load': 100 - float(data.selfload),
                     'input': int(data.input),
                     'output': int(data.output),
                     'connect_time': float(data.avg_connect_time),

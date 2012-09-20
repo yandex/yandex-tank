@@ -57,15 +57,29 @@ def expand_time(str_time, default_unit='s', multiplier=1):
     for value, unit in parts:
         value = int(value)
         unit = unit.lower()
-        if unit == '': unit = default_unit 
+        if unit == '': 
+            unit = default_unit 
         
-        if   unit == 'ms': result += value * 0.001; continue
-        elif unit == 's':  result += value; continue
-        elif unit == 'm':  result += value * 60; continue
-        elif unit == 'h':  result += value * 60 * 60; continue
-        elif unit == 'd':  result += value * 60 * 60 * 24; continue
-        elif unit == 'w':  result += value * 60 * 60 * 24 * 7; continue
-        else: raise ValueError("String contains unsupported unit %s: %s", unit, str_time)
+        if   unit == 'ms': 
+            result += value * 0.001 
+            continue
+        elif unit == 's':  
+            result += value
+            continue
+        elif unit == 'm':  
+            result += value * 60
+            continue
+        elif unit == 'h':  
+            result += value * 60 * 60
+            continue
+        elif unit == 'd':  
+            result += value * 60 * 60 * 24
+            continue
+        elif unit == 'w':  
+            result += value * 60 * 60 * 24 * 7
+            continue
+        else: 
+            raise ValueError("String contains unsupported unit %s: %s", unit, str_time)
     return int(result * multiplier)
 
 def pid_exists(pid):
@@ -74,8 +88,8 @@ def pid_exists(pid):
         return False
     try:
         os.kill(pid, 0)
-    except OSError, e:
-        return e.errno == errno.EPERM
+    except OSError, exc:
+        return exc.errno == errno.EPERM
     else:
         return True
 
@@ -98,9 +112,9 @@ def execute(cmd, shell=False, poll_period=1, catch_out=False):
         for line in process.stdout.readlines():
             log.debug(line.strip())
     
-    rc = process.poll()
-    log.debug("Process exit code: %s", rc)
-    return rc
+    retcode = process.poll()
+    log.debug("Process exit code: %s", retcode)
+    return retcode
 
 def splitstring(string):
     """
@@ -108,10 +122,10 @@ def splitstring(string):
     >>> splitstring(string)
     ['apple', 'orange', 'green', '"banana tree"']
     """
-    p = re.compile(r'"[\w ]+"')
-    if p.search(string):
-        quoted_item = p.search(string).group()
-        newstring = p.sub('', string)
+    patt = re.compile(r'"[\w ]+"')
+    if patt.search(string):
+        quoted_item = patt.search(string).group()
+        newstring = patt.sub('', string)
         return newstring.split() + [quoted_item]
     else:
         return string.split()

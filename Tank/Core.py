@@ -23,8 +23,12 @@ class TankCore:
         self.artifacts_dir = None
         self.artifact_files = {}
         self.plugins_order = []
+        self.artifacts_base_dir = '.'
          
     def load_configs(self, configs):
+        '''
+        Tells core to load configs set into options storage
+        '''
         self.log.info("Loading configs...")
         self.config.load_files(configs)
         self.config.flush()
@@ -32,6 +36,9 @@ class TankCore:
 
          
     def load_plugins(self):
+        '''
+        Tells core to take plugin options and instantiate plugin classes
+        '''
         self.log.info("Loading plugins...")
         self.log.debug("sys.path: %s", sys.path)
 
@@ -44,13 +51,13 @@ class TankCore:
             if not plugin_path:
                 self.log.warning("Seems the plugin '%s' was disabled", plugin_name)
                 continue
-            instance = self.load_plugin(plugin_name, plugin_path)
+            instance = self.__load_plugin(plugin_name, plugin_path)
             self.plugins[instance.get_key()] = instance 
             self.plugins_order.append(instance.get_key())
         self.log.debug("Plugin instances: %s", self.plugins)
         self.log.debug("Plugins order: %s", self.plugins_order)
             
-    def load_plugin(self, name, path):
+    def __load_plugin(self, name, path):
         self.log.debug("Loading plugin %s from %s", name, path)
         for basedir in sys.path:
             if os.path.exists(basedir + '/' + path):
@@ -65,28 +72,41 @@ class TankCore:
         return res
 
     def plugins_configure(self):
+        '''
+        Call configure() on all plugins
+        '''
         self.log.info("Configuring plugins...")
         for plugin_key in self.plugins_order:
-            plugin = self.get_plugin_by_key(plugin_key)
+            plugin = self.__get_plugin_by_key(plugin_key)
             self.log.debug("Configuring %s", plugin)
             plugin.configure()
             self.config.flush()
         
     def plugins_prepare_test(self):
+        '''
+        Call prepare_test() on all plugins
+        '''
         self.log.info("Preparing test...")
         for plugin_key in self.plugins_order:
-            plugin = self.get_plugin_by_key(plugin_key)
+            plugin = self.__get_plugin_by_key(plugin_key)
             self.log.debug("Preparing %s", plugin)
             plugin.prepare_test()
         
     def plugins_start_test(self):
+        '''
+        Call start_test() on all plugins
+        '''
         self.log.info("Starting test...")
         for plugin_key in self.plugins_order:
-            plugin = self.get_plugin_by_key(plugin_key)
+            plugin = self.__get_plugin_by_key(plugin_key)
             self.log.debug("Starting %s", plugin)
             plugin.start_test()
             
     def wait_for_finish(self):
+        '''
+        Call is_test_finished() on all plugins 'till one of them initiates exit
+        '''
+
         self.log.info("Waiting for test to finish...")
         if not self.plugins:
             raise RuntimeError("It's strange: we have no plugins loaded...")
@@ -94,7 +114,7 @@ class TankCore:
         while True:
             begin_time = time.time()
             for plugin_key in self.plugins_order:
-                plugin = self.get_plugin_by_key(plugin_key)
+                plugin = self.__get_plugin_by_key(plugin_key)
                 self.log.debug("Polling %s", plugin)
                 retcode = plugin.is_test_finished()
                 if retcode >= 0:
@@ -107,23 +127,29 @@ class TankCore:
         raise RuntimeError("Unreachable line hit")
             
 
-    def plugins_end_test(self, rc):
+    def plugins_end_test(self, retcode):
+        '''
+        Call end_test() on all plugins
+        '''
         self.log.info("Finishing test...")
         
         for plugin_key in self.plugins_order:
-            plugin = self.get_plugin_by_key(plugin_key)
+            plugin = self.__get_plugin_by_key(plugin_key)
             self.log.debug("Finalize %s", plugin)
             try:
-                plugin.end_test(rc)
+                plugin.end_test(retcode)
             except Exception, ex:
                 self.log.error("Failed finishing plugin %s: %s", plugin, ex)
                 self.log.debug("Failed finishing plugin: %s", traceback.format_exc(ex))
-                if not rc:
-                    rc = 1
+                if not retcode:
+                    retcode = 1
 
-        return rc
+        return retcode
     
-    def plugins_post_process(self, rc):
+    def plugins_post_process(self, retcode):
+        '''
+        Call post_process() on all plugins
+        '''
         self.log.info("Post-processing test...")
         
         if not self.artifacts_dir: 
@@ -134,23 +160,26 @@ class TankCore:
         self.log.info("Artifacts dir: %s", self.artifacts_dir)
 
         for plugin_key in self.plugins_order:
-            plugin = self.get_plugin_by_key(plugin_key)
+            plugin = self.__get_plugin_by_key(plugin_key)
             self.log.debug("Post-process %s", plugin)
             try:
-                plugin.post_process(rc)
+                plugin.post_process(retcode)
             except Exception, ex:
                 self.log.error("Failed post-processing plugin %s: %s", plugin, ex)
                 self.log.debug("Failed post-processing plugin: %s", traceback.format_exc(ex))
                 del self.plugins[plugin_key]
-                if not rc:
-                    rc = 1
+                if not retcode:
+                    retcode = 1
 
         for (filename, keep) in self.artifact_files.items():
-            self.collect_file(filename, keep)
+            self.__collect_file(filename, keep)
         
-        return rc
+        return retcode
     
     def get_option(self, section, option, default=None):
+        '''
+        Get an option from option storage
+        '''
         if not self.config.config.has_section(section):
             self.log.debug("No section '%s', adding", section)
             self.config.config.add_section(section)
@@ -168,18 +197,24 @@ class TankCore:
                 raise ex
 
     def set_option(self, section, option, value):
+        '''
+        Set an option in storage
+        '''
         if not self.config.config.has_section(section):
             self.config.config.add_section(section)
         self.config.config.set(section, option, value)
         self.config.flush()
              
     def get_plugin_of_type(self, needle):
+        '''
+        Retrieve a plugin of desired class, KeyError raised otherwise
+        '''
         self.log.debug("Searching for plugin: %s", needle)
         key = needle.get_key()
         
-        return self.get_plugin_by_key(key)
+        return self.__get_plugin_by_key(key)
         
-    def get_plugin_by_key(self, key):
+    def __get_plugin_by_key(self, key):
         if key in self.plugins.keys():
             return self.plugins[key]
         
@@ -193,7 +228,7 @@ class TankCore:
         
         raise KeyError("Requested plugin type not found: %s", key)  
     
-    def collect_file(self, filename, keep_original=False):
+    def __collect_file(self, filename, keep_original=False):
         if not self.artifacts_dir:
             self.log.warning("No artifacts dir configured")
             return            
@@ -216,20 +251,32 @@ class TankCore:
 
     
     def add_artifact_file(self, filename, keep_original=False):
+        '''
+        Add file to be stored as result artifact on post-process phase
+        '''
         if filename:
             self.artifact_files[filename] = keep_original
     
             
 class ConfigManager:
+    '''
+    Option storage class
+    '''
     def __init__(self):
         self.file = tempfile.mkstemp(".conf", "lp_")[1]
         self.log = logging.getLogger(__name__)
         self.config = ConfigParser.ConfigParser()
             
     def set_out_file(self, filename):
+        '''
+        set path to file where current options set state will be saved
+        '''
         self.file = filename
     
     def load_files(self, configs):
+        '''
+        Read configs set into storage
+        '''
         self.log.debug("Reading configs: %s", configs)
         try:
             self.config.read(configs)
@@ -238,6 +285,9 @@ class ConfigManager:
             raise ex
                     
     def flush(self, filename=None):
+        '''
+        Flush current stat to file
+        '''
         if not filename:
             filename = self.file
         self.log.debug("Flushing config to: %s", filename)
@@ -245,6 +295,9 @@ class ConfigManager:
             self.config.write(configfile)
                     
     def get_options(self, section, prefix=''):
+        '''
+        Get options list with requested prefix
+        '''
         res = []
         self.log.debug("Looking in section '%s' for options starting with '%s'", section, prefix)
         try :
@@ -260,25 +313,35 @@ class ConfigManager:
         return res
 
 class AbstractPlugin:
+    '''
+    Parent class for all plugins/modules
+    '''
 
     SECTION = 'DEFAULT'
     
     @staticmethod
     def get_key():
         raise TypeError("Abstract method needs to be overridden")
+    
     def __init__(self, core):
         self.log = logging.getLogger(__name__)
         self.core = core
+        
     def configure(self):
-        raise TypeError("Abstract method needs to be overridden")
+        pass
+    
     def prepare_test(self):
-        raise TypeError("Abstract method needs to be overridden")
+        pass
+    
     def start_test(self):
-        raise TypeError("Abstract method needs to be overridden")
+        pass
+    
     def is_test_finished(self):
         return -1
+    
     def end_test(self, retcode):
-        raise TypeError("Abstract method needs to be overridden")
+        return retcode
+    
     def post_process(self, retcode):
         return retcode
 

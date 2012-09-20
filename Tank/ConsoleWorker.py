@@ -115,7 +115,7 @@ class ConsoleTank:
             test_parser.read(config)
             self.log.debug("Config passed ini format test: %s", config)
             return config
-        except Exception, ex:
+        except Exception:
             self.log.warning("Config failed INI format test, consider upgrading it: %s", config)
             file_handle, corrected_file = tempfile.mkstemp(".conf", "corrected_")
             self.log.debug("Creating corrected INI config for it: %s", corrected_file)
@@ -160,12 +160,12 @@ class ConsoleTank:
                         self.log.debug("Lock PID %s not exists, ignoring and trying to remove", pid)
                         try:
                             os.remove(full_name)
-                        except Exception, e:
-                            self.log.debug("Failed to delete lock %s: %s", full_name, e)
+                        except Exception, exc:
+                            self.log.debug("Failed to delete lock %s: %s", full_name, exc)
                     else:
                         retcode = True        
-                except Exception, e:
-                    self.log.warn("Failed to load info from lock %s: %s", full_name, e)
+                except Exception, exc:
+                    self.log.warn("Failed to load info from lock %s: %s", full_name, exc)
                     retcode = True        
         return retcode
     
