@@ -129,6 +129,7 @@ class AbstractReader:
     def __init__(self, owner):
         self.aggregator = owner
         self.log = logging.getLogger(__name__)
+        self.cumulative = SecondAggregateDataTotalItem()
 
     def check_open_files(self):
         pass

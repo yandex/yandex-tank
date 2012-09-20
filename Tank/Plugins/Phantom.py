@@ -504,7 +504,6 @@ class PhantomReader(AbstractReader):
         self.pending_datetime = None
         self.data_queue = []
         self.data_buffer = {}
-        self.cumulative = SecondAggregateDataTotalItem()
   
     def check_open_files(self):
         if not self.phout and os.path.exists(self.phout_file):
