@@ -6,6 +6,7 @@ import struct
 import termios
 import math
 import copy
+from Tank.Plugins.Aggregator import SecondAggregateDataItem
 
 def get_terminal_size(): 
     defaultSize = (25, 80)
@@ -366,7 +367,6 @@ class CurrentNetBlock(CurrentHTTPBlock):
 # ======================================================
             
 class TotalQuantilesBlock(AbstractBlock):
-    QUANTILES = [0.25, 0.50, 0.75, 0.80, 0.90, 0.95, 0.98, 0.99, 1.00]
     
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -383,7 +383,7 @@ class TotalQuantilesBlock(AbstractBlock):
     def render(self):
         self.lines = []
         quan = 0
-        quantiles = copy.copy(self.QUANTILES)
+        quantiles = copy.copy(SecondAggregateDataItem.QUANTILES)
         for key, item in sorted(self.times_dist.iteritems()):
             if self.total_count: 
                 perc = float(item['count']) / self.total_count

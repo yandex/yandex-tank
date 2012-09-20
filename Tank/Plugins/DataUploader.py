@@ -127,12 +127,11 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
             tank_type = 0
             ammo_path = ''
         
-        try: 
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-            detailed_field = aggregator.detailed_field
-        except Exception, ex:
-            self.log.warning("No phantom plugin to get target info: %s", ex)
-            detailed_field = "interval_real"
+        # undera: Previously took it from aggregator, 
+        # but for now this functionality is disabled
+        # I don't know if it should be re-enabled... 
+        # Will someone miss it?
+        detailed_field = "interval_real"
 
         #TODO: 3 copy old stepper logic to this class            
         loadscheme = self.core.get_option(PhantomPlugin.SECTION, PhantomPlugin.OPTION_SCHEDULE, '')
@@ -197,7 +196,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         
 class KSHMAPIClient():
 
-    QUANTILES = ['50', '75', '80', '85', '90', '95', '98', '99', '100']
+    QUANTILES = [50.0, 75.0, 80.0, 85.0, 90.0, 95.0, 98.0, 99.0, 100.0]
 
     def __init__(self):
         self.log = logging.getLogger(__name__)
@@ -324,7 +323,7 @@ class KSHMAPIClient():
         for quan_level in self.QUANTILES:
             if quan_level in data.quantiles.keys():
                 prev_level = float(data.quantiles[quan_level]) 
-            api_data['trail']['q' + quan_level] = prev_level
+            api_data['trail']['q' + str(int(quan_level))] = prev_level
 
         for code, cnt in data.net_codes.iteritems():
             api_data['net_codes'].append({'code': int(code), 'count': int(cnt)})  

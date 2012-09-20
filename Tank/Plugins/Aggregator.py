@@ -2,6 +2,7 @@ from Tank import Utils
 from Tank.Core import AbstractPlugin
 import datetime
 import logging
+import copy
 
 class AggregateResultListener:
     def aggregate_second(self, second_aggregate_data):
@@ -35,7 +36,6 @@ class AggregatorPlugin(AbstractPlugin):
         periods = self.get_option("time_periods", self.default_time_periods).split(" ")
         self.time_periods = " ".join([ str(Utils.expand_to_milliseconds(x)) for x in periods ])
         self.core.set_option(self.SECTION, "time_periods", self.time_periods)
-        self.detailed_field = self.get_option(self.OPTION_DETAILED_FIELD, 'interval_real')
         self.preproc_steps = self.get_option(self.OPTION_STEPS, "")
 
     def prepare_test(self):
@@ -82,71 +82,7 @@ class SecondAggregateData:
         self.cumulative = cimulative_item
 
 class SecondAggregateDataItem:
-    def parse_singles(self, line):
-        if line.startswith(self.T_OVERALL):
-            self.overall = int(line.strip()[len(self.T_OVERALL):])
-        if line.startswith(self.T_CASE):
-            self.case = line.strip()[len(self.T_CASE):]
-        if line.startswith(self.T_TIMESTAMP):
-            self.time = datetime.datetime.strptime(line.strip()[len(self.T_TIMESTAMP):], "%Y%m%d%H%M%S")
-        if line.startswith(self.T_REQPS):
-            self.planned_requests = int(line.strip()[len(self.T_REQPS):])
-        if line.startswith(self.T_TASKS):
-            self.active_threads = int(line.strip()[len(self.T_TASKS):])
-        if line.startswith(self.T_INPUT):
-            self.input = int(line.strip()[len(self.T_INPUT):])
-        if line.startswith(self.T_OUTPUT):
-            self.output = int(line.strip()[len(self.T_OUTPUT):])
-        if line.startswith(self.T_SELFLOAD):
-            selfload = line.strip()[len(self.T_SELFLOAD):]
-            if selfload != "0":
-                self.selfload = float(selfload[:-1])
-            else: 
-                self.selfload = 0
-
-
-    def parse_avg_times(self, line):
-        if line.startswith(self.T_CONNECT):
-            self.avg_connect_time = float(line.strip()[len(self.T_CONNECT):]) / 1000
-        if line.startswith(self.T_SEND):
-            self.avg_send_time = float(line.strip()[len(self.T_SEND):]) / 1000
-        if line.startswith(self.T_LATENCY):
-            self.avg_latency = float(line.strip()[len(self.T_LATENCY):]) / 1000
-        if line.startswith(self.T_RECEIVE):
-            self.avg_receive_time = float(line.strip()[len(self.T_RECEIVE):]) / 1000
-        if line.startswith(self.T_AVG_RT):
-            self.avg_response_time = float(line.strip()[len(self.T_AVG_RT):]) / 1000
-
-
-    def parse_distributions(self, line):
-        if line.startswith(self.T_HTTP_CODE):
-            times_line = line.strip()[len(self.T_HTTP_CODE):].strip()
-            parts = times_line.split(":")
-            self.http_codes[parts[0]] = int(parts[1])
-
-        if line.startswith(self.T_NET_CODE):
-            times_line = line.strip()[len(self.T_NET_CODE):].strip()
-            parts = times_line.split(":")
-            self.net_codes[parts[0]] = int(parts[1])
-
-        if line.startswith(self.T_TIMES):
-            times_line = line.strip()[len(self.T_TIMES):].strip()
-            parts = times_line.split(":")
-            interval = parts[0].split('-')
-            self.times_dist += [{"from": int(interval[0]), "to": int(interval[1]), "count": int(parts[1])}]
-
-    
-    def parse_quantiles(self, line):
-        if self.T_DISPERSION in line:
-            line = line.strip()
-            dis = line[line.find(self.T_DISPERSION) + len(self.T_DISPERSION):]
-            self.dispersion = float(dis)
-        
-        if "_q" in line:
-            parts = line.split("=")
-            level_parts = parts[0].split("_q")
-            self.quantiles[level_parts[1]] = int(parts[1]) / 1000
-    
+    QUANTILES = [0.25, 0.50, 0.75, 0.80, 0.90, 0.95, 0.98, 0.99, 1.00]
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.case = None
@@ -229,6 +165,19 @@ class AbstractReader:
             item.avg_latency /= item.RPS
             item.avg_receive_time /= item.RPS
             item.avg_response_time /= item.RPS
+
+            item.times_dist.sort()
+            count = 0.0
+            quantiles = copy.copy(SecondAggregateDataItem.QUANTILES)
+            for timing in item.times_dist:
+                count += 1
+                if quantiles and (count / item.RPS) >= quantiles[0]:
+                    level = quantiles.pop(0)
+                    item.quantiles[level * 100] = timing
+                     
+            item.dispersion = 0
+            item.times_dist = []        
+
         
     def append_sample(self, result, item):
         (marker, threads, overall_rt, http_code, net_code, sent_bytes, received_bytes, connect, send, latency, receive, accuracy) = item
@@ -236,13 +185,15 @@ class AbstractReader:
         result.active_threads = threads
         result.planned_requests = 0
         result.RPS += 1
-        result.http_codes = {}
-        result.net_codes = {}
-        result.times_dist = []
         
-        result.quantiles = {}
-        result.dispersion = 0
-
+        if http_code and http_code != '0':
+            if not http_code in result.http_codes.keys():
+                result.http_codes[http_code] = 0
+            result.http_codes[http_code] += 1
+        if not net_code in result.net_codes.keys():
+            result.net_codes[net_code] = 1
+        result.net_codes[net_code] += 1
+        
         result.input += received_bytes
         result.output += sent_bytes
         
@@ -253,6 +204,7 @@ class AbstractReader:
         result.avg_response_time += overall_rt
         result.selfload += accuracy
     
+        result.times_dist.append(overall_rt)        
 
     
     

@@ -539,7 +539,7 @@ class PhantomReader(AbstractReader):
                     return None 
                 self.log.debug("Phout line: %s", line)
                 #1346949510.514        74420    66    78    65409    8867    74201    18    15662    0    200
-                data = line.split("\t")
+                data = line.strip().split("\t")
                 cur_time = int(float(data[0]))
                 try:
                     active = self.stat_data[cur_time]
