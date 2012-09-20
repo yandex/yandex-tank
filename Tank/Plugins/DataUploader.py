@@ -301,15 +301,13 @@ class KSHMAPIClient():
                 'time_intervals': [],
         }
         
-        self.log.debug("selfload: %s", data.selfload)
-        
         api_data['trail'] = {
                     'time': str(timestamp),
                     'reqps': int(data.planned_requests),
                     'resps': int(data.RPS),
                     'expect': float(data.avg_response_time),
                     'disper': float(data.dispersion),
-                    'self_load': float(data.selfload),
+                    'self_load': 100-float(data.selfload),
                     'input': int(data.input),
                     'output': int(data.output),
                     'connect_time': float(data.avg_connect_time),

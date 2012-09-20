@@ -14,8 +14,6 @@ class AggregatorPlugin(AbstractPlugin):
     default_time_periods = "1 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 150 200 250 300 350 400 450 500 600 650 700 750 800 850 900 950 1s 1500 2s 2500 3s 3500 4s 4500 5s 5500 6s 6500 7s 7500 8s 8500 9s 9500 10s 11s"
 
     SECTION = 'aggregator'
-    OPTION_STEPS = 'steps'
-    OPTION_DETAILED_FIELD = "detailed_time"
     
     @staticmethod
     def get_key():
@@ -34,9 +32,8 @@ class AggregatorPlugin(AbstractPlugin):
     
     def configure(self):
         periods = self.get_option("time_periods", self.default_time_periods).split(" ")
-        self.time_periods = " ".join([ str(Utils.expand_to_milliseconds(x)) for x in periods ])
-        self.core.set_option(self.SECTION, "time_periods", self.time_periods)
-        self.preproc_steps = self.get_option(self.OPTION_STEPS, "")
+        self.time_periods = [ str(Utils.expand_to_milliseconds(x)) for x in periods ]
+        self.core.set_option(self.SECTION, "time_periods", " ".join(self.time_periods))
 
     def prepare_test(self):
         pass
@@ -71,7 +68,7 @@ class AggregatorPlugin(AbstractPlugin):
             listener.aggregate_second(data)
     
     def get_timeout(self):
-        return self.time_periods.split(' ')[-1:][0]
+        return self.time_periods[-1:][0]
 
 class SecondAggregateData:
     def __init__(self, cimulative_item):
@@ -129,7 +126,7 @@ class AbstractReader:
     Parent class for all source reading adapters
     '''
     def __init__(self, owner):
-        self.owner = owner
+        self.aggregator = owner
         self.log = logging.getLogger(__name__)
 
     def check_open_files(self):
@@ -137,7 +134,6 @@ class AbstractReader:
 
     def get_next_sample(self, force):
         pass
-
 
     def parse_second(self, next_time, data):
         self.log.debug("Parsing second: %s", next_time)
@@ -154,12 +150,15 @@ class AbstractReader:
         self.calculate_aggregates(result.overall)
         for case in result.cases.values():
             self.calculate_aggregates(case)
+
+        self.cumulative.add_data(result.overall)
+
         return result
     
 
     def calculate_aggregates(self, item):
         if item.RPS:
-            item.selfload = (item.avg_response_time - item.selfload) / item.avg_response_time
+            item.selfload = 100 * float(item.selfload) / item.avg_response_time
             item.avg_connect_time /= item.RPS 
             item.avg_send_time /= item.RPS 
             item.avg_latency /= item.RPS
@@ -169,6 +168,7 @@ class AbstractReader:
             item.times_dist.sort()
             count = 0.0
             quantiles = copy.copy(SecondAggregateDataItem.QUANTILES)
+            times = copy.copy(self.aggregator.time_periods)
             for timing in item.times_dist:
                 count += 1
                 if quantiles and (count / item.RPS) >= quantiles[0]:

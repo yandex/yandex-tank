@@ -451,13 +451,13 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         else:
             res += str(self.RPS)
                 
-        res += "\n       Self load: "
-        if self.selfload > 30:
-            res += screen.markup.RED + str(self.selfload) + screen.markup.RESET
-        elif self.selfload > 10:
-            res += screen.markup.YELLOW + str(self.selfload) + screen.markup.RESET
+        res += "\n       Accuracy: "
+        if self.selfload < 80:
+            res += screen.markup.RED + ('%6.2f' % self.selfload) + screen.markup.RESET
+        elif self.selfload < 95:
+            res += screen.markup.YELLOW + ('%6.2f' % self.selfload) + screen.markup.RESET
         else:
-            res += str(self.selfload)
+            res += ('%6.2f' % self.selfload)
 
         res += "%\n        Time lag: "        
         if self.time_lag > 15:
