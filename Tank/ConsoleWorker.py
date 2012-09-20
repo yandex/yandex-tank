@@ -261,7 +261,7 @@ class ConsoleTank:
                 retcode = 1
                                 
         except Exception as ex:
-            self.log.debug("Exception: %s", traceback.format_exc(ex))
+            self.log.info("Exception: %s", traceback.format_exc(ex))
             sys.stdout.write(RealConsoleMarkup.RED)
             self.log.error("%s", ex)
             sys.stdout.write(RealConsoleMarkup.RESET)

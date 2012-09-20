@@ -196,6 +196,9 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         self.api_client.push_monitoring_data(self.jobno, data_string)
         
 class KSHMAPIClient():
+
+    QUANTILES = ['50', '75', '80', '85', '90', '95', '98', '99', '100']
+
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.address = None
@@ -287,13 +290,13 @@ class KSHMAPIClient():
         return response
     
     
-    def second_data_to_push_item(self, data):
+    def second_data_to_push_item(self, data, timestamp, overall, case):
         """
         @data: SecondAggregateDataItem
         """
         api_data = {
-                'overall': data.overall,
-                'case': data.case,
+                'overall': overall,
+                'case': case,
                 'net_codes': [],
                 'http_codes': [],
                 'time_intervals': [],
@@ -302,7 +305,7 @@ class KSHMAPIClient():
         self.log.debug("selfload: %s", data.selfload)
         
         api_data['trail'] = {
-                    'time': str(data.time),
+                    'time': str(timestamp),
                     'reqps': int(data.planned_requests),
                     'resps': int(data.RPS),
                     'expect': float(data.avg_response_time),
@@ -310,21 +313,18 @@ class KSHMAPIClient():
                     'self_load': float(data.selfload),
                     'input': int(data.input),
                     'output': int(data.output),
-                    'q50': float(data.quantiles['50']),
-                    'q75': float(data.quantiles['75']),
-                    'q80': float(data.quantiles['80']),
-                    'q85': float(data.quantiles['85']),
-                    'q90': float(data.quantiles['90']),
-                    'q95': float(data.quantiles['95']),
-                    'q98': float(data.quantiles['98']),
-                    'q99': float(data.quantiles['99']),
-                    'q100': float(data.quantiles['100']),
                     'connect_time': float(data.avg_connect_time),
                     'send_time': float(data.avg_send_time),
                     'latency': float(data.avg_latency),
                     'receive_time': float(data.avg_receive_time),
                     'threads': int(data.active_threads),
                 }
+
+        prev_level = 0
+        for quan_level in self.QUANTILES:
+            if quan_level in data.quantiles.keys():
+                prev_level = float(data.quantiles[quan_level]) 
+            api_data['trail']['q' + quan_level] = prev_level
 
         for code, cnt in data.net_codes.iteritems():
             api_data['net_codes'].append({'code': int(code), 'count': int(cnt)})  
@@ -338,10 +338,10 @@ class KSHMAPIClient():
     
     def push_test_data(self, jobno, data):
         uri = 'api/job/' + str(jobno) + '/push_data.json'
-        for case in data.cases.values():
-            case_data = self.second_data_to_push_item(case)
+        for case_name, case in data.cases.iteritems():
+            case_data = self.second_data_to_push_item(case, data.time, 0, case_name)
             self.post(uri, case_data)
-        overall = self.second_data_to_push_item(data.overall)
+        overall = self.second_data_to_push_item(data.overall, data.time, 1, '')
         
         res = [{'success': 0}]
         try:

@@ -150,16 +150,17 @@ class SecondAggregateDataItem:
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.case = None
-        self.planned_requests = None
+        self.planned_requests = 0
         self.active_threads = 0
-        self.selfload = None
-        self.RPS = None
+        self.selfload = 0
+        self.RPS = 0
         self.http_codes = {}
         self.net_codes = {}
         self.times_dist = []
         self.quantiles = {}
         self.dispersion = None
-        self.input = None
+        self.input = 0
+        self.output = 0
         self.avg_connect_time = 0
         self.avg_send_time = 0
         self.avg_latency = 0
@@ -202,18 +203,45 @@ class AbstractReader:
         pass
 
 
+    def parse_second(self, next_time, data):
+        self.log.debug("Parsing second: %s", next_time)
+        result = SecondAggregateData(self.cumulative)
+        result.time = datetime.datetime.fromtimestamp(next_time)
+        for item in data:
+            self.append_sample(result.overall, item)
+            marker = item[0]
+            if marker:
+                if not marker in result.cases.keys():
+                    result.cases[marker] = SecondAggregateDataItem()
+                self.append_sample(result.cases[marker], item)
+
+        self.calculate_aggregates(result.overall)
+        for case in result.cases.values():
+            self.calculate_aggregates(case)
+        return result
+    
+
+    def calculate_aggregates(self, item):
+        if item.RPS:
+            item.selfload = (item.avg_response_time - item.selfload) / item.avg_response_time
+            item.avg_connect_time /= item.RPS 
+            item.avg_send_time /= item.RPS 
+            item.avg_latency /= item.RPS
+            item.avg_receive_time /= item.RPS
+            item.avg_response_time /= item.RPS
+        
     def append_sample(self, result, item):
         (marker, threads, overall_rt, http_code, net_code, sent_bytes, received_bytes, connect, send, latency, receive, accuracy) = item
         result.case = marker
         result.active_threads = threads
-        result.planned_requests = None
+        result.planned_requests = 0
         result.RPS += 1
         result.http_codes = {}
         result.net_codes = {}
         result.times_dist = []
         
         result.quantiles = {}
-        result.dispersion = None
+        result.dispersion = 0
 
         result.input += received_bytes
         result.output += sent_bytes
@@ -224,21 +252,7 @@ class AbstractReader:
         result.avg_receive_time += receive
         result.avg_response_time += overall_rt
         result.selfload += accuracy
-
-    
-    
-    def parse_second(self, next_time, data):
-        self.log.debug("Parsing second: %s", next_time)
-        result = SecondAggregateData(self.cumulative)
-        result.time = datetime.datetime.fromtimestamp(next_time)
-        for item in data:
-            self.append_sample(result.overall, item)
-            marker = item[0]
-            if marker:
-                if not marker in result.cases.keys:
-                    result.cases[marker] = SecondAggregateDataItem()
-                self.append_sample(result.cases[marker], item)
-            
-        return result
     
 
+    
+    

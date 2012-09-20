@@ -557,7 +557,7 @@ class PhantomReader(AbstractReader):
                 #        connect    send    latency    receive
                 data_item += [int(data[3]) / 1000, int(data[4]) / 1000, int(data[5]) / 1000, int(data[6]) / 1000]
                 #        accuracy
-                data_item += [int(data[7])]
+                data_item += [int(data[7])/1000]
                 self.data_buffer[cur_time].append(data_item)
                     
         if len(self.data_queue) > 2:
