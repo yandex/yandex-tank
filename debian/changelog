@@ -1,3 +1,13 @@
+yandex-load-tank-base (1.0.4) precise; urgency=low
+
+  * add interactive metainfo querying
+  * mon agent logs as usual artifacts
+  * total quantiles block in console
+  * quantile autostop criteria
+  * tips&tricks in console
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 20 Sep 2012 11:20:27 +0400
+
 yandex-load-tank-base (1.0.3) precise; urgency=low
 
   * implemented gatling and request limits for phantom
