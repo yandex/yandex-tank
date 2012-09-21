@@ -72,7 +72,6 @@ class PhantomPlugin(AbstractPlugin):
         self.ammo_limit = None
         self.uris = None
         self.headers = None
-        self.get_option = None
         self.autocases = None
         self.cache_dir = None
         self.force_stepping = None
