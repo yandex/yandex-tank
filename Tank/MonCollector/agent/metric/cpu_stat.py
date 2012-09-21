@@ -32,19 +32,16 @@ class CpuStat(object):
             output = Popen('cat /proc/stat | grep -E "^(ctxt|intr|cpu) "',
                             shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         except Exception:
-#            logger.error("%s: %s" % (e.__class__, str(e)))
             result.append([EMPTY] * 9)
         else: 
             err = output.stderr.read()
             if err:
                 result.extend([EMPTY] * 9)
-#                logger.error(err.rstrip())
             else:
                 info = output.stdout.read()
 
                 # CPU. Fetch data
                 cpus = info.split("\n")[0].split()[1:8]
-#                logger.debug("cpus: %s" % cpus)
                 fetch_cpu = lambda: map(float, cpus)
 
                 # Context switches and interrupts. Fetch data
@@ -55,7 +52,6 @@ class CpuStat(object):
                 fetch_data = lambda: map(float, data)
 
                 # Context switches and interrups. Analyze.
-#                logger.debug("Switches start.")
                 if self.last:
                     self.current = fetch_data()
                     delta = []
@@ -76,15 +72,16 @@ class CpuStat(object):
                     self.check_last = fetch_cpu()
                     delta = []
                     cnt = 0
+                    sum_val = 0
                     for v in self.check_last:
                         column_delta = self.check_last[cnt] - self.check_prev[cnt]
-                        sum += column_delta
+                        sum_val += column_delta
                         delta.append(column_delta)
                         cnt += 1
 
                     cnt = 0
                     for column in self.check_last:
-                        result.append(str((delta[cnt] / sum) * 100))
+                        result.append(str((delta[cnt] / sum_val) * 100))
                         cnt += 1
                     self.check_prev = self.check_last
                 else:

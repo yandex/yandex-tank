@@ -1,3 +1,4 @@
+#! /usr/bin/python
 from metric.cpu_la import CpuLa
 from metric.cpu_stat import CpuStat
 from metric.custom import Custom

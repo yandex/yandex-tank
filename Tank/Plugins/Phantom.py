@@ -49,6 +49,7 @@ class PhantomPlugin(AbstractPlugin):
     
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
+        # FIXME: obviously needs refactoring, at least extracting phantom-specific options into separate class
         self.process = None
         self.timeout = 1000
         self.answ_log = None

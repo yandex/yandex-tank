@@ -99,11 +99,12 @@ class AgentClient(object):
                 cfg.write('%s=%s\n' % (method, join(self.custom[method], ',')))
         
         cfg.close()
+        return self.path['TEMP_CONFIG']
 
     def install(self, loglevel):
         """ Create folder and copy agent and metrics scripts to remote host """
         logging.info("Installing monitoring agent at %s...", self.host)
-        self.create_agent_config(loglevel)
+        agent_config = self.create_agent_config(loglevel)
         
         self.ssh.set_host_port(self.host, self.port)
 
@@ -145,11 +146,12 @@ class AgentClient(object):
         if pipe.returncode != 0:
             raise RuntimeError("AgentClient copy config exitcode: %s" % pipe.returncode)
 
-        if os.getenv("DEBUG"):
+        if os.getenv("DEBUG") or 1:
             debug = "DEBUG=1"
         else:
             debug = ""
         self.run = ['/usr/bin/env', debug, self.python, self.path['AGENT_REMOTE_FOLDER'] + '/agent/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
+        return agent_config
 
     def uninstall(self):
         """ Remove agent's files from remote host"""
@@ -160,11 +162,7 @@ class AgentClient(object):
         remove.wait()
         
         logging.info("Removing agent from: %s..." % self.host)
-        if os.path.isfile(self.path['TEMP_CONFIG']):
-            os.remove(self.path['TEMP_CONFIG'])
-
         cmd = ['rm', '-r', self.path['AGENT_REMOTE_FOLDER']]
-        logging.debug("Uninstall agent from %s: %s" % (self.host, cmd))
         remove = self.ssh.get_ssh_pipe(cmd)
         remove.wait()
         return log_file
@@ -181,7 +179,7 @@ class MonitoringCollector:
         self.ssh_wrapper_class = SSHWrapper
         self.first_data_received = False
         self.send_data = ''
-        self.agent_logs = []
+        self.artifact_files = []
 
     def add_listener(self, obj):
         self.listeners.append(obj)
@@ -214,7 +212,7 @@ class MonitoringCollector:
         
         for agent in self.agents:
             logging.debug('Install monitoring agent. Host: %s' % agent.host)
-            agent.install(conf.loglevel())        
+            self.artifact_files.append(agent.install(conf.loglevel()))        
 
     def start(self):
         self.inputs, self.outputs, self.excepts = [], [], []
@@ -274,13 +272,8 @@ class MonitoringCollector:
                 logging.debug("Killing %s with %s", pipe.pid, signal.SIGINT)
                 os.kill(pipe.pid, signal.SIGINT)
 
-        self.agent_logs = []
         for agent in self.agents:
-            self.agent_logs.append(agent.uninstall())
-            logging.debug("Remove: %s" % agent.path['TEMP_CONFIG'])
-            if os.path.isfile(agent.path['TEMP_CONFIG']):
-                logging.warning("Seems uninstall failed to remove %s", agent.path['TEMP_CONFIG'])
-                os.remove(agent.path['TEMP_CONFIG'])
+            self.artifact_files.append(agent.uninstall())
         
     def getconfig(self, filename, target_hint):
         default = {
@@ -401,11 +394,16 @@ class MonitoringCollector:
         if mask[host]:
             keys = initial + mask[host]
             for key in keys:
-                res.append(filter_list[key])
-                out += filter_list[key] + ';'
+                try:
+                    res.append(filter_list[key])
+                    out += filter_list[key] + ';'
+                except IndexError:
+                    self.log.warn("Problems filtering data: %s with %s", mask, len(filter_list))
+                    return None
         return join(res, ";")
             
     def filter_unused_data(self, filter_conf, filter_mask, data):
+        self.log.debug("Filtering data: %s", data)
         out = ''
         # Filtering data
         keys = data.rstrip().split(';')
@@ -414,7 +412,7 @@ class MonitoringCollector:
             for i in xrange(3, len(keys)):
                 if keys[i] in filter_conf[host]:
                     filter_mask[host].append(i - 1)
-            
+            self.log.debug("Filter mask: %s", filter_mask)
             out = 'start;'
             out += self.filtering(filter_mask, keys[1:]).rstrip(';') + '\n'
         elif re.match('^\[debug\]', data): # log debug output

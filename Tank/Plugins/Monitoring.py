@@ -92,7 +92,7 @@ class MonitoringPlugin(AbstractPlugin):
         self.log.info("Finishing monitoring")
         if self.monitoring:
             self.monitoring.stop()
-            for log in self.monitoring.agent_logs:
+            for log in self.monitoring.artifact_files:
                 self.core.add_artifact_file(log)
         return retcode
     
