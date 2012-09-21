@@ -48,12 +48,15 @@ class ShellExecPlugin(AbstractPlugin):
             self.execute(self.end)
         return retcode
 
-    def post_process(self, rc):
+    def post_process(self, retcode):
         if self.postprocess:
             self.execute(self.postprocess)
-        return rc
+        return retcode
 
     def execute(self, cmd):
+        '''
+        Execute and check exit code
+        '''
         self.log.debug("Executing: %s", cmd)
         retcode = Utils.execute(cmd, shell=True, poll_period=0.1)
         if retcode:

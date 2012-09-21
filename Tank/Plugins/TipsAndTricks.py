@@ -1,3 +1,7 @@
+'''
+Plugin showing tool learning hints in console
+'''
+
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 import os
@@ -5,10 +9,14 @@ import random
 import textwrap
 
 class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
+    '''
+    Tips showing plugin
+    '''
     SECTION = 'tips'
     
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
+        AbstractInfoWidget.__init__(self)
         lines = open(os.path.dirname(__file__) + '/tips.txt').readlines()
         line = random.choice(lines)
         self.section = line[:line.index(':')]

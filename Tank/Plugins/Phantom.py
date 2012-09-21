@@ -1,3 +1,7 @@
+'''
+Contains Phantom Plugin, Console widgets, result reader classes
+'''
+
 from Tank import Utils
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener, \
@@ -25,7 +29,9 @@ import time
 # FIXME: 2 phout import does not import cases info
 # FIXME: 3 disable monitoring on phout import
 class PhantomPlugin(AbstractPlugin):
-
+    '''
+    Plugin for running phantom tool
+    '''
     OPTION_STEPS = 'steps'
     OPTION_TEST_DURATION = 'test_duration'
     OPTION_INSTANCES_LIMIT = 'instances'
@@ -58,12 +64,38 @@ class PhantomPlugin(AbstractPlugin):
         self.did_phout_import_try = False
         self.steps = []
         self.phantom_start_time = None
+        self.ipv6 = None
+        self.tools_path = None
+        self.ammo_file = None
+        self.instances_schedule = None
+        self.loop_limit = None
+        self.ammo_limit = None
+        self.uris = None
+        self.headers = None
+        self.get_option = None
+        self.autocases = None
+        self.cache_dir = None
+        self.force_stepping = None
+        self.phantom_path = None
+        self.phantom_modules_path = None
+        self.ssl = None
+        self.address = None
+        self.port = None
+        self.tank_type = None
+        self.answ_log_level = None
+        self.stpd = None
+        self.threads = None
+        self.gatling = None
+        self.phantom_http_line = None
+        self.phantom_http_field_num = None
+        self.phantom_http_field = None
+        self.phantom_http_entity = None
     
     @staticmethod
     def get_key():
-        return __file__;
+        return __file__
     
-    def check_address(self):
+    def __check_address(self):
         try:
             ipaddr.IPv6Address(self.address)
             self.ipv6 = True
@@ -78,11 +110,11 @@ class PhantomPlugin(AbstractPlugin):
                 ipaddr.IPv4Address(self.address)
             except AddressValueError:
                 self.log.debug("Not ipv4 address: %s", self.address)
-                ip = socket.gethostbyname(self.address)
-                reverse_name = socket.gethostbyaddr(ip)[0]
-                self.log.debug("Address %s ip: %s, reverse-resolve: %s", self.address, ip, reverse_name)
+                ip_addr = socket.gethostbyname(self.address)
+                reverse_name = socket.gethostbyaddr(ip_addr)[0]
+                self.log.debug("Address %s ip_addr: %s, reverse-resolve: %s", self.address, ip_addr, reverse_name)
                 if reverse_name.startswith(self.address):
-                    self.address = ip
+                    self.address = ip_addr
                 else:
                     raise ValueError("Address %s reverse-resolved to %s, but must match", self.address, reverse_name)
 
@@ -145,10 +177,10 @@ class PhantomPlugin(AbstractPlugin):
         self.core.add_artifact_file(self.phantom_log)
         self.core.add_artifact_file(self.config)        
 
-        self.check_address()            
+        self.__check_address()            
 
 
-    def compose_config(self):
+    def __compose_config(self):
         if not self.stpd:
             raise RuntimeError("Cannot proceed with no source file")
         
@@ -198,15 +230,15 @@ class PhantomPlugin(AbstractPlugin):
         return filename
         
 
-    def prepare_stepper(self):
-        self.stpd = self.get_stpd_filename()
+    def __prepare_stepper(self):
+        self.stpd = self.__get_stpd_filename()
         self.core.set_option(self.SECTION, self.OPTION_STPD, self.stpd)
         if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.stpd + ".conf"):
             self.log.info("Using cached stpd-file: %s", self.stpd)
             stepper = Stepper(self.stpd) # just to store cached data
-            self.read_cached_options(self.stpd + ".conf", stepper)
+            self.__read_cached_options(self.stpd + ".conf", stepper)
         else:
-            stepper = self.make_stpd_file(self.stpd)
+            stepper = self.__make_stpd_file(self.stpd)
         
         self.steps = stepper.steps
         
@@ -215,7 +247,7 @@ class PhantomPlugin(AbstractPlugin):
         self.core.set_option(self.SECTION, self.OPTION_LOADSCHEME, stepper.loadscheme)
         self.core.set_option(self.SECTION, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
         self.core.set_option(self.SECTION, self.OPTION_AMMO_COUNT, str(stepper.ammo_count))
-        self.calculate_test_duration(stepper.steps)
+        self.__calculate_test_duration(stepper.steps)
                 
         self.core.config.flush(self.stpd + ".conf")
         
@@ -232,14 +264,14 @@ class PhantomPlugin(AbstractPlugin):
             self.timeout = aggregator.get_timeout()
 
         if not self.phout_import_mode:
-            self.prepare_stepper()     
+            self.__prepare_stepper()     
                 
             if not self.config:
-                self.config = self.compose_config()
+                self.config = self.__compose_config()
             args = [self.phantom_path, 'check', self.config]
             
-            rc = Utils.execute(args, catch_out=True)
-            if rc:
+            retcode = Utils.execute(args, catch_out=True)
+            if retcode:
                 raise RuntimeError("Subprocess returned %s",)    
 
             try:
@@ -275,10 +307,10 @@ class PhantomPlugin(AbstractPlugin):
         if not self.phout_import_mode:
             Utils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
     
-            rc = self.process.poll()
-            if rc != None:
-                self.log.info("Phantom done its work with exit code: %s", rc)
-                return rc
+            retcode = self.process.poll()
+            if retcode != None:
+                self.log.info("Phantom done its work with exit code: %s", retcode)
+                return retcode
             else:
                 return -1
         else:
@@ -298,7 +330,7 @@ class PhantomPlugin(AbstractPlugin):
         return retcode
             
             
-    def get_stpd_filename(self):
+    def __get_stpd_filename(self):
         if self.use_caching:
             sep = "|"
             hasher = hashlib.md5()
@@ -331,7 +363,7 @@ class PhantomPlugin(AbstractPlugin):
     
         return stpd
     
-    def calculate_test_duration(self, steps):
+    def __calculate_test_duration(self, steps):
         # calc total test duration
         duration = 0
         for rps, dur in Utils.pairs(steps):
@@ -339,7 +371,7 @@ class PhantomPlugin(AbstractPlugin):
         
         self.core.set_option(self.SECTION, self.OPTION_TEST_DURATION, str(duration))
 
-    def read_cached_options(self, cached_config, stepper):
+    def __read_cached_options(self, cached_config, stepper):
         self.log.debug("Reading cached stepper options: %s", cached_config)
         external_stepper_conf = ConfigParser.ConfigParser()
         external_stepper_conf.read(cached_config)
@@ -350,7 +382,7 @@ class PhantomPlugin(AbstractPlugin):
         stepper.ammo_count = external_stepper_conf.get(self.SECTION, self.OPTION_AMMO_COUNT)
 
 
-    def make_stpd_file(self, stpd):
+    def __make_stpd_file(self, stpd):
         self.log.info("Making stpd-file: %s", self.stpd)
         stepper = Stepper(stpd)
         stepper.autocases = int(self.autocases)
@@ -367,6 +399,9 @@ class PhantomPlugin(AbstractPlugin):
         
 
 class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
+    '''
+    Widget that displays progressbar
+    '''
     def get_index(self):
         return 0
 
@@ -421,7 +456,9 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
 # TODO: 3 widget data: loadscheme?    
 # TODO: 1 req/answ sizes in widget - last sec and curRPS
 class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
-
+    '''
+    Widget with information about current run state
+    '''
     def get_index(self):
         return 2
 

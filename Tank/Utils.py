@@ -95,6 +95,9 @@ def pid_exists(pid):
         return True
 
 def execute(cmd, shell=False, poll_period=1, catch_out=False):
+    '''
+    Wrapper for Popen
+    '''
     log = logging.getLogger(__name__)
     log.debug("Starting: %s", cmd)
 
