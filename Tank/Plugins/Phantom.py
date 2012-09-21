@@ -105,7 +105,7 @@ class PhantomPlugin(AbstractPlugin):
         self.http_ver = self.get_option("header_http", '1.1')
         self.autocases = self.get_option("autocases", '0')
         self.use_caching = int(self.get_option("use_caching", '1'))
-        self.cache_dir = os.path.expanduser(self.get_option("cache_dir", os.getcwd()))
+        self.cache_dir = os.path.expanduser(self.get_option("cache_dir", self.core.artifacts_base_dir))
         self.force_stepping = int(self.get_option("force_stepping", '0'))
         
         # phantom part
