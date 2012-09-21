@@ -9,8 +9,6 @@ from Tank import Utils
 # TODO: 2 eliminate double ammo file pass
 # TODO: 1 add progress and ETA
 # TODO: 3 add stpd file size estimation 
-
-
 def make_load_ammo(uris, headers, httpver):
     filename = tempfile.mkstemp('.ammo', 'uri_')[1]
     tmp_ammo = open(filename, 'w')
@@ -1004,10 +1002,9 @@ class Stepper:
             lp_cases = "''"
         self.cases = lp_cases
 
-        lp_steps = ''
+        self.steps = []
         for s in load_steps:
-            lp_steps += '(%s;%s) ' % (s[0], s[1])
-        self.steps = lp_steps
+            self.steps += [int(s[0]), int(s[1])]
 
         if ammo_delete:
             os.unlink(ammo_delete)

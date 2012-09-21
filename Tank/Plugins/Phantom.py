@@ -15,6 +15,7 @@ import select
 import socket
 import string
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -210,7 +211,7 @@ class PhantomPlugin(AbstractPlugin):
         self.steps = stepper.steps
         
         #self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES, stepper.cases)
-        self.core.set_option(self.SECTION, self.OPTION_STEPS, stepper.steps)
+        self.core.set_option(self.SECTION, self.OPTION_STEPS, ' '.join([str(x) for x in stepper.steps]))
         self.core.set_option(self.SECTION, self.OPTION_LOADSCHEME, stepper.loadscheme)
         self.core.set_option(self.SECTION, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
         self.core.set_option(self.SECTION, self.OPTION_AMMO_COUNT, str(stepper.ammo_count))
@@ -330,15 +331,11 @@ class PhantomPlugin(AbstractPlugin):
     
         return stpd
     
-
-
     def calculate_test_duration(self, steps):
         # calc total test duration
-        steps = steps.split(' ')
         duration = 0
-        for step in steps:
-            if step.strip():
-                duration += int(step[1:-1].split(';')[1])
+        for rps, dur in Utils.pairs(steps):
+            duration += dur
         
         self.core.set_option(self.SECTION, self.OPTION_TEST_DURATION, str(duration))
 
@@ -347,7 +344,7 @@ class PhantomPlugin(AbstractPlugin):
         external_stepper_conf = ConfigParser.ConfigParser()
         external_stepper_conf.read(cached_config)
         #stepper.cases = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES)
-        stepper.steps = external_stepper_conf.get(self.SECTION, self.OPTION_STEPS)
+        stepper.steps = [int(x) for x in external_stepper_conf.get(self.SECTION, self.OPTION_STEPS).split(' ')]
         stepper.loadscheme = external_stepper_conf.get(self.SECTION, self.OPTION_LOADSCHEME)
         stepper.loop_count = external_stepper_conf.get(self.SECTION, self.OPTION_LOOP_COUNT)
         stepper.ammo_count = external_stepper_conf.get(self.SECTION, self.OPTION_AMMO_COUNT)
@@ -508,6 +505,7 @@ class PhantomReader(AbstractReader):
         self.data_queue = []
         self.data_buffer = {}
         self.steps = []
+        self.first_request_time = sys.maxint
   
     def check_open_files(self):
         if not self.phout and os.path.exists(self.phantom.phout_file):
@@ -561,6 +559,7 @@ class PhantomReader(AbstractReader):
                     active = 0
     
                 if not cur_time in self.data_buffer.keys():
+                    self.first_request_time = min(self.first_request_time, int(float(data[0])))
                     if self.data_queue and self.data_queue[-1] >= cur_time:
                         self.log.warning("Aggregator data dates must be sequential: %s vs %s" % (cur_time, self.data_queue[-1]))
                         cur_time = self.data_queue[-1]
@@ -595,8 +594,14 @@ class PhantomReader(AbstractReader):
         return res
         
     def __get_expected_rps(self, next_time):
-        offset = next_time - self.phantom.phantom_start_time
-        self.log.debug("Offset: %s", offset)
+        offset = next_time - self.first_request_time
+        self.log.debug("Offset: %s in %s", offset, self.phantom.steps)
+        for rps, dur in Utils.pairs(self.phantom.steps):
+            if offset < dur:
+                self.log.debug("Offset dur/rps: %s/%s", dur, rps)
+                return rps
+            else:
+                offset -= dur 
         return 0
     
     

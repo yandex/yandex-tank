@@ -3,6 +3,7 @@ Commonly used utilities contained here
 '''
 
 import errno
+import itertools
 import logging
 import os
 import re
@@ -129,3 +130,11 @@ def splitstring(string):
         return newstring.split() + [quoted_item]
     else:
         return string.split()
+
+
+def pairs(lst):
+    '''
+    Iterate over pairs in the list
+    '''
+    return itertools.izip(lst[::2], lst[1::2])
+
