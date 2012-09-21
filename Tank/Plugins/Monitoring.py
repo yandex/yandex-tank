@@ -54,7 +54,7 @@ class MonitoringPlugin(AbstractPlugin):
             if self.default_target:
                 self.monitoring.default_target = self.default_target
             
-            data_file = tempfile.mkstemp('.data', 'monitoring_')[1]
+            data_file = tempfile.mkstemp('.data', 'monitoring_', self.core.artifacts_base_dir)[1]
             self.monitoring.add_listener(SaveMonToFile(data_file))
             self.core.add_artifact_file(data_file)
 

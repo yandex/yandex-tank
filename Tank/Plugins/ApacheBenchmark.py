@@ -25,7 +25,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
         self.url = self.get_option("url", 'http://localhost/')
         self.requests = self.get_option("requests", '100')
         self.concurrency = self.get_option("concurrency", '1')
-        self.out_file = tempfile.mkstemp('.log', 'ab_')[1]
+        self.out_file = tempfile.mkstemp('.log', 'ab_', self.core.artifacts_base_dir)[1]
         self.core.add_artifact_file(self.out_file)
 
     def prepare_test(self):

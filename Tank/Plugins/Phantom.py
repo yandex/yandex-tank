@@ -116,7 +116,7 @@ class PhantomPlugin(AbstractPlugin):
         self.address = self.get_option(self.OPTION_IP, '127.0.0.1')
         self.port = self.get_option(self.OPTION_PORT, '80')
         self.tank_type = self.get_option("tank_type", 'http')
-        self.answ_log = self.get_option("answ_log", tempfile.mkstemp(".log", "answ_")[1])
+        self.answ_log = self.get_option("answ_log", tempfile.mkstemp(".log", "answ_", self.core.artifacts_base_dir)[1])
         self.answ_log_level = self.get_option("writelog", "none")
         if self.answ_log_level == '0':
             self.answ_log_level = 'none' 
@@ -124,12 +124,12 @@ class PhantomPlugin(AbstractPlugin):
             self.answ_log_level = 'all' 
         self.phout_file = self.get_option("phout_file", '')
         if not self.phout_file:
-            self.phout_file = tempfile.mkstemp(".log", "phout_")[1]
+            self.phout_file = tempfile.mkstemp(".log", "phout_", self.core.artifacts_base_dir)[1]
             self.core.add_artifact_file(self.phout_file)
         else:
             self.phout_import_mode = 1
-        self.stat_log = self.get_option("stat_log", tempfile.mkstemp(".log", "phantom_stat_")[1])
-        self.phantom_log = self.get_option("phantom_log", tempfile.mkstemp(".log", "phantom_")[1])
+        self.stat_log = self.get_option("stat_log", tempfile.mkstemp(".log", "phantom_stat_", self.core.artifacts_base_dir)[1])
+        self.phantom_log = self.get_option("phantom_log", tempfile.mkstemp(".log", "phantom_", self.core.artifacts_base_dir)[1])
         self.stpd = self.get_option(self.OPTION_STPD, '')
         self.threads = self.get_option("threads", int(multiprocessing.cpu_count() / 2) + 1)
         self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
@@ -187,7 +187,7 @@ class PhantomPlugin(AbstractPlugin):
             kwargs['reply_limits'] = ''
 
         
-        handle, filename = tempfile.mkstemp(".conf", "phantom_")
+        handle, filename = tempfile.mkstemp(".conf", "phantom_", self.core.artifacts_base_dir)
         self.core.add_artifact_file(filename)
         self.log.debug("Generating phantom config: %s", filename)
         template_str = open(os.path.dirname(__file__) + "/phantom.conf.tpl", 'r').read()
