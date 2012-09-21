@@ -6,7 +6,7 @@ import unittest
 
 class  TankCoreTestCase(TankTestCase):
     def setUp(self):
-        self.foo = TankCore()
+        self.foo = self.get_core()
         (handler, name) = tempfile.mkstemp()
         self.foo.config.set_out_file(name)
 

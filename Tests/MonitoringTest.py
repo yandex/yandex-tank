@@ -1,4 +1,3 @@
-from Tank.Core import TankCore
 from Tank.MonCollector.collector import MonitoringCollector, \
     MonitoringDataListener, SSHWrapper
 from Tank.Plugins.ConsoleOnline import Screen
@@ -23,7 +22,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
         mon.poll()
 
     def test_plugin_disabled(self):
-        core = TankCore()
+        core = self.get_core()
         core.artifacts_base_dir=tempfile.mkdtemp()
         mon = MonitoringPlugin(core)
         core.set_option(mon.SECTION, 'config', 'none')
@@ -38,7 +37,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
         mon.post_process(0)
 
     def test_plugin_default(self):
-        core = TankCore()
+        core = self.get_core()
         core.artifacts_base_dir=tempfile.mkdtemp()
         core.load_configs(['config/monitoring.conf'])
         core.load_plugins()
@@ -57,7 +56,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
         mon.post_process(0)
 
     def test_plugin_config(self):
-        core = TankCore()
+        core = self.get_core()
         core.artifacts_base_dir=tempfile.mkdtemp()
         core.load_configs(['config/monitoring.conf'])
         core.load_plugins()
@@ -77,7 +76,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
         mon.post_process(0)
     
     def test_widget(self):
-        core = TankCore()
+        core = self.get_core()
         core.artifacts_base_dir=tempfile.mkdtemp()
         owner = MonitoringPlugin(core)
         owner.monitoring=1

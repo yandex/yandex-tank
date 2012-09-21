@@ -42,7 +42,7 @@ class TankCore:
         self.log.info("Loading plugins...")
         self.log.debug("sys.path: %s", sys.path)
 
-        self.artifacts_base_dir = os.path.expanduser(self.get_option(self.SECTION, "artifacts_base_dir", os.getcwd()))
+        self.artifacts_base_dir = os.path.expanduser(self.get_option(self.SECTION, "artifacts_base_dir", self.artifacts_base_dir))
         self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
         if self.artifacts_dir:
             self.artifacts_dir = os.path.expanduser(self.artifacts_dir)

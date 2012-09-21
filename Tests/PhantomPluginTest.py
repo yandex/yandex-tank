@@ -1,16 +1,14 @@
-from Tank.Core import TankCore
+from Tank.Plugins.Aggregator import AggregatorPlugin
 from Tank.Plugins.Phantom import PhantomPlugin, PhantomReader
 from Tests.TankTests import TankTestCase
 import os
 import tempfile
 import time
 import unittest
-from Tank.Plugins.Aggregator import AggregatorPlugin
 
 class  PhantomPluginTestCase(TankTestCase):
     def setUp(self):
-        core = TankCore()
-        core.artifacts_base_dir=tempfile.mkdtemp()
+        core = self.get_core()
         (name) = tempfile.mkstemp()[1]
         core.config.set_out_file(name)
         core.load_configs(['config/phantom.conf'])

@@ -10,7 +10,7 @@ import unittest
 
 class  ShellExecPluginTestCase(TankTestCase):
     def setUp(self):
-        core = TankCore()
+        core = self.get_core()
         (handler, name) = tempfile.mkstemp()
         core.config.set_out_file(name)
         core.load_configs(['config/shellexec.conf'])

@@ -7,7 +7,7 @@ import unittest
 
 class  AggregatorPluginTestCase(TankTestCase):
     def setUp(self):
-        core = TankCore()
+        core = self.get_core()
         core.load_configs(['config/aggregator.conf'])
         self.foo = AggregatorPlugin(core)
 

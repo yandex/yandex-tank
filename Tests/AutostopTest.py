@@ -9,7 +9,7 @@ import unittest
 
 class AutostopTestCase(TankTestCase):
     def setUp(self):
-        core = TankCore()
+        core = self.get_core()
         name = tempfile.mkstemp()[1]
         core.config.set_out_file(name)
         core.load_configs(['config/autostop.conf'])
