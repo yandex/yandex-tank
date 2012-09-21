@@ -41,15 +41,8 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
             if console:    
                 console.add_info_widget(self)        
     
-    def start_test(self):
-        pass
-        
-    def end_test(self, retcode):
-        pass
-        
     def get_index(self):
-        return 10000 # really last index    
-        
+        return 10000 # really last index            
 
     def render(self, screen):
         line = screen.markup.WHITE + "Tips & Tricks => " + self.section + screen.markup.RESET + ":\n  "

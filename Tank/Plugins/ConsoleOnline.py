@@ -68,21 +68,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
         self.info_panel_width = self.get_option("info_panel_width", '33')
         self.short_only = int(self.get_option("short_only", '0'))
         self.screen = Screen(self.info_panel_width, self.console_markup)
-    
-    def prepare_test(self):
-        pass
-    
-    def start_test(self):
-        pass
-    
-    def end_test(self, retcode):
-        #if not self.short_only:
-        #    sys.stdout.write(self.console_markup.clear)
-        return retcode
-
-    def execute(self, cmd):
-        pass
-    
+        
     def is_test_finished(self):
         if not self.short_only:
             try:

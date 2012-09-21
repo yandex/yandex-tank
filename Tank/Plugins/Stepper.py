@@ -870,7 +870,7 @@ class Stepper:
                                         raise RuntimeError("Wrong case format for '%s'"
          % m.group(2))
 
-                            # 2 TODO: add more info to locate problem chunk
+                            # TODO: 2 add more info to locate problem chunk
                             raise RuntimeError('Wrong chunk size')
 
                     if int(cur_progress) == int(max_progress):

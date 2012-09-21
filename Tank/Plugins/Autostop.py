@@ -59,12 +59,6 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         if console:    
             console.add_info_widget(AutostopWidget(self))
 
-    def start_test(self):
-        pass
-
-    def end_test(self, retcode):
-        return retcode
-
     def is_test_finished(self):
         if self.cause_criteria:
             self.log.info("Autostop criteria requested test stop: %s", self.cause_criteria.explain())

@@ -1,4 +1,4 @@
 '''
 Package contains all original tank tool plugins
 '''
-# TODO: add loadosophia uploader plugin
+# TODO: 2 add loadosophia uploader plugin

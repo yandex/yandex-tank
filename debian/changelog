@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.0.5) precise; urgency=low
+
+  * rewrite aggregator with python
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 21 Sep 2012 17:08:27 +0400
+
 yandex-load-tank-base (1.0.4) precise; urgency=low
 
   * add interactive metainfo querying

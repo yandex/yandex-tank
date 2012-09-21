@@ -36,10 +36,6 @@ class AggregatorPlugin(AbstractPlugin):
         self.time_periods = [ Utils.expand_to_milliseconds(x) for x in periods ]
         self.core.set_option(self.SECTION, "time_periods", " ".join([ str(x) for x in periods ]))
 
-    def prepare_test(self):
-        pass
-    
-    
     def start_test(self):
         if not self.reader:
             self.log.warning("No one set reader for aggregator yet")
@@ -208,7 +204,7 @@ class AbstractReader:
         (marker, threads, overall_rt, http_code, net_code, sent_bytes, received_bytes, connect, send, latency, receive, accuracy) = item
         result.case = marker
         result.active_threads = threads
-        result.planned_requests = 0 # FIXME: implement this
+        result.planned_requests = 0
         result.RPS += 1
         
         if http_code and http_code != '0':

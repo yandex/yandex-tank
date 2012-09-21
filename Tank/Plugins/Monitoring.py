@@ -44,6 +44,8 @@ class MonitoringPlugin(AbstractPlugin):
             self.log.debug("Phantom plugin not found: %s", ex)
         if phantom:
             self.default_target = phantom.address
+            if phantom.phout_import_mode:
+                self.config=None
             # TODO: 2 resolve virtual to host address
         
         if not self.config or self.config == 'none':
@@ -73,9 +75,6 @@ class MonitoringPlugin(AbstractPlugin):
             while not self.monitoring.first_data_received:
                 time.sleep(0.2)
                 self.monitoring.poll()
-            
-    def start_test(self):
-        pass
             
     def is_test_finished(self):
         if self.monitoring and not self.monitoring.poll():
