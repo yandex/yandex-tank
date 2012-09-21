@@ -340,7 +340,7 @@ class CurrentNetBlock(CurrentHTTPBlock):
 
     def add_second(self, data):
         rps = data.overall.planned_requests
-        codes_dist = data.overall.net_codes
+        codes_dist = copy.deepcopy(data.overall.net_codes)
         self.process_dist(rps, codes_dist)
     
     def format_line(self, code, count):

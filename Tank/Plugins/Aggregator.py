@@ -29,7 +29,7 @@ class AggregatorPlugin(AbstractPlugin):
         self.preproc_out_filename = None
         self.cumulative_data = SecondAggregateDataTotalItem()
         self.reader = None
-        self.time_periods = []
+        self.time_periods = [ Utils.expand_to_milliseconds(x) for x in self.default_time_periods.split(' ') ]
     
     def configure(self):
         periods = self.get_option("time_periods", self.default_time_periods).split(" ")
@@ -174,7 +174,7 @@ class AbstractReader:
             quantiles = copy.copy(SecondAggregateDataItem.QUANTILES)
             times = copy.copy(self.aggregator.time_periods)
             time_from = 0
-            time_to = 0
+            time_to = times.pop(0)
             times_dist_draft = []
             times_dist_item = {'from': time_from, 'to': time_to, 'count':0}
             for timing in item.times_dist:
@@ -191,6 +191,10 @@ class AbstractReader:
                     times_dist_item = {'from': time_from, 'to': time_to, 'count':0}                    
                     
                 times_dist_item['count'] += 1
+                
+            while quantiles:
+                level = quantiles.pop(0)
+                item.quantiles[level * 100] = timing
                 
                                     
             if  times_dist_item['count']:
@@ -212,7 +216,7 @@ class AbstractReader:
                 result.http_codes[http_code] = 0
             result.http_codes[http_code] += 1
         if not net_code in result.net_codes.keys():
-            result.net_codes[net_code] = 1
+            result.net_codes[net_code] = 0
         result.net_codes[net_code] += 1
         
         result.input += received_bytes

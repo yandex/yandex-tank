@@ -105,6 +105,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
             self.log.info(tpl % data)
         else:
             self.screen.add_second_data(second_aggregate_data)    
+            self.is_test_finished()
 
     
     def add_info_widget(self, widget):

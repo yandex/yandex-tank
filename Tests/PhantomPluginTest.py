@@ -83,13 +83,18 @@ class  PhantomPluginTestCase(TankTestCase):
         self.assertEquals(['const(1,1)', 'line(1,100,60)', 'step(1,10,1,10)'], self.foo.rps_schedule)
     
     def test_reader(self):
-        self.foo.phout_file='data/phout_timeout_mix.txt'
-        self.foo.phantom_start_time=time.time()
+        self.foo.phout_file = 'data/phout_timeout_mix.txt'
+        self.foo.phantom_start_time = time.time()
         reader = PhantomReader(AggregatorPlugin(self.foo.core), self.foo)
         reader.check_open_files()
-        while reader.get_next_sample(False):
-            pass
-        while reader.get_next_sample(True):
-            pass
+        
+        data = reader.get_next_sample(False)
+        while data:
+            times_sum = 0
+            for timing in data.overall.times_dist:
+                times_sum += timing['count']
+            self.assertEquals(sum(data.overall.net_codes.values()), times_sum)
+            data = reader.get_next_sample(False)
+
 if __name__ == '__main__':
     unittest.main()

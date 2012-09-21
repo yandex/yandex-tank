@@ -5,6 +5,7 @@ from Tank.Plugins.ConsoleOnline import AbstractInfoWidget, ConsoleOnlinePlugin
 from Tank.Plugins.Phantom import PhantomPlugin
 import logging
 import re
+import copy
 
 class AutostopPlugin(AbstractPlugin, AggregateResultListener):
     SECTION = 'autostop'
@@ -276,7 +277,7 @@ class NetCodesCriteria(AbstractCriteria):
     
 
     def notify(self, aggregate_second):
-        codes = aggregate_second.overall.net_codes.copy()
+        codes = copy.deepcopy(aggregate_second.overall.net_codes)
         if '0' in codes.keys(): codes.pop('0')
         matched_responses = self.count_matched_codes(self.codes_regex, codes)
         if self.is_relative:

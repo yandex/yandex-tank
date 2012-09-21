@@ -463,11 +463,11 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
                 
         res += "\n        Accuracy: "
         if self.selfload < 80:
-            res += screen.markup.RED + ('%6.2f' % self.selfload) + screen.markup.RESET
+            res += screen.markup.RED + ('%.2f' % self.selfload) + screen.markup.RESET
         elif self.selfload < 95:
-            res += screen.markup.YELLOW + ('%6.2f' % self.selfload) + screen.markup.RESET
+            res += screen.markup.YELLOW + ('%.2f' % self.selfload) + screen.markup.RESET
         else:
-            res += ('%6.2f' % self.selfload)
+            res += ('%.2f' % self.selfload)
 
         res += "%\n        Time lag: "        
         if self.time_lag > 15:
@@ -547,7 +547,7 @@ class PhantomReader(AbstractReader):
         if phout_ready:
             phout = phout_ready.pop(0).readlines()
             for line in phout:
-                if not line:
+                if not line.strip():
                     return None 
                 #1346949510.514        74420    66    78    65409    8867    74201    18    15662    0    200
                 data = line.strip().split("\t")
@@ -561,12 +561,12 @@ class PhantomReader(AbstractReader):
                     active = 0
     
                 if not cur_time in self.data_buffer.keys():
-                    self.data_buffer[cur_time] = []
                     if self.data_queue and self.data_queue[-1] >= cur_time:
                         self.log.warning("Aggregator data dates must be sequential: %s vs %s" % (cur_time, self.data_queue[-1]))
                         cur_time = self.data_queue[-1]
                     else:
                         self.data_queue.append(cur_time)
+                        self.data_buffer[cur_time] = []
                 #        marker, threads, overallRT, httpCode, netCode
                 data_item = [data[1], active, int(data[2]) / 1000, data[11], data[10]]
                 # bytes:     sent    received
