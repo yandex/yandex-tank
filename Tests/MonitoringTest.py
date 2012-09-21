@@ -7,6 +7,7 @@ from Tests.ConsoleOnlinePluginTest import FakeConsoleMarkup
 from Tests.TankTests import TankTestCase
 import logging
 import time
+import tempfile
 
 class  MonitoringCollectorTestCase(TankTestCase):
     data = None
@@ -23,6 +24,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
 
     def test_plugin_disabled(self):
         core = TankCore()
+        core.artifacts_base_dir=tempfile.mkdtemp()
         mon = MonitoringPlugin(core)
         core.set_option(mon.SECTION, 'config', 'none')
         mon.configure()
@@ -37,6 +39,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
 
     def test_plugin_default(self):
         core = TankCore()
+        core.artifacts_base_dir=tempfile.mkdtemp()
         core.load_configs(['config/monitoring.conf'])
         core.load_plugins()
         core.plugins_configure()
@@ -55,6 +58,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
 
     def test_plugin_config(self):
         core = TankCore()
+        core.artifacts_base_dir=tempfile.mkdtemp()
         core.load_configs(['config/monitoring.conf'])
         core.load_plugins()
         core.plugins_configure()
@@ -74,6 +78,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
     
     def test_widget(self):
         core = TankCore()
+        core.artifacts_base_dir=tempfile.mkdtemp()
         owner = MonitoringPlugin(core)
         owner.monitoring=1
         widget = MonitoringWidget(owner)
