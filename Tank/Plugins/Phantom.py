@@ -1,7 +1,7 @@
 from Tank import Utils
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener, \
-    AbstractReader, SecondAggregateData, SecondAggregateDataTotalItem
+    AbstractReader
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.Stepper import Stepper
 from ipaddr import AddressValueError
@@ -11,12 +11,12 @@ import hashlib
 import ipaddr
 import multiprocessing
 import os
+import select
 import socket
 import string
 import subprocess
 import tempfile
 import time
-import select
 
 # TODO: 3  chosen cases
 # TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
@@ -55,6 +55,8 @@ class PhantomPlugin(AbstractPlugin):
         self.rps_schedule = []
         self.phout_import_mode = 0
         self.did_phout_import_try = False
+        self.steps = []
+        self.phantom_start_time = None
     
     @staticmethod
     def get_key():
@@ -205,6 +207,8 @@ class PhantomPlugin(AbstractPlugin):
         else:
             stepper = self.make_stpd_file(self.stpd)
         
+        self.steps = stepper.steps
+        
         #self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES, stepper.cases)
         self.core.set_option(self.SECTION, self.OPTION_STEPS, stepper.steps)
         self.core.set_option(self.SECTION, self.OPTION_LOADSCHEME, stepper.loadscheme)
@@ -223,7 +227,7 @@ class PhantomPlugin(AbstractPlugin):
             self.log.warning("No aggregator found: %s", ex)
 
         if aggregator:
-            aggregator.reader = PhantomReader(aggregator, self.phout_file, self.stat_log)
+            aggregator.reader = PhantomReader(aggregator, self)
             self.timeout = aggregator.get_timeout()
 
         if not self.phout_import_mode:
@@ -307,12 +311,12 @@ class PhantomPlugin(AbstractPlugin):
             if not os.path.exists(self.ammo_file):
                 raise RuntimeError("Ammo file not found: %s", self.ammo_file)
             
-            stat=os.stat(self.ammo_file)
-            cnt=0
+            stat = os.stat(self.ammo_file)
+            cnt = 0
             for stat_option in stat:
-                if cnt==7: # skip access time
+                if cnt == 7: # skip access time
                     continue
-                cnt+=1
+                cnt += 1
                 hashed_str += ";" + str(stat_option)
             self.log.debug("stpd-hash source: %s", hashed_str)
             hasher.update(hashed_str)            
@@ -457,7 +461,7 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         else:
             res += str(self.RPS)
                 
-        res += "\n       Accuracy: "
+        res += "\n        Accuracy: "
         if self.selfload < 80:
             res += screen.markup.RED + ('%6.2f' % self.selfload) + screen.markup.RESET
         elif self.selfload < 95:
@@ -494,31 +498,32 @@ class PhantomReader(AbstractReader):
     Adapter to read phout files
     '''
 
-    def __init__(self, owner, phout_file, threads_file):
+    def __init__(self, owner, phantom):
         AbstractReader.__init__(self, owner)
-        self.phout_file = phout_file
-        self.stat_file = threads_file
+        self.phantom = phantom
         self.phout = None
         self.stat = None
         self.stat_data = {}
         self.pending_datetime = None
         self.data_queue = []
         self.data_buffer = {}
+        self.steps = []
   
     def check_open_files(self):
-        if not self.phout and os.path.exists(self.phout_file):
-            self.log.debug("Opening phout file: %s", self.phout_file)
-            self.phout = open(self.phout_file, 'r')
+        if not self.phout and os.path.exists(self.phantom.phout_file):
+            self.log.debug("Opening phout file: %s", self.phantom.phout_file)
+            self.phout = open(self.phantom.phout_file, 'r')
     
-        if not self.stat and self.stat_file and os.path.exists(self.stat_file):
-            self.log.debug("Opening stat file: %s", self.stat_file)
-            self.stat = open(self.stat_file, 'r')
+        if not self.stat and self.phantom.stat_log and os.path.exists(self.phantom.stat_log):
+            self.log.debug("Opening stat file: %s", self.phantom.stat_log)
+            self.stat = open(self.phantom.stat_log, 'r')
 
     def get_next_sample(self, force):
-        self.read_stat_data()
-        return self.read_phout_data(force)
+        if self.stat: 
+            self.__read_stat_data()
+        return self.__read_phout_data(force)
 
-    def read_stat_data(self):
+    def __read_stat_data(self):
         stat_ready = select.select([self.stat], [], [], 0)[0]
         if stat_ready:
             stat = stat_ready.pop(0).readlines()
@@ -527,14 +532,16 @@ class PhantomReader(AbstractReader):
                     date_str = line[len('time:\t') - 1:].strip()[:-5].strip()
                     date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
                     self.pending_datetime = int(time.mktime(date_obj.timetuple()))
+                    self.stat_data[self.pending_datetime] = 0
                 if line.startswith('tasks\t'):
                     if not self.pending_datetime:
                         raise RuntimeError("Can't have tasks info without timestamp")
-                    self.stat_data[self.pending_datetime] = int(line[len('tasks\t'):])
+                    
+                    self.stat_data[self.pending_datetime] = max(int(line[len('tasks\t'):]), self.stat_data[self.pending_datetime])
                     self.log.debug("Active instances: %s=>%s", self.pending_datetime, self.stat_data[self.pending_datetime])
 
 
-    def read_phout_data(self, force):
+    def __read_phout_data(self, force):
         phout_ready = select.select([self.phout], [], [], 0)[0]
         self.log.debug("Selected phout: %s", phout_ready)
         if phout_ready:
@@ -542,10 +549,11 @@ class PhantomReader(AbstractReader):
             for line in phout:
                 if not line:
                     return None 
-                self.log.debug("Phout line: %s", line)
                 #1346949510.514        74420    66    78    65409    8867    74201    18    15662    0    200
                 data = line.strip().split("\t")
-                cur_time = int(float(data[0]))
+                self.log.debug("Phout line: %s", data)
+                cur_time = int(float(data[0]) + float(data[2]) / 1000000)
+                #self.log.info("%s => %s", data[0], cur_time)
                 try:
                     active = self.stat_data[cur_time]
                 except KeyError:
@@ -554,7 +562,11 @@ class PhantomReader(AbstractReader):
     
                 if not cur_time in self.data_buffer.keys():
                     self.data_buffer[cur_time] = []
-                    self.data_queue.append(cur_time)
+                    if self.data_queue and self.data_queue[-1] >= cur_time:
+                        self.log.warning("Aggregator data dates must be sequential: %s vs %s" % (cur_time, self.data_queue[-1]))
+                        cur_time = self.data_queue[-1]
+                    else:
+                        self.data_queue.append(cur_time)
                 #        marker, threads, overallRT, httpCode, netCode
                 data_item = [data[1], active, int(data[2]) / 1000, data[11], data[10]]
                 # bytes:     sent    received
@@ -562,20 +574,29 @@ class PhantomReader(AbstractReader):
                 #        connect    send    latency    receive
                 data_item += [int(data[3]) / 1000, int(data[4]) / 1000, int(data[5]) / 1000, int(data[6]) / 1000]
                 #        accuracy
-                data_item += [int(data[7])/1000]
+                data_item += [(float(data[7]) + 1) / (int(data[2]) + 1)]
                 self.data_buffer[cur_time].append(data_item)
                     
         if len(self.data_queue) > 2:
-            return self.pop_second()
+            return self.__pop_second()
         
         if force and self.data_queue:
-            return self.pop_second()
+            return self.__pop_second()
         else:
             return None 
 
-    def pop_second(self):
+
+    def __pop_second(self):
         next_time = self.data_queue.pop(0)
         data = self.data_buffer[next_time]
         del self.data_buffer[next_time]
-        return self.parse_second(next_time, data)
+        res = self.parse_second(next_time, data)
+        res.overall.planned_requests = self.__get_expected_rps(next_time)
+        return res
         
+    def __get_expected_rps(self, next_time):
+        offset = next_time - self.phantom.phantom_start_time
+        self.log.debug("Offset: %s", offset)
+        return 0
+    
+    

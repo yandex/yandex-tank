@@ -65,6 +65,7 @@ class AggregatorPlugin(AbstractPlugin):
         self.second_data_listeners += [listener]
     
     def notify_listeners(self, data):
+        self.log.debug("Notifying listeners about second: %s , %s responses", data.time, data.overall.RPS)
         for listener in self.second_data_listeners:
             listener.aggregate_second(data)
     
@@ -161,7 +162,7 @@ class AbstractReader:
     def calculate_aggregates(self, item):
         if item.RPS:
             if item.avg_response_time:
-                item.selfload = 100 * float(item.selfload) / item.avg_response_time
+                item.selfload = 100 * item.selfload / item.RPS
             item.avg_connect_time /= item.RPS 
             item.avg_send_time /= item.RPS 
             item.avg_latency /= item.RPS

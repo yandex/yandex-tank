@@ -1,9 +1,8 @@
 from Tank.Core import TankCore
-from Tank.Plugins.Aggregator import AggregatorPlugin
+from Tank.Plugins.Aggregator import AggregatorPlugin, AbstractReader
 from Tests.TankTests import TankTestCase
 import time
 import unittest
-from Tank.Plugins.Phantom import PhantomReader
 
 
 class  AggregatorPluginTestCase(TankTestCase):
@@ -19,7 +18,7 @@ class  AggregatorPluginTestCase(TankTestCase):
     def test_run(self):
         self.foo.configure()
         self.foo.prepare_test()
-        self.foo.reader=PhantomReader(self.foo, 'data/phout_example.txt', 'data/phantom_stat.txt')
+        self.foo.reader=FakeReader(self.foo)
         self.foo.start_test()
         retry = 0
         while self.foo.is_test_finished() < 0 and retry < 5:
@@ -31,7 +30,7 @@ class  AggregatorPluginTestCase(TankTestCase):
     def test_run_final_read(self):
         self.foo.configure()
         self.foo.prepare_test()
-        self.foo.reader=PhantomReader(self.foo, 'data/phout_example.txt', 'data/phantom_stat.txt')
+        self.foo.reader=FakeReader(self.foo)
         self.foo.start_test()
         self.foo.end_test(0)
         
@@ -41,6 +40,10 @@ class  AggregatorPluginTestCase(TankTestCase):
         self.foo.start_test()
         time.sleep(2)
         self.foo.end_test(0)
+
+class FakeReader(AbstractReader):
+    pass
+
 
 if __name__ == '__main__':
     unittest.main()

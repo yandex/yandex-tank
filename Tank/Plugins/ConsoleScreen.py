@@ -90,6 +90,7 @@ class Screen(object):
             lines.append("")
         return lines
 
+
     def render_screen(self):
         self.term_width, self.term_height = get_terminal_size()
         self.log.debug("Terminal size: %sx%s", self.term_width, self.term_height)
@@ -107,7 +108,8 @@ class Screen(object):
                 self.log.debug("Rendering info widget #%s: %s", index, widget)
                 widget_out = widget.render(self)
                 widget_output += widget_out.split("\n")
-                widget_output += [""]
+                if widget_out:
+                    widget_output += [""]
 
         left_lines = self.render_left_panel()
 

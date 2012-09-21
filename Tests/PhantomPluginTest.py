@@ -1,15 +1,16 @@
 from Tank.Core import TankCore
-from Tank.Plugins.Phantom import PhantomPlugin
+from Tank.Plugins.Phantom import PhantomPlugin, PhantomReader
 from Tests.TankTests import TankTestCase
 import os
 import tempfile
 import time
 import unittest
+from Tank.Plugins.Aggregator import AggregatorPlugin
 
 class  PhantomPluginTestCase(TankTestCase):
     def setUp(self):
         core = TankCore()
-        (handler, name) = tempfile.mkstemp()
+        (name) = tempfile.mkstemp()[1]
         core.config.set_out_file(name)
         core.load_configs(['config/phantom.conf'])
         core.load_plugins()
@@ -27,13 +28,18 @@ class  PhantomPluginTestCase(TankTestCase):
         self.foo.core.set_option(PhantomPlugin.SECTION, "config", '')
         self.foo.configure()
         self.foo.prepare_test()
+        reader = PhantomReader(AggregatorPlugin(self.foo.core), self.foo)
         self.foo.start_test()
+        
         while self.foo.is_test_finished() < 0:
             self.foo.log.debug("Not finished")
+            reader.check_open_files()
+            reader.get_next_sample(False)
             time.sleep(1)
         if self.foo.is_test_finished() != 0:
             raise RuntimeError("RC: %s" % self.foo.is_test_finished())
         self.foo.end_test(0)
+        reader.get_next_sample(True)
 
     def test_run_ready_conf(self):
         self.foo.core.add_artifact_file("ready_conf_phout.txt")
@@ -75,6 +81,15 @@ class  PhantomPluginTestCase(TankTestCase):
         self.foo.core.set_option('phantom', 'rps_schedule', 'const(1,1) line(1,100,60)\nstep(1,10,1,10)')
         self.foo.configure()
         self.assertEquals(['const(1,1)', 'line(1,100,60)', 'step(1,10,1,10)'], self.foo.rps_schedule)
-        
+    
+    def test_reader(self):
+        self.foo.phout_file='data/phout_timeout_mix.txt'
+        self.foo.phantom_start_time=time.time()
+        reader = PhantomReader(AggregatorPlugin(self.foo.core), self.foo)
+        reader.check_open_files()
+        while reader.get_next_sample(False):
+            pass
+        while reader.get_next_sample(True):
+            pass
 if __name__ == '__main__':
     unittest.main()
