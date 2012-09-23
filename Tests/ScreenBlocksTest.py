@@ -8,7 +8,7 @@ class BlocksTestCase(TankTestCase):
         block = CurrentHTTPBlock(screen)
         block.render()
         print block.lines
-        self.assertEquals('HTTP for current RPS:', block.lines[0].strip())
+        self.assertEquals('<w>HTTP for 0 RPS:  <rst>', block.lines[0].strip())
         self.assertEquals(1, len(block.lines))
     
         data = self.get_aggregate_data('data/preproc_single.txt')
@@ -30,7 +30,7 @@ class BlocksTestCase(TankTestCase):
         block = CurrentNetBlock(screen)
         block.render()
         print block.lines
-        self.assertEquals('NET for current RPS:', block.lines[0].strip())
+        self.assertEquals('<w> NET for 0 RPS:  <rst>', block.lines[0].strip())
         self.assertEquals(1, len(block.lines))
     
         data = self.get_aggregate_data('data/preproc_single.txt')
