@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.0.6) precise; urgency=low
+
+  * added several screen info blocks
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Sun, 23 Sep 2012 21:01:57 +0400
+
 yandex-load-tank-base (1.0.5) precise; urgency=low
 
   * rewrite aggregator with python
