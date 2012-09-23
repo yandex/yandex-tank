@@ -25,7 +25,6 @@ import time
 
 # TODO: 3  chosen cases
 # TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
-# FIXME: 2 sometimes cache not used
 # FIXME: 3 in phout import mode there is no graceful way to interrupt the process
 class PhantomPlugin(AbstractPlugin):
     '''

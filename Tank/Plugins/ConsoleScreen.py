@@ -2,16 +2,14 @@
 Classes to build full console screen
 '''
 from Tank.Plugins import Codes
+from Tank.Plugins.Aggregator import SecondAggregateDataItem
+import copy
 import fcntl
 import logging
+import math
 import os
 import struct
 import termios
-import math
-import copy
-from Tank.Plugins.Aggregator import SecondAggregateDataItem
-
-# TODO: 1 req/answ sizes in widget - last sec and curRPS
 
 def get_terminal_size(): 
     '''
