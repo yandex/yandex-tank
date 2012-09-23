@@ -560,7 +560,7 @@ class CasesBlock(AbstractBlock):
     def render(self):
         self.lines = [self.screen.markup.WHITE + self.header + self.screen.markup.RESET]
         tpl = "  %s: %" + str(len(str(self.count))) + "d %5.2f%% / avg %.1f ms"
-        for name, (count, resp_time) in self.cases.iteritems():
+        for name, (count, resp_time) in sorted(self.cases.iteritems()):
             line = tpl % (" "*(self.max_case_len - len(name)) + name, count, 100 * float(count) / self.count, float(resp_time) / count)
             if name in self.highlight_cases:
                 self.lines.append(self.screen.markup.CYAN + line + self.screen.markup.RESET)
