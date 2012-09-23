@@ -59,8 +59,8 @@ class Screen(object):
         
         codes_block = VerticalBlock(CurrentHTTPBlock(self), CurrentNetBlock(self))
         
-        first_row = [CurrentTimesBlock(self), VerticalBlock(codes_block, AnswSizesBlock(self, 'Request/response sizes for current RPS:'))]
-        second_row = [TotalQuantilesBlock(self), AnswSizesBlock(self, 'Request/response sizes for all test:', True)]
+        first_row = [CurrentTimesBlock(self), VerticalBlock(codes_block, AnswSizesBlock(self))]
+        second_row = [TotalQuantilesBlock(self)]
         self.block_rows = [first_row, second_row]
 
     def __get_right_line(self, widget_output):
@@ -264,7 +264,7 @@ class CurrentTimesBlock(AbstractBlock):
             self.width = max(self.width, len(line))
             self.lines.append(line)
         self.lines.reverse()
-        self.lines = ['Times for current RPS:'] + self.lines
+        self.lines = [self.screen.markup.WHITE+'Times for current RPS:'+self.screen.markup.RESET] + self.lines
         self.lines.append("")
 
         count_len = str(len(str(self.current_count)))
@@ -284,7 +284,7 @@ class CurrentTimesBlock(AbstractBlock):
             # 30691    9.26%: 010  --  025       68.03%  <  025
             count_len = str(len(str(self.current_count)))
             timing_len = str(len(str(self.current_max_rt)))
-            tpl = ' %' + count_len + 'd %6.2f%%: %' + timing_len + 'd -- %' + timing_len + 'd  %6.2f%% < %' + count_len + 'd'
+            tpl = '  %' + count_len + 'd %6.2f%%: %' + timing_len + 'd -- %' + timing_len + 'd  %6.2f%% < %' + count_len + 'd'
             data = (item['count'], perc * 100, item['from'], item['to'], quan * 100, item['to'])
             left_line = tpl % data
         return left_line, quan
@@ -331,7 +331,7 @@ class CurrentHTTPBlock(AbstractBlock):
         self.process_dist(rps, codes_dist)
       
     def render(self):
-        self.lines = [self.TITLE] 
+        self.lines = [self.screen.markup.WHITE+self.TITLE+self.screen.markup.RESET] 
         #self.width = len(self.lines[0])
         for code, count in sorted(self.times_dist.iteritems()):        
             line = self.format_line(code, count)
@@ -349,7 +349,7 @@ class CurrentHTTPBlock(AbstractBlock):
             code_desc = Codes.HTTP[int(code)]
         else:
             code_desc = "N/A"
-        tpl = ' %' + count_len + 'd %6.2f%%: %s %s'
+        tpl = '  %' + count_len + 'd %6.2f%%: %s %s'
         data = (count, perc * 100, code, code_desc)
         left_line = tpl % data
         
@@ -390,7 +390,7 @@ class CurrentNetBlock(CurrentHTTPBlock):
             code_desc = Codes.NET[int(code)]
         else:
             code_desc = "N/A"
-        tpl = ' %' + count_len + 'd %6.2f%%: %s %s'
+        tpl = '  %' + count_len + 'd %6.2f%%: %s %s'
         data = (count, perc * 100, code, code_desc)
         left_line = tpl % data
         
@@ -436,7 +436,7 @@ class TotalQuantilesBlock(AbstractBlock):
                 self.lines.append(line)
                 
         self.lines.reverse()
-        self.lines = ['Total percentiles:'] + self.lines
+        self.lines = [self.screen.markup.WHITE + 'Total percentiles:' + self.screen.markup.RESET] + self.lines
         self.width = max(self.width, len(self.lines[0]))
 
     def __format_line(self, quan, timing):
@@ -452,25 +452,27 @@ class TotalQuantilesBlock(AbstractBlock):
 
 class AnswSizesBlock(AbstractBlock):
     
-    def __init__(self, screen, header, total=False):
+    def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
         self.sum_in = 0
         self.current_rps = -1
         self.sum_out = 0
         self.count = 0
-        self.header=header
-        self.is_total=total
+        self.header = screen.markup.WHITE + 'Request/response sizes:' + screen.markup.RESET
 
     def render(self):
         self.lines = [self.header]
         if self.count:
-            self.lines.append(" Avg Request: %d bytes" % (self.sum_out / self.count))
-            self.lines.append("Avg Response: %d bytes" % (self.sum_in / self.count))
+            self.lines.append("   Avg Request at %s RPS: %d bytes" % (self.current_rps, self.sum_out / self.count))
+            self.lines.append("  Avg Response at %s RPS: %d bytes" % (self.current_rps, self.sum_in / self.count))
+            self.lines.append("")
+            self.lines.append("   Last Avg Request: %d bytes" % (self.cur_out / self.cur_count))
+            self.lines.append("  Last Avg Response: %d bytes" % (self.cur_in / self.cur_count))
         for line in self.lines:
             self.width = max(self.width, len(line))
 
     def add_second(self, data):
-        if not self.is_total and data.overall.planned_requests != self.current_rps:
+        if data.overall.planned_requests != self.current_rps:
             self.current_rps = data.overall.planned_requests
             self.sum_in = 0
             self.sum_out = 0
@@ -480,4 +482,6 @@ class AnswSizesBlock(AbstractBlock):
         self.sum_in += data.overall.input
         self.sum_out += data.overall.output
         
-        
+        self.cur_in = data.overall.input
+        self.cur_out = data.overall.output
+        self.cur_count = data.overall.RPS
