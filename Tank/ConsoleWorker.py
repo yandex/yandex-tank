@@ -119,6 +119,7 @@ class ConsoleTank:
 
     def __convert_old_multiline_options(self, old_lines):
         opts = {}
+        option=None
         res = ''
         for line in old_lines:
             try:

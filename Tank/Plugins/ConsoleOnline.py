@@ -5,7 +5,6 @@ import traceback
 import sys
 import logging
 
-# TODO: 1 add avg times: parts & by case    
 class RealConsoleMarkup(object):
     '''    
     Took colors from here: https://www.siafoo.net/snippet/88
