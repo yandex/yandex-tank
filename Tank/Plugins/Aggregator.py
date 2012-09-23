@@ -40,27 +40,27 @@ class AggregatorPlugin(AbstractPlugin):
         if not self.reader:
             self.log.warning("No one set reader for aggregator yet")
     
-    def read_samples(self, limit=0, force=False):
+    def __read_samples(self, limit=0, force=False):
         if self.reader:
             self.reader.check_open_files()
             data = self.reader.get_next_sample(force)
             count = 0
             while data and (limit < 1 or count < limit):
-                self.notify_listeners(data)
+                self.__notify_listeners(data)
                 data = self.reader.get_next_sample(force)
         
     def is_test_finished(self):
-        self.read_samples(5)                    
+        self.__read_samples(5)                    
         return -1
 
     def end_test(self, retcode):
-        self.read_samples(force=True)
+        self.__read_samples(force=True)
         return retcode                
         
     def add_result_listener(self, listener):
         self.second_data_listeners += [listener]
     
-    def notify_listeners(self, data):
+    def __notify_listeners(self, data):
         self.log.debug("Notifying listeners about second: %s , %s responses", data.time, data.overall.RPS)
         for listener in self.second_data_listeners:
             listener.aggregate_second(data)

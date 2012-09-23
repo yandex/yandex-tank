@@ -1,3 +1,6 @@
+'''
+Classes to build full console screen
+'''
 from Tank.Plugins import Codes
 import fcntl
 import logging
@@ -8,29 +11,34 @@ import math
 import copy
 from Tank.Plugins.Aggregator import SecondAggregateDataItem
 
+# TODO: 1 req/answ sizes in widget - last sec and curRPS
+
 def get_terminal_size(): 
-    defaultSize = (25, 80)
+    '''
+    Gets width and height of terminal viewport
+    '''
+    default_size = (25, 80)
     env = os.environ
-    def ioctl_gwinsz(fd):
+    def ioctl_gwinsz(file_d):
         try:
-            cr = struct.unpack('hh', fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234'))
-        except:
-            cr = defaultSize
-        return cr
-    cr = ioctl_gwinsz(0) or ioctl_gwinsz(1) or ioctl_gwinsz(2)
-    if not cr:
+            sizes = struct.unpack('hh', fcntl.ioctl(file_d, termios.TIOCGWINSZ, '1234'))
+        except Exception:
+            sizes = default_size
+        return sizes
+    sizes = ioctl_gwinsz(0) or ioctl_gwinsz(1) or ioctl_gwinsz(2)
+    if not sizes:
         try:
-            fd = os.open(os.ctermid(), os.O_RDONLY)
-            cr = ioctl_gwinsz(fd)
-            os.close(fd)
-        except:
+            file_d = os.open(os.ctermid(), os.O_RDONLY)
+            sizes = ioctl_gwinsz(file_d)
+            os.close(file_d)
+        except Exception:
             pass
-    if not cr:
+    if not sizes:
         try:
-            cr = (env['LINES'], env['COLUMNS'])
+            sizes = (env['LINES'], env['COLUMNS'])
         except:
-            cr = defaultSize
-    return int(cr[1]), int(cr[0])    
+            sizes = default_size
+    return int(sizes[1]), int(sizes[0])    
 
 
 class Screen(object):
@@ -48,11 +56,14 @@ class Screen(object):
         self.term_width = 80
         self.right_panel_width = 10
         self.left_panel_width = self.term_width - self.right_panel_width - len(self.RIGHT_PANEL_SEPARATOR)
-        first_row = [CurrentTimesBlock(self), VerticalBlock(CurrentHTTPBlock(self), CurrentNetBlock(self))]
-        second_row = [TotalQuantilesBlock(self)]
+        
+        codes_block = VerticalBlock(CurrentHTTPBlock(self), CurrentNetBlock(self))
+        
+        first_row = [CurrentTimesBlock(self), VerticalBlock(codes_block, AnswSizesBlock(self, 'Request/response sizes for current RPS:'))]
+        second_row = [TotalQuantilesBlock(self), AnswSizesBlock(self, 'Request/response sizes for all test:', True)]
         self.block_rows = [first_row, second_row]
 
-    def get_right_line(self, widget_output):
+    def __get_right_line(self, widget_output):
         right_line = ''
         if widget_output:
             right_line = widget_output.pop(0)
@@ -63,7 +74,7 @@ class Screen(object):
         return right_line
 
 
-    def render_left_panel(self):
+    def __render_left_panel(self):
         lines = []
         for row in self.block_rows:
             space_left = self.left_panel_width
@@ -87,11 +98,15 @@ class Screen(object):
                         line += ' ' * block.width
                     line += space
                 lines.append(line)
+            lines.append(".  " * (1 + self.left_panel_width / 3))
             lines.append("")
         return lines
 
 
     def render_screen(self):
+        '''
+        Main method to render screen view
+        '''
         self.term_width, self.term_height = get_terminal_size()
         self.log.debug("Terminal size: %sx%s", self.term_width, self.term_height)
         self.right_panel_width = int((self.term_width - len(self.RIGHT_PANEL_SEPARATOR)) * (float(self.info_panel_percent) / 100)) - 1
@@ -111,13 +126,13 @@ class Screen(object):
                 if widget_out:
                     widget_output += [""]
 
-        left_lines = self.render_left_panel()
+        left_lines = self.__render_left_panel()
 
         output = []        
-        for lineNo in range(1, self.term_height):
+        for line_no in range(1, self.term_height):
             line = " "
 
-            if lineNo > 1 and left_lines:
+            if line_no > 1 and left_lines:
                 left_line = left_lines.pop(0)
                 if len(left_line) > self.left_panel_width:
                     left_line_plain = self.markup.clean_markup(left_line)
@@ -131,7 +146,7 @@ class Screen(object):
 
             if self.right_panel_width:
                 line += (self.RIGHT_PANEL_SEPARATOR)
-                right_line = self.get_right_line(widget_output)
+                right_line = self.__get_right_line(widget_output)
                 line += right_line
                  
             output.append(line)
@@ -139,6 +154,9 @@ class Screen(object):
 
     
     def add_info_widget(self, widget):
+        '''
+        Add widget string to right panel of the screen
+        '''
         if widget.get_index() in self.info_widgets.keys():
             self.log.warning("There is existing info widget with index %s: %s, widget %s skipped", widget.get_index(), self.info_widgets[widget.get_index()], widget)
         else:
@@ -146,6 +164,9 @@ class Screen(object):
 
 
     def add_second_data(self, data):
+        '''
+        Notification method about new aggregator data
+        '''
         for row in self.block_rows:
             for block in row:
                 block.add_second(data)        
@@ -154,6 +175,9 @@ class Screen(object):
 # ======================================================
 
 class AbstractBlock:
+    '''
+    Parent class for all left panel blocks
+    '''
     def __init__(self, screen):
         self.log = logging.getLogger(__name__)
         self.lines = []
@@ -161,9 +185,15 @@ class AbstractBlock:
         self.screen = screen
 
     def add_second(self, data):
+        '''
+        Notification about new aggregate data
+        '''
         pass
 
     def render(self):
+        '''
+        Render method, fills .lines and .width properties with rendered data
+        '''
         raise RuntimeError("Abstract method needs to be overridden")
     
 # ======================================================
@@ -173,6 +203,7 @@ class VerticalBlock(AbstractBlock):
     Block to merge two other blocks vertically
     '''
     def __init__(self, top_block, bottom_block):
+        AbstractBlock.__init__(self, None)
         self.top = top_block
         self.bottom = bottom_block
 
@@ -229,7 +260,7 @@ class CurrentTimesBlock(AbstractBlock):
         quan = 0
         current_times = sorted(self.current_codes.iteritems())
         while current_times:
-            line, quan = self.format_line(current_times, quan)
+            line, quan = self.__format_line(current_times, quan)
             self.width = max(self.width, len(line))
             self.lines.append(line)
         self.lines.reverse()
@@ -237,11 +268,11 @@ class CurrentTimesBlock(AbstractBlock):
         self.lines.append("")
 
         count_len = str(len(str(self.current_count)))
-        tpl = ' %' + count_len + 'd %6.2f%%: total'
+        tpl = ' %' + count_len + 'd %6.2f%%: is_total'
         self.lines.append(tpl % (self.current_count, 100))
         self.width = max(self.width, len(self.lines[0]))
 
-    def format_line(self, current_times, quan):
+    def __format_line(self, current_times, quan):
         left_line = ''
         if current_times:
             index, item = current_times.pop(0)
@@ -269,9 +300,13 @@ class CurrentHTTPBlock(AbstractBlock):
         self.times_dist = {}
         self.current_rps = -1
         self.total_count = 0
+        self.highlight_codes = []
 
 
     def process_dist(self, rps, codes_dist):
+        '''
+        Analyze arrived codes distribution and highlight arrived
+        '''
         self.log.debug("Arrived codes data: %s", codes_dist)
         self.highlight_codes = []
         if not self.current_rps == rps:
@@ -319,6 +354,7 @@ class CurrentHTTPBlock(AbstractBlock):
         left_line = tpl % data
         
         if code in self.highlight_codes:
+            code = str(code)
             if code[0] == '2':
                 left_line = self.screen.markup.GREEN + left_line + self.screen.markup.RESET
             elif code[0] == '3':
@@ -394,8 +430,8 @@ class TotalQuantilesBlock(AbstractBlock):
             quan += perc 
 
             while quantiles and quan >= quantiles[0]:
-                # FIXME break here could resolve problem
-                line = self.format_line(quantiles.pop(0), item['to'])
+                # FIXME 3 break here could resolve problem
+                line = self.__format_line(quantiles.pop(0), item['to'])
                 self.width = max(self.width, len(line))
                 self.lines.append(line)
                 
@@ -403,9 +439,45 @@ class TotalQuantilesBlock(AbstractBlock):
         self.lines = ['Total percentiles:'] + self.lines
         self.width = max(self.width, len(self.lines[0]))
 
-    def format_line(self, quan, timing):
+    def __format_line(self, quan, timing):
         timing_len = str(len(str(self.current_max_rt)))
         tpl = '   %3d%% < %' + timing_len + 'd ms'
         data = (100 * quan, timing)
         left_line = tpl % data
         return left_line
+
+
+# ======================================================
+
+
+class AnswSizesBlock(AbstractBlock):
+    
+    def __init__(self, screen, header, total=False):
+        AbstractBlock.__init__(self, screen)
+        self.sum_in = 0
+        self.current_rps = -1
+        self.sum_out = 0
+        self.count = 0
+        self.header=header
+        self.is_total=total
+
+    def render(self):
+        self.lines = [self.header]
+        if self.count:
+            self.lines.append(" Avg Request: %d bytes" % (self.sum_out / self.count))
+            self.lines.append("Avg Response: %d bytes" % (self.sum_in / self.count))
+        for line in self.lines:
+            self.width = max(self.width, len(line))
+
+    def add_second(self, data):
+        if not self.is_total and data.overall.planned_requests != self.current_rps:
+            self.current_rps = data.overall.planned_requests
+            self.sum_in = 0
+            self.sum_out = 0
+            self.count = 0
+
+        self.count += data.overall.RPS
+        self.sum_in += data.overall.input
+        self.sum_out += data.overall.output
+        
+        
