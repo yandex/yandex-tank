@@ -117,7 +117,6 @@ class ConsoleTank:
         logger.addHandler(console_handler)
 
 
-
     def __convert_old_multiline_options(self, old_lines):
         opts = {}
         res = ''
@@ -132,12 +131,16 @@ class ConsoleTank:
                     opts[option] = []
                 opts[option].append(value.strip())
             except Exception:
-                res += line
+                if option:
+                    opts[option].append(line.strip())
+                else:
+                    res += line
     
         for option, values in opts.iteritems():
             res += option + '=' + "\n\t".join(values) + "\n"
     
         return res
+    
     
     def __adapt_old_config(self, config):
         test_parser = ConfigParser.ConfigParser()
