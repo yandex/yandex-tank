@@ -18,16 +18,7 @@ class  ConsoleWorkerTestCase(TankTests.TankTestCase):
 
     def tearDown(self):
         del self.foo
-        self.foo = None
-        try:
-            os.remove('lp.conf')
-        except:
-            pass
-        try:
-            os.remove('lunapark.log')
-        except:
-            pass
-            
+        self.foo = None            
 
     def test_perform(self):
         self.foo.configure()
@@ -45,6 +36,7 @@ class  ConsoleWorkerTestCase(TankTests.TankTestCase):
         
         if self.foo.perform_test() != 0:
             raise RuntimeError()
+
         
     def test_option_override(self):
         options = FakeOptions()
@@ -55,6 +47,13 @@ class  ConsoleWorkerTestCase(TankTests.TankTestCase):
         res = self.foo.core.get_option("owner", "address")
         logging.debug(res)
         self.assertEquals("overridden", res)
+
+
+    def test_option_old_convert(self):
+        options = FakeOptions()
+        options.config = ["data/old_to_migrate.conf"]
+        self.foo = ConsoleTank(options, None)
+        self.foo.configure()
 
 if __name__ == '__main__':
     unittest.main()

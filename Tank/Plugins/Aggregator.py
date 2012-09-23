@@ -196,7 +196,7 @@ class AbstractReader:
             if  times_dist_item['count']:
                 times_dist_draft.append(times_dist_item)
                      
-            item.dispersion = 0 # TODO: will someone miss this so-called 'dispersion'?
+            item.dispersion = 0 # TODO: 2 will someone miss this so-called 'dispersion'?
             item.times_dist = times_dist_draft        
 
         

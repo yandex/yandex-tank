@@ -48,7 +48,7 @@ class PhantomPlugin(AbstractPlugin):
     
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
-        # FIXME: obviously needs refactoring, at least extracting phantom-specific options into separate class
+        # FIXME: 3 obviously needs refactoring, at least extracting phantom-specific options into separate class
         self.process = None
         self.timeout = 1000
         self.answ_log = None
@@ -454,7 +454,6 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
 
 
 # TODO: 3 widget data: loadscheme?    
-# TODO: 1 req/answ sizes in widget - last sec and curRPS
 class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
     '''
     Widget with information about current run state

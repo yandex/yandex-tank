@@ -1,3 +1,6 @@
+'''
+Provides class to run TankCore from console environment
+'''
 from Tank.Core import TankCore
 from Tank import Utils 
 import ConfigParser
@@ -12,7 +15,6 @@ from Tank.Plugins.ConsoleOnline import RealConsoleMarkup
 
 # TODO: 2 --manual-start
 # TODO: 2 add system resources busy check
-# TODO: 1 convert old multiline config values to new format
 class ConsoleTank:
     """
     Worker class that runs tank core accepting cmdline params
@@ -71,6 +73,7 @@ class ConsoleTank:
         self.options = options
         self.ammofile = ammofile
         
+        # TODO: 3 change it to /etc/yandex-tank
         self.baseconfigs_location = '/etc/lunapark' 
 
         self.log_filename = self.options.log
@@ -80,9 +83,15 @@ class ConsoleTank:
         self.signal_count = 0
 
     def set_baseconfigs_dir(self, directory):
+        '''
+        Set directory where to read configs set
+        '''
         self.baseconfigs_location = directory
         
     def init_logging(self):
+        '''
+        Set up logging, as it is very important for console tool
+        '''
         logger = logging.getLogger()
         logger.setLevel(logging.DEBUG)
 
@@ -109,7 +118,28 @@ class ConsoleTank:
 
 
 
-    def adapt_old_config(self, config):
+    def __convert_old_multiline_options(self, old_lines):
+        opts = {}
+        res = ''
+        for line in old_lines:
+            try:
+                if line.strip() and line.strip()[0] == '#':
+                    res+=line
+                    continue
+                option = line[:line.index('=')]
+                value = line[line.index('=')+1:]
+                if option not in opts.keys():
+                    opts[option] = []
+                opts[option].append(value.strip())
+            except Exception:
+                res += line
+    
+        for option, values in opts.iteritems():
+            res += option + '=' + "\n\t".join(values) + "\n"
+    
+        return res
+    
+    def __adapt_old_config(self, config):
         test_parser = ConfigParser.ConfigParser()
         try:
             test_parser.read(config)
@@ -117,20 +147,19 @@ class ConsoleTank:
             return config
         except Exception:
             self.log.warning("Config failed INI format test, consider upgrading it: %s", config)
-            file_handle, corrected_file = tempfile.mkstemp(".conf", "corrected_")
+            file_handle, corrected_file = tempfile.mkstemp(".ini", "corrected_")
             self.log.debug("Creating corrected INI config for it: %s", corrected_file)
             os.write(file_handle, "[" + self.MIGRATE_SECTION + "]\n")
-            old_config = open(config, 'r').read()
-            os.write(file_handle, old_config)
+            os.write(file_handle, self.__convert_old_multiline_options(open(config, 'r').readlines()))
             return corrected_file
 
-    def add_adapted_config(self, configs, conf_file):
-        conf_file = self.adapt_old_config(conf_file)
+    def __add_adapted_config(self, configs, conf_file):
+        conf_file = self.__adapt_old_config(conf_file)
         configs += [conf_file]
         self.core.add_artifact_file(conf_file, True)
 
 
-    def override_config_from_cmdline(self):
+    def __override_config_from_cmdline(self):
         # override config options from command line
         if self.options.option: 
             for option_str in self.options.option:
@@ -145,7 +174,7 @@ class ConsoleTank:
                 self.core.set_option(section, option, value)
             
     
-    def there_is_locks(self):
+    def __there_is_locks(self):
         retcode = False
         for filename in os.listdir(self.LOCK_DIR):
             if fnmatch.fnmatch(filename, 'lunapark_*.lock'):
@@ -170,7 +199,7 @@ class ConsoleTank:
         return retcode
     
     
-    def translate_old_options(self):
+    def __translate_old_options(self):
         for old_option, value in self.core.config.get_options(self.MIGRATE_SECTION):
             if old_option in self.old_options_mapping.keys():
                 new_sect = self.old_options_mapping[old_option][0]
@@ -185,8 +214,11 @@ class ConsoleTank:
 
                 
     def configure(self):
+        '''
+        Make all console-specific preparations before running Tank
+        '''
         if not self.options.ignore_lock:
-            while self.there_is_locks():
+            while self.__there_is_locks():
                 if self.options.lock_fail:
                     raise RuntimeError("Lock file present, cannot continue")
                 self.log.info("Waiting for 5s for retry...")
@@ -200,6 +232,7 @@ class ConsoleTank:
 
         try:
             for filename in os.listdir(self.baseconfigs_location):
+                # TODO: 3 change extension to INI
                 if fnmatch.fnmatch(filename, '*.conf'):
                     configs += [os.path.realpath(self.baseconfigs_location + os.sep + filename)]
         except OSError:
@@ -209,12 +242,12 @@ class ConsoleTank:
         
         if not self.options.config:
             self.log.debug("No config passed via cmdline, using ./load.conf")
-            conf_file = self.adapt_old_config(os.path.realpath('load.conf'))
+            conf_file = self.__adapt_old_config(os.path.realpath('load.conf'))
             configs += [conf_file]
             self.core.add_artifact_file(conf_file, True)
         else:
             for config_file in self.options.config:
-                self.add_adapted_config(configs, config_file)
+                self.__add_adapted_config(configs, config_file)
 
         self.core.load_configs(configs)
 
@@ -224,13 +257,13 @@ class ConsoleTank:
             self.log.debug("Ammofile: %s", self.ammofile)
             self.core.set_option(self.MIGRATE_SECTION, 'ammofile', self.ammofile[0])
 
-        self.translate_old_options()
-        self.override_config_from_cmdline()
+        self.__translate_old_options()
+        self.__override_config_from_cmdline()
                     
         self.core.load_plugins()
         
 
-    def graceful_shutdown(self):
+    def __graceful_shutdown(self):
         retcode = 1
         self.log.info("Trying to shutdown gracefully...")
         retcode = self.core.plugins_end_test(retcode)
@@ -240,6 +273,9 @@ class ConsoleTank:
     
     
     def perform_test(self):
+        '''
+        Run the test sequence via Tank Core
+        '''
         self.log.info("Performing test")
         retcode = 1
         try:
@@ -254,7 +290,7 @@ class ConsoleTank:
             self.signal_count += 1
             self.log.debug("Caught KeyboardInterrupt: %s", traceback.format_exc(ex))
             try:
-                retcode = self.graceful_shutdown()
+                retcode = self.__graceful_shutdown()
             except KeyboardInterrupt as ex:
                 self.log.debug("Caught KeyboardInterrupt again: %s", traceback.format_exc(ex))
                 self.log.info("User insists on exiting, aborting graceful shutdown...")
@@ -265,7 +301,7 @@ class ConsoleTank:
             sys.stdout.write(RealConsoleMarkup.RED)
             self.log.error("%s", ex)
             sys.stdout.write(RealConsoleMarkup.RESET)
-            retcode = self.graceful_shutdown()
+            retcode = self.__graceful_shutdown()
         
         self.log.info("Done performing test with code %s", retcode)
         return retcode
