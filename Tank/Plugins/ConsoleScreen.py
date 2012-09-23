@@ -283,7 +283,7 @@ class CurrentTimesDistBlock(AbstractBlock):
             # 30691    9.26%: 010  --  025       68.03%  <  025
             count_len = str(len(str(self.current_count)))
             timing_len = str(len(str(self.current_max_rt)))
-            tpl = '  %' + count_len + 'd %6.2f%%: %' + timing_len + 'd -- %' + timing_len + 'd  %6.2f%% < %' + count_len + 'd'
+            tpl = '  %' + count_len + 'd %6.2f%%: %' + timing_len + 'd -- %' + timing_len + 'd  %6.2f%% < %' + timing_len + 'd'
             data = (item['count'], perc * 100, item['from'], item['to'], quan * 100, item['to'])
             left_line = tpl % data
         return left_line, quan

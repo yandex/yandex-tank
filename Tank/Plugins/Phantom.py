@@ -541,6 +541,7 @@ class PhantomReader(AbstractReader):
         self.data_buffer = {}
         self.steps = []
         self.first_request_time = sys.maxint
+        self.partial_buffer = ''
   
     def check_open_files(self):
         if not self.phout and os.path.exists(self.phantom.phout_file):
@@ -579,18 +580,28 @@ class PhantomReader(AbstractReader):
         self.log.debug("Selected phout: %s", phout_ready)
         if phout_ready:
             phout = phout_ready.pop(0).readlines()
+            self.log.debug("About to process %s phout lines", len(phout))
             for line in phout:
-                if not line.strip():
+                line = self.partial_buffer + line
+                self.partial_buffer = ''
+                if line[-1] != "\n":
+                    self.partial_buffer = line
+                    continue
+                line = line.strip()
+                if not line:
                     return None 
                 #1346949510.514        74420    66    78    65409    8867    74201    18    15662    0    200
-                data = line.strip().split("\t")
-                self.log.debug("Phout line: %s", data)
+                #self.log.debug("Phout line: %s", line)
+                data = line.split("\t")
+                if len(data) != 12:
+                    self.log.warning("Wrong phout line, skipped: %s", line)
+                    continue
                 cur_time = int(float(data[0]) + float(data[2]) / 1000000)
                 #self.log.info("%s => %s", data[0], cur_time)
                 try:
                     active = self.stat_data[cur_time]
                 except KeyError:
-                    self.log.debug("No tasks info for second yet: %s", cur_time)
+                    #self.log.debug("No tasks info for second yet: %s", cur_time)
                     active = 0
     
                 if not cur_time in self.data_buffer.keys():
@@ -629,11 +640,10 @@ class PhantomReader(AbstractReader):
         return res
         
     def __get_expected_rps(self, next_time):
+        # TODO: 3 optimize this
         offset = next_time - self.first_request_time
-        self.log.debug("Offset: %s in %s", offset, self.phantom.steps)
         for rps, dur in Utils.pairs(self.phantom.steps):
             if offset < dur:
-                self.log.debug("Offset dur/rps: %s/%s", dur, rps)
                 return rps
             else:
                 offset -= dur 

@@ -132,6 +132,7 @@ class AbstractReader:
         pass
 
     def get_next_sample(self, force):
+        # FIXME: 1 add empty samples for non-responsive seconds
         pass
 
     def parse_second(self, next_time, data):
