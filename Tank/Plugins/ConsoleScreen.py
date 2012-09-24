@@ -100,8 +100,8 @@ class Screen(object):
                         line += ' ' * block.width
                     line += space
                 lines.append(line)
-            lines.append(".  " * (1 + self.left_panel_width / 3))
-            lines.append("")
+            #lines.append(".  " * (1 + self.left_panel_width / 3))
+            #lines.append("")
         return lines
 
 
@@ -604,4 +604,3 @@ class CasesBlock(AbstractBlock):
         for line in self.lines:
             self.width = max(self.width, len(self.screen.markup.clean_markup(line)))
         
-# FIXME: 1 last second quantiles missing for ligreen@
