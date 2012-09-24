@@ -1,3 +1,10 @@
+yandex-load-tank-base (1.0.8) precise; urgency=low
+
+  * change screen layout
+  * fix bugs reported from test usages
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 24 Sep 2012 19:16:33 +0400
+
 yandex-load-tank-base (1.0.7) precise; urgency=low
 
   * increase aggregator speed and fix its bugs
