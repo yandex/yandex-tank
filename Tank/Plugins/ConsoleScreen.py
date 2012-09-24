@@ -56,9 +56,11 @@ class Screen(object):
         self.left_panel_width = self.term_width - self.right_panel_width - len(self.RIGHT_PANEL_SEPARATOR)
         
         codes_block = VerticalBlock(CurrentHTTPBlock(self), CurrentNetBlock(self))
-        times_block = VerticalBlock(CurrentTimesDistBlock(self), AvgTimesBlock(self, 'Average Times for Current RPS:', False))
-        first_row = [times_block, VerticalBlock(codes_block, AnswSizesBlock(self))]
-        second_row = [TotalQuantilesBlock(self), AvgTimesBlock(self, 'Cumulative Average Times:', True), CasesBlock(self)]
+        codes_answ_block = VerticalBlock(codes_block, AnswSizesBlock(self))
+        codes_answ_times_block = VerticalBlock(codes_answ_block, AvgTimesBlock(self, 'Average Times for Current RPS:', False))
+        times_block = CurrentTimesDistBlock(self)
+        second_row = [times_block, codes_answ_times_block]
+        first_row = [TotalQuantilesBlock(self), AvgTimesBlock(self, 'Cumulative Average Times:', True), CasesBlock(self)]
         self.block_rows = [first_row, second_row]
 
     def __get_right_line(self, widget_output):

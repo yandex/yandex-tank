@@ -49,7 +49,7 @@ class AggregatorPlugin(AbstractPlugin):
             return        
         while self.last_sample_time and int(time.mktime(data.time.timetuple())) - self.last_sample_time > 1:
             self.last_sample_time += 1
-            self.log.warning("Adding zero sample: %s", self.last_sample_time)
+            self.log.debug("Adding zero sample: %s", self.last_sample_time)
             zero = self.reader.get_zero_sample(datetime.datetime.fromtimestamp(self.last_sample_time))
             self.__notify_listeners(zero)
         self.last_sample_time = int(time.mktime(data.time.timetuple()))

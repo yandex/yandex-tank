@@ -32,7 +32,8 @@ class SSHWrapper:
     '''
     def __init__(self):
         self.log = logging.getLogger(__name__)
-        self.ssh_opts = ['-q', '-o', 'StrictHostKeyChecking=no', '-o', 'PasswordAuthentication=no', '-o', 'NumberOfPasswordPrompts=0', '-o', 'ConnectTimeout=5']        
+        self.ssh_opts = ['-q', '-o', 'StrictHostKeyChecking=no', '-o', 'PasswordAuthentication=no', '-o', 'NumberOfPasswordPrompts=0', '-o', 'ConnectTimeout=5']
+        self.scp_opts = []        
         self.host = None
         self.port = None
 

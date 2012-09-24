@@ -78,6 +78,8 @@ class TankCore:
         '''
         Call configure() on all plugins
         '''
+        if not os.path.exists(self.artifacts_base_dir): 
+            os.makedirs(self.artifacts_base_dir)
         self.log.info("Configuring plugins...")
         for plugin_key in self.plugins_order:
             plugin = self.__get_plugin_by_key(plugin_key)
