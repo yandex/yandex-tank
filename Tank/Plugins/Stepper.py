@@ -5,6 +5,7 @@ import os
 import re
 import tempfile
 from Tank import Utils
+from progressbar import ProgressBar, Percentage, Bar, ETA
 
 # TODO: 2 eliminate double ammo file pass
 # TODO: 1 add progress and ETA
@@ -40,24 +41,33 @@ def detect_case_file(filename):
 
 def get_ammo_count(filename, stop_count):
     logging.info("Getting ammo count from %s ...", filename)
+
+    widgets = [Percentage(), ' ', Bar(), ' ', ETA(), ' ' ]
+    pbar = ProgressBar(widgets=widgets, maxval=os.path.getsize(filename)).start()
+
     ammo_type = get_ammo_type(filename)
     ammo_cnt = 0
-    pattern = \
-        re.compile("^(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK)\s"
-                   )
+    pattern = re.compile("^(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK)\s")
+    cur_progress = 0
     if ammo_type == 'uri':
         input_ammo = open(filename, 'r')
         for line in input_ammo:
+            cur_progress += len(line)
             if re.match("^\/", line):
                 ammo_cnt += 1
+                pbar.update(cur_progress)
+        pbar.finish()
         return ammo_cnt
     elif ammo_type == 'request':
         input_ammo = open(filename, 'r')
         for line in input_ammo:
+            cur_progress += len(line)
             if pattern.match(line):
                 ammo_cnt += 1
+                pbar.update(cur_progress)
             if ammo_cnt == stop_count & stop_count > 0:
                 break
+        pbar.finish()
         return ammo_cnt
 
 
@@ -751,6 +761,7 @@ class Stepper:
         already_cases = defaultdict(int)
 
         self.log.info("Generating stpd-file...")
+        widgets = [Percentage(), ' ', Bar(), ' ', ETA(), ' ' ]
         if ammo_type == 'request':
             if case == 2:
                 max_progress = loop * ammo_count
@@ -761,6 +772,7 @@ class Stepper:
                 else:
                     max_progress = load_count
 
+            pbar = ProgressBar(widgets=widgets, maxval=max_progress).start()
             base_time = 0
 
             pattern_uri = \
@@ -773,8 +785,7 @@ class Stepper:
             stepped_ammo = open(self.stpd_file, 'wb')
             for step in load_steps:
                 if case == 3:
-                    if stop_loop_count > 0 and cur_progress\
-                         == stop_loop_count:
+                    if stop_loop_count > 0 and cur_progress == stop_loop_count:
                         break
                 (step_ammo_num, looping) = (0, 1)
                 (count, duration) = (step[0], step[1])
@@ -788,8 +799,7 @@ class Stepper:
 
                     if not chunk_start:
                         if not cur_progress:
-                            raise RuntimeError("Empty ammo file, can't use it"
-                                    )
+                            raise RuntimeError("Empty ammo file, can't use it")
                         input_ammo.seek(0)
                         continue
 
@@ -888,8 +898,10 @@ class Stepper:
                         if step_ammo_num == load_count:
                             looping = 0
                 base_time += duration * 1000
+                pbar.update(cur_progress)
 
             stepped_ammo.write('0\n')
+            pbar.finish()
         elif ammo_type == 'uri':
             if case == 2:
                 self.log.debug("Looping '%s' for %s time(s):" % (ammo_file, loop))
