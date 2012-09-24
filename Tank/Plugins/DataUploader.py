@@ -119,6 +119,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
             instances = phantom.instances
             tank_type = 1 if phantom.tank_type == 'http' else 2
             ammo_path = phantom.ammo_file
+            loadscheme = phantom.rps_schedule
         except Exception, ex:
             self.log.warning("No phantom plugin to get target info: %s", ex)
             address = "127.0.0.1"
@@ -126,6 +127,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
             instances = 0
             tank_type = 0
             ammo_path = ''
+            loadscheme=[]
         
         # undera: Previously took it from aggregator, 
         # but for now this functionality is disabled
@@ -133,8 +135,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
         # Will someone miss it?
         detailed_field = "interval_real"
 
-        #TODO: 3 copy old stepper logic to this class            
-        loadscheme = self.core.get_option(PhantomPlugin.SECTION, PhantomPlugin.OPTION_SCHEDULE, '')
+        #TODO: 3 copy old stepper logic to this class                    
         loadscheme_expanded = self.core.get_option(PhantomPlugin.SECTION, PhantomPlugin.OPTION_LOADSCHEME, '')         
         loop_count = self.core.get_option(PhantomPlugin.SECTION, PhantomPlugin.OPTION_LOOP_COUNT, '-1')        
 

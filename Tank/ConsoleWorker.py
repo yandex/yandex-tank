@@ -57,7 +57,7 @@ class ConsoleTank:
         'component': ('meta', ''),
         'regress': ('meta', ''),
         'ver': ('meta', ''),
-        'inform': ('meta', ''),
+        'inform': ('meta', 'notify'),
 
         'autostop': ('autostop', ''),
         'monitoring_config': ('monitoring', 'config'),
@@ -225,7 +225,7 @@ class ConsoleTank:
             while self.__there_is_locks():
                 if self.options.lock_fail:
                     raise RuntimeError("Lock file present, cannot continue")
-                self.log.info("Waiting for 5s for retry...")
+                self.log.info("Waiting 5s for retry...")
                 time.sleep(5)
         else:
             self.log.warn("Lock files ignored. This is highly unrecommended practice!")        
