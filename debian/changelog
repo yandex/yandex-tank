@@ -1,3 +1,10 @@
+yandex-load-tank-base (1.0.7) precise; urgency=low
+
+  * increase aggregator speed and fix its bugs
+  * return progressbar to stepper
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 24 Sep 2012 13:54:36 +0400
+
 yandex-load-tank-base (1.0.6) precise; urgency=low
 
   * added several screen info blocks
