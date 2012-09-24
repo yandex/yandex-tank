@@ -640,7 +640,7 @@ class PhantomReader(AbstractReader):
         return res
         
     def __get_expected_rps(self, next_time):
-        # TODO: 3 optimize this
+        # TODO: 3 optimize expected rps with rolling property
         offset = next_time - self.first_request_time
         for rps, dur in Utils.pairs(self.phantom.steps):
             if offset < dur:

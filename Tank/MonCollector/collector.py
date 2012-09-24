@@ -180,6 +180,7 @@ class MonitoringCollector:
         self.first_data_received = False
         self.send_data = ''
         self.artifact_files = []
+        self.inputs, self.outputs, self.excepts = [], [], []
 
     def add_listener(self, obj):
         self.listeners.append(obj)
@@ -214,9 +215,7 @@ class MonitoringCollector:
             logging.debug('Install monitoring agent. Host: %s' % agent.host)
             self.artifact_files.append(agent.install(conf.loglevel()))        
 
-    def start(self):
-        self.inputs, self.outputs, self.excepts = [], [], []
-        
+    def start(self):        
         # Start N parallel agents 
         for a in self.agents:
             pipe = a.start()

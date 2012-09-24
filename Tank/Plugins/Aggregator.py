@@ -48,6 +48,7 @@ class AggregatorPlugin(AbstractPlugin):
             while data and (limit < 1 or count < limit):
                 self.__notify_listeners(data)
                 data = self.reader.get_next_sample(force)
+                count += 1
         
     def is_test_finished(self):
         self.__read_samples(5)                    

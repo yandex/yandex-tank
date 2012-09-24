@@ -1,4 +1,6 @@
-# TODO: 3 distinct private from public in classes
+'''
+The central part of the tool: Core
+'''
 from ConfigParser import NoSectionError
 import ConfigParser
 import logging
@@ -9,6 +11,7 @@ import tempfile
 import time
 import traceback
 
+# TODO: 3 name artifacts dir with date and time
 class TankCore:
     """
     JMeter + dstat inspired :)
