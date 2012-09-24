@@ -3,6 +3,7 @@ from Tank.Core import AbstractPlugin
 import datetime
 import logging
 import copy
+import math
 
 class AggregateResultListener:
     def aggregate_second(self, second_aggregate_data):
@@ -175,6 +176,7 @@ class AbstractReader:
             time_to = times.pop(0)
             times_dist_draft = []
             times_dist_item = {'from': time_from, 'to': time_to, 'count':0}
+            deviation = 0.0
             for timing in item.times_dist:
                 count += 1
                 if quantiles and (count / item.RPS) >= quantiles[0]:
@@ -189,6 +191,7 @@ class AbstractReader:
                     times_dist_item = {'from': time_from, 'to': time_to, 'count':0}                    
                     
                 times_dist_item['count'] += 1
+                deviation += math.pow(item.avg_response_time - timing, 2)
                 
             while quantiles:
                 level = quantiles.pop(0)
@@ -198,7 +201,7 @@ class AbstractReader:
             if  times_dist_item['count']:
                 times_dist_draft.append(times_dist_item)
                      
-            item.dispersion = 0 # TODO: 2 will someone miss this so-called 'dispersion'?
+            item.dispersion = deviation / item.RPS
             item.times_dist = times_dist_draft        
 
         
