@@ -1,9 +1,10 @@
 from Tank import Utils
 from Tank.Core import AbstractPlugin
+import copy
 import datetime
 import logging
-import copy
 import math
+import time
 
 class AggregateResultListener:
     def aggregate_second(self, second_aggregate_data):
@@ -31,6 +32,7 @@ class AggregatorPlugin(AbstractPlugin):
         self.cumulative_data = SecondAggregateDataTotalItem()
         self.reader = None
         self.time_periods = [ Utils.expand_to_milliseconds(x) for x in self.default_time_periods.split(' ') ]
+        self.last_sample_time = 0
     
     def configure(self):
         periods = self.get_option("time_periods", self.default_time_periods).split(" ")
@@ -41,12 +43,25 @@ class AggregatorPlugin(AbstractPlugin):
         if not self.reader:
             self.log.warning("No one set reader for aggregator yet")
     
+
+    def __generate_zero_samples(self, data):
+        if not data:
+            return        
+        while self.last_sample_time and int(time.mktime(data.time.timetuple())) - self.last_sample_time > 1:
+            self.last_sample_time += 1
+            self.log.warning("Adding zero sample: %s", self.last_sample_time)
+            zero = self.reader.get_zero_sample(datetime.datetime.fromtimestamp(self.last_sample_time))
+            self.__notify_listeners(zero)
+        self.last_sample_time = int(time.mktime(data.time.timetuple()))
+    
+    
     def __read_samples(self, limit=0, force=False):
         if self.reader:
             self.reader.check_open_files()
             data = self.reader.get_next_sample(force)
             count = 0
             while data and (limit < 1 or count < limit):
+                self.__generate_zero_samples(data)
                 self.__notify_listeners(data)
                 data = self.reader.get_next_sample(force)
                 count += 1
@@ -91,7 +106,7 @@ class SecondAggregateDataItem:
         self.net_codes = {}
         self.times_dist = []
         self.quantiles = {}
-        self.dispersion = None
+        self.dispersion = 0
         self.input = 0
         self.output = 0
         self.avg_connect_time = 0
@@ -132,15 +147,13 @@ class AbstractReader:
 
     def check_open_files(self):
         pass
-
+        
     def get_next_sample(self, force):
-        # FIXME: 1 add empty samples for non-responsive seconds
         pass
 
     def parse_second(self, next_time, data):
         self.log.debug("Parsing second: %s", next_time)
-        result = SecondAggregateData(self.cumulative)
-        result.time = datetime.datetime.fromtimestamp(next_time)
+        result = self.get_zero_sample(datetime.datetime.fromtimestamp(next_time))
         for item in data:
             self.append_sample(result.overall, item)
             marker = item[0]
@@ -232,5 +245,7 @@ class AbstractReader:
     
         result.times_dist.append(overall_rt)        
 
-    
-    
+    def get_zero_sample(self, date_time):
+        res = SecondAggregateData(self.cumulative)
+        res.time = date_time
+        return res

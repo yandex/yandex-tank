@@ -8,7 +8,6 @@ from Tank import Utils
 from progressbar import ProgressBar, Percentage, Bar, ETA
 
 # TODO: 2 eliminate double ammo file pass
-# TODO: 1 add progress and ETA
 # TODO: 3 add stpd file size estimation 
 def make_load_ammo(uris, headers, httpver):
     filename = tempfile.mkstemp('.ammo', 'uri_')[1]

@@ -632,12 +632,14 @@ class PhantomReader(AbstractReader):
 
 
     def __pop_second(self):
+        # FIXME: 2 add empty samples for non-responsive seconds
         next_time = self.data_queue.pop(0)
         data = self.data_buffer[next_time]
         del self.data_buffer[next_time]
         res = self.parse_second(next_time, data)
         res.overall.planned_requests = self.__get_expected_rps(next_time)
         return res
+    
         
     def __get_expected_rps(self, next_time):
         # TODO: 3 optimize expected rps with rolling property
