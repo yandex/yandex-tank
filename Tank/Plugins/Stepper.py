@@ -775,15 +775,16 @@ class Stepper:
             pbar = ProgressBar(widgets=widgets, maxval=max_progress).start()
             base_time = 0
 
-            pattern_uri = \
-                re.compile("^(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK|PROPFIND|PROPPATCH|MKCOL|COPY|MOVE|LOCK|UNLOCK\s+)?\s*(\/(.*?))($|\s)"
-                           )
+            pattern_uri = re.compile("^(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK|PROPFIND|PROPPATCH|MKCOL|COPY|MOVE|LOCK|UNLOCK\s+)?\s*(\/(.*?))($|\s)")
 
             chunk_case = ''
 
             input_ammo = open(ammo_file, 'rb')
             stepped_ammo = open(self.stpd_file, 'wb')
             for step in load_steps:
+                if not (cur_progress / 100) % 2:
+                    pbar.update(cur_progress)
+
                 if case == 3:
                     if stop_loop_count > 0 and cur_progress == stop_loop_count:
                         break
@@ -807,8 +808,7 @@ class Stepper:
                                  chunk_start)
 
                     if m:
-                        (chunk_size, chunk_case) = (int(m.group(1)),
-                                m.group(2))
+                        (chunk_size, chunk_case) = (int(m.group(1)), m.group(2))
 
                         already_cases[chunk_case] += 1
                         chunk = input_ammo.read(chunk_size)
@@ -820,8 +820,7 @@ class Stepper:
                             if not chunk_case:
                                 request = pattern_uri.match(chunk)
                                 if request:
-                                    chunk_case = \
-    get_prepared_case(request.group(2), cases_done, pattern)
+                                    chunk_case = get_prepared_case(request.group(2), cases_done, pattern)
                                 else:
                                     chunk_case = 'other'
 
@@ -830,24 +829,17 @@ class Stepper:
                             if case == 3:
                                 time = base_time + marked[step_ammo_num]
                             elif case == 2:
-
-                                if step_ammo_num\
-                                     < instances_schedule_count:
+                                if step_ammo_num < instances_schedule_count:
                                     if not instances_chunk_cnt:
-                                        [instances_chunk_cnt,
-        instances_chunk_time] = instances_schedule.pop(0)
-                                        base_time += \
-    instances_chunk_time * 1000
+                                        [instances_chunk_cnt, instances_chunk_time] = instances_schedule.pop(0)
+                                        base_time += instances_chunk_time * 1000
                                     instances_chunk_cnt -= 1
                                     time = base_time
                             else:
-
                                 time = 1000
 
                             if chunk_case:
-                                stepped_ammo.write('%s %s %s\n'
-                                         % (chunk_size, time,
-                                        chunk_case))
+                                stepped_ammo.write('%s %s %s\n' % (chunk_size, time, chunk_case))
                             else:
                                 stepped_ammo.write('%s %s\n'
                                          % (chunk_size, time))
@@ -877,8 +869,7 @@ class Stepper:
                                 if m.group(2):
                                     c = re.match("^\w+$", m.group(2))
                                     if not c:
-                                        raise RuntimeError("Wrong case format for '%s'"
-         % m.group(2))
+                                        raise RuntimeError("Wrong case format for '%s'" % m.group(2))
 
                             # TODO: 2 add more info to locate problem chunk
                             raise RuntimeError('Wrong chunk size')
@@ -898,7 +889,6 @@ class Stepper:
                         if step_ammo_num == load_count:
                             looping = 0
                 base_time += duration * 1000
-                pbar.update(cur_progress)
 
             stepped_ammo.write('0\n')
             pbar.finish()
