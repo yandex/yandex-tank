@@ -22,6 +22,8 @@ import subprocess
 import sys
 import tempfile
 import time
+from Tank.Plugins import Autostop
+from Tank.Plugins.Autostop import AutostopPlugin, AbstractCriteria
 
 # TODO: 3  chosen cases
 # TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
@@ -177,6 +179,11 @@ class PhantomPlugin(AbstractPlugin):
 
         self.__check_address()            
 
+        try:
+            autostop = self.core.get_plugin_of_type(AutostopPlugin)
+            autostop.add_criteria_class(UsedInstancesCriteria)
+        except KeyError:
+            self.log.debug("No autostop plugin found, not adding instances criteria")
 
     def __compose_config(self):
         if not self.stpd:
@@ -652,3 +659,67 @@ class PhantomReader(AbstractReader):
         return 0
     
     
+class UsedInstancesCriteria(AbstractCriteria):
+    @staticmethod
+    def get_type_string():
+        return 'instances'
+
+    def __init__(self, autostop, param_str):
+        AbstractCriteria.__init__(self)
+        self.seconds_count = 0
+        self.autostop = autostop
+
+        level_str = param_str.split(',')[0].strip()
+        if level_str[-1:] == '%':
+            self.level = float(level_str[:-1]) / 100
+            self.is_relative = True
+        else:
+            self.level = int(level_str)
+            self.is_relative = False
+        self.seconds_limit = Utils.expand_to_seconds(param_str.split(',')[1])
+        
+        try:
+            phantom = autostop.core.get_plugin_of_type(PhantomPlugin)
+            self.threads_limit = phantom.instances
+            if not self.threads_limit:
+                raise ValueError("Cannot create 'instances' criteria with zero instances limit")
+        except KeyError:
+            self.log.warning("No phantom module, 'instances' autostop disabled")
+
+    def notify(self, aggregate_second):
+        threads = aggregate_second.overall.active_threads
+        if self.is_relative:
+            threads = float(threads) / self.threads_limit
+        if threads > self.level:
+            if not self.seconds_count:
+                self.cause_second = aggregate_second
+            
+            self.log.debug(self.explain())
+            
+            self.seconds_count += 1
+            self.autostop.add_counting(self)
+            if self.seconds_count >= self.seconds_limit:
+                return True
+        else:
+            self.seconds_count = 0
+            
+        return False
+
+    def get_rc(self):
+        return self.RC_INST
+
+    def get_level_str(self):
+        if self.is_relative:
+            level_str = str(100 * self.level) + "%"
+        else:
+            level_str = self.level
+        return level_str
+
+    def explain(self):
+        items = (self.get_level_str(), self.seconds_count, self.cause_second.time)
+        return "Testing threads (instances) utilization higher than %s for %ss, started at: %s" % items                 
+
+    def widget_explain(self):
+        items = (self.get_level_str(), self.seconds_count, self.seconds_limit)
+        return ("Instances >%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
+

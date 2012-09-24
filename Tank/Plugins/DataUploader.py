@@ -129,8 +129,8 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
             ammo_path = ''
             loadscheme=[]
         
-        # undera: Previously took it from aggregator, 
-        # but for now this functionality is disabled
+        # undera: Previously been tanking it from aggregator, 
+        # but for now this functionality is not implemented
         # I don't know if it should be re-enabled... 
         # Will someone miss it?
         detailed_field = "interval_real"

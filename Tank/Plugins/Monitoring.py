@@ -181,3 +181,5 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                     
             return res.strip()
             
+
+# TODO: 3 add autostop criteria on metric
