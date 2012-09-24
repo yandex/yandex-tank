@@ -119,15 +119,15 @@ class ConsoleTank:
 
     def __convert_old_multiline_options(self, old_lines):
         opts = {}
-        option=None
+        option = None
         res = ''
         for line in old_lines:
             try:
                 if line.strip() and line.strip()[0] == '#':
-                    res+=line
+                    res += line
                     continue
                 option = line[:line.index('=')]
-                value = line[line.index('=')+1:]
+                value = line[line.index('=') + 1:]
                 if option not in opts.keys():
                     opts[option] = []
                 opts[option].append(value.strip())
@@ -135,7 +135,7 @@ class ConsoleTank:
                 if option:
                     opts[option].append(line.strip())
                 else:
-                    res += line
+                    res += line.strip() + "\n"
     
         for option, values in opts.iteritems():
             res += option + '=' + "\n\t".join(values) + "\n"

@@ -18,6 +18,9 @@ def get_terminal_size():
     default_size = (25, 80)
     env = os.environ
     def ioctl_gwinsz(file_d):
+        '''
+        Helper to get console size
+        '''
         try:
             sizes = struct.unpack('hh', fcntl.ioctl(file_d, termios.TIOCGWINSZ, '1234'))
         except Exception:
@@ -34,7 +37,7 @@ def get_terminal_size():
     if not sizes:
         try:
             sizes = (env['LINES'], env['COLUMNS'])
-        except:
+        except Exception:
             sizes = default_size
     return int(sizes[1]), int(sizes[0])    
 
@@ -57,10 +60,9 @@ class Screen(object):
         
         codes_block = VerticalBlock(CurrentHTTPBlock(self), CurrentNetBlock(self))
         codes_answ_block = VerticalBlock(codes_block, AnswSizesBlock(self))
-        codes_answ_times_block = VerticalBlock(codes_answ_block, AvgTimesBlock(self, 'Average Times for Current RPS:', False))
         times_block = CurrentTimesDistBlock(self)
-        second_row = [times_block, codes_answ_times_block]
-        first_row = [TotalQuantilesBlock(self), AvgTimesBlock(self, 'Cumulative Average Times:', True), CasesBlock(self)]
+        second_row = [times_block, codes_answ_block]
+        first_row = [AvgTimesBlock(self), TotalQuantilesBlock(self), CasesBlock(self)]
         self.block_rows = [first_row, second_row]
 
     def __get_right_line(self, widget_output):
@@ -492,43 +494,75 @@ class AnswSizesBlock(AbstractBlock):
 
 
 class AvgTimesBlock(AbstractBlock):
-    def __init__(self, screen, header, is_total=False):
+    def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
-        self.avg_connect_time = 0
-        self.avg_send_time = 0
-        self.avg_latency = 0
-        self.avg_receive_time = 0
-        self.avg_response_time = 0
-        self.count = 0
-        self.header = header
-        self.is_total = is_total
+        self.rps_connect = 0
+        self.rps_send = 0
+        self.rps_latency = 0
+        self.rps_receive = 0
+        self.rps_overall = 0
+        self.rps_count = 0
         self.current_rps = 0
+
+        self.all_connect = 0
+        self.all_send = 0
+        self.all_latency = 0
+        self.all_receive = 0
+        self.all_overall = 0
+        self.all_count = 0
+
+        self.last_connect = 0
+        self.last_send = 0
+        self.last_latency = 0
+        self.last_receive = 0
+        self.last_overall = 0
+        self.last_count = 0
+
+        self.header = 'Average Times (all/%s RPS/last):'
         
     def add_second(self, data):
-        if not self.is_total and self.current_rps != data.overall.planned_requests:
+        if self.current_rps != data.overall.planned_requests:
             self.current_rps = data.overall.planned_requests
-            self.avg_connect_time = 0
-            self.avg_send_time = 0
-            self.avg_latency = 0
-            self.avg_receive_time = 0
-            self.avg_response_time = 0
-            self.count = 0            
+            self.rps_connect = 0
+            self.rps_send = 0
+            self.rps_latency = 0
+            self.rps_receive = 0
+            self.rps_overall = 0
+            self.rps_count = 0            
         
-        self.avg_connect_time += data.overall.avg_connect_time * data.overall.RPS
-        self.avg_send_time += data.overall.avg_send_time * data.overall.RPS
-        self.avg_latency += data.overall.avg_latency * data.overall.RPS
-        self.avg_receive_time += data.overall.avg_receive_time * data.overall.RPS
-        self.avg_response_time += data.overall.avg_response_time * data.overall.RPS
-        self.count += data.overall.RPS
+        self.rps_connect += data.overall.avg_connect_time * data.overall.RPS
+        self.rps_send += data.overall.avg_send_time * data.overall.RPS
+        self.rps_latency += data.overall.avg_latency * data.overall.RPS
+        self.rps_receive += data.overall.avg_receive_time * data.overall.RPS
+        self.rps_overall += data.overall.avg_response_time * data.overall.RPS
+        self.rps_count += data.overall.RPS
+
+        self.all_connect += data.overall.avg_connect_time * data.overall.RPS
+        self.all_send += data.overall.avg_send_time * data.overall.RPS
+        self.all_latency += data.overall.avg_latency * data.overall.RPS
+        self.all_receive += data.overall.avg_receive_time * data.overall.RPS
+        self.all_overall += data.overall.avg_response_time * data.overall.RPS
+        self.all_count += data.overall.RPS
         
+        self.last_connect = data.overall.avg_connect_time * data.overall.RPS
+        self.last_send = data.overall.avg_send_time * data.overall.RPS
+        self.last_latency = data.overall.avg_latency * data.overall.RPS
+        self.last_receive = data.overall.avg_receive_time * data.overall.RPS
+        self.last_overall = data.overall.avg_response_time * data.overall.RPS
+        self.last_count = data.overall.RPS
+
     def render(self):
-        self.lines = [self.screen.markup.WHITE + self.header + self.screen.markup.RESET]
-        if self.count:
-            self.lines.append("  Overall: %.1f ms" % (float(self.avg_response_time) / self.count))
-            self.lines.append("  Connect: %.1f ms" % (float(self.avg_connect_time) / self.count))
-            self.lines.append("     Send: %.1f ms" % (float(self.avg_send_time) / self.count))
-            self.lines.append("  Latency: %.1f ms" % (float(self.avg_latency) / self.count))
-            self.lines.append("  Receive: %.1f ms" % (float(self.avg_receive_time) / self.count))
+        self.lines = [self.screen.markup.WHITE + self.header % self.current_rps + self.screen.markup.RESET]
+        if self.last_count:
+            len_all = str(len(str(max([self.all_connect, self.all_latency, self.all_overall, self.all_receive, self.all_send]))))
+            len_rps = str(len(str(max([self.rps_connect, self.rps_latency, self.rps_overall, self.rps_receive, self.rps_send]))))
+            len_last = str(len(str(max([self.last_connect, self.last_latency, self.last_overall, self.last_receive, self.last_send]))))
+            tpl = "%" + len_all + "d / %" + len_rps + "d / %" + len_last + "d"
+            self.lines.append("  Overall: " + tpl % (float(self.all_overall) / self.all_count, float(self.rps_overall) / self.rps_count, float(self.last_overall) / self.last_count))
+            self.lines.append("  Connect: " + tpl % (float(self.all_connect) / self.all_count, float(self.rps_connect) / self.rps_count, float(self.last_connect) / self.last_count))
+            self.lines.append("     Send: " + tpl % (float(self.all_send) / self.all_count, float(self.rps_send) / self.rps_count, float(self.rps_send) / self.rps_count))
+            self.lines.append("  Latency: " + tpl % (float(self.all_latency) / self.all_count, float(self.rps_latency) / self.rps_count, float(self.rps_latency) / self.rps_count))
+            self.lines.append("  Receive: " + tpl % (float(self.all_receive) / self.all_count, float(self.rps_receive) / self.rps_count, float(self.rps_receive) / self.rps_count))
         for line in self.lines:
             self.width = max(self.width, len(self.screen.markup.clean_markup(line)))
         

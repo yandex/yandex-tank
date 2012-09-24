@@ -494,7 +494,7 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         else:
             res += str(self.instances)
         
-        res += "\nPlanned requests: %s    %s\nActual responses: " % (self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
+        res += "\nPlanned requests: %s for %s\nActual responses: " % (self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
         if not self.planned == self.RPS:
             res += screen.markup.YELLOW + str(self.RPS) + screen.markup.RESET
         else:

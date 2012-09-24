@@ -66,21 +66,6 @@ class AutostopTestCase(TankTestCase):
             raise RuntimeError()
         self.foo.end_test(0)
         
-    def test_run_inst(self):
-        data = SecondAggregateData()
-        data.overall.active_threads = 10
-        self.foo.core.set_option(self.foo.SECTION, "autostop", "instances (5, 5)\ninstances (90%, 10m)")
-        
-        self.foo.configure()
-        self.foo.prepare_test()
-        
-        self.foo.start_test()
-        for n in range(1, 15):
-            self.foo.aggregate_second(data)
-        if self.foo.is_test_finished() < 0:
-            raise RuntimeError()
-        self.foo.end_test(0)
-
     def test_run_quan(self):
         data = SecondAggregateData()
         data.overall.quantiles = {99.0:11}
@@ -96,13 +81,6 @@ class AutostopTestCase(TankTestCase):
             raise RuntimeError()
         self.foo.end_test(0)
 
-    def test_run_multiconf(self):
-        self.foo.core.set_option(self.foo.SECTION, "autostop", "instances (5, 5)\ninstances (90%, 10m) instances (90%, 10m)")
-        
-        self.foo.configure()
-        self.foo.prepare_test()
-        self.assertEquals(3, len(self.foo.criterias))
-        
 if __name__ == '__main__':
     unittest.main()
 
