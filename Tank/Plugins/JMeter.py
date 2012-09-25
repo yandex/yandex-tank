@@ -3,8 +3,11 @@ import os
 import subprocess
 import signal
 from Tank import Utils
-from Tank.Plugins.Aggregator import AbstractReader, AggregatorPlugin
+from Tank.Plugins.Aggregator import AbstractReader, AggregatorPlugin, \
+    AggregateResultListener
 import tempfile
+from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+
 
 # TODO: 3 add screen widget with info
 class JMeterPlugin(AbstractPlugin):
@@ -20,11 +23,11 @@ class JMeterPlugin(AbstractPlugin):
         return __file__
     
     def configure(self):
-        original_jmx = self.get_option("jmx")
-        self.core.add_artifact_file(original_jmx, True)
+        self.original_jmx = self.get_option("jmx")
+        self.core.add_artifact_file(self.original_jmx, True)
         self.jtl_file = self.get_option("jtl", tempfile.mkstemp('.jtl', 'jmeter_', self.core.artifacts_base_dir)[1])
         self.core.add_artifact_file(self.jtl_file)
-        self.jmx = self.__add_writing_section(original_jmx, self.jtl_file)
+        self.jmx = self.__add_writing_section(self.original_jmx, self.jtl_file)
         self.core.add_artifact_file(self.jmx)
         self.user_args = self.get_option("args", '')
         self.jmeter_path = self.get_option("jmeter_path", 'jmeter')
@@ -43,6 +46,18 @@ class JMeterPlugin(AbstractPlugin):
 
         if aggregator:
             aggregator.reader = JMeterReader(aggregator, self)
+
+        try:
+            console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+        except Exception, ex:
+            self.log.debug("Console not found: %s", ex)
+            console = None
+            
+        if console:    
+            widget = JMeterInfoWidget(self)
+            console.add_info_widget(widget)
+            if aggregator:
+                aggregator.add_result_listener(widget)
             
     def start_test(self):
         self.log.info("Starting %s with arguments: %s", self.jmeter_path, self.args)
@@ -150,3 +165,27 @@ class JMeterReader(AbstractReader):
     
 
 
+class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
+    
+    def __init__(self, jmeter):
+        AbstractInfoWidget.__init__(self)
+        self.jmeter = jmeter
+        self.active_threads = 0
+
+    def get_index(self):
+        return 0
+
+    def aggregate_second(self, second_aggregate_data):
+        self.active_threads = second_aggregate_data.overall.active_threads
+
+    def render(self, screen):        
+        jmeter = " JMeter Test "
+        space = screen.right_panel_width - len(jmeter) - 1 
+        left_spaces = space / 2
+        right_spaces = space / 2
+        template = screen.markup.BG_MAGENTA + '~' * left_spaces + jmeter + ' ' + '~' * right_spaces + screen.markup.RESET + "\n" 
+        template += "     Test Plan: %s\n"
+        template += "Active Threads: %s"
+        data = (os.path.basename(self.jmeter.original_jmx), self.active_threads)
+        
+        return template % data

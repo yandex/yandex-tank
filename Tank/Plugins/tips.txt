@@ -13,6 +13,11 @@ autostop: An 'instances' criteria, used with phantom module is the most efficien
 autostop: You can easily write your standalone autostop criteria class and plug it into Autostop module, consult with developers for details 
 console: Disable full screen console with console.short_only=1 option 
 console: You can change relative width of right panel in full screen console with console.info_panel_width=50 option (value is percents of width) 
+jmeter: Sent bytes info not available in JMeter, so it is zero in JMeter module for Yandex.Tank
+jmeter: There is only two states for JMeter results - successful or not, so NET codes are either 0 or 1
+jmeter: JMeter provides only full response time and latency values, and 'full minus latency' value is put into 'receive time' inside Yandex.Tank
+jmeter: Path to alternate JMeter tool location can be set with jmeter.jmeter_path option
+jmeter: If you need supplementary JMeter command-line start switches - add them with jmeter.args option 
 monitoring: Use monitoring.config=none option to disable monitoring
 phantom: Use phantom.stpd_file option to set pre-generated source data file and avoid genetating (stepping) process
 phantom: Use phantom.config option to set predefined phantom run config (e.g. to work with multiple targets)
