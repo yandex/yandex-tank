@@ -1,3 +1,10 @@
+yandex-load-tank-base (1.0.9) precise; urgency=low
+
+  * add ab functionality
+  * add JMeter functionality
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 25 Sep 2012 17:29:42 +0400
+
 yandex-load-tank-base (1.0.8) precise; urgency=low
 
   * change screen layout

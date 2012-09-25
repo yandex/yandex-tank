@@ -81,6 +81,21 @@ class AutostopTestCase(TankTestCase):
             raise RuntimeError()
         self.foo.end_test(0)
 
+    def test_run_false_trigger_bug(self):
+        data = SecondAggregateData()
+        data.overall.http_codes = {}
+        self.foo.core.set_option(self.foo.SECTION, "autostop", "http (5xx, 100%, 1)")
+        
+        self.foo.configure()
+        self.foo.prepare_test()
+        
+        self.foo.start_test()
+        for n in range(1, 15):
+            self.foo.aggregate_second(data)
+        if self.foo.is_test_finished() >= 0:
+            raise RuntimeError()
+        self.foo.end_test(0)
+        
 if __name__ == '__main__':
     unittest.main()
 

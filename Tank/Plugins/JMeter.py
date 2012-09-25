@@ -162,7 +162,6 @@ class JMeterReader(AbstractReader):
             return self.pop_second()
         else:
             return None 
-    
 
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):

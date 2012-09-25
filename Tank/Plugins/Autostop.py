@@ -209,7 +209,7 @@ class HTTPCodesCriteria(AbstractCriteria):
             if aggregate_second.overall.RPS:
                 matched_responses = float(matched_responses) / aggregate_second.overall.RPS
             else:
-                matched_responses = 1
+                matched_responses = 0
         self.log.debug("HTTP codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.level)
         
         if matched_responses >= self.level:
@@ -276,7 +276,7 @@ class NetCodesCriteria(AbstractCriteria):
             if aggregate_second.overall.RPS:
                 matched_responses = float(matched_responses) / aggregate_second.overall.RPS
             else:
-                matched_responses = 1
+                matched_responses = 0
         self.log.debug("Net codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.level)
         
         if matched_responses >= self.level:
