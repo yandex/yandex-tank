@@ -1,10 +1,10 @@
-import logging
-import unittest
-import sys
-from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData, \
-    SecondAggregateDataTotalItem
 from Tank.Core import TankCore
+from Tank.Plugins.Aggregator import SecondAggregateData, \
+    SecondAggregateDataTotalItem
+import logging
+import sys
 import tempfile
+import unittest
 
 class TankTestCase(unittest.TestCase):
     formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s\t%(message)s")
@@ -34,4 +34,4 @@ class FakeOptions(object):
     option = ['testsection.testoption=testvalue']
     ignore_lock = True
     lock_fail = False
-    
+    no_rc = True

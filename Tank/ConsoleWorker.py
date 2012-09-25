@@ -234,15 +234,16 @@ class ConsoleTank:
         
         configs = []
 
-        try:
-            for filename in os.listdir(self.baseconfigs_location):
-                # TODO: 3 change extension to INI
-                if fnmatch.fnmatch(filename, '*.conf'):
-                    configs += [os.path.realpath(self.baseconfigs_location + os.sep + filename)]
-        except OSError:
-            self.log.warn(self.baseconfigs_location + ' is not acessible to get configs list')
-
-        configs += [os.path.expanduser('~/.yandex-tank')]
+        if not self.options.no_rc:
+            try:
+                for filename in os.listdir(self.baseconfigs_location):
+                    # TODO: 3 change extension to INI
+                    if fnmatch.fnmatch(filename, '*.conf'):
+                        configs += [os.path.realpath(self.baseconfigs_location + os.sep + filename)]
+            except OSError:
+                self.log.warn(self.baseconfigs_location + ' is not acessible to get configs list')
+    
+            configs += [os.path.expanduser('~/.yandex-tank')]
         
         if not self.options.config:
             self.log.debug("No config passed via cmdline, using ./load.conf")
