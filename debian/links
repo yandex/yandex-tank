@@ -6,3 +6,5 @@
 /usr/lib/lunapark/fantom.py /usr/bin/fantom.py
 
 /usr/lib/lunapark/tank.py /usr/bin/yandex-tank
+/usr/lib/lunapark/ab.sh /usr/bin/yandex-tank-ab
+/usr/lib/lunapark/jmeter.sh /usr/bin/yandex-tank-jmeter
