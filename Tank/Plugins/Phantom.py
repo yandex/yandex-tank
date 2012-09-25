@@ -1,11 +1,11 @@
 '''
 Contains Phantom Plugin, Console widgets, result reader classes
 '''
-
 from Tank import Utils
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener, \
     AbstractReader
+from Tank.Plugins.Autostop import AutostopPlugin, AbstractCriteria
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.Stepper import Stepper
 from ipaddr import AddressValueError
@@ -22,8 +22,6 @@ import subprocess
 import sys
 import tempfile
 import time
-from Tank.Plugins import Autostop
-from Tank.Plugins.Autostop import AutostopPlugin, AbstractCriteria
 
 # TODO: 3  chosen cases
 # TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
@@ -583,6 +581,7 @@ class PhantomReader(AbstractReader):
 
 
     def __read_phout_data(self, force):
+        # FIXME: 3 select is useless here
         phout_ready = select.select([self.phout], [], [], 0)[0]
         self.log.debug("Selected phout: %s", phout_ready)
         if phout_ready:
@@ -630,24 +629,18 @@ class PhantomReader(AbstractReader):
                 self.data_buffer[cur_time].append(data_item)
                     
         if len(self.data_queue) > 2:
-            return self.__pop_second()
+            return self.pop_second()
         
         if force and self.data_queue:
-            return self.__pop_second()
+            return self.pop_second()
         else:
             return None 
 
-
-    def __pop_second(self):
-        # FIXME: 2 add empty samples for non-responsive seconds
-        next_time = self.data_queue.pop(0)
-        data = self.data_buffer[next_time]
-        del self.data_buffer[next_time]
-        res = self.parse_second(next_time, data)
-        res.overall.planned_requests = self.__get_expected_rps(next_time)
+    def pop_second(self):
+        res = AbstractReader.pop_second(self)
+        res.overall.planned_requests = self.__get_expected_rps(time.mktime(res.time.timetuple()))
         return res
-    
-        
+
     def __get_expected_rps(self, next_time):
         # TODO: 3 optimize expected rps with rolling property
         offset = next_time - self.first_request_time

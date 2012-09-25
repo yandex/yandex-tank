@@ -231,7 +231,7 @@ class TankCore:
         if ext == '.pyc' and key[:-1] in self.plugins.keys(): # .pyc => .py:
             return self.plugins[key[:-1]]
         
-        raise KeyError("Requested plugin type not found: %s", key)  
+        raise KeyError("Requested plugin type not found: %s" % key)  
     
     def __collect_file(self, filename, keep_original=False):
         if not self.artifacts_dir:

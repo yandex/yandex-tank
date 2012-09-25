@@ -144,6 +144,8 @@ class AbstractReader:
         self.aggregator = owner
         self.log = logging.getLogger(__name__)
         self.cumulative = SecondAggregateDataTotalItem()
+        self.data_queue = []
+        self.data_buffer = {}
 
     def check_open_files(self):
         pass
@@ -155,23 +157,23 @@ class AbstractReader:
         self.log.debug("Parsing second: %s", next_time)
         result = self.get_zero_sample(datetime.datetime.fromtimestamp(next_time))
         for item in data:
-            self.append_sample(result.overall, item)
+            self.__append_sample(result.overall, item)
             marker = item[0]
             if marker:
                 if not marker in result.cases.keys():
                     result.cases[marker] = SecondAggregateDataItem()
-                self.append_sample(result.cases[marker], item)
+                self.__append_sample(result.cases[marker], item)
 
-        self.calculate_aggregates(result.overall)
+        self.__calculate_aggregates(result.overall)
         for case in result.cases.values():
-            self.calculate_aggregates(case)
+            self.__calculate_aggregates(case)
 
         self.cumulative.add_data(result.overall)
 
         return result
     
 
-    def calculate_aggregates(self, item):
+    def __calculate_aggregates(self, item):
         if item.RPS:
             if item.avg_response_time:
                 item.selfload = 100 * item.selfload / item.RPS
@@ -218,7 +220,7 @@ class AbstractReader:
             item.times_dist = times_dist_draft        
 
         
-    def append_sample(self, result, item):
+    def __append_sample(self, result, item):
         (marker, threads, overall_rt, http_code, net_code, sent_bytes, received_bytes, connect, send, latency, receive, accuracy) = item
         result.case = marker
         result.active_threads = threads
@@ -248,4 +250,12 @@ class AbstractReader:
     def get_zero_sample(self, date_time):
         res = SecondAggregateData(self.cumulative)
         res.time = date_time
+        return res
+
+    def pop_second(self):
+        # FIXME: 2 add empty samples for non-responsive seconds
+        next_time = self.data_queue.pop(0)
+        data = self.data_buffer[next_time]
+        del self.data_buffer[next_time]
+        res = self.parse_second(next_time, data)
         return res

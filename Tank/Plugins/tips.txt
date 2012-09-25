@@ -8,6 +8,7 @@ tank: Use tank.artifacts_base_dir=~/yandex-tank-artifacts option to have all tes
 tank: You can specify durations and timeouts in mixed units like 1d5h46m or 13s187ms
 tank: Options from 'DEFAULT' section in INI files are inherited by all other sections. Use it wisely to shorten your configs.
 ab: Apache Benchmark module for Yandex.Tank kinda creepy, but it exists!
+ab: Remember that Apache Benchmark results available only when test is complete
 autostop: An 'instances' criteria, used with phantom module is the most efficient way to tell if the service is already overloaded
 autostop: You can easily write your standalone autostop criteria class and plug it into Autostop module, consult with developers for details 
 console: Disable full screen console with console.short_only=1 option 
