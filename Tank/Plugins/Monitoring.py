@@ -26,9 +26,9 @@ class MonitoringPlugin(AbstractPlugin):
     
     def configure(self):
         self.config = self.get_option("config", 'auto')
+        self.default_target = self.get_option("default_target", 'localhost')
         if self.config == 'auto':
             self.config = os.path.dirname(__file__) + '/monitoring_default_config.xml'
-        self.core.add_artifact_file(self.config, True)
         
         if self.config == 'none' or self.config == 'auto':
             self.die_on_fail = False         
@@ -45,13 +45,15 @@ class MonitoringPlugin(AbstractPlugin):
         if phantom:
             self.default_target = phantom.address
             if phantom.phout_import_mode:
-                self.config=None
+                self.config = None
             # TODO: 2 resolve virtual to host address
+
         
         if not self.config or self.config == 'none':
             self.log.info("Monitoring has been disabled")
         else:
             self.log.info("Starting monitoring with config: %s", self.config)
+            self.core.add_artifact_file(self.config, True)
             self.monitoring.config = self.config
             if self.default_target:
                 self.monitoring.default_target = self.default_target

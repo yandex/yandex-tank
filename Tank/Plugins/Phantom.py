@@ -542,8 +542,6 @@ class PhantomReader(AbstractReader):
         self.stat = None
         self.stat_data = {}
         self.pending_datetime = None
-        self.data_queue = []
-        self.data_buffer = {}
         self.steps = []
         self.first_request_time = sys.maxint
         self.partial_buffer = ''

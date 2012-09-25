@@ -124,7 +124,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
             self.log.warning("No phantom plugin to get target info: %s", ex)
             address = "127.0.0.1"
             port = 80
-            instances = 0
+            instances = 1
             tank_type = 0
             ammo_path = ''
             loadscheme=[]

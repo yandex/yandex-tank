@@ -5,8 +5,7 @@ import os
 import subprocess
 import tempfile
 
-# TODO: 3 make it work with new aggregator
-
+# TODO: 3 add console screen widget with info and PB measured via stderr info parsing
 class ApacheBenchmarkPlugin(AbstractPlugin):
 
     SECTION = 'ab'
@@ -98,7 +97,7 @@ class ABReader(AbstractReader):
                 #Tue Sep 25 14:19:36 2012        1348568376      0       36      36      34
                 data = line.split("\t")
                 if len(data) != 6:
-                    self.log.warning("Wrong read_lines line, skipped: %s", line)
+                    self.log.warning("Wrong ab log line, skipped: %s", line)
                     continue
                 cur_time = int(data[1])
                 ctime = int(data[2])
@@ -114,7 +113,7 @@ class ABReader(AbstractReader):
                 # bytes:     sent    received
                 data_item += [0, 0]
                 #        connect    send    latency    receive
-                data_item += [ctime, 0, wait, 0]
+                data_item += [ctime, 0, wait, ttime - ctime - wait]
                 #        accuracy
                 data_item += [0]
                 self.data_buffer[cur_time].append(data_item)
