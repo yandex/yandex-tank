@@ -1,19 +1,20 @@
-import TankTests
-import os
-import unittest
 from Tank.ConsoleWorker import ConsoleTank
-from Tests.TankTests import FakeOptions
-from Tank.Plugins.DataUploader import DataUploaderPlugin
-from Tests.DataUploaderTest import FakeAPICLient
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin
+from Tank.Plugins.DataUploader import DataUploaderPlugin
 from Tests.ConsoleOnlinePluginTest import FakeConsoleMarkup
-import time
+from Tests.DataUploaderTest import FakeAPICLient
+from Tests.TankTests import FakeOptions
+import TankTests
 import logging
+import time
+import unittest
 
 
 class  ConsoleWorkerTestCase(TankTests.TankTestCase):
     def setUp(self):
-        self.foo = ConsoleTank(FakeOptions(), None)
+        opts = FakeOptions()
+        opts.no_rc = False
+        self.foo = ConsoleTank(opts, None)
         self.foo.set_baseconfigs_dir('full')
 
     def tearDown(self):
