@@ -120,7 +120,7 @@ class AgentClient(object):
         pipe.wait()
         logging.debug("Return code [%s]: %s" % (self.host, pipe.returncode))
         if pipe.returncode:
-            raise RuntimeError("Return code [%s]: %s" % (self.host, pipe.returncode))
+            raise RuntimeError("Failed to get remote dir via SSH at %s, code %s: %s" % (self.host, pipe.returncode, pipe.stdout.read().strip()))
 
         remote_dir = pipe.stdout.read().strip()
         if (remote_dir):
