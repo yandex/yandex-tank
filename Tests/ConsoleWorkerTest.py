@@ -1,12 +1,9 @@
 from Tank.ConsoleWorker import ConsoleTank
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin
-from Tank.Plugins.DataUploader import DataUploaderPlugin
 from Tests.ConsoleOnlinePluginTest import FakeConsoleMarkup
-from Tests.DataUploaderTest import FakeAPICLient
 from Tests.TankTests import FakeOptions
 import TankTests
 import logging
-import time
 import unittest
 
 
@@ -24,20 +21,11 @@ class  ConsoleWorkerTestCase(TankTests.TankTestCase):
     def test_perform(self):
         self.foo.configure()
 
-        uploader = self.foo.core.get_plugin_of_type(DataUploaderPlugin)
-        uploader.api_client = FakeAPICLient()
-        uploader.api_client.get_results.append('[{"closed":"", "name": "test task"}]')
-        uploader.api_client.get_results.append('[{"success":1}]')
-        uploader.api_client.post_results.append('[{"job":' + str(time.time()) + '}]')
-        for n in range(1, 120):
-            uploader.api_client.post_results.append('[{"success":1}]')
-
         console = self.foo.core.get_plugin_of_type(ConsoleOnlinePlugin)
         console.console_markup = FakeConsoleMarkup()
         
         if self.foo.perform_test() != 0:
             raise RuntimeError()
-
         
     def test_option_override(self):
         options = FakeOptions()
