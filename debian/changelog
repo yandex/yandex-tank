@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.0.10) precise; urgency=low
+
+  * remove old perl code completely
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 26 Sep 2012 18:21:37 +0400
+
 yandex-load-tank-base (1.0.9) precise; urgency=low
 
   * add ab functionality
