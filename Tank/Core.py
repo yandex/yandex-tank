@@ -62,9 +62,11 @@ class TankCore:
             
     def __load_plugin(self, name, path):
         self.log.debug("Loading plugin %s from %s", name, path)
-        for basedir in sys.path:
+        for basedir in ['']+sys.path:
+            new_dir=basedir + '/' + path
             if os.path.exists(basedir + '/' + path):
-                sys.path.append(os.path.dirname(basedir + '/' + path))
+                self.log.debug('Append to path basedir of: %s', new_dir)
+                sys.path.append(os.path.dirname(new_dir))
         res = None
         classname = os.path.basename(path)[:-3]
         exec ("import " + classname)

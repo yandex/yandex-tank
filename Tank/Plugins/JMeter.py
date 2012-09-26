@@ -7,6 +7,7 @@ from Tank.Plugins.Aggregator import AbstractReader, AggregatorPlugin, \
     AggregateResultListener
 import tempfile
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+import time
 
 
 # TODO: 3 add screen widget with info
@@ -62,7 +63,7 @@ class JMeterPlugin(AbstractPlugin):
             
     def start_test(self):
         self.log.info("Starting %s with arguments: %s", self.jmeter_path, self.args)
-        self.jmeter_process = subprocess.Popen(self.args, executable=self.jmeter_path, stderr=subprocess.PIPE, stdout=subprocess.PIPE, preexec_fn=os.setsid)
+        self.jmeter_process = subprocess.Popen(self.args, executable=self.jmeter_path, preexec_fn=os.setsid) # stderr=subprocess.PIPE, stdout=subprocess.PIPE, 
     
     def is_test_finished(self):
         rc = self.jmeter_process.poll()
@@ -80,7 +81,7 @@ class JMeterPlugin(AbstractPlugin):
         else:
             self.log.debug("Seems JMeter finished OK")
         
-        Utils.log_stdout_stderr(self.log, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
+        #Utils.log_stdout_stderr(self.log, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
 
         self.core.add_artifact_file(self.jmeter_log)
         return retcode
@@ -109,6 +110,7 @@ class JMeterPlugin(AbstractPlugin):
     
     
 class JMeterReader(AbstractReader):
+    KNOWN_EXC = {"java.net.NoRouteToHostException": 113}
     '''
     Adapter to read jtl files
     '''
@@ -122,11 +124,16 @@ class JMeterReader(AbstractReader):
             self.log.info("Opening jmeter out file: %s", self.jmeter.jtl_file)
             self.results = open(self.jmeter.jtl_file, 'r')
     
+
     def get_next_sample(self, force):
+        if force:
+            while self.jmeter.jmeter_process and self.jmeter.jmeter_process.poll() == None: 
+                self.log.debug("Waiting for JMeter process to exit")
+                self.jmeter.jmeter_process.terminate()
+                time.sleep(1)
+        
         if self.results:
             read_lines = self.results.readlines()
-            if read_lines:
-                read_lines.pop(0) # remove header line
             self.log.debug("About to process %s result lines", len(read_lines))
             for line in read_lines:
                 line = line.strip()
@@ -147,7 +154,7 @@ class JMeterReader(AbstractReader):
                         self.data_queue.append(cur_time)
                         self.data_buffer[cur_time] = []
                 #        marker, threads, overallRT, httpCode, netCode
-                data_item = [data[2], int(data[7]), int(data[1]), data[3], netcode]
+                data_item = [data[2], int(data[7]), int(data[1]), self.exc_to_code(data[3]), netcode]
                 # bytes:     sent    received
                 data_item += [0, int(data[5])]
                 #        connect    send    latency    receive
@@ -164,6 +171,17 @@ class JMeterReader(AbstractReader):
         else:
             return None 
 
+    def exc_to_code(self, param1):
+        if len(param1) <= 3:
+            return param1
+        
+        exc = param1.split(' ')[-1] 
+        if exc in self.KNOWN_EXC.keys():
+            return self.KNOWN_EXC[exc]
+        else:
+            self.log.warning("Not known Java exception, onsider adding it to dictionary: %s", param1)
+            return '1'
+    
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
     
