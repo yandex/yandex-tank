@@ -1,14 +1,4 @@
-old/fantom.py usr/lib/lunapark
-old/lunapark usr/lib/lunapark
-old/prd.pl usr/lib/lunapark
-old/preproc.pl usr/lib/lunapark
-old/stepper.py usr/lib/lunapark
-old/Lunapark.pm usr/share/perl5
-old/db.conf /etc/lunapark
-old/load.conf.example /etc/lunapark
-old/yandex_load_lunapark usr/lib/lunapark
-
-yandex-tank.conf etc/lunapark
-Tank usr/lib/lunapark
-tank.py usr/lib/lunapark
-*.sh usr/lib/lunapark
+Tank usr/lib/yandex-tank
+tank.py usr/lib/yandex-tank
+*.sh usr/lib/yandex-tank
+yandex-tank.ini etc/yandex-tank

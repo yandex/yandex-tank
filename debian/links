@@ -1,10 +1,3 @@
-/usr/lib/lunapark/lunapark /usr/bin/lunapark
-/usr/lib/lunapark/prd.pl /usr/bin/prd.pl
-/usr/lib/lunapark/preproc.pl /usr/bin/preproc.pl
-
-/usr/lib/lunapark/stepper.py /usr/bin/stepper.py
-/usr/lib/lunapark/fantom.py /usr/bin/fantom.py
-
-/usr/lib/lunapark/tank.py /usr/bin/yandex-tank
-/usr/lib/lunapark/ab.sh /usr/bin/yandex-tank-ab
-/usr/lib/lunapark/jmeter.sh /usr/bin/yandex-tank-jmeter
+/usr/lib/yandex-tank/tank.py /usr/bin/yandex-tank
+/usr/lib/yandex-tank/ab.sh /usr/bin/yandex-tank-ab
+/usr/lib/yandex-tank/jmeter.sh /usr/bin/yandex-tank-jmeter

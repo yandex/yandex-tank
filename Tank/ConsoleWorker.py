@@ -73,8 +73,7 @@ class ConsoleTank:
         self.options = options
         self.ammofile = ammofile
         
-        # TODO: 3 change it to /etc/yandex-tank
-        self.baseconfigs_location = '/etc/lunapark' 
+        self.baseconfigs_location = '/etc/yandex-tank' 
 
         self.log_filename = self.options.log
         self.core.add_artifact_file(self.log_filename)
@@ -238,7 +237,7 @@ class ConsoleTank:
             try:
                 for filename in os.listdir(self.baseconfigs_location):
                     # TODO: 3 change extension to INI
-                    if fnmatch.fnmatch(filename, '*.conf'):
+                    if fnmatch.fnmatch(filename, '*.ini'):
                         configs += [os.path.realpath(self.baseconfigs_location + os.sep + filename)]
             except OSError:
                 self.log.warn(self.baseconfigs_location + ' is not acessible to get configs list')
@@ -246,6 +245,7 @@ class ConsoleTank:
             configs += [os.path.expanduser('~/.yandex-tank')]
         
         if not self.options.config:
+            # just for old 'lunapark' compatibility
             self.log.debug("No config passed via cmdline, using ./load.conf")
             conf_file = self.__adapt_old_config(os.path.realpath('load.conf'))
             configs += [conf_file]

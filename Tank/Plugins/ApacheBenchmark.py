@@ -15,6 +15,10 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
         self.end = None
         self.out_file = None
         self.process = None
+        self.concurrency = None
+        self.options = None
+        self.url = None
+        self.requests = None
 
     @staticmethod
     def get_key():
