@@ -64,7 +64,6 @@ class PhantomPlugin(AbstractPlugin):
         self.steps = []
         self.phantom_start_time = None
         self.ipv6 = None
-        self.tools_path = None
         self.ammo_file = None
         self.instances_schedule = None
         self.loop_limit = None
@@ -118,11 +117,10 @@ class PhantomPlugin(AbstractPlugin):
 
     def configure(self):
         # stepper part
-        self.tools_path = self.get_option("tools_path", '/usr/bin')
         self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
         self.instances_schedule = self.get_option("instances_schedule", '')
         self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
-        self.ammo_limit = int(self.get_option("ammo_limit", "-1"))
+        self.ammo_limit = int(self.get_option("ammo_limit", "-1")) # TODO: 3 stepper must implement it
         sched = self.get_option(self.OPTION_SCHEDULE, '')
         sched = " ".join(sched.split("\n"))
         sched = sched.split(')')
@@ -146,7 +144,7 @@ class PhantomPlugin(AbstractPlugin):
         self.address = self.get_option(self.OPTION_IP, '127.0.0.1')
         self.port = self.get_option(self.OPTION_PORT, '80')
         self.tank_type = self.get_option("tank_type", 'http')
-        self.answ_log = self.get_option("answ_log", tempfile.mkstemp(".log", "answ_", self.core.artifacts_base_dir)[1])
+        self.answ_log = tempfile.mkstemp(".log", "answ_", self.core.artifacts_base_dir)[1]
         self.answ_log_level = self.get_option("writelog", "none")
         if self.answ_log_level == '0':
             self.answ_log_level = 'none' 
@@ -158,8 +156,8 @@ class PhantomPlugin(AbstractPlugin):
             self.core.add_artifact_file(self.phout_file)
         else:
             self.phout_import_mode = 1
-        self.stat_log = self.get_option("stat_log", tempfile.mkstemp(".log", "phantom_stat_", self.core.artifacts_base_dir)[1])
-        self.phantom_log = self.get_option("phantom_log", tempfile.mkstemp(".log", "phantom_", self.core.artifacts_base_dir)[1])
+        self.stat_log = tempfile.mkstemp(".log", "phantom_stat_", self.core.artifacts_base_dir)[1]
+        self.phantom_log = tempfile.mkstemp(".log", "phantom_", self.core.artifacts_base_dir)[1]
         self.stpd = self.get_option(self.OPTION_STPD, '')
         self.threads = self.get_option("threads", int(multiprocessing.cpu_count() / 2) + 1)
         self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))

@@ -101,7 +101,7 @@ class ABReader(AbstractReader):
                     continue
                 cur_time = int(data[1])
                 ctime = int(data[2])
-                dtime = int(data[3])
+                #dtime = int(data[3])
                 ttime = int(data[4])
                 wait = int(data[5])
     
@@ -109,7 +109,7 @@ class ABReader(AbstractReader):
                     self.data_queue.append(cur_time)
                     self.data_buffer[cur_time] = []
                 #        marker, threads, overallRT, httpCode, netCode
-                data_item = ['', 0, ttime, 0, 0]
+                data_item = ['', self.ab.concurrency, ttime, 0, 0]
                 # bytes:     sent    received
                 data_item += [0, 0]
                 #        connect    send    latency    receive

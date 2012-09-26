@@ -10,6 +10,7 @@ from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 
 
 # TODO: 3 add screen widget with info
+# FIXME: 1 problem with small data count reading
 class JMeterPlugin(AbstractPlugin):
     SECTION = 'jmeter'
     
@@ -25,13 +26,13 @@ class JMeterPlugin(AbstractPlugin):
     def configure(self):
         self.original_jmx = self.get_option("jmx")
         self.core.add_artifact_file(self.original_jmx, True)
-        self.jtl_file = self.get_option("jtl", tempfile.mkstemp('.jtl', 'jmeter_', self.core.artifacts_base_dir)[1])
+        self.jtl_file = tempfile.mkstemp('.jtl', 'jmeter_', self.core.artifacts_base_dir)[1]
         self.core.add_artifact_file(self.jtl_file)
         self.jmx = self.__add_writing_section(self.original_jmx, self.jtl_file)
         self.core.add_artifact_file(self.jmx)
         self.user_args = self.get_option("args", '')
         self.jmeter_path = self.get_option("jmeter_path", 'jmeter')
-        self.jmeter_log = self.get_option("jmeter_log", tempfile.mkstemp('.log', 'jmeter_', self.core.artifacts_base_dir)[1])
+        self.jmeter_log = tempfile.mkstemp('.log', 'jmeter_', self.core.artifacts_base_dir)[1]
         self.core.add_artifact_file(self.jmeter_log, True)
 
     def prepare_test(self):

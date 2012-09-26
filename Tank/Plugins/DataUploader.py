@@ -16,6 +16,7 @@ import sys
 import time
 import urllib2
 
+# TODO: 3 get instances info from ab's concurrency
 class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     '''
     API Client class for Yandex KSHM web service
@@ -47,7 +48,7 @@ class DataUploaderPlugin(AbstractPlugin, AggregateResultListener, MonitoringData
             self.job_name = raw_input('Please, enter job_name: ')        
         self.job_dsc = self.get_option("job_dsc", '')
         if self.job_dsc == 'ask':
-            self.job_name = raw_input('Please, enter job_dsc: ')
+            self.job_dsc = raw_input('Please, enter job_dsc: ')
         self.notify_list = self.get_option("notify", '').split(' ')
         self.version_tested = self.get_option("ver", '')
         self.regression_component = self.get_option("component", '')
