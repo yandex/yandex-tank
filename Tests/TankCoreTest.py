@@ -1,14 +1,10 @@
-from Tank.Core import TankCore
 from Tests.TankTests import TankTestCase
-import os
 import tempfile
 import unittest
 
 class  TankCoreTestCase(TankTestCase):
     def setUp(self):
         self.foo = self.get_core()
-        (handler, name) = tempfile.mkstemp()
-        self.foo.config.set_out_file(name)
 
     def tearDown(self):
         del self.foo
@@ -33,6 +29,7 @@ class  TankCoreTestCase(TankTestCase):
         self.foo.wait_for_finish()
         self.foo.add_artifact_file(__file__, 1)
         self.foo.plugins_end_test(0)
+        self.foo.plugins_post_process(0)
 
 if __name__ == '__main__':
     unittest.main()

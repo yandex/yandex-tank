@@ -10,8 +10,8 @@ import sys
 import tempfile
 import time
 import traceback
+import datetime
 
-# TODO: 3 name artifacts dir with date and time
 class TankCore:
     """
     JMeter + dstat inspired :)
@@ -61,9 +61,12 @@ class TankCore:
         self.log.debug("Plugins order: %s", self.plugins_order)
             
     def __load_plugin(self, name, path):
+        '''
+        Load single plugin using 'exec' statement
+        '''
         self.log.debug("Loading plugin %s from %s", name, path)
-        for basedir in ['']+sys.path:
-            new_dir=basedir + '/' + path
+        for basedir in [''] + sys.path:
+            new_dir = basedir + '/' + path
             if os.path.exists(basedir + '/' + path):
                 self.log.debug('Append to path basedir of: %s', new_dir)
                 sys.path.append(os.path.dirname(new_dir))
@@ -160,7 +163,8 @@ class TankCore:
         self.log.info("Post-processing test...")
         
         if not self.artifacts_dir: 
-            self.artifacts_dir = tempfile.mkdtemp(".artifacts", "tank_", self.artifacts_base_dir)
+            date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
+            self.artifacts_dir = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)
         else:
             if not os.path.isdir(self.artifacts_dir):
                 os.makedirs(self.artifacts_dir)
@@ -222,6 +226,9 @@ class TankCore:
         return self.__get_plugin_by_key(key)
         
     def __get_plugin_by_key(self, key):
+        '''
+        Get plugin from loaded by its key
+        '''
         if key in self.plugins.keys():
             return self.plugins[key]
         
@@ -236,6 +243,9 @@ class TankCore:
         raise KeyError("Requested plugin type not found: %s" % key)  
     
     def __collect_file(self, filename, keep_original=False):
+        '''
+        Move or copy single file to artifacts dir
+        '''
         if not self.artifacts_dir:
             self.log.warning("No artifacts dir configured")
             return            
@@ -328,6 +338,9 @@ class AbstractPlugin:
     
     @staticmethod
     def get_key():
+        '''
+        Get dictionary key for plugin, should point to __file__ magic constant
+        '''
         raise TypeError("Abstract method needs to be overridden")
     
     def __init__(self, core):
@@ -335,25 +348,49 @@ class AbstractPlugin:
         self.core = core
         
     def configure(self):
+        '''
+        A stage to read config values and instantiate objects
+        '''
         pass
     
     def prepare_test(self):
+        '''
+        Test preparation tasks
+        '''
         pass
     
     def start_test(self):
+        '''
+        Launch test process
+        '''
         pass
     
     def is_test_finished(self):
+        '''
+        Polling call, if result differs from -1 then test end will be triggeted
+        '''
         return -1
     
     def end_test(self, retcode):
+        '''
+        Stop processes launched at 'start_test', change return code if necessary
+        '''
         return retcode
     
     def post_process(self, retcode):
+        '''
+        Post-process test data
+        '''
         return retcode
 
     def get_option(self, option_name, default_value=None):
+        '''
+        Wrapper to get option from plugins' section
+        '''
         return self.core.get_option(self.SECTION, option_name, default_value)
 
     def set_option(self, option_name, value):
+        '''
+        Wrapper to set option to plugins' section
+        '''
         return self.core.set_option(self.SECTION, option_name, value)
