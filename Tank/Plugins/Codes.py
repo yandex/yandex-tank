@@ -31,7 +31,7 @@ WEBDAV = {
     510: 'Not Extended',
     598: 'network read timeout error',
     599: 'network connect timeout error',
-    999: 'lunapark internal error',
+    999: 'Common Failure',
 }
 HTTP.update(WEBDAV)
 
@@ -170,5 +170,5 @@ NET = {
 	129: "Key was rejected by service",
 	130: "Owner died",
 	131: "State not recoverable",
-        999: 'lunapark internal error',
+    999: 'Common Failure',
 }

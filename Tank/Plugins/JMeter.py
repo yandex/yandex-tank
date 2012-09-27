@@ -27,7 +27,9 @@ class JMeterPlugin(AbstractPlugin):
     def configure(self):
         self.original_jmx = self.get_option("jmx")
         self.core.add_artifact_file(self.original_jmx, True)
-        self.jtl_file = tempfile.mkstemp('.jtl', 'jmeter_', self.core.artifacts_base_dir)[1]
+        handle, jtl = tempfile.mkstemp('.jtl', 'jmeter_', self.core.artifacts_base_dir)
+        os.close(handle)
+        self.jtl_file = jtl
         self.core.add_artifact_file(self.jtl_file)
         self.jmx = self.__add_writing_section(self.original_jmx, self.jtl_file)
         self.core.add_artifact_file(self.jmx)
@@ -110,7 +112,17 @@ class JMeterPlugin(AbstractPlugin):
     
     
 class JMeterReader(AbstractReader):
-    KNOWN_EXC = {"java.net.NoRouteToHostException": 113}
+    KNOWN_EXC = {
+        "java.net.NoRouteToHostException": 113,
+        "java.net.ConnectException": 110,
+        "java.net.BindException":99,
+        "java.net.PortUnreachableException":101,
+        "java.net.ProtocolException":71,
+        "java.net.SocketException":32,
+        "java.net.SocketTimeoutException":110,
+        "java.net.UnknownHostException":14,
+        "java.io.IOException": 5,
+    }
     '''
     Adapter to read jtl files
     '''
@@ -121,9 +133,8 @@ class JMeterReader(AbstractReader):
     
     def check_open_files(self):
         if not self.results and os.path.exists(self.jmeter.jtl_file):
-            self.log.info("Opening jmeter out file: %s", self.jmeter.jtl_file)
+            self.log.debug("Opening jmeter out file: %s", self.jmeter.jtl_file)
             self.results = open(self.jmeter.jtl_file, 'r')
-    
 
     def get_next_sample(self, force):
         if force:
@@ -131,6 +142,10 @@ class JMeterReader(AbstractReader):
                 self.log.debug("Waiting for JMeter process to exit")
                 self.jmeter.jmeter_process.terminate()
                 time.sleep(1)
+            offset = self.results.tell()
+            self.log.debug("Reopening JTL file with offset: %s:%s", self.jmeter.jtl_file, offset)
+            self.results = open(self.jmeter.jtl_file, 'r')
+            self.results.seek(offset)
         
         if self.results:
             read_lines = self.results.readlines()
@@ -145,7 +160,7 @@ class JMeterReader(AbstractReader):
                     self.log.warning("Wrong jtl line, skipped: %s", line)
                     continue
                 cur_time = int(data[0]) / 1000
-                netcode = '0' if data[4] == 'true' else '1' 
+                netcode = '0' if data[4] == 'true' else '999' 
                 
                 if not cur_time in self.data_buffer.keys():
                     if self.data_queue and self.data_queue[-1] >= cur_time:
@@ -179,7 +194,7 @@ class JMeterReader(AbstractReader):
         if exc in self.KNOWN_EXC.keys():
             return self.KNOWN_EXC[exc]
         else:
-            self.log.warning("Not known Java exception, onsider adding it to dictionary: %s", param1)
+            self.log.warning("Not known Java exception, consider adding it to dictionary: %s", param1)
             return '1'
     
 

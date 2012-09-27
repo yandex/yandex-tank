@@ -1,9 +1,11 @@
 from Tank.MonCollector.agent.metric.disk import Disk
 import time
 import unittest
+import tempfile
+import os
 
 
-class  Mem_TestCase(unittest.TestCase):
+class  Disk_TestCase(unittest.TestCase):
     def setUp(self):
         self.foo = Disk()
 
@@ -11,6 +13,8 @@ class  Mem_TestCase(unittest.TestCase):
         print self.foo.check()
         self.assertEquals(2, len(self.foo.check()))
         self.assertNotEquals(['', ''], self.foo.check())
+        fd = tempfile.mkstemp()
+        os.write(fd, ' ' * 5000)
         time.sleep(5)
         self.assertNotEquals(['0', '0'], self.foo.check())
 
