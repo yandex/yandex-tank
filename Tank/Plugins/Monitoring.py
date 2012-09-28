@@ -72,11 +72,18 @@ class MonitoringPlugin(AbstractPlugin):
                 console.add_info_widget(widget)
                 self.monitoring.add_listener(widget)
 
-            self.monitoring.prepare()
-            self.monitoring.start()
-            while not self.monitoring.first_data_received:
-                time.sleep(0.2)
-                self.monitoring.poll()
+            try:
+                self.monitoring.prepare()
+                self.monitoring.start()
+                while not self.monitoring.first_data_received:
+                    time.sleep(0.2)
+                    self.monitoring.poll()
+            except Exception, exc:
+                if self.die_on_fail:
+                    raise exc
+                else:
+                    self.log.warning("Failed to start monitoring: %s", exc)
+                    self.monitoring=None
             
     def is_test_finished(self):
         if self.monitoring and not self.monitoring.poll():
