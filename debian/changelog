@@ -1,3 +1,11 @@
+yandex-load-tank-base (1.0.11) precise; urgency=low
+
+  * default artiacts dir name with datetime
+  * don't interrupt test if default monitoring failed to install
+  * larger default console size
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 28 Sep 2012 13:26:54 +0400
+
 yandex-load-tank-base (1.0.10) precise; urgency=low
 
   * remove old perl code completely
