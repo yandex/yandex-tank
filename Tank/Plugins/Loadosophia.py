@@ -12,6 +12,7 @@ import mimetools
 import mimetypes
 import os
 import urllib2
+import gzip
 
 class LoadosophiaPlugin(AbstractPlugin):
     '''
@@ -32,8 +33,10 @@ class LoadosophiaPlugin(AbstractPlugin):
         self.project_key = None
     
     def configure(self):
-        self.loadosophia.set_address(self.get_option("address", "https://loadosophia.org/uploader/"))
-        self.loadosophia.set_token(self.get_option("token", ""))
+        self.loadosophia.address = self.get_option("address", "https://loadosophia.org/uploader/")
+        self.loadosophia.token = self.get_option("token", "")
+        self.loadosophia.file_prefix = self.get_option("file_prefix", "")
+        
         self.project_key = self.get_option("project", '')
     
     def post_process(self, retcode):
@@ -68,14 +71,8 @@ class LoadosophiaClient:
         self.log = logging.getLogger(__name__)
         self.token = None
         self.address = None
+        self.file_prefix = ''
     
-    def set_token(self, token):
-        self.log.info("Setting token")
-        self.token = token
-
-    def set_address(self, addr):
-        self.address = addr
-
     def send_results(self, project, result_file, monitoring_files):
         if not self.token:
             self.log.warning("Loadosophia.org uploading disabled, please set loadosophia.token option to enable it, get token at https://loadosophia.org/service/upload/token/")
@@ -98,11 +95,17 @@ class LoadosophiaClient:
         form.add_field('projectKey', project)
         form.add_field('uploadToken', self.token)
         
-        # Add a fake file
-        form.add_file('jtl_file', os.path.basename(result_file), open(result_file, 'r'))
+        # Add main file
+        form.add_file_as_string('jtl_file', self.file_prefix + os.path.basename(result_file) + ".gz", self.__get_gzipped_file(result_file))
     
-        # TODO: add mon files
-    
+        index = 0
+        for mon_file in monitoring_files:
+            if not mon_file or not os.path.exists(mon_file) or not os.path.getsize(mon_file):
+                self.log.warning("Skipped mon file: %s", mon_file)
+                continue
+            form.add_file_as_string('perfmon_' + str(index), self.file_prefix + os.path.basename(mon_file) + ".gz", self.__get_gzipped_file(mon_file))
+            index += 1
+            
         # Build the request
         request = urllib2.Request(self.address)
         request.add_header('User-Agent', 'Yandex.Tank Loadosophia Uploader Module')
@@ -118,6 +121,14 @@ class LoadosophiaClient:
         self.log.info("Loadosophia.org upload succeeded, visit https://loadosophia.org/service/upload/ to see processing status")
         
                 
+    def __get_gzipped_file(self, result_file):
+        out = StringIO.StringIO()
+        f = gzip.GzipFile(fileobj=out, mode='w')
+        f.write(open(result_file, 'r').read())
+        f.close()
+        return out.getvalue()
+    
+    
 
 class MultiPartForm(object):
     """Accumulate the data to be used when posting a form."""
