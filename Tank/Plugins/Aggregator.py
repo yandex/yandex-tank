@@ -174,6 +174,7 @@ class AbstractReader:
     
 
     def __calculate_aggregates(self, item):
+        # TODO: 2 make total qunatiles more precise
         if item.RPS:
             if item.avg_response_time:
                 item.selfload = 100 * item.selfload / item.RPS

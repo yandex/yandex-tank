@@ -19,6 +19,7 @@ class MonitoringPlugin(AbstractPlugin):
         self.process = None
         self.monitoring = MonitoringCollector()
         self.die_on_fail = True
+        self.data_file = None
 
     @staticmethod
     def get_key():
@@ -27,15 +28,16 @@ class MonitoringPlugin(AbstractPlugin):
     def configure(self):
         self.config = self.get_option("config", 'auto')
         self.default_target = self.get_option("default_target", 'localhost')
-        if self.config == 'auto':
-            self.config = os.path.dirname(__file__) + '/monitoring_default_config.xml'
-        
+
         if self.config == 'none' or self.config == 'auto':
             self.die_on_fail = False         
-            
+                    
         if self.config == 'none':
             self.monitoring = None
     
+        if self.config == 'auto':
+            self.config = os.path.dirname(__file__) + '/monitoring_default_config.xml'
+        
     def prepare_test(self):
         phantom = None
         try:
@@ -58,9 +60,9 @@ class MonitoringPlugin(AbstractPlugin):
             if self.default_target:
                 self.monitoring.default_target = self.default_target
             
-            data_file = tempfile.mkstemp('.data', 'monitoring_', self.core.artifacts_base_dir)[1]
-            self.monitoring.add_listener(SaveMonToFile(data_file))
-            self.core.add_artifact_file(data_file)
+            self.data_file = tempfile.mkstemp('.data', 'monitoring_', self.core.artifacts_base_dir)[1]
+            self.monitoring.add_listener(SaveMonToFile(self.data_file))
+            self.core.add_artifact_file(self.data_file)
 
             try:
                 console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)

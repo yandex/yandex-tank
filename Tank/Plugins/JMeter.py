@@ -76,14 +76,15 @@ class JMeterPlugin(AbstractPlugin):
             return -1
         
     def end_test(self, retcode):
-        if self.jmeter_process.poll() == None:
-            self.log.warn("Terminating jmeter process with PID %s", self.jmeter_process.pid)
-            self.jmeter_process.terminate()
-            os.killpg(self.jmeter_process.pid, signal.SIGTERM)
-        else:
-            self.log.debug("Seems JMeter finished OK")
-        
-        #Utils.log_stdout_stderr(self.log, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
+        if self.jmeter_process:
+            if self.jmeter_process.poll() == None:
+                self.log.warn("Terminating jmeter process with PID %s", self.jmeter_process.pid)
+                self.jmeter_process.terminate()
+                os.killpg(self.jmeter_process.pid, signal.SIGTERM)
+            else:
+                self.log.debug("Seems JMeter finished OK")
+            
+            #Utils.log_stdout_stderr(self.log, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
 
         self.core.add_artifact_file(self.jmeter_log)
         return retcode

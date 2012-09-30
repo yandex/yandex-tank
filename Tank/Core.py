@@ -12,6 +12,8 @@ import time
 import traceback
 import datetime
 
+# TODO: 3 add ability to set options in "section.option" style in DEFAULT section
+
 class TankCore:
     """
     JMeter + dstat inspired :)

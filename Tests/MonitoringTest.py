@@ -13,8 +13,8 @@ class  MonitoringCollectorTestCase(TankTestCase):
     
     def test_collector(self):
         mon = MonitoringCollector()
-        mon.config="config/mon1.conf"
-        mon.ssh_wrapper_class=SSHEmulator
+        mon.config = "config/mon1.conf"
+        mon.ssh_wrapper_class = SSHEmulator
         listener = TestMonListener()
         mon.add_listener(listener)
         mon.prepare()
@@ -23,7 +23,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
 
     def test_plugin_disabled(self):
         core = self.get_core()
-        core.artifacts_base_dir=tempfile.mkdtemp()
+        core.artifacts_base_dir = tempfile.mkdtemp()
         mon = MonitoringPlugin(core)
         core.set_option(mon.SECTION, 'config', 'none')
         mon.configure()
@@ -38,14 +38,14 @@ class  MonitoringCollectorTestCase(TankTestCase):
 
     def test_plugin_default(self):
         core = self.get_core()
-        core.artifacts_base_dir=tempfile.mkdtemp()
+        core.artifacts_base_dir = tempfile.mkdtemp()
         core.load_configs(['config/monitoring.conf'])
         core.load_plugins()
         core.plugins_configure()
         core.plugins_prepare_test()
         mon = MonitoringPlugin(core)
         mon.configure()
-        mon.monitoring.ssh_wrapper_class=SSHEmulator
+        mon.monitoring.ssh_wrapper_class = SSHEmulator
         mon.prepare_test()
         mon.start_test()
         self.assertEquals(-1, mon.is_test_finished())
@@ -57,13 +57,13 @@ class  MonitoringCollectorTestCase(TankTestCase):
 
     def test_plugin_config(self):
         core = self.get_core()
-        core.artifacts_base_dir=tempfile.mkdtemp()
+        core.artifacts_base_dir = tempfile.mkdtemp()
         core.load_configs(['config/monitoring.conf'])
         core.load_plugins()
         core.plugins_configure()
         core.plugins_prepare_test()
         mon = MonitoringPlugin(core)
-        mon.monitoring.ssh_wrapper_class=SSHEmulator
+        mon.monitoring.ssh_wrapper_class = SSHEmulator
         core.set_option(mon.SECTION, 'config', "config/mon1.conf")
         mon.configure()
         mon.prepare_test()
@@ -77,9 +77,9 @@ class  MonitoringCollectorTestCase(TankTestCase):
     
     def test_widget(self):
         core = self.get_core()
-        core.artifacts_base_dir=tempfile.mkdtemp()
+        core.artifacts_base_dir = tempfile.mkdtemp()
         owner = MonitoringPlugin(core)
-        owner.monitoring=1
+        owner.monitoring = 1
         widget = MonitoringWidget(owner)
         screen = Screen(50, FakeConsoleMarkup())
         res = widget.render(screen)
@@ -94,6 +94,25 @@ class  MonitoringCollectorTestCase(TankTestCase):
         
         widget.monitoring_data("127.0.0.1;1347631473;1506.65625;574.9609375;8055;1518;0;143360;34.9775784753;16.1434977578;0.0")
         res = widget.render(screen)
+
+    def test_plugin_default_failedInstall(self):
+        core = self.get_core()
+        core.artifacts_base_dir = tempfile.mkdtemp()
+        core.load_configs(['config/monitoring.conf'])
+        core.load_plugins()
+        core.plugins_configure()
+        core.plugins_prepare_test()
+        mon = MonitoringPlugin(core)
+        mon.configure()
+        mon.monitoring.ssh_wrapper_class = SSHEmulatorFailer
+        mon.prepare_test()
+        mon.start_test()
+        self.assertEquals(-1, mon.is_test_finished())
+        self.assertEquals(None, mon.monitoring)
+        time.sleep(1)
+        self.assertEquals(-1, mon.is_test_finished())
+        mon.end_test(0)
+        mon.post_process(0)
 
 class TestMonListener(MonitoringDataListener):
     def __init__(self):
@@ -118,10 +137,10 @@ class SSHEmulator(SSHWrapper):
     
 class PipeEmul:
     def __init__(self, out, err):
-        self.stderr=open(err, 'rU')
-        self.stdout=open(out, 'rU')
-        self.returncode=0
-        self.pid=0
+        self.stderr = open(err, 'rU')
+        self.stdout = open(out, 'rU')
+        self.returncode = 0
+        self.pid = 0
         
     def wait(self):
         pass
@@ -129,4 +148,11 @@ class PipeEmul:
     def readline(self):
         return self.stdout.readline()
     
+class SSHEmulatorFailer(SSHEmulator):
+    def get_scp_pipe(self, cmd):
+        raise RuntimeError()
     
+    def get_ssh_pipe(self, cmd):
+        raise RuntimeError()
+
+
