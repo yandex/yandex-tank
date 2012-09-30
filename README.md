@@ -595,7 +595,7 @@ INI file section: **[jmeter]**
 * **jmeter_path** - JMeter path, default: ```jmeter```
 
 ##### Artifacts
-* **<original jmx filename>** - original test plan file
+* **_original_jmx.jmx>** - original test plan file
 * **modified_*.jmx** - modified test plan with results output section
 * **jmeter_*.jtl** - JMeter results
 * **jmeter_*.log** - JMeter log
