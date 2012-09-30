@@ -502,10 +502,14 @@ You can also mix them: ```1h30m15s``` or ```2s15ms```
 As a result Yandex.Tank produces some files (logs, results, configs etc). Those files are placed with care to the **artifact directory**. An option for that is ```artifacts_base_dir``` in the ```tank``` section. It is recommended to set it to a convinient place, for example, ```~/yandex-tank-artifacts```, it would be easier to manage the artifacts there.
 
 ### Modules
+
 #### Phantom
 Load generator module that uses phantom utility.
+
 ##### Options
+
 INI file section: **[phantom]**
+
 Basic options:
 * **ammofile** - ammo file path (ammo file is a file containing requests that are to be sent to a server)
 * **rps_schedule** - load schedule in terms of RPS
@@ -513,6 +517,7 @@ Basic options:
 * **instances_schedule** - load schedule in terms of number of instances
 * **loop** - number of times requests from ammo file are repeated in loop
 * **autocases** - enable marking requests automatically (1 -- enable, 0 -- disable)
+
 Additional options:
 * **writelog** - enable verbose request/response logging. Available options: 0 - disable, all - all messages, proto_warning - 4хх+5хх+network errors, proto_error - 5хх+network errors. Default: 0
 * **ssl** - enable SSL, 1 - enable, 0 - disable, default: 0
@@ -520,14 +525,17 @@ Additional options:
 * **port** - port of service to test. Default: ```80```
 * **gatling_ip** - use multiple source addresses. List, divided by spaces.
 * **tank_type** - protocol type: http, none (raw TCP). Default: ```http```
+
 URI-style options:
 * **uris** - URI list, multiline option.
 * **headers** - HTTP headers list in the following form: ```[Header: value]```, multiline option.
 * **header_http** - HTTP version, default: ```1.1```
+
 stpd-file cache options:
 * **use_caching** - enable cache, default: ```1```
 * **cache_dir** - cache files directory, default: base artifacts directory.
 * **force_stepping** - force stpd file generation, default: ```0```
+
 Advanced options:
 * **phantom_path** - phantom utility path, default: ```phantom```
 * **phantom_modules_path** - phantom modules path, default:```/usr/lib/phantom```
@@ -535,11 +543,13 @@ Advanced options:
 * **phout_file** - import this phout instead of launching phantom (import phantom results)
 * **stpd_file** - use this stpd-file instead of generated
 * **threads** - phantom thread count, default: ```<processor cores count>/2 + 1```
+
 http-module tuning options:
 * **phantom_http_line** 
 * **phantom_http_field_num**
 * **phantom_http_field**
 * **phantom_http_entity**
+
 #####Artifacts
 * **phantom_*.conf** - generated configuration files
 * **phout_*.log** - raw results file
@@ -549,9 +559,12 @@ http-module tuning options:
 
 #### Auto-stop
 The Auto-stop module gets the data from the aggregator and passes them to the criteria-objects that decide if we should stop the test.
+
 INI file section: **[autostop]**
+
 ##### Options
 * **autostop** - criteria list divided by spaces, in following format: ```type(parameters)```
+
 Available criteria types:
 * **time** - stop the test if average response time is higher then specified for as long as the time period specified. E.g.: ```time(1s500ms, 30s) time(50,15)```
 * **http** - stop the test if the count of responses in last time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value. Examples: ```http(404,10,15) http(5xx, 10%, 1m)```
@@ -565,7 +578,9 @@ Available criteria types:
 
 #### Console on-line screen
 Shows usefull information in console while running the test
+
 INI file section: **[console]**
+
 ##### Options
 * **short_only** - show only one-line summary instead of full-screen (usefull for scripting), default: 0 (disable)
 * **info_panel_width** - relative right-panel width in percents, default: 33
@@ -578,7 +593,9 @@ INI file section: **[aggregator]**
 
 #### ShellExec
 The ShellExec module executes the shell-scripts (hooks) on different stages of test, for example, you could start/stop some services just before/after the test. Every hook must return 0 as an exit code or the test is terminated. Hook's stdout will be written to DEBUG, stderr will be WARNINGs.
+
 INI file section: **[shellexec]**
+
 ##### Options:
 * **prepare** - the script to run on prepare stage
 * **start** - the script to run on start stage
@@ -588,7 +605,9 @@ INI file section: **[shellexec]**
 
 #### JMeter
 JMeter load generator module. 
+
 INI file section: **[jmeter]**
+
 ##### Options
 * !!mandatory option!! **jmx** - test plan file
 * **args** - JMeter command line parameters
@@ -602,23 +621,27 @@ INI file section: **[jmeter]**
 
 #### AB
 Apache Benchmark load generator module. As the ab utility writes results to file only after the test is finished, Yandex.Tank is unable to show the on-line statistics for the tests with ab. The data are reviewed after the test.
+
 INI file section: **[ab]**
 ##### Options
 * **url** - requested URL, default: ```http:**localhost/```
 * **requests** - total request count, default: 100
 * **concurrency** - number of concurrent requests: 1
 * **options** - ab command line options
+
 ##### Artifacts
 * **ab_*.log** - request log with response times
 
 #### Tips&Tricks
 Shows tips and tricks in fullscreen console. **If you have any tips&tricks, tell the developers about them**
+
 INI-file section: **[tips]**
 ##### Options
 * **disable** - disable tips and tricks, default: don't (0)
 
 ### Sources
 Yandex.Tank sources ((https://github.com/yandex-load/yandex-tank here)).
+
 ### load.conf.example
 ```
 # Yandex.Tank config file
