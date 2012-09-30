@@ -425,15 +425,15 @@ gatling_ip = 23.23.23.24 23.23.23.26
 
 ### Command line options
 There are three executables in Yandex.Tank package: ```yandex-tank```, ```yandex-tank-ab``` и ```yandex-tank-jmeter```. Last two of them just use different king of load gen utilities, ```ab``` (Apache Benchmark) and ```jmeter``` (Apache JMeter), accordingly. Command line options are common for all three:
-* //-h, --help// - show command line options
-* //-c CONFIG, --config=CONFIG// - read options from INI file. It is possible to set multiple INI files by specifying the option serveral times. Default: ```./load.conf```
-* //-i, --ignore-lock// - ignore lock files
-* //-f, --fail-lock// - don't wait for lock file, quit if it's busy. The default behaviour is to wait for lock file to become free.
-* //-l LOG, --log=LOG// - main log file location. Default: ```./tank.log```
-* //-n, --no-rc// - don't read ```/etc/yandex-tank/*.ini``` and ```~/.yandex-tank```
-* //-o OPTION, --option=OPTION// - set an option from command line. Options set in cmd line override those have been set in configuration files. Multiple times for multiple options. Format: ```<section>.<option>=value``` Example: ```yandex-tank -o "console.short_only=1" --option="phantom.force_stepping=1"```
-* //-q, --quiet// - only print WARNINGs and ERRORs to console
-* //-v, --verbose// - print ALL messages to console. Chatty mode
+* **-h, --help** - show command line options
+* **-c CONFIG, --config=CONFIG** - read options from INI file. It is possible to set multiple INI files by specifying the option serveral times. Default: ```./load.conf```
+* **-i, --ignore-lock** - ignore lock files
+* **-f, --fail-lock** - don't wait for lock file, quit if it's busy. The default behaviour is to wait for lock file to become free.
+* **-l LOG, --log=LOG** - main log file location. Default: ```./tank.log```
+* **-n, --no-rc** - don't read ```/etc/yandex-tank/*.ini``` and ```~/.yandex-tank```
+* **-o OPTION, --option=OPTION** - set an option from command line. Options set in cmd line override those have been set in configuration files. Multiple times for multiple options. Format: ```<section>.<option>=value``` Example: ```yandex-tank -o "console.short_only=1" --option="phantom.force_stepping=1"```
+* **-q, --quiet** - only print WARNINGs and ERRORs to console
+* **-v, --verbose** - print ALL messages to console. Chatty mode
 
 Add an ammo file name as a nameless parameter, e.g.: ```yandex-tank ammo.txt```
 
