@@ -54,7 +54,7 @@ class TankCore:
 
         for (plugin_name, plugin_path) in self.config.get_options(self.SECTION, self.PLUGIN_PREFIX):
             if not plugin_path:
-                self.log.warning("Seems the plugin '%s' was disabled", plugin_name)
+                self.log.debug("Seems the plugin '%s' was disabled", plugin_name)
                 continue
             instance = self.__load_plugin(plugin_name, plugin_path)
             self.plugins[instance.get_key()] = instance 
