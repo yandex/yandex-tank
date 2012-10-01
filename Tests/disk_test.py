@@ -16,7 +16,7 @@ class  Disk_TestCase(unittest.TestCase):
         fd = tempfile.mkstemp()[0]
         os.write(fd, ' ' * 5000)
         time.sleep(1)
-        self.assertNotEquals(['0', '0'], self.foo.check())
+        self.assertNotEquals(['', ''], self.foo.check())
 
     def test_cols(self):
         res = self.foo.columns()
