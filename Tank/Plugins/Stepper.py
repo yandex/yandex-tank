@@ -1,3 +1,7 @@
+'''
+Tools for preparing phantom input data file
+'''
+
 from collections import defaultdict
 import logging
 import operator
@@ -7,9 +11,11 @@ import tempfile
 from Tank import Utils
 from progressbar import ProgressBar, Percentage, Bar, ETA
 
-# TODO: 2 eliminate double ammo file pass
 # TODO: 3 add stpd file size estimation 
 def make_load_ammo(uris, headers, httpver):
+    '''
+    Create temp file for uri-format ammo
+    '''
     filename = tempfile.mkstemp('.ammo', 'uri_')[1]
     tmp_ammo = open(filename, 'w')
     for line in uris:
@@ -18,6 +24,9 @@ def make_load_ammo(uris, headers, httpver):
 
 
 def get_ammo_type(filename):
+    '''
+    Detect ammo file format
+    '''
     ammo = open(filename, 'r')
     first_line = ammo.readline()
     if re.match("^(\/|\[)", first_line):
@@ -29,6 +38,9 @@ def get_ammo_type(filename):
 
 
 def detect_case_file(filename):
+    '''
+    Detect cases presence
+    '''
     ammo = open(filename, 'r')
     first_line = ammo.readline()
     m = re.match("^(\d+)\s*\d*\s*(\w*)\s*", first_line)
@@ -38,7 +50,11 @@ def detect_case_file(filename):
     return False
 
 
+# TODO: 2 eliminate double ammo file pass
 def get_ammo_count(filename, stop_count):
+    '''
+    Long-running damn function
+    '''
     logging.info("Getting ammo count from %s ...", filename)
 
     widgets = [Percentage(), ' ', Bar(), ' ', ETA(), ' ' ]
@@ -71,6 +87,9 @@ def get_ammo_count(filename, stop_count):
 
 
 def header_print(values_list):
+    '''
+    Helper to generate request with headers
+    '''
     header = ''
     for (h, v) in values_list.iteritems():
         header += '%s: %s\r\n' % (h, v)
@@ -78,7 +97,9 @@ def header_print(values_list):
 
 
 def get_headers_list(line):
-    """return a dict of {header: value}, parsed from string"""
+    """
+    return a dict of {header: value}, parsed from string
+    """
 
     values_list = defaultdict(str)
     h = re.match("^\[", line)
@@ -95,6 +116,9 @@ def get_headers_list(line):
 
 
 def get_common_header(filename):
+    '''
+    Read headers from ammo file 
+    '''
     input_ammo = open(filename, 'r')
     values_list = {}
     for line in input_ammo:
@@ -103,6 +127,9 @@ def get_common_header(filename):
 
 
 def load_const(req, duration):
+    '''
+    Constant load pattern
+    '''
     dur = Utils.expand_to_seconds(duration)
     steps = []
     steps.append([req, dur])
@@ -114,6 +141,9 @@ def load_const(req, duration):
 
 
 def load_line(start, end, duration):
+    '''
+    Linear load pattern
+    '''
     dur = Utils.expand_to_seconds(duration)
     k = float((end - start) / float(dur - 1))
     (cnt, last_x, total) = (1, start, 0)
@@ -143,6 +173,9 @@ def load_step(
     step,
     duration,
     ):
+    '''
+    Stepping load pattern
+    '''
     dur = Utils.expand_to_seconds(duration)
     (steps, ls, total) = ([], '', 0)
     if end > start:
@@ -175,6 +208,9 @@ def load_step(
 
 
 def collapse_schedule(schedule):
+    '''
+    Helper to merge duplicate chunks
+    '''
     res = []
     prev_item = []
     rolling_count = 0
@@ -196,6 +232,9 @@ def collapse_schedule(schedule):
 
 
 def make_steps_element(l):
+    '''
+    Generate schedule element
+    '''
     (steps, loadscheme, load_ammo) = ([], '', 0)
     params = []
     params.append(l)
@@ -236,6 +275,9 @@ def make_steps_element(l):
 
 
 def expand_load_spec(l):
+    '''
+    Parse load scpecification
+    '''
     (st, ls, cnt, max_val) = ([], '', 0, 0)
     m = re.match("^const\s*\(\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
     if m:
@@ -275,6 +317,9 @@ def expand_load_spec(l):
 
 
 def make_steps(load_spec):
+    '''
+    Process schedule
+    '''
     (steps, loadscheme, load_ammo) = ([], '', 0)
     for l in load_spec:
         if not l:
@@ -288,6 +333,9 @@ def make_steps(load_spec):
 
 
 def mark_sec(cnt, dur):
+    '''
+    second marker?
+    '''
     k = 1000 / float(cnt)
     times = [0]
     for i in range(1, cnt * dur):
@@ -296,6 +344,9 @@ def mark_sec(cnt, dur):
 
 
 def constf(req, duration):
+    '''
+    Float const load pattern
+    '''
     m = re.match("(\d+)\/(\d+)", req)
     if m:
         (a, b) = (int(m.group(1)), int(m.group(2)))
@@ -321,6 +372,9 @@ def constf(req, duration):
 
 
 def frps(req):
+    '''
+    Float const load pattern helper
+    '''
     m = re.match("(\d+)\/(\d+)", req)
     if m:
         c = defaultdict(str)
@@ -347,6 +401,9 @@ def frps(req):
 
 
 def frps_print(s, t):
+    '''
+    Float const load pattern
+    '''
     out = []
     for x in range(0, t):
         out.append([s, 1])
@@ -354,10 +411,16 @@ def frps_print(s, t):
 
 
 def frps_vv(a):
+    '''
+    Float const load pattern
+    '''
     return (int(a) + 1) % 2
 
 
 def frps_scheme(c):
+    '''
+    Float const load pattern
+    '''
     out = []
     for x in range(0, c['chunks']):
         out += frps_print(c['first'], c['per_chunk'])
@@ -370,6 +433,9 @@ def frps_scheme(c):
 
 
 def frps_cut(c, r):
+    '''
+    Float const load pattern
+    '''
     m = re.match("(\d+)\/(\d+)", r)
     if m:
         b = int(m.group(2))
@@ -391,6 +457,9 @@ def frps_cut(c, r):
 
 
 def frps_expand(s, e):
+    '''
+    Float const load pattern
+    '''
     out = []
     for (x, y) in s:
         out.append([int(x) + e, y])
@@ -398,6 +467,9 @@ def frps_expand(s, e):
 
 
 def frps_ammo(s):
+    '''
+    Float const load pattern
+    '''
     cnt = 0
     for (x, y) in s:
         cnt += int(x)
@@ -405,6 +477,9 @@ def frps_ammo(s):
 
 
 def auto_case(url, pattern):
+    '''
+    Generate case automatically
+    '''
     m = pattern.search(url)
     res = ['', '', '']
     if m:
@@ -420,6 +495,9 @@ def auto_case(url, pattern):
 
 
 def get_prepared_case(uri, cases_done, pattern):
+    '''
+    Get existing cases
+    '''
     cases = auto_case(uri, pattern)
     cases.reverse()
     if cases_done:
@@ -432,6 +510,9 @@ def get_prepared_case(uri, cases_done, pattern):
 
 
 def get_autocases_tree(filename):
+    '''
+    Generate case automatically
+    '''
     logging.debug("get_autocases_tree")    
     pattern = \
         re.compile('^(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK\s+)?\s*\/(.*?)(/(.*?))?(/(.*?))?(\.|/|\?|$|\s)'
@@ -461,6 +542,9 @@ def get_autocases_tree(filename):
 
 
 def get_autocases_tree_access(filename):
+    '''
+    Generate case automatically
+    '''
     logging.debug("get_autocases_tree_access")
     pattern = \
         re.compile('(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK\s+)\s*\/(.*?)(/(.*?))?(/(.*?))?(\.|/|\?|$|\s)'
@@ -487,13 +571,10 @@ def get_autocases_tree_access(filename):
     return (level1, level2, level3, tree, total_cnt)
 
 
-def make_autocases_top(
-    l1,
-    l2,
-    l3,
-    total_cnt,
-    tree,
-    ):
+def make_autocases_top(l1, l2, l3, total_cnt, tree,):
+    '''
+    Generate case automatically
+    '''
     logging.debug("make autocases top")
     (N, alpha) = (9, 1)
     (total_done) = (0)
@@ -569,6 +650,9 @@ def make_autocases_top(
     return (cases_done, output)
 
 def parse_uri(line):
+    '''
+    Parse uri... why not use urlparse module?
+    '''
     (uri, header_list) = ('', {})
     pattern = re.compile('^(\/\S*?)\s+(\[.+)')
     h = re.match("^\/", line)
@@ -583,14 +667,7 @@ def parse_uri(line):
     return (uri, header_list)
 
 
-def chunk_by_uri(
-    line,
-    http,
-    time,
-    case,
-    common_header,
-    config_header,
-    ):
+def chunk_by_uri(line, http, time, case, common_header, config_header,):
     """Create request for uri and header"""
 
     header = {}
@@ -606,13 +683,10 @@ def chunk_by_uri(
 ''' % (len(req), time, case, req)
     return chunk
 
-
-def file_len(fname):
-    return os.path.getsize(fname)
-
-
 class Stepper:
-
+    '''
+    Phantom source data generator
+    '''
     HTTP_REQUEST_LINE = '^(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK|PROPFIND|PROPPATCH|MKCOL|COPY|MOVE|LOCK|UNLOCK\s+)?\s*\/(.*?)(/(.*?))?(/(.*?))?(\.|/|\?|$|\s)'
 
     def __init__(self, stpd_filename):
@@ -635,6 +709,10 @@ class Stepper:
         self.ammo_count = None
 
     def generate_stpd(self):
+        '''
+        Main method
+        '''
+        
         self.log.debug("Generating stpd file: %s", self.stpd_file)
         self.log.debug("Autocases: %s", self.autocases)
         self.log.debug("Ammofile: %s", self.ammofile)

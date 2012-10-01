@@ -1,3 +1,13 @@
+yandex-load-tank-base (1.0.13) precise; urgency=low
+
+  * fix bug with disabled monitoring
+  * add loadosophia.org uploading module
+  * fix issue #10
+  * add manual and scheduled start to command line
+  * add ab screen widget
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 01 Oct 2012 17:46:33 +0400
+
 yandex-load-tank-base (1.0.11) precise; urgency=low
 
   * default artiacts dir name with datetime
