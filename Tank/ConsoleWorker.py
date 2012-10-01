@@ -166,17 +166,7 @@ class ConsoleTank:
     def __override_config_from_cmdline(self):
         # override config options from command line
         if self.options.option: 
-            for option_str in self.options.option:
-                try:
-                    section = option_str[:option_str.index('.')]
-                    option = option_str[option_str.index('.') + 1:option_str.index('=')]
-                except ValueError:
-                    section = self.MIGRATE_SECTION
-                    option = option_str[:option_str.index('=')]
-                value = option_str[option_str.index('=') + 1:]    
-                self.log.debug("Override option: %s => [%s] %s=%s", option_str, section, option, value)
-                self.core.set_option(section, option, value)
-            
+            self.core.apply_shorthand_options(self.options.option, self.MIGRATE_SECTION)            
     
     def __there_is_locks(self):
         retcode = False

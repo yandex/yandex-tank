@@ -385,7 +385,6 @@ class MonitoringCollector:
     
         return [config, filter_obj]
     
-    # FIXME: 3 simplify this filtering hell with built-in filter()
     def filtering(self, mask, filter_list):
         host = filter_list[0]
         initial = [0, 1]

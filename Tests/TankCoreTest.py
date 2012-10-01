@@ -1,5 +1,4 @@
 from Tests.TankTests import TankTestCase
-import tempfile
 import unittest
 
 class  TankCoreTestCase(TankTestCase):
@@ -22,6 +21,8 @@ class  TankCoreTestCase(TankTestCase):
     def test_tankCore(self):
         paths = ['config/load.conf']
         self.foo.load_configs(paths)
+        self.assertEquals('passed', self.foo.get_option('dotted', 'test'))
+        
         self.foo.load_plugins()
         self.foo.plugins_configure()
         self.foo.plugins_prepare_test()

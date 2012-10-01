@@ -12,8 +12,6 @@ import time
 import traceback
 import datetime
 
-# TODO: 3 add ability to set options in "section.option" style in DEFAULT section
-
 class TankCore:
     """
     JMeter + dstat inspired :)
@@ -38,6 +36,11 @@ class TankCore:
         '''
         self.log.info("Loading configs...")
         self.config.load_files(configs)
+        dotted_options = []
+        for option, value in self.config.get_options(self.SECTION):
+            if '.' in option:
+                dotted_options += [option + '=' + value]
+        self.apply_shorthand_options(dotted_options, self.SECTION)
         self.config.flush()
         self.add_artifact_file(self.config.file)
 
@@ -160,20 +163,23 @@ class TankCore:
 
         return retcode
     
+
+    def __collect_artifacts(self):
+        if not self.artifacts_dir:
+            date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
+            self.artifacts_dir = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)
+        elif not os.path.isdir(self.artifacts_dir):
+            os.makedirs(self.artifacts_dir)
+        self.log.info("Artifacts dir: %s", self.artifacts_dir)
+        for filename, keep in self.artifact_files.items():
+            self.__collect_file(filename, keep)
+
     def plugins_post_process(self, retcode):
         '''
         Call post_process() on all plugins
         '''
         self.log.info("Post-processing test...")
         
-        if not self.artifacts_dir: 
-            date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
-            self.artifacts_dir = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)
-        else:
-            if not os.path.isdir(self.artifacts_dir):
-                os.makedirs(self.artifacts_dir)
-        self.log.info("Artifacts dir: %s", self.artifacts_dir)
-
         for plugin_key in self.plugins_order:
             plugin = self.__get_plugin_by_key(plugin_key)
             self.log.debug("Post-process %s", plugin)
@@ -186,8 +192,7 @@ class TankCore:
                 if not retcode:
                     retcode = 1
 
-        for (filename, keep) in self.artifact_files.items():
-            self.__collect_file(filename, keep)
+        self.__collect_artifacts()
         
         return retcode
     
@@ -277,6 +282,19 @@ class TankCore:
         '''
         if filename:
             self.artifact_files[filename] = keep_original
+
+    
+    def apply_shorthand_options(self, options, default_section='DEFAULT'):
+        for option_str in options:
+            try:
+                section = option_str[:option_str.index('.')]
+                option = option_str[option_str.index('.') + 1:option_str.index('=')]
+            except ValueError:
+                section = default_section
+                option = option_str[:option_str.index('=')]
+            value = option_str[option_str.index('=') + 1:]    
+            self.log.debug("Override option: %s => [%s] %s=%s", option_str, section, option, value)
+            self.set_option(section, option, value)
     
             
 class ConfigManager:
