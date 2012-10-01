@@ -96,8 +96,9 @@ How to make a test?
 Create a file on a server with Yandex.Tank:
 **load.conf**
 ```
+[phantom]
 address=23.23.23.23:80 #Target's address and port .
-load =  line(1, 100, 10m) #load scheme 
+rps_schedule=line(1, 100, 10m) #load scheme 
 ```
 Yandex.Tank have 3 primitives for describing load scheme:
    1. ```step (a,b,step,dur)``` makes stepped load, where a,b are start/end load values, step - increment value, dur - step duration.
@@ -116,8 +117,9 @@ Time duration could be defined in seconds, minutes (m) and hours (h). For exampl
 
 For a test with constant load at 10rps for 10 minutes, load.conf should have next lines:
 ```
-address=23.23.23.23:80 #Target's address and port
-load = const (10,10m) #Load scheme
+[phantom]
+address=23.23.23.23:80 #Target's address and port .
+rps_schedule=const(10, 10m) #load scheme
 ```
 Voilà, Yandex.Tank setup is done.
 
@@ -129,16 +131,16 @@ URIs listed in load.conf or in a separate file.
 ##### URIs in load.conf
 Update configuration file with HTTP headers and URIs:
 ```
-address=23.23.23.23:80 # Target's address and port
-load = const (10,10m) # Load scheme
-# Headers and URIs for GET requests
+[phantom]
+address=23.23.23.23:80 #Target's address and port .
+rps_schedule=const(10, 10m) #load scheme# Headers and URIs for GET requests
 header_http = 1.1
 header = [Host: www.target.example.com]
 header = [Connection: close]
-uri = /
-uri = /buy
-uri = /sdfg?sdf=rwerf
-uri = /sdfbv/swdfvs/ssfsf
+uris = /
+  /buy
+  /sdfg?sdf=rwerf
+  /sdfbv/swdfvs/ssfsf
 ```
 Parameters ```header``` define headers values.
 ```uri``` contains uri, which should be used for requests generation.
@@ -285,8 +287,9 @@ User-Agent: xxx (shell 1)
 To activate SSL add 'ssl = 1' to load.conf. Don't forget to change port number to appropriate value.
 Now, our basic config looks like that: 
 ```
-address=23.23.23.23:443 #Target's address and port
-load = const (10,10m) #Load scheme
+[phantom]
+address=23.23.23.23:80 #Target's address and port .
+rps_schedule=const (10,10m) #Load scheme
 ssl=1
 ```
 ### Autostop
@@ -302,11 +305,15 @@ Examples:
 Example:
 ```autostop = time(1500,15)``` – stop test, if average answer time exceeds 1500ms
 
-So, if we want to stop test when all answers in 1 second period are 5xx, add autostop line to load.conf:
+So, if we want to stop test when all answers in 1 second period are 5xx plus some network and timing factors - add autostop line to load.conf:
 ```
-address=23.23.23.23:443 #Target's address and port
-load = const (10,10m) #Load schemessl=1
-autostop = http(5xx,100%,1)
+[phantom]
+address=23.23.23.23:80 #Target's address and port .
+rps_schedule=const(10, 10m) #load scheme
+[autostop]
+autostop=time(1,10)
+  http(5xx,100%,1s)
+  net(xx,1,30)
 ```
 
 ### Logging
@@ -338,12 +345,15 @@ Content-Type: application/javascript;charset=UTF-8
 
 For ```load.conf``` like this:
 ```
-instances=10
-address=23.23.23.23:443 #Target's address and port
-load = const (10,10m) #Load scheme
-ssl=1
-autostop = http(5xx,100%,1)
+[phantom]
+address=23.23.23.23:80 #Target's address and port .
+rps_schedule=const(10, 10m) #load scheme
 writelog=1
+[autostop]
+autostop=time(1,10)
+  http(5xx,100%,1s)
+  net(xx,1,30)
+
 ```
 
 ### Results in phout
@@ -374,9 +384,10 @@ Use your favorite stats packet, R, for example. Internal stat and graphing tool 
 ### Custom timings
 You can set custom timings in ```load.conf``` with ```time_periods``` parameter like this:
 ```
-instances=10
-address=23.23.23.23:443 #Target's address and port
-load = const (10,10m) #Load scheme
+[phantom]
+address=23.23.23.23:80 #Target's address and port .
+rps_schedule=const(10, 10m) #load scheme
+[aggregator]
 time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s is considered as connect timeout.
 ```
 
@@ -384,18 +395,19 @@ time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s
 ```instances=N``` in ```load.conf``` limits number of simultanious connections (threads).
 Test with 10 threads:
 ```
+[phantom]
+address=23.23.23.23:80 #Target's address and port .
+rps_schedule=const(10, 10m) #load scheme
 instances=10
-address=23.23.23.23:443 #Target's address and port
-load = const (10,10m) #Load scheme
 ```
 
 ### Dynamic thread limit
 ```instances_schedule = <instances increasing scheme>``` -- test with active instances schedule will be performed if load scheme is not defined. Bear in mind that active instances number cannot be decreased and final number of them must be equal to ```instances``` parameter value.
 load.conf example:
 ```
-instances=10
+[phantom]
+address=23.23.23.23:80 #Target's address and port .
 instances_schedule = line(1,10,10m)
-address=23.23.23.23:443 #Target's address and port
 #load = const (10,10m) #Load scheme is excluded from this load.conf as we used instances_schedule parameter
 ```
 
@@ -405,18 +417,20 @@ To do that add ```tank_type = 2``` to ```load.conf```.
 **Indispensable condition: Connection close must be initiated by remote side**
 load.conf example:
 ```
+[phantom]
+address=23.23.23.23:80 #Target's address and port .
+rps_schedule=const(10, 10m) #load scheme
 instances=10
-address=23.23.23.23:80 #Target's address and port
-load = const (10,10m) #Load scheme
 tank_type=2 # Parameter Nonna is commented for compatibility reasons.
 ```
 ### Gatling
 If server with Yandex.Tank have several IPs, they may be used to avoid outcome port shortage. Use ```gatling_ip``` parameter for that.
 Load.conf:
 ```
+[phantom]
+address=23.23.23.23:80 #Target's address and port .
+rps_schedule=const(10, 10m) #load scheme
 instances=10
-address=23.23.23.23:80 #Target's address and port
-load = const (10,10m) #Load scheme
 gatling_ip = 23.23.23.24 23.23.23.26
 ```
 **run yandex-tank with -g key**
