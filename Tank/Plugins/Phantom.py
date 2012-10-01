@@ -93,6 +93,9 @@ class PhantomPlugin(AbstractPlugin):
         return __file__
     
     def __check_address(self):
+        '''
+        Analyse target address setting, resolve it to IP
+        '''
         try:
             ipaddr.IPv6Address(self.address)
             self.ipv6 = True
@@ -115,28 +118,11 @@ class PhantomPlugin(AbstractPlugin):
                 else:
                     raise ValueError("Address %s reverse-resolved to %s, but must match", self.address, reverse_name)
 
-    def configure(self):
-        # stepper part
-        self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
-        self.instances_schedule = self.get_option("instances_schedule", '')
-        self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
-        self.ammo_limit = int(self.get_option("ammo_limit", "-1")) # TODO: 3 stepper must implement it
-        sched = self.get_option(self.OPTION_SCHEDULE, '')
-        sched = " ".join(sched.split("\n"))
-        sched = sched.split(')')
-        self.rps_schedule = [] 
-        for x in sched:
-            if x.strip():
-                self.rps_schedule.append(x.strip() + ')')
-        self.uris = self.get_option("uris", '').split("\n")
-        self.headers = self.get_option("headers", '').split("\n")
-        self.http_ver = self.get_option("header_http", '1.1')
-        self.autocases = self.get_option("autocases", '0')
-        self.use_caching = int(self.get_option("use_caching", '1'))
-        self.cache_dir = os.path.expanduser(self.get_option("cache_dir", self.core.artifacts_base_dir))
-        self.force_stepping = int(self.get_option("force_stepping", '0'))
-        
-        # phantom part
+
+    def __read_phantom_options(self):
+        '''
+        Read phantom tool specific options
+        '''
         self.phantom_path = self.get_option("phantom_path", 'phantom')
         self.config = self.get_option("config", '')
         self.phantom_modules_path = self.get_option("phantom_modules_path", "/usr/lib/phantom")
@@ -147,9 +133,9 @@ class PhantomPlugin(AbstractPlugin):
         self.answ_log = tempfile.mkstemp(".log", "answ_", self.core.artifacts_base_dir)[1]
         self.answ_log_level = self.get_option("writelog", "none")
         if self.answ_log_level == '0':
-            self.answ_log_level = 'none' 
+            self.answ_log_level = 'none'
         elif self.answ_log_level == '1':
-            self.answ_log_level = 'all' 
+            self.answ_log_level = 'all'
         self.phout_file = self.get_option("phout_file", '')
         if not self.phout_file:
             self.phout_file = tempfile.mkstemp(".log", "phout_", self.core.artifacts_base_dir)[1]
@@ -162,11 +148,34 @@ class PhantomPlugin(AbstractPlugin):
         self.threads = self.get_option("threads", int(multiprocessing.cpu_count() / 2) + 1)
         self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
         self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
-        
         self.phantom_http_line = self.get_option("phantom_http_line", "")
         self.phantom_http_field_num = self.get_option("phantom_http_field_num", "")
         self.phantom_http_field = self.get_option("phantom_http_field", "")
         self.phantom_http_entity = self.get_option("phantom_http_entity", "")
+
+    def configure(self):
+        # stepper part
+        self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
+        self.instances_schedule = self.get_option("instances_schedule", '')
+        self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
+        self.ammo_limit = int(self.get_option("ammo_limit", "-1")) # TODO: 3 stepper should implement ammo_limit
+        sched = self.get_option(self.OPTION_SCHEDULE, '')
+        sched = " ".join(sched.split("\n"))
+        sched = sched.split(')')
+        self.rps_schedule = [] 
+        for step in sched:
+            if step.strip():
+                self.rps_schedule.append(step.strip() + ')')
+        self.uris = self.get_option("uris", '').split("\n")
+        self.headers = self.get_option("headers", '').split("\n")
+        self.http_ver = self.get_option("header_http", '1.1')
+        self.autocases = self.get_option("autocases", '0')
+        self.use_caching = int(self.get_option("use_caching", '1'))
+        self.cache_dir = os.path.expanduser(self.get_option("cache_dir", self.core.artifacts_base_dir))
+        self.force_stepping = int(self.get_option("force_stepping", '0'))
+        
+        # phantom part
+        self.__read_phantom_options()
 
         self.core.add_artifact_file(self.answ_log)        
         self.core.add_artifact_file(self.stat_log)
@@ -182,6 +191,9 @@ class PhantomPlugin(AbstractPlugin):
             self.log.debug("No autostop plugin found, not adding instances criteria")
 
     def __compose_config(self):
+        '''
+        Generate phantom tool run config
+        '''
         if not self.stpd:
             raise RuntimeError("Cannot proceed with no source file")
         
@@ -232,6 +244,9 @@ class PhantomPlugin(AbstractPlugin):
         
 
     def __prepare_stepper(self):
+        '''
+        Generate test data if necessary
+        '''
         self.stpd = self.__get_stpd_filename()
         self.core.set_option(self.SECTION, self.OPTION_STPD, self.stpd)
         if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.stpd + ".conf"):
@@ -333,6 +348,9 @@ class PhantomPlugin(AbstractPlugin):
             
             
     def __get_stpd_filename(self):
+        '''
+        Choose the name for stepped data file
+        '''
         if self.use_caching:
             sep = "|"
             hasher = hashlib.md5()
@@ -366,7 +384,9 @@ class PhantomPlugin(AbstractPlugin):
         return stpd
     
     def __calculate_test_duration(self, steps):
-        # calc total test duration
+        '''
+        Get total test duration
+        '''        
         duration = 0
         for rps, dur in Utils.pairs(steps):
             duration += dur
@@ -374,6 +394,9 @@ class PhantomPlugin(AbstractPlugin):
         self.core.set_option(self.SECTION, self.OPTION_TEST_DURATION, str(duration))
 
     def __read_cached_options(self, cached_config, stepper):
+        '''
+        Merge stpd cached options to current config
+        '''
         self.log.debug("Reading cached stepper options: %s", cached_config)
         external_stepper_conf = ConfigParser.ConfigParser()
         external_stepper_conf.read(cached_config)
@@ -385,6 +408,9 @@ class PhantomPlugin(AbstractPlugin):
 
 
     def __make_stpd_file(self, stpd):
+        '''
+        stpd generation using Stepper class
+        '''
         self.log.info("Making stpd-file: %s", self.stpd)
         stepper = Stepper(stpd)
         stepper.autocases = int(self.autocases)
@@ -418,8 +444,6 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         res = ""
 
         dur_seconds = int(time.time()) - int(self.owner.phantom_start_time)
-        duration = datetime.timedelta(seconds=dur_seconds)
-        dur = 'Duration: %s' % str(duration)
 
         eta_time = 'N/A' 
         
@@ -446,6 +470,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         res += str_perc + "\n"
 
         eta = 'ETA: %s' % eta_time
+        dur = 'Duration: %s' % str(datetime.timedelta(seconds=dur_seconds))
         spaces = ' ' * (screen.right_panel_width - len(eta) - len(dur) - 1)
         res += dur + ' ' + spaces + eta
 
@@ -455,7 +480,6 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         self.ammo_progress += second_aggregate_data.overall.RPS
 
 
-# TODO: 3 widget data: loadscheme?    
 class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
     '''
     Widget with information about current run state
@@ -559,6 +583,9 @@ class PhantomReader(AbstractReader):
         return self.__read_phout_data(force)
 
     def __read_stat_data(self):
+        '''
+        Read active instances info
+        '''
         stat_ready = select.select([self.stat], [], [], 0)[0]
         if stat_ready:
             stat = stat_ready.pop(0).readlines()
@@ -577,6 +604,9 @@ class PhantomReader(AbstractReader):
 
 
     def __read_phout_data(self, force):
+        '''
+        Read phantom results
+        '''
         phout = self.phout.readlines()
         self.log.debug("About to process %s phout lines", len(phout))
         for line in phout:
@@ -634,6 +664,9 @@ class PhantomReader(AbstractReader):
         return res
 
     def __get_expected_rps(self, next_time):
+        '''
+        Mark second with expected rps from stepper info
+        '''
         # TODO: 3 optimize expected rps with rolling property
         offset = next_time - self.first_request_time
         for rps, dur in Utils.pairs(self.phantom.steps):
@@ -645,6 +678,10 @@ class PhantomReader(AbstractReader):
     
     
 class UsedInstancesCriteria(AbstractCriteria):
+    '''
+    Autostop criteria, based on active instances count
+    '''
+    
     @staticmethod
     def get_type_string():
         return 'instances'
@@ -694,6 +731,9 @@ class UsedInstancesCriteria(AbstractCriteria):
         return self.RC_INST
 
     def get_level_str(self):
+        '''
+        String value for instances level
+        '''
         if self.is_relative:
             level_str = str(100 * self.level) + "%"
         else:

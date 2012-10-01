@@ -116,6 +116,7 @@ class AbstractCriteria:
         
     def __init__(self):
         self.log = logging.getLogger(__name__)
+        self.cause_second = None
         
     def count_matched_codes(self, codes_regex, codes_dict):
         total = 0
