@@ -1,10 +1,6 @@
-from Tank.Core import TankCore
-from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData
-from Tank.Plugins.Autostop import AutostopPlugin
-from Tests.TankTests import TankTestCase
+from Tank.Plugins.Aggregator import SecondAggregateData
 from Tank.Plugins.TotalAutostop import TotalHTTPCodesCriteria
-import os
-import tempfile
+from Tests.TankTests import TankTestCase
 import unittest
 
 

@@ -35,3 +35,5 @@ class FakeOptions(object):
     ignore_lock = True
     lock_fail = False
     no_rc = True
+    manual_start = False
+    scheduled_start = None

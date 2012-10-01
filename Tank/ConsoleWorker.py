@@ -12,8 +12,8 @@ import tempfile
 import time
 import traceback
 from Tank.Plugins.ConsoleOnline import RealConsoleMarkup
+import datetime
 
-# TODO: 2 --manual-start
 # TODO: 2 add system resources busy check
 class ConsoleTank:
     """
@@ -236,7 +236,6 @@ class ConsoleTank:
         if not self.options.no_rc:
             try:
                 for filename in os.listdir(self.baseconfigs_location):
-                    # TODO: 3 change extension to INI
                     if fnmatch.fnmatch(filename, '*.ini'):
                         configs += [os.path.realpath(self.baseconfigs_location + os.sep + filename)]
             except OSError:
@@ -267,6 +266,15 @@ class ConsoleTank:
                     
         self.core.load_plugins()
         
+        if self.options.manual_start:
+            self.core.manual_start = self.options.manual_start
+        
+        if self.options.scheduled_start:
+            try:
+                self.core.scheduled_start = datetime.datetime.strptime(self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                self.core.scheduled_start = datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d ') + self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
+            
 
     def __graceful_shutdown(self):
         retcode = 1

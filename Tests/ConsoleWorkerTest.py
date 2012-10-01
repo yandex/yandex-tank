@@ -5,12 +5,14 @@ from Tests.TankTests import FakeOptions
 import TankTests
 import logging
 import unittest
+import datetime
 
 
 class  ConsoleWorkerTestCase(TankTests.TankTestCase):
     def setUp(self):
         opts = FakeOptions()
         opts.no_rc = False
+        opts.scheduled_start=datetime.datetime.now().strftime('%H:%M:%S')
         self.foo = ConsoleTank(opts, None)
         self.foo.set_baseconfigs_dir('full')
 
@@ -26,6 +28,7 @@ class  ConsoleWorkerTestCase(TankTests.TankTestCase):
         
         if self.foo.perform_test() != 0:
             raise RuntimeError()
+        
         
     def test_option_override(self):
         options = FakeOptions()
