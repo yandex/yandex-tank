@@ -25,7 +25,7 @@ import time
 
 # TODO: 3  chosen cases
 # TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
-# FIXME: 3 in phout import mode there is no graceful way to interrupt the process
+# FIXME: 3 there is no graceful way to interrupt the process in phout import mode 
 class PhantomPlugin(AbstractPlugin):
     '''
     Plugin for running phantom tool
@@ -567,6 +567,8 @@ class PhantomReader(AbstractReader):
         self.steps = []
         self.first_request_time = sys.maxint
         self.partial_buffer = ''
+        self.pending_second_data = None
+        self.last_sample_time = 0
   
     def check_open_files(self):
         if not self.phout and os.path.exists(self.phantom.phout_file):
@@ -658,8 +660,20 @@ class PhantomReader(AbstractReader):
         else:
             return None 
 
+
     def pop_second(self):
-        res = AbstractReader.pop_second(self)
+        if not self.pending_second_data:
+            self.pending_second_data = AbstractReader.pop_second(self)
+            
+        if self.last_sample_time and int(time.mktime(self.pending_second_data.time.timetuple())) - self.last_sample_time > 1:
+            self.last_sample_time += 1
+            self.log.debug("Adding zero sample: %s", self.last_sample_time)
+            res = self.get_zero_sample(datetime.datetime.fromtimestamp(self.last_sample_time))
+        else:
+            res = self.pending_second_data
+            self.pending_second_data = None
+        
+        self.last_sample_time = int(time.mktime(res.time.timetuple()))
         res.overall.planned_requests = self.__get_expected_rps(time.mktime(res.time.timetuple()))
         return res
 
