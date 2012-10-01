@@ -10,8 +10,6 @@ from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 import time
 
 
-# TODO: 3 add screen widget with info
-# FIXME: 1 problem with small data count reading
 class JMeterPlugin(AbstractPlugin):
     SECTION = 'jmeter'
     
@@ -205,12 +203,14 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         AbstractInfoWidget.__init__(self)
         self.jmeter = jmeter
         self.active_threads = 0
+        self.rps = 0
 
     def get_index(self):
         return 0
 
     def aggregate_second(self, second_aggregate_data):
         self.active_threads = second_aggregate_data.overall.active_threads
+        self.rps=second_aggregate_data.overall.RPS
 
     def render(self, screen):        
         jmeter = " JMeter Test "
@@ -219,7 +219,8 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         right_spaces = space / 2
         template = screen.markup.BG_MAGENTA + '~' * left_spaces + jmeter + ' ' + '~' * right_spaces + screen.markup.RESET + "\n" 
         template += "     Test Plan: %s\n"
-        template += "Active Threads: %s"
-        data = (os.path.basename(self.jmeter.original_jmx), self.active_threads)
+        template += "Active Threads: %s\n"
+        template += "   Responses/s: %s"
+        data = (os.path.basename(self.jmeter.original_jmx), self.active_threads, self.rps)
         
         return template % data

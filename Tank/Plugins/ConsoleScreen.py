@@ -123,9 +123,9 @@ class Screen(object):
             widget_output = []
             for index, widget in sorted(self.info_widgets.iteritems(), key=lambda(k, v): (v.get_index(), k)): 
                 self.log.debug("Rendering info widget #%s: %s", index, widget)
-                widget_out = widget.render(self)
-                widget_output += widget_out.split("\n")
+                widget_out = widget.render(self).strip()
                 if widget_out:
+                    widget_output += widget_out.split("\n")
                     widget_output += [""]
 
         left_lines = self.__render_left_panel()

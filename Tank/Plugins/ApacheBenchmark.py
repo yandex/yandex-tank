@@ -4,6 +4,7 @@ from Tank.Plugins.Aggregator import AggregatorPlugin, AbstractReader
 import os
 import subprocess
 import tempfile
+from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 
 # TODO: 3 add console screen widget with info and PB measured via stderr info parsing
 class ApacheBenchmarkPlugin(AbstractPlugin):
@@ -12,7 +13,6 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
     
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
-        self.end = None
         self.out_file = None
         self.process = None
         self.concurrency = None
@@ -41,6 +41,17 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
 
         if aggregator:
             aggregator.reader = ABReader(aggregator, self)
+            
+        try:
+            console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+        except Exception, ex:
+            self.log.debug("Console not found: %s", ex)
+            console = None
+            
+        if console:    
+            widget = ABInfoWidget(self)
+            console.add_info_widget(widget)
+        
             
     def start_test(self):
         args = ['ab', '-r', '-g', self.out_file,
@@ -128,3 +139,28 @@ class ABReader(AbstractReader):
             return None 
     
 
+class ABInfoWidget(AbstractInfoWidget):
+    
+    def __init__(self, ab):
+        AbstractInfoWidget.__init__(self)
+        self.ab = ab
+        self.active_threads = 0
+
+    def get_index(self):
+        return 0
+
+    def aggregate_second(self, second_aggregate_data):
+        self.active_threads = second_aggregate_data.overall.active_threads
+
+    def render(self, screen):        
+        ab_text = " Apache Benchmark Test "
+        space = screen.right_panel_width - len(ab_text) - 1 
+        left_spaces = space / 2
+        right_spaces = space / 2
+        template = screen.markup.BG_BROWN + '~' * left_spaces + ab_text + ' ' + '~' * right_spaces + screen.markup.RESET + "\n" 
+        template += "           URL: %s\n"
+        template += "   Concurrency: %s\n"
+        template += "Total Requests: %s"
+        data = (self.ab.url, self.ab.concurrency, self.ab.requests)
+        
+        return template % data
