@@ -80,6 +80,7 @@ class ConsoleTank:
         self.log = logging.getLogger(__name__)
 
         self.signal_count = 0
+        self.scheduled_start = None
 
     def set_baseconfigs_dir(self, directory):
         '''
@@ -266,14 +267,11 @@ class ConsoleTank:
                     
         self.core.load_plugins()
         
-        if self.options.manual_start:
-            self.core.manual_start = self.options.manual_start
-        
         if self.options.scheduled_start:
             try:
-                self.core.scheduled_start = datetime.datetime.strptime(self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
+                self.scheduled_start = datetime.datetime.strptime(self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
             except ValueError:
-                self.core.scheduled_start = datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d ') + self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
+                self.scheduled_start = datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d ') + self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
             
 
     def __graceful_shutdown(self):
@@ -294,6 +292,16 @@ class ConsoleTank:
         try:
             self.core.plugins_configure()
             self.core.plugins_prepare_test()
+            if self.scheduled_start:
+                self.log.info("Waiting scheduled time: %s...", self.scheduled_start)
+                while datetime.datetime.now() < self.scheduled_start:
+                    self.log.debug("Not yet: %s < %s", datetime.datetime.now(), self.scheduled_start)
+                    time.sleep(1)
+                self.log.info("Time has come: %s", datetime.datetime.now())
+            
+            if self.options.manual_start:
+                raw_input("Press Enter key to start test:")
+            
             self.core.plugins_start_test()
             retcode = self.core.wait_for_finish()
             retcode = self.core.plugins_end_test(retcode)

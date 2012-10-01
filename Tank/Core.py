@@ -110,16 +110,6 @@ class TankCore:
         '''
         Call start_test() on all plugins
         '''
-        if self.scheduled_start:
-            self.log.info("Waiting scheduled time: %s...", self.scheduled_start)
-            while datetime.datetime.now() < self.scheduled_start:
-                self.log.debug("Not yet: %s < %s", datetime.datetime.now(), self.scheduled_start)
-                time.sleep(1)
-            self.log.info("Time has come: %s", datetime.datetime.now())
-        
-        if self.manual_start:
-            raw_input("Press Enter key to start test:")
-        
         self.log.info("Starting test...")
         for plugin_key in self.plugins_order:
             plugin = self.__get_plugin_by_key(plugin_key)
