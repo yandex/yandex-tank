@@ -1,0 +1,86 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+	<head>
+		<link rel="stylesheet" href="http://loadosophia.org/img/design/styles.css" />
+		<link rel="stylesheet" href="http://loadosophia.org/img/hlas/hlas.css" />
+		<script src='http://loadosophia.org/img/amcharts/javascript/amcharts.js' type='text/javascript'></script>
+		<script src='http://loadosophia.org/img/amcharts/javascript/raphael.js' type='text/javascript'></script>
+		<script src='http://loadosophia.org/img/hlas/chart_tpl.js' type='text/javascript'></script>
+		<script type="text/javascript">
+			function req(url) {
+				var request;
+				if (window.XMLHttpRequest) {
+					// IE7+, Firefox, Chrome, Opera, Safari
+					request = new XMLHttpRequest();
+				} else {
+					// code for IE6, IE5
+					request = new ActiveXObject('Microsoft.XMLHTTP');
+				}
+				// load
+				request.open('GET', url, false);
+				request.send();
+
+				var data = eval('(' + request.responseText + ')');
+				return data
+			}
+
+			var redir_to;
+			function get_redirect() {
+				try {
+					redir_to = req('/redirect.json');
+					return false;
+				} catch (e) {
+					if (redir_to[0]) {
+						window.location=redir_to[0];
+					} else {
+						document.getElementById('header').innerHTML="Test Complete";
+					}
+					return true;
+				}
+			}
+		</script>
+	</head>
+
+	<body>
+
+		<table width="100%">
+			<tr>
+				<td align="center"><h2 id='header'>Quantiles Per Second</h2><div id="chartdivQ" class="amchartGraph" style="width:90%; height:600px;"></div>
+				<script type="text/javascript">
+					var HelperQ = new AmChartsPWEHelper("Q");
+
+					HelperQ.setImagesPath("http://loadosophia.org/img/amcharts/javascript/images/");
+					HelperQ.setUnit1(" ms");
+					HelperQ.setUnit2(" RPS");
+					HelperQ.setZoomed(false);
+
+					HelperQ.setRowTitles("RPS;100%;99%;98%;95%;90%;80%;75%;50%;25%");
+					HelperQ.setRowFills("0;1");
+					HelperQ.setRowAxes("2;1");
+					HelperQ.setRowColors("#990099;@FF");
+					//HelperQ.setDisableByDefault("100%;99%");
+					HelperQ.setFirstRowToLast(true);
+
+					HelperQ.setDataURL("./Q.json");
+
+					var chartQ = HelperQ.createChart();
+
+					function refresh_q(i) {
+						try {
+							HelperQ.validateData();
+						} catch (e) {
+							// drop
+						}
+						if (!get_redirect()) {
+							window.setTimeout("refresh_q(1000);", i);
+						}
+					}
+
+					refresh_q(100);
+
+				</script><!-- footer --><big><b title='Mathematical sign, means "For All"'>&forall;</b></big><small> Powered by <a href="http://yandex.ru/"><span style="color:red">Y</span>andex</a>, <a href='http://loadosophia.org/'>Loadosophia.org</a></small></td>
+			</tr>
+		</table>
+	</body>
+</html>

@@ -13,11 +13,14 @@ import mimetools
 import mimetypes
 import os
 import urllib2
+from Tank.Plugins.WebOnline import WebOnlinePlugin
 
 class LoadosophiaPlugin(AbstractPlugin):
     '''
     Tank plugin with Loadosophia.org uploading 
     '''
+
+    REDIR_TO = "https://loadosophia.org/service/upload/"
     SECTION = 'loadosophia'
     
     @staticmethod
@@ -30,6 +33,7 @@ class LoadosophiaPlugin(AbstractPlugin):
         '''
         AbstractPlugin.__init__(self, core)
         self.loadosophia = LoadosophiaClient()
+        self.loadosophia.results_url = self.REDIR_TO
         self.project_key = None
     
     def configure(self):
@@ -38,7 +42,7 @@ class LoadosophiaPlugin(AbstractPlugin):
         self.loadosophia.file_prefix = self.get_option("file_prefix", "")
         
         self.project_key = self.get_option("project", '')
-
+        
     def post_process(self, retcode):
         main_file = None
         # phantom
@@ -64,6 +68,15 @@ class LoadosophiaPlugin(AbstractPlugin):
             self.log.debug("Phantom not found")
             
         self.loadosophia.send_results(self.project_key, main_file, [mon_file])
+
+        try:
+            web = self.core.get_plugin_of_type(WebOnlinePlugin)
+            if not web.redirect:
+                web.redirect = self.REDIR_TO
+        except KeyError:
+            self.log.debug("Web online not found")
+
+
         return retcode
     
 
@@ -73,6 +86,7 @@ class LoadosophiaClient:
         self.token = None
         self.address = None
         self.file_prefix = ''
+        self.results_url = None
     
     def send_results(self, project, result_file, monitoring_files):
         if not self.token:
@@ -119,7 +133,7 @@ class LoadosophiaClient:
         if response.getcode() != 202:
             self.log.debug("Full loadosophia.org response: %s", response.read())
             raise RuntimeError("Loadosophia.org upload failed, response code %s instead of 202, see log for full response text" % response.getcode())
-        self.log.info("Loadosophia.org upload succeeded, visit https://loadosophia.org/service/upload/ to see processing status")
+        self.log.info("Loadosophia.org upload succeeded, visit %s to see processing status", self.results_url)
         
                 
     def __get_gzipped_file(self, result_file):
