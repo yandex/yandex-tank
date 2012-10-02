@@ -269,7 +269,7 @@ class ConsoleTank:
         self.log.info("Trying to shutdown gracefully...")
         retcode = self.core.plugins_end_test(retcode)
         retcode = self.core.plugins_post_process(retcode)
-        self.log.info("Done graceful shutdown.")
+        self.log.info("Done graceful shutdown")
         return retcode
     
     

@@ -67,6 +67,9 @@ class Screen(object):
         self.block_rows = [first_row, second_row]
         
     def __get_right_line(self, widget_output):
+        '''
+        Gets next line for right panel
+        '''
         right_line = ''
         if widget_output:
             right_line = widget_output.pop(0)
@@ -78,6 +81,9 @@ class Screen(object):
 
 
     def __render_left_panel(self):
+        '''
+        Render left blocks 
+        '''
         lines = []
         for row in self.block_rows:
             space_left = self.left_panel_width
@@ -231,6 +237,10 @@ class VerticalBlock(AbstractBlock):
             
 # ======================================================
 class CurrentTimesDistBlock(AbstractBlock):
+    '''
+    Detailed distribution for current RPS
+    '''
+    
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
         self.current_codes = {}
@@ -277,6 +287,7 @@ class CurrentTimesDistBlock(AbstractBlock):
         self.width = max(self.width, len(self.lines[0]))
 
     def __format_line(self, current_times, quan):
+        ''' Format dist line '''
         left_line = ''
         if current_times:
             index, item = current_times.pop(0)
@@ -297,7 +308,7 @@ class CurrentTimesDistBlock(AbstractBlock):
 # ======================================================
 
 class CurrentHTTPBlock(AbstractBlock):
-
+    ''' Http codes with highlight'''
     TITLE = 'HTTP for %s RPS:  '
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -343,6 +354,7 @@ class CurrentHTTPBlock(AbstractBlock):
             self.lines.append(line)
 
     def format_line(self, code, count):
+        ''' format line for display '''
         if self.total_count:
             perc = float(count) / self.total_count
         else:
@@ -376,6 +388,7 @@ class CurrentHTTPBlock(AbstractBlock):
 # ======================================================
 
 class CurrentNetBlock(CurrentHTTPBlock):
+    ''' NET codes with highlight'''
     TITLE = ' NET for %s RPS:  '
 
     def add_second(self, data):
@@ -409,6 +422,7 @@ class CurrentNetBlock(CurrentHTTPBlock):
 # ======================================================
             
 class TotalQuantilesBlock(AbstractBlock):
+    ''' Total test quantiles '''
     
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -426,6 +440,7 @@ class TotalQuantilesBlock(AbstractBlock):
         self.lines = []
         quan = 0
         quantiles = copy.copy(SecondAggregateDataItem.QUANTILES)
+        item = None
         for key, item in sorted(self.times_dist.iteritems()):
             if self.total_count: 
                 perc = float(item['count']) / self.total_count
@@ -434,16 +449,22 @@ class TotalQuantilesBlock(AbstractBlock):
             quan += perc 
 
             while quantiles and quan >= quantiles[0]:
-                # FIXME 3 break here could resolve problem
                 line = self.__format_line(quantiles.pop(0), item['to'])
                 self.width = max(self.width, len(line))
                 self.lines.append(line)
-                
+
+        # get rests   
+        while quantiles and item:
+            line = self.__format_line(quantiles.pop(0), item['to'])
+            self.width = max(self.width, len(line))
+            self.lines.append(line)
+
         self.lines.reverse()
         self.lines = [self.screen.markup.WHITE + 'Cumulative Percentiles:' + self.screen.markup.RESET] + self.lines
         self.width = max(self.width, len(self.screen.markup.clean_markup(self.lines[0])))
 
     def __format_line(self, quan, timing):
+        ''' Format line '''
         timing_len = str(len(str(self.current_max_rt)))
         tpl = '   %3d%% < %' + timing_len + 'd ms'
         data = (100 * quan, timing)
@@ -455,6 +476,7 @@ class TotalQuantilesBlock(AbstractBlock):
 
 
 class AnswSizesBlock(AbstractBlock):
+    ''' Answer sizes, if available '''
     
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -464,6 +486,8 @@ class AnswSizesBlock(AbstractBlock):
         self.count = 0
         self.header = screen.markup.WHITE + 'Request/Response Sizes:' + screen.markup.RESET
         self.cur_count = 0
+        self.cur_in = 0
+        self.cur_out = 0
 
     def render(self):
         self.lines = [self.header]
@@ -497,6 +521,8 @@ class AnswSizesBlock(AbstractBlock):
 
 
 class AvgTimesBlock(AbstractBlock):
+    ''' Average times breakdown '''
+
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
         self.rps_connect = 0
@@ -574,7 +600,7 @@ class AvgTimesBlock(AbstractBlock):
 
 
 class CasesBlock(AbstractBlock):
-
+    '''     Cases info    '''
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
         self.cases = {}
