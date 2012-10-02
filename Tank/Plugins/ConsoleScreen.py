@@ -462,6 +462,7 @@ class AnswSizesBlock(AbstractBlock):
         self.sum_out = 0
         self.count = 0
         self.header = screen.markup.WHITE + 'Request/Response Sizes:' + screen.markup.RESET
+        self.cur_count = 0
 
     def render(self):
         self.lines = [self.header]
@@ -469,6 +470,7 @@ class AnswSizesBlock(AbstractBlock):
             self.lines.append("   Avg Request at %s RPS: %d bytes" % (self.current_rps, self.sum_out / self.count))
             self.lines.append("  Avg Response at %s RPS: %d bytes" % (self.current_rps, self.sum_in / self.count))
             self.lines.append("")
+        if self.cur_count:
             self.lines.append("   Last Avg Request: %d bytes" % (self.cur_out / self.cur_count))
             self.lines.append("  Last Avg Response: %d bytes" % (self.cur_in / self.cur_count))
         for line in self.lines:

@@ -6,13 +6,13 @@ from Tank.Plugins.ApacheBenchmark import ApacheBenchmarkPlugin
 from Tank.Plugins.Monitoring import MonitoringPlugin
 from Tank.Plugins.Phantom import PhantomPlugin
 import StringIO
+import gzip
 import itertools
 import logging
 import mimetools
 import mimetypes
 import os
 import urllib2
-import gzip
 
 class LoadosophiaPlugin(AbstractPlugin):
     '''
@@ -38,7 +38,7 @@ class LoadosophiaPlugin(AbstractPlugin):
         self.loadosophia.file_prefix = self.get_option("file_prefix", "")
         
         self.project_key = self.get_option("project", '')
-    
+
     def post_process(self, retcode):
         main_file = None
         # phantom
@@ -65,6 +65,7 @@ class LoadosophiaPlugin(AbstractPlugin):
             
         self.loadosophia.send_results(self.project_key, main_file, [mon_file])
         return retcode
+    
 
 class LoadosophiaClient:
     def __init__(self):
@@ -197,3 +198,5 @@ class MultiPartForm(object):
         flattened.append('--' + self.boundary + '--')
         flattened.append('')
         return '\r\n'.join(flattened)
+
+
