@@ -52,6 +52,19 @@ class  PhantomPluginTestCase(TankTestCase):
             raise RuntimeError("RC: %s" % self.foo.is_test_finished())
         self.foo.end_test(0)
         
+    def test_run_uri_style(self):
+        self.foo.set_option("ammofile", "")
+        self.foo.set_option("uris", "/")
+        self.foo.configure()
+        self.foo.prepare_test()
+        self.foo.start_test()
+        while self.foo.is_test_finished() < 0:
+            self.foo.log.debug("Not finished")
+            time.sleep(1)
+        if self.foo.is_test_finished() != 0:
+            raise RuntimeError("RC: %s" % self.foo.is_test_finished())
+        self.foo.end_test(0)
+
     def test_run_interrupt(self):
         self.foo.configure()
         self.foo.prepare_test()

@@ -694,7 +694,7 @@ class Stepper:
         self.ammofile = None
         self.autocases = 0
         self.tank_type = 1
-        self.header_http = '1.1'
+        self.header_http = '1.0'
         self.rps_schedule = []
         self.instances_schedule = None
         self.headers = []

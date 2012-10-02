@@ -358,21 +358,24 @@ class PhantomPlugin(AbstractPlugin):
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(self.rps_schedule) + sep + self.autocases
             hashed_str += sep + ";".join(self.uris) + sep + ";".join(self.headers)
             
-            if not self.ammo_file:
-                raise RuntimeError("Ammo file not specified")
-
-            if not os.path.exists(self.ammo_file):
-                raise RuntimeError("Ammo file not found: %s", self.ammo_file)
+            if self.ammo_file:
+                if not os.path.exists(self.ammo_file):
+                    raise RuntimeError("Ammo file not found: %s", self.ammo_file)
             
-            stat = os.stat(self.ammo_file)
-            cnt = 0
-            for stat_option in stat:
-                if cnt == 7: # skip access time
-                    continue
-                cnt += 1
-                hashed_str += ";" + str(stat_option)
-            self.log.debug("stpd-hash source: %s", hashed_str)
-            hasher.update(hashed_str)            
+                stat = os.stat(self.ammo_file)
+                cnt = 0
+                for stat_option in stat:
+                    if cnt == 7: # skip access time
+                        continue
+                    cnt += 1
+                    hashed_str += ";" + str(stat_option)
+                self.log.debug("stpd-hash source: %s", hashed_str)
+                hasher.update(hashed_str)
+            else:
+                if not self.uris:
+                    raise RuntimeError("Neither phantom.ammofile nor phantom.uris specified")
+                hasher.update(';'.join(self.uris) + ';'.join(self.headers))
+
             
             if not os.path.exists(self.cache_dir):
                 os.makedirs(self.cache_dir)
