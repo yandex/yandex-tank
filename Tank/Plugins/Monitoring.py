@@ -77,9 +77,11 @@ class MonitoringPlugin(AbstractPlugin):
             try:
                 self.monitoring.prepare()
                 self.monitoring.start()
-                while not self.monitoring.first_data_received:
+                count = 0
+                while not self.monitoring.first_data_received and count < 15 * 5:
                     time.sleep(0.2)
                     self.monitoring.poll()
+                    count += 1
             except Exception, exc:
                 if self.die_on_fail:
                     raise exc
