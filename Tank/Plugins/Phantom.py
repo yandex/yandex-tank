@@ -500,8 +500,8 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.planned_rps_duration = 0
 
     def render(self, screen):
-        template = "Hosts: %s => %s:%s\n Ammo: %s\nCount: %s"
-        data = (socket.gethostname(), self.owner.address, self.owner.port, os.path.basename(self.owner.ammo_file), self.ammo_count)
+        template = "Hosts: %s => %s:%s\n Ammo: %s\nCount: %s\n Load: %s"
+        data = (socket.gethostname(), self.owner.address, self.owner.port, os.path.basename(self.owner.ammo_file), self.ammo_count, ' '.join(self.owner.rps_schedule))
         res = template % data
         
         res += "\n\n"

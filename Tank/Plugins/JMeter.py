@@ -164,6 +164,7 @@ class JMeterReader(AbstractReader):
                 if not cur_time in self.data_buffer.keys():
                     if self.data_queue and self.data_queue[-1] >= cur_time:
                         self.log.warning("Aggregator data dates must be sequential: %s vs %s" % (cur_time, self.data_queue[-1]))
+                        cur_time = self.data_queue[-1]
                     else:
                         self.data_queue.append(cur_time)
                         self.data_buffer[cur_time] = []

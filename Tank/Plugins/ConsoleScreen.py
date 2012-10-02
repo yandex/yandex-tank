@@ -64,7 +64,7 @@ class Screen(object):
         second_row = [times_block, codes_answ_block]
         first_row = [AvgTimesBlock(self), TotalQuantilesBlock(self), CasesBlock(self)]
         self.block_rows = [first_row, second_row]
-
+        
     def __get_right_line(self, widget_output):
         right_line = ''
         if widget_output:

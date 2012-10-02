@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.0.14) precise; urgency=low
+
+  * added web online module
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 02 Oct 2012 13:44:11 +0400
+
 yandex-load-tank-base (1.0.13) precise; urgency=low
 
   * fix bug with disabled monitoring

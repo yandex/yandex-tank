@@ -85,7 +85,7 @@ class MonitoringPlugin(AbstractPlugin):
                     raise exc
                 else:
                     self.log.warning("Failed to start monitoring: %s", exc)
-                    self.monitoring=None
+                    self.monitoring = None
             
     def is_test_finished(self):
         if self.monitoring and not self.monitoring.poll():
@@ -185,9 +185,9 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                 res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET + ":\n") % hostname
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
-                        value = screen.markup.GREEN + value + screen.markup.RESET
+                        value = screen.markup.YELLOW + value + screen.markup.RESET
                     elif self.sign[hostname][metric] < 0:
-                        value = screen.markup.RED + value + screen.markup.RESET
+                        value = screen.markup.CYAN + value + screen.markup.RESET
                     res += "      %s%s: %s\n" % (' ' * (self.max_metric_len - len(metric)), metric.replace('_', ' '), value)
                     
             return res.strip()
