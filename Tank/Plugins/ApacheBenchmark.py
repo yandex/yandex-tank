@@ -15,7 +15,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
         AbstractPlugin.__init__(self, core)
         self.out_file = None
         self.process = None
-        self.concurrency = None
+        self.concurrency = 0
         self.options = None
         self.url = None
         self.requests = None

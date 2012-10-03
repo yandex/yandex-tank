@@ -225,6 +225,7 @@ class AbstractReader:
         (marker, threads, overall_rt, http_code, net_code, sent_bytes, received_bytes, connect, send, latency, receive, accuracy) = item
         for check in [threads, overall_rt, sent_bytes, received_bytes, connect, send, latency, receive, accuracy]:
             if check < 0:
+                self.log.error("Problem item: %s", item)
                 raise ValueError("One of the sample items has negative value")
         result.case = marker
         result.active_threads = threads
