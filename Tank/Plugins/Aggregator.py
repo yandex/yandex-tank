@@ -258,7 +258,6 @@ class AbstractReader:
         return res
 
     def pop_second(self):
-        # FIXME: 2 add empty samples for non-responsive seconds
         next_time = self.data_queue.pop(0)
         data = self.data_buffer[next_time]
         del self.data_buffer[next_time]

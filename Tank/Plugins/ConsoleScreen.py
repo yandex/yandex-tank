@@ -11,7 +11,6 @@ import os
 import struct
 import termios
 
-# TODO: 2 either detect or disable colors in proper situations
 def get_terminal_size(): 
     '''
     Gets width and height of terminal viewport

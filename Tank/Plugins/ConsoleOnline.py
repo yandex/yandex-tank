@@ -99,7 +99,7 @@ class RealConsoleMarkup(object):
 
 # ======================================================
 
-# FIXME: better way to have it?
+# FIXME: 3 better way to have it?
 class NoConsoleMarkup(RealConsoleMarkup):
     WHITE_ON_BLACK = ''
     TOTAL_RESET = ''
