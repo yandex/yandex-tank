@@ -126,7 +126,7 @@ class PhantomPlugin(AbstractPlugin):
         self.phantom_path = self.get_option("phantom_path", 'phantom')
         self.config = self.get_option("config", '')
         self.phantom_modules_path = self.get_option("phantom_modules_path", "/usr/lib/phantom")
-        self.ssl = self.get_option("ssl", '')
+        self.ssl = int(self.get_option("ssl", '0'))
         self.address = self.get_option(self.OPTION_IP, '127.0.0.1')
         self.port = self.get_option(self.OPTION_PORT, '80')
         self.tank_type = self.get_option("tank_type", 'http')
@@ -577,6 +577,9 @@ class PhantomReader(AbstractReader):
         if not self.phout and os.path.exists(self.phantom.phout_file):
             self.log.debug("Opening phout file: %s", self.phantom.phout_file)
             self.phout = open(self.phantom.phout_file, 'r')
+            # strange decision to place it here, but no better idea yet
+            for item in Utils.pairs(self.phantom.steps):
+                self.steps.append([item[0], item[1]])  
     
         if not self.stat and self.phantom.stat_log and os.path.exists(self.phantom.stat_log):
             self.log.debug("Opening stat file: %s", self.phantom.stat_log)
@@ -677,22 +680,22 @@ class PhantomReader(AbstractReader):
             self.pending_second_data = None
         
         self.last_sample_time = int(time.mktime(res.time.timetuple()))
-        res.overall.planned_requests = self.__get_expected_rps(time.mktime(res.time.timetuple()))
+        res.overall.planned_requests = self.__get_expected_rps()
         return res
 
-    def __get_expected_rps(self, next_time):
+    def __get_expected_rps(self):
         '''
         Mark second with expected rps from stepper info
         '''
-        offset = next_time - self.first_request_time
-        for rps, dur in Utils.pairs(self.phantom.steps):
-            if offset < dur:
-                return rps
-            else:
-                offset -= dur 
-        return 0
-    
-    
+        while self.steps and self.steps[0][1] < 1:
+            self.steps.pop(0)
+        
+        if not self.steps:
+            return 0
+        else:
+            self.steps[0][1] -= 1
+            return self.steps[0][0]    
+     
 class UsedInstancesCriteria(AbstractCriteria):
     '''
     Autostop criteria, based on active instances count
