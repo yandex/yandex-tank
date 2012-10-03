@@ -18,7 +18,7 @@ class FakeConsoleMarkup(RealConsoleMarkup):
     RED_DARK = '<rd>'
     RESET = '<rst>'
     CYAN = "<c>"
-    WHITE="<w>"
+    WHITE = "<w>"
     GREEN = "<g>"
     MAGENTA = '<m>'
     BG_MAGENTA = '<M>'
@@ -40,8 +40,8 @@ class ConsoleOnlinePluginTestCase(TankTestCase):
         self.foo = None 
 
     def test_run(self):
-        self.data=self.get_aggregate_data('data/preproc_single2.txt')
-        
+        self.data = self.get_aggregate_data('data/preproc_single2.txt')
+        self.foo.set_option('disable_colors', 'WHITE')
         self.foo.configure()
         self.foo.prepare_test()
         self.foo.add_info_widget(TestWidget())

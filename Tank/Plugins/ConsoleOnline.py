@@ -5,10 +5,74 @@ import traceback
 import sys
 import logging
 
+
+class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
+    SECTION = 'console'
+    
+    def __init__(self, core):
+        AbstractPlugin.__init__(self, core)
+        self.screen = None
+        self.render_exception = None
+        self.console_markup = None
+
+    @staticmethod
+    def get_key():
+        return __file__
+    
+    def configure(self):
+        aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+        aggregator.add_result_listener(self)
+        self.info_panel_width = self.get_option("info_panel_width", '33')
+        self.short_only = int(self.get_option("short_only", '0'))
+        if not self.short_only:
+            if sys.stdout.isatty() and not int(self.get_option("disable_all_colors", '0')):
+                self.console_markup = RealConsoleMarkup()
+            else:
+                self.console_markup = NoConsoleMarkup()
+            for color in self.get_option("disable_colors", '').split(' '):
+                self.console_markup.__dict__[color] = ''
+            self.screen = Screen(self.info_panel_width, self.console_markup)
+
+    def is_test_finished(self):
+        if not self.short_only:
+            try:
+                console_view = self.screen.render_screen()
+                sys.stdout.write(self.console_markup.clear)
+                sys.stdout.write(console_view.encode('utf-8'))
+                sys.stdout.write(self.console_markup.TOTAL_RESET)
+            except Exception, ex:
+                self.log.warn("Exception inside render: %s", traceback.format_exc(ex))
+                self.render_exception = ex
+            # TODO: 3 add a way to send console view to remote API, via listener notification (avoid DataUploader dependency
+
+        return -1
+    
+    def aggregate_second(self, second_aggregate_data):
+        if self.short_only:
+            tpl = "Time: %s\tExpected RPS: %s\tActual RPS: %s\tActive Threads: %s\tAvg RT: %s"
+            o = second_aggregate_data.overall # just to see the next line in IDE
+            data = (second_aggregate_data.time, o.planned_requests, o.RPS,
+                    o.active_threads, o.avg_response_time)
+            self.log.info(tpl % data)
+        else:
+            self.screen.add_second_data(second_aggregate_data)    
+            #self.is_test_finished()
+
+    
+    def add_info_widget(self, widget):
+        if not self.screen:
+            self.log.warn("No screen instance to add widget")
+        else:
+            self.screen.add_info_widget(widget)
+        
+# ======================================================
+
 class RealConsoleMarkup(object):
     '''    
     Took colors from here: https://www.siafoo.net/snippet/88
     '''
+    WHITE_ON_BLACK = '\033[37;40m'
+    TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
     new_line = "\n"
     
@@ -35,6 +99,29 @@ class RealConsoleMarkup(object):
 
 # ======================================================
 
+# FIXME: better way to have it?
+class NoConsoleMarkup(RealConsoleMarkup):
+    WHITE_ON_BLACK = ''
+    TOTAL_RESET = ''
+    clear = ""
+    new_line = "\n"
+    
+    YELLOW = ''
+    RED = ''
+    RED_DARK = ''
+    RESET = ''
+    CYAN = ""
+    GREEN = ""
+    WHITE = ""
+    MAGENTA = ''
+    BG_MAGENTA = ''
+    BG_GREEN = ''
+    BG_BROWN = ''
+    BG_CYAN = ''
+
+# ======================================================
+
+
 class AbstractInfoWidget:
     def __init__(self):
         self.log = logging.getLogger(__name__)
@@ -46,57 +133,3 @@ class AbstractInfoWidget:
     def get_index(self):
         return 0;
 
-# ======================================================
-
-class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
-    SECTION = 'console'
-    
-    def __init__(self, core):
-        AbstractPlugin.__init__(self, core)
-        self.console_markup = RealConsoleMarkup()
-        self.screen = None
-        self.render_exception = None
-
-    @staticmethod
-    def get_key():
-        return __file__
-    
-    def configure(self):
-        aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        aggregator.add_result_listener(self)
-        self.info_panel_width = self.get_option("info_panel_width", '33')
-        self.short_only = int(self.get_option("short_only", '0'))
-        if not self.short_only:
-            self.screen = Screen(self.info_panel_width, self.console_markup)
-        
-    def is_test_finished(self):
-        if not self.short_only:
-            try:
-                console_view = self.screen.render_screen()
-                sys.stdout.write(self.console_markup.clear)
-                sys.stdout.write(console_view.encode('utf-8'))
-            except Exception, ex:
-                self.log.warn("Exception inside render: %s", traceback.format_exc(ex))
-                self.render_exception = ex
-            # TODO: 3 add a way to send console view to remote API, via listener notification (avoid DataUploader dependency
-
-        return -1
-    
-    def aggregate_second(self, second_aggregate_data):
-        if self.short_only:
-            tpl = "Time: %s\tExpected RPS: %s\tActual RPS: %s\tActive Threads: %s\tAvg RT: %s"
-            o = second_aggregate_data.overall # just to see the next line in IDE
-            data = (second_aggregate_data.time, o.planned_requests, o.RPS,
-                    o.active_threads, o.avg_response_time)
-            self.log.info(tpl % data)
-        else:
-            self.screen.add_second_data(second_aggregate_data)    
-            #self.is_test_finished()
-
-    
-    def add_info_widget(self, widget):
-        if not self.screen:
-            self.log.warn("No screen instance to add widget")
-        else:
-            self.screen.add_info_widget(widget)
-        
