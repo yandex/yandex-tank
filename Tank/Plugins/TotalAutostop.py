@@ -141,9 +141,9 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
 
     def explain(self):
         if self.is_relative:
-            items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.overall.time)
+            items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
             return "%s codes count higher than %s for %ss, ended at: %s" % items
-        items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.overall.time)
+        items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
         return "%s codes count higher than %s for %ss, started at: %s" % items 
     
     def widget_explain(self):
@@ -212,9 +212,9 @@ class TotalNetCodesCriteria(AbstractCriteria):
 
     def explain(self):
         if self.is_relative:
-            items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.overall.time)
+            items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
             return "%s net codes count higher than %s for %ss, ended at: %s" % items 
-        items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.overall.time)
+        items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
         return "%s net codes count higher than %s for %ss, started at: %s" % items 
     
     def widget_explain(self):
@@ -282,9 +282,9 @@ class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
 
     def explain(self):
         if self.is_relative:
-            items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.overall.time)
+            items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
             return "Not %s codes count higher than %s for %ss, ended at: %s" % items
-        items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.overall.time)
+        items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
         return "Not %s codes count higher than %s for %ss, started at: %s" % items 
     
     def widget_explain(self):
