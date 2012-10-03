@@ -2,7 +2,7 @@
 Provides class to run TankCore from console environment
 '''
 from Tank.Core import TankCore
-from Tank import Utils 
+from Tank import Core 
 import ConfigParser
 import fnmatch
 import logging
@@ -81,6 +81,7 @@ class ConsoleTank:
 
         self.signal_count = 0
         self.scheduled_start = None
+        self.lock_file = None
 
     def set_baseconfigs_dir(self, directory):
         '''
@@ -179,7 +180,7 @@ class ConsoleTank:
                     info = ConfigParser.ConfigParser()
                     info.read(full_name)
                     pid = info.get(TankCore.SECTION, self.PID_OPTION)
-                    if not Utils.pid_exists(int(pid)):
+                    if not Core.pid_exists(int(pid)):
                         self.log.debug("Lock PID %s not exists, ignoring and trying to remove", pid)
                         try:
                             os.remove(full_name)
@@ -220,7 +221,8 @@ class ConsoleTank:
         else:
             self.log.warn("Lock files ignored. This is highly unrecommended practice!")        
         
-        self.core.config.set_out_file(tempfile.mkstemp('.lock', 'lunapark_', self.LOCK_DIR)[1])
+        self.lock_file = tempfile.mkstemp('.lock', 'lunapark_', self.LOCK_DIR)[1]
+        self.core.config.set_out_file(self.lock_file)
         
         configs = []
 

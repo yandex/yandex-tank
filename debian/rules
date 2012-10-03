@@ -81,6 +81,9 @@ binary-indep: install
 	dh_md5sums
 	dh_builddeb
 
+override_dh_pysupport:
+	dh_python2
+
 # Build architecture-dependent files here.
 binary-arch: install
 

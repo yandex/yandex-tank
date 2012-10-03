@@ -1,4 +1,4 @@
-from Tank import Utils
+from Tank import Core
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin, AbstractReader
 import os
@@ -69,7 +69,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
             return -1
 
         if self.process:
-            Utils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
+            Core.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
 
             
     def end_test(self, retcode):
@@ -80,7 +80,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
             self.log.info("Seems ab finished OK")
 
         if self.process:
-            Utils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
+            Core.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
         return retcode
             
 

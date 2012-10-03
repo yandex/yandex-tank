@@ -1,7 +1,7 @@
 '''
 Contains Phantom Plugin, Console widgets, result reader classes
 '''
-from Tank import Utils
+from Tank import Core
 from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener, \
     AbstractReader
@@ -116,7 +116,7 @@ class PhantomPlugin(AbstractPlugin):
                 if reverse_name.startswith(self.address):
                     self.address = ip_addr
                 else:
-                    raise ValueError("Address %s reverse-resolved to %s, but must match", self.address, reverse_name)
+                    raise ValueError("Address %s reverse-resolved to %s, but must match" % (self.address, reverse_name))
 
 
     def __read_phantom_options(self):
@@ -286,7 +286,7 @@ class PhantomPlugin(AbstractPlugin):
                 self.config = self.__compose_config()
             args = [self.phantom_path, 'check', self.config]
             
-            retcode = Utils.execute(args, catch_out=True)
+            retcode = Core.execute(args, catch_out=True)
             if retcode:
                 raise RuntimeError("Subprocess returned %s",)    
 
@@ -322,7 +322,7 @@ class PhantomPlugin(AbstractPlugin):
 
     def is_test_finished(self):
         if not self.phout_import_mode:
-            Utils.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
+            Core.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
     
             retcode = self.process.poll()
             if retcode != None:
@@ -391,7 +391,7 @@ class PhantomPlugin(AbstractPlugin):
         Get total test duration
         '''        
         duration = 0
-        for rps, dur in Utils.pairs(steps):
+        for rps, dur in Core.pairs(steps):
             duration += dur
         
         self.core.set_option(self.SECTION, self.OPTION_TEST_DURATION, str(duration))
@@ -578,7 +578,7 @@ class PhantomReader(AbstractReader):
             self.log.debug("Opening phout file: %s", self.phantom.phout_file)
             self.phout = open(self.phantom.phout_file, 'r')
             # strange decision to place it here, but no better idea yet
-            for item in Utils.pairs(self.phantom.steps):
+            for item in Core.pairs(self.phantom.steps):
                 self.steps.append([item[0], item[1]])  
     
         if not self.stat and self.phantom.stat_log and os.path.exists(self.phantom.stat_log):
@@ -717,7 +717,7 @@ class UsedInstancesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = Utils.expand_to_seconds(param_str.split(',')[1])
+        self.seconds_limit = Core.expand_to_seconds(param_str.split(',')[1])
         
         try:
             phantom = autostop.core.get_plugin_of_type(PhantomPlugin)

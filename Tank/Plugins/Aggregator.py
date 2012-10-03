@@ -1,4 +1,4 @@
-from Tank import Utils
+from Tank import Core
 from Tank.Core import AbstractPlugin
 import copy
 import datetime
@@ -31,12 +31,12 @@ class AggregatorPlugin(AbstractPlugin):
         self.preproc_out_filename = None
         self.cumulative_data = SecondAggregateDataTotalItem()
         self.reader = None
-        self.time_periods = [ Utils.expand_to_milliseconds(x) for x in self.default_time_periods.split(' ') ]
+        self.time_periods = [ Core.expand_to_milliseconds(x) for x in self.default_time_periods.split(' ') ]
         self.last_sample_time = 0
     
     def configure(self):
         periods = self.get_option("time_periods", self.default_time_periods).split(" ")
-        self.time_periods = [ Utils.expand_to_milliseconds(x) for x in periods ]
+        self.time_periods = [ Core.expand_to_milliseconds(x) for x in periods ]
         self.core.set_option(self.SECTION, "time_periods", " ".join([ str(x) for x in periods ]))
 
     def start_test(self):
