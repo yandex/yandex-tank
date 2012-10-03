@@ -12,7 +12,7 @@ from Tank import Utils
 from progressbar import ProgressBar, Percentage, Bar, ETA
 
 # TODO: 3 add stpd file size estimation 
-def make_load_ammo(uris, headers, httpver):
+def make_load_ammo(uris):
     '''
     Create temp file for uri-format ammo
     '''
@@ -43,9 +43,9 @@ def detect_case_file(filename):
     '''
     ammo = open(filename, 'r')
     first_line = ammo.readline()
-    m = re.match("^(\d+)\s*\d*\s*(\w*)\s*", first_line)
-    if m:
-        if m.group(2):
+    pattern = re.match("^(\d+)\s*\d*\s*(\w*)\s*", first_line)
+    if pattern:
+        if pattern.group(2):
             return True
     return False
 
@@ -91,8 +91,8 @@ def header_print(values_list):
     Helper to generate request with headers
     '''
     header = ''
-    for (h, v) in values_list.iteritems():
-        header += '%s: %s\r\n' % (h, v)
+    for (key, val) in values_list.iteritems():
+        header += '%s: %s\r\n' % (key, val)
     return header
 
 
@@ -102,16 +102,16 @@ def get_headers_list(line):
     """
 
     values_list = defaultdict(str)
-    h = re.match("^\[", line)
-    if h:
-        m = re.match("^\[(.+)\]", line)
-        if m:
+    header = re.match("^\[", line)
+    if header:
+        pattern = re.match("^\[(.+)\]", line)
+        if pattern:
             cases = re.split('\]\s*\[', line)
             for case in cases:
                 case = re.sub("\[|\]", '', case)
-                c = re.match("^\s*(\S+)\s*:\s*(.+?)\s*$", case)
-                if c:
-                    values_list[c.group(1)] = c.group(2)
+                case_pat = re.match("^\s*(\S+)\s*:\s*(.+?)\s*$", case)
+                if case_pat:
+                    values_list[case_pat.group(1)] = case_pat.group(2)
     return values_list
 
 
@@ -145,7 +145,7 @@ def load_line(start, end, duration):
     Linear load pattern
     '''
     dur = Utils.expand_to_seconds(duration)
-    k = float((end - start) / float(dur - 1))
+    diff_k = float((end - start) / float(dur - 1))
     (cnt, last_x, total) = (1, start, 0)
     ls = '%s,line,%s,%s,(%s,%s,%s)\n' % (
         dur,
@@ -156,8 +156,8 @@ def load_line(start, end, duration):
         duration,
         )
     steps = []
-    for i in range(1, dur + 1):
-        cur_x = int(start + k * i)
+    for sec_i in range(1, dur + 1):
+        cur_x = int(start + diff_k * sec_i)
         if cur_x == last_x:
             cnt += 1
         else:
@@ -167,43 +167,38 @@ def load_line(start, end, duration):
     return [steps, ls, total]
 
 
-def load_step(
-    start,
-    end,
-    step,
-    duration,
-    ):
+def load_step(start, end, step, duration,):
     '''
     Stepping load pattern
     '''
     dur = Utils.expand_to_seconds(duration)
     (steps, ls, total) = ([], '', 0)
     if end > start:
-        for x in range(start, end + 1, step):
-            steps.append([x, dur])
+        for rps_level in range(start, end + 1, step):
+            steps.append([rps_level, dur])
             ls += '%s,step,%s,%s,(%s,%s,%s,%s)\n' % (
                 dur,
-                x,
-                x,
+                rps_level,
+                rps_level,
                 start,
                 end,
                 step,
                 duration,
                 )
-            total += x * dur
+            total += rps_level * dur
     else:
-        for x in range(start, end - 1, -step):
-            steps.append([x, dur])
+        for rps_level in range(start, end - 1, -step):
+            steps.append([rps_level, dur])
             ls += '%s,step,%s,%s,(%s,%s,%s,%s)\n' % (
                 dur,
-                x,
-                x,
+                rps_level,
+                rps_level,
                 start,
                 end,
                 step,
                 duration,
                 )
-            total += x * dur
+            total += rps_level * dur
     return [steps, ls, total]
 
 
@@ -231,42 +226,35 @@ def collapse_schedule(schedule):
     return res
 
 
-def make_steps_element(l):
+def make_steps_element(param_item):
     '''
     Generate schedule element
     '''
     (steps, loadscheme, load_ammo) = ([], '', 0)
     params = []
-    params.append(l)
-    for l in params:
+    params.append(param_item)
+    for param_item in params:
         (st, ls, cnt) = ([], '', 0)
-        m = re.match("^const\s*\(\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
-        if m:
-            (st, ls, cnt) = load_const(int(m.group(1)), m.group(2))
+        pattern = re.match("^const\s*\(\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", param_item)
+        if pattern:
+            (st, ls, cnt) = load_const(int(pattern.group(1)), pattern.group(2))
         else:
-            m = \
-                re.match("^line\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*"
-                         , l)
-            if m:
-                [st, ls, cnt] = load_line(int(m.group(1)),
-                        int(m.group(2)), m.group(3))
+            pattern = re.match("^line\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", param_item)
+            if pattern:
+                [st, ls, cnt] = load_line(int(pattern.group(1)),
+                        int(pattern.group(2)), pattern.group(3))
             else:
-                m = \
-                    re.match("^step\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*\)\s*"
-                             , l)
-                if m:
-                    [st, ls, cnt] = load_step(int(m.group(1)),
-                            int(m.group(2)), int(m.group(3)),
-                            m.group(4))
+                pattern = re.match("^step\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*\)\s*", param_item)
+                if pattern:
+                    [st, ls, cnt] = load_step(int(pattern.group(1)),
+                            int(pattern.group(2)), int(pattern.group(3)),
+                            pattern.group(4))
                 else:
-                    m = \
-                        re.match("^const\s*\(\s*(\d+\/\d+)\s*,\s*((\d+[hms]?)+)\s*"
-                                 , l)
-                    if m:
-                        [st, ls, cnt] = constf(m.group(1), m.group(2))
+                    pattern = re.match("^const\s*\(\s*(\d+\/\d+)\s*,\s*((\d+[hms]?)+)\s*", param_item)
+                    if pattern:
+                        [st, ls, cnt] = constf(pattern.group(1), pattern.group(2))
                     else:
-                        raise RuntimeError("[Warning] Wrong load format: '%s'. Aborting."
-                                 % l)
+                        raise RuntimeError("[Warning] Wrong load format: '%s'. Aborting." % param_item)
         if ls:
             steps += st
             loadscheme += ls
@@ -279,40 +267,33 @@ def expand_load_spec(l):
     Parse load scpecification
     '''
     (st, ls, cnt, max_val) = ([], '', 0, 0)
-    m = re.match("^const\s*\(\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
-    if m:
-        val = int(m.group(1))
-        (st, ls, cnt) = load_const(val, m.group(2))
+    pattern = re.match("^const\s*\(\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
+    if pattern:
+        val = int(pattern.group(1))
+        (st, ls, cnt) = load_const(val, pattern.group(2))
         if val > max_val:
             max_val = val
     else:
-        m = \
-            re.match("^line\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*"
-                     , l)
-        if m:
-            val = int(m.group(2))
-            [st, ls, cnt] = load_line(int(m.group(1)), val, m.group(3))
+        pattern = \
+            re.match("^line\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
+        if pattern:
+            val = int(pattern.group(2))
+            [st, ls, cnt] = load_line(int(pattern.group(1)), val, pattern.group(3))
             if val > max_val:
                 max_val = val
         else:
-            m = \
-                re.match("^step\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*\)\s*"
-                         , l)
-            if m:
-                val = int(m.group(2))
-                [st, ls, cnt] = load_step(int(m.group(1)), val,
-                        int(m.group(3)), m.group(4))
+            pattern = re.match("^step\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*\)\s*", l)
+            if pattern:
+                val = int(pattern.group(2))
+                [st, ls, cnt] = load_step(int(pattern.group(1)), val, int(pattern.group(3)), pattern.group(4))
                 if val > max_val:
                     max_val = val
             else:
-                m = \
-                    re.match("^const\s*\(\s*(\d+\/\d+)\s*,\s*((\d+[hms]?)+)\s*"
-                             , l)
-                if m:
-                    [st, ls, cnt] = constf(m.group(1), m.group(2))
+                pattern = re.match("^const\s*\(\s*(\d+\/\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
+                if pattern:
+                    [st, ls, cnt] = constf(pattern.group(1), pattern.group(2))
                 else:
-                    raise RuntimeError("[Warning] Wrong load format: '%s'. Aborting."
-                             % l)
+                    raise RuntimeError("[Warning] Wrong load format: '%s'. Aborting." % l)
     return (st, ls, cnt, max_val)
 
 
@@ -321,10 +302,10 @@ def make_steps(load_spec):
     Process schedule
     '''
     (steps, loadscheme, load_ammo) = ([], '', 0)
-    for l in load_spec:
-        if not l:
+    for load_item in load_spec:
+        if not load_item:
             continue
-        (st, ls, cnt, skip) = expand_load_spec(l)
+        (st, ls, cnt, skip) = expand_load_spec(load_item)
         if ls:
             steps += st
             loadscheme += ls
@@ -336,10 +317,10 @@ def mark_sec(cnt, dur):
     '''
     second marker?
     '''
-    k = 1000 / float(cnt)
+    koeff = 1000 / float(cnt)
     times = [0]
-    for i in range(1, cnt * dur):
-        times.append(int(i * k))
+    for sec in range(1, cnt * dur):
+        times.append(int(sec * koeff))
     return times
 
 
@@ -347,9 +328,9 @@ def constf(req, duration):
     '''
     Float const load pattern
     '''
-    m = re.match("(\d+)\/(\d+)", req)
-    if m:
-        (a, b) = (int(m.group(1)), int(m.group(2)))
+    pattern = re.match("(\d+)\/(\d+)", req)
+    if pattern:
+        (a, b) = (int(pattern.group(1)), int(pattern.group(2)))
         (dur, e) = (Utils.expand_to_seconds(duration), int(a / b))
 
         fr = '%.3f' % (float(a) / b)
@@ -366,8 +347,7 @@ def constf(req, duration):
             out = frps_expand(out, e)
         return (out, ls, frps_ammo(out))
     else:
-        raise RuntimeError("Error in 'const_f' function. rps: %s, duration: %s"\
-             % (req, duration))
+        raise RuntimeError("Error in 'const_f' function. rps: %s, duration: %s" % (req, duration))
         
 
 
@@ -375,11 +355,11 @@ def frps(req):
     '''
     Float const load pattern helper
     '''
-    m = re.match("(\d+)\/(\d+)", req)
-    if m:
+    pattern = re.match("(\d+)\/(\d+)", req)
+    if pattern:
         c = defaultdict(str)
-        num1 = int(m.group(1))
-        num0 = int(m.group(2)) - num1
+        num1 = int(pattern.group(1))
+        num0 = int(pattern.group(2)) - num1
         if num1 == 0:
             out = []
             for x in range(0, num0):
@@ -436,9 +416,9 @@ def frps_cut(c, r):
     '''
     Float const load pattern
     '''
-    m = re.match("(\d+)\/(\d+)", r)
-    if m:
-        b = int(m.group(2))
+    pattern = re.match("(\d+)\/(\d+)", r)
+    if pattern:
+        b = int(pattern.group(2))
         if c < b:
             frs = frps(r)
             out = []
@@ -480,17 +460,17 @@ def auto_case(url, pattern):
     '''
     Generate case automatically
     '''
-    m = pattern.search(url)
+    pattern = pattern.search(url)
     res = ['', '', '']
-    if m:
-        el = m.groups()
+    if pattern:
+        elm = pattern.groups()
         res[0] = 'front_page'
-        if el[1]:
-            res[0] = el[1]
-        if el[1] and el[3]:
-            res[1] = el[1] + '_' + el[3]
-        if el[1] and el[3] and el[5]:
-            res[2] = el[1] + '_' + el[3] + '_' + el[5]
+        if elm[1]:
+            res[0] = elm[1]
+        if elm[1] and elm[3]:
+            res[1] = elm[1] + '_' + elm[3]
+        if elm[1] and elm[3] and elm[5]:
+            res[2] = elm[1] + '_' + elm[3] + '_' + elm[5]
     return res
 
 
@@ -514,13 +494,10 @@ def get_autocases_tree(filename):
     Generate case automatically
     '''
     logging.debug("get_autocases_tree")    
-    pattern = \
-        re.compile('^(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK\s+)?\s*\/(.*?)(/(.*?))?(/(.*?))?(\.|/|\?|$|\s)'
-                   )
+    pattern = re.compile('^(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK\s+)?\s*\/(.*?)(/(.*?))?(/(.*?))?(\.|/|\?|$|\s)')
 
     tree = {'other': 'none'}
-    (level1, level2, level3) = (defaultdict(int), defaultdict(int),
-                                defaultdict(int))
+    (level1, level2, level3) = (defaultdict(int), defaultdict(int), defaultdict(int))
     (total_cnt, line_cnt) = (0, 0)
     input_ammo = open(filename, 'r')
     for line in input_ammo:
@@ -546,9 +523,7 @@ def get_autocases_tree_access(filename):
     Generate case automatically
     '''
     logging.debug("get_autocases_tree_access")
-    pattern = \
-        re.compile('(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK\s+)\s*\/(.*?)(/(.*?))?(/(.*?))?(\.|/|\?|$|\s)'
-                   )
+    pattern = re.compile('(GET|POST|PUT|HEAD|OPTIONS|PATCH|DELETE|TRACE|LINK|UNLINK\s+)\s*\/(.*?)(/(.*?))?(/(.*?))?(\.|/|\?|$|\s)')
     tree = {'other': 'none'}
     (level1, level2, level3) = (defaultdict(int), defaultdict(int),
                                 defaultdict(int))
@@ -580,12 +555,9 @@ def make_autocases_top(l1, l2, l3, total_cnt, tree,):
     (total_done) = (0)
     output = ''
     cases_done = defaultdict(int)
-    sl1 = sorted(l1.iteritems(), key=operator.itemgetter(1),
-                 reverse=True)
-    sl2 = sorted(l2.iteritems(), key=operator.itemgetter(1),
-                 reverse=True)
-    sl3 = sorted(l3.iteritems(), key=operator.itemgetter(1),
-                 reverse=True)
+    sl1 = sorted(l1.iteritems(), key=operator.itemgetter(1), reverse=True)
+    sl2 = sorted(l2.iteritems(), key=operator.itemgetter(1), reverse=True)
+    sl3 = sorted(l3.iteritems(), key=operator.itemgetter(1), reverse=True)
     n = 0
     output += 'level 1\n'
     for s in sl1:
@@ -594,8 +566,7 @@ def make_autocases_top(l1, l2, l3, total_cnt, tree,):
             cases_done[s[0]] = s[1]
             total_done += s[1]
             n += 1
-            output += '\t%s. [level 1]\t%s\t%.2f%s\n' % (n, s[0], t, '%'
-                    )
+            output += '\t%s. [level 1]\t%s\t%.2f%s\n' % (n, s[0], t, '%')
     n = 0
     output += 'level 2:\n'
     for s in sl2:
@@ -745,8 +716,7 @@ class Stepper:
 
         if tank_type == 1:
             if not ammo_file and self.uris:
-                ammo_file = make_load_ammo(self.uris, self.headers,
-                        self.header_http)
+                ammo_file = make_load_ammo(self.uris)
                 ammo_type = 'uri'
                 ammo_delete = ammo_file
             else:
