@@ -1,10 +1,11 @@
 '''
 Module to have Loadosophia.org integration
 '''
-from Tank.Core import AbstractPlugin
 from Tank.Plugins.ApacheBenchmark import ApacheBenchmarkPlugin
 from Tank.Plugins.Monitoring import MonitoringPlugin
 from Tank.Plugins.Phantom import PhantomPlugin
+from Tank.Plugins.WebOnline import WebOnlinePlugin
+from tankcore import AbstractPlugin
 import StringIO
 import gzip
 import itertools
@@ -13,7 +14,6 @@ import mimetools
 import mimetypes
 import os
 import urllib2
-from Tank.Plugins.WebOnline import WebOnlinePlugin
 
 class LoadosophiaPlugin(AbstractPlugin):
     '''

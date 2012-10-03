@@ -1,6 +1,6 @@
-from Tank.Core import TankCore
 from Tank.Plugins.Aggregator import SecondAggregateData, \
     SecondAggregateDataTotalItem
+from tankcore import TankCore
 import logging
 import sys
 import tempfile

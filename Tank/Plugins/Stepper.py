@@ -3,13 +3,13 @@ Tools for preparing phantom input data file
 '''
 
 from collections import defaultdict
+from progressbar import ProgressBar, Percentage, Bar, ETA
 import logging
 import operator
 import os
 import re
 import tempfile
-from Tank import Core
-from progressbar import ProgressBar, Percentage, Bar, ETA
+import tankcore
 
 # TODO: 3 add stpd file size estimation 
 def make_load_ammo(uris):
@@ -130,7 +130,7 @@ def load_const(req, duration):
     '''
     Constant load pattern
     '''
-    dur = Core.expand_to_seconds(duration)
+    dur = tankcore.expand_to_seconds(duration)
     steps = []
     steps.append([req, dur])
     ls = '%s,const,%s,%s,(%s,%s)\n' % (dur, req, req, req, duration)
@@ -144,7 +144,7 @@ def load_line(start, end, duration):
     '''
     Linear load pattern
     '''
-    dur = Core.expand_to_seconds(duration)
+    dur = tankcore.expand_to_seconds(duration)
     diff_k = float((end - start) / float(dur - 1))
     (cnt, last_x, total) = (1, start, 0)
     ls = '%s,line,%s,%s,(%s,%s,%s)\n' % (
@@ -171,7 +171,7 @@ def load_step(start, end, step, duration,):
     '''
     Stepping load pattern
     '''
-    dur = Core.expand_to_seconds(duration)
+    dur = tankcore.expand_to_seconds(duration)
     (steps, ls, total) = ([], '', 0)
     if end > start:
         for rps_level in range(start, end + 1, step):
@@ -331,7 +331,7 @@ def constf(req, duration):
     pattern = re.match("(\d+)\/(\d+)", req)
     if pattern:
         (a, b) = (int(pattern.group(1)), int(pattern.group(2)))
-        (dur, e) = (Core.expand_to_seconds(duration), int(a / b))
+        (dur, e) = (tankcore.expand_to_seconds(duration), int(a / b))
 
         fr = '%.3f' % (float(a) / b)
         ls = '%s,const,%s,%s,(%s,%s)\n' % (dur, fr, fr, req, duration)

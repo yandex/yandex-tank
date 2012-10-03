@@ -1,13 +1,8 @@
-from Tank.Core import TankCore
-from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget, \
     RealConsoleMarkup
 from Tests.TankTests import TankTestCase
-import os
 import tempfile
 import unittest
-from Tests import TankTests
-
 
 class FakeConsoleMarkup(RealConsoleMarkup):
     clear = "\n[clear]\n"

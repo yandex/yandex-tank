@@ -1,9 +1,8 @@
 '''
 Contains shellexec plugin
 '''
-from Tank.Core import AbstractPlugin
-from Tank import Core
-
+from tankcore import AbstractPlugin
+import tankcore
 class ShellExecPlugin(AbstractPlugin):
     '''
     ShellExec plugin
@@ -58,6 +57,6 @@ class ShellExecPlugin(AbstractPlugin):
         Execute and check exit code
         '''
         self.log.debug("Executing: %s", cmd)
-        retcode = Core.execute(cmd, shell=True, poll_period=0.1)
+        retcode = tankcore.execute(cmd, shell=True, poll_period=0.1)
         if retcode:
             raise RuntimeError("Subprocess returned %s",)    

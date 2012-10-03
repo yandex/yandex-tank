@@ -1,10 +1,9 @@
-from Tank import Core
-from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregateResultListener
 from Tank.Plugins.Autostop import AbstractCriteria, AutostopPlugin
 from collections import deque
+from tankcore import AbstractPlugin
 import re
-
+import tankcore
 
 class TotalAutostopPlugin(AbstractPlugin, AggregateResultListener):
     SECTION='autostop'
@@ -37,9 +36,9 @@ class TotalFracTimeCriteria(AbstractCriteria):
         AbstractCriteria.__init__(self)
         param = param_str.split(',')
         self.seconds_count = 0
-        self.rt_limit = Core.expand_to_milliseconds(param[0])
+        self.rt_limit = tankcore.expand_to_milliseconds(param[0])
         self.frac = param[1][:-1]
-        self.seconds_limit = Core.expand_to_seconds(param[2])
+        self.seconds_limit = tankcore.expand_to_seconds(param[2])
         self.autostop = autostop
         self.data = deque()
 
@@ -93,7 +92,7 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = Core.expand_to_seconds(param_str.split(',')[2])
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[2])
     
     def notify(self, aggregate_second):
         matched_responses = self.count_matched_codes(self.codes_regex, aggregate_second.overall.http_codes)
@@ -168,7 +167,7 @@ class TotalNetCodesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = Core.expand_to_seconds(param_str.split(',')[2])
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[2])
     
 
     def notify(self, aggregate_second):
@@ -239,7 +238,7 @@ class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = Core.expand_to_seconds(param_str.split(',')[2])
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[2])
     
     def notify(self, aggregate_second):
         matched_responses = self.count_matched_codes(self.codes_regex, aggregate_second.overall.http_codes)

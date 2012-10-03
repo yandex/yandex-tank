@@ -1,4 +1,3 @@
-from Tank.Core import TankCore
 from Tank.Plugins.Aggregator import AggregatorPlugin, AbstractReader
 from Tests.TankTests import TankTestCase
 import time

@@ -1,7 +1,8 @@
-from Tank.MonCollector.collector import MonitoringCollector, MonitoringDataListener
-from Tank.Core import AbstractPlugin
+from Tank.MonCollector.collector import MonitoringCollector, \
+    MonitoringDataListener
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.Phantom import PhantomPlugin
+from tankcore import AbstractPlugin
 import base64
 import copy
 import os

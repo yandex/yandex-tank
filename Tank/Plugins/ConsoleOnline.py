@@ -1,9 +1,9 @@
-from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from Tank.Plugins.ConsoleScreen import Screen
-import traceback
-import sys
+from tankcore import AbstractPlugin
 import logging
+import sys
+import traceback
 
 
 class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):

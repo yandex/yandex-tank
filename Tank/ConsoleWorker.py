@@ -1,9 +1,10 @@
 '''
 Provides class to run TankCore from console environment
 '''
-from Tank.Core import TankCore
-from Tank import Core 
+from Tank.Plugins.ConsoleOnline import RealConsoleMarkup
+from tankcore import TankCore
 import ConfigParser
+import datetime
 import fnmatch
 import logging
 import os
@@ -11,8 +12,7 @@ import sys
 import tempfile
 import time
 import traceback
-from Tank.Plugins.ConsoleOnline import RealConsoleMarkup
-import datetime
+import tankcore
 
 # TODO: 2 add system resources busy check
 class ConsoleTank:
@@ -180,7 +180,7 @@ class ConsoleTank:
                     info = ConfigParser.ConfigParser()
                     info.read(full_name)
                     pid = info.get(TankCore.SECTION, self.PID_OPTION)
-                    if not Core.pid_exists(int(pid)):
+                    if not tankcore.pid_exists(int(pid)):
                         self.log.debug("Lock PID %s not exists, ignoring and trying to remove", pid)
                         try:
                             os.remove(full_name)

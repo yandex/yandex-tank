@@ -1,10 +1,10 @@
-from Tank import Core
-from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin, AbstractReader
+from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+from tankcore import AbstractPlugin
 import os
 import subprocess
+import tankcore
 import tempfile
-from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 
 # TODO: 3 add console screen widget with info and PB measured via stderr info parsing
 class ApacheBenchmarkPlugin(AbstractPlugin):
@@ -69,7 +69,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
             return -1
 
         if self.process:
-            Core.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
+            tankcore.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
 
             
     def end_test(self, retcode):
@@ -80,7 +80,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
             self.log.info("Seems ab finished OK")
 
         if self.process:
-            Core.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
+            tankcore.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
         return retcode
             
 

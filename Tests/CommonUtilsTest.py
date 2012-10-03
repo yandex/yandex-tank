@@ -1,7 +1,7 @@
-from Tank import Core
 from Tests.TankTests import TankTestCase 
 
 import unittest
+import tankcore
 
 class CommonUtilsTest(TankTestCase):
 	def setUp(self):
@@ -15,11 +15,11 @@ class CommonUtilsTest(TankTestCase):
 
 	def test_expand_to_seconds(self):
 		for i in self.stest:
-			self.assertEqual(Core.expand_to_seconds(i[0]), i[1])
+			self.assertEqual(tankcore.expand_to_seconds(i[0]), i[1])
 
 	def test_expand_to_seconds_fail(self):
 		try:
-			Core.expand_to_seconds("100n")
+			tankcore.expand_to_seconds("100n")
 			raise RuntimeError("Exception expected")
 		except ValueError, ex:
 			# it's ok, we have excpected exception
@@ -28,12 +28,12 @@ class CommonUtilsTest(TankTestCase):
 
 	def test_expand_to_milliseconds(self):
 		for i in self.mstest:
-			self.assertEqual(Core.expand_to_milliseconds(i[0]), i[1])
+			self.assertEqual(tankcore.expand_to_milliseconds(i[0]), i[1])
 
 
 	def test_expand_to_milliseconds_fail(self):
 		try:
-			Core.expand_to_milliseconds("100n")
+			tankcore.expand_to_milliseconds("100n")
 			raise RuntimeError("Exception expected")
 		except ValueError, ex:
 			# it's ok, we have excpected exception

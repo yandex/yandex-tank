@@ -1,7 +1,6 @@
 from Tank.ConsoleWorker import ConsoleTank
-from Tank.Core import ConfigManager
 from Tests.TankTests import TankTestCase, FakeOptions
-import os
+from tankcore import ConfigManager
 import tempfile
 import unittest
 
@@ -10,7 +9,7 @@ class  ConfigManagerTestCase(TankTestCase):
         tank = ConsoleTank(FakeOptions(), None)
         tank.init_logging()
         self.foo = ConfigManager()
-        (handler, name) = tempfile.mkstemp()
+        name = tempfile.mkstemp()[1]
         self.foo.set_out_file(name)
     
 

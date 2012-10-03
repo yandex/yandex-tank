@@ -1,4 +1,4 @@
-from Tank.Core import AbstractPlugin
+from tankcore import AbstractPlugin
 import time
 
 class DummyPlugin(AbstractPlugin):

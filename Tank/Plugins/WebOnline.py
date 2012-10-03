@@ -1,12 +1,12 @@
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-from Tank import Core
-from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
+from tankcore import AbstractPlugin
 from threading import Thread
 import json
 import logging
 import os.path
 import socket
+import tankcore
 import time
 
 class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
@@ -29,7 +29,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
     
     def configure(self):
         self.port = int(self.get_option("port", self.port))
-        self.interval = int(Core.expand_to_seconds(self.get_option("interval", '1m')))
+        self.interval = int(tankcore.expand_to_seconds(self.get_option("interval", '1m')))
         self.redirect = self.get_option("redirect", self.redirect)
     
     def prepare_test(self):

@@ -1,7 +1,4 @@
-Tank/__init__.py usr/lib/yandex-tank/Tank
-Tank/ConsoleWorker.py usr/lib/yandex-tank/Tank
-Tank/Plugins usr/lib/yandex-tank/Tank
-Tank/MonCollector usr/lib/yandex-tank/Tank
+Tank usr/lib/yandex-tank
 
 tank.py usr/lib/yandex-tank
 *.sh usr/lib/yandex-tank

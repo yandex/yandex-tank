@@ -1,5 +1,3 @@
-from Tank import Core
-from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AbstractReader, AggregatorPlugin, \
     AggregateResultListener
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
@@ -8,6 +6,8 @@ import signal
 import subprocess
 import tempfile
 import time
+from tankcore import AbstractPlugin
+import tankcore
 
 
 class JMeterPlugin(AbstractPlugin):
@@ -38,7 +38,7 @@ class JMeterPlugin(AbstractPlugin):
 
     def prepare_test(self):
         self.args = [self.jmeter_path, "-n", "-t", self.jmx, '-j', self.jmeter_log, '-Jjmeter.save.saveservice.default_delimiter=\\t']
-        self.args += Core.splitstring(self.user_args)
+        self.args += tankcore.splitstring(self.user_args)
         
         aggregator = None
         try:

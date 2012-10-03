@@ -2,8 +2,8 @@
 Plugin showing tool learning hints in console
 '''
 
-from Tank.Core import AbstractPlugin
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+from tankcore import AbstractPlugin
 import os
 import random
 import textwrap
