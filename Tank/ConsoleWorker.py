@@ -67,7 +67,6 @@ class ConsoleTank:
     
     
     def __init__(self, options, ammofile):
-        # @type tank Tank.Core.TankCore
         self.core = TankCore()
 
         self.options = options
@@ -314,6 +313,7 @@ class ConsoleTank:
             sys.stdout.write(RealConsoleMarkup.RED)
             self.log.error("%s", ex)
             sys.stdout.write(RealConsoleMarkup.RESET)
+            sys.stdout.write(RealConsoleMarkup.TOTAL_RESET)
             retcode = self.__graceful_shutdown()
         
         self.log.info("Done performing test with code %s", retcode)

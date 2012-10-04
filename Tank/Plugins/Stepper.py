@@ -34,7 +34,7 @@ def get_ammo_type(filename):
     elif re.match("^\d", first_line):
         return 'request'
     else:
-        raise RuntimeError("Unsupported ammo format in %s", filename)
+        raise RuntimeError("Unsupported ammo format in %s" % filename)
 
 
 def detect_case_file(filename):

@@ -1,24 +1,27 @@
 '''Graphite Uploader plugin that sends aggregated data to Graphite server'''
 
-from Tank.Core import AbstractPlugin
 from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
+from tankcore import AbstractPlugin
 import logging
 import socket
-import time
 import string
+import time
 
 class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
     '''Graphite data uploader'''
     
     SECTION = 'graphite'
 
+    @staticmethod
+    def get_key():
+        return __file__
+    
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         self.graphite_client = None
 
     def configure(self):
         '''Read configuration'''
-        self.log = logging.getLogger(__name__)
         address = self.get_option("address", "")
         if address == "": 
             self.log.warning("Graphite uploader is not configured and will not send any data")
@@ -33,7 +36,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         """
         @data: SecondAggregateData
         """
-        if self.graphite_client != None:
+        if self.graphite_client:
             results = {}
             overall = GraphiteUploaderPlugin.__flatten(data.overall.__dict__, "overall")
             cumulative = GraphiteUploaderPlugin.__flatten(data.cumulative.__dict__, "cumulative")
@@ -58,10 +61,8 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             except AttributeError:
                 pass
         return results
-    
-    @staticmethod
-    def get_key():
-        return __file__
+
+
     
 class GraphiteClient(object):
     '''Graphite client that writes metrics to Graphite server'''
