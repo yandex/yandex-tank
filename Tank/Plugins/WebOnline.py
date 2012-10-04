@@ -41,6 +41,13 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
     def start_test(self):
         self.start()
         
+    def end_test(self, retcode):
+        self.log.info("Shutting down local server")
+        self.server.shutdown()
+        del self.server
+        self.server = None
+        return retcode
+        
     def run(self):
         address = socket.gethostname()
         self.log.info("Starting local HTTP server for online view at port: http://%s:%s/", address, self.port)
