@@ -167,6 +167,7 @@ class TankCore:
         self.artifacts_base_dir = '.'
         self.manual_start = False
         self.scheduled_start = None
+        self.interrupted = False
          
     def load_configs(self, configs):
         '''
@@ -266,7 +267,7 @@ class TankCore:
         if not self.plugins:
             raise RuntimeError("It's strange: we have no plugins loaded...")
         
-        while True:
+        while not self.interrupted:
             begin_time = time.time()
             for plugin_key in self.plugins_order:
                 plugin = self.__get_plugin_by_key(plugin_key)
@@ -279,8 +280,7 @@ class TankCore:
             self.log.debug("Polling took %s", diff)
             if (diff < 1):
                 time.sleep(1 - diff)
-        raise RuntimeError("Unreachable line hit")
-            
+        return 1
 
     def plugins_end_test(self, retcode):
         '''
