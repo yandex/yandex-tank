@@ -358,7 +358,7 @@ class PhantomPlugin(AbstractPlugin):
         if self.use_caching:
             sep = "|"
             hasher = hashlib.md5()
-            hashed_str = os.path.realpath(self.ammo_file) + sep + self.instances_schedule + sep + str(self.loop_limit)
+            hashed_str = self.instances_schedule + sep + str(self.loop_limit)
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(self.rps_schedule) + sep + self.autocases
             hashed_str += sep + ";".join(self.uris) + sep + ";".join(self.headers)
             
@@ -366,6 +366,7 @@ class PhantomPlugin(AbstractPlugin):
                 if not os.path.exists(self.ammo_file):
                     raise RuntimeError("Ammo file not found: %s", self.ammo_file)
             
+                hashed_str += sep + os.path.realpath(self.ammo_file)
                 stat = os.stat(self.ammo_file)
                 cnt = 0
                 for stat_option in stat:
@@ -373,13 +374,13 @@ class PhantomPlugin(AbstractPlugin):
                         continue
                     cnt += 1
                     hashed_str += ";" + str(stat_option)
-                self.log.debug("stpd-hash source: %s", hashed_str)
-                hasher.update(hashed_str)
             else:
                 if not self.uris:
                     raise RuntimeError("Neither phantom.ammofile nor phantom.uris specified")
-                hasher.update(';'.join(self.uris) + ';'.join(self.headers))
+                hashed_str += sep + ';'.join(self.uris) + sep + ';'.join(self.headers)
 
+            self.log.debug("stpd-hash source: %s", hashed_str)
+            hasher.update(hashed_str)
             
             if not os.path.exists(self.cache_dir):
                 os.makedirs(self.cache_dir)
@@ -619,7 +620,11 @@ class PhantomReader(AbstractReader):
         '''
         Read phantom results
         '''
-        phout = self.phout.readlines()
+        if self.phout:
+            phout = self.phout.readlines()
+        else:
+            phout = []
+    
         self.log.debug("About to process %s phout lines", len(phout))
         for line in phout:
             line = self.partial_buffer + line

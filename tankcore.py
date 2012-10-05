@@ -189,20 +189,25 @@ class TankCore:
         Tells core to take plugin options and instantiate plugin classes
         '''
         self.log.info("Loading plugins...")
-        self.log.debug("sys.path: %s", sys.path)
 
         self.artifacts_base_dir = os.path.expanduser(self.get_option(self.SECTION, "artifacts_base_dir", self.artifacts_base_dir))
         self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
         if self.artifacts_dir:
             self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
 
-        for (plugin_name, plugin_path) in self.config.get_options(self.SECTION, self.PLUGIN_PREFIX):
+        options = self.config.get_options(self.SECTION, self.PLUGIN_PREFIX)
+        #old_count = len(self.plugins)
+        #while old_count
+        for (plugin_name, plugin_path) in options:
             if not plugin_path:
                 self.log.debug("Seems the plugin '%s' was disabled", plugin_name)
                 continue
             instance = self.__load_plugin(plugin_name, plugin_path)
-            self.plugins[instance.get_key()] = instance 
-            self.plugins_order.append(instance.get_key())
+            key = os.path.realpath(instance.get_key())
+            self.plugins[key] = instance 
+            self.plugins_order.append(key)
+            
+            
         self.log.debug("Plugin instances: %s", self.plugins)
         self.log.debug("Plugins order: %s", self.plugins_order)
             
@@ -212,12 +217,18 @@ class TankCore:
         '''
         self.log.debug("Loading plugin %s from %s", name, path)
         for basedir in [''] + sys.path:
-            new_dir = basedir + '/' + path
-            if os.path.exists(basedir + '/' + path):
-                self.log.debug('Append to path basedir of: %s', new_dir)
-                sys.path.append(os.path.dirname(new_dir))
+            if basedir:
+                new_dir = basedir + '/' + path
+            else:
+                new_dir = path
+            if os.path.exists(new_dir):
+                new_dir = os.path.dirname(new_dir)
+                if new_dir not in sys.path:
+                    self.log.debug('Append to path: %s', new_dir)
+                    sys.path.append(new_dir)
         res = None
         classname = os.path.basename(path)[:-3]
+        self.log.debug("sys.path: %s", sys.path)
         exec ("import " + classname)
         script = "res=" + classname + "." + classname + "Plugin(self)"
         self.log.debug("Exec: " + script)
@@ -303,6 +314,7 @@ class TankCore:
     
 
     def __collect_artifacts(self):
+        self.log.debug("Collecting artifacts")
         if not self.artifacts_dir:
             date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
             self.artifacts_dir = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)
@@ -367,7 +379,7 @@ class TankCore:
         Retrieve a plugin of desired class, KeyError raised otherwise
         '''
         self.log.debug("Searching for plugin: %s", needle)
-        key = needle.get_key()
+        key = os.path.realpath(needle.get_key())
         
         return self.__get_plugin_by_key(key)
         

@@ -35,6 +35,7 @@ class MonitoringPlugin(AbstractPlugin):
                     
         if self.config == 'none':
             self.monitoring = None
+        # TODO: 2 check for config file existence here
     
         if self.config == 'auto':
             self.config = os.path.dirname(__file__) + '/monitoring_default_config.xml'
