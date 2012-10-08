@@ -8,6 +8,7 @@ import os.path
 import socket
 import tankcore
 import time
+import traceback
 
 class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
     SECTION = "web"
@@ -43,7 +44,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         
     def end_test(self, retcode):
         self.log.info("Shutting down local server")
-        self.server.shutdown()
+        #self.server.shutdown() don't enable it since it leads to random deadlocks
         del self.server
         self.server = None
         return retcode

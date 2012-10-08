@@ -9,4 +9,5 @@ configure-stamp
 *.pyc
 .*
 debian/files
-*~
+*~debian/yandex-load-tank-base.postinst.debhelper
+debian/yandex-load-tank-base.prerm.debhelper
