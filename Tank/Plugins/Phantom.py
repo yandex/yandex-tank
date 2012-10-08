@@ -87,6 +87,7 @@ class PhantomPlugin(AbstractPlugin):
         self.phantom_http_field_num = None
         self.phantom_http_field = None
         self.phantom_http_entity = None
+        self.eta_file = None
     
     @staticmethod
     def get_key():
@@ -181,10 +182,14 @@ class PhantomPlugin(AbstractPlugin):
         # phantom part
         self.__read_phantom_options()
 
+        # plugin part
+        self.eta_file = self.get_option("eta_file", '')
+
         self.core.add_artifact_file(self.answ_log)        
         self.core.add_artifact_file(self.stat_log)
         self.core.add_artifact_file(self.phantom_log)
-        self.core.add_artifact_file(self.config)        
+        self.core.add_artifact_file(self.config)
+        self.core.add_artifact_file(self.eta_file)        
 
         self.__check_address()            
 
@@ -302,6 +307,8 @@ class PhantomPlugin(AbstractPlugin):
                 
             if console:    
                 widget = PhantomProgressBarWidget(self)
+                if self.eta_file:
+                    widget.eta_file = self.eta_file
                 console.add_info_widget(widget)
                 aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
                 aggregator.add_result_listener(widget)
@@ -447,6 +454,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         self.ammo_progress = 0
         self.ammo_count = int(self.owner.core.get_option(self.owner.SECTION, self.owner.OPTION_AMMO_COUNT))
         self.test_duration = int(self.owner.core.get_option(self.owner.SECTION, self.owner.OPTION_TEST_DURATION))
+        self.eta_file = None
 
     def render(self, screen):
         res = ""
@@ -454,20 +462,26 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         dur_seconds = int(time.time()) - int(self.owner.phantom_start_time)
 
         eta_time = 'N/A' 
-        
+        eta_secs = -1
         progress = 0
         color_bg = screen.markup.BG_CYAN
         color_fg = screen.markup.CYAN
         if self.test_duration and self.test_duration >= dur_seconds:
             color_bg = screen.markup.BG_GREEN
             color_fg = screen.markup.GREEN
-            eta_time = datetime.timedelta(seconds=self.test_duration - dur_seconds)
+            eta_secs = self.test_duration - dur_seconds
+            eta_time = datetime.timedelta(seconds=eta_secs)
             progress = float(dur_seconds) / self.test_duration
         elif self.ammo_progress:
             left_part = self.ammo_count - self.ammo_progress
-            secs = int(float(dur_seconds) / float(self.ammo_progress) * float(left_part))
-            eta_time = datetime.timedelta(seconds=secs)
+            eta_secs = int(float(dur_seconds) / float(self.ammo_progress) * float(left_part))
+            eta_time = datetime.timedelta(seconds=eta_secs)
             progress = float(self.ammo_progress) / float(self.ammo_count)
+
+        if self.eta_file:
+            handle = open(self.eta_file, 'w')
+            handle.write(str(eta_secs))
+            handle.close()
 
         perc = float(int(1000 * progress)) / 10
         str_perc = str(perc) + "%"

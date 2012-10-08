@@ -1,3 +1,12 @@
+yandex-load-tank-base (1.1.0) precise; urgency=low
+
+  * make core pyshared object
+  * allow external test interruption
+  * add manpages
+  * fix some bugs
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 08 Oct 2012 16:59:57 +0400
+
 yandex-load-tank-base (1.0.15) precise; urgency=low
 
   * change core module layout
