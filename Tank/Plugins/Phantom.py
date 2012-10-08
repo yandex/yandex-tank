@@ -570,7 +570,6 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         
         self.RPS = second_aggregate_data.overall.RPS
         self.selfload = second_aggregate_data.overall.selfload
-        self.log.debug("%s %s", second_aggregate_data.time.timetuple(), self.owner.phantom_start_time)
         self.time_lag = int(time.time() - time.mktime(second_aggregate_data.time.timetuple()))
     
     

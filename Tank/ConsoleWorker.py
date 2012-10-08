@@ -13,7 +13,6 @@ import tempfile
 import time
 import traceback
 
-# FIXME: 1 remove lock in case of config format error
 # TODO: 2 add system resources busy check
 class ConsoleTank:
     """

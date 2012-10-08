@@ -323,12 +323,17 @@ class TankCore:
         self.log.debug("Collecting artifacts")
         if not self.artifacts_dir:
             date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
-            self.artifacts_dir = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)
-        elif not os.path.isdir(self.artifacts_dir):
+            self.artifacts_dir = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)        
+        if not os.path.isdir(self.artifacts_dir):
             os.makedirs(self.artifacts_dir)
+            os.chmod(self.artifacts_dir, 0744)
+        
         self.log.info("Artifacts dir: %s", self.artifacts_dir)
         for filename, keep in self.artifact_files.items():
-            self.__collect_file(filename, keep)
+            try:
+                self.__collect_file(filename, keep)
+            except Exception, ex:
+                self.log.warn("Failed to collect file %s: %s", filename, ex)
 
     def plugins_post_process(self, retcode):
         '''
@@ -457,6 +462,7 @@ class TankCore:
             raise RuntimeError("There is lock files")
         
         self.lock_file = tempfile.mkstemp('.lock', 'lunapark_', self.LOCK_DIR)[1]
+        os.chmod(self.lock_file, 0644)
         self.config.file = self.lock_file
     
     
@@ -484,15 +490,11 @@ class TankCore:
                         except Exception, exc:
                             self.log.debug("Failed to delete lock %s: %s", full_name, exc)
                     else:
-                        retcode = True        
+                        retcode = True
                 except Exception, exc:
                     self.log.warn("Failed to load info from lock %s: %s", full_name, exc)
                     retcode = True        
         return retcode
-    
-    
-    
-    
     
     
             
