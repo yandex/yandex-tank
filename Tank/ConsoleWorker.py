@@ -9,7 +9,6 @@ import fnmatch
 import logging
 import os
 import sys
-import tankcore
 import tempfile
 import time
 import traceback
@@ -23,10 +22,6 @@ class ConsoleTank:
 
     MIGRATE_SECTION = 'migrate_old'
 
-    PID_OPTION = 'pid'
-
-    LOCK_DIR = '/var/lock'
-    
     old_options_mapping = {
         'instances': ('phantom', ''),
         'tank_type': ('phantom', ''),
@@ -81,7 +76,6 @@ class ConsoleTank:
 
         self.signal_count = 0
         self.scheduled_start = None
-        self.lock_file = None
 
     def set_baseconfigs_dir(self, directory):
         '''
@@ -169,31 +163,6 @@ class ConsoleTank:
         if self.options.option: 
             self.core.apply_shorthand_options(self.options.option, self.MIGRATE_SECTION)            
     
-    def __there_is_locks(self):
-        retcode = False
-        for filename in os.listdir(self.LOCK_DIR):
-            if fnmatch.fnmatch(filename, 'lunapark_*.lock'):
-                full_name = self.LOCK_DIR + os.sep + filename
-                self.log.warn("Lock file present: %s", full_name)
-                
-                try:
-                    info = ConfigParser.ConfigParser()
-                    info.read(full_name)
-                    pid = info.get(TankCore.SECTION, self.PID_OPTION)
-                    if not tankcore.pid_exists(int(pid)):
-                        self.log.debug("Lock PID %s not exists, ignoring and trying to remove", pid)
-                        try:
-                            os.remove(full_name)
-                        except Exception, exc:
-                            self.log.debug("Failed to delete lock %s: %s", full_name, exc)
-                    else:
-                        retcode = True        
-                except Exception, exc:
-                    self.log.warn("Failed to load info from lock %s: %s", full_name, exc)
-                    retcode = True        
-        return retcode
-    
-    
     def __translate_old_options(self):
         for old_option, value in self.core.config.get_options(self.MIGRATE_SECTION):
             if old_option in self.old_options_mapping.keys():
@@ -212,59 +181,66 @@ class ConsoleTank:
         '''
         Make all console-specific preparations before running Tank
         '''
-        if not self.options.ignore_lock:
-            while self.__there_is_locks():
+        if self.options.ignore_lock:
+            self.log.warn("Lock files ignored. This is highly unrecommended practice!")        
+        
+        while True:        
+            try:
+                self.core.get_lock(self.options.ignore_lock)
+                break;
+            except Exception:
                 if self.options.lock_fail:
                     raise RuntimeError("Lock file present, cannot continue")
                 self.log.info("Waiting 5s for retry...")
                 time.sleep(5)
-        else:
-            self.log.warn("Lock files ignored. This is highly unrecommended practice!")        
         
-        self.lock_file = tempfile.mkstemp('.lock', 'lunapark_', self.LOCK_DIR)[1]
-        self.core.config.set_out_file(self.lock_file)
-        
-        configs = []
-
-        if not self.options.no_rc:
-            try:
-                for filename in os.listdir(self.baseconfigs_location):
-                    if fnmatch.fnmatch(filename, '*.ini'):
-                        configs += [os.path.realpath(self.baseconfigs_location + os.sep + filename)]
-            except OSError:
-                self.log.warn(self.baseconfigs_location + ' is not acessible to get configs list')
-    
-            configs += [os.path.expanduser('~/.yandex-tank')]
-        
-        if not self.options.config:
-            # just for old 'lunapark' compatibility
-            self.log.debug("No config passed via cmdline, using ./load.conf")
-            conf_file = self.__adapt_old_config(os.path.realpath('load.conf'))
-            configs += [conf_file]
-            self.core.add_artifact_file(conf_file, True)
-        else:
-            for config_file in self.options.config:
-                self.__add_adapted_config(configs, config_file)
-
-        self.core.load_configs(configs)
-
-        self.core.set_option(TankCore.SECTION, self.PID_OPTION, os.getpid())
-        
-        if self.ammofile:
-            self.log.debug("Ammofile: %s", self.ammofile)
-            self.core.set_option(self.MIGRATE_SECTION, 'ammofile', self.ammofile[0])
-
-        self.__translate_old_options()
-        self.__override_config_from_cmdline()
-                    
-        self.core.load_plugins()
-        
-        if self.options.scheduled_start:
-            try:
-                self.scheduled_start = datetime.datetime.strptime(self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
-            except ValueError:
-                self.scheduled_start = datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d ') + self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
+        try:
+            configs = []
             
+            if not self.options.no_rc:
+                try:
+                    for filename in os.listdir(self.baseconfigs_location):
+                        if fnmatch.fnmatch(filename, '*.ini'):
+                            configs += [os.path.realpath(self.baseconfigs_location + os.sep + filename)]
+                except OSError:
+                    self.log.warn(self.baseconfigs_location + ' is not acessible to get configs list')
+        
+                configs += [os.path.expanduser('~/.yandex-tank')]
+            
+            if not self.options.config:
+                # just for old 'lunapark' compatibility
+                self.log.debug("No config passed via cmdline, using ./load.conf")
+                conf_file = self.__adapt_old_config(os.path.realpath('load.conf'))
+                configs += [conf_file]
+                self.core.add_artifact_file(conf_file, True)
+            else:
+                for config_file in self.options.config:
+                    self.__add_adapted_config(configs, config_file)
+    
+            self.core.load_configs(configs)
+    
+            if self.ammofile:
+                self.log.debug("Ammofile: %s", self.ammofile)
+                self.core.set_option(self.MIGRATE_SECTION, 'ammofile', self.ammofile[0])
+    
+            self.__translate_old_options()
+            self.__override_config_from_cmdline()
+                        
+            self.core.load_plugins()
+            
+            if self.options.scheduled_start:
+                try:
+                    self.scheduled_start = datetime.datetime.strptime(self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    self.scheduled_start = datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d ') + self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
+        except Exception, ex:
+            self.log.info("Exception: %s", traceback.format_exc(ex))
+            sys.stdout.write(RealConsoleMarkup.RED)
+            self.log.error("%s", ex)
+            sys.stdout.write(RealConsoleMarkup.RESET)
+            sys.stdout.write(RealConsoleMarkup.TOTAL_RESET)
+            self.core.release_lock()
+            raise ex
 
     def __graceful_shutdown(self):
         retcode = 1
@@ -316,6 +292,7 @@ class ConsoleTank:
             sys.stdout.write(RealConsoleMarkup.RESET)
             sys.stdout.write(RealConsoleMarkup.TOTAL_RESET)
             retcode = self.__graceful_shutdown()
+            self.core.release_lock()
         
         self.log.info("Done performing test with code %s", retcode)
         return retcode

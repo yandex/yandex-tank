@@ -8,10 +8,7 @@ class  ConfigManagerTestCase(TankTestCase):
     def setUp(self):
         tank = ConsoleTank(FakeOptions(), None)
         tank.init_logging()
-        self.foo = ConfigManager()
-        name = tempfile.mkstemp()[1]
-        self.foo.set_out_file(name)
-    
+        self.foo = ConfigManager()    
 
     def tearDown(self):
         del self.foo

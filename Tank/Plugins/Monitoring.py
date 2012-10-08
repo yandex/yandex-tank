@@ -1,3 +1,7 @@
+'''
+Module to provide target monitoring
+'''
+
 from Tank.MonCollector.collector import MonitoringCollector, \
     MonitoringDataListener
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
@@ -10,6 +14,10 @@ import tempfile
 import time
 
 class MonitoringPlugin(AbstractPlugin):
+    '''
+    Tank plugin
+    '''
+    
     SECTION = 'monitoring'
     
     def __init__(self, core):
@@ -24,7 +32,7 @@ class MonitoringPlugin(AbstractPlugin):
 
     @staticmethod
     def get_key():
-        return __file__;
+        return __file__
     
     def configure(self):
         self.config = self.get_option("config", 'auto')
@@ -112,16 +120,22 @@ class MonitoringPlugin(AbstractPlugin):
     
 
 class SaveMonToFile(MonitoringDataListener):
+    '''
+    Default listener - saves data to file
+    '''
     def __init__(self, out_file):
         if out_file:
             self.store = open(out_file, 'w')
     
     def monitoring_data(self, data_string):
-            self.store.write(data_string)
-            self.store.flush()
+        self.store.write(data_string)
+        self.store.flush()
 
 
 class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
+    '''
+    Screen widget
+    '''
 
     NA = 'n/a'
     def __init__(self, owner):
@@ -135,6 +149,25 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
     def get_index(self):
         return 50
 
+
+    def handle_data_item(self, data, host, metrics):
+        for value in data:
+            metric = metrics.pop(0)
+            if value == '':
+                value = self.NA
+                self.sign[host][metric] = -1
+                self.data[host][metric] = value
+            else:
+                if self.data[host][metric] == self.NA:
+                    self.sign[host][metric] = 1
+                elif float(value) > float(self.data[host][metric]):
+                    self.sign[host][metric] = 1
+                elif float(value) < float(self.data[host][metric]):
+                    self.sign[host][metric] = -1
+                else:
+                    self.sign[host][metric] = 0
+                self.data[host][metric] = "%.2f" % float(value)
+
     def monitoring_data(self, data_string):
         self.log.debug("Mon widget data: %s", data_string)
         for line in data_string.split("\n"):
@@ -145,7 +178,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                 data.pop(0) # remove 'start'
                 host = data.pop(0)
                 if not data:
-                    continue;
+                    continue
                 data.pop(0) # remove timestamp
                 self.metrics[host] = []
                 self.data[host] = {}
@@ -161,23 +194,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                 host = data.pop(0)
                 data.pop(0) # remove timestamp
                 metrics = copy.copy(self.metrics[host])
-                for value in data:
-                    metric = metrics.pop(0)
-                    if value == '':
-                        value = self.NA
-                        self.sign[host][metric] = -1
-                        self.data[host][metric] = value
-                    else:
-                        if self.data[host][metric] == self.NA:
-                            self.sign[host][metric] = 1
-                        else:
-                            if float(value) > float(self.data[host][metric]):
-                                self.sign[host][metric] = 1
-                            elif float(value) < float(self.data[host][metric]):
-                                self.sign[host][metric] = -1
-                            else:
-                                self.sign[host][metric] = 0
-                        self.data[host][metric] = "%.2f" % float(value) 
+                self.handle_data_item(data, host, metrics) 
                 
     
     def render(self, screen):

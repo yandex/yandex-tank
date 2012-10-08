@@ -9,8 +9,6 @@ import unittest
 class  PhantomPluginTestCase(TankTestCase):
     def setUp(self):
         core = self.get_core()
-        (name) = tempfile.mkstemp()[1]
-        core.config.set_out_file(name)
         core.load_configs(['config/phantom.conf'])
         core.load_plugins()
         core.plugins_configure()

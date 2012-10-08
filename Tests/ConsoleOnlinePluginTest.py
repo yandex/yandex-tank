@@ -23,8 +23,6 @@ class FakeConsoleMarkup(RealConsoleMarkup):
 class ConsoleOnlinePluginTestCase(TankTestCase):
     def setUp(self):
         core = self.get_core()
-        name = tempfile.mkstemp()[1]
-        core.config.set_out_file(name)
         core.load_configs(['config/console.conf'])
         core.load_plugins()
         self.foo = ConsoleOnlinePlugin(core)

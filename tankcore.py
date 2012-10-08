@@ -16,6 +16,7 @@ import sys
 import tempfile
 import time
 import traceback
+import fnmatch
 
 
 def log_stdout_stderr(log, stdout, stderr, comment=""):
@@ -156,6 +157,9 @@ class TankCore:
     """
     SECTION = 'tank'
     PLUGIN_PREFIX = 'plugin_'
+    PID_OPTION = 'pid'
+    LOCK_DIR = '/var/lock'
+    
     
     def __init__(self):
         self.log = logging.getLogger(__name__)
@@ -168,7 +172,8 @@ class TankCore:
         self.manual_start = False
         self.scheduled_start = None
         self.interrupted = False
-         
+        self.lock_file = None
+
     def load_configs(self, configs):
         '''
         Tells core to load configs set into options storage
@@ -182,6 +187,7 @@ class TankCore:
         self.apply_shorthand_options(dotted_options, self.SECTION)
         self.config.flush()
         self.add_artifact_file(self.config.file)
+        self.set_option(self.SECTION, self.PID_OPTION, os.getpid())
 
          
     def load_plugins(self):
@@ -444,6 +450,50 @@ class TankCore:
             value = option_str[option_str.index('=') + 1:]    
             self.log.debug("Override option: %s => [%s] %s=%s", option_str, section, option, value)
             self.set_option(section, option, value)
+
+    
+    def get_lock(self, force=False):
+        if not force and self.__there_is_locks():
+            raise RuntimeError("There is lock files")
+        
+        self.lock_file = tempfile.mkstemp('.lock', 'lunapark_', self.LOCK_DIR)[1]
+        self.config.file = self.lock_file
+    
+    
+    def release_lock(self):
+        self.config.file = './lp.conf'
+        if os.path.exists(self.lock_file):
+            os.remove(self.lock_file)
+    
+    
+    def __there_is_locks(self):
+        retcode = False
+        for filename in os.listdir(self.LOCK_DIR):
+            if fnmatch.fnmatch(filename, 'lunapark_*.lock'):
+                full_name = self.LOCK_DIR + os.sep + filename
+                self.log.warn("Lock file present: %s", full_name)
+                
+                try:
+                    info = ConfigParser.ConfigParser()
+                    info.read(full_name)
+                    pid = info.get(TankCore.SECTION, self.PID_OPTION)
+                    if not pid_exists(int(pid)):
+                        self.log.debug("Lock PID %s not exists, ignoring and trying to remove", pid)
+                        try:
+                            os.remove(full_name)
+                        except Exception, exc:
+                            self.log.debug("Failed to delete lock %s: %s", full_name, exc)
+                    else:
+                        retcode = True        
+                except Exception, exc:
+                    self.log.warn("Failed to load info from lock %s: %s", full_name, exc)
+                    retcode = True        
+        return retcode
+    
+    
+    
+    
+    
     
             
 class ConfigManager:
@@ -451,16 +501,10 @@ class ConfigManager:
     Option storage class
     '''
     def __init__(self):
-        self.file = tempfile.mkstemp(".conf", "lp_")[1]
+        self.file = './lp.conf'
         self.log = logging.getLogger(__name__)
         self.config = ConfigParser.ConfigParser()
             
-    def set_out_file(self, filename):
-        '''
-        set path to file where current options set state will be saved
-        '''
-        self.file = filename
-    
     def load_files(self, configs):
         '''
         Read configs set into storage
@@ -499,6 +543,8 @@ class ConfigManager:
                 
         self.log.debug("Found options: %s", res)
         return res
+
+
 
 class AbstractPlugin:
     '''
