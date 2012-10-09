@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.1.1) precise; urgency=low
+
+  * polish work with artifacts
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 08 Oct 2012 20:58:45 +0400
+
 yandex-load-tank-base (1.1.0) precise; urgency=low
 
   * make core pyshared object
