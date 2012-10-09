@@ -1,4 +1,4 @@
-.TH load.conf 5 "Oct 5, 2012" "" "YANDEX-TANK CONFIGURATION FILE"
+.TH load.conf 5 "Oct 9, 2012" "" "YANDEX-TANK CONFIGURATION FILE"
 
 .SH NAME
 load.conf \- yandex-tank(1) load test configuration file.
@@ -23,16 +23,20 @@ rps_scedule = const(1,10)
 .br
 .SH BASIC OPTIONS
 .B
-.IP address=IP , address=FQDN
-IP address , ipv6 supported
+.TP
+address=FQDN , IP
+IP address(ipv6 supported as x:x:x:x:x:x:x:x)
 .B
-.IP port=PORT
+.TP
+port=PORT
 IP port
 .B
-.IP rps_scedule=...
+.TP
+rps_scedule=...
 Load scheme of a test. These types of scheme stages may be used: const(RPS,DURATION), line (START_RPS,END_RPS,DURATION), step (START_RPS, END_RPS, STEP_RPS,DURATION_STEP). Load scheme is combined from multiple stages of those types: rps_schedule = line(1,10, 10) const(10,10)
 .B
-.IP uris=URL 
+.TP
+uris=URL 
 URL relative to server's root. You can use several uri= parameters. For example:
 .br
 uris = /
@@ -40,18 +44,22 @@ uris = /
   /buy
 
 .B
-.IP header_http=HTTP_PROTO
+.TP
+header_http=HTTP_PROTO
 HTTP protocol versions. Versions 1.1 and 1.0 are supported, 1.0 as default
 .B
-.IP headers=[CUSTOM_HEADERS] 
+.TP
+headers=[CUSTOM_HEADERS] 
 Additional HTTP headers:
 .br
 headers=[Connection: Close]
 .B
-.IP ssl=SSL_ENABLED
+.TP
+ssl=SSL_ENABLED
 ssl=1  enable SSL, in ssl=0 disable SSL, default 0
 .B
-.IP autostop=...
+.TP
+autostop=...
 This is a multi-string option. Autostop criteria to stop the test automaticaly. For example:
 .br
 [autostop]
@@ -65,23 +73,28 @@ autostop=time(1,10)
 Further reading: https://github.com/yandex-load/yandex-tank#auto-stop
 
 .B
-.IP instances=NUM
+.TP
+instances=NUM
 Number of concurrent connections. 
 .B
-.IP writelog=NUM
+.TP
+writelog=NUM
 1 - enable request/answers log, 0 - disable (WARNING: disable when you have high RPS to lower the load on your generator machine)
 .B
-.IP time_periods=NUM,NUM2,NUM3...
+.TP
+time_periods=NUM,NUM2,NUM3...
 Distribution histogram boundaries, for example: 
 .br
 [aggregator]
 .br
 time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s 
 .B
-.IP tank_type=NUM
+.TP
+tank_type=NUM
 1 - HTTP protocol, 2 - raw data (any stateless protocol).
 .B
-.IP gatling_ip=IP IP2 IP3..
+.TP
+gatling_ip=\IP\ \IP2\ \IP3\..
 Multiple source IPs.
 
 .SH EXAMPLE
@@ -89,13 +102,11 @@ Multiple source IPs.
 .br
 [phantom]
 .br
-#instances=10
-.br
 address=127.0.0.1
 .br
 port=80
 .br
-#writelog=1
+writelog=1
 .br
 rps_scedule = const (10,10m) 
 .br
@@ -107,6 +118,8 @@ headers = [Connection: Close]
 .br
 uris= /
 .br
+#instances=10
+.br
 #instances_schedule = line (1,1000,10m)
 .br
 #tank_type=2
@@ -114,19 +127,19 @@ uris= /
 #gatling_ip = 141.8.153.82 141.8.153.81
 .br
 .br
-#ssl=1
+ssl=0
 .br
 [autostop]
 .br
-#autostop = http(5xx,100%,1)
+autostop = http(5xx,100%,1)
 .br
 [monitoring]
 .br
-#monitoring_config=
+monitoring_config=none
 .br
 [aggregator]
 .br
-#time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s  
+time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s
 .br
 .SH "SEE ALSO"
 yandex-tank (1) 
