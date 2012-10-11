@@ -1,4 +1,5 @@
 Tank usr/lib/yandex-tank
+tankcore.py usr/lib/yandex-tank
 
 tank.py usr/lib/yandex-tank
 *.sh usr/lib/yandex-tank

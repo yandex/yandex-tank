@@ -435,6 +435,7 @@ class TankCore:
         else:
             shutil.move(filename, self.artifacts_dir)
 
+        os.chmod(dest, 0644)
     
     def add_artifact_file(self, filename, keep_original=False):
         '''

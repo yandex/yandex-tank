@@ -26,7 +26,7 @@ import time
 # TODO: 3  chosen cases
 # TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
 # FIXME: 3 there is no graceful way to interrupt the process in phout import mode 
-class PhantomPlugin(AbstractPlugin):
+class PhantomPlugin(AbstractPlugin, AggregateResultListener):
     '''
     Plugin for running phantom tool
     '''
@@ -88,6 +88,7 @@ class PhantomPlugin(AbstractPlugin):
         self.phantom_http_field = None
         self.phantom_http_entity = None
         self.eta_file = None
+        self.processed_ammo_count = 0
     
     @staticmethod
     def get_key():
@@ -287,6 +288,7 @@ class PhantomPlugin(AbstractPlugin):
         if aggregator:
             aggregator.reader = PhantomReader(aggregator, self)
             self.timeout = aggregator.get_timeout()
+            aggregator.add_result_listener(self)
 
         if not self.phout_import_mode:
             self.__prepare_stepper()     
@@ -342,8 +344,8 @@ class PhantomPlugin(AbstractPlugin):
             else:
                 return -1
         else:
-            if not self.did_phout_import_try:
-                self.did_phout_import_try = True
+            if not self.processed_ammo_count or self.did_phout_import_try != self.processed_ammo_count:
+                self.did_phout_import_try = self.processed_ammo_count
                 return -1
             else:
                 return 0
@@ -356,7 +358,19 @@ class PhantomPlugin(AbstractPlugin):
         else:
             self.log.debug("Seems phantom finished OK")
         return retcode
+
             
+    def post_process(self, retcode):
+        if not retcode:
+            count = self.get_option(self.OPTION_AMMO_COUNT)
+            if count != self.processed_ammo_count:
+                self.log.warning("Planned ammo count %s differs from processed %s", count, self.processed_ammo_count)
+        return retcode
+
+
+    def aggregate_second(self, second_aggregate_data):
+        self.processed_ammo_count += second_aggregate_data.overall.RPS
+
             
     def __get_stpd_filename(self):
         '''
@@ -397,6 +411,7 @@ class PhantomPlugin(AbstractPlugin):
             stpd = os.path.realpath("ammo.stpd")
     
         return stpd
+
     
     def __calculate_test_duration(self, steps):
         '''
@@ -407,6 +422,7 @@ class PhantomPlugin(AbstractPlugin):
             duration += dur
         
         self.core.set_option(self.SECTION, self.OPTION_TEST_DURATION, str(duration))
+
 
     def __read_cached_options(self, cached_config, stepper):
         '''
@@ -634,7 +650,7 @@ class PhantomReader(AbstractReader):
         Read phantom results
         '''
         if self.phout:
-            phout = self.phout.readlines()
+            phout = self.phout.readlines(5 * 1024 * 1024)
         else:
             phout = []
     
@@ -643,6 +659,7 @@ class PhantomReader(AbstractReader):
             line = self.partial_buffer + line
             self.partial_buffer = ''
             if line[-1] != "\n":
+                self.log.warn("Not complete line, buffering it: %s", line)
                 self.partial_buffer = line
                 continue
             line = line.strip()
@@ -680,7 +697,7 @@ class PhantomReader(AbstractReader):
             data_item += [(float(data[7]) + 1) / (int(data[2]) + 1)]
             self.data_buffer[cur_time].append(data_item)
                     
-        if len(self.data_queue) > 2:
+        if len(self.data_queue) > 3:
             return self.pop_second()
         
         if force and self.data_queue:

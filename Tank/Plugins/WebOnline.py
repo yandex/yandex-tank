@@ -8,7 +8,6 @@ import os.path
 import socket
 import tankcore
 import time
-import traceback
 
 class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
     SECTION = "web"
@@ -63,7 +62,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
             header += quantiles
             self.quantiles_data = [header, []]
             
-        item_data = {"timeStamp":time.mktime(data.time.timetuple()), "requestCount":data.overall.planned_requests}
+        item_data = {"timeStamp":time.mktime(data.time.timetuple()), "requestCount":data.overall.planned_requests if data.overall.planned_requests else data.overall.RPS}
         for level, timing in data.overall.quantiles.iteritems():
             item_data[str(int(level))] = timing
         self.quantiles_data[1] += [item_data]
