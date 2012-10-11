@@ -55,7 +55,8 @@ class MonitoringPlugin(AbstractPlugin):
         except KeyError, ex:
             self.log.debug("Phantom plugin not found: %s", ex)
         if phantom:
-            self.default_target = phantom.address
+            if phantom.phantom:
+                self.default_target = phantom.phantom.address
             if phantom.phout_import_mode:
                 self.config = None
             # TODO: 2 resolve virtual to host address

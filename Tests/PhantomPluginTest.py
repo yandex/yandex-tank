@@ -90,7 +90,7 @@ class  PhantomPluginTestCase(TankTestCase):
     def test_multiload_parsing(self):
         self.foo.core.set_option('phantom', 'rps_schedule', 'const(1,1) line(1,100,60)\nstep(1,10,1,10)')
         self.foo.configure()
-        self.assertEquals(['const(1,1)', 'line(1,100,60)', 'step(1,10,1,10)'], self.foo.rps_schedule)
+        self.assertEquals(['const(1,1)', 'line(1,100,60)', 'step(1,10,1,10)'], self.foo.stepper.rps_schedule)
     
     def test_reader(self):
         self.foo.phout_file = 'data/phout_timeout_mix.txt'

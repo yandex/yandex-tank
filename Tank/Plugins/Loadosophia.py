@@ -48,7 +48,7 @@ class LoadosophiaPlugin(AbstractPlugin):
         # phantom
         try:
             phantom = self.core.get_plugin_of_type(PhantomPlugin)
-            main_file = phantom.phout_file
+            main_file = phantom.phantom.phout_file
         except KeyError:
             self.log.debug("Phantom not found")
             
@@ -65,7 +65,7 @@ class LoadosophiaPlugin(AbstractPlugin):
             mon = self.core.get_plugin_of_type(MonitoringPlugin)
             mon_file = mon.data_file
         except KeyError:
-            self.log.debug("Phantom not found")
+            self.log.debug("Monitoring not found")
             
         self.loadosophia.send_results(self.project_key, main_file, [mon_file])
 
@@ -75,7 +75,6 @@ class LoadosophiaPlugin(AbstractPlugin):
                 web.redirect = self.REDIR_TO
         except KeyError:
             self.log.debug("Web online not found")
-
 
         return retcode
     
