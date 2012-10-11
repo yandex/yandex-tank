@@ -1,10 +1,20 @@
-.. Yandex.Tank documentation master file, created by
-   sphinx-quickstart on Thu Oct 11 17:02:24 2012.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to Yandex.Tank's documentation!
 =======================================
+
+:Author: `Alexey Lavrenuke
+ <https://github.com/direvius>`_
+:Version: |release|
+:Date: |today|
+:Homepage: `Yandex.Tank Homepage on Github
+ <https://github.com/yandex-load/yandex-tank>`_
+:Download: `Launchpad PPA (ubuntu packages)
+ <https://launchpad.net/~yandex-load/+archive/main>`_
+:Documentation: `PDF Documentation
+ <https://media.readthedocs.org/pdf/yandextank/latest/yandextank.pdf>`_
+:License: `GNU LGPLv3
+ <http://www.gnu.org/licenses/lgpl.html>`_
+:Issue tracker: `GitHub Issues
+ <http://github.com/yandex-load/yandex-tank/issues>`_
 
 Contents:
 
