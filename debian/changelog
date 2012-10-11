@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.1.2) precise; urgency=low
+
+  * phantom class refactored
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 11 Oct 2012 17:12:50 +0400
+
 yandex-load-tank-base (1.1.1) precise; urgency=low
 
   * polish work with artifacts

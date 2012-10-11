@@ -253,11 +253,12 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.planned_rps_duration = 0
 
     def render(self, screen):
-        template = "Hosts: %s => %s:%s\n Ammo: %s\nCount: %s\n Load: %s"
-        data = (socket.gethostname(), self.owner.address, self.owner.port, os.path.basename(self.owner.ammo_file), self.ammo_count, ' '.join(self.owner.rps_schedule))
-        res = template % data
-        
-        res += "\n\n"
+        if self.owner.phantom and self.owner.stepper:
+            template = "Hosts: %s => %s:%s\n Ammo: %s\nCount: %s\n Load: %s"
+            data = (socket.gethostname(), self.owner.phantom.address, self.owner.phantom.port, os.path.basename(self.owner.stepper.ammo_file), self.ammo_count, ' '.join(self.owner.stepper.rps_schedule))
+            res = template % data
+            
+            res += "\n\n"
         
         res += "Active instances: "
         if float(self.instances) / self.instances_limit > 0.8:
@@ -266,7 +267,7 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
             res += screen.markup.YELLOW + str(self.instances) + screen.markup.RESET
         else:
             res += str(self.instances)
-        
+            
         res += "\nPlanned requests: %s for %s\nActual responses: " % (self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
         if not self.planned == self.RPS:
             res += screen.markup.YELLOW + str(self.RPS) + screen.markup.RESET
