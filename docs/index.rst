@@ -10,8 +10,9 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+
    intro
-   instal
+   install
    tutorial
    configuration
 
