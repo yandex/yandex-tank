@@ -4,8 +4,8 @@ Usage
 So, you've installed Yandex.Tank to a proper server, close to target,
 access is permitted and server is tuned. How to make a test?
 
-First Step
-~~~~~~~~~~
+First Steps
+~~~~~~~~~~~
 
 Create a file on a server with Yandex.Tank: **load.conf**
 .. code-block:: bash
@@ -16,27 +16,27 @@ Create a file on a server with Yandex.Tank: **load.conf**
 
 Yandex.Tank have 3 primitives for describing load scheme: 
 
-1. ``step (a,b,step,dur)`` makes stepped load, where a,b are start/end load
-values, step - increment value, dur - step duration. 
+\1. ``step (a,b,step,dur)`` makes stepped load, where a,b are start/end load
+  values, step - increment value, dur - step duration. 
 
-2. ``line (a,b,dur)`` makes linear load, where ``a,b`` are start/end load, ``dur``
-- the time for linear load increase from a to b. 
+\2. ``line (a,b,dur)`` makes linear load, where ``a,b`` are start/end load, ``dur``
+  - the time for linear load increase from a to b. 
 
-3. ``const (load,dur)`` makes constant load. ``load`` - rps amount, ``dur`` - load duration. You can set
-fractional load like this: ``const (a/b,dur)`` -- a/b rps, where a >= 0,
-b > 0. Note: ``const(0, 10)`` - 0 rps for 10 seconds, in fact 10s pause
-in a test.
+\3. ``const (load,dur)`` makes constant load. ``load`` - rps amount, ``dur`` - load duration. You can set
+  fractional load like this: ``const (a/b,dur)`` -- a/b rps, where a >= 0,
+  b > 0. Note: ``const(0, 10)`` - 0 rps for 10 seconds, in fact 10s pause
+  in a test.
 
 ``step`` and ``line`` could be used with increasing and decreasing
 intensity: 
 
-* ``step(25, 5, 5, 60)`` - stepped load from 25 to 5 rps, with
-5 rps steps, step duration 60s. ``step(5, 25, 5, 60)`` - stepped load
-from 5 to 25 rps, with 5 rps steps, step duration 60s
+* ``step(25, 5, 5, 60)`` - stepped load from 25 to 5 rps, with 5 rps steps, 
+  step duration 60s. ``step(5, 25, 5, 60)`` - stepped load from 5 to 25 rps, 
+  with 5 rps steps, step duration 60s
 
 * ``line(100, 1, 10m)`` - linear load from 100 to 1 rps, duration - 10
-minutes ``line(1, 100, 10m)`` - linear load from 1 to 100 rps, duration
-- 10 minutes
+  minutes ``line(1, 100, 10m)`` - linear load from 1 to 100 rps, duration
+  - 10 minutes
 
 Time duration could be defined in seconds, minutes (m) and hours (h).
 For example: ``27h103m645``
@@ -138,7 +138,7 @@ include them in a file after each request. '\r' is also required.
   Host: xxx.tanks.example.com
   User-Agent: xxx (shell 1)
 
-**sample POST requests**
+**sample POST requests (binary data)**
 
 .. code-block:: bash
 
@@ -459,5 +459,5 @@ that. Load.conf:
   rps_schedule=const(10, 10m) #load scheme
   instances=10
   gatling_ip = 23.23.23.24 23.23.23.26
-  
+
 **run yandex-tank with -g key**
