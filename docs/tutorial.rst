@@ -18,15 +18,15 @@ Create a file on a server with Yandex.Tank: **load.conf**
 Yandex.Tank have 3 primitives for describing load scheme: 
 
 1. ``step (a,b,step,dur)`` makes stepped load, where a,b are start/end load
-  values, step - increment value, dur - step duration. 
+values, step - increment value, dur - step duration. 
 
 2. ``line (a,b,dur)`` makes linear load, where ``a,b`` are start/end load, ``dur``
-  - the time for linear load increase from a to b. 
+- the time for linear load increase from a to b. 
 
 3. ``const (load,dur)`` makes constant load. ``load`` - rps amount, ``dur`` - load duration. You can set
-  fractional load like this: ``const (a/b,dur)`` -- a/b rps, where a >= 0,
-  b > 0. Note: ``const(0, 10)`` - 0 rps for 10 seconds, in fact 10s pause
-  in a test.
+fractional load like this: ``const (a/b,dur)`` -- a/b rps, where a >= 0,
+b > 0. Note: ``const(0, 10)`` - 0 rps for 10 seconds, in fact 10s pause
+in a test.
 
 ``step`` and ``line`` could be used with increasing and decreasing
 intensity: 
