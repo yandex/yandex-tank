@@ -11,21 +11,26 @@ class DummyPlugin(AbstractPlugin):
         return __file__
     
     def configure(self):
-        self.log.debug("Configure2")
+        self.log.warn("Configure")
+    
     def prepare_test(self):
-        self.log.debug("Prepare2")
+        self.log.warn("Prepare")
+    
     def start_test(self):
-        self.log.debug("Start2")
-        time.sleep(1)
-    def end_test(self, retcode):
-        self.log.debug("End2")
-        
+        self.log.warn("Start")
+
     def is_test_finished(self):
         self.count += 1
         if self.count > 3:
+            self.log.warn("Triggering exit")
             return 0
         else:
-            self.log.debug("Delaying")
+            self.log.warn("Delaying")
             time.sleep(0.2)
             return -1
         
+    def end_test(self, retcode):
+        self.log.warn("End")
+        
+    def post_process(self, retcode):
+        self.log.warn("Post-process")

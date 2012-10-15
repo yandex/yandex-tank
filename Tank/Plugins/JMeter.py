@@ -88,6 +88,9 @@ class JMeterPlugin(AbstractPlugin):
         return retcode
             
     def __add_writing_section(self, jmx, jtl):
+        '''
+        Genius idea by Alexey Lavrenyuk
+        '''
         self.log.debug("Original JMX: %s", os.path.realpath(jmx))
         source_lines = open(jmx, 'r').readlines()
         try:
@@ -100,7 +103,11 @@ class JMeterPlugin(AbstractPlugin):
         
         tpl = open(os.path.dirname(__file__) + '/jmeter_writer.xml', 'r').read()
         
-        new_file = tempfile.mkstemp('.jmx', 'modified_', self.core.artifacts_base_dir)[1]
+        try:
+            new_file = tempfile.mkstemp('.jmx', 'modified_', os.path.dirname(os.path.realpath(jmx)))[1]
+        except OSError, e:
+            self.log.debug("Can't create new jmx near original: %s", e)
+            new_file = tempfile.mkstemp('.jmx', 'modified_', self.core.artifacts_base_dir)[1]
         self.log.debug("Modified JMX: %s", new_file)
         file_handle = open(new_file, 'w')
         file_handle.write(''.join(source_lines))
@@ -211,7 +218,7 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
     def aggregate_second(self, second_aggregate_data):
         self.active_threads = second_aggregate_data.overall.active_threads
-        self.rps=second_aggregate_data.overall.RPS
+        self.rps = second_aggregate_data.overall.RPS
 
     def render(self, screen):        
         jmeter = " JMeter Test "
