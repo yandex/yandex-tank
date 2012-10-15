@@ -676,6 +676,9 @@ class PhantomConfig:
 
     
 class StepperWrapper:
+    '''
+    Wrapper for cached stepper functionality
+    '''
     OPTION_STPD = 'stpd_file'
     OPTION_STEPS = 'steps'
     OPTION_TEST_DURATION = 'test_duration'
