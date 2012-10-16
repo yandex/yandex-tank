@@ -684,3 +684,5 @@ Evgeniy Mamchits' [phantom](https://github.com/mamchits/phantom) - Phantom scala
 Gregory Komissarov's [firebat](https://github.com/greggyNapalm/firebat-console) - test tool based on Phantom
 
 Andrey Pohilko's [loadosophia](http://loadosophia.org/) - service for storing and analysing performance test results
+
+![Yandex.Metrics counter](https://mc.yandex.ru/watch/17743264)
