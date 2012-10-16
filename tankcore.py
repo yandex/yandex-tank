@@ -468,7 +468,7 @@ class TankCore:
     
     
     def release_lock(self):
-        self.config.file = './lp.conf'
+        self.config.file = None
         if os.path.exists(self.lock_file):
             os.remove(self.lock_file)
     
@@ -477,7 +477,7 @@ class TankCore:
         retcode = False
         for filename in os.listdir(self.LOCK_DIR):
             if fnmatch.fnmatch(filename, 'lunapark_*.lock'):
-                full_name = self.LOCK_DIR + os.sep + filename
+                full_name = os.path.join(self.LOCK_DIR, filename)
                 self.log.warn("Lock file present: %s", full_name)
                 
                 try:
@@ -504,7 +504,7 @@ class ConfigManager:
     Option storage class
     '''
     def __init__(self):
-        self.file = './lp.conf'
+        self.file = None
         self.log = logging.getLogger(__name__)
         self.config = ConfigParser.ConfigParser()
             
@@ -525,9 +525,12 @@ class ConfigManager:
         '''
         if not filename:
             filename = self.file
-        self.log.debug("Flushing config to: %s", filename)
-        with open(filename, 'wb') as configfile:
-            self.config.write(configfile)
+            
+        if filename:
+            self.log.debug("Flushing config to: %s", filename)
+            handle = open(filename, 'wb')
+            self.config.write(handle)
+            handle.close()
                     
     def get_options(self, section, prefix=''):
         '''

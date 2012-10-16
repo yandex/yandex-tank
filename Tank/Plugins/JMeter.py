@@ -77,8 +77,12 @@ class JMeterPlugin(AbstractPlugin):
         if self.jmeter_process:
             if self.jmeter_process.poll() == None:
                 self.log.warn("Terminating jmeter process with PID %s", self.jmeter_process.pid)
-                self.jmeter_process.terminate()
                 os.killpg(self.jmeter_process.pid, signal.SIGTERM)
+                #self.jmeter_process.terminate()
+                time.sleep(1)
+                if self.jmeter_process.poll() == None:
+                    self.log.warn("Killing jmeter process with PID %s", self.jmeter_process.pid)
+                    os.killpg(self.jmeter_process.pid, signal.SIGKILL)
             else:
                 self.log.debug("Seems JMeter finished OK")
             

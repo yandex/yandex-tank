@@ -695,17 +695,17 @@ class StepperWrapper:
         self.log = logging.getLogger(__name__)
         # stepper
         self.rps_schedule = []
-        self.use_caching = None
+        self.use_caching = True
         self.http_ver = None
         self.steps = []
         self.ammo_file = None
-        self.instances_schedule = None
+        self.instances_schedule = ''
         self.loop_limit = None
         self.ammo_limit = None
-        self.uris = None
-        self.headers = None
-        self.autocases = None
-        self.cache_dir = None
+        self.uris = []
+        self.headers = []
+        self.autocases = 0
+        self.cache_dir = '.'
         self.force_stepping = None
         self.stpd = None
         
@@ -717,6 +717,8 @@ class StepperWrapper:
     def read_config(self):
         # stepper part
         self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
+        if self.ammo_file:
+            self.ammo_file = os.path.expanduser(self.ammo_file)
         self.instances_schedule = self.get_option("instances_schedule", '')
         self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
         self.ammo_limit = int(self.get_option("ammo_limit", "-1")) # TODO: 3 stepper should implement ammo_limit
@@ -771,7 +773,7 @@ class StepperWrapper:
             sep = "|"
             hasher = hashlib.md5()
             hashed_str = self.instances_schedule + sep + str(self.loop_limit)
-            hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(self.rps_schedule) + sep + self.autocases
+            hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(self.rps_schedule) + sep + str(self.autocases)
             hashed_str += sep + ";".join(self.uris) + sep + ";".join(self.headers)
             
             if self.ammo_file:
