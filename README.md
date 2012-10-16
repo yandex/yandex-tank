@@ -222,6 +222,7 @@ Host: xxxxxxxxx.dev.example.com
 Keep-Alive: 300
 Content-Type: multipart/form-data; boundary=AGHTUNG
 Content-Length:334
+Connection: Close
 
 --AGHTUNG
 Content-Disposition: form-data; name="host"
@@ -237,7 +238,6 @@ Content-Disposition: form-data; name="wsw-fields"
 <wsw-fields><wsw-field name="moderate-code"><wsw-value>disable</wsw-value></wsw-field></wsw-fields>
 --AGHTUNG--
 
-Connection: Close
 ```
 
 ### Run Test!
@@ -275,8 +275,8 @@ GET /abra HTTP/1.0
 Host: xxx.tanks.example.com
 User-Agent: xxx (shell 1)
 
-78 unknown
-GET /ab ra HTTP/1.0
+75 unknown
+GET /ab HTTP/1.0
 Host: xxx.tanks.example.com
 User-Agent: xxx (shell 1)
 ```
@@ -379,8 +379,9 @@ Phout example:
 **NOTE:** as Yandex.Tank uses phantom as an http load engine and this file is written by phantom, it contents depends on phantom version installed on your Yandex.Tank system.
 
 ### Graph and statistics
-Use your favorite stats packet, R, for example. Internal stat and graphing tool is under construction.
-
+Use included charting tool that runs as a webservice on localhost
+OR
+use your favorite stats packet, R, for example.
 ### Custom timings
 You can set custom timings in ```load.conf``` with ```time_periods``` parameter like this:
 ```
@@ -421,7 +422,7 @@ load.conf example:
 address=23.23.23.23:80 #Target's address and port .
 rps_schedule=const(10, 10m) #load scheme
 instances=10
-tank_type=2 # Parameter Nonna is commented for compatibility reasons.
+tank_type=2
 ```
 ### Gatling
 If server with Yandex.Tank have several IPs, they may be used to avoid outcome port shortage. Use ```gatling_ip``` parameter for that.
