@@ -98,8 +98,8 @@ class AgentClient(object):
         }
         self.interval = None
         self.metric = None
-        self.custom = None
-        self.python = None
+        self.custom = {}
+        self.python = '/usr/bin/python'
 
     def start(self):
         '''
