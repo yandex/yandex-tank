@@ -15,7 +15,7 @@ import sys
 import tempfile
 import time
 
-# FIXME: 2 synchronize times between agent and collector better
+# FIXME: 3 synchronize times between agent and collector better
 class Config(object):
     '''
     Config reader helper
@@ -156,7 +156,7 @@ class AgentClient(object):
         logging.debug("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER']);
 
         # Copy agent
-        cmd = ['-r', self.path['AGENT_LOCAL_FOLDER'], self.host + ':' + self.path['AGENT_REMOTE_FOLDER']]
+        cmd = [self.path['AGENT_LOCAL_FOLDER']+'/agent.py', self.host + ':' + self.path['AGENT_REMOTE_FOLDER']]
         logging.debug("Copy agent to %s: %s" % (self.host, cmd))
 
         pipe = self.ssh.get_scp_pipe(cmd)
@@ -179,7 +179,7 @@ class AgentClient(object):
             debug = "DEBUG=1"
         else:
             debug = ""
-        self.run = ['/usr/bin/env', debug, self.python, self.path['AGENT_REMOTE_FOLDER'] + '/agent/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
+        self.run = ['/usr/bin/env', debug, self.python, self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
         return agent_config
 
     def uninstall(self):

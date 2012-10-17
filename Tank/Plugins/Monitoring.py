@@ -12,6 +12,7 @@ import copy
 import os
 import tempfile
 import time
+import traceback
 
 class MonitoringPlugin(AbstractPlugin):
     '''
@@ -94,6 +95,7 @@ class MonitoringPlugin(AbstractPlugin):
                     self.monitoring.poll()
                     count += 1
             except Exception, exc:
+                self.log.debug("Problems starting monitoring: %s", traceback.format_exc(exc))
                 if self.die_on_fail:
                     raise exc
                 else:

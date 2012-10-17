@@ -1,3 +1,0 @@
-'''
-Metric collection classes
-'''
