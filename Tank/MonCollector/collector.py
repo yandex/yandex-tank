@@ -75,13 +75,11 @@ class AgentClient(object):
     Agent client connection
     '''
     
-    def __init__(self, **kwargs):
+    def __init__(self):
         self.run = []
         self.host = None
         
         self.port = 22
-        for key, value in kwargs.iteritems():
-            setattr(self, key, value)
         self.ssh = None
 
         temp_config = tempfile.mkstemp('.cfg', 'agent_')
@@ -117,6 +115,9 @@ class AgentClient(object):
 
     def create_agent_config(self, loglevel):
         ''' Creating config '''
+        if not self.metric and not self.custom:
+            raise ValueError("No metrics to collect configured")
+            
         cfg = open(self.path['TEMP_CONFIG'], 'w')
         cfg.write('[main]\ninterval=%s\n' % self.interval)
         cfg.write('host=%s\n' % self.host)
@@ -156,7 +157,7 @@ class AgentClient(object):
         logging.debug("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER']);
 
         # Copy agent
-        cmd = [self.path['AGENT_LOCAL_FOLDER']+'/agent.py', self.host + ':' + self.path['AGENT_REMOTE_FOLDER']]
+        cmd = [self.path['AGENT_LOCAL_FOLDER'] + '/agent.py', self.host + ':' + self.path['AGENT_REMOTE_FOLDER']]
         logging.debug("Copy agent to %s: %s" % (self.host, cmd))
 
         pipe = self.ssh.get_scp_pipe(cmd)
@@ -196,6 +197,8 @@ class AgentClient(object):
         remove.wait()
         return log_file
 
+
+
 class MonitoringCollector:
     '''
     Class to aggregate data from several collectors
@@ -226,7 +229,6 @@ class MonitoringCollector:
             [agent_config, self.filter_conf] = self.getconfig(self.config, self.default_target)
 
         self.log.debug("filter_conf: %s", self.filter_conf)        
-        conf = Config(self.config)
         
         # Filtering
         self.filter_mask = defaultdict(str)
@@ -238,13 +240,20 @@ class MonitoringCollector:
         logging.debug('Creating agents')
         for adr in agent_config:
             logging.debug('Creating agent: %s', adr)
-            agent = AgentClient(**adr)
+            agent = AgentClient()
+            agent.host = adr['host']
+            agent.python = adr['python']
+            agent.metric = adr['metric']
+            agent.port = adr['port']
+            agent.interval = adr['interval']
+            agent.custom = adr['custom']
             agent.ssh = self.ssh_wrapper_class()
             self.agents.append(agent)
         
         # Mass agents install
         logging.debug("Agents: %s", self.agents)
         
+        conf = Config(self.config)
         for agent in self.agents:
             logging.debug('Install monitoring agent. Host: %s', agent.host)
             self.artifact_files.append(agent.install(conf.loglevel()))        
@@ -342,6 +351,7 @@ class MonitoringCollector:
                     raise ValueError("Can't use [target] keyword with no target parameter specified")
                 logging.debug("Using target hint: %s", target_hint)
                 hostname = target_hint
+            
             stats = []
             custom = {'tail': [], 'call': [], }
             metrics_count = 0

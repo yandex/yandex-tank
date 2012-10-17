@@ -1,6 +1,4 @@
-from Tank.MonCollector.agent.metrics import CpuStat, Custom, Disk, Mem, NetTcp, \
-    NetTxRx
-import logging
+from Tank.MonCollector.agent.agent import CpuStat, Custom, Disk, NetTcp, NetTxRx
 import os
 import tempfile
 import time
