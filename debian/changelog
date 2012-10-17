@@ -1,3 +1,11 @@
+yandex-load-tank-base (1.1.3) precise; urgency=high
+
+  * fix bug with phantom timeout
+  * ability to send console view to listener
+  * try to fix phantom missed records
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 17 Oct 2012 16:32:41 +0400
+
 yandex-load-tank-base (1.1.2) precise; urgency=low
 
   * phantom class refactored
