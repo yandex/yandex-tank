@@ -14,6 +14,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
         self.screen = None
         self.render_exception = None
         self.console_markup = None
+        self.remote_translator = None
 
     @staticmethod
     def get_key():
@@ -24,26 +25,30 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
         aggregator.add_result_listener(self)
         self.info_panel_width = self.get_option("info_panel_width", '33')
         self.short_only = int(self.get_option("short_only", '0'))
-        if not self.short_only:
-            if sys.stdout.isatty() and not int(self.get_option("disable_all_colors", '0')):
-                self.console_markup = RealConsoleMarkup()
-            else:
-                self.console_markup = NoConsoleMarkup()
-            for color in self.get_option("disable_colors", '').split(' '):
-                self.console_markup.__dict__[color] = ''
-            self.screen = Screen(self.info_panel_width, self.console_markup)
+        if sys.stdout.isatty() and not int(self.get_option("disable_all_colors", '0')):
+            self.console_markup = RealConsoleMarkup()
+        else:
+            self.console_markup = NoConsoleMarkup()
+        for color in self.get_option("disable_colors", '').split(' '):
+            self.console_markup.__dict__[color] = ''
+        self.screen = Screen(self.info_panel_width, self.console_markup)
 
     def is_test_finished(self):
-        if not self.short_only:
-            try:
-                console_view = self.screen.render_screen()
+        try:
+            console_view = self.screen.render_screen().encode('utf-8')
+        except Exception, ex:
+            self.log.warn("Exception inside render: %s", traceback.format_exc(ex))
+            self.render_exception = ex
+            console_view = ""
+
+        if console_view:
+            if not self.short_only:
                 sys.stdout.write(self.console_markup.clear)
-                sys.stdout.write(console_view.encode('utf-8'))
+                sys.stdout.write(console_view)
                 sys.stdout.write(self.console_markup.TOTAL_RESET)
-            except Exception, ex:
-                self.log.warn("Exception inside render: %s", traceback.format_exc(ex))
-                self.render_exception = ex
-            # TODO: 3 add a way to send console view to remote API, via listener notification (avoid DataUploader dependency
+        
+            if self.remote_translator:
+                self.remote_translator.send_console(self.console_markup.clean_markup(console_view))
 
         return -1
     
