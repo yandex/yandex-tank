@@ -218,7 +218,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         
         pb_width = screen.right_panel_width - 1 - len(str_perc)
         
-        res += color_bg + '-' * int(pb_width * progress) + screen.markup.RESET + color_fg + '-' * (pb_width - int(pb_width * progress)) + screen.markup.RESET + ' '
+        res += color_bg + '=' * int(pb_width * progress) + screen.markup.RESET + color_fg + '~' * (pb_width - int(pb_width * progress)) + screen.markup.RESET + ' '
         res += str_perc + "\n"
 
         eta = 'ETA: %s' % eta_time
@@ -535,7 +535,7 @@ class PhantomConfig:
         self.owner = owner
         self.log = logging.getLogger(__name__)
         # phant
-        self.timeout = 1000
+        self.timeout = -1
         self.answ_log = None
         self.phout_file = None
         self.stat_log = None

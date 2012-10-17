@@ -198,7 +198,9 @@ class ConsoleTank:
             
             if not self.options.no_rc:
                 try:
-                    for filename in sorted(os.listdir(self.baseconfigs_location)):
+                    conf_files=os.listdir(self.baseconfigs_location)
+                    conf_files.sort()
+                    for filename in conf_files:
                         if fnmatch.fnmatch(filename, '*.ini'):
                             configs += [os.path.realpath(self.baseconfigs_location + os.sep + filename)]
                 except OSError:

@@ -428,7 +428,7 @@ class TankCore:
             return
         
         if os.path.exists(dest):
-            # FIXME: 2 find a way to store artifacts anyway
+            # FIXME: 3 find a way to store artifacts anyway
             self.log.warning("File already exists: %s", dest)
             return
                 
