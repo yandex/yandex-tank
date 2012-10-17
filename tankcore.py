@@ -248,6 +248,8 @@ class TankCore:
         '''
         if not os.path.exists(self.artifacts_base_dir): 
             os.makedirs(self.artifacts_base_dir)
+            os.chmod(self.artifacts_base_dir, 0755)
+
         self.log.info("Configuring plugins...")
         for plugin_key in self.plugins_order:
             plugin = self.__get_plugin_by_key(plugin_key)
@@ -326,7 +328,7 @@ class TankCore:
             self.artifacts_dir = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)        
         if not os.path.isdir(self.artifacts_dir):
             os.makedirs(self.artifacts_dir)
-            os.chmod(self.artifacts_dir, 0744)
+            os.chmod(self.artifacts_dir, 0755)
         
         self.log.info("Artifacts dir: %s", self.artifacts_dir)
         for filename, keep in self.artifact_files.items():
