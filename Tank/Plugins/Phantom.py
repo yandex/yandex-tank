@@ -161,7 +161,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             
     def post_process(self, retcode):
         if not retcode:
-            count = self.get_option(StepperWrapper.OPTION_AMMO_COUNT)
+            count = int(self.get_option(StepperWrapper.OPTION_AMMO_COUNT))
             if count != self.processed_ammo_count:
                 self.log.warning("Planned ammo count %s differs from processed %s", count, self.processed_ammo_count)
         return retcode
@@ -345,21 +345,19 @@ class PhantomReader(AbstractReader):
         '''
         Read active instances info
         '''
-        stat_ready = select.select([self.stat], [], [], 0)[0]
-        if stat_ready:
-            stat = stat_ready.pop(0).readlines()
-            for line in stat:
-                if line.startswith('time\t'):
-                    date_str = line[len('time:\t') - 1:].strip()[:-5].strip()
-                    date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-                    self.pending_datetime = int(time.mktime(date_obj.timetuple()))
-                    self.stat_data[self.pending_datetime] = 0
-                if line.startswith('tasks\t'):
-                    if not self.pending_datetime:
-                        raise RuntimeError("Can't have tasks info without timestamp")
-                    
-                    self.stat_data[self.pending_datetime] = max(int(line[len('tasks\t'):]), self.stat_data[self.pending_datetime])
-                    self.log.debug("Active instances: %s=>%s", self.pending_datetime, self.stat_data[self.pending_datetime])
+        stat = self.stat.readlines()
+        for line in stat:
+            if line.startswith('time\t'):
+                date_str = line[len('time:\t') - 1:].strip()[:-5].strip()
+                date_obj = datetime.datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+                self.pending_datetime = int(time.mktime(date_obj.timetuple()))
+                self.stat_data[self.pending_datetime] = 0
+            if line.startswith('tasks\t'):
+                if not self.pending_datetime:
+                    raise RuntimeError("Can't have tasks info without timestamp")
+                
+                self.stat_data[self.pending_datetime] = max(int(line[len('tasks\t'):]), self.stat_data[self.pending_datetime])
+                self.log.debug("Active instances: %s=>%s", self.pending_datetime, self.stat_data[self.pending_datetime])
 
 
     def __read_phout_data(self, force):
@@ -381,7 +379,8 @@ class PhantomReader(AbstractReader):
                 continue
             line = line.strip()
             if not line:
-                return None 
+                self.log.warning("Empty phout line")
+                continue
             #1346949510.514        74420    66    78    65409    8867    74201    18    15662    0    200
             #self.log.debug("Phout line: %s", line)
             data = line.split("\t")
@@ -438,6 +437,7 @@ class PhantomReader(AbstractReader):
         self.last_sample_time = int(time.mktime(res.time.timetuple()))
         res.overall.planned_requests = self.__get_expected_rps()
         return res
+    
 
     def __get_expected_rps(self):
         '''

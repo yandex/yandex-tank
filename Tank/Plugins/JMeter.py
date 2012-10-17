@@ -17,6 +17,7 @@ class JMeterPlugin(AbstractPlugin):
         AbstractPlugin.__init__(self, core)
         self.jmeter_process = None
         self.args = None
+        self.original_jmx = None
 
     @staticmethod
     def get_key():

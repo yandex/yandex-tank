@@ -164,6 +164,7 @@ class AbstractReader:
                     result.cases[marker] = SecondAggregateDataItem()
                 self.__append_sample(result.cases[marker], item)
 
+        self.log.debug("Calculate aggregates for %s requests", result.overall.RPS)
         self.__calculate_aggregates(result.overall)
         for case in result.cases.values():
             self.__calculate_aggregates(case)
@@ -252,10 +253,12 @@ class AbstractReader:
     
         result.times_dist.append(overall_rt)        
 
+
     def get_zero_sample(self, date_time):
         res = SecondAggregateData(self.cumulative)
         res.time = date_time
         return res
+    
 
     def pop_second(self):
         next_time = self.data_queue.pop(0)

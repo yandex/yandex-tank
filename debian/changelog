@@ -1,8 +1,9 @@
 yandex-load-tank-base (1.1.2) precise; urgency=low
 
   * phantom class refactored
+  * fixed some bugs
 
- -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 11 Oct 2012 17:12:50 +0400
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 16 Oct 2012 16:21:13 +0400
 
 yandex-load-tank-base (1.1.1) precise; urgency=low
 
