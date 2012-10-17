@@ -14,7 +14,6 @@ import hashlib
 import ipaddr
 import multiprocessing
 import os
-import select
 import socket
 import string
 import subprocess
@@ -85,7 +84,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
 
         if aggregator:
             aggregator.reader = PhantomReader(aggregator, self)
-            self.timeout = aggregator.get_timeout()
+            self.phantom.timeout = aggregator.get_timeout()
             aggregator.add_result_listener(self)
 
         if not self.phout_import_mode:
@@ -219,7 +218,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         
         pb_width = screen.right_panel_width - 1 - len(str_perc)
         
-        res += color_bg + ' ' * int(pb_width * progress) + screen.markup.RESET + color_fg + '-' * (pb_width - int(pb_width * progress)) + screen.markup.RESET + ' '
+        res += color_bg + '-' * int(pb_width * progress) + screen.markup.RESET + color_fg + '-' * (pb_width - int(pb_width * progress)) + screen.markup.RESET + ' '
         res += str_perc + "\n"
 
         eta = 'ETA: %s' % eta_time
@@ -439,6 +438,7 @@ class PhantomReader(AbstractReader):
         return res
     
 
+    # FIXME: 1 there is zeros in expected RPS reported
     def __get_expected_rps(self):
         '''
         Mark second with expected rps from stepper info
@@ -450,12 +450,14 @@ class PhantomReader(AbstractReader):
             return 0
         else:
             self.steps[0][1] -= 1
-            return self.steps[0][0]    
+            return self.steps[0][0]
+            
      
 class UsedInstancesCriteria(AbstractCriteria):
     '''
     Autostop criteria, based on active instances count
     '''
+    RC_INST = 24
     
     @staticmethod
     def get_type_string():

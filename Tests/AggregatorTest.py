@@ -16,8 +16,9 @@ class  AggregatorPluginTestCase(TankTestCase):
 
     def test_run(self):
         self.foo.configure()
+        self.assertEquals(11000, self.foo.get_timeout())
         self.foo.prepare_test()
-        self.foo.reader=FakeReader(self.foo)
+        self.foo.reader = FakeReader(self.foo)
         self.foo.start_test()
         retry = 0
         while self.foo.is_test_finished() < 0 and retry < 5:
@@ -29,7 +30,7 @@ class  AggregatorPluginTestCase(TankTestCase):
     def test_run_final_read(self):
         self.foo.configure()
         self.foo.prepare_test()
-        self.foo.reader=FakeReader(self.foo)
+        self.foo.reader = FakeReader(self.foo)
         self.foo.start_test()
         self.foo.end_test(0)
         

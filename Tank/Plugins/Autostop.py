@@ -112,7 +112,6 @@ class AbstractCriteria:
     RC_TIME = 21
     RC_HTTP = 22
     RC_NET = 23
-    RC_INST = 24
         
     def __init__(self):
         self.log = logging.getLogger(__name__)
