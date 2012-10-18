@@ -21,8 +21,11 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
         return __file__
     
     def configure(self):
-        aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        aggregator.add_result_listener(self)
+        try:
+            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+            aggregator.add_result_listener(self)
+        except KeyError:
+            self.log.debug("No aggregator for console")
         self.info_panel_width = self.get_option("info_panel_width", '33')
         self.short_only = int(self.get_option("short_only", '0'))
         if sys.stdout.isatty() and not int(self.get_option("disable_all_colors", '0')):
