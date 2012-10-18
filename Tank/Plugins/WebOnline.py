@@ -9,6 +9,7 @@ import socket
 import tankcore
 import time
 
+# TODO: 3 add more graphs: HTTP/NET
 class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
     SECTION = "web"
     

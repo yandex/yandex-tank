@@ -22,7 +22,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
 
     @staticmethod
     def get_key():
-        return __file__;
+        return __file__
     
     def configure(self):
         self.options = self.get_option("options", '')
@@ -67,9 +67,6 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
             return rc
         else:
             return -1
-
-        if self.process:
-            tankcore.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
 
             
     def end_test(self, retcode):

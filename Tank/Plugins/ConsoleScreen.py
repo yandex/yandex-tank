@@ -165,10 +165,10 @@ class Screen(object):
         '''
         Add widget string to right panel of the screen
         '''
-        if widget.get_index() in self.info_widgets.keys():
-            self.log.warning("There is existing info widget with index %s: %s, widget %s skipped", widget.get_index(), self.info_widgets[widget.get_index()], widget)
-        else:
-            self.info_widgets[widget.get_index()] = widget    
+        index = widget.get_index()
+        while index in self.info_widgets.keys(): 
+            index += 1
+        self.info_widgets[widget.get_index()] = widget    
 
 
     def add_second_data(self, data):

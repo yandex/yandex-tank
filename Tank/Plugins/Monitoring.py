@@ -40,11 +40,13 @@ class MonitoringPlugin(AbstractPlugin):
         self.default_target = self.get_option("default_target", 'localhost')
 
         if self.config == 'none' or self.config == 'auto':
-            self.die_on_fail = False         
+            self.die_on_fail = False
+        else:
+            if not os.path.exists(self.config):
+                raise OSError("Monitoring config file not found: %s" % self.config)         
                     
         if self.config == 'none':
             self.monitoring = None
-        # TODO: 2 check for config file existence here
     
         if self.config == 'auto':
             self.config = os.path.dirname(__file__) + '/monitoring_default_config.xml'
@@ -109,8 +111,7 @@ class MonitoringPlugin(AbstractPlugin):
             else:
                 self.log.warn("Monitoring died unexpectedly")
                 self.monitoring = None
-        else:
-            return -1
+        return -1
             
             
     def end_test(self, retcode):

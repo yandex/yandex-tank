@@ -6,10 +6,10 @@ import re
 import tankcore
 
 class TotalAutostopPlugin(AbstractPlugin, AggregateResultListener):
-    SECTION='autostop'
+    SECTION = 'autostop'
     @staticmethod
     def get_key():
-        return __file__;
+        return __file__
 
     def configure(self):
         autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -52,7 +52,7 @@ class TotalFracTimeCriteria(AbstractCriteria):
         self.data.append(value)
         if len(self.data) > self.seconds_limit:
             self.data.popleft()
-        self.real_frac = float(sum(self.data)) /  len(self.data) * 100
+        self.real_frac = float(sum(self.data)) / len(self.data) * 100
         if self.real_frac >= float(self.frac) and len(self.data) >= self.seconds_limit:
             self.cause_second = aggregate_second
             self.log.debug(self.explain())

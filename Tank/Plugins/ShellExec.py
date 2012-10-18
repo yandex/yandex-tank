@@ -60,3 +60,5 @@ class ShellExecPlugin(AbstractPlugin):
         retcode = tankcore.execute(cmd, shell=True, poll_period=0.1)
         if retcode:
             raise RuntimeError("Subprocess returned %s",)    
+
+

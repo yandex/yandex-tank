@@ -217,9 +217,11 @@ class MonitoringCollector:
         self.artifact_files = []
         self.inputs, self.outputs, self.excepts = [], [], []
 
+
     def add_listener(self, obj):
         '''         Add data line listener        '''
         self.listeners.append(obj)
+
 
     def prepare(self): 
         ''' Prepare for monitoring - install agents etc'''       

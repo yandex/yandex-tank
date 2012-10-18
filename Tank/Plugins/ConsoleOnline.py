@@ -66,7 +66,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
     
     def add_info_widget(self, widget):
         if not self.screen:
-            self.log.warn("No screen instance to add widget")
+            self.log.debug("No screen instance to add widget")
         else:
             self.screen.add_info_widget(widget)
         

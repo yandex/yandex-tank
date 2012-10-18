@@ -18,7 +18,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
 
     @staticmethod
     def get_key():
-        return __file__;
+        return __file__
 
     def get_counting(self):
         return self.counting
@@ -81,6 +81,8 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
                 self.log.debug("Autostop criteria requested test stop: %s", criteria)
                 self.cause_criteria = criteria
     
+    
+    
 class AutostopWidget(AbstractInfoWidget):
     def __init__(self, sender):
         AbstractInfoWidget.__init__(self)
@@ -107,6 +109,8 @@ class AutostopWidget(AbstractInfoWidget):
             return "Autostop:\n  " + ("\n  ".join(res))
         else:
             return ''
+        
+        
 
 class AbstractCriteria:
     RC_TIME = 21

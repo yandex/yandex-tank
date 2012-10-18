@@ -43,6 +43,24 @@ class AggregatorPlugin(AbstractPlugin):
         if not self.reader:
             self.log.warning("No one set reader for aggregator yet")
     
+    def is_test_finished(self):
+        self.__read_samples(5)                    
+        return -1
+
+    def end_test(self, retcode):
+        self.__read_samples(force=True)
+        return retcode                
+        
+    def add_result_listener(self, listener):
+        self.second_data_listeners += [listener]
+    
+    def __notify_listeners(self, data):
+        self.log.debug("Notifying listeners about second: %s , %s responses", data.time, data.overall.RPS)
+        for listener in self.second_data_listeners:
+            listener.aggregate_second(data)
+    
+    def get_timeout(self):
+        return self.time_periods[-1:][0]
 
     def __generate_zero_samples(self, data):
         if not data:
@@ -66,24 +84,6 @@ class AggregatorPlugin(AbstractPlugin):
                 data = self.reader.get_next_sample(force)
                 count += 1
         
-    def is_test_finished(self):
-        self.__read_samples(5)                    
-        return -1
-
-    def end_test(self, retcode):
-        self.__read_samples(force=True)
-        return retcode                
-        
-    def add_result_listener(self, listener):
-        self.second_data_listeners += [listener]
-    
-    def __notify_listeners(self, data):
-        self.log.debug("Notifying listeners about second: %s , %s responses", data.time, data.overall.RPS)
-        for listener in self.second_data_listeners:
-            listener.aggregate_second(data)
-    
-    def get_timeout(self):
-        return self.time_periods[-1:][0]
 
 class SecondAggregateData:
     def __init__(self, cimulative_item=None):

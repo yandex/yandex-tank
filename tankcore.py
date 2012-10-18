@@ -321,22 +321,6 @@ class TankCore:
         return retcode
     
 
-    def __collect_artifacts(self):
-        self.log.debug("Collecting artifacts")
-        if not self.artifacts_dir:
-            date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
-            self.artifacts_dir = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)        
-        if not os.path.isdir(self.artifacts_dir):
-            os.makedirs(self.artifacts_dir)
-            os.chmod(self.artifacts_dir, 0755)
-        
-        self.log.info("Artifacts dir: %s", self.artifacts_dir)
-        for filename, keep in self.artifact_files.items():
-            try:
-                self.__collect_file(filename, keep)
-            except Exception, ex:
-                self.log.warn("Failed to collect file %s: %s", filename, ex)
-
     def plugins_post_process(self, retcode):
         '''
         Call post_process() on all plugins
@@ -358,6 +342,23 @@ class TankCore:
         self.__collect_artifacts()
         
         return retcode
+
+    
+    def __collect_artifacts(self):
+        self.log.debug("Collecting artifacts")
+        if not self.artifacts_dir:
+            date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
+            self.artifacts_dir = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)        
+        if not os.path.isdir(self.artifacts_dir):
+            os.makedirs(self.artifacts_dir)
+            os.chmod(self.artifacts_dir, 0755)
+        
+        self.log.info("Artifacts dir: %s", self.artifacts_dir)
+        for filename, keep in self.artifact_files.items():
+            try:
+                self.__collect_file(filename, keep)
+            except Exception, ex:
+                self.log.warn("Failed to collect file %s: %s", filename, ex)
     
     def get_option(self, section, option, default=None):
         '''
