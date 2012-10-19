@@ -1,15 +1,21 @@
-from Tank.Plugins.Aggregator import AggregateResultListener
-from Tank.Plugins.Autostop import AbstractCriteria, AutostopPlugin
+from Tank import Utils
+from Tank.Core import AbstractPlugin
+from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
+from Tank.Plugins.ConsoleOnline import AbstractInfoWidget, ConsoleOnlinePlugin
+from Tank.Plugins.Phantom import PhantomPlugin
+from Tank.Plugins.Autostop import AbstractCriteria
+from Tank.Plugins.Autostop import AutostopPlugin
+from Tank.Plugins.Autostop import AutostopWidget
+
 from collections import deque
-from tankcore import AbstractPlugin
+import logging
 import re
-import tankcore
 
 class TotalAutostopPlugin(AbstractPlugin, AggregateResultListener):
-    SECTION = 'autostop'
+    SECTION='autostop'
     @staticmethod
     def get_key():
-        return __file__
+        return __file__;
 
     def configure(self):
         autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -36,9 +42,9 @@ class TotalFracTimeCriteria(AbstractCriteria):
         AbstractCriteria.__init__(self)
         param = param_str.split(',')
         self.seconds_count = 0
-        self.rt_limit = tankcore.expand_to_milliseconds(param[0])
+        self.rt_limit = Utils.expand_to_milliseconds(param[0])
         self.frac = param[1][:-1]
-        self.seconds_limit = tankcore.expand_to_seconds(param[2])
+        self.seconds_limit = Utils.expand_to_seconds(param[2])
         self.autostop = autostop
         self.data = deque()
 
@@ -48,11 +54,12 @@ class TotalFracTimeCriteria(AbstractCriteria):
         for i in reversed(aggregate_second.overall.times_dist):
             if i['from'] >= self.rt_limit : failcnt += i['count'];
             cnt += i['count']
-        value = float(failcnt) / cnt
+        if cnt != 0 : value = float(failcnt) / cnt
+        else :  value = 0;
         self.data.append(value)
         if len(self.data) > self.seconds_limit:
             self.data.popleft()
-        self.real_frac = float(sum(self.data)) / len(self.data) * 100
+        self.real_frac = float(sum(self.data)) /  len(self.data) * 100
         if self.real_frac >= float(self.frac) and len(self.data) >= self.seconds_limit:
             self.cause_second = aggregate_second
             self.log.debug(self.explain())
@@ -92,7 +99,7 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[2])
+        self.seconds_limit = Utils.expand_to_seconds(param_str.split(',')[2])
     
     def notify(self, aggregate_second):
         matched_responses = self.count_matched_codes(self.codes_regex, aggregate_second.overall.http_codes)
@@ -167,7 +174,7 @@ class TotalNetCodesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[2])
+        self.seconds_limit = Utils.expand_to_seconds(param_str.split(',')[2])
     
 
     def notify(self, aggregate_second):
@@ -238,7 +245,7 @@ class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[2])
+        self.seconds_limit = Utils.expand_to_seconds(param_str.split(',')[2])
     
     def notify(self, aggregate_second):
         matched_responses = self.count_matched_codes(self.codes_regex, aggregate_second.overall.http_codes)
