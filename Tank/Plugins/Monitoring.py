@@ -27,9 +27,9 @@ class MonitoringPlugin(AbstractPlugin):
         self.config = None
         self.process = None
         self.monitoring = MonitoringCollector()
-        self.mon_saver=SaveMonToFile(self.data_file)
         self.die_on_fail = True
         self.data_file = None
+        self.mon_saver = None
 
     @staticmethod
     def get_key():
@@ -75,6 +75,7 @@ class MonitoringPlugin(AbstractPlugin):
                 self.monitoring.default_target = self.default_target
             
             self.data_file = self.core.mkstemp('.data', 'monitoring_')
+            self.mon_saver = SaveMonToFile(self.data_file)
             self.monitoring.add_listener(self.mon_saver)
             self.core.add_artifact_file(self.data_file)
 
@@ -121,7 +122,8 @@ class MonitoringPlugin(AbstractPlugin):
             for log in self.monitoring.artifact_files:
                 self.core.add_artifact_file(log)
         
-        self.mon_saver.close()
+        if self.mon_saver:
+            self.mon_saver.close()
         return retcode
     
 

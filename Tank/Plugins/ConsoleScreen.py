@@ -546,7 +546,7 @@ class AvgTimesBlock(AbstractBlock):
         self.last_overall = 0
         self.last_count = 0
 
-        self.header = 'Average Times (all/%s RPS/last):'
+        self.header = 'Avg Times (all / %s RPS / last):'
         
     def add_second(self, data):
         if self.current_rps != data.overall.planned_requests:

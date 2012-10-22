@@ -50,7 +50,8 @@ class AggregatorPlugin(AbstractPlugin):
 
     def end_test(self, retcode):
         self.__read_samples(force=True)
-        self.reader.close_files()
+        if self.reader:
+            self.reader.close_files()
         return retcode                
         
     def add_result_listener(self, listener):
