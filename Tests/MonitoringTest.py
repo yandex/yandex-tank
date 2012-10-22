@@ -85,7 +85,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
         res = widget.render(screen)
         self.assertEquals("Monitoring is <w>online<rst>:", res)
 
-        widget.monitoring_data("start;127.0.0.1;1347631472;Memory_total;Memory_used;Memory_free;Memory_shared;Memory_buff;Memory_cached;Net_recv;Net_send;Disk_read;Disk_write;System_csw;System_int;CPU_user;CPU_nice;CPU_system;CPU_idle;CPU_iowait;CPU_irq;CPU_softirq;System_numproc;System_numthreads")
+        widget.monitoring_data("start;127.0.0.1;1347631472;Memory_total;Memory_used;Memory_free;Memory_shared;Memory_buff;Memory_cached;Net_recv;Net_send;")
         res = widget.render(screen)
         
         widget.monitoring_data("127.0.0.1;1347631473;1507.65625;576.9609375;8055;1518;0;143360;34.9775784753;16.1434977578;0.0")

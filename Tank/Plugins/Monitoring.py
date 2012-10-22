@@ -144,28 +144,60 @@ class SaveMonToFile(MonitoringDataListener):
             self.store.close()
 
 
-class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
+class MonitoringDataDecoder:
+    '''
+    The class that serves converting monitoring data lines to dict
+    '''
+    NA = 'n/a'
+
+    def __init__(self):
+        self.metrics = {}
+    
+    def decode_line(self, line):
+        is_initial = False
+        data_dict = {}
+        data = line.strip().split(';')
+        if data[0] == 'start':
+            data.pop(0) # remove 'start'
+            host = data.pop(0)
+            if not data:
+                raise ValueError("Wrong mon data line: %s", line)
+            
+            data.pop(0) # remove timestamp
+            self.metrics[host] = []
+            for metric in data:
+                if metric.startswith("Custom:"):
+                    metric = base64.standard_b64decode(metric.split(':')[1])
+                self.metrics[host].append(metric)
+                data_dict[metric] = self.NA
+                is_initial = True
+        else:
+            host = data.pop(0)
+            data.pop(0) # remove timestamp
+            for metric in self.metrics[host]:
+                data_dict[metric] = data.pop(0)
+        return host, data_dict, is_initial
+
+            
+class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDataDecoder):
     '''
     Screen widget
     '''
 
-    NA = 'n/a'
     def __init__(self, owner):
         AbstractInfoWidget.__init__(self)
+        MonitoringDataDecoder.__init__(self)
         self.owner = owner
         self.data = {}
-        self.metrics = {}
         self.sign = {}
         self.max_metric_len = 0
     
     def get_index(self):
         return 50
-
-
-    def handle_data_item(self, data, host, metrics):
-        for value in data:
-            metric = metrics.pop(0)
-            if value == '':
+    
+    def handle_data_item(self, host, data):
+        for metric, value in data.iteritems():
+            if value == '' or value == self.NA:
                 value = self.NA
                 self.sign[host][metric] = -1
                 self.data[host][metric] = value
@@ -180,33 +212,22 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                     self.sign[host][metric] = 0
                 self.data[host][metric] = "%.2f" % float(value)
 
+
     def monitoring_data(self, data_string):
         self.log.debug("Mon widget data: %s", data_string)
         for line in data_string.split("\n"):
             if not line.strip():
                 continue
-            data = line.strip().split(';')
-            if data[0] == 'start':
-                data.pop(0) # remove 'start'
-                host = data.pop(0)
-                if not data:
-                    continue
-                data.pop(0) # remove timestamp
-                self.metrics[host] = []
-                self.data[host] = {}
+            
+            host, data, initial = self.decode_line(line)
+            if initial:
                 self.sign[host] = {}
-                for metric in data:
-                    if metric.startswith("Custom:"):
-                        metric = base64.standard_b64decode(metric.split(':')[1])
-                    self.metrics[host].append(metric)
-                    self.max_metric_len = max(self.max_metric_len, len(metric))                    
-                    self.data[host][metric] = self.NA
+                self.data[host] = {}
+                for metric in data.keys():
                     self.sign[host][metric] = 0
+                    self.data[host][metric] = self.NA
             else:
-                host = data.pop(0)
-                data.pop(0) # remove timestamp
-                metrics = copy.copy(self.metrics[host])
-                self.handle_data_item(data, host, metrics) 
+                self.handle_data_item(host, data) 
                 
     
     def render(self, screen):
