@@ -149,6 +149,7 @@ class ConsoleTank:
             self.log.debug("Creating corrected INI config for it: %s", corrected_file)
             os.write(file_handle, "[" + self.MIGRATE_SECTION + "]\n")
             os.write(file_handle, self.__convert_old_multiline_options(open(config, 'r').readlines()))
+            os.close(file_handle)
             return corrected_file
 
     def __add_adapted_config(self, configs, conf_file):

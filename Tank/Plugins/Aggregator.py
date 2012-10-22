@@ -44,11 +44,13 @@ class AggregatorPlugin(AbstractPlugin):
             self.log.warning("No one set reader for aggregator yet")
     
     def is_test_finished(self):
+        # read up to 5 samples in single pass
         self.__read_samples(5)                    
         return -1
 
     def end_test(self, retcode):
         self.__read_samples(force=True)
+        self.reader.close_files()
         return retcode                
         
     def add_result_listener(self, listener):
@@ -149,7 +151,13 @@ class AbstractReader:
 
     def check_open_files(self):
         pass
-        
+
+    def close_files(self):
+        '''
+        Close opened handlers to avoid fd leak
+        '''
+        pass
+    
     def get_next_sample(self, force):
         pass
 

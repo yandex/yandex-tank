@@ -465,7 +465,8 @@ class TankCore:
         if not force and self.__there_is_locks():
             raise RuntimeError("There is lock files")
         
-        self.lock_file = tempfile.mkstemp('.lock', 'lunapark_', self.LOCK_DIR)[1]
+        fh, self.lock_file = tempfile.mkstemp('.lock', 'lunapark_', self.LOCK_DIR)
+        os.close(fh)
         os.chmod(self.lock_file, 0644)
         self.config.file = self.lock_file
     
@@ -500,8 +501,15 @@ class TankCore:
                     retcode = True        
         return retcode
     
-    
-            
+    def mkstemp(self, suffix, prefix):
+        '''
+        Generate temp file name in artifacts base dir
+        and close temp file handle
+        '''
+        fd, fname = tempfile.mkstemp(suffix, prefix, self.artifacts_base_dir)
+        os.close(fd)
+        return fname
+             
 class ConfigManager:
     '''
     Option storage class

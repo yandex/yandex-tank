@@ -110,6 +110,7 @@ class CpuStat(object):
 #                logger.debug("Result: %s" % result)
                     
         # Numproc, numthreads 
+        # FIXME: 1 remove this expensive operations!!!
         command = ['ps axf | wc -l', 'ps -eLf | wc -l']
         for cmd in command:
             try:

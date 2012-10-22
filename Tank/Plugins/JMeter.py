@@ -18,6 +18,7 @@ class JMeterPlugin(AbstractPlugin):
         self.jmeter_process = None
         self.args = None
         self.original_jmx = None
+        self.jtl_file = None
 
     @staticmethod
     def get_key():
@@ -26,15 +27,13 @@ class JMeterPlugin(AbstractPlugin):
     def configure(self):
         self.original_jmx = self.get_option("jmx")
         self.core.add_artifact_file(self.original_jmx, True)
-        handle, jtl = tempfile.mkstemp('.jtl', 'jmeter_', self.core.artifacts_base_dir)
-        os.close(handle)
-        self.jtl_file = jtl
+        self.jtl_file = self.core.mkstemp('.jtl', 'jmeter_')
         self.core.add_artifact_file(self.jtl_file)
         self.jmx = self.__add_writing_section(self.original_jmx, self.jtl_file)
         self.core.add_artifact_file(self.jmx)
         self.user_args = self.get_option("args", '')
         self.jmeter_path = self.get_option("jmeter_path", 'jmeter')
-        self.jmeter_log = tempfile.mkstemp('.log', 'jmeter_', self.core.artifacts_base_dir)[1]
+        self.jmeter_log = self.core.mkstemp('.log', 'jmeter_')
         self.core.add_artifact_file(self.jmeter_log, True)
 
     def prepare_test(self):
@@ -62,9 +61,11 @@ class JMeterPlugin(AbstractPlugin):
             if aggregator:
                 aggregator.add_result_listener(widget)
             
+            
     def start_test(self):
         self.log.info("Starting %s with arguments: %s", self.jmeter_path, self.args)
         self.jmeter_process = subprocess.Popen(self.args, executable=self.jmeter_path, preexec_fn=os.setsid) # stderr=subprocess.PIPE, stdout=subprocess.PIPE, 
+    
     
     def is_test_finished(self):
         rc = self.jmeter_process.poll()
@@ -73,8 +74,10 @@ class JMeterPlugin(AbstractPlugin):
             return rc
         else:
             return -1
+    
         
     def end_test(self, retcode):
+        # FIXME: 1 jmeter hangs
         if self.jmeter_process:
             if self.jmeter_process.poll() == None:
                 self.log.warn("Terminating jmeter process with PID %s", self.jmeter_process.pid)
@@ -109,16 +112,15 @@ class JMeterPlugin(AbstractPlugin):
         tpl = open(os.path.dirname(__file__) + '/jmeter_writer.xml', 'r').read()
         
         try:
-            new_file = tempfile.mkstemp('.jmx', 'modified_', os.path.dirname(os.path.realpath(jmx)))[1]
+            file_handle, new_file = tempfile.mkstemp('.jmx', 'modified_', os.path.dirname(os.path.realpath(jmx)))
         except OSError, e:
             self.log.debug("Can't create new jmx near original: %s", e)
-            new_file = tempfile.mkstemp('.jmx', 'modified_', self.core.artifacts_base_dir)[1]
+            file_handle, new_file = tempfile.mkstemp('.jmx', 'modified_', self.core.artifacts_base_dir)
         self.log.debug("Modified JMX: %s", new_file)
-        file_handle = open(new_file, 'w')
-        file_handle.write(''.join(source_lines))
-        file_handle.write(tpl % jtl)
-        file_handle.write(closing)
-        file_handle.close()
+        os.write(file_handle, ''.join(source_lines))
+        os.write(file_handle, tpl % jtl)
+        os.write(file_handle, closing)
+        os.close(file_handle)
         return new_file
     
     
@@ -146,9 +148,14 @@ class JMeterReader(AbstractReader):
         if not self.results and os.path.exists(self.jmeter.jtl_file):
             self.log.debug("Opening jmeter out file: %s", self.jmeter.jtl_file)
             self.results = open(self.jmeter.jtl_file, 'r')
+            
+    def close_files(self):
+        if self.results:
+            self.results.close()
 
     def get_next_sample(self, force):
         if force:
+            # FIXME: 1 not works
             while self.jmeter.jmeter_process and self.jmeter.jmeter_process.poll() == None: 
                 self.log.debug("Waiting for JMeter process to exit")
                 self.jmeter.jmeter_process.terminate()

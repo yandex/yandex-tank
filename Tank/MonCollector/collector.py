@@ -83,6 +83,7 @@ class AgentClient(object):
         self.ssh = None
 
         temp_config = tempfile.mkstemp('.cfg', 'agent_')
+        os.close(temp_config[0])
         self.path = {
             # Destination path on remote host
             'AGENT_REMOTE_FOLDER': '/var/tmp/lunapark_monitoring',
@@ -185,7 +186,8 @@ class AgentClient(object):
 
     def uninstall(self):
         """ Remove agent's files from remote host"""
-        log_file = tempfile.mkstemp('.log', "agent_" + self.host + "_")[1]
+        fh, log_file = tempfile.mkstemp('.log', "agent_" + self.host + "_")
+        os.close(fh)
         cmd = [self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_file]
         logging.debug("Copy agent log from %s: %s" , self.host, cmd)
         remove = self.ssh.get_scp_pipe(cmd)

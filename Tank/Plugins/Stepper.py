@@ -16,7 +16,8 @@ def make_load_ammo(uris):
     '''
     Create temp file for uri-format ammo
     '''
-    filename = tempfile.mkstemp('.ammo', 'uri_')[1]
+    fd, filename = tempfile.mkstemp('.ammo', 'uri_')
+    os.close(fd)
     tmp_ammo = open(filename, 'w')
     for line in uris:
         tmp_ammo.write(line + '\n')

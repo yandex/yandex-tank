@@ -10,7 +10,6 @@ from tankcore import AbstractPlugin
 import base64
 import copy
 import os
-import tempfile
 import time
 import traceback
 
@@ -28,6 +27,7 @@ class MonitoringPlugin(AbstractPlugin):
         self.config = None
         self.process = None
         self.monitoring = MonitoringCollector()
+        self.mon_saver=SaveMonToFile(self.data_file)
         self.die_on_fail = True
         self.data_file = None
 
@@ -74,8 +74,8 @@ class MonitoringPlugin(AbstractPlugin):
             if self.default_target:
                 self.monitoring.default_target = self.default_target
             
-            self.data_file = tempfile.mkstemp('.data', 'monitoring_', self.core.artifacts_base_dir)[1]
-            self.monitoring.add_listener(SaveMonToFile(self.data_file))
+            self.data_file = self.core.mkstemp('.data', 'monitoring_')
+            self.monitoring.add_listener(self.mon_saver)
             self.core.add_artifact_file(self.data_file)
 
             try:
@@ -120,6 +120,8 @@ class MonitoringPlugin(AbstractPlugin):
             self.monitoring.stop()
             for log in self.monitoring.artifact_files:
                 self.core.add_artifact_file(log)
+        
+        self.mon_saver.close()
         return retcode
     
 
@@ -134,6 +136,10 @@ class SaveMonToFile(MonitoringDataListener):
     def monitoring_data(self, data_string):
         self.store.write(data_string)
         self.store.flush()
+    
+    def close(self):
+        if self.store:
+            self.store.close()
 
 
 class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):

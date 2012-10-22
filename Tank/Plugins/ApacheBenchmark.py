@@ -4,7 +4,6 @@ from tankcore import AbstractPlugin
 import os
 import subprocess
 import tankcore
-import tempfile
 
 # TODO: 3 add console screen widget with info and PB measured via stderr info parsing
 class ApacheBenchmarkPlugin(AbstractPlugin):
@@ -29,7 +28,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
         self.url = self.get_option("url", 'http://localhost/')
         self.requests = self.get_option("requests", '100')
         self.concurrency = self.get_option("concurrency", '1')
-        self.out_file = tempfile.mkstemp('.log', 'ab_', self.core.artifacts_base_dir)[1]
+        self.out_file = self.core.mkstemp('.log', 'ab_')
         self.core.add_artifact_file(self.out_file)
 
     def prepare_test(self):
@@ -95,6 +94,10 @@ class ABReader(AbstractReader):
         if not self.results and os.path.exists(self.ab.out_file):
             self.log.debug("Opening ab out file: %s", self.ab.out_file)
             self.results = open(self.ab.out_file, 'r')
+            
+    def close_files(self):
+        if self.results:
+            self.results.close()
     
     def get_next_sample(self, force):
         if self.results:

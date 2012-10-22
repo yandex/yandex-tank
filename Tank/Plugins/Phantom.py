@@ -19,7 +19,6 @@ import string
 import subprocess
 import sys
 import tankcore
-import tempfile
 import time
 import logging
 
@@ -335,6 +334,13 @@ class PhantomReader(AbstractReader):
             self.log.debug("Opening stat file: %s", self.phantom.phantom.stat_log)
             self.stat = open(self.phantom.phantom.stat_log, 'r')
 
+    def close_files(self):
+        if self.stat:
+            self.stat.close()
+            
+        if self.phout:
+            self.phout.close()
+
     def get_next_sample(self, force):
         if self.stat: 
             self.__read_stat_data()
@@ -598,17 +604,20 @@ class PhantomConfig:
         self.address = self.get_option('address', '127.0.0.1')
         self.port = self.get_option('port', '80')
         self.tank_type = self.get_option("tank_type", 'http')
-        self.answ_log = tempfile.mkstemp(".log", "answ_", self.owner.core.artifacts_base_dir)[1]
         self.answ_log_level = self.get_option("writelog", "none")
         if self.answ_log_level == '0':
             self.answ_log_level = 'none'
         elif self.answ_log_level == '1':
             self.answ_log_level = 'all'
-        self.phout_file = tempfile.mkstemp(".log", "phout_", self.owner.core.artifacts_base_dir)[1]
+            
+        if self.answ_log_level != 'none':
+            self.answ_log = self.owner.core.mkstemp(".log", "answ_")
+            
+        self.phout_file = self.owner.core.mkstemp(".log", "phout_")
         self.owner.core.add_artifact_file(self.phout_file)
 
-        self.stat_log = tempfile.mkstemp(".log", "phantom_stat_", self.owner.core.artifacts_base_dir)[1]
-        self.phantom_log = tempfile.mkstemp(".log", "phantom_", self.owner.core.artifacts_base_dir)[1]
+        self.stat_log = self.owner.core.mkstemp(".log", "phantom_stat_")
+        self.phantom_log = self.owner.core.mkstemp(".log", "phantom_")
         self.stpd = self.get_option(self.OPTION_STPD, '')
         self.threads = self.get_option("threads", int(multiprocessing.cpu_count() / 2) + 1)
         self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
@@ -665,14 +674,16 @@ class PhantomConfig:
             kwargs['reply_limits'] = ''
 
         
-        handle, filename = tempfile.mkstemp(".conf", "phantom_", self.owner.core.artifacts_base_dir)
+        filename = self.owner.core.mkstemp(".conf", "phantom_")
         self.owner.core.add_artifact_file(filename)
         self.log.debug("Generating phantom config: %s", filename)
         template_str = open(os.path.dirname(__file__) + "/phantom.conf.tpl", 'r').read()
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
 
-        os.write(handle, config)
+        handle = open(filename, 'w')
+        handle.write(config)
+        handle.close()
         return filename
         
 
