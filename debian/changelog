@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.1.4) precise; urgency=low
+
+  * fix file descriptor leaks
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 22 Oct 2012 16:01:47 +0400
+
 yandex-load-tank-base (1.1.3) precise; urgency=high
 
   * fix bug with phantom timeout

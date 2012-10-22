@@ -610,9 +610,7 @@ class PhantomConfig:
         elif self.answ_log_level == '1':
             self.answ_log_level = 'all'
             
-        if self.answ_log_level != 'none':
-            self.answ_log = self.owner.core.mkstemp(".log", "answ_")
-            
+        self.answ_log = self.owner.core.mkstemp(".log", "answ_")            
         self.phout_file = self.owner.core.mkstemp(".log", "phout_")
         self.owner.core.add_artifact_file(self.phout_file)
 

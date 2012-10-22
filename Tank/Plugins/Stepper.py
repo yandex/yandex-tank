@@ -830,8 +830,7 @@ class Stepper:
             input_ammo = open(ammo_file, 'rb')
             stepped_ammo = open(self.stpd_file, 'wb')
             for step in load_steps:
-                if not (cur_progress / 100) % 2:
-                    pbar.update(cur_progress)
+                pbar.update(cur_progress)
 
                 if case == 3:
                     if stop_loop_count > 0 and cur_progress == stop_loop_count:
