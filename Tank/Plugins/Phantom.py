@@ -491,6 +491,7 @@ class UsedInstancesCriteria(AbstractCriteria):
         except KeyError:
             self.log.warning("No phantom module, 'instances' autostop disabled")
 
+
     def notify(self, aggregate_second):
         threads = aggregate_second.overall.active_threads
         if self.is_relative:
