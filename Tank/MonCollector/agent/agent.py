@@ -151,8 +151,6 @@ class Custom(AbstractMetric):
         for key, value in kwargs.iteritems():
             setattr(self, key, value)
             self.diff_values = {}
-        self.tail = []
-        self.call = []
 
     def columns(self,):
         cols = []
