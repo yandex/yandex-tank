@@ -110,9 +110,9 @@ def execute(cmd, shell=False, poll_period=1, catch_out=False):
     log.debug("Starting: %s", cmd)
 
     if catch_out:
-        process = subprocess.Popen(cmd, shell=shell, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        process = subprocess.Popen(cmd, shell=shell, stderr=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
     else:
-        process = subprocess.Popen(cmd, shell=shell)
+        process = subprocess.Popen(cmd, shell=shell, close_fds=True)
         
     while process.poll() == None:
         log.debug("Waiting for process to finish: %s", process)

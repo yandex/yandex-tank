@@ -57,8 +57,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.core.add_artifact_file(self.eta_file)        
         self.core.add_artifact_file(self.config)
 
-        if self.get_option(PhantomConfig.OPTION_PHOUT, ''):
-            self.phout_import_mode = 1
+        self.phout_import_mode = self.get_option(PhantomConfig.OPTION_PHOUT, '')
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -82,7 +81,8 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
 
         if aggregator:
             aggregator.reader = PhantomReader(aggregator, self)
-            self.phantom.timeout = aggregator.get_timeout()
+            if self.phantom:
+                self.phantom.timeout = aggregator.get_timeout()
             aggregator.add_result_listener(self)
 
         if not self.phout_import_mode:
@@ -103,13 +103,14 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             self.log.debug("Console not found: %s", ex)
             console = None
             
-        if console:    
-            widget = PhantomProgressBarWidget(self)
-            if self.eta_file:
-                widget.eta_file = self.eta_file
-            console.add_info_widget(widget)
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-            aggregator.add_result_listener(widget)
+        if console:
+            if not self.phout_import_mode:    
+                widget = PhantomProgressBarWidget(self)
+                if self.eta_file:
+                    widget.eta_file = self.eta_file
+                console.add_info_widget(widget)
+                aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+                aggregator.add_result_listener(widget)
 
             widget = PhantomInfoWidget(self)
             console.add_info_widget(widget)
@@ -122,11 +123,11 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             args = [self.phantom_path, 'run', self.config]
             self.log.debug("Starting %s with arguments: %s", self.phantom_path, args)
             self.phantom_start_time = time.time()
-            self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
         else:
-            if not os.path.exists(self.phout_file):
-                raise RuntimeError("Phout file not exists for import: %s", self.phout_file)
-            self.log.warn("Will import phout file instead of running phantom: %s", self.phout_file)
+            if not os.path.exists(self.phout_import_mode):
+                raise RuntimeError("Phout file not exists for import: %s", self.phout_import_mode)
+            self.log.warn("Will import phout file instead of running phantom: %s", self.phout_import_mode)
     
 
     def is_test_finished(self):
@@ -244,9 +245,9 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.planned = 0
         self.RPS = 0    
         self.instances_limit = int(self.owner.core.get_option(PhantomPlugin.SECTION, PhantomConfig.OPTION_INSTANCES_LIMIT))
+        self.ammo_count = int(self.owner.core.get_option(PhantomPlugin.SECTION, StepperWrapper.OPTION_AMMO_COUNT))
         self.selfload = 0
         self.time_lag = 0
-        self.ammo_count = int(self.owner.core.get_option(PhantomPlugin.SECTION, StepperWrapper.OPTION_AMMO_COUNT))
         self.planned_rps_duration = 0
 
     def render(self, screen):
@@ -448,7 +449,6 @@ class PhantomReader(AbstractReader):
         return res
     
 
-    # FIXME: 1 there is zeros in expected RPS reported
     def __get_expected_rps(self):
         '''
         Mark second with expected rps from stepper info
@@ -530,7 +530,7 @@ class UsedInstancesCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.get_level_str(), self.seconds_count, self.cause_second.time)
-        return "Testing threads (instances) utilization higher than %s for %ss, started at: %s" % items                 
+        return "Testing threads (instances) utilization higher than %s for %ss, since %s" % items                 
 
     def widget_explain(self):
         items = (self.get_level_str(), self.seconds_count, self.seconds_limit)

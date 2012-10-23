@@ -1,4 +1,4 @@
-from Tank.Plugins.Aggregator import AggregatorPlugin
+from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData
 from Tank.Plugins.Phantom import PhantomPlugin, PhantomReader, StepperWrapper
 from Tests.TankTests import TankTestCase
 import os
@@ -112,10 +112,26 @@ class  PhantomPluginTestCase(TankTestCase):
     def test_stepper_no_steps(self):
         self.foo.core.set_option('phantom', 'rps_schedule', '')
         self.foo.core.set_option('phantom', 'instances_schedule', '')
-        wrapper=StepperWrapper(self.foo)
-        wrapper.ammo_file='data/dummy.ammo'
+        wrapper = StepperWrapper(self.foo)
+        wrapper.ammo_file = 'data/dummy.ammo'
         wrapper.prepare_stepper()
         wrapper.prepare_stepper()
+        
+    def test_phout_import(self):
+        self.foo.core.set_option('phantom', 'phout_file', 'data/phout_timeout_mix.txt')
+        self.foo.core.set_option('phantom', 'instances', '1')
+        self.foo.core.set_option('phantom', 'ammo_count', '1')
+        self.foo.configure()
+        self.foo.prepare_test()
+        self.foo.start_test()
+        self.assertEqual(self.foo.is_test_finished(), -1)
+        sec = SecondAggregateData()
+        sec.overall.RPS = 1
+        self.foo.aggregate_second(sec)
+        self.assertEqual(self.foo.is_test_finished(), -1)
+        self.assertEqual(self.foo.is_test_finished(), 0)
+        self.foo.end_test(0)
+        self.foo.post_process(0)
         
 if __name__ == '__main__':
     unittest.main()

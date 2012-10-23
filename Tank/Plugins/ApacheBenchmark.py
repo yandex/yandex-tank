@@ -57,7 +57,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
                 '-n', self.requests,
                 '-c', self.concurrency, self.url]
         self.log.info("Starting ab with arguments: %s", args)
-        self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
            
     def is_test_finished(self):
         rc = self.process.poll()

@@ -58,7 +58,7 @@ class SSHWrapper:
         '''
         args = ['ssh'] + self.ssh_opts + [self.host] + cmd
         self.log.debug('Executing: %s', args)
-        return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid)
+        return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid, close_fds=True)
 
     def get_scp_pipe(self, cmd):
         '''
@@ -66,7 +66,7 @@ class SSHWrapper:
         '''
         args = ['scp'] + self.scp_opts + cmd
         self.log.debug('Executing: %s', args)
-        return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid)
+        return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid, close_fds=True)
 
 
 

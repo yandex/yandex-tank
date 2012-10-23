@@ -178,7 +178,7 @@ class AvgTimeCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.rt_limit, self.seconds_count, self.cause_second.time)
-        return "Average response time higher than %sms for %ss, started at: %s" % items
+        return "Average response time higher than %sms for %ss, since %s" % items
 
     def widget_explain(self):
         items = (self.rt_limit, self.seconds_count, self.seconds_limit)
@@ -243,7 +243,7 @@ class HTTPCodesCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.codes_mask, self.get_level_str(), self.seconds_count, self.cause_second.time)
-        return "%s codes count higher than %s for %ss, started at: %s" % items 
+        return "%s codes count higher than %s for %ss, since %s" % items 
     
     def widget_explain(self):
         items = (self.codes_mask, self.get_level_str(), self.seconds_count, self.seconds_limit)
@@ -310,7 +310,7 @@ class NetCodesCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.codes_mask, self.get_level_str(), self.seconds_count, self.cause_second.time)
-        return "%s net codes count higher than %s for %ss, started at: %s" % items 
+        return "%s net codes count higher than %s for %ss, since %s" % items 
     
     def widget_explain(self):
         items = (self.codes_mask, self.get_level_str(), self.seconds_count, self.seconds_limit)
@@ -354,7 +354,7 @@ class QuantileCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.quantile, self.rt_limit, self.seconds_count, self.cause_second.time)
-        return "Percentile %s higher than %sms for %ss, started at: %s" % items
+        return "Percentile %s higher than %sms for %ss, since %s" % items
 
     def widget_explain(self):
         items = (self.quantile, self.rt_limit, self.seconds_count, self.seconds_limit)
