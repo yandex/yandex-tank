@@ -41,7 +41,8 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.config = None
         self.stepper = None
         self.phantom = None
-        
+        self.phantom_start_time = time.time()
+                
     
     @staticmethod
     def get_key():

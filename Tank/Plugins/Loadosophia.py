@@ -55,8 +55,8 @@ class LoadosophiaPlugin(AbstractPlugin):
             
         # ab
         try:
-            ab = self.core.get_plugin_of_type(ApacheBenchmarkPlugin)
-            main_file = ab.out_file
+            apache_bench = self.core.get_plugin_of_type(ApacheBenchmarkPlugin)
+            main_file = apache_bench.out_file
         except KeyError:
             self.log.debug("AB not found")
         
@@ -81,6 +81,7 @@ class LoadosophiaPlugin(AbstractPlugin):
     
 
 class LoadosophiaClient:
+    ''' Loadosophia service client class '''
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.token = None
@@ -89,6 +90,7 @@ class LoadosophiaClient:
         self.results_url = None
     
     def send_results(self, project, result_file, monitoring_files):
+        ''' Send files to loadosophia '''
         if not self.token:
             self.log.warning("Loadosophia.org uploading disabled, please set loadosophia.token option to enable it, get token at https://loadosophia.org/service/upload/token/")
         else:
@@ -105,6 +107,7 @@ class LoadosophiaClient:
     
     
     def __send_checked_results(self, project, result_file, monitoring_files):
+        ''' internal wrapper to send request '''
         # Create the form with simple fields
         form = MultiPartForm()
         form.add_field('projectKey', project)
@@ -138,16 +141,16 @@ class LoadosophiaClient:
                 
     def __get_gzipped_file(self, result_file):
         out = StringIO.StringIO()
-        f = gzip.GzipFile(fileobj=out, mode='w')
-        f.write(open(result_file, 'r').read())
-        f.close()
+        fhandle = gzip.GzipFile(fileobj=out, mode='w')
+        fhandle.write(open(result_file, 'r').read())
+        fhandle.close()
         return out.getvalue()
     
     
 
 class MultiPartForm(object):
-    """Accumulate the data to be used when posting a form."""
-    '''http://blog.doughellmann.com/2009/07/pymotw-urllib2-library-for-opening-urls.html'''
+    """Accumulate the data to be used when posting a form.
+    http://blog.doughellmann.com/2009/07/pymotw-urllib2-library-for-opening-urls.html """
 
     def __init__(self):
         self.form_fields = []
@@ -156,6 +159,7 @@ class MultiPartForm(object):
         return
     
     def get_content_type(self):
+        ''' returns content type '''
         return 'multipart/form-data; boundary=%s' % self.boundary
 
     def add_field(self, name, value):
@@ -164,6 +168,7 @@ class MultiPartForm(object):
         return
 
     def add_file_as_string(self, fieldname, filename, body, mimetype=None):
+        ''' add raw string file '''
         if mimetype is None:
             mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
         self.files.append((fieldname, filename, mimetype, body))

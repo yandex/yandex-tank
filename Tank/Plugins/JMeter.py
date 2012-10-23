@@ -1,3 +1,4 @@
+''' jmeter load generator support '''
 from Tank.Plugins.Aggregator import AbstractReader, AggregatorPlugin, \
     AggregateResultListener
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
@@ -10,6 +11,7 @@ import tankcore
 
 
 class JMeterPlugin(AbstractPlugin):
+    ''' JMeter tank plugin '''
     SECTION = 'jmeter'
     
     def __init__(self, core):
@@ -18,6 +20,10 @@ class JMeterPlugin(AbstractPlugin):
         self.args = None
         self.original_jmx = None
         self.jtl_file = None
+        self.jmx = None
+        self.user_args = None
+        self.jmeter_path = None
+        self.jmeter_log = None
 
     @staticmethod
     def get_key():
@@ -67,10 +73,10 @@ class JMeterPlugin(AbstractPlugin):
     
     
     def is_test_finished(self):
-        rc = self.jmeter_process.poll()
-        if rc != None:
-            self.log.debug("JMeter RC %s", rc)
-            return rc
+        retcode = self.jmeter_process.poll()
+        if retcode != None:
+            self.log.debug("JMeter RC %s", retcode)
+            return retcode
         else:
             return -1
     
@@ -79,7 +85,10 @@ class JMeterPlugin(AbstractPlugin):
         # FIXME: 1 jmeter hangs
         if self.jmeter_process:
             self.log.info("Terminating jmeter process group with PID %s", self.jmeter_process.pid)
-            os.killpg(self.jmeter_process.pid, signal.SIGTERM)
+            try:
+                os.killpg(self.jmeter_process.pid, signal.SIGTERM)
+            except OSError, exc:
+                self.log.debug("Seems JMeter exited itself: %s", exc)
             #Utils.log_stdout_stderr(self.log, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
 
         self.core.add_artifact_file(self.jmeter_log)
@@ -104,8 +113,8 @@ class JMeterPlugin(AbstractPlugin):
         
         try:
             file_handle, new_file = tempfile.mkstemp('.jmx', 'modified_', os.path.dirname(os.path.realpath(jmx)))
-        except OSError, e:
-            self.log.debug("Can't create new jmx near original: %s", e)
+        except OSError, exc:
+            self.log.debug("Can't create new jmx near original: %s", exc)
             file_handle, new_file = tempfile.mkstemp('.jmx', 'modified_', self.core.artifacts_base_dir)
         self.log.debug("Modified JMX: %s", new_file)
         os.write(file_handle, ''.join(source_lines))
@@ -116,6 +125,7 @@ class JMeterPlugin(AbstractPlugin):
     
     
 class JMeterReader(AbstractReader):
+    ''' JTL files reader '''
     KNOWN_EXC = {
         "java.net.NoRouteToHostException": 113,
         "java.net.ConnectException": 110,
@@ -128,9 +138,7 @@ class JMeterReader(AbstractReader):
         "java.io.IOException": 5,
         "org.apache.http.conn.ConnectTimeoutException":110,
     }
-    '''
-    Adapter to read jtl files
-    '''
+
     def __init__(self, owner, jmeter):
         AbstractReader.__init__(self, owner)
         self.jmeter = jmeter
@@ -187,8 +195,9 @@ class JMeterReader(AbstractReader):
             return None 
 
     def exc_to_net(self, param1):
+        ''' translate http code to net code '''
         if len(param1) <= 3:
-            return 0
+            return '0'
         
         exc = param1.split(' ')[-1] 
         if exc in self.KNOWN_EXC.keys():
@@ -198,17 +207,18 @@ class JMeterReader(AbstractReader):
             return '1'
     
     def exc_to_http(self, param1):
+        ''' translate exception str to http code'''
         if len(param1) <= 3:
             return param1
         
         exc = param1.split(' ')[-1] 
         if exc in self.KNOWN_EXC.keys():
-            return 0
+            return '0'
         else:
-            return param1
+            return '500'
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
-    
+    ''' Right panel widget with JMeter test info '''
     def __init__(self, jmeter):
         AbstractInfoWidget.__init__(self)
         self.jmeter = jmeter

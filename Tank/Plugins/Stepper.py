@@ -17,8 +17,8 @@ def make_load_ammo(uris):
     '''
     Create temp file for uri-format ammo
     '''
-    fd, filename = tempfile.mkstemp('.ammo', 'uri_')
-    os.close(fd)
+    fds, filename = tempfile.mkstemp('.ammo', 'uri_')
+    os.close(fds)
     tmp_ammo = open(filename, 'w')
     for line in uris:
         tmp_ammo.write(line + '\n')
@@ -135,11 +135,11 @@ def load_const(req, duration):
     dur = tankcore.expand_to_seconds(duration)
     steps = []
     steps.append([req, dur])
-    ls = '%s,const,%s,%s,(%s,%s)\n' % (dur, req, req, req, duration)
+    loads = '%s,const,%s,%s,(%s,%s)\n' % (dur, req, req, req, duration)
     time = dur * int(req)
     if int(req) == 0:
         time = dur
-    return [steps, ls, time]
+    return [steps, loads, time]
 
 
 def load_line(start, end, duration):
@@ -149,7 +149,7 @@ def load_line(start, end, duration):
     dur = tankcore.expand_to_seconds(duration)
     diff_k = float((end - start) / float(dur - 1))
     (cnt, last_x, total) = (1, start, 0)
-    ls = '%s,line,%s,%s,(%s,%s,%s)\n' % (
+    loads = '%s,line,%s,%s,(%s,%s,%s)\n' % (
         dur,
         start,
         end,
@@ -166,7 +166,7 @@ def load_line(start, end, duration):
             steps.append([last_x, cnt])
             total += cnt * last_x
             (cnt, last_x) = (1, cur_x)
-    return [steps, ls, total]
+    return [steps, loads, total]
 
 
 def load_step(start, end, step, duration,):
@@ -174,11 +174,11 @@ def load_step(start, end, step, duration,):
     Stepping load pattern
     '''
     dur = tankcore.expand_to_seconds(duration)
-    (steps, ls, total) = ([], '', 0)
+    (steps, loads, total) = ([], '', 0)
     if end > start:
         for rps_level in range(start, end + 1, step):
             steps.append([rps_level, dur])
-            ls += '%s,step,%s,%s,(%s,%s,%s,%s)\n' % (
+            loads += '%s,step,%s,%s,(%s,%s,%s,%s)\n' % (
                 dur,
                 rps_level,
                 rps_level,
@@ -191,7 +191,7 @@ def load_step(start, end, step, duration,):
     else:
         for rps_level in range(start, end - 1, -step):
             steps.append([rps_level, dur])
-            ls += '%s,step,%s,%s,(%s,%s,%s,%s)\n' % (
+            loads += '%s,step,%s,%s,(%s,%s,%s,%s)\n' % (
                 dur,
                 rps_level,
                 rps_level,
@@ -201,7 +201,7 @@ def load_step(start, end, step, duration,):
                 duration,
                 )
             total += rps_level * dur
-    return [steps, ls, total]
+    return [steps, loads, total]
 
 
 def collapse_schedule(schedule):
@@ -236,30 +236,30 @@ def make_steps_element(param_item):
     params = []
     params.append(param_item)
     for param_item in params:
-        (st, ls, cnt) = ([], '', 0)
+        (st, loads, cnt) = ([], '', 0)
         pattern = re.match("^const\s*\(\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", param_item)
         if pattern:
-            (st, ls, cnt) = load_const(int(pattern.group(1)), pattern.group(2))
+            (st, loads, cnt) = load_const(int(pattern.group(1)), pattern.group(2))
         else:
             pattern = re.match("^line\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", param_item)
             if pattern:
-                [st, ls, cnt] = load_line(int(pattern.group(1)),
+                [st, loads, cnt] = load_line(int(pattern.group(1)),
                         int(pattern.group(2)), pattern.group(3))
             else:
                 pattern = re.match("^step\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*\)\s*", param_item)
                 if pattern:
-                    [st, ls, cnt] = load_step(int(pattern.group(1)),
+                    [st, loads, cnt] = load_step(int(pattern.group(1)),
                             int(pattern.group(2)), int(pattern.group(3)),
                             pattern.group(4))
                 else:
                     pattern = re.match("^const\s*\(\s*(\d+\/\d+)\s*,\s*((\d+[hms]?)+)\s*", param_item)
                     if pattern:
-                        [st, ls, cnt] = constf(pattern.group(1), pattern.group(2))
+                        [st, loads, cnt] = constf(pattern.group(1), pattern.group(2))
                     else:
                         raise RuntimeError("[Warning] Wrong load format: '%s'. Aborting." % param_item)
-        if ls:
+        if loads:
             steps += st
-            loadscheme += ls
+            loadscheme += loads
             load_ammo += cnt
     return (steps, loadscheme, load_ammo)
 
@@ -268,11 +268,11 @@ def expand_load_spec(l):
     '''
     Parse load scpecification
     '''
-    (st, ls, cnt, max_val) = ([], '', 0, 0)
+    (step, loads, cnt, max_val) = ([], '', 0, 0)
     pattern = re.match("^const\s*\(\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
     if pattern:
         val = int(pattern.group(1))
-        (st, ls, cnt) = load_const(val, pattern.group(2))
+        (step, loads, cnt) = load_const(val, pattern.group(2))
         if val > max_val:
             max_val = val
     else:
@@ -280,23 +280,23 @@ def expand_load_spec(l):
             re.match("^line\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
         if pattern:
             val = int(pattern.group(2))
-            [st, ls, cnt] = load_line(int(pattern.group(1)), val, pattern.group(3))
+            [step, loads, cnt] = load_line(int(pattern.group(1)), val, pattern.group(3))
             if val > max_val:
                 max_val = val
         else:
             pattern = re.match("^step\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*((\d+[hms]?)+)\s*\)\s*", l)
             if pattern:
                 val = int(pattern.group(2))
-                [st, ls, cnt] = load_step(int(pattern.group(1)), val, int(pattern.group(3)), pattern.group(4))
+                [step, loads, cnt] = load_step(int(pattern.group(1)), val, int(pattern.group(3)), pattern.group(4))
                 if val > max_val:
                     max_val = val
             else:
                 pattern = re.match("^const\s*\(\s*(\d+\/\d+)\s*,\s*((\d+[hms]?)+)\s*", l)
                 if pattern:
-                    [st, ls, cnt] = constf(pattern.group(1), pattern.group(2))
+                    [step, loads, cnt] = constf(pattern.group(1), pattern.group(2))
                 else:
                     raise RuntimeError("[Warning] Wrong load format: '%s'. Aborting." % l)
-    return (st, ls, cnt, max_val)
+    return (step, loads, cnt, max_val)
 
 
 def make_steps(load_spec):
@@ -307,10 +307,10 @@ def make_steps(load_spec):
     for load_item in load_spec:
         if not load_item:
             continue
-        (st, ls, cnt, skip) = expand_load_spec(load_item)
-        if ls:
+        (st, loads, cnt, skip) = expand_load_spec(load_item)
+        if loads:
             steps += st
-            loadscheme += ls
+            loadscheme += loads
             load_ammo += cnt
     return (steps, loadscheme, load_ammo)
 
@@ -335,8 +335,8 @@ def constf(req, duration):
         (a, b) = (int(pattern.group(1)), int(pattern.group(2)))
         (dur, e) = (tankcore.expand_to_seconds(duration), int(a / b))
 
-        fr = '%.3f' % (float(a) / b)
-        ls = '%s,const,%s,%s,(%s,%s)\n' % (dur, fr, fr, req, duration)
+        fract = '%.3f' % (float(a) / b)
+        loads = '%s,const,%s,%s,(%s,%s)\n' % (dur, fract, fract, req, duration)
         a = a % b
         req = '%s/%s' % (a, b)
         out = []
@@ -347,7 +347,7 @@ def constf(req, duration):
             out += frps_cut(tail, req)
         if e > 0:
             out = frps_expand(out, e)
-        return (out, ls, frps_ammo(out))
+        return (out, loads, frps_ammo(out))
     else:
         raise RuntimeError("Error in 'const_f' function. rps: %s, duration: %s" % (req, duration))
         

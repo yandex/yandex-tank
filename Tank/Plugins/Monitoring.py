@@ -149,6 +149,7 @@ class SaveMonToFile(MonitoringDataListener):
         self.store.flush()
     
     def close(self):
+        ''' close open files '''
         if self.store:
             self.store.close()
 
@@ -163,6 +164,7 @@ class MonitoringDataDecoder:
         self.metrics = {}
     
     def decode_line(self, line):
+        ''' convert mon line to dict '''
         is_initial = False
         data_dict = {}
         data = line.strip().split(';')
@@ -204,7 +206,8 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
     def get_index(self):
         return 50
     
-    def handle_data_item(self, host, data):
+    def __handle_data_item(self, host, data):
+        ''' store metric in data tree and calc offset signs '''
         for metric, value in data.iteritems():
             if value == '' or value == self.NA:
                 value = self.NA
@@ -236,7 +239,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
                     self.sign[host][metric] = 0
                     self.data[host][metric] = self.NA
             else:
-                self.handle_data_item(host, data) 
+                self.__handle_data_item(host, data) 
                 
     
     def render(self, screen):
@@ -257,6 +260,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
             
 
 class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, MonitoringDataDecoder):
+    ''' Parent class for metric criteria '''
     def __init__(self, autostop, param_str):
         AbstractCriteria.__init__(self)
         MonitoringDataDecoder.__init__(self)
@@ -314,9 +318,11 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
         return self.triggered
     
     def comparison_fn(self, x, y):
+        ''' comparison function '''
         raise NotImplementedError()
 
 class MetricHigherCriteria(AbstractMetricCriteria):
+    ''' trigger if metric is higher than limit '''
     def __init__(self, autostop, param_str):
         AbstractMetricCriteria.__init__(self, autostop, param_str)
     
@@ -339,6 +345,7 @@ class MetricHigherCriteria(AbstractMetricCriteria):
         return x > y
 
 class MetricLowerCriteria(AbstractMetricCriteria):
+    ''' trigger if metric is lower than limit '''
     def __init__(self, autostop, param_str):
         AbstractMetricCriteria.__init__(self, autostop, param_str)
 

@@ -1,4 +1,7 @@
 #! /usr/bin/python
+'''
+The agent bundle, contains all metric classes and agent running code
+'''
 from optparse import OptionParser
 from subprocess import Popen, PIPE
 import ConfigParser
@@ -11,8 +14,17 @@ import socket
 import sys
 import time
 
-class CpuLa(object):
+class AbstractMetric:
+    ''' Parent class for all metrics'''
+    def columns(self):
+        ''' methods should return list of columns provided by metric class '''
+        raise NotImplementedError()
+    
+    def check(self):
+        ''' methods should return list of values provided by metric class '''
+        raise NotImplementedError()
 
+class CpuLa(AbstractMetric):
     def columns(self,):
         return ['System_la1', 'System_la5', 'System_la15']
 
@@ -20,7 +32,7 @@ class CpuLa(object):
         loadavg_str = open('/proc/loadavg', 'r').readline().strip()
         return map(str, loadavg_str.split()[:3])
 
-class CpuStat(object):
+class CpuStat(AbstractMetric):
     ''' read /proc/stat and calculate amount of time
         the CPU has spent performing different kinds of work.
     '''
@@ -133,12 +145,14 @@ def is_number(s):
     except ValueError:
         return False
 
-class Custom(object):
+class Custom(AbstractMetric):
 
     def __init__(self, **kwargs):
         for key, value in kwargs.iteritems():
             setattr(self, key, value)
             self.diff_values = {}
+        self.tail = []
+        self.call = []
 
     def columns(self,):
         cols = []
@@ -175,7 +189,7 @@ class Custom(object):
         return str(value)
 
 
-class Disk(object):
+class Disk(AbstractMetric):
     def __init__(self):
         self.read = 0
         self.write = 0
@@ -218,7 +232,7 @@ class Disk(object):
 
 
 
-class Io(object):
+class Io(AbstractMetric):
     ''' Get no virtual block device names and count theys r/rw sectors '''
     def __init__(self,):
         self.check_prev = None
@@ -256,7 +270,7 @@ class Io(object):
 
 
 EMPTY = ''
-class Mem(object):
+class Mem(AbstractMetric):
     """
     Memory statistics
     """
@@ -304,7 +318,7 @@ class Mem(object):
             return map(str, result)
 
 
-class NetRetrans(object):
+class NetRetrans(AbstractMetric):
     ''' read netstat output and
     calculate tcp segment retransmition derivative '''
     def __init__(self,):
@@ -331,7 +345,7 @@ class NetRetrans(object):
 
 
 
-class NetTcp(object):
+class NetTcp(AbstractMetric):
     ''' Read ss util output and count TCP socket's number grouped by state '''
 
     def __init__(self,):
@@ -363,7 +377,7 @@ class NetTcp(object):
 
 
 
-class NetTxRx(object):
+class NetTxRx(AbstractMetric):
     ''' Get upped iface names and read they Tx/Rx counters in bytes '''
     def __init__(self,):
         self.prevRX = 0
@@ -398,7 +412,7 @@ class NetTxRx(object):
 
 
 
-class Net(object):
+class Net(AbstractMetric):
     def __init__(self):
         self.recv = 0
         self.send = 0
@@ -415,8 +429,8 @@ class Net(object):
         logging.debug("Starting: %s", cmd)
         try:
             stat = Popen([cmd], stdout=PIPE, stderr=PIPE, shell=True)
-        except Exception, e:
-            logging.error("Error getting net metrics: %s", e)
+        except Exception, exc:
+            logging.error("Error getting net metrics: %s", exc)
             result = ['', '']
 
         else:
@@ -425,14 +439,14 @@ class Net(object):
                 logging.error("Error output: %s", err)
                 result = ['', '']
             else:
-                for el in stat.stdout:
-                    m = self.rgx.match(el)
-                    if m:
-                        recv += int(m.group(1))
-                        send += int(m.group(2))
+                for elm in stat.stdout:
+                    match = self.rgx.match(elm)
+                    if match:
+                        recv += int(match.group(1))
+                        send += int(match.group(2))
                         logging.debug("Recv/send: %s/%s", recv, send)
                     else:
-                        logging.debug("Not matched: %s", el)
+                        logging.debug("Not matched: %s", elm)
                 if self.recv:
                     result = [str(recv - self.recv), str(send - self.send)]
                 else:
@@ -452,31 +466,31 @@ def write(mesg):
     sys.stdout.flush()
 
 def setup_logging():
-    # Logging params
-    LOG_FILENAME = os.path.dirname(__file__) + "_agent.log"
+    ''' Logging params '''
+    fname = os.path.dirname(__file__) + "_agent.log"
     if os.getenv("DEBUG"):
         level = logging.DEBUG
     else:
         level = logging.INFO
         
-    FORMAT = "%(asctime)s - %(filename)s - %(name)s - %(levelname)s - %(message)s"
-    logging.basicConfig(filename=LOG_FILENAME, level=level, format=FORMAT)
+    fmt = "%(asctime)s - %(filename)s - %(name)s - %(levelname)s - %(message)s"
+    logging.basicConfig(filename=fname, level=level, format=fmt)
     
     logging.info('Start agent')
     
 
 def fixed_sleep(slp_interval,):
-    # sleep 'interval' exclude processing time part
+    ''' sleep 'interval' exclude processing time part '''
     global t_after
     if t_after is not None:
         t_delta = time.time() - t_after
         t_after = time.time()
-        logging.debug('slp_interval:%s, t_delta:%s, slp_interval * 2 - t_delta = %s' % (slp_interval, t_delta, slp_interval * 2 - t_delta))
+        logging.debug('slp_interval:%s, t_delta:%s, slp_interval * 2 - t_delta = %s', slp_interval, t_delta, slp_interval * 2 - t_delta)
         if ((t_delta > slp_interval) & (slp_interval * 2 - t_delta > 0)):
             time.sleep(slp_interval * 2 - t_delta)
         else:
             if slp_interval * 2 - t_delta < 0:
-                    logging.warn('[negative sleep time]')
+                logging.warn('[negative sleep time]')
             else:
                 time.sleep(slp_interval)
     else:

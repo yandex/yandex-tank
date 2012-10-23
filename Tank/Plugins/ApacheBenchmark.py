@@ -1,3 +1,4 @@
+''' AB load generator '''
 from Tank.Plugins.Aggregator import AggregatorPlugin, AbstractReader
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from tankcore import AbstractPlugin
@@ -5,9 +6,8 @@ import os
 import subprocess
 import tankcore
 
-# TODO: 3 add console screen widget with info and PB measured via stderr info parsing
 class ApacheBenchmarkPlugin(AbstractPlugin):
-
+    ''' Apache Benchmark plugin '''
     SECTION = 'ab'
     
     def __init__(self, core):
@@ -60,10 +60,10 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
         self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
            
     def is_test_finished(self):
-        rc = self.process.poll()
-        if rc != None:
-            self.log.debug("%s exit code: %s", self.SECTION, rc)
-            return rc
+        retcode = self.process.poll()
+        if retcode != None:
+            self.log.debug("%s exit code: %s", self.SECTION, retcode)
+            return retcode
         else:
             return -1
 
@@ -85,15 +85,15 @@ class ABReader(AbstractReader):
     '''
     Adapter to read AB files
     '''
-    def __init__(self, aggregator, ab):
+    def __init__(self, aggregator, abench):
         AbstractReader.__init__(self, aggregator)
-        self.ab = ab
+        self.abench = abench
         self.results = None
     
     def check_open_files(self):
-        if not self.results and os.path.exists(self.ab.out_file):
-            self.log.debug("Opening ab out file: %s", self.ab.out_file)
-            self.results = open(self.ab.out_file, 'r')
+        if not self.results and os.path.exists(self.abench.out_file):
+            self.log.debug("Opening ab out file: %s", self.abench.out_file)
+            self.results = open(self.abench.out_file, 'r')
             
     def close_files(self):
         if self.results:
@@ -140,17 +140,14 @@ class ABReader(AbstractReader):
     
 
 class ABInfoWidget(AbstractInfoWidget):
-    
-    def __init__(self, ab):
+    ''' Console widget '''    
+    def __init__(self, abench):
         AbstractInfoWidget.__init__(self)
-        self.ab = ab
+        self.abench = abench
         self.active_threads = 0
 
     def get_index(self):
         return 0
-
-    def aggregate_second(self, second_aggregate_data):
-        self.active_threads = second_aggregate_data.overall.active_threads
 
     def render(self, screen):        
         ab_text = " Apache Benchmark Test "
@@ -161,6 +158,6 @@ class ABInfoWidget(AbstractInfoWidget):
         template += "           URL: %s\n"
         template += "   Concurrency: %s\n"
         template += "Total Requests: %s"
-        data = (self.ab.url, self.ab.concurrency, self.ab.requests)
+        data = (self.abench.url, self.abench.concurrency, self.abench.requests)
         
         return template % data

@@ -1,3 +1,4 @@
+''' Autostop facility '''
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from Tank.Plugins.ConsoleOnline import AbstractInfoWidget, ConsoleOnlinePlugin
 from tankcore import AbstractPlugin
@@ -7,6 +8,7 @@ import re
 import tankcore
 
 class AutostopPlugin(AbstractPlugin, AggregateResultListener):
+    ''' Plugin that accepts criteria classes and triggers autostop '''
     SECTION = 'autostop'
 
     def __init__(self, core):
@@ -15,19 +17,22 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         self.criterias = []
         self.custom_criterias = []
         self.counting = []
+        self.criteria_str = ''
 
     @staticmethod
     def get_key():
         return __file__
 
     def get_counting(self):
+        ''' get criterias that are activated '''
         return self.counting
 
     def add_counting(self, obj):
+        ''' add criteria that activated '''
         self.counting += [obj]
 
-
     def add_criteria_class(self, criteria_class):
+        ''' add new criteria class '''
         self.custom_criterias += [criteria_class]
     
     def configure(self):
@@ -44,7 +49,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
             if not criteria_str: 
                 continue
             self.log.debug("Criteria string: %s", criteria_str)
-            self.criterias.append(self.create_criteria(criteria_str))
+            self.criterias.append(self.__create_criteria(criteria_str))
             
         self.log.debug("Criteria object: %s", self.criterias)
     
@@ -64,7 +69,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         else:
             return -1
 
-    def create_criteria(self, criteria_str):
+    def __create_criteria(self, criteria_str):
         parsed = criteria_str.split("(")
         type_str = parsed[0].strip().lower()
         parsed[1] = parsed[1].split(")")[0].strip()
@@ -84,6 +89,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
     
     
 class AutostopWidget(AbstractInfoWidget):
+    ''' widget that displays counting criterias '''
     def __init__(self, sender):
         AbstractInfoWidget.__init__(self)
         self.owner = sender        
@@ -113,6 +119,7 @@ class AutostopWidget(AbstractInfoWidget):
         
 
 class AbstractCriteria:
+    ''' parent class for all criterias '''
     RC_TIME = 21
     RC_HTTP = 22
     RC_NET = 23
@@ -122,6 +129,7 @@ class AbstractCriteria:
         self.cause_second = None
         
     def count_matched_codes(self, codes_regex, codes_dict):
+        ''' helper to aggregate codes by mask '''
         total = 0
         for code, count in codes_dict.items():
             if codes_regex.match(str(code)):
@@ -129,23 +137,30 @@ class AbstractCriteria:
         return total
     
     def notify(self, aggregate_second):
-        raise RuntimeError("Abstract methods requires overriding")
+        ''' notification about aggregate data goes here '''
+        raise NotImplementedError("Abstract methods requires overriding")
 
     def get_rc(self):
-        raise RuntimeError("Abstract methods requires overriding")
+        ''' get return code for test '''
+        raise NotImplementedError("Abstract methods requires overriding")
 
     def explain(self):
-        raise RuntimeError("Abstract methods requires overriding")
+        ''' long explanation to show after test stop '''
+        raise NotImplementedError("Abstract methods requires overriding")
     
     def widget_explain(self):
+        ''' short explanation to display in right panel '''
         return (self.explain(), 0)
     
     @staticmethod
     def get_type_string():
-        raise RuntimeError("Abstract methods requires overriding")
+        ''' returns string that used as config name for criteria '''
+        raise NotImplementedError("Abstract methods requires overriding")
 
 
 class AvgTimeCriteria(AbstractCriteria):
+    ''' average response time criteria '''
+    
     @staticmethod
     def get_type_string():
         return 'time'
@@ -186,6 +201,7 @@ class AvgTimeCriteria(AbstractCriteria):
     
     
 class HTTPCodesCriteria(AbstractCriteria):
+    ''' HTTP codes criteria '''
     @staticmethod
     def get_type_string():
         return 'http'
@@ -235,6 +251,7 @@ class HTTPCodesCriteria(AbstractCriteria):
         return self.RC_HTTP
 
     def get_level_str(self):
+        ''' format level str '''
         if self.is_relative:
             level_str = str(100 * self.level) + "%"
         else:
@@ -251,6 +268,8 @@ class HTTPCodesCriteria(AbstractCriteria):
 
     
 class NetCodesCriteria(AbstractCriteria):
+    ''' Net codes criteria '''
+
     @staticmethod
     def get_type_string():
         return 'net'
@@ -274,7 +293,8 @@ class NetCodesCriteria(AbstractCriteria):
 
     def notify(self, aggregate_second):
         codes = copy.deepcopy(aggregate_second.overall.net_codes)
-        if '0' in codes.keys(): codes.pop('0')
+        if '0' in codes.keys(): 
+            codes.pop('0')
         matched_responses = self.count_matched_codes(self.codes_regex, codes)
         if self.is_relative:
             if aggregate_second.overall.RPS:
@@ -302,6 +322,7 @@ class NetCodesCriteria(AbstractCriteria):
         return self.RC_NET
 
     def get_level_str(self):
+        ''' format level str '''
         if self.is_relative:
             level_str = str(100 * self.level) + "%"
         else:
@@ -318,6 +339,8 @@ class NetCodesCriteria(AbstractCriteria):
 
 
 class QuantileCriteria(AbstractCriteria):
+    ''' quantile criteria '''
+
     @staticmethod
     def get_type_string():
         return 'quantile'

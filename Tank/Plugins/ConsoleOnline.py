@@ -1,3 +1,4 @@
+''' Plugin provides fullscreen console '''
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from Tank.Plugins.ConsoleScreen import Screen
 from tankcore import AbstractPlugin
@@ -7,6 +8,7 @@ import traceback
 
 
 class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
+    ''' Console plugin '''
     SECTION = 'console'
     
     def __init__(self, core):
@@ -15,13 +17,15 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
         self.render_exception = None
         self.console_markup = None
         self.remote_translator = None
+        self.info_panel_width = '33'
+        self.short_only = 0
 
     @staticmethod
     def get_key():
         return __file__
     
     def configure(self):
-        self.info_panel_width = self.get_option("info_panel_width", '33')
+        self.info_panel_width = self.get_option("info_panel_width", self.info_panel_width)
         self.short_only = int(self.get_option("short_only", '0'))
         if sys.stdout.isatty() and not int(self.get_option("disable_all_colors", '0')):
             self.console_markup = RealConsoleMarkup()
@@ -36,8 +40,8 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
             aggregator.add_result_listener(self)
         except KeyError:
             self.log.debug("No aggregator for console")
-            self.screen.block_rows=[]
-            self.screen.info_panel_percent=100
+            self.screen.block_rows = []
+            self.screen.info_panel_percent = 100
 
     def is_test_finished(self):
         try:
@@ -61,9 +65,9 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
     def aggregate_second(self, second_aggregate_data):
         if self.short_only:
             tpl = "Time: %s\tExpected RPS: %s\tActual RPS: %s\tActive Threads: %s\tAvg RT: %s"
-            o = second_aggregate_data.overall # just to see the next line in IDE
-            data = (second_aggregate_data.time, o.planned_requests, o.RPS,
-                    o.active_threads, o.avg_response_time)
+            ovr = second_aggregate_data.overall # just to see the next line in IDE
+            data = (second_aggregate_data.time, ovr.planned_requests, ovr.RPS,
+                    ovr.active_threads, ovr.avg_response_time)
             self.log.info(tpl % data)
         else:
             self.screen.add_second_data(second_aggregate_data)    
@@ -71,6 +75,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
 
     
     def add_info_widget(self, widget):
+        ''' add right panel widget '''
         if not self.screen:
             self.log.debug("No screen instance to add widget")
         else:
@@ -101,6 +106,7 @@ class RealConsoleMarkup(object):
     BG_CYAN = '\033[1;46m'
     
     def clean_markup(self, orig_str):
+        ''' clean markup from string '''
         for val in [self.YELLOW, self.RED, self.RESET,
                     self.CYAN, self.BG_MAGENTA, self.WHITE,
                     self.BG_GREEN, self.GREEN, self.BG_BROWN,
@@ -109,9 +115,10 @@ class RealConsoleMarkup(object):
         return orig_str
 
 # ======================================================
-
 # FIXME: 3 better way to have it?
+
 class NoConsoleMarkup(RealConsoleMarkup):
+    ''' all colors are disabled '''
     WHITE_ON_BLACK = ''
     TOTAL_RESET = ''
     clear = ""
@@ -134,13 +141,17 @@ class NoConsoleMarkup(RealConsoleMarkup):
 
 
 class AbstractInfoWidget:
+    ''' parent class for all right panel widgets '''
     def __init__(self):
         self.log = logging.getLogger(__name__)
 
     def render(self, screen):
+        ''' render widget, returns string '''
         self.log.warn("Please, override render widget")
         return "[Please, override render widget]"
 
     def get_index(self):
-        return 0;
+        ''' get vertical priority index '''
+        return 0
+
 

@@ -104,7 +104,7 @@ class AgentClient(object):
         '''
         Start remote agent
         '''
-        logging.debug('Start monitoring: %s' % self.host)
+        logging.debug('Start monitoring: %s', self.host)
         if not self.run:
             raise ValueError("Empty run string")
         self.run += ['-t', str(int(time.time()))]
@@ -148,7 +148,7 @@ class AgentClient(object):
         if err:
             raise RuntimeError("[%s] ssh error: '%s'" % (self.host, err))
         pipe.wait()
-        logging.debug("Return code [%s]: %s" % (self.host, pipe.returncode))
+        logging.debug("Return code [%s]: %s", self.host, pipe.returncode)
         if pipe.returncode:
             raise RuntimeError("Failed to get remote dir via SSH at %s, code %s: %s" % (self.host, pipe.returncode, pipe.stdout.read().strip()))
 
@@ -159,7 +159,7 @@ class AgentClient(object):
 
         # Copy agent
         cmd = [self.path['AGENT_LOCAL_FOLDER'] + '/agent.py', self.host + ':' + self.path['AGENT_REMOTE_FOLDER']]
-        logging.debug("Copy agent to %s: %s" % (self.host, cmd))
+        logging.debug("Copy agent to %s: %s" ,self.host, cmd)
 
         pipe = self.ssh.get_scp_pipe(cmd)
         pipe.wait()
@@ -186,8 +186,8 @@ class AgentClient(object):
 
     def uninstall(self):
         """ Remove agent's files from remote host"""
-        fh, log_file = tempfile.mkstemp('.log', "agent_" + self.host + "_")
-        os.close(fh)
+        fhandle, log_file = tempfile.mkstemp('.log', "agent_" + self.host + "_")
+        os.close(fhandle)
         cmd = [self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_file]
         logging.debug("Copy agent log from %s: %s" , self.host, cmd)
         remove = self.ssh.get_scp_pipe(cmd)
@@ -218,6 +218,7 @@ class MonitoringCollector:
         self.send_data = ''
         self.artifact_files = []
         self.inputs, self.outputs, self.excepts = [], [], []
+        self.filter_mask = defaultdict(str)
 
 
     def add_listener(self, obj):
@@ -235,7 +236,6 @@ class MonitoringCollector:
         self.log.debug("filter_conf: %s", self.filter_conf)        
         
         # Filtering
-        self.filter_mask = defaultdict(str)
         for host in self.filter_conf:
             self.filter_mask[host] = []
         self.log.debug("Filter mask: %s", self.filter_mask)
@@ -264,8 +264,8 @@ class MonitoringCollector:
 
     def start(self):        
         ''' Start N parallel agents ''' 
-        for a in self.agents:
-            pipe = a.start()
+        for agent in self.agents:
+            pipe = agent.start()
             self.agent_pipes.append(pipe)
             self.outputs.append(pipe.stdout)
             self.excepts.append(pipe.stderr)     
@@ -288,16 +288,16 @@ class MonitoringCollector:
                     self.agent_pipes.remove(pipe)
         
         # Handle exceptions
-        for s in exceptional:
-                data = s.readline()
-                while data:
-                    logging.error("Got exception [%s]: %s", s, data)
-                    data = s.readline()                
+        for excepted in exceptional:
+            data = excepted.readline()
+            while data:
+                logging.error("Got exception [%s]: %s", excepted, data)
+                data = excepted.readline()                
     
         while readable:
-            s = readable.pop(0)
+            excepted = readable.pop(0)
             # Handle outputs
-            data = s.readline()
+            data = excepted.readline()
             if not data:
                 continue
             logging.debug("Got data from agent: %s", data.strip())    
@@ -363,15 +363,15 @@ class MonitoringCollector:
                 # known metrics
                 if metric.tag in default.keys():
                     metrics_count += 1
-                    m = default[metric.tag].split(',')
+                    metr_val = default[metric.tag].split(',')
                     if metric.get('measure'):
-                        m = metric.get('measure').split(',')
-                    for el in m:
-                        if not el:
-                            continue;
-                        stat = "%s_%s" % (metric.tag, el)
+                        metr_val = metric.get('measure').split(',')
+                    for elm in metr_val:
+                        if not elm:
+                            continue
+                        stat = "%s_%s" % (metric.tag, elm)
                         stats.append(stat)
-                        agent_name = self.get_agent_name(metric.tag, el)
+                        agent_name = self.get_agent_name(metric.tag, elm)
                         if agent_name:
                             names[agent_name] = 1
                 # custom metric ('call' and 'tail' methods)
@@ -392,11 +392,11 @@ class MonitoringCollector:
             # use default metrics for host
             if metrics_count == 0:
                 for metric in default_metric:
-                    m = default[metric].split(',')
-                    for el in m:
-                        stat = "%s_%s" % (metric, el)
+                    metr_val = default[metric].split(',')
+                    for elm in metr_val:
+                        stat = "%s_%s" % (metric, elm)
                         stats.append(stat)
-                        agent_name = self.get_agent_name(metric, el)
+                        agent_name = self.get_agent_name(metric, elm)
                         if agent_name:
                             names[agent_name] = 1
     
@@ -441,14 +441,12 @@ class MonitoringCollector:
         ''' Filtering helper '''
         host = filter_list[0]
         initial = [0, 1]
-        out = ''
         res = []
         if mask[host]:
             keys = initial + mask[host]
             for key in keys:
                 try:
                     res.append(filter_list[key])
-                    out += filter_list[key] + ';'
                 except IndexError:
                     self.log.warn("Problems filtering data: %s with %s", mask, len(filter_list))
                     return None

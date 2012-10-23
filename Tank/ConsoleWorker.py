@@ -112,6 +112,7 @@ class ConsoleTank:
 
 
     def __convert_old_multiline_options(self, old_lines):
+        ''' supports old-school 'lunapark' tool configs ''' 
         opts = {}
         option = None
         res = ''
@@ -138,6 +139,7 @@ class ConsoleTank:
     
     
     def __adapt_old_config(self, config):
+        ''' supports old-school 'lunapark' tool configs ''' 
         test_parser = ConfigParser.ConfigParser()
         try:
             test_parser.read(config)
@@ -153,17 +155,19 @@ class ConsoleTank:
             return corrected_file
 
     def __add_adapted_config(self, configs, conf_file):
+        ''' supports old-school 'lunapark' tool configs ''' 
         conf_file = self.__adapt_old_config(conf_file)
         configs += [conf_file]
         self.core.add_artifact_file(conf_file, True)
 
 
     def __override_config_from_cmdline(self):
-        # override config options from command line
+        ''' override config options from command line'''
         if self.options.option: 
             self.core.apply_shorthand_options(self.options.option, self.MIGRATE_SECTION)            
     
     def __translate_old_options(self):
+        ''' supports old-school 'lunapark' tool configs ''' 
         for old_option, value in self.core.config.get_options(self.MIGRATE_SECTION):
             if old_option in self.old_options_mapping.keys():
                 new_sect = self.old_options_mapping[old_option][0]
@@ -187,7 +191,7 @@ class ConsoleTank:
         while True:        
             try:
                 self.core.get_lock(self.options.ignore_lock)
-                break;
+                break
             except Exception:
                 if self.options.lock_fail:
                     raise RuntimeError("Lock file present, cannot continue")
@@ -199,7 +203,7 @@ class ConsoleTank:
             
             if not self.options.no_rc:
                 try:
-                    conf_files=os.listdir(self.baseconfigs_location)
+                    conf_files = os.listdir(self.baseconfigs_location)
                     conf_files.sort()
                     for filename in conf_files:
                         if fnmatch.fnmatch(filename, '*.ini'):
@@ -245,6 +249,7 @@ class ConsoleTank:
             raise ex
 
     def __graceful_shutdown(self):
+        ''' call shutdown routines '''
         retcode = 1
         self.log.info("Trying to shutdown gracefully...")
         retcode = self.core.plugins_end_test(retcode)
