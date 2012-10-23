@@ -5,7 +5,6 @@ import os
 import signal
 import subprocess
 import tempfile
-import time
 from tankcore import AbstractPlugin
 import tankcore
 
@@ -64,7 +63,7 @@ class JMeterPlugin(AbstractPlugin):
             
     def start_test(self):
         self.log.info("Starting %s with arguments: %s", self.jmeter_path, self.args)
-        self.jmeter_process = subprocess.Popen(self.args, executable=self.jmeter_path, preexec_fn=os.setsid) # stderr=subprocess.PIPE, stdout=subprocess.PIPE, 
+        self.jmeter_process = subprocess.Popen(self.args, executable=self.jmeter_path, preexec_fn=os.setsid, close_fds=True) # stderr=subprocess.PIPE, stdout=subprocess.PIPE, 
     
     
     def is_test_finished(self):
@@ -79,21 +78,13 @@ class JMeterPlugin(AbstractPlugin):
     def end_test(self, retcode):
         # FIXME: 1 jmeter hangs
         if self.jmeter_process:
-            if self.jmeter_process.poll() == None:
-                self.log.warn("Terminating jmeter process with PID %s", self.jmeter_process.pid)
-                os.killpg(self.jmeter_process.pid, signal.SIGTERM)
-                #self.jmeter_process.terminate()
-                time.sleep(1)
-                if self.jmeter_process.poll() == None:
-                    self.log.warn("Killing jmeter process with PID %s", self.jmeter_process.pid)
-                    os.killpg(self.jmeter_process.pid, signal.SIGKILL)
-            else:
-                self.log.debug("Seems JMeter finished OK")
-            
+            self.log.info("Terminating jmeter process group with PID %s", self.jmeter_process.pid)
+            os.killpg(self.jmeter_process.pid, signal.SIGTERM)
             #Utils.log_stdout_stderr(self.log, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
 
         self.core.add_artifact_file(self.jmeter_log)
         return retcode
+
             
     def __add_writing_section(self, jmx, jtl):
         '''
@@ -135,6 +126,7 @@ class JMeterReader(AbstractReader):
         "java.net.SocketTimeoutException":110,
         "java.net.UnknownHostException":14,
         "java.io.IOException": 5,
+        "org.apache.http.conn.ConnectTimeoutException":110,
     }
     '''
     Adapter to read jtl files
@@ -154,17 +146,6 @@ class JMeterReader(AbstractReader):
             self.results.close()
 
     def get_next_sample(self, force):
-        if force:
-            # FIXME: 1 not works
-            while self.jmeter.jmeter_process and self.jmeter.jmeter_process.poll() == None: 
-                self.log.debug("Waiting for JMeter process to exit")
-                self.jmeter.jmeter_process.terminate()
-                time.sleep(1)
-            offset = self.results.tell()
-            self.log.debug("Reopening JTL file with offset: %s:%s", self.jmeter.jtl_file, offset)
-            self.results = open(self.jmeter.jtl_file, 'r')
-            self.results.seek(offset)
-        
         if self.results:
             read_lines = self.results.readlines()
             self.log.debug("About to process %s result lines", len(read_lines))
@@ -178,7 +159,7 @@ class JMeterReader(AbstractReader):
                     self.log.warning("Wrong jtl line, skipped: %s", line)
                     continue
                 cur_time = int(data[0]) / 1000
-                netcode = '0' if data[4] == 'true' else '999' 
+                netcode = '0' if data[4] == 'true' else self.exc_to_net(data[3]) 
                 
                 if not cur_time in self.data_buffer.keys():
                     if self.data_queue and self.data_queue[-1] >= cur_time:
@@ -188,7 +169,7 @@ class JMeterReader(AbstractReader):
                         self.data_queue.append(cur_time)
                         self.data_buffer[cur_time] = []
                 #        marker, threads, overallRT, httpCode, netCode
-                data_item = [data[2], int(data[7]), int(data[1]), self.exc_to_code(data[3]), netcode]
+                data_item = [data[2], int(data[7]), int(data[1]), self.exc_to_http(data[3]), netcode]
                 # bytes:     sent    received
                 data_item += [0, int(data[5])]
                 #        connect    send    latency    receive
@@ -205,9 +186,9 @@ class JMeterReader(AbstractReader):
         else:
             return None 
 
-    def exc_to_code(self, param1):
+    def exc_to_net(self, param1):
         if len(param1) <= 3:
-            return param1
+            return 0
         
         exc = param1.split(' ')[-1] 
         if exc in self.KNOWN_EXC.keys():
@@ -216,6 +197,15 @@ class JMeterReader(AbstractReader):
             self.log.warning("Not known Java exception, consider adding it to dictionary: %s", param1)
             return '1'
     
+    def exc_to_http(self, param1):
+        if len(param1) <= 3:
+            return param1
+        
+        exc = param1.split(' ')[-1] 
+        if exc in self.KNOWN_EXC.keys():
+            return 0
+        else:
+            return param1
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
     
