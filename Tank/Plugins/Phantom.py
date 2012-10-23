@@ -22,7 +22,6 @@ import tankcore
 import time
 import logging
 
-# TODO: 3  chosen cases
 # TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
 # FIXME: 3 there is no graceful way to interrupt the process in phout import mode 
 class PhantomPlugin(AbstractPlugin, AggregateResultListener):
@@ -318,7 +317,7 @@ class PhantomReader(AbstractReader):
         self.steps = []
         self.first_request_time = sys.maxint
         self.partial_buffer = ''
-        self.pending_second_data = None
+        self.pending_second_data_queue = []
         self.last_sample_time = 0
   
     def check_open_files(self):
@@ -428,16 +427,21 @@ class PhantomReader(AbstractReader):
 
 
     def pop_second(self):
-        if not self.pending_second_data:
-            self.pending_second_data = AbstractReader.pop_second(self)
+        parsed_sec = AbstractReader.pop_second(self)
+        if parsed_sec:
+            self.pending_second_data_queue.append(parsed_sec)
             
-        if self.last_sample_time and int(time.mktime(self.pending_second_data.time.timetuple())) - self.last_sample_time > 1:
+        if not self.pending_second_data_queue:
+            return None
+
+        next_time = int(time.mktime(self.pending_second_data_queue[0].time.timetuple()))
+            
+        if self.last_sample_time and (next_time - self.last_sample_time) > 1:
             self.last_sample_time += 1
-            self.log.debug("Adding zero sample: %s", self.last_sample_time)
+            self.log.debug("Adding phantom zero sample: %s", self.last_sample_time)
             res = self.get_zero_sample(datetime.datetime.fromtimestamp(self.last_sample_time))
         else:
-            res = self.pending_second_data
-            self.pending_second_data = None
+            res = self.pending_second_data_queue.pop(0)
         
         self.last_sample_time = int(time.mktime(res.time.timetuple()))
         res.overall.planned_requests = self.__get_expected_rps()
@@ -485,7 +489,7 @@ class UsedInstancesCriteria(AbstractCriteria):
         
         try:
             phantom = autostop.core.get_plugin_of_type(PhantomPlugin)
-            self.threads_limit = phantom.instances
+            self.threads_limit = phantom.phantom.instances
             if not self.threads_limit:
                 raise ValueError("Cannot create 'instances' criteria with zero instances limit")
         except KeyError:
@@ -837,7 +841,11 @@ class StepperWrapper:
         external_stepper_conf = ConfigParser.ConfigParser()
         external_stepper_conf.read(cached_config)
         #stepper.cases = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES)
-        stepper.steps = [int(x) for x in external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_STEPS).split(' ')]
+        steps = external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_STEPS).strip().split(' ')
+        if steps:
+            stepper.steps = [int(x) for x in steps]
+        else:
+            stepper.steps = []
         stepper.loadscheme = external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_LOADSCHEME)
         stepper.loop_count = external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_LOOP_COUNT)
         stepper.ammo_count = external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_AMMO_COUNT)

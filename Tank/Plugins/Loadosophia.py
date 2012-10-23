@@ -48,7 +48,8 @@ class LoadosophiaPlugin(AbstractPlugin):
         # phantom
         try:
             phantom = self.core.get_plugin_of_type(PhantomPlugin)
-            main_file = phantom.phantom.phout_file
+            if phantom.phantom:
+                main_file = phantom.phantom.phout_file
         except KeyError:
             self.log.debug("Phantom not found")
             

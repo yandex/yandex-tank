@@ -58,7 +58,7 @@ class AggregatorPlugin(AbstractPlugin):
         self.second_data_listeners += [listener]
     
     def __notify_listeners(self, data):
-        self.log.debug("Notifying listeners about second: %s , %s responses", data.time, data.overall.RPS)
+        self.log.debug("Notifying listeners about second: %s , %s/%s req/responses", data.time, data.overall.planned_requests, data.overall.RPS)
         for listener in self.second_data_listeners:
             listener.aggregate_second(data)
     

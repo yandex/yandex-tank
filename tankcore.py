@@ -297,8 +297,9 @@ class TankCore:
             end_time = time.time()
             diff = end_time - begin_time
             self.log.debug("Polling took %s", diff)
-            if (diff < 1):
-                time.sleep(1 - diff)
+            # screen refresh every 0.5 s
+            if (diff < 0.5):
+                time.sleep(0.5 - diff)
         return 1
 
     def plugins_end_test(self, retcode):

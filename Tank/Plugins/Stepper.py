@@ -12,6 +12,7 @@ import tempfile
 import tankcore
 
 # TODO: 3 add stpd file size estimation 
+# TODO: 3  chosen cases
 def make_load_ammo(uris):
     '''
     Create temp file for uri-format ammo

@@ -56,7 +56,7 @@ class ShellExecPlugin(AbstractPlugin):
         '''
         Execute and check exit code
         '''
-        self.log.debug("Executing: %s", cmd)
+        self.log.info("Executing: %s", cmd)
         retcode = tankcore.execute(cmd, shell=True, poll_period=0.1)
         if retcode:
             raise RuntimeError("Subprocess returned %s",)    
