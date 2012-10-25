@@ -146,11 +146,11 @@ def is_number(s):
         return False
 
 class Custom(AbstractMetric):
-
-    def __init__(self, **kwargs):
-        for key, value in kwargs.iteritems():
-            setattr(self, key, value)
-            self.diff_values = {}
+    ''' custom metrics: call and tail '''
+    def __init__(self, call, tail):
+        self.call = call
+        self.tail = tail
+        self.diff_values = {}
 
     def columns(self,):
         cols = []
@@ -165,7 +165,7 @@ class Custom(AbstractMetric):
         for el in self.tail:
             cmd = base64.b64decode(el.split(':')[1])
             output = Popen(['tail', '-n', '1', cmd], stdout=PIPE).communicate()[0]
-            res.append(self.diff_value(output.strip()))
+            res.append(self.diff_value(el, output.strip()))
         for el in self.call:
             cmd = base64.b64decode(el.split(':')[1])
             output = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE).stdout.read()
@@ -589,11 +589,13 @@ if __name__ == '__main__':
     logging.info('Agent params: %s, %s, %s' % (c_interval, c_host, c_loglevel))
 
     # custom section
+    calls = []
+    tails = []
     if config.has_section('custom'):
         if config.has_option('custom', 'tail'):
-            custom_cfg['tail'] += config.get('custom', 'tail').split(',')
+            tails += config.get('custom', 'tail').split(',')
         if config.has_option('custom', 'call'):
-            custom_cfg['call'] += config.get('custom', 'call').split(',')
+            calls += config.get('custom', 'call').split(',')
 
 
     # parce cfg file - process section
@@ -667,7 +669,7 @@ if __name__ == '__main__':
 
     # add custom metrics from config file to header
 #    print custom_cfg
-    custom = Custom(**custom_cfg)
+    custom = Custom(calls, tails)
     header.extend(custom.columns())
 
     sys.stdout.write(dlmtr.join(header) + '\n')

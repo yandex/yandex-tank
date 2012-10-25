@@ -3,6 +3,7 @@ import os
 import tempfile
 import time
 import unittest
+import base64
 
 
 if __name__ == '__main__':
@@ -41,17 +42,29 @@ class  Custom_TestCase(unittest.TestCase):
         print self.foo.check()
         
     def test_custom_nodiff(self):
-        custom_config = {'tail': [], 'call': ['ZGlmZkV4:aWZjb25maWcgLXMgZXRoMCB8IGF3ayAnJDE9PSJldGgwIiB7cHJpbnQgJDR9Jw==:0']}
-        self.foo = Custom(**custom_config)
+        tail_fd, tailfile = tempfile.mkstemp()
+        tail = ["%s:%s:%s" % (base64.b64encode('lbl'), base64.b64encode(tailfile), 0)]
+        call = ['ZGlmZkV4:aWZjb25maWcgLXMgZXRoMCB8IGF3ayAnJDE9PSJldGgwIiB7cHJpbnQgJDR9Jw==:0']
+        self.foo = Custom(call, tail)
 
         x = self.foo.check()
         print "second test", x
         self.assertNotEquals(["0.0"], x)
+        self.assertEquals('0', x[0])
         time.sleep(1)
+        
+        tailval = str(time.time())
+        os.write(tail_fd, "%s\n" % tailval)
         y = self.foo.check()
+        self.assertNotEquals(x[1], y[1])
+        self.assertEquals(tailval, y[0])
+        
         time.sleep(0.5)
+        tailval = str(time.time())
+        os.write(tail_fd, "%s\n" % tailval)
         z = self.foo.check()
-        print z
+        self.assertEquals(tailval, z[0])
+        self.assertNotEquals(y[1], z[1])
         
     def test_custom_fail(self):
         custom_config = {'tail': [], 'call': ['cXVlcnkgY291bnQ=:cXVlcnlfY2xhc3NpZnlfY2xpZW50IGZzdGF0cyB8IGdyZXAgY2xhc3MtY21kIHwgY3V0IC1mIDM=:1']}
@@ -92,7 +105,7 @@ class  Net_tcp_TestCase(unittest.TestCase):
     def test_net_tcp_(self):
         print self.foo.check()
         self.assertEquals(4, len(self.foo.check()))
-        self.assertNotEquals(['0','0','0','0'], self.foo.check())
+        self.assertNotEquals(['0', '0', '0', '0'], self.foo.check())
 
 
 class  Net_tx_rx_TestCase(unittest.TestCase):
@@ -100,13 +113,13 @@ class  Net_tx_rx_TestCase(unittest.TestCase):
         self.foo = NetTxRx()
 
     def test_net_tx_rx_(self):
-        self.assertEquals([0,0], self.foo.check())
+        self.assertEquals([0, 0], self.foo.check())
         time.sleep(2)
-        self.assertNotEquals([0,0], self.foo.check())
+        self.assertNotEquals([0, 0], self.foo.check())
         time.sleep(2)
         print self.foo.check()
 
     def test_net_tx_rx_cols(self):
-        res=self.foo.columns()
+        res = self.foo.columns()
         self.assertEquals(['Net_tx', 'Net_rx', ], res)
 
