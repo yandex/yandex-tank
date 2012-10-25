@@ -140,6 +140,7 @@ class LoadosophiaClient:
         
                 
     def __get_gzipped_file(self, result_file):
+        ''' gzip file '''
         out = StringIO.StringIO()
         fhandle = gzip.GzipFile(fileobj=out, mode='w')
         fhandle.write(open(result_file, 'r').read())
@@ -174,9 +175,9 @@ class MultiPartForm(object):
         self.files.append((fieldname, filename, mimetype, body))
         return
 
-    def add_file(self, fieldname, filename, fileHandle, mimetype=None):
+    def add_file(self, fieldname, filename, file_handle, mimetype=None):
         """Add a file to be uploaded."""
-        body = fileHandle.read()
+        body = file_handle.read()
         self.add_file_as_string(fieldname, filename, body, mimetype)
         return
     

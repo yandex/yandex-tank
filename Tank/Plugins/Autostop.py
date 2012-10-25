@@ -70,6 +70,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
             return -1
 
     def __create_criteria(self, criteria_str):
+        ''' instantiate criteria from config string '''
         parsed = criteria_str.split("(")
         type_str = parsed[0].strip().lower()
         parsed[1] = parsed[1].split(")")[0].strip()

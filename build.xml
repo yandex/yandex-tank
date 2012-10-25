@@ -22,7 +22,7 @@ PYTHONPATH=''
 			<arg value="-f" />
 			<arg value="parseable" />
 			<arg value="-d" />
-			<arg value="I0011,C0301,R0201,W0703,W0122,R0902" />
+			<arg value="I0011,C0301,R0201,W0703,W0122,R0902,R0903,W0232" />
 			<arg value="${package}" />
 		</exec>
 	</target>

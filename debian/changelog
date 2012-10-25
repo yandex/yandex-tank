@@ -1,3 +1,14 @@
+yandex-load-tank-base (1.1.5) precise; urgency=low
+
+  * fix fd leaking
+  * graphite uploader enabled by default
+  * change default config name
+  * fix gaps in expected rps
+  * fix jmeter process killing (just tried)
+  * add monitoring autostop criterias
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 25 Oct 2012 13:46:14 +0400
+
 yandex-load-tank-base (1.1.4) precise; urgency=low
 
   * fix file descriptor leaks

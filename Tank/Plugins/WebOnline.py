@@ -1,3 +1,4 @@
+''' local webserver with online graphs '''
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from tankcore import AbstractPlugin
@@ -11,6 +12,7 @@ import time
 
 # TODO: 3 add more graphs: HTTP/NET
 class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
+    ''' web online plugin '''
     SECTION = "web"
     
     @staticmethod
@@ -74,12 +76,14 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
     
 #http://fragments.turtlemeat.com/pythonwebserver.php
 class OnlineServer(HTTPServer):
-    def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
-        HTTPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
+    ''' web server starter '''
+    def __init__(self, server_address, handler_class, bind_and_activate=True):
+        HTTPServer.__init__(self, server_address, handler_class, bind_and_activate)
         self.last_sec = None
         self.owner = None
             
 class WebOnlineHandler(BaseHTTPRequestHandler):
+    ''' request handler '''
     def __init__(self, request, client_address, server):
         self.log = logging.getLogger(__name__)
         BaseHTTPRequestHandler.__init__(self, request, client_address, server)
@@ -91,15 +95,16 @@ class WebOnlineHandler(BaseHTTPRequestHandler):
         self.log.debug(fmt % args)
     
     def do_GET(self):
+        ''' handle GET request '''
         try:
             if self.path == '/':
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/html')
                 self.end_headers()
                 
-                f = open(os.path.dirname(__file__) + '/online.html') 
-                self.wfile.write(f.read())
-                f.close()
+                fhandle = open(os.path.dirname(__file__) + '/online.html') 
+                self.wfile.write(fhandle.read())
+                fhandle.close()
 
                 self.wfile.write('<!-- %s -->' % self.server.last_sec)
             elif self.path.endswith(".ico"):
@@ -120,9 +125,9 @@ class WebOnlineHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-Type', 'text/html')
                 self.end_headers()
                 
-                f = open(os.path.dirname(__file__) + self.path) 
-                self.wfile.write(f.read())
-                f.close()
+                fhandle = open(os.path.dirname(__file__) + self.path) 
+                self.wfile.write(fhandle.read())
+                fhandle.close()
         except IOError:
             self.log.warning("404: %s" % self.path)
             self.send_error(404, 'File Not Found: %s' % self.path)

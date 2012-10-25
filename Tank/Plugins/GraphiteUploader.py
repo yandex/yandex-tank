@@ -85,5 +85,5 @@ class GraphiteClient(object):
                     (self.prefix, metric, results[metric], time.time()))
             sock.close()
             self.log.debug("Sent metrics to graphite server")
-        except:
-            self.log.exception("Failed to send metrics to graphite")
+        except Exception, exc:
+            self.log.exception("Failed to send metrics to graphite: %s", exc)

@@ -289,7 +289,7 @@ class CurrentTimesDistBlock(AbstractBlock):
         ''' Format dist line '''
         left_line = ''
         if current_times:
-            index, item = current_times.pop(0)
+            item = current_times.pop(0)[1]
             if self.current_count: 
                 perc = float(item['count']) / self.current_count
             else:

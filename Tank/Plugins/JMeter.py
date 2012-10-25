@@ -82,7 +82,6 @@ class JMeterPlugin(AbstractPlugin):
     
         
     def end_test(self, retcode):
-        # FIXME: 1 jmeter hangs
         if self.jmeter_process:
             self.log.info("Terminating jmeter process group with PID %s", self.jmeter_process.pid)
             try:

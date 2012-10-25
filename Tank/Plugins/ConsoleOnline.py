@@ -146,9 +146,7 @@ class AbstractInfoWidget:
         self.log = logging.getLogger(__name__)
 
     def render(self, screen):
-        ''' render widget, returns string '''
-        self.log.warn("Please, override render widget")
-        return "[Please, override render widget]"
+        raise NotImplementedError()
 
     def get_index(self):
         ''' get vertical priority index '''

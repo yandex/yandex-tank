@@ -155,11 +155,11 @@ class AgentClient(object):
         remote_dir = pipe.stdout.read().strip()
         if (remote_dir):
             self.path['AGENT_REMOTE_FOLDER'] = remote_dir
-        logging.debug("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER']);
+        logging.debug("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
 
         # Copy agent
         cmd = [self.path['AGENT_LOCAL_FOLDER'] + '/agent.py', self.host + ':' + self.path['AGENT_REMOTE_FOLDER']]
-        logging.debug("Copy agent to %s: %s" ,self.host, cmd)
+        logging.debug("Copy agent to %s: %s", self.host, cmd)
 
         pipe = self.ssh.get_scp_pipe(cmd)
         pipe.wait()
@@ -339,8 +339,8 @@ class MonitoringCollector:
     
         try:
             tree = etree.parse(filename)
-        except IOError, e:
-            logging.error("Error loading config: %s", e)
+        except IOError, exc:
+            logging.error("Error loading config: %s", exc)
             raise RuntimeError ("Can't read monitoring config %s" % filename)
     
         hosts = tree.xpath('/Monitoring/Host')
@@ -524,11 +524,13 @@ class MonitoringDataListener:
     ''' Parent class for data listeners '''
     def monitoring_data(self, data_string):
         ''' Notification about new monitoring data lines '''
-        raise RuntimeError("Abstract method needs to be overridden")
+        raise NotImplementedError()
 
 
 class StdOutPrintMon(MonitoringDataListener):
     ''' Simple listener, writing data to stdout '''
     
     def monitoring_data(self, data_string):
-            sys.stdout.write(data_string)
+        sys.stdout.write(data_string)
+
+

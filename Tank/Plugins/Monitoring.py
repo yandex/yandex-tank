@@ -257,6 +257,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
                     res += "      %s%s: %s\n" % (' ' * (self.max_metric_len - len(metric)), metric.replace('_', ' '), value)
                     
             return res.strip()
+
             
 
 class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, MonitoringDataDecoder):
@@ -317,9 +318,11 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
         self.last_second = aggregate_second
         return self.triggered
     
-    def comparison_fn(self, x, y):
+    def comparison_fn(self, arg1, arg2):
         ''' comparison function '''
         raise NotImplementedError()
+
+
 
 class MetricHigherCriteria(AbstractMetricCriteria):
     ''' trigger if metric is higher than limit '''
@@ -341,8 +344,10 @@ class MetricHigherCriteria(AbstractMetricCriteria):
         items = (self.host, self.metric, self.value_limit, self.seconds_count, self.seconds_limit)
         return ("%s/%s > %s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
 
-    def comparison_fn(self, x, y):
-        return x > y
+    def comparison_fn(self, arg1, arg2):
+        return arg1 > arg2
+
+
 
 class MetricLowerCriteria(AbstractMetricCriteria):
     ''' trigger if metric is lower than limit '''
@@ -364,7 +369,7 @@ class MetricLowerCriteria(AbstractMetricCriteria):
         items = (self.host, self.metric, self.value_limit, self.seconds_count, self.seconds_limit)
         return ("%s/%s < %s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
 
-    def comparison_fn(self, x, y):
-        return x < y
+    def comparison_fn(self, arg1, arg2):
+        return arg1 < arg2
 
 

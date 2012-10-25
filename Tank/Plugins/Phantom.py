@@ -538,7 +538,7 @@ class UsedInstancesCriteria(AbstractCriteria):
         return ("Instances >%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
 
 class PhantomConfig:
-
+    ''' config file generator '''
     OPTION_INSTANCES_LIMIT = 'instances'
     OPTION_PHOUT = "phout_file"
     OPTION_STPD = 'stpd_file'
@@ -571,6 +571,7 @@ class PhantomConfig:
 
 
     def get_option(self, option_ammofile, param2=None):
+        ''' get option wrapper '''
         return self.owner.get_option(option_ammofile, param2)
     
     
@@ -728,11 +729,12 @@ class StepperWrapper:
         
 
     def get_option(self, option_ammofile, param2=None):
+        ''' get_option wrapper'''
         return self.owner.get_option(option_ammofile, param2)
     
     
     def read_config(self):
-        # stepper part
+        ''' stepper part of reading options '''
         self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
         if self.ammo_file:
             self.ammo_file = os.path.expanduser(self.ammo_file)
