@@ -44,7 +44,7 @@ class  Custom_TestCase(unittest.TestCase):
     def test_custom_nodiff(self):
         tail_fd, tailfile = tempfile.mkstemp()
         tail = ["%s:%s:%s" % (base64.b64encode('lbl'), base64.b64encode(tailfile), 0)]
-        call = ['ZGlmZkV4:aWZjb25maWcgLXMgZXRoMCB8IGF3ayAnJDE9PSJldGgwIiB7cHJpbnQgJDR9Jw==:0']
+        call = ["%s:%s:%s" % (base64.b64encode('lbl2'), base64.b64encode("date +%s"), 0)]
         self.foo = Custom(call, tail)
 
         x = self.foo.check()
@@ -59,7 +59,7 @@ class  Custom_TestCase(unittest.TestCase):
         self.assertNotEquals(x[1], y[1])
         self.assertEquals(tailval, y[0])
         
-        time.sleep(0.5)
+        time.sleep(2)
         tailval = str(time.time())
         os.write(tail_fd, "%s\n" % tailval)
         z = self.foo.check()
@@ -67,10 +67,13 @@ class  Custom_TestCase(unittest.TestCase):
         self.assertNotEquals(y[1], z[1])
         
     def test_custom_fail(self):
-        custom_config = {'tail': [], 'call': ['cXVlcnkgY291bnQ=:cXVlcnlfY2xhc3NpZnlfY2xpZW50IGZzdGF0cyB8IGdyZXAgY2xhc3MtY21kIHwgY3V0IC1mIDM=:1']}
-        self.foo = Custom(**custom_config)
+        tail = ["%s:%s:%s" % (base64.b64encode('lbl'), base64.b64encode("notexistent"), 0)]
+        call = ["%s:%s:%s" % (base64.b64encode('lbl2'), base64.b64encode("notexistent"), 0)]
+        self.foo = Custom(call, tail)
 
         x = self.foo.check()
+        self.assertEquals("0", x[0])
+        self.assertEquals("0", x[1])
         
     def test_custom_fail2(self):
         custom_config = {'tail': [], 'call': ['TnVtUGhyYXNlcw==:Y2F0IC92YXIvdG1wL3N0YXQx:0']}
