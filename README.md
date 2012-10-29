@@ -23,7 +23,24 @@ sudo add-apt-repository ppa:yandex-load/main
 Then update package list and install ```yandex-load-tank-base``` package:
 ```sudo apt-get update && sudo apt-get install yandex-load-tank-base```
 
-For mild load tests (less then 1000rps) an average laptop with 32/64bit Ubuntu (Lucid/Precise) would be sufficient. The tank could be easily used in virtual machine if queries aren't too heavy and load isn't too big.
+For mild load tests (less then 1000rps) an average laptop with 32/64bit Ubuntu (Lucid/Precise) would be sufficient.
+
+Create load.conf file in local directory:
+```
+[phantom]
+address = 127.0.0.1:80
+rps_schedule = const(1,1m)
+uris = /
+```
+...and start tank from console:
+```
+$ yandex-tank
+```
+
+Perfomance testing utility starts after several seconds. Enjoy!
+
+
+The tank could be easily used in virtual machine if queries aren't too heavy and load isn't too big.
 Otherwise it is recommended to request a physical server or a more capable virtual machine from your admin.
 
 ### Firewall
