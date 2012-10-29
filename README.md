@@ -25,7 +25,8 @@ Then update package list and install ```yandex-load-tank-base``` package:
 
 For mild load tests (less then 1000rps) an average laptop with 32/64bit Ubuntu (Lucid/Precise) would be sufficient.
 The tank could be easily used in virtual machine if queries aren't too heavy and load isn't too big.
-Otherwise it is recommended to request a physical server or a more capable virtual machine from your admin.
+Otherwise it is recommended to request a physical server or a more capable virtual machine from your admin. 
+See also https://github.com/yandex-load/yandex-tank#load-server-configuration-and-tunning
 
 ## Usage
 So, you've installed Yandex.Tank to a proper server, close to target, access is permitted and server is tuned.
@@ -616,7 +617,7 @@ uri = /
 #gatling_ip = 141.8.153.82 141.8.153.81
 
 ```
-## Load server Configuration and Tunning
+## Load Server Configuration and Tunning
 ### Firewall
 
 Before test execution, please, check service availability. If service is running on server with IP x.x.x.x and listening for TCP port zz, try to connect to it with ```telnet``` like this:
