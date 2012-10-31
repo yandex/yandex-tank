@@ -55,12 +55,12 @@ class TotalFracTimeCriteria(AbstractCriteria):
         cnt = 0
         for i in reversed(aggregate_second.overall.times_dist):
             if i['from'] >= self.rt_limit :
-                failcnt += i['count'];
+                failcnt += i['count']
             cnt += i['count']
         if cnt != 0 :
             value = float(failcnt) / cnt
         else :
-            value = 0;
+            value = 0
         self.data.append(value)
         if len(self.data) > self.seconds_limit:
             self.data.popleft()
@@ -128,7 +128,8 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
 
 #        based on avg
         queue_len = 1
-        if self.is_relative : queue_len = len(self.data)
+        if self.is_relative :
+            queue_len = len(self.data)
         if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:
             self.cause_second = aggregate_second
             self.log.debug(self.explain())
@@ -199,7 +200,8 @@ class TotalNetCodesCriteria(AbstractCriteria):
         else : self.log.debug("Net codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.get_level_str())
 
         self.data.append(matched_responses)
-        if len(self.data) > self.seconds_limit : self.data.popleft()
+        if len(self.data) > self.seconds_limit :
+            self.data.popleft()
 
         queue_len = 1
         if self.is_relative :
