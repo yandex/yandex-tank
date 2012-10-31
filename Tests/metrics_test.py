@@ -116,9 +116,9 @@ class  Net_tx_rx_TestCase(unittest.TestCase):
         self.foo = NetTxRx()
 
     def test_net_tx_rx_(self):
-        self.assertEquals([0, 0], self.foo.check())
+        self.assertEquals(['0', '0'], self.foo.check())
         time.sleep(2)
-        self.assertNotEquals([0, 0], self.foo.check())
+        self.assertNotEquals(['0', '0'], self.foo.check())
         time.sleep(2)
         print self.foo.check()
 

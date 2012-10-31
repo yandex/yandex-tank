@@ -406,7 +406,7 @@ class NetTxRx(AbstractMetric):
         self.prevRX = rx
         self.prevTX = tx
         
-        return [tRX, tTX]
+        return [str(tRX), str(tTX)]
 
 
 
@@ -466,10 +466,7 @@ def write(mesg):
 def setup_logging():
     ''' Logging params '''
     fname = os.path.dirname(__file__) + "_agent.log"
-    if os.getenv("DEBUG"):
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
+    level = logging.DEBUG
         
     fmt = "%(asctime)s - %(filename)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(filename=fname, level=level, format=fmt)
