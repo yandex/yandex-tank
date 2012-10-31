@@ -697,10 +697,14 @@ if __name__ == '__main__':
         line.extend(custom.check())
         
         # print result line
-        row = dlmtr.join(line)
-        logging.debug("str: %s" % row)
-        sys.stdout.write(dlmtr.join(line) + '\n')
-        sys.stdout.flush()
+        try:
+            row = dlmtr.join(line)
+            logging.debug("str: %s" % row)
+            sys.stdout.write(row + '\n')
+            sys.stdout.flush()
+        except Exception, e:
+            logging.error('Failed to convert line %s: %s', line, e)
+            
 
         fixed_sleep(c_interval)
 

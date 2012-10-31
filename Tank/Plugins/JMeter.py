@@ -79,7 +79,7 @@ class JMeterPlugin(AbstractPlugin):
     def is_test_finished(self):
         retcode = self.jmeter_process.poll()
         if retcode != None:
-            self.log.debug("JMeter RC %s", retcode)
+            self.log.info("JMeter process finished with exit core: %s", retcode)
             return retcode
         else:
             return -1

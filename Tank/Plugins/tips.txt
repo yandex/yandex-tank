@@ -20,6 +20,7 @@ jmeter: Path to alternate JMeter tool location can be set with jmeter.jmeter_pat
 jmeter: If you need supplementary JMeter command-line start switches - add them with jmeter.args option
 loadosophia: Yandex.Tank has integration features with Loadosophia.org service for storing and analysing load test results  
 monitoring: Use monitoring.config=none option to disable monitoring
+monitoring: Use monitoring.default_target=<address> option to start default monitoring for desired host
 phantom: Use phantom.stpd_file option to set pre-generated source data file and avoid genetating (stepping) process
 phantom: Use phantom.config option to set predefined phantom run config (e.g. to work with multiple targets)
 phantom: Use phantom.writelog=proto_warning to record only non-successful requests
