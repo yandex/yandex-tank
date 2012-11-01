@@ -693,4 +693,6 @@ Gregory Komissarov's [firebat](https://github.com/greggyNapalm/firebat-console) 
 
 Andrey Pohilko's [loadosophia](http://loadosophia.org/) - service for storing and analysing performance test results
 
+Russian Community [YandexTankClub](http://clubs.ya.ru/yandex-tank/) - Yandex Team Blog
+
 ![Yandex.Metrics counter](https://mc.yandex.ru/watch/17743264)
