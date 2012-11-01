@@ -283,6 +283,10 @@ class ConsoleTank:
             retcode = self.core.plugins_post_process(retcode)
         
         except KeyboardInterrupt as ex:
+            sys.stdout.write(RealConsoleMarkup.YELLOW)
+            self.log.info("Do not press Ctrl+C again, the test will be broken otherwise")
+            sys.stdout.write(RealConsoleMarkup.RESET)
+            sys.stdout.write(RealConsoleMarkup.TOTAL_RESET)
             self.signal_count += 1
             self.log.debug("Caught KeyboardInterrupt: %s", traceback.format_exc(ex))
             try:
