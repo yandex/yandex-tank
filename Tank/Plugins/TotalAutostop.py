@@ -1,3 +1,4 @@
+''' Cummulative Autostops '''
 from Tank.Plugins.Aggregator import AggregateResultListener
 from Tank.Plugins.Autostop import AbstractCriteria, AutostopPlugin
 
@@ -7,6 +8,7 @@ import re
 import tankcore
 
 class TotalAutostopPlugin(AbstractPlugin, AggregateResultListener):
+    ''' Cummulative Criterias Plugin '''
     SECTION = 'autostop'
     @staticmethod
     def get_key():
@@ -28,7 +30,11 @@ class TotalAutostopPlugin(AbstractPlugin, AggregateResultListener):
     def end_test(self, retcode):
         pass
 
+    def aggregate_second(self, second_aggregate_data):
+        pass
+
 class TotalFracTimeCriteria(AbstractCriteria):
+    ''' Cummulative Time Criteria '''
     @staticmethod
     def get_type_string():
         return 'total_time'
@@ -42,15 +48,19 @@ class TotalFracTimeCriteria(AbstractCriteria):
         self.seconds_limit = tankcore.expand_to_seconds(param[2])
         self.autostop = autostop
         self.data = deque()
+        self.real_frac = float()
 
     def notify(self, aggregate_second):
         failcnt = 0
         cnt = 0
         for i in reversed(aggregate_second.overall.times_dist):
-            if i['from'] >= self.rt_limit : failcnt += i['count'];
+            if i['from'] >= self.rt_limit :
+                failcnt += i['count']
             cnt += i['count']
-        if cnt != 0 : value = float(failcnt) / cnt
-        else :  value = 0;
+        if cnt != 0 :
+            value = float(failcnt) / cnt
+        else :
+            value = 0
         self.data.append(value)
         if len(self.data) > self.seconds_limit:
             self.data.popleft()
@@ -60,7 +70,6 @@ class TotalFracTimeCriteria(AbstractCriteria):
             self.log.debug(self.explain())
             self.autostop.add_counting(self)
             return True
-            #raise ValueError("Hakuna Matata!")
         return False
 
     def get_rc(self):
@@ -75,6 +84,7 @@ class TotalFracTimeCriteria(AbstractCriteria):
         return ("%s%% Times >%sms for %ss" % items, self.real_frac)
 
 class TotalHTTPCodesCriteria(AbstractCriteria):
+    ''' Cummulative HTTP Criteria '''
     @staticmethod
     def get_type_string():
         return 'total_http'
@@ -105,7 +115,8 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
                 matched_responses = 1
         self.log.debug("HTTP codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.level)
         self.data.append(matched_responses)
-        if len(self.data) > self.seconds_limit :    self.data.popleft()
+        if len(self.data) > self.seconds_limit :
+            self.data.popleft()
 
         # based on moment
         # for i in self.data:
@@ -116,19 +127,21 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
         # return True
 
 #        based on avg
-        x = 1
-        if self.is_relative : x = len(self.data)
-        if (sum(self.data) / x) >= self.level and len(self.data) >= self.seconds_limit:
-                self.cause_second = aggregate_second
-                self.log.debug(self.explain())
-                self.autostop.add_counting(self)
-                return True
+        queue_len = 1
+        if self.is_relative :
+            queue_len = len(self.data)
+        if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:
+            self.cause_second = aggregate_second
+            self.log.debug(self.explain())
+            self.autostop.add_counting(self)
+            return True
         return False
 
     def get_rc(self):
         return self.RC_HTTP
 
     def get_level_str(self):
+        ''' format level str '''
         if self.is_relative:
             level_str = str(self.level) + "%"
         else:
@@ -150,6 +163,7 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
         return ("HTTP %s>%s for %ss" % items, 1.0)
 
 class TotalNetCodesCriteria(AbstractCriteria):
+    ''' Cummulative Net Criteria '''
     @staticmethod
     def get_type_string():
         return 'total_net'
@@ -174,7 +188,8 @@ class TotalNetCodesCriteria(AbstractCriteria):
 
     def notify(self, aggregate_second):
         codes = aggregate_second.overall.net_codes.copy()
-        if '0' in codes.keys(): codes.pop('0')
+        if '0' in codes.keys():
+            codes.pop('0')
         matched_responses = self.count_matched_codes(self.codes_regex, codes)
         if self.is_relative:
             if aggregate_second.overall.RPS:
@@ -185,11 +200,13 @@ class TotalNetCodesCriteria(AbstractCriteria):
         else : self.log.debug("Net codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.get_level_str())
 
         self.data.append(matched_responses)
-        if len(self.data) > self.seconds_limit : self.data.popleft()
+        if len(self.data) > self.seconds_limit :
+            self.data.popleft()
 
-        x = 1
-        if self.is_relative : x = len(self.data)
-        if (sum(self.data) / x) >= self.level and len(self.data) >= self.seconds_limit:
+        queue_len = 1
+        if self.is_relative :
+            queue_len = len(self.data)
+        if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:
             self.cause_second = aggregate_second
             self.log.debug(self.explain())
             self.autostop.add_counting(self)
@@ -200,6 +217,7 @@ class TotalNetCodesCriteria(AbstractCriteria):
         return self.RC_NET
 
     def get_level_str(self):
+        ''' format level str '''
         if self.is_relative:
             level_str = str(self.level) + "%"
         else:
@@ -221,6 +239,7 @@ class TotalNetCodesCriteria(AbstractCriteria):
         return ("Net %s>%s for %ss" % items, self.level)
 
 class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
+    ''' Reversed HTTP Criteria '''
     @staticmethod
     def get_type_string():
         return 'negative_http'
@@ -255,11 +274,13 @@ class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
             matched_responses = aggregate_second.overall.RPS - matched_responses
             self.log.debug("HTTP codes matching mask not %s: %s/%s", self.codes_mask, matched_responses, self.level)
         self.data.append(matched_responses)
-        if len(self.data) > self.seconds_limit :    self.data.popleft()
+        if len(self.data) > self.seconds_limit :
+            self.data.popleft()
 
-        x = 1
-        if self.is_relative : x = len(self.data)
-        if (sum(self.data) / x) >= self.level and len(self.data) >= self.seconds_limit:
+        queue_len = 1
+        if self.is_relative :
+            queue_len = len(self.data)
+        if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:
             self.cause_second = aggregate_second
             self.log.debug(self.explain())
             self.autostop.add_counting(self)
@@ -270,6 +291,7 @@ class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
         return self.RC_HTTP
 
     def get_level_str(self):
+        ''' format level str'''
         if self.is_relative:
             level_str = str(self.level) + "%"
         else:

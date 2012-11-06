@@ -20,7 +20,7 @@ class TotalNegativeHTTPCodesCriteriaTest(TankTestCase):
         data = list()
         for i in range(1,20):
             data = SecondAggregateData()
-            data.overall.time = "2012-09-25 18:18:18"
+            data.time = "2012-09-25 18:18:18"
             data.overall.RPS = 200 + 2*i
             data.overall.http_codes = {'200': 100, '201': 100, '501': i, '503': i}
             try:
@@ -33,7 +33,7 @@ class TotalNegativeHTTPCodesCriteriaTest(TankTestCase):
         data = list()
         for i in range(1,20):
             data = SecondAggregateData()
-            data.overall.time = "2012-09-25 18:18:18"
+            data.time = "2012-09-25 18:18:18"
             data.overall.RPS = 200 + 2*i
             data.overall.http_codes = {'200': 100, '201': 100, '302': i*2}
             try:
