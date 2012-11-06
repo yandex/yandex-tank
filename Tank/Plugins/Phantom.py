@@ -754,7 +754,7 @@ class StepperWrapper:
         self.headers = self.get_option("headers", '').strip().split("\n")
         while '' in self.headers: 
             self.headers.remove('')
-        self.http_ver = self.get_option("header_http", '1.1')
+        self.http_ver = self.get_option("header_http", '1.0')
         self.autocases = self.get_option("autocases", '0')
         self.use_caching = int(self.get_option("use_caching", '1'))
         self.cache_dir = os.path.expanduser(self.get_option("cache_dir", self.owner.core.artifacts_base_dir))
