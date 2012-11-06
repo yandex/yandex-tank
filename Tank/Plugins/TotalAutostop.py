@@ -73,7 +73,7 @@ class TotalFracTimeCriteria(AbstractCriteria):
         return False
 
     def get_rc(self):
-        return self.RC_TIME
+        return 25
 
     def explain(self):
         items = (round(self.real_frac, 2), self.rt_limit, self.seconds_limit, self.cause_second.time)
@@ -138,7 +138,7 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
         return False
 
     def get_rc(self):
-        return self.RC_HTTP
+        return 26
 
     def get_level_str(self):
         ''' format level str '''
@@ -214,7 +214,7 @@ class TotalNetCodesCriteria(AbstractCriteria):
         return False
 
     def get_rc(self):
-        return self.RC_NET
+        return 27
 
     def get_level_str(self):
         ''' format level str '''
@@ -288,7 +288,7 @@ class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
         return False
 
     def get_rc(self):
-        return self.RC_HTTP
+        return 28
 
     def get_level_str(self):
         ''' format level str'''
