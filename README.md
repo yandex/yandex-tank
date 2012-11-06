@@ -75,8 +75,8 @@ Update configuration file with HTTP headers and URIs:
 address=23.23.23.23:80 #Target's address and port .
 rps_schedule=const(10, 10m) #load scheme# Headers and URIs for GET requests
 header_http = 1.1
-header = [Host: www.target.example.com]
-header = [Connection: close]
+headers = [Host: www.target.example.com]
+  [Connection: close]
 uris = /
   /buy
   /sdfg?sdf=rwerf
@@ -604,8 +604,8 @@ address=23.23.23.23:443 #Target's address and port
 load = const (10,10m) #Load scheme
 #  Headers and URIs for GET requests
 header_http = 1.1
-header = [Host: www.target.example.com]
-header = [Connection: close]
+headers = [Host: www.target.example.com]
+  [Connection: close]
 uri = /
 #ssl=1
 #autostop = http(5xx,100%,1)
