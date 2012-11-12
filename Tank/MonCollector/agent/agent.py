@@ -687,9 +687,11 @@ if __name__ == '__main__':
         for metric_name in c_metrics:
             try:
                 data = known_metrics[metric_name].check()
+                if len(data)!=len(known_metrics[metric_name].columns()):
+                    raise RuntimeError("Data len not matched columns count: %s" % data)
             except Exception, e:
                 logging.error('Can\'t fetch %s: %s', metric_name, e)
-                data = ''
+                data = ['']* len(known_metrics[metric_name].columns())
             line.extend(data)
         
         logging.debug("line: %s" % line)
