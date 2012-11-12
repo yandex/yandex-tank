@@ -352,8 +352,9 @@ class TankCore:
             self.artifacts_dir = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)        
         if not os.path.isdir(self.artifacts_dir):
             os.makedirs(self.artifacts_dir)
-            os.chmod(self.artifacts_dir, 0755)
         
+        os.chmod(self.artifacts_dir, 0755)
+
         self.log.info("Artifacts dir: %s", self.artifacts_dir)
         for filename, keep in self.artifact_files.items():
             try:
