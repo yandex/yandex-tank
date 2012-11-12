@@ -576,6 +576,8 @@ class PhantomConfig:
     
     
     def __check_address(self):
+        if not self.address:
+            raise RuntimeError("Target address not specified")
         '''
         Analyse target address setting, resolve it to IP
         '''
@@ -793,7 +795,7 @@ class StepperWrapper:
             hasher = hashlib.md5()
             hashed_str = self.instances_schedule + sep + str(self.loop_limit)
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(self.rps_schedule) + sep + str(self.autocases)
-            hashed_str += sep + ";".join(self.uris) + sep + ";".join(self.headers)
+            hashed_str += sep + ";".join(self.uris) + sep + ";".join(self.headers)+sep+self.http_ver
             
             if self.ammo_file:
                 if not os.path.exists(self.ammo_file):
