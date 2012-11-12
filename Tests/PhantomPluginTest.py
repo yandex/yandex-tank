@@ -2,7 +2,6 @@ from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData
 from Tank.Plugins.Phantom import PhantomPlugin, PhantomReader, StepperWrapper
 from Tests.TankTests import TankTestCase
 import os
-import tempfile
 import time
 import unittest
 
