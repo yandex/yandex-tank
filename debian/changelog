@@ -1,3 +1,15 @@
+yandex-load-tank-base (1.1.6) precise; urgency=low
+
+  * fix minor bugs
+  * load.ini is default
+  * own rc codes for total autostop
+  * http 1.0 by default in uri-style ammo
+  * warning about ctrl+c
+  * fix tx/rx metrics
+  * fix tail metric
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 12 Nov 2012 19:16:34 +0400
+
 yandex-load-tank-base (1.1.5) precise; urgency=low
 
   * fix fd leaking
