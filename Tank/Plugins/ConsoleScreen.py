@@ -58,12 +58,13 @@ class Screen(object):
         self.right_panel_width = 10
         self.left_panel_width = self.term_width - self.right_panel_width - len(self.RIGHT_PANEL_SEPARATOR)
         
-        codes_block = VerticalBlock(CurrentHTTPBlock(self), CurrentNetBlock(self))
-        codes_answ_block = VerticalBlock(codes_block, AnswSizesBlock(self))
-        times_block = CurrentTimesDistBlock(self)
-        second_row = [times_block, codes_answ_block]
-        first_row = [AvgTimesBlock(self), TotalQuantilesBlock(self), CasesBlock(self)]
-        self.block_rows = [first_row, second_row]
+        block1 = VerticalBlock(CurrentHTTPBlock(self), CurrentNetBlock(self))
+        block2 = VerticalBlock(block1, CasesBlock(self))   
+        block3 = VerticalBlock(block2, TotalQuantilesBlock(self))
+        block4 = VerticalBlock(block3, AnswSizesBlock(self))
+        block5 = VerticalBlock(block4, AvgTimesBlock(self))
+        
+        self.block_rows = [[CurrentTimesDistBlock(self), block5]]
         
     def __get_right_line(self, widget_output):
         '''
@@ -497,6 +498,9 @@ class AnswSizesBlock(AbstractBlock):
         if self.cur_count:
             self.lines.append("   Last Avg Request: %d bytes" % (self.cur_out / self.cur_count))
             self.lines.append("  Last Avg Response: %d bytes" % (self.cur_in / self.cur_count))
+        else:
+            self.lines.append("")
+            self.lines.append("")
         for line in self.lines:
             self.width = max(self.width, len(self.screen.markup.clean_markup(line)))
 
@@ -591,6 +595,12 @@ class AvgTimesBlock(AbstractBlock):
             self.lines.append("     Send: " + tpl % (float(self.all_send) / self.all_count, float(self.rps_send) / self.rps_count, float(self.rps_send) / self.rps_count))
             self.lines.append("  Latency: " + tpl % (float(self.all_latency) / self.all_count, float(self.rps_latency) / self.rps_count, float(self.rps_latency) / self.rps_count))
             self.lines.append("  Receive: " + tpl % (float(self.all_receive) / self.all_count, float(self.rps_receive) / self.rps_count, float(self.rps_receive) / self.rps_count))
+        else:
+            self.lines.append("")
+            self.lines.append("")
+            self.lines.append("")
+            self.lines.append("")
+            self.lines.append("")
         for line in self.lines:
             self.width = max(self.width, len(self.screen.markup.clean_markup(line)))
         
