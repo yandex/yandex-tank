@@ -124,8 +124,8 @@ class TestMonListener(MonitoringDataListener):
         
 class SSHEmulator(SSHWrapper):
 
-    def __init__(self):
-        SSHWrapper.__init__(self)
+    def __init__(self, timeout):
+        SSHWrapper.__init__(self, timeout)
     
     def get_scp_pipe(self, cmd):
         self.scp_pipe = PipeEmul('data/ssh_out.txt', 'data/ssh_err.txt')

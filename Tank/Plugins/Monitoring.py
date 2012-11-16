@@ -1,6 +1,4 @@
-'''
-Module to provide target monitoring
-'''
+'''Module to provide target monitoring'''
 
 from Tank.MonCollector.collector import MonitoringCollector, \
     MonitoringDataListener, MonitoringDataDecoder
@@ -12,6 +10,7 @@ import time
 import traceback
 from Tank.Plugins.Autostop import AutostopPlugin, AbstractCriteria
 import tankcore
+import fnmatch
 
 class MonitoringPlugin(AbstractPlugin):
     '''
@@ -38,6 +37,7 @@ class MonitoringPlugin(AbstractPlugin):
     def configure(self):
         self.config = self.get_option("config", 'auto')
         self.default_target = self.get_option("default_target", 'localhost')
+        self.monitoring.ssh_timeout=tankcore.expand_to_seconds(self.get_option('ssh_timeout', "5s"))
 
         if self.config == 'none' or self.config == 'auto':
             self.die_on_fail = False
@@ -253,7 +253,7 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
                 continue
             
             host, data, initial = self.decode_line(line)
-            if initial or host != self.host:
+            if initial or not fnmatch.fnmatch(host, self.host):
                 return
             
             if not data[self.metric] or data[self.metric] == self.NA:

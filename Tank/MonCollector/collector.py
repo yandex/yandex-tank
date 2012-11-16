@@ -36,9 +36,9 @@ class SSHWrapper:
     '''
     separate SSH calls to be able to unit test the collector
     '''
-    def __init__(self):
+    def __init__(self, timeout):
         self.log = logging.getLogger(__name__)
-        self.ssh_opts = ['-q', '-o', 'StrictHostKeyChecking=no', '-o', 'PasswordAuthentication=no', '-o', 'NumberOfPasswordPrompts=0', '-o', 'ConnectTimeout=5']
+        self.ssh_opts = ['-q', '-o', 'StrictHostKeyChecking=no', '-o', 'PasswordAuthentication=no', '-o', 'NumberOfPasswordPrompts=0', '-o', 'ConnectTimeout='+str(timeout)]
         self.scp_opts = []        
         self.host = None
         self.port = None
@@ -219,6 +219,7 @@ class MonitoringCollector:
         self.artifact_files = []
         self.inputs, self.outputs, self.excepts = [], [], []
         self.filter_mask = defaultdict(str)
+        self.ssh_timeout = 5
 
 
     def add_listener(self, obj):
@@ -251,7 +252,7 @@ class MonitoringCollector:
             agent.port = adr['port']
             agent.interval = adr['interval']
             agent.custom = adr['custom']
-            agent.ssh = self.ssh_wrapper_class()
+            agent.ssh = self.ssh_wrapper_class(self.ssh_timeout)
             self.agents.append(agent)
         
         # Mass agents install
