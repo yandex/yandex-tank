@@ -314,17 +314,19 @@ class MonitoringCollector:
             self.send_data = ''
             
         return len(self.outputs)            
+
     
     def stop(self):
         ''' Shutdown  agents       '''
         logging.debug("Initiating normal finish")
         for pipe in self.agent_pipes:
             if pipe.pid:
-                logging.debug("Killing %s with %s", pipe.pid, signal.SIGINT)
-                os.kill(pipe.pid, signal.SIGINT)
+                logging.debug("Killing %s with %s", pipe.pid, signal.SIGKILL)
+                os.kill(pipe.pid, signal.SIGKILL)
 
         for agent in self.agents:
             self.artifact_files.append(agent.uninstall())
+
         
     def getconfig(self, filename, target_hint):
         ''' Prepare config data'''
