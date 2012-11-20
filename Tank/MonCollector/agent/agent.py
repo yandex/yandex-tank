@@ -123,7 +123,7 @@ class CpuStat(AbstractMetric):
                     
         # Numproc, numthreads 
         # FIXME: 1 remove this expensive operations!!!
-        command = ['ps axf | wc -l', 'ps -eLf | wc -l']
+        command = ['ps ax | wc -l', "cat /proc/loadavg | cut -d' ' -f 4 | cut -d'/' -f2"]
         for cmd in command:
             try:
                 output = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
@@ -455,6 +455,33 @@ class Net(AbstractMetric):
         return result
 
 
+# ===========================
+
+class PidStat(AbstractMetric):
+    def __init__(self):
+        self.fields=['pid', 'comm', 'state', 'ppid', 'pgrp', 'session', 'tty_nr', 'tpgid', 'flags',
+                     'minflt', 'cminflt', 'majflt', 'cmajflt', 'utime', 'stime', 'cutime', 'cstime',
+                     'priority', 'nice', 'num_threads', 'itrealvalue', 'starttime', 'vsize', 'rss',
+                     'rsslim', 'startcode', 'endcode', 'startstack', 'kstkesp','kstkeip','signal',
+                     'blocked', 'segignore', 'sigcatch', 'wchan', 'nswap', 'cnswap', 'exit_signal',
+                     'processor', 'rt_priority', 'policy', 'delayacct_blkio_ticks', 'guest_time',
+                     'cguest_time']
+        self.total_ticks=-1
+        self.prev_vals=[]
+        self.pid=0
+        
+        
+    def set_options(self, options):
+        # direct pid and pidfile
+        self.pid=0
+        
+    
+    def columns(self,):
+        return self.fields
+
+    def check(self,):
+        loadavg_str = open('/proc/loadavg', 'r').readline().strip()
+        return map(str, loadavg_str.split()[:3])
 
 # ===========================
 
@@ -494,21 +521,6 @@ def fixed_sleep(slp_interval,):
         time.sleep(slp_interval)
 
 
-# TODO: 3 why this is required???
-def check_cpu_mem(process_dict):
-    '''
-    Read 'ps' tool output and
-    collect POSIX process %CPU,%MEM,VSZ,RSS values
-    '''
-    result = []
-    for name in process_dict:
-        result.extend(commands.getoutput('ps aux | grep ' + str(process_dict[name]['pid']) + ' | grep -v grep | awk \'{print $3";"$4";"$5";"$6}\'').split(';'))
-    return result
-
-
-proc_column = lambda name: [name + '_cpu_per', name + '_mem_per',
-                                                name + '_mem_vsz',
-                                                name + '_mem_rss', ]
 unixtime = lambda: str(int(time.time()))
 
 if __name__ == '__main__':
@@ -521,7 +533,6 @@ if __name__ == '__main__':
     c_loglevel = ''
     c_local_start = int(time.time())
     c_start = c_local_start
-    process = {}
     header = []
     dlmtr = ';'
     t_after = None
@@ -539,9 +550,9 @@ if __name__ == '__main__':
             'net-tcp': NetTcp(),
             'disk': Disk(),
             'net': Net(),
+            'pid': PidStat(),
             }
     
-#    logger.debug('[debug] [agent] Start main loop')
     # parse options
     parser = OptionParser()
     parser.add_option('-c', '--config', dest='cfg_file', type='str',
@@ -557,20 +568,12 @@ if __name__ == '__main__':
 
     # parse cfg file
     config = ConfigParser.ConfigParser()
-    try:
-        config.readfp(open(options.cfg_file))
-    except IOError, msg:
-        print >> sys.stderr, 'Can\'t read config file: ' + options.cfg_file
-        sys.exit(1)
+    config.readfp(open(options.cfg_file))
 
     # metric section
-    c_metrics = []
-    try:
-        if config.has_option('metric', 'names'):
-            c_metrics = config.get('metric', 'names').split(',')
-    except ConfigParser.NoOptionError, msg:
-        print >> sys.stderr, 'Can\'t parce config file, reason:\n', msg
-        sys.exit(1)
+    metrics_collected = []
+    if config.has_option('metric', 'names'):
+        metrics_collected = config.get('metric', 'names').split(',')
 
     # main section
     if config.has_section('main'):
@@ -595,77 +598,16 @@ if __name__ == '__main__':
             calls += config.get('custom', 'call').split(',')
 
 
-    # parce cfg file - process section
-    try:
-        c_process = config.get('process', 'names').split(',')
-        for proc_name in c_process:
-            try:
-                process[proc_name] = {'pid_file': config.get('process',
-                                                    proc_name + '_pid_file')}
-            except ConfigParser.NoOptionError:
-                try:
-                    process[proc_name] = {'pid': config.getint('process',
-                                                        proc_name + '_pid')}
-                except Exception, e:
-                    print >> sys.stderr, \
-                            'Can\'t parce config file *process* section:\n', e
-                    sys.exit(1)
-                pass
-            pass
-    except ConfigParser.NoOptionError, e:
-        print '*process* section have to contain names and pids fields!\n', e
-        sys.exit(1)
-    except ConfigParser.NoSectionError:  # All fine, we can work without proc
-        pass
-    pass
-
     sync_time = str(c_start + (int(time.time()) - c_local_start))
 #    header.extend(['start', c_host, unixtime()])  # start compile init header
     header.extend(['start', c_host, sync_time])  # start compile init header
 
-    # check process, if it exist add columns to header
-    for name in process:
-        try:
-            tmpPID = open(process[name]['pid_file'], 'r').read()
-            # check that pid_file exist but is empty
-            if not len(tmpPID) == 0:
-                process[name]['pid'] = tmpPID.rstrip()
-                if not os.path.exists('/proc/' + str(process[name]['pid'])):
-                    print >> sys.stderr, 'Process with PID: ', \
-                    process[name]['pid'], \
-                    'doesn\'t exist. Associated with app:', name
-                    sys.exit(1)
-                else:
-                    header.extend(proc_column(name))
-            else:
-                print >> sys.stderr, 'PID File is empty, path: ',
-                process[name]['pid_file']
-                sys.exit(1)
-        # no 'pid_file' key in dict,
-        # that mean that we shude use 'pid' property from conf file
-        except KeyError:
-            if not os.path.exists('/proc/' + str(process[name]['pid'])):
-                print >> sys.stderr, 'Process with PID: ', \
-                process[name]['pid'], \
-                'doesn\'t exist, associated with app:', \
-                name
-                sys.exit(1)
-            else:
-                header.extend(proc_column(name))
-        # can't read pid_file
-        except IOError, e:
-            print >> sys.stderr, 'Can\'t read PID file: ',
-            process[name]['pid_file'], '\n', e
-            sys.exit(1)
-        pass
-
     # add metrics from config file to header
-    for metric_name in c_metrics:
+    for metric_name in metrics_collected:
         if metric_name:
             header.extend(known_metrics[metric_name].columns())
 
     # add custom metrics from config file to header
-#    print custom_cfg
     custom = Custom(calls, tails)
     header.extend(custom.columns())
 
@@ -676,15 +618,13 @@ if __name__ == '__main__':
 
     # check loop
     while True:
-        logging.debug('Check')
+        logging.debug('Start check')
         line = []
         sync_time = str(c_start + (int(time.time()) - c_local_start))
         line.extend([c_host, sync_time])
-        for name in process:
-            line.extend(check_cpu_mem(process))
 
         # known metrics
-        for metric_name in c_metrics:
+        for metric_name in metrics_collected:
             try:
                 data = known_metrics[metric_name].check()
                 if len(data)!=len(known_metrics[metric_name].columns()):
