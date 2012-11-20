@@ -388,7 +388,7 @@ class PhantomReader(AbstractReader):
                 self.log.warning("Empty phout line")
                 continue
             #1346949510.514        74420    66    78    65409    8867    74201    18    15662    0    200
-            #self.log.debug("Phout line: %s", line)
+            self.log.debug("Phout line: %s", line)
             data = line.split("\t")
             if len(data) != 12:
                 self.log.warning("Wrong phout line, skipped: %s", line)
@@ -419,12 +419,14 @@ class PhantomReader(AbstractReader):
             data_item += [(float(data[7]) + 1) / (int(data[2]) + 1)]
             self.data_buffer[cur_time].append(data_item)
                     
+        self.log.debug("Seconds queue: %s", self.data_buffer.keys())
         if len(self.data_queue) > 3:
             return self.pop_second()
         
         if force and self.data_queue:
             return self.pop_second()
         else:
+            self.log.debug("No queue data!")
             return None 
 
 
@@ -432,21 +434,28 @@ class PhantomReader(AbstractReader):
         parsed_sec = AbstractReader.pop_second(self)
         if parsed_sec:
             self.pending_second_data_queue.append(parsed_sec)
+        else:
+            self.log.debug("No new seconds present");            
             
         if not self.pending_second_data_queue:
+            self.log.debug("pending_second_data_queue empty");
             return None
+        else:
+            self.log.debug("pending_second_data_queue: %s", self.pending_second_data_queue);
+
 
         next_time = int(time.mktime(self.pending_second_data_queue[0].time.timetuple()))
             
         if self.last_sample_time and (next_time - self.last_sample_time) > 1:
             self.last_sample_time += 1
-            self.log.debug("Adding phantom zero sample: %s", self.last_sample_time)
+            self.log.warning("Adding phantom zero sample: %s", self.last_sample_time)
             res = self.get_zero_sample(datetime.datetime.fromtimestamp(self.last_sample_time))
         else:
             res = self.pending_second_data_queue.pop(0)
         
         self.last_sample_time = int(time.mktime(res.time.timetuple()))
         res.overall.planned_requests = self.__get_expected_rps()
+        self.log.debug("Pop result: %s", res)
         return res
     
 
@@ -576,11 +585,9 @@ class PhantomConfig:
     
     
     def __check_address(self):
+        '''        Analyse target address setting, resolve it to IP        '''
         if not self.address:
             raise RuntimeError("Target address not specified")
-        '''
-        Analyse target address setting, resolve it to IP
-        '''
         try:
             ipaddr.IPv6Address(self.address)
             self.ipv6 = True
@@ -605,9 +612,7 @@ class PhantomConfig:
 
 
     def read_config(self):
-        '''
-        Read phantom tool specific options
-        '''
+        '''        Read phantom tool specific options        '''
         self.phantom_modules_path = self.get_option("phantom_modules_path", "/usr/lib/phantom")
         self.ssl = int(self.get_option("ssl", '0'))
         self.address = self.get_option('address', '127.0.0.1')
@@ -640,9 +645,7 @@ class PhantomConfig:
         self.owner.core.add_artifact_file(self.phantom_log)
 
     def compose_config(self):
-        '''
-        Generate phantom tool run config
-        '''
+        '''        Generate phantom tool run config        '''
         if not self.stpd:
             raise RuntimeError("Cannot proceed with no source file")
         

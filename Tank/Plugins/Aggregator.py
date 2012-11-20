@@ -76,6 +76,7 @@ class AggregatorPlugin(AbstractPlugin):
         if not data:
             return        
         while self.last_sample_time and int(time.mktime(data.time.timetuple())) - self.last_sample_time > 1:
+            raise RuntimeError("Gap in results timeline")
             self.last_sample_time += 1
             self.log.debug("Adding zero sample: %s", self.last_sample_time)
             zero = self.reader.get_zero_sample(datetime.datetime.fromtimestamp(self.last_sample_time))
@@ -90,6 +91,7 @@ class AggregatorPlugin(AbstractPlugin):
             data = self.reader.get_next_sample(force)
             count = 0
             while data and (limit < 1 or count < limit):
+                self.last_sample_time = int(time.mktime(data.time.timetuple()))
                 self.__generate_zero_samples(data)
                 self.__notify_listeners(data)
                 data = self.reader.get_next_sample(force)
@@ -103,6 +105,9 @@ class SecondAggregateData:
         self.time = None
         self.overall = SecondAggregateDataItem()
         self.cumulative = cimulative_item
+
+    def __repr__(self):
+        return "SecondAggregateData[%s][%s]" % (self.time, time.mktime(self.time.timetuple()))
 
 class SecondAggregateDataItem:
     ''' overall and case items has this type '''
