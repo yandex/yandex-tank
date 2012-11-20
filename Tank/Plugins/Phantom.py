@@ -168,6 +168,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
 
     def aggregate_second(self, second_aggregate_data):
         self.processed_ammo_count += second_aggregate_data.overall.RPS
+        self.log.debug("Processed ammo count: %s/", self.processed_ammo_count);
 
             
 
@@ -321,6 +322,7 @@ class PhantomReader(AbstractReader):
         self.partial_buffer = ''
         self.pending_second_data_queue = []
         self.last_sample_time = 0
+        self.read_lines_count = 0
   
     def check_open_files(self):
         if not self.phout and self.phantom.phantom and os.path.exists(self.phantom.phantom.phout_file):
@@ -389,6 +391,7 @@ class PhantomReader(AbstractReader):
                 continue
             #1346949510.514        74420    66    78    65409    8867    74201    18    15662    0    200
             self.log.debug("Phout line: %s", line)
+            self.read_lines_count += 1
             data = line.split("\t")
             if len(data) != 12:
                 self.log.warning("Wrong phout line, skipped: %s", line)
@@ -418,8 +421,10 @@ class PhantomReader(AbstractReader):
             #        accuracy
             data_item += [(float(data[7]) + 1) / (int(data[2]) + 1)]
             self.data_buffer[cur_time].append(data_item)
-                    
-        self.log.debug("Seconds queue: %s", self.data_buffer.keys())
+
+        self.log.debug("Read lines: %s", self.read_lines_count)                    
+        self.log.debug("Seconds queue: %s", self.data_queue)
+        self.log.debug("Seconds buffer: %s", self.data_buffer.keys())
         if len(self.data_queue) > 3:
             return self.pop_second()
         
@@ -798,7 +803,7 @@ class StepperWrapper:
             hasher = hashlib.md5()
             hashed_str = self.instances_schedule + sep + str(self.loop_limit)
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(self.rps_schedule) + sep + str(self.autocases)
-            hashed_str += sep + ";".join(self.uris) + sep + ";".join(self.headers)+sep+self.http_ver
+            hashed_str += sep + ";".join(self.uris) + sep + ";".join(self.headers) + sep + self.http_ver
             
             if self.ammo_file:
                 if not os.path.exists(self.ammo_file):
