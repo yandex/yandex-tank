@@ -43,6 +43,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
             self.screen.block_rows = []
             self.screen.info_panel_percent = 100
 
+
     def is_test_finished(self):
         try:
             console_view = self.screen.render_screen().encode('utf-8')
@@ -58,21 +59,20 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
                 sys.stdout.write(self.console_markup.TOTAL_RESET)
         
             if self.remote_translator:
-                self.remote_translator.send_console(self.console_markup.clean_markup(console_view))
+                self.remote_translator.send_console(console_view)
 
         return -1
     
+    
     def aggregate_second(self, second_aggregate_data):
+        self.screen.add_second_data(second_aggregate_data)    
         if self.short_only:
             tpl = "Time: %s\tExpected RPS: %s\tActual RPS: %s\tActive Threads: %s\tAvg RT: %s"
             ovr = second_aggregate_data.overall # just to see the next line in IDE
             data = (second_aggregate_data.time, ovr.planned_requests, ovr.RPS,
                     ovr.active_threads, ovr.avg_response_time)
             self.log.info(tpl % data)
-        else:
-            self.screen.add_second_data(second_aggregate_data)    
-            #self.is_test_finished()
-
+            
     
     def add_info_widget(self, widget):
         ''' add right panel widget '''
@@ -81,7 +81,9 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
         else:
             self.screen.add_info_widget(widget)
         
+        
 # ======================================================
+
 
 class RealConsoleMarkup(object):
     '''    
