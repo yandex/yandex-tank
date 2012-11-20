@@ -1,3 +1,20 @@
+yandex-load-tank-base (1.1.8) precise; urgency=low
+
+  * Fix lost samples and RPS data in Phantom results
+  * Don't clean console colors before sending to transmitter
+  * Kill ssh clients forcefully
+  * Less expensive threads count metric
+  * add ssh_timeout option to monitoring
+  * monitoring autostops can use wildcards in host names
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 20 Nov 2012 14:59:57 +0400
+
+yandex-load-tank-base (1.1.7) precise; urgency=low
+
+  * change screen layout
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 16 Nov 2012 17:55:50 +0400
+
 yandex-load-tank-base (1.1.6) precise; urgency=low
 
   * fix minor bugs
