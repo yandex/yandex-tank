@@ -15,7 +15,7 @@ def get_terminal_size():
     '''
     Gets width and height of terminal viewport
     '''
-    default_size = (60, 120)
+    default_size = (60, 140)
     env = os.environ
     def ioctl_gwinsz(file_d):
         '''
