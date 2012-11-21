@@ -391,7 +391,7 @@ class NetTxRx(AbstractMetric):
         If we have network bonding or need to collect multiple iface
         statistic beter to change that behavior.
         '''
-        data = commands.getoutput("/sbin/ifconfig -s | awk '{rx+=$4; tx+=$8} END {print rx, tx}'")
+        data = commands.getoutput("/sbin/ifconfig -s | awk '{rx+=$8; tx+=$4} END {print rx, tx}'")
         logging.debug("TXRX output: %s", data)
         (rx, tx) = data.split(" ")
         rx = int(rx)
