@@ -390,7 +390,7 @@ class PhantomReader(AbstractReader):
                 self.log.warning("Empty phout line")
                 continue
             #1346949510.514        74420    66    78    65409    8867    74201    18    15662    0    200
-            self.log.debug("Phout line: %s", line)
+            #self.log.debug("Phout line: %s", line)
             self.read_lines_count += 1
             data = line.split("\t")
             if len(data) != 12:
