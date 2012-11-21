@@ -256,7 +256,7 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
             if initial or not fnmatch.fnmatch(host, self.host):
                 return
             
-            if not data[self.metric] or data[self.metric] == self.NA:
+            if self.metric not in data.keys() or not data[self.metric] or data[self.metric] == self.NA:
                 data[self.metric] = 0
                 
             self.log.debug("Compare %s %s/%s=%s to %s", self.get_type_string(), host, self.metric, data[self.metric], self.value_limit)
