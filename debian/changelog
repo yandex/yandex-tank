@@ -1,3 +1,12 @@
+yandex-load-tank-base (1.1.9) precise; urgency=low
+
+  * remove expensive logging in phantom parser
+  * fix custom monitoring autostop failure
+  * misplaced rx/tx values
+  * enable colors for non-tty
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 23 Nov 2012 12:00:09 +0400
+
 yandex-load-tank-base (1.1.8) precise; urgency=low
 
   * Fix lost samples and RPS data in Phantom results
