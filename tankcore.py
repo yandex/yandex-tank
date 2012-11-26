@@ -17,7 +17,7 @@ import tempfile
 import time
 import traceback
 import fnmatch
-
+import psutil
 
 def log_stdout_stderr(log, stdout, stderr, comment=""):
     '''
@@ -91,6 +91,7 @@ def expand_time(str_time, default_unit='s', multiplier=1):
             raise ValueError("String contains unsupported unit %s: %s", unit, str_time)
     return int(result * multiplier)
 
+
 def pid_exists(pid):
     """Check whether pid exists in the current process table."""
     if pid < 0:
@@ -98,9 +99,12 @@ def pid_exists(pid):
     try:
         os.kill(pid, 0)
     except OSError, exc:
+        logging.debug("No process[%s]: %s", exc.errno, exc)
         return exc.errno == errno.EPERM
     else:
-        return True
+        p = psutil.Process(pid)
+        return p.status != psutil.STATUS_ZOMBIE
+
 
 def execute(cmd, shell=False, poll_period=1, catch_out=False):
     '''

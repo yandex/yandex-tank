@@ -8,7 +8,7 @@ Homepage: https://github.com/yandex-load/yandex-tank
 
 Package: yandex-load-tank-base
 Architecture: all
-Depends: python (>=2.6), python-ipaddr, python-lxml, python-progressbar,
+Depends: python (>=2.6), python-ipaddr, python-lxml, python-progressbar, python-psutil,
 	phantom(>=0.14), phantom-ssl,
     ${misc:Depends}
 Description: Yandex.Tank (Load Testing Tool)
