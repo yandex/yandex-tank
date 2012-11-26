@@ -1,7 +1,5 @@
 #! /usr/bin/python
-'''
-The agent bundle, contains all metric classes and agent running code
-'''
+''' The agent bundle, contains all metric classes and agent running code '''
 from optparse import OptionParser
 from subprocess import Popen, PIPE
 import ConfigParser
@@ -13,9 +11,11 @@ import re
 import socket
 import sys
 import time
+import fcntl
+from threading import Thread
 
 class AbstractMetric:
-    ''' Parent class for all metrics'''
+    ''' Parent class for all metrics '''
     def columns(self):
         ''' methods should return list of columns provided by metric class '''
         raise NotImplementedError()
@@ -459,21 +459,21 @@ class Net(AbstractMetric):
 
 class PidStat(AbstractMetric):
     def __init__(self):
-        self.fields=['pid', 'comm', 'state', 'ppid', 'pgrp', 'session', 'tty_nr', 'tpgid', 'flags',
+        self.fields = ['pid', 'comm', 'state', 'ppid', 'pgrp', 'session', 'tty_nr', 'tpgid', 'flags',
                      'minflt', 'cminflt', 'majflt', 'cmajflt', 'utime', 'stime', 'cutime', 'cstime',
                      'priority', 'nice', 'num_threads', 'itrealvalue', 'starttime', 'vsize', 'rss',
-                     'rsslim', 'startcode', 'endcode', 'startstack', 'kstkesp','kstkeip','signal',
+                     'rsslim', 'startcode', 'endcode', 'startstack', 'kstkesp', 'kstkeip', 'signal',
                      'blocked', 'segignore', 'sigcatch', 'wchan', 'nswap', 'cnswap', 'exit_signal',
                      'processor', 'rt_priority', 'policy', 'delayacct_blkio_ticks', 'guest_time',
                      'cguest_time']
-        self.total_ticks=-1
-        self.prev_vals=[]
-        self.pid=0
+        self.total_ticks = -1
+        self.prev_vals = []
+        self.pid = 0
         
         
     def set_options(self, options):
         # direct pid and pidfile
-        self.pid=0
+        self.pid = 0
         
     
     def columns(self,):
@@ -523,35 +523,98 @@ def fixed_sleep(slp_interval,):
 
 unixtime = lambda: str(int(time.time()))
 
+class AgentWorker(Thread):
+    dlmtr = ';'
+    
+    def __init__(self):
+        Thread.__init__(self)
+        self.daemon = True # Thread auto-shutdown
+        self.finished = False
+        # metrics we know about
+        self.known_metrics = {
+                'cpu-la': CpuLa(),
+                'cpu-stat': CpuStat(),
+                'mem':  Mem(),
+                'io':  Io(),
+                'net-retrans': NetRetrans(),
+                'net-tx-rx': NetTxRx(),
+                'net-tcp': NetTcp(),
+                'disk': Disk(),
+                'net': Net(),
+                'pid': PidStat(),
+                }
+
+
+    def run(self):
+        logging.info("Start polling thread")
+        global t_after
+        t_after = None
+        header = []
+    
+        sync_time = str(self.c_start + (int(time.time()) - self.c_local_start))
+        header.extend(['start', self.c_host, sync_time])  # start compile init header
+    
+        # add metrics from config file to header
+        for metric_name in self.metrics_collected:
+            if metric_name:
+                header.extend(self.known_metrics[metric_name].columns())
+    
+        # add custom metrics from config file to header
+        custom = Custom(self.calls, self.tails)
+        header.extend(custom.columns())
+    
+        sys.stdout.write(self.dlmtr.join(header) + '\n')
+        sys.stdout.flush()
+    
+        logging.debug(self.dlmtr.join(header))
+        
+        # check loop
+        while not self.finished:
+            logging.debug('Start check')
+            line = []
+            sync_time = str(self.c_start + (int(time.time()) - self.c_local_start))
+            line.extend([self.c_host, sync_time])
+    
+            # known metrics
+            for metric_name in self.metrics_collected:
+                try:
+                    data = self.known_metrics[metric_name].check()
+                    if len(data) != len(self.known_metrics[metric_name].columns()):
+                        raise RuntimeError("Data len not matched columns count: %s" % data)
+                except Exception, e:
+                    logging.error('Can\'t fetch %s: %s', metric_name, e)
+                    data = [''] * len(self.known_metrics[metric_name].columns())
+                line.extend(data)
+            
+            logging.debug("line: %s" % line)
+            # custom commands
+            line.extend(custom.check())
+            
+            # print result line
+            try:
+                row = self.dlmtr.join(line)
+                logging.debug("str: %s" % row)
+                sys.stdout.write(row + '\n')
+                sys.stdout.flush()
+            except Exception, e:
+                logging.error('Failed to convert line %s: %s', line, e)
+                
+            fixed_sleep(self.c_interval)
+    
+
 if __name__ == '__main__':
+    pass
+
+#def tmp():
     # default params
     def_cfg_path = 'agent.cfg'
     c_interval = 1
     c_host = socket.getfqdn()
-    custom_cfg = {'tail': [], 'call': []}
-    c_tail = ''
-    c_loglevel = ''
     c_local_start = int(time.time())
-    c_start = c_local_start
-    header = []
-    dlmtr = ';'
-    t_after = None
     
-    #logger.debug("[debug] [agent] Start agent at host: %s\n" % c_host)
+    setup_logging()    
+    logging.info("Start agent at host: %s\n" % c_host)
     
-    # metrics we know about
-    known_metrics = {
-            'cpu-la': CpuLa(),
-            'cpu-stat': CpuStat(),
-            'mem':  Mem(),
-            'io':  Io(),
-            'net-retrans': NetRetrans(),
-            'net-tx-rx': NetTxRx(),
-            'net-tcp': NetTcp(),
-            'disk': Disk(),
-            'net': Net(),
-            'pid': PidStat(),
-            }
     
     # parse options
     parser = OptionParser()
@@ -581,12 +644,10 @@ if __name__ == '__main__':
             c_interval = config.getfloat('main', 'interval')
         if config.has_option('main', 'host'):
             c_host = config.get('main', 'host')
-        if config.has_option('main', 'loglevel'):
-            c_loglevel = config.get('main', 'loglevel')
         if config.has_option('main', 'start'):
             c_start = config.getint('main', 'start')
 
-    logging.info('Agent params: %s, %s, %s' % (c_interval, c_host, c_loglevel))
+    logging.info('Agent params: %s, %s' % (c_interval, c_host))
 
     # custom section
     calls = []
@@ -597,56 +658,23 @@ if __name__ == '__main__':
         if config.has_option('custom', 'call'):
             calls += config.get('custom', 'call').split(',')
 
-
-    sync_time = str(c_start + (int(time.time()) - c_local_start))
-#    header.extend(['start', c_host, unixtime()])  # start compile init header
-    header.extend(['start', c_host, sync_time])  # start compile init header
-
-    # add metrics from config file to header
-    for metric_name in metrics_collected:
-        if metric_name:
-            header.extend(known_metrics[metric_name].columns())
-
-    # add custom metrics from config file to header
-    custom = Custom(calls, tails)
-    header.extend(custom.columns())
-
-    sys.stdout.write(dlmtr.join(header) + '\n')
-    sys.stdout.flush()
-
-    logging.debug(dlmtr.join(header))
-
-    # check loop
-    while True:
-        logging.debug('Start check')
-        line = []
-        sync_time = str(c_start + (int(time.time()) - c_local_start))
-        line.extend([c_host, sync_time])
-
-        # known metrics
-        for metric_name in metrics_collected:
-            try:
-                data = known_metrics[metric_name].check()
-                if len(data)!=len(known_metrics[metric_name].columns()):
-                    raise RuntimeError("Data len not matched columns count: %s" % data)
-            except Exception, e:
-                logging.error('Can\'t fetch %s: %s', metric_name, e)
-                data = ['']* len(known_metrics[metric_name].columns())
-            line.extend(data)
-        
-        logging.debug("line: %s" % line)
-        # custom commands
-        line.extend(custom.check())
-        
-        # print result line
-        try:
-            row = dlmtr.join(line)
-            logging.debug("str: %s" % row)
-            sys.stdout.write(row + '\n')
-            sys.stdout.flush()
-        except Exception, e:
-            logging.error('Failed to convert line %s: %s', line, e)
+    worker = AgentWorker()
+    
+    # populate
+    worker.c_start = c_start
+    worker.c_local_start = c_local_start
+    worker.c_host = c_host
+    worker.metrics_collected = metrics_collected
+    worker.calls = calls
+    worker.tails = tails
+    worker.c_interval = c_interval
+    
+    worker.start()
+    
+    logging.debug("Ckeck for stdin shutdown command")
+    cmd = sys.stdin.read()
+    if cmd:
+        logging.info("Stdin cmd received: %s", cmd)
+        worker.finished = True
             
-
-        fixed_sleep(c_interval)
-
+    

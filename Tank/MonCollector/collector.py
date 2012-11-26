@@ -14,6 +14,7 @@ import signal
 import sys
 import tempfile
 import time
+import tankcore
 
 # FIXME: 3 synchronize times between agent and collector better
 class Config(object):
@@ -38,7 +39,7 @@ class SSHWrapper:
     '''
     def __init__(self, timeout):
         self.log = logging.getLogger(__name__)
-        self.ssh_opts = ['-q', '-o', 'StrictHostKeyChecking=no', '-o', 'PasswordAuthentication=no', '-o', 'NumberOfPasswordPrompts=0', '-o', 'ConnectTimeout='+str(timeout)]
+        self.ssh_opts = ['-q', '-o', 'StrictHostKeyChecking=no', '-o', 'PasswordAuthentication=no', '-o', 'NumberOfPasswordPrompts=0', '-o', 'ConnectTimeout=' + str(timeout)]
         self.scp_opts = []        
         self.host = None
         self.port = None
@@ -321,9 +322,19 @@ class MonitoringCollector:
         logging.debug("Initiating normal finish")
         for pipe in self.agent_pipes:
             if pipe.pid:
-                logging.debug("Killing %s with %s", pipe.pid, signal.SIGKILL)
-                os.kill(pipe.pid, signal.SIGKILL)
-
+                first_try = True
+                delay = 1
+                while tankcore.pid_exists(pipe.pid):
+                    if first_try:
+                        logging.debug("Killing %s with %s", pipe.pid, signal.SIGTERM)
+                        os.kill(pipe.pid, signal.SIGTERM)                        
+                        first_try = False
+                    else:
+                        time.sleep(delay)
+                        delay *= 2
+                        logging.warn("Killing %s with %s", pipe.pid, signal.SIGKILL)
+                        os.kill(pipe.pid, signal.SIGKILL)
+                        
         for agent in self.agents:
             self.artifact_files.append(agent.uninstall())
 
