@@ -46,10 +46,10 @@ class MonitoringPlugin(AbstractPlugin):
             if self.config[0] == '<':                    
                 xmlfile = self.core.mkstemp(".xml", "monitoring_")
                 self.core.add_artifact_file(xmlfile)
-                xml=open(xmlfile, 'w')
+                xml = open(xmlfile, 'w')
                 xml.write(self.config)
                 xml.close()
-                self.config=xmlfile
+                self.config = xmlfile
             
             if not os.path.exists(self.config):
                 raise OSError("Monitoring config file not found: %s" % self.config)         

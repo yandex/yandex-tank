@@ -582,6 +582,8 @@ class MonitoringDataDecoder:
             if host in self.metrics.keys():
                 for metric in self.metrics[host]:
                     data_dict[metric] = data.pop(0)
+                    
+        self.log.debug("Decoded data %s: %s", host, data_dict)
         return host, data_dict, is_initial
 
             
