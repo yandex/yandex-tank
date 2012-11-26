@@ -74,6 +74,26 @@ class  MonitoringCollectorTestCase(TankTestCase):
         self.assertEquals(-1, mon.is_test_finished())
         mon.end_test(0)
         mon.post_process(0)
+
+    def test_plugin_inline_config(self):
+        core = self.get_core()
+        core.artifacts_base_dir = tempfile.mkdtemp()
+        core.load_configs(['config/monitoring.conf'])
+        core.load_plugins()
+        core.plugins_configure()
+        core.plugins_prepare_test()
+        mon = MonitoringPlugin(core)
+        mon.monitoring.ssh_wrapper_class = SSHEmulator
+        core.set_option(mon.SECTION, 'config', "<Monitoring>\n<Host address='[target]'/>\n</Monitoring>")
+        mon.configure()
+        mon.prepare_test()
+        mon.start_test()
+        self.assertEquals(-1, mon.is_test_finished())
+        self.assertNotEquals(None, mon.monitoring)
+        time.sleep(1)
+        self.assertEquals(-1, mon.is_test_finished())
+        mon.end_test(0)
+        mon.post_process(0)
     
     def test_widget(self):
         core = self.get_core()

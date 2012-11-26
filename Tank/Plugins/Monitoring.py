@@ -1,7 +1,7 @@
 '''Module to provide target monitoring'''
 
 from Tank.MonCollector.collector import MonitoringCollector, \
-    MonitoringDataListener, MonitoringDataDecoder
+    MonitoringDataListener, MonitoringDataDecoder, Config
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.Phantom import PhantomPlugin
 from tankcore import AbstractPlugin
@@ -11,6 +11,7 @@ import traceback
 from Tank.Plugins.Autostop import AutostopPlugin, AbstractCriteria
 import tankcore
 import fnmatch
+from lxml import etree
 
 class MonitoringPlugin(AbstractPlugin):
     '''
@@ -35,13 +36,21 @@ class MonitoringPlugin(AbstractPlugin):
         return __file__
     
     def configure(self):
-        self.config = self.get_option("config", 'auto')
+        self.config = self.get_option("config", 'auto').strip()
         self.default_target = self.get_option("default_target", 'localhost')
-        self.monitoring.ssh_timeout=tankcore.expand_to_seconds(self.get_option('ssh_timeout', "5s"))
+        self.monitoring.ssh_timeout = tankcore.expand_to_seconds(self.get_option('ssh_timeout', "5s"))
 
         if self.config == 'none' or self.config == 'auto':
             self.die_on_fail = False
         else:
+            if self.config[0] == '<':                    
+                xmlfile = self.core.mkstemp(".xml", "monitoring_")
+                self.core.add_artifact_file(xmlfile)
+                xml=open(xmlfile, 'w')
+                xml.write(self.config)
+                xml.close()
+                self.config=xmlfile
+            
             if not os.path.exists(self.config):
                 raise OSError("Monitoring config file not found: %s" % self.config)         
                     
