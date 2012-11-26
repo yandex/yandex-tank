@@ -51,7 +51,7 @@ class SSHWrapper:
         self.host = host
         self.port = port
         self.scp_opts = self.ssh_opts + ['-P', self.port]
-        self.ssh_opts = self.ssh_opts + ['-p', self.port]
+        self.ssh_opts = self.ssh_opts + ['-C', '-p', self.port]
 
     def get_ssh_pipe(self, cmd):
         '''
@@ -329,6 +329,7 @@ class MonitoringCollector:
                         logging.debug("Killing %s with %s", pipe.pid, signal.SIGTERM)
                         os.kill(pipe.pid, signal.SIGTERM)                        
                         first_try = False
+                        time.sleep(0.1)
                     else:
                         time.sleep(delay)
                         delay *= 2
