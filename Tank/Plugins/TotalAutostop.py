@@ -70,7 +70,7 @@ class TotalFracTimeCriteria(AbstractCriteria):
 
         self.real_frac = float(sum(self.data)) / len(self.data) * 100
         if self.real_frac >= float(self.frac) and len(self.data) >= self.seconds_limit:
-            self.cause_second = self.second_windows[0]
+            self.cause_second = self.second_window[0]
             self.log.debug(self.explain())
             self.autostop.add_counting(self)
             return True
@@ -128,7 +128,7 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
         if self.is_relative :
             queue_len = len(self.data)
         if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:
-            self.cause_second = self.second_windows[0]
+            self.cause_second = self.second_window[0]
             self.log.debug(self.explain())
             self.autostop.add_counting(self)
             return True
