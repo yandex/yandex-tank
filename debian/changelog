@@ -1,3 +1,12 @@
+yandex-load-tank-base (1.2.0) precise; urgency=low
+
+  * add more graphs to web online
+  * better monitoring agent logging and shutdown
+  * allow inline monitoring config
+  * cause second fixed in total autostops
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 27 Nov 2012 15:16:59 +0400
+
 yandex-load-tank-base (1.1.9) precise; urgency=low
 
   * remove expensive logging in phantom parser

@@ -122,7 +122,6 @@ class CpuStat(AbstractMetric):
 #                logger.debug("Result: %s" % result)
                     
         # Numproc, numthreads 
-        # FIXME: 1 remove this expensive operations!!!
         command = ['ps ax | wc -l', "cat /proc/loadavg | cut -d' ' -f 4 | cut -d'/' -f2"]
         for cmd in command:
             try:

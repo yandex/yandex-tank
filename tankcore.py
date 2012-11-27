@@ -132,6 +132,7 @@ def execute(cmd, shell=False, poll_period=1, catch_out=False):
     log.debug("Process exit code: %s", retcode)
     return retcode
 
+
 def splitstring(string):
     """
     >>> string = 'apple orange "banana tree" green'

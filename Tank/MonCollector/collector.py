@@ -321,6 +321,7 @@ class MonitoringCollector:
         ''' Shutdown  agents       '''
         logging.debug("Initiating normal finish")
         for pipe in self.agent_pipes:
+            pipe.stdin.write("stop\n")
             if pipe.pid:
                 first_try = True
                 delay = 1
