@@ -47,6 +47,18 @@
 				document.all['actual'].innerHTML = data['actual'];
 				document.all['avg'].innerHTML = data['avg'];
 				document.all['net'].innerHTML = data['net'];
+
+				if (data['net']) {
+					document.all['netCell'].style.backgroundColor = "#FF9999";
+				} else {
+					document.all['netCell'].style.backgroundColor = "white";
+				}
+
+				if (data['planned'] && data['planned'] != data['actual']) {
+					document.all['actCell'].style.backgroundColor = "#FFFF99";
+				} else {
+					document.all['actCell'].style.backgroundColor = "white";
+				}
 			}
 		</script>
 		<style type="text/css">
@@ -57,7 +69,6 @@
 
 			div.amchartGraph {
 				margin: 0px;
-				float: left;
 			}
 
 			table.bigNumbers {
@@ -70,6 +81,7 @@
 				color: gray;
 				vertical-align: bottom;
 				font-weight: normal;
+				width: 20%;
 			}
 
 			table.bigNumbers th div {
@@ -91,7 +103,7 @@
 				<div style="color: #990099;" id="planned">
 					N/A
 				</div>planned requests</th>
-				<th>
+				<th  id="actCell">
 				<div style="color: #3333FF;" id="actual">
 					N/A
 				</div>actual responses</th>
@@ -99,7 +111,7 @@
 				<div style="color: #009900;" id="avg">
 					N/A
 				</div>avg response time</th>
-				<th>
+				<th id="netCell">
 				<div style="color: black;" id="net">
 					N/A
 				</div>NET errors</th>
@@ -115,6 +127,7 @@
 						<td style="width:50%"><div id="chartdivAvg" class="amchartGraph" style="width:100%; height:250px;"></div></td>
 					</tr>
 				</table></td>
+			</tr>
 		</table>
 		<script type="text/javascript">
 			var HelperQ = new AmChartsPWEHelper("Q");
@@ -134,6 +147,7 @@
 			HelperQ.setDataURL("./Q.json");
 
 			var chartQ = HelperQ.createChart();
+			chartQ.addLabel("0","1em", "Response Time Quantiles", "center", "black", "", 0, "true");
 		</script>
 		<script type="text/javascript">
 			var HelperHTTP = new AmChartsPWEHelper("HTTP");
@@ -143,35 +157,39 @@
 			HelperHTTP.setUnit2("");
 			HelperHTTP.setZoomed(false);
 
-			HelperHTTP.setRowTitles("connect;send;latency;receive");
+			HelperHTTP.setRowTitles("NET Errors;2xx;3xx;4xx;5xx;Non-Avg");
 			HelperHTTP.setRowFills("0;1");
 			HelperHTTP.setRowAxes("2;1");
-			HelperHTTP.setRowColors("blue;green;red;orange;");
-			HelperHTTP.setDisableByDefault("2xx;");
+			HelperHTTP.setStacked("regular");
+			HelperHTTP.setRowColors("black;green;blue;orange;red;darkred");
+			HelperHTTP.setDisableByDefault("2xx");
 			HelperHTTP.setFirstRowToLast(true);
 
 			HelperHTTP.setDataURL("./HTTP.json");
 
 			var chartHTTP = HelperHTTP.createChart();
+			chartHTTP.addLabel("0","1em", "Response Codes", "center", "black", "", 0, "true");
 		</script>
 		<script type="text/javascript">
 			var HelperAvg = new AmChartsPWEHelper("Avg");
 
 			HelperAvg.setImagesPath("http://loadosophia.org/img/amcharts/javascript/images/");
 			HelperAvg.setUnit1(" ms");
-			HelperAvg.setUnit2(" RPS");
+			HelperAvg.setUnit2("");
 			HelperAvg.setZoomed(false);
 
-			HelperAvg.setRowTitles("NET Errors;2xx;3xx;4xx;5xx;Non-Avg");
-			HelperAvg.setRowFills("0;1");
-			HelperAvg.setRowAxes("2;1");
-			HelperAvg.setRowColors("black;green;blue;orange;red;darkred");
-			HelperAvg.setDisableByDefault("2xx");
+			HelperAvg.setRowTitles("connect;send;latency;receive");
+			HelperAvg.setRowFills("1");
+			HelperAvg.setRowAxes("1");
+			HelperAvg.setStacked("regular")
+			HelperAvg.setRowColors("#6666FF;#66FF66;#FF6666;#FFFF66");
+			HelperAvg.setDisableByDefault("2xx;");
 			HelperAvg.setFirstRowToLast(true);
 
 			HelperAvg.setDataURL("./Avg.json");
 
 			var chartAvg = HelperAvg.createChart();
+			chartAvg.addLabel("0","1em", "Average Response Times", "center", "black", "", 0, "true");
 
 			function refresh_all(i) {
 				try {

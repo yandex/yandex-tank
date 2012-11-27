@@ -28,6 +28,8 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.server = None
         self.interval = 60
         self.quantiles_data = []
+        self.codes_data = []
+        self.avg_data = []
         self.redirect = ''
     
     def configure(self):
@@ -56,22 +58,70 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.log.info("Starting local HTTP server for online view at port: http://%s:%s/", address, self.port)
         self.server.serve_forever()
     
-    def aggregate_second(self, data):
-        self.last_sec = data
-        
+
+    def calculate_quantiles(self, data):
         if not self.quantiles_data:
             header = ["timeStamp", "requestCount"]
             quantiles = [int(x) for x in sorted(data.overall.quantiles.keys(), reverse=True)]
             header += quantiles
             self.quantiles_data = [header, []]
-            
         item_data = {"timeStamp":time.mktime(data.time.timetuple()), "requestCount":data.overall.planned_requests if data.overall.planned_requests else data.overall.RPS}
         for level, timing in data.overall.quantiles.iteritems():
             item_data[str(int(level))] = timing
-        self.quantiles_data[1] += [item_data]
         
+        self.quantiles_data[1] += [item_data]
         while len(self.quantiles_data[1]) > self.interval:
             self.quantiles_data[1].pop(0)
+
+    def calculate_avg(self, data):
+        if not self.avg_data:
+            header = ["timeStamp", "connect", "send", "latency", "receive"]
+            self.avg_data = [header, []]
+        item_data = {"timeStamp":time.mktime(data.time.timetuple())}
+        item_data['connect'] = data.overall.avg_connect_time
+        item_data['send'] = data.overall.avg_send_time
+        item_data['latency'] = data.overall.avg_latency
+        item_data['receive'] = data.overall.avg_receive_time
+        
+        self.avg_data[1] += [item_data]
+        while len(self.avg_data[1]) > self.interval:
+            self.avg_data[1].pop(0)
+
+    def calculate_codes(self, data):
+        if not self.codes_data:
+            header = ["timeStamp", "net", "2xx", "3xx", "4xx", "5xx", "Non-HTTP"]
+            self.codes_data = [header, []]
+            
+        item_data = {"timeStamp":time.mktime(data.time.timetuple()), "net":0, "2xx":0, "3xx":0, "4xx":0, "5xx":0, "Non-HTTP":0}
+        
+        net = 0
+        for code, count in data.overall.net_codes.iteritems():
+            if code != "0":
+                net += count;
+        item_data['net'] = net
+        
+        for code, count in data.overall.http_codes.iteritems():
+            if code[0] == '2':
+                item_data['2xx'] += count
+            elif code[0] == '3':
+                item_data['3xx'] += count
+            elif code[0] == '4':
+                item_data['4xx'] += count
+            elif code[0] == '5':
+                item_data['5xx'] += count
+            else:
+                item_data['Non-HTTP'] += count
+            
+        self.codes_data[1] += [item_data]
+        while len(self.codes_data[1]) > self.interval:
+            self.codes_data[1].pop(0)
+
+    def aggregate_second(self, data):
+        self.last_sec = data
+        
+        self.calculate_quantiles(data)
+        self.calculate_avg(data)
+        self.calculate_codes(data)
 
     
 #http://fragments.turtlemeat.com/pythonwebserver.php
@@ -116,12 +166,20 @@ class WebOnlineHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 if self.path == '/Q.json':
                     self.wfile.write(json.dumps(self.server.owner.quantiles_data))
+                if self.path == '/HTTP.json':
+                    self.wfile.write(json.dumps(self.server.owner.codes_data))
+                if self.path == '/Avg.json':
+                    self.wfile.write(json.dumps(self.server.owner.avg_data))
                 elif self.path == '/redirect.json':
                     self.wfile.write('["' + self.server.owner.redirect + '"]')
                 elif self.path == '/numbers.json':
-                    sec=self.server.owner.last_sec
-                    data=(sec.overall.active_threads, sec.overall.planned_requests, sec.overall.RPS)
-                    self.wfile.write('{"instances": %s, "planned": %s, "actual": %s}' % data);
+                    sec = self.server.owner.last_sec
+                    net = 0
+                    for code, count in sec.overall.net_codes.iteritems():
+                        if code != "0":
+                            net += count;
+                    data = (sec.overall.active_threads, sec.overall.planned_requests, sec.overall.RPS, sec.overall.avg_response_time, net)
+                    self.wfile.write('{"instances": %s, "planned": %s, "actual": %s, "avg": %s, "net": %s}' % data);
             else:
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/html')
