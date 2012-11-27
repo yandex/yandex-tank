@@ -79,7 +79,6 @@ class OnlineServer(HTTPServer):
     ''' web server starter '''
     def __init__(self, server_address, handler_class, bind_and_activate=True):
         HTTPServer.__init__(self, server_address, handler_class, bind_and_activate)
-        self.last_sec = None
         self.owner = None
             
 class WebOnlineHandler(BaseHTTPRequestHandler):
@@ -106,7 +105,6 @@ class WebOnlineHandler(BaseHTTPRequestHandler):
                 self.wfile.write(fhandle.read())
                 fhandle.close()
 
-                self.wfile.write('<!-- %s -->' % self.server.last_sec)
             elif self.path.endswith(".ico"):
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/html')
@@ -120,6 +118,10 @@ class WebOnlineHandler(BaseHTTPRequestHandler):
                     self.wfile.write(json.dumps(self.server.owner.quantiles_data))
                 elif self.path == '/redirect.json':
                     self.wfile.write('["' + self.server.owner.redirect + '"]')
+                elif self.path == '/numbers.json':
+                    sec=self.server.owner.last_sec
+                    data=(sec.overall.active_threads, sec.overall.planned_requests, sec.overall.RPS)
+                    self.wfile.write('{"instances": %s, "planned": %s, "actual": %s}' % data);
             else:
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/html')
