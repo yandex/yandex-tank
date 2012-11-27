@@ -23,9 +23,7 @@ class TotalHTTPCodesCriteriaTest(TankTestCase):
             data.time = "2012-09-25 18:18:18"
             data.overall.RPS = 100 + i*2
             data.overall.http_codes = {'200': 100, '501': i, '503': i}
-            try:
-                self.relcriteria.notify(data)
-            except AttributeError:
+            if self.relcriteria.notify(data):
                 break
         if i != 7 : raise RuntimeError()
 
@@ -36,9 +34,7 @@ class TotalHTTPCodesCriteriaTest(TankTestCase):
             data.time = "2012-09-25 18:18:18"
             data.overall.RPS = 100 + i*2
             data.overall.http_codes = {'200': 100, '501': i, '503': i}
-            try:
-                self.abscriteria.notify(data)
-            except AttributeError:
+            if self.abscriteria.notify(data) :
                 break
         if i != 6 : raise RuntimeError()
 
