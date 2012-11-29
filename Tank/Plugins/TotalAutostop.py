@@ -72,7 +72,7 @@ class TotalFracTimeCriteria(AbstractCriteria):
         if self.real_frac >= float(self.frac) and len(self.data) >= self.seconds_limit:
             self.cause_second = self.second_window[0]
             self.log.debug(self.explain())
-            self.autostop.add_counting(self)
+#            self.autostop.add_counting(self)
             return True
         return False
 
@@ -130,7 +130,7 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
         if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:
             self.cause_second = self.second_window[0]
             self.log.debug(self.explain())
-            self.autostop.add_counting(self)
+#            self.autostop.add_counting(self)
             return True
         return False
 
@@ -209,7 +209,7 @@ class TotalNetCodesCriteria(AbstractCriteria):
         if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:
             self.cause_second = self.second_window[0]
             self.log.debug(self.explain())
-            self.autostop.add_counting(self)
+#            self.autostop.add_counting(self)
             return True
         return False
 
@@ -286,7 +286,7 @@ class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
         if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:
             self.cause_second = self.second_window[0]
             self.log.debug(self.explain())
-            self.autostop.add_counting(self)
+#            self.autostop.add_counting(self)
             return True
         return False
 
