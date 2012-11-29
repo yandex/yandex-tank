@@ -581,9 +581,12 @@ class MonitoringDataDecoder:
         else:
             host = data.pop(0)
             data.pop(0) # remove timestamp
-            if host in self.metrics.keys():
-                for metric in self.metrics[host]:
-                    data_dict[metric] = data.pop(0)
+            
+            if len(self.metrics[host]) != len(data):
+                raise ValueError("Metrics len and data len differs: %s vs %s" % (len(self.metrics[host]), len(data)))
+            
+            for metric in self.metrics[host]:
+                data_dict[metric] = data.pop(0)
                     
         self.log.debug("Decoded data %s: %s", host, data_dict)
         return host, data_dict, is_initial
