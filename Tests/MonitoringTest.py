@@ -159,6 +159,7 @@ class PipeEmul:
     def __init__(self, out, err):
         self.stderr = open(err, 'rU')
         self.stdout = open(out, 'rU')
+        self.stdin = open(tempfile.mkstemp()[1], 'w')
         self.returncode = 0
         self.pid = 0
         
