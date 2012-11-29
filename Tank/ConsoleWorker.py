@@ -12,12 +12,21 @@ import sys
 import tempfile
 import time
 import traceback
+import signal
+
+# required for non-tty python runs
+def signal_handler(signal, frame):
+    raise KeyboardInterrupt()
+    
+signal.signal(signal.SIGINT, signal_handler)
 
 # TODO: 2 add system resources busy check
 class ConsoleTank:
     """
     Worker class that runs tank core accepting cmdline params
     """
+
+    IGNORE_LOCKS = "ignore_locks"
 
     MIGRATE_SECTION = 'migrate_old'
 
@@ -186,7 +195,7 @@ class ConsoleTank:
         Make all console-specific preparations before running Tank
         '''
         if self.options.ignore_lock:
-            self.log.warn("Lock files ignored. This is highly unrecommended practice!")        
+            self.log.warn("Lock files ignored. This is highly unrecommended practice!")
         
         while True:        
             try:
@@ -244,6 +253,10 @@ class ConsoleTank:
                     self.scheduled_start = datetime.datetime.strptime(self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
                 except ValueError:
                     self.scheduled_start = datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d ') + self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
+
+            if self.options.ignore_lock:
+                self.core.set_option(self.core.SECTION, self.IGNORE_LOCKS, "1")
+                
         except Exception, ex:
             self.log.info("Exception: %s", traceback.format_exc(ex))
             sys.stdout.write(RealConsoleMarkup.RED)
