@@ -34,7 +34,7 @@ class  TankCoreTestCase(TankTestCase):
         self.foo.plugins_post_process(0)
         
     def test_strstplit(self):
-        str1='-Jtarget.address=webtest7h.yandex.ru -Jtarget.port=26 -J "load_profile=const(1,60s) line(0,1000,10m)"'
+        str1='-Jtarget.address=www.yandex.ru -Jtarget.port=26 -J "load_profile=const(1,60s) line(0,1000,10m)"'
         arr1=tankcore.splitstring(str1)
         self.assertEquals(len(arr1), 5)
 

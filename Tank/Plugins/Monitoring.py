@@ -240,7 +240,8 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
         
         try:
             self.mon = autostop.core.get_plugin_of_type(MonitoringPlugin)
-            self.mon.monitoring.add_listener(self)
+            if self.mon.monitoring:
+                self.mon.monitoring.add_listener(self)
         except KeyError:
             self.log.warning("No monitoring module, mon autostop disabled")
         self.triggered = False

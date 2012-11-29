@@ -7,7 +7,28 @@
 		<link rel="stylesheet" href="http://loadosophia.org/img/hlas/hlas.css" />
 		<script src='http://loadosophia.org/img/amcharts/javascript/amcharts.js' type='text/javascript'></script>
 		<script src='http://loadosophia.org/img/hlas/chart_tpl.js' type='text/javascript'></script>
+		<script src="http://code.jquery.com/jquery-1.8.3.min.js" type='text/javascript'></script>
 		<script type="text/javascript">
+			$(document).ready(rresize);
+
+			$(window).resize(function() {
+
+				clearTimeout(window.timeoutId);
+
+				window.timeoutId = setTimeout(rresize, 100);
+
+			});
+
+			function rresize() {
+
+				$(".amchartGraph").hide();
+				$(".amchartGraph").css("width", "100%");
+				$(".amchartGraph").find("div").css("width", "100%");
+				$("svg").css("width", "100%");
+				$(".amchartGraph").show();
+
+			}
+
 			function req(url) {
 				var request;
 				if (window.XMLHttpRequest) {
@@ -65,6 +86,7 @@
 			body {
 				padding: 0px;
 				margin: 0px;
+				overflow-x: hidden;
 			}
 
 			div.amchartGraph {
@@ -147,7 +169,7 @@
 			HelperQ.setDataURL("./Q.json");
 
 			var chartQ = HelperQ.createChart();
-			chartQ.addLabel("0","1em", "Response Time Quantiles", "center", "black", "", 0, "true");
+			chartQ.addLabel("0", "1em", "Response Time Quantiles", "center", "black", "", 0, "true");
 		</script>
 		<script type="text/javascript">
 			var HelperHTTP = new AmChartsPWEHelper("HTTP");
@@ -168,7 +190,7 @@
 			HelperHTTP.setDataURL("./HTTP.json");
 
 			var chartHTTP = HelperHTTP.createChart();
-			chartHTTP.addLabel("0","1em", "Response Codes", "center", "black", "", 0, "true");
+			chartHTTP.addLabel("0", "1em", "Response Codes", "center", "black", "", 0, "true");
 		</script>
 		<script type="text/javascript">
 			var HelperAvg = new AmChartsPWEHelper("Avg");
@@ -189,7 +211,7 @@
 			HelperAvg.setDataURL("./Avg.json");
 
 			var chartAvg = HelperAvg.createChart();
-			chartAvg.addLabel("0","1em", "Average Response Times", "center", "black", "", 0, "true");
+			chartAvg.addLabel("0", "1em", "Average Response Times", "center", "black", "", 0, "true");
 
 			function refresh_all(i) {
 				try {

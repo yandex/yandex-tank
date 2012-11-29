@@ -855,9 +855,11 @@ class StepperWrapper:
         external_stepper_conf.read(cached_config)
         #stepper.cases = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES)
         steps = external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_STEPS).strip().split(' ')
-        if steps:
+
+        if len(steps) % 2 == 0:
             stepper.steps = [int(x) for x in steps]
         else:
+            self.log.warning("Steps list must be even: %s", steps)
             stepper.steps = []
         stepper.loadscheme = external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_LOADSCHEME)
         stepper.loop_count = external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_LOOP_COUNT)
