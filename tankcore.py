@@ -88,7 +88,7 @@ def expand_time(str_time, default_unit='s', multiplier=1):
             result += value * 60 * 60 * 24 * 7
             continue
         else: 
-            raise ValueError("String contains unsupported unit %s: %s", unit, str_time)
+            raise ValueError("String contains unsupported unit %s: %s" % (unit, str_time))
     return int(result * multiplier)
 
 

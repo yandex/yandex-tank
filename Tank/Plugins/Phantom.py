@@ -96,7 +96,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             
             retcode = tankcore.execute(args, catch_out=True)
             if retcode:
-                raise RuntimeError("Subprocess returned %s",)    
+                raise RuntimeError("Subprocess returned %s" % retcode)    
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
@@ -127,7 +127,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
         else:
             if not os.path.exists(self.phout_import_mode):
-                raise RuntimeError("Phout file not exists for import: %s", self.phout_import_mode)
+                raise RuntimeError("Phout file not exists for import: %s" % self.phout_import_mode)
             self.log.warn("Will import phout file instead of running phantom: %s", self.phout_import_mode)
     
 
@@ -807,7 +807,7 @@ class StepperWrapper:
             
             if self.ammo_file:
                 if not os.path.exists(self.ammo_file):
-                    raise RuntimeError("Ammo file not found: %s", self.ammo_file)
+                    raise RuntimeError("Ammo file not found: %s" % self.ammo_file)
             
                 hashed_str += sep + os.path.realpath(self.ammo_file)
                 stat = os.stat(self.ammo_file)
