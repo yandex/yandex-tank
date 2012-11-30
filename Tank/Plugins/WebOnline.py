@@ -96,7 +96,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         net = 0
         for code, count in data.overall.net_codes.iteritems():
             if code != "0":
-                net += count;
+                net += count
         item_data['net'] = net
         
         for code, count in data.overall.http_codes.iteritems():
@@ -176,9 +176,9 @@ class WebOnlineHandler(BaseHTTPRequestHandler):
                     net = 0
                     for code, count in sec.overall.net_codes.iteritems():
                         if code != "0":
-                            net += count;
+                            net += count
                     data = (sec.overall.active_threads, sec.overall.planned_requests, sec.overall.RPS, sec.overall.avg_response_time, net)
-                    self.wfile.write('{"instances": %s, "planned": %s, "actual": %s, "avg": %s, "net": %s}' % data);
+                    self.wfile.write('{"instances": %s, "planned": %s, "actual": %s, "avg": %s, "net": %s}' % data)
             else:
                 self.send_response(200)
                 self.send_header('Content-Type', 'text/html')

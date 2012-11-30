@@ -440,13 +440,13 @@ class PhantomReader(AbstractReader):
         if parsed_sec:
             self.pending_second_data_queue.append(parsed_sec)
         else:
-            self.log.debug("No new seconds present");            
+            self.log.debug("No new seconds present")   
             
         if not self.pending_second_data_queue:
-            self.log.debug("pending_second_data_queue empty");
+            self.log.debug("pending_second_data_queue empty")
             return None
         else:
-            self.log.debug("pending_second_data_queue: %s", self.pending_second_data_queue);
+            self.log.debug("pending_second_data_queue: %s", self.pending_second_data_queue)
 
 
         next_time = int(time.mktime(self.pending_second_data_queue[0].time.timetuple()))
