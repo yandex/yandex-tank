@@ -14,13 +14,14 @@ import mimetools
 import mimetypes
 import os
 import urllib2
+import json
+import time
 
 class LoadosophiaPlugin(AbstractPlugin):
     '''
     Tank plugin with Loadosophia.org uploading 
     '''
 
-    REDIR_TO = "https://loadosophia.org/service/upload/"
     SECTION = 'loadosophia'
     
     @staticmethod
@@ -33,15 +34,14 @@ class LoadosophiaPlugin(AbstractPlugin):
         '''
         AbstractPlugin.__init__(self, core)
         self.loadosophia = LoadosophiaClient()
-        self.loadosophia.results_url = self.REDIR_TO
+        self.loadosophia.results_url = None
         self.project_key = None
     
     def configure(self):
-        self.loadosophia.address = self.get_option("address", "https://loadosophia.org/uploader/")
+        self.loadosophia.address = self.get_option("address", "https://loadosophia.org/")
         self.loadosophia.token = self.get_option("token", "")
         self.loadosophia.file_prefix = self.get_option("file_prefix", "")
-        
-        self.project_key = self.get_option("project", '')
+        self.project_key = self.get_option("project", 'DEFAULT')
         
     def post_process(self, retcode):
         main_file = None
@@ -73,7 +73,8 @@ class LoadosophiaPlugin(AbstractPlugin):
         try:
             web = self.core.get_plugin_of_type(WebOnlinePlugin)
             if not web.redirect:
-                web.redirect = self.REDIR_TO
+                web.redirect = self.loadosophia.results_url
+                time.sleep(2)
         except KeyError:
             self.log.debug("Web online not found")
 
@@ -103,7 +104,7 @@ class LoadosophiaClient:
                 if not result_file or not os.path.exists(result_file) or not os.path.getsize(result_file):
                     self.log.warning("Empty results file, skip Loadosophia.org uploading: %s", result_file)
                 else:
-                    self.__send_checked_results(project, result_file, monitoring_files)
+                    return self.__send_checked_results(project, result_file, monitoring_files)
     
     
     def __send_checked_results(self, project, result_file, monitoring_files):
@@ -125,7 +126,7 @@ class LoadosophiaClient:
             index += 1
             
         # Build the request
-        request = urllib2.Request(self.address)
+        request = urllib2.Request(self.address+"api/file/upload/?format=json")
         request.add_header('User-Agent', 'Yandex.Tank Loadosophia Uploader Module')
         body = str(form)
         request.add_header('Content-Type', form.get_content_type())
@@ -133,10 +134,13 @@ class LoadosophiaClient:
         request.add_data(body)
 
         response = urllib2.urlopen(request)
-        if response.getcode() != 202:
+        if response.getcode() != 200:
             self.log.debug("Full loadosophia.org response: %s", response.read())
-            raise RuntimeError("Loadosophia.org upload failed, response code %s instead of 202, see log for full response text" % response.getcode())
-        self.log.info("Loadosophia.org upload succeeded, visit %s to see processing status", self.results_url)
+            raise RuntimeError("Loadosophia.org upload failed, response code %s instead of 200, see log for full response text" % response.getcode())
+
+        res=json.loads(response.read())
+        self.results_url=self.address+'api/file/status/'+res[1][0]['QueueID']+'/?redirect=true'
+        self.log.info("Loadosophia.org upload succeeded, report link: %s", self.results_url)
         
                 
     def __get_gzipped_file(self, result_file):
