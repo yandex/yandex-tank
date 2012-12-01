@@ -393,3 +393,57 @@ class TotalNegativeNetCodesCriteria(AbstractCriteria):
             return ("Net not %s>%s for %ss" % items, sum(self.data))
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit)
         return ("Net not %s>%s for %ss" % items, 1.0)
+
+class TotalHTTPTrendCriteria(AbstractCriteria):
+    ''' HTTP Trend Criteria '''
+
+    @staticmethod
+    def get_type_string():
+        return 'http_trend'
+    
+    def __init__(self, autostop, param_str):
+        AbstractCriteria.__init__(self)
+        self.seconds_count = 0
+        self.codes_mask = param_str.split(',')[0].lower()
+        self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
+        self.autostop = autostop
+        self.tangents = deque()
+        self.second_window = deque()
+        self.total_tan = float()
+
+        self.tangents.append(0)
+        self.last = 0
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[1])
+    
+    def notify(self, aggregate_second):
+        matched_responses = self.count_matched_codes(self.codes_regex, aggregate_second.overall.http_codes)
+
+        self.tangents.append(matched_responses - self.last)
+        self.second_window.append(aggregate_second)
+
+        self.last = matched_responses
+
+        if len(self.tangents) > self.seconds_limit :
+            self.tangents.popleft()
+            self.second_window.popleft()
+
+        self.total_tan = sum(self.tangents) / len (self.tangents);
+        self.log.debug("Last trend for http codes %s: %d", self.codes_mask, self.total_tan)
+
+        if self.total_tan < 0 :
+            self.cause_second = self.second_window[0]
+            self.log.debug(self.explain())
+            return True
+
+        return False
+
+    def get_rc(self):
+        return 30
+
+    def explain(self):
+        items = (self.codes_mask, self.total_tan, self.seconds_limit, self.cause_second.time)
+        return "Last trend for %s http codes is %s for %ss, since %s" % items 
+    
+    def widget_explain(self):
+        items = (self.codes_mask, self.total_tan, self.seconds_limit)
+        return ("HTTP(%s) trend %s < 0 for %ss" % items, 1.0)
