@@ -314,3 +314,82 @@ class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
             return ("HTTP not %s>%s for %ss" % items, sum(self.data))
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit)
         return ("HTTP not %s>%s for %ss" % items, 1.0)
+
+class TotalNegativeNetCodesCriteria(AbstractCriteria):
+    ''' Reversed NET Criteria '''
+    @staticmethod
+    def get_type_string():
+        return 'negative_net'
+    
+    def __init__(self, autostop, param_str):
+        AbstractCriteria.__init__(self)
+        self.seconds_count = 0
+        self.codes_mask = param_str.split(',')[0].lower()
+        self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
+        self.autostop = autostop
+        self.data = deque()
+        self.second_window = deque()
+        
+        level_str = param_str.split(',')[1].strip()
+        if level_str[-1:] == '%':
+            self.level = float(level_str[:-1])
+            self.is_relative = True
+        else:
+            self.level = int(level_str)
+            self.is_relative = False
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[2])
+    
+    def notify(self, aggregate_second):
+        codes = aggregate_second.overall.net_codes.copy()
+        # if '0' in codes.keys():
+        #     codes.pop('0')
+        matched_responses = self.count_matched_codes(self.codes_regex, codes)
+        if self.is_relative:
+            if aggregate_second.overall.RPS:
+                matched_responses = float(matched_responses) / aggregate_second.overall.RPS * 100
+                matched_responses = 100 - matched_responses
+            else:
+                matched_responses = 1
+            self.log.debug("Net codes matching mask not %s: %s/%s", self.codes_mask, round(matched_responses, 1), self.level)
+        else :
+            matched_responses = aggregate_second.overall.RPS - matched_responses
+            self.log.debug("Net codes matching mask not %s: %s/%s", self.codes_mask, matched_responses, self.level)
+        self.data.append(matched_responses)
+        self.second_window.append(aggregate_second)
+        if len(self.data) > self.seconds_limit :
+            self.data.popleft()
+            self.second_window.popleft()
+
+        queue_len = 1
+        if self.is_relative :
+            queue_len = len(self.data)
+        if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:
+            self.cause_second = self.second_window[0]
+            self.log.debug(self.explain())
+            return True
+        return False
+
+    def get_rc(self):
+        return 29
+
+    def get_level_str(self):
+        ''' format level str'''
+        if self.is_relative:
+            level_str = str(self.level) + "%"
+        else:
+            level_str = self.level
+        return level_str
+
+    def explain(self):
+        if self.is_relative:
+            items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
+            return "Not %s codes count higher than %s for %ss, since %s" % items
+        items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
+        return "Not %s codes count higher than %s for %ss, since %s" % items 
+    
+    def widget_explain(self):
+        if self.is_relative:
+            items = (self.codes_mask, self.get_level_str(), self.seconds_limit)
+            return ("Net not %s>%s for %ss" % items, sum(self.data))
+        items = (self.codes_mask, self.get_level_str(), self.seconds_limit)
+        return ("Net not %s>%s for %ss" % items, 1.0)

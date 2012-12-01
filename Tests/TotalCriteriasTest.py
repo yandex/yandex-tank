@@ -1,5 +1,5 @@
 from Tank.Plugins.Aggregator import SecondAggregateData
-from Tank.Plugins.TotalAutostop import TotalFracTimeCriteria, TotalHTTPCodesCriteria, TotalNegativeHTTPCodesCriteria, TotalNetCodesCriteria
+from Tank.Plugins.TotalAutostop import TotalFracTimeCriteria, TotalHTTPCodesCriteria, TotalNegativeHTTPCodesCriteria, TotalNetCodesCriteria, TotalNegativeNetCodesCriteria
 from Tests.TankTests import TankTestCase
 import unittest
 
@@ -13,6 +13,8 @@ class TotalCriteriasTest(TankTestCase):
         self.negative_http_abscriteria = TotalNegativeHTTPCodesCriteria(None, "20x, 30, 4s")
         self.net_relcriteria = TotalNetCodesCriteria(None, "110, 37%, 3s")
         self.net_abscriteria = TotalNetCodesCriteria(None, "71, 30, 2s")
+        self.negative_net_relcriteria = TotalNegativeNetCodesCriteria(None, "0, 45%, 5s")
+        self.negative_net_abscriteria = TotalNegativeNetCodesCriteria(None, "0, 100, 5s")
 
     def tearDown(self):
         #frac time
@@ -36,6 +38,13 @@ class TotalCriteriasTest(TankTestCase):
         self.net_relcriteria = None
         del self.net_abscriteria
         self.net_abscriteria = None
+
+        #negative net
+        del self.negative_net_relcriteria
+        self.negative_net_relcriteria = None
+        del self.negative_net_abscriteria
+        self.negative_net_abscriteria = None
+
 
     def test_frac_null(self):
         data = list()
@@ -113,7 +122,7 @@ class TotalCriteriasTest(TankTestCase):
         data = list()
         for i in range(1,20):
             data = SecondAggregateData()
-            data.time = "2012-09-25 18:18:"
+            data.time = "2012-09-25 18:18:18"
             data.overall.RPS = 100 + i**2
             data.overall.net_codes = {'0': 100, '110': i**2}
             if self.net_relcriteria.notify(data) :
@@ -131,6 +140,28 @@ class TotalCriteriasTest(TankTestCase):
                 break
         if i != 5 : raise RuntimeError()
 
+    def test_negative_net_run_relative(self):
+        data = list()
+        for i in range(1,20):
+            data = SecondAggregateData()
+            data.time = "2012-09-25 18:18:18"
+            data.overall.RPS = 100 + i**2
+            data.overall.net_codes = {'0': 100, '110': i**2}
+            if self.negative_net_relcriteria.notify(data) :
+                break
+        if i != 12 : raise RuntimeError()
+
+    def test_negative_net_run_absolute(self):
+        data = list()
+        for i in range(1,20):
+            data = SecondAggregateData()
+            data.time = "2012-09-25 18:18:18"
+            data.overall.RPS = 100 + i**2
+            data.overall.net_codes = {'0': 100, '110': i**2}
+            if self.negative_net_abscriteria.notify(data) :
+                break
+        if i != 7 : raise RuntimeError()
+        
 if __name__ == '__main__':
     unittest.main()
 
