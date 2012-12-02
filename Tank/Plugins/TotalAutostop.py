@@ -6,6 +6,7 @@ from collections import deque
 from tankcore import AbstractPlugin
 import re
 import tankcore
+import math
 
 class TotalAutostopPlugin(AbstractPlugin, AggregateResultListener):
     ''' Cummulative Criterias Plugin '''
@@ -427,15 +428,29 @@ class TotalHTTPTrendCriteria(AbstractCriteria):
             self.tangents.popleft()
             self.second_window.popleft()
 
-        self.total_tan = sum(self.tangents) / len (self.tangents);
-        self.log.debug("Last trend for http codes %s: %d", self.codes_mask, self.total_tan)
+        self.total_tan = float(sum(self.tangents) / len (self.tangents))
+        self.log.debug("Last trend for http codes %s: %.2f +/- %.2f", self.codes_mask, self.total_tan, self.measurement_error())
 
-        if self.total_tan < 0 :
+        if self.total_tan + self.measurement_error() < 0 :
             self.cause_second = self.second_window[0]
             self.log.debug(self.explain())
             return True
 
         return False
+
+    def measurement_error(self):
+        # formula
+        # sqrt ( (sum(1, n, (k_i - <k>)**2) / (n*(n-1)))
+
+        if len(self.tangents) < 2 :
+            return 0.0
+
+        avg_tan = float(sum(self.tangents) / len(self.tangents))
+        numerator = float()
+        for i in self.tangents:
+            numerator += (i - avg_tan)*(i - avg_tan)
+
+        return math.sqrt (numerator / len(self.tangents) / (len(self.tangents) - 1) )
 
     def get_rc(self):
         return 30

@@ -179,10 +179,10 @@ class TotalCriteriasTest(TankTestCase):
 
             elif i >= 10 and i < 20:
                 if i % 2:
-                    diff = -1
+                    diff = -3
                 else :
-                    diff = 1
-                    
+                    diff = 3
+
                 data.overall.RPS += 10 + diff
                 data.overall.http_codes = {'200': 110 + diff, '201': 100}
 
@@ -192,10 +192,10 @@ class TotalCriteriasTest(TankTestCase):
                 data.overall.http_codes = {'200': 110 - diff, '201': 100, '502': i}
 
             if self.http_trend.notify(data) :
-                  break
-
-        if i != 20 : 
-            raise RuntimeError()
+                break
+        
+        if i != 28 : 
+             raise RuntimeError()
 
 if __name__ == '__main__':
     unittest.main()
