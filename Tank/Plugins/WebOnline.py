@@ -46,8 +46,11 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.start()
         
     def end_test(self, retcode):
-        self.log.info("Shutting down local server")
+        #self.log.info("Shutting down local server")
         #self.server.shutdown() don't enable it since it leads to random deadlocks
+        if self.redirect:
+            time.sleep(2)
+
         del self.server
         self.server = None
         return retcode

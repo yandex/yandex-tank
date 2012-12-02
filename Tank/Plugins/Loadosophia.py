@@ -16,6 +16,8 @@ import os
 import urllib2
 import json
 import time
+from urllib2 import HTTPError
+import urllib
 
 class LoadosophiaPlugin(AbstractPlugin):
     '''
@@ -36,12 +38,16 @@ class LoadosophiaPlugin(AbstractPlugin):
         self.loadosophia = LoadosophiaClient()
         self.loadosophia.results_url = None
         self.project_key = None
+        self.color = None
+        self.title = None
     
     def configure(self):
         self.loadosophia.address = self.get_option("address", "https://loadosophia.org/")
         self.loadosophia.token = self.get_option("token", "")
         self.loadosophia.file_prefix = self.get_option("file_prefix", "")
         self.project_key = self.get_option("project", 'DEFAULT')
+        self.title = self.get_option("test_title", "")
+        self.color = self.get_option("color_flag", "")
         
     def post_process(self, retcode):
         main_file = None
@@ -68,13 +74,20 @@ class LoadosophiaPlugin(AbstractPlugin):
         except KeyError:
             self.log.debug("Monitoring not found")
             
-        self.loadosophia.send_results(self.project_key, main_file, [mon_file])
-
+        queue_id = self.loadosophia.send_results(self.project_key, main_file, [mon_file])
+        if self.title or self.color:
+            test_id = self.loadosophia.get_test_by_upload(queue_id)
+            if self.color:
+                self.loadosophia.set_color_flag(test_id, self.color)
+            if self.title:
+                self.loadosophia.set_test_title(test_id, self.title)
+        
+        self.log.info("Loadosophia.org upload succeeded, report link: %s", self.loadosophia.results_url)
+        
         try:
             web = self.core.get_plugin_of_type(WebOnlinePlugin)
             if not web.redirect:
                 web.redirect = self.loadosophia.results_url
-                time.sleep(2)
         except KeyError:
             self.log.debug("Web online not found")
 
@@ -83,6 +96,8 @@ class LoadosophiaPlugin(AbstractPlugin):
 
 class LoadosophiaClient:
     ''' Loadosophia service client class '''
+
+    STATUS_DONE = 4
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.token = None
@@ -112,7 +127,7 @@ class LoadosophiaClient:
         # Create the form with simple fields
         form = MultiPartForm()
         form.add_field('projectKey', project)
-        form.add_field('uploadToken', self.token)
+        form.add_field('token', self.token)
         
         # Add main file
         form.add_file_as_string('jtl_file', self.file_prefix + os.path.basename(result_file) + ".gz", self.__get_gzipped_file(result_file))
@@ -126,7 +141,7 @@ class LoadosophiaClient:
             index += 1
             
         # Build the request
-        request = urllib2.Request(self.address+"api/file/upload/?format=json")
+        request = urllib2.Request(self.address + "api/file/upload/?format=json")
         request.add_header('User-Agent', 'Yandex.Tank Loadosophia Uploader Module')
         body = str(form)
         request.add_header('Content-Type', form.get_content_type())
@@ -138,9 +153,9 @@ class LoadosophiaClient:
             self.log.debug("Full loadosophia.org response: %s", response.read())
             raise RuntimeError("Loadosophia.org upload failed, response code %s instead of 200, see log for full response text" % response.getcode())
 
-        res=json.loads(response.read())
-        self.results_url=self.address+'api/file/status/'+res[1][0]['QueueID']+'/?redirect=true'
-        self.log.info("Loadosophia.org upload succeeded, report link: %s", self.results_url)
+        res = json.loads(response.read())
+        self.results_url = self.address + 'api/file/status/' + res[1][0]['QueueID'] + '/?redirect=true'
+        return res[1][0]['QueueID']
         
                 
     def __get_gzipped_file(self, result_file):
@@ -150,8 +165,80 @@ class LoadosophiaClient:
         fhandle.write(open(result_file, 'r').read())
         fhandle.close()
         return out.getvalue()
+
+
+    def get_test_by_upload(self, queue_id):
+        self.log.info("Waiting for Loadosophia.org to process file...")
+        
+        while True:
+            time.sleep(1)
+            status = self.get_upload_status(queue_id)
+            if status['UserError']:
+                raise HTTPError("Loadosophia processing error: " + status['UserError'])
+            
+            if int(status['status']) == self.STATUS_DONE:
+                self.results_url = self.address + 'gui/' + status['TestID'] +'/'
+                return status['TestID']  
+            
+
+    def get_upload_status(self, queue_id):
+        self.log.debug("Requesting file status: %s", queue_id)
+        form = MultiPartForm()
+        form.add_field('token', self.token)
+        
+        request = urllib2.Request(self.address + "api/file/status/" + queue_id + "/?format=json")
+        request.add_header('User-Agent', 'Yandex.Tank Loadosophia Uploader Module')
+        body = str(form)
+        request.add_header('Content-Type', form.get_content_type())
+        request.add_header('Content-Length', len(body))
+        request.add_data(body)
+
+        response = urllib2.urlopen(request)
+        if response.getcode() != 200:
+            self.log.debug("Full loadosophia.org response: %s", response.read())
+            raise RuntimeError("Loadosophia.org request failed, response code %s instead of 200, see log for full response text" % response.getcode())
+
+        res = json.loads(response.read())
+        self.log.debug("Status info: %s", res)
+        return res[1][0]
     
     
+    def set_color_flag(self, test_id, color):
+        form = MultiPartForm()
+        form.add_field('token', self.token)
+        
+        request = urllib2.Request(self.address + "api/test/edit/color/" + test_id + "/?format=json&color=" + color)
+        request.add_header('User-Agent', 'Yandex.Tank Loadosophia Uploader Module')
+        body = str(form)
+        request.add_header('Content-Type', form.get_content_type())
+        request.add_header('Content-Length', len(body))
+        request.add_data(body)
+
+        response = urllib2.urlopen(request)
+        if response.getcode() != 204:
+            self.log.debug("Full loadosophia.org response: %s", response.read())
+            raise RuntimeError("Loadosophia.org request failed, response code %s instead of 204, see log for full response text" % response.getcode())
+
+
+    def set_test_title(self, test_id, title):
+        self.log.debug("Set test title: %s", title)
+        form = MultiPartForm()
+        form.add_field('token', self.token)
+        
+        request = urllib2.Request(self.address + "api/test/edit/title/" + test_id + "/?format=json&" + urllib.urlencode({"title": title}))
+        request.add_header('User-Agent', 'Yandex.Tank Loadosophia Uploader Module')
+        body = str(form)
+        request.add_header('Content-Type', form.get_content_type())
+        request.add_header('Content-Length', len(body))
+        request.add_data(body)
+
+        response = urllib2.urlopen(request)
+        if response.getcode() != 204:
+            self.log.debug("Full loadosophia.org response: %s", response.read())
+            raise RuntimeError("Loadosophia.org request failed, response code %s instead of 204, see log for full response text" % response.getcode())
+
+
+# =================================================================    
 
 class MultiPartForm(object):
     """Accumulate the data to be used when posting a form.
