@@ -1,3 +1,12 @@
+yandex-load-tank-base (1.2.1) precise; urgency=low
+
+  * a pair of new autostop criteria: http_trend and negative_http
+  * add color flag and test title to loadosophia uploader
+  * direct results link for loadosophia uploader
+  * add SIGINT handler to catch kills
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 03 Dec 2012 15:59:58 +0400
+
 yandex-load-tank-base (1.2.0) precise; urgency=low
 
   * add more graphs to web online

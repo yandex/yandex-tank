@@ -88,6 +88,7 @@ class LoadosophiaPlugin(AbstractPlugin):
             web = self.core.get_plugin_of_type(WebOnlinePlugin)
             if not web.redirect:
                 web.redirect = self.loadosophia.results_url
+                time.sleep(1)
         except KeyError:
             self.log.debug("Web online not found")
 
