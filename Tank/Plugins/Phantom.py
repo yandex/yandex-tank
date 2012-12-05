@@ -582,7 +582,7 @@ class PhantomConfig:
         self.phantom_http_field_num = None
         self.phantom_http_field = None
         self.phantom_http_entity = None
-        self.resolved_ip=None
+        self.resolved_ip = None
 
 
     def get_option(self, option_ammofile, param2=None):
@@ -597,7 +597,7 @@ class PhantomConfig:
         try:
             ipaddr.IPv6Address(self.address)
             self.ipv6 = True
-            self.resolved_ip=self.address
+            self.resolved_ip = self.address
         except AddressValueError:
             self.log.debug("Not ipv6 address: %s", self.address)
             self.ipv6 = False
@@ -607,14 +607,14 @@ class PhantomConfig:
                 self.port = address_port[1]
             try:
                 ipaddr.IPv4Address(self.address)
-                self.resolved_ip=self.address
+                self.resolved_ip = self.address
             except AddressValueError:
                 self.log.debug("Not ipv4 address: %s", self.address)
                 ip_addr = socket.gethostbyname(self.address)
                 reverse_name = socket.gethostbyaddr(ip_addr)[0]
                 self.log.debug("Address %s ip_addr: %s, reverse-resolve: %s", self.address, ip_addr, reverse_name)
                 if reverse_name.startswith(self.address):
-                    self.resolved_ip=ip_addr
+                    self.resolved_ip = ip_addr
                 else:
                     raise ValueError("Address %s reverse-resolved to %s, but must match" % (self.address, reverse_name))
 

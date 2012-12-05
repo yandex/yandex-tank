@@ -61,7 +61,8 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.server.serve_forever()
     
 
-    def calculate_quantiles(self, data):
+    def __calculate_quantiles(self, data):
+        ''' prepare response quantiles data '''
         if not self.quantiles_data:
             header = ["timeStamp", "requestCount"]
             quantiles = [int(x) for x in sorted(data.overall.quantiles.keys(), reverse=True)]
@@ -75,7 +76,8 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         while len(self.quantiles_data[1]) > self.interval:
             self.quantiles_data[1].pop(0)
 
-    def calculate_avg(self, data):
+    def __calculate_avg(self, data):
+        ''' prepare response avg times data '''
         if not self.avg_data:
             header = ["timeStamp", "connect", "send", "latency", "receive"]
             self.avg_data = [header, []]
@@ -89,7 +91,8 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         while len(self.avg_data[1]) > self.interval:
             self.avg_data[1].pop(0)
 
-    def calculate_codes(self, data):
+    def __calculate_codes(self, data):
+        ''' prepare response codes data '''
         if not self.codes_data:
             header = ["timeStamp", "net", "2xx", "3xx", "4xx", "5xx", "Non-HTTP"]
             self.codes_data = [header, []]
@@ -121,9 +124,9 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
     def aggregate_second(self, data):
         self.last_sec = data
         
-        self.calculate_quantiles(data)
-        self.calculate_avg(data)
-        self.calculate_codes(data)
+        self.__calculate_quantiles(data)
+        self.__calculate_avg(data)
+        self.__calculate_codes(data)
 
     
 #http://fragments.turtlemeat.com/pythonwebserver.php
