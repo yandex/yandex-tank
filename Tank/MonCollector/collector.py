@@ -568,16 +568,16 @@ class MonitoringDataDecoder:
             data.pop(0) # remove 'start'
             host = data.pop(0)
             if not data:
-                raise ValueError("Wrong mon data line: %s", line)
-            
-            data.pop(0) # remove timestamp
-            self.metrics[host] = []
-            for metric in data:
-                if metric.startswith("Custom:"):
-                    metric = base64.standard_b64decode(metric.split(':')[1])
-                self.metrics[host].append(metric)
-                data_dict[metric] = self.NA
-                is_initial = True
+                logging.warn("Wrong mon data line: %s", line)
+            else:
+                data.pop(0) # remove timestamp
+                self.metrics[host] = []
+                for metric in data:
+                    if metric.startswith("Custom:"):
+                        metric = base64.standard_b64decode(metric.split(':')[1])
+                    self.metrics[host].append(metric)
+                    data_dict[metric] = self.NA
+                    is_initial = True
         else:
             host = data.pop(0)
             data.pop(0) # remove timestamp
