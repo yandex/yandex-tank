@@ -9,7 +9,7 @@ yandex-load-tank-base (1.2.2) precise; urgency=low
 
 yandex-load-tank-base (1.2.1) precise; urgency=low
 
-  * a pair of new autostop criteria: http_trend and negative_http
+  * a pair of new autostop criteria: http_trend and negative_net
   * add color flag and test title to loadosophia uploader
   * direct results link for loadosophia uploader
   * add SIGINT handler to catch kills
