@@ -382,7 +382,7 @@ class PhantomReader(AbstractReader):
             line = self.partial_buffer + line
             self.partial_buffer = ''
             if line[-1] != "\n":
-                self.log.warn("Not complete line, buffering it: %s", line)
+                self.log.debug("Not complete line, buffering it: %s", line)
                 self.partial_buffer = line
                 continue
             line = line.strip()
@@ -582,6 +582,7 @@ class PhantomConfig:
         self.phantom_http_field_num = None
         self.phantom_http_field = None
         self.phantom_http_entity = None
+        self.resolved_ip=None
 
 
     def get_option(self, option_ammofile, param2=None):
@@ -589,13 +590,14 @@ class PhantomConfig:
         return self.owner.get_option(option_ammofile, param2)
     
     
-    def __check_address(self):
+    def __resolve_address(self):
         '''        Analyse target address setting, resolve it to IP        '''
         if not self.address:
             raise RuntimeError("Target address not specified")
         try:
             ipaddr.IPv6Address(self.address)
             self.ipv6 = True
+            self.resolved_ip=self.address
         except AddressValueError:
             self.log.debug("Not ipv6 address: %s", self.address)
             self.ipv6 = False
@@ -605,13 +607,14 @@ class PhantomConfig:
                 self.port = address_port[1]
             try:
                 ipaddr.IPv4Address(self.address)
+                self.resolved_ip=self.address
             except AddressValueError:
                 self.log.debug("Not ipv4 address: %s", self.address)
                 ip_addr = socket.gethostbyname(self.address)
                 reverse_name = socket.gethostbyaddr(ip_addr)[0]
                 self.log.debug("Address %s ip_addr: %s, reverse-resolve: %s", self.address, ip_addr, reverse_name)
                 if reverse_name.startswith(self.address):
-                    self.address = ip_addr
+                    self.resolved_ip=ip_addr
                 else:
                     raise ValueError("Address %s reverse-resolved to %s, but must match" % (self.address, reverse_name))
 
@@ -620,8 +623,6 @@ class PhantomConfig:
         '''        Read phantom tool specific options        '''
         self.phantom_modules_path = self.get_option("phantom_modules_path", "/usr/lib/phantom")
         self.ssl = int(self.get_option("ssl", '0'))
-        self.address = self.get_option('address', '127.0.0.1')
-        self.port = self.get_option('port', '80')
         self.tank_type = self.get_option("tank_type", 'http')
         self.answ_log_level = self.get_option("writelog", "none")
         if self.answ_log_level == '0':
@@ -644,7 +645,10 @@ class PhantomConfig:
         self.phantom_http_field = self.get_option("phantom_http_field", "")
         self.phantom_http_entity = self.get_option("phantom_http_entity", "")
 
-        self.__check_address()            
+        self.address = self.get_option('address', 'localhost')
+        self.port = self.get_option('port', '80')
+        self.__resolve_address()            
+
         self.owner.core.add_artifact_file(self.answ_log)        
         self.owner.core.add_artifact_file(self.stat_log)
         self.owner.core.add_artifact_file(self.phantom_log)
@@ -668,7 +672,7 @@ class PhantomConfig:
             kwargs['bind'] = 'bind={ ' + self.gatling + ' }'
         else: 
             kwargs['bind'] = '' 
-        kwargs['ip'] = self.address
+        kwargs['ip'] = self.resolved_ip
         kwargs['port'] = self.port
         kwargs['timeout'] = self.timeout
         kwargs['instances'] = self.instances
