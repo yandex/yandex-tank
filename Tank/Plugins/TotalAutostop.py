@@ -415,6 +415,7 @@ class TotalHTTPTrendCriteria(AbstractCriteria):
         self.tangents.append(0)
         self.last = 0
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[1])
+        self.measurement_error = float()
     
     def notify(self, aggregate_second):
         matched_responses = self.count_matched_codes(self.codes_regex, aggregate_second.overall.http_codes)
@@ -428,37 +429,39 @@ class TotalHTTPTrendCriteria(AbstractCriteria):
             self.tangents.popleft()
             self.second_window.popleft()
 
-        self.total_tan = float(sum(self.tangents) / len (self.tangents))
-        self.log.debug("Last trend for http codes %s: %.2f +/- %.2f", self.codes_mask, self.total_tan, self.measurement_error())
+        self.measurement_error = self.calc_measurement_error(self.tangents)
 
-        if self.total_tan + self.measurement_error() < 0 :
+        self.total_tan = float(sum(self.tangents) / len (self.tangents))
+        self.log.debug("Last trend for http codes %s: %.2f +/- %.2f", self.codes_mask, self.total_tan, self.measurement_error)
+
+        if self.total_tan + self.measurement_error < 0 :
             self.cause_second = self.second_window[0]
             self.log.debug(self.explain())
             return True
 
         return False
 
-    def measurement_error(self):
+    def calc_measurement_error(self, tangents):
         # formula
         # sqrt ( (sum(1, n, (k_i - <k>)**2) / (n*(n-1)))
 
-        if len(self.tangents) < 2 :
+        if len(tangents) < 2 :
             return 0.0
 
-        avg_tan = float(sum(self.tangents) / len(self.tangents))
+        avg_tan = float(sum(tangents) / len(tangents))
         numerator = float()
-        for i in self.tangents:
+        for i in tangents:
             numerator += (i - avg_tan)*(i - avg_tan)
 
-        return math.sqrt (numerator / len(self.tangents) / (len(self.tangents) - 1) )
+        return math.sqrt (numerator / len(tangents) / (len(tangents) - 1) )
 
     def get_rc(self):
         return 30
 
     def explain(self):
-        items = (self.codes_mask, self.total_tan, self.seconds_limit, self.cause_second.time)
-        return "Last trend for %s http codes is %s for %ss, since %s" % items 
+        items = (self.codes_mask, self.total_tan, self.measurement_error, self.seconds_limit, self.cause_second.time)
+        return "Last trend for %s http codes is %.2f +/- %.2f for %ss, since %s" % items 
     
     def widget_explain(self):
-        items = (self.codes_mask, self.total_tan, self.seconds_limit)
-        return ("HTTP(%s) trend %s < 0 for %ss" % items, 1.0)
+        items = (self.codes_mask, self.total_tan, self.measurement_error, self.seconds_limit)
+        return ("HTTP(%s) trend is %.2f +/- %.2f < 0 for %ss" % items, 1.0)
