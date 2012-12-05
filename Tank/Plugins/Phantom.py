@@ -94,7 +94,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
                 self.config = self.phantom.compose_config()
             args = [self.phantom_path, 'check', self.config]
             
-            retcode = tankcore.execute(args, catch_out=True)
+            retcode = tankcore.execute(args, catch_out=True)[0]
             if retcode:
                 raise RuntimeError("Subprocess returned %s" % retcode)    
 

@@ -113,6 +113,9 @@ def execute(cmd, shell=False, poll_period=1, catch_out=False):
     log = logging.getLogger(__name__)
     log.debug("Starting: %s", cmd)
 
+    stdout=""
+    stderr=""
+
     if catch_out:
         process = subprocess.Popen(cmd, shell=shell, stderr=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
     else:
@@ -124,13 +127,15 @@ def execute(cmd, shell=False, poll_period=1, catch_out=False):
     
     if catch_out:
         for line in process.stderr.readlines():
+            stderr+=line
             log.warn(line.strip())
         for line in process.stdout.readlines():
+            stdout+=line
             log.debug(line.strip())
     
     retcode = process.poll()
     log.debug("Process exit code: %s", retcode)
-    return retcode
+    return retcode, stdout, stderr
 
 
 def splitstring(string):
@@ -376,15 +381,26 @@ class TankCore:
             self.config.config.add_section(section)
             
         try:
-            return self.config.config.get(section, option)
+            value = self.config.config.get(section, option).strip()
         except ConfigParser.NoOptionError as ex:
             if default != None:
+                default=str(default)
                 self.config.config.set(section, option, default)
                 self.config.flush()
-                return default
+                value = default.strip()
             else:
                 self.log.warn("Mandatory option %s was not found in section %s", option, section)
                 raise ex
+        
+        if len(value) > 1 and  value[0] == '`' and value[-1] == '`':
+            self.log.debug("Expanding shell option %s", value)
+            retcode, stdout, stderr = execute(value[1:-1], True, 0.1, True)
+            if retcode or stderr:
+                raise ValueError("Error expanding option %s, RC: %s" % (value, retcode))
+            value=stdout.strip()
+            
+        return value
+        
 
     def set_option(self, section, option, value):
         '''
@@ -516,6 +532,9 @@ class TankCore:
         fd, fname = tempfile.mkstemp(suffix, prefix, self.artifacts_base_dir)
         os.close(fd)
         return fname
+    
+    
+    
              
 class ConfigManager:
     '''
