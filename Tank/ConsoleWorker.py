@@ -19,6 +19,7 @@ def signal_handler(signal, frame):
     raise KeyboardInterrupt()
     
 signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 # TODO: 2 add system resources busy check
 class ConsoleTank:
