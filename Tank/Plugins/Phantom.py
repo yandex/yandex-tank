@@ -453,7 +453,7 @@ class PhantomReader(AbstractReader):
             
         if self.last_sample_time and (next_time - self.last_sample_time) > 1:
             self.last_sample_time += 1
-            self.log.warning("Adding phantom zero sample: %s", self.last_sample_time)
+            self.log.debug("Adding phantom zero sample: %s", self.last_sample_time)
             res = self.get_zero_sample(datetime.datetime.fromtimestamp(self.last_sample_time))
         else:
             res = self.pending_second_data_queue.pop(0)
@@ -551,6 +551,8 @@ class UsedInstancesCriteria(AbstractCriteria):
         items = (self.get_level_str(), self.seconds_count, self.seconds_limit)
         return ("Instances >%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
 
+
+
 class PhantomConfig:
     ''' config file generator '''
     OPTION_INSTANCES_LIMIT = 'instances'
@@ -598,6 +600,7 @@ class PhantomConfig:
             ipaddr.IPv6Address(self.address)
             self.ipv6 = True
             self.resolved_ip = self.address
+            self.address=socket.gethostbyaddr(self.resolved_ip)[0]
         except AddressValueError:
             self.log.debug("Not ipv6 address: %s", self.address)
             self.ipv6 = False
@@ -608,6 +611,7 @@ class PhantomConfig:
             try:
                 ipaddr.IPv4Address(self.address)
                 self.resolved_ip = self.address
+                self.address=socket.gethostbyaddr(self.resolved_ip)[0]
             except AddressValueError:
                 self.log.debug("Not ipv4 address: %s", self.address)
                 ip_addr = socket.gethostbyname(self.address)
