@@ -201,7 +201,7 @@ class JMeterReader(AbstractReader):
     def exc_to_net(self, param1):
         ''' translate http code to net code '''
         if len(param1) <= 3:
-            return '0'
+            return '1'
         
         exc = param1.split(' ')[-1] 
         if exc in self.KNOWN_EXC.keys():
@@ -220,6 +220,8 @@ class JMeterReader(AbstractReader):
             return '0'
         else:
             return '500'
+
+# ===============================================================================
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
     ''' Right panel widget with JMeter test info '''
