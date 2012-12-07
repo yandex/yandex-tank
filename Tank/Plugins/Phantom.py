@@ -825,6 +825,7 @@ class StepperWrapper:
                         continue
                     cnt += 1
                     hashed_str += ";" + str(stat_option)
+                hashed_str+=";"+os.path.getmtime(self.ammo_file)
             else:
                 if not self.uris:
                     raise RuntimeError("Neither phantom.ammofile nor phantom.uris specified")
