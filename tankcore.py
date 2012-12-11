@@ -1,6 +1,4 @@
-'''
-The central part of the tool: Core
-'''
+''' The central part of the tool: Core '''
 from ConfigParser import NoSectionError
 import ConfigParser
 import datetime

@@ -1,7 +1,7 @@
 '''Module to provide target monitoring'''
 
 from Tank.MonCollector.collector import MonitoringCollector, \
-    MonitoringDataListener, MonitoringDataDecoder, Config
+    MonitoringDataListener, MonitoringDataDecoder
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.Phantom import PhantomPlugin
 from tankcore import AbstractPlugin
@@ -11,7 +11,6 @@ import traceback
 from Tank.Plugins.Autostop import AutostopPlugin, AbstractCriteria
 import tankcore
 import fnmatch
-from lxml import etree
 
 class MonitoringPlugin(AbstractPlugin):
     '''
@@ -30,6 +29,7 @@ class MonitoringPlugin(AbstractPlugin):
         self.die_on_fail = True
         self.data_file = None
         self.mon_saver = None
+        self.address_resolver = None
 
     @staticmethod
     def get_key():
@@ -77,10 +77,12 @@ class MonitoringPlugin(AbstractPlugin):
         if phantom:
             if phantom.phantom:
                 self.default_target = phantom.phantom.address
+                self.log.debug("Changed monitoring target to %s", self.default_target)
             if phantom.phout_import_mode:
                 self.config = None
-            # TODO: 2 resolve virtual to host address
 
+        if self.address_resolver:
+            self.default_target=self.address_resolver.resolve_virtual(self.default_target)
         
         if not self.config or self.config == 'none':
             self.log.info("Monitoring has been disabled")
@@ -346,3 +348,11 @@ class MetricLowerCriteria(AbstractMetricCriteria):
         return arg1 < arg2
 
 
+
+class AbstractResolver:
+    def resolve_virtual(self, virt_address):
+        raise NotImplementedError()
+    
+    
+    
+    
