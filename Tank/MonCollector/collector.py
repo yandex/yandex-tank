@@ -565,6 +565,7 @@ class MonitoringDataDecoder:
         is_initial = False
         data_dict = {}
         data = line.strip().split(';')
+        timestamp=-1
         if data[0] == 'start':
             data.pop(0)  # remove 'start'
             host = data.pop(0)

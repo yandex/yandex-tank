@@ -103,7 +103,7 @@ class  MonitoringCollectorTestCase(TankTestCase):
         widget = MonitoringWidget(owner)
         screen = Screen(50, FakeConsoleMarkup())
         res = widget.render(screen)
-        self.assertEquals("Monitoring is <w>online<rst>:", res)
+        self.assertEquals("Monitoring is <g>online<rst>:", res)
 
         widget.monitoring_data("start;127.0.0.1;1347631472;Memory_total;Memory_used;Memory_free;Memory_shared;Memory_buff;Memory_cached;Net_recv;Net_send;")
         res = widget.render(screen)

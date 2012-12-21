@@ -9,6 +9,8 @@ import tempfile
 from tankcore import AbstractPlugin
 import tankcore
 from Tank.Plugins import ConsoleScreen
+import time
+import datetime
 
 
 class JMeterPlugin(AbstractPlugin):
@@ -26,6 +28,7 @@ class JMeterPlugin(AbstractPlugin):
         self.user_args = None
         self.jmeter_path = None
         self.jmeter_log = None
+        self.start_time=time.time()
 
 
     @staticmethod
@@ -75,7 +78,8 @@ class JMeterPlugin(AbstractPlugin):
     def start_test(self):
         self.log.info("Starting %s with arguments: %s", self.jmeter_path, self.args)
         self.jmeter_process = subprocess.Popen(self.args, executable=self.jmeter_path, preexec_fn=os.setsid, close_fds=True) # stderr=subprocess.PIPE, stdout=subprocess.PIPE, 
-    
+        self.start_time=time.time()
+            
     
     def is_test_finished(self):
         retcode = self.jmeter_process.poll()
@@ -245,10 +249,15 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         space = screen.right_panel_width - len(jmeter) - 1 
         left_spaces = space / 2
         right_spaces = space / 2
+        
+        dur_seconds = int(time.time()) - int(self.jmeter.start_time)
+        duration=str(datetime.timedelta(seconds=dur_seconds))        
+        
         template = screen.markup.BG_MAGENTA + '~' * left_spaces + jmeter + ' ' + '~' * right_spaces + screen.markup.RESET + "\n" 
         template += "     Test Plan: %s\n"
+        template += "      Duration: %s\n"
         template += "Active Threads: %s\n"
         template += "   Responses/s: %s"
-        data = (os.path.basename(self.jmeter.original_jmx), self.active_threads, self.rps)
+        data = (os.path.basename(self.jmeter.original_jmx), duration, self.active_threads, self.rps)
         
         return template % data
