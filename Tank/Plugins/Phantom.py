@@ -1,6 +1,7 @@
 '''
 Contains Phantom Plugin, Console widgets, result reader classes
 '''
+from Tank.Plugins import ConsoleScreen
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener, \
     AbstractReader
 from Tank.Plugins.Autostop import AutostopPlugin, AbstractCriteria
@@ -12,6 +13,7 @@ import ConfigParser
 import datetime
 import hashlib
 import ipaddr
+import logging
 import multiprocessing
 import os
 import socket
@@ -20,7 +22,6 @@ import subprocess
 import sys
 import tankcore
 import time
-import logging
 
 # TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
 # FIXME: 3 there is no graceful way to interrupt the process in phout import mode 
@@ -42,6 +43,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.stepper = None
         self.phantom = None
         self.phantom_start_time = time.time()
+        self.buffered_seconds = 3
                 
     
     @staticmethod
@@ -54,6 +56,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.config = self.get_option("config", '')
         self.eta_file = self.get_option("eta_file", '')
         self.phantom_path = self.get_option("phantom_path", 'phantom')
+        self.buffered_seconds = self.get_option("buffered_seconds", self.buffered_seconds)
         
         self.core.add_artifact_file(self.eta_file)        
         self.core.add_artifact_file(self.config)
@@ -82,6 +85,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
 
         if aggregator:
             aggregator.reader = PhantomReader(aggregator, self)
+            aggregator.reader.buffered_seconds = self.buffered_seconds
             if self.phantom:
                 self.phantom.timeout = aggregator.get_timeout()
             aggregator.add_result_listener(self)
@@ -181,6 +185,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
 
     def __init__(self, sender):
         AbstractInfoWidget.__init__(self)
+        self.krutilka=ConsoleScreen.krutilka()
         self.owner = sender 
         self.ammo_progress = 0
         self.ammo_count = int(self.owner.core.get_option(PhantomPlugin.SECTION, StepperWrapper.OPTION_AMMO_COUNT))
@@ -219,7 +224,10 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         
         pb_width = screen.right_panel_width - 1 - len(str_perc)
         
-        res += color_bg + '=' * int(pb_width * progress) + screen.markup.RESET + color_fg + '~' * (pb_width - int(pb_width * progress)) + screen.markup.RESET + ' '
+        progress_chars='=' * (int(pb_width * progress)-1)
+        progress_chars+=self.krutilka.next()
+        
+        res += color_bg + progress_chars + screen.markup.RESET + color_fg + '~' * (pb_width - int(pb_width * progress)) + screen.markup.RESET + ' '
         res += str_perc + "\n"
 
         eta = 'ETA: %s' % eta_time
@@ -283,9 +291,9 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
             res += ('%.2f' % self.selfload)
 
         res += "%\n        Time lag: "        
-        if self.time_lag > 15:
+        if self.time_lag > self.owner.buffered_seconds * 5:
             res += screen.markup.RED + str(datetime.timedelta(seconds=self.time_lag)) + screen.markup.RESET
-        elif self.time_lag > 3:
+        elif self.time_lag > self.owner.buffered_seconds:
             res += screen.markup.YELLOW + str(datetime.timedelta(seconds=self.time_lag)) + screen.markup.RESET
         else:
             res += str(datetime.timedelta(seconds=self.time_lag))
@@ -323,6 +331,7 @@ class PhantomReader(AbstractReader):
         self.pending_second_data_queue = []
         self.last_sample_time = 0
         self.read_lines_count = 0
+        self.buffered_seconds = 3
   
     def check_open_files(self):
         if not self.phout and self.phantom.phantom and os.path.exists(self.phantom.phantom.phout_file):
@@ -389,19 +398,19 @@ class PhantomReader(AbstractReader):
             if not line:
                 self.log.warning("Empty phout line")
                 continue
-            #1346949510.514        74420    66    78    65409    8867    74201    18    15662    0    200
-            #self.log.debug("Phout line: %s", line)
+            # 1346949510.514        74420    66    78    65409    8867    74201    18    15662    0    200
+            # self.log.debug("Phout line: %s", line)
             self.read_lines_count += 1
             data = line.split("\t")
             if len(data) != 12:
                 self.log.warning("Wrong phout line, skipped: %s", line)
                 continue
             cur_time = int(float(data[0]) + float(data[2]) / 1000000)
-            #self.log.info("%s => %s", data[0], cur_time)
+            # self.log.info("%s => %s", data[0], cur_time)
             try:
                 active = self.stat_data[cur_time]
             except KeyError:
-                #self.log.debug("No tasks info for second yet: %s", cur_time)
+                # self.log.debug("No tasks info for second yet: %s", cur_time)
                 active = 0
 
             if not cur_time in self.data_buffer.keys():
@@ -425,7 +434,7 @@ class PhantomReader(AbstractReader):
         self.log.debug("Read lines: %s", self.read_lines_count)                    
         self.log.debug("Seconds queue: %s", self.data_queue)
         self.log.debug("Seconds buffer: %s", self.data_buffer.keys())
-        if len(self.data_queue) > 3:
+        if len(self.data_queue) > self.buffered_seconds:
             return self.pop_second()
         
         if force and self.data_queue:
@@ -600,7 +609,7 @@ class PhantomConfig:
             ipaddr.IPv6Address(self.address)
             self.ipv6 = True
             self.resolved_ip = self.address
-            self.address=socket.gethostbyaddr(self.resolved_ip)[0]
+            self.address = socket.gethostbyaddr(self.resolved_ip)[0]
         except AddressValueError:
             self.log.debug("Not ipv6 address: %s", self.address)
             self.ipv6 = False
@@ -611,7 +620,7 @@ class PhantomConfig:
             try:
                 ipaddr.IPv4Address(self.address)
                 self.resolved_ip = self.address
-                self.address=socket.gethostbyaddr(self.resolved_ip)[0]
+                self.address = socket.gethostbyaddr(self.resolved_ip)[0]
             except AddressValueError:
                 self.log.debug("Not ipv4 address: %s", self.address)
                 ip_addr = socket.gethostbyname(self.address)
@@ -758,7 +767,7 @@ class StepperWrapper:
             self.ammo_file = os.path.expanduser(self.ammo_file)
         self.instances_schedule = self.get_option("instances_schedule", '')
         self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
-        self.ammo_limit = int(self.get_option("ammo_limit", "-1")) # TODO: 3 stepper should implement ammo_limit
+        self.ammo_limit = int(self.get_option("ammo_limit", "-1"))  # TODO: 3 stepper should implement ammo_limit
         sched = self.get_option(self.OPTION_SCHEDULE, '')
         sched = " ".join(sched.split("\n"))
         sched = sched.split(')')
@@ -786,14 +795,14 @@ class StepperWrapper:
         self.owner.core.set_option(self.owner.SECTION, self.OPTION_STPD, self.stpd)
         if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.stpd + ".conf"):
             self.log.info("Using cached stpd-file: %s", self.stpd)
-            stepper = Stepper(self.stpd) # just to store cached data
+            stepper = Stepper(self.stpd)  # just to store cached data
             self.__read_cached_options(self.stpd + ".conf", stepper)
         else:
             stepper = self.__make_stpd_file(self.stpd)
         
         self.steps = stepper.steps
         
-        #self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES, stepper.cases)
+        # self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES, stepper.cases)
         self.owner.core.set_option(self.owner.SECTION, self.OPTION_STEPS, ' '.join([str(x) for x in stepper.steps]))
         self.owner.core.set_option(self.owner.SECTION, self.OPTION_LOADSCHEME, stepper.loadscheme)
         self.owner.core.set_option(self.owner.SECTION, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
@@ -821,11 +830,11 @@ class StepperWrapper:
                 stat = os.stat(self.ammo_file)
                 cnt = 0
                 for stat_option in stat:
-                    if cnt == 7: # skip access time
+                    if cnt == 7:  # skip access time
                         continue
                     cnt += 1
                     hashed_str += ";" + str(stat_option)
-                hashed_str+=";"+os.path.getmtime(self.ammo_file)
+                hashed_str += ";" + str(os.path.getmtime(self.ammo_file))
             else:
                 if not self.uris:
                     raise RuntimeError("Neither phantom.ammofile nor phantom.uris specified")
@@ -862,7 +871,7 @@ class StepperWrapper:
         self.log.debug("Reading cached stepper options: %s", cached_config)
         external_stepper_conf = ConfigParser.ConfigParser()
         external_stepper_conf.read(cached_config)
-        #stepper.cases = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES)
+        # stepper.cases = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES)
         steps = external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_STEPS).strip().split(' ')
 
         if len(steps) % 2 == 0:

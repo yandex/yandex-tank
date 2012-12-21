@@ -60,4 +60,3 @@ class ShellExecPlugin(AbstractPlugin):
         if retcode:
             raise RuntimeError("Subprocess returned %s" % retcode)    
 
-

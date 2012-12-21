@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 from tankcore import AbstractPlugin
 import tankcore
+from Tank.Plugins import ConsoleScreen
 
 
 class JMeterPlugin(AbstractPlugin):
@@ -108,9 +109,9 @@ class JMeterPlugin(AbstractPlugin):
             closing = source_lines.pop(-1)
             closing = source_lines.pop(-1) + closing
             closing = source_lines.pop(-1) + closing
+            self.log.debug("Closing statement: %s", closing)
         except Exception, exc:
-            self.log.error("Failed to find the end of JMX XML: %s", exc)
-        self.log.debug("Closing statement: %s", closing)
+            raise RuntimeError("Failed to find the end of JMX XML: %s" % exc)
         
         tpl = open(os.path.dirname(__file__) + '/jmeter_writer.xml', 'r').read()
         
@@ -227,6 +228,7 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
     ''' Right panel widget with JMeter test info '''
     def __init__(self, jmeter):
         AbstractInfoWidget.__init__(self)
+        self.krutilka=ConsoleScreen.krutilka()
         self.jmeter = jmeter
         self.active_threads = 0
         self.rps = 0
@@ -239,7 +241,7 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.rps = second_aggregate_data.overall.RPS
 
     def render(self, screen):        
-        jmeter = " JMeter Test "
+        jmeter = " JMeter Test %s" % self.krutilka.next()
         space = screen.right_panel_width - len(jmeter) - 1 
         left_spaces = space / 2
         right_spaces = space / 2

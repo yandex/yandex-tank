@@ -266,9 +266,7 @@ class TankCore:
             self.config.flush()
         
     def plugins_prepare_test(self):
-        '''
-        Call prepare_test() on all plugins
-        '''
+        ''' Call prepare_test() on all plugins        '''
         self.log.info("Preparing test...")
         for plugin_key in self.plugins_order:
             plugin = self.__get_plugin_by_key(plugin_key)

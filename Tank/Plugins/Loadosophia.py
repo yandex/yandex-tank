@@ -82,7 +82,8 @@ class LoadosophiaPlugin(AbstractPlugin):
             if self.title:
                 self.loadosophia.set_test_title(test_id, self.title)
         
-        self.log.info("Loadosophia.org upload succeeded, report link: %s", self.loadosophia.results_url)
+        if queue_id:
+            self.log.info("Loadosophia.org upload succeeded, report link: %s", self.loadosophia.results_url)
         
         try:
             web = self.core.get_plugin_of_type(WebOnlinePlugin)

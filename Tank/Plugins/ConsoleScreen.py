@@ -42,6 +42,16 @@ def get_terminal_size():
     return int(sizes[1]), int(sizes[0])    
 
 
+def krutilka():
+    pos=0
+    chars="|/-\\"
+    while True:
+        yield chars[pos]
+        pos+=1
+        if pos>=len(chars):
+            pos=0
+
+
 class Screen(object):
     '''
     Console screen renderer class

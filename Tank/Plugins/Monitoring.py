@@ -43,7 +43,7 @@ class MonitoringPlugin(AbstractPlugin):
         if self.config == 'none' or self.config == 'auto':
             self.die_on_fail = False
         else:
-            if self.config[0] == '<':                    
+            if self.config and self.config[0] == '<':                    
                 xmlfile = self.core.mkstemp(".xml", "monitoring_")
                 self.core.add_artifact_file(xmlfile)
                 xml = open(xmlfile, 'w')

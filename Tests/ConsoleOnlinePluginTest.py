@@ -3,6 +3,7 @@ from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget, 
 from Tests.TankTests import TankTestCase
 import tempfile
 import unittest
+from Tank.Plugins.ConsoleScreen import krutilka
 
 class FakeConsoleMarkup(RealConsoleMarkup):
     clear = "\n[clear]\n"
@@ -28,9 +29,11 @@ class ConsoleOnlinePluginTestCase(TankTestCase):
         self.foo = ConsoleOnlinePlugin(core)
         self.foo.console_markup = FakeConsoleMarkup()
 
+
     def tearDown(self):
         del self.foo
         self.foo = None 
+
 
     def test_run(self):
         self.data = self.get_aggregate_data('data/preproc_single2.txt')
@@ -41,7 +44,9 @@ class ConsoleOnlinePluginTestCase(TankTestCase):
         self.foo.add_info_widget(TestWidget2())
         
         self.foo.start_test()
+        k=krutilka()
         for i in range(1, 10):
+            print k.next()
             self.foo.aggregate_second(self.data)
         self.foo.end_test(0)
         self.assertFalse(self.foo.render_exception)
