@@ -21,6 +21,8 @@ class TotalAutostopPlugin(AbstractPlugin, AggregateResultListener):
         autostop.add_criteria_class(TotalHTTPCodesCriteria)
         autostop.add_criteria_class(TotalNetCodesCriteria)
         autostop.add_criteria_class(TotalNegativeHTTPCodesCriteria)
+        autostop.add_criteria_class(TotalNegativeNetCodesCriteria)
+        autostop.add_criteria_class(TotalHTTPTrendCriteria)
 
     def prepare_test(self):
         pass
