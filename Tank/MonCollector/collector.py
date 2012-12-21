@@ -274,6 +274,7 @@ class MonitoringCollector:
             
         logging.debug("Pipes: %s", self.agent_pipes)
         
+        
     def poll(self):
         '''
         Poll agents for data
@@ -474,7 +475,7 @@ class MonitoringCollector:
         out = ''
         # Filtering data
         keys = data.rstrip().split(';')
-        if re.match('^start;', data): # make filter_conf mask
+        if re.match('^start;', data):  # make filter_conf mask
             host = keys[1]
             for i in xrange(3, len(keys)):
                 if keys[i] in filter_conf[host]:
@@ -482,12 +483,12 @@ class MonitoringCollector:
             self.log.debug("Filter mask: %s", filter_mask)
             out = 'start;'
             out += self.filtering(filter_mask, keys[1:]).rstrip(';') + '\n'
-        elif re.match('^\[debug\]', data): # log debug output
+        elif re.match('^\[debug\]', data):  # log debug output
             logging.debug('agent debug: %s', data.rstrip())
         else:
             filtered = self.filtering(filter_mask, keys)
             if filtered:
-                out = filtered + '\n' # filtering values
+                out = filtered + '\n'  # filtering values
         return out
     
     def get_agent_name(self, metric, param):
@@ -565,12 +566,12 @@ class MonitoringDataDecoder:
         data_dict = {}
         data = line.strip().split(';')
         if data[0] == 'start':
-            data.pop(0) # remove 'start'
+            data.pop(0)  # remove 'start'
             host = data.pop(0)
             if not data:
                 logging.warn("Wrong mon data line: %s", line)
             else:
-                data.pop(0) # remove timestamp
+                timestamp = data.pop(0)
                 self.metrics[host] = []
                 for metric in data:
                     if metric.startswith("Custom:"):
@@ -580,7 +581,7 @@ class MonitoringDataDecoder:
                     is_initial = True
         else:
             host = data.pop(0)
-            data.pop(0) # remove timestamp
+            timestamp = data.pop(0)
             
             if host not in self.metrics.keys():
                 raise ValueError("Host %s not in started metrics: %s" % (host, self.metrics))
@@ -592,6 +593,6 @@ class MonitoringDataDecoder:
                 data_dict[metric] = data.pop(0)
                     
         self.log.debug("Decoded data %s: %s", host, data_dict)
-        return host, data_dict, is_initial
+        return host, data_dict, is_initial, timestamp
 
             

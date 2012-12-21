@@ -11,6 +11,7 @@ import traceback
 from Tank.Plugins.Autostop import AutostopPlugin, AbstractCriteria
 import tankcore
 import fnmatch
+import datetime
 
 class MonitoringPlugin(AbstractPlugin):
     '''
@@ -82,7 +83,7 @@ class MonitoringPlugin(AbstractPlugin):
                 self.config = None
 
         if self.address_resolver:
-            self.default_target=self.address_resolver.resolve_virtual(self.default_target)
+            self.default_target = self.address_resolver.resolve_virtual(self.default_target)
         
         if not self.config or self.config == 'none':
             self.log.info("Monitoring has been disabled")
@@ -175,6 +176,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
         self.owner = owner
         self.data = {}
         self.sign = {}
+        self.time = {}
         self.max_metric_len = 0
     
     def get_index(self):
@@ -205,7 +207,8 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
             if not line.strip():
                 continue
             
-            host, data, initial = self.decode_line(line)
+            host, data, initial, timestamp = self.decode_line(line)
+            self.time[host] = timestamp
             if initial:
                 self.sign[host] = {}
                 self.data[host] = {}
@@ -220,9 +223,10 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
         if not self.owner.monitoring:
             return "Monitoring is " + screen.markup.RED + "offline" + screen.markup.RESET
         else:
-            res = "Monitoring is " + screen.markup.WHITE + "online" + screen.markup.RESET + ":\n"
+            res = "Monitoring is " + screen.markup.GREEN + "online" + screen.markup.RESET + ":\n"
             for hostname, metrics in self.data.items():
-                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET + ":\n") % hostname
+                tm=datetime.datetime.fromtimestamp(float(self.time[hostname])).strftime('%H:%M:%S')
+                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET + " at %s:\n") % (hostname, tm)
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
@@ -256,6 +260,7 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
         self.last_second = None
         self.seconds_count = 0
 
+    
     def monitoring_data(self, data_string):
         if self.triggered:
             return
@@ -264,7 +269,7 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
             if not line.strip():
                 continue
             
-            host, data, initial = self.decode_line(line)
+            host, data, initial, timestamp = self.decode_line(line)
             if initial or not fnmatch.fnmatch(host, self.host):
                 return
             
