@@ -43,7 +43,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.stepper = None
         self.phantom = None
         self.phantom_start_time = time.time()
-        self.buffered_seconds = 3
+        self.buffered_seconds = "2"
                 
     
     @staticmethod
@@ -56,7 +56,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.config = self.get_option("config", '')
         self.eta_file = self.get_option("eta_file", '')
         self.phantom_path = self.get_option("phantom_path", 'phantom')
-        self.buffered_seconds = self.get_option("buffered_seconds", self.buffered_seconds)
+        self.buffered_seconds = int(self.get_option("buffered_seconds", self.buffered_seconds))
         
         self.core.add_artifact_file(self.eta_file)        
         self.core.add_artifact_file(self.config)
@@ -433,8 +433,9 @@ class PhantomReader(AbstractReader):
 
         self.log.debug("Read lines: %s", self.read_lines_count)                    
         self.log.debug("Seconds queue: %s", self.data_queue)
-        self.log.debug("Seconds buffer: %s", self.data_buffer.keys())
+        self.log.debug("Seconds buffer (up to %s): %s", self.buffered_seconds, self.data_buffer.keys())        
         if len(self.data_queue) > self.buffered_seconds:
+            self.log.debug("Should send!")
             return self.pop_second()
         
         if force and self.data_queue:
@@ -609,7 +610,11 @@ class PhantomConfig:
             ipaddr.IPv6Address(self.address)
             self.ipv6 = True
             self.resolved_ip = self.address
-            self.address = socket.gethostbyaddr(self.resolved_ip)[0]
+            try:
+                self.address = socket.gethostbyaddr(self.resolved_ip)[0]
+            except Exception, e:
+                self.log.debug("Failed to get hostname for ip: %s", e)
+                self.address = self.resolved_ip
         except AddressValueError:
             self.log.debug("Not ipv6 address: %s", self.address)
             self.ipv6 = False
