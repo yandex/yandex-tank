@@ -74,7 +74,7 @@ Here are default options, controlling a yandex tank's web frontend::
     redirect = ""    # does nothing except 2 seconds delay on exit
     # if 'yes', then webserver will wait for Enter from keyboard
     # to exit
-    manual_stop = no
+    manual_stop = 0
 
 Multiline options
 ^^^^^^^^^^^^^^^^^

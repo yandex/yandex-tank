@@ -33,11 +33,13 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.redirect = ''
         self.manual_stop = False
     
+    
     def configure(self):
         self.port = int(self.get_option("port", self.port))
         self.interval = int(tankcore.expand_to_seconds(self.get_option("interval", '1m')))
         self.redirect = self.get_option("redirect", self.redirect)
-        self.manual_stop = strtobool(self.get_option('manual_stop', self.manual_stop))
+        self.manual_stop = int(self.get_option('manual_stop', self.manual_stop))
+    
     
     def prepare_test(self):
         self.server = OnlineServer(('', self.port), WebOnlineHandler)
@@ -45,8 +47,10 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
     
+    
     def start_test(self):
         self.start()
+    
         
     def end_test(self, retcode):
         #self.log.info("Shutting down local server")
@@ -60,6 +64,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         del self.server
         self.server = None
         return retcode
+    
         
     def run(self):
         address = socket.gethostname()
@@ -82,6 +87,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         while len(self.quantiles_data[1]) > self.interval:
             self.quantiles_data[1].pop(0)
 
+
     def __calculate_avg(self, data):
         ''' prepare response avg times data '''
         if not self.avg_data:
@@ -96,6 +102,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.avg_data[1] += [item_data]
         while len(self.avg_data[1]) > self.interval:
             self.avg_data[1].pop(0)
+
 
     def __calculate_codes(self, data):
         ''' prepare response codes data '''
@@ -126,6 +133,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.codes_data[1] += [item_data]
         while len(self.codes_data[1]) > self.interval:
             self.codes_data[1].pop(0)
+
 
     def aggregate_second(self, data):
         self.last_sec = data
