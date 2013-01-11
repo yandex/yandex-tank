@@ -601,7 +601,7 @@ class PhantomConfig:
         ''' get option wrapper '''
         return self.owner.get_option(option_ammofile, param2)
     
-    
+    # FIXME: this method became a piece of shit, needs refactoring
     def __resolve_address(self):
         '''        Analyse target address setting, resolve it to IP        '''
         if not self.address:
@@ -625,7 +625,11 @@ class PhantomConfig:
             try:
                 ipaddr.IPv4Address(self.address)
                 self.resolved_ip = self.address
-                self.address = socket.gethostbyaddr(self.resolved_ip)[0]
+                try:
+                    self.address = socket.gethostbyaddr(self.resolved_ip)[0]
+                except Exception, e:
+                    self.log.debug("Failed to get hostname for ip: %s", e)
+                    self.address = self.resolved_ip
             except AddressValueError:
                 self.log.debug("Not ipv4 address: %s", self.address)
                 ip_addr = socket.gethostbyname(self.address)
