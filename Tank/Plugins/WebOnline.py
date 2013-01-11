@@ -3,6 +3,7 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from tankcore import AbstractPlugin
 from threading import Thread
+from distutils.util import strtobool
 import json
 import logging
 import os.path
@@ -30,11 +31,13 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.codes_data = []
         self.avg_data = []
         self.redirect = ''
+        self.manual_stop = False
     
     def configure(self):
         self.port = int(self.get_option("port", self.port))
         self.interval = int(tankcore.expand_to_seconds(self.get_option("interval", '1m')))
         self.redirect = self.get_option("redirect", self.redirect)
+        self.manual_stop = strtobool(self.get_option('manual_stop', self.manual_stop))
     
     def prepare_test(self):
         self.server = OnlineServer(('', self.port), WebOnlineHandler)
@@ -48,6 +51,9 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
     def end_test(self, retcode):
         #self.log.info("Shutting down local server")
         #self.server.shutdown() don't enable it since it leads to random deadlocks
+        if self.manual_stop:
+            raw_input('Press Enter, to close webserver.')
+
         if self.redirect:
             time.sleep(2)
 

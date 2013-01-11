@@ -63,6 +63,19 @@ autostop=time(1,10) short\_only=1 time\_periods=10 20 30 100
 job\_name=ask \`\`\` !!! Don't use global options wich have same name in
 different sections.
 
+The ``web`` section
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Here are default options, controlling a yandex tank's web frontend::
+
+    [web]
+    port = 8080      # a port to bind to on localhost
+    interval = 1m    # ???
+    redirect = ""    # does nothing except 2 seconds delay on exit
+    # if 'yes', then webserver will wait for Enter from keyboard
+    # to exit
+    manual_stop = no
+
 Multiline options
 ^^^^^^^^^^^^^^^^^
 
