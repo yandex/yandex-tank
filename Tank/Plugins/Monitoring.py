@@ -83,7 +83,10 @@ class MonitoringPlugin(AbstractPlugin):
                 self.config = None
 
         if self.address_resolver:
-            self.default_target = self.address_resolver.resolve_virtual(self.default_target)
+            try:
+                self.default_target = self.address_resolver.resolve_virtual(self.default_target)
+            except Exception, exc:
+                self.log.error("Failed to get target info: %s", exc)
         
         if not self.config or self.config == 'none':
             self.log.info("Monitoring has been disabled")

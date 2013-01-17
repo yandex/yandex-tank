@@ -10,3 +10,4 @@ configure-stamp
 .*
 debian/files
 *.debhelper
+Tank/Plugins/DataUploader.py
