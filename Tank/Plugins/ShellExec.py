@@ -39,7 +39,12 @@ class ShellExecPlugin(AbstractPlugin):
 
     def is_test_finished(self):
         if self.poll:
-            self.execute(self.poll)
+            self.log.info("Executing: %s", self.poll)
+            retcode = tankcore.execute(self.poll, shell=True, poll_period=0.1)[0]
+            if retcode:
+                self.log.warn("Non-zero exit code, interrupting test: %s", retcode)
+                return retcode
+        return -1
             
     def end_test(self, retcode):
         if self.end:
