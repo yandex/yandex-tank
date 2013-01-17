@@ -31,7 +31,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.codes_data = []
         self.avg_data = []
         self.redirect = ''
-        self.manual_stop = False
+        self.manual_stop = 0
     
     
     def configure(self):
