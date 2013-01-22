@@ -14,6 +14,21 @@ import time
 import traceback
 import signal
 
+
+class SingleLevelFilter(logging.Filter):
+    '''Exclude or approve one msg type at a time.
+    '''
+    def __init__(self, passlevel, reject):
+        self.passlevel = passlevel
+        self.reject = reject
+
+    def filter(self, record):
+        if self.reject:
+            return (record.levelno != self.passlevel)
+        else:
+            return (record.levelno == self.passlevel)
+
+
 # required for non-tty python runs
 def signal_handler(signal, frame):
     raise KeyboardInterrupt()
@@ -118,7 +133,21 @@ class ConsoleTank:
         else:
             console_handler.setLevel(logging.INFO)
             console_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s: %(message)s", "%H:%M:%S"))
+
+        f_err = SingleLevelFilter(logging.ERROR, True)
+        f_warn = SingleLevelFilter(logging.WARNING, True)
+        f_crit = SingleLevelFilter(logging.CRITICAL, True)
+        console_handler.addFilter(f_err)
+        console_handler.addFilter(f_warn)
+        console_handler.addFilter(f_crit)
         logger.addHandler(console_handler)
+
+        stderr_hdl = logging.StreamHandler(sys.stderr)
+        f_info = SingleLevelFilter(logging.INFO, True)
+        f_debug = SingleLevelFilter(logging.DEBUG, True)
+        stderr_hdl.addFilter(f_info)
+        stderr_hdl.addFilter(f_debug)
+        logger.addHandler(stderr_hdl)
 
 
     def __convert_old_multiline_options(self, old_lines):
