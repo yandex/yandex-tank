@@ -1,3 +1,11 @@
+yandex-load-tank-base (1.2.4) precise; urgency=low
+
+  * Report poll hook exit code as test RC
+  * Fix ip resolving bugs
+  * Add manual stop for web plugin
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 17 Jan 2013 20:36:33 +0400
+
 yandex-load-tank-base (1.2.3~doomsday-fixed) precise; urgency=high
 
   * fix phantom buffer and set it to 2 seconds

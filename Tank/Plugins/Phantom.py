@@ -29,6 +29,8 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
     '''
     Plugin for running phantom tool
     '''
+
+    OPTION_CONFIG = "config"
     SECTION = 'phantom'
     
     def __init__(self, core):
@@ -53,15 +55,14 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
     
     def configure(self):       
         # plugin part
-        self.config = self.get_option("config", '')
+        self.config = self.get_option(self.OPTION_CONFIG, '')
         self.eta_file = self.get_option("eta_file", '')
+        self.core.add_artifact_file(self.eta_file)        
         self.phantom_path = self.get_option("phantom_path", 'phantom')
         self.buffered_seconds = int(self.get_option("buffered_seconds", self.buffered_seconds))
         
-        self.core.add_artifact_file(self.eta_file)        
-        self.core.add_artifact_file(self.config)
 
-        self.phout_import_mode = self.get_option(PhantomConfig.OPTION_PHOUT, '')
+        self.phout_import_mode = self.get_option(PhantomConfig.OPTION_PHOUT, '') and not self.get_option(self.OPTION_CONFIG, '')
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -90,7 +91,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
                 self.phantom.timeout = aggregator.get_timeout()
             aggregator.add_result_listener(self)
 
-        if not self.phout_import_mode:
+        if not self.config and not self.phout_import_mode:
             self.stepper.prepare_stepper()     
             self.phantom.stpd = self.stepper.stpd
                 
@@ -185,11 +186,11 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
 
     def __init__(self, sender):
         AbstractInfoWidget.__init__(self)
-        self.krutilka=ConsoleScreen.krutilka()
+        self.krutilka = ConsoleScreen.krutilka()
         self.owner = sender 
         self.ammo_progress = 0
-        self.ammo_count = int(self.owner.core.get_option(PhantomPlugin.SECTION, StepperWrapper.OPTION_AMMO_COUNT))
-        self.test_duration = int(self.owner.core.get_option(PhantomPlugin.SECTION, StepperWrapper.OPTION_TEST_DURATION))
+        self.ammo_count = int(self.owner.core.get_option(PhantomPlugin.SECTION, StepperWrapper.OPTION_AMMO_COUNT, 1))
+        self.test_duration = int(self.owner.core.get_option(PhantomPlugin.SECTION, StepperWrapper.OPTION_TEST_DURATION, 1))
         self.eta_file = None
 
     def render(self, screen):
@@ -224,8 +225,8 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         
         pb_width = screen.right_panel_width - 1 - len(str_perc)
         
-        progress_chars='=' * (int(pb_width * progress)-1)
-        progress_chars+=self.krutilka.next()
+        progress_chars = '=' * (int(pb_width * progress) - 1)
+        progress_chars += self.krutilka.next()
         
         res += color_bg + progress_chars + screen.markup.RESET + color_fg + '~' * (pb_width - int(pb_width * progress)) + screen.markup.RESET + ' '
         res += str_perc + "\n"
@@ -254,13 +255,14 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.instances = 0
         self.planned = 0
         self.RPS = 0    
-        self.instances_limit = int(self.owner.core.get_option(PhantomPlugin.SECTION, PhantomConfig.OPTION_INSTANCES_LIMIT))
-        self.ammo_count = int(self.owner.core.get_option(PhantomPlugin.SECTION, StepperWrapper.OPTION_AMMO_COUNT))
+        self.instances_limit = int(self.owner.core.get_option(PhantomPlugin.SECTION, PhantomConfig.OPTION_INSTANCES_LIMIT, 1))
+        self.ammo_count = int(self.owner.core.get_option(PhantomPlugin.SECTION, StepperWrapper.OPTION_AMMO_COUNT, 1))
         self.selfload = 0
         self.time_lag = 0
         self.planned_rps_duration = 0
 
     def render(self, screen):
+        res=''
         if self.owner.phantom and self.owner.stepper:
             template = "Hosts: %s => %s:%s\n Ammo: %s\nCount: %s\n Load: %s"
             data = (socket.gethostname(), self.owner.phantom.address, self.owner.phantom.port, os.path.basename(self.owner.stepper.ammo_file), self.ammo_count, ' '.join(self.owner.stepper.rps_schedule))
@@ -299,6 +301,7 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
             res += str(datetime.timedelta(seconds=self.time_lag))
                 
         return res
+
 
     def aggregate_second(self, second_aggregate_data):
         self.instances = second_aggregate_data.overall.active_threads
