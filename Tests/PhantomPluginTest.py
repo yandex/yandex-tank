@@ -37,6 +37,7 @@ class  PhantomPluginTestCase(TankTestCase):
         self.foo.end_test(0)
         reader.get_next_sample(True)
 
+
     def test_run_ready_conf(self):
         self.foo.core.add_artifact_file("ready_conf_phout.txt")
         self.foo.configure()
@@ -47,7 +48,9 @@ class  PhantomPluginTestCase(TankTestCase):
             time.sleep(1)
         if self.foo.is_test_finished() != 0:
             raise RuntimeError("RC: %s" % self.foo.is_test_finished())
+        self.assertTrue(os.path.getsize("ready_conf_phout.txt")>0)
         self.foo.end_test(0)
+        
         
     def test_run_uri_style(self):
         self.foo.set_option("ammofile", "")
@@ -95,9 +98,9 @@ class  PhantomPluginTestCase(TankTestCase):
     
     
     def test_reader(self):
-        self.foo.phout_file = 'data/phout_timeout_mix.txt'
         self.foo.phantom_start_time = time.time()
         reader = PhantomReader(AggregatorPlugin(self.foo.core), self.foo)
+        reader.phout_file = 'data/phout_timeout_mix.txt'
         reader.check_open_files()
         
         data = reader.get_next_sample(False)
@@ -108,6 +111,7 @@ class  PhantomPluginTestCase(TankTestCase):
             self.assertEquals(sum(data.overall.net_codes.values()), times_sum)
             data = reader.get_next_sample(False)
 
+
     def test_stepper_no_steps(self):
         self.foo.core.set_option('phantom', 'rps_schedule', '')
         self.foo.core.set_option('phantom', 'instances_schedule', '')
@@ -115,6 +119,7 @@ class  PhantomPluginTestCase(TankTestCase):
         wrapper.ammo_file = 'data/dummy.ammo'
         wrapper.prepare_stepper()
         wrapper.prepare_stepper()
+        
         
     def test_phout_import(self):
         self.foo.core.set_option('phantom', 'phout_file', 'data/phout_timeout_mix.txt')

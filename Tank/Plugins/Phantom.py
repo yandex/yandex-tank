@@ -36,7 +36,8 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         self.process = None
-        self.phout_import_mode = 0
+        self.predefined_phout = None
+        self.phout_import_mode = False
         self.did_phout_import_try = False
         self.phantom_path = None
         self.eta_file = None
@@ -61,8 +62,9 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.phantom_path = self.get_option("phantom_path", 'phantom')
         self.buffered_seconds = int(self.get_option("buffered_seconds", self.buffered_seconds))
         
-
-        self.phout_import_mode = self.get_option(PhantomConfig.OPTION_PHOUT, '') and not self.get_option(self.OPTION_CONFIG, '')
+        self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
+        if not self.get_option(self.OPTION_CONFIG, '') and self.predefined_phout:
+            self.phout_import_mode = True
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -91,9 +93,11 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
                 self.phantom.timeout = aggregator.get_timeout()
             aggregator.add_result_listener(self)
 
+
         if not self.config and not self.phout_import_mode:
             self.stepper.prepare_stepper()     
             self.phantom.stpd = self.stepper.stpd
+            aggregator.reader.phout_file = self.phantom.phout_file
                 
             if not self.config:
                 self.config = self.phantom.compose_config()
@@ -102,7 +106,9 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             retcode = tankcore.execute(args, catch_out=True)[0]
             if retcode:
                 raise RuntimeError("Subprocess returned %s" % retcode)    
-
+        else:
+            aggregator.reader.phout_file = self.predefined_phout
+        
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
         except Exception, ex:
@@ -131,9 +137,9 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             self.phantom_start_time = time.time()
             self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
         else:
-            if not os.path.exists(self.phout_import_mode):
-                raise RuntimeError("Phout file not exists for import: %s" % self.phout_import_mode)
-            self.log.warn("Will import phout file instead of running phantom: %s", self.phout_import_mode)
+            if not os.path.exists(self.predefined_phout):
+                raise RuntimeError("Phout file not exists for import: %s" % self.predefined_phout)
+            self.log.warn("Will import phout file instead of running phantom: %s", self.predefined_phout)
     
 
     def is_test_finished(self):
@@ -262,7 +268,7 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.planned_rps_duration = 0
 
     def render(self, screen):
-        res=''
+        res = ''
         if self.owner.phantom and self.owner.stepper:
             template = "Hosts: %s => %s:%s\n Ammo: %s\nCount: %s\n Load: %s"
             data = (socket.gethostname(), self.owner.phantom.address, self.owner.phantom.port, os.path.basename(self.owner.stepper.ammo_file), self.ammo_count, ' '.join(self.owner.stepper.rps_schedule))
@@ -324,6 +330,7 @@ class PhantomReader(AbstractReader):
     def __init__(self, owner, phantom):
         AbstractReader.__init__(self, owner)
         self.phantom = phantom
+        self.phout_file = None
         self.phout = None
         self.stat = None
         self.stat_data = {}
@@ -337,9 +344,9 @@ class PhantomReader(AbstractReader):
         self.buffered_seconds = 3
   
     def check_open_files(self):
-        if not self.phout and self.phantom.phantom and os.path.exists(self.phantom.phantom.phout_file):
-            self.log.debug("Opening phout file: %s", self.phantom.phantom.phout_file)
-            self.phout = open(self.phantom.phantom.phout_file, 'r')
+        if not self.phout and os.path.exists(self.phout_file):
+            self.log.debug("Opening phout file: %s", self.phout_file)
+            self.phout = open(self.phout_file, 'r')
             # strange decision to place it here, but no better idea yet
             if self.phantom.stepper:
                 for item in tankcore.pairs(self.phantom.stepper.steps):
