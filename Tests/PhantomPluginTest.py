@@ -25,6 +25,7 @@ class  PhantomPluginTestCase(TankTestCase):
         self.foo.configure()
         self.foo.prepare_test()
         reader = PhantomReader(AggregatorPlugin(self.foo.core), self.foo)
+        reader.phout_file=self.foo.phantom.phout_file
         self.foo.start_test()
         
         while self.foo.is_test_finished() < 0:
@@ -39,6 +40,7 @@ class  PhantomPluginTestCase(TankTestCase):
 
 
     def test_run_ready_conf(self):
+        self.foo.core.set_option(PhantomPlugin.SECTION, "config", 'data/phantom_ready.conf')
         self.foo.core.add_artifact_file("ready_conf_phout.txt")
         self.foo.configure()
         self.foo.prepare_test()
