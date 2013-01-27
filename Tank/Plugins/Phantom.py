@@ -715,7 +715,7 @@ class StreamConfig:
 
     def get_option(self, option_ammofile, default=None):
         ''' get option wrapper '''
-        return self.core.get_option(PhantomPlugin.SECTION, option_ammofile, default)
+        return self.core.get_option(self.section, option_ammofile, default)
     
     
     def read_config(self):
@@ -746,7 +746,7 @@ class StreamConfig:
         
         kwargs = {}
         kwargs['sequence_no'] = self.sequence_no
-        kwargs['ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s } transport = ssl_transport" if self.ssl else ""
+        kwargs['ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s }\n transport = ssl_transport" if self.ssl else ""
         kwargs['method_stream'] = "method_stream_ipv6_t" if self.ipv6 else "method_stream_ipv4_t"            
         kwargs['proto'] = "http_proto%s" % self.sequence_no if self.tank_type == 'http' else "none_proto"
         kwargs['phout'] = self.phout_file
