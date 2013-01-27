@@ -28,11 +28,6 @@ io_t benchmark_io$sequence_no = io_benchmark_t {
 	}
 	method = stream_method   
     
-    times_t simple_times = times_simple_t {
-                max = $timeout
-                min = 1
-                steps = 20
-    }
 	times = simple_times
     
 	instances = $instances   

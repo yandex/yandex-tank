@@ -8,6 +8,7 @@ from Tank.Plugins.Stepper import Stepper
 from ipaddr import AddressValueError
 from tankcore import AbstractPlugin
 import ConfigParser
+import copy
 import datetime
 import hashlib
 import ipaddr
@@ -179,8 +180,11 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
 
     def aggregate_second(self, second_aggregate_data):
         self.processed_ammo_count += second_aggregate_data.overall.RPS
-        self.log.debug("Processed ammo count: %s/", self.processed_ammo_count);
-
+        self.log.debug("Processed ammo count: %s/", self.processed_ammo_count)
+        
+        
+    def get_info(self):
+        return self.phantom.get_info()
             
 
 class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
@@ -269,9 +273,10 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
     def render(self, screen):
         res = ''
+        info = self.owner.get_info()
         if self.owner.phantom:
             template = "Hosts: %s => %s:%s\n Ammo: %s\nCount: %s\n Load: %s"
-            data = (socket.gethostname(), self.owner.phantom.address, self.owner.phantom.port, os.path.basename(self.owner.phantom.get_ammo_file()), self.ammo_count, ' '.join(self.owner.phantom.get_rps_schedule()))
+            data = (socket.gethostname(), info.address, info.port, os.path.basename(info.ammo_file), self.ammo_count, ' '.join(info.rps_schedule))
             res = template % data
             
             res += "\n\n"
@@ -351,7 +356,8 @@ class PhantomReader(AbstractReader):
             if info: 
                 for item in tankcore.pairs(info.steps):
                     self.steps.append([item[0], item[1]])  
-    
+        
+        # TODO: read stat log correctly for multitest
         if not self.stat and info and os.path.exists(info.stat_log):
             self.log.debug("Opening stat file: %s", self.phantom.phantom.stat_log)
             self.stat = open(self.phantom.phantom.stat_log, 'r')
@@ -632,14 +638,18 @@ class PhantomConfig:
     def compose_config(self):
         '''        Generate phantom tool run config        '''
         streams_config = ''
+        stat_benchmarks = ''
         for stream in self.streams:
             streams_config += stream.compose_config()
+            if stream.section != PhantomPlugin.SECTION:
+                stat_benchmarks += " " + "benchmark_io%s" % stream.sequence_no
         
         kwargs = {}
         kwargs['threads'] = self.threads
         kwargs['phantom_log'] = self.phantom_log
         kwargs['stat_log'] = self.stat_log
         kwargs['benchmarks_block'] = streams_config
+        kwargs['stat_benchmarks'] = stat_benchmarks
         
         filename = self.core.mkstemp(".conf", "phantom_")
         self.core.add_artifact_file(filename)
@@ -657,6 +667,16 @@ class PhantomConfig:
     def set_timeout(self, timeout):
         for stream in self.streams:
             stream.timeout = timeout
+
+    # TODO: merge data for multitest
+    def get_info(self):
+        result = copy.copy(self.streams[0])
+        result.stat_log = self.stat_log
+        for stream in self.streams:
+            result.steps = stream.stepper.steps
+            result.ammo_file=stream.stepper.ammo_file
+            result.rps_schedule=stream.stepper.rps_schedule
+        return result    
     
     
         
@@ -728,7 +748,7 @@ class StreamConfig:
         kwargs['sequence_no'] = self.sequence_no
         kwargs['ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s } transport = ssl_transport" if self.ssl else ""
         kwargs['method_stream'] = "method_stream_ipv6_t" if self.ipv6 else "method_stream_ipv4_t"            
-        kwargs['proto'] = "http_proto" if self.tank_type == 'http' else "none_proto"
+        kwargs['proto'] = "http_proto%s" % self.sequence_no if self.tank_type == 'http' else "none_proto"
         kwargs['phout'] = self.phout_file
         kwargs['answ_log'] = self.answ_log
         kwargs['answ_log_level'] = self.answ_log_level

@@ -23,7 +23,7 @@ io_t benchmark_io = io_benchmark_t {
 	
 	    $ssl_transport
 	    
-		proto_t http_proto = proto_http_t { 
+		proto_t http_proto0 = proto_http_t { 
 			$reply_limits
 		}
 		

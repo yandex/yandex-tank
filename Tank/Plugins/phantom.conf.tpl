@@ -33,6 +33,6 @@ stat = {
     clear = true
     period = 1s
     time_format = full
-    list = { benchmark_io }
+    list = { benchmark_io $stat_benchmarks }
     filename = "$stat_log"
 }
