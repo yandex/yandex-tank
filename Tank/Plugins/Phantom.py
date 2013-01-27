@@ -1,6 +1,4 @@
-'''
-Contains Phantom Plugin, Console widgets, result reader classes
-'''
+''' Contains Phantom Plugin, Console widgets, result reader classes '''
 from Tank.Plugins import ConsoleScreen
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener, \
     AbstractReader
@@ -35,18 +33,20 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
     
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
+        self.config = None
         self.process = None
+
         self.predefined_phout = None
         self.phout_import_mode = False
         self.did_phout_import_try = False
+        
         self.phantom_path = None
         self.eta_file = None
         self.processed_ammo_count = 0
-        self.config = None
-        self.stepper = None
-        self.phantom = None
         self.phantom_start_time = time.time()
         self.buffered_seconds = "2"
+
+        self.phantom = None
                 
     
     @staticmethod
@@ -62,21 +62,19 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.phantom_path = self.get_option("phantom_path", 'phantom')
         self.buffered_seconds = int(self.get_option("buffered_seconds", self.buffered_seconds))
         
-        self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
-        if not self.get_option(self.OPTION_CONFIG, '') and self.predefined_phout:
-            self.phout_import_mode = True
-
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
             autostop.add_criteria_class(UsedInstancesCriteria)
         except KeyError:
             self.log.debug("No autostop plugin found, not adding instances criteria")
             
+        self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
+        if not self.get_option(self.OPTION_CONFIG, '') and self.predefined_phout:
+            self.phout_import_mode = True
+
         if not self.config and not self.phout_import_mode:
             self.phantom = PhantomConfig(self)
             self.phantom.read_config()
-            self.stepper = StepperWrapper(self)
-            self.stepper.read_config()
        
 
     def prepare_test(self):
@@ -95,17 +93,15 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
 
 
         if not self.config and not self.phout_import_mode:
-            self.stepper.prepare_stepper()     
-            self.phantom.stpd = self.stepper.stpd
             aggregator.reader.phout_file = self.phantom.phout_file
                 
-            if not self.config:
-                self.config = self.phantom.compose_config()
+            # generate config
+            self.config = self.phantom.compose_config()
             args = [self.phantom_path, 'check', self.config]
             
             retcode = tankcore.execute(args, catch_out=True)[0]
             if retcode:
-                raise RuntimeError("Subprocess returned %s" % retcode)    
+                raise RuntimeError("Config check failed. Subprocess returned code %s" % retcode)    
         else:
             aggregator.reader.phout_file = self.predefined_phout
         
@@ -269,9 +265,9 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
     def render(self, screen):
         res = ''
-        if self.owner.phantom and self.owner.stepper:
+        if self.owner.phantom:
             template = "Hosts: %s => %s:%s\n Ammo: %s\nCount: %s\n Load: %s"
-            data = (socket.gethostname(), self.owner.phantom.address, self.owner.phantom.port, os.path.basename(self.owner.stepper.ammo_file), self.ammo_count, ' '.join(self.owner.stepper.rps_schedule))
+            data = (socket.gethostname(), self.owner.phantom.address, self.owner.phantom.port, os.path.basename(self.owner.phantom.get_ammo_file()), self.ammo_count, ' '.join(self.owner.phantom.get_rps_schedule()))
             res = template % data
             
             res += "\n\n"
@@ -347,8 +343,8 @@ class PhantomReader(AbstractReader):
         if not self.phout and os.path.exists(self.phout_file):
             self.log.debug("Opening phout file: %s", self.phout_file)
             self.phout = open(self.phout_file, 'r')
-            # strange decision to place it here, but no better idea yet
-            if self.phantom.stepper:
+            # FIXME: strange decision to place it here, but no better idea yet
+            if self.phantom.stepper: 
                 for item in tankcore.pairs(self.phantom.stepper.steps):
                     self.steps.append([item[0], item[1]])  
     
@@ -486,7 +482,7 @@ class PhantomReader(AbstractReader):
 
     def __get_expected_rps(self):
         '''
-        Mark second with expected rps from stepper info
+        Mark second with expected rps
         '''
         while self.steps and self.steps[0][1] < 1:
             self.steps.pop(0)
@@ -572,33 +568,112 @@ class UsedInstancesCriteria(AbstractCriteria):
         return ("Instances >%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
 
 
+# ==================================================================================================
 
 class PhantomConfig:
     ''' config file generator '''
-    OPTION_INSTANCES_LIMIT = 'instances'
     OPTION_PHOUT = "phout_file"
-    OPTION_STPD = 'stpd_file'
     
-    def __init__(self, owner):
-        self.owner = owner
+    def __init__(self, core):
+        self.core = core
         self.log = logging.getLogger(__name__)
-        # phant
+        self.streams = []
+            
+        # common
         self.timeout = -1
         self.answ_log = None
+        self.answ_log_level = None
         self.phout_file = None
         self.stat_log = None
         self.phantom_log = None
-        self.instances = None
         self.phantom_start_time = None
-        self.ipv6 = None
         self.phantom_modules_path = None
+        self.threads = None
+
+
+    def get_option(self, option_ammofile, default=None):
+        ''' get option wrapper '''
+        return self.core.get_option(PhantomPlugin.SECTION, option_ammofile, default)
+    
+    
+    def read_config(self):
+        '''        Read phantom tool specific options        '''
+        self.threads = self.get_option("threads", str(int(multiprocessing.cpu_count() / 2) + 1))
+        self.phantom_modules_path = self.get_option("phantom_modules_path", "/usr/lib/phantom")
+        self.answ_log_level = self.get_option("writelog", "none")
+        if self.answ_log_level == '0':
+            self.answ_log_level = 'none'
+        elif self.answ_log_level == '1':
+            self.answ_log_level = 'all'
+            
+        self.answ_log = self.core.mkstemp(".log", "answ_")            
+        self.core.add_artifact_file(self.answ_log)        
+        self.phout_file = self.core.mkstemp(".log", "phout_")
+        self.core.add_artifact_file(self.phout_file)
+        self.stat_log = self.core.mkstemp(".log", "phantom_stat_")
+        self.core.add_artifact_file(self.stat_log)
+        self.phantom_log = self.core.mkstemp(".log", "phantom_")
+        self.core.add_artifact_file(self.phantom_log)                    
+
+        main_stream = StreamConfig(self.core, len(self.streams), self.phout_file, self.answ_log, self.answ_log_level, self.timeout)
+        self.streams.append(main_stream)
+        
+        for section in self.core.config.find_sections(PhantomPlugin.SECTION + '.'):
+            self.streams.append(StreamConfig(self.core, len(self.streams), self.phout_file, self.answ_log, self.answ_log_level, self.timeout, section))
+        
+        for stream in self.streams:
+            stream.read_config()
+
+
+    def compose_config(self):
+        '''        Generate phantom tool run config        '''
+        streams_config = ''
+        for stream in self.streams:
+            streams_config += stream.compose_config()
+        
+        kwargs = {}
+        kwargs['threads'] = self.threads
+        kwargs['phantom_log'] = self.phantom_log
+        kwargs['stat_log'] = self.stat_log
+        kwargs['benchmarks_block'] = streams_config
+        
+        filename = self.core.mkstemp(".conf", "phantom_")
+        self.core.add_artifact_file(filename)
+        self.log.debug("Generating phantom config: %s", filename)
+        template_str = open(os.path.dirname(__file__) + "/phantom.conf.tpl", 'r').read()
+        tpl = string.Template(template_str)
+        config = tpl.substitute(kwargs)
+
+        handle = open(filename, 'w')
+        handle.write(config)
+        handle.close()
+        return filename
+        
+# ==================================================================================================
+
+class StreamConfig:
+    OPTION_INSTANCES_LIMIT = 'instances'
+    OPTION_STPD = 'stpd_file'
+
+    def __init__(self, core, sequence, phout, answ, answ_level, timeout, section=PhantomPlugin.SECTION):
+        self.core = core
+        self.sequence_no = sequence
+        self.log = logging.getLogger(__name__)
+        self.section = section
+        self.stepper = StepperWrapper(self.core, self.section)
+        self.phout_file = phout
+        self.answ_log = answ
+        self.answ_log_level = answ_level
+        self.timeout = timeout        
+    
+        # per benchmark
+        self.instances = None
+        self.ipv6 = None
         self.ssl = None
         self.address = None
         self.port = None
         self.tank_type = None
-        self.answ_log_level = None
         self.stpd = None
-        self.threads = None
         self.gatling = None
         self.phantom_http_line = None
         self.phantom_http_field_num = None
@@ -607,10 +682,81 @@ class PhantomConfig:
         self.resolved_ip = None
 
 
-    def get_option(self, option_ammofile, param2=None):
+    def get_option(self, option_ammofile, default=None):
         ''' get option wrapper '''
-        return self.owner.get_option(option_ammofile, param2)
+        return self.core.get_option(PhantomPlugin.SECTION, option_ammofile, default)
     
+    
+    def read_config(self):
+        # multi-options
+        self.ssl = int(self.get_option("ssl", '0'))
+        self.tank_type = self.get_option("tank_type", 'http')
+        self.stpd = self.get_option(self.OPTION_STPD, '')
+        self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
+        self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
+        self.phantom_http_line = self.get_option("phantom_http_line", "")
+        self.phantom_http_field_num = self.get_option("phantom_http_field_num", "")
+        self.phantom_http_field = self.get_option("phantom_http_field", "")
+        self.phantom_http_entity = self.get_option("phantom_http_entity", "")
+        self.address = self.get_option('address', 'localhost')
+        self.port = self.get_option('port', '80')
+        self.__resolve_address()
+        
+        self.stepper.read_config()
+
+
+    def compose_config(self):
+        # step file
+        self.stepper.prepare_stepper()     
+        self.stpd = self.stepper.stpd
+        
+        if not self.stpd:
+            raise RuntimeError("Cannot proceed with no STPD file")
+        
+        kwargs = {}
+        kwargs['sequence_no'] = self.sequence_no
+        kwargs['ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s } transport = ssl_transport" if self.ssl else ""
+        kwargs['method_stream'] = "method_stream_ipv6_t" if self.ipv6 else "method_stream_ipv4_t"            
+        kwargs['proto'] = "http_proto" if self.tank_type == 'http' else "none_proto"
+        kwargs['phout'] = self.phout_file
+        kwargs['answ_log'] = self.answ_log
+        kwargs['answ_log_level'] = self.answ_log_level
+        kwargs['comment_answ'] = "# " if self.answ_log_level == 'none' else ''
+        kwargs['stpd'] = self.stpd
+        if self.gatling:
+            kwargs['bind'] = 'bind={ ' + self.gatling + ' }'
+        else: 
+            kwargs['bind'] = '' 
+        kwargs['ip'] = self.resolved_ip
+        kwargs['port'] = self.port
+        kwargs['timeout'] = self.timeout
+        kwargs['instances'] = self.instances
+        tune = ''
+        if self.phantom_http_entity:
+            tune += "entity = " + self.phantom_http_entity + "\n"
+        if self.phantom_http_field:
+            tune += "field = " + self.phantom_http_field + "\n"
+        if self.phantom_http_field_num:
+            tune += "field_num = " + self.phantom_http_field_num + "\n"
+        if self.phantom_http_line:
+            tune += "line = " + self.phantom_http_line + "\n"
+        if tune:
+            kwargs['reply_limits'] = 'reply_limits = {\n' + tune + "}"
+        else:
+            kwargs['reply_limits'] = ''
+
+        if self.section == PhantomPlugin.SECTION:
+            fname = 'phantom_benchmark_main.tpl'
+        else:
+            fname = 'phantom_benchmark_additional.tpl'
+        tplf = open(os.path.dirname(__file__) + '/' + fname, 'r')
+        template_str = tplf.read()
+        tplf.close()
+        tpl = string.Template(template_str)
+        config = tpl.substitute(kwargs)
+        
+        return config
+        
     # FIXME: this method became a piece of shit, needs refactoring
     def __resolve_address(self):
         '''        Analyse target address setting, resolve it to IP        '''
@@ -650,94 +796,7 @@ class PhantomConfig:
                 else:
                     raise ValueError("Address %s reverse-resolved to %s, but must match" % (self.address, reverse_name))
 
-
-    def read_config(self):
-        '''        Read phantom tool specific options        '''
-        self.phantom_modules_path = self.get_option("phantom_modules_path", "/usr/lib/phantom")
-        self.ssl = int(self.get_option("ssl", '0'))
-        self.tank_type = self.get_option("tank_type", 'http')
-        self.answ_log_level = self.get_option("writelog", "none")
-        if self.answ_log_level == '0':
-            self.answ_log_level = 'none'
-        elif self.answ_log_level == '1':
-            self.answ_log_level = 'all'
-            
-        self.answ_log = self.owner.core.mkstemp(".log", "answ_")            
-        self.phout_file = self.owner.core.mkstemp(".log", "phout_")
-        self.owner.core.add_artifact_file(self.phout_file)
-
-        self.stat_log = self.owner.core.mkstemp(".log", "phantom_stat_")
-        self.phantom_log = self.owner.core.mkstemp(".log", "phantom_")
-        self.stpd = self.get_option(self.OPTION_STPD, '')
-        self.threads = self.get_option("threads", int(multiprocessing.cpu_count() / 2) + 1)
-        self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
-        self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
-        self.phantom_http_line = self.get_option("phantom_http_line", "")
-        self.phantom_http_field_num = self.get_option("phantom_http_field_num", "")
-        self.phantom_http_field = self.get_option("phantom_http_field", "")
-        self.phantom_http_entity = self.get_option("phantom_http_entity", "")
-
-        self.address = self.get_option('address', 'localhost')
-        self.port = self.get_option('port', '80')
-        self.__resolve_address()            
-
-        self.owner.core.add_artifact_file(self.answ_log)        
-        self.owner.core.add_artifact_file(self.stat_log)
-        self.owner.core.add_artifact_file(self.phantom_log)
-
-    def compose_config(self):
-        '''        Generate phantom tool run config        '''
-        if not self.stpd:
-            raise RuntimeError("Cannot proceed with no source file")
-        
-        kwargs = {}
-        kwargs['ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s } transport = ssl_transport" if self.ssl else ""
-        kwargs['method_stream'] = "method_stream_ipv6_t" if self.ipv6 else "method_stream_ipv4_t"            
-        kwargs['proto'] = "http_proto" if self.tank_type == 'http' else "none_proto"
-        kwargs['threads'] = self.threads
-        kwargs['answ_log'] = self.answ_log
-        kwargs['answ_log_level'] = self.answ_log_level
-        kwargs['comment_answ'] = "# " if self.answ_log_level == 'none' else ''
-        kwargs['phout'] = self.phout_file
-        kwargs['stpd'] = self.stpd
-        if self.gatling:
-            kwargs['bind'] = 'bind={ ' + self.gatling + ' }'
-        else: 
-            kwargs['bind'] = '' 
-        kwargs['ip'] = self.resolved_ip
-        kwargs['port'] = self.port
-        kwargs['timeout'] = self.timeout
-        kwargs['instances'] = self.instances
-        kwargs['stat_log'] = self.stat_log
-        kwargs['phantom_log'] = self.phantom_log
-        tune = ''
-        if self.phantom_http_entity:
-            tune += "entity = " + self.phantom_http_entity + "\n"
-        if self.phantom_http_field:
-            tune += "field = " + self.phantom_http_field + "\n"
-        if self.phantom_http_field_num:
-            tune += "field_num = " + self.phantom_http_field_num + "\n"
-        if self.phantom_http_line:
-            tune += "line = " + self.phantom_http_line + "\n"
-        if tune:
-            kwargs['reply_limits'] = 'reply_limits = {\n' + tune + "}"
-        else:
-            kwargs['reply_limits'] = ''
-
-        
-        filename = self.owner.core.mkstemp(".conf", "phantom_")
-        self.owner.core.add_artifact_file(filename)
-        self.log.debug("Generating phantom config: %s", filename)
-        template_str = open(os.path.dirname(__file__) + "/phantom.conf.tpl", 'r').read()
-        tpl = string.Template(template_str)
-        config = tpl.substitute(kwargs)
-
-        handle = open(filename, 'w')
-        handle.write(config)
-        handle.close()
-        return filename
-        
-
+# ==================================================================================================
     
 class StepperWrapper:
     '''
@@ -754,14 +813,16 @@ class StepperWrapper:
     OPTION_LOADSCHEME = 'loadscheme'
 
 
-    def __init__(self, owner):
-        self.owner = owner
+    def __init__(self, core, section=PhantomPlugin.SECTION):
         self.log = logging.getLogger(__name__)
-        # stepper
+        self.core = core
+        self.section = section
+
+        self.cache_dir = '.' 
+        
+        # per-shoot params
         self.rps_schedule = []
-        self.use_caching = True
         self.http_ver = '1.0'
-        self.steps = []
         self.ammo_file = None
         self.instances_schedule = ''
         self.loop_limit = None
@@ -769,14 +830,17 @@ class StepperWrapper:
         self.uris = []
         self.headers = []
         self.autocases = 0
-        self.cache_dir = '.'
+        self.use_caching = True
         self.force_stepping = None
+
+        # out params
         self.stpd = None
+        self.steps = []
         
 
     def get_option(self, option_ammofile, param2=None):
         ''' get_option wrapper'''
-        return self.owner.get_option(option_ammofile, param2)
+        return self.core.get_option(self.section, option_ammofile, param2)
     
     
     def read_config(self):
@@ -803,7 +867,9 @@ class StepperWrapper:
         self.http_ver = self.get_option("header_http", self.http_ver)
         self.autocases = self.get_option("autocases", '0')
         self.use_caching = int(self.get_option("use_caching", '1'))
-        self.cache_dir = os.path.expanduser(self.get_option("cache_dir", self.owner.core.artifacts_base_dir))
+        
+        cache_dir = self.core.get_option(PhantomPlugin.SECTION, "cache_dir", self.core.artifacts_base_dir)
+        self.cache_dir = os.path.expanduser(cache_dir)
         self.force_stepping = int(self.get_option("force_stepping", '0'))
                 
     def prepare_stepper(self):
@@ -811,7 +877,7 @@ class StepperWrapper:
         Generate test data if necessary
         '''
         self.stpd = self.__get_stpd_filename()
-        self.owner.core.set_option(self.owner.SECTION, self.OPTION_STPD, self.stpd)
+        self.core.set_option(PhantomPlugin.SECTION, self.OPTION_STPD, self.stpd)
         if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.stpd + ".conf"):
             self.log.info("Using cached stpd-file: %s", self.stpd)
             stepper = Stepper(self.stpd)  # just to store cached data
@@ -821,14 +887,13 @@ class StepperWrapper:
         
         self.steps = stepper.steps
         
-        # self.core.set_option(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES, stepper.cases)
-        self.owner.core.set_option(self.owner.SECTION, self.OPTION_STEPS, ' '.join([str(x) for x in stepper.steps]))
-        self.owner.core.set_option(self.owner.SECTION, self.OPTION_LOADSCHEME, stepper.loadscheme)
-        self.owner.core.set_option(self.owner.SECTION, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
-        self.owner.core.set_option(self.owner.SECTION, self.OPTION_AMMO_COUNT, str(stepper.ammo_count))
+        self.core.set_option(self.section, self.OPTION_STEPS, ' '.join([str(x) for x in stepper.steps]))
+        self.core.set_option(self.section, self.OPTION_LOADSCHEME, stepper.loadscheme)
+        self.core.set_option(self.section, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
+        self.core.set_option(self.section, self.OPTION_AMMO_COUNT, str(stepper.ammo_count))
         self.__calculate_test_duration(stepper.steps)
                 
-        self.owner.core.config.flush(self.stpd + ".conf")
+        self.core.config.flush(self.stpd + ".conf")
 
     def __get_stpd_filename(self):
         '''
@@ -880,7 +945,7 @@ class StepperWrapper:
         for rps, dur in tankcore.pairs(steps):
             duration += dur
         
-        self.owner.core.set_option(self.owner.SECTION, self.OPTION_TEST_DURATION, str(duration))
+        self.core.set_option(self.section, self.OPTION_TEST_DURATION, str(duration))
 
 
     def __read_cached_options(self, cached_config, stepper):

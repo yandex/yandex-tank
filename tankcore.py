@@ -459,6 +459,7 @@ class TankCore:
 
         os.chmod(dest, 0644)
     
+    
     def add_artifact_file(self, filename, keep_original=False):
         '''
         Add file to be stored as result artifact on post-process phase
@@ -565,6 +566,7 @@ class ConfigManager:
             self.config.write(handle)
             handle.close()
                     
+                    
     def get_options(self, section, prefix=''):
         '''
         Get options list with requested prefix
@@ -581,6 +583,15 @@ class ConfigManager:
             self.log.debug("No section: %s", ex)
                 
         self.log.debug("Found options: %s", res)
+        return res
+
+
+    def find_sections(self, prefix):
+        ''' return sections with specified prefix '''
+        res=[]
+        for section in self.config.sections():
+            if section.startswith(prefix):
+                res.append(section)
         return res
 
 

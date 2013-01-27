@@ -3,6 +3,7 @@ debian/yandex-load-tank-base.substvars
 build-stamp
 *.ammo
 *.stpd
+dummy.*.conf
 configure-stamp
 .project
 *.log
