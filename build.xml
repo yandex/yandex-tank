@@ -27,10 +27,12 @@ PYTHONPATH=''
 		</exec>
 	</target>
 	<target name="debian" depends="loc,pylint,test">
+		<!--
 		<exec executable="dch" dir='.' failonerror="true">
 			<arg value="-n" />
 			<arg value="Jenkins CI build" />
 		</exec>
+		-->
 		<exec executable="debuild" dir='.' failonerror="true">
 			<arg value="-I" />
 			<arg value="-us" />

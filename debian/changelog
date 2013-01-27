@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.2.5) precise; urgency=low
+
+  * correct work with external phantom conf
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 24 Jan 2013 18:01:01 +0400
+
 yandex-load-tank-base (1.2.4) precise; urgency=low
 
   * Report poll hook exit code as test RC
