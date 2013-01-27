@@ -117,7 +117,7 @@ class  PhantomPluginTestCase(TankTestCase):
     def test_stepper_no_steps(self):
         self.foo.core.set_option('phantom', 'rps_schedule', '')
         self.foo.core.set_option('phantom', 'instances_schedule', '')
-        wrapper = StepperWrapper(self.foo)
+        wrapper = StepperWrapper(self.foo.core)
         wrapper.ammo_file = 'data/dummy.ammo'
         wrapper.prepare_stepper()
         wrapper.prepare_stepper()

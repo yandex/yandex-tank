@@ -73,14 +73,15 @@ class MonitoringPlugin(AbstractPlugin):
         phantom = None
         try:
             phantom = self.core.get_plugin_of_type(PhantomPlugin)
-        except KeyError, ex:
-            self.log.debug("Phantom plugin not found: %s", ex)
-        if phantom:
-            if phantom.phantom:
-                self.default_target = phantom.phantom.address
-                self.log.debug("Changed monitoring target to %s", self.default_target)
             if phantom.phout_import_mode:
                 self.config = None
+
+            info=phantom.get_info()
+            if info:
+                self.default_target = info.address
+                self.log.debug("Changed monitoring target to %s", self.default_target)
+        except KeyError, ex:
+            self.log.debug("Phantom plugin not found: %s", ex)
 
         if self.address_resolver:
             try:

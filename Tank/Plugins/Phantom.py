@@ -73,7 +73,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             self.phout_import_mode = True
 
         if not self.config and not self.phout_import_mode:
-            self.phantom = PhantomConfig(self)
+            self.phantom = PhantomConfig(self.core)
             self.phantom.read_config()
        
 
@@ -88,7 +88,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             aggregator.reader = PhantomReader(aggregator, self)
             aggregator.reader.buffered_seconds = self.buffered_seconds
             if self.phantom:
-                self.phantom.timeout = aggregator.get_timeout()
+                self.phantom.set_timeout(aggregator.get_timeout())
             aggregator.add_result_listener(self)
 
 
@@ -99,9 +99,13 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             self.config = self.phantom.compose_config()
             args = [self.phantom_path, 'check', self.config]
             
-            retcode = tankcore.execute(args, catch_out=True)[0]
+            result = tankcore.execute(args, catch_out=True)
+            retcode = result[0]
             if retcode:
-                raise RuntimeError("Config check failed. Subprocess returned code %s" % retcode)    
+                raise RuntimeError("Config check failed. Subprocess returned code %s" % retcode)
+            if result[2]:
+                raise RuntimeError("Subprocess returned message: %s" % result[2])
+                    
         else:
             aggregator.reader.phout_file = self.predefined_phout
         
@@ -257,7 +261,7 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.instances = 0
         self.planned = 0
         self.RPS = 0    
-        self.instances_limit = int(self.owner.core.get_option(PhantomPlugin.SECTION, PhantomConfig.OPTION_INSTANCES_LIMIT, 1))
+        self.instances_limit = int(self.owner.core.get_option(PhantomPlugin.SECTION, StreamConfig.OPTION_INSTANCES_LIMIT, 1))
         self.ammo_count = int(self.owner.core.get_option(PhantomPlugin.SECTION, StepperWrapper.OPTION_AMMO_COUNT, 1))
         self.selfload = 0
         self.time_lag = 0
@@ -340,15 +344,15 @@ class PhantomReader(AbstractReader):
         self.buffered_seconds = 3
   
     def check_open_files(self):
+        info = self.phantom.get_info()
         if not self.phout and os.path.exists(self.phout_file):
             self.log.debug("Opening phout file: %s", self.phout_file)
             self.phout = open(self.phout_file, 'r')
-            # FIXME: strange decision to place it here, but no better idea yet
-            if self.phantom.stepper: 
-                for item in tankcore.pairs(self.phantom.stepper.steps):
+            if info: 
+                for item in tankcore.pairs(info.steps):
                     self.steps.append([item[0], item[1]])  
     
-        if not self.stat and self.phantom.phantom and self.phantom.phantom.stat_log and os.path.exists(self.phantom.phantom.stat_log):
+        if not self.stat and info and os.path.exists(info.stat_log):
             self.log.debug("Opening stat file: %s", self.phantom.phantom.stat_log)
             self.stat = open(self.phantom.phantom.stat_log, 'r')
 
@@ -648,6 +652,13 @@ class PhantomConfig:
         handle.write(config)
         handle.close()
         return filename
+
+    
+    def set_timeout(self, timeout):
+        for stream in self.streams:
+            stream.timeout = timeout
+    
+    
         
 # ==================================================================================================
 
