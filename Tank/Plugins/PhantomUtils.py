@@ -100,12 +100,13 @@ class PhantomConfig:
 
     
     def set_timeout(self, timeout):
+        ''' pass timeout to all streams '''
         for stream in self.streams:
             stream.timeout = timeout
 
 
-    # TODO: merge data for multitest
     def get_info(self):
+        ''' get merged info about phantom conf '''
         result = copy.copy(self.streams[0])
         result.stat_log = self.stat_log
         result.steps = []
@@ -143,6 +144,8 @@ class PhantomConfig:
     
         
 class StreamConfig:
+    ''' each test stream's config '''
+    
     OPTION_INSTANCES_LIMIT = 'instances'
     OPTION_STPD = 'stpd_file'
 
@@ -179,6 +182,7 @@ class StreamConfig:
     
     
     def read_config(self):
+        ''' reads config '''
         # multi-options
         self.ssl = int(self.get_option("ssl", '0'))
         self.tank_type = self.get_option("tank_type", 'http')
@@ -199,6 +203,7 @@ class StreamConfig:
 
 
     def compose_config(self):
+        ''' compose benchmark block '''
         # step file
         self.stepper.prepare_stepper()     
         self.stpd = self.stepper.stpd
@@ -262,8 +267,8 @@ class StreamConfig:
             self.resolved_ip = self.address
             try:
                 self.address = socket.gethostbyaddr(self.resolved_ip)[0]
-            except Exception, e:
-                self.log.debug("Failed to get hostname for ip: %s", e)
+            except Exception, exc:
+                self.log.debug("Failed to get hostname for ip: %s", exc)
                 self.address = self.resolved_ip
         except AddressValueError:
             self.log.debug("Not ipv6 address: %s", self.address)
@@ -277,8 +282,8 @@ class StreamConfig:
                 self.resolved_ip = self.address
                 try:
                     self.address = socket.gethostbyaddr(self.resolved_ip)[0]
-                except Exception, e:
-                    self.log.debug("Failed to get hostname for ip: %s", e)
+                except Exception, exc:
+                    self.log.debug("Failed to get hostname for ip: %s", exc)
                     self.address = self.resolved_ip
             except AddressValueError:
                 self.log.debug("Not ipv4 address: %s", self.address)

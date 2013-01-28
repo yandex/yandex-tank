@@ -3,7 +3,6 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from tankcore import AbstractPlugin
 from threading import Thread
-from distutils.util import strtobool
 import json
 import logging
 import os.path

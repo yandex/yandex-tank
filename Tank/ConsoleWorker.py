@@ -19,6 +19,7 @@ class SingleLevelFilter(logging.Filter):
     '''Exclude or approve one msg type at a time.
     '''
     def __init__(self, passlevel, reject):
+        logging.Filter.__init__(self)
         self.passlevel = passlevel
         self.reject = reject
 
@@ -29,8 +30,8 @@ class SingleLevelFilter(logging.Filter):
             return (record.levelno == self.passlevel)
 
 
-# required for non-tty python runs
-def signal_handler(signal, frame):
+def signal_handler(sig, frame):
+    ''' required for non-tty python runs to interrupt '''
     raise KeyboardInterrupt()
     
 signal.signal(signal.SIGINT, signal_handler)
@@ -125,8 +126,8 @@ class ConsoleTank:
         console_handler = logging.StreamHandler(sys.stdout)
         stderr_hdl = logging.StreamHandler(sys.stderr)
         
-        fmt_verbose=logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s")
-        fmt_regular=logging.Formatter("%(asctime)s %(levelname)s: %(message)s", "%H:%M:%S")
+        fmt_verbose = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s")
+        fmt_regular = logging.Formatter("%(asctime)s %(levelname)s: %(message)s", "%H:%M:%S")
         
         if self.options.verbose:
             console_handler.setLevel(logging.DEBUG)

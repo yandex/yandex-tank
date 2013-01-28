@@ -559,13 +559,14 @@ class MonitoringDataDecoder:
 
     def __init__(self):
         self.metrics = {}
+        self.log = logging.getLogger()
     
     def decode_line(self, line):
         ''' convert mon line to dict '''
         is_initial = False
         data_dict = {}
         data = line.strip().split(';')
-        timestamp=-1
+        timestamp = -1
         if data[0] == 'start':
             data.pop(0)  # remove 'start'
             host = data.pop(0)
