@@ -27,10 +27,12 @@ class ResourceCheckPlugin(AbstractPlugin):
         self.mem_limit = int(self.get_option("mem_limit", self.mem_limit))
         
     def prepare_test(self):
+        self.log.info("Checking tank resources...")
         self.__check_disk()
         self.__check_mem()
         
     def is_test_finished(self):
+        self.log.debug("Checking tank resources...")
         if time.time() - self.last_check < self.interval:
             return -1
         self.__check_disk()
@@ -41,7 +43,7 @@ class ResourceCheckPlugin(AbstractPlugin):
 
     def __check_disk(self):
         ''' raise exception on disk space exceeded '''
-        cmd = "df --no-sync -m -P -l -x fuse -x tmpfs -x devtmpfs "
+        cmd = "df --no-sync -m -P -l -x fuse -x tmpfs -x devtmpfs -x davfs "
         cmd += self.core.artifacts_base_dir
         cmd += " | tail -n 1 | awk '{print $4}'"
         disk_free = tankcore.execute(cmd, True, 0.1, True)[1]
