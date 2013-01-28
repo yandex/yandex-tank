@@ -76,7 +76,7 @@ class MonitoringPlugin(AbstractPlugin):
             if phantom.phout_import_mode:
                 self.config = None
 
-            info=phantom.get_info()
+            info = phantom.get_info()
             if info:
                 self.default_target = info.address
                 self.log.debug("Changed monitoring target to %s", self.default_target)
@@ -229,8 +229,8 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
         else:
             res = "Monitoring is " + screen.markup.GREEN + "online" + screen.markup.RESET + ":\n"
             for hostname, metrics in self.data.items():
-                tm=datetime.datetime.fromtimestamp(float(self.time[hostname])).strftime('%H:%M:%S')
-                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET + " at %s:\n") % (hostname, tm)
+                tm_stamp = datetime.datetime.fromtimestamp(float(self.time[hostname])).strftime('%H:%M:%S')
+                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
@@ -359,7 +359,9 @@ class MetricLowerCriteria(AbstractMetricCriteria):
 
 
 class AbstractResolver:
+    ''' Resolver class provides virtual to real host resolution '''
     def resolve_virtual(self, virt_address):
+        ''' get host address by virtual '''
         raise NotImplementedError()
     
     

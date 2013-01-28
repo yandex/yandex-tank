@@ -1,7 +1,8 @@
-from Tank.Plugins.Phantom import PhantomConfig, StepperWrapper
+from Tank.Plugins.Phantom import PhantomConfig, PhantomPlugin
 from Tests.TankTests import TankTestCase
 import unittest
 import logging
+from Tank.Plugins.PhantomUtils import StepperWrapper
 
 class  PhantomConfigTestCase(TankTestCase):
     def setUp(self):
@@ -34,10 +35,12 @@ class  PhantomConfigTestCase(TankTestCase):
         conf_str = open(config).read()
         logging.info(conf_str)
         self.assertEquals(conf_str.count("io_benchmark_t"), 2)
+        self.assertEquals(conf_str.count("benchmark_io "), 2)
+        self.assertEquals(conf_str.count("benchmark_io1 "), 2)
 
     def test_multiload_parsing(self):
         core = self.get_core()
-        foo = StepperWrapper(core)
+        foo = StepperWrapper(core, PhantomPlugin.SECTION)
         foo.core.set_option('phantom', 'rps_schedule', 'const(1,1) line(1,100,60)\nstep(1,10,1,10)')
         foo.read_config()
         self.assertEquals(['const(1,1)', 'line(1,100,60)', 'step(1,10,1,10)'], foo.rps_schedule)

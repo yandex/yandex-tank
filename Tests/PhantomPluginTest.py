@@ -1,9 +1,10 @@
 from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData
-from Tank.Plugins.Phantom import PhantomPlugin, PhantomReader, StepperWrapper
+from Tank.Plugins.Phantom import PhantomPlugin, PhantomReader
 from Tests.TankTests import TankTestCase
 import os
 import time
 import unittest
+from Tank.Plugins.PhantomUtils import StepperWrapper
 
 class  PhantomPluginTestCase(TankTestCase):
     def setUp(self):
@@ -112,7 +113,7 @@ class  PhantomPluginTestCase(TankTestCase):
     def test_stepper_no_steps(self):
         self.foo.core.set_option('phantom', 'rps_schedule', '')
         self.foo.core.set_option('phantom', 'instances_schedule', '')
-        wrapper = StepperWrapper(self.foo.core)
+        wrapper = StepperWrapper(self.foo.core, PhantomPlugin.SECTION)
         wrapper.ammo_file = 'data/dummy.ammo'
         wrapper.prepare_stepper()
         wrapper.prepare_stepper()
