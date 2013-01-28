@@ -694,8 +694,7 @@ class Stepper:
 
         tank_type = self.tank_type
 
-        (load_steps, load_scheme, load_count) = \
-            make_steps(self.rps_schedule)
+        (load_steps, load_scheme, load_count) = make_steps(self.rps_schedule)
 
         instances_schedule_count = 0
         instances_schedule = []
@@ -705,8 +704,7 @@ class Stepper:
             sched_parts = instances.split(' ')
             for sched_part in sched_parts:
                 if sched_part:
-                    [expanded_sched, skip, skip, max_val] = \
-                        expand_load_spec(sched_part)
+                    [expanded_sched, skip, skip, max_val] = expand_load_spec(sched_part)
                     instances_schedule += expanded_sched
                     if max_val > instances_schedule_count:
                         instances_schedule_count = max_val
@@ -746,16 +744,13 @@ class Stepper:
             if not self.autocases:
                 ammo_count = get_ammo_count(ammo_file, load_count)
             else:
-                if ammo_type == 'request'\
-                     and detect_case_file(ammo_file) == True:
+                if ammo_type == 'request' and detect_case_file(ammo_file) == True:
                     self.log.debug('Ammo file has cases. Do not create autocases.')
                     ammo_count = get_ammo_count(ammo_file, load_count)
                 else:
-                    (l1, l2, l3, cases_tree, ammo_count) = \
-                        get_autocases_tree(ammo_file)
+                    (l1, l2, l3, cases_tree, ammo_count) = get_autocases_tree(ammo_file)
                     if self.autocases:
-                        (cases_done, cases_output) = \
-                            make_autocases_top(l1, l2, l3, ammo_count,
+                        (cases_done, cases_output) = make_autocases_top(l1, l2, l3, ammo_count,
                                 cases_tree)
 
         if self.autocases:

@@ -174,7 +174,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
     def post_process(self, retcode):
         if not retcode:
             info = self.get_info()
-            if info.ammo_count != self.processed_ammo_count:
+            if info and info.ammo_count != self.processed_ammo_count:
                 self.log.warning("Planned ammo count %s differs from processed %s", info.ammo_count, self.processed_ammo_count)
         return retcode
 
@@ -187,6 +187,8 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
     def get_info(self):
         ''' returns info object '''
         if not self.cached_info:
+            if not self.phantom:
+                return None
             self.cached_info = self.phantom.get_info()
         return self.cached_info
             
@@ -206,9 +208,14 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         self.eta_file = None
         
         info = self.owner.get_info()
-        self.ammo_count = int(info.ammo_count)
-        self.test_duration = int(info.duration)
+        if info:
+            self.ammo_count = int(info.ammo_count)
+            self.test_duration = int(info.duration)
+        else:
+            self.ammo_count = 0
+            self.test_duration = 0
 
+    
     def render(self, screen):
         res = ""
 
@@ -276,8 +283,12 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.planned_rps_duration = 0
 
         info = self.owner.get_info()
-        self.instances_limit = int(info.instances)
-        self.ammo_count = int(info.ammo_count)
+        if info:
+            self.instances_limit = int(info.instances)
+            self.ammo_count = int(info.ammo_count)
+        else:
+            self.instances_limit = 0
+            self.ammo_count = 0
 
     def render(self, screen):
         res = ''
@@ -361,9 +372,9 @@ class PhantomReader(AbstractReader):
         if not self.phout and os.path.exists(self.phout_file):
             self.log.debug("Opening phout file: %s", self.phout_file)
             self.phout = open(self.phout_file, 'r')
-            self.steps = info.steps 
+            if info:
+                self.steps = info.steps 
         
-        # TODO: read stat log correctly for multitest
         if not self.stat and info and os.path.exists(info.stat_log):
             self.log.debug("Opening stat file: %s", self.phantom.phantom.stat_log)
             self.stat = open(self.phantom.phantom.stat_log, 'r')
@@ -395,7 +406,7 @@ class PhantomReader(AbstractReader):
                 if not self.pending_datetime:
                     raise RuntimeError("Can't have tasks info without timestamp")
                 
-                self.stat_data[self.pending_datetime] = max(int(line[len('tasks\t'):]), self.stat_data[self.pending_datetime])
+                self.stat_data[self.pending_datetime] += int(line[len('tasks\t'):])
                 self.log.debug("Active instances: %s=>%s", self.pending_datetime, self.stat_data[self.pending_datetime])
 
 
@@ -686,20 +697,32 @@ class PhantomConfig:
         result.ammo_file = ''
         result.rps_schedule = None
         result.ammo_count = 0
-        result.duration = 0        
+        result.duration = 0
+        result.instances = 0        
         
         for stream in self.streams:
+            sec_no = 0
             for item in tankcore.pairs(stream.stepper.steps):
-                result.steps.append([item[0], item[1]])              
+                for x in range(0, item[1]):
+                    if len(result.steps) > sec_no:
+                        result.steps[sec_no][0] += item[0]
+                    else:
+                        result.steps.append([item[0], 1])
+                sec_no += 1
             
             if result.rps_schedule:
                 result.rps_schedule = u'multiple'
             else:
                 result.rps_schedule = stream.stepper.rps_schedule
 
-            result.ammo_file = stream.stepper.ammo_file + ' '
-            result.ammo_count += int(self.core.get_option(stream.section, StepperWrapper.OPTION_AMMO_COUNT, 0))
-            result.duration = max(result.duration, int(self.core.get_option(stream.section, StepperWrapper.OPTION_TEST_DURATION, 0)))        
+            result.ammo_file += stream.stepper.ammo_file + ' '
+            result.ammo_count += stream.stepper.ammo_count
+            result.duration = max(result.duration, stream.stepper.duration)
+            result.instances += stream.instances
+            
+        if not result.ammo_count:
+            raise ValueError("Total ammo count cannot be zero")
+
         return result    
     
     
@@ -894,7 +917,9 @@ class StepperWrapper:
         # out params
         self.stpd = None
         self.steps = []
-        
+        self.ammo_count = 0
+        self.duration = 0
+                
 
     def get_option(self, option_ammofile, param2=None):
         ''' get_option wrapper'''
@@ -929,6 +954,7 @@ class StepperWrapper:
         cache_dir = self.core.get_option(PhantomPlugin.SECTION, "cache_dir", self.core.artifacts_base_dir)
         self.cache_dir = os.path.expanduser(cache_dir)
         self.force_stepping = int(self.get_option("force_stepping", '0'))
+        
                 
     def prepare_stepper(self):
         '''
@@ -944,23 +970,28 @@ class StepperWrapper:
             stepper = self.__make_stpd_file(self.stpd)
         
         self.steps = stepper.steps
+        self.ammo_count = int(stepper.ammo_count)
+        self.duration = self.__calculate_test_duration(stepper.steps)
         
-        self.core.set_option(self.section, self.OPTION_STEPS, ' '.join([str(x) for x in stepper.steps]))
-        self.core.set_option(self.section, self.OPTION_LOADSCHEME, stepper.loadscheme)
-        self.core.set_option(self.section, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
-        self.core.set_option(self.section, self.OPTION_AMMO_COUNT, str(stepper.ammo_count))
-        self.__calculate_test_duration(stepper.steps)
+        external_stepper_conf = ConfigParser.ConfigParser()
+        external_stepper_conf.add_section(PhantomPlugin.SECTION)
+        external_stepper_conf.set(PhantomPlugin.SECTION, self.OPTION_STEPS, ' '.join([str(x) for x in stepper.steps]))
+        external_stepper_conf.set(PhantomPlugin.SECTION, self.OPTION_LOADSCHEME, stepper.loadscheme)
+        external_stepper_conf.set(PhantomPlugin.SECTION, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
+        external_stepper_conf.set(PhantomPlugin.SECTION, self.OPTION_AMMO_COUNT, str(stepper.ammo_count))
+        external_stepper_conf.set(PhantomPlugin.SECTION, self.OPTION_TEST_DURATION, str(self.duration))
                 
-        self.core.config.flush(self.stpd + ".conf")
+        handle = open(self.stpd + ".conf", 'wb')
+        external_stepper_conf.write(handle)
+        handle.close()
+
 
     def __get_stpd_filename(self):
-        '''
-        Choose the name for stepped data file
-        '''
+        ''' Choose the name for stepped data file '''
         if self.use_caching:
             sep = "|"
             hasher = hashlib.md5()
-            hashed_str = self.instances_schedule + sep + str(self.loop_limit)
+            hashed_str = "cache version 2" + sep + self.instances_schedule + sep + str(self.loop_limit)
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(self.rps_schedule) + sep + str(self.autocases)
             hashed_str += sep + ";".join(self.uris) + sep + ";".join(self.headers) + sep + self.http_ver
             
@@ -1002,8 +1033,7 @@ class StepperWrapper:
         duration = 0
         for rps, dur in tankcore.pairs(steps):
             duration += dur
-        
-        self.core.set_option(self.section, self.OPTION_TEST_DURATION, str(duration))
+        return duration
 
 
     def __read_cached_options(self, cached_config, stepper):
@@ -1014,16 +1044,18 @@ class StepperWrapper:
         external_stepper_conf = ConfigParser.ConfigParser()
         external_stepper_conf.read(cached_config)
         # stepper.cases = external_stepper_conf.get(AggregatorPlugin.SECTION, AggregatorPlugin.OPTION_CASES)
-        steps = external_stepper_conf.get(self.section, self.OPTION_STEPS).strip().split(' ')
 
+        steps = external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_STEPS).strip().split(' ')
         if len(steps) % 2 == 0:
             stepper.steps = [int(x) for x in steps]
         else:
             self.log.warning("Steps list must be even: %s", steps)
             stepper.steps = []
-        stepper.loadscheme = external_stepper_conf.get(self.section, self.OPTION_LOADSCHEME)
-        stepper.loop_count = external_stepper_conf.get(self.section, self.OPTION_LOOP_COUNT)
-        stepper.ammo_count = external_stepper_conf.get(self.section, self.OPTION_AMMO_COUNT)
+            
+        stepper.loadscheme = external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_LOADSCHEME)
+        stepper.loop_count = external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_LOOP_COUNT)
+        stepper.ammo_count = int(external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_AMMO_COUNT))
+        stepper.duration = int(external_stepper_conf.get(PhantomPlugin.SECTION, self.OPTION_TEST_DURATION))
 
 
     def __make_stpd_file(self, stpd):

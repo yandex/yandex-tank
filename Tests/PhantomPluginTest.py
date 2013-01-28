@@ -93,12 +93,6 @@ class  PhantomPluginTestCase(TankTestCase):
             pass
     
     
-    def test_multiload_parsing(self):
-        self.foo.core.set_option('phantom', 'rps_schedule', 'const(1,1) line(1,100,60)\nstep(1,10,1,10)')
-        self.foo.configure()
-        self.assertEquals(['const(1,1)', 'line(1,100,60)', 'step(1,10,1,10)'], self.foo.get_info().rps_schedule)
-    
-    
     def test_reader(self):
         self.foo.phantom_start_time = time.time()
         reader = PhantomReader(AggregatorPlugin(self.foo.core), self.foo)
