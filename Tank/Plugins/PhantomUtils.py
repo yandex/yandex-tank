@@ -115,21 +115,34 @@ class PhantomConfig:
         result.ammo_count = 0
         result.duration = 0
         result.instances = 0        
+        result.loadscheme = ''
+        result.loop_count = 0
         
         for stream in self.streams:
             sec_no = 0
+            logging.info("Steps: %s", stream.stepper.steps)
             for item in tankcore.pairs(stream.stepper.steps):
                 for x in range(0, item[1]):
                     if len(result.steps) > sec_no:
                         result.steps[sec_no][0] += item[0]
                     else:
                         result.steps.append([item[0], 1])
-                sec_no += 1
+                    sec_no += 1
             
             if result.rps_schedule:
                 result.rps_schedule = u'multiple'
             else:
                 result.rps_schedule = stream.stepper.rps_schedule
+                
+            if result.rps_schedule:
+                result.loadscheme = u'multiple'
+            else:
+                result.loadscheme = stream.stepper.loadscheme
+
+            if result.loop_count:
+                result.loop_count = u'0'
+            else:
+                result.loop_count = stream.stepper.loop_count
 
             result.ammo_file += stream.stepper.ammo_file + ' '
             result.ammo_count += stream.stepper.ammo_count
