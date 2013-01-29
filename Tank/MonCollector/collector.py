@@ -271,14 +271,14 @@ class MonitoringCollector:
             pipe = agent.start()
             self.agent_pipes.append(pipe)
             
-            fd = pipe.stdout.fileno()
-            fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-            fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+            fds = pipe.stdout.fileno()
+            flags = fcntl.fcntl(fds, fcntl.F_GETFL)
+            fcntl.fcntl(fds, fcntl.F_SETFL, flags | os.O_NONBLOCK)
             self.outputs.append(pipe.stdout)
 
-            fd = pipe.stderr.fileno()
-            fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-            fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+            fds = pipe.stderr.fileno()
+            flags = fcntl.fcntl(fds, fcntl.F_GETFL)
+            fcntl.fcntl(fds, fcntl.F_SETFL, flags | os.O_NONBLOCK)
             self.excepts.append(pipe.stderr)     
             
         logging.debug("Pipes: %s", self.agent_pipes)
@@ -355,6 +355,7 @@ class MonitoringCollector:
 
 
     def send_collected_data(self):
+        ''' sends pending data set to listeners '''
         for listener in self.listeners:
             listener.monitoring_data(self.send_data)
         self.send_data = ''
