@@ -147,9 +147,9 @@ class MonitoringPlugin(AbstractPlugin):
             for log in self.monitoring.artifact_files:
                 self.core.add_artifact_file(log)
     
-        while self.monitoring.send_data:
-            self.log.info("Sending monitoring data rests...")
-            self.monitoring.send_collected_data()
+            while self.monitoring.send_data:
+                self.log.info("Sending monitoring data rests...")
+                self.monitoring.send_collected_data()
         
         if self.mon_saver:
             self.mon_saver.close()
