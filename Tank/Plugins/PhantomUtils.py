@@ -61,7 +61,7 @@ class PhantomConfig:
         main_stream = StreamConfig(self.core, len(self.streams), self.phout_file, self.answ_log, self.answ_log_level, self.timeout, self.SECTION)
         self.streams.append(main_stream)
         
-        for section in self.core.config.find_sections(self.SECTION + '.'):
+        for section in self.core.config.find_sections(self.SECTION + '-'):
             self.streams.append(StreamConfig(self.core, len(self.streams), self.phout_file, self.answ_log, self.answ_log_level, self.timeout, section))
         
         for stream in self.streams:
