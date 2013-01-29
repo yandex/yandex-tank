@@ -297,10 +297,10 @@ class ConsoleTank:
                 
         except Exception, ex:
             self.log.info("Exception: %s", traceback.format_exc(ex))
-            sys.stdout.write(RealConsoleMarkup.RED)
+            sys.stderr.write(RealConsoleMarkup.RED)
             self.log.error("%s", ex)
-            sys.stdout.write(RealConsoleMarkup.RESET)
-            sys.stdout.write(RealConsoleMarkup.TOTAL_RESET)
+            sys.stderr.write(RealConsoleMarkup.RESET)
+            sys.stderr.write(RealConsoleMarkup.TOTAL_RESET)
             self.core.release_lock()
             raise ex
 
@@ -354,10 +354,10 @@ class ConsoleTank:
                                 
         except Exception as ex:
             self.log.info("Exception: %s", traceback.format_exc(ex))
-            sys.stdout.write(RealConsoleMarkup.RED)
+            sys.stderr.write(RealConsoleMarkup.RED)
             self.log.error("%s", ex)
-            sys.stdout.write(RealConsoleMarkup.RESET)
-            sys.stdout.write(RealConsoleMarkup.TOTAL_RESET)
+            sys.stderr.write(RealConsoleMarkup.RESET)
+            sys.stderr.write(RealConsoleMarkup.TOTAL_RESET)
             retcode = self.__graceful_shutdown()
             self.core.release_lock()
         
