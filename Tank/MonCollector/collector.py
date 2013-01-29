@@ -15,6 +15,7 @@ import sys
 import tempfile
 import time
 import tankcore
+import fcntl
 
 # FIXME: 3 synchronize times between agent and collector better
 class Config(object):
@@ -269,7 +270,15 @@ class MonitoringCollector:
         for agent in self.agents:
             pipe = agent.start()
             self.agent_pipes.append(pipe)
+            
+            fd = pipe.stdout.fileno()
+            fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+            fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
             self.outputs.append(pipe.stdout)
+
+            fd = pipe.stderr.fileno()
+            fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+            fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
             self.excepts.append(pipe.stderr)     
             
         logging.debug("Pipes: %s", self.agent_pipes)
@@ -298,22 +307,25 @@ class MonitoringCollector:
                 data = excepted.readline()                
     
         while readable:
-            excepted = readable.pop(0)
+            to_read = readable.pop(0)
             # Handle outputs
-            data = excepted.readline()
-            if not data:
-                continue
-            logging.debug("Got data from agent: %s", data.strip())    
-            self.send_data += self.filter_unused_data(self.filter_conf, self.filter_mask, data)
-            logging.debug("Data after filtering: %s", self.send_data)
+            
+            try:
+                lines = to_read.read().split("\n")
+            except IOError:
+                self.log.debug("No data available")
+                lines = []
+            
+            for data in lines:
+                logging.debug("Got data from agent: %s", data.strip())    
+                self.send_data += self.filter_unused_data(self.filter_conf, self.filter_mask, data)
+                logging.debug("Data after filtering: %s", self.send_data)
 
         if not self.first_data_received and self.send_data:
             self.first_data_received = True
             self.log.info("Monitoring received first data")
         else:
-            for listener in self.listeners:
-                listener.monitoring_data(self.send_data)
-            self.send_data = ''
+            self.send_collected_data()
             
         return len(self.outputs)            
 
@@ -341,6 +353,12 @@ class MonitoringCollector:
         for agent in self.agents:
             self.artifact_files.append(agent.uninstall())
 
+
+    def send_collected_data(self):
+        for listener in self.listeners:
+            listener.monitoring_data(self.send_data)
+        self.send_data = ''
+            
         
     def getconfig(self, filename, target_hint):
         ''' Prepare config data'''
