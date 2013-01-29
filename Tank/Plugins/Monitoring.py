@@ -155,6 +155,8 @@ class MonitoringPlugin(AbstractPlugin):
             self.mon_saver.close()
         return retcode
     
+    
+    
 class SaveMonToFile(MonitoringDataListener):
     '''
     Default listener - saves data to file
