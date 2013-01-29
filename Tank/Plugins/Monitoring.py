@@ -14,9 +14,7 @@ import fnmatch
 import datetime
 
 class MonitoringPlugin(AbstractPlugin):
-    '''
-    Tank plugin
-    '''
+    '''  resource mon plugin  '''
     
     SECTION = 'monitoring'
     
@@ -32,9 +30,11 @@ class MonitoringPlugin(AbstractPlugin):
         self.mon_saver = None
         self.address_resolver = None
 
+
     @staticmethod
     def get_key():
         return __file__
+    
     
     def configure(self):
         self.config = self.get_option("config", 'auto').strip()
@@ -128,6 +128,7 @@ class MonitoringPlugin(AbstractPlugin):
                 else:
                     self.log.warning("Failed to start monitoring: %s", exc)
                     self.monitoring = None
+            
             
     def is_test_finished(self):
         if self.monitoring and not self.monitoring.poll():

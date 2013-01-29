@@ -115,12 +115,12 @@ class PhantomConfig:
         result.ammo_count = 0
         result.duration = 0
         result.instances = 0        
-        result.loadscheme = ''
+        result.loadscheme = []
         result.loop_count = 0
         
         for stream in self.streams:
             sec_no = 0
-            logging.info("Steps: %s", stream.stepper.steps)
+            # logging.info("Steps: %s", stream.stepper.steps)
             for item in tankcore.pairs(stream.stepper.steps):
                 for x in range(0, item[1]):
                     if len(result.steps) > sec_no:
@@ -134,8 +134,8 @@ class PhantomConfig:
             else:
                 result.rps_schedule = stream.stepper.rps_schedule
                 
-            if result.rps_schedule:
-                result.loadscheme = u'multiple'
+            if result.loadscheme:
+                result.loadscheme = ''
             else:
                 result.loadscheme = stream.stepper.loadscheme
 
@@ -350,6 +350,9 @@ class StepperWrapper:
         self.steps = []
         self.ammo_count = 0
         self.duration = 0
+        self.loop_count = 0
+        self.loadscheme = None
+        
                 
 
     def get_option(self, option_ammofile, param2=None):
@@ -403,6 +406,8 @@ class StepperWrapper:
         self.steps = stepper.steps
         self.ammo_count = int(stepper.ammo_count)
         self.duration = self.__calculate_test_duration(stepper.steps)
+        self.loop_count = stepper.loop_count
+        self.loadscheme = stepper.loadscheme
         
         external_stepper_conf = ConfigParser.ConfigParser()
         external_stepper_conf.add_section(PhantomConfig.SECTION)
