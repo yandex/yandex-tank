@@ -114,6 +114,8 @@ class SecondAggregateData:
     def __repr__(self):
         return "SecondAggregateData[%s][%s]" % (self.time, time.mktime(self.time.timetuple()))
 
+
+
 class SecondAggregateDataItem:
     ''' overall and case items has this type '''
     QUANTILES = [0.25, 0.50, 0.75, 0.80, 0.90, 0.95, 0.98, 0.99, 1.00]
@@ -136,6 +138,8 @@ class SecondAggregateDataItem:
         self.avg_latency = 0
         self.avg_receive_time = 0
         self.avg_response_time = 0
+
+
 
 class SecondAggregateDataTotalItem:
     ''' total cumulative data item '''
