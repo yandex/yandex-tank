@@ -74,7 +74,9 @@ class MonitoringPlugin(AbstractPlugin):
         try:
             phantom = self.core.get_plugin_of_type(PhantomPlugin)
             if phantom.phout_import_mode:
+                self.log.info("Phout import mode, disabling monitoring")
                 self.config = None
+                self.monitoring = None
 
             info = phantom.get_info()
             if info:

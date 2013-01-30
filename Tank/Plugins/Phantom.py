@@ -279,8 +279,8 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
             self.instances_limit = int(info.instances)
             self.ammo_count = int(info.ammo_count)
         else:
-            self.instances_limit = 0
-            self.ammo_count = 0
+            self.instances_limit = 1
+            self.ammo_count = 1
 
     def render(self, screen):
         res = ''
@@ -527,6 +527,7 @@ class UsedInstancesCriteria(AbstractCriteria):
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
         self.autostop = autostop
+        self.threads_limit = 1
 
         level_str = param_str.split(',')[0].strip()
         if level_str[-1:] == '%':
@@ -540,7 +541,8 @@ class UsedInstancesCriteria(AbstractCriteria):
         try:
             phantom = autostop.core.get_plugin_of_type(PhantomPlugin)
             info = phantom.get_info()
-            self.threads_limit = info.instances
+            if info:
+                self.threads_limit = info.instances
             if not self.threads_limit:
                 raise ValueError("Cannot create 'instances' criteria with zero instances limit")
         except KeyError:
