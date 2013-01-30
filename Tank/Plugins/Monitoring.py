@@ -281,7 +281,7 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
             
             host, data, initial, timestamp = self.decode_line(line)
             if initial or not fnmatch.fnmatch(host, self.host):
-                return
+                continue
             
             if self.metric not in data.keys() or not data[self.metric] or data[self.metric] == self.NA:
                 data[self.metric] = 0
