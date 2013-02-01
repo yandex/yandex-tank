@@ -17,20 +17,19 @@ io_t benchmark_io = io_benchmark_t {
 			$comment_answ benchmark_logger 
 	    }
 	
-	    source_t source_log = source_log_t {
+	    ${source_log_prefix}source_t source_log = ${source_log_prefix}source_log_t {
 			filename = "$stpd"     
 	    }
 	
 	    $ssl_transport
 	    
-		proto_t http_proto0 = proto_http_t { 
+		$comment_proto proto_t http_proto0 = proto_http_t { 
 			$reply_limits
-		}
+		$comment_proto }
 		
-	    proto_t none_proto = proto_none_t { 
-	    }
+	    $comment_proto proto_t none_proto = proto_none_t { }
 	    
-	    proto=$proto
+	    $proto
 	    
 	    address = $ip
 	    port = $port

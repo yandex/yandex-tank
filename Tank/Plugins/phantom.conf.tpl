@@ -10,6 +10,8 @@ setup_t module_setup = setup_module_t {
 		io_benchmark_method_stream_source_log
 		io_benchmark_method_stream_proto_none
 		io_benchmark_method_stream_proto_http
+		
+		$additional_libs
 	}
 }
 

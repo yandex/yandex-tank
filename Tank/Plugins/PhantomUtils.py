@@ -32,6 +32,7 @@ class PhantomConfig:
         self.phantom_start_time = None
         self.phantom_modules_path = None
         self.threads = None
+        self.additional_libs = None
 
 
     def get_option(self, opt_name, default=None):
@@ -43,6 +44,7 @@ class PhantomConfig:
         '''        Read phantom tool specific options        '''
         self.threads = self.get_option("threads", str(int(multiprocessing.cpu_count() / 2) + 1))
         self.phantom_modules_path = self.get_option("phantom_modules_path", "/usr/lib/phantom")
+        self.additional_libs = self.get_option("additional_libs", "")
         self.answ_log_level = self.get_option("writelog", "none")
         if self.answ_log_level == '0':
             self.answ_log_level = 'none'
@@ -83,6 +85,7 @@ class PhantomConfig:
         kwargs['stat_log'] = self.stat_log
         kwargs['benchmarks_block'] = streams_config
         kwargs['stat_benchmarks'] = stat_benchmarks
+        kwargs['additional_libs'] = self.additional_libs
         
         filename = self.core.mkstemp(".conf", "phantom_")
         self.core.add_artifact_file(filename)
@@ -187,6 +190,8 @@ class StreamConfig:
         self.phantom_http_field = None
         self.phantom_http_entity = None
         self.resolved_ip = None
+        self.method_prefix = None
+        self.source_log_prefix = None
 
 
     def get_option(self, option_ammofile, default=None):
@@ -202,6 +207,8 @@ class StreamConfig:
         self.stpd = self.get_option(self.OPTION_STPD, '')
         self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
         self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
+        self.method_prefix = self.get_option("method_prefix", 'method_stream')
+        self.source_log_prefix = self.get_option("source_log_prefix", '')
         
         self.phantom_http_line = self.get_option("phantom_http_line", "")
         self.phantom_http_field_num = self.get_option("phantom_http_field_num", "")
@@ -227,13 +234,21 @@ class StreamConfig:
         kwargs = {}
         kwargs['sequence_no'] = self.sequence_no
         kwargs['ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s }\n transport = ssl_transport" if self.ssl else ""
-        kwargs['method_stream'] = "method_stream_ipv6_t" if self.ipv6 else "method_stream_ipv4_t"            
-        kwargs['proto'] = "http_proto%s" % self.sequence_no if self.tank_type == 'http' else "none_proto"
+        kwargs['method_stream'] = self.method_prefix + "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"            
         kwargs['phout'] = self.phout_file
         kwargs['answ_log'] = self.answ_log
         kwargs['answ_log_level'] = self.answ_log_level
         kwargs['comment_answ'] = "# " if self.answ_log_level == 'none' else ''
         kwargs['stpd'] = self.stpd
+        kwargs['source_log_prefix'] = self.source_log_prefix        
+        
+        if self.tank_type:
+            kwargs['proto'] = "http_proto%s" % self.sequence_no if self.tank_type == 'http' else "none_proto"
+            kwargs['comment_proto'] = ""
+        else:
+            kwargs['proto']=""
+            kwargs['comment_proto'] = "#"
+        
         if self.gatling:
             kwargs['bind'] = 'bind={ ' + self.gatling + ' }'
         else: 
