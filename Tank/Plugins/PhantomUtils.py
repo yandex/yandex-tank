@@ -243,7 +243,7 @@ class StreamConfig:
         kwargs['source_log_prefix'] = self.source_log_prefix        
         
         if self.tank_type:
-            kwargs['proto'] = "http_proto%s" % self.sequence_no if self.tank_type == 'http' else "none_proto"
+            kwargs['proto'] = "proto=http_proto%s" % self.sequence_no if self.tank_type == 'http' else "proto=none_proto"
             kwargs['comment_proto'] = ""
         else:
             kwargs['proto']=""
