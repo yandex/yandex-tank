@@ -23,6 +23,7 @@ class TotalAutostopPlugin(AbstractPlugin, AggregateResultListener):
         autostop.add_criteria_class(TotalNegativeHTTPCodesCriteria)
         autostop.add_criteria_class(TotalNegativeNetCodesCriteria)
         autostop.add_criteria_class(TotalHTTPTrendCriteria)
+        autostop.add_criteria_class(QuantileOfSaturationCriteria)
 
     def prepare_test(self):
         pass
@@ -467,3 +468,72 @@ class TotalHTTPTrendCriteria(AbstractCriteria):
     def widget_explain(self):
         items = (self.codes_mask, self.total_tan, self.measurement_error, self.seconds_limit)
         return ("HTTP(%s) trend is %.2f +/- %.2f < 0 for %ss" % items, 1.0)
+
+class QuantileOfSaturationCriteria(AbstractCriteria):
+    ''' Quantile of Saturation Criteria '''
+    ''' example: qsat(50ms, 3m, 10%) '''
+    ''' only for [abs time] x [rel fluctuations] '''
+    @staticmethod
+    def get_type_string():
+        return 'qsat'
+    
+    def __init__(self, autostop, param_str):
+        AbstractCriteria.__init__(self)
+        self.autostop = autostop
+        self.data = deque()
+        self.second_window = deque()
+
+        params = param_str.split(',')
+        # qunatile in ms
+        self.q = tankcore.expand_to_milliseconds(params[0])
+        # width of time in seconds
+        self.width = tankcore.expand_to_seconds(params[1])
+        # max height of deviations in percents
+        self.height = float(params[2][0:-1])
+        # last deviation in percents
+        self.deviation = int()
+
+    def notify(self, aggregate_second):
+
+        good = int()
+        bad = int()
+
+        for times in aggregate_second.overall.times_dist:
+            if times['from'] < self.q :
+                good += times['count']
+            else :
+                bad += times['count']
+            self.log.debug("%s requests of %s < %sms-quantile", good, good+bad, self.q)
+
+        if good + bad != 0 :
+            self.data.append(good * 100 / (good+bad))
+            self.second_window.append(aggregate_second)
+
+        if len(self.data) > self.width :
+            self.data.popleft()
+            self.second_window.popleft()
+
+            self.deviation = max (self.data) - min (self.data);
+            self.log.debug(self.explain())
+
+            print aggregate_second.time, self.deviation
+
+            if self.deviation < self.height :
+                self.cause_second = self.second_window[0]
+                return True
+        return False
+
+    def get_rc(self):
+        return 33
+
+    def get_level_str(self):
+        ''' format level str'''
+        return self.height + "%"
+
+    def explain(self):
+        items = (self.deviation, self.height, self.q)
+        return ("Test is not saturated. Deviation %s%% (limit %s%%) for %sms-quantile" % items, 1.0)
+    
+    def widget_explain(self):
+        items = (self.deviation, self.height, self.q)
+        return ("Test saturated. Deviation %s%% > %s%% for %sms-quantile" % items, 1.0)

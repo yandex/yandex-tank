@@ -1,5 +1,5 @@
 from Tank.Plugins.Aggregator import SecondAggregateData
-from Tank.Plugins.TotalAutostop import TotalFracTimeCriteria, TotalHTTPCodesCriteria, TotalNegativeHTTPCodesCriteria, TotalNetCodesCriteria, TotalNegativeNetCodesCriteria, TotalHTTPTrendCriteria
+from Tank.Plugins.TotalAutostop import TotalFracTimeCriteria, TotalHTTPCodesCriteria, TotalNegativeHTTPCodesCriteria, TotalNetCodesCriteria, TotalNegativeNetCodesCriteria, TotalHTTPTrendCriteria, QuantileOfSaturationCriteria
 from Tests.TankTests import TankTestCase
 import unittest
 
@@ -14,8 +14,9 @@ class TotalCriteriasTest(TankTestCase):
         self.net_abscriteria = TotalNetCodesCriteria(None, "71, 30, 2s")
         self.negative_net_relcriteria = TotalNegativeNetCodesCriteria(None, "0, 45%, 5s")
         self.negative_net_abscriteria = TotalNegativeNetCodesCriteria(None, "0, 100, 5s")
-
         self.http_trend = TotalHTTPTrendCriteria(None, "2xx, 10s")
+
+        self.qsat_absrel = QuantileOfSaturationCriteria(None, "200ms, 70s, 20%")
 
     def tearDown(self):
         #frac time
@@ -49,6 +50,9 @@ class TotalCriteriasTest(TankTestCase):
         #tangent of total_count
         del self.http_trend
         self.http_trend = None
+
+        del self.qsat_absrel
+        self.qsat_absrel = None
 
     def test_frac_null(self):
         data = list()
@@ -196,6 +200,84 @@ class TotalCriteriasTest(TankTestCase):
         
         if i != 28 : 
              raise RuntimeError()
+
+    def test_qsat(self):
+        for i in range(1,50):
+            data = SecondAggregateData()
+            data.time = "2012-09-25 18:18:18"
+            data.overall.RPS = 100
+
+            data.overall.times_dist = list()
+            data.overall.times_dist.append({'count': i, 'to': 200, 'from': 150})
+            data.overall.times_dist.append({'count': 100-i, 'to': 250, 'from': 200})
+
+            print i, data.overall.times_dist
+
+            if self.qsat_absrel.notify(data) :
+                break
+
+        if i == 49:
+            for i in range(51,100):
+                data = SecondAggregateData()
+                data.time = "2012-09-25 18:18:18"
+                data.overall.RPS = 100
+
+                data.overall.times_dist = list()
+                data.overall.times_dist.append({'count': i-25, 'to': 200, 'from': 150})
+                data.overall.times_dist.append({'count': 100-(i-25), 'to': 250, 'from': 200})
+
+                print i,    data.overall.times_dist
+
+                if self.qsat_absrel.notify(data) :
+                    break
+            if i == 99:
+                for i in range(100,150):
+                    data = SecondAggregateData()
+                    data.time = "2012-09-25 18:18:18"
+                    data.overall.RPS = 100
+
+                    data.overall.times_dist = list()
+                    data.overall.times_dist.append({'count': i-50, 'to': 200, 'from': 150})
+                    data.overall.times_dist.append({'count': 100-(i-50), 'to': 250, 'from': 200})
+
+                    print i,    data.overall.times_dist
+
+                    if self.qsat_absrel.notify(data) :
+                        break
+
+                    if i == 149:
+                        for i in range(149,200):
+                        #for i in range(100,150):
+                            data = SecondAggregateData()
+                            data.time = "2012-09-25 18:18:18"
+                            data.overall.RPS = 100
+
+                            data.overall.times_dist = list()
+                            data.overall.times_dist.append({'count': i/2, 'to': 200, 'from': 150})
+                            data.overall.times_dist.append({'count': 100-(i/2), 'to': 250, 'from': 200})
+
+                            print i,    data.overall.times_dist
+
+                            if self.qsat_absrel.notify(data) :
+                                break
+                        if i == 199:
+                            for i in range(199,300):
+                        #for i in range(100,150):
+                                data = SecondAggregateData()
+                                data.time = "2012-09-25 18:18:18"
+                                data.overall.RPS = 100
+
+                                data.overall.times_dist = list()
+                                data.overall.times_dist.append({'count': 90, 'to': 200, 'from': 150})
+                                data.overall.times_dist.append({'count': 10, 'to': 250, 'from': 200})
+
+                                print i,    data.overall.times_dist
+
+                                if self.qsat_absrel.notify(data) :
+                                    break
+        if i != 228 : 
+            raise RuntimeError()
+
 
 if __name__ == '__main__':
     unittest.main()
