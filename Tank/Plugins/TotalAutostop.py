@@ -512,7 +512,7 @@ class QuantileOfSaturationCriteria(AbstractCriteria):
             self.data.popleft()
             self.second_window.popleft()
 
-            self.deviation = max (self.data) - min (self.data);
+            self.deviation = max (self.data) - min (self.data)
             self.log.debug(self.explain())
 
             if self.deviation < self.height :
