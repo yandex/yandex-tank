@@ -406,7 +406,7 @@ class PhantomReader(AbstractReader):
         '''
         Read phantom results
         '''
-        if self.phout and len(self.data_queue) < self.buffered_seconds:
+        if self.phout and len(self.data_queue) < self.buffered_seconds * 2:
             phout = self.phout.readlines(5 * 1024 * 1024)
         else:
             phout = []
