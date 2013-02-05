@@ -445,8 +445,7 @@ class TotalHTTPTrendCriteria(AbstractCriteria):
         return False
 
     def calc_measurement_error(self, tangents):
-        # formula
-        # sqrt ( (sum(1, n, (k_i - <k>)**2) / (n*(n-1)))
+        ''' formula for measurement error sqrt ( (sum(1, n, (k_i - <k>)**2) / (n*(n-1))) '''
 
         if len(tangents) < 2 :
             return 0.0
@@ -470,9 +469,9 @@ class TotalHTTPTrendCriteria(AbstractCriteria):
         return ("HTTP(%s) trend is %.2f +/- %.2f < 0 for %ss" % items, 1.0)
 
 class QuantileOfSaturationCriteria(AbstractCriteria):
-    ''' Quantile of Saturation Criteria '''
-    ''' example: qsat(50ms, 3m, 10%) '''
-    ''' only for [abs time] x [rel fluctuations] '''
+    ''' Quantile of Saturation Criteria 
+        example: qsat(50ms, 3m, 10%) '''
+
     @staticmethod
     def get_type_string():
         return 'qsat'
@@ -485,13 +484,13 @@ class QuantileOfSaturationCriteria(AbstractCriteria):
 
         params = param_str.split(',')
         # qunatile in ms
-        self.q = tankcore.expand_to_milliseconds(params[0])
+        self.quantile = tankcore.expand_to_milliseconds(params[0])
         # width of time in seconds
         self.width = tankcore.expand_to_seconds(params[1])
         # max height of deviations in percents
         self.height = float(params[2][0:-1])
         # last deviation in percents
-        self.deviation = int()
+        self.deviation = float()
 
     def notify(self, aggregate_second):
 
@@ -499,14 +498,14 @@ class QuantileOfSaturationCriteria(AbstractCriteria):
         bad = int()
 
         for times in aggregate_second.overall.times_dist:
-            if times['from'] < self.q :
+            if times['from'] < self.quantile :
                 good += times['count']
             else :
                 bad += times['count']
-            self.log.debug("%s requests of %s < %sms-quantile", good, good+bad, self.q)
+            self.log.debug("%s requests of %s < %sms-quantile", good, good+bad, self.quantile)
 
         if good + bad != 0 :
-            self.data.append(good * 100 / (good+bad))
+            self.data.append(float(good * 100 / (good+bad)))
             self.second_window.append(aggregate_second)
 
         if len(self.data) > self.width :
@@ -515,8 +514,6 @@ class QuantileOfSaturationCriteria(AbstractCriteria):
 
             self.deviation = max (self.data) - min (self.data);
             self.log.debug(self.explain())
-
-            print aggregate_second.time, self.deviation
 
             if self.deviation < self.height :
                 self.cause_second = self.second_window[0]
@@ -531,9 +528,9 @@ class QuantileOfSaturationCriteria(AbstractCriteria):
         return self.height + "%"
 
     def explain(self):
-        items = (self.deviation, self.height, self.q)
+        items = (self.deviation, self.height, self.quantile)
         return ("Test is not saturated. Deviation %s%% (limit %s%%) for %sms-quantile" % items, 1.0)
     
     def widget_explain(self):
-        items = (self.deviation, self.height, self.q)
+        items = (self.deviation, self.height, self.quantile)
         return ("Test saturated. Deviation %s%% > %s%% for %sms-quantile" % items, 1.0)
