@@ -845,6 +845,7 @@ class Stepper:
                         if not cur_progress:
                             raise RuntimeError("Empty ammo file, can't use it")
                         input_ammo.seek(0)
+                        pbar.update(cur_progress)
                         continue
 
                     m = re.match("^\s*(\d+)\s*\d*\s*(\w*)\s*$",
