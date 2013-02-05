@@ -246,7 +246,7 @@ class StreamConfig:
             kwargs['proto'] = "proto=http_proto%s" % self.sequence_no if self.tank_type == 'http' else "proto=none_proto"
             kwargs['comment_proto'] = ""
         else:
-            kwargs['proto']=""
+            kwargs['proto'] = ""
             kwargs['comment_proto'] = "#"
         
         if self.gatling:
