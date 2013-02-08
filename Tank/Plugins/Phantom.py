@@ -407,7 +407,7 @@ class PhantomReader(AbstractReader):
         Read phantom results
         '''
         if self.phout and len(self.data_queue) < self.buffered_seconds * 2:
-            phout = self.phout.readlines(5 * 1024 * 1024)
+            phout = self.phout.readlines(10 * 1024 * 1024)
         else:
             phout = []
     
@@ -419,41 +419,42 @@ class PhantomReader(AbstractReader):
                 self.log.debug("Not complete line, buffering it: %s", line)
                 self.partial_buffer = line
                 continue
-            line = line.strip()
-            if not line:
-                self.log.warning("Empty phout line")
-                continue
+
             # 1346949510.514        74420    66    78    65409    8867    74201    18    15662    0    200
             # self.log.debug("Phout line: %s", line)
             self.read_lines_count += 1
             data = line.split("\t")
+
             if len(data) != 12:
                 self.log.warning("Wrong phout line, skipped: %s", line)
                 continue
-            cur_time = int(float(data[0]) + float(data[2]) / 1000000)
-            # self.log.info("%s => %s", data[0], cur_time)
-            try:
+            rt_real=int(data[2])
+            tstmp=float(data[0])
+            cur_time = int(tstmp + float(rt_real) / 1000000)
+
+            if cur_time in self.stat_data.keys():
                 active = self.stat_data[cur_time]
-            except KeyError:
-                # self.log.debug("No tasks info for second yet: %s", cur_time)
+            else:
                 active = 0
 
-            if not cur_time in self.data_buffer.keys():
-                self.first_request_time = min(self.first_request_time, int(float(data[0])))
+            if not cur_time in self.data_queue:
+                self.first_request_time = min(self.first_request_time, int(tstmp))
                 if self.data_queue and self.data_queue[-1] >= cur_time:
                     self.log.warning("Aggregator data dates must be sequential: %s vs %s" % (cur_time, self.data_queue[-1]))
                     cur_time = self.data_queue[-1]
                 else:
                     self.data_queue.append(cur_time)
                     self.data_buffer[cur_time] = []
+
             #        marker, threads, overallRT, httpCode, netCode
-            data_item = [data[1], active, int(data[2]) / 1000, data[11], data[10]]
             # bytes:     sent    received
-            data_item += [int(data[8]), int(data[9])]
             #        connect    send    latency    receive
-            data_item += [int(data[3]) / 1000, int(data[4]) / 1000, int(data[5]) / 1000, int(data[6]) / 1000]
             #        accuracy
-            data_item += [(float(data[7]) + 1) / (int(data[2]) + 1)]
+            data_item = (data[1], active, rt_real / 1000, data[11], data[10],
+                int(data[8]), int(data[9]),
+                int(data[3]) / 1000, int(data[4]) / 1000, int(data[5]) / 1000, int(data[6]) / 1000,
+                (float(data[7]) + 1) / (rt_real + 1))
+
             self.data_buffer[cur_time].append(data_item)
 
         self.log.debug("Read lines: %s", self.read_lines_count)                    
