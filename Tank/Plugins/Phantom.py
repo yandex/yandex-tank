@@ -428,8 +428,8 @@ class PhantomReader(AbstractReader):
             if len(data) != 12:
                 self.log.warning("Wrong phout line, skipped: %s", line)
                 continue
-            rt_real=int(data[2])
-            tstmp=float(data[0])
+            rt_real = int(data[2])
+            tstmp = float(data[0])
             cur_time = int(tstmp + float(rt_real) / 1000000)
 
             if cur_time in self.stat_data.keys():
