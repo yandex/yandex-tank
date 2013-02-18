@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.3.7) precise; urgency=low
+
+  * fix http code getting bug
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 18 Feb 2013 13:57:42 +0400
+
 yandex-load-tank-base (1.3.6) precise; urgency=low
 
   * optimize phout reading
