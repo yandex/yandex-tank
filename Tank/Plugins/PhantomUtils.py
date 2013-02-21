@@ -11,6 +11,7 @@ import os
 import socket
 import string
 import tankcore
+from ConfigParser import NoSectionError
 
 class PhantomConfig:
     ''' config file generator '''
@@ -163,7 +164,6 @@ class StreamConfig:
     ''' each test stream's config '''
     
     OPTION_INSTANCES_LIMIT = 'instances'
-    OPTION_STPD = 'stpd_file'
 
     def __init__(self, core, sequence, phout, answ, answ_level, timeout, section):
         self.core = core
@@ -204,7 +204,6 @@ class StreamConfig:
         # multi-options
         self.ssl = int(self.get_option("ssl", '0'))
         self.tank_type = self.get_option("tank_type", 'http')
-        self.stpd = self.get_option(self.OPTION_STPD, '')
         self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
         self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
         self.method_prefix = self.get_option("method_prefix", 'method_stream')
@@ -363,10 +362,10 @@ class StepperWrapper:
         # out params
         self.stpd = None
         self.steps = []
-        self.ammo_count = 0
+        self.ammo_count = 1
         self.duration = 0
         self.loop_count = 0
-        self.loadscheme = None
+        self.loadscheme = ""
         
                 
 
@@ -403,38 +402,42 @@ class StepperWrapper:
         cache_dir = self.core.get_option(PhantomConfig.SECTION, "cache_dir", self.core.artifacts_base_dir)
         self.cache_dir = os.path.expanduser(cache_dir)
         self.force_stepping = int(self.get_option("force_stepping", '0'))
-        
+        self.stpd = self.get_option(self.OPTION_STPD, "")
+                
                 
     def prepare_stepper(self):
-        '''
-        Generate test data if necessary
-        '''
-        self.stpd = self.__get_stpd_filename()
-        self.core.set_option(self.section, self.OPTION_STPD, self.stpd)
-        if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.stpd + ".conf"):
-            self.log.info("Using cached stpd-file: %s", self.stpd)
-            stepper = Stepper.Stepper(self.stpd)  # just to store cached data
-            self.__read_cached_options(self.stpd + ".conf", stepper)
-        else:
-            stepper = self.__make_stpd_file(self.stpd)
-        
-        self.steps = stepper.steps
-        self.ammo_count = int(stepper.ammo_count)
-        self.duration = self.__calculate_test_duration(stepper.steps)
-        self.loop_count = stepper.loop_count
-        self.loadscheme = stepper.loadscheme
-        
-        external_stepper_conf = ConfigParser.ConfigParser()
-        external_stepper_conf.add_section(PhantomConfig.SECTION)
-        external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_STEPS, ' '.join([str(x) for x in stepper.steps]))
-        external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_LOADSCHEME, stepper.loadscheme)
-        external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
-        external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_AMMO_COUNT, str(stepper.ammo_count))
-        external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_TEST_DURATION, str(self.duration))
+        ''' Generate test data if necessary '''
+        if not self.stpd:
+            self.stpd = self.__get_stpd_filename()
+            self.core.set_option(self.section, self.OPTION_STPD, self.stpd)
+            if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.stpd + ".conf"):
+                self.log.info("Using cached stpd-file: %s", self.stpd)
+            else:
+                stepper = self.__make_stpd_file(self.stpd)
+                external_stepper_conf = ConfigParser.ConfigParser()
+                external_stepper_conf.add_section(PhantomConfig.SECTION)
+                external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_STEPS, ' '.join([str(x) for x in stepper.steps]))
+                external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_LOADSCHEME, stepper.loadscheme)
+                external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
+                external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_AMMO_COUNT, str(stepper.ammo_count))
+                external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_TEST_DURATION, str(self.duration))
+                        
+                handle = open(self.stpd + ".conf", 'wb')
+                external_stepper_conf.write(handle)
+                handle.close()
                 
-        handle = open(self.stpd + ".conf", 'wb')
-        external_stepper_conf.write(handle)
-        handle.close()
+        stepper = Stepper.Stepper(self.stpd)  # just to store cached data
+        try:
+            self.__read_cached_options(self.stpd + ".conf", stepper)
+            self.steps = stepper.steps
+            self.ammo_count = int(stepper.ammo_count)
+            self.duration = self.__calculate_test_duration(stepper.steps)
+            self.loop_count = stepper.loop_count
+            self.loadscheme = stepper.loadscheme
+        except NoSectionError, exc:
+            self.log.warn("Failed to read stepped meta-info for %s: %s", self.stpd, exc)
+        
+        
 
 
     def __get_stpd_filename(self):
