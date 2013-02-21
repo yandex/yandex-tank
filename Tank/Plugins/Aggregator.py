@@ -47,8 +47,8 @@ class AggregatorPlugin(AbstractPlugin):
             self.log.warning("No one set reader for aggregator yet")
     
     def is_test_finished(self):
-        # read up to 5 samples in single pass
-        self.__read_samples(5)                    
+        # read up to 2 samples in single pass
+        self.__read_samples(2)                    
         return -1
 
     def end_test(self, retcode):
