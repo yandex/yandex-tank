@@ -636,7 +636,7 @@ class CasesBlock(AbstractBlock):
                 self.cases[name] = [0, 0]
                 self.max_case_len = max(self.max_case_len, len(name))
             self.cases[name][0] += case.RPS
-            self.cases[name][1] += case.avg_response_time
+            self.cases[name][1] += case.avg_response_time * case.RPS
             self.count += case.RPS
         
     def render(self):
