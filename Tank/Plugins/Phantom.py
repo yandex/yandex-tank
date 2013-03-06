@@ -316,6 +316,7 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
         res += "%\n        Time lag: "        
         if self.time_lag > self.owner.buffered_seconds * 5:
+            self.log.debug("Time lag: %s", self.time_lag)
             res += screen.markup.RED + str(datetime.timedelta(seconds=self.time_lag)) + screen.markup.RESET
         elif self.time_lag > self.owner.buffered_seconds:
             res += screen.markup.YELLOW + str(datetime.timedelta(seconds=self.time_lag)) + screen.markup.RESET
@@ -407,11 +408,14 @@ class PhantomReader(AbstractReader):
         Read phantom results
         '''
         if self.phout and len(self.data_queue) < self.buffered_seconds * 2:
+            self.log.debug("Reading phout, up to 10MB...")
             phout = self.phout.readlines(10 * 1024 * 1024)
         else:
+            self.log.debug("Skipped phout reading")
             phout = []
     
         self.log.debug("About to process %s phout lines", len(phout))
+        time_before=time.time()
         for line in phout:
             line = self.partial_buffer + line
             self.partial_buffer = ''
@@ -457,7 +461,8 @@ class PhantomReader(AbstractReader):
 
             self.data_buffer[cur_time].append(data_item)
 
-        self.log.debug("Read lines: %s", self.read_lines_count)                    
+        self.log.debug("Parsing speed: %s lines/sec", int(len(phout)/(time.time()-time_before)))                    
+        self.log.debug("Read lines total: %s", self.read_lines_count)                    
         self.log.debug("Seconds queue: %s", self.data_queue)
         self.log.debug("Seconds buffer (up to %s): %s", self.buffered_seconds, self.data_buffer.keys())        
         if len(self.data_queue) > self.buffered_seconds:
