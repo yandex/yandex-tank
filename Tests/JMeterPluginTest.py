@@ -25,7 +25,7 @@ class  JMeterPluginTestCase(TankTestCase):
         self.foo.end_test(0)
         results = open(self.foo.jtl_file, 'r').read()
         logging.debug("Results: %s", results)
-        self.assertNotEquals('', results.strip())
+        self.assertNotEquals('', results.strip(), open(self.foo.jmeter_log, 'r').read())
         
     def test_run_interrupt(self):
         self.foo.configure()
