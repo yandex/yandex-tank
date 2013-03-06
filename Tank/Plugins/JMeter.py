@@ -104,11 +104,11 @@ class JMeterPlugin(AbstractPlugin):
 
             
     def __add_writing_section(self, jmx, jtl):
-        '''
-        Genius idea by Alexey Lavrenyuk
-        '''
+        ''' Genius idea by Alexey Lavrenyuk '''
         self.log.debug("Original JMX: %s", os.path.realpath(jmx))
-        source_lines = open(jmx, 'r').readlines()
+        src_jmx=open(jmx, 'r')
+        source_lines = src_jmx.readlines()
+        src_jmx.close()
         try:
             closing = source_lines.pop(-1)
             closing = source_lines.pop(-1) + closing
@@ -117,7 +117,9 @@ class JMeterPlugin(AbstractPlugin):
         except Exception, exc:
             raise RuntimeError("Failed to find the end of JMX XML: %s" % exc)
         
-        tpl = open(os.path.dirname(__file__) + '/jmeter_writer.xml', 'r').read()
+        tpl_file=open(os.path.dirname(__file__) + '/jmeter_writer.xml', 'r')
+        tpl = tpl_file.read()
+        tpl_file.close()
         
         try:
             file_handle, new_file = tempfile.mkstemp('.jmx', 'modified_', os.path.dirname(os.path.realpath(jmx)))
