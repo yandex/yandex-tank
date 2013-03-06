@@ -461,7 +461,9 @@ class PhantomReader(AbstractReader):
 
             self.data_buffer[cur_time].append(data_item)
 
-        self.log.debug("Parsing speed: %s lines/sec", int(len(phout)/(time.time()-time_before)))                    
+        spent=time.time()-time_before
+        if spent:
+            self.log.debug("Parsing speed: %s lines/sec", int(len(phout)/spent))                    
         self.log.debug("Read lines total: %s", self.read_lines_count)                    
         self.log.debug("Seconds queue: %s", self.data_queue)
         self.log.debug("Seconds buffer (up to %s): %s", self.buffered_seconds, self.data_buffer.keys())        
