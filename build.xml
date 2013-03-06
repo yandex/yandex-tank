@@ -10,7 +10,7 @@ PYTHONPATH=''
 			<arg value="--with-xunit" />
 			<arg value="--all-modules" />
 			<arg value="--traverse-namespace" />
-			<arg value="--with-xcoverage" />
+			<arg value="--with-coverage" />
 			<arg value="--cover-inclusive" />
 			<arg value="--cover-erase" />
 			<arg value="--cover-package=${package}"/>
