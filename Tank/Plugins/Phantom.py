@@ -401,7 +401,8 @@ class PhantomReader(AbstractReader):
                 
                 self.stat_data[self.pending_datetime] += int(line[len('tasks\t'):])
                 self.log.debug("Active instances: %s=>%s", self.pending_datetime, self.stat_data[self.pending_datetime])
-
+        
+        self.log.debug("Instances info buffer size: %s", len(self.stat_data))
 
     def __read_phout_data(self, force):
         '''
