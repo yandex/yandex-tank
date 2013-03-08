@@ -91,9 +91,8 @@ class Screen(object):
 
 
     def __render_left_panel(self):
-        '''
-        Render left blocks 
-        '''
+        ''' Render left blocks '''
+        self.log.debug("Rendering left blocks")
         lines = []
         for row in self.block_rows:
             space_left = self.left_panel_width
@@ -147,6 +146,7 @@ class Screen(object):
 
         left_lines = self.__render_left_panel()
 
+        self.log.debug("Composing final screen output")
         output = []        
         for line_no in range(1, self.term_height):
             line = " "
