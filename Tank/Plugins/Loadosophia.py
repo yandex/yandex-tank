@@ -1,28 +1,26 @@
-'''
-Module to have Loadosophia.org integration
-'''
+''' Module to have Loadosophia.org integration '''
+from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
 from Tank.Plugins.ApacheBenchmark import ApacheBenchmarkPlugin
 from Tank.Plugins.Monitoring import MonitoringPlugin
 from Tank.Plugins.Phantom import PhantomPlugin
 from Tank.Plugins.WebOnline import WebOnlinePlugin
 from tankcore import AbstractPlugin
+from urllib2 import HTTPError
 import StringIO
+import cookielib
 import gzip
 import itertools
+import json
 import logging
 import mimetools
 import mimetypes
 import os
-import urllib2
-import json
 import time
-from urllib2 import HTTPError
 import urllib
+import urllib2
 
-class LoadosophiaPlugin(AbstractPlugin):
-    '''
-    Tank plugin with Loadosophia.org uploading 
-    '''
+class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
+    ''' Tank plugin with Loadosophia.org uploading '''
 
     SECTION = 'loadosophia'
     
@@ -31,15 +29,15 @@ class LoadosophiaPlugin(AbstractPlugin):
         return __file__
 
     def __init__(self, core):
-        '''
-        Constructor
-        '''
+        ''' Constructor '''
         AbstractPlugin.__init__(self, core)
         self.loadosophia = LoadosophiaClient()
         self.loadosophia.results_url = None
         self.project_key = None
         self.color = None
         self.title = None
+        self.online_buffer = []
+        self.online_initiated=False
     
     def configure(self):
         self.loadosophia.address = self.get_option("address", "https://loadosophia.org/")
@@ -48,8 +46,46 @@ class LoadosophiaPlugin(AbstractPlugin):
         self.project_key = self.get_option("project", 'DEFAULT')
         self.title = self.get_option("test_title", "")
         self.color = self.get_option("color_flag", "")
+
+        try:
+            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+            aggregator.add_result_listener(self)
+        except KeyError:
+            self.log.debug("No aggregator for loadosophia")
+
         
+    def start_test(self):
+        try:
+            self.loadosophia.start_online(self.project_key, self.title)
+        except Exception, exc:
+            self.log.warning("Problems starting online: %s", exc)
+            
+    
+    def aggregate_second(self, second_aggregate_data):
+        self.log.debug("Online buffer: %s", self.online_buffer)
+        self.online_buffer.append(second_aggregate_data)
+        if len(self.online_buffer) >= 5 or not self.online_initiated:
+            try:
+                self.loadosophia.send_online_data(self.online_buffer)
+                self.online_initiated=True
+            except Exception, exc:
+                self.log.warning("Problems sending online data: %s", exc)
+            self.online_buffer = []
+
+    
     def post_process(self, retcode):
+        if self.online_buffer:
+            try:
+                self.loadosophia.send_online_data(self.online_buffer)
+            except Exception, exc:
+                self.log.warning("Problems sending online data rests: %s", exc)
+            self.online_buffer = []
+        # mark test closed
+        try:
+            self.loadosophia.end_online()
+        except Exception, exc:
+            self.log.warning("Problems ending online: %s", exc)
+
         main_file = None
         # phantom
         try:
@@ -106,6 +142,8 @@ class LoadosophiaClient:
         self.address = None
         self.file_prefix = ''
         self.results_url = None
+        self.cookie_jar = cookielib.CookieJar()
+    
     
     def send_results(self, project, result_file, monitoring_files):
         ''' Send files to loadosophia '''
@@ -155,7 +193,12 @@ class LoadosophiaClient:
             self.log.debug("Full loadosophia.org response: %s", response.read())
             raise RuntimeError("Loadosophia.org upload failed, response code %s instead of 200, see log for full response text" % response.getcode())
 
-        res = json.loads(response.read())
+        resp_str=response.read()
+        try:
+            res = json.loads(resp_str)
+        except Exception, exc:
+            self.log.debug("Failed to load json from str: %s", resp_str)
+            raise exc
         self.results_url = self.address + 'api/file/status/' + res[1][0]['QueueID'] + '/?redirect=true'
         return res[1][0]['QueueID']
         
@@ -179,7 +222,7 @@ class LoadosophiaClient:
                 raise HTTPError("Loadosophia processing error: " + status['UserError'])
             
             if int(status['status']) == self.STATUS_DONE:
-                self.results_url = self.address + 'gui/' + status['TestID'] +'/'
+                self.results_url = self.address + 'gui/' + status['TestID'] + '/'
                 return status['TestID']  
             
 
@@ -239,6 +282,53 @@ class LoadosophiaClient:
             self.log.debug("Full loadosophia.org response: %s", response.read())
             raise RuntimeError("Loadosophia.org request failed, response code %s instead of 204, see log for full response text" % response.getcode())
 
+    
+    def start_online(self, project, title):
+        self.log.info("Initiating Loadosophia.org active test...")
+        data = urllib.urlencode({'projectKey': project, 'token':self.token, 'title': title})
+        
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie_jar))
+        url = self.address + "api/active/receiver/start/"
+        response = opener.open(url, data)
+        if response.getcode() != 201:
+            self.log.warn("Failed to start active test: %s", response.getcode())        
+            self.log.debug("Failed to start active test: %s", response.read())        
+            self.cookie_jar.clear_session_cookies()
+
+
+    def end_online(self):
+        self.log.debug("Ending Loadosophia online test")
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie_jar))
+        url = self.address + "api/active/receiver/stop/"
+        response = opener.open(url)
+        if response.getcode() != 205:
+            self.log.warn("Failed to end active test: %s", response.getcode())        
+            self.log.debug("Failed to end active test: %s", response.read())        
+        self.cookie_jar.clear_session_cookies()
+
+    
+    def send_online_data(self, data_buffer):
+        data = []
+        for sec in data_buffer:
+            item=sec.overall
+            json_item = {
+                       "threads": item.active_threads,
+                       "rps": item.RPS,
+                       "planned_rps": item.planned_requests,
+                       "avg_rt": item.avg_response_time
+                    }
+            data.append(json_item)
+        
+        data_str = urllib.urlencode({'data': json.dumps(data)})
+        self.log.debug("Sending online data: %s", data_str)
+        
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie_jar))
+        url = self.address + "api/active/receiver/data/"
+        response = opener.open(url, data_str)
+        if response.getcode() != 202:
+            self.log.warn("Failed to push data: %s", response.getcode())        
+
+        
 
 # =================================================================    
 
