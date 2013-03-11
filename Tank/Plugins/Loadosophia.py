@@ -37,7 +37,8 @@ class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
         self.color = None
         self.title = None
         self.online_buffer = []
-        self.online_initiated=False
+        self.online_initiated = False
+        self.online_enabled = False
     
     def configure(self):
         self.loadosophia.address = self.get_option("address", "https://loadosophia.org/")
@@ -46,6 +47,7 @@ class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
         self.project_key = self.get_option("project", 'DEFAULT')
         self.title = self.get_option("test_title", "")
         self.color = self.get_option("color_flag", "")
+        self.online_enabled = self.get_option("online_enabled", "0")
 
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
@@ -55,36 +57,39 @@ class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
 
         
     def start_test(self):
-        try:
-            self.loadosophia.start_online(self.project_key, self.title)
-        except Exception, exc:
-            self.log.warning("Problems starting online: %s", exc)
+        if self.online_enabled:
+            try:
+                self.loadosophia.start_online(self.project_key, self.title)
+            except Exception, exc:
+                self.log.warning("Problems starting online: %s", exc)
             
     
     def aggregate_second(self, second_aggregate_data):
-        self.log.debug("Online buffer: %s", self.online_buffer)
-        self.online_buffer.append(second_aggregate_data)
-        if len(self.online_buffer) >= 5 or not self.online_initiated:
-            try:
-                self.loadosophia.send_online_data(self.online_buffer)
-                self.online_initiated=True
-            except Exception, exc:
-                self.log.warning("Problems sending online data: %s", exc)
-            self.online_buffer = []
+        if self.online_enabled:
+            self.log.debug("Online buffer: %s", self.online_buffer)
+            self.online_buffer.append(second_aggregate_data)
+            if len(self.online_buffer) >= 5 or not self.online_initiated:
+                try:
+                    self.loadosophia.send_online_data(self.online_buffer)
+                    self.online_initiated = True
+                except Exception, exc:
+                    self.log.warning("Problems sending online data: %s", exc)
+                self.online_buffer = []
 
     
     def post_process(self, retcode):
-        if self.online_buffer:
+        if self.online_enabled:
+            if self.online_buffer:
+                try:
+                    self.loadosophia.send_online_data(self.online_buffer)
+                except Exception, exc:
+                    self.log.warning("Problems sending online data rests: %s", exc)
+                self.online_buffer = []
+            # mark test closed
             try:
-                self.loadosophia.send_online_data(self.online_buffer)
+                self.loadosophia.end_online()
             except Exception, exc:
-                self.log.warning("Problems sending online data rests: %s", exc)
-            self.online_buffer = []
-        # mark test closed
-        try:
-            self.loadosophia.end_online()
-        except Exception, exc:
-            self.log.warning("Problems ending online: %s", exc)
+                self.log.warning("Problems ending online: %s", exc)
 
         main_file = None
         # phantom
@@ -193,7 +198,7 @@ class LoadosophiaClient:
             self.log.debug("Full loadosophia.org response: %s", response.read())
             raise RuntimeError("Loadosophia.org upload failed, response code %s instead of 200, see log for full response text" % response.getcode())
 
-        resp_str=response.read()
+        resp_str = response.read()
         try:
             res = json.loads(resp_str)
         except Exception, exc:
@@ -310,17 +315,19 @@ class LoadosophiaClient:
     def send_online_data(self, data_buffer):
         data = []
         for sec in data_buffer:
-            item=sec.overall
+            item = sec.overall
             json_item = {
                        "threads": item.active_threads,
                        "rps": item.RPS,
                        "planned_rps": item.planned_requests,
-                       "avg_rt": item.avg_response_time
+                       "avg_rt": item.avg_response_time,
+                       "quantiles": item.quantiles,
+                       "rc": item.http_codes
                     }
             data.append(json_item)
         
+        self.log.debug("Sending online data: %s", json.dumps(data))
         data_str = urllib.urlencode({'data': json.dumps(data)})
-        self.log.debug("Sending online data: %s", data_str)
         
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie_jar))
         url = self.address + "api/active/receiver/data/"
