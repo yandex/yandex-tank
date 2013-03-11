@@ -17,9 +17,7 @@ import datetime
 # TODO: 2 if instances_schedule enabled - pass to phantom the top count as instances limit
 # FIXME: 3 there is no graceful way to interrupt the process in phout import mode 
 class PhantomPlugin(AbstractPlugin, AggregateResultListener):
-    '''
-    Plugin for running phantom tool
-    '''
+    '''     Plugin for running phantom tool    '''
 
     OPTION_CONFIG = "config"
     SECTION = PhantomConfig.SECTION
@@ -437,7 +435,7 @@ class PhantomReader(AbstractReader):
             tstmp = float(data[0])
             cur_time = int(tstmp + float(rt_real) / 1000000)
 
-            if cur_time in self.stat_data.keys():
+            if cur_time in self.stat_data.keys(): # FIXME: optimize
                 active = self.stat_data[cur_time]
             else:
                 active = 0
@@ -483,6 +481,9 @@ class PhantomReader(AbstractReader):
         parsed_sec = AbstractReader.pop_second(self)
         if parsed_sec:
             self.pending_second_data_queue.append(parsed_sec)
+            timestamp=int(time.mktime(parsed_sec.time.timetuple()))
+            if timestamp in self.stat_data.keys():
+                del self.stat_data[timestamp]                        
         else:
             self.log.debug("No new seconds present")   
             
@@ -490,8 +491,7 @@ class PhantomReader(AbstractReader):
             self.log.debug("pending_second_data_queue empty")
             return None
         else:
-            self.log.debug("pending_second_data_queue: %s", self.pending_second_data_queue)
-
+            self.log.debug("pending_second_data_queue: %s", self.pending_second_data_queue) # FIXME: optimize
 
         next_time = int(time.mktime(self.pending_second_data_queue[0].time.timetuple()))
             
