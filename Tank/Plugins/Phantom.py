@@ -470,42 +470,51 @@ class PhantomReader(AbstractReader):
             self.log.debug("Should send!")
             return self.pop_second()
         
-        if (force and self.data_queue) or self.pending_second_data_queue:
+        if self.pending_second_data_queue:
+            return self.__process_pending_second()
+        
+        if (force and self.data_queue):
             return self.pop_second()
         else:
             self.log.debug("No queue data!")
             return None 
 
 
-    def pop_second(self):
+    def __aggregate_next_second(self):
         parsed_sec = AbstractReader.pop_second(self)
         if parsed_sec:
             self.pending_second_data_queue.append(parsed_sec)
-            timestamp=int(time.mktime(parsed_sec.time.timetuple()))
+            timestamp = int(time.mktime(parsed_sec.time.timetuple()))
             if timestamp in self.stat_data.keys():
-                del self.stat_data[timestamp]                        
+                del self.stat_data[timestamp]
         else:
-            self.log.debug("No new seconds present")   
-            
-        if not self.pending_second_data_queue:
-            self.log.debug("pending_second_data_queue empty")
-            return None
-        else:
-            self.log.debug("pending_second_data_queue: %s", self.pending_second_data_queue) # FIXME: optimize
+            self.log.debug("No new seconds present")
 
+
+    def __process_pending_second(self):
         next_time = int(time.mktime(self.pending_second_data_queue[0].time.timetuple()))
-            
         if self.last_sample_time and (next_time - self.last_sample_time) > 1:
             self.last_sample_time += 1
             self.log.debug("Adding phantom zero sample: %s", self.last_sample_time)
             res = self.get_zero_sample(datetime.datetime.fromtimestamp(self.last_sample_time))
         else:
             res = self.pending_second_data_queue.pop(0)
-        
         self.last_sample_time = int(time.mktime(res.time.timetuple()))
         res.overall.planned_requests = self.__get_expected_rps()
         self.log.debug("Pop result: %s", res)
         return res
+
+
+    def pop_second(self):
+        self.__aggregate_next_second()   
+            
+        if not self.pending_second_data_queue:
+            self.log.debug("pending_second_data_queue empty")
+            return None
+        else:
+            self.log.debug("pending_second_data_queue: %s", self.pending_second_data_queue)
+            res = self.__process_pending_second()
+            return res
     
 
     def __get_expected_rps(self):
