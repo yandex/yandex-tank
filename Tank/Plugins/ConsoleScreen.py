@@ -143,7 +143,6 @@ class Screen(object):
         self.log.debug("Composing final screen output")
         output = []        
         for line_no in range(1, self.term_height):
-            self.log.debug("Line: %s", line_no)
             line = " "
 
             if line_no > 1 and left_lines:
@@ -157,7 +156,6 @@ class Screen(object):
                 line += left_line     
             else:
                 line += ' ' * self.left_panel_width
-
             if self.right_panel_width:
                 line += (self.RIGHT_PANEL_SEPARATOR)
                 right_line = self.__get_right_line(widget_output)

@@ -368,7 +368,6 @@ class StepperWrapper:
         self.loadscheme = ""
         
                 
-
     def get_option(self, option_ammofile, param2=None):
         ''' get_option wrapper'''
         return self.core.get_option(self.section, option_ammofile, param2)

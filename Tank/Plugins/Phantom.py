@@ -202,8 +202,8 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
             self.ammo_count = int(info.ammo_count)
             self.test_duration = int(info.duration)
         else:
-            self.ammo_count = 0
-            self.test_duration = 0
+            self.ammo_count = 1
+            self.test_duration = 1
 
     
     def render(self, screen):
@@ -224,9 +224,15 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
             progress = float(dur_seconds) / self.test_duration
         elif self.ammo_progress:
             left_part = self.ammo_count - self.ammo_progress
-            eta_secs = int(float(dur_seconds) / float(self.ammo_progress) * float(left_part))
+            if left_part > 0:
+                eta_secs = int(float(dur_seconds) / float(self.ammo_progress) * float(left_part))
+            else:
+                eta_secs = 0
             eta_time = datetime.timedelta(seconds=eta_secs)
-            progress = float(self.ammo_progress) / float(self.ammo_count)
+            if self.ammo_progress < self.ammo_count:
+                progress = float(self.ammo_progress) / float(self.ammo_count)
+            else:
+                progress = 0.5
 
         if self.eta_file:
             handle = open(self.eta_file, 'w')
@@ -414,7 +420,7 @@ class PhantomReader(AbstractReader):
             phout = []
     
         self.log.debug("About to process %s phout lines", len(phout))
-        time_before=time.time()
+        time_before = time.time()
         for line in phout:
             line = self.partial_buffer + line
             self.partial_buffer = ''
@@ -435,7 +441,7 @@ class PhantomReader(AbstractReader):
             tstmp = float(data[0])
             cur_time = int(tstmp + float(rt_real) / 1000000)
 
-            if cur_time in self.stat_data.keys(): # FIXME: optimize
+            if cur_time in self.stat_data.keys():  # FIXME: optimize
                 active = self.stat_data[cur_time]
             else:
                 active = 0
@@ -460,9 +466,9 @@ class PhantomReader(AbstractReader):
 
             self.data_buffer[cur_time].append(data_item)
 
-        spent=time.time()-time_before
+        spent = time.time() - time_before
         if spent:
-            self.log.debug("Parsing speed: %s lines/sec", int(len(phout)/spent))                    
+            self.log.debug("Parsing speed: %s lines/sec", int(len(phout) / spent))                    
         self.log.debug("Read lines total: %s", self.read_lines_count)                    
         self.log.debug("Seconds queue: %s", self.data_queue)
         self.log.debug("Seconds buffer (up to %s): %s", self.buffered_seconds, self.data_buffer.keys())        
