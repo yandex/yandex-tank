@@ -143,16 +143,17 @@ class Screen(object):
         self.log.debug("Composing final screen output")
         output = []        
         for line_no in range(1, self.term_height):
+            self.log.debug("Line: %s", line_no)
             line = " "
 
             if line_no > 1 and left_lines:
                 left_line = left_lines.pop(0)
+                left_line_plain = self.markup.clean_markup(left_line)
                 if len(left_line) > self.left_panel_width:
-                    left_line_plain = self.markup.clean_markup(left_line)
                     if len(left_line_plain) > self.left_panel_width:
                         left_line = left_line[:self.left_panel_width] + self.markup.RESET
                 
-                left_line += (' ' * (self.left_panel_width - len(self.markup.clean_markup(left_line)))) 
+                left_line += (' ' * (self.left_panel_width - len(left_line_plain))) 
                 line += left_line     
             else:
                 line += ' ' * self.left_panel_width
