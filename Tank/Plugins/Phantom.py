@@ -470,7 +470,7 @@ class PhantomReader(AbstractReader):
             self.log.debug("Should send!")
             return self.pop_second()
         
-        if force and self.data_queue:
+        if (force and self.data_queue) or self.pending_second_data_queue:
             return self.pop_second()
         else:
             self.log.debug("No queue data!")
