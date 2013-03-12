@@ -54,6 +54,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
 
         if console_view:
             if not self.short_only:
+                self.log.debug("Writing console view to STDOUT")
                 sys.stdout.write(self.console_markup.clear)
                 sys.stdout.write(console_view)
                 sys.stdout.write(self.console_markup.TOTAL_RESET)

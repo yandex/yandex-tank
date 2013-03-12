@@ -53,9 +53,7 @@ def krutilka():
 
 
 class Screen(object):
-    '''
-    Console screen renderer class
-    '''
+    '''     Console screen renderer class    '''
     RIGHT_PANEL_SEPARATOR = ' . '
     
     def __init__(self, info_panel_width, markup_provider):
@@ -77,9 +75,7 @@ class Screen(object):
         self.block_rows = [[CurrentTimesDistBlock(self), block5]]
         
     def __get_right_line(self, widget_output):
-        '''
-        Gets next line for right panel
-        '''
+        '''        Gets next line for right panel        '''
         right_line = ''
         if widget_output:
             right_line = widget_output.pop(0)
@@ -122,9 +118,7 @@ class Screen(object):
 
 
     def render_screen(self):
-        '''
-        Main method to render screen view
-        '''
+        '''        Main method to render screen view        '''
         self.term_width, self.term_height = get_terminal_size()
         self.log.debug("Terminal size: %sx%s", self.term_width, self.term_height)
         self.right_panel_width = int((self.term_width - len(self.RIGHT_PANEL_SEPARATOR)) * (float(self.info_panel_percent) / 100)) - 1
