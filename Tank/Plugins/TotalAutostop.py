@@ -453,9 +453,9 @@ class TotalHTTPTrendCriteria(AbstractCriteria):
         avg_tan = float(sum(tangents) / len(tangents))
         numerator = float()
         for i in tangents:
-            numerator += (i - avg_tan)*(i - avg_tan)
+            numerator += (i - avg_tan) * (i - avg_tan)
 
-        return math.sqrt (numerator / len(tangents) / (len(tangents) - 1) )
+        return math.sqrt (numerator / len(tangents) / (len(tangents) - 1))
 
     def get_rc(self):
         return 30
@@ -467,6 +467,8 @@ class TotalHTTPTrendCriteria(AbstractCriteria):
     def widget_explain(self):
         items = (self.codes_mask, self.total_tan, self.measurement_error, self.seconds_limit)
         return ("HTTP(%s) trend is %.2f +/- %.2f < 0 for %ss" % items, 1.0)
+
+
 
 class QuantileOfSaturationCriteria(AbstractCriteria):
     ''' Quantile of Saturation Criteria 
@@ -484,53 +486,60 @@ class QuantileOfSaturationCriteria(AbstractCriteria):
 
         params = param_str.split(',')
         # qunatile in ms
-        self.quantile = tankcore.expand_to_milliseconds(params[0])
+        self.timing = tankcore.expand_to_milliseconds(params[0])
         # width of time in seconds
         self.width = tankcore.expand_to_seconds(params[1])
         # max height of deviations in percents
-        self.height = float(params[2][0:-1])
+        self.height = float(params[2].split('%')[0])
         # last deviation in percents
         self.deviation = float()
 
+
+    def __get_timing_quantile(self, aggr_data):
+        quan = 0.0
+        for timing in sorted(aggr_data.cumulative.times_dist.keys()):
+            timing_item = aggr_data.cumulative.times_dist[timing]
+            quan += float(timing_item['count']) / aggr_data.cumulative.total_count
+            self.log.debug("tt: %s %s", self.timing, timing_item['to'])
+            if self.timing <= timing_item['to']:
+                return quan
+        return quan
+            
+
     def notify(self, aggregate_second):
+        self.log.debug("Dist: %s", aggregate_second.cumulative.times_dist)
+        quan = 100 * self.__get_timing_quantile(aggregate_second)
+        self.log.debug("Quantile for %s: %s", self.timing, quan)
+        
+        self.data.append(quan)
+        self.second_window.append(aggregate_second)
 
-        good = int()
-        bad = int()
-
-        for times in aggregate_second.overall.times_dist:
-            if times['from'] < self.quantile :
-                good += times['count']
-            else :
-                bad += times['count']
-            self.log.debug("%s requests of %s < %sms-quantile", good, good+bad, self.quantile)
-
-        if good + bad != 0 :
-            self.data.append(float(good * 100 / (good+bad)))
-            self.second_window.append(aggregate_second)
+        self.log.debug("QSat data: %s", self.data)
 
         if len(self.data) > self.width :
+            self.autostop.add_counting(self)
             self.data.popleft()
             self.second_window.popleft()
 
-            self.deviation = max (self.data) - min (self.data)
+            self.deviation = max(self.data) - min(self.data)
             self.log.debug(self.explain())
 
-            if self.deviation < self.height :
-                self.cause_second = self.second_window[0]
+            if self.deviation < self.height:
                 return True
         return False
 
     def get_rc(self):
         return 33
 
-    def get_level_str(self):
-        ''' format level str'''
-        return self.height + "%"
-
     def explain(self):
-        items = (self.deviation, self.height, self.quantile)
-        return ("Test is not saturated. Deviation %s%% (limit %s%%) for %sms-quantile" % items, 1.0)
+        items = (self.timing, self.width, self.deviation, self.height)
+        return "%sms variance for %ss: %.3f%% (<%s%%)" % items
+    
     
     def widget_explain(self):
-        items = (self.deviation, self.height, self.quantile)
-        return ("Test saturated. Deviation %s%% > %s%% for %sms-quantile" % items, 1.0)
+        level = self.height / self.deviation
+        items = (self.timing, self.width, self.deviation, self.height)
+        return ("%sms variance for %ss: %.3f%% (<%s%%)" % items, level)
+
+
+

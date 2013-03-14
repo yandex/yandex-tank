@@ -340,25 +340,25 @@ class NetCodesCriteria(AbstractCriteria):
 
 
 class QuantileCriteria(AbstractCriteria):
-    ''' quantile criteria '''
+    ''' timing criteria '''
 
     @staticmethod
     def get_type_string():
-        return 'quantile'
+        return 'timing'
     
     def __init__(self, autostop, param_str):
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
-        self.quantile = float(param_str.split(',')[0])
+        self.timing = float(param_str.split(',')[0])
         self.rt_limit = tankcore.expand_to_milliseconds(param_str.split(',')[1])
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[2])
         self.autostop = autostop
     
     def notify(self, aggregate_second):
-        if not (self.quantile in aggregate_second.overall.quantiles.keys()):
-            self.log.warning("No qunatile %s in %s", self.quantile, aggregate_second.overall.quantiles)
-        if self.quantile in aggregate_second.overall.quantiles.keys() \
-                and aggregate_second.overall.quantiles[self.quantile] > self.rt_limit:
+        if not (self.timing in aggregate_second.overall.quantiles.keys()):
+            self.log.warning("No qunatile %s in %s", self.timing, aggregate_second.overall.quantiles)
+        if self.timing in aggregate_second.overall.quantiles.keys() \
+                and aggregate_second.overall.quantiles[self.timing] > self.rt_limit:
             if not self.seconds_count:
                 self.cause_second = aggregate_second
             
@@ -377,10 +377,10 @@ class QuantileCriteria(AbstractCriteria):
         return self.RC_TIME
 
     def explain(self):
-        items = (self.quantile, self.rt_limit, self.seconds_count, self.cause_second.time)
+        items = (self.timing, self.rt_limit, self.seconds_count, self.cause_second.time)
         return "Percentile %s higher than %sms for %ss, since %s" % items
 
     def widget_explain(self):
-        items = (self.quantile, self.rt_limit, self.seconds_count, self.seconds_limit)
+        items = (self.timing, self.rt_limit, self.seconds_count, self.seconds_limit)
         return ("%s%% >%sms for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
    
