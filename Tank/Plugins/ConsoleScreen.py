@@ -2,7 +2,6 @@
 Classes to build full console screen
 '''
 from Tank.Plugins import Codes
-from Tank.Plugins.Aggregator import SecondAggregateDataItem
 import copy
 import fcntl
 import logging
@@ -431,34 +430,15 @@ class TotalQuantilesBlock(AbstractBlock):
         AbstractBlock.__init__(self, screen)
         self.total_count = 0
         self.current_max_rt = 0
-        self.times_dist = {}
+        self.quantiles = {}
 
     def add_second(self, data):
-        self.times_dist = data.cumulative.times_dist
-        self.total_count = data.cumulative.total_count
-        if data.cumulative.times_dist:
-            self.current_max_rt = data.cumulative.times_dist[max(data.cumulative.times_dist.keys())]['to']
+        self.quantiles=data.cumulative.quantiles
       
     def render(self):
         self.lines = []
-        quan = 0
-        quantiles = copy.copy(SecondAggregateDataItem.QUANTILES)
-        item = None
-        for key, item in sorted(self.times_dist.iteritems()):
-            if self.total_count: 
-                perc = float(item['count']) / self.total_count
-            else:
-                perc = 1
-            quan += perc 
-
-            while quantiles and quan >= quantiles[0]:
-                line = self.__format_line(quantiles.pop(0), item['to'])
-                self.width = max(self.width, len(line))
-                self.lines.append(line)
-
-        # get rests   
-        while quantiles and item:
-            line = self.__format_line(quantiles.pop(0), item['to'])
+        for quant in sorted(self.quantiles):
+            line = self.__format_line(quant, self.quantiles[quant])
             self.width = max(self.width, len(line))
             self.lines.append(line)
 
@@ -470,7 +450,7 @@ class TotalQuantilesBlock(AbstractBlock):
         ''' Format line '''
         timing_len = str(len(str(self.current_max_rt)))
         tpl = '   %3d%% < %' + timing_len + 'd ms'
-        data = (100 * quan, timing)
+        data = (quan, timing)
         left_line = tpl % data
         return left_line
 
