@@ -39,6 +39,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
 
         self.phantom = None
         self.cached_info = None
+        self.phantom_stderr = None
                 
     
     @staticmethod
@@ -127,7 +128,10 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             args = [self.phantom_path, 'run', self.config]
             self.log.debug("Starting %s with arguments: %s", self.phantom_path, args)
             self.phantom_start_time = time.time()
-            self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
+            phantom_stderr_file = self.core.mkstemp(".log", "phantom_stdout_stderr_")
+            self.core.add_artifact_file(phantom_stderr_file)
+            self.phantom_stderr = open(phantom_stderr_file, 'w')
+            self.process = subprocess.Popen(args, stderr=self.phantom_stderr, stdout=self.phantom_stderr, close_fds=True)
         else:
             if not os.path.exists(self.predefined_phout):
                 raise RuntimeError("Phout file not exists for import: %s" % self.predefined_phout)
@@ -136,8 +140,6 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
 
     def is_test_finished(self):
         if not self.phout_import_mode:
-            tankcore.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
-    
             retcode = self.process.poll()
             if retcode != None:
                 self.log.info("Phantom done its work with exit code: %s", retcode)
@@ -156,6 +158,8 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         if self.process and self.process.poll() == None:
             self.log.warn("Terminating phantom process with PID %s", self.process.pid)
             self.process.terminate()
+            if self.phantom_stderr:
+                self.phantom_stderr.close()
         else:
             self.log.debug("Seems phantom finished OK")
         return retcode
