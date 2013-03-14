@@ -44,7 +44,7 @@ class AggregatorPlugin(AbstractPlugin):
 
     def start_test(self):
         if not self.reader:
-            self.log.warning("No one set reader for aggregator yet")
+            self.log.warning("No one had set reader for aggregate data yet...")
     
     def is_test_finished(self):
         # read up to 2 samples in single pass
@@ -59,7 +59,7 @@ class AggregatorPlugin(AbstractPlugin):
         
     def add_result_listener(self, listener):
         ''' add object to data listeners '''
-        self.second_data_listeners += [listener]
+        self.second_data_listeners.append(listener)
     
     def __notify_listeners(self, data):
         ''' notify all listeners about aggregate data '''
@@ -81,7 +81,7 @@ class AggregatorPlugin(AbstractPlugin):
             zero = self.reader.get_zero_sample(datetime.datetime.fromtimestamp(self.last_sample_time))
             self.__notify_listeners(zero)
         self.last_sample_time = int(time.mktime(data.time.timetuple()))
-    
+        
     
     def __read_samples(self, limit=0, force=False):
         ''' call reader object to read next sample set '''
@@ -151,17 +151,46 @@ class SecondAggregateDataTotalItem:
         self.avg_response_time = 0
         self.total_count = 0
         self.times_dist = {}
+        self.quantiles = {}
     
     def add_data(self, overall_item):
         ''' add data to total '''
         for time_item in overall_item.times_dist:
             self.total_count += time_item['count']
-            if time_item['from'] in self.times_dist.keys():
-                self.times_dist[time_item['from']]['count'] += time_item['count']
+            timing = int(time_item['from'])
+            if timing in self.times_dist.keys():
+                self.times_dist[timing]['count'] += time_item['count']
             else:
-                self.times_dist[time_item['from']] = time_item
+                self.times_dist[timing] = time_item
+        logging.debug("Total times: %s", self.times_dist)
 
 
+    def calculate_total_quantiles(self):
+        ''' calculate total quantiles based on times dist '''
+        self.quantiles = {}
+        quantiles = reversed(copy.copy(SecondAggregateDataItem.QUANTILES))        
+        timings = sorted(self.times_dist.keys(), reverse=True)
+        level = 1.0
+        for quan in quantiles:
+            while level >= quan:
+                timing = timings.pop(0)
+                level -= float(self.times_dist[timing]['count']) / self.total_count
+            self.quantiles[quan * 100] = self.times_dist[timing]['to']
+        
+        '''
+        for timing in sorted(self.times_dist.keys(), reversed=True):
+            count += self.times_dist[timing]['count']
+            if quantiles and (count / self.total_count) >= quantiles[0]:
+                level = quantiles.pop(0)
+                self.quantiles[level * 100] = self.times_dist[timing]['to']
+            
+        while quantiles:
+            level = quantiles.pop(0)
+            self.quantiles[level * 100] = self.times_dist[timing]['to']
+        '''
+        logging.debug("Total quantiles: %s", self.quantiles)
+        return self.quantiles
+                                
 
 # ===============================================================
 
@@ -208,13 +237,13 @@ class AbstractReader:
             self.__calculate_aggregates(case)
 
         self.cumulative.add_data(result.overall)
+        self.cumulative.calculate_total_quantiles()
 
         return result
     
 
     def __calculate_aggregates(self, item):
         ''' calculate aggregates on raw data '''
-        # TODO: 2 make total quantiles more precise
         if item.RPS:
             if item.avg_response_time:
                 item.selfload = 100 * item.selfload / item.RPS
