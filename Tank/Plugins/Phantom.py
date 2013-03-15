@@ -413,9 +413,7 @@ class PhantomReader(AbstractReader):
         self.log.debug("Instances info buffer size: %s", len(self.stat_data))
 
     def __read_phout_data(self, force):
-        '''
-        Read phantom results
-        '''
+        '''         Read phantom results        '''
         if self.phout and len(self.data_queue) < self.buffered_seconds * 2:
             self.log.debug("Reading phout, up to 10MB...")
             phout = self.phout.readlines(10 * 1024 * 1024)
@@ -445,7 +443,7 @@ class PhantomReader(AbstractReader):
             tstmp = float(data[0])
             cur_time = int(tstmp + float(rt_real) / 1000000)
 
-            if cur_time in self.stat_data.keys():  # FIXME: optimize
+            if cur_time in self.stat_data.keys():
                 active = self.stat_data[cur_time]
             else:
                 active = 0
@@ -491,6 +489,7 @@ class PhantomReader(AbstractReader):
 
 
     def __aggregate_next_second(self):
+        ''' calls aggregator if there is data '''
         parsed_sec = AbstractReader.pop_second(self)
         if parsed_sec:
             self.pending_second_data_queue.append(parsed_sec)
@@ -502,6 +501,7 @@ class PhantomReader(AbstractReader):
 
 
     def __process_pending_second(self):
+        ''' process data in queue '''
         next_time = int(time.mktime(self.pending_second_data_queue[0].time.timetuple()))
         if self.last_sample_time and (next_time - self.last_sample_time) > 1:
             self.last_sample_time += 1

@@ -496,6 +496,7 @@ class QuantileOfSaturationCriteria(AbstractCriteria):
 
 
     def __get_timing_quantile(self, aggr_data):
+        ''' get quantile level for criteria timing '''
         quan = 0.0
         for timing in sorted(aggr_data.cumulative.times_dist.keys()):
             timing_item = aggr_data.cumulative.times_dist[timing]

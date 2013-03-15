@@ -28,7 +28,7 @@ class JMeterPlugin(AbstractPlugin):
         self.user_args = None
         self.jmeter_path = None
         self.jmeter_log = None
-        self.start_time=time.time()
+        self.start_time = time.time()
 
 
     @staticmethod
@@ -77,8 +77,8 @@ class JMeterPlugin(AbstractPlugin):
             
     def start_test(self):
         self.log.info("Starting %s with arguments: %s", self.jmeter_path, self.args)
-        self.jmeter_process = subprocess.Popen(self.args, executable=self.jmeter_path, preexec_fn=os.setsid, close_fds=True) # stderr=subprocess.PIPE, stdout=subprocess.PIPE, 
-        self.start_time=time.time()
+        self.jmeter_process = subprocess.Popen(self.args, executable=self.jmeter_path, preexec_fn=os.setsid, close_fds=True)  # stderr=subprocess.PIPE, stdout=subprocess.PIPE, 
+        self.start_time = time.time()
             
     
     def is_test_finished(self):
@@ -97,7 +97,7 @@ class JMeterPlugin(AbstractPlugin):
                 os.killpg(self.jmeter_process.pid, signal.SIGTERM)
             except OSError, exc:
                 self.log.debug("Seems JMeter exited itself: %s", exc)
-            #Utils.log_stdout_stderr(self.log, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
+            # Utils.log_stdout_stderr(self.log, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
 
         self.core.add_artifact_file(self.jmeter_log)
         return retcode
@@ -106,7 +106,7 @@ class JMeterPlugin(AbstractPlugin):
     def __add_writing_section(self, jmx, jtl):
         ''' Genius idea by Alexey Lavrenyuk '''
         self.log.debug("Original JMX: %s", os.path.realpath(jmx))
-        src_jmx=open(jmx, 'r')
+        src_jmx = open(jmx, 'r')
         source_lines = src_jmx.readlines()
         src_jmx.close()
         try:
@@ -117,7 +117,7 @@ class JMeterPlugin(AbstractPlugin):
         except Exception, exc:
             raise RuntimeError("Failed to find the end of JMX XML: %s" % exc)
         
-        tpl_file=open(os.path.dirname(__file__) + '/jmeter_writer.xml', 'r')
+        tpl_file = open(os.path.dirname(__file__) + '/jmeter_writer.xml', 'r')
         tpl = tpl_file.read()
         tpl_file.close()
         
@@ -172,7 +172,7 @@ class JMeterReader(AbstractReader):
                 line = line.strip()
                 if not line:
                     return None 
-                #timeStamp,elapsed,label,responseCode,success,bytes,grpThreads,allThreads,Latency
+                # timeStamp,elapsed,label,responseCode,success,bytes,grpThreads,allThreads,Latency
                 data = line.split("\t")
                 if len(data) != 9:
                     self.log.warning("Wrong jtl line, skipped: %s", line)
@@ -234,7 +234,7 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
     ''' Right panel widget with JMeter test info '''
     def __init__(self, jmeter):
         AbstractInfoWidget.__init__(self)
-        self.krutilka=ConsoleScreen.krutilka()
+        self.krutilka = ConsoleScreen.krutilka()
         self.jmeter = jmeter
         self.active_threads = 0
         self.rps = 0
@@ -253,7 +253,7 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         right_spaces = space / 2
         
         dur_seconds = int(time.time()) - int(self.jmeter.start_time)
-        duration=str(datetime.timedelta(seconds=dur_seconds))        
+        duration = str(datetime.timedelta(seconds=dur_seconds))        
         
         template = screen.markup.BG_MAGENTA + '~' * left_spaces + jmeter + ' ' + '~' * right_spaces + screen.markup.RESET + "\n" 
         template += "     Test Plan: %s\n"
