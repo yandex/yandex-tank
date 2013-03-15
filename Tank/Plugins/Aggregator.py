@@ -36,11 +36,13 @@ class AggregatorPlugin(AbstractPlugin):
         self.reader = None
         self.time_periods = [ tankcore.expand_to_milliseconds(x) for x in self.default_time_periods.split(' ') ]
         self.last_sample_time = 0
+        self.precise_cumulative = 1
     
     def configure(self):
         periods = self.get_option("time_periods", self.default_time_periods).split(" ")
         self.time_periods = [ tankcore.expand_to_milliseconds(x) for x in periods ]
         self.core.set_option(self.SECTION, "time_periods", " ".join([ str(x) for x in periods ]))
+        self.precise_cumulative = int(self.get_option("precise_cumulative", '1'))
 
     def start_test(self):
         if not self.reader:
@@ -162,7 +164,17 @@ class SecondAggregateDataTotalItem:
                 self.times_dist[timing]['count'] += time_item['count']
             else:
                 self.times_dist[timing] = time_item
-        logging.debug("Total times: %s", self.times_dist)
+
+
+    def add_raw_data(self, times_dist):
+        ''' add data to total '''
+        for time_item in times_dist:
+            self.total_count += 1
+            timing = int(time_item)
+            dist_item = self.times_dist.get(timing, {'from': timing, 'to': timing, 'count': 0})
+            dist_item['count'] += 1
+            self.times_dist[timing] = dist_item
+        logging.debug("Total times len: %s", len(self.times_dist))
 
 
     def calculate_total_quantiles(self):
@@ -177,17 +189,6 @@ class SecondAggregateDataTotalItem:
                 level -= float(self.times_dist[timing]['count']) / self.total_count
             self.quantiles[quan * 100] = self.times_dist[timing]['to']
         
-        '''
-        for timing in sorted(self.times_dist.keys(), reversed=True):
-            count += self.times_dist[timing]['count']
-            if quantiles and (count / self.total_count) >= quantiles[0]:
-                level = quantiles.pop(0)
-                self.quantiles[level * 100] = self.times_dist[timing]['to']
-            
-        while quantiles:
-            level = quantiles.pop(0)
-            self.quantiles[level * 100] = self.times_dist[timing]['to']
-        '''
         logging.debug("Total quantiles: %s", self.quantiles)
         return self.quantiles
                                 
@@ -205,24 +206,25 @@ class AbstractReader:
         self.data_queue = []
         self.data_buffer = {}
 
+
     def check_open_files(self):
         ''' open files if necessary '''
         pass
 
     def close_files(self):
-        '''
-        Close opened handlers to avoid fd leak
-        '''
+        '''        Close opened handlers to avoid fd leak        '''
         pass
     
     def get_next_sample(self, force):
         ''' read next sample from file '''
         pass
+    
 
     def parse_second(self, next_time, data):
         ''' parse buffered data to aggregate item '''
         self.log.debug("Parsing second: %s", next_time)
         result = self.get_zero_sample(datetime.datetime.fromtimestamp(next_time))
+        time_before = time.time()
         for item in data:
             self.__append_sample(result.overall, item)
             marker = item[0]
@@ -231,14 +233,22 @@ class AbstractReader:
                     result.cases[marker] = SecondAggregateDataItem()
                 self.__append_sample(result.cases[marker], item)
 
+        # at this phase we have raw response times in result.overall.times_dist
+        if self.aggregator.precise_cumulative:
+            self.cumulative.add_raw_data(result.overall.times_dist)
+
         self.log.debug("Calculate aggregates for %s requests", result.overall.RPS)
         self.__calculate_aggregates(result.overall)
         for case in result.cases.values():
             self.__calculate_aggregates(case)
 
-        self.cumulative.add_data(result.overall)
+        if not self.aggregator.precise_cumulative:
+            self.cumulative.add_data(result.overall)
         self.cumulative.calculate_total_quantiles()
 
+        spent = time.time() - time_before
+        if spent:
+            self.log.debug("Aggregating speed: %s lines/sec", int(len(data) / spent))                    
         return result
     
 
