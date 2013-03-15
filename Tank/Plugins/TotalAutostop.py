@@ -507,14 +507,11 @@ class QuantileOfSaturationCriteria(AbstractCriteria):
             
 
     def notify(self, aggregate_second):
-        self.log.debug("Dist: %s", aggregate_second.cumulative.times_dist)
         quan = 100 * self.__get_timing_quantile(aggregate_second)
         self.log.debug("Quantile for %s: %s", self.timing, quan)
         
         self.data.append(quan)
         self.second_window.append(aggregate_second)
-
-        self.log.debug("QSat data: %s", self.data)
 
         if len(self.data) > self.width :
             self.autostop.add_counting(self)
