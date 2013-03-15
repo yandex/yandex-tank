@@ -1,3 +1,15 @@
+yandex-load-tank-base (1.3.8) precise; urgency=low
+
+  * fix and optimize phantom results reading
+  * add new phantom-stderr log file
+  * make total quantiles more precise
+  * fix qsat autostop criteria
+  * fix fd leak in jmeter plugin
+  * repair external STPD usage
+  * fix wrong cases info in screen block
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 15 Mar 2013 14:43:29 +0400
+
 yandex-load-tank-base (1.3.7) precise; urgency=low
 
   * fix http code getting bug
