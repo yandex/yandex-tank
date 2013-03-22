@@ -1,4 +1,4 @@
-#have yandex-tank && 
+have yandex-tank && 
 _yandex_tank() 
 {
     local cur prev opts
@@ -18,9 +18,8 @@ _yandex_tank()
         return 0
     fi
     COMPREPLY=()
-}
-complete -F _yandex_tank yandex-tank
-# && 
-#complete -F _yandex_tank yandex-tank-jmeter && 
-#complete -F _yandex_tank yandex-tank-udp &&
-#complete -F _yandex_tank yandex-tank-elliptics
+} &&
+complete -o default -F _yandex_tank yandex-tank && 
+complete -o default -F _yandex_tank yandex-tank-jmeter && 
+complete -o default -F _yandex_tank yandex-tank-udp &&
+complete -o default -F _yandex_tank yandex-tank-elliptics
