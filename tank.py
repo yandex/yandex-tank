@@ -1,52 +1,10 @@
 #! /usr/bin/python
-from Tank.ConsoleWorker import ConsoleTank
+from Tank.ConsoleWorker import ConsoleTank, CompletionHelperOptionParser
 from optparse import OptionParser
 import logging
 import os
 import sys
 import traceback
-
-class DevNullOpts:
-    log = "/dev/null"
-
-class CompletionHelperOptionParser(OptionParser):
-    def __init__(self):
-        OptionParser.__init__(self, add_help_option=False)
-        self.add_option('--bash-switches-list', action='store_true', dest="list_switches", help="Options list")
-        self.add_option('--bash-options-prev', action='store', dest="list_options_prev", help="Options list")
-        self.add_option('--bash-options-cur', action='store', dest="list_options_cur", help="Options list")
-    
-    def error(self, msg):
-        pass
-
-    def exit(self, status=0, msg=None):
-        pass
-
-    def handle_request(self, parser):
-        options = self.parse_args()[0]
-        if options.list_switches:
-            opts = []
-            for option in parser.option_list:
-                if not "--bash" in option.get_opt_string():
-                    opts.append(option.get_opt_string())
-            print ' '.join(opts)
-            exit(0)
-    
-        if options.list_options_cur or options.list_options_prev:
-            cmdtank = ConsoleTank(DevNullOpts(), None)
-            cmdtank.core.load_configs(cmdtank.get_default_configs())
-            cmdtank.core.load_plugins()
-            
-            opts = []
-            for option in cmdtank.core.get_available_options():
-                opts.append(cmdtank.core.SECTION + '.' + option + '=')
-                
-            for plugin in cmdtank.core.plugins.values():
-                for option in plugin.get_available_options():
-                    opts.append(plugin.SECTION + '.' + option + '=')
-            print ' '.join(sorted(opts))
-            exit(0)
-
 
 if __name__ == "__main__":
     sys.path.append(os.path.dirname(__file__))
@@ -64,8 +22,7 @@ if __name__ == "__main__":
 
     completion_helper = CompletionHelperOptionParser()
     completion_helper.handle_request(parser)
-    
-    
+        
     options, ammofile = parser.parse_args()
 
     worker = ConsoleTank(options, ammofile)

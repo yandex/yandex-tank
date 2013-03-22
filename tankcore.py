@@ -183,7 +183,7 @@ class TankCore:
         self.lock_file = None
 
     def get_available_options(self):
-        return ["artifacts_base_dir", "artifacts_dir" , "plugin_"]
+        return ["artifacts_base_dir", "artifacts_dir"]
 
     def load_configs(self, configs):
         '''        Tells core to load configs set into options storage        '''
