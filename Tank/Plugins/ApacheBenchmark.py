@@ -23,6 +23,9 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
     def get_key():
         return __file__
     
+    def get_available_options(self):
+        return ["options", "url", "requests", "concurrency"]
+    
     def configure(self):
         self.options = self.get_option("options", '')
         self.url = self.get_option("url", 'http://localhost/')
@@ -103,20 +106,20 @@ class ABReader(AbstractReader):
         if self.results:
             read_lines = self.results.readlines()
             if read_lines:
-                read_lines.pop(0) # remove header line
+                read_lines.pop(0)  # remove header line
             self.log.debug("About to process %s result lines", len(read_lines))
             for line in read_lines:
                 line = line.strip()
                 if not line:
                     return None 
-                #Tue Sep 25 14:19:36 2012        1348568376      0       36      36      34
+                # Tue Sep 25 14:19:36 2012        1348568376      0       36      36      34
                 data = line.split("\t")
                 if len(data) != 6:
                     self.log.warning("Wrong ab log line, skipped: %s", line)
                     continue
                 cur_time = int(data[1])
                 ctime = int(data[2])
-                #dtime = int(data[3])
+                # dtime = int(data[3])
                 ttime = int(data[4])
                 wait = int(data[5])
     

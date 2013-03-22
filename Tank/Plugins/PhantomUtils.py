@@ -40,6 +40,11 @@ class PhantomConfig:
         ''' get option wrapper '''
         return self.core.get_option(self.SECTION, opt_name, default)
     
+    @staticmethod
+    def get_available_options():
+        opts = ["threads", "phantom_modules_path", "additional_libs", "writelog", ]
+        opts += StreamConfig.get_available_options()
+        return opts
     
     def read_config(self):
         '''        Read phantom tool specific options        '''
@@ -158,7 +163,6 @@ class PhantomConfig:
 
         return result    
     
-    
         
 class StreamConfig:
     ''' each test stream's config '''
@@ -198,6 +202,13 @@ class StreamConfig:
         ''' get option wrapper '''
         return self.core.get_option(self.section, option_ammofile, default)
     
+    @staticmethod
+    def get_available_options():
+        opts = ["ssl", "tank_type", 'gatling_ip', "method_prefix", "source_log_prefix"]
+        opts += ["phantom_http_line", "phantom_http_field_num", "phantom_http_field", "phantom_http_entity"]
+        opts += ['address', "port", StreamConfig.OPTION_INSTANCES_LIMIT]
+        opts += StepperWrapper.get_available_options()
+        return opts
     
     def read_config(self):
         ''' reads config '''
@@ -372,6 +383,12 @@ class StepperWrapper:
         ''' get_option wrapper'''
         return self.core.get_option(self.section, option_ammofile, param2)
     
+    @staticmethod
+    def get_available_options():
+        opts = [StepperWrapper.OPTION_AMMOFILE, StepperWrapper.OPTION_LOOP, StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD]
+        opts += ["instances_schedule", "uris", "headers", "header_http", "autocases", ]
+        opts += ["use_caching", "cache_dir", "force_stepping", ]
+        return opts
     
     def read_config(self):
         ''' stepper part of reading options '''

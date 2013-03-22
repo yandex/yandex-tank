@@ -40,6 +40,9 @@ class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
         self.online_initiated = False
         self.online_enabled = False
     
+    def get_available_options(self):
+        return ["token", "project", "test_title", "file_prefix", "color_flag", "online_enabled" ]
+    
     def configure(self):
         self.loadosophia.address = self.get_option("address", "https://loadosophia.org/")
         self.loadosophia.token = self.get_option("token", "")
@@ -62,7 +65,7 @@ class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
                 self.loadosophia.start_online(self.project_key, self.title)
             except Exception, exc:
                 self.log.warning("Problems starting online: %s", exc)
-                self.online_enabled=False
+                self.online_enabled = False
             
     
     def aggregate_second(self, second_aggregate_data):

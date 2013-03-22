@@ -24,6 +24,9 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
     def get_key():
         return __file__
     
+    def get_available_options(self):
+        return ["info_panel_width", "short_only", "disable_all_colors", "disable_colors"]
+    
     def configure(self):
         self.info_panel_width = self.get_option("info_panel_width", self.info_panel_width)
         self.short_only = int(self.get_option("short_only", '0'))
@@ -69,7 +72,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
         self.screen.add_second_data(second_aggregate_data)    
         if self.short_only:
             tpl = "Time: %s\tExpected RPS: %s\tActual RPS: %s\tActive Threads: %s\tAvg RT: %s"
-            ovr = second_aggregate_data.overall # just to see the next line in IDE
+            ovr = second_aggregate_data.overall  # just to see the next line in IDE
             data = (second_aggregate_data.time, ovr.planned_requests, ovr.RPS,
                     ovr.active_threads, ovr.avg_response_time)
             self.log.info(tpl % data)

@@ -14,7 +14,6 @@ import time
 import traceback
 import signal
 
-
 class SingleLevelFilter(logging.Filter):
     '''Exclude or approve one msg type at a time.
     '''
@@ -227,10 +226,24 @@ class ConsoleTank:
             self.core.config.config.remove_section(self.MIGRATE_SECTION)
 
                 
+    def get_default_configs(self):
+        ''' returns default configs list, from /etc and home dir '''
+        configs=[]
+        try:
+            conf_files = os.listdir(self.baseconfigs_location)
+            conf_files.sort()
+            for filename in conf_files:
+                if fnmatch.fnmatch(filename, '*.ini'):
+                    configs += [os.path.realpath(self.baseconfigs_location + os.sep + filename)]
+        except OSError:
+            self.log.warn(self.baseconfigs_location + ' is not acessible to get configs list')
+
+        configs += [os.path.expanduser('~/.yandex-tank')]
+        return configs
+    
+    
     def configure(self):
-        '''
-        Make all console-specific preparations before running Tank
-        '''
+        '''         Make all console-specific preparations before running Tank        '''
         if self.options.ignore_lock:
             self.log.warn("Lock files ignored. This is highly unrecommended practice!")
         
@@ -249,16 +262,7 @@ class ConsoleTank:
             configs = []
             
             if not self.options.no_rc:
-                try:
-                    conf_files = os.listdir(self.baseconfigs_location)
-                    conf_files.sort()
-                    for filename in conf_files:
-                        if fnmatch.fnmatch(filename, '*.ini'):
-                            configs += [os.path.realpath(self.baseconfigs_location + os.sep + filename)]
-                except OSError:
-                    self.log.warn(self.baseconfigs_location + ' is not acessible to get configs list')
-        
-                configs += [os.path.expanduser('~/.yandex-tank')]
+                configs = self.get_default_configs()
             
             if not self.options.config:
                 if os.path.exists(os.path.realpath('load.ini')):

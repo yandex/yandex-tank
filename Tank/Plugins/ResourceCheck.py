@@ -17,9 +17,12 @@ class ResourceCheckPlugin(AbstractPlugin):
         '''         Constructor        '''
         AbstractPlugin.__init__(self, core)
         self.interval = "10s"
-        self.disk_limit = 2048 # 2 GB
-        self.mem_limit = 512 # 0.5 GB
+        self.disk_limit = 2048  # 2 GB
+        self.mem_limit = 512  # 0.5 GB
         self.last_check = 0
+
+    def get_available_options(self):
+        return ["interval", "disk_limit", "mem_limit"]
 
     def configure(self):
         self.interval = tankcore.expand_to_seconds(self.get_option("interval", self.interval))

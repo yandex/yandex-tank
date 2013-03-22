@@ -38,6 +38,9 @@ class AggregatorPlugin(AbstractPlugin):
         self.last_sample_time = 0
         self.precise_cumulative = 1
     
+    def get_available_options(self):
+        return ["time_periods", "precise_cumulative"]
+    
     def configure(self):
         periods = self.get_option("time_periods", self.default_time_periods).split(" ")
         self.time_periods = [ tankcore.expand_to_milliseconds(x) for x in periods ]

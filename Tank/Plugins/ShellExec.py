@@ -22,6 +22,9 @@ class ShellExecPlugin(AbstractPlugin):
     def get_key():
         return __file__
     
+    def get_available_options(self):
+        return ["prepare", "start", "end", "poll", "post_process"]
+    
     def configure(self):
         self.prepare = self.get_option("prepare", '')
         self.start = self.get_option("start", '')

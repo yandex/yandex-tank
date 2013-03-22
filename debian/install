@@ -4,3 +4,4 @@ tankcore.py usr/lib/yandex-tank
 tank.py usr/lib/yandex-tank
 *.sh usr/lib/yandex-tank
 00-base.ini etc/yandex-tank
+yandex-tank.completion /etc/bash_completion.d

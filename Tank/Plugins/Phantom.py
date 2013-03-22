@@ -46,6 +46,11 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
     def get_key():
         return __file__
     
+    def get_available_options(self):
+        opts = ["eta_file", "phantom_path", "buffered_seconds", ]
+        opts += [PhantomConfig.OPTION_PHOUT, self.OPTION_CONFIG]
+        opts += PhantomConfig.get_available_options()
+        return opts
     
     def configure(self):       
         # plugin part

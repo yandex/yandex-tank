@@ -111,8 +111,8 @@ def execute(cmd, shell=False, poll_period=1, catch_out=False):
     log = logging.getLogger(__name__)
     log.debug("Starting: %s", cmd)
 
-    stdout=""
-    stderr=""
+    stdout = ""
+    stderr = ""
 
     if catch_out:
         process = subprocess.Popen(cmd, shell=shell, stderr=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
@@ -125,10 +125,10 @@ def execute(cmd, shell=False, poll_period=1, catch_out=False):
     
     if catch_out:
         for line in process.stderr.readlines():
-            stderr+=line
+            stderr += line
             log.warn(line.strip())
         for line in process.stdout.readlines():
-            stdout+=line
+            stdout += line
             log.debug(line.strip())
     
     retcode = process.poll()
@@ -182,10 +182,11 @@ class TankCore:
         self.interrupted = False
         self.lock_file = None
 
+    def get_available_options(self):
+        return ["artifacts_base_dir", "artifacts_dir" , "plugin_"]
+
     def load_configs(self, configs):
-        '''
-        Tells core to load configs set into options storage
-        '''
+        '''        Tells core to load configs set into options storage        '''
         self.log.info("Loading configs...")
         self.config.load_files(configs)
         dotted_options = []
@@ -199,9 +200,7 @@ class TankCore:
 
          
     def load_plugins(self):
-        '''
-        Tells core to take plugin options and instantiate plugin classes
-        '''
+        '''        Tells core to take plugin options and instantiate plugin classes        '''
         self.log.info("Loading plugins...")
 
         self.artifacts_base_dir = os.path.expanduser(self.get_option(self.SECTION, "artifacts_base_dir", self.artifacts_base_dir))
@@ -210,8 +209,8 @@ class TankCore:
             self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
 
         options = self.config.get_options(self.SECTION, self.PLUGIN_PREFIX)
-        #old_count = len(self.plugins)
-        #while old_count
+        # old_count = len(self.plugins)
+        # while old_count
         for (plugin_name, plugin_path) in options:
             if not plugin_path:
                 self.log.debug("Seems the plugin '%s' was disabled", plugin_name)
@@ -226,9 +225,7 @@ class TankCore:
         self.log.debug("Plugins order: %s", self.plugins_order)
             
     def __load_plugin(self, name, path):
-        '''
-        Load single plugin using 'exec' statement
-        '''
+        '''        Load single plugin using 'exec' statement        '''
         self.log.debug("Loading plugin %s from %s", name, path)
         for basedir in [''] + sys.path:
             if basedir:
@@ -251,9 +248,7 @@ class TankCore:
         return res
 
     def plugins_configure(self):
-        '''
-        Call configure() on all plugins
-        '''
+        '''        Call configure() on all plugins        '''
         if not os.path.exists(self.artifacts_base_dir): 
             os.makedirs(self.artifacts_base_dir)
             os.chmod(self.artifacts_base_dir, 0755)
@@ -274,9 +269,7 @@ class TankCore:
             plugin.prepare_test()
         
     def plugins_start_test(self):
-        '''
-        Call start_test() on all plugins
-        '''
+        '''        Call start_test() on all plugins        '''
         self.log.info("Starting test...")
         for plugin_key in self.plugins_order:
             plugin = self.__get_plugin_by_key(plugin_key)
@@ -284,9 +277,7 @@ class TankCore:
             plugin.start_test()
             
     def wait_for_finish(self):
-        '''
-        Call is_test_finished() on all plugins 'till one of them initiates exit
-        '''
+        '''        Call is_test_finished() on all plugins 'till one of them initiates exit        '''
 
         self.log.info("Waiting for test to finish...")
         if not self.plugins:
@@ -309,9 +300,7 @@ class TankCore:
         return 1
 
     def plugins_end_test(self, retcode):
-        '''
-        Call end_test() on all plugins
-        '''
+        '''        Call end_test() on all plugins        '''
         self.log.info("Finishing test...")
         
         for plugin_key in self.plugins_order:
@@ -380,7 +369,7 @@ class TankCore:
             value = self.config.config.get(section, option).strip()
         except ConfigParser.NoOptionError as ex:
             if default != None:
-                default=str(default)
+                default = str(default)
                 self.config.config.set(section, option, default)
                 self.config.flush()
                 value = default.strip()
@@ -393,7 +382,7 @@ class TankCore:
             retcode, stdout, stderr = execute(value[1:-1], True, 0.1, True)
             if retcode or stderr:
                 raise ValueError("Error expanding option %s, RC: %s" % (value, retcode))
-            value=stdout.strip()
+            value = stdout.strip()
             
         return value
         
@@ -425,10 +414,10 @@ class TankCore:
         
         ext = os.path.splitext(key)[1].lower()
         
-        if ext == '.py' and key + 'c' in self.plugins.keys(): # .py => .pyc
+        if ext == '.py' and key + 'c' in self.plugins.keys():  # .py => .pyc
             return self.plugins[key + 'c']
         
-        if ext == '.pyc' and key[:-1] in self.plugins.keys(): # .pyc => .py:
+        if ext == '.pyc' and key[:-1] in self.plugins.keys():  # .pyc => .py:
             return self.plugins[key[:-1]]
         
         raise KeyError("Requested plugin type not found: %s" % key)  
@@ -588,7 +577,7 @@ class ConfigManager:
 
     def find_sections(self, prefix):
         ''' return sections with specified prefix '''
-        res=[]
+        res = []
         for section in self.config.sections():
             if section.startswith(prefix):
                 res.append(section)
@@ -605,9 +594,7 @@ class AbstractPlugin:
     
     @staticmethod
     def get_key():
-        '''
-        Get dictionary key for plugin, should point to __file__ magic constant
-        '''
+        '''        Get dictionary key for plugin, should point to __file__ magic constant        '''
         raise TypeError("Abstract method needs to be overridden")
     
     def __init__(self, core):
@@ -615,49 +602,37 @@ class AbstractPlugin:
         self.core = core
         
     def configure(self):
-        '''
-        A stage to read config values and instantiate objects
-        '''
+        '''        A stage to read config values and instantiate objects        '''
         pass
     
     def prepare_test(self):
-        '''
-        Test preparation tasks
-        '''
+        '''        Test preparation tasks        '''
         pass
     
     def start_test(self):
-        '''
-        Launch test process
-        '''
+        '''        Launch test process        '''
         pass
     
     def is_test_finished(self):
-        '''
-        Polling call, if result differs from -1 then test end will be triggeted
-        '''
+        '''        Polling call, if result differs from -1 then test end will be triggeted        '''
         return -1
     
     def end_test(self, retcode):
-        '''
-        Stop processes launched at 'start_test', change return code if necessary
-        '''
+        '''        Stop processes launched at 'start_test', change return code if necessary        '''
         return retcode
     
     def post_process(self, retcode):
-        '''
-        Post-process test data
-        '''
+        '''        Post-process test data        '''
         return retcode
 
     def get_option(self, option_name, default_value=None):
-        '''
-        Wrapper to get option from plugins' section
-        '''
+        '''        Wrapper to get option from plugins' section        '''
         return self.core.get_option(self.SECTION, option_name, default_value)
 
     def set_option(self, option_name, value):
-        '''
-        Wrapper to set option to plugins' section
-        '''
+        '''        Wrapper to set option to plugins' section        '''
         return self.core.set_option(self.SECTION, option_name, value)
+
+    def get_available_options(self):
+        ''' returns array containing known options for plugin '''
+        return []

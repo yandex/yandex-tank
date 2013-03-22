@@ -35,6 +35,8 @@ class MonitoringPlugin(AbstractPlugin):
     def get_key():
         return __file__
     
+    def get_available_options(self):
+        return ["config", "default_target", 'ssh_timeout']
     
     def configure(self):
         self.config = self.get_option("config", 'auto').strip()

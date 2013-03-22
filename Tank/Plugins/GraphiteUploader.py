@@ -20,6 +20,9 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         AbstractPlugin.__init__(self, core)
         self.graphite_client = None
 
+    def get_available_options(self):
+        return ["address", "port", "prefix"]
+
     def configure(self):
         '''Read configuration'''
         address = self.get_option("address", "")
@@ -31,7 +34,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             self.graphite_client = GraphiteClient(prefix, address, port)
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(self)
-
+            
     def aggregate_second(self, data):
         """
         @data: SecondAggregateData

@@ -35,6 +35,8 @@ class JMeterPlugin(AbstractPlugin):
     def get_key():
         return __file__
 
+    def get_available_options(self):
+        return ["jmx", "args", "jmeter_path", ]
     
     def configure(self):
         self.original_jmx = self.get_option("jmx")

@@ -21,7 +21,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         Thread.__init__(self)
-        self.daemon = True # Thread auto-shutdown
+        self.daemon = True  # Thread auto-shutdown
         self.port = 8080
         self.last_sec = None
         self.server = None
@@ -32,6 +32,8 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.redirect = ''
         self.manual_stop = 0
     
+    def get_available_options(self):
+        return ["port", "interval", "redirect", "manual_stop"]
     
     def configure(self):
         self.port = int(self.get_option("port", self.port))
@@ -52,8 +54,8 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
     
         
     def end_test(self, retcode):
-        #self.log.info("Shutting down local server")
-        #self.server.shutdown() don't enable it since it leads to random deadlocks
+        # self.log.info("Shutting down local server")
+        # self.server.shutdown() don't enable it since it leads to random deadlocks
         if self.manual_stop:
             raw_input('Press Enter, to close webserver.')
 
@@ -142,7 +144,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.__calculate_codes(data)
 
     
-#http://fragments.turtlemeat.com/pythonwebserver.php
+# http://fragments.turtlemeat.com/pythonwebserver.php
 class OnlineServer(HTTPServer):
     ''' web server starter '''
     def __init__(self, server_address, handler_class, bind_and_activate=True):

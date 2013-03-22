@@ -27,6 +27,9 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
     def get_key():
         return __file__
     
+    def get_available_options(self):
+        return ["disable"]
+    
     def configure(self):
         self.disable = int(self.get_option('disable', '0'))
     

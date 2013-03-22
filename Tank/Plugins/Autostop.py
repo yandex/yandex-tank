@@ -35,6 +35,9 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         ''' add new criteria class '''
         self.custom_criterias += [criteria_class]
     
+    def get_available_options(self):
+        return ["autostop"]
+    
     def configure(self):
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
