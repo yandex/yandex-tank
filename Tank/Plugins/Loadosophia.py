@@ -321,12 +321,14 @@ class LoadosophiaClient:
         for sec in data_buffer:
             item = sec.overall
             json_item = {
+                       "ts": str(sec.time),
                        "threads": item.active_threads,
                        "rps": item.RPS,
                        "planned_rps": item.planned_requests,
                        "avg_rt": item.avg_response_time,
                        "quantiles": item.quantiles,
-                       "rc": item.http_codes
+                       "rc": item.http_codes,
+                       "net": item.net_codes
                     }
             data.append(json_item)
         
