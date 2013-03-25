@@ -62,7 +62,8 @@ class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
     def start_test(self):
         if self.online_enabled:
             try:
-                self.loadosophia.start_online(self.project_key, self.title)
+                url=self.loadosophia.start_online(self.project_key, self.title)
+                self.log.info("Started active test: %s", url)
             except Exception, exc:
                 self.log.warning("Problems starting online: %s", exc)
                 self.online_enabled = False
@@ -304,6 +305,8 @@ class LoadosophiaClient:
             self.log.debug("Failed to start active test: %s", response.read())        
             self.cookie_jar.clear_session_cookies()
 
+        online_id=json.loads(response.read())
+        return self.address + "gui/active/"+online_id['OnlineID']+'/'
 
     def end_online(self):
         self.log.debug("Ending Loadosophia online test")
