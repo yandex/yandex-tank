@@ -327,7 +327,7 @@ class TankCore:
             plugin = self.__get_plugin_by_key(plugin_key)
             self.log.debug("Post-process %s", plugin)
             try:
-                plugin.post_process(retcode)
+                retcode=plugin.post_process(retcode)
             except Exception, ex:
                 self.log.error("Failed post-processing plugin %s: %s", plugin, ex)
                 self.log.debug("Failed post-processing plugin: %s", traceback.format_exc(ex))

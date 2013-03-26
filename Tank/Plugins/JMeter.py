@@ -15,8 +15,7 @@ import datetime
 
 class JMeterPlugin(AbstractPlugin):
     ''' JMeter tank plugin '''
-    SECTION = 'jmeter'
-    
+    SECTION = 'jmeter'    
     
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
@@ -37,6 +36,7 @@ class JMeterPlugin(AbstractPlugin):
 
     def get_available_options(self):
         return ["jmx", "args", "jmeter_path", ]
+    
     
     def configure(self):
         self.original_jmx = self.get_option("jmx")

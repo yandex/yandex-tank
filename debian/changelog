@@ -1,8 +1,10 @@
 yandex-load-tank-base (1.3.9) precise; urgency=low
 
   * add bash completion
+  * add support for Loadosophia.org active tests
+  * add RCAssert plugin
 
- -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 22 Mar 2013 17:55:21 +0400
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 26 Mar 2013 19:43:07 +0400
 
 yandex-load-tank-base (1.3.8) precise; urgency=low
 
