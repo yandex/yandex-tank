@@ -208,10 +208,10 @@ class JMeterReader(AbstractReader):
                 self.data_buffer[cur_time].append(data_item)
         
         if not force and self.data_queue and (self.data_queue[-1] - self.data_queue[0]) > self.buffer_size:
-                return self.pop_second()
+            return self.pop_second()
         elif force and self.data_queue:
             return self.pop_second()
-        else :
+        else:
             return None
 
     def exc_to_net(self, param1):
