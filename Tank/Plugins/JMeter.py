@@ -28,6 +28,7 @@ class JMeterPlugin(AbstractPlugin):
         self.jmeter_path = None
         self.jmeter_log = None
         self.start_time = time.time()
+        self.jmeter_buffer_size = None
 
 
     @staticmethod
@@ -206,16 +207,12 @@ class JMeterReader(AbstractReader):
                 data_item += [0]
                 self.data_buffer[cur_time].append(data_item)
         
-        if not force:
-            if self.data_queue and (self.data_queue[-1] - self.data_queue[0]) > self.buffer_size:
+        if not force and self.data_queue and (self.data_queue[-1] - self.data_queue[0]) > self.buffer_size:
                 return self.pop_second()
-            else :
-                return None
-        else:
-            if self.data_queue:
-                return self.pop_second()
-            else:
-                return None 
+        elif force and self.data_queue:
+            return self.pop_second()
+        else :
+            return None
 
     def exc_to_net(self, param1):
         ''' translate http code to net code '''
