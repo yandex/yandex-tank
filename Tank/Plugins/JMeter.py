@@ -48,6 +48,7 @@ class JMeterPlugin(AbstractPlugin):
         self.user_args = self.get_option("args", '')
         self.jmeter_path = self.get_option("jmeter_path", 'jmeter')
         self.jmeter_log = self.core.mkstemp('.log', 'jmeter_')
+        self.jmeter_buffer_size = int(self.get_option('buffer_size', '3'))
         self.core.add_artifact_file(self.jmeter_log, True)
 
 
@@ -63,6 +64,7 @@ class JMeterPlugin(AbstractPlugin):
 
         if aggregator:
             aggregator.reader = JMeterReader(aggregator, self)
+            aggregator.reader.buffer_size = self.jmeter_buffer_size
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
