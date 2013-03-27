@@ -156,6 +156,8 @@ class JMeterReader(AbstractReader):
         AbstractReader.__init__(self, owner)
         self.jmeter = jmeter
         self.results = None
+        self.partial_buffer = ''
+        self.buffer_size = 3
     
     def check_open_files(self):
         if not self.results and os.path.exists(self.jmeter.jtl_file):
@@ -168,24 +170,29 @@ class JMeterReader(AbstractReader):
 
     def get_next_sample(self, force):
         if self.results:
-            read_lines = self.results.readlines()
+            read_lines = self.results.readlines(10*1024*1024)
             self.log.debug("About to process %s result lines", len(read_lines))
             for line in read_lines:
-                line = line.strip()
                 if not line:
                     return None 
                 # timeStamp,elapsed,label,responseCode,success,bytes,grpThreads,allThreads,Latency
-                data = line.split("\t")
+                if self.partial_buffer != '':
+                    line = self.partial_buffer + line
+                    self.partial_buffer = ''
+                data = line.rstrip().split("\t")
                 if len(data) != 9:
-                    self.log.warning("Wrong jtl line, skipped: %s", line)
+                    self.partial_buffer = line
+                    #self.log.warning("Wrong jtl line, skipped: %s", line)
                     continue
                 cur_time = int(data[0]) / 1000
-                netcode = '0' if data[4] == 'true' else self.exc_to_net(data[3]) 
-                
+                netcode = '0' if data[4] == 'true' else self.exc_to_net(data[3])
+
                 if not cur_time in self.data_buffer.keys():
                     if self.data_queue and self.data_queue[-1] >= cur_time:
+                        #print self.data_queue[-1]
                         self.log.warning("Aggregator data dates must be sequential: %s vs %s" % (cur_time, self.data_queue[-1]))
-                        cur_time = self.data_queue[-1]
+                        continue
+                        #cur_time = self.data_queue[-1]
                     else:
                         self.data_queue.append(cur_time)
                         self.data_buffer[cur_time] = []
