@@ -170,7 +170,7 @@ class JMeterReader(AbstractReader):
 
     def get_next_sample(self, force):
         if self.results:
-            read_lines = self.results.readlines(10*1024*1024)
+            read_lines = self.results.readlines(2*1024*1024)
             self.log.debug("About to process %s result lines", len(read_lines))
             for line in read_lines:
                 if not line:
@@ -188,11 +188,9 @@ class JMeterReader(AbstractReader):
                 netcode = '0' if data[4] == 'true' else self.exc_to_net(data[3])
 
                 if not cur_time in self.data_buffer.keys():
-                    if self.data_queue and self.data_queue[-1] >= cur_time:
-                        #print self.data_queue[-1]
-                        self.log.warning("Aggregator data dates must be sequential: %s vs %s" % (cur_time, self.data_queue[-1]))
-                        continue
-                        #cur_time = self.data_queue[-1]
+                    if self.data_queue and self.data_queue[0] >= cur_time:
+                        self.log.warning("Aggregator data dates must be sequential: %s vs %s" % (cur_time, self.data_queue[0]))
+                        cur_time = self.data_queue[0] # 0 or -1?
                     else:
                         self.data_queue.append(cur_time)
                         self.data_buffer[cur_time] = []
@@ -205,14 +203,17 @@ class JMeterReader(AbstractReader):
                 #        accuracy
                 data_item += [0]
                 self.data_buffer[cur_time].append(data_item)
-                    
-        if len(self.data_queue) > 2:
-            return self.pop_second()
         
-        if force and self.data_queue:
-            return self.pop_second()
+        if not force:
+            if self.data_queue and (self.data_queue[-1] - self.data_queue[0]) > self.buffer_size:
+                return self.pop_second()
+            else :
+                return None
         else:
-            return None 
+            if self.data_queue:
+                return self.pop_second()
+            else:
+                return None 
 
     def exc_to_net(self, param1):
         ''' translate http code to net code '''
