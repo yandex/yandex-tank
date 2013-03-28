@@ -28,6 +28,7 @@ class JMeterPlugin(AbstractPlugin):
         self.jmeter_path = None
         self.jmeter_log = None
         self.start_time = time.time()
+        self.jmeter_buffer_size = None
 
 
     @staticmethod
@@ -48,6 +49,7 @@ class JMeterPlugin(AbstractPlugin):
         self.user_args = self.get_option("args", '')
         self.jmeter_path = self.get_option("jmeter_path", 'jmeter')
         self.jmeter_log = self.core.mkstemp('.log', 'jmeter_')
+        self.jmeter_buffer_size = int(self.get_option('buffer_size', '3'))
         self.core.add_artifact_file(self.jmeter_log, True)
 
 
@@ -63,6 +65,7 @@ class JMeterPlugin(AbstractPlugin):
 
         if aggregator:
             aggregator.reader = JMeterReader(aggregator, self)
+            aggregator.reader.buffer_size = self.jmeter_buffer_size
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
@@ -156,6 +159,8 @@ class JMeterReader(AbstractReader):
         AbstractReader.__init__(self, owner)
         self.jmeter = jmeter
         self.results = None
+        self.partial_buffer = ''
+        self.buffer_size = 3
     
     def check_open_files(self):
         if not self.results and os.path.exists(self.jmeter.jtl_file):
@@ -168,24 +173,27 @@ class JMeterReader(AbstractReader):
 
     def get_next_sample(self, force):
         if self.results:
-            read_lines = self.results.readlines()
+            read_lines = self.results.readlines(2*1024*1024)
             self.log.debug("About to process %s result lines", len(read_lines))
             for line in read_lines:
-                line = line.strip()
                 if not line:
                     return None 
                 # timeStamp,elapsed,label,responseCode,success,bytes,grpThreads,allThreads,Latency
-                data = line.split("\t")
+                if self.partial_buffer != '':
+                    line = self.partial_buffer + line
+                    self.partial_buffer = ''
+                data = line.rstrip().split("\t")
                 if len(data) != 9:
-                    self.log.warning("Wrong jtl line, skipped: %s", line)
+                    self.partial_buffer = line
+                    #self.log.warning("Wrong jtl line, skipped: %s", line)
                     continue
                 cur_time = int(data[0]) / 1000
-                netcode = '0' if data[4] == 'true' else self.exc_to_net(data[3]) 
-                
+                netcode = '0' if data[4] == 'true' else self.exc_to_net(data[3])
+
                 if not cur_time in self.data_buffer.keys():
-                    if self.data_queue and self.data_queue[-1] >= cur_time:
-                        self.log.warning("Aggregator data dates must be sequential: %s vs %s" % (cur_time, self.data_queue[-1]))
-                        cur_time = self.data_queue[-1]
+                    if self.data_queue and self.data_queue[0] >= cur_time:
+                        self.log.warning("Aggregator data dates must be sequential: %s vs %s" % (cur_time, self.data_queue[0]))
+                        cur_time = self.data_queue[0] # 0 or -1?
                     else:
                         self.data_queue.append(cur_time)
                         self.data_buffer[cur_time] = []
@@ -198,14 +206,13 @@ class JMeterReader(AbstractReader):
                 #        accuracy
                 data_item += [0]
                 self.data_buffer[cur_time].append(data_item)
-                    
-        if len(self.data_queue) > 2:
-            return self.pop_second()
         
-        if force and self.data_queue:
+        if not force and self.data_queue and (self.data_queue[-1] - self.data_queue[0]) > self.buffer_size:
+            return self.pop_second()
+        elif force and self.data_queue:
             return self.pop_second()
         else:
-            return None 
+            return None
 
     def exc_to_net(self, param1):
         ''' translate http code to net code '''
