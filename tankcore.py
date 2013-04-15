@@ -181,9 +181,12 @@ class TankCore:
         self.scheduled_start = None
         self.interrupted = False
         self.lock_file = None
+        self.flush_config_to=None
+        
 
     def get_available_options(self):
-        return ["artifacts_base_dir", "artifacts_dir"]
+        return ["artifacts_base_dir", "artifacts_dir", "flush_config_to"]
+    
 
     def load_configs(self, configs):
         '''        Tells core to load configs set into options storage        '''
@@ -197,6 +200,9 @@ class TankCore:
         self.config.flush()
         self.add_artifact_file(self.config.file)
         self.set_option(self.SECTION, self.PID_OPTION, os.getpid())
+        self.flush_config_to=self.get_option(self.SECTION, "flush_config_to", "")
+        if self.flush_config_to:
+            self.config.flush(self.flush_config_to)
 
          
     def load_plugins(self):
@@ -259,6 +265,8 @@ class TankCore:
             self.log.debug("Configuring %s", plugin)
             plugin.configure()
             self.config.flush()
+        if self.flush_config_to:
+            self.config.flush(self.flush_config_to)
         
     def plugins_prepare_test(self):
         ''' Call prepare_test() on all plugins        '''
@@ -267,6 +275,8 @@ class TankCore:
             plugin = self.__get_plugin_by_key(plugin_key)
             self.log.debug("Preparing %s", plugin)
             plugin.prepare_test()
+        if self.flush_config_to:
+            self.config.flush(self.flush_config_to)
         
     def plugins_start_test(self):
         '''        Call start_test() on all plugins        '''
@@ -275,6 +285,8 @@ class TankCore:
             plugin = self.__get_plugin_by_key(plugin_key)
             self.log.debug("Starting %s", plugin)
             plugin.start_test()
+        if self.flush_config_to:
+            self.config.flush(self.flush_config_to)
             
     def wait_for_finish(self):
         '''        Call is_test_finished() on all plugins 'till one of them initiates exit        '''
@@ -316,6 +328,8 @@ class TankCore:
                 if not retcode:
                     retcode = 1
 
+        if self.flush_config_to:
+            self.config.flush(self.flush_config_to)
         return retcode
     
 
@@ -338,6 +352,9 @@ class TankCore:
                 del self.plugins[plugin_key]
                 if not retcode:
                     retcode = 1
+
+        if self.flush_config_to:
+            self.config.flush(self.flush_config_to)
 
         self.__collect_artifacts()
         
