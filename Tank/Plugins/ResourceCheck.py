@@ -46,7 +46,7 @@ class ResourceCheckPlugin(AbstractPlugin):
 
     def __check_disk(self):
         ''' raise exception on disk space exceeded '''
-        cmd = "df --no-sync -m -P -l -x fuse -x tmpfs -x devtmpfs -x davfs "
+        cmd = "df --no-sync -m -P -l -x fuse -x tmpfs -x devtmpfs -x davfs -x nfs "
         cmd += self.core.artifacts_base_dir
         cmd += " | tail -n 1 | awk '{print $4}'"
         disk_free = tankcore.execute(cmd, True, 0.1, True)[1]
