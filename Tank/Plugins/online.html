@@ -63,22 +63,22 @@
 
 			function refresh_numbers() {
 				data = req('/numbers.json');
-				document.all['instances'].innerHTML = data['instances'];
-				document.all['planned'].innerHTML = data['planned'];
-				document.all['actual'].innerHTML = data['actual'];
-				document.all['avg'].innerHTML = data['avg'];
-				document.all['net'].innerHTML = data['net'];
+				$('#instances').text(data['instances']);
+				$('#planned').text(data['planned']);
+				$('#actual').text(data['actual']);
+				$('#avg').text(data['avg']);
+				$('#net').text(data['net']);
 
 				if (data['net']) {
-					document.all['netCell'].style.backgroundColor = "#FF9999";
+					$('#netCell').css('background-color', "#FF9999");
 				} else {
-					document.all['netCell'].style.backgroundColor = "white";
+					$('#netCell').css('background-color', "white");
 				}
 
 				if (data['planned'] && data['planned'] != data['actual']) {
-					document.all['actCell'].style.backgroundColor = "#FFFF99";
+					$('#actCell').css('background-color', "#FFFF99");
 				} else {
-					document.all['actCell'].style.backgroundColor = "white";
+					$('#actCell').css('background-color', "white");
 				}
 			}
 		</script>
