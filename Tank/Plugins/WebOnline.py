@@ -148,6 +148,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
 class OnlineServer(HTTPServer):
     ''' web server starter '''
     def __init__(self, server_address, handler_class, bind_and_activate=True):
+        HTTPServer.allow_reuse_address = True
         HTTPServer.__init__(self, server_address, handler_class, bind_and_activate)
         self.owner = None
             
