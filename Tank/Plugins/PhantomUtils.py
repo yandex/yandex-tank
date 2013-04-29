@@ -12,6 +12,7 @@ import socket
 import string
 import tankcore
 from ConfigParser import NoSectionError
+import traceback
 
 class PhantomConfig:
     ''' config file generator '''
@@ -451,6 +452,7 @@ class StepperWrapper:
             self.loop_count = stepper.loop_count
             self.loadscheme = stepper.loadscheme
         except NoSectionError, exc:
+            self.log.debug("No section: %s", traceback.format_exc(exc))
             self.log.warn("Failed to read stepped meta-info for %s: %s", self.stpd, exc)
         
         

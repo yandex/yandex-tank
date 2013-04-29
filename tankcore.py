@@ -215,8 +215,6 @@ class TankCore:
             self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
 
         options = self.config.get_options(self.SECTION, self.PLUGIN_PREFIX)
-        # old_count = len(self.plugins)
-        # while old_count
         for (plugin_name, plugin_path) in options:
             if not plugin_path:
                 self.log.debug("Seems the plugin '%s' was disabled", plugin_name)
@@ -229,6 +227,7 @@ class TankCore:
             
         self.log.debug("Plugin instances: %s", self.plugins)
         self.log.debug("Plugins order: %s", self.plugins_order)
+            
             
     def __load_plugin(self, name, path):
         '''        Load single plugin using 'exec' statement        '''
@@ -268,6 +267,7 @@ class TankCore:
         if self.flush_config_to:
             self.config.flush(self.flush_config_to)
         
+        
     def plugins_prepare_test(self):
         ''' Call prepare_test() on all plugins        '''
         self.log.info("Preparing test...")
@@ -278,6 +278,7 @@ class TankCore:
         if self.flush_config_to:
             self.config.flush(self.flush_config_to)
         
+        
     def plugins_start_test(self):
         '''        Call start_test() on all plugins        '''
         self.log.info("Starting test...")
@@ -287,6 +288,7 @@ class TankCore:
             plugin.start_test()
         if self.flush_config_to:
             self.config.flush(self.flush_config_to)
+            
             
     def wait_for_finish(self):
         '''        Call is_test_finished() on all plugins 'till one of them initiates exit        '''
@@ -310,6 +312,7 @@ class TankCore:
             if (diff < 0.5):
                 time.sleep(0.5 - diff)
         return 1
+
 
     def plugins_end_test(self, retcode):
         '''        Call end_test() on all plugins        '''
