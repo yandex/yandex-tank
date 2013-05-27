@@ -1,5 +1,5 @@
 ''' Utility classes for phantom module '''
-from Tank.Plugins import Stepper
+from Tank.stepper import Stepper
 from ipaddr import AddressValueError
 import ConfigParser
 import copy
@@ -13,16 +13,17 @@ import string
 import tankcore
 from ConfigParser import NoSectionError
 
+
 class PhantomConfig:
     ''' config file generator '''
     OPTION_PHOUT = "phout_file"
     SECTION = 'phantom'
-        
+
     def __init__(self, core):
         self.core = core
         self.log = logging.getLogger(__name__)
         self.streams = []
-            
+
         # common
         self.timeout = -1
         self.answ_log = None
@@ -35,17 +36,16 @@ class PhantomConfig:
         self.threads = None
         self.additional_libs = None
 
-
     def get_option(self, opt_name, default=None):
         ''' get option wrapper '''
         return self.core.get_option(self.SECTION, opt_name, default)
-    
+
     @staticmethod
     def get_available_options():
         opts = ["threads", "phantom_modules_path", "additional_libs", "writelog", ]
         opts += StreamConfig.get_available_options()
         return opts
-    
+
     def read_config(self):
         '''        Read phantom tool specific options        '''
         self.threads = self.get_option("threads", str(int(multiprocessing.cpu_count() / 2) + 1))
@@ -56,25 +56,24 @@ class PhantomConfig:
             self.answ_log_level = 'none'
         elif self.answ_log_level == '1':
             self.answ_log_level = 'all'
-            
-        self.answ_log = self.core.mkstemp(".log", "answ_")            
-        self.core.add_artifact_file(self.answ_log)        
+
+        self.answ_log = self.core.mkstemp(".log", "answ_")
+        self.core.add_artifact_file(self.answ_log)
         self.phout_file = self.core.mkstemp(".log", "phout_")
         self.core.add_artifact_file(self.phout_file)
         self.stat_log = self.core.mkstemp(".log", "phantom_stat_")
         self.core.add_artifact_file(self.stat_log)
         self.phantom_log = self.core.mkstemp(".log", "phantom_")
-        self.core.add_artifact_file(self.phantom_log)                    
+        self.core.add_artifact_file(self.phantom_log)
 
         main_stream = StreamConfig(self.core, len(self.streams), self.phout_file, self.answ_log, self.answ_log_level, self.timeout, self.SECTION)
         self.streams.append(main_stream)
-        
+
         for section in self.core.config.find_sections(self.SECTION + '-'):
             self.streams.append(StreamConfig(self.core, len(self.streams), self.phout_file, self.answ_log, self.answ_log_level, self.timeout, section))
-        
+
         for stream in self.streams:
             stream.read_config()
-
 
     def compose_config(self):
         '''        Generate phantom tool run config        '''
@@ -84,7 +83,7 @@ class PhantomConfig:
             streams_config += stream.compose_config()
             if stream.section != self.SECTION:
                 stat_benchmarks += " " + "benchmark_io%s" % stream.sequence_no
-        
+
         kwargs = {}
         kwargs['threads'] = self.threads
         kwargs['phantom_log'] = self.phantom_log
@@ -92,7 +91,7 @@ class PhantomConfig:
         kwargs['benchmarks_block'] = streams_config
         kwargs['stat_benchmarks'] = stat_benchmarks
         kwargs['additional_libs'] = self.additional_libs
-        
+
         filename = self.core.mkstemp(".conf", "phantom_")
         self.core.add_artifact_file(filename)
         self.log.debug("Generating phantom config: %s", filename)
@@ -107,12 +106,10 @@ class PhantomConfig:
         handle.close()
         return filename
 
-    
     def set_timeout(self, timeout):
         ''' pass timeout to all streams '''
         for stream in self.streams:
             stream.timeout = timeout
-
 
     def get_info(self):
         ''' get merged info about phantom conf '''
@@ -123,10 +120,10 @@ class PhantomConfig:
         result.rps_schedule = None
         result.ammo_count = 0
         result.duration = 0
-        result.instances = 0        
+        result.instances = 0
         result.loadscheme = []
         result.loop_count = 0
-        
+
         for stream in self.streams:
             sec_no = 0
             # logging.info("Steps: %s", stream.stepper.steps)
@@ -137,12 +134,12 @@ class PhantomConfig:
                     else:
                         result.steps.append([item[0], 1])
                     sec_no += 1
-            
+
             if result.rps_schedule:
                 result.rps_schedule = u'multiple'
             else:
                 result.rps_schedule = stream.stepper.rps_schedule
-                
+
             if result.loadscheme:
                 result.loadscheme = ''
             else:
@@ -157,16 +154,15 @@ class PhantomConfig:
             result.ammo_count += stream.stepper.ammo_count
             result.duration = max(result.duration, stream.stepper.duration)
             result.instances += stream.instances
-            
+
         if not result.ammo_count:
             raise ValueError("Total ammo count cannot be zero")
+        return result
 
-        return result    
-    
-        
+
 class StreamConfig:
     ''' each test stream's config '''
-    
+
     OPTION_INSTANCES_LIMIT = 'instances'
 
     def __init__(self, core, sequence, phout, answ, answ_level, timeout, section):
@@ -178,8 +174,8 @@ class StreamConfig:
         self.phout_file = phout
         self.answ_log = answ
         self.answ_log_level = answ_level
-        self.timeout = timeout        
-    
+        self.timeout = timeout
+
         # per benchmark
         self.instances = None
         self.ipv6 = None
@@ -197,11 +193,10 @@ class StreamConfig:
         self.method_prefix = None
         self.source_log_prefix = None
 
-
     def get_option(self, option_ammofile, default=None):
         ''' get option wrapper '''
         return self.core.get_option(self.section, option_ammofile, default)
-    
+
     @staticmethod
     def get_available_options():
         opts = ["ssl", "tank_type", 'gatling_ip', "method_prefix", "source_log_prefix"]
@@ -209,7 +204,7 @@ class StreamConfig:
         opts += ['address', "port", StreamConfig.OPTION_INSTANCES_LIMIT]
         opts += StepperWrapper.get_available_options()
         return opts
-    
+
     def read_config(self):
         ''' reads config '''
         # multi-options
@@ -219,7 +214,7 @@ class StreamConfig:
         self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
         self.method_prefix = self.get_option("method_prefix", 'method_stream')
         self.source_log_prefix = self.get_option("source_log_prefix", '')
-        
+
         self.phantom_http_line = self.get_option("phantom_http_line", "")
         self.phantom_http_field_num = self.get_option("phantom_http_field_num", "")
         self.phantom_http_field = self.get_option("phantom_http_field", "")
@@ -228,19 +223,18 @@ class StreamConfig:
         self.address = self.get_option('address', 'localhost')
         self.port = self.get_option('port', '80')
         self.__resolve_address()
-        
-        self.stepper.read_config()
 
+        self.stepper.read_config()
 
     def compose_config(self):
         ''' compose benchmark block '''
         # step file
-        self.stepper.prepare_stepper()     
+        self.stepper.prepare_stepper()
         self.stpd = self.stepper.stpd
-        
+
         if not self.stpd:
             raise RuntimeError("Cannot proceed with no STPD file")
-        
+
         kwargs = {}
         kwargs['sequence_no'] = self.sequence_no
         kwargs['ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s }\n transport = ssl_transport" if self.ssl else ""
@@ -251,17 +245,17 @@ class StreamConfig:
         kwargs['comment_answ'] = "# " if self.answ_log_level == 'none' else ''
         kwargs['stpd'] = self.stpd
         kwargs['source_log_prefix'] = self.source_log_prefix        
-        
+
         if self.tank_type:
             kwargs['proto'] = "proto=http_proto%s" % self.sequence_no if self.tank_type == 'http' else "proto=none_proto"
             kwargs['comment_proto'] = ""
         else:
             kwargs['proto'] = ""
             kwargs['comment_proto'] = "#"
-        
+
         if self.gatling:
             kwargs['bind'] = 'bind={ ' + self.gatling + ' }'
-        else: 
+        else:
             kwargs['bind'] = '' 
         kwargs['ip'] = self.resolved_ip
         kwargs['port'] = self.port
@@ -290,10 +284,9 @@ class StreamConfig:
         tplf.close()
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
-        
+
         return config
-        
-        
+
     # FIXME: this method became a piece of shit, needs refactoring
     def __resolve_address(self):
         ''' Analyse target address setting, resolve it to IP '''
@@ -334,7 +327,8 @@ class StreamConfig:
                     raise ValueError("Address %s reverse-resolved to %s, but must match" % (self.address, reverse_name))
 
 # ==================================================================================================
-    
+
+
 class StepperWrapper:
     '''
     Wrapper for cached stepper functionality
@@ -349,14 +343,13 @@ class StepperWrapper:
     OPTION_SCHEDULE = 'rps_schedule'
     OPTION_LOADSCHEME = 'loadscheme'
 
-
     def __init__(self, core, section):
         self.log = logging.getLogger(__name__)
         self.core = core
         self.section = section
 
-        self.cache_dir = '.' 
-        
+        self.cache_dir = '.'
+
         # per-shoot params
         self.rps_schedule = []
         self.http_ver = '1.0'
@@ -377,19 +370,18 @@ class StepperWrapper:
         self.duration = 0
         self.loop_count = 0
         self.loadscheme = ""
-        
-                
+
     def get_option(self, option_ammofile, param2=None):
         ''' get_option wrapper'''
         return self.core.get_option(self.section, option_ammofile, param2)
-    
+
     @staticmethod
     def get_available_options():
         opts = [StepperWrapper.OPTION_AMMOFILE, StepperWrapper.OPTION_LOOP, StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD]
         opts += ["instances_schedule", "uris", "headers", "header_http", "autocases", ]
         opts += ["use_caching", "cache_dir", "force_stepping", ]
         return opts
-    
+
     def read_config(self):
         ''' stepper part of reading options '''
         self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
@@ -401,26 +393,25 @@ class StepperWrapper:
         sched = self.get_option(self.OPTION_SCHEDULE, '')
         sched = " ".join(sched.split("\n"))
         sched = sched.split(')')
-        self.rps_schedule = [] 
+        self.rps_schedule = []
         for step in sched:
             if step.strip():
                 self.rps_schedule.append(step.strip() + ')')
         self.uris = self.get_option("uris", '').strip().split("\n")
-        while '' in self.uris: 
+        while '' in self.uris:
             self.uris.remove('')
         self.headers = self.get_option("headers", '').strip().split("\n")
-        while '' in self.headers: 
+        while '' in self.headers:
             self.headers.remove('')
         self.http_ver = self.get_option("header_http", self.http_ver)
         self.autocases = self.get_option("autocases", '0')
         self.use_caching = int(self.get_option("use_caching", '1'))
-        
+
         cache_dir = self.core.get_option(PhantomConfig.SECTION, "cache_dir", self.core.artifacts_base_dir)
         self.cache_dir = os.path.expanduser(cache_dir)
         self.force_stepping = int(self.get_option("force_stepping", '0'))
         self.stpd = self.get_option(self.OPTION_STPD, "")
-                
-                
+
     def prepare_stepper(self):
         ''' Generate test data if necessary '''
         if not self.stpd:
@@ -437,11 +428,11 @@ class StepperWrapper:
                 external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
                 external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_AMMO_COUNT, str(stepper.ammo_count))
                 external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_TEST_DURATION, str(self.duration))
-                        
+
                 handle = open(self.stpd + ".conf", 'wb')
                 external_stepper_conf.write(handle)
                 handle.close()
-                
+
         stepper = Stepper.Stepper(self.stpd)  # just to store cached data
         try:
             self.__read_cached_options(self.stpd + ".conf", stepper)
@@ -452,9 +443,6 @@ class StepperWrapper:
             self.loadscheme = stepper.loadscheme
         except NoSectionError, exc:
             self.log.warn("Failed to read stepped meta-info for %s: %s", self.stpd, exc)
-        
-        
-
 
     def __get_stpd_filename(self):
         ''' Choose the name for stepped data file '''
@@ -464,11 +452,11 @@ class StepperWrapper:
             hashed_str = "cache version 2" + sep + self.instances_schedule + sep + str(self.loop_limit)
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(self.rps_schedule) + sep + str(self.autocases)
             hashed_str += sep + ";".join(self.uris) + sep + ";".join(self.headers) + sep + self.http_ver
-            
+
             if self.ammo_file:
                 if not os.path.exists(self.ammo_file):
                     raise RuntimeError("Ammo file not found: %s" % self.ammo_file)
-            
+
                 hashed_str += sep + os.path.realpath(self.ammo_file)
                 stat = os.stat(self.ammo_file)
                 cnt = 0
@@ -485,26 +473,22 @@ class StepperWrapper:
 
             self.log.debug("stpd-hash source: %s", hashed_str)
             hasher.update(hashed_str)
-            
             if not os.path.exists(self.cache_dir):
                 os.makedirs(self.cache_dir)
             stpd = self.cache_dir + '/' + os.path.basename(self.ammo_file) + "_" + hasher.hexdigest() + ".stpd"
             self.log.debug("Generated cache file name: %s", stpd)
         else:
             stpd = os.path.realpath("ammo.stpd")
-    
         return stpd
 
-    
     def __calculate_test_duration(self, steps):
         '''
         Get total test duration
-        '''        
+        '''
         duration = 0
         for rps, dur in tankcore.pairs(steps):
             duration += dur
         return duration
-
 
     def __read_cached_options(self, cached_config, stepper):
         '''
@@ -521,12 +505,11 @@ class StepperWrapper:
         else:
             self.log.warning("Steps list must be even: %s", steps)
             stepper.steps = []
-            
+
         stepper.loadscheme = external_stepper_conf.get(PhantomConfig.SECTION, self.OPTION_LOADSCHEME)
         stepper.loop_count = external_stepper_conf.get(PhantomConfig.SECTION, self.OPTION_LOOP_COUNT)
         stepper.ammo_count = int(external_stepper_conf.get(PhantomConfig.SECTION, self.OPTION_AMMO_COUNT))
         stepper.duration = int(external_stepper_conf.get(PhantomConfig.SECTION, self.OPTION_TEST_DURATION))
-
 
     def __make_stpd_file(self, stpd):
         ''' stpd generation using Stepper class '''
@@ -540,7 +523,5 @@ class StepperWrapper:
         stepper.headers = self.headers
         stepper.header_http = self.http_ver
         stepper.ammofile = self.ammo_file
-
         stepper.generate_stpd()
         return stepper
-        
