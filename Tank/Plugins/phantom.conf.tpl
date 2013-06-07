@@ -1,5 +1,5 @@
 setup_t module_setup = setup_module_t {
-	dir = "/usr/lib/phantom"   
+	dir = "$phantom_modules_path"   
 	list = {
 		ssl
 		io_benchmark

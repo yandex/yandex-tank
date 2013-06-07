@@ -93,6 +93,8 @@ class PhantomConfig:
         kwargs['benchmarks_block'] = streams_config
         kwargs['stat_benchmarks'] = stat_benchmarks
         kwargs['additional_libs'] = self.additional_libs
+        kwargs['phantom_modules_path'] = self.phantom_modules_path
+        
         
         filename = self.core.mkstemp(".conf", "phantom_")
         self.core.add_artifact_file(filename)
