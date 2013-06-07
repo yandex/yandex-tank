@@ -1,3 +1,16 @@
+yandex-load-tank-base (1.3.10) precise; urgency=low
+
+  * don't support old config format anymore
+  * don't interrupt test on local web start failure
+  * add method_options for phantom
+  * fix web online view in firefox
+  * add confog flush option to core
+  * ignore nfs in resource check
+  * add buffer size option for jmeter
+  * enable Loadosophia online by default
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 07 Jun 2013 18:04:56 +0400
+
 yandex-load-tank-base (1.3.9) precise; urgency=low
 
   * add bash completion
