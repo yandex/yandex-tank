@@ -43,10 +43,13 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
     
     
     def prepare_test(self):
-        self.server = OnlineServer(('', self.port), WebOnlineHandler)
-        self.server.owner = self
-        aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        aggregator.add_result_listener(self)
+        try:
+            self.server = OnlineServer(('', self.port), WebOnlineHandler)
+            self.server.owner = self
+            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+            aggregator.add_result_listener(self)
+        except Exception, ex:
+            self.log.warning("Failed to start web results server: %s", ex)
     
     
     def start_test(self):
@@ -68,9 +71,10 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
     
         
     def run(self):
-        address = socket.gethostname()
-        self.log.info("Starting local HTTP server for online view at port: http://%s:%s/", address, self.port)
-        self.server.serve_forever()
+        if (self.server):
+            address = socket.gethostname()
+            self.log.info("Starting local HTTP server for online view at port: http://%s:%s/", address, self.port)
+            self.server.serve_forever()
     
 
     def __calculate_quantiles(self, data):
