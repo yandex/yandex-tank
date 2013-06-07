@@ -172,7 +172,7 @@ class ConsoleTank:
                     self.core.add_artifact_file(conf_file, True)
             else:
                 for config_file in self.options.config:
-                    self.__add_adapted_config(configs, config_file)
+                    configs.append(config_file)
     
             self.core.load_configs(configs)
     
