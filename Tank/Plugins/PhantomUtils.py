@@ -250,7 +250,7 @@ class StreamConfig:
         kwargs = {}
         kwargs['sequence_no'] = self.sequence_no
         kwargs['ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s }\n transport = ssl_transport" if self.ssl else ""
-        kwargs['method_stream'] = self.method_prefix +"_t" # + "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"            
+        kwargs['method_stream'] = self.method_prefix + "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"            
         kwargs['phout'] = self.phout_file
         kwargs['answ_log'] = self.answ_log
         kwargs['answ_log_level'] = self.answ_log_level
