@@ -118,7 +118,7 @@ class ConsoleTank:
     def __override_config_from_cmdline(self):
         ''' override config options from command line'''
         if self.options.option: 
-            self.core.apply_shorthand_options(self.options.option, self.MIGRATE_SECTION)            
+            self.core.apply_shorthand_options(self.options.option)            
     
 
     def get_default_configs(self):
@@ -178,7 +178,7 @@ class ConsoleTank:
     
             if self.ammofile:
                 self.log.debug("Ammofile: %s", self.ammofile)
-                self.core.set_option(self.MIGRATE_SECTION, 'ammofile', self.ammofile[0])
+                self.core.set_option("phantom", 'ammofile', self.ammofile[0])
     
             self.__override_config_from_cmdline()
                         
