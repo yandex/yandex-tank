@@ -14,6 +14,7 @@ import tankcore
 from ConfigParser import NoSectionError
 import traceback
 
+# TODO: use separate answ log per benchmark
 class PhantomConfig:
     ''' config file generator '''
     OPTION_PHOUT = "phout_file"
@@ -199,6 +200,7 @@ class StreamConfig:
         self.resolved_ip = None
         self.method_prefix = None
         self.source_log_prefix = None
+        self.method_options = None
 
 
     def get_option(self, option_ammofile, default=None):
@@ -207,7 +209,7 @@ class StreamConfig:
     
     @staticmethod
     def get_available_options():
-        opts = ["ssl", "tank_type", 'gatling_ip', "method_prefix", "source_log_prefix"]
+        opts = ["ssl", "tank_type", 'gatling_ip', "method_prefix", "source_log_prefix", "method_options"]
         opts += ["phantom_http_line", "phantom_http_field_num", "phantom_http_field", "phantom_http_entity"]
         opts += ['address', "port", StreamConfig.OPTION_INSTANCES_LIMIT]
         opts += StepperWrapper.get_available_options()
@@ -221,6 +223,7 @@ class StreamConfig:
         self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
         self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
         self.method_prefix = self.get_option("method_prefix", 'method_stream')
+        self.method_options = self.get_option("method_options", '')
         self.source_log_prefix = self.get_option("source_log_prefix", '')
         
         self.phantom_http_line = self.get_option("phantom_http_line", "")
@@ -247,13 +250,14 @@ class StreamConfig:
         kwargs = {}
         kwargs['sequence_no'] = self.sequence_no
         kwargs['ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s }\n transport = ssl_transport" if self.ssl else ""
-        kwargs['method_stream'] = self.method_prefix + "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"            
+        kwargs['method_stream'] = self.method_prefix +"_t" # + "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"            
         kwargs['phout'] = self.phout_file
         kwargs['answ_log'] = self.answ_log
         kwargs['answ_log_level'] = self.answ_log_level
         kwargs['comment_answ'] = "# " if self.answ_log_level == 'none' else ''
         kwargs['stpd'] = self.stpd
         kwargs['source_log_prefix'] = self.source_log_prefix        
+        kwargs['method_options'] = self.method_options        
         
         if self.tank_type:
             kwargs['proto'] = "proto=http_proto%s" % self.sequence_no if self.tank_type == 'http' else "proto=none_proto"
