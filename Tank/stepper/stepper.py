@@ -30,15 +30,18 @@ class AmmoFactory(object):
     def get_loop_count(self):
         return self.ammo_generator.loop_count()
 
-    def get_loadscheme(self):
+    def get_steps(self):
         return self.load_plan.get_rps_list()
 
     def get_duration(self):
         return self.load_plan.get_duration()
 
+    def get_loadscheme(self):
+        return self.load_plan.
+
 StepperInfo = namedtuple(
     'StepperInfo',
-    'loop_count,loadscheme,duration,ammo_count'
+    'loop_count,steps,loadscheme,duration,ammo_count'
 )
 
 
@@ -47,7 +50,8 @@ class Stepper(object):
         af = AmmoFactory(ComponentFactory(**kwargs))
         self.info = StepperInfo(
             loop_count=af.get_loop_count(),
-            loadscheme=af.get_loadscheme(),
+            steps=af.get_steps(),
+            loadscheme=' '.join(kwargs['rps_schedule'],
             duration=af.get_duration(),
             ammo_count=len(af),
         )

@@ -136,7 +136,7 @@ class PhantomConfig:
         for stream in self.streams:
             sec_no = 0
             # logging.info("Steps: %s", stream.stepper.steps)
-            for item in tankcore.pairs(stream.stepper.steps):
+            for item in tankcore.pairs(stream.stepper_wrapper.steps):
                 for x in range(0, item[1]):
                     if len(result.steps) > sec_no:
                         result.steps[sec_no][0] += item[0]
@@ -147,21 +147,21 @@ class PhantomConfig:
             if result.rps_schedule:
                 result.rps_schedule = u'multiple'
             else:
-                result.rps_schedule = stream.stepper.get_rps_list()
+                result.rps_schedule = stream.stepper_wrapper.steps
 
             if result.loadscheme:
                 result.loadscheme = ''
             else:
-                result.loadscheme = stream.stepper.loadscheme
+                result.loadscheme = stream.stepper_wrapper.loadscheme
 
             if result.loop_count:
                 result.loop_count = u'0'
             else:
-                result.loop_count = stream.stepper.loop_count()
+                result.loop_count = stream.stepper_wrapper.loop_count
 
-            result.ammo_file += stream.stepper.ammo_file + ' '
-            result.ammo_count += len(stream.stepper)
-            result.duration = max(result.duration, stream.stepper.duration)
+            result.ammo_file += stream.stepper_wrapper.ammo_file + ' '
+            result.ammo_count += stream.stepper_wrapper).ammo_count
+            result.duration = max(result.duration, stream.stepper_wrapper.duration)
             result.instances += stream.instances
 
         if not result.ammo_count:
@@ -376,7 +376,7 @@ class StepperWrapper:
         self.ammo_file = None
         self.instances_schedule = ''
         self.loop_limit = None
-        self.ammo_limit = None
+        self.ammo_limit = None 
         self.uris = []
         self.headers = []
         self.autocases = 0
@@ -451,6 +451,7 @@ class StepperWrapper:
             self.duration = stepper_info.duration
             self.loop_count = stepper_info.loop_count
             self.loadscheme = stepper_info.loadscheme
+            self.steps = stepper_info.steps
 
     def __si_filename(self):
         '''Return name for stepper_info json file'''
