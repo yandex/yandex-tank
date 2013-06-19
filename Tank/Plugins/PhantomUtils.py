@@ -179,7 +179,7 @@ class StreamConfig:
         self.sequence_no = sequence
         self.log = logging.getLogger(__name__)
         self.section = section
-        self.stepper = StepperWrapper(self.core, self.section)
+        self.stepper_wrapper = StepperWrapper(self.core, self.section)
         self.phout_file = phout
         self.answ_log = answ
         self.answ_log_level = answ_level
@@ -237,13 +237,13 @@ class StreamConfig:
         self.port = self.get_option('port', '80')
         self.__resolve_address()
 
-        self.stepper.read_config()
+        self.stepper_wrapper.read_config()
 
     def compose_config(self):
         ''' compose benchmark block '''
         # step file
-        self.stepper.prepare_stepper()
-        self.stpd = self.stepper.stpd
+        self.stepper_wrapper.prepare_stepper()
+        self.stpd = self.stepper_wrapper.stpd
 
         if not self.stpd:
             raise RuntimeError("Cannot proceed with no STPD file")
@@ -443,6 +443,8 @@ class StepperWrapper:
             if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.stpd + ".conf"):
                 self.log.info("Using cached stpd-file: %s", self.stpd)
             else:
+                #TODO: make stepper return stepping results in a named tuple
+                # and use it here.
                 stepper = self.__make_stpd_file()
                 external_stepper_conf = ConfigParser.ConfigParser()
                 external_stepper_conf.add_section(PhantomConfig.SECTION)
@@ -457,11 +459,10 @@ class StepperWrapper:
                 external_stepper_conf.set(
                     PhantomConfig.SECTION, self.OPTION_TEST_DURATION, str(self.duration))
 
-                handle = open(self.stpd + ".conf", 'wb')
-                external_stepper_conf.write(handle)
-                handle.close()
+                with open(self.stpd + ".conf", 'wb') as stpd_conf:
+                    external_stepper_conf.write(stpd_conf)
 
-        # stepper = Stepper.Stepper(self.stpd)  # just to store cached data
+        #TODO: use stepping results here.
         try:
             self.__read_cached_options(self.stpd + ".conf", stepper)
             self.steps = stepper.steps
@@ -571,5 +572,4 @@ class StepperWrapper:
         )
         with open(self.stpd, 'w') as os:
             stepper.write(os)
-
         return stepper
