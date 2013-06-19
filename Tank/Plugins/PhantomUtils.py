@@ -447,14 +447,10 @@ class StepperWrapper:
             else:
                 stepper_info = self.__make_stpd_file()
                 self.__write_cached_options(stepper_info)
-        try:
             self.ammo_count = stepper_info.ammo_count
             self.duration = stepper_info.duration
             self.loop_count = stepper_info.loop_count
             self.loadscheme = stepper_info.loadscheme
-        except NoSectionError, exc:
-            self.log.warn(
-                "Failed to read stepped meta-info for %s: %s", self.stpd, exc)
 
     def __si_filename(self):
         '''Return name for stepper_info json file'''
@@ -504,7 +500,7 @@ class StepperWrapper:
             self.log.debug("Generated cache file name: %s", stpd)
         else:
             stpd = os.path.realpath("ammo.stpd")
-        return stpd
+            return stpd
 
     def __read_cached_options(self, si_filename):
         '''
