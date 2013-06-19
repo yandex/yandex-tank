@@ -1,5 +1,5 @@
 ''' Utility classes for phantom module '''
-from Tank.stepper import Stepper
+from Tank.stepper import Stepper, StepperInfo
 from ipaddr import AddressValueError
 import ConfigParser
 import copy
@@ -11,6 +11,7 @@ import os
 import socket
 import string
 import tankcore
+import json
 from ConfigParser import NoSectionError
 
 
@@ -440,39 +441,24 @@ class StepperWrapper:
         if not self.stpd:
             self.stpd = self.__get_stpd_filename()
             self.core.set_option(self.section, self.OPTION_STPD, self.stpd)
-            if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.stpd + ".conf"):
+            if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.__si_filename()):
                 self.log.info("Using cached stpd-file: %s", self.stpd)
+                stepper_info = self.__read_cached_options()
             else:
-                #TODO: make stepper return stepping results in a named tuple
-                # and use it here.
-                stepper = self.__make_stpd_file()
-                external_stepper_conf = ConfigParser.ConfigParser()
-                external_stepper_conf.add_section(PhantomConfig.SECTION)
-                external_stepper_conf.set(
-                    PhantomConfig.SECTION, self.OPTION_STEPS, ' '.join([str(x) for x in stepper.steps]))
-                external_stepper_conf.set(
-                    PhantomConfig.SECTION, self.OPTION_LOADSCHEME, stepper.loadscheme)
-                external_stepper_conf.set(
-                    PhantomConfig.SECTION, self.OPTION_LOOP_COUNT, str(stepper.loop_count))
-                external_stepper_conf.set(
-                    PhantomConfig.SECTION, self.OPTION_AMMO_COUNT, str(stepper.ammo_count))
-                external_stepper_conf.set(
-                    PhantomConfig.SECTION, self.OPTION_TEST_DURATION, str(self.duration))
-
-                with open(self.stpd + ".conf", 'wb') as stpd_conf:
-                    external_stepper_conf.write(stpd_conf)
-
-        #TODO: use stepping results here.
+                stepper_info = self.__make_stpd_file()
+                self.__write_cached_options(stepper_info)
         try:
-            self.__read_cached_options(self.stpd + ".conf", stepper)
-            self.steps = stepper.steps
-            self.ammo_count = int(stepper.ammo_count)
-            self.duration = self.__calculate_test_duration(stepper.steps)
-            self.loop_count = stepper.loop_count
-            self.loadscheme = stepper.loadscheme
+            self.ammo_count = stepper_info.ammo_count
+            self.duration = stepper_info.duration
+            self.loop_count = stepper_info.loop_count
+            self.loadscheme = stepper_info.loadscheme
         except NoSectionError, exc:
             self.log.warn(
                 "Failed to read stepped meta-info for %s: %s", self.stpd, exc)
+
+    def __si_filename(self):
+        '''Return name for stepper_info json file'''
+        return self.stpd + "_si.json"
 
     def __get_stpd_filename(self):
         ''' Choose the name for stepped data file '''
@@ -520,41 +506,22 @@ class StepperWrapper:
             stpd = os.path.realpath("ammo.stpd")
         return stpd
 
-    def __calculate_test_duration(self, steps):
+    def __read_cached_options(self, si_filename):
         '''
-        Get total test duration
+        Read stepper info from json
         '''
-        duration = 0
-        for rps, dur in tankcore.pairs(steps):
-            duration += dur
-        return duration
+        self.log.debug("Reading cached stepper info: %s", self.__si_filename())
+        with open(self.__si_filename(), 'r') as si_file:
+            si = StepperInfo(**json.load(si_file))
+        return si
 
-    def __read_cached_options(self, cached_config, stepper):
+    def __write_cached_options(self, si, si_filename):
         '''
-        Merge stpd cached options to current config
+        Write stepper info to json
         '''
-        self.log.debug("Reading cached stepper options: %s", cached_config)
-        external_stepper_conf = ConfigParser.ConfigParser()
-        external_stepper_conf.read(cached_config)
-        # stepper.cases = external_stepper_conf.get(AggregatorPlugin.SECTION,
-        # AggregatorPlugin.OPTION_CASES)
-
-        steps = external_stepper_conf.get(
-            PhantomConfig.SECTION, self.OPTION_STEPS).strip().split(' ')
-        if len(steps) % 2 == 0:
-            stepper.steps = [int(x) for x in steps]
-        else:
-            self.log.warning("Steps list must be even: %s", steps)
-            stepper.steps = []
-
-        stepper.loadscheme = external_stepper_conf.get(
-            PhantomConfig.SECTION, self.OPTION_LOADSCHEME)
-        stepper.loop_count = external_stepper_conf.get(
-            PhantomConfig.SECTION, self.OPTION_LOOP_COUNT)
-        stepper.ammo_count = int(external_stepper_conf.get(
-            PhantomConfig.SECTION, self.OPTION_AMMO_COUNT))
-        stepper.duration = int(external_stepper_conf.get(
-            PhantomConfig.SECTION, self.OPTION_TEST_DURATION))
+        self.log.debug("Saving stepper info: %s", self.__si_filename())
+        with open(self.__si_filename(), 'w') as si_file:
+            json.dump(stepper_info.__dict__, si_file)
 
     def __make_stpd_file(self):
         ''' stpd generation using Stepper class '''
@@ -572,4 +539,4 @@ class StepperWrapper:
         )
         with open(self.stpd, 'w') as os:
             stepper.write(os)
-        return stepper
+        return stepper.info

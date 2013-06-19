@@ -2,6 +2,7 @@ from itertools import izip
 import format as fmt
 from info import progress
 from config import ComponentFactory
+from collections import namedtuple
 
 
 class AmmoFactory(object):
@@ -29,21 +30,38 @@ class AmmoFactory(object):
     def get_loop_count(self):
         return self.ammo_generator.loop_count()
 
-    def get_rps_list(self):
+    def get_loadscheme(self):
         return self.load_plan.get_rps_list()
+
+    def get_duration(self):
+        return self.load_plan.get_duration()
+
+StepperInfo = namedtuple(
+    'StepperInfo',
+    'loop_count,loadscheme,duration,ammo_count'
+)
 
 
 class Stepper(object):
     def __init__(self, **kwargs):
         af = AmmoFactory(ComponentFactory(**kwargs))
+        self.info = StepperInfo(
+            loop_count=af.get_loop_count(),
+            loadscheme=af.get_loadscheme(),
+            duration=af.get_duration(),
+            ammo_count=len(af),
+        )
         self.ammo = fmt.Stpd(progress(af, 'Ammo: '))
 
     def write(self, f):
         for missile in self.ammo:
             f.write(missile)
 
-    def get_loop_count(self):
-        return self.af.get_loop_count()
+    # def get_loop_count(self):
+    #     return self.af.get_loop_count()
 
-    def get_rps_list(self):
-        return self.af.get_rps_list()
+    # def get_rps_list(self):
+    #     return self.af.get_rps_list()
+
+    # def get_duration(self):
+    #     return self.af.get_duration()
