@@ -26,7 +26,7 @@ class AmmoFactory(object):
         ammo_len = len(self.ammo_generator)
         return min(lp_len, ammo_len) or max(lp_len, ammo_len)
 
-    def loop_count(self):
+    def get_loop_count(self):
         return self.ammo_generator.loop_count()
 
     def get_rps_list(self):
@@ -36,9 +36,14 @@ class AmmoFactory(object):
 class Stepper(object):
     def __init__(self, **kwargs):
         af = AmmoFactory(ComponentFactory(**kwargs))
-        print af.get_rps_list()
         self.ammo = fmt.Stpd(progress(af, 'Ammo: '))
 
     def write(self, f):
         for missile in self.ammo:
             f.write(missile)
+
+    def get_loop_count(self):
+        return self.af.get_loop_count()
+
+    def get_rps_list(self):
+        return self.af.get_rps_list()

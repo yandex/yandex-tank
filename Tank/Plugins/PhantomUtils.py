@@ -138,7 +138,7 @@ class PhantomConfig:
             if result.rps_schedule:
                 result.rps_schedule = u'multiple'
             else:
-                result.rps_schedule = stream.stepper.rps_schedule
+                result.rps_schedule = stream.stepper.get_rps_list()
 
             if result.loadscheme:
                 result.loadscheme = ''
@@ -148,10 +148,10 @@ class PhantomConfig:
             if result.loop_count:
                 result.loop_count = u'0'
             else:
-                result.loop_count = stream.stepper.loop_count
+                result.loop_count = stream.stepper.loop_count()
 
             result.ammo_file += stream.stepper.ammo_file + ' '
-            result.ammo_count += stream.stepper.ammo_count
+            result.ammo_count += len(stream.stepper)
             result.duration = max(result.duration, stream.stepper.duration)
             result.instances += stream.instances
 
@@ -238,13 +238,13 @@ class StreamConfig:
         kwargs = {}
         kwargs['sequence_no'] = self.sequence_no
         kwargs['ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s }\n transport = ssl_transport" if self.ssl else ""
-        kwargs['method_stream'] = self.method_prefix + "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"            
+        kwargs['method_stream'] = self.method_prefix + "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"
         kwargs['phout'] = self.phout_file
         kwargs['answ_log'] = self.answ_log
         kwargs['answ_log_level'] = self.answ_log_level
         kwargs['comment_answ'] = "# " if self.answ_log_level == 'none' else ''
         kwargs['stpd'] = self.stpd
-        kwargs['source_log_prefix'] = self.source_log_prefix        
+        kwargs['source_log_prefix'] = self.source_log_prefix
 
         if self.tank_type:
             kwargs['proto'] = "proto=http_proto%s" % self.sequence_no if self.tank_type == 'http' else "proto=none_proto"
@@ -256,7 +256,7 @@ class StreamConfig:
         if self.gatling:
             kwargs['bind'] = 'bind={ ' + self.gatling + ' }'
         else:
-            kwargs['bind'] = '' 
+            kwargs['bind'] = ''
         kwargs['ip'] = self.resolved_ip
         kwargs['port'] = self.port
         kwargs['timeout'] = self.timeout
@@ -420,7 +420,7 @@ class StepperWrapper:
             if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.stpd + ".conf"):
                 self.log.info("Using cached stpd-file: %s", self.stpd)
             else:
-                stepper = self.__make_stpd_file(self.stpd)
+                stepper = self.__make_stpd_file()
                 external_stepper_conf = ConfigParser.ConfigParser()
                 external_stepper_conf.add_section(PhantomConfig.SECTION)
                 external_stepper_conf.set(PhantomConfig.SECTION, self.OPTION_STEPS, ' '.join([str(x) for x in stepper.steps]))
@@ -433,7 +433,7 @@ class StepperWrapper:
                 external_stepper_conf.write(handle)
                 handle.close()
 
-        stepper = Stepper.Stepper(self.stpd)  # just to store cached data
+        #stepper = Stepper.Stepper(self.stpd)  # just to store cached data
         try:
             self.__read_cached_options(self.stpd + ".conf", stepper)
             self.steps = stepper.steps
@@ -511,17 +511,21 @@ class StepperWrapper:
         stepper.ammo_count = int(external_stepper_conf.get(PhantomConfig.SECTION, self.OPTION_AMMO_COUNT))
         stepper.duration = int(external_stepper_conf.get(PhantomConfig.SECTION, self.OPTION_TEST_DURATION))
 
-    def __make_stpd_file(self, stpd):
+    def __make_stpd_file(self):
         ''' stpd generation using Stepper class '''
         self.log.info("Making stpd-file: %s", self.stpd)
-        stepper = Stepper.Stepper(stpd)
-        stepper.autocases = int(self.autocases)
-        stepper.rps_schedule = self.rps_schedule
-        stepper.instances_schedule = self.instances_schedule
-        stepper.loop_limit = self.loop_limit
-        stepper.uris = self.uris
-        stepper.headers = self.headers
-        stepper.header_http = self.http_ver
-        stepper.ammofile = self.ammo_file
-        stepper.generate_stpd()
+        stepper = Stepper(
+            rps_schedule=self.rps_schedule,
+            http_ver=self.http_ver,
+            ammo_file=self.ammo_file,
+            instances_schedule=self.instances_schedule,
+            loop_limit=self.loop_limit,
+            ammo_limit=None,
+            uris=self.uris,
+            headers=self.headers,
+            autocases=self.autocases,
+        )
+        with open(self.stpd, 'w') as os:
+            stepper.write(os)
+
         return stepper
