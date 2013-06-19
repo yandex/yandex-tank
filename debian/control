@@ -1,7 +1,7 @@
 Source: yandex-load-tank-base
 Section: devel
 Priority: optional
-Maintainer: Yandex Load Testing Team <load@yandex-team.ru>
+Maintainer: Yandex Load Testing Team <doctornkz@yandex.ru>
 Build-Depends: debhelper (>= 7), python | python-all | python-dev | python-all-dev
 Standards-Version: 3.9.3
 Homepage: https://github.com/yandex-load/yandex-tank
