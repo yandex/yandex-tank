@@ -41,6 +41,9 @@ class Const(object):
 class Line(object):
     '''Load plan with linear load'''
     def __init__(self, minrps, maxrps, duration):
+        #FIXME: does not work for negative k (minrps > maxrps)
+        if minrps > maxrps:
+            raise NotImplementedError("We have no support for descending linear load yet")
         self.minrps = float(minrps)
         self.maxrps = float(maxrps)
         self.duration = float(duration)
@@ -51,10 +54,6 @@ class Line(object):
     def __iter__(self):
         k = self.k
         b = self.b
-
-        #FIXME: does not work for negative k (minrps > maxrps)
-        if k < 0:
-            raise NotImplementedError("We have no support for descending linear load yet")
 
         '''
         Solve equation:
