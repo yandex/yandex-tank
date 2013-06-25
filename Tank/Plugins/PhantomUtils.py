@@ -1,7 +1,6 @@
 ''' Utility classes for phantom module '''
-from Tank.stepper import Stepper, StepperInfo
+import Tank.stepper as stp
 from ipaddr import AddressValueError
-import ConfigParser
 import copy
 import hashlib
 import ipaddr
@@ -12,7 +11,6 @@ import socket
 import string
 import tankcore
 import json
-from ConfigParser import NoSectionError
 
 
 class PhantomConfig:
@@ -133,10 +131,11 @@ class PhantomConfig:
         result.loadscheme = []
         result.loop_count = 0
 
+        # WTF?
         for stream in self.streams:
             sec_no = 0
-            # logging.info("Steps: %s", stream.stepper.steps)
-            for item in tankcore.pairs(stream.stepper_wrapper.steps):
+            logging.info("Steps: %s", stream.stepper_wrapper.steps)
+            for item in stream.stepper_wrapper.steps:
                 for x in range(0, item[1]):
                     if len(result.steps) > sec_no:
                         result.steps[sec_no][0] += item[0]
@@ -160,7 +159,7 @@ class PhantomConfig:
                 result.loop_count = stream.stepper_wrapper.loop_count
 
             result.ammo_file += stream.stepper_wrapper.ammo_file + ' '
-            result.ammo_count += stream.stepper_wrapper).ammo_count
+            result.ammo_count += stream.stepper_wrapper.ammo_count
             result.duration = max(result.duration, stream.stepper_wrapper.duration)
             result.instances += stream.instances
 
@@ -376,7 +375,7 @@ class StepperWrapper:
         self.ammo_file = None
         self.instances_schedule = ''
         self.loop_limit = None
-        self.ammo_limit = None 
+        self.ammo_limit = None
         self.uris = []
         self.headers = []
         self.autocases = 0
@@ -455,7 +454,7 @@ class StepperWrapper:
 
     def __si_filename(self):
         '''Return name for stepper_info json file'''
-        return self.stpd + "_si.json"
+        return "%s_si.json" % self.stpd
 
     def __get_stpd_filename(self):
         ''' Choose the name for stepped data file '''
@@ -490,7 +489,6 @@ class StepperWrapper:
                         "Neither phantom.ammofile nor phantom.uris specified")
                 hashed_str += sep + \
                     ';'.join(self.uris) + sep + ';'.join(self.headers)
-
             self.log.debug("stpd-hash source: %s", hashed_str)
             hasher.update(hashed_str)
             if not os.path.exists(self.cache_dir):
@@ -498,32 +496,33 @@ class StepperWrapper:
             stpd = self.cache_dir + '/' + \
                 os.path.basename(self.ammo_file) + \
                 "_" + hasher.hexdigest() + ".stpd"
-            self.log.debug("Generated cache file name: %s", stpd)
         else:
             stpd = os.path.realpath("ammo.stpd")
-            return stpd
+        self.log.debug("Generated cache file name: %s", stpd)
+        return stpd
 
-    def __read_cached_options(self, si_filename):
+    def __read_cached_options(self):
         '''
         Read stepper info from json
         '''
         self.log.debug("Reading cached stepper info: %s", self.__si_filename())
         with open(self.__si_filename(), 'r') as si_file:
-            si = StepperInfo(**json.load(si_file))
+            si = stp.StepperInfo(**json.load(si_file))
         return si
 
-    def __write_cached_options(self, si, si_filename):
+    def __write_cached_options(self, si):
         '''
         Write stepper info to json
         '''
+        # TODO: format json
         self.log.debug("Saving stepper info: %s", self.__si_filename())
         with open(self.__si_filename(), 'w') as si_file:
-            json.dump(stepper_info.__dict__, si_file)
+            json.dump(si.__dict__, si_file)
 
     def __make_stpd_file(self):
         ''' stpd generation using Stepper class '''
         self.log.info("Making stpd-file: %s", self.stpd)
-        stepper = Stepper(
+        stepper = stp.Stepper(
             rps_schedule=self.rps_schedule,
             http_ver=self.http_ver,
             ammo_file=self.ammo_file,

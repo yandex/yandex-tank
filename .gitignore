@@ -13,3 +13,4 @@ debian/files
 *.debhelper
 Tank/Plugins/DataUploader.py
 Tests/nosetests.xml
+load.ini

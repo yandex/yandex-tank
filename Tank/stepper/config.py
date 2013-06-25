@@ -42,11 +42,13 @@ class ComponentFactory():
         return load plan (timestamps generator)
         """
         if self.rps_schedule and self.instances_schedule:
-            raise StepperConfigurationError('Both rps and instances schedules specified. You must specify only one of them')
+            raise StepperConfigurationError(
+                'Both rps and instances schedules specified. You must specify only one of them')
         elif self.rps_schedule:
             return lp.create(self.rps_schedule)
         elif self.instances_schedule:
-            raise NotImplementedError('We have no support for instances_schedule yet')
+            raise NotImplementedError(
+                'We have no support for instances_schedule yet')
         else:
             raise StepperConfigurationError('Schedule is not specified')
 
@@ -55,7 +57,8 @@ class ComponentFactory():
         return ammo generator
         """
         if self.uris and self.ammo_file:
-            raise StepperConfigurationError('Both uris and ammo file specified. You must specify only one of them')
+            raise StepperConfigurationError(
+                'Both uris and ammo file specified. You must specify only one of them')
         else:
             if self.uris:
                 return util.Limiter(
@@ -76,13 +79,15 @@ class ComponentFactory():
                     self.ammo_limit
                 )
             else:
-                raise StepperConfigurationError('Ammo not found. Specify uris or ammo file')
+                raise StepperConfigurationError(
+                    'Ammo not found. Specify uris or ammo file')
 
     def get_marker(self):
-        if self.autocases:
+        if self.autocases and self.autocases is not '0':
             if self.autocases in ComponentFactory.markers:
                 return ComponentFactory.markers[self.autocases]
             else:
-                raise NotImplementedError('No such marker')
+                raise NotImplementedError(
+                    'No such marker: "%s"' % self.autocases)
         else:
             return lambda m: 'None'

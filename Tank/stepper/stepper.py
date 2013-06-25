@@ -6,7 +6,9 @@ from collections import namedtuple
 
 
 class AmmoFactory(object):
+
     '''Link generators, filters and markers together'''
+
     def __init__(self, factory):
         self.factory = factory
         self.load_plan = factory.get_load_plan()
@@ -22,7 +24,7 @@ class AmmoFactory(object):
         )
 
     def __len__(self):
-        #FIXME: wrong ammo count when loop_limit is set
+        # FIXME: wrong ammo count when loop_limit is set
         lp_len = len(self.load_plan)
         ammo_len = len(self.ammo_generator)
         return min(lp_len, ammo_len) or max(lp_len, ammo_len)
@@ -36,8 +38,6 @@ class AmmoFactory(object):
     def get_duration(self):
         return self.load_plan.get_duration()
 
-    def get_loadscheme(self):
-        return self.load_plan.
 
 StepperInfo = namedtuple(
     'StepperInfo',
@@ -46,12 +46,13 @@ StepperInfo = namedtuple(
 
 
 class Stepper(object):
+
     def __init__(self, **kwargs):
         af = AmmoFactory(ComponentFactory(**kwargs))
         self.info = StepperInfo(
             loop_count=af.get_loop_count(),
             steps=af.get_steps(),
-            loadscheme=' '.join(kwargs['rps_schedule'],
+            loadscheme=' '.join(kwargs['rps_schedule']),
             duration=af.get_duration(),
             ammo_count=len(af),
         )
@@ -60,12 +61,3 @@ class Stepper(object):
     def write(self, f):
         for missile in self.ammo:
             f.write(missile)
-
-    # def get_loop_count(self):
-    #     return self.af.get_loop_count()
-
-    # def get_rps_list(self):
-    #     return self.af.get_rps_list()
-
-    # def get_duration(self):
-    #     return self.af.get_duration()

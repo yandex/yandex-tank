@@ -42,3 +42,6 @@ class Limiter(object):
 
     def __iter__(self):
         return (item for item in self.gen)
+
+    def loop_count(self):
+        return 0
