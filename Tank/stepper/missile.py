@@ -15,7 +15,9 @@ class HttpAmmo(object):
         self.loops = 0
 
     def to_s(self):
-        return "%s %s %s\n%s" % (self.method, self.uri, self.proto, '\n'.join(self.headers))
+        if self.headers:
+            headers = '\r\n'.join(self.headers) + '\r\n'
+        return "%s %s %s\r\n%s\r\n" % (self.method, self.uri, self.proto, headers)
 
 
 class SimpleGenerator(object):
@@ -38,7 +40,7 @@ class UriStyleGenerator(SimpleGenerator):
         self.ammo_number = 0
         self.loop_limit = loop_limit
         self.uri_count = len(uris)
-        self.missiles = cycle([(HttpAmmo(uri, headers, http_ver).to_s(), None) for uri in uris])
+        self.missiles = cycle([(HttpAmmo(uri, headers, http_ver=http_ver).to_s(), None) for uri in uris])
 
     def __iter__(self):
         for m in self.missiles:

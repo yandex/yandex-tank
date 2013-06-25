@@ -11,4 +11,4 @@ class Stpd(object):
         self.af = ammo_factory
 
     def __iter__(self):
-        return ("%s %s %s\n%s\n" % (timestamp, len(missile), marker, missile) for timestamp, marker, missile in self.af)
+        return ("%s %s %s\n%s\n" % (len(missile), timestamp, marker, missile) for timestamp, marker, missile in self.af)

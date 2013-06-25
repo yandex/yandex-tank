@@ -16,7 +16,7 @@ class Const(object):
     def __iter__(self):
         if self.rps == 0:
             return iter([])
-        interval = 1000000 / self.rps
+        interval = 1000 / self.rps
         return (i * interval for i in xrange(0, self.rps * self.duration))
 
     def rps_at(self, t):
@@ -35,7 +35,7 @@ class Const(object):
         return self.duration * self.rps
 
     def get_rps_list(self):
-        return [(self.duration, self.rps)]
+        return [(self.rps, int(self.duration))]
 
 
 class Line(object):
@@ -44,8 +44,8 @@ class Line(object):
         self.minrps = float(minrps)
         self.maxrps = float(maxrps)
         self.duration = float(duration)
-        self.k = self.maxrps - self.minrps / self.duration
-        print minrps, maxrps, duration
+        self.k = (self.maxrps - self.minrps) / self.duration
+        #print minrps, maxrps, duration
         self.b = 1 + 2 * self.minrps / self.k
 
     def __iter__(self):
@@ -63,7 +63,7 @@ class Line(object):
         r0 is initial rps.
         '''
         def timestamp(n):
-            return int((math.sqrt(b ** 2 + 8 * n / k) - b) * 500000)  # (sqrt(b^2 + 8 * n / k) - b) / 2 -- time in seconds
+            return int((math.sqrt(b ** 2 + 8 * n / k) - b) / 2 * 1000)  # (sqrt(b^2 + 8 * n / k) - b) / 2 -- time in seconds
 
         ''' Find ammo count given the time '''
         def number(t):
@@ -87,9 +87,8 @@ class Line(object):
 
     def get_rps_list(self):
         int_rps = xrange(int(self.minrps), int(self.maxrps) + 1)
-        step_size = float(self.duration) / len(int_rps)
-        print int_rps, self.k, self.b
-        return [(step_size, rps) for rps in int_rps]
+        step_duration = float(self.duration) / len(int_rps)
+        return [(rps, int(step_duration)) for rps in int_rps]
 
 
 class Composite(object):
@@ -102,7 +101,7 @@ class Composite(object):
         for step in self.steps:
             for ts in step:
                 yield ts + base
-            base += step.get_duration() * 1000000
+            base += step.get_duration() * 1000
 
     def get_duration(self):
         '''Return total duration'''

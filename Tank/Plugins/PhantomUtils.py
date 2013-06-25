@@ -147,7 +147,9 @@ class PhantomConfig:
             if result.rps_schedule:
                 result.rps_schedule = u'multiple'
             else:
-                result.rps_schedule = stream.stepper_wrapper.steps
+                # TODO: what do we actually expect here?
+                result.rps_schedule = ['%s %s' % (load, time)
+                                       for time, load in stream.stepper_wrapper.steps]
 
             if result.loadscheme:
                 result.loadscheme = ''
@@ -161,7 +163,8 @@ class PhantomConfig:
 
             result.ammo_file += stream.stepper_wrapper.ammo_file + ' '
             result.ammo_count += stream.stepper_wrapper.ammo_count
-            result.duration = max(result.duration, stream.stepper_wrapper.duration)
+            result.duration = max(
+                result.duration, stream.stepper_wrapper.duration)
             result.instances += stream.instances
 
         if not result.ammo_count:
@@ -262,8 +265,8 @@ class StreamConfig:
         kwargs['answ_log_level'] = self.answ_log_level
         kwargs['comment_answ'] = "# " if self.answ_log_level == 'none' else ''
         kwargs['stpd'] = self.stpd
-        kwargs['source_log_prefix'] = self.source_log_prefix        
-        kwargs['method_options'] = self.method_options        
+        kwargs['source_log_prefix'] = self.source_log_prefix
+        kwargs['method_options'] = self.method_options
         if self.tank_type:
             kwargs[
                 'proto'] = "proto=http_proto%s" % self.sequence_no if self.tank_type == 'http' else "proto=none_proto"
@@ -533,7 +536,7 @@ class StepperWrapper:
             loop_limit=self.loop_limit,
             ammo_limit=None,
             uris=self.uris,
-            headers=self.headers,
+            headers=[header.strip('[]') for header in self.headers],
             autocases=self.autocases,
         )
         with open(self.stpd, 'w') as os:
