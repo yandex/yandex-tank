@@ -19,6 +19,8 @@ io_t benchmark_io$sequence_no = io_benchmark_t {
 	    
 	    $proto
 	    
+	    $method_options
+
 	    address = $ip
 	    port = $port
 	    $bind

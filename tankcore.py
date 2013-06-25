@@ -218,8 +218,6 @@ class TankCore:
             self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
 
         options = self.config.get_options(self.SECTION, self.PLUGIN_PREFIX)
-        # old_count = len(self.plugins)
-        # while old_count
         for (plugin_name, plugin_path) in options:
             if not plugin_path:
                 self.log.debug(

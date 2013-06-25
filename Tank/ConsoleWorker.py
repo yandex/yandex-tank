@@ -43,48 +43,6 @@ class ConsoleTank:
 
     IGNORE_LOCKS = "ignore_locks"
 
-    MIGRATE_SECTION = 'migrate_old'
-
-    old_options_mapping = {
-        'instances': ('phantom', ''),
-        'tank_type': ('phantom', ''),
-        'gatling_ip': ('phantom', ''),
-        'ssl': ('phantom', ''),
-        'address': ('phantom', ''),
-        'port': ('phantom', ''),
-        'writelog': ('phantom', ''),
-        'phantom_http_line': ('phantom', ''),
-        'phantom_http_field_num': ('phantom', ''),
-        'phantom_http_field': ('phantom', ''),
-        'phantom_http_entity': ('phantom', ''),
-
-        'load': ('phantom', 'rps_schedule'),
-        'instances_schedule': ('phantom', ''),
-        'ammofile': ('phantom', ''),
-        'loop': ('phantom', ''),
-        'autocases': ('phantom', ''),
-        'chosen_cases': ('phantom', ''),
-        'uri': ('phantom', 'uris'),
-        'header': ('phantom', 'headers'),
-        
-        'time_periods': ('aggregator', ''),
-        'detailed_field': ('aggregator', ''),
-
-        'task': ('meta', ''),
-        'job_name': ('meta', ''),
-        'job_dsc': ('meta', ''),
-        'component': ('meta', ''),
-        'regress': ('meta', ''),
-        'ver': ('meta', ''),
-        'inform': ('meta', 'notify'),
-
-        'autostop': ('autostop', ''),
-        'monitoring_config': ('monitoring', 'config'),
-        'manual_start': ('tank', ''),
-        'http_base': ('meta', 'api_address')
-    }
-    
-    
     def __init__(self, options, ammofile):
         self.core = TankCore()
 
@@ -100,11 +58,13 @@ class ConsoleTank:
         self.signal_count = 0
         self.scheduled_start = None
 
+
     def set_baseconfigs_dir(self, directory):
         '''
         Set directory where to read configs set
         '''
         self.baseconfigs_location = directory
+        
         
     def init_logging(self):
         '''
@@ -155,76 +115,12 @@ class ConsoleTank:
         logger.addHandler(stderr_hdl)
 
 
-    def __convert_old_multiline_options(self, old_lines):
-        ''' supports old-school 'lunapark' tool configs ''' 
-        opts = {}
-        option = None
-        res = ''
-        for line in old_lines:
-            try:
-                if line.strip() and line.strip()[0] == '#':
-                    res += line
-                    continue
-                option = line[:line.index('=')]
-                value = line[line.index('=') + 1:]
-                if option not in opts.keys():
-                    opts[option] = []
-                opts[option].append(value.strip())
-            except Exception:
-                if option:
-                    opts[option].append(line.strip())
-                else:
-                    res += line.strip() + "\n"
-    
-        for option, values in opts.iteritems():
-            res += option + '=' + "\n\t".join(values) + "\n"
-    
-        return res
-    
-    
-    def __adapt_old_config(self, config):
-        ''' supports old-school 'lunapark' tool configs ''' 
-        test_parser = ConfigParser.ConfigParser()
-        try:
-            test_parser.read(config)
-            self.log.debug("Config passed ini format test: %s", config)
-            return config
-        except Exception:
-            self.log.warning("Config failed INI format test, consider upgrading it: %s", config)
-            file_handle, corrected_file = tempfile.mkstemp(".ini", "corrected_")
-            self.log.debug("Creating corrected INI config for it: %s", corrected_file)
-            os.write(file_handle, "[" + self.MIGRATE_SECTION + "]\n")
-            os.write(file_handle, self.__convert_old_multiline_options(open(config, 'r').readlines()))
-            os.close(file_handle)
-            return corrected_file
-
-    def __add_adapted_config(self, configs, conf_file):
-        ''' supports old-school 'lunapark' tool configs ''' 
-        conf_file = self.__adapt_old_config(conf_file)
-        configs += [conf_file]
-        self.core.add_artifact_file(conf_file, True)
-
-
     def __override_config_from_cmdline(self):
         ''' override config options from command line'''
         if self.options.option: 
-            self.core.apply_shorthand_options(self.options.option, self.MIGRATE_SECTION)            
+            self.core.apply_shorthand_options(self.options.option)            
     
-    def __translate_old_options(self):
-        ''' supports old-school 'lunapark' tool configs ''' 
-        for old_option, value in self.core.config.get_options(self.MIGRATE_SECTION):
-            if old_option in self.old_options_mapping.keys():
-                new_sect = self.old_options_mapping[old_option][0]
-                new_opt = self.old_options_mapping[old_option][1] if self.old_options_mapping[old_option][1] else old_option
-                self.log.debug("Translating old option %s=%s into new: %s.%s", old_option, value, new_sect, new_opt)
-                self.core.set_option(new_sect, new_opt, value)
-            else:
-                self.log.warn("Unknown old option, please add it to translation mapping: %s=%s", old_option, value)
 
-        if self.core.config.config.has_section(self.MIGRATE_SECTION):                
-            self.core.config.config.remove_section(self.MIGRATE_SECTION)
-
-                
     def get_default_configs(self):
         ''' returns default configs list, from /etc and home dir '''
         configs = []
@@ -271,20 +167,19 @@ class ConsoleTank:
                 elif os.path.exists(os.path.realpath('load.conf')):
                     # just for old 'lunapark' compatibility
                     self.log.warn("Using 'load.conf' is unrecommended, please use 'load.ini' instead")
-                    conf_file = self.__adapt_old_config(os.path.realpath('load.conf'))
+                    conf_file = os.path.realpath('load.conf')
                     configs += [conf_file]
                     self.core.add_artifact_file(conf_file, True)
             else:
                 for config_file in self.options.config:
-                    self.__add_adapted_config(configs, config_file)
+                    configs.append(config_file)
     
             self.core.load_configs(configs)
     
             if self.ammofile:
                 self.log.debug("Ammofile: %s", self.ammofile)
-                self.core.set_option(self.MIGRATE_SECTION, 'ammofile', self.ammofile[0])
+                self.core.set_option("phantom", 'ammofile', self.ammofile[0])
     
-            self.__translate_old_options()
             self.__override_config_from_cmdline()
                         
             self.core.load_plugins()

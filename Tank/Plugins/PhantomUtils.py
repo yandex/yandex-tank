@@ -11,8 +11,10 @@ import socket
 import string
 import tankcore
 import json
+import traceback
 
 
+# TODO: use separate answ log per benchmark
 class PhantomConfig:
 
     ''' config file generator '''
@@ -97,7 +99,7 @@ class PhantomConfig:
         kwargs['benchmarks_block'] = streams_config
         kwargs['stat_benchmarks'] = stat_benchmarks
         kwargs['additional_libs'] = self.additional_libs
-
+        kwargs['phantom_modules_path'] = self.phantom_modules_path
         filename = self.core.mkstemp(".conf", "phantom_")
         self.core.add_artifact_file(filename)
         self.log.debug("Generating phantom config: %s", filename)
@@ -131,7 +133,6 @@ class PhantomConfig:
         result.loadscheme = []
         result.loop_count = 0
 
-        # WTF?
         for stream in self.streams:
             sec_no = 0
             logging.info("Steps: %s", stream.stepper_wrapper.steps)
@@ -201,6 +202,7 @@ class StreamConfig:
         self.resolved_ip = None
         self.method_prefix = None
         self.source_log_prefix = None
+        self.method_options = None
 
     def get_option(self, option_ammofile, default=None):
         ''' get option wrapper '''
@@ -225,6 +227,7 @@ class StreamConfig:
             self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
         self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
         self.method_prefix = self.get_option("method_prefix", 'method_stream')
+        self.method_options = self.get_option("method_options", '')
         self.source_log_prefix = self.get_option("source_log_prefix", '')
 
         self.phantom_http_line = self.get_option("phantom_http_line", "")
@@ -259,8 +262,8 @@ class StreamConfig:
         kwargs['answ_log_level'] = self.answ_log_level
         kwargs['comment_answ'] = "# " if self.answ_log_level == 'none' else ''
         kwargs['stpd'] = self.stpd
-        kwargs['source_log_prefix'] = self.source_log_prefix
-
+        kwargs['source_log_prefix'] = self.source_log_prefix        
+        kwargs['method_options'] = self.method_options        
         if self.tank_type:
             kwargs[
                 'proto'] = "proto=http_proto%s" % self.sequence_no if self.tank_type == 'http' else "proto=none_proto"
