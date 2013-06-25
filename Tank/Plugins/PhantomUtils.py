@@ -520,7 +520,7 @@ class StepperWrapper:
         # TODO: format json
         self.log.debug("Saving stepper info: %s", self.__si_filename())
         with open(self.__si_filename(), 'w') as si_file:
-            json.dump(si.__dict__, si_file)
+            json.dump(si.__dict__, si_file, indent=4)
 
     def __make_stpd_file(self):
         ''' stpd generation using Stepper class '''
