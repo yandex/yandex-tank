@@ -147,10 +147,10 @@ class PhantomConfig:
             if result.rps_schedule:
                 result.rps_schedule = u'multiple'
             else:
-                # TODO: what do we actually expect here?
-                result.rps_schedule = ['%s %s' % (load, time)
-                                       for time, load in stream.stepper_wrapper.steps]
-
+                # TODO: format for server:
+                # <step_size,step_type,first_rps,last_rps,original_step_params>
+                # as a string
+                result.rps_schedule = u'multiple'
             if result.loadscheme:
                 result.loadscheme = ''
             else:
