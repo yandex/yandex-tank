@@ -12,14 +12,14 @@ class Const(object):
     '''Load plan with constant load'''
 
     def __init__(self, rps, duration):
-        self.rps = rps
+        self.rps = float(rps)
         self.duration = duration
 
     def __iter__(self):
         if self.rps == 0:
             return iter([])
         interval = 1000 / self.rps
-        return (i * interval for i in xrange(0, self.rps * self.duration))
+        return (int(i * interval) for i in xrange(0, int(self.rps * self.duration)))
 
     def rps_at(self, t):
         '''Return rps for second t'''
