@@ -18,6 +18,8 @@ class HttpAmmo(object):
     def to_s(self):
         if self.headers:
             headers = '\r\n'.join(self.headers) + '\r\n'
+        else:
+            headers = ''
         return "%s %s %s\r\n%s\r\n" % (self.method, self.uri, self.proto, headers)
 
 
