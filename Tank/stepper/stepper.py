@@ -52,7 +52,7 @@ class Stepper(object):
         self.info = StepperInfo(
             loop_count=af.get_loop_count(),
             steps=af.get_steps(),
-            loadscheme=' '.join(kwargs['rps_schedule']),
+            loadscheme=kwargs['rps_schedule'],
             duration=af.get_duration(),
             ammo_count=len(af),
         )
