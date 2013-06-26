@@ -393,14 +393,12 @@ class PhantomReader(AbstractReader):
             self.phout.close()
 
     def get_next_sample(self, force):
-        if self.stat: 
+        if self.stat and len(self.data_queue) < self.buffered_seconds * 2: 
             self.__read_stat_data()
         return self.__read_phout_data(force)
 
     def __read_stat_data(self):
-        '''
-        Read active instances info
-        '''
+        ''' Read active instances info '''
         stat = self.stat.readlines()
         for line in stat:
             if line.startswith('time\t'):
