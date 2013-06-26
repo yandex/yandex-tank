@@ -145,14 +145,14 @@ class PhantomConfig:
             if result.rps_schedule:
                 result.rps_schedule = u'multiple'
             else:
-                # TODO: format for server:
-                # <step_size,step_type,first_rps,last_rps,original_step_params>
-                # as a string
-                result.rps_schedule = u'multiple'
+                result.rps_schedule = stream.stepper_wrapper.loadscheme
             if result.loadscheme:
                 result.loadscheme = ''
             else:
-                result.loadscheme = stream.stepper_wrapper.loadscheme
+                # FIXME: add formatted load scheme for server:
+                # <step_size,step_type,first_rps,last_rps,original_step_params>
+                # as a string
+                result.loadscheme = ''
 
             if result.loop_count:
                 result.loop_count = u'0'
