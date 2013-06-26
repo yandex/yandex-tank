@@ -4,11 +4,13 @@ Load Plan generators
 import math
 import re
 from util import parse_duration
-from itertools import chain
+from itertools import chain, groupby
 
 
 class Const(object):
+
     '''Load plan with constant load'''
+
     def __init__(self, rps, duration):
         self.rps = rps
         self.duration = duration
@@ -39,16 +41,18 @@ class Const(object):
 
 
 class Line(object):
+
     '''Load plan with linear load'''
+
     def __init__(self, minrps, maxrps, duration):
-        #FIXME: does not work for negative k (minrps > maxrps)
+        # FIXME: does not work for negative k (minrps > maxrps)
         if minrps > maxrps:
-            raise NotImplementedError("We have no support for descending linear load yet")
+            raise NotImplementedError(
+                "We have no support for descending linear load yet")
         self.minrps = float(minrps)
         self.maxrps = float(maxrps)
         self.duration = float(duration)
         self.k = (self.maxrps - self.minrps) / self.duration
-        #print minrps, maxrps, duration
         self.b = 1 + 2 * self.minrps / self.k
 
     def __iter__(self):
@@ -84,14 +88,30 @@ class Line(object):
         '''Return total ammo count'''
         return int(self.k * (self.duration ** 2) / 2 + (self.k / 2 + self.minrps) * self.duration)
 
-    def get_rps_list(self):
+    def get_float_rps_list(self):
+        '''
+        get list of constant load parts (we have no constant load at all, but tank will think so),
+        with parts durations (float)
+        '''
         int_rps = xrange(int(self.minrps), int(self.maxrps) + 1)
         step_duration = float(self.duration) / len(int_rps)
         return [(rps, int(step_duration)) for rps in int_rps]
 
+    def get_rps_list(self):
+        '''
+        get list of each second's rps
+        '''
+        seconds = xrange(0, int(self.duration))
+        rps_groups = groupby([int(self.rps_at(t))
+                              for t in seconds], lambda x: x)
+        rps_list = [(rps, len(list(rpl))) for rps, rpl in rps_groups]
+        return rps_list
+
 
 class Composite(object):
+
     '''Load plan with multiple steps'''
+
     def __init__(self, steps):
         self.steps = steps
 
@@ -115,6 +135,7 @@ class Composite(object):
 
 
 class Stairway(Composite):
+
     def __init__(self, minrps, maxrps, increment, duration):
         if maxrps < minrps:
             increment = -increment
@@ -158,7 +179,8 @@ class StepFactory(object):
         if load_type in _plans:
             return _plans[load_type](params)
         else:
-            raise NotImplementedError('No such load type implemented: "%s"' % load_type)
+            raise NotImplementedError(
+                'No such load type implemented: "%s"' % load_type)
 
 
 def create(rps_schedule):
