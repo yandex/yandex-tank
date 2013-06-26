@@ -9,9 +9,7 @@ import multiprocessing
 import os
 import socket
 import string
-import tankcore
 import json
-import traceback
 
 
 # TODO: use separate answ log per benchmark
@@ -135,7 +133,7 @@ class PhantomConfig:
 
         for stream in self.streams:
             sec_no = 0
-            logging.info("Steps: %s", stream.stepper_wrapper.steps)
+            logging.debug("Steps: %s", stream.stepper_wrapper.steps)
             for item in stream.stepper_wrapper.steps:
                 for x in range(0, item[1]):
                     if len(result.steps) > sec_no:
@@ -467,7 +465,7 @@ class StepperWrapper:
         if self.use_caching:
             sep = "|"
             hasher = hashlib.md5()
-            hashed_str = "cache version 2" + sep + \
+            hashed_str = "cache version 3" + sep + \
                 self.instances_schedule + sep + str(self.loop_limit)
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(
                 self.rps_schedule) + sep + str(self.autocases)
