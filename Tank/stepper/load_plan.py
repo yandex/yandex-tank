@@ -111,7 +111,7 @@ class Composite(object):
         return sum(step.__len__() for step in self.steps)
 
     def get_rps_list(self):
-        return list(chain(step.get_rps_list() for step in self.steps))
+        return list(chain.from_iterable(step.get_rps_list() for step in self.steps))
 
 
 class Stairway(Composite):
