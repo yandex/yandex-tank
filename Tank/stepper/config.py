@@ -1,5 +1,6 @@
 from exceptions import StepperConfigurationError
 import load_plan as lp
+import instance_plan as ip
 import missile
 import util
 from uuid import uuid4
@@ -49,8 +50,7 @@ class ComponentFactory():
         elif self.rps_schedule:
             return lp.create(self.rps_schedule)
         elif self.instances_schedule:
-            raise NotImplementedError(
-                'We have no support for instances_schedule yet')
+            return ip.create(self.instances_schedule)
         else:
             raise StepperConfigurationError('Schedule is not specified')
 
