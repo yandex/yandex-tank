@@ -25,9 +25,29 @@ class Empty(object):
 
 class Line:
 
-    def __init__(self, minrps, maxrps, duration):
-        raise NotImplementedError(
-            'We have no support for this load type in instances_schedule yet')
+    '''
+    Starts some instances linearly
+    '''
+
+    def __init__(self, instances, duration):
+        self.instances = instances
+        self.duration = float(duration)
+
+    def __iter__(self):
+        instances_per_second = self.instances / self.duration
+        interval = 1000 / instances_per_second
+        return (int(i * interval) for i in xrange(0, self.instances))
+
+    def get_duration(self):
+        '''Return total duration'''
+        return 0
+
+    def __len__(self):
+        '''Return total ammo count'''
+        return 0
+
+    def get_rps_list(self):
+        return []
 
 
 class Stairway:
@@ -43,7 +63,9 @@ class StepFactory(object):
     def line(params):
         template = re.compile('(\d+),\s*(\d+),\s*(\d+[dhms]?)+\)')
         minrps, maxrps, duration = template.search(params).groups()
-        return Line(int(minrps), int(maxrps), parse_duration(duration))
+        # note that we don't use minrps at all and use maxrps
+        # as the number of instances we gonna start
+        return Line(int(maxrps), parse_duration(duration))
 
     @staticmethod
     def stairway(params):
