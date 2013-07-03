@@ -4,15 +4,10 @@ from util import parse_duration
 import re
 
 
-class Empty(object):
-
-    '''Load plan with no timestamp (for instance_schedule)'''
+class InstanceLP(object):
 
     def __init__(self, duration=0):
         self.duration = duration
-
-    def __iter__(self):
-        return cycle([0])
 
     def get_duration(self):
         '''Return step duration'''
@@ -26,7 +21,15 @@ class Empty(object):
         return []
 
 
-class Line:
+class Empty(InstanceLP):
+
+    '''Load plan with no timestamp (for instance_schedule)'''
+
+    def __iter__(self):
+        return cycle([0])
+
+
+class Line(InstanceLP):
 
     '''
     Starts some instances linearly
@@ -41,19 +44,23 @@ class Line:
         interval = 1000 / instances_per_second
         return (int(i * interval) for i in xrange(0, self.instances))
 
-    def get_duration(self):
-        '''Return total duration'''
-        return 0
 
-    def __len__(self):
-        '''Return total ammo count'''
-        return 0
+class Ramp(InstanceLP):
 
-    def get_rps_list(self):
-        return []
+    '''
+    Starts <n> instances, one each <interval> seconds
+    '''
+
+    def __init__(self, n, interval):
+        self.duration = float(n * interval)
+        self.n = n
+        self.interval = interval
+
+    def __iter__(self):
+        return ((int(i * self.interval) for i in xrange(0, self.n)))
 
 
-class Stairway:
+class Stairway(InstanceLP):
 
     def __init__(self, minrps, maxrps, increment, duration):
         raise NotImplementedError(

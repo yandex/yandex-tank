@@ -36,6 +36,8 @@ class ComponentFactory():
         if self.loop_limit == -1:  # -1 means infinite
             self.loop_limit = 0
         self.ammo_limit = ammo_limit
+        if self.ammo_limit == -1:  # -1 means infinite
+            self.ammo_limit = 0
         self.uris = uris
         self.headers = headers
         self.autocases = autocases

@@ -32,7 +32,7 @@ def parse_duration(duration):
 class Limiter(object):
     def __init__(self, gen, limit):
         self.limit = limit or 0
-        if not limit:
+        if self.limit == 0:
             self.gen = gen
         else:
             self.gen = islice(gen, limit)
