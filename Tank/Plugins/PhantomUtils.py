@@ -412,17 +412,21 @@ class StepperWrapper:
         self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
         if self.ammo_file:
             self.ammo_file = os.path.expanduser(self.ammo_file)
-        self.instances_schedule = self.get_option("instances_schedule", '')
         self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
         self.ammo_limit = int(self.get_option("ammo_limit", "-1"))
-                              # TODO: 3 stepper should implement ammo_limit
-        sched = self.get_option(self.OPTION_SCHEDULE, '')
-        sched = " ".join(sched.split("\n"))
-        sched = sched.split(')')
-        self.rps_schedule = []
-        for step in sched:
-            if step.strip():
-                self.rps_schedule.append(step.strip() + ')')
+        # TODO: 3 stepper should implement ammo_limit
+
+        def make_steps(schedule):
+            steps = []
+            for step in " ".join(schedule.split("\n")).split(')'):
+                if step.strip():
+                    steps.append(step.strip() + ')')
+            return steps
+        self.rps_schedule = make_steps(
+            self.get_option(self.OPTION_SCHEDULE, ''))
+        self.instances_schedule = make_steps(
+            self.get_option("instances_schedule", ''))
+
         self.uris = self.get_option("uris", '').strip().split("\n")
         while '' in self.uris:
             self.uris.remove('')
@@ -466,7 +470,7 @@ class StepperWrapper:
             sep = "|"
             hasher = hashlib.md5()
             hashed_str = "cache version 3" + sep + \
-                self.instances_schedule + sep + str(self.loop_limit)
+                ';'.join(self.instances_schedule) + sep + str(self.loop_limit)
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(
                 self.rps_schedule) + sep + str(self.autocases)
             hashed_str += sep + \
@@ -532,7 +536,7 @@ class StepperWrapper:
             ammo_file=self.ammo_file,
             instances_schedule=self.instances_schedule,
             loop_limit=self.loop_limit,
-            ammo_limit=None,
+            ammo_limit=self.ammo_limit,
             uris=self.uris,
             headers=[header.strip('[]') for header in self.headers],
             autocases=self.autocases,

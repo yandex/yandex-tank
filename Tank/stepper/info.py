@@ -26,7 +26,9 @@ def progress(gen, caption='', pb_class=DefaultProgressBar):
 
     It also should have start, update and finish methods.
     """
-    pbar = pb_class(len(gen), caption).start() if pb_class else None
+    pbar = None
+    if len(gen):
+        pbar = pb_class(len(gen), caption).start() if pb_class else None
     i = 0
     for elem in gen:
         if pbar:

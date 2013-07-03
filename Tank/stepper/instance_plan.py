@@ -22,6 +22,9 @@ class Empty(object):
         '''Return total ammo count'''
         return 0
 
+    def get_rps_list(self):
+        return []
+
 
 class Line:
 
@@ -94,4 +97,5 @@ def create(instances_schedule):
                  for step_config in instances_schedule]
     else:
         steps = [StepFactory.produce(instances_schedule[0])]
-    return Composite(steps.append(Empty()))
+    steps.append(Empty())
+    return Composite(steps)
