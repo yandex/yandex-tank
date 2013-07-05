@@ -1,6 +1,6 @@
 ''' jmeter load generator support '''
 from Tank.Plugins.Aggregator import AbstractReader, AggregatorPlugin, \
-    AggregateResultListener
+    AggregateResultListener, SecondAggregateDataItem, SecondAggregateData
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 import os
 import signal
@@ -11,7 +11,7 @@ import tankcore
 from Tank.Plugins import ConsoleScreen
 import time
 import datetime
-
+import json
 
 class JMeterPlugin(AbstractPlugin):
     ''' JMeter tank plugin '''
@@ -29,29 +29,28 @@ class JMeterPlugin(AbstractPlugin):
         self.jmeter_log = None
         self.start_time = time.time()
         self.jmeter_buffer_size = None
-
+        self.use_argentum = None
 
     @staticmethod
     def get_key():
         return __file__
 
     def get_available_options(self):
-        return ["jmx", "args", "jmeter_path", ]
-    
+        return ["jmx", "args", "jmeter_path", "buffer_size", "use_argentum"]
     
     def configure(self):
         self.original_jmx = self.get_option("jmx")
         self.core.add_artifact_file(self.original_jmx, True)
         self.jtl_file = self.core.mkstemp('.jtl', 'jmeter_')
         self.core.add_artifact_file(self.jtl_file)
-        self.jmx = self.__add_writing_section(self.original_jmx, self.jtl_file)
         self.core.add_artifact_file(self.jmx)
         self.user_args = self.get_option("args", '')
         self.jmeter_path = self.get_option("jmeter_path", 'jmeter')
         self.jmeter_log = self.core.mkstemp('.log', 'jmeter_')
         self.jmeter_buffer_size = int(self.get_option('buffer_size', '3'))
         self.core.add_artifact_file(self.jmeter_log, True)
-
+        self.use_argentum = eval(self.get_option('use_argentum', 'False'))
+        self.jmx = self.__add_writing_section(self.original_jmx, self.jtl_file)
 
     def prepare_test(self):
         self.args = [self.jmeter_path, "-n", "-t", self.jmx, '-j', self.jmeter_log, '-Jjmeter.save.saveservice.default_delimiter=\\t']
@@ -66,6 +65,7 @@ class JMeterPlugin(AbstractPlugin):
         if aggregator:
             aggregator.reader = JMeterReader(aggregator, self)
             aggregator.reader.buffer_size = self.jmeter_buffer_size
+            aggregator.reader.use_argentum = self.use_argentum
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
@@ -121,8 +121,20 @@ class JMeterPlugin(AbstractPlugin):
             self.log.debug("Closing statement: %s", closing)
         except Exception, exc:
             raise RuntimeError("Failed to find the end of JMX XML: %s" % exc)
+
+        tpl_filepath = '/jmeter_writer.xml'
+
+        # Property not initialized
+        print self.use_argentum
+        #use_argentum = eval(self.get_option('use_argentum', 'False'))
+
+        #buffer_size = int(self.get_option('buffer_size', '3'))
+
+        self.log.warn("aws ag state:" + str(self.use_argentum))
+        if self.use_argentum :
+            tpl_filepath = '/jmeter_argentum.xml'
         
-        tpl_file = open(os.path.dirname(__file__) + '/jmeter_writer.xml', 'r')
+        tpl_file = open(os.path.dirname(__file__) + tpl_filepath, 'r')
         tpl = tpl_file.read()
         tpl_file.close()
         
@@ -133,7 +145,13 @@ class JMeterPlugin(AbstractPlugin):
             file_handle, new_file = tempfile.mkstemp('.jmx', 'modified_', self.core.artifacts_base_dir)
         self.log.debug("Modified JMX: %s", new_file)
         os.write(file_handle, ''.join(source_lines))
-        os.write(file_handle, tpl % jtl)
+        
+        if self.use_argentum :
+            os.write(file_handle, tpl % (self.jmeter_buffer_size, jtl, "", ""))
+            #quantiles = "0.25 0.50 0.75 0.80 0.90 0.95 0.98 0.99 1.00"
+            #os.write(file_handle, tpl % (self.jmeter_buffer_size, jtl, quantiles, "1 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 150 200 250 300 350 400 450 500 600 650 700 750 800 850 900 950 1000 1500 2000 2500 3000 3500 4000 4500 5000 5500 6000 6500 7000 7500 8000 8500 9000 9500 10000 11000"))
+        else:
+            os.write(file_handle, tpl % jtl)
         os.write(file_handle, closing)
         os.close(file_handle)
         return new_file
@@ -161,6 +179,7 @@ class JMeterReader(AbstractReader):
         self.results = None
         self.partial_buffer = ''
         self.buffer_size = 3
+        self.use_argentum = False
     
     def check_open_files(self):
         if not self.results and os.path.exists(self.jmeter.jtl_file):
@@ -172,6 +191,58 @@ class JMeterReader(AbstractReader):
             self.results.close()
 
     def get_next_sample(self, force):
+        if self.use_argentum :
+            return self.get_next_sample_from_ag(force)
+        else :
+            return self.get_next_sample_from_sdw(force)
+
+    def get_next_sample_from_ag(self, force):
+        if self.results:
+            read_line = self.results.readline()
+            second = None
+            if len(read_line) == 0:
+                return None
+            else :
+                second = json.loads(read_line, 'ascii')
+                second_ag = self.get_zero_sample(datetime.datetime.fromtimestamp(second['second']))
+                second_ag.overall.avg_connect_time = 0
+                second_ag.overall.avg_send_time = 0
+                second_ag.overall.avg_receive_time = second['avg_rt'] - second['avg_lt']
+                second_ag.overall.avg_response_time = second['avg_rt']
+                second_ag.overall.avg_latency = second['avg_lt']
+                second_ag.overall.RPS = second['th']
+                second_ag.overall.active_threads = second['active_threads']
+                second_ag.overall.times_dist = second['interval_dist']
+                second_ag.overall.input = second['traffic']['inbound']
+                second_ag.overall.output = second['traffic']['outbound']
+
+                rc_map = dict()
+                for item in second['rc'].items():
+                    rc_map[self.exc_to_http(item[0])] = item[1]
+                second_ag.overall.http_codes = rc_map
+                
+                for percentile in second['percentile'].keys() :
+                    second_ag.overall.quantiles[int(float(percentile))] = second['percentile'][percentile]
+                    second_ag.cumulative.quantiles[int(float(percentile))] = second['cumulative_percentile'][percentile]
+
+                self.cumulative.add_data(second_ag.overall)
+    
+                for sampler in second['samplers'].keys():
+                    sampler_ag_data_item = SecondAggregateDataItem()
+                    sampler_ag_data_item.case = sampler
+                    sampler_ag_data_item.active_threads = second['active_threads']
+                    sampler_ag_data_item.RPS = int(second['samplers'][sampler])
+                    sampler_ag_data_item.times_dist =  second['sampler_interval_dist'][sampler]
+                    
+                    sampler_ag_data_item.quantiles = second['sampler_percentile'][sampler]
+
+                    sampler_ag_data_item.avg_response_time = second['sampler_avg_rt'][sampler]
+                    second_ag.cases[sampler] = sampler_ag_data_item
+
+                return second_ag
+        return None
+
+    def get_next_sample_from_sdw(self, force):
         if self.results:
             read_lines = self.results.readlines(2*1024*1024)
             self.log.debug("About to process %s result lines", len(read_lines))
