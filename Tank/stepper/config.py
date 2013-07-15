@@ -65,7 +65,7 @@ class ComponentFactory():
                 'Both uris and ammo file specified. You must specify only one of them')
         else:
             if self.uris:
-                return util.Limiter(
+                return util.limiter(
                     missile.UriStyleGenerator(
                         self.uris,
                         self.headers,
@@ -75,7 +75,7 @@ class ComponentFactory():
                     self.ammo_limit
                 )
             elif self.ammo_file:
-                return util.Limiter(
+                return util.limiter(
                     missile.AmmoFileReader(
                         self.ammo_file,
                         loop_limit=self.loop_limit

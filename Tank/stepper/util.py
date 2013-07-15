@@ -22,7 +22,8 @@ def parse_duration(duration):
             if multiplier in multipliers:
                 return int(time) * multipliers[multiplier]
             else:
-                raise StepperConfigurationError('Failed to parse duration: %s' % duration)
+                raise StepperConfigurationError(
+                    'Failed to parse duration: %s' % duration)
         else:
             return int(time)
 
@@ -30,12 +31,9 @@ def parse_duration(duration):
 
 
 class Limiter(object):
+
     def __init__(self, gen, limit):
-        self.limit = limit or 0
-        if self.limit == 0:
-            self.gen = gen
-        else:
-            self.gen = islice(gen, limit)
+        self.gen = islice(gen, limit)
 
     def __len__(self):
         return self.limit
@@ -45,3 +43,10 @@ class Limiter(object):
 
     def loop_count(self):
         return 0
+
+
+def limiter(gen, limit):
+    if limit == 0:
+        return gen
+    else:
+        return Limiter(gen, limit)
