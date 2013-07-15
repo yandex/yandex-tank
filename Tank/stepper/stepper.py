@@ -36,7 +36,8 @@ class AmmoFactory(object):
         return self.load_plan.get_rps_list()
 
     def get_duration(self):
-        return self.load_plan.get_duration()
+        '''Get overall duration in seconds'''
+        return self.load_plan.get_duration() / 1000
 
 
 StepperInfo = namedtuple(

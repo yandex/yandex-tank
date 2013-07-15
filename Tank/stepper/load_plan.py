@@ -9,7 +9,9 @@ from itertools import chain, groupby
 
 class Const(object):
 
-    '''Load plan with constant load'''
+    '''
+    Load plan with constant load
+    '''
 
     def __init__(self, rps, duration):
         self.rps = float(rps)
@@ -18,8 +20,8 @@ class Const(object):
     def __iter__(self):
         if self.rps == 0:
             return iter([])
-        interval = 1000 / self.rps
-        return (int(i * interval) for i in xrange(0, int(self.rps * self.duration)))
+        interval = 1000.0 / self.rps
+        return (int(i * interval) for i in xrange(0, int(self.rps * self.duration / 1000)))
 
     def rps_at(self, t):
         '''Return rps for second t'''
@@ -30,14 +32,14 @@ class Const(object):
 
     def get_duration(self):
         '''Return step duration'''
-        return int(self.duration)
+        return self.duration
 
     def __len__(self):
         '''Return total ammo count'''
         return self.duration * self.rps
 
     def get_rps_list(self):
-        return [(self.rps, int(self.duration))]
+        return [(self.rps, self.duration / 1000)]
 
 
 class Line(object):
@@ -51,7 +53,7 @@ class Line(object):
                 "We have no support for descending linear load yet")
         self.minrps = float(minrps)
         self.maxrps = float(maxrps)
-        self.duration = float(duration)
+        self.duration = duration / 1000.0
         self.k = (self.maxrps - self.minrps) / self.duration
         self.b = 1 + 2 * self.minrps / self.k
 
@@ -82,7 +84,7 @@ class Line(object):
 
     def get_duration(self):
         '''Return step duration'''
-        return int(self.duration)
+        return int(self.duration * 1000)
 
     def __len__(self):
         '''Return total ammo count'''
@@ -94,7 +96,7 @@ class Line(object):
         with parts durations (float)
         '''
         int_rps = xrange(int(self.minrps), int(self.maxrps) + 1)
-        step_duration = float(self.duration) / len(int_rps)
+        step_duration = float(self.duration * 1000) / len(int_rps)
         return [(rps, int(step_duration)) for rps in int_rps]
 
     def get_rps_list(self):
@@ -120,7 +122,7 @@ class Composite(object):
         for step in self.steps:
             for ts in step:
                 yield ts + base
-            base += step.get_duration() * 1000
+            base += step.get_duration()
 
     def get_duration(self):
         '''Return total duration'''
@@ -151,19 +153,19 @@ class StepFactory(object):
 
     @staticmethod
     def line(params):
-        template = re.compile('(\d+),\s*(\d+),\s*(\d+[dhms]?)+\)')
+        template = re.compile('(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
         minrps, maxrps, duration = template.search(params).groups()
         return Line(int(minrps), int(maxrps), parse_duration(duration))
 
     @staticmethod
     def const(params):
-        template = re.compile('(\d+),\s*(\d+[dhms]?)+\)')
+        template = re.compile('(\d+),\s*([0-9.]+[dhms]?)+\)')
         rps, duration = template.search(params).groups()
         return Const(int(rps), parse_duration(duration))
 
     @staticmethod
     def stairway(params):
-        template = re.compile('(\d+),\s*(\d+),\s*(\d+),\s*(\d+[dhms]?)+\)')
+        template = re.compile('(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
         minrps, maxrps, increment, duration = template.search(params).groups()
         return Stairway(int(minrps), int(maxrps), int(increment), parse_duration(duration))
 
@@ -184,7 +186,23 @@ class StepFactory(object):
 
 
 def create(rps_schedule):
-    '''Load Plan factory method'''
+    '''
+    Create Load Plan as defined in schedule
+
+    >>> from util import take
+
+    >>> take(100, create(['line(1, 5, 2s)']))
+    [0, 414, 732, 1000, 1236, 1449, 1645, 1828]
+
+    >>> take(100, create(['const(1, 10s)']))
+    [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]
+
+    >>> take(100, create(['const(200, 0.1s)']))
+    [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+
+    >>> take(100, create(['const(1, 2s)', 'const(2, 2s)']))
+    [0, 1000, 2000, 2500, 3000, 3500]
+    '''
     if len(rps_schedule) > 1:
         return Composite([StepFactory.produce(step_config) for step_config in rps_schedule])
     else:

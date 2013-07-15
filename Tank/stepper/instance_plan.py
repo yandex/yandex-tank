@@ -11,12 +11,12 @@ class InstanceLP(object):
         self.duration = float(duration)
 
     def get_duration(self):
-        '''Return step duration'''
+        '''Return step duration in milliseconds'''
         return self.duration
 
     def __len__(self):
         '''Return total ammo count'''
-        return 0
+        return None
 
     def get_rps_list(self):
         return []
@@ -42,17 +42,13 @@ class Composite(InstanceLP):
         for step in self.steps:
             for ts in step:
                 yield int(ts + base)
-            base += step.get_duration() * 1000
+            base += step.get_duration()
         for item in cycle([0]):
             yield item
 
     def get_duration(self):
-        '''Return total duration'''
+        '''Return total duration in milliseconds'''
         return sum(step.get_duration() for step in self.steps)
-
-    def __len__(self):
-        '''Return total ammo count'''
-        return sum(step.__len__() for step in self.steps)
 
     def get_rps_list(self):
         return list(chain.from_iterable(step.get_rps_list() for step in self.steps))
@@ -63,8 +59,8 @@ class Line(InstanceLP):
     '''
     Starts some instances linearly
 
-    >>> list(Line(5, 5))
-    [0, 1000, 2000, 3000, 4000]
+    >>> list(Line(5, 5000))
+    [1000, 2000, 3000, 4000, 5000]
     '''
 
     def __init__(self, instances, duration):
@@ -72,9 +68,8 @@ class Line(InstanceLP):
         self.duration = float(duration)
 
     def __iter__(self):
-        instances_per_second = self.instances / self.duration
-        interval = 1000 / instances_per_second
-        return (int(i * interval) for i in xrange(0, self.instances))
+        interval = float(self.duration) / self.instances
+        return (int(i * interval) for i in xrange(1, self.instances + 1))
 
 
 class Ramp(InstanceLP):
@@ -82,14 +77,14 @@ class Ramp(InstanceLP):
     '''
     Starts <instance_count> instances, one each <interval> seconds
 
-    >>> list(Ramp(5, 5))
+    >>> list(Ramp(5, 5000))
     [0, 5000, 10000, 15000, 20000]
     '''
 
     def __init__(self, instance_count, interval):
-        self.duration = float(instance_count * interval)
+        self.duration = instance_count * interval
         self.instance_count = instance_count
-        self.interval = float(interval) * 1000
+        self.interval = interval
 
     def __iter__(self):
         return ((int(i * self.interval) for i in xrange(0, self.instance_count)))
@@ -102,7 +97,7 @@ class Wait(InstanceLP):
     '''
 
     def __init__(self, duration):
-        self.duration = float(duration)
+        self.duration = duration
 
     def __iter__(self):
         return iter([])
@@ -164,19 +159,15 @@ def create(instances_schedule):
     '''
     Creates load plan timestamps generator
 
-    >>> from itertools import islice
     >>> from util import take
 
-    >>> lp = create(['ramp(5, 5s)'])
-    >>> take(7, lp)
+    >>> take(7, create(['ramp(5, 5s)']))
     [0, 5000, 10000, 15000, 20000, 0, 0]
 
-    >>> lp = create(['ramp(5, 5s)', 'wait(5s)', 'ramp(5,5s)'])
-    >>> take(12, lp)
+    >>> take(12, create(['ramp(5, 5s)', 'wait(5s)', 'ramp(5,5s)']))
     [0, 5000, 10000, 15000, 20000, 30000, 35000, 40000, 45000, 50000, 0, 0]
 
-    >>> lp = create(['wait(5s)', 'ramp(5, 0)'])
-    >>> take(7, lp)
+    >>> take(7, create(['wait(5s)', 'ramp(5, 0)']))
     [5000, 5000, 5000, 5000, 5000, 0, 0]
     '''
     if len(instances_schedule) > 1:
