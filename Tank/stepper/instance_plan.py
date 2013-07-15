@@ -114,7 +114,7 @@ class StepFactory(object):
 
     @staticmethod
     def line(params):
-        template = re.compile('(\d+),\s*(\d+),\s*(\d+[dhms]?)+\)')
+        template = re.compile('(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
         minrps, maxrps, duration = template.search(params).groups()
         # note that we don't use minrps at all and use maxrps
         # as the number of instances we gonna start
@@ -122,19 +122,19 @@ class StepFactory(object):
 
     @staticmethod
     def ramp(params):
-        template = re.compile('(\d+),\s*(\d+[dhms]?)+\)')
+        template = re.compile('(\d+),\s*([0-9.]+[dhms]?)+\)')
         instances, interval = template.search(params).groups()
         return Ramp(int(instances), parse_duration(interval))
 
     @staticmethod
     def wait(params):
-        template = re.compile('(\d+[dhms]?)+\)')
+        template = re.compile('([0-9.]+[dhms]?)+\)')
         duration = template.search(params).groups()[0]
         return Wait(parse_duration(duration))
 
     @staticmethod
     def stairway(params):
-        template = re.compile('(\d+),\s*(\d+),\s*(\d+),\s*(\d+[dhms]?)+\)')
+        template = re.compile('(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
         minrps, maxrps, increment, duration = template.search(params).groups()
         return Stairway(int(minrps), int(maxrps), int(increment), parse_duration(duration))
 
