@@ -24,10 +24,12 @@ class AmmoFactory(object):
         )
 
     def __len__(self):
-        # FIXME: wrong ammo count when loop_limit is set
-        lp_len = len(self.load_plan)
+        ''' ONLY WORKS WHEN GENERATION IS OVER'''
         ammo_len = len(self.ammo_generator)
-        return min(lp_len, ammo_len)
+        if hasattr(self.load_plan, '__len__'):
+            return min(len(self.load_plan), ammo_len)
+        else:
+            return ammo_len
 
     def get_loop_count(self):
         return self.ammo_generator.loop_count()
