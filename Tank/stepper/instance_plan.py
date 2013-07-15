@@ -123,7 +123,7 @@ class StepFactory(object):
         minrps, maxrps, duration = template.search(params).groups()
         # note that we don't use minrps at all and use maxrps
         # as the number of instances we gonna start
-        return Line(int(maxrps - minrps), parse_duration(duration))
+        return Line(int(maxrps) - int(minrps), parse_duration(duration))
 
     @staticmethod
     def ramp(params):
