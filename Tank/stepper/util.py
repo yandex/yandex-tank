@@ -44,6 +44,7 @@ class Limiter(object):
 
     def __init__(self, gen, limit):
         self.gen = islice(gen, limit)
+        self.limit = limit
 
     def __len__(self):
         return self.limit
