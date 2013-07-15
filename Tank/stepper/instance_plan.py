@@ -1,6 +1,5 @@
 from itertools import cycle, chain
 from util import parse_duration
-import sys
 import re
 
 
@@ -14,10 +13,6 @@ class InstanceLP(object):
     def get_duration(self):
         '''Return step duration in milliseconds'''
         return self.duration
-
-    def __len__(self):
-        '''Return total ammo count'''
-        return sys.maxint
 
     def get_rps_list(self):
         return []
@@ -60,7 +55,8 @@ class Line(InstanceLP):
     '''
     Starts some instances linearly
 
-    >>> list(Line(5, 5000))
+    >>> from util import take
+    >>> take(10, Line(5, 5000))
     [1000, 2000, 3000, 4000, 5000]
     '''
 
@@ -78,7 +74,8 @@ class Ramp(InstanceLP):
     '''
     Starts <instance_count> instances, one each <interval> seconds
 
-    >>> list(Ramp(5, 5000))
+    >>> from util import take
+    >>> take(10, Ramp(5, 5000))
     [0, 5000, 10000, 15000, 20000]
     '''
 
