@@ -3,7 +3,7 @@ Utilities: parsers, converters, etc.
 '''
 import re
 from itertools import islice
-from exceptions import StepperConfigurationError
+from module_exceptions import StepperConfigurationError
 
 
 def parse_duration(duration):

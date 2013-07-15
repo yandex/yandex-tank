@@ -7,7 +7,7 @@ import re
 class InstanceLP(object):
 
     def __init__(self, duration=0):
-        self.duration = duration
+        self.duration = float(duration)
 
     def get_duration(self):
         '''Return step duration'''
@@ -33,6 +33,9 @@ class Line(InstanceLP):
 
     '''
     Starts some instances linearly
+
+    >>> list(Line(5, 5))
+    [0, 1000, 2000, 3000, 4000]
     '''
 
     def __init__(self, instances, duration):
@@ -48,16 +51,19 @@ class Line(InstanceLP):
 class Ramp(InstanceLP):
 
     '''
-    Starts <n> instances, one each <interval> seconds
+    Starts <instance_count> instances, one each <interval> seconds
+
+    >>> list(Ramp(5, 5))
+    [0, 5000, 10000, 15000, 20000]
     '''
 
-    def __init__(self, n, interval):
-        self.duration = float(n * interval)
-        self.n = n
-        self.interval = interval
+    def __init__(self, instance_count, interval):
+        self.duration = float(instance_count * interval) * 1000
+        self.instance_count = instance_count
+        self.interval = float(interval) * 1000
 
     def __iter__(self):
-        return ((int(i * self.interval) for i in xrange(0, self.n)))
+        return ((int(i * self.interval) for i in xrange(0, self.instance_count)))
 
 
 class Wait(InstanceLP):

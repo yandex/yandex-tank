@@ -2,7 +2,7 @@
 Missile generator
 '''
 from itertools import cycle
-from exceptions import AmmoFileError
+from module_exceptions import AmmoFileError
 
 
 class HttpAmmo(object):

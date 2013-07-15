@@ -1,4 +1,4 @@
-from exceptions import StepperConfigurationError
+from module_exceptions import StepperConfigurationError
 import load_plan as lp
 import instance_plan as ip
 import missile
