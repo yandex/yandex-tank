@@ -452,6 +452,8 @@ class StepperWrapper:
                 self.log.info("Using cached stpd-file: %s", self.stpd)
                 stepper_info = self.__read_cached_options()
             else:
+                if self.force_stepping and os.path.exists(self.__si_filename()):
+                    os.remove(self.__si_filename())
                 stepper_info = self.__make_stpd_file()
                 self.__write_cached_options(stepper_info)
             self.ammo_count = stepper_info.ammo_count
