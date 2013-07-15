@@ -393,6 +393,7 @@ class StepperWrapper:
         self.duration = 0
         self.loop_count = 0
         self.loadscheme = ""
+        self.file_cache = 8192
 
     def get_option(self, option_ammofile, param2=None):
         ''' get_option wrapper'''
@@ -404,7 +405,7 @@ class StepperWrapper:
                 StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD]
         opts += ["instances_schedule", "uris",
                  "headers", "header_http", "autocases", ]
-        opts += ["use_caching", "cache_dir", "force_stepping", ]
+        opts += ["use_caching", "cache_dir", "force_stepping", "file_cache"]
         return opts
 
     def read_config(self):
@@ -437,6 +438,7 @@ class StepperWrapper:
         self.autocases = self.get_option("autocases", '0')
         self.use_caching = int(self.get_option("use_caching", '1'))
 
+        self.file_cache = int(self.get_option('file_cache', '8192'))
         cache_dir = self.core.get_option(
             PhantomConfig.SECTION, "cache_dir", self.core.artifacts_base_dir)
         self.cache_dir = os.path.expanduser(cache_dir)
@@ -543,6 +545,6 @@ class StepperWrapper:
             headers=[header.strip('[]') for header in self.headers],
             autocases=self.autocases,
         )
-        with open(self.stpd, 'w') as os:
+        with open(self.stpd, 'w', self.file_cache) as os:
             stepper.write(os)
         return stepper.info
