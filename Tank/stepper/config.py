@@ -30,6 +30,8 @@ class ComponentFactory():
         self.ammo_limit = int(ammo_limit)
         if self.ammo_limit == -1:  # -1 means infinite
             self.ammo_limit = 0
+        if self.loop_limit is 0 and self.ammo_limit is 0:
+                self.loop_limit = 1  # we should have only one loop if we have instance_schedule
         self.uris = uris
         self.headers = headers
         self.marker = get_marker(autocases)
