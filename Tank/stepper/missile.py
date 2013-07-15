@@ -3,6 +3,7 @@ Missile generator
 '''
 from itertools import cycle
 from module_exceptions import AmmoFileError
+import sys
 
 
 class HttpAmmo(object):
@@ -35,6 +36,9 @@ class SimpleGenerator(object):
             self.loops += 1
             yield m
 
+    def __len__(self):
+        return sys.maxint
+
     def loop_count(self):
         return self.loops
 
@@ -57,6 +61,9 @@ class UriStyleGenerator(SimpleGenerator):
                 raise StopIteration
             else:
                 yield m
+
+    def __len__(self):
+        return sys.maxint
 
     def loop_count(self):
         return self.ammo_number / self.uri_count
@@ -100,5 +107,6 @@ class AmmoFileReader(SimpleGenerator):
 
     def __len__(self):
         if self.ammo_len is 0:
-            raise RuntimeError("The number of missiles in ammo file is not known yet")
+            raise RuntimeError(
+                "The number of missiles in ammo file is not known yet")
         return self.ammo_len

@@ -50,16 +50,16 @@ class Stepper(object):
 
     def __init__(self, **kwargs):
         self.af = AmmoFactory(ComponentFactory(**kwargs))
-        self.info = StepperInfo(
-            loop_count=self.af.get_loop_count(),
-            steps=self.af.get_steps(),
-            loadscheme=kwargs['rps_schedule'],
-            duration=self.af.get_duration(),
-            ammo_count=None,
-        )
+        self.rps_schedule = kwargs['rps_schedule']
         self.ammo = fmt.Stpd(progress(self.af, 'Ammo: '))
 
     def write(self, f):
         for missile in self.ammo:
             f.write(missile)
-        self.info.ammo_count = len(self.af)
+        self.info = StepperInfo(
+            loop_count=self.af.get_loop_count(),
+            steps=self.af.get_steps(),
+            loadscheme=self.rps_schedule,
+            duration=self.af.get_duration(),
+            ammo_count=len(self.af),
+        )
