@@ -3,18 +3,10 @@ import load_plan as lp
 import instance_plan as ip
 import missile
 import util
-from uuid import uuid4
-
-
-def mark_by_uri(missile):
-    return missile.split('\n', 1)[0].split(' ', 2)[1].split('?', 1)[0]
+from mark import get_marker
 
 
 class ComponentFactory():
-    markers = {
-        'uniq': lambda m: uuid4().hex,
-        'uri': mark_by_uri,
-    }
 
     def __init__(
         self,
@@ -40,7 +32,7 @@ class ComponentFactory():
             self.ammo_limit = 0
         self.uris = uris
         self.headers = headers
-        self.autocases = autocases
+        self.marker = get_marker(autocases)
 
     def get_load_plan(self):
         """
@@ -63,35 +55,24 @@ class ComponentFactory():
         if self.uris and self.ammo_file:
             raise StepperConfigurationError(
                 'Both uris and ammo file specified. You must specify only one of them')
+        elif self.uris:
+            ammo_gen = missile.UriStyleGenerator(
+                self.uris,
+                self.headers,
+                loop_limit=self.loop_limit,
+                http_ver=self.http_ver
+            )
+        elif self.ammo_file:
+            ammo_gen = missile.AmmoFileReader(
+                self.ammo_file,
+                loop_limit=self.loop_limit
+            )
         else:
-            if self.uris:
-                return util.limiter(
-                    missile.UriStyleGenerator(
-                        self.uris,
-                        self.headers,
-                        loop_limit=self.loop_limit,
-                        http_ver=self.http_ver
-                    ),
-                    self.ammo_limit
-                )
-            elif self.ammo_file:
-                return util.limiter(
-                    missile.AmmoFileReader(
-                        self.ammo_file,
-                        loop_limit=self.loop_limit
-                    ),
-                    self.ammo_limit
-                )
-            else:
-                raise StepperConfigurationError(
-                    'Ammo not found. Specify uris or ammo file')
+            raise StepperConfigurationError(
+                'Ammo not found. Specify uris or ammo file')
+        return util.limiter(ammo_gen,
+                            self.ammo_limit
+                            )
 
     def get_marker(self):
-        if self.autocases and self.autocases is not '0':
-            if self.autocases in ComponentFactory.markers:
-                return ComponentFactory.markers[self.autocases]
-            else:
-                raise NotImplementedError(
-                    'No such marker: "%s"' % self.autocases)
-        else:
-            return lambda m: 'None'
+        return self.marker
