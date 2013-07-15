@@ -49,16 +49,16 @@ StepperInfo = namedtuple(
 class Stepper(object):
 
     def __init__(self, **kwargs):
-        af = AmmoFactory(ComponentFactory(**kwargs))
+        self.af = AmmoFactory(ComponentFactory(**kwargs))
         self.info = StepperInfo(
-            loop_count=af.get_loop_count(),
-            steps=af.get_steps(),
+            loop_count=self.af.get_loop_count(),
+            steps=self.af.get_steps(),
             loadscheme=kwargs['rps_schedule'],
-            duration=af.get_duration(),
-            ammo_count=len(af),
+            duration=self.af.get_duration(),
         )
-        self.ammo = fmt.Stpd(progress(af, 'Ammo: '))
+        self.ammo = fmt.Stpd(progress(self.af, 'Ammo: '))
 
     def write(self, f):
         for missile in self.ammo:
             f.write(missile)
+        self.info.ammo_count = len(self.af)

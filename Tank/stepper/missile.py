@@ -74,6 +74,7 @@ class AmmoFileReader(SimpleGenerator):
 
     def __iter__(self):
         with open(self.filename, 'rb') as ammo_file:
+            ammo_len = 0
             chunk_header = ammo_file.readline()
             while chunk_header:
                 if chunk_header.strip('\r\n') is not '':
@@ -85,7 +86,7 @@ class AmmoFileReader(SimpleGenerator):
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
                                 "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
-                        self.ammo_len += 1
+                        ammo_len += 1
                         yield (missile, marker)
                     except (IndexError, ValueError):
                         raise AmmoFileError(
@@ -95,6 +96,9 @@ class AmmoFileReader(SimpleGenerator):
                     self.loops += 1
                     ammo_file.seek(0)
                     chunk_header = ammo_file.readline()
+            self.ammo_len = ammo_len
 
     def __len__(self):
+        if self.ammo_len is 0:
+            raise RuntimeError("The number of missiles in ammo file is not known yet")
         return self.ammo_len
