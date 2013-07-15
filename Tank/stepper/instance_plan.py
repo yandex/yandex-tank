@@ -60,6 +60,19 @@ class Ramp(InstanceLP):
         return ((int(i * self.interval) for i in xrange(0, self.n)))
 
 
+class Wait(InstanceLP):
+
+    '''
+    Don't start any instances for the definded duration
+    '''
+
+    def __init__(self, duration):
+        self.duration = float(duration)
+
+    def __iter__(self):
+        return []
+
+
 class Stairway(InstanceLP):
 
     def __init__(self, minrps, maxrps, increment, duration):
@@ -75,7 +88,19 @@ class StepFactory(object):
         minrps, maxrps, duration = template.search(params).groups()
         # note that we don't use minrps at all and use maxrps
         # as the number of instances we gonna start
-        return Line(int(maxrps), parse_duration(duration))
+        return Line(int(maxrps - minrps), parse_duration(duration))
+
+    @staticmethod
+    def ramp(params):
+        template = re.compile('(\d+),\s*(\d+[dhms]?)+\)')
+        instances, interval = template.search(params).groups()
+        return Ramp(int(instances), parse_duration(interval))
+
+    @staticmethod
+    def wait(params):
+        template = re.compile('(\d+[dhms]?)+\)')
+        duration = template.search(params).groups()
+        return Wait(parse_duration(duration))
 
     @staticmethod
     def stairway(params):
@@ -88,6 +113,8 @@ class StepFactory(object):
         _plans = {
             'line': StepFactory.line,
             'step': StepFactory.stairway,
+            'ramp': StepFactory.ramp,
+            'wait': StepFactory.wait,
         }
         load_type, params = step_config.split('(')
         load_type = load_type.strip()
