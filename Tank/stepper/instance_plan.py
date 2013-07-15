@@ -1,5 +1,6 @@
 from itertools import cycle, chain
 from util import parse_duration
+import sys
 import re
 
 
@@ -16,7 +17,7 @@ class InstanceLP(object):
 
     def __len__(self):
         '''Return total ammo count'''
-        return None
+        return sys.maxint
 
     def get_rps_list(self):
         return []
