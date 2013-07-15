@@ -6,6 +6,8 @@ import re
 
 class InstanceLP(object):
 
+    '''Base class for all instance plans'''
+
     def __init__(self, duration=0):
         self.duration = float(duration)
 
@@ -76,7 +78,7 @@ class Wait(InstanceLP):
         self.duration = float(duration)
 
     def __iter__(self):
-        return []
+        return iter([])
 
 
 class Stairway(InstanceLP):
@@ -105,7 +107,7 @@ class StepFactory(object):
     @staticmethod
     def wait(params):
         template = re.compile('(\d+[dhms]?)+\)')
-        duration = template.search(params).groups()
+        duration = template.search(params).groups()[0]
         return Wait(parse_duration(duration))
 
     @staticmethod
@@ -132,6 +134,18 @@ class StepFactory(object):
 
 
 def create(instances_schedule):
+    '''
+    Generates load plan
+
+    >>> from itertools import islice
+    >>> list(islice(create(['ramp(5, 5s)']), 0, 7))
+    [0, 5000, 10000, 15000, 20000, 0, 0]
+
+    >>> list(islice(
+    ...     create(['ramp(5, 5s)', 'wait(5s)', 'ramp(5,5s)']),
+    ...     0, 12))
+    [0, 5000, 10000, 15000, 20000, 25000]
+    '''
     if len(instances_schedule) > 1:
         steps = [StepFactory.produce(step_config)
                  for step_config in instances_schedule]
