@@ -1,5 +1,4 @@
-from itertools import cycle
-from load_plan import Composite
+from itertools import cycle, chain
 from util import parse_duration
 import re
 
@@ -31,6 +30,34 @@ class Empty(InstanceLP):
         return cycle([0])
 
 
+class Composite(InstanceLP):
+
+    '''Load plan with multiple steps'''
+
+    def __init__(self, steps):
+        self.steps = steps
+
+    def __iter__(self):
+        base = 0
+        for step in self.steps:
+            for ts in step:
+                yield int(ts + base)
+            base += step.get_duration() * 1000
+        for item in cycle([0]):
+            yield item
+
+    def get_duration(self):
+        '''Return total duration'''
+        return sum(step.get_duration() for step in self.steps)
+
+    def __len__(self):
+        '''Return total ammo count'''
+        return sum(step.__len__() for step in self.steps)
+
+    def get_rps_list(self):
+        return list(chain.from_iterable(step.get_rps_list() for step in self.steps))
+
+
 class Line(InstanceLP):
 
     '''
@@ -60,7 +87,7 @@ class Ramp(InstanceLP):
     '''
 
     def __init__(self, instance_count, interval):
-        self.duration = float(instance_count * interval) * 1000
+        self.duration = float(instance_count * interval)
         self.instance_count = instance_count
         self.interval = float(interval) * 1000
 
@@ -135,21 +162,20 @@ class StepFactory(object):
 
 def create(instances_schedule):
     '''
-    Generates load plan
+    Creates load plan timestamps generator
 
     >>> from itertools import islice
-    >>> list(islice(create(['ramp(5, 5s)']), 0, 7))
+    >>> lp = create(['ramp(5, 5s)'])
+    >>> list(islice(lp, 0, 7))
     [0, 5000, 10000, 15000, 20000, 0, 0]
 
-    >>> list(islice(
-    ...     create(['ramp(5, 5s)', 'wait(5s)', 'ramp(5,5s)']),
-    ...     0, 12))
-    [0, 5000, 10000, 15000, 20000, 25000]
+    >>> lp = create(['ramp(5, 5s)', 'wait(5s)', 'ramp(5,5s)'])
+    >>> list(islice(lp, 0, 12))
+    [0, 5000, 10000, 15000, 20000, 30000, 35000, 40000, 45000, 50000, 0, 0]
     '''
     if len(instances_schedule) > 1:
         steps = [StepFactory.produce(step_config)
                  for step_config in instances_schedule]
     else:
         steps = [StepFactory.produce(instances_schedule[0])]
-    steps.append(Empty())
     return Composite(steps)
