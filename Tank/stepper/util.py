@@ -6,6 +6,10 @@ from itertools import islice
 from module_exceptions import StepperConfigurationError
 
 
+def take(number, iter):
+    return list(islice(iter, 0, number))
+
+
 def parse_duration(duration):
     '''
     Parse duration string, such as '3h2m3s'

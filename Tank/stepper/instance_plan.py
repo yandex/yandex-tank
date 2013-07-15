@@ -165,13 +165,19 @@ def create(instances_schedule):
     Creates load plan timestamps generator
 
     >>> from itertools import islice
+    >>> from util import take
+
     >>> lp = create(['ramp(5, 5s)'])
-    >>> list(islice(lp, 0, 7))
+    >>> take(7, lp)
     [0, 5000, 10000, 15000, 20000, 0, 0]
 
     >>> lp = create(['ramp(5, 5s)', 'wait(5s)', 'ramp(5,5s)'])
-    >>> list(islice(lp, 0, 12))
+    >>> take(12, lp)
     [0, 5000, 10000, 15000, 20000, 30000, 35000, 40000, 45000, 50000, 0, 0]
+
+    >>> lp = create(['wait(5s)', 'ramp(5, 0)'])
+    >>> take(7, lp)
+    [5000, 5000, 5000, 5000, 5000, 0, 0]
     '''
     if len(instances_schedule) > 1:
         steps = [StepFactory.produce(step_config)
