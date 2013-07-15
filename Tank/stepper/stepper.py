@@ -60,5 +60,9 @@ class Stepper(object):
         self.ammo = fmt.Stpd(progress(af, 'Ammo: '))
 
     def write(self, f):
+        missile_count = 0
         for missile in self.ammo:
+            missile_count += 1
             f.write(missile)
+            if missile_count % 10000:
+                f.flush()
