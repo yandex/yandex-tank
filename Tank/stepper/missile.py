@@ -94,6 +94,7 @@ class AmmoFileReader(SimpleGenerator):
                 if not chunk_header and (self.loops < self.loop_limit or self.loop_limit == 0):
                     self.loops += 1
                     ammo_file.seek(0)
+                    chunk_header = ammo_file.readline()
 
     def __len__(self):
         return self.ammo_len
