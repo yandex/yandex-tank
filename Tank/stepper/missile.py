@@ -90,10 +90,10 @@ class AmmoFileReader(SimpleGenerator):
                     except (IndexError, ValueError):
                         raise AmmoFileError(
                             "Error while reading ammo file. Position: %s, header: '%s'" % (ammo_file.tell(), chunk_header))
-                    if not chunk_header and (self.loops < self.loop_limit or self.loop_limit == 0):
-                        self.loops += 1
-                        ammo_file.seek(0)
                 chunk_header = ammo_file.readline()
+                if not chunk_header and (self.loops < self.loop_limit or self.loop_limit == 0):
+                    self.loops += 1
+                    ammo_file.seek(0)
 
     def __len__(self):
         return self.ammo_len
