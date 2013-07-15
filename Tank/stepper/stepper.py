@@ -55,6 +55,7 @@ class Stepper(object):
             steps=self.af.get_steps(),
             loadscheme=kwargs['rps_schedule'],
             duration=self.af.get_duration(),
+            ammo_count=None,
         )
         self.ammo = fmt.Stpd(progress(self.af, 'Ammo: '))
 
