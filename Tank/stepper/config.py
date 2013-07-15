@@ -24,10 +24,10 @@ class ComponentFactory():
         self.http_ver = http_ver
         self.ammo_file = ammo_file
         self.instances_schedule = instances_schedule
-        self.loop_limit = loop_limit
+        self.loop_limit = int(loop_limit)
         if self.loop_limit == -1:  # -1 means infinite
             self.loop_limit = 0
-        self.ammo_limit = ammo_limit
+        self.ammo_limit = int(ammo_limit)
         if self.ammo_limit == -1:  # -1 means infinite
             self.ammo_limit = 0
         self.uris = uris
