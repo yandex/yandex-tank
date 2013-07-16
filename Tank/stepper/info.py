@@ -2,12 +2,15 @@ from progressbar import ProgressBar, ETA, ReverseBar, Bar
 
 
 class DefaultProgressBar(ProgressBar):
+
     """
     progressbar with predefined parameters
     """
+
     def __init__(self, maxval, caption=''):
         widgets = [caption, Bar('>'), ' ', ETA(), ' ', ReverseBar('<')]
-        super(DefaultProgressBar, self).__init__(widgets=widgets, maxval=maxval)
+        super(DefaultProgressBar, self).__init__(
+            widgets=widgets, maxval=maxval)
 
 
 def progress(gen, caption='', pb_class=DefaultProgressBar):
@@ -37,3 +40,9 @@ def progress(gen, caption='', pb_class=DefaultProgressBar):
         yield(elem)
     if pbar:
         pbar.finish()
+
+
+class StepperStatus(object):
+
+    def __init__(self):
+        pass

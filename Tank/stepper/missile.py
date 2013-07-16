@@ -1,12 +1,15 @@
 '''
-Missile generator
+Missile object and generators
 '''
 from itertools import cycle
 from module_exceptions import AmmoFileError
-import sys
 
 
 class HttpAmmo(object):
+
+    '''
+    Represents HTTP missile
+    '''
 
     def __init__(self, uri, headers, method='GET', http_ver='1.1'):
         self.method = method
@@ -26,9 +29,15 @@ class HttpAmmo(object):
 
 class SimpleGenerator(object):
 
-    '''Generates ammo based on given sample'''
+    '''
+    Generates ammo based on a given sample.
+    '''
 
     def __init__(self, missile_sample):
+        '''
+        Missile sample is any object that has to_s method which
+        returns its string representation.
+        '''
         self.missiles = cycle([(missile_sample.to_s(), None)])
 
     def __iter__(self):
@@ -36,18 +45,20 @@ class SimpleGenerator(object):
             self.loops += 1
             yield m
 
-    def __len__(self):
-        return sys.maxint
-
     def loop_count(self):
         return self.loops
 
 
 class UriStyleGenerator(SimpleGenerator):
 
-    '''Generates GET ammo based on given URI list'''
+    '''
+    Generates GET ammo based on given URI list.
+    '''
 
     def __init__(self, uris, headers, loop_limit=0, http_ver='1.1'):
+        '''
+        uris - a list of URIs as strings.
+        '''
         self.ammo_number = 0
         self.loop_limit = loop_limit
         self.uri_count = len(uris)
@@ -61,9 +72,6 @@ class UriStyleGenerator(SimpleGenerator):
                 raise StopIteration
             else:
                 yield m
-
-    def __len__(self):
-        return sys.maxint
 
     def loop_count(self):
         return self.ammo_number / self.uri_count
@@ -104,9 +112,4 @@ class AmmoFileReader(SimpleGenerator):
                     ammo_file.seek(0)
                     chunk_header = ammo_file.readline()
             self.ammo_len = ammo_len
-
-    def __len__(self):
-        if self.ammo_len is 0:
-            raise RuntimeError(
-                "The number of missiles in ammo file is not known yet")
-        return self.ammo_len
+            #  TODO: publish ammo length
