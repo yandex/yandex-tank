@@ -44,9 +44,8 @@ class SimpleGenerator(object):
 
     def __iter__(self):
         for m in self.missiles:
-            self.loops += 1
-            STATUS.loop_count = self.loops
-            STATUS.ammo_count = self.loops  # loops equals ammo count
+            STATUS.inc_loop_count()
+            STATUS.inc_ammo_count()  # loops equals ammo count
             yield m
 
     def loop_count(self):
@@ -63,24 +62,15 @@ class UriStyleGenerator(SimpleGenerator):
         '''
         uris - a list of URIs as strings.
         '''
-        self.ammo_count = 0
-        self.loop_count = 0
         self.uri_count = len(uris)
         self.missiles = cycle(
             [(HttpAmmo(uri, headers, http_ver=http_ver).to_s(), None) for uri in uris])
 
     def __iter__(self):
         for m in self.missiles:
-            self.ammo_count += 1
-            STATUS.ammo_count = self.ammo_count
-            self.update_loop_count()
+            STATUS.inc_ammo_count()
+            STATUS.loop_count = STATUS.ammo_count / self.uri_count
             yield m
-
-    def update_loop_count(self):
-        loop_count = self.ammo_count / self.uri_count
-        if self.loop_count != loop_count:
-            STATUS.loop_count = loop_count
-            self.loop_count = loop_count
 
 
 class AmmoFileReader(SimpleGenerator):
@@ -89,11 +79,9 @@ class AmmoFileReader(SimpleGenerator):
 
     def __init__(self, filename, loop_limit=0):
         self.filename = filename
-        self.loops = 0
 
     def __iter__(self):
         with open(self.filename, 'rb') as ammo_file:
-            ammo_count = 0
             chunk_header = ammo_file.readline()
             while chunk_header:
                 if chunk_header.strip('\r\n') is not '':
@@ -105,15 +93,13 @@ class AmmoFileReader(SimpleGenerator):
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
                                 "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
-                        ammo_count += 1
-                        STATUS.ammo_count = ammo_count
+                        STATUS.inc_ammo_count()
                         yield (missile, marker)
                     except (IndexError, ValueError):
                         raise AmmoFileError(
                             "Error while reading ammo file. Position: %s, header: '%s'" % (ammo_file.tell(), chunk_header))
                 chunk_header = ammo_file.readline()
                 if not chunk_header:
-                    self.loops += 1
-                    STATUS.loop_count = self.loops
+                    STATUS.inc_loop_count()
                     ammo_file.seek(0)
                     chunk_header = ammo_file.readline()

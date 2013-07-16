@@ -51,6 +51,7 @@ StepperInfo = namedtuple(
 
 
 class StepperStatus(object):
+
     '''
     Raises StopIteration when limits are reached.
     '''
@@ -58,11 +59,11 @@ class StepperStatus(object):
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.info = {
-            'loop_count': None,
+            'loop_count': 0,
             'steps': None,
             'loadscheme': None,
             'duration': None,
-            'ammo_count': None,
+            'ammo_count': 0,
         }
         self.loop_limit = None
         self.ammo_limit = None
@@ -76,27 +77,33 @@ class StepperStatus(object):
 
     @property
     def ammo_count(self):
-        #return self._ammo_count
+        # return self._ammo_count
         return self.info['ammo_count']
 
     @ammo_count.setter
     def ammo_count(self, value):
-        #self._ammo_count = value
+        # self._ammo_count = value
         self.info['ammo_count'] = value
         if self.ammo_limit and value > self.ammo_limit:
             raise StopIteration
 
+    def inc_ammo_count(self):
+        self.ammo_count += 1
+
     @property
     def loop_count(self):
-        #return self._loop_count
+        # return self._loop_count
         return self.info['loop_count']
 
     @loop_count.setter
     def loop_count(self, value):
-        #self._loop_count = value
+        # self._loop_count = value
         self.info['loop_count'] = value
         if self.loop_limit and value > self.loop_limit:
             raise StopIteration
+
+    def inc_loop_count(self):
+        self.loop_count += 1
 
     def get_info(self):
         for key in self.info:
