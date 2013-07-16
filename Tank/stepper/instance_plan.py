@@ -1,6 +1,7 @@
-from itertools import cycle, chain
+from itertools import cycle
 from util import parse_duration
 import re
+import info
 
 
 class InstanceLP(object):
@@ -9,13 +10,6 @@ class InstanceLP(object):
 
     def __init__(self, duration=0):
         self.duration = float(duration)
-
-    def get_duration(self):
-        '''Return step duration in milliseconds'''
-        return self.duration
-
-    def get_rps_list(self):
-        return []
 
 
 class Empty(InstanceLP):
@@ -41,13 +35,6 @@ class Composite(InstanceLP):
             base += step.get_duration()
         for item in cycle([0]):
             yield item
-
-    def get_duration(self):
-        '''Return total duration in milliseconds'''
-        return sum(step.get_duration() for step in self.steps)
-
-    def get_rps_list(self):
-        return list(chain.from_iterable(step.get_rps_list() for step in self.steps))
 
 
 class Line(InstanceLP):
@@ -173,4 +160,7 @@ def create(instances_schedule):
                  for step_config in instances_schedule]
     else:
         steps = [StepFactory.produce(instances_schedule[0])]
-    return Composite(steps)
+    lp = Composite(steps)
+    info.status.publish('duration', 0)
+    info.status.publish('steps', [])
+    return lp
