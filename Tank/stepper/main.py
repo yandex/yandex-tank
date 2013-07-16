@@ -3,8 +3,8 @@ Module contains top-level generators.
 '''
 from itertools import izip
 import format as fmt
-from info import STATUS
 from config import ComponentFactory
+import info
 
 
 class AmmoFactory(object):
@@ -74,6 +74,7 @@ class AmmoFactory(object):
 class Stepper(object):
 
     def __init__(self, **kwargs):
+        info.status = info.StepperStatus()
         self.af = AmmoFactory(ComponentFactory(**kwargs))
         self.ammo = fmt.Stpd(self.af)
 

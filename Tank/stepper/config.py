@@ -2,9 +2,8 @@ from module_exceptions import StepperConfigurationError
 import load_plan as lp
 import instance_plan as ip
 import missile
-import util
 from mark import get_marker
-from info import STATUS
+import info
 
 
 class ComponentFactory():
@@ -33,8 +32,8 @@ class ComponentFactory():
             ammo_limit = 0
         if loop_limit is 0 and ammo_limit is 0:
             loop_limit = 1  # we should have only one loop if we have instance_schedule
-        STATUS.loop_limit = loop_limit
-        STATUS.ammo_limit = ammo_limit
+        info.status.loop_limit = loop_limit
+        info.status.ammo_limit = ammo_limit
         self.uris = uris
         self.headers = headers
         self.marker = get_marker(autocases)
@@ -47,10 +46,10 @@ class ComponentFactory():
             raise StepperConfigurationError(
                 'Both rps and instances schedules specified. You must specify only one of them')
         elif self.rps_schedule:
-            STATUS.publish('loadscheme', self.rps_schedule)
+            info.status.publish('loadscheme', self.rps_schedule)
             return lp.create(self.rps_schedule)
         elif self.instances_schedule:
-            STATUS.publish('loadscheme', self.instances_schedule)
+            info.status.publish('loadscheme', self.instances_schedule)
             return ip.create(self.instances_schedule)
         else:
             raise StepperConfigurationError('Schedule is not specified')

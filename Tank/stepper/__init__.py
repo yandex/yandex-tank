@@ -1,3 +1,2 @@
 #
-from stepper import Stepper
-from info import STATUS
+from main import Stepper

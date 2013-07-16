@@ -1,11 +1,11 @@
 '''
 Missile object and generators
 
-You should update STATUS.ammo_count and STATUS.loop_count in your custom generators!
+You should update Stepper.status.ammo_count and Stepper.status.loop_count in your custom generators!
 '''
 from itertools import cycle
 from module_exceptions import AmmoFileError
-from info import STATUS
+import info
 
 
 class HttpAmmo(object):
@@ -44,8 +44,8 @@ class SimpleGenerator(object):
 
     def __iter__(self):
         for m in self.missiles:
-            STATUS.inc_loop_count()
-            STATUS.inc_ammo_count()  # loops equals ammo count
+            info.status.inc_loop_count()
+            info.status.inc_ammo_count()  # loops equals ammo count
             yield m
 
     def loop_count(self):
@@ -68,8 +68,8 @@ class UriStyleGenerator(SimpleGenerator):
 
     def __iter__(self):
         for m in self.missiles:
-            STATUS.inc_ammo_count()
-            STATUS.loop_count = STATUS.ammo_count / self.uri_count
+            info.status.inc_ammo_count()
+            info.status.loop_count = info.status.ammo_count / self.uri_count
             yield m
 
 
@@ -93,13 +93,13 @@ class AmmoFileReader(SimpleGenerator):
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
                                 "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
-                        STATUS.inc_ammo_count()
+                        info.status.inc_ammo_count()
                         yield (missile, marker)
                     except (IndexError, ValueError):
                         raise AmmoFileError(
                             "Error while reading ammo file. Position: %s, header: '%s'" % (ammo_file.tell(), chunk_header))
                 chunk_header = ammo_file.readline()
                 if not chunk_header:
-                    STATUS.inc_loop_count()
+                    info.status.inc_loop_count()
                     ammo_file.seek(0)
                     chunk_header = ammo_file.readline()

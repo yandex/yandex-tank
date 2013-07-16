@@ -5,7 +5,7 @@ import math
 import re
 from util import parse_duration
 from itertools import chain, groupby
-from info import STATUS
+import info
 
 
 class Const(object):
@@ -209,6 +209,6 @@ def create(rps_schedule):
                        for step_config in rps_schedule])
     else:
         lp = StepFactory.produce(rps_schedule[0])
-    STATUS.publish('duration', lp.get_duration())
-    STATUS.publish('steps', lp.get_rps_list())
+    info.status.publish('duration', lp.get_duration())
+    info.status.publish('steps', lp.get_rps_list())
     return lp

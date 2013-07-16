@@ -112,4 +112,4 @@ class StepperStatus(object):
                     "Information for %s is not published yet." % key)
         return StepperInfo(**self.info)
 
-STATUS = StepperStatus()
+status = StepperStatus()
