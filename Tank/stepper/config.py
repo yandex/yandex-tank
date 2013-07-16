@@ -4,6 +4,7 @@ import instance_plan as ip
 import missile
 import util
 from mark import get_marker
+from info import STATUS
 
 
 class ComponentFactory():
@@ -44,8 +45,10 @@ class ComponentFactory():
             raise StepperConfigurationError(
                 'Both rps and instances schedules specified. You must specify only one of them')
         elif self.rps_schedule:
+            STATUS.publish('loadscheme', self.rps_schedule)
             return lp.create(self.rps_schedule)
         elif self.instances_schedule:
+            STATUS.publish('loadscheme', self.instances_schedule)
             return ip.create(self.instances_schedule)
         else:
             raise StepperConfigurationError('Schedule is not specified')

@@ -5,6 +5,7 @@ import math
 import re
 from util import parse_duration
 from itertools import chain, groupby
+from info import STATUS
 
 
 class Const(object):
@@ -187,7 +188,7 @@ class StepFactory(object):
 
 def create(rps_schedule):
     '''
-    Create Load Plan as defined in schedule
+    Create Load Plan as defined in schedule. Publish info about its duration.
 
     >>> from util import take
 
@@ -204,6 +205,9 @@ def create(rps_schedule):
     [0, 1000, 2000, 2500, 3000, 3500]
     '''
     if len(rps_schedule) > 1:
-        return Composite([StepFactory.produce(step_config) for step_config in rps_schedule])
+        lp = Composite([StepFactory.produce(step_config)
+                       for step_config in rps_schedule])
     else:
-        return StepFactory.produce(rps_schedule[0])
+        lp = StepFactory.produce(rps_schedule[0])
+    STATUS.publish('duration', lp.get_duration())
+    return lp
