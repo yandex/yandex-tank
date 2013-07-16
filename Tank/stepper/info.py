@@ -69,6 +69,26 @@ class StepperStatus(object):
         self.log.debug('Published %s to %s', value, key)
         self.info[key] = value
 
+    @property
+    def ammo_count(self):
+        #return self._ammo_count
+        return self.info['ammo_count']
+
+    @ammo_count.setter
+    def ammo_count(self, value):
+        #self._ammo_count = value
+        self.info['ammo_count'] = value
+
+    @property
+    def loop_count(self):
+        #return self._loop_count
+        return self.info['loop_count']
+
+    @loop_count.setter
+    def loop_count(self, value):
+        #self._loop_count = value
+        self.info['loop_count'] = value
+
     def get_info(self):
         for key in self.info:
             if self.info[key] is None:
