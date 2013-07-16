@@ -66,10 +66,10 @@ class StepperStatus(object):
         if key not in self.info:
             raise RuntimeError(
                 "Tryed to publish to a non-existent key: %s" % key)
-        self.log.info('Published %s to %s', (value, key))
+        self.log.debug('Published %s to %s', value, key)
         self.info[key] = value
 
-    def get_stepper_info(self):
+    def get_info(self):
         for key in self.info:
             if self.info[key] is None:
                 raise RuntimeError(

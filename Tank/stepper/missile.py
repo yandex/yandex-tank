@@ -3,6 +3,7 @@ Missile object and generators
 '''
 from itertools import cycle
 from module_exceptions import AmmoFileError
+from info import STATUS
 
 
 class HttpAmmo(object):
@@ -17,7 +18,6 @@ class HttpAmmo(object):
         self.proto = 'HTTP/%s' % http_ver
         self.headers = headers
         self.body = []
-        self.loops = 0
 
     def to_s(self):
         if self.headers:
@@ -43,6 +43,8 @@ class SimpleGenerator(object):
     def __iter__(self):
         for m in self.missiles:
             self.loops += 1
+            STATUS.publish('loop_count', self.loops)
+            STATUS.publish('ammo_count', self.loops)  # loops equals ammo count
             yield m
 
     def loop_count(self):
@@ -59,7 +61,8 @@ class UriStyleGenerator(SimpleGenerator):
         '''
         uris - a list of URIs as strings.
         '''
-        self.ammo_number = 0
+        self.ammo_count = 0
+        self.loop_count = 0
         self.loop_limit = loop_limit
         self.uri_count = len(uris)
         self.missiles = cycle(
@@ -67,14 +70,19 @@ class UriStyleGenerator(SimpleGenerator):
 
     def __iter__(self):
         for m in self.missiles:
-            self.ammo_number += 1
-            if self.loop_limit and self.loop_count() > self.loop_limit:
+            self.ammo_count += 1
+            STATUS.publish('ammo_count', self.ammo_count)
+            self.update_loop_count()
+            if self.loop_limit and self.loop_count > self.loop_limit:
                 raise StopIteration
             else:
                 yield m
 
-    def loop_count(self):
-        return self.ammo_number / self.uri_count
+    def update_loop_count(self):
+        loop_count = self.ammo_count / self.uri_count
+        if self.loop_count != loop_count:
+            STATUS.publish('loop_count', loop_count)
+            self.loop_count = loop_count
 
 
 class AmmoFileReader(SimpleGenerator):
@@ -84,12 +92,11 @@ class AmmoFileReader(SimpleGenerator):
     def __init__(self, filename, loop_limit=0):
         self.filename = filename
         self.loops = 0
-        self.ammo_len = 0
         self.loop_limit = loop_limit
 
     def __iter__(self):
         with open(self.filename, 'rb') as ammo_file:
-            ammo_len = 0
+            ammo_count = 0
             chunk_header = ammo_file.readline()
             while chunk_header:
                 if chunk_header.strip('\r\n') is not '':
@@ -101,7 +108,8 @@ class AmmoFileReader(SimpleGenerator):
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
                                 "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
-                        ammo_len += 1
+                        ammo_count += 1
+                        STATUS.publish('ammo_count', ammo_count)
                         yield (missile, marker)
                     except (IndexError, ValueError):
                         raise AmmoFileError(
@@ -109,7 +117,6 @@ class AmmoFileReader(SimpleGenerator):
                 chunk_header = ammo_file.readline()
                 if not chunk_header and (self.loops < self.loop_limit or self.loop_limit == 0):
                     self.loops += 1
+                    STATUS.publish('loop_count', self.loops)
                     ammo_file.seek(0)
                     chunk_header = ammo_file.readline()
-            self.ammo_len = ammo_len
-            #  TODO: publish ammo length

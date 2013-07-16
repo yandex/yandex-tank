@@ -3,7 +3,7 @@ Module contains top-level generators.
 '''
 from itertools import izip
 import format as fmt
-from info import progress
+from info import STATUS
 from config import ComponentFactory
 
 
@@ -32,11 +32,12 @@ class AmmoFactory(object):
         configured ComponentFactory, passed as a parameter to the
         __init__ method of this class.
         '''
-        return (
+        for ammo_tuple in (
             (timestamp, marker or self.marker(missile), missile)
             for timestamp, (missile, marker)
             in izip(self.load_plan, self.ammo_generator)
-        )
+        ):
+            yield ammo_tuple
 
     def __len__(self):
         '''
@@ -74,7 +75,7 @@ class Stepper(object):
 
     def __init__(self, **kwargs):
         self.af = AmmoFactory(ComponentFactory(**kwargs))
-        self.ammo = fmt.Stpd(progress(self.af, 'Ammo: '))
+        self.ammo = fmt.Stpd(self.af)
 
     def write(self, f):
         for missile in self.ammo:

@@ -456,7 +456,8 @@ class StepperWrapper:
             else:
                 if self.force_stepping and os.path.exists(self.__si_filename()):
                     os.remove(self.__si_filename())
-                stepper_info = self.__make_stpd_file()
+                self.__make_stpd_file()
+                stepper_info = stp.STATUS.get_info()
                 self.__write_cached_options(stepper_info)
             self.ammo_count = stepper_info.ammo_count
             self.duration = stepper_info.duration
@@ -547,4 +548,3 @@ class StepperWrapper:
         )
         with open(self.stpd, 'w', self.file_cache) as os:
             stepper.write(os)
-        return stepper.info

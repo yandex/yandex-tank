@@ -210,4 +210,5 @@ def create(rps_schedule):
     else:
         lp = StepFactory.produce(rps_schedule[0])
     STATUS.publish('duration', lp.get_duration())
+    STATUS.publish('steps', lp.get_rps_list())
     return lp
