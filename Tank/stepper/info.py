@@ -61,6 +61,8 @@ class StepperStatus(object):
             'duration': None,
             'ammo_count': None,
         }
+        self.loop_limit = None
+        self.ammo_limit = None
 
     def publish(self, key, value):
         if key not in self.info:
@@ -78,6 +80,8 @@ class StepperStatus(object):
     def ammo_count(self, value):
         #self._ammo_count = value
         self.info['ammo_count'] = value
+        if self.ammo_limit and value > self.ammo_limit:
+            raise StopIteration
 
     @property
     def loop_count(self):
@@ -88,6 +92,8 @@ class StepperStatus(object):
     def loop_count(self, value):
         #self._loop_count = value
         self.info['loop_count'] = value
+        if self.loop_limit and value > self.loop_limit:
+            raise StopIteration
 
     def get_info(self):
         for key in self.info:
