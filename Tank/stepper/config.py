@@ -25,14 +25,16 @@ class ComponentFactory():
         self.http_ver = http_ver
         self.ammo_file = ammo_file
         self.instances_schedule = instances_schedule
-        self.loop_limit = int(loop_limit)
-        if self.loop_limit == -1:  # -1 means infinite
-            self.loop_limit = 0
-        self.ammo_limit = int(ammo_limit)
-        if self.ammo_limit == -1:  # -1 means infinite
-            self.ammo_limit = 0
-        if self.loop_limit is 0 and self.ammo_limit is 0:
-            self.loop_limit = 1  # we should have only one loop if we have instance_schedule
+        loop_limit = int(loop_limit)
+        if loop_limit == -1:  # -1 means infinite
+            loop_limit = 0
+        ammo_limit = int(ammo_limit)
+        if ammo_limit == -1:  # -1 means infinite
+            ammo_limit = 0
+        if loop_limit is 0 and ammo_limit is 0:
+            loop_limit = 1  # we should have only one loop if we have instance_schedule
+        STATUS.loop_limit = loop_limit
+        STATUS.ammo_limit = ammo_limit
         self.uris = uris
         self.headers = headers
         self.marker = get_marker(autocases)
@@ -64,20 +66,14 @@ class ComponentFactory():
             ammo_gen = missile.UriStyleGenerator(
                 self.uris,
                 self.headers,
-                loop_limit=self.loop_limit,
                 http_ver=self.http_ver
             )
         elif self.ammo_file:
-            ammo_gen = missile.AmmoFileReader(
-                self.ammo_file,
-                loop_limit=self.loop_limit
-            )
+            ammo_gen = missile.AmmoFileReader(self.ammo_file)
         else:
             raise StepperConfigurationError(
                 'Ammo not found. Specify uris or ammo file')
-        return util.limiter(ammo_gen,
-                            self.ammo_limit
-                            )
+        return ammo_gen
 
     def get_marker(self):
         return self.marker
