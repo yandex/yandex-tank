@@ -37,7 +37,7 @@ Create a file on a server with Yandex.Tank:
 **load.conf**
 ```
 [phantom]
-address=23.23.23.23:80 #Target's address and port .
+address=203.0.113.1:80 #Target's address and port .
 rps_schedule=line(1, 100, 10m) #load scheme 
 ```
 Yandex.Tank have 3 primitives for describing load scheme:
@@ -58,7 +58,7 @@ Time duration could be defined in seconds, minutes (m) and hours (h). For exampl
 For a test with constant load at 10rps for 10 minutes, load.conf should have next lines:
 ```
 [phantom]
-address=23.23.23.23:80 #Target's address and port .
+address=203.0.113.1:80 #Target's address and port .
 rps_schedule=const(10, 10m) #load scheme
 ```
 Voilà, Yandex.Tank setup is done.
@@ -72,7 +72,7 @@ URIs listed in load.conf or in a separate file.
 Update configuration file with HTTP headers and URIs:
 ```
 [phantom]
-address=23.23.23.23:80 #Target's address and port .
+address=203.0.113.1:80 #Target's address and port .
 rps_schedule=const(10, 10m) #load scheme# Headers and URIs for GET requests
 header_http = 1.1
 headers = [Host: www.target.example.com]
@@ -228,7 +228,7 @@ To activate SSL add 'ssl = 1' to load.conf. Don't forget to change port number t
 Now, our basic config looks like that: 
 ```
 [phantom]
-address=23.23.23.23:80 #Target's address and port .
+address=203.0.113.1:80 #Target's address and port .
 rps_schedule=const (10,10m) #Load scheme
 ssl=1
 ```
@@ -248,7 +248,7 @@ Example:
 So, if we want to stop test when all answers in 1 second period are 5xx plus some network and timing factors - add autostop line to load.conf:
 ```
 [phantom]
-address=23.23.23.23:80 #Target's address and port .
+address=203.0.113.1:80 #Target's address and port .
 rps_schedule=const(10, 10m) #load scheme
 [autostop]
 autostop=time(1,10)
@@ -286,7 +286,7 @@ Content-Type: application/javascript;charset=UTF-8
 For ```load.conf``` like this:
 ```
 [phantom]
-address=23.23.23.23:80 #Target's address and port .
+address=203.0.113.1:80 #Target's address and port .
 rps_schedule=const(10, 10m) #load scheme
 writelog=1
 [autostop]
@@ -326,7 +326,7 @@ use your favorite stats packet, R, for example.
 You can set custom timings in ```load.conf``` with ```time_periods``` parameter like this:
 ```
 [phantom]
-address=23.23.23.23:80 #Target's address and port .
+address=203.0.113.1:80 #Target's address and port .
 rps_schedule=const(10, 10m) #load scheme
 [aggregator]
 time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s is considered as connect timeout.
@@ -337,7 +337,7 @@ time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s
 Test with 10 threads:
 ```
 [phantom]
-address=23.23.23.23:80 #Target's address and port .
+address=203.0.113.1:80 #Target's address and port .
 rps_schedule=const(10, 10m) #load scheme
 instances=10
 ```
@@ -347,7 +347,7 @@ instances=10
 load.conf example:
 ```
 [phantom]
-address=23.23.23.23:80 #Target's address and port .
+address=203.0.113.1:80 #Target's address and port .
 instances_schedule = line(1,10,10m)
 #load = const (10,10m) #Load scheme is excluded from this load.conf as we used instances_schedule parameter
 ```
@@ -359,7 +359,7 @@ To do that add ```tank_type = 2``` to ```load.conf```.
 load.conf example:
 ```
 [phantom]
-address=23.23.23.23:80 #Target's address and port .
+address=203.0.113.1:80 #Target's address and port .
 rps_schedule=const(10, 10m) #load scheme
 instances=10
 tank_type=2
@@ -369,10 +369,10 @@ If server with Yandex.Tank have several IPs, they may be used to avoid outcome p
 Load.conf:
 ```
 [phantom]
-address=23.23.23.23:80 #Target's address and port .
+address=203.0.113.1:80 #Target's address and port .
 rps_schedule=const(10, 10m) #load scheme
 instances=10
-gatling_ip = 23.23.23.24 23.23.23.26
+gatling_ip = 203.0.113.2 203.0.113.3
 ```
 **run yandex-tank with -g key**
 
@@ -600,7 +600,7 @@ Yandex.Tank sources ((https://github.com/yandex-load/yandex-tank here)).
 ### load.conf.example
 ```
 # Yandex.Tank config file
-address=23.23.23.23:443 #Target's address and port
+address=203.0.113.1:443 #Target's address and port
 load = const (10,10m) #Load scheme
 #  Headers and URIs for GET requests
 header_http = 1.1
@@ -624,9 +624,9 @@ Before test execution, please, check service availability. If service is running
 ```telnet x.x.x.x zz```
 If everything OK, you'll see:
 ```
-$ telnet 23.23.23.23 80
-Trying 23.23.23.23...
-Connected to 23.23.23.23.
+$ telnet 203.0.113.1 80
+Trying 203.0.113.1...
+Connected to 203.0.113.1.
 Escape character is '^]'.
 ```
 Otherwise if port is unreacheable:
@@ -640,24 +640,24 @@ telnet: Unable to connect to remote host: Connection timed out
 OK, service is reachable, next thing you should know is how far Yandex.Tank is located from the service you'd like to test. Heavy load can make switch to be unresponsible or to reboot, or at least it may lead to network losses, so the test results would be distorted. Be careful. Path estimation could be done by execution of ```tracepath``` command or it analogs (```tracert/traceroute```) on Yandex.Tank machine:
 
 ```
-$ tracepath 23.23.23.24
- 1:  tank.example.com (23.23.23.23)            0.084ms pmtu 1450
- 1:  target.load.example.com (23.23.23.24)           20.919ms reached
- 1:  target.example.com (23.23.23.24)            0.128ms reached
+$ tracepath 203.0.113.2
+ 1:  tank.example.com (203.0.113.1)            0.084ms pmtu 1450
+ 1:  target.load.example.com (203.0.113.2)           20.919ms reached
+ 1:  target.example.com (203.0.113.2)            0.128ms reached
      Resume: pmtu 1450 hops 1 back 64
 ```
 Hops count = 1 means that tank and target are in closest location.
 
 ```
-$ tracepath 24.24.24.24
- 1:  1.example.com (124.24.24.24)                 0.084ms pmtu 1450
- 1:  2.example.com (24.124.24.24)          0.276ms 
- 1:  3.example.com (24.24.124.24)          0.411ms 
- 2:  4.example.com (24.24.24.124)                0.514ms 
- 3:  5.example.com (241.24.24.24)              10.690ms 
- 4:  6.example.com (24.241.24.24)                  0.831ms asymm  3 
- 5:  7.example.com (24.24.241.24)                 0.512ms 
- 6:  8.example.com (24.24.24.241)                 0.525ms asymm  5 
+$ tracepath 203.0.113.10
+ 1:  1.example.com (203.0.113.21)                 0.084ms pmtu 1450
+ 1:  2.example.com (203.0.113.22)          0.276ms 
+ 1:  3.example.com (203.0.113.23)          0.411ms 
+ 2:  4.example.com (203.0.113.24)                0.514ms 
+ 3:  5.example.com (203.0.113.25)              10.690ms 
+ 4:  6.example.com (203.0.113.26)                  0.831ms asymm  3 
+ 5:  7.example.com (203.0.113.27)                 0.512ms 
+ 6:  8.example.com (203.0.113.28)                 0.525ms asymm  5 
  7:  no reply
 ```
 In this example you'd better find another closer located tank.
