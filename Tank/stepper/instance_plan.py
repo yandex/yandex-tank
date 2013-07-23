@@ -11,6 +11,9 @@ class InstanceLP(object):
     def __init__(self, duration=0):
         self.duration = float(duration)
 
+    def get_duration(self):
+        return int(self.duration)  # needed for Composite LP
+
 
 class Empty(InstanceLP):
 
