@@ -5,6 +5,7 @@ You should update Stepper.status.ammo_count and Stepper.status.loop_count in you
 '''
 from itertools import cycle
 from module_exceptions import AmmoFileError
+import os.path
 import info
 
 
@@ -82,9 +83,10 @@ class AmmoFileReader(SimpleGenerator):
 
     def __iter__(self):
         with open(self.filename, 'rb') as ammo_file:
-            chunk_header = ammo_file.readline()
+            info.status.ammo_file_size = os.path.getsize(self.filename)
+            chunk_header = ammo_file.readline().strip('\r\n')
             while chunk_header:
-                if chunk_header.strip('\r\n') is not '':
+                if chunk_header is not '':
                     try:
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])
@@ -98,8 +100,9 @@ class AmmoFileReader(SimpleGenerator):
                     except (IndexError, ValueError):
                         raise AmmoFileError(
                             "Error while reading ammo file. Position: %s, header: '%s'" % (ammo_file.tell(), chunk_header))
-                chunk_header = ammo_file.readline()
+                chunk_header = ammo_file.readline().strip('\r\n')
                 if not chunk_header:
                     info.status.inc_loop_count()
                     ammo_file.seek(0)
-                    chunk_header = ammo_file.readline()
+                    chunk_header = ammo_file.readline().strip('\r\n')
+                info.status.ammo_file_position = ammo_file.tell()

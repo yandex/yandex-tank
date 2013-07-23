@@ -67,6 +67,8 @@ class StepperStatus(object):
         }
         self._ammo_count = 0
         self._loop_count = 0
+        self.ammo_file_position = None
+        self.ammo_file_size = None
         self.loop_limit = None
         self.ammo_limit = None
 
@@ -84,6 +86,7 @@ class StepperStatus(object):
     @ammo_count.setter
     def ammo_count(self, value):
         self._ammo_count = value
+        self.update_view()
         if self.ammo_limit and value > self.ammo_limit:
             raise StopIteration
 
@@ -97,6 +100,7 @@ class StepperStatus(object):
     @loop_count.setter
     def loop_count(self, value):
         self._loop_count = value
+        self.update_view()
         if self.loop_limit and value > self.loop_limit:
             raise StopIteration
 
@@ -111,5 +115,11 @@ class StepperStatus(object):
                 raise RuntimeError(
                     "Information for %s is not published yet." % key)
         return StepperInfo(**self.info)
+
+    def update_view(self):
+        if self.ammo_file_position and self.ammo_file_size:
+            bytes_read = self.ammo_file_position + \
+                (self.ammo_file_size * self.loop_count)
+        #  TODO: show data on screen
 
 status = StepperStatus()
