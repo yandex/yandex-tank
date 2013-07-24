@@ -1,2 +1,2 @@
 #
-from stepper import Stepper, StepperInfo
+from main import Stepper

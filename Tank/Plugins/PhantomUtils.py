@@ -145,14 +145,14 @@ class PhantomConfig:
             if result.rps_schedule:
                 result.rps_schedule = u'multiple'
             else:
-                # TODO: format for server:
-                # <step_size,step_type,first_rps,last_rps,original_step_params>
-                # as a string
-                result.rps_schedule = u'multiple'
+                result.rps_schedule = stream.stepper_wrapper.loadscheme
             if result.loadscheme:
                 result.loadscheme = ''
             else:
-                result.loadscheme = stream.stepper_wrapper.loadscheme
+                # FIXME: add formatted load scheme for server:
+                # <step_size,step_type,first_rps,last_rps,original_step_params>
+                # as a string
+                result.loadscheme = ''
 
             if result.loop_count:
                 result.loop_count = u'0'
@@ -393,6 +393,7 @@ class StepperWrapper:
         self.duration = 0
         self.loop_count = 0
         self.loadscheme = ""
+        self.file_cache = 8192
 
     def get_option(self, option_ammofile, param2=None):
         ''' get_option wrapper'''
@@ -404,7 +405,7 @@ class StepperWrapper:
                 StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD]
         opts += ["instances_schedule", "uris",
                  "headers", "header_http", "autocases", ]
-        opts += ["use_caching", "cache_dir", "force_stepping", ]
+        opts += ["use_caching", "cache_dir", "force_stepping", "file_cache"]
         return opts
 
     def read_config(self):
@@ -412,17 +413,21 @@ class StepperWrapper:
         self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
         if self.ammo_file:
             self.ammo_file = os.path.expanduser(self.ammo_file)
-        self.instances_schedule = self.get_option("instances_schedule", '')
         self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
         self.ammo_limit = int(self.get_option("ammo_limit", "-1"))
-                              # TODO: 3 stepper should implement ammo_limit
-        sched = self.get_option(self.OPTION_SCHEDULE, '')
-        sched = " ".join(sched.split("\n"))
-        sched = sched.split(')')
-        self.rps_schedule = []
-        for step in sched:
-            if step.strip():
-                self.rps_schedule.append(step.strip() + ')')
+        # TODO: 3 stepper should implement ammo_limit
+
+        def make_steps(schedule):
+            steps = []
+            for step in " ".join(schedule.split("\n")).split(')'):
+                if step.strip():
+                    steps.append(step.strip() + ')')
+            return steps
+        self.rps_schedule = make_steps(
+            self.get_option(self.OPTION_SCHEDULE, ''))
+        self.instances_schedule = make_steps(
+            self.get_option("instances_schedule", ''))
+
         self.uris = self.get_option("uris", '').strip().split("\n")
         while '' in self.uris:
             self.uris.remove('')
@@ -433,6 +438,7 @@ class StepperWrapper:
         self.autocases = self.get_option("autocases", '0')
         self.use_caching = int(self.get_option("use_caching", '1'))
 
+        self.file_cache = int(self.get_option('file_cache', '8192'))
         cache_dir = self.core.get_option(
             PhantomConfig.SECTION, "cache_dir", self.core.artifacts_base_dir)
         self.cache_dir = os.path.expanduser(cache_dir)
@@ -448,7 +454,10 @@ class StepperWrapper:
                 self.log.info("Using cached stpd-file: %s", self.stpd)
                 stepper_info = self.__read_cached_options()
             else:
-                stepper_info = self.__make_stpd_file()
+                if self.force_stepping and os.path.exists(self.__si_filename()):
+                    os.remove(self.__si_filename())
+                self.__make_stpd_file()
+                stepper_info = stp.info.status.get_info()
                 self.__write_cached_options(stepper_info)
             self.ammo_count = stepper_info.ammo_count
             self.duration = stepper_info.duration
@@ -466,7 +475,7 @@ class StepperWrapper:
             sep = "|"
             hasher = hashlib.md5()
             hashed_str = "cache version 3" + sep + \
-                self.instances_schedule + sep + str(self.loop_limit)
+                ';'.join(self.instances_schedule) + sep + str(self.loop_limit)
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(
                 self.rps_schedule) + sep + str(self.autocases)
             hashed_str += sep + \
@@ -532,11 +541,10 @@ class StepperWrapper:
             ammo_file=self.ammo_file,
             instances_schedule=self.instances_schedule,
             loop_limit=self.loop_limit,
-            ammo_limit=None,
+            ammo_limit=self.ammo_limit,
             uris=self.uris,
             headers=[header.strip('[]') for header in self.headers],
             autocases=self.autocases,
         )
-        with open(self.stpd, 'w') as os:
+        with open(self.stpd, 'w', self.file_cache) as os:
             stepper.write(os)
-        return stepper.info

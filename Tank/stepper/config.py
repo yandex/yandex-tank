@@ -1,19 +1,12 @@
-from exceptions import StepperConfigurationError
+from module_exceptions import StepperConfigurationError
 import load_plan as lp
+import instance_plan as ip
 import missile
-import util
-from uuid import uuid4
-
-
-def mark_by_uri(missile):
-    return missile.split('\n', 1)[0].split(' ', 2)[1].split('?', 1)[0]
+from mark import get_marker
+import info
 
 
 class ComponentFactory():
-    markers = {
-        'uniq': lambda m: uuid4().hex,
-        'uri': mark_by_uri,
-    }
 
     def __init__(
         self,
@@ -31,13 +24,19 @@ class ComponentFactory():
         self.http_ver = http_ver
         self.ammo_file = ammo_file
         self.instances_schedule = instances_schedule
-        self.loop_limit = loop_limit
-        if self.loop_limit == -1:  # -1 means infinite
-            self.loop_limit = 0
-        self.ammo_limit = ammo_limit
+        loop_limit = int(loop_limit)
+        if loop_limit == -1:  # -1 means infinite
+            loop_limit = 0
+        ammo_limit = int(ammo_limit)
+        if ammo_limit == -1:  # -1 means infinite
+            ammo_limit = 0
+        if loop_limit is 0 and ammo_limit is 0:
+            loop_limit = 1  # we should have only one loop if we have instance_schedule
+        info.status.loop_limit = loop_limit
+        info.status.ammo_limit = ammo_limit
         self.uris = uris
         self.headers = headers
-        self.autocases = autocases
+        self.marker = get_marker(autocases)
 
     def get_load_plan(self):
         """
@@ -47,10 +46,11 @@ class ComponentFactory():
             raise StepperConfigurationError(
                 'Both rps and instances schedules specified. You must specify only one of them')
         elif self.rps_schedule:
+            info.status.publish('loadscheme', self.rps_schedule)
             return lp.create(self.rps_schedule)
         elif self.instances_schedule:
-            raise NotImplementedError(
-                'We have no support for instances_schedule yet')
+            info.status.publish('loadscheme', self.instances_schedule)
+            return ip.create(self.instances_schedule)
         else:
             raise StepperConfigurationError('Schedule is not specified')
 
@@ -61,35 +61,18 @@ class ComponentFactory():
         if self.uris and self.ammo_file:
             raise StepperConfigurationError(
                 'Both uris and ammo file specified. You must specify only one of them')
+        elif self.uris:
+            ammo_gen = missile.UriStyleGenerator(
+                self.uris,
+                self.headers,
+                http_ver=self.http_ver
+            )
+        elif self.ammo_file:
+            ammo_gen = missile.AmmoFileReader(self.ammo_file)
         else:
-            if self.uris:
-                return util.Limiter(
-                    missile.UriStyleGenerator(
-                        self.uris,
-                        self.headers,
-                        loop_limit=self.loop_limit,
-                        http_ver=self.http_ver
-                    ),
-                    self.ammo_limit
-                )
-            elif self.ammo_file:
-                return util.Limiter(
-                    missile.AmmoFileReader(
-                        self.ammo_file,
-                        loop_limit=self.loop_limit
-                    ),
-                    self.ammo_limit
-                )
-            else:
-                raise StepperConfigurationError(
-                    'Ammo not found. Specify uris or ammo file')
+            raise StepperConfigurationError(
+                'Ammo not found. Specify uris or ammo file')
+        return ammo_gen
 
     def get_marker(self):
-        if self.autocases and self.autocases is not '0':
-            if self.autocases in ComponentFactory.markers:
-                return ComponentFactory.markers[self.autocases]
-            else:
-                raise NotImplementedError(
-                    'No such marker: "%s"' % self.autocases)
-        else:
-            return lambda m: 'None'
+        return self.marker

@@ -1,0 +1,8 @@
+<!--JMeter Argentum Addition-->
+<me.schiz.jmeter.argentum.reporters.ArgentumListener guiclass="me.schiz.jmeter.argentum.reporters.ArgentumListenerGui" testclass="me.schiz.jmeter.argentum.reporters.ArgentumListener" testname="Argentum Listener" enabled="true">
+	<intProp name="ArgentumListener.timeout">%d</intProp>
+    <stringProp name="ArgentumListener.OutputFileName">%s</stringProp>
+    <stringProp name="ArgentumListener.percentiles">%s</stringProp>
+    <stringProp name="ArgentumListener.timePeriods">%s</stringProp>
+</me.schiz.jmeter.argentum.reporters.ArgentumListener>
+<!--/JMeter Argentum Addition-->

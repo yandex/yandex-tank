@@ -1,11 +1,19 @@
 '''
-Missile generator
+Missile object and generators
+
+You should update Stepper.status.ammo_count and Stepper.status.loop_count in your custom generators!
 '''
 from itertools import cycle
-from exceptions import AmmoFileError
+from module_exceptions import AmmoFileError
+import os.path
+import info
 
 
 class HttpAmmo(object):
+
+    '''
+    Represents HTTP missile
+    '''
 
     def __init__(self, uri, headers, method='GET', http_ver='1.1'):
         self.method = method
@@ -13,7 +21,6 @@ class HttpAmmo(object):
         self.proto = 'HTTP/%s' % http_ver
         self.headers = headers
         self.body = []
-        self.loops = 0
 
     def to_s(self):
         if self.headers:
@@ -25,14 +32,21 @@ class HttpAmmo(object):
 
 class SimpleGenerator(object):
 
-    '''Generates ammo based on given sample'''
+    '''
+    Generates ammo based on a given sample.
+    '''
 
     def __init__(self, missile_sample):
+        '''
+        Missile sample is any object that has to_s method which
+        returns its string representation.
+        '''
         self.missiles = cycle([(missile_sample.to_s(), None)])
 
     def __iter__(self):
         for m in self.missiles:
-            self.loops += 1
+            info.status.inc_loop_count()
+            info.status.inc_ammo_count()  # loops equals ammo count
             yield m
 
     def loop_count(self):
@@ -41,25 +55,23 @@ class SimpleGenerator(object):
 
 class UriStyleGenerator(SimpleGenerator):
 
-    '''Generates GET ammo based on given URI list'''
+    '''
+    Generates GET ammo based on given URI list.
+    '''
 
-    def __init__(self, uris, headers, loop_limit=0, http_ver='1.1'):
-        self.ammo_number = 0
-        self.loop_limit = loop_limit
+    def __init__(self, uris, headers, http_ver='1.1'):
+        '''
+        uris - a list of URIs as strings.
+        '''
         self.uri_count = len(uris)
         self.missiles = cycle(
             [(HttpAmmo(uri, headers, http_ver=http_ver).to_s(), None) for uri in uris])
 
     def __iter__(self):
         for m in self.missiles:
-            self.ammo_number += 1
-            if self.loop_limit and self.loop_count() > self.loop_limit:
-                raise StopIteration
-            else:
-                yield m
-
-    def loop_count(self):
-        return self.ammo_number / self.uri_count
+            info.status.inc_ammo_count()
+            info.status.loop_count = info.status.ammo_count / self.uri_count
+            yield m
 
 
 class AmmoFileReader(SimpleGenerator):
@@ -68,14 +80,13 @@ class AmmoFileReader(SimpleGenerator):
 
     def __init__(self, filename, loop_limit=0):
         self.filename = filename
-        self.loops = 0
-        self.loop_limit = loop_limit
 
     def __iter__(self):
         with open(self.filename, 'rb') as ammo_file:
-            chunk_header = ammo_file.readline()
+            info.status.ammo_file_size = os.path.getsize(self.filename)
+            chunk_header = ammo_file.readline().strip('\r\n')
             while chunk_header:
-                if chunk_header.strip('\r\n') is not '':
+                if chunk_header is not '':
                     try:
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])
@@ -84,11 +95,14 @@ class AmmoFileReader(SimpleGenerator):
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
                                 "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
+                        info.status.inc_ammo_count()
                         yield (missile, marker)
                     except (IndexError, ValueError):
                         raise AmmoFileError(
                             "Error while reading ammo file. Position: %s, header: '%s'" % (ammo_file.tell(), chunk_header))
-                    if not chunk_header and (self.loops < self.loop_limit or self.loop_limit == 0):
-                        self.loops += 1
-                        ammo_file.seek(0)
-                chunk_header = ammo_file.readline()
+                chunk_header = ammo_file.readline().strip('\r\n')
+                if not chunk_header:
+                    info.status.inc_loop_count()
+                    ammo_file.seek(0)
+                    chunk_header = ammo_file.readline().strip('\r\n')
+                info.status.ammo_file_position = ammo_file.tell()

@@ -14,3 +14,4 @@ debian/files
 Tank/Plugins/DataUploader.py
 Tests/nosetests.xml
 load.ini
+tmp/
