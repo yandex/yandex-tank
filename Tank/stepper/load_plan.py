@@ -211,4 +211,5 @@ def create(rps_schedule):
         lp = StepFactory.produce(rps_schedule[0])
     info.status.publish('duration', lp.get_duration())
     info.status.publish('steps', lp.get_rps_list())
+    info.status.lp_len = len(lp)
     return lp

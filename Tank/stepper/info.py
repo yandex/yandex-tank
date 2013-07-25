@@ -71,6 +71,7 @@ class StepperStatus(object):
         self.ammo_file_size = None
         self.loop_limit = None
         self.ammo_limit = None
+        self.lp_len = None
 
     def publish(self, key, value):
         if key not in self.info:
@@ -120,6 +121,10 @@ class StepperStatus(object):
         if self.ammo_file_position and self.ammo_file_size:
             bytes_read = self.ammo_file_position + \
                 (self.ammo_file_size * self.loop_count)
+            if self.lp_len:
+                avg_ammo_size = float(bytes_read) / self.ammo_count
+                progress = bytes_read * 100 / (self.lp_len * avg_ammo_size)
+                #print progress
         #  TODO: show data on screen
 
 status = StepperStatus()

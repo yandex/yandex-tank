@@ -338,6 +338,7 @@ class StreamConfig:
                     self.address = self.resolved_ip
             except AddressValueError:
                 self.log.debug("Not ipv4 address: %s", self.address)
+                # TODO: use getaddrinfo to support IPv6
                 ip_addr = socket.gethostbyname(self.address)
                 reverse_name = socket.gethostbyaddr(ip_addr)[0]
                 self.log.debug(
