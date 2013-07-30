@@ -26,12 +26,12 @@ class ComponentFactory():
         self.instances_schedule = instances_schedule
         loop_limit = int(loop_limit)
         if loop_limit == -1:  # -1 means infinite
-            loop_limit = 0
+            loop_limit = None
         ammo_limit = int(ammo_limit)
         if ammo_limit == -1:  # -1 means infinite
-            ammo_limit = 0
-        if loop_limit is 0 and ammo_limit is 0:
-            loop_limit = 1  # we should have only one loop if we have instance_schedule
+            ammo_limit = None
+        if loop_limit is None and ammo_limit is None and instances_schedule:
+            loop_limit = 0  # we should have only one loop if we have instance_schedule
         info.status.loop_limit = loop_limit
         info.status.ammo_limit = ammo_limit
         self.uris = uris

@@ -59,6 +59,7 @@ class StepperStatus(object):
         self._ammo_count = value
         self.update_lp_progress()
         if self.ammo_limit and value > self.ammo_limit:
+            print
             self.log.info("Ammo limit reached: %s", self.ammo_limit)
             raise StopIteration
 
@@ -73,6 +74,7 @@ class StepperStatus(object):
     def loop_count(self, value):
         self._loop_count = value
         if self.loop_limit and value > self.loop_limit:
+            print
             self.log.info("Loop limit reached: %s", self.loop_limit)
             raise StopIteration
 
@@ -90,6 +92,7 @@ class StepperStatus(object):
 
     def update_view(self):
         stdout.write("AF: %3s%%, LP: %3s%%, loops: %10s\r" % (self.af_progress, self.lp_progress, self.loop_count))
+        stdout.flush()
 
     def update_af_progress(self):
         if self.af_size and self.loop_limit and self.af_position is not None:
