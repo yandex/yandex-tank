@@ -1,47 +1,6 @@
-from progressbar import ProgressBar, ETA, ReverseBar, Bar
 from collections import namedtuple
 import logging
-
-
-class DefaultProgressBar(ProgressBar):
-
-    """
-    progressbar with predefined parameters
-    """
-
-    def __init__(self, maxval, caption=''):
-        widgets = [caption, Bar('>'), ' ', ETA(), ' ', ReverseBar('<')]
-        super(DefaultProgressBar, self).__init__(
-            widgets=widgets, maxval=maxval)
-
-
-def progress(gen, caption='', pb_class=DefaultProgressBar):
-    """
-    Make a generator that displays a progress bar from
-    generator gen, set caption and choose the class to
-    use (DefaultProgressBar by default)
-
-    Generator should have __len__ method returning it's
-    size.
-
-    Progress bar class constructor should take two
-    parameters:
-      * generator size
-      * progress bar caption.
-
-    It also should have start, update and finish methods.
-    """
-    pbar = None
-    if len(gen):
-        pbar = pb_class(len(gen), caption).start() if pb_class else None
-    i = 0
-    for elem in gen:
-        if pbar:
-            pbar.update(i)
-        i += 1
-        yield(elem)
-    if pbar:
-        pbar.finish()
+from sys import stdout
 
 
 StepperInfo = namedtuple(
@@ -67,13 +26,13 @@ class StepperStatus(object):
         }
         self._ammo_count = 0
         self._loop_count = 0
-        self.ammo_file_position = None
-        self.ammo_file_size = None
+        self._af_position = None
+        self.af_size = None
         self.loop_limit = None
         self.ammo_limit = None
         self.lp_len = None
-
-        self.pb = None
+        self.lp_progress = 0
+        self.af_progress = 0
 
     def publish(self, key, value):
         if key not in self.info:
@@ -83,13 +42,22 @@ class StepperStatus(object):
         self.info[key] = value
 
     @property
+    def af_position(self):
+        return self._af_position
+
+    @af_position.setter
+    def af_position(self, value):
+        self._af_position = value
+        self.update_af_progress()
+
+    @property
     def ammo_count(self):
         return self._ammo_count
 
     @ammo_count.setter
     def ammo_count(self, value):
         self._ammo_count = value
-        self.update_view()
+        self.update_lp_progress()
         if self.ammo_limit and value > self.ammo_limit:
             self.log.info("Ammo limit reached: %s", self.ammo_limit)
             raise StopIteration
@@ -104,7 +72,6 @@ class StepperStatus(object):
     @loop_count.setter
     def loop_count(self, value):
         self._loop_count = value
-        self.update_view()
         if self.loop_limit and value > self.loop_limit:
             self.log.info("Loop limit reached: %s", self.loop_limit)
             raise StopIteration
@@ -122,16 +89,31 @@ class StepperStatus(object):
         return StepperInfo(**self.info)
 
     def update_view(self):
-        if self.ammo_file_position and self.ammo_file_size:
-            self.ammo_file_progress()
-        self.load_plan_progress()
+        stdout.write("AF: %3s%%, LP: %3s%%, loops: %10s\r" % (self.af_progress, self.lp_progress, self.loop_count))
 
-    def ammo_file_progress(self):
-        bytes_read = self.ammo_file_size * self.loop_count + self.ammo_file_position
-        total_bytes = self.ammo_file_size * (self.loop_limit + 1)
-        print "File progress: %s" % int(float(bytes_read) / float(total_bytes) * 100.0)
+    def update_af_progress(self):
+        if self.af_size and self.loop_limit and self.af_position is not None:
+            bytes_read = self.af_size * self.loop_count + self.af_position
+            total_bytes = self.af_size * (self.loop_limit + 1)
+            progress = int(float(bytes_read) / float(total_bytes) * 100.0)
+        else:
+            progress = 100
+        if self.af_progress != progress:
+            self.af_progress = progress
+            self.update_view()
 
-    def load_plan_progress(self):
-        max_ammo = min(self.ammo_limit, self.lp_len)
-        print "Load plan progress: %s" % int(float(self.ammo_count) / float(max_ammo) * 100.0)
+    def update_lp_progress(self):
+        if self.ammo_limit or self.lp_len:
+            if self.ammo_limit:
+                max_ammo = min(self.ammo_limit, self.lp_len)
+            else:
+                max_ammo = self.lp_len
+            progress = int(float(self.ammo_count) / float(max_ammo) * 100.0)
+        else:
+            progress = 100
+        if self.lp_progress != progress:
+            self.lp_progress = progress
+            self.update_view()
+
+
 status = StepperStatus()

@@ -83,7 +83,7 @@ class AmmoFileReader(SimpleGenerator):
 
     def __iter__(self):
         with open(self.filename, 'rb') as ammo_file:
-            info.status.ammo_file_size = os.path.getsize(self.filename)
+            info.status.af_size = os.path.getsize(self.filename)
             chunk_header = ammo_file.readline().strip('\r\n')
             while chunk_header:
                 if chunk_header is not '':
@@ -103,8 +103,8 @@ class AmmoFileReader(SimpleGenerator):
                 chunk_header = ammo_file.readline().strip('\r\n')
                 if not chunk_header:
                     ammo_file.seek(0)
-                    info.status.ammo_file_position = 0
+                    info.status.af_position = 0
                     info.status.inc_loop_count()
                     chunk_header = ammo_file.readline().strip('\r\n')
                 else:
-                    info.status.ammo_file_position = ammo_file.tell()
+                    info.status.af_position = ammo_file.tell()
