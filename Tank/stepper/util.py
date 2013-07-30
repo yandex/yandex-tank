@@ -41,26 +41,3 @@ def parse_duration(duration):
             return int(float(time) * 1000)
 
     return sum(parse_token(*token) for token in _re_token.findall(duration))
-
-
-class Limiter(object):
-
-    def __init__(self, gen, limit):
-        self.gen = islice(gen, limit)
-        self.limit = limit
-
-    def __len__(self):
-        return self.limit
-
-    def __iter__(self):
-        return (item for item in self.gen)
-
-    def loop_count(self):
-        return 0
-
-
-def limiter(gen, limit):
-    if limit == 0:
-        return gen
-    else:
-        return Limiter(gen, limit)

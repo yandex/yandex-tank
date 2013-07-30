@@ -39,20 +39,6 @@ class AmmoFactory(object):
         ):
             yield ammo_tuple
 
-    def __len__(self):
-        '''
-        Should return the length of ammo based on load plan,
-        loop count, ammo limit and the number of missiles in
-        the ammo file.
-
-        ONLY WORKS WHEN GENERATION IS OVER
-        '''
-        ammo_len = len(self.ammo_generator)
-        if hasattr(self.load_plan, '__len__'):
-            return min(len(self.load_plan), ammo_len)
-        else:
-            return ammo_len
-
     def get_loop_count(self):
         '''
         Returns loop count from ammo_generator
@@ -81,10 +67,3 @@ class Stepper(object):
     def write(self, f):
         for missile in self.ammo:
             f.write(missile)
-        # self.info = StepperInfo(
-        #     loop_count=self.af.get_loop_count(),
-        #     steps=self.af.get_steps(),
-        #     loadscheme=self.rps_schedule,
-        #     duration=self.af.get_duration(),
-        #     ammo_count=len(self.af),
-        # )
