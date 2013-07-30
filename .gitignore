@@ -15,3 +15,5 @@ Tank/Plugins/DataUploader.py
 Tests/nosetests.xml
 load.ini
 tmp/
+Tests/data/modified_*.jmx
+Tests/20*/lunapark_*.lock
