@@ -102,7 +102,9 @@ class AmmoFileReader(SimpleGenerator):
                             "Error while reading ammo file. Position: %s, header: '%s'" % (ammo_file.tell(), chunk_header))
                 chunk_header = ammo_file.readline().strip('\r\n')
                 if not chunk_header:
-                    info.status.inc_loop_count()
                     ammo_file.seek(0)
+                    info.status.ammo_file_position = 0
+                    info.status.inc_loop_count()
                     chunk_header = ammo_file.readline().strip('\r\n')
-                info.status.ammo_file_position = ammo_file.tell()
+                else:
+                    info.status.ammo_file_position = ammo_file.tell()

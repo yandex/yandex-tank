@@ -73,6 +73,8 @@ class StepperStatus(object):
         self.ammo_limit = None
         self.lp_len = None
 
+        self.pb = None
+
     def publish(self, key, value):
         if key not in self.info:
             raise RuntimeError(
@@ -89,6 +91,7 @@ class StepperStatus(object):
         self._ammo_count = value
         self.update_view()
         if self.ammo_limit and value > self.ammo_limit:
+            self.log.info("Ammo limit reached: %s", self.ammo_limit)
             raise StopIteration
 
     def inc_ammo_count(self):
@@ -103,6 +106,7 @@ class StepperStatus(object):
         self._loop_count = value
         self.update_view()
         if self.loop_limit and value > self.loop_limit:
+            self.log.info("Loop limit reached: %s", self.loop_limit)
             raise StopIteration
 
     def inc_loop_count(self):
@@ -119,12 +123,15 @@ class StepperStatus(object):
 
     def update_view(self):
         if self.ammo_file_position and self.ammo_file_size:
-            bytes_read = self.ammo_file_position + \
-                (self.ammo_file_size * self.loop_count)
-            if self.lp_len:
-                avg_ammo_size = float(bytes_read) / self.ammo_count
-                progress = bytes_read * 100 / (self.lp_len * avg_ammo_size)
-                #print progress
-        #  TODO: show data on screen
+            self.ammo_file_progress()
+        self.load_plan_progress()
 
+    def ammo_file_progress(self):
+        bytes_read = self.ammo_file_size * self.loop_count + self.ammo_file_position
+        total_bytes = self.ammo_file_size * (self.loop_limit + 1)
+        print "File progress: %s" % int(float(bytes_read) / float(total_bytes) * 100.0)
+
+    def load_plan_progress(self):
+        max_ammo = min(self.ammo_limit, self.lp_len)
+        print "Load plan progress: %s" % int(float(self.ammo_count) / float(max_ammo) * 100.0)
 status = StepperStatus()
