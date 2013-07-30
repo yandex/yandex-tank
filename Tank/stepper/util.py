@@ -19,6 +19,9 @@ def parse_duration(duration):
 
     >>> parse_duration('0.3s')
     300
+
+    >>> parse_duration('5')
+    5000
     '''
     _re_token = re.compile("([0-9.]+)([dhms]?)")
 
@@ -35,7 +38,7 @@ def parse_duration(duration):
                 raise StepperConfigurationError(
                     'Failed to parse duration: %s' % duration)
         else:
-            return int(time * 1000)
+            return int(float(time) * 1000)
 
     return sum(parse_token(*token) for token in _re_token.findall(duration))
 
