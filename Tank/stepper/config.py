@@ -31,7 +31,7 @@ class ComponentFactory():
         if ammo_limit == -1:  # -1 means infinite
             ammo_limit = None
         if loop_limit is None and ammo_limit is None and instances_schedule:
-            loop_limit = 0  # we should have only one loop if we have instance_schedule
+            loop_limit = 1  # we should have only one loop if we have instance_schedule
         info.status.loop_limit = loop_limit
         info.status.ammo_limit = ammo_limit
         self.uris = uris

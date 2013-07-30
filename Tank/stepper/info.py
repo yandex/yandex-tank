@@ -73,7 +73,7 @@ class StepperStatus(object):
     @loop_count.setter
     def loop_count(self, value):
         self._loop_count = value
-        if self.loop_limit and value > self.loop_limit:
+        if self.loop_limit and value >= self.loop_limit:
             print
             self.log.info("Loop limit reached: %s", self.loop_limit)
             raise StopIteration
@@ -97,7 +97,7 @@ class StepperStatus(object):
     def update_af_progress(self):
         if self.af_size and self.loop_limit and self.af_position is not None:
             bytes_read = self.af_size * self.loop_count + self.af_position
-            total_bytes = self.af_size * (self.loop_limit + 1)
+            total_bytes = self.af_size * self.loop_limit
             progress = int(float(bytes_read) / float(total_bytes) * 100.0)
         else:
             progress = 100
