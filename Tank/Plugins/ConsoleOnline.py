@@ -46,8 +46,8 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
             self.screen.block_rows = []
             self.screen.info_panel_percent = 100
 
-	nf = fcntl.fcntl(sys.stdout.fileno(), fcntl.F_UNCLK)
-	fcntl.fcntl(sys.stdout.fileno(), fcntl.F_SETFL , nf | os.O_NONBLOCK )
+        nf = fcntl.fcntl(sys.stdout.fileno(), fcntl.F_UNLCK)
+        fcntl.fcntl(sys.stdout.fileno(), fcntl.F_SETFL , nf | os.O_NONBLOCK )
 
     def is_test_finished(self):
         try:
