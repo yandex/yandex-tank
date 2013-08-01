@@ -52,7 +52,10 @@ class ComponentFactory():
             info.status.publish('loadscheme', self.instances_schedule)
             return ip.create(self.instances_schedule)
         else:
-            raise StepperConfigurationError('Schedule is not specified')
+            #raise StepperConfigurationError('Schedule is not specified')
+            self.instances_schedule = []
+            info.status.publish('loadscheme', self.instances_schedule)
+            return ip.create(self.instances_schedule)
 
     def get_ammo_generator(self):
         """
