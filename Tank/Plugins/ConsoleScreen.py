@@ -1,6 +1,4 @@
-'''
-Classes to build full console screen
-'''
+''' Classes to build full console screen '''
 from Tank.Plugins import Codes
 import copy
 import fcntl
