@@ -547,10 +547,7 @@ class TankCore:
 
 
 class ConfigManager:
-
-    '''
-    Option storage class
-    '''
+    '''    Option storage class    '''
 
     def __init__(self):
         self.file = None
@@ -558,9 +555,7 @@ class ConfigManager:
         self.config = ConfigParser.ConfigParser()
 
     def load_files(self, configs):
-        '''
-        Read configs set into storage
-        '''
+        '''         Read configs set into storage        '''
         self.log.debug("Reading configs: %s", configs)
         try:
             self.config.read(configs)
@@ -569,9 +564,7 @@ class ConfigManager:
             raise ex
 
     def flush(self, filename=None):
-        '''
-        Flush current stat to file
-        '''
+        '''        Flush current stat to file        '''
         if not filename:
             filename = self.file
 
@@ -582,9 +575,7 @@ class ConfigManager:
             handle.close()
 
     def get_options(self, section, prefix=''):
-        '''
-        Get options list with requested prefix
-        '''
+        '''        Get options list with requested prefix        '''
         res = []
         self.log.debug(
             "Looking in section '%s' for options starting with '%s'", section, prefix)
@@ -611,10 +602,7 @@ class ConfigManager:
 
 
 class AbstractPlugin:
-
-    '''
-    Parent class for all plugins/modules
-    '''
+    '''    Parent class for all plugins/modules    '''
 
     SECTION = 'DEFAULT'
 
