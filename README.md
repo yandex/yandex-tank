@@ -1,3 +1,5 @@
+[Заказывайте фан-футболки с Яндекс.Танком!](http://clubs.ya.ru/yandex-tank/replies.xml?item_no=139)
+
 # Yandex Tank
 ## Description
 Yandex.Tank is a console HTTP load testing instrument.
