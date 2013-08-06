@@ -39,23 +39,6 @@ class AmmoFactory(object):
         ):
             yield ammo_tuple
 
-    def get_loop_count(self):
-        '''
-        Returns loop count from ammo_generator
-        '''
-        return self.ammo_generator.loop_count()
-
-    def get_steps(self):
-        '''
-        Return the list of (rps, duration) tuples which represents
-        the regions of constant load.
-        '''
-        return self.load_plan.get_rps_list()
-
-    def get_duration(self):
-        '''Get overall duration in seconds (based on load plan).'''
-        return self.load_plan.get_duration() / 1000
-
 
 class Stepper(object):
 
