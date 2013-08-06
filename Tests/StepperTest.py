@@ -1,4 +1,4 @@
-from Tank.Plugins.Stepper import Stepper
+from Tank.stepper import Stepper
 from Tests.TankTests import TankTestCase
 import tempfile
 import os
@@ -7,13 +7,23 @@ class  StepperTestCase(TankTestCase):
     data = None
     
     def test_regular(self):
-        stepper = Stepper(tempfile.mkstemp()[1])
-        stepper.ammofile = "data/dummy.ammo"
-        stepper.rps_schedule = ["const(1,10)"]
-        stepper.generate_stpd()
-        res = open(stepper.stpd_file, 'r').read()
+        temp_stpd = tempfile.mkstemp()[1]
+        with open(temp_stpd, 'w') as stpd_file:
+            Stepper(
+                rps_schedule=["const(1,10)"],
+                http_ver='1.1',
+                ammo_file="data/dummy.ammo",
+                instances_schedule=[],
+                loop_limit=-1,
+                ammo_limit=-1,
+                uris=[],
+                headers=[],
+                autocases=0,
+            ).write(stpd_file)
+        res = open(temp_stpd, 'r').read()
         self.assertNotEquals("", res)
-        self.assertEquals(269, os.path.getsize(stepper.stpd_file))
+        # ensure that we got a valid stpd file here
+        self.assertEquals(317, os.path.getsize(temp_stpd))
 
     def test_uri(self):
         stepper = Stepper(tempfile.mkstemp()[1])
