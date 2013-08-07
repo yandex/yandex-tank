@@ -49,9 +49,6 @@ class SimpleGenerator(object):
             info.status.inc_ammo_count()  # loops equals ammo count
             yield m
 
-    def loop_count(self):
-        return self.loops
-
 
 class UriStyleGenerator(SimpleGenerator):
 

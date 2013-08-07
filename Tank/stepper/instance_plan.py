@@ -157,12 +157,12 @@ def create(instances_schedule):
 
     >>> take(7, create(['wait(5s)', 'ramp(5, 0)']))
     [5000, 5000, 5000, 5000, 5000, 0, 0]
+
+    >>> take(7, create([]))
+    [0, 0, 0, 0, 0, 0, 0]
     '''
-    if len(instances_schedule) > 1:
-        steps = [StepFactory.produce(step_config)
-                 for step_config in instances_schedule]
-    else:
-        steps = [StepFactory.produce(instances_schedule[0])]
+    steps = [StepFactory.produce(step_config)
+             for step_config in instances_schedule]
     lp = Composite(steps)
     info.status.publish('duration', 0)
     info.status.publish('steps', [])
