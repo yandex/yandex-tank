@@ -50,7 +50,7 @@ class SimpleGenerator(object):
             yield m
 
 
-class UriStyleGenerator(SimpleGenerator):
+class UriStyleGenerator(object):
 
     '''
     Generates GET ammo based on given URI list.
@@ -71,7 +71,7 @@ class UriStyleGenerator(SimpleGenerator):
             yield m
 
 
-class AmmoFileReader(SimpleGenerator):
+class AmmoFileReader(object):
 
     '''Read missiles from ammo file'''
 
