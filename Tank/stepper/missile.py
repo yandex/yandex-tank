@@ -7,6 +7,7 @@ from itertools import cycle
 from module_exceptions import AmmoFileError
 import os.path
 import info
+import logging
 
 
 class HttpAmmo(object):
@@ -77,11 +78,21 @@ class AmmoFileReader(object):
 
     def __init__(self, filename):
         self.filename = filename
+        self.log = logging.getLogger(__name__)
+        self.log.info("Loading ammo from '%s'" % filename)
 
     def __iter__(self):
+        def read_chunk_header(ammo_file):
+            chunk_header = ''
+            while chunk_header is '':
+                line = ammo_file.readline()
+                if line is '':
+                    return line
+                chunk_header = line.strip('\r\n')
+            return chunk_header
         with open(self.filename, 'rb') as ammo_file:
             info.status.af_size = os.path.getsize(self.filename)
-            chunk_header = ammo_file.readline().strip('\r\n')
+            chunk_header = read_chunk_header(ammo_file) #  if we got StopIteration here, the file is empty
             while chunk_header:
                 if chunk_header is not '':
                     try:
@@ -94,17 +105,16 @@ class AmmoFileReader(object):
                                 "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
                         info.status.inc_ammo_count()
                         yield (missile, marker)
-                    except (IndexError, ValueError):
+                    except (IndexError, ValueError) as e:
                         raise AmmoFileError(
-                            "Error while reading ammo file. Position: %s, header: '%s'" % (ammo_file.tell(), chunk_header))
-                chunk_header = ammo_file.readline().strip('\r\n')
-                if not chunk_header:
+                            "Error while reading ammo file. Position: %s, header: '%s', original exception: %s" % (ammo_file.tell(), chunk_header, e))
+                chunk_header = read_chunk_header(ammo_file)
+                if chunk_header == '':
+                    self.log.debug('Reached the end of ammo file. Starting over.')
                     ammo_file.seek(0)
-                    info.status.af_position = 0
                     info.status.inc_loop_count()
-                    chunk_header = ammo_file.readline().strip('\r\n')
-                else:
-                    info.status.af_position = ammo_file.tell()
+                    chunk_header = read_chunk_header(ammo_file)
+                info.status.af_position = ammo_file.tell()
 
 
 class SlowLogReader(object):
