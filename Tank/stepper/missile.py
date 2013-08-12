@@ -105,3 +105,38 @@ class AmmoFileReader(object):
                     chunk_header = ammo_file.readline().strip('\r\n')
                 else:
                     info.status.af_position = ammo_file.tell()
+
+
+class SlowLogReader(object):
+
+    '''Read missiles from SQL slow log. Not usable with Phantom'''
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    def __iter__(self):
+        with open(self.filename, 'rb') as ammo_file:
+            info.status.af_size = os.path.getsize(self.filename)
+            request = ''
+            loop_count = 0
+            while True:
+                for line in ammo_file:
+                    info.status.af_position = ammo_file.tell()
+                    if line.startswith('#') or line.startswith('/*'):
+                        pass
+                    else:
+                        if ';' in line:
+                            req_end, req_start = line.split(';')
+                            result = ' '.join((request + req_end).split())
+                            for kw in 'select insert update delete'.split():
+                                if result.startswith(kw):
+                                    info.status.inc_ammo_count()
+                                    yield result
+                                    break
+                            request = req_start
+                        else:
+                            request += line
+                loop_count += 1
+                ammo_file.seek(0)
+                info.status.af_position = 0
+                info.status.inc_loop_count()
