@@ -75,7 +75,7 @@ class AmmoFileReader(object):
 
     '''Read missiles from ammo file'''
 
-    def __init__(self, filename, loop_limit=0):
+    def __init__(self, filename):
         self.filename = filename
 
     def __iter__(self):
