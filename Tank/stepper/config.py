@@ -19,6 +19,7 @@ class ComponentFactory():
         uris=None,
         headers=None,
         autocases=None,
+        ammo_type='phantom'
     ):
         self.rps_schedule = rps_schedule
         self.http_ver = http_ver
