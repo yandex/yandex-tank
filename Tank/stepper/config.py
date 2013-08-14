@@ -21,6 +21,15 @@ class ComponentFactory():
         autocases=None,
         ammo_type='phantom'
     ):
+        generators = {
+            'phantom': missile.AmmoFileReader,
+            'sql': missile.SlowLogReader,
+        }
+        if ammo_type in generators:
+            self.ammo_generator_class = generators[ammo_type]
+        else:
+            raise NotImplementedError(
+                'No such ammo type implemented: "%s"' % ammo_type)
         self.rps_schedule = rps_schedule
         self.http_ver = http_ver
         self.ammo_file = ammo_file
@@ -72,7 +81,8 @@ class ComponentFactory():
                 http_ver=self.http_ver
             )
         elif self.ammo_file:
-            ammo_gen = missile.AmmoFileReader(self.ammo_file)
+            
+            ammo_gen = self.ammo_generator_class(self.ammo_file)
         else:
             raise StepperConfigurationError(
                 'Ammo not found. Specify uris or ammo file')
