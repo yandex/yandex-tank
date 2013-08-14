@@ -1,3 +1,3 @@
 #
-from main import Stepper
+from main import Stepper, StepperWrapper
 from info import StepperInfo
