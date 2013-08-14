@@ -29,16 +29,16 @@ class BFGPlugin(AbstractPlugin):
 
     def configure(self):
         self.log.info("Configuring BFG...")
-        self.conf = {
-            'gun_type': self.get_option("gun_type"),
-            'instances': self.get_option("instances", '15'),
-        }
-        self.bfg = BFG(**self.conf)
         self.stepper_wrapper.read_config()
 
 
     def prepare_test(self):
         self.stepper_wrapper.prepare_stepper()
+        self.bfg = BFG(
+            gun_type=self.get_option("gun_type"),
+            instances=self.get_option("instances", '15'),
+            stpd_file=self.stepper_wrapper.stpd,
+        )
         aggregator = None
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
@@ -91,8 +91,12 @@ class BFG(object):
         self,
         gun_type,
         instances,
+        stpd_file,
     ):
+        self.log = logging.getLogger(__name__)
+        self.log.info("BFG using gun '%s', stpd from %s", gun_type, stpd_file)
         self.gun_type = gun_type
+        self.stpd_file = stpd_file
         self.instances = int(instances)
         self.running = False
         self.retcode = None
