@@ -101,20 +101,24 @@ class StepperWrapper:
 
     def get_option(self, option_ammofile, param2=None):
         ''' get_option wrapper'''
-        return self.core.get_option(self.section, option_ammofile, param2)
+        result = self.core.get_option(self.section, option_ammofile, param2)
+        self.log.debug("Option %s.%s = %s", self.section, option_ammofile, result)
+        return result
 
     @staticmethod
     def get_available_options():
         opts = [StepperWrapper.OPTION_AMMOFILE, StepperWrapper.OPTION_LOOP,
                 StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD]
         opts += ["instances_schedule", "uris",
-                 "headers", "header_http", "autocases", ]
+                 "headers", "header_http", "autocases", "ammo_type"]
         opts += ["use_caching", "cache_dir", "force_stepping", "file_cache"]
         return opts
 
     def read_config(self):
         ''' stepper part of reading options '''
+        self.log.info("Configuring StepperWrapper...")
         self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
+        self.ammo_type = self.get_option('ammo_type', 'phantom')
         if self.ammo_file:
             self.ammo_file = os.path.expanduser(self.ammo_file)
         self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
@@ -144,7 +148,7 @@ class StepperWrapper:
 
         self.file_cache = int(self.get_option('file_cache', '8192'))
         cache_dir = self.core.get_option(
-            'phantom', "cache_dir", self.core.artifacts_base_dir)
+            self.section, "cache_dir", self.core.artifacts_base_dir)
         self.cache_dir = os.path.expanduser(cache_dir)
         self.force_stepping = int(self.get_option("force_stepping", '0'))
         self.stpd = self.get_option(self.OPTION_STPD, "")
@@ -203,7 +207,7 @@ class StepperWrapper:
             else:
                 if not self.uris:
                     raise RuntimeError(
-                        "Neither phantom.ammofile nor phantom.uris specified")
+                        "Neither ammofile nor uris specified")
                 hashed_str += sep + \
                     ';'.join(self.uris) + sep + ';'.join(self.headers)
             self.log.debug("stpd-hash source: %s", hashed_str)
@@ -249,6 +253,7 @@ class StepperWrapper:
             uris=self.uris,
             headers=[header.strip('[]') for header in self.headers],
             autocases=self.autocases,
+            ammo_type=self.ammo_type,
         )
         with open(self.stpd, 'w', self.file_cache) as os:
             stepper.write(os)

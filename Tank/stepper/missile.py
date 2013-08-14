@@ -141,7 +141,7 @@ class SlowLogReader(object):
                             for kw in 'select insert update delete'.split():
                                 if result.startswith(kw):
                                     info.status.inc_ammo_count()
-                                    yield result
+                                    yield (result, None)
                                     break
                             request = req_start
                         else:

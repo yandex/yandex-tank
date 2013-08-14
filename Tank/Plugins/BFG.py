@@ -4,7 +4,7 @@ from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin
 from tankcore import AbstractPlugin
 import logging
 import time
-from Tank.stepper import Stepper
+from Tank.stepper import StepperWrapper
 
 
 class BFGPlugin(AbstractPlugin):
@@ -17,6 +17,7 @@ class BFGPlugin(AbstractPlugin):
         AbstractPlugin.__init__(self, core)
         self.gun_type = None
         self.start_time = time.time()
+        self.stepper_wrapper = StepperWrapper(self.core, BFGPlugin.SECTION)
         self.log.info("Initialized BFG")
 
     @staticmethod
@@ -24,29 +25,20 @@ class BFGPlugin(AbstractPlugin):
         return __file__
 
     def get_available_options(self):
-        return ["gun_type", "rps_schedule", "ammo_limit", "loop_limit", "instances", "ammo_file"]
+        return ["gun_type", "instances"] + self.stepper_wrapper.get_available_options
 
     def configure(self):
-        # TODO: move this elsewhere
-        def make_steps(schedule):
-            steps = []
-            for step in " ".join(schedule.split("\n")).split(')'):
-                if step.strip():
-                    steps.append(step.strip() + ')')
-            return steps
+        self.log.info("Configuring BFG...")
         self.conf = {
             'gun_type': self.get_option("gun_type"),
-            'rps_schedule': make_steps(self.get_option("rps_schedule")),
-            'ammo_limit': self.get_option("ammo_limit", '-1'),
-            'loop_limit': self.get_option("loop_limit", '-1'),
             'instances': self.get_option("instances", '15'),
-            'ammo_file': self.get_option("ammo_file", 'ammo'),
         }
         self.bfg = BFG(**self.conf)
-        self.log.info("Configured BFG")
+        self.stepper_wrapper.read_config()
 
 
     def prepare_test(self):
+        self.stepper_wrapper.prepare_stepper()
         aggregator = None
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
@@ -98,21 +90,10 @@ class BFG(object):
     def __init__(
         self,
         gun_type,
-        rps_schedule,
-        ammo_limit,
-        loop_limit,
         instances,
-        ammo_file,
     ):
         self.gun_type = gun_type
         self.instances = int(instances)
-        self.stepper = Stepper(
-            rps_schedule=rps_schedule,
-            ammo_file=ammo_file,
-            loop_limit=loop_limit,
-            ammo_limit=ammo_limit,
-            ammo_type = gun_type,
-        )
         self.running = False
         self.retcode = None
 
