@@ -33,7 +33,7 @@ class StpdReader(object):
                 chunk_header = line.strip('\r\n')
             return chunk_header
         with open(self.filename, 'rb') as ammo_file:
-            chunk_header = read_chunk_header(ammo_file) #  if we got StopIteration here, the file is empty
+            chunk_header = read_chunk_header(ammo_file)
             while chunk_header is not '':
                 try:
                     fields = chunk_header.split()
