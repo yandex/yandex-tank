@@ -99,7 +99,14 @@ class BFG(object):
         self.log = logging.getLogger(__name__)
         self.log.info(
             "BFG using gun '%s', stpd from %s", gun_type, stpd_filename)
-        self.gun_type = gun_type
+        guns = {
+            'log': LogGun,
+        }
+        if gun_type in guns:
+            self.gun = guns[gun_type]()
+        else:
+            raise NotImplementedError(
+                'No such gun type implemented: "%s"' % gun_type)
         self.stpd_filename = stpd_filename
         self.instances = int(instances)
         self.running = False
@@ -121,9 +128,15 @@ class BFG(object):
         return timer_task
 
     def _shoot(self, missile, marker):
-        self.log.info("Executing on timer, %s", time.time())
-        self.log.info("Missile: %s\n%s", marker, missile)
+        self.gun.shoot(missile, marker)
 
     def stop(self):
         self.running = False
         self.retcode = 0
+
+class LogGun(object):
+    def __init__(self):
+        self.log = logging.getLogger(__name__)
+
+    def shoot(self, missile, marker):
+        self.log.info("Missile: %s\n%s", marker, missile)
