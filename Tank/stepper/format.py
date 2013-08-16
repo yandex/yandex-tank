@@ -37,7 +37,6 @@ class StpdReader(object):
             while chunk_header <> '':
                 try:
                     fields = chunk_header.split()
-                    print fields
                     chunk_size = int(fields[0])
                     timestamp = int(fields[1])
                     marker = fields[2] if len(fields) > 1 else None

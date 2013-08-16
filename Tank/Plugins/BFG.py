@@ -108,16 +108,17 @@ class BFG(object):
 
     def start(self):
         self.running = True
-        start_time = time.time()
+        self.start_time = time.time()
         stpd = StpdReader(self.stpd_filename)
-        tasks = []
-        for timestamp, missile, marker in stpd:
-            delay = timestamp / 1000.0 - (time.time() - start_time)
-            timer_task = Timer(delay, self._shoot, [missile, marker])
-            timer_task.start()
-            tasks.append(timer_task)
+        tasks = [self.schedule(*element) for element in stpd]
         [task.join() for task in tasks]
         self.stop()
+
+    def schedule(self, timestamp, missile, marker):
+        delay = timestamp / 1000.0 - (time.time() - self.start_time)
+        timer_task = Timer(delay, self._shoot, [missile, marker])
+        timer_task.start()
+        return timer_task
 
     def _shoot(self, missile, marker):
         self.log.info("Executing on timer, %s", time.time())
