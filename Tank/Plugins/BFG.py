@@ -2,9 +2,11 @@
 from Tank.Plugins.Aggregator import AggregatorPlugin
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin
 from tankcore import AbstractPlugin
+from Queue import Queue
 import logging
 import time
-from Tank.stepper import StepperWrapper
+from threading import Timer
+from Tank.stepper import StepperWrapper, StpdReader
 
 
 class BFGPlugin(AbstractPlugin):
@@ -31,13 +33,12 @@ class BFGPlugin(AbstractPlugin):
         self.log.info("Configuring BFG...")
         self.stepper_wrapper.read_config()
 
-
     def prepare_test(self):
         self.stepper_wrapper.prepare_stepper()
         self.bfg = BFG(
             gun_type=self.get_option("gun_type"),
             instances=self.get_option("instances", '15'),
-            stpd_file=self.stepper_wrapper.stpd,
+            stpd_filename=self.stepper_wrapper.stpd,
         )
         aggregator = None
         try:
@@ -86,23 +87,41 @@ class BFGPlugin(AbstractPlugin):
             self.bfg.stop()
         return retcode
 
+
 class BFG(object):
+
     def __init__(
         self,
         gun_type,
         instances,
-        stpd_file,
+        stpd_filename,
     ):
         self.log = logging.getLogger(__name__)
-        self.log.info("BFG using gun '%s', stpd from %s", gun_type, stpd_file)
+        self.log.info(
+            "BFG using gun '%s', stpd from %s", gun_type, stpd_filename)
         self.gun_type = gun_type
-        self.stpd_file = stpd_file
+        self.stpd_filename = stpd_filename
         self.instances = int(instances)
         self.running = False
         self.retcode = None
+        self.ammo_cache = Queue(self.instances)
 
     def start(self):
         self.running = True
+        start_time = time.time()
+        stpd = StpdReader(self.stpd_filename)
+        tasks = []
+        for timestamp, missile, marker in stpd:
+            delay = timestamp / 1000.0 - (time.time() - start_time)
+            timer_task = Timer(delay, self._shoot, [missile, marker])
+            timer_task.start()
+            tasks.append(timer_task)
+        [task.join() for task in tasks]
+        self.stop()
+
+    def _shoot(self, missile, marker):
+        self.log.info("Executing on timer, %s", time.time())
+        self.log.info("Missile: %s\n%s", marker, missile)
 
     def stop(self):
         self.running = False

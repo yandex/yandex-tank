@@ -29,14 +29,15 @@ class StpdReader(object):
             while chunk_header is '':
                 line = ammo_file.readline()
                 if line is '':
-                    return line
+                    return line # EOF
                 chunk_header = line.strip('\r\n')
             return chunk_header
         with open(self.filename, 'rb') as ammo_file:
             chunk_header = read_chunk_header(ammo_file)
-            while chunk_header is not '':
+            while chunk_header <> '':
                 try:
                     fields = chunk_header.split()
+                    print fields
                     chunk_size = int(fields[0])
                     timestamp = int(fields[1])
                     marker = fields[2] if len(fields) > 1 else None
@@ -49,3 +50,4 @@ class StpdReader(object):
                     raise StpdFileError(
                         "Error while reading ammo file. Position: %s, header: '%s', original exception: %s" % (ammo_file.tell(), chunk_header, e))
                 chunk_header = read_chunk_header(ammo_file)
+        self.log.info("Reached the end of stpd file")
