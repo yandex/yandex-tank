@@ -6,6 +6,7 @@ from Queue import Queue
 import logging
 import time
 from threading import Timer
+from threading import Thread
 from Tank.stepper import StepperWrapper, StpdReader
 from collections import namedtuple
 import os
@@ -96,6 +97,12 @@ class BFGInfoWidget(AbstractInfoWidget):
         AbstractInfoWidget.__init__(self)
         self.bfg = bfg
         self.active_threads = 0
+        self.instances = 0
+        self.planned = 0
+        self.RPS = 0    
+        self.selfload = 0
+        self.time_lag = 0
+        self.planned_rps_duration = 0
 
     def get_index(self):
         return 0
@@ -113,15 +120,9 @@ class BFGInfoWidget(AbstractInfoWidget):
         self.time_lag = int(time.time() - time.mktime(second_aggregate_data.time.timetuple()))
 
 
-    def render(self, screen):        
+    def render(self, screen):
+        return 'Hello!'
         res = ''
-        info = self.owner.get_info()
-        if self.owner.phantom:
-            template = "Hosts: %s => %s:%s\n Ammo: %s\nCount: %s\n Load: %s"
-            data = (socket.gethostname(), info.address, info.port, os.path.basename(info.ammo_file), self.ammo_count, ' '.join(info.rps_schedule))
-            res = template % data
-            
-            res += "\n\n"
         
         res += "Active instances: "
         if float(self.instances) / self.instances_limit > 0.8:
@@ -210,6 +211,10 @@ class BFG(object):
         self.listeners.append(l)
 
     def start(self):
+        self.worker = Thread(target=self._start)
+        self.worker.start()
+
+    def _start(self):
         self.running = True
         self.start_time = time.time()
         stpd = StpdReader(self.stpd_filename)
