@@ -597,7 +597,7 @@ INI-file section: **[tips]**
 * **disable** - disable tips and tricks, default: don't (0)
 
 ### Sources
-Yandex.Tank sources ((https://github.com/yandex-load/yandex-tank here)).
+Yandex.Tank sources [here](https://github.com/yandex-load/yandex-tank).
 
 ### load.ini.example
 ```
