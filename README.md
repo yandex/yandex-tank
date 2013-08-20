@@ -36,7 +36,7 @@ How to make a test?
 
 ### First Step
 Create a file on a server with Yandex.Tank:
-**load.conf**
+**load.ini**
 ```
 [phantom]
 address=203.0.113.1:80 #Target's address and port .
@@ -57,7 +57,7 @@ Note: ```const(0, 10)``` - 0 rps for 10 seconds, in fact 10s pause in a test.
 
 Time duration could be defined in seconds, minutes (m) and hours (h). For example: ```27h103m645```
 
-For a test with constant load at 10rps for 10 minutes, load.conf should have next lines:
+For a test with constant load at 10rps for 10 minutes, load.ini should have next lines:
 ```
 [phantom]
 address=203.0.113.1:80 #Target's address and port .
@@ -68,9 +68,9 @@ Voilà, Yandex.Tank setup is done.
 ### Preparing requests
 There are two ways to set up requests.
 #### URI-style
-URIs listed in load.conf or in a separate file.
+URIs listed in load.ini or in a separate file.
 
-##### URIs in load.conf
+##### URIs in load.ini
 Update configuration file with HTTP headers and URIs:
 ```
 [phantom]
@@ -184,7 +184,7 @@ Content-Disposition: form-data; name="wsw-fields"
 
 ### Run Test!
 
-1. Request specs in load.conf
+1. Request specs in load.ini
 ```
 yandex-tank
 ```
@@ -226,7 +226,7 @@ User-Agent: xxx (shell 1)
 **RESTRICTION: latin letters allowed only.**
 
 ### SSL
-To activate SSL add 'ssl = 1' to load.conf. Don't forget to change port number to appropriate value.
+To activate SSL add 'ssl = 1' to load.ini. Don't forget to change port number to appropriate value.
 Now, our basic config looks like that: 
 ```
 [phantom]
@@ -247,7 +247,7 @@ Examples:
 Example:
 ```autostop = time(1500,15)``` – stop test, if average answer time exceeds 1500ms
 
-So, if we want to stop test when all answers in 1 second period are 5xx plus some network and timing factors - add autostop line to load.conf:
+So, if we want to stop test when all answers in 1 second period are 5xx plus some network and timing factors - add autostop line to load.ini:
 ```
 [phantom]
 address=203.0.113.1:80 #Target's address and port .
@@ -259,7 +259,7 @@ autostop=time(1,10)
 ```
 
 ### Logging
-Looking into target's answers is quite useful in debugging. For doing that add 'writelog = 1' to load.conf.
+Looking into target's answers is quite useful in debugging. For doing that add 'writelog = 1' to load.ini.
 **ATTENTION: Writing answers on high load leads to intensive disk i/o usage and can affect test accuracy.**
 Log format:
 ```
@@ -285,7 +285,7 @@ HTTP/1.1 200 OK
 Content-Type: application/javascript;charset=UTF-8
 ```
 
-For ```load.conf``` like this:
+For ```load.ini``` like this:
 ```
 [phantom]
 address=203.0.113.1:80 #Target's address and port .
@@ -325,7 +325,7 @@ Use included charting tool that runs as a webservice on localhost
 OR
 use your favorite stats packet, R, for example.
 ### Custom timings
-You can set custom timings in ```load.conf``` with ```time_periods``` parameter like this:
+You can set custom timings in ```load.ini``` with ```time_periods``` parameter like this:
 ```
 [phantom]
 address=203.0.113.1:80 #Target's address and port .
@@ -335,7 +335,7 @@ time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s
 ```
 
 ### Thread limit
-```instances=N``` in ```load.conf``` limits number of simultanious connections (threads).
+```instances=N``` in ```load.ini``` limits number of simultanious connections (threads).
 Test with 10 threads:
 ```
 [phantom]
@@ -346,19 +346,19 @@ instances=10
 
 ### Dynamic thread limit
 ```instances_schedule = <instances increasing scheme>``` -- test with active instances schedule will be performed if load scheme is not defined. Bear in mind that active instances number cannot be decreased and final number of them must be equal to ```instances``` parameter value.
-load.conf example:
+load.ini example:
 ```
 [phantom]
 address=203.0.113.1:80 #Target's address and port .
 instances_schedule = line(1,10,10m)
-#load = const (10,10m) #Load scheme is excluded from this load.conf as we used instances_schedule parameter
+#load = const (10,10m) #Load scheme is excluded from this load.ini as we used instances_schedule parameter
 ```
 
 ### Custom stateless protocol
 In necessity of testing stateless HTTP-like protocol, Yandex.Tank's HTTP parser could be switched off, providing ability to generate load with any data, receiving any answer in return.
-To do that add ```tank_type = 2``` to ```load.conf```. 
+To do that add ```tank_type = 2``` to ```load.ini```. 
 **Indispensable condition: Connection close must be initiated by remote side**
-load.conf example:
+load.ini example:
 ```
 [phantom]
 address=203.0.113.1:80 #Target's address and port .
@@ -368,7 +368,7 @@ tank_type=2
 ```
 ### Gatling
 If server with Yandex.Tank have several IPs, they may be used to avoid outcome port shortage. Use ```gatling_ip``` parameter for that.
-Load.conf:
+Load.ini:
 ```
 [phantom]
 address=203.0.113.1:80 #Target's address and port .
@@ -383,7 +383,7 @@ gatling_ip = 203.0.113.2 203.0.113.3
 ### Command line options
 There are three executables in Yandex.Tank package: ```yandex-tank```, ```yandex-tank-ab``` и ```yandex-tank-jmeter```. Last two of them just use different king of load gen utilities, ```ab``` (Apache Benchmark) and ```jmeter``` (Apache JMeter), accordingly. Command line options are common for all three:
 * **-h, --help** - show command line options
-* **-c CONFIG, --config=CONFIG** - read options from INI file. It is possible to set multiple INI files by specifying the option serveral times. Default: ```./load.conf```
+* **-c CONFIG, --config=CONFIG** - read options from INI file. It is possible to set multiple INI files by specifying the option serveral times. Default: ```./load.ini```
 * **-i, --ignore-lock** - ignore lock files
 * **-f, --fail-lock** - don't wait for lock file, quit if it's busy. The default behaviour is to wait for lock file to become free.
 * **-l LOG, --log=LOG** - main log file location. Default: ```./tank.log```
@@ -599,7 +599,7 @@ INI-file section: **[tips]**
 ### Sources
 Yandex.Tank sources ((https://github.com/yandex-load/yandex-tank here)).
 
-### load.conf.example
+### load.ini.example
 ```
 # Yandex.Tank config file
 address=203.0.113.1:443 #Target's address and port
