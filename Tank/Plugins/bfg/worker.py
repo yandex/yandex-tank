@@ -34,7 +34,7 @@ class BFG(object):
         self.results = result_queue
         self.start_time = time.time()
         stpd = StpdReader(self.stpd_filename)
-        shooter = BFGShooter(self.gun, result_queue)
+        shooter = BFGShooter(self.gun, result_queue, instances = self.instances)
         self.tasks = [
             shooter.shoot(self.start_time + (ts / 1000.0), missile, marker)
             for ts, missile, marker in stpd
@@ -71,7 +71,8 @@ class BFGShooter(object):
     def shoot(self, planned_time, missile, marker):
         delay = planned_time - time.time()
         while th.active_count() > (self.instances - 1):
-            time.sleep(delay)
+            if delay > 0:
+                time.sleep(delay)
         task = th.Timer(delay, self._shoot, [missile, marker])
         task.start()
         return task
