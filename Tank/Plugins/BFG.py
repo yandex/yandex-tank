@@ -17,7 +17,7 @@ Sample = namedtuple(
 
 class BFGPlugin(AbstractPlugin):
 
-    ''' JMeter tank plugin '''
+    ''' Big Fucking Gun plugin '''
     SECTION = 'bfg'
 
     def __init__(self, core):
@@ -27,6 +27,10 @@ class BFGPlugin(AbstractPlugin):
         self.start_time = time.time()
         self.stepper_wrapper = StepperWrapper(self.core, BFGPlugin.SECTION)
         self.log.info("Initialized BFG")
+
+        self.gun_classes = {
+            'log': LogGun,
+        }
 
     @staticmethod
     def get_key():
@@ -41,8 +45,14 @@ class BFGPlugin(AbstractPlugin):
 
     def prepare_test(self):
         self.stepper_wrapper.prepare_stepper()
+        gun_type = self.get_option("gun_type")
+        if gun_type in self.gun_classes:
+            self.gun = self.gun_classes[gun_type](self.core)
+        else:
+            raise NotImplementedError(
+                'No such gun type implemented: "%s"' % gun_type)
         self.bfg = BFG(
-            gun_type=self.get_option("gun_type"),
+            gun=self.gun,
             instances=self.get_option("instances", '15'),
             stpd_filename=self.stepper_wrapper.stpd,
         )
@@ -54,7 +64,6 @@ class BFGPlugin(AbstractPlugin):
 
         if aggregator:
             aggregator.reader = BFGReader(aggregator, self.bfg)
-            pass
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
@@ -67,7 +76,6 @@ class BFGPlugin(AbstractPlugin):
             console.add_info_widget(widget)
             if aggregator:
                 aggregator.add_result_listener(widget)
-            pass
         self.log.info("Prepared BFG")
 
     def start_test(self):
@@ -177,39 +185,35 @@ class BFG(object):
 
     def __init__(
         self,
-        gun_type,
+        gun,
         instances,
         stpd_filename,
     ):
         self.log = logging.getLogger(__name__)
         self.log.info(
-            "BFG using gun '%s', stpd from %s", gun_type, stpd_filename)
-        guns = {
-            'log': LogGun,
-        }
-        if gun_type in guns:
-            self.gun = guns[gun_type]()
-        else:
-            raise NotImplementedError(
-                'No such gun type implemented: "%s"' % gun_type)
+            "BFG using stpd from %s", stpd_filename)
+        self.gun = gun
         self.stpd_filename = stpd_filename
         self.instances = int(instances)
         self.results = None
         self.worker = None
 
     def start(self):
-        self.results = Queue()
-        self.worker = Process(target=self._start, args=(self.results,))
+        results = Queue()
+        self.worker = Process(target=self._start, args=(results,))
         self.worker.start()
-
+        self.results = results
 
     def _start(self, result_queue):
+        '''
+        Worker that runs as a separate process
+        '''
         self.results = result_queue
         self.start_time = time.time()
         stpd = StpdReader(self.stpd_filename)
         shooter = BFGShooter(self.gun, result_queue)
         self.tasks = [
-            shooter.shoot(self.start_time + (ts / 1000.0),missile, marker)
+            shooter.shoot(self.start_time + (ts / 1000.0), missile, marker)
             for ts, missile, marker in stpd
         ]
         try:
@@ -229,11 +233,13 @@ class BFG(object):
 
 
 class BFGShooter(object):
+
     '''
     Executes tasks from queue at a specified time
     (or immediately if time is in the past).
     The results of execution are added to result_queue.
     '''
+
     def __init__(self, gun, result_queue):
         self.gun = gun
         self.result_queue = result_queue
@@ -249,10 +255,14 @@ class BFGShooter(object):
         self.result_queue.put((cur_time, sample))
 
 
-class LogGun(object):
+class LogGun(AbstractPlugin):
+    SECTION = 'log_gun'
 
-    def __init__(self):
+    def __init__(self, core):
         self.log = logging.getLogger(__name__)
+        AbstractPlugin.__init__(self, core)
+        param = self.get_option("param", '15')
+        self.log.info('Initialized log gun for BFG with param = %s' % param)
 
     def shoot(self, missile, marker):
         self.log.debug("Missile: %s\n%s", marker, missile)
