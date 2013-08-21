@@ -1,8 +1,8 @@
 import logging
 import time
 from Tank.stepper import StpdReader
-from multiprocessing import Queue, Process
-from threading import Timer
+import multiprocessing as mp
+import threading as th
 
 class BFG(object):
 
@@ -22,8 +22,8 @@ class BFG(object):
         self.worker = None
 
     def start(self):
-        results = Queue()
-        self.worker = Process(target=self._start, args=(results,))
+        results = mp.Queue()
+        self.worker = mp.Process(target=self._start, args=(results,))
         self.worker.start()
         self.results = results
 
@@ -63,13 +63,16 @@ class BFGShooter(object):
     The results of execution are added to result_queue.
     '''
 
-    def __init__(self, gun, result_queue):
+    def __init__(self, gun, result_queue, instances = 10):
         self.gun = gun
         self.result_queue = result_queue
+        self.instances = instances
 
     def shoot(self, planned_time, missile, marker):
         delay = planned_time - time.time()
-        task = Timer(delay, self._shoot, [missile, marker])
+        while th.active_count() > (self.instances - 1):
+            time.sleep(delay)
+        task = th.Timer(delay, self._shoot, [missile, marker])
         task.start()
         return task
 

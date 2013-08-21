@@ -20,7 +20,7 @@ class BFGReader(AbstractReader):
                 self.data_queue.append(cur_time)
                 self.data_buffer[cur_time] = []
             self.data_buffer[cur_time].append(list(sample))
-        if self.data_queue:
+        if self.data_queue and len(self.data_queue) > 1:
             return self.pop_second()
         else:
             return None
