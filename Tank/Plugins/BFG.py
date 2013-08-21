@@ -11,7 +11,9 @@ from collections import namedtuple
 import datetime
 from random import randint
 
-Sample = namedtuple('Sample', 'marker,threads,overallRT,httpCode,netCode,sent,received,connect,send,latency,receive,accuracy')
+Sample = namedtuple(
+    'Sample', 'marker,threads,overallRT,httpCode,netCode,sent,received,connect,send,latency,receive,accuracy')
+
 
 class BFGPlugin(AbstractPlugin):
 
@@ -61,7 +63,7 @@ class BFGPlugin(AbstractPlugin):
             console = None
 
         if console:
-            widget = BFGInfoWidget(self)
+            widget = BFGInfoWidget()
             console.add_info_widget(widget)
             if aggregator:
                 aggregator.add_result_listener(widget)
@@ -74,29 +76,29 @@ class BFGPlugin(AbstractPlugin):
         self.bfg.start()
 
     def is_test_finished(self):
-        if self.bfg.running:
+        if self.bfg.running():
             return -1
         else:
-            retcode = self.bfg.retcode
-            self.log.info(
-                "BFG finished with exit code: %s", retcode)
-            return retcode
+            self.log.info("BFG finished")
+            return 0
 
     def end_test(self, retcode):
-        if self.bfg.running:
+        if self.bfg.running():
             self.log.info("Terminating BFG")
             self.bfg.stop()
         return retcode
 
+
 class BFGInfoWidget(AbstractInfoWidget):
-    ''' Console widget '''    
-    def __init__(self, bfg):
+
+    ''' Console widget '''
+
+    def __init__(self):
         AbstractInfoWidget.__init__(self)
-        self.bfg = bfg
         self.active_threads = 0
         self.instances = 0
         self.planned = 0
-        self.RPS = 0    
+        self.RPS = 0
         self.selfload = 0
         self.time_lag = 0
         self.planned_rps_duration = 0
@@ -111,47 +113,38 @@ class BFGInfoWidget(AbstractInfoWidget):
         else:
             self.planned = second_aggregate_data.overall.planned_requests
             self.planned_rps_duration = 1
-        
+
         self.RPS = second_aggregate_data.overall.RPS
         self.selfload = second_aggregate_data.overall.selfload
-        self.time_lag = int(time.time() - time.mktime(second_aggregate_data.time.timetuple()))
-
+        self.time_lag = int(
+            time.time() - time.mktime(second_aggregate_data.time.timetuple()))
 
     def render(self, screen):
-        return 'Hello!'
         res = ''
-        
+
         res += "Active instances: "
-        if float(self.instances) / self.instances_limit > 0.8:
-            res += screen.markup.RED + str(self.instances) + screen.markup.RESET
-        elif float(self.instances) / self.instances_limit > 0.5:
-            res += screen.markup.YELLOW + str(self.instances) + screen.markup.RESET
-        else:
-            res += str(self.instances)
-            
-        res += "\nPlanned requests: %s for %s\nActual responses: " % (self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
+        res += str(self.instances)
+
+        res += "\nPlanned requests: %s for %s\nActual responses: " % (
+            self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
         if not self.planned == self.RPS:
             res += screen.markup.YELLOW + str(self.RPS) + screen.markup.RESET
         else:
             res += str(self.RPS)
-                
+
         res += "\n        Accuracy: "
         if self.selfload < 80:
-            res += screen.markup.RED + ('%.2f' % self.selfload) + screen.markup.RESET
+            res += screen.markup.RED + \
+                ('%.2f' % self.selfload) + screen.markup.RESET
         elif self.selfload < 95:
-            res += screen.markup.YELLOW + ('%.2f' % self.selfload) + screen.markup.RESET
+            res += screen.markup.YELLOW + \
+                ('%.2f' % self.selfload) + screen.markup.RESET
         else:
             res += ('%.2f' % self.selfload)
 
-        res += "%\n        Time lag: "        
-        if self.time_lag > self.owner.buffered_seconds * 5:
-            self.log.debug("Time lag: %s", self.time_lag)
-            res += screen.markup.RED + str(datetime.timedelta(seconds=self.time_lag)) + screen.markup.RESET
-        elif self.time_lag > self.owner.buffered_seconds:
-            res += screen.markup.YELLOW + str(datetime.timedelta(seconds=self.time_lag)) + screen.markup.RESET
-        else:
-            res += str(datetime.timedelta(seconds=self.time_lag))
-                
+        res += "%\n        Time lag: "
+        res += str(datetime.timedelta(seconds=self.time_lag))
+
         return res
 
 
@@ -201,43 +194,59 @@ class BFG(object):
                 'No such gun type implemented: "%s"' % gun_type)
         self.stpd_filename = stpd_filename
         self.instances = int(instances)
-        self.running = False
-        self.retcode = None
-        self.listeners = []
         self.results = None
-
-    def add_listener(self, l):
-        self.listeners.append(l)
+        self.worker = None
 
     def start(self):
         self.results = Queue()
-        self.running = True
         self.worker = Process(target=self._start, args=(self.results,))
         self.worker.start()
+
 
     def _start(self, result_queue):
         self.results = result_queue
         self.start_time = time.time()
         stpd = StpdReader(self.stpd_filename)
-        self.tasks = [self.schedule(*element) for element in stpd]
-        [task.join() for task in self.tasks]
-        self.stop()
+        shooter = BFGShooter(self.gun, result_queue)
+        self.tasks = [
+            shooter.shoot(self.start_time + (ts / 1000.0),missile, marker)
+            for ts, missile, marker in stpd
+        ]
+        try:
+            [task.join() for task in self.tasks]
+        except KeyboardInterrupt:
+            [task.cancel() for task in self.tasks]
 
-    def schedule(self, timestamp, missile, marker):
-        delay = timestamp / 1000.0 - (time.time() - self.start_time)
-        timer_task = Timer(delay, self._shoot, [missile, marker])
-        timer_task.start()
-        return timer_task
+    def running(self):
+        if self.worker:
+            return self.worker.is_alive()
+        else:
+            return False
+
+    def stop(self):
+        if self.worker:
+            return self.worker.terminate()
+
+
+class BFGShooter(object):
+    '''
+    Executes tasks from queue at a specified time
+    (or immediately if time is in the past).
+    The results of execution are added to result_queue.
+    '''
+    def __init__(self, gun, result_queue):
+        self.gun = gun
+        self.result_queue = result_queue
+
+    def shoot(self, planned_time, missile, marker):
+        delay = planned_time - time.time()
+        task = Timer(delay, self._shoot, [missile, marker])
+        task.start()
+        return task
 
     def _shoot(self, missile, marker):
         cur_time, sample = self.gun.shoot(missile, marker)
-        self.results.put((cur_time, sample))
-
-    def stop(self):
-        self.running = False
-        self.retcode = 0
-        if self.tasks and len(self.tasks):
-            [task.cancel() for task in self.tasks]
+        self.result_queue.put((cur_time, sample))
 
 
 class LogGun(object):
