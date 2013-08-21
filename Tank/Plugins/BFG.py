@@ -2,16 +2,14 @@
 from Tank.Plugins.Aggregator import AggregatorPlugin, AbstractReader
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from tankcore import AbstractPlugin
-from Queue import Queue
 import logging
 import time
 from threading import Timer
-from threading import Thread
+from multiprocessing import Process, Queue
 from Tank.stepper import StepperWrapper, StpdReader
 from collections import namedtuple
-import os
-import socket
 import datetime
+from random import randint
 
 Sample = namedtuple('Sample', 'marker,threads,overallRT,httpCode,netCode,sent,received,connect,send,latency,receive,accuracy')
 
@@ -72,7 +70,6 @@ class BFGPlugin(AbstractPlugin):
 
     def start_test(self):
         self.log.info("Starting BFG")
-        # TODO: start BFG here
         self.start_time = time.time()
         self.bfg.start()
 
@@ -166,19 +163,21 @@ class BFGReader(AbstractReader):
 
     def __init__(self, aggregator, bfg):
         AbstractReader.__init__(self, aggregator)
-        bfg.add_listener(self)
+        self.bfg = bfg
 
     def get_next_sample(self, force):
+        new_data = []
+        while not self.bfg.results.empty():
+            new_data.append(self.bfg.results.get())
+        for cur_time, sample in new_data:
+            if not cur_time in self.data_buffer.keys():
+                self.data_queue.append(cur_time)
+                self.data_buffer[cur_time] = []
+            self.data_buffer[cur_time].append(list(sample))
         if self.data_queue:
             return self.pop_second()
         else:
             return None
-
-    def send(self, cur_time, sample):
-        if not cur_time in self.data_buffer.keys():
-            self.data_queue.append(cur_time)
-            self.data_buffer[cur_time] = []
-        self.data_buffer[cur_time].append(list(sample))
 
 
 class BFG(object):
@@ -204,18 +203,20 @@ class BFG(object):
         self.instances = int(instances)
         self.running = False
         self.retcode = None
-        self.ammo_cache = Queue(self.instances)
         self.listeners = []
+        self.results = None
 
     def add_listener(self, l):
         self.listeners.append(l)
 
     def start(self):
-        self.worker = Thread(target=self._start)
+        self.results = Queue()
+        self.running = True
+        self.worker = Process(target=self._start, args=(self.results,))
         self.worker.start()
 
-    def _start(self):
-        self.running = True
+    def _start(self, result_queue):
+        self.results = result_queue
         self.start_time = time.time()
         stpd = StpdReader(self.stpd_filename)
         self.tasks = [self.schedule(*element) for element in stpd]
@@ -230,8 +231,7 @@ class BFG(object):
 
     def _shoot(self, missile, marker):
         cur_time, sample = self.gun.shoot(missile, marker)
-        for l in self.listeners:
-            l.send(cur_time, sample)
+        self.results.put((cur_time, sample))
 
     def stop(self):
         self.running = False
@@ -247,17 +247,18 @@ class LogGun(object):
 
     def shoot(self, missile, marker):
         self.log.debug("Missile: %s\n%s", marker, missile)
+        rt = randint(2, 30000)
         data_item = Sample(
             marker,  # marker
             1,       # threads
-            120,     # overallRT
+            rt,      # overallRT
             0,       # httpCode
             0,       # netCode
             0,       # sent
             0,       # received
             0,       # connect
             0,       # send
-            120,     # latency
+            rt,      # latency
             0,       # receive
             0,       # accuracy
         )
