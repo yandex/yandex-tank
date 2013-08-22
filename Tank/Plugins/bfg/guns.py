@@ -56,8 +56,7 @@ class SqlGun(AbstractPlugin):
         try:
             self.engine.execute(missile.replace('%', '%%')).fetchall()
         except exc.ResourceClosedError as e:
-            httpCode = 404
-            self.log.warn(e)
+            pass
         except exc.SQLAlchemyError as e:
             errno = e.orig.args[0]
             self.log.warn(e.orig.args)
