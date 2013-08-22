@@ -54,12 +54,14 @@ class SqlGun(AbstractPlugin):
         errno = 0
         httpCode = 200
         try:
-            self.engine.execute(missile.replace('%', '%%')).fetchall()
+            cursor = self.engine.execute(missile.replace('%', '%%'))
+            cursor.fetchall()
+            cursor.close()
         except exc.TimeoutError as e:
             self.log.debug("Timeout: %s", e)
             errno = 110
         except exc.ResourceClosedError as e:
-            pass
+            self.log.debug(e)
         except exc.SQLAlchemyError as e:
             httpCode = 500
             self.log.debug(e.orig.args)
