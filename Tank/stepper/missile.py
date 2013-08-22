@@ -137,17 +137,20 @@ class SlowLogReader(object):
                         pass
                     else:
                         line = line.rstrip('\r\n')
-                        if line.endswith(';'):
-                            req_end = line.rstrip(';\r\n')
-                            result = ' '.join((request + req_end).split())
-                            for kw in 'select insert update delete'.split():
-                                if result.startswith(kw):
-                                    info.status.inc_ammo_count()
-                                    yield (result, None)
-                                    break
-                            request = ""
-                        else:
+                        if line.startswith('use '):
                             request += line
+                        else:
+                            if line.endswith(';'):
+                                req_end = line.rstrip(';\r\n')
+                                result = ' '.join((request + req_end).split())
+                                for kw in 'select insert update delete'.split():
+                                    if result.startswith(kw):
+                                        info.status.inc_ammo_count()
+                                        yield (result, None)
+                                        break
+                                request = ""
+                            else:
+                                request += line
                 loop_count += 1
                 ammo_file.seek(0)
                 info.status.af_position = 0
