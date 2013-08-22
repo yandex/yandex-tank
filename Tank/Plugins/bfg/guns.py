@@ -52,8 +52,12 @@ class SqlGun(AbstractPlugin):
         self.log.debug("Missile: %s\n%s", marker, missile)
         start_time = time.time()
         errno = 0
+        httpCode = 200
         try:
             self.engine.execute(missile.replace('%', '%%')).fetchall()
+        except exc.ResourceClosedError as e:
+            httpCode = 404
+            self.log.warn(e)
         except exc.SQLAlchemyError as e:
             errno = e.orig.args[0]
             self.log.warn(e.orig.args)
@@ -62,7 +66,7 @@ class SqlGun(AbstractPlugin):
             marker,             # marker
             th.active_count(),  # threads
             rt,                 # overallRT
-            0,                  # httpCode
+            httpCode,                  # httpCode
             errno,                  # netCode
             0,                  # sent
             0,                  # received
