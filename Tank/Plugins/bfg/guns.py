@@ -55,10 +55,13 @@ class SqlGun(AbstractPlugin):
         httpCode = 200
         try:
             self.engine.execute(missile.replace('%', '%%')).fetchall()
+        except exc.TimeoutError as e:
+            self.log.debug("Timeout: %s", e)
+            errno = 110
         except exc.ResourceClosedError as e:
             pass
         except exc.SQLAlchemyError as e:
-            errno = e.orig.args[0]
+            httpCode = e.orig.args[0]
             self.log.warn(e.orig.args)
         rt = int((time.time() - start_time) * 1000)
         data_item = Sample(
