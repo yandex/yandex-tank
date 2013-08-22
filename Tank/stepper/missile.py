@@ -129,6 +129,7 @@ class SlowLogReader(object):
         with open(self.filename, 'rb') as ammo_file:
             info.status.af_size = os.path.getsize(self.filename)
             request = ""
+            use_db = ""
             loop_count = 0
             while True:
                 for line in ammo_file:
@@ -136,17 +137,17 @@ class SlowLogReader(object):
                     if line.startswith('#') or line.startswith('/*'):
                         pass
                     else:
-                        line = line.rstrip('\r\n')
-                        if line.startswith('use '):
-                            request += line
+                        if line.startswith('use'):
+                            use_db = line
                         else:
+                            line = line.rstrip('\r\n')
                             if line.endswith(';'):
                                 req_end = line.rstrip(';\r\n')
                                 result = ' '.join((request + req_end).split())
                                 for kw in 'select insert update delete'.split():
                                     if result.startswith(kw):
                                         info.status.inc_ammo_count()
-                                        yield (result, None)
+                                        yield (use_db + result, None)
                                         break
                                 request = ""
                             else:
