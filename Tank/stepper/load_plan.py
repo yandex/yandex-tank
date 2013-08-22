@@ -142,7 +142,7 @@ class Stairway(Composite):
     def __init__(self, minrps, maxrps, increment, duration):
         if maxrps < minrps:
             increment = -increment
-        n_steps = (maxrps - minrps) / increment
+        n_steps = int((maxrps - minrps) / increment)
         steps = [
             Const(minrps + i * increment, duration)
             for i in xrange(0, n_steps + 1)
@@ -154,9 +154,9 @@ class StepFactory(object):
 
     @staticmethod
     def line(params):
-        template = re.compile('(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
+        template = re.compile('([0-9.]+),\s*([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
         minrps, maxrps, duration = template.search(params).groups()
-        return Line(int(minrps), int(maxrps), parse_duration(duration))
+        return Line(float(minrps), float(maxrps), parse_duration(duration))
 
     @staticmethod
     def const(params):
@@ -166,9 +166,9 @@ class StepFactory(object):
 
     @staticmethod
     def stairway(params):
-        template = re.compile('(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
+        template = re.compile('([0-9.]+),\s*([0-9.]+),\s*([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
         minrps, maxrps, increment, duration = template.search(params).groups()
-        return Stairway(int(minrps), int(maxrps), int(increment), parse_duration(duration))
+        return Stairway(float(minrps), float(maxrps), float(increment), parse_duration(duration))
 
     @staticmethod
     def produce(step_config):
@@ -195,6 +195,9 @@ def create(rps_schedule):
     >>> take(100, create(['line(1, 5, 2s)']))
     [0, 414, 732, 1000, 1236, 1449, 1645, 1828]
 
+    >>> take(100, create(['line(1.1, 5.8, 2s)']))
+    [0, 369, 656, 900, 1115, 1310, 1490, 1657, 1815]
+
     >>> take(100, create(['const(1, 10s)']))
     [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]
 
@@ -206,6 +209,12 @@ def create(rps_schedule):
 
     >>> take(100, create(['const(1.5, 10s)']))
     [0, 666, 1333, 2000, 2666, 3333, 4000, 4666, 5333, 6000, 6666, 7333, 8000, 8666, 9333]
+
+    >>> take(10, create(['step(1, 5, 1, 5s)']))
+    [0, 1000, 2000, 3000, 4000, 5000, 5500, 6000, 6500, 7000]
+
+    >>> take(10, create(['step(1.2, 5.7, 1.1, 5s)']))
+    [0, 833, 1666, 2500, 3333, 4166, 5000, 5434, 5869, 6304]
     '''
     if len(rps_schedule) > 1:
         lp = Composite([StepFactory.produce(step_config)
