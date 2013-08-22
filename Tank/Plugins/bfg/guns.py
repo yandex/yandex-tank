@@ -62,14 +62,14 @@ class SqlGun(AbstractPlugin):
             pass
         except exc.SQLAlchemyError as e:
             httpCode = e.orig.args[0]
-            self.log.warn(e.orig.args)
+            self.log.debug(e.orig.args)
         rt = int((time.time() - start_time) * 1000)
         data_item = Sample(
             marker,             # marker
             th.active_count(),  # threads
             rt,                 # overallRT
-            httpCode,                  # httpCode
-            errno,                  # netCode
+            httpCode,           # httpCode
+            errno,              # netCode
             0,                  # sent
             0,                  # received
             0,                  # connect
