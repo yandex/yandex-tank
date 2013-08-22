@@ -65,6 +65,12 @@ class SqlGun(AbstractPlugin):
         except exc.SQLAlchemyError as e:
             httpCode = 500
             self.log.debug(e.orig.args)
+        except exc.SAWarning as e:
+            httpCode = 400
+            self.log.debug(e)
+        except Exception as e:
+            httpCode = 500
+            self.log.debug(e)
         rt = int((time.time() - start_time) * 1000)
         data_item = Sample(
             marker,             # marker
