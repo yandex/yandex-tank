@@ -61,7 +61,7 @@ class SqlGun(AbstractPlugin):
         except exc.ResourceClosedError as e:
             pass
         except exc.SQLAlchemyError as e:
-            httpCode = e.orig.args[0]
+            httpCode = 500
             self.log.debug(e.orig.args)
         rt = int((time.time() - start_time) * 1000)
         data_item = Sample(
