@@ -100,7 +100,7 @@ class AgentClient(object):
         self.interval = None
         self.metric = None
         self.custom = {}
-        self.python = '/usr/bin/python'
+        self.python = '/usr/bin/env python'
 
     def start(self):
         '''
@@ -183,7 +183,7 @@ class AgentClient(object):
             debug = "DEBUG=1"
         else:
             debug = ""
-        self.run = ['/usr/bin/env', debug, self.python, self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
+        self.run = [debug, self.python, self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
         return agent_config
 
     def uninstall(self):
@@ -462,7 +462,7 @@ class MonitoringCollector:
             if host.get('python'):
                 tmp.update({'python': host.get('python')})
             else:
-                tmp.update({'python': '/usr/bin/python'})
+                tmp.update({'python': '/usr/bin/env python'})
                 
     
             tmp.update({'custom': custom})
