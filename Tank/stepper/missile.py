@@ -8,6 +8,7 @@ from module_exceptions import AmmoFileError
 import os.path
 import info
 import logging
+import re
 
 
 class HttpAmmo(object):
@@ -127,7 +128,7 @@ class SlowLogReader(object):
     def __iter__(self):
         with open(self.filename, 'rb') as ammo_file:
             info.status.af_size = os.path.getsize(self.filename)
-            request = ''
+            request = ""
             loop_count = 0
             while True:
                 for line in ammo_file:
@@ -135,15 +136,16 @@ class SlowLogReader(object):
                     if line.startswith('#') or line.startswith('/*'):
                         pass
                     else:
-                        if ';' in line:
-                            req_end, req_start = line.split(';')
+                        line = line.rstrip('\r\n')
+                        if line.endswith(';'):
+                            req_end = line.rstrip(';\r\n')
                             result = ' '.join((request + req_end).split())
                             for kw in 'select insert update delete'.split():
                                 if result.startswith(kw):
                                     info.status.inc_ammo_count()
                                     yield (result, None)
                                     break
-                            request = req_start
+                            request = ""
                         else:
                             request += line
                 loop_count += 1
