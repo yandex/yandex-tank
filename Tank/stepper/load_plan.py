@@ -160,9 +160,9 @@ class StepFactory(object):
 
     @staticmethod
     def const(params):
-        template = re.compile('(\d+),\s*([0-9.]+[dhms]?)+\)')
+        template = re.compile('([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
         rps, duration = template.search(params).groups()
-        return Const(int(rps), parse_duration(duration))
+        return Const(float(rps), parse_duration(duration))
 
     @staticmethod
     def stairway(params):
@@ -203,6 +203,9 @@ def create(rps_schedule):
 
     >>> take(100, create(['const(1, 2s)', 'const(2, 2s)']))
     [0, 1000, 2000, 2500, 3000, 3500]
+
+    >>> take(100, create(['const(1.5, 10s)']))
+    [0, 666, 1333, 2000, 2666, 3333, 4000, 4666, 5333, 6000, 6666, 7333, 8000, 8666, 9333]
     '''
     if len(rps_schedule) > 1:
         lp = Composite([StepFactory.produce(step_config)

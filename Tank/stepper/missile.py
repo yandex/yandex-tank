@@ -7,6 +7,8 @@ from itertools import cycle
 from module_exceptions import AmmoFileError
 import os.path
 import info
+import logging
+import re
 
 
 class HttpAmmo(object):
@@ -50,7 +52,7 @@ class SimpleGenerator(object):
             yield m
 
 
-class UriStyleGenerator(SimpleGenerator):
+class UriStyleGenerator(object):
 
     '''
     Generates GET ammo based on given URI list.
@@ -71,17 +73,27 @@ class UriStyleGenerator(SimpleGenerator):
             yield m
 
 
-class AmmoFileReader(SimpleGenerator):
+class AmmoFileReader(object):
 
     '''Read missiles from ammo file'''
 
-    def __init__(self, filename, loop_limit=0):
+    def __init__(self, filename):
         self.filename = filename
+        self.log = logging.getLogger(__name__)
+        self.log.info("Loading ammo from '%s'" % filename)
 
     def __iter__(self):
+        def read_chunk_header(ammo_file):
+            chunk_header = ''
+            while chunk_header is '':
+                line = ammo_file.readline()
+                if line is '':
+                    return line
+                chunk_header = line.strip('\r\n')
+            return chunk_header
         with open(self.filename, 'rb') as ammo_file:
             info.status.af_size = os.path.getsize(self.filename)
-            chunk_header = ammo_file.readline().strip('\r\n')
+            chunk_header = read_chunk_header(ammo_file) #  if we got StopIteration here, the file is empty
             while chunk_header:
                 if chunk_header is not '':
                     try:
@@ -94,14 +106,53 @@ class AmmoFileReader(SimpleGenerator):
                                 "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
                         info.status.inc_ammo_count()
                         yield (missile, marker)
-                    except (IndexError, ValueError):
+                    except (IndexError, ValueError) as e:
                         raise AmmoFileError(
-                            "Error while reading ammo file. Position: %s, header: '%s'" % (ammo_file.tell(), chunk_header))
-                chunk_header = ammo_file.readline().strip('\r\n')
-                if not chunk_header:
+                            "Error while reading ammo file. Position: %s, header: '%s', original exception: %s" % (ammo_file.tell(), chunk_header, e))
+                chunk_header = read_chunk_header(ammo_file)
+                if chunk_header == '':
+                    self.log.debug('Reached the end of ammo file. Starting over.')
                     ammo_file.seek(0)
-                    info.status.af_position = 0
                     info.status.inc_loop_count()
-                    chunk_header = ammo_file.readline().strip('\r\n')
-                else:
+                    chunk_header = read_chunk_header(ammo_file)
+                info.status.af_position = ammo_file.tell()
+
+
+class SlowLogReader(object):
+
+    '''Read missiles from SQL slow log. Not usable with Phantom'''
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    def __iter__(self):
+        with open(self.filename, 'rb') as ammo_file:
+            info.status.af_size = os.path.getsize(self.filename)
+            request = ""
+            use_db = ""
+            loop_count = 0
+            while True:
+                for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
+                    if line.startswith('#') or line.startswith('/*'):
+                        pass
+                    else:
+                        if line.startswith('use'):
+                            use_db = line
+                        else:
+                            line = line.rstrip('\r\n')
+                            if line.endswith(';'):
+                                req_end = line.rstrip(';\r\n')
+                                result = ' '.join((request + req_end).split())
+                                for kw in 'select insert update delete'.split():
+                                    if result.startswith(kw):
+                                        info.status.inc_ammo_count()
+                                        yield (use_db + result, None)
+                                        break
+                                request = ""
+                            else:
+                                request += line
+                loop_count += 1
+                ammo_file.seek(0)
+                info.status.af_position = 0
+                info.status.inc_loop_count()

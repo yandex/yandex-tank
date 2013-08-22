@@ -124,14 +124,8 @@ class JMeterPlugin(AbstractPlugin):
 
         tpl_filepath = '/jmeter_writer.xml'
 
-        # Property not initialized
-        print self.use_argentum
-        #use_argentum = eval(self.get_option('use_argentum', 'False'))
-
-        #buffer_size = int(self.get_option('buffer_size', '3'))
-
-        self.log.warn("aws ag state:" + str(self.use_argentum))
         if self.use_argentum :
+            self.log.warn("You are using argentum. Be careful.")
             tpl_filepath = '/jmeter_argentum.xml'
         
         tpl_file = open(os.path.dirname(__file__) + tpl_filepath, 'r')
@@ -148,8 +142,6 @@ class JMeterPlugin(AbstractPlugin):
         
         if self.use_argentum :
             os.write(file_handle, tpl % (self.jmeter_buffer_size, jtl, "", ""))
-            #quantiles = "0.25 0.50 0.75 0.80 0.90 0.95 0.98 0.99 1.00"
-            #os.write(file_handle, tpl % (self.jmeter_buffer_size, jtl, quantiles, "1 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 150 200 250 300 350 400 450 500 600 650 700 750 800 850 900 950 1000 1500 2000 2500 3000 3500 4000 4500 5000 5500 6000 6500 7000 7500 8000 8500 9000 9500 10000 11000"))
         else:
             os.write(file_handle, tpl % jtl)
         os.write(file_handle, closing)
@@ -203,42 +195,53 @@ class JMeterReader(AbstractReader):
             if len(read_line) == 0:
                 return None
             else :
-                second = json.loads(read_line, 'ascii')
-                second_ag = self.get_zero_sample(datetime.datetime.fromtimestamp(second['second']))
-                second_ag.overall.avg_connect_time = 0
-                second_ag.overall.avg_send_time = 0
-                second_ag.overall.avg_receive_time = second['avg_rt'] - second['avg_lt']
-                second_ag.overall.avg_response_time = second['avg_rt']
-                second_ag.overall.avg_latency = second['avg_lt']
-                second_ag.overall.RPS = second['th']
-                second_ag.overall.active_threads = second['active_threads']
-                second_ag.overall.times_dist = second['interval_dist']
-                second_ag.overall.input = second['traffic']['inbound']
-                second_ag.overall.output = second['traffic']['outbound']
+                try:
+                    if self.partial_buffer != '' : 
+                        read_line = str(self.partial_buffer + read_line)
+                        self.partial_buffer = ''
 
-                rc_map = dict()
-                for item in second['rc'].items():
-                    rc_map[self.exc_to_http(item[0])] = item[1]
-                second_ag.overall.http_codes = rc_map
-                
-                for percentile in second['percentile'].keys() :
-                    second_ag.overall.quantiles[int(float(percentile))] = second['percentile'][percentile]
-                    second_ag.cumulative.quantiles[int(float(percentile))] = second['cumulative_percentile'][percentile]
+                    second = json.loads(read_line, 'ascii')
+                except ValueError, e:
+                    # not-ended second json-object
+                    self.partial_buffer = read_line
+                    log.warn('bad json-object', e)
+                    return None
+                else:
+                    # good json-object. parse it!
+                    second_ag = self.get_zero_sample(datetime.datetime.fromtimestamp(second['second']))
+                    second_ag.overall.avg_connect_time = 0
+                    second_ag.overall.avg_send_time = 0
+                    second_ag.overall.avg_receive_time = second['avg_rt'] - second['avg_lt']
+                    second_ag.overall.avg_response_time = second['avg_rt']
+                    second_ag.overall.avg_latency = second['avg_lt']
+                    second_ag.overall.RPS = second['th']
+                    second_ag.overall.active_threads = second['active_threads']
+                    second_ag.overall.times_dist = second['interval_dist']
+                    second_ag.overall.input = second['traffic']['inbound']
+                    second_ag.overall.output = second['traffic']['outbound']
 
-                self.cumulative.add_data(second_ag.overall)
-    
-                for sampler in second['samplers'].keys():
-                    sampler_ag_data_item = SecondAggregateDataItem()
-                    sampler_ag_data_item.case = sampler
-                    sampler_ag_data_item.active_threads = second['active_threads']
-                    sampler_ag_data_item.RPS = int(second['samplers'][sampler])
-                    sampler_ag_data_item.times_dist =  second['sampler_interval_dist'][sampler]
+                    rc_map = dict()
+                    for item in second['rc'].items():
+                        rc_map[self.exc_to_http(item[0])] = item[1]
+                    second_ag.overall.http_codes = rc_map
                     
-                    sampler_ag_data_item.quantiles = second['sampler_percentile'][sampler]
+                    for percentile in second['percentile'].keys() :
+                        second_ag.overall.quantiles[int(float(percentile))] = second['percentile'][percentile]
+                        second_ag.cumulative.quantiles[int(float(percentile))] = second['cumulative_percentile'][percentile]
 
-                    sampler_ag_data_item.avg_response_time = second['sampler_avg_rt'][sampler]
-                    second_ag.cases[sampler] = sampler_ag_data_item
+                    self.cumulative.add_data(second_ag.overall)
+        
+                    for sampler in second['samplers'].keys():
+                        sampler_ag_data_item = SecondAggregateDataItem()
+                        sampler_ag_data_item.case = sampler
+                        sampler_ag_data_item.active_threads = second['active_threads']
+                        sampler_ag_data_item.RPS = int(second['samplers'][sampler])
+                        sampler_ag_data_item.times_dist =  second['sampler_interval_dist'][sampler]
+                        
+                        sampler_ag_data_item.quantiles = second['sampler_percentile'][sampler]
 
+                        sampler_ag_data_item.avg_response_time = second['sampler_avg_rt'][sampler]
+                        second_ag.cases[sampler] = sampler_ag_data_item
                 return second_ag
         return None
 
