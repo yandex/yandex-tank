@@ -8,7 +8,6 @@ from module_exceptions import AmmoFileError
 import os.path
 import info
 import logging
-import re
 
 
 class HttpAmmo(object):
@@ -129,7 +128,6 @@ class SlowLogReader(object):
         with open(self.filename, 'rb') as ammo_file:
             info.status.af_size = os.path.getsize(self.filename)
             request = ""
-            loop_count = 0
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
@@ -140,7 +138,24 @@ class SlowLogReader(object):
                             request = ""
                     else:
                         request += line
-                loop_count += 1
+                ammo_file.seek(0)
+                info.status.af_position = 0
+                info.status.inc_loop_count()
+
+class LineReader(object):
+
+    '''One line -- one missile'''
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    def __iter__(self):
+        with open(self.filename, 'rb') as ammo_file:
+            while True:
+                for line in ammo_file:
+                    info.status.inc_ammo_count()
+                    info.status.af_position = ammo_file.tell()
+                    yield (line.rstrip('\r\n'), None)
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()

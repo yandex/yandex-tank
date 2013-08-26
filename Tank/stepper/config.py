@@ -24,6 +24,7 @@ class ComponentFactory():
         generators = {
             'phantom': missile.AmmoFileReader,
             'slowlog': missile.SlowLogReader,
+            'line': missile.LineReader,
         }
         if ammo_type in generators:
             self.ammo_generator_class = generators[ammo_type]
