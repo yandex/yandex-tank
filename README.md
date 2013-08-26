@@ -576,6 +576,46 @@ INI file section: **[jmeter]**
 * **jmeter_*.jtl** - JMeter results
 * **jmeter_*.log** - JMeter log
 
+#### BFG
+[What is BFG](http://en.wikipedia.org/wiki/BFG_(weapon))
+BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first, enable BFG plugin and then specify the parameters for BFG and for the cannon you select. For example, if you want to kill an SQL db:
+```
+[tank]
+# Disable phantom:
+plugin_phantom=
+# Enable BFG instead:
+plugin_bfg=Tank/Plugins/BFG.py
+
+# BFG config section:
+[bfg]
+
+# gun type -- what kind of gun should BFG use:
+gun_type=sql
+
+# what ammo parser should BFG use:
+ammo_type=slowlog
+
+# stepper parameters (see phantom options):
+instances = 200
+ammofile=bsdb03h.sql
+rps_schedule=line(1,1000,1m)
+loop=500
+
+# selected gun config section:
+[sql_gun]
+db = mysql://user:user@localhost/
+```
+
+##### BFG Options
+INI file section: **[bfg]**
+* **gun_type** - what kind of gun should BFG use
+* **ammo_type** - what ammo parser should BFG use, default: phantom
+* other common stepper options
+
+##### SQL Gun Options
+INI file section: **[sql_gun]**
+* **db** - DB uri in format:  ```dialect+driver://user:password@host/dbname[?key=value..]```, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. [details](http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls)
+
 #### AB
 Apache Benchmark load generator module. As the ab utility writes results to file only after the test is finished, Yandex.Tank is unable to show the on-line statistics for the tests with ab. The data are reviewed after the test.
 
