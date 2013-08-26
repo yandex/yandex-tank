@@ -4,6 +4,7 @@ from tankcore import AbstractPlugin
 import logging
 from random import randint
 import threading as th
+import sys
 
 from sqlalchemy import create_engine
 from sqlalchemy import exc
@@ -87,3 +88,18 @@ class SqlGun(AbstractPlugin):
             0,                  # accuracy
         )
         return (int(time.time()), data_item)
+
+class CustomGun(AbstractPlugin):
+    SECTION = 'custom_gun'
+
+    def __init__(self, core):
+        self.log = logging.getLogger(__name__)
+        AbstractPlugin.__init__(self, core)
+        module_path = self.get_option("module_path")
+        module_name = self.get_option("module_name")
+        sys.path.append(module_path)
+        self.module = __import__(module_name)
+
+    def shoot(self, missile, marker):
+        self.log.debug("Missile: %s\n%s", marker, missile)
+        return self.module.shoot(self, missile, marker)

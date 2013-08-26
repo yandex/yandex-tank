@@ -4,7 +4,7 @@ from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin
 import logging
 import time
 from Tank.stepper import StepperWrapper
-from guns import LogGun, SqlGun
+from guns import LogGun, SqlGun, CustomGun
 from widgets import BFGInfoWidget
 from worker import BFG
 from reader import BFGReader
@@ -25,6 +25,7 @@ class BFGPlugin(AbstractPlugin):
         self.gun_classes = {
             'log': LogGun,
             'sql': SqlGun,
+            'custom': CustomGun,
         }
 
     @staticmethod
