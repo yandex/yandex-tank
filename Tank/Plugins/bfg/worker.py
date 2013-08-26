@@ -72,7 +72,10 @@ class BFGShooter(object):
         delay = planned_time - time.time()
         while th.active_count() >= self.instances:
             if delay - delay / 2 > 0:
-                time.sleep(delay - delay / 2)
+                try:
+                    time.sleep(delay - delay / 2)
+                except KeyboardInterrupt:
+                    return None
                 delay = planned_time - time.time()
         task = th.Timer(delay, self._shoot, [missile, marker])
         task.start()
