@@ -3,6 +3,7 @@ Missile object and generators
 
 You should update Stepper.status.ammo_count and Stepper.status.loop_count in your custom generators!
 '''
+import gzip
 from itertools import cycle
 from module_exceptions import AmmoFileError
 import os.path
@@ -81,6 +82,22 @@ class AmmoFileReader(object):
         self.log = logging.getLogger(__name__)
         self.log.info("Loading ammo from '%s'" % filename)
 
+
+    def get_opener(self, f_path):
+        """ Returns opener function according to file extensions:
+            bouth open and gzip.open calls return fileobj.
+
+        Args:
+            f_path: str, ammo file path.
+
+        Returns:
+            function, to call for file open.
+        """
+        if f_path.endswith('.gz'):
+            return gzip.open
+        return open
+
+
     def __iter__(self):
         def read_chunk_header(ammo_file):
             chunk_header = ''
@@ -90,7 +107,7 @@ class AmmoFileReader(object):
                     return line
                 chunk_header = line.strip('\r\n')
             return chunk_header
-        with open(self.filename, 'rb') as ammo_file:
+        with self.get_opener(self.filename)(self.filename, 'rb') as ammo_file:
             info.status.af_size = os.path.getsize(self.filename)
             chunk_header = read_chunk_header(ammo_file) #  if we got StopIteration here, the file is empty
             while chunk_header:
@@ -149,8 +166,22 @@ class LineReader(object):
     def __init__(self, filename):
         self.filename = filename
 
+    def get_opener(self, f_path):
+        """ Returns opener function according to file extensions:
+            bouth open and gzip.open calls return fileobj.
+
+        Args:
+            f_path: str, ammo file path.
+
+        Returns:
+            function, to call for file open.
+        """
+        if f_path.endswith('.gz'):
+            return gzip.open
+        return open
+
     def __iter__(self):
-        with open(self.filename, 'rb') as ammo_file:
+        with self.get_opener(self.filename)(self.filename, 'rb') as ammo_file:
             while True:
                 for line in ammo_file:
                     info.status.inc_ammo_count()
