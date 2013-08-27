@@ -35,11 +35,11 @@ class BFG(object):
         self.start_time = time.time()
         stpd = StpdReader(self.stpd_filename)
         shooter = BFGShooter(self.gun, result_queue, instances = self.instances)
-        self.tasks = [
-            shooter.shoot(self.start_time + (ts / 1000.0), missile, marker)
-            for ts, missile, marker in stpd
-        ]
         try:
+            self.tasks = [
+                shooter.shoot(self.start_time + (ts / 1000.0), missile, marker)
+                for ts, missile, marker in stpd
+            ]
             [task.join() for task in self.tasks]
         except KeyboardInterrupt:
             [task.cancel() for task in self.tasks]
@@ -72,10 +72,7 @@ class BFGShooter(object):
         delay = planned_time - time.time()
         while th.active_count() >= self.instances:
             if delay - delay / 2 > 0:
-                try:
-                    time.sleep(delay - delay / 2)
-                except KeyboardInterrupt:
-                    return None
+                time.sleep(delay - delay / 2)
                 delay = planned_time - time.time()
         task = th.Timer(delay, self._shoot, [missile, marker])
         task.start()
