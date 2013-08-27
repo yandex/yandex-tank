@@ -36,10 +36,9 @@ class BFG(object):
         stpd = StpdReader(self.stpd_filename)
         shooter = BFGShooter(self.gun, result_queue, instances = self.instances)
         try:
-            self.tasks = [
-                shooter.shoot(self.start_time + (ts / 1000.0), missile, marker)
-                for ts, missile, marker in stpd
-            ]
+            self.tasks = []
+            for ts, missile, marker in stpd:
+                self.tasks.append(shooter.shoot(self.start_time + (ts / 1000.0), missile, marker))
             [task.join() for task in self.tasks]
         except KeyboardInterrupt:
             [task.cancel() for task in self.tasks]
