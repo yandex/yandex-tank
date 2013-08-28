@@ -4,6 +4,7 @@ Utilities: parsers, converters, etc.
 import re
 from itertools import islice
 from module_exceptions import StepperConfigurationError
+import math
 
 
 def take(number, iter):
@@ -41,3 +42,13 @@ def parse_duration(duration):
             return int(float(time) * 1000)
 
     return sum(parse_token(*token) for token in _re_token.findall(duration))
+
+def solve_quadratic(a, b, c):
+    '''
+    >>> solve_quadratic(1.0, 2.0, 1.0)
+    (-1.0, -1.0)
+    '''
+    discRoot = math.sqrt((b * b) - 4 * a * c)
+    root1 = (-b - discRoot) / (2 * a)
+    root2 = (-b + discRoot) / (2 * a)
+    return (root1, root2)

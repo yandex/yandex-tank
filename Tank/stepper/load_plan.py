@@ -1,9 +1,8 @@
 '''
 Load Plan generators
 '''
-import math
 import re
-from util import parse_duration
+from util import parse_duration, solve_quadratic
 from itertools import chain, groupby
 import info
 
@@ -48,33 +47,18 @@ class Line(object):
     '''Load plan with linear load'''
 
     def __init__(self, minrps, maxrps, duration):
-        # FIXME: does not work for negative k (minrps > maxrps)
-        if minrps > maxrps:
-            raise NotImplementedError(
-                "We have no support for descending linear load yet")
         self.minrps = float(minrps)
         self.maxrps = float(maxrps)
         self.duration = duration / 1000.0
+        self.b = self.minrps
         self.k = (self.maxrps - self.minrps) / self.duration
-        self.b = 1 + 2 * self.minrps / self.k
 
+    def ts(self, n):
+            root1, root2 = solve_quadratic(self.k / 2.0, self.b, -n)
+            return int(root2 * 1000)
+            
     def __iter__(self):
-        k = self.k
-        b = self.b
-
-        '''
-        Solve equation:
-        n(t) = k/2 * t^2 + (k/2 + r0) * t
-        where r(t) = k(t + 1/2) + r0 -- rps
-        r0 is initial rps.
-        '''
-        def timestamp(n):
-            return int((math.sqrt(b ** 2 + 8 * n / k) - b) / 2 * 1000)  # (sqrt(b^2 + 8 * n / k) - b) / 2 -- time in seconds
-
-        ''' Find ammo count given the time '''
-        def number(t):
-            return int(k * (t ** 2) / 2 + (k / 2 + self.minrps) * self.duration)
-        return (timestamp(n) for n in xrange(0, self.__len__()))
+        return (self.ts(n) for n in xrange(0, self.__len__()))
 
     def rps_at(self, t):
         '''Return rps for second t'''
@@ -89,7 +73,7 @@ class Line(object):
 
     def __len__(self):
         '''Return total ammo count'''
-        return int(self.k * (self.duration ** 2) / 2 + (self.k / 2 + self.minrps) * self.duration)
+        return int(self.k / 2.0 * (self.duration ** 2) + self.b * self.duration)
 
     def get_float_rps_list(self):
         '''
@@ -97,7 +81,7 @@ class Line(object):
         with parts durations (float)
         '''
         int_rps = xrange(int(self.minrps), int(self.maxrps) + 1)
-        step_duration = float(self.duration * 1000) / len(int_rps)
+        step_duration = float(self.duration) / len(int_rps)
         return [(rps, int(step_duration)) for rps in int_rps]
 
     def get_rps_list(self):
@@ -193,10 +177,13 @@ def create(rps_schedule):
     >>> from util import take
 
     >>> take(100, create(['line(1, 5, 2s)']))
-    [0, 414, 732, 1000, 1236, 1449, 1645, 1828]
+    [0, 618, 1000, 1302, 1561, 1791]
 
     >>> take(100, create(['line(1.1, 5.8, 2s)']))
-    [0, 369, 656, 900, 1115, 1310, 1490, 1657, 1815]
+    [0, 566, 917, 1196, 1435, 1647]
+
+    >>> take(100, create(['line(5, 1, 2s)']))
+    [0, 208, 438, 697, 1000, 1381]
 
     >>> take(100, create(['const(1, 10s)']))
     [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]
