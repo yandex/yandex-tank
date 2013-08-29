@@ -2,6 +2,7 @@ from itertools import cycle
 from util import parse_duration
 import re
 import info
+import logging
 
 
 class InstanceLP(object):
@@ -13,14 +14,6 @@ class InstanceLP(object):
 
     def get_duration(self):
         return int(self.duration)  # needed for Composite LP
-
-
-class Empty(InstanceLP):
-
-    '''Load plan with no timestamp (for instance_schedule)'''
-
-    def __iter__(self):
-        return cycle([0])
 
 
 class Composite(InstanceLP):
@@ -38,6 +31,9 @@ class Composite(InstanceLP):
             base += step.get_duration()
         for item in cycle([0]):
             yield item
+
+    def __len__(self):
+        return sum(len(step) for step in self.steps)
 
 
 class Line(InstanceLP):
@@ -58,6 +54,9 @@ class Line(InstanceLP):
         interval = float(self.duration) / self.instances
         return (int(i * interval) for i in xrange(1, self.instances + 1))
 
+    def __len__(self):
+        return self.instances
+
 
 class Ramp(InstanceLP):
 
@@ -77,6 +76,9 @@ class Ramp(InstanceLP):
     def __iter__(self):
         return ((int(i * self.interval) for i in xrange(0, self.instance_count)))
 
+    def __len__(self):
+        return self.instance_count
+
 
 class Wait(InstanceLP):
 
@@ -90,6 +92,9 @@ class Wait(InstanceLP):
     def __iter__(self):
         return iter([])
 
+    def __len__(self):
+        return 0
+
 
 class Stairway(InstanceLP):
 
@@ -102,11 +107,11 @@ class StepFactory(object):
 
     @staticmethod
     def line(params):
-        template = re.compile('(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
-        minrps, maxrps, duration = template.search(params).groups()
-        # note that we don't use minrps at all and use maxrps
-        # as the number of instances we gonna start
-        return Line(int(maxrps) - int(minrps), parse_duration(duration))
+        logging.warning(
+            "Line load type in 'instances_schedule' is strongly deprecated. Use 'ramp(instance_count, duration)'")
+        raise NotImplementedError(
+            "Line load type in 'instances_schedule' is strongly deprecated. Use 'ramp(instance_count, duration)'")
+            # won't support this. Only support possible if converted to 'ramp'
 
     @staticmethod
     def ramp(params):
