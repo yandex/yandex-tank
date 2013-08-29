@@ -5,7 +5,7 @@ from sys import stdout
 
 StepperInfo = namedtuple(
     'StepperInfo',
-    'loop_count,steps,loadscheme,duration,ammo_count'
+    'loop_count,steps,loadscheme,duration,ammo_count,instances'
 )
 
 
@@ -23,6 +23,7 @@ class StepperStatus(object):
             'loadscheme': None,
             'duration': None,
             'ammo_count': 0,
+            'instances': None,
         }
         self._ammo_count = 0
         self._loop_count = 0

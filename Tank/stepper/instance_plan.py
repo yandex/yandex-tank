@@ -165,10 +165,13 @@ def create(instances_schedule):
 
     >>> take(7, create([]))
     [0, 0, 0, 0, 0, 0, 0]
+
+    >>> take(100, create(['ramp(10, 10s']))
     '''
     steps = [StepFactory.produce(step_config)
              for step_config in instances_schedule]
     lp = Composite(steps)
     info.status.publish('duration', 0)
     info.status.publish('steps', [])
+    info.status.publish('instances', len(lp))
     return lp
