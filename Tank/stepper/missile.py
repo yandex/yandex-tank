@@ -68,9 +68,9 @@ class UriStyleGenerator(object):
 
     def __iter__(self):
         for m in self.missiles:
+            yield m
             info.status.inc_ammo_count()
             info.status.loop_count = info.status.ammo_count / self.uri_count
-            yield m
 
 
 class AmmoFileReader(object):
@@ -120,8 +120,8 @@ class AmmoFileReader(object):
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
                                 "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
-                        info.status.inc_ammo_count()
                         yield (missile, marker)
+                        info.status.inc_ammo_count()
                     except (IndexError, ValueError) as e:
                         raise AmmoFileError(
                             "Error while reading ammo file. Position: %s, header: '%s', original exception: %s" % (ammo_file.tell(), chunk_header, e))
@@ -150,8 +150,8 @@ class SlowLogReader(object):
                     info.status.af_position = ammo_file.tell()
                     if line.startswith('#'):
                         if request != "":
-                            info.status.inc_ammo_count()
                             yield (request, None)
+                            info.status.inc_ammo_count()
                             request = ""
                     else:
                         request += line
@@ -184,9 +184,9 @@ class LineReader(object):
         with self.get_opener(self.filename)(self.filename, 'rb') as ammo_file:
             while True:
                 for line in ammo_file:
-                    info.status.inc_ammo_count()
                     info.status.af_position = ammo_file.tell()
                     yield (line.rstrip('\r\n'), None)
+                    info.status.inc_ammo_count()
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()
