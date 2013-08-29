@@ -1,4 +1,4 @@
-[Заказывайте фан-футболки с Яндекс.Танком!](http://clubs.ya.ru/yandex-tank/replies.xml?item_no=139)
+[Wiki is here!](https://github.com/yandex-load/yandex-tank/wiki)
 
 # Yandex Tank
 ## Description
