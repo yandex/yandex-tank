@@ -1,5 +1,6 @@
 from itertools import cycle
 from util import parse_duration
+from module_exceptions import StepperConfigurationError
 import re
 import info
 import logging
@@ -36,14 +37,14 @@ class Composite(InstanceLP):
         return sum(len(step) for step in self.steps)
 
 
-class Line(InstanceLP):
+class Ramp(InstanceLP):
 
     '''
-    Starts some instances linearly
+    Starts some instances in a specified interval
 
     >>> from util import take
-    >>> take(10, Line(5, 5000))
-    [1000, 2000, 3000, 4000, 5000]
+    >>> take(10, Ramp(5, 5000))
+    [0, 1000, 2000, 3000, 4000]
     '''
 
     def __init__(self, instances, duration):
@@ -52,32 +53,10 @@ class Line(InstanceLP):
 
     def __iter__(self):
         interval = float(self.duration) / self.instances
-        return (int(i * interval) for i in xrange(1, self.instances + 1))
+        return (int(i * interval) for i in xrange(0, self.instances))
 
     def __len__(self):
         return self.instances
-
-
-class Ramp(InstanceLP):
-
-    '''
-    Starts <instance_count> instances, one each <interval> seconds
-
-    >>> from util import take
-    >>> take(10, Ramp(5, 5000))
-    [0, 5000, 10000, 15000, 20000]
-    '''
-
-    def __init__(self, instance_count, interval):
-        self.duration = instance_count * interval
-        self.instance_count = instance_count
-        self.interval = interval
-
-    def __iter__(self):
-        return ((int(i * self.interval) for i in xrange(0, self.instance_count)))
-
-    def __len__(self):
-        return self.instance_count
 
 
 class Wait(InstanceLP):
@@ -106,24 +85,29 @@ class Stairway(InstanceLP):
 class StepFactory(object):
 
     @staticmethod
-    def line(params):
-        logging.warning(
-            "Line load type in 'instances_schedule' is strongly deprecated. Use 'ramp(instance_count, duration)'")
-        raise NotImplementedError(
-            "Line load type in 'instances_schedule' is strongly deprecated. Use 'ramp(instance_count, duration)'")
-            # won't support this. Only support possible if converted to 'ramp'
-
-    @staticmethod
     def ramp(params):
         template = re.compile('(\d+),\s*([0-9.]+[dhms]?)+\)')
-        instances, interval = template.search(params).groups()
-        return Ramp(int(instances), parse_duration(interval))
+        s_res = template.search(params)
+        if s_res:
+            instances, interval = s_res.groups()
+            return Ramp(int(instances), parse_duration(interval))
+        else:
+            logging.info(
+                "Ramp step format: 'ramp(<instances_to_start>, <step_duration>)'")
+            raise StepperConfigurationError(
+                "Error in step configuration: 'ramp(%s'" % params)
 
     @staticmethod
     def wait(params):
         template = re.compile('([0-9.]+[dhms]?)+\)')
-        duration = template.search(params).groups()[0]
-        return Wait(parse_duration(duration))
+        s_res = template.search(params)
+        if s_res:
+            duration = s_res.groups()[0]
+            return Wait(parse_duration(duration))
+        else:
+            logging.info("Wait step format: 'wait(<step_duration>)'")
+            raise StepperConfigurationError(
+                "Error in step configuration: 'wait(%s'" % params)
 
     @staticmethod
     def stairway(params):
@@ -134,7 +118,7 @@ class StepFactory(object):
     @staticmethod
     def produce(step_config):
         _plans = {
-            'line': StepFactory.line,
+            #  'line': StepFactory.line,
             'step': StepFactory.stairway,
             'ramp': StepFactory.ramp,
             'wait': StepFactory.wait,
@@ -155,18 +139,16 @@ def create(instances_schedule):
     >>> from util import take
 
     >>> take(7, create(['ramp(5, 5s)']))
-    [0, 5000, 10000, 15000, 20000, 0, 0]
+    [0, 1000, 2000, 3000, 4000, 0, 0]
 
     >>> take(12, create(['ramp(5, 5s)', 'wait(5s)', 'ramp(5,5s)']))
-    [0, 5000, 10000, 15000, 20000, 30000, 35000, 40000, 45000, 50000, 0, 0]
+    [0, 1000, 2000, 3000, 4000, 10000, 11000, 12000, 13000, 14000, 0, 0]
 
     >>> take(7, create(['wait(5s)', 'ramp(5, 0)']))
     [5000, 5000, 5000, 5000, 5000, 0, 0]
 
     >>> take(7, create([]))
     [0, 0, 0, 0, 0, 0, 0]
-
-    >>> take(100, create(['ramp(10, 10s']))
     '''
     steps = [StepFactory.produce(step_config)
              for step_config in instances_schedule]
