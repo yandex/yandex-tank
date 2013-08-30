@@ -204,7 +204,7 @@ class JMeterReader(AbstractReader):
                 except ValueError, e:
                     # not-ended second json-object
                     self.partial_buffer = read_line
-                    log.warn('bad json-object', e)
+                    self.log.warn('bad json-object', e)
                     return None
                 else:
                     # good json-object. parse it!
