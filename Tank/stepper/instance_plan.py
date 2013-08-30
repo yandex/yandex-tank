@@ -88,6 +88,18 @@ class LoadPlanBuilder(object):
                 raise StepperConfigurationError(
                     "Error in step configuration: 'const(%s'" % params)
 
+        def parse_start(params):
+            template = re.compile('(\d+)\)')
+            s_res = template.search(params)
+            if s_res:
+                instances = s_res.groups()
+                self.start(int(instances))
+            else:
+                self.log.info(
+                    "Start step format: 'start(<instances_count>)'")
+                raise StepperConfigurationError(
+                    "Error in step configuration: 'start(%s'" % params)
+
         def parse_line(params):
             template = re.compile('(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
             s_res = template.search(params)
@@ -136,6 +148,7 @@ class LoadPlanBuilder(object):
             'step': parse_stairway,
             'ramp': parse_ramp,
             'wait': parse_wait,
+            'start': parse_start,
         }
         step_type, params = step_config.split('(')
         step_type = step_type.strip()
