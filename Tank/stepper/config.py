@@ -46,6 +46,8 @@ class ComponentFactory():
         info.status.loop_limit = loop_limit
         info.status.ammo_limit = ammo_limit
         self.uris = uris
+        if self.uris and loop_limit:
+            info.status.ammo_limit = len(self.uris) * loop_limit
         self.headers = headers
         self.marker = get_marker(autocases)
 
