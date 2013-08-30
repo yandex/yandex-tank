@@ -27,7 +27,7 @@ class LoadPlanBuilder(object):
     def wait(self, duration):
         self.log.debug("Wait for %sms from %sms" % (duration, self.duration))
         self.duration += duration
-        self.steps.append((self.instances, duration / 1000.0))
+        self.steps.append((self.instances, int(duration) / 1000))
         return self
 
     def ramp(self, count, duration):
@@ -40,7 +40,7 @@ class LoadPlanBuilder(object):
         start_time = self.duration
         self.generators.append(int(start_time + i * interval)
                                for i in xrange(0, count))
-        self.steps += [(self.instances + i, interval / 1000.0) for i in xrange(0, count)]
+        self.steps += [(self.instances + i, int(interval / 1000.0)) for i in xrange(0, count)]
         self.instances += count
         self.duration += duration
         return self
