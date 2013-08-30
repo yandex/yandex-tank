@@ -200,6 +200,7 @@ def create(instances_schedule):
     '''
     lpb = LoadPlanBuilder().add_all_steps(instances_schedule)
     info.status.publish('duration', 0)
-    info.status.publish('steps', lpb.steps)
+    # info.status.publish('steps', lpb.steps)
+    info.status.publish('steps', [])
     info.status.publish('instances', lpb.instances)
     return lpb.create()
