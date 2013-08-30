@@ -52,3 +52,6 @@ def solve_quadratic(a, b, c):
     root1 = (-b - discRoot) / (2 * a)
     root2 = (-b + discRoot) / (2 * a)
     return (root1, root2)
+
+def s_to_ms(f_sec):
+    return int(f_sec * 1000.0)

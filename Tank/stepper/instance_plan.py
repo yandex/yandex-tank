@@ -1,4 +1,4 @@
-from itertools import cycle
+from itertools import cycle, repeat, chain
 from util import parse_duration
 from module_exceptions import StepperConfigurationError
 import re
@@ -6,130 +6,148 @@ import info
 import logging
 
 
-class InstanceLP(object):
+class LoadPlanBuilder(object):
 
-    '''Base class for all instance plans'''
+    def __init__(self):
+        self.steps = []
+        self.instances = 0
+        self.duration = 0
+        self.log = logging.getLogger(__name__)
 
-    def __init__(self, duration=0):
-        self.duration = float(duration)
-
-    def get_duration(self):
-        return int(self.duration)  # needed for Composite LP
-
-
-class Composite(InstanceLP):
-
-    '''Load plan with multiple steps'''
-
-    def __init__(self, steps):
-        self.steps = steps
-
-    def __iter__(self):
-        base = 0
-        for step in self.steps:
-            for ts in step:
-                yield int(ts + base)
-            base += step.get_duration()
-        for item in cycle([0]):
-            yield item
-
-    def __len__(self):
-        return sum(len(step) for step in self.steps)
-
-
-class Ramp(InstanceLP):
-
-    '''
-    Starts some instances in a specified interval
-
-    >>> from util import take
-    >>> take(10, Ramp(5, 5000))
-    [0, 1000, 2000, 3000, 4000]
-    '''
-
-    def __init__(self, instances, duration):
-        self.instances = instances
-        self.duration = float(duration)
-
-    def __iter__(self):
-        interval = float(self.duration) / self.instances
-        return (int(i * interval) for i in xrange(0, self.instances))
-
-    def __len__(self):
-        return self.instances
-
-
-class Wait(InstanceLP):
-
-    '''
-    Don't start any instances for the definded duration
-    '''
-
-    def __init__(self, duration):
-        self.duration = duration
-
-    def __iter__(self):
-        return iter([])
-
-    def __len__(self):
-        return 0
-
-
-class Stairway(InstanceLP):
-
-    def __init__(self, minrps, maxrps, increment, duration):
-        raise NotImplementedError(
-            'We have no support for this load type in instances_schedule yet')
-
-
-class StepFactory(object):
-
-    @staticmethod
-    def ramp(params):
-        template = re.compile('(\d+),\s*([0-9.]+[dhms]?)+\)')
-        s_res = template.search(params)
-        if s_res:
-            instances, interval = s_res.groups()
-            return Ramp(int(instances), parse_duration(interval))
-        else:
-            logging.info(
-                "Ramp step format: 'ramp(<instances_to_start>, <step_duration>)'")
+    def start(self, count):
+        self.log.debug("Start %s instances at %sms" % (count, self.duration))
+        if count < 0:
             raise StepperConfigurationError(
-                "Error in step configuration: 'ramp(%s'" % params)
+                "Can not stop instances in instances_schedule.")
+        self.steps.append(repeat(int(self.duration), count))
+        self.instances += count
+        return self
 
-    @staticmethod
-    def wait(params):
-        template = re.compile('([0-9.]+[dhms]?)+\)')
-        s_res = template.search(params)
-        if s_res:
-            duration = s_res.groups()[0]
-            return Wait(parse_duration(duration))
-        else:
-            logging.info("Wait step format: 'wait(<step_duration>)'")
+    def ramp(self, count, duration):
+        self.log.debug("Ramp %s instances in %sms from %sms" % (count, duration, self.duration))
+        if count < 0:
             raise StepperConfigurationError(
-                "Error in step configuration: 'wait(%s'" % params)
+                "Can not stop instances in instances_schedule.")
+        interval = float(duration) / count
+        start_time = self.duration
+        self.steps.append(int(start_time + i * interval)
+                          for i in xrange(0, count))
+        self.instances += count
+        self.duration += duration
+        return self
 
-    @staticmethod
-    def stairway(params):
-        template = re.compile('(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
-        minrps, maxrps, increment, duration = template.search(params).groups()
-        return Stairway(int(minrps), int(maxrps), int(increment), parse_duration(duration))
+    def const(self, instances, duration):
+        self.start(instances - self.instances)
+        self.duration += duration
+        return self
 
-    @staticmethod
-    def produce(step_config):
+    def wait(self, duration):
+        self.log.debug("Wait for %sms from %sms" % (duration, self.duration))
+        self.duration += duration
+        return self
+
+    def line(self, initial_instances, final_instances, duration):
+        self.start(initial_instances - self.instances)
+        self.ramp(final_instances - initial_instances, duration)
+        return self
+
+    def stairway(self, initial_instances, final_instances, step_size, step_duration):
+        self.start(initial_instances - self.instances)
+        step_count = (final_instances - initial_instances) / step_size
+        self.log.debug("Making a stairway: %s steps" % step_count)
+        for i in xrange(1, step_count):
+            self.wait(step_duration).start(step_size)
+        return self
+
+    def add_step(self, step_config):
+        def parse_ramp(params):
+            template = re.compile('(\d+),\s*([0-9.]+[dhms]?)+\)')
+            s_res = template.search(params)
+            if s_res:
+                instances, interval = s_res.groups()
+                self.ramp(int(instances), parse_duration(interval))
+            else:
+                self.log.info(
+                    "Ramp step format: 'ramp(<instances_to_start>, <step_duration>)'")
+                raise StepperConfigurationError(
+                    "Error in step configuration: 'ramp(%s'" % params)
+
+        def parse_const(params):
+            template = re.compile('(\d+),\s*([0-9.]+[dhms]?)+\)')
+            s_res = template.search(params)
+            if s_res:
+                instances, interval = s_res.groups()
+                self.const(int(instances), parse_duration(interval))
+            else:
+                self.log.info(
+                    "Const step format: 'const(<instances_count>, <step_duration>)'")
+                raise StepperConfigurationError(
+                    "Error in step configuration: 'const(%s'" % params)
+
+        def parse_line(params):
+            template = re.compile('(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
+            s_res = template.search(params)
+            if s_res:
+                initial_instances, final_instances, interval = s_res.groups()
+                self.line(
+                    int(initial_instances),
+                    int(final_instances),
+                    parse_duration(interval)
+                )
+            else:
+                self.log.info(
+                    "Line step format: 'line(<initial_instances>, <final_instances>, <step_duration>)'")
+                raise StepperConfigurationError(
+                    "Error in step configuration: 'line(%s'" % params)
+
+        def parse_wait(params):
+            template = re.compile('([0-9.]+[dhms]?)+\)')
+            s_res = template.search(params)
+            if s_res:
+                duration = s_res.groups()[0]
+                self.wait(parse_duration(duration))
+            else:
+                self.log.info("Wait step format: 'wait(<step_duration>)'")
+                raise StepperConfigurationError(
+                    "Error in step configuration: 'wait(%s'" % params)
+
+        def parse_stairway(params):
+            template = re.compile(
+                '(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
+            s_res = template.search(params)
+            if s_res:
+                initial_instances, final_instances, step_size, step_duration = s_res.groups()
+                self.stairway(int(initial_instances), int(final_instances), int(
+                    step_size), parse_duration(step_duration))
+            else:
+                self.log.info(
+                    "Stairway step format: 'step(<initial_instances>, <final_instances>, <step_size>, <step_duration>)'")
+                raise StepperConfigurationError(
+                    "Error in step configuration: 'step(%s'" % params)
+
         _plans = {
-            #  'line': StepFactory.line,
-            'step': StepFactory.stairway,
-            'ramp': StepFactory.ramp,
-            'wait': StepFactory.wait,
+            'line': parse_line,
+            'const': parse_const,
+            'step': parse_stairway,
+            'ramp': parse_ramp,
+            'wait': parse_wait,
         }
-        load_type, params = step_config.split('(')
-        load_type = load_type.strip()
-        if load_type in _plans:
-            return _plans[load_type](params)
+        step_type, params = step_config.split('(')
+        step_type = step_type.strip()
+        if step_type in _plans:
+            _plans[step_type](params)
         else:
             raise NotImplementedError(
-                'No such load type implemented for instances_schedule: "%s"' % load_type)
+                'No such load type implemented for instances_schedule: "%s"' % step_type)
+
+    def add_all_steps(self, steps):
+        for step in steps:
+            self.add_step(step)
+        return self
+
+    def create(self):
+        self.steps.append(cycle([0]))
+        return chain(*self.steps)
 
 
 def create(instances_schedule):
@@ -137,6 +155,9 @@ def create(instances_schedule):
     Creates load plan timestamps generator
 
     >>> from util import take
+
+    >>> take(7, LoadPlanBuilder().ramp(5, 5000).create())
+    [0, 1000, 2000, 3000, 4000, 0, 0]
 
     >>> take(7, create(['ramp(5, 5s)']))
     [0, 1000, 2000, 3000, 4000, 0, 0]
@@ -149,11 +170,15 @@ def create(instances_schedule):
 
     >>> take(7, create([]))
     [0, 0, 0, 0, 0, 0, 0]
+
+    >>> take(12, create(['const(3, 5s)', 'line(7, 10, 5s)']))
+    [0, 0, 0, 5000, 5000, 5000, 5000, 5000, 6666, 8333, 0, 0]
+
+    >>> take(10, create(['step(2, 10, 2, 3s)']))
+    [0, 0, 3000, 3000, 6000, 6000, 9000, 9000, 0, 0]
     '''
-    steps = [StepFactory.produce(step_config)
-             for step_config in instances_schedule]
-    lp = Composite(steps)
+    lpb = LoadPlanBuilder().add_all_steps(instances_schedule)
     info.status.publish('duration', 0)
     info.status.publish('steps', [])
-    info.status.publish('instances', len(lp))
-    return lp
+    info.status.publish('instances', lpb.instances)
+    return lpb.create()
