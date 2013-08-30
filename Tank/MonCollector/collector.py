@@ -418,7 +418,7 @@ class MonitoringCollector:
                         isdiff = 0
                     stat = "%s:%s:%s" % (base64.b64encode(metric.get('label')), base64.b64encode(metric.text), isdiff)
                     stats.append('Custom:' + stat)
-                    custom[metric.get('measure')].append(stat)
+                    custom[metric.get('measure', 'call')].append(stat)
     
             logging.debug("Metrics count: %s", metrics_count)
             logging.debug("Host len: %s", len(host))

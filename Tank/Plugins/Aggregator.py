@@ -273,8 +273,7 @@ class AbstractReader:
     def __calculate_aggregates(self, item):
         ''' calculate aggregates on raw data '''
         if item.RPS:
-            if item.avg_response_time:
-                item.selfload = 100 * item.selfload / item.RPS
+            item.selfload = 100 * item.selfload / item.RPS
             item.avg_connect_time /= item.RPS
             item.avg_send_time /= item.RPS
             item.avg_latency /= item.RPS
