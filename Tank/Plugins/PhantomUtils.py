@@ -246,6 +246,9 @@ class StreamConfig:
         # step file
         self.stepper_wrapper.prepare_stepper()
         self.stpd = self.stepper_wrapper.stpd
+        if self.stepper_wrapper.instances:
+            self.instances = self.stepper_wrapper.instances
+            self.log.warning("Redefined instances parameter: %s" % self.instances)
 
         if not self.stpd:
             raise RuntimeError("Cannot proceed with no STPD file")
