@@ -1,3 +1,16 @@
+yandex-load-tank-base (1.4.0) precise; urgency=low
+
+  * new stepper for phantom module
+  * fix unnecessary check in aggregator
+  * fix python call for monitoring agent
+  * add BFG plugin for mysql testing
+  * fix lock file checking bug
+  * add universal phout shooter plugin
+  * optimize phout reading
+  * support argentum aggregator for JMeter plugin
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 02 Sep 2013 17:52:28 +0400
+
 yandex-load-tank-base (1.3.10) precise; urgency=low
 
   * don't support old config format anymore
