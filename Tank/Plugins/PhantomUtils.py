@@ -248,7 +248,6 @@ class StreamConfig:
         self.stpd = self.stepper_wrapper.stpd
         if self.stepper_wrapper.instances:
             self.instances = self.stepper_wrapper.instances
-            self.log.warning("Redefined instances parameter: %s" % self.instances)
 
         if not self.stpd:
             raise RuntimeError("Cannot proceed with no STPD file")
@@ -351,4 +350,3 @@ class StreamConfig:
                         "Address %s reverse-resolved to %s, but must match" % (self.address, reverse_name))
 
 # ========================================================================
-
