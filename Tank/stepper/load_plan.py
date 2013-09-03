@@ -39,7 +39,7 @@ class Const(object):
         return self.duration / 1000 * self.rps
 
     def get_rps_list(self):
-        return [(self.rps, self.duration / 1000)]
+        return [(int(self.rps), self.duration / 1000)]
 
 
 class Line(object):
