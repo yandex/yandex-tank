@@ -10,6 +10,7 @@ import json
 import hashlib
 import logging
 
+
 class AmmoFactory(object):
 
     '''
@@ -54,8 +55,9 @@ class Stepper(object):
         for missile in self.ammo:
             f.write(missile)
 
-# TODO: review and rewrite this class
-class StepperWrapper:
+
+class StepperWrapper(object):
+    # TODO: review and rewrite this class
 
     '''
     Wrapper for cached stepper functionality
@@ -69,6 +71,7 @@ class StepperWrapper:
     OPTION_AMMOFILE = "ammofile"
     OPTION_SCHEDULE = 'rps_schedule'
     OPTION_LOADSCHEME = 'loadscheme'
+    OPTION_INSTANCES_LIMIT = 'instances'
 
     def __init__(self, core, section):
         self.log = logging.getLogger(__name__)
@@ -102,7 +105,8 @@ class StepperWrapper:
     def get_option(self, option_ammofile, param2=None):
         ''' get_option wrapper'''
         result = self.core.get_option(self.section, option_ammofile, param2)
-        self.log.debug("Option %s.%s = %s", self.section, option_ammofile, result)
+        self.log.debug(
+            "Option %s.%s = %s", self.section, option_ammofile, result)
         return result
 
     @staticmethod
@@ -135,7 +139,8 @@ class StepperWrapper:
             self.get_option(self.OPTION_SCHEDULE, ''))
         self.instances_schedule = make_steps(
             self.get_option("instances_schedule", ''))
-
+        self.instances = int(
+            self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
         self.uris = self.get_option("uris", '').strip().split("\n")
         while '' in self.uris:
             self.uris.remove('')
@@ -249,6 +254,7 @@ class StepperWrapper:
             http_ver=self.http_ver,
             ammo_file=self.ammo_file,
             instances_schedule=self.instances_schedule,
+            instances=self.instances,
             loop_limit=self.loop_limit,
             ammo_limit=self.ammo_limit,
             uris=self.uris,

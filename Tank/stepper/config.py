@@ -14,6 +14,7 @@ class ComponentFactory():
         http_ver='1.1',
         ammo_file=None,
         instances_schedule=None,
+        instances=1000,
         loop_limit=0,
         ammo_limit=0,
         uris=None,
@@ -45,6 +46,7 @@ class ComponentFactory():
             loop_limit = 1  # we should have only one loop if we have instance_schedule
         info.status.loop_limit = loop_limit
         info.status.ammo_limit = ammo_limit
+        info.status.publish("instances", instances)
         self.uris = uris
         if self.uris and loop_limit:
             info.status.ammo_limit = len(self.uris) * loop_limit
@@ -65,7 +67,6 @@ class ComponentFactory():
             info.status.publish('loadscheme', self.instances_schedule)
             return ip.create(self.instances_schedule)
         else:
-            #raise StepperConfigurationError('Schedule is not specified')
             self.instances_schedule = []
             info.status.publish('loadscheme', self.instances_schedule)
             return ip.create(self.instances_schedule)
@@ -84,7 +85,6 @@ class ComponentFactory():
                 http_ver=self.http_ver
             )
         elif self.ammo_file:
-            
             ammo_gen = self.ammo_generator_class(self.ammo_file)
         else:
             raise StepperConfigurationError(

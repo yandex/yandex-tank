@@ -56,7 +56,7 @@ class Line(object):
     def ts(self, n):
             root1, root2 = solve_quadratic(self.k / 2.0, self.b, -n)
             return int(root2 * 1000)
-            
+
     def __iter__(self):
         return (self.ts(n) for n in xrange(0, self.__len__()))
 
