@@ -32,7 +32,7 @@ class Const(object):
 
     def get_duration(self):
         '''Return step duration'''
-        return self.duration
+        return self.duration / 1000
 
     def __len__(self):
         '''Return total ammo count'''
