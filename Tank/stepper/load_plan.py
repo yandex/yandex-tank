@@ -69,7 +69,7 @@ class Line(object):
 
     def get_duration(self):
         '''Return step duration'''
-        return int(self.duration * 1000)
+        return int(self.duration)
 
     def __len__(self):
         '''Return total ammo count'''
