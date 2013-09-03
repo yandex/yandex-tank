@@ -118,7 +118,6 @@ class StepperStatus(object):
             progress = int(float(self.ammo_count) / float(max_ammo) * 100.0)
         else:
             progress = 100
-
         if self.lp_progress != progress:
             self.lp_progress = progress
             self.update_view()

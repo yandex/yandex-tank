@@ -36,7 +36,7 @@ class Const(object):
 
     def __len__(self):
         '''Return total ammo count'''
-        return self.duration * self.rps
+        return self.duration / 1000 * self.rps
 
     def get_rps_list(self):
         return [(self.rps, self.duration / 1000)]
