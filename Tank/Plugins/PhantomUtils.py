@@ -222,6 +222,7 @@ class StreamConfig:
         # multi-options
         self.ssl = int(self.get_option("ssl", '0'))
         self.tank_type = self.get_option("tank_type", 'http')
+        # TODO: refactor. Maybe we should decide how to interact with StepperWrapper here.
         self.instances = int(
             self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
         self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
