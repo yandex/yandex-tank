@@ -300,13 +300,16 @@ autostop=time(1,10)
 
 ### Results in phout
 phout.txt - is a per-request log. It could be used for service behaviour analysis (Excel/gnuplot/etc)
-It has following fields: ```time, tag, interval_real, connect_time, send_time, latency, receive_time, interval_event, size_out, size_in, net_code proto_code```
+It has following fields: 
+```
+time, tag, interval_real, connect_time, send_time, latency, receive_time, interval_event, size_out, size_in, net_code, proto_code
+```
 
 Phout example:
 ```
 1326453006.582          1510    934     52      384     140     1249    37      478     0       404
-1326453006.582   others       1301    674     58      499     70      1116    37      478     0       404
-1326453006.587   heavy       377     76      33      178     90      180     37      478     0       404
+1326453006.582 others   1301    674     58      499     70      1116    37      478     0       404
+1326453006.587 heavy    377     76      33      178     90      180     37      478     0       404
 1326453006.587          294     47      27      146     74      147     37      478     0       404
 1326453006.588          345     75      29      166     75      169     37      478     0       404
 1326453006.590          276     72      28      119     57      121     53      476     0       404
@@ -318,6 +321,22 @@ Phout example:
 1326453006.603          256     59      33      107     57      110     53      476     0       404
 1326453006.605          241     53      26      130     32      131     37      478     0       404
 ```
+Description:
+```
+time - unix time with milliseconds
+tag - custom marker, it can be used in analisys different URL's
+interval_real - full round trip time with overhead, mcs(microseconds)
+connect_time - time to get connectivity with server (TCP handshake, for example), mcs
+send_time - time to send request to server (from first byte to last byte), mcs
+latency - duration of server-side procesing (from last byte of request to first byte of response), mcs
+receive_time - time to get data from server (from first byte to last byte of response, download time), mcs
+interval_event - full round trip time, mcs
+size_out - request size (including headers, \n, \r etc), bytes
+size_in - response size (including headers, HTTP code, POST data, etc), bytes
+net_code - network level code, i.e. 0-OK, 101-Timeout, 104-Reset by peer, etc
+proto_code - protocol level code, i.e. 404-Not Found, 200-OK, etc.
+```
+
 **NOTE:** as Yandex.Tank uses phantom as an http load engine and this file is written by phantom, it contents depends on phantom version installed on your Yandex.Tank system.
 
 ### Graph and statistics
