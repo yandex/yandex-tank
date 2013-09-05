@@ -55,4 +55,4 @@ def get_marker(marker_type):
             raise NotImplementedError(
                 'No such marker: "%s"' % marker_type)
     else:
-        return lambda m: 'None'
+        return lambda m: ''
