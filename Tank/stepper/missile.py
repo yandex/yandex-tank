@@ -90,7 +90,7 @@ class AmmoFileReader(object):
 
     '''Read missiles from ammo file'''
 
-    def __init__(self, filename):
+    def __init__(self, filename, **kwargs):
         self.filename = filename
         self.log = logging.getLogger(__name__)
         self.log.info("Loading ammo from '%s'" % filename)
@@ -135,7 +135,7 @@ class SlowLogReader(object):
 
     '''Read missiles from SQL slow log. Not usable with Phantom'''
 
-    def __init__(self, filename):
+    def __init__(self, filename, **kwargs):
         self.filename = filename
 
     def __iter__(self):
@@ -160,7 +160,7 @@ class LineReader(object):
 
     '''One line -- one missile'''
 
-    def __init__(self, filename):
+    def __init__(self, filename, **kwargs):
         self.filename = filename
 
     def __iter__(self):
@@ -176,7 +176,7 @@ class LineReader(object):
 
 
 class UriReader(object):
-    def __init__(self, filename, headers=[]):
+    def __init__(self, filename, headers=[], **kwargs):
         self.filename = filename
         self.headers = set(headers)
 

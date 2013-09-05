@@ -86,7 +86,7 @@ class ComponentFactory():
                 http_ver=self.http_ver
             )
         elif self.ammo_file:
-            ammo_gen = self.ammo_generator_class(self.ammo_file)
+            ammo_gen = self.ammo_generator_class(self.ammo_file, headers=self.headers)
         else:
             raise StepperConfigurationError(
                 'Ammo not found. Specify uris or ammo file')
