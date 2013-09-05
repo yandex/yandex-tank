@@ -182,7 +182,6 @@ class UriReader(object):
 
     def __iter__(self):
         with get_opener(self.filename)(self.filename, 'rb') as ammo_file:
-            line = ammo_file.next()
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
