@@ -26,6 +26,7 @@ class ComponentFactory():
             'phantom': missile.AmmoFileReader,
             'slowlog': missile.SlowLogReader,
             'line': missile.LineReader,
+            'uri': missile.UriReader,
         }
         if ammo_type in generators:
             self.ammo_generator_class = generators[ammo_type]

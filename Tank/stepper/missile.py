@@ -10,6 +10,19 @@ import os.path
 import info
 import logging
 
+def get_opener(f_path):
+    """ Returns opener function according to file extensions:
+        bouth open and gzip.open calls return fileobj.
+
+    Args:
+        f_path: str, ammo file path.
+
+    Returns:
+        function, to call for file open.
+    """
+    if f_path.endswith('.gz'):
+        return gzip.open
+    return open
 
 class HttpAmmo(object):
 
@@ -82,22 +95,6 @@ class AmmoFileReader(object):
         self.log = logging.getLogger(__name__)
         self.log.info("Loading ammo from '%s'" % filename)
 
-
-    def get_opener(self, f_path):
-        """ Returns opener function according to file extensions:
-            bouth open and gzip.open calls return fileobj.
-
-        Args:
-            f_path: str, ammo file path.
-
-        Returns:
-            function, to call for file open.
-        """
-        if f_path.endswith('.gz'):
-            return gzip.open
-        return open
-
-
     def __iter__(self):
         def read_chunk_header(ammo_file):
             chunk_header = ''
@@ -107,7 +104,7 @@ class AmmoFileReader(object):
                     return line
                 chunk_header = line.strip('\r\n')
             return chunk_header
-        with self.get_opener(self.filename)(self.filename, 'rb') as ammo_file:
+        with get_opener(self.filename)(self.filename, 'rb') as ammo_file:
             info.status.af_size = os.path.getsize(self.filename)
             chunk_header = read_chunk_header(ammo_file) #  if we got StopIteration here, the file is empty
             while chunk_header:
@@ -166,27 +163,34 @@ class LineReader(object):
     def __init__(self, filename):
         self.filename = filename
 
-    def get_opener(self, f_path):
-        """ Returns opener function according to file extensions:
-            bouth open and gzip.open calls return fileobj.
-
-        Args:
-            f_path: str, ammo file path.
-
-        Returns:
-            function, to call for file open.
-        """
-        if f_path.endswith('.gz'):
-            return gzip.open
-        return open
-
     def __iter__(self):
-        with self.get_opener(self.filename)(self.filename, 'rb') as ammo_file:
+        with get_opener(self.filename)(self.filename, 'rb') as ammo_file:
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
                     yield (line.rstrip('\r\n'), None)
                     info.status.inc_ammo_count()
+                ammo_file.seek(0)
+                info.status.af_position = 0
+                info.status.inc_loop_count()
+
+
+class UriReader(object):
+    def __init__(self, filename, headers=[]):
+        self.filename = filename
+        self.headers = set(headers)
+
+    def __iter__(self):
+        with get_opener(self.filename)(self.filename, 'rb') as ammo_file:
+            line = ammo_file.next()
+            while True:
+                for line in ammo_file:
+                    info.status.af_position = ammo_file.tell()
+                    if line.startswith('['):
+                        self.headers.add(line.strip('\r\n[]'))
+                    elif len(line.rstrip('\r\n')):
+                        yield (HttpAmmo(line.rstrip('\r\n'), headers=self.headers).to_s(), None)
+                        info.status.inc_ammo_count()
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()
