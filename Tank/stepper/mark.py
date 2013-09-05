@@ -9,9 +9,17 @@ Content-length: 32\r
 param1=50&param2=0&param3=hello
 """
 
+__test_missile = """\
+GET /example/search?param1=50&param2=0&param3=hello HTTP/1.1\r
+Connection: close\r
+Host: example.org\r
+Content-length: 32\r
+\r
+"""
+
 
 def __mark_by_uri(missile):
-    return '_'.join(missile.split('\n', 1)[0].split(' ', 2)[1].split('/'))
+    return '_'.join(missile.split('\n', 1)[0].split(' ', 2)[1].split('?')[0].split('/'))
 
 
 __markers = {
