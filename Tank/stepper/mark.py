@@ -17,6 +17,7 @@ def __mark_by_uri(missile):
 __markers = {
     'uniq': lambda m: uuid4().hex,
     'uri': __mark_by_uri,
+    '1': __mark_by_uri,
 }
 
 
