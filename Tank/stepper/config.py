@@ -4,6 +4,7 @@ import instance_plan as ip
 import missile
 from mark import get_marker
 import info
+import logging
 
 
 class ComponentFactory():
@@ -22,6 +23,7 @@ class ComponentFactory():
         autocases=None,
         ammo_type='phantom'
     ):
+        self.log = logging.getLogger(__name__)
         generators = {
             'phantom': missile.AmmoFileReader,
             'slowlog': missile.SlowLogReader,
@@ -29,6 +31,14 @@ class ComponentFactory():
             'uri': missile.UriReader,
         }
         if ammo_type in generators:
+            if ammo_type is 'phantom':
+                with open(ammo_file) as ammo:
+                    if not ammo.next()[0].isdigit():
+                        ammo_type = 'uri'
+                        self.log.warning(
+                            "Setting ammo_type 'uri' because ammo is not started with digit and you did non specify ammo format.")
+                    else:
+                        self.log.info("I believe ammo_type is 'phantom' cause you did not specify it.")
             self.ammo_generator_class = generators[ammo_type]
         else:
             raise NotImplementedError(
@@ -44,7 +54,8 @@ class ComponentFactory():
         if ammo_limit == -1:  # -1 means infinite
             ammo_limit = None
         if loop_limit is None and ammo_limit is None and instances_schedule:
-            loop_limit = 1  # we should have only one loop if we have instance_schedule
+            # we should have only one loop if we have instance_schedule
+            loop_limit = 1
         info.status.loop_limit = loop_limit
         info.status.ammo_limit = ammo_limit
         info.status.publish("instances", instances)
@@ -86,7 +97,8 @@ class ComponentFactory():
                 http_ver=self.http_ver
             )
         elif self.ammo_file:
-            ammo_gen = self.ammo_generator_class(self.ammo_file, headers=self.headers)
+            ammo_gen = self.ammo_generator_class(
+                self.ammo_file, headers=self.headers)
         else:
             raise StepperConfigurationError(
                 'Ammo not found. Specify uris or ammo file')
