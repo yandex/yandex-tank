@@ -16,8 +16,8 @@ class ComponentFactory():
         ammo_file=None,
         instances_schedule=None,
         instances=1000,
-        loop_limit=0,
-        ammo_limit=0,
+        loop_limit=None,
+        ammo_limit=None,
         uris=None,
         headers=None,
         autocases=None,
@@ -35,7 +35,7 @@ class ComponentFactory():
         ammo_limit = int(ammo_limit)
         if ammo_limit == -1:  # -1 means infinite
             ammo_limit = None
-        if loop_limit is None and ammo_limit is None and instances_schedule:
+        if loop_limit is None and ammo_limit is None and not rps_schedule:
             # we should have only one loop if we have instance_schedule
             loop_limit = 1
         info.status.loop_limit = loop_limit
