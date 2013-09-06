@@ -21,31 +21,13 @@ class ComponentFactory():
         uris=None,
         headers=None,
         autocases=None,
-        ammo_type='phantom'
+        ammo_type='phantom',
     ):
         self.log = logging.getLogger(__name__)
-        generators = {
-            'phantom': missile.AmmoFileReader,
-            'slowlog': missile.SlowLogReader,
-            'line': missile.LineReader,
-            'uri': missile.UriReader,
-        }
-        if ammo_type in generators:
-            if ammo_type is 'phantom':
-                with open(ammo_file) as ammo:
-                    if not ammo.next()[0].isdigit():
-                        ammo_type = 'uri'
-                        self.log.warning(
-                            "Setting ammo_type 'uri' because ammo is not started with digit and you did non specify ammo format.")
-                    else:
-                        self.log.info("I believe ammo_type is 'phantom' cause you did not specify it.")
-            self.ammo_generator_class = generators[ammo_type]
-        else:
-            raise NotImplementedError(
-                'No such ammo type implemented: "%s"' % ammo_type)
+        self.ammo_file = ammo_file
+        self.ammo_type = ammo_type
         self.rps_schedule = rps_schedule
         self.http_ver = http_ver
-        self.ammo_file = ammo_file
         self.instances_schedule = instances_schedule
         loop_limit = int(loop_limit)
         if loop_limit == -1:  # -1 means infinite
@@ -87,6 +69,12 @@ class ComponentFactory():
         """
         return ammo generator
         """
+        af_readers = {
+            'phantom': missile.AmmoFileReader,
+            'slowlog': missile.SlowLogReader,
+            'line': missile.LineReader,
+            'uri': missile.UriReader,
+        }
         if self.uris and self.ammo_file:
             raise StepperConfigurationError(
                 'Both uris and ammo file specified. You must specify only one of them')
@@ -97,7 +85,21 @@ class ComponentFactory():
                 http_ver=self.http_ver
             )
         elif self.ammo_file:
-            ammo_gen = self.ammo_generator_class(
+            
+            if self.ammo_type in af_readers:
+                if self.ammo_type is 'phantom':
+                    with open(self.ammo_file) as ammo:
+                        if not ammo.next()[0].isdigit():
+                            self.ammo_type = 'uri'
+                            self.log.info(
+                                "Setting ammo_type 'uri' because ammo is not started with digit and you did non specify ammo format.")
+                        else:
+                            self.log.info(
+                                "I believe ammo_type is 'phantom' cause you did not specify it.")
+            else:
+                raise NotImplementedError(
+                    'No such ammo type implemented: "%s"' % self.ammo_type)
+            ammo_gen = af_readers[self.ammo_type](
                 self.ammo_file, headers=self.headers)
         else:
             raise StepperConfigurationError(
