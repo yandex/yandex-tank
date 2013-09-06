@@ -1,0 +1,7 @@
+[Host: www.example.org]
+[Connection: close] 
+[User-Agent: Tank]  
+/route/?p1=50&origin=1&simplify=1
+/route/?p1=50&origin=1&simplify=1
+/route/?p2=37&origin=1&simplify=1
+/route/?p2=37&origin=1&simplify=1
