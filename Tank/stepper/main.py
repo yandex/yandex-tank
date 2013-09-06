@@ -81,6 +81,7 @@ class StepperWrapper(object):
         self.cache_dir = '.'
 
         # per-shoot params
+        self.instances = 1000
         self.rps_schedule = []
         self.http_ver = '1.0'
         self.ammo_file = None
