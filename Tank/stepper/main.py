@@ -93,6 +93,7 @@ class StepperWrapper(object):
         self.autocases = 0
         self.use_caching = True
         self.force_stepping = None
+        self.ammo_type = 'phantom'
 
         # out params
         self.stpd = None
@@ -123,7 +124,7 @@ class StepperWrapper(object):
         ''' stepper part of reading options '''
         self.log.info("Configuring StepperWrapper...")
         self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
-        self.ammo_type = self.get_option('ammo_type', 'phantom')
+        self.ammo_type = self.get_option('ammo_type', self.ammo_type)
         if self.ammo_file:
             self.ammo_file = os.path.expanduser(self.ammo_file)
         self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
