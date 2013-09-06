@@ -186,7 +186,7 @@ class UriReader(object):
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
                     if line.startswith('['):
-                        self.headers.add(line.strip('\r\n[]'))
+                        self.headers.add(line.strip('\r\n[]\t '))
                     elif len(line.rstrip('\r\n')):
                         yield (HttpAmmo(line.rstrip('\r\n'), headers=self.headers).to_s(), None)
                         info.status.inc_ammo_count()
