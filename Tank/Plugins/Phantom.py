@@ -93,7 +93,8 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             aggregator.add_result_listener(self)
 
         if not self.config and not self.phout_import_mode:
-            aggregator.reader.phout_file = self.phantom.phout_file
+            if aggregator:
+                aggregator.reader.phout_file = self.phantom.phout_file
 
             # generate config
             self.config = self.phantom.compose_config()
@@ -109,7 +110,8 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
                     "Subprocess returned message: %s" % result[2])
 
         else:
-            aggregator.reader.phout_file = self.predefined_phout
+            if aggregator:
+                aggregator.reader.phout_file = self.predefined_phout
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)

@@ -1,21 +1,18 @@
 ''' Provides classes to run TankCore from console environment '''
 from Tank.Plugins.ConsoleOnline import RealConsoleMarkup
 from tankcore import TankCore
-import ConfigParser
 import datetime
 import fnmatch
 import logging
 import os
 import sys
-import tempfile
-import time
+import time 
 import traceback
 import signal
 from optparse import OptionParser
 
 class SingleLevelFilter(logging.Filter):
-    '''Exclude or approve one msg type at a time.
-    '''
+    '''Exclude or approve one msg type at a time.    '''
     def __init__(self, passlevel, reject):
         logging.Filter.__init__(self)
         self.passlevel = passlevel
@@ -35,11 +32,8 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
-# TODO: 2 add system resources busy check
 class ConsoleTank:
-    """
-    Worker class that runs tank core accepting cmdline params
-    """
+    """    Worker class that runs tank core accepting cmdline params    """
 
     IGNORE_LOCKS = "ignore_locks"
 
@@ -60,16 +54,12 @@ class ConsoleTank:
 
 
     def set_baseconfigs_dir(self, directory):
-        '''
-        Set directory where to read configs set
-        '''
+        '''        Set directory where to read configs set        '''
         self.baseconfigs_location = directory
         
         
     def init_logging(self):
-        '''
-        Set up logging, as it is very important for console tool
-        '''
+        '''        Set up logging, as it is very important for console tool        '''
         logger = logging.getLogger()
         logger.setLevel(logging.DEBUG)
 

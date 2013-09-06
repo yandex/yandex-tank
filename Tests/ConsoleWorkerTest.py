@@ -23,8 +23,11 @@ class  ConsoleWorkerTestCase(TankTests.TankTestCase):
     def test_perform(self):
         self.foo.configure()
 
-        console = self.foo.core.get_plugin_of_type(ConsoleOnlinePlugin)
-        console.console_markup = FakeConsoleMarkup()
+        try:
+            console = self.foo.core.get_plugin_of_type(ConsoleOnlinePlugin)
+            console.console_markup = FakeConsoleMarkup()
+        except:
+            pass
         
         if self.foo.perform_test() != 0:
             raise RuntimeError()
