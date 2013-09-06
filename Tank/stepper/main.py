@@ -86,7 +86,7 @@ class StepperWrapper(object):
         self.http_ver = '1.0'
         self.ammo_file = None
         self.instances_schedule = ''
-        self.loop_limit = None
+        self.loop_limit = -1
         self.ammo_limit = None
         self.uris = []
         self.headers = []
