@@ -87,7 +87,7 @@ class StepperWrapper(object):
         self.ammo_file = None
         self.instances_schedule = ''
         self.loop_limit = -1
-        self.ammo_limit = None
+        self.ammo_limit = -1
         self.uris = []
         self.headers = []
         self.autocases = 0
