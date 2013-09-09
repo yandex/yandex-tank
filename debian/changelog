@@ -1,3 +1,22 @@
+yandex-load-tank-base (1.4.5) precise; urgency=low
+
+  * fix uri-style from config
+  * fix unit tests
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 06 Sep 2013 19:53:07 +0400
+
+yandex-load-tank-base (1.4.4) precise; urgency=low
+
+  * fix uri-style from file
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 05 Sep 2013 19:03:17 +0400
+
+yandex-load-tank-base (1.4.3) precise; urgency=low
+
+  * fix stepper bugs
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 03 Sep 2013 21:20:08 +0400
+
 yandex-load-tank-base (1.4.0) precise; urgency=low
 
   * new stepper for phantom module

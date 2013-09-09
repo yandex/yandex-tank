@@ -81,17 +81,19 @@ class StepperWrapper(object):
         self.cache_dir = '.'
 
         # per-shoot params
+        self.instances = 1000
         self.rps_schedule = []
         self.http_ver = '1.0'
         self.ammo_file = None
         self.instances_schedule = ''
-        self.loop_limit = None
-        self.ammo_limit = None
+        self.loop_limit = -1
+        self.ammo_limit = -1
         self.uris = []
         self.headers = []
         self.autocases = 0
         self.use_caching = True
         self.force_stepping = None
+        self.ammo_type = 'phantom'
 
         # out params
         self.stpd = None
@@ -122,7 +124,7 @@ class StepperWrapper(object):
         ''' stepper part of reading options '''
         self.log.info("Configuring StepperWrapper...")
         self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
-        self.ammo_type = self.get_option('ammo_type', 'phantom')
+        self.ammo_type = self.get_option('ammo_type', self.ammo_type)
         if self.ammo_file:
             self.ammo_file = os.path.expanduser(self.ammo_file)
         self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))

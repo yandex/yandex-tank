@@ -18,7 +18,7 @@ class RCAssertPlugin(AbstractPlugin):
         return ["pass", "fail_code"]
     
     def configure(self):
-        codes=self.get_option("pass", '').split(' ')
+        codes = self.get_option("pass", '').split(' ')
         for code in codes:
             if code:
                 self.ok_codes.append(int(code))
