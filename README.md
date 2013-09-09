@@ -39,8 +39,8 @@ Create a file on a server with Yandex.Tank:
 **load.ini**
 ```
 [phantom]
-address=203.0.113.1:80 #Target's address and port .
-rps_schedule=line(1, 100, 10m) #load scheme 
+address=203.0.113.1:80 ; Target's address and port .
+rps_schedule=line(1, 100, 10m) ; load scheme 
 ```
 Yandex.Tank have 3 primitives for describing load scheme:
    1. ```step (a,b,step,dur)``` makes stepped load, where a,b are start/end load values, step - increment value, dur - step duration.
@@ -60,8 +60,8 @@ Time duration could be defined in seconds, minutes (m) and hours (h). For exampl
 For a test with constant load at 10rps for 10 minutes, load.ini should have next lines:
 ```
 [phantom]
-address=203.0.113.1:80 #Target's address and port .
-rps_schedule=const(10, 10m) #load scheme
+address=203.0.113.1:80 ; Target's address and port .
+rps_schedule=const(10, 10m) ; load scheme
 ```
 Voilà, Yandex.Tank setup is done.
 
@@ -74,8 +74,8 @@ URIs listed in load.ini or in a separate file.
 Update configuration file with HTTP headers and URIs:
 ```
 [phantom]
-address=203.0.113.1:80 #Target's address and port .
-rps_schedule=const(10, 10m) #load scheme# Headers and URIs for GET requests
+address=203.0.113.1:80 ; Target's address and port .
+rps_schedule=const(10, 10m) ; load scheme# Headers and URIs for GET requests
 header_http = 1.1
 headers = [Host: www.target.example.com]
   [Connection: close]
@@ -230,8 +230,8 @@ To activate SSL add 'ssl = 1' to load.ini. Don't forget to change port number to
 Now, our basic config looks like that: 
 ```
 [phantom]
-address=203.0.113.1:80 #Target's address and port .
-rps_schedule=const (10,10m) #Load scheme
+address=203.0.113.1:80 ; Target's address and port .
+rps_schedule=const (10,10m) ; Load scheme
 ssl=1
 ```
 ### Autostop
@@ -250,8 +250,8 @@ Example:
 So, if we want to stop test when all answers in 1 second period are 5xx plus some network and timing factors - add autostop line to load.ini:
 ```
 [phantom]
-address=203.0.113.1:80 #Target's address and port .
-rps_schedule=const(10, 10m) #load scheme
+address=203.0.113.1:80 ; Target's address and port .
+rps_schedule=const(10, 10m) ; load scheme
 [autostop]
 autostop=time(1,10)
   http(5xx,100%,1s)
@@ -288,8 +288,8 @@ Content-Type: application/javascript;charset=UTF-8
 For ```load.ini``` like this:
 ```
 [phantom]
-address=203.0.113.1:80 #Target's address and port .
-rps_schedule=const(10, 10m) #load scheme
+address=203.0.113.1:80 ; Target's address and port .
+rps_schedule=const(10, 10m) ; load scheme
 writelog=1
 [autostop]
 autostop=time(1,10)
@@ -347,8 +347,8 @@ use your favorite stats packet, R, for example.
 You can set custom timings in ```load.ini``` with ```time_periods``` parameter like this:
 ```
 [phantom]
-address=203.0.113.1:80 #Target's address and port .
-rps_schedule=const(10, 10m) #load scheme
+address=203.0.113.1:80 ; Target's address and port .
+rps_schedule=const(10, 10m) ; load scheme
 [aggregator]
 time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s is considered as connect timeout.
 ```
@@ -358,8 +358,8 @@ time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s
 Test with 10 threads:
 ```
 [phantom]
-address=203.0.113.1:80 #Target's address and port .
-rps_schedule=const(10, 10m) #load scheme
+address=203.0.113.1:80 ; Target's address and port .
+rps_schedule=const(10, 10m) ; load scheme
 instances=10
 ```
 
@@ -368,9 +368,9 @@ instances=10
 load.ini example:
 ```
 [phantom]
-address=203.0.113.1:80 #Target's address and port .
+address=203.0.113.1:80 ; Target's address and port .
 instances_schedule = line(1,10,10m)
-#load = const (10,10m) #Load scheme is excluded from this load.ini as we used instances_schedule parameter
+;load = const (10,10m) ; Load scheme is excluded from this load.ini as we used instances_schedule parameter
 ```
 
 ### Custom stateless protocol
@@ -380,8 +380,8 @@ To do that add ```tank_type = 2``` to ```load.ini```.
 load.ini example:
 ```
 [phantom]
-address=203.0.113.1:80 #Target's address and port .
-rps_schedule=const(10, 10m) #load scheme
+address=203.0.113.1:80 ; Target's address and port .
+rps_schedule=const(10, 10m) ; load scheme
 instances=10
 tank_type=2
 ```
@@ -390,8 +390,8 @@ If server with Yandex.Tank have several IPs, they may be used to avoid outcome p
 Load.ini:
 ```
 [phantom]
-address=203.0.113.1:80 #Target's address and port .
-rps_schedule=const(10, 10m) #load scheme
+address=203.0.113.1:80 ; Target's address and port .
+rps_schedule=const(10, 10m) ; load scheme
 instances=10
 gatling_ip = 203.0.113.2 203.0.113.3
 ```
@@ -600,27 +600,27 @@ INI file section: **[jmeter]**
 BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first, enable BFG plugin and then specify the parameters for BFG and for the cannon you select. For example, if you want to kill an SQL db:
 ```
 [tank]
-# Disable phantom:
+; Disable phantom:
 plugin_phantom=
-# Enable BFG instead:
+; Enable BFG instead:
 plugin_bfg=Tank/Plugins/BFG.py
 
-# BFG config section:
+; BFG config section:
 [bfg]
 
-# gun type -- what kind of gun should BFG use:
+; gun type -- what kind of gun should BFG use:
 gun_type=sql
 
-# what ammo parser should BFG use:
+; what ammo parser should BFG use:
 ammo_type=slowlog
 
-# stepper parameters (see phantom options):
+; stepper parameters (see phantom options):
 instances = 200
 ammofile=bsdb03h.sql
 rps_schedule=line(1,1000,1m)
 loop=500
 
-# selected gun config section:
+; selected gun config section:
 [sql_gun]
 db = mysql://user:user@localhost/
 ```
@@ -660,22 +660,22 @@ Yandex.Tank sources [here](https://github.com/yandex-load/yandex-tank).
 
 ### load.ini.example
 ```
-# Yandex.Tank config file
-address=203.0.113.1:443 #Target's address and port
-load = const (10,10m) #Load scheme
-#  Headers and URIs for GET requests
+; Yandex.Tank config file
+address=203.0.113.1:443 ; Target's address and port
+load = const (10,10m) ; Load scheme
+;  Headers and URIs for GET requests
 header_http = 1.1
 headers = [Host: www.target.example.com]
   [Connection: close]
 uri = /
-#ssl=1
-#autostop = http(5xx,100%,1)
-#instances=10
-#writelog=1
-#time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s is considered as connect timeout.
-#instances_schedule = line (1,1000,10m)
-#tank_type=2
-#gatling_ip = 141.8.153.82 141.8.153.81
+;ssl=1
+;autostop = http(5xx,100%,1)
+;instances=10
+;writelog=1
+;time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s ; the last value - 10s is considered as connect timeout.
+;instances_schedule = line (1,1000,10m)
+;tank_type=2
+;gatling_ip = 141.8.153.82 141.8.153.81
 
 ```
 ## Load Server Configuration and Tunning
