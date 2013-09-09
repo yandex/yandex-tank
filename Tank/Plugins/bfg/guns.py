@@ -101,5 +101,4 @@ class CustomGun(AbstractPlugin):
         self.module = __import__(module_name)
 
     def shoot(self, missile, marker):
-        self.log.debug("Missile: %s\n%s", marker, missile)
         return self.module.shoot(self, missile, marker)

@@ -29,24 +29,6 @@ class BFG(object):
         self.worker.start()
         self.results = results
 
-    def _start(self, result_queue):
-        '''
-        Worker that runs as a separate process
-        '''
-        self.results = result_queue
-        self.start_time = time.time()
-        stpd = StpdReader(self.stpd_filename)
-        if self.cached_stpd:
-            stpd = list(stpd)
-        shooter = BFGShooter(self.gun, result_queue, instances = self.instances)
-        shooter.start()
-        try:
-            for ts, missile, marker in stpd:
-                shooter.shoot(self.start_time + (ts / 1000.0), missile, marker)
-            shooter.finish()
-        except (KeyboardInterrupt, SystemExit):
-            shooter.finish()
-
     def running(self):
         if self.worker:
             return self.worker.is_alive()
@@ -57,33 +39,62 @@ class BFG(object):
         if self.worker:
             return self.worker.terminate()
 
+    def _start(self, results):
+        '''
+        Worker that runs as a separate process
+        '''
+        self.start_time = time.time()
+        stpd = StpdReader(self.stpd_filename)
+        if self.cached_stpd:
+            stpd = list(stpd)
+        self.shooter = BFGShooter(
+            self.gun,
+            results,
+            plan=stpd,
+            instances=self.instances
+        )
+        try:
+            self.shooter.start()
+        except (KeyboardInterrupt, SystemExit):
+            self.shooter.stop()
+            self.shooter.join()
+
 
 class BFGShooter(object):
-    def __init__(self, gun, result_queue, instances = 10):
+    def __init__(self, gun, results, plan, instances = 10):
         self.gun = gun
-        self.result_queue = result_queue
-        self.quit = False
-        self.missile_queue = mp.Queue()
-        self.thread_pool = [th.Thread(target=self._worker) for i in xrange(0, instances)]
+        self.results = results
+        self.quit = mp.Value('b')
+        self.quit.value = False
+        self.task_queue = mp.Queue()
+        self.plan = plan
+        self.pool = [mp.Process(target=self._worker) for i in xrange(0, instances)]
+        self.feeder = th.Thread(target=self._feed)
 
     def start(self):
-        map(lambda x: x.start(), self.thread_pool)
+        self.start_time = time.time()
+        map(lambda x: x.start(), self.pool)
+        self.feeder.start()
 
-    def finish(self):
-        self.quit = True
-        [thread.join for thread in self.thread_pool]
+    def stop(self):
+        self.quit.value = True
 
-    def shoot(self, planned_time, missile, marker):
-        delay = planned_time - time.time()
-        if delay > 0:
-            time.sleep(delay)
-        self._shoot(missile, marker)
+    def join(self):
+        self.feeder.join()
+        map(lambda x: x.join(), self.pool)
 
-    def _shoot(self, missile, marker):
-        self.missile_queue.put((missile, marker))
+    def _feed(self):
+        for task in self.plan:
+            if self.quit.value:
+                break
+            self.task_queue.put(task)
 
     def _worker(self):
-        while not self.quit:
-            missile, marker = self.missile_queue.get()
+        while not self.quit.value:
+            ts, missile, marker = self.task_queue.get()
+            planned_time = self.start_time + (ts / 1000.0)
+            delay = planned_time - time.time()
+            if delay > 0:
+                time.sleep(delay)
             cur_time, sample = self.gun.shoot(missile, marker)
-            self.result_queue.put((cur_time, sample))
+            self.results.put((cur_time, sample))
