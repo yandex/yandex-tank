@@ -3,6 +3,7 @@ import time
 from Tank.stepper import StpdReader
 import multiprocessing as mp
 import threading as th
+from Queue import Queue
 
 class BFG(object):
 
@@ -11,6 +12,7 @@ class BFG(object):
         gun,
         instances,
         stpd_filename,
+        cache_stpd=False,
     ):
         self.log = logging.getLogger(__name__)
         self.log.info(
@@ -20,6 +22,7 @@ class BFG(object):
         self.instances = int(instances)
         self.results = None
         self.worker = None
+        self.cache_stpd = cache_stpd
 
     def start(self):
         results = mp.Queue()
@@ -34,14 +37,16 @@ class BFG(object):
         self.results = result_queue
         self.start_time = time.time()
         stpd = StpdReader(self.stpd_filename)
+        if self.cache_stpd:
+            stpd = list(stpd)
         shooter = BFGShooter(self.gun, result_queue, instances = self.instances)
+        shooter.start()
         try:
-            self.tasks = []
             for ts, missile, marker in stpd:
-                self.tasks.append(shooter.shoot(self.start_time + (ts / 1000.0), missile, marker))
-            [task.join() for task in self.tasks]
+                shooter.shoot(self.start_time + (ts / 1000.0), missile, marker)
+            shooter.finish()
         except KeyboardInterrupt:
-            [task.cancel() for task in self.tasks]
+            shooter.finish()
 
     def running(self):
         if self.worker:
@@ -55,31 +60,31 @@ class BFG(object):
 
 
 class BFGShooter(object):
-
-    '''
-    Executes tasks from queue at a specified time
-    (or immediately if time is in the past).
-    The results of execution are added to result_queue.
-    '''
-
     def __init__(self, gun, result_queue, instances = 10):
         self.gun = gun
         self.result_queue = result_queue
-        self.instances = instances
+        self.quit = False
+        self.missile_queue = Queue()
+        self.thread_pool = [th.Thread(target=self._worker) for i in xrange(0, instances)]
+
+    def start(self):
+        map(lambda x: x.start(), self.thread_pool)
+
+    def finish(self):
+        self.quit = True
+        [thread.join for thread in self.thread_pool]
 
     def shoot(self, planned_time, missile, marker):
         delay = planned_time - time.time()
-        while th.active_count() >= self.instances:
-            if delay - delay / 2 > 0:
-                time.sleep(delay - delay / 2)
-                delay = planned_time - time.time()
         if delay > 0:
-            task = th.Timer(delay, self._shoot, [missile, marker])
-        else:
-            task = th.Thread(target=self._shoot, args=[missile, marker])
-        task.start()
-        return task
+            time.sleep(delay)
+        self._shoot(missile, marker)
 
     def _shoot(self, missile, marker):
-        cur_time, sample = self.gun.shoot(missile, marker)
-        self.result_queue.put((cur_time, sample))
+        self.missile_queue.put((missile, marker))
+
+    def _worker(self):
+        while not self.quit:
+            missile, marker = self.missile_queue.get()
+            cur_time, sample = self.gun.shoot(missile, marker)
+            self.result_queue.put((cur_time, sample))
