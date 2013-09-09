@@ -3,7 +3,6 @@ import time
 from Tank.stepper import StpdReader
 import multiprocessing as mp
 import threading as th
-from Queue import Queue
 
 class BFG(object):
 
@@ -64,7 +63,7 @@ class BFGShooter(object):
         self.gun = gun
         self.result_queue = result_queue
         self.quit = False
-        self.missile_queue = Queue()
+        self.missile_queue = mp.Queue()
         self.thread_pool = [th.Thread(target=self._worker) for i in xrange(0, instances)]
 
     def start(self):
