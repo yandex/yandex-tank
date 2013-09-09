@@ -9,6 +9,7 @@ import os
 import json
 import hashlib
 import logging
+from info import status
 
 
 class AmmoFactory(object):
@@ -168,6 +169,12 @@ class StepperWrapper(object):
             if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.__si_filename()):
                 self.log.info("Using cached stpd-file: %s", self.stpd)
                 stepper_info = self.__read_cached_options()
+                status.publish('instances', stepper_info.instances)
+                status.publish('loadscheme', stepper_info.loadscheme)
+                status.publish('loop_count', stepper_info.loop_count)
+                status.publish('steps', stepper_info.steps)
+                status.publish('duration', stepper_info.duration)
+                status.ammo_count = stepper_info.ammo_count
             else:
                 if self.force_stepping and os.path.exists(self.__si_filename()):
                     os.remove(self.__si_filename())
