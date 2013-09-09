@@ -12,7 +12,7 @@ class BFG(object):
         gun,
         instances,
         stpd_filename,
-        cache_stpd=False,
+        cached_stpd=False,
     ):
         self.log = logging.getLogger(__name__)
         self.log.info(
@@ -22,7 +22,7 @@ class BFG(object):
         self.instances = int(instances)
         self.results = None
         self.worker = None
-        self.cache_stpd = cache_stpd
+        self.cached_stpd = cached_stpd
 
     def start(self):
         results = mp.Queue()
@@ -37,7 +37,7 @@ class BFG(object):
         self.results = result_queue
         self.start_time = time.time()
         stpd = StpdReader(self.stpd_filename)
-        if self.cache_stpd:
+        if self.cached_stpd:
             stpd = list(stpd)
         shooter = BFGShooter(self.gun, result_queue, instances = self.instances)
         shooter.start()

@@ -33,7 +33,7 @@ class BFGPlugin(AbstractPlugin):
         return __file__
 
     def get_available_options(self):
-        return ["gun_type", "instances"] + self.stepper_wrapper.get_available_options
+        return ["gun_type", "instances", "cached_stpd"] + self.stepper_wrapper.get_available_options
 
     def configure(self):
         self.log.info("Configuring BFG...")
@@ -47,10 +47,16 @@ class BFGPlugin(AbstractPlugin):
         else:
             raise NotImplementedError(
                 'No such gun type implemented: "%s"' % gun_type)
+        cached_stpd_option = self.get_option("cached_stpd", '0')
+        if cached_stpd_option == '1':
+            cached_stpd = True
+        else:
+            cached_stpd = False
         self.bfg = BFG(
             gun=self.gun,
             instances=self.get_option("instances", '15'),
             stpd_filename=self.stepper_wrapper.stpd,
+            cached_stpd=cached_stpd,
         )
         aggregator = None
         try:
