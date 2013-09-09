@@ -73,7 +73,10 @@ class BFGShooter(object):
             if delay - delay / 2 > 0:
                 time.sleep(delay - delay / 2)
                 delay = planned_time - time.time()
-        task = th.Timer(delay, self._shoot, [missile, marker])
+        if delay > 0:
+            task = th.Timer(delay, self._shoot, [missile, marker])
+        else:
+            task = th.Thread(target=self._shoot, args=[missile, marker])
         task.start()
         return task
 
