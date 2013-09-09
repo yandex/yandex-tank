@@ -39,7 +39,7 @@ class StpdReader(object):
                     fields = chunk_header.split()
                     chunk_size = int(fields[0])
                     timestamp = int(fields[1])
-                    marker = fields[2] if len(fields) > 1 else None
+                    marker = fields[2] if len(fields) > 2 else None
                     missile = ammo_file.read(chunk_size)
                     if len(missile) < chunk_size:
                         raise StpdFileError(
