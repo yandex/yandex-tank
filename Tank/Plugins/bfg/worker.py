@@ -45,7 +45,7 @@ class BFG(object):
             for ts, missile, marker in stpd:
                 shooter.shoot(self.start_time + (ts / 1000.0), missile, marker)
             shooter.finish()
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, SystemExit):
             shooter.finish()
 
     def running(self):
