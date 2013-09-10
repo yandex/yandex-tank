@@ -45,31 +45,32 @@ class BFG(object):
         Worker that runs as a separate process
         '''
         self.start_time = time.time()
-        stpd = StpdReader(self.stpd_filename)
-        if self.cached_stpd:
-            stpd = list(stpd)
-        self.shooter = BFGShooter(
+        shooter = BFGShooter(
             self.gun,
             results,
-            plan=stpd,
-            instances=self.instances
+            stpd_filename=self.stpd_filename,
+            instances=self.instances,
+            cached_stpd=self.cached_stpd,
         )
         try:
-            self.shooter.start()
+            shooter.start()
         except (KeyboardInterrupt, SystemExit):
-            self.shooter.stop()
-            self.shooter.join()
+            shooter.stop()
+
+        self.log.info("Waiting for worker")
+        shooter.join()
+        self.log.info("Worker exited")
 
 
 class BFGShooter(object):
-    def __init__(self, gun, results, plan, instances = 10):
+    def __init__(self, gun, results, stpd_filename, instances=10, cached_stpd=False):
         self.log = logging.getLogger(__name__)
         self.gun = gun
         self.results = results
-        self.quit = mp.Value('b')
-        self.quit.value = False
+        self.quit = mp.Event()
         self.task_queue = mp.Queue()
-        self.plan = plan
+        self.cached_stpd = cached_stpd
+        self.stpd_filename = stpd_filename
         self.pool = [mp.Process(target=self._worker) for i in xrange(0, instances)]
         self.feeder = th.Thread(target=self._feed)
 
@@ -79,23 +80,27 @@ class BFGShooter(object):
         self.feeder.start()
 
     def stop(self):
-        self.quit.value = True
+        self.quit.set()
 
     def join(self):
-        #self.feeder.join()
-        #self.log.info("Feeder have just exited")
+        self.log.info("Waiting for shooters and feeder")
+        self.feeder.join()
         map(lambda x: x.join(), self.pool)
+        self.log.info("Shooters and feeder exited.")
 
     def _feed(self):
-        for task in self.plan:
-            if self.quit.value:
+        plan = StpdReader(self.stpd_filename)
+        if self.cached_stpd:
+            plan = list(plan)
+        for task in plan:
+            if self.quit.is_set():
                 break
             self.task_queue.put(task)
         self.log.info("Feeded all data. Set quit marker")
-        self.quit.value = True
+        self.quit.set()
 
     def _worker(self):
-        while not self.quit.value:
+        while not self.quit.is_set():
             try:
                 task = self.task_queue.get(timeout=1)
                 ts, missile, marker = task
@@ -106,11 +111,10 @@ class BFGShooter(object):
                 cur_time, sample = self.gun.shoot(missile, marker)
                 self.results.put((cur_time, sample), timeout=1)
             except (KeyboardInterrupt, SystemExit):
-                self.quit.value = True
+                self.quit.set()
             except Empty:
-                self.log.info("Empty queue. Quit = %s" % self.quit.value)
+                self.log.info("Empty queue. Quit = %s" % self.quit.is_set())
                 pass
             except Full:
                 self.log.warning("Couldn't put to result queue because it's full")
-        self.log.info("Exiting worker...")
-        return
+        self.log.info("Exiting shooter...")
