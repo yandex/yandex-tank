@@ -3,6 +3,7 @@ import time
 from Tank.stepper import StpdReader
 import multiprocessing as mp
 import threading as th
+from Queue import Empty, Full
 
 class BFG(object):
 
@@ -62,6 +63,7 @@ class BFG(object):
 
 class BFGShooter(object):
     def __init__(self, gun, results, plan, instances = 10):
+        self.log = logging.getLogger(__name__)
         self.gun = gun
         self.results = results
         self.quit = mp.Value('b')
@@ -80,7 +82,8 @@ class BFGShooter(object):
         self.quit.value = True
 
     def join(self):
-        self.feeder.join()
+        #self.feeder.join()
+        #self.log.info("Feeder have just exited")
         map(lambda x: x.join(), self.pool)
 
     def _feed(self):
@@ -88,13 +91,26 @@ class BFGShooter(object):
             if self.quit.value:
                 break
             self.task_queue.put(task)
+        self.log.info("Feeded all data. Set quit marker")
+        self.quit.value = True
 
     def _worker(self):
         while not self.quit.value:
-            ts, missile, marker = self.task_queue.get()
-            planned_time = self.start_time + (ts / 1000.0)
-            delay = planned_time - time.time()
-            if delay > 0:
-                time.sleep(delay)
-            cur_time, sample = self.gun.shoot(missile, marker)
-            self.results.put((cur_time, sample))
+            try:
+                task = self.task_queue.get(timeout=1)
+                ts, missile, marker = task
+                planned_time = self.start_time + (ts / 1000.0)
+                delay = planned_time - time.time()
+                if delay > 0:
+                    time.sleep(delay)
+                cur_time, sample = self.gun.shoot(missile, marker)
+                self.results.put((cur_time, sample), timeout=1)
+            except (KeyboardInterrupt, SystemExit):
+                self.quit.value = True
+            except Empty:
+                self.log.info("Empty queue. Quit = %s" % self.quit.value)
+                pass
+            except Full:
+                self.log.warning("Couldn't put to result queue because it's full")
+        self.log.info("Exiting worker...")
+        return

@@ -22,7 +22,7 @@ class BFGReader(AbstractReader):
                 self.data_queue.append(cur_time)
                 self.data_buffer[cur_time] = []
             self.data_buffer[cur_time].append(list(sample))
-        if self.data_queue and len(self.data_queue) > 1:
+        if self.data_queue and len(self.data_queue) > 4:
             res = self.pop_second()
             res.overall.planned_requests = self.__get_expected_rps()
             return res
