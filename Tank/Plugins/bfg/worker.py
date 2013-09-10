@@ -25,7 +25,7 @@ class BFG(object):
         self.cached_stpd = cached_stpd
 
     def start(self):
-        results = mp.Queue(1024)
+        results = mp.Queue(8192)
         self.worker = mp.Process(target=self._start, args=(results,))
         self.worker.start()
         self.results = results
