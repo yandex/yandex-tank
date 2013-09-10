@@ -112,6 +112,8 @@ class AmmoFileReader(object):
                     try:
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])
+                        if chunk_size == 0:
+                            break
                         marker = fields[1] if len(fields) > 1 else None
                         missile = ammo_file.read(chunk_size)
                         if len(missile) < chunk_size:
