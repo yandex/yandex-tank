@@ -16,7 +16,7 @@ class BFGReader(AbstractReader):
     def get_next_sample(self, force):
         new_data = []
         while not self.bfg.results.empty():
-            new_data.append(self.bfg.results.get())
+            new_data.append(self.bfg.results.get(1))
         for cur_time, sample in new_data:
             if not cur_time in self.data_buffer.keys():
                 self.data_queue.append(cur_time)
