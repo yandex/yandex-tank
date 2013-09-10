@@ -68,7 +68,7 @@ class BFGShooter(object):
         self.gun = gun
         self.results = results
         self.quit = mp.Event()
-        self.task_queue = mp.Queue()
+        self.task_queue = mp.Queue(1024)
         self.cached_stpd = cached_stpd
         self.stpd_filename = stpd_filename
         self.pool = [mp.Process(target=self._worker) for i in xrange(0, instances)]
@@ -83,10 +83,13 @@ class BFGShooter(object):
         self.quit.set()
 
     def join(self):
-        self.log.info("Waiting for shooters and feeder")
-        self.feeder.join()
-        map(lambda x: x.join(), self.pool)
-        self.log.info("Shooters and feeder exited.")
+        try:
+            self.log.info("Waiting for shooters and feeder")
+            # self.feeder.join()
+            map(lambda x: x.join(), self.pool)
+            self.log.info("Shooters and feeder exited.")
+        except (KeyboardInterrupt, SystemExit):
+            self.quit.set()
 
     def _feed(self):
         plan = StpdReader(self.stpd_filename)
