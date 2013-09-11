@@ -11,6 +11,7 @@ class BFG(object):
         self,
         gun,
         instances,
+        threads,
         stpd_filename,
         cached_stpd=False,
     ):
@@ -20,6 +21,7 @@ class BFG(object):
         self.gun = gun
         self.stpd_filename = stpd_filename
         self.instances = int(instances)
+        self.threads = int(threads)
         self.results = None
         self.worker = None
         self.cached_stpd = cached_stpd
@@ -49,6 +51,7 @@ class BFG(object):
             self.gun,
             results,
             stpd_filename=self.stpd_filename,
+            threads=self.threads,
             instances=self.instances,
             cached_stpd=self.cached_stpd,
         )

@@ -55,6 +55,7 @@ class BFGPlugin(AbstractPlugin):
         self.bfg = BFG(
             gun=self.gun,
             instances=self.get_option("instances", '15'),
+            threads=self.get_option("threads", '10'),
             stpd_filename=self.stepper_wrapper.stpd,
             cached_stpd=cached_stpd,
         )
