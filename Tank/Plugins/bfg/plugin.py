@@ -9,6 +9,7 @@ from widgets import BFGInfoWidget
 from worker import BFG
 from reader import BFGReader
 
+
 class BFGPlugin(AbstractPlugin):
 
     ''' Big Fucking Gun plugin '''
@@ -66,7 +67,9 @@ class BFGPlugin(AbstractPlugin):
             self.log.warning("No aggregator found: %s", ex)
 
         if aggregator:
-            aggregator.reader = BFGReader(aggregator, self.bfg)
+            result_cache_size = int(self.get_option("result_cache_size", '5'))
+            aggregator.reader = BFGReader(
+                aggregator, self.bfg, result_cache_size=result_cache_size)
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
@@ -98,4 +101,3 @@ class BFGPlugin(AbstractPlugin):
             self.log.info("Terminating BFG")
             self.bfg.stop()
         return retcode
-

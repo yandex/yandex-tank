@@ -8,9 +8,10 @@ class BFGReader(AbstractReader):
     Listens results from BFG and provides them to Aggregator
     '''
 
-    def __init__(self, aggregator, bfg):
+    def __init__(self, aggregator, bfg, result_cache_size=5):
         AbstractReader.__init__(self, aggregator)
         self.bfg = bfg
+        self.result_cache_size = result_cache_size
         self.steps = map(list, si.status.get_info().steps)
 
     def get_next_sample(self, force):
@@ -22,7 +23,7 @@ class BFGReader(AbstractReader):
                 self.data_queue.append(cur_time)
                 self.data_buffer[cur_time] = []
             self.data_buffer[cur_time].append(list(sample))
-        if self.data_queue and len(self.data_queue) > 4:
+        if self.data_queue and len(self.data_queue) >= self.result_cache_size:
             res = self.pop_second()
             res.overall.planned_requests = self.__get_expected_rps()
             return res
