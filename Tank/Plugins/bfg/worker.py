@@ -57,15 +57,16 @@ class BFG(object):
         except (KeyboardInterrupt, SystemExit):
             shooter.stop()
 
-        self.log.info("Waiting for worker")
+        self.log.info("Waiting for shooter")
         shooter.join()
-        self.log.info("Worker exited")
+        self.log.info("Shooter exited")
 
 
 class BFGShooter(object):
-    def __init__(self, gun, results, stpd_filename, instances=10, cached_stpd=False):
+    def __init__(self, gun, results, stpd_filename, instances=10, threads=10, cached_stpd=False):
         self.log = logging.getLogger(__name__)
         self.gun = gun
+        self.threads = threads
         self.results = results
         self.quit = mp.Event()
         self.task_queue = mp.Queue(1024)
@@ -84,10 +85,9 @@ class BFGShooter(object):
 
     def join(self):
         try:
-            self.log.info("Waiting for shooters and feeder")
-            # self.feeder.join()
+            self.log.info("Waiting for workers")
             map(lambda x: x.join(), self.pool)
-            self.log.info("Shooters and feeder exited.")
+            self.log.info("All workers exited.")
         except (KeyboardInterrupt, SystemExit):
             self.quit.set()
 
@@ -103,6 +103,14 @@ class BFGShooter(object):
         self.quit.set()
 
     def _worker(self):
+        self.log.info("Started shooter process with %s threads..." % self.threads)
+        pool = [mp.Process(target=self._thread_worker) for i in xrange(0, self.threads)]
+        map(lambda x: x.start(), pool)
+        map(lambda x: x.join(), pool)
+        self.log.info("Exiting shooter process...")
+
+    def _thread_worker(self):
+        self.log.debug("Starting shooter thread...")
         while not self.quit.is_set():
             try:
                 task = self.task_queue.get(timeout=1)
@@ -116,8 +124,8 @@ class BFGShooter(object):
             except (KeyboardInterrupt, SystemExit):
                 self.quit.set()
             except Empty:
-                self.log.info("Empty queue. Quit = %s" % self.quit.is_set())
+                self.log.info("Empty queue. Quit flag is %s" % self.quit.is_set())
                 pass
             except Full:
                 self.log.warning("Couldn't put to result queue because it's full")
-        self.log.info("Exiting shooter...")
+        self.log.debug("Exiting shooter thread...")
