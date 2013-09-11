@@ -359,6 +359,7 @@ class AbstractReader:
 
     def pop_second(self):
         ''' pop from out queue new aggregate data item '''
+        self.data_queue.sort()
         next_time = self.data_queue.pop(0)
         data = self.data_buffer[next_time]
         del self.data_buffer[next_time]
