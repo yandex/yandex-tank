@@ -108,7 +108,8 @@ class BFGShooter(object):
             plan = list(plan)
         for task in plan:
             if self.quit.is_set():
-                break
+                self.log.info("Stop feeding: gonna quit")
+                return
             self.task_queue.put(task)
         self.log.info("Feeded all data. Set quit marker")
         self.quit.set()
