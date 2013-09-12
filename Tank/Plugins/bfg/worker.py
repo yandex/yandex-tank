@@ -3,7 +3,11 @@ import time
 from Tank.stepper import StpdReader
 import multiprocessing as mp
 import threading as th
+import signal
 from Queue import Empty, Full
+
+def signal_handler(signum, frame):
+    pass
 
 class BFG(object):
 
@@ -46,6 +50,10 @@ class BFG(object):
         '''
         Worker that runs as a separate process
         '''
+        # disable signal handler from parent:
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+
         self.start_time = time.time()
         shooter = BFGShooter(
             self.gun,
