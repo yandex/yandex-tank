@@ -10,6 +10,7 @@ import json
 import hashlib
 import logging
 from info import status
+import re
 
 
 class AmmoFactory(object):
@@ -147,9 +148,8 @@ class StepperWrapper(object):
         self.uris = self.get_option("uris", '').strip().split("\n")
         while '' in self.uris:
             self.uris.remove('')
-        self.headers = self.get_option("headers", '').strip().split("\n")
-        while '' in self.headers:
-            self.headers.remove('')
+        rx = re.compile('\[(.*?)\]')
+        self.headers = rx.findall(self.get_option("headers", ''))
         self.http_ver = self.get_option("header_http", self.http_ver)
         self.autocases = self.get_option("autocases", '0')
         self.use_caching = int(self.get_option("use_caching", '1'))
