@@ -202,6 +202,9 @@ def create(rps_schedule):
 
     >>> take(10, create(['step(1.2, 5.7, 1.1, 5s)']))
     [0, 833, 1666, 2500, 3333, 4166, 5000, 5434, 5869, 6304]
+
+    >>> take(10, create(['const(1, 1)']))
+    [0]
     '''
     if len(rps_schedule) > 1:
         lp = Composite([StepFactory.produce(step_config)

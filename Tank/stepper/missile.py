@@ -61,7 +61,6 @@ class SimpleGenerator(object):
     def __iter__(self):
         for m in self.missiles:
             info.status.inc_loop_count()
-            info.status.inc_ammo_count()  # loops equals ammo count
             yield m
 
 
@@ -82,7 +81,6 @@ class UriStyleGenerator(object):
     def __iter__(self):
         for m in self.missiles:
             yield m
-            info.status.inc_ammo_count()
             info.status.loop_count = info.status.ammo_count / self.uri_count
 
 
@@ -120,7 +118,6 @@ class AmmoFileReader(object):
                             raise AmmoFileError(
                                 "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
                         yield (missile, marker)
-                        info.status.inc_ammo_count()
                     except (IndexError, ValueError) as e:
                         raise AmmoFileError(
                             "Error while reading ammo file. Position: %s, header: '%s', original exception: %s" % (ammo_file.tell(), chunk_header, e))
@@ -150,7 +147,6 @@ class SlowLogReader(object):
                     if line.startswith('#'):
                         if request != "":
                             yield (request, None)
-                            info.status.inc_ammo_count()
                             request = ""
                     else:
                         request += line
@@ -171,7 +167,6 @@ class LineReader(object):
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
                     yield (line.rstrip('\r\n'), None)
-                    info.status.inc_ammo_count()
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()
@@ -191,7 +186,6 @@ class UriReader(object):
                         self.headers.add(line.strip('\r\n[]\t '))
                     elif len(line.rstrip('\r\n')):
                         yield (HttpAmmo(line.rstrip('\r\n'), headers=self.headers).to_s(), None)
-                        info.status.inc_ammo_count()
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()
