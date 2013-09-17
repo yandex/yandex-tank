@@ -101,7 +101,10 @@ class ComponentFactory():
                 raise NotImplementedError(
                     'No such ammo type implemented: "%s"' % self.ammo_type)
             ammo_gen = af_readers[self.ammo_type](
-                self.ammo_file, headers=self.headers)
+                self.ammo_file,
+                headers=self.headers,
+                http_ver=self.http_ver
+            )
         else:
             raise StepperConfigurationError(
                 'Ammo not found. Specify uris or ammo file')

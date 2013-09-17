@@ -189,9 +189,10 @@ class LineReader(object):
 
 
 class UriReader(object):
-    def __init__(self, filename, headers=[], **kwargs):
+    def __init__(self, filename, headers=[], http_ver='1.1', **kwargs):
         self.filename = filename
         self.headers = set(headers)
+        self.http_ver = http_ver
         self.log = logging.getLogger(__name__)
         self.log.info("Loading ammo from '%s' using URI format." % filename)
 
@@ -203,7 +204,12 @@ class UriReader(object):
                     if line.startswith('['):
                         self.headers.add(line.strip('\r\n[]\t '))
                     elif len(line.rstrip('\r\n')):
-                        yield (HttpAmmo(line.rstrip('\r\n'), headers=self.headers).to_s(), None)
+                        yield (
+                            HttpAmmo(
+                                line.rstrip('\r\n'),
+                                headers=self.headers,
+                                http_ver=self.http_ver,
+                            ).to_s(), None)
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()
@@ -212,9 +218,10 @@ class UriPostReader(object):
 
     '''Read POST missiles from ammo file'''
 
-    def __init__(self, filename, headers=[], **kwargs):
+    def __init__(self, filename, headers=[], http_ver='1.1', **kwargs):
         self.filename = filename
         self.headers = set(headers)
+        self.http_ver = http_ver
         self.log = logging.getLogger(__name__)
         self.log.info("Loading ammo from '%s' using URI+POST format" % filename)
 
@@ -254,6 +261,7 @@ class UriPostReader(object):
                                 headers=self.headers,
                                 method='POST',
                                 body=missile,
+                                http_ver=self.http_ver,
                             ).to_s(),
                             marker
                         )
