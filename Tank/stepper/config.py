@@ -74,6 +74,7 @@ class ComponentFactory():
             'slowlog': missile.SlowLogReader,
             'line': missile.LineReader,
             'uri': missile.UriReader,
+            'uripost': missile.UriPostReader,
         }
         if self.uris and self.ammo_file:
             raise StepperConfigurationError(
