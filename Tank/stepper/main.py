@@ -121,7 +121,7 @@ class StepperWrapper(object):
         opts = [StepperWrapper.OPTION_AMMOFILE, StepperWrapper.OPTION_LOOP,
                 StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD]
         opts += ["instances_schedule", "uris",
-                 "headers", "header_http", "autocases", "ammo_type"]
+                 "headers", "header_http", "autocases", "ammo_type", "ammo_limit"]
         opts += ["use_caching", "cache_dir", "force_stepping", "file_cache"]
         return opts
 
