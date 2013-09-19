@@ -55,7 +55,10 @@ class Stepper(object):
     def write(self, f):
         for missile in self.ammo:
             f.write(missile)
-            info.status.inc_ammo_count()
+            try:
+                info.status.inc_ammo_count()
+            except StopIteration:
+                break
 
 
 class StepperWrapper(object):
