@@ -127,13 +127,17 @@ class AmmoFileReader(object):
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])
                         if chunk_size == 0:
-                            break
-                        marker = fields[1] if len(fields) > 1 else None
-                        missile = ammo_file.read(chunk_size)
-                        if len(missile) < chunk_size:
-                            raise AmmoFileError(
-                                "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
-                        yield (missile, marker)
+                            self.log.debug('Zero-sized chunk in ammo file at %s. Starting over.' % ammo_file.tell())
+                            ammo_file.seek(0)
+                            info.status.inc_loop_count()
+                            chunk_header = read_chunk_header(ammo_file)
+                        else:
+                            marker = fields[1] if len(fields) > 1 else None
+                            missile = ammo_file.read(chunk_size)
+                            if len(missile) < chunk_size:
+                                raise AmmoFileError(
+                                    "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
+                            yield (missile, marker)
                     except (IndexError, ValueError) as e:
                         raise AmmoFileError(
                             "Error while reading ammo file. Position: %s, header: '%s', original exception: %s" % (ammo_file.tell(), chunk_header, e))
@@ -246,23 +250,27 @@ class UriPostReader(object):
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])
                         if chunk_size == 0:
-                            break
-                        uri = fields[1]
-                        marker = fields[2] if len(fields) > 2 else None
-                        missile = ammo_file.read(chunk_size)
-                        if len(missile) < chunk_size:
-                            raise AmmoFileError(
-                                "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
-                        yield (
-                            HttpAmmo(
-                                uri=uri,
-                                headers=self.headers,
-                                method='POST',
-                                body=missile,
-                                http_ver=self.http_ver,
-                            ).to_s(),
-                            marker
-                        )
+                            self.log.debug('Zero-sized chunk in ammo file at %s. Starting over.' % ammo_file.tell())
+                            ammo_file.seek(0)
+                            info.status.inc_loop_count()
+                            chunk_header = read_chunk_header(ammo_file)
+                        else:
+                            uri = fields[1]
+                            marker = fields[2] if len(fields) > 2 else None
+                            missile = ammo_file.read(chunk_size)
+                            if len(missile) < chunk_size:
+                                raise AmmoFileError(
+                                    "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
+                            yield (
+                                HttpAmmo(
+                                    uri=uri,
+                                    headers=self.headers,
+                                    method='POST',
+                                    body=missile,
+                                    http_ver=self.http_ver,
+                                ).to_s(),
+                                marker
+                            )
                     except (IndexError, ValueError) as e:
                         raise AmmoFileError(
                             "Error while reading ammo file. Position: %s, header: '%s', original exception: %s" % (ammo_file.tell(), chunk_header, e))
