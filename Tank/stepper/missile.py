@@ -243,8 +243,6 @@ class UriPostReader(object):
             while chunk_header:
                 if chunk_header is not '':
                     try:
-                        self.log.info("Headers: %s" % self.headers)
-                        self.log.info("chunk_header: %s" % chunk_header)
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])
                         if chunk_size == 0:
