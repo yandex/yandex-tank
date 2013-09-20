@@ -56,11 +56,14 @@ class LoadPlanBuilder(object):
         return self
 
     def stairway(self, initial_instances, final_instances, step_size, step_duration):
-        self.start(initial_instances - self.instances)
         step_count = (final_instances - initial_instances) / step_size
         self.log.debug("Making a stairway: %s steps" % step_count)
-        for i in xrange(1, step_count):
+        self.start(initial_instances - self.instances)
+        for i in xrange(1, step_count + 1):
             self.wait(step_duration).start(step_size)
+        if final_instances != self.instances:
+            self.wait(step_duration).start(final_instances - self.instances)
+        self.wait(step_duration)
         return self
 
     def add_step(self, step_config):
@@ -192,11 +195,14 @@ def create(instances_schedule):
     >>> take(12, create(['const(3, 5s)', 'line(7, 10, 5s)']))
     [0, 0, 0, 5000, 5000, 5000, 5000, 5000, 6666, 8333, 0, 0]
 
-    >>> take(10, create(['step(2, 10, 2, 3s)']))
-    [0, 0, 3000, 3000, 6000, 6000, 9000, 9000, 0, 0]
+    >>> take(12, create(['step(2, 10, 2, 3s)']))
+    [0, 0, 3000, 3000, 6000, 6000, 9000, 9000, 12000, 12000, 0, 0]
 
     >>> take(12, LoadPlanBuilder().const(3, 1000).line(5, 10, 5000).steps)
-    [(3, 1.0), (5, 1.0), (6, 1.0), (7, 1.0), (8, 1.0), (9, 1.0)]
+    [(3, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1)]
+
+    >>> take(12, LoadPlanBuilder().stairway(100, 950, 100, 30000).steps)
+    [(100, 30), (200, 30), (300, 30), (400, 30), (500, 30), (600, 30), (700, 30), (800, 30), (900, 30), (950, 30)]
     '''
     lpb = LoadPlanBuilder().add_all_steps(instances_schedule)
     info.status.publish('duration', 0)

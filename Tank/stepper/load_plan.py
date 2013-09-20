@@ -5,6 +5,7 @@ import re
 from util import parse_duration, solve_quadratic
 from itertools import chain, groupby
 import info
+import logging
 
 
 class Const(object):
@@ -40,6 +41,9 @@ class Const(object):
 
     def get_rps_list(self):
         return [(int(self.rps), self.duration / 1000)]
+
+    def __repr__(self):
+        return 'const(%s, %s)' % (self.rps, self.duration / 1000)
 
 
 class Line(object):
@@ -131,6 +135,7 @@ class Stairway(Composite):
             Const(minrps + i * increment, duration)
             for i in xrange(0, n_steps + 1)
         ]
+        logging.info(steps)
         super(Stairway, self).__init__(steps)
 
 
@@ -205,6 +210,8 @@ def create(rps_schedule):
 
     >>> take(10, create(['const(1, 1)']))
     [0]
+
+    >>> take(10, create(['step(100,950,100,1m)']))
     '''
     if len(rps_schedule) > 1:
         lp = Composite([StepFactory.produce(step_config)
