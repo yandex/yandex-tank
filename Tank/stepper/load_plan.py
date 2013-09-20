@@ -135,6 +135,8 @@ class Stairway(Composite):
             Const(minrps + i * increment, duration)
             for i in xrange(0, n_steps + 1)
         ]
+        if (n_steps + 1) * increment < maxrps:
+            steps.append(Const(maxrps, duration))
         logging.info(steps)
         super(Stairway, self).__init__(steps)
 
@@ -211,7 +213,6 @@ def create(rps_schedule):
     >>> take(10, create(['const(1, 1)']))
     [0]
 
-    >>> take(10, create(['step(100,950,100,1m)']))
     '''
     if len(rps_schedule) > 1:
         lp = Composite([StepFactory.produce(step_config)
