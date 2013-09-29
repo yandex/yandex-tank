@@ -8,21 +8,19 @@ There are three executables in Yandex.Tank package: ``yandex-tank``,
 ``yandex-tank-ab`` и ``yandex-tank-jmeter``. Last two of them just use
 different king of load gen utilities, ``ab`` (Apache Benchmark) and
 ``jmeter`` (Apache JMeter), accordingly. Command line options are common
-for all three: \* **-h, --help** - show command line options \* **-c
-CONFIG, --config=CONFIG** - read options from INI file. It is possible
-to set multiple INI files by specifying the option serveral times.
-Default: ``./load.conf`` \* **-i, --ignore-lock** - ignore lock files \*
-**-f, --fail-lock** - don't wait for lock file, quit if it's busy. The
-default behaviour is to wait for lock file to become free. \* **-l LOG,
---log=LOG** - main log file location. Default: ``./tank.log`` \* **-n,
---no-rc** - don't read ``/etc/yandex-tank/*.ini`` and ``~/.yandex-tank``
-\* **-o OPTION, --option=OPTION** - set an option from command line.
-Options set in cmd line override those have been set in configuration
-files. Multiple times for multiple options. Format:
-``<section>.<option>=value`` Example:
-``yandex-tank -o "console.short_only=1" --option="phantom.force_stepping=1"``
-\* **-q, --quiet** - only print WARNINGs and ERRORs to console \* **-v,
---verbose** - print ALL messages to console. Chatty mode
+for all three.
+
+- **-h, --help** - show command line options 
+- **-c CONFIG, --config=CONFIG** - read options from INI file. It is possible to set multiple INI files by specifying the option serveral times. Default: ``./load.conf`` 
+- **-i, --ignore-lock** - ignore lock files 
+- **-f, --fail-lock** - don't wait for lock file, quit if it's busy. The default behaviour is to wait for lock file to become free. 
+- **-l LOG, --log=LOG** - main log file location. Default: ``./tank.log``
+- **-n, --no-rc** - don't read ``/etc/yandex-tank/*.ini`` and ``~/.yandex-tank``
+- **-o OPTION, --option=OPTION** - set an option from command line. Options set in cmd line override those have been set in configuration files. Multiple times for multiple options. Format: ``<section>.<option>=value`` Example: ``yandex-tank -o "console.short_only=1" --option="phantom.force_stepping=1"``
+- **-s SCHEDULED_START, --scheduled-start=SCHEDULED_START** - run test on specified time, date format YYYY-MM-DD hh:mm:ss or hh:mm:ss
+- **-q, --quiet** - only print WARNINGs and ERRORs to console 
+- **-v, --verbose** - print ALL messages to console. Chatty mode
+
 
 Add an ammo file name as a nameless parameter, e.g.:
 ``yandex-tank ammo.txt``
@@ -32,10 +30,18 @@ Advanced configuration
 
 Configuration files organized as standard INI files. Those are files
 partitioned into named sections that contain 'name=value' records. For
-example: \`\`\` [phantom] address=target-mulca.targetnets.yandex.ru:8080
-rps\_schedule=const(100,60s)
+example: 
 
-[autostop] autostop=instances(80%,10) \`\`\` A common rule: options with
+::
+
+    [phantom] 
+    address=example.com:80
+    rps_schedule=const(100,60s)
+    
+    [autostop] 
+    autostop=instances(80%,10)
+
+A common rule: options with
 same name override those set before them (in the same file or not).
 
 Default configuration files
@@ -51,48 +57,75 @@ The ``DEFAULT`` section
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 One can use a **magic** ``DEFAULT`` section, that contains global
-options. Those options are in charge for every section: \`\`\`
-[autostop] autostop=time(1,10)
+options. Those options are in charge for every section: 
 
-[console] short\_only=1
+::
 
-[aggregator] time\_periods=10 20 30 100
+    [autostop] 
+    autostop=time(1,10)
+    
+    [console] 
+    short_only=1
+    
+    [aggregator] 
+    time_periods=10 20 30 100
+    
+    [meta] 
+    job_name=ask 
 
-[meta] job\_name=ask ``is an equivalent for:`` [DEFAULT]
-autostop=time(1,10) short\_only=1 time\_periods=10 20 30 100
-job\_name=ask \`\`\` !!! Don't use global options wich have same name in
-different sections.
+is an equivalent for:
 
-The ``web`` section
-^^^^^^^^^^^^^^^^^^^^^^^
+::
 
-Here are default options, controlling a yandex tank's web frontend::
+    [DEFAULT]
+    autostop=time(1,10) 
+    short_only=1 
+    time_periods=10 20 30 100
+    job_name=ask
+    
+!!! Don't use global options wich have same name in different sections.
 
-    [web]
-    port = 8080      # a port to bind to on localhost
-    interval = 1m    # ???
-    redirect = ""    # does nothing except 2 seconds delay on exit
-    # if 'yes', then webserver will wait for Enter from keyboard
-    # to exit
-    manual_stop = 0
 
 Multiline options
 ^^^^^^^^^^^^^^^^^
 
 Use indent to show that a line is a continuation of a previous one:
-``[autostop] autostop=time(1,10)   http(404,1%,5s)   net(xx,1,30)``
-**Ask Yandex.Tank developers to add multiline capability for options
-where you need it!**
+
+:: 
+
+    [autostop]
+    autostop=time(1,10)
+      http(404,1%,5s)   
+      net(xx,1,30)
+*Ask Yandex.Tank developers to add multiline capability for options
+where you need it!*
 
 Time units
 ^^^^^^^^^^
 
-Time units encoding is as following: \* ``ms`` = millisecons \* ``s`` =
-seconds \* ``m`` = minutes \* ``h`` = hours Default time unit is a
-millisecond. For example, ``30000 == 30s``
+Time units encoding is as following: 
 
+* ``ms`` = millisecons \
+
+* ``s`` = seconds \
+
+* ``m`` = minutes \
+
+* ``h`` = hours 
+
+Default time unit is a millisecond. For example, ``30000 == 30s``
 ``time(30000,120)`` is an equivalent to ``time(30s,2m)`` You can also
-mix them: ``1h30m15s`` or ``2s15ms``
+mix them: ``1h30m15s`` or ``2s15ms``. If somewhere it is not supported - report a bug, please.
+
+Shell-options
+^^^^^^^^^^
+
+Option value with backquotes is evaluated in shell, for example
+
+::
+
+ [meta]
+ job_name=`pwd`
 
 Artifacts
 ~~~~~~~~~
@@ -100,8 +133,8 @@ Artifacts
 As a result Yandex.Tank produces some files (logs, results, configs
 etc). Those files are placed with care to the **artifact directory**. An
 option for that is ``artifacts_base_dir`` in the ``tank`` section. It is
-recommended to set it to a convinient place, for example,
-``~/yandex-tank-artifacts``, it would be easier to manage the artifacts
+recommended to set it to a convenient place, for example,
+``~/yandex-tank-artifacts``; it would be easier to manage the artifacts
 there.
 
 Modules
