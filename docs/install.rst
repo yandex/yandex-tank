@@ -51,7 +51,11 @@ Otherwise if port is unreacheable:
 
 (it's just an example, programs like ``nc/nmap/wget/curl`` could be used
 as well, but not ping!) 
-Routing OK, service is reachable, next thing
+
+Routing
+~~~~~~~~
+
+OK, service is reachable, next thing
 you should know is how far Yandex.Tank is located from the service you'd
 like to test. Heavy load can make switch to be unresponsible or to
 reboot, or at least it may lead to network losses, so the test results
