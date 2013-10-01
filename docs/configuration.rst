@@ -100,6 +100,25 @@ Use indent to show that a line is a continuation of a previous one:
 *Ask Yandex.Tank developers to add multiline capability for options
 where you need it!*
 
+Referencing one option to another
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``%(optname)s`` gives you ability to reference from option to another. It helps to reduce duplication. Example:
+
+::
+
+    [DEFAULT]
+    host=target12.load.net  
+  
+    [phantom]
+    address=%(host)s:8080
+    
+    [monitoring]
+    default_target=%(host)s
+    
+    [shellexec]
+    prepare=echo Target is %(host)s
+
 Time units
 ^^^^^^^^^^
 
@@ -145,10 +164,10 @@ Phantom
 
 Load generator module that uses phantom utility.
 
+INI file section: **[phantom]**
+
 Options
 '''''''
-
-INI file section: **[phantom]**
 
 Basic options: 
 
@@ -261,12 +280,14 @@ Options
 
 Basic criteria types: 
 
-* **time** - stop the test if average response time for each second in specified period is higher then allowed. E.g.: ``time(1s500ms, 30s) time(50,15)``. Exit code - 21
+* **time** - stop the test if average response time is higher then allowed. E.g.: ``time(1s500ms, 30s) time(50,15)``. Exit code - 21
 * **http** - stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value. Examples: ``http(404,10,15) http(5xx, 10%, 1m)``. Exit code - 22
 * **net** - like ``http``, but for network codes. Use ``xx`` for all non-zero codes. Exit code - 23
 * **quantile** - stop the test if the specified percentile is larger then specified level for as long as the time period specified. Available percentile values: 25, 50, 75, 80, 90, 95, 98, 99, 100. Example: ``quantile (95,100ms,10s)`` 
 * **instances** - available when phantom module is included. Stop the test if instance count is larger then specified value. Example: ``instances(80%, 30) instances(50,1m)``. Exit code - 24
 * **metric_lower** and **metric_higher** - stop test if monitored metrics are lower/higher than specified for time period. Example: metric_lower(127.0.0.1,Memory_free,500,10). Exit code - 31 and 32. **Note**: metric names (except customs) are written with underline. For hostnames masks are allowed (i.e target-\*.load.net)
+
+Basic criteria aren't aggregated, they are tested for each second in specified period. For example autostop=time(50,15) means "stop if average responce time for every second in 15s interval is higher than 50ms"
 
 Advanced criteria types:
 
@@ -275,6 +296,133 @@ Advanced criteria types:
 * **total_net** — like ``net``, but accumulated. See ``total_time``. Example: ``total_net(79,10%,10s) total_net(11x,50%,15s)``  Exit code - 27
 * **negative_http** —  inversed ``total_http``. Stop if there are not enough responses that fit the specified mask. Use to be shure that server responds 200. Example: ``negative_http(2xx,10%,10s)``. Exit code: 28
 * **negative_net** — inversed ``total_net``. Stop if there are not enough responses that fit the specified mask. Example: ``negative_net(0,10%,10s)``. Exit code: 29
+
+Monitoring
+^^^^^^^^^^
+Runs metrics collection through ssh connect.
+
+INI file section: **[monitoring]**
+
+Options
+'''''''
+
+* **config** - path to monitoring config file. Default: ``auto`` means collect default metrics from ``default_target`` host. If ``none`` is defined, monitoring won't be executed. Also it is possible to write plain multiline XML config.
+* **default_target** - an address where from collect "default" metrics. When phantom module is used, address will be obtained from it.
+* **ssh_timeout** - ssh connection timeout. Default: 5s
+
+Artifacts
+'''''''''
+
+* **agent_*.cfg** - configuration files sent to hosts to run monitoring agents.
+* **agent_<host>_*.log** - monitoring agents' log files, downloaded from hosts
+* **monitoring_*.data** - data collected by monitoring agents, received by ssh.
+* **<monitoring config** - monitoring config file
+
+Configuration
+'''''''''''''
+
+Net access and authentication
+"""""""""""""""""""""""""""""
+
+Monitoring requires ssh access to hosts for copy and executing agents on them. SSH session is established with current user account, so you need to copy your public keys (ssh-copy-id) and enable nonpassword authorization on hosts.
+If connection establishing failed for some reason in ``ssh_timeout`` seconds, corresponding message will be written to console and monitoring log and task will proceed further. 
+Tip: write to ``.ssh/config`` next lines to eliminate ``-A`` option in ``ssh`` 
+
+:: 
+    
+    StrictHostKeyChecking no
+    ForwardAgent yes
+    
+Configuration file format
+"""""""""""""""""""""""""
+
+Config is an XML file with structure:
+root element ``Monitoring`` includes elements ``Host`` which contains elements-metrics
+Example:
+
+::
+
+    <Monitoring>
+      <Host address="xxx.load.net">
+        <CPU measure="user,system,iowait"/>
+        <System measure="csw,int"/>
+        <Memory measure="free,used"/>
+        <Disk measure="read,write"/>
+        <Net measure="recv,send"/>
+      </Host>
+    </Monitoring>
+    
+Element ``Monitoring``
+**********************
+Global monitoring settings. Attributes:
+
+* ``loglevel`` - debug level (info, debug), optional. Default: info.
+
+Element ``Host``
+****************
+Contains address and role of monitored server. Attributes:
+
+* ``address="<IP address or domain name>"`` - server adddress. Mandatory. Special string ``[target]`` could be used here, which means "get from the tank target address"
+* ``port="<SSH port>"`` - server's ssh port. Optional. Default: 22
+* ``python="<python path>"`` - the way to use alternative python version. Optional
+* ``interval="<seconds>"`` - metrics collection interval. Optional. Default: 1 second
+* ``comment="<short commentary>"`` - short notice about server's role in test. Optional. Default: empty
+
+Example: `<Host address="localhost" comment="frontend" priority="1" interval="5" />`
+
+Metric elements
+****************
+
+Metric elements in general are set by metrics group name and particular metrics enumeration in attribute `measure`. Example: `<CPU measure="idle,user,system" />`
+
+List of metrics group names and particular metrics in them:
+
+* CPU
+    * idle
+    * user - default 
+    * system - default
+    * iowait - default
+    * nice
+* System
+    * la1 - load average 1 min
+    * la5 - ...
+    * la15 - ...
+    * csw - context switches, default
+    * int - interrupts, default
+    * numproc - process amount in system
+    * numthreads - threads amount in system
+* Memory
+    * free - default
+    * used - default
+    * cached
+    * buff
+* Disk
+    * read  - default
+    * write - default
+* Net
+    * recv - bytes received, default
+    * send - bytes sent,  default
+    * tx - outgoing packet rate
+    * rx - incoming packet rate 
+    * retransmit - retransmit amount
+    * estab - number of sockets in ESTABLISHED state
+    * closewait - number of sockets in CLOSEWAIT
+    * timewait - number of sockets in TIMEWAIT
+* Custom
+    * tail - metric value is read from file's last line, file path is specified in node text. Example: `<Custom measure="tail" label="size history">/tmp/dbsize.log</Custom>`
+    * call - metric value is a command or script execution output. Example: `<Custom measure="call" diff="1" label="Base size">du -hs /usr/mysql/data</Custom>`
+
+Custom metrics have an additional attribute `diff`, that signals to obtain as metric value the difference between previous and current value. So in example above, not the file size, but the dynamic of changes in size will be written.
+Also custom metrics must have attribute `label`, which defines metric short name (only latin). `Underline symbol should be avoided.` 
+
+Monitoring default logic
+****************
+Default logic is applied on next levels:
+
+1. Host level: by default target is derived from `address` in `phantom` module.
+2. Metrics group level: If config contain host address only, without metrics, i.e `<Host address="somehost.yandex.ru" />`, then default metrics in groups `CPU`, `Memory`, `Disk` are collected. If host has defined any metric, then only it is collected.
+3. Metric level: if metrics group is defined without attribute `measure`, then only default group metrics are collected.
+   
 
 Console on-line screen
 ^^^^^^^^^^^^^^^^^^^^^^
