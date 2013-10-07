@@ -127,7 +127,8 @@ class AmmoFileReader(object):
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])
                         if chunk_size == 0:
-                            self.log.info('Zero-sized chunk in ammo file at %s. Starting over.' % ammo_file.tell())
+                            if info.status.loop_count == 0:
+                                self.log.info('Zero-sized chunk in ammo file at %s. Starting over.' % ammo_file.tell())
                             ammo_file.seek(0)
                             info.status.inc_loop_count()
                             chunk_header = read_chunk_header(ammo_file)
