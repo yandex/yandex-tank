@@ -172,7 +172,6 @@ class StepperWrapper(object):
             if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.__si_filename()):
                 self.log.info("Using cached stpd-file: %s", self.stpd)
                 stepper_info = self.__read_cached_options()
-                info.status.publish('instances', stepper_info.instances)
                 info.status.publish('loadscheme', stepper_info.loadscheme)
                 info.status.publish('loop_count', stepper_info.loop_count)
                 info.status.publish('steps', stepper_info.steps)
@@ -189,7 +188,6 @@ class StepperWrapper(object):
             self.loop_count = stepper_info.loop_count
             self.loadscheme = stepper_info.loadscheme
             self.steps = stepper_info.steps
-            self.instances = stepper_info.instances
 
     def __si_filename(self):
         '''Return name for stepper_info json file'''
