@@ -5,6 +5,7 @@ import re
 from itertools import islice
 from module_exceptions import StepperConfigurationError
 import math
+import gzip
 
 
 def take(number, iter):
@@ -55,3 +56,18 @@ def solve_quadratic(a, b, c):
 
 def s_to_ms(f_sec):
     return int(f_sec * 1000.0)
+
+
+def get_opener(f_path):
+    """ Returns opener function according to file extensions:
+        bouth open and gzip.open calls return fileobj.
+
+    Args:
+        f_path: str, ammo file path.
+
+    Returns:
+        function, to call for file open.
+    """
+    if f_path.endswith('.gz'):
+        return gzip.open
+    return open

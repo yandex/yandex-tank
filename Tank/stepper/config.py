@@ -3,6 +3,7 @@ import load_plan as lp
 import instance_plan as ip
 import missile
 from mark import get_marker
+from util import get_opener
 import info
 import logging
 
@@ -89,7 +90,7 @@ class ComponentFactory():
             
             if self.ammo_type in af_readers:
                 if self.ammo_type is 'phantom':
-                    with open(self.ammo_file) as ammo:
+                    with get_opener(self.ammo_file)(self.ammo_file, 'rb') as ammo:
                         if not ammo.next()[0].isdigit():
                             self.ammo_type = 'uri'
                             self.log.info(

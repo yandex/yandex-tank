@@ -3,26 +3,13 @@ Missile object and generators
 
 You should update Stepper.status.ammo_count and Stepper.status.loop_count in your custom generators!
 '''
-import gzip
+from util import get_opener
 from itertools import cycle
 from module_exceptions import AmmoFileError
 import os.path
 import info
 import logging
 
-def get_opener(f_path):
-    """ Returns opener function according to file extensions:
-        bouth open and gzip.open calls return fileobj.
-
-    Args:
-        f_path: str, ammo file path.
-
-    Returns:
-        function, to call for file open.
-    """
-    if f_path.endswith('.gz'):
-        return gzip.open
-    return open
 
 class HttpAmmo(object):
     '''
