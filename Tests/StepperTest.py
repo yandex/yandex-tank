@@ -44,7 +44,7 @@ class StepperTestCase(TankTestCase):
             ).write(stpd_file)
         res = open(temp_stpd, 'r').read()
         self.assertNotEquals("", res)
-        self.assertEquals(347, os.path.getsize(temp_stpd))
+        self.assertEquals(277, os.path.getsize(temp_stpd))
 
     def test_uri(self):
         temp_stpd = tempfile.mkstemp()[1]
