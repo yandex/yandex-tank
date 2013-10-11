@@ -2,6 +2,7 @@
 Utilities: parsers, converters, etc.
 '''
 import re
+import logging
 from itertools import islice
 from module_exceptions import StepperConfigurationError
 import math
@@ -69,5 +70,7 @@ def get_opener(f_path):
         function, to call for file open.
     """
     if f_path.endswith('.gz'):
+        logging.info("Using gzip opener")
         return gzip.open
-    return open
+    else:
+        return open
