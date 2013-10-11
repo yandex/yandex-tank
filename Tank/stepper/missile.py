@@ -208,12 +208,18 @@ class UriReader(object):
                     if line.startswith('['):
                         self.headers.add(line.strip('\r\n[]\t '))
                     elif len(line.rstrip('\r\n')):
+                        fields = line.split()
+                        uri = fields[0]
+                        if len(fields) > 1:
+                            marker = fields[1]
+                        else:
+                            marker = None
                         yield (
                             HttpAmmo(
-                                line.rstrip('\r\n'),
+                                uri,
                                 headers=self.headers,
                                 http_ver=self.http_ver,
-                            ).to_s(), None)
+                            ).to_s(), marker)
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()
