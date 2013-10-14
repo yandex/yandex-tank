@@ -41,8 +41,8 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         else:
             port = self.get_option("port", "2003")
             self.web_port = self.get_option("web_port", "8080")
-            prefix = self.get_option("prefix", "one_sec.yandex_tank")
-            self.graphite_client = GraphiteClient(prefix, self.address, port)
+            self.prefix = self.get_option("prefix", "one_sec.yandex_tank")
+            self.graphite_client = GraphiteClient(self.prefix, self.address, port)
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(self)
             
@@ -72,7 +72,8 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
                         width=1000,
                         height=400,
                         start_time=self.start_time,
-                        end_time=self.end_time
+                        end_time=self.end_time,
+                        prefix=self.prefix
                     )
                 )
 
