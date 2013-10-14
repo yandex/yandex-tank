@@ -6,6 +6,8 @@ import logging
 import socket
 import string
 import time
+from datetime import datetime
+import os
 
 class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
     '''Graphite data uploader'''
@@ -21,17 +23,26 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         self.graphite_client = None
 
     def get_available_options(self):
-        return ["address", "port", "prefix"]
+        return ["address", "port", "prefix", "web_port"]
+
+    def start_test(self):
+        start_time = datetime.datetime.now()
+        self.start_time = start_time.strftime("%H:%M%%20%Y%m%d")
+
+    def end_test(self, retcode):
+        end_time = datetime.datetime.now() + datetime.timedelta(minutes = 1)
+        self.end_time = end_time.strftime("%H:%M%%20%Y%m%d")
 
     def configure(self):
         '''Read configuration'''
-        address = self.get_option("address", "")
-        if address == "": 
+        self.address = self.get_option("address", "")
+        if self.address == "": 
             self.log.warning("Graphite uploader is not configured and will not send any data")
         else:
             port = self.get_option("port", "2003")
+            self.web_port = self.get_option("web_port", "8080")
             prefix = self.get_option("prefix", "one_sec.yandex_tank")
-            self.graphite_client = GraphiteClient(prefix, address, port)
+            self.graphite_client = GraphiteClient(prefix, self.address, port)
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(self)
             
@@ -48,6 +59,22 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             for marker in data.cases.keys():
                 results.update(GraphiteUploaderPlugin.__flatten(data.cases[marker].__dict__, 'markers.%s' % marker))
             self.graphite_client.submit(results)
+
+    def post_process(self, retcode):
+        if self.graphite_client:
+            template = open(os.path.dirname(__file__) + "/graphite.tpl", 'r').read()
+            graphite_html = self.core.mkstemp(".html", "graphite_")
+            self.core.add_artifact_file(graphite_html)
+            with open(graphite_html, 'w') as graphite_html_file:
+                graphite_html_file.write(
+                    template.format(
+                        host='%s:%s' % (self.address, self.web_port),
+                        width=1000,
+                        height=400,
+                        start_time=self.start_time,
+                        end_time=self.end_time
+                    )
+                )
 
     @staticmethod
     def __flatten(dic, prefix):
