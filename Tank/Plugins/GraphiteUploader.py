@@ -6,7 +6,7 @@ import logging
 import socket
 import string
 import time
-from datetime import datetime
+import datetime
 import os
 
 class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
