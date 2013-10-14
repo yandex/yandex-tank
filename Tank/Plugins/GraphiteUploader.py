@@ -29,7 +29,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         if address == "": 
             self.log.warning("Graphite uploader is not configured and will not send any data")
         else:
-            port = self.get_option("port", "2024")
+            port = self.get_option("port", "2003")
             prefix = self.get_option("prefix", "one_sec.yandex_tank")
             self.graphite_client = GraphiteClient(prefix, address, port)
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
