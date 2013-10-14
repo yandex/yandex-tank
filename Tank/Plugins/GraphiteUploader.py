@@ -47,7 +47,6 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             results.update(cumulative)
             for marker in data.cases.keys():
                 results.update(GraphiteUploaderPlugin.__flatten(data.cases[marker].__dict__, 'markers.%s' % marker))
-            print results
             self.graphite_client.submit(results)
 
     @staticmethod
