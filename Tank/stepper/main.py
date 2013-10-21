@@ -97,6 +97,7 @@ class StepperWrapper(object):
         self.use_caching = True
         self.force_stepping = None
         self.ammo_type = 'phantom'
+        self.chosen_cases = []
 
         # out params
         self.stpd = None
