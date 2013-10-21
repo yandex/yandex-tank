@@ -42,6 +42,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             port = self.get_option("port", "2003")
             self.web_port = self.get_option("web_port", "8080")
             self.prefix = self.get_option("prefix", "one_sec.yandex_tank")
+            self.template = self.get_option("template", os.path.dirname(__file__) + "/graphite.tpl")
             self.graphite_client = GraphiteClient(self.prefix, self.address, port)
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(self)
@@ -62,7 +63,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
 
     def post_process(self, retcode):
         if self.graphite_client:
-            template = open(os.path.dirname(__file__) + "/graphite.tpl", 'r').read()
+            template = open(self.template, 'r').read()
             graphite_html = self.core.mkstemp(".html", "graphite_")
             self.core.add_artifact_file(graphite_html)
             with open(graphite_html, 'w') as graphite_html_file:
