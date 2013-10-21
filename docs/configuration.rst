@@ -178,6 +178,7 @@ Basic options:
 * **loop** - number of times requests from ammo file are repeated in loop 
 * **ammo_limit** - limit request number
 * **autocases** - enable marking requests automatically (1 -- enable, 0 -- disable)
+* **chosen_cases** - use only selected cases
 
 There are 3 ways to constrain requests number: by schedule with **rps_schedule**, by requests number with **ammo_limit** or by loop number with **loop** option. Tank stops if any constrain is reached. If stop reason is reached **ammo_limit** or **loop** it will be mentioned in log file. In test without **rps_schedule** file with requests is used one time by default
 
