@@ -26,7 +26,7 @@ class AmmoFactory(object):
         self.factory = factory
         self.load_plan = factory.get_load_plan()
         self.ammo_generator = factory.get_ammo_generator()
-        self.filter = lambda missile: True
+        self.filter = factory.get_filter()
         self.marker = factory.get_marker()
 
     def __iter__(self):
@@ -37,13 +37,11 @@ class AmmoFactory(object):
         configured ComponentFactory, passed as a parameter to the
         __init__ method of this class.
         '''
-        for ammo_tuple in (
+        return (ammo_tuple for ammo_tuple in (
             (timestamp, marker or self.marker(missile), missile)
             for timestamp, (missile, marker)
             in izip(self.load_plan, self.ammo_generator)
-        ):
-            yield ammo_tuple
-
+        ) if self.filter(ammo_tuple))
 
 class Stepper(object):
 
@@ -122,7 +120,7 @@ class StepperWrapper(object):
                 StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD]
         opts += ["instances_schedule", "uris",
                  "headers", "header_http", "autocases", "ammo_type", "ammo_limit"]
-        opts += ["use_caching", "cache_dir", "force_stepping", "file_cache"]
+        opts += ["use_caching", "cache_dir", "force_stepping", "file_cache", "chosen_cases"]
         return opts
 
     def read_config(self):
@@ -163,6 +161,9 @@ class StepperWrapper(object):
         self.cache_dir = os.path.expanduser(cache_dir)
         self.force_stepping = int(self.get_option("force_stepping", '0'))
         self.stpd = self.get_option(self.OPTION_STPD, "")
+        self.chosen_cases = self.get_option("chosen_cases", "").split()
+        if self.chosen_cases:
+            self.log.info("Using only %s cases.", self.chosen_cases)
 
     def prepare_stepper(self):
         ''' Generate test data if necessary '''
@@ -271,6 +272,7 @@ class StepperWrapper(object):
             headers=[header.strip('[]') for header in self.headers],
             autocases=self.autocases,
             ammo_type=self.ammo_type,
+            chosen_cases=self.chosen_cases,
         )
         with open(self.stpd, 'w', self.file_cache) as os:
             stepper.write(os)

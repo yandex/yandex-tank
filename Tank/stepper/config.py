@@ -23,6 +23,7 @@ class ComponentFactory():
         headers=None,
         autocases=None,
         ammo_type='phantom',
+        chosen_cases=[],
     ):
         self.log = logging.getLogger(__name__)
         self.ammo_file = ammo_file
@@ -47,6 +48,7 @@ class ComponentFactory():
             info.status.ammo_limit = len(self.uris) * loop_limit
         self.headers = headers
         self.marker = get_marker(autocases)
+        self.chosen_cases = chosen_cases
 
     def get_load_plan(self):
         """
@@ -113,3 +115,11 @@ class ComponentFactory():
 
     def get_marker(self):
         return self.marker
+
+    def get_filter(self):
+        if len(self.chosen_cases):
+            def is_chosen_case(ammo_tuple):
+                return ammo_tuple[1] in self.chosen_cases
+            return is_chosen_case
+        else:
+            return lambda ammo_tuple: True
