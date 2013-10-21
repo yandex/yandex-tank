@@ -298,6 +298,19 @@ Advanced criteria types:
 * **negative_http** —  inversed ``total_http``. Stop if there are not enough responses that fit the specified mask. Use to be shure that server responds 200. Example: ``negative_http(2xx,10%,10s)``. Exit code: 28
 * **negative_net** — inversed ``total_net``. Stop if there are not enough responses that fit the specified mask. Example: ``negative_net(0,10%,10s)``. Exit code: 29
 
+Graphite
+^^^^^^^^
+Graphite plugin uploads data to `Graphite <http://graphite.readthedocs.org/en/0.9.12/index.html>`_ monitoring tool.
+
+Options
+'''''''
+
+* **address** - graphite server
+* **port** - graphite backend port (where to send data), default: 2003
+* **web_port** - graphite frontend port, default: 8080
+* **template** - template file. Default: Tank/Plugins/graphite.tpl
+
+
 Monitoring
 ^^^^^^^^^^
 Runs metrics collection through ssh connect.
