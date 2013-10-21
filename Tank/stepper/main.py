@@ -163,7 +163,7 @@ class StepperWrapper(object):
         self.stpd = self.get_option(self.OPTION_STPD, "")
         self.chosen_cases = self.get_option("chosen_cases", "").split()
         if self.chosen_cases:
-            self.log.info("Using only %s cases.", self.chosen_cases)
+            self.log.info("chosen_cases LIMITS: %s", self.chosen_cases)
 
     def prepare_stepper(self):
         ''' Generate test data if necessary '''
@@ -199,13 +199,13 @@ class StepperWrapper(object):
         if self.use_caching:
             sep = "|"
             hasher = hashlib.md5()
-            hashed_str = "cache version 3" + sep + \
+            hashed_str = "cache version 4" + sep + \
                 ';'.join(self.instances_schedule) + sep + str(self.loop_limit)
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(
                 self.rps_schedule) + sep + str(self.autocases)
             hashed_str += sep + \
                 ";".join(self.uris) + sep + ";".join(
-                    self.headers) + sep + self.http_ver
+                    self.headers) + sep + self.http_ver + sep + ";".join(self.chosen_cases)
 
             if self.ammo_file:
                 if not os.path.exists(self.ammo_file):
