@@ -6,6 +6,7 @@ import datetime
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import defaultdict
 
 class ReportPlugin(AbstractPlugin, AggregateResultListener):
     '''Graphite data uploader'''
@@ -18,8 +19,8 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener):
     
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
-        self.overall = []
-        self.timeline = []
+        self.overall_quantiles = defaultdict(list)
+        self.overall_rps = []
 
     def get_available_options(self):
         return []
@@ -42,46 +43,38 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener):
         @data: SecondAggregateData
         """
         ts = int(time.time())
-        self.overall.append([ts, data.overall.RPS] + [data.overall.quantiles[key] for key in sorted(data.overall.quantiles)])
+        self.overall_rps.append((ts, data.overall.RPS))
+        for key in data.overall.quantiles.keys():
+            self.overall_quantiles[key].append((ts, data.overall.quantiles[key]))
 
     def post_process(self, retcode):
-        colors = [
-            "#000000",
-            "#000000",
-            "#DD0000",
-            "#DD3800",
-            "#DD6E00",
-            "#DDAA00",
-            "#DDDC00",
-            "#A6DD00",
-            "#70DD00",
-            "#38DD00",
-            "#18BB00",
-        ]
-        legend = [
-            "RPS",
-            "25",
-            "50",
-            "75",
-            "80",
-            "90",
-            "95",
-            "98",
-            "99",
-            "100",
-        ]
-        print self.overall
-        overall = np.array(self.overall)
+        colors = {
+            25.0: "#DD0000",
+            50.0: "#DD3800",
+            75.0: "#DD6E00",
+            80.0: "#DDAA00",
+            90.0: "#DDDC00",
+            95.0: "#A6DD00",
+            98.0: "#70DD00",
+            99.0: "#38DD00",
+            100.0: "#18BB00",
+        }
+        overall_rps = np.array(self.overall_rps)
         fig = plt.figure()
-        overall_quantiles = fig.add_subplot(111)
-        overall_quantiles.grid(True)
-        overall_quantiles.plot(overall[:, 0], overall[:, 1], '--')
-        [overall_quantiles.fill_between(overall[:, 0], overall[:, i], color=colors[i]) for i in reversed(range(2, len(overall[0])))]
+        oq_plot = fig.add_subplot(111)
+        oq_plot.grid(True)
+        oq_keys = sorted(self.overall_quantiles)
+        legend = ["RPS"] + map(lambda x: str(int(x)), oq_keys)
+        oq_plot.plot(overall_rps[:, 0], overall_rps[:, 1], '--')
+        for key in reversed(oq_keys):
+            quantile = np.array(self.overall_quantiles[key])
+            oq_plot.fill_between(quantile[:, 0], quantile[:, 1], color=colors[key])
         plt.xlabel("Time")
         plt.ylabel("Quantiles, ms")
         plt.title("RPS and overall quantiles")
-        plt.legend(legend, loc='upper left')
+        oq_plot.legend(legend, loc='upper left')
         graph_png = self.core.mkstemp(".png", "overall_")
         self.core.add_artifact_file(graph_png)
         plt.savefig(graph_png)
+        plt.show()
         plt.close()
