@@ -35,6 +35,7 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener):
 
     def configure(self):
         '''Read configuration'''
+        self.show_graph = self.get_option("show_graph", "")
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
             
@@ -69,6 +70,11 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener):
         for key in reversed(oq_keys):
             quantile = np.array(self.overall_quantiles[key])
             oq_plot.fill_between(quantile[:, 0], quantile[:, 1], color=colors[key])
+        # workaround: pyplot can not build a legend for fill_between
+        # so we just draw a bunch of lines here:
+        for key in oq_keys:
+            quantile = np.array(self.overall_quantiles[key])
+            oq_plot.plot(quantile[:, 0], quantile[:, 1], color=colors[key])
         plt.xlabel("Time")
         plt.ylabel("Quantiles, ms")
         plt.title("RPS and overall quantiles")
@@ -76,5 +82,6 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener):
         graph_png = self.core.mkstemp(".png", "overall_")
         self.core.add_artifact_file(graph_png)
         plt.savefig(graph_png)
-        plt.show()
+        if self.show_graph:
+            plt.show()
         plt.close()
