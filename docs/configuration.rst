@@ -651,7 +651,7 @@ Options
 
 * **artifacts_base_dir** - base directory for artifacts storing. Temporary artifacts files are stored here. Default: current directory
 * **artifacts_dir** - directory where to keep artifacts after test. Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
-* **flush_config_to** - dump configuration options after each step to that file
+* **flush_config_to** - dump configuration options after each tank step (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file 
 
 Tips&Tricks
 ^^^^^^^^^^^
