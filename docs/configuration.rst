@@ -212,6 +212,11 @@ Advanced options:
 * **phout_file** - import this phout instead of launching phantom (import phantom results)
 * **stpd_file** - use this stpd-file instead of generated 
 * **threads** - phantom thread count, default: ``<processor cores count>/2 + 1``
+* **buffered_seconds** - amount of seconds to which delay aggregator, to be sure that everything were read from phout
+* **additional_libs** - list separated by whitespaces, will be added to phantom config file in section ``module_setup`` 
+* **method_prefix** - object's type, that has a functionality to create test requests. Default: method_stream
+* **source_log_prefix** - prefix, added to class name that reads source data. Default: empty
+* **method_options** - additional options for method objects. It is used for Elliptics etc. Default: empty
 
 Phantom http-module tuning options: 
 
@@ -363,6 +368,7 @@ Advanced criteria types:
 * **total_net** — like ``net``, but accumulated. See ``total_time``. Example: ``total_net(79,10%,10s) total_net(11x,50%,15s)``  Exit code - 27
 * **negative_http** —  inversed ``total_http``. Stop if there are not enough responses that fit the specified mask. Use to be shure that server responds 200. Example: ``negative_http(2xx,10%,10s)``. Exit code: 28
 * **negative_net** — inversed ``total_net``. Stop if there are not enough responses that fit the specified mask. Example: ``negative_net(0,10%,10s)``. Exit code: 29
+* **http_trend** - Stop if trend for defined http codes is negative on defined period. Example: http_trend(2xx,10s). Exit code: 30. Trend is a sum of an average coefficient for linear functions calculated for each pair points in last n seconds and standart deviation for it
 
 Graphite
 ^^^^^^^^
