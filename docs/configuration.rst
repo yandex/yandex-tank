@@ -265,6 +265,72 @@ To make several simultaneous tests with phantom, add proper amount of sections w
 
 Options that apply only for main section: buffered_seconds, writelog, phantom_modules_path, phout_file, config, eta_file, phantom_path
 
+JMeter
+^^^^^^
+JMeter module uses JMeter as a load generator 
+
+INI file section: **[jmeter]**
+
+Options
+'''''''
+* **jmx** - testplan for execution
+* **args** - additional commandline arguments for JMeter
+* **jmeter_path** - path to JMeter, allows to use alternative JMeter installation. Default: jmeter
+
+Artifacts
+'''''''''
+* **<original jmx>** - original testplan
+* **<modified jmx>** - modified test plan with results output section
+* **<jmeter_*.jtl>** - JMeter's results
+* **<jmeter_*.log>** - JMeter's log
+
+BFG
+^^^
+(`What is BFG <http://en.wikipedia.org/wiki/BFG_(weapon)>`_)
+BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first, enable BFG plugin and then specify the parameters for BFG and for the cannon you select. For example, if you want to kill an SQL db:
+
+::
+
+    [tank]
+    ; Disable phantom:
+    plugin_phantom=
+    ; Enable BFG instead:
+    plugin_bfg=Tank/Plugins/BFG.py
+            
+    ; BFG config section:
+    [bfg]
+            
+    ; gun type -- what kind of gun should BFG use:
+    gun_type=sql
+            
+    ; what ammo parser should BFG use:
+    ammo_type=slowlog
+            
+    ; stepper parameters (see phantom options):
+    instances = 200
+    ammofile=bsdb03h.sql
+    rps_schedule=line(1,1000,1m)
+    loop=500
+            
+    ; selected gun config section:
+    [sql_gun]
+    db = mysql://user:user@localhost/
+
+
+BFG Options
+'''''''''''
+INI file section: **[bfg]**
+
+* **gun_type** - what kind of gun should BFG use
+* **ammo_type** - what ammo parser should BFG use, default: phantom
+* other common stepper options
+
+SQL Gun Options
+'''''''''''''''
+INI file section: **[sql_gun]**
+
+* **db** - DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
+
 Auto-stop
 ^^^^^^^^^
 
@@ -310,6 +376,19 @@ Options
 * **web_port** - graphite frontend port, default: 8080
 * **template** - template file. Default: Tank/Plugins/graphite.tpl
 
+Loadosophia
+^^^^^^^^^^^
+When test has been finished, module upload to Loadosophia.org test artifacts: file with answer times and files with monitoring data. The link will be shown in console output.
+
+INI file section: **[loadosophia]**
+
+Options
+'''''''
+* **token** - account's access key, received on Upload Token page
+* **project** - test will be uploaded to that project
+* **test_title** - test name
+* **color_flag** - color flag, assigned to test. (gray flag = "to delete")
+* **file_prefix** - prefix that will be added to uploaded file's name (deprecated
 
 Monitoring
 ^^^^^^^^^^
@@ -490,27 +569,6 @@ Options:
 -  **end** - the script to run on end stage
 -  **postprocess** - the script to run on postprocess stage
 
-JMeter
-^^^^^^
-
-JMeter load generator module.
-
-INI file section: **[jmeter]**
-
-Options
-'''''''
-
--  !!mandatory option!! **jmx** - test plan file
--  **args** - JMeter command line parameters
--  **jmeter\_path** - JMeter path, default: ``jmeter``
-
-Artifacts
-'''''''''
-
--  **<original_jmx_file>** - original test plan file
--  **modified_*.jmx** - modified test plan with results output section
--  **jmeter_*.jtl** - JMeter results
--  **jmeter_*.log** - JMeter log
 
 AB
 ^^
@@ -534,6 +592,60 @@ Artifacts
 '''''''''
 
 -  **ab_*.log** - request log with response times
+
+Resource Check
+^^^^^^^^^^^^^^
+Module checks free memory and disk space amount before and during test. Test stops if minimum values are reached. 
+
+INI file section: **[rcheck]**
+
+Options
+'''''''
+
+* **interval** - how often to check resources. Default interval: 10s
+* **disk_limit** - Minimum free disk space in MB. Default: 2GB
+* **mem_limit** - Minimum free memory amount in MB. Default: 512MB
+
+RC Assert
+^^^^^^^^^
+
+Module checks test's exit code with predefined acceptable codes. If exit code matches, it is overrides as 0. Otherwise it is replaced with code from option ``fail_code``
+
+INI file section: **[rcassert]**
+
+Options
+'''''''
+* **pass** - list of acceptable codes, delimiter - whitespace. Default: empty, no check is performed.
+* **fail_code** - exit code when check fails, integer number. Default: 10
+
+Web Online
+^^^^^^^^^^
+
+Module starts local web sever that shows online graphics. Enabled by ``plugin_web=Tank/Plugins/WebOnline.py`` in ``[tank]`` section.
+
+INI file section: **[web]**
+
+Options
+'''''''
+
+* **port** - a port to bind to on localhost. Default: 8080
+* **interval** - graphics' interval that will be shown, in seconds. Default: 60 seconds
+* **redirect** - address where to redirect browser after test stop. 
+* **manual_stop** - flag 0/1. If '1' then webserver will wait for key press from keyboard to exit
+
+Yandex.Tank kernel
+^^^^^^^^^^^^^^^^^^
+
+Python-object, that loads and execs tank modules.
+
+INI file section: **[tank]**
+
+Options
+'''''''
+
+* **artifacts_base_dir** - base directory for artifacts storing. Temporary artifacts files are stored here. Default: current directory
+* **artifacts_dir** - directory where to keep artifacts after test. Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
+* **flush_config_to** - dump configuration options after each step to that file
 
 Tips&Tricks
 ^^^^^^^^^^^
