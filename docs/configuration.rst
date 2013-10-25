@@ -11,7 +11,7 @@ different king of load gen utilities, ``ab`` (Apache Benchmark) and
 for all three.
 
 - **-h, --help** - show command line options 
-- **-c CONFIG, --config=CONFIG** - read options from INI file. It is possible to set multiple INI files by specifying the option serveral times. Default: ``./load.conf`` 
+- **-c CONFIG, --config=CONFIG** - read options from INI file. It is possible to set multiple INI files by specifying the option serveral times. Default: ``./load.ini`` 
 - **-i, --ignore-lock** - ignore lock files 
 - **-f, --fail-lock** - don't wait for lock file, quit if it's busy. The default behaviour is to wait for lock file to become free. 
 - **-l LOG, --log=LOG** - main log file location. Default: ``./tank.log``
@@ -675,20 +675,21 @@ load.conf.example
 
 ::
 
-    # Yandex.Tank config file
-    address=23.23.23.23:443 #Target's address and port
-    load = const (10,10m) #Load scheme
-    #  Headers and URIs for GET requests
+    ;Yandex.Tank config file
+    [phantom]
+    ;Target's address and port
+    address=fe80::200:f8ff:fe21:67cf
+    port=8080 
+    instances=1000
+    ;Load scheme
+    rps_schedule=const(1,30) line(1,1000,2m) const(1000,5m) 
+    ;  Headers and URIs for GET requests
     header_http = 1.1
-    header = [Host: www.target.example.com]
-    header = [Connection: close]
-    uri = /
-    #ssl=1
-    #autostop = http(5xx,100%,1)
-    #instances=10
-    #writelog=1
-    #time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s is considered as connect timeout.
-    #instances_schedule = line (1,1000,10m)
-    #tank_type=2
-    #gatling_ip = 141.8.153.82 141.8.153.81
+    uris=/
+        /test
+        /test2
+    headers=[Host: www.ya.ru]
+            [Connection: close]
+    [autostop] autostop = http(5xx,10%,5s)
 
+    
