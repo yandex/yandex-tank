@@ -14,8 +14,8 @@ Gregory Komissarov's [firebat](https://github.com/greggyNapalm/firebat-console) 
 
 Andrey Pohilko's [loadosophia](http://loadosophia.org/) - service for storing and analysing performance test results
 
-[Jenkins](http://jenkins-ci.org/) An extendable open source continuous integration server that may be used to automate test execution.
+[Jenkins](http://jenkins-ci.org/) - an extendable open source continuous integration server that may be used to automate test execution.
 
-[Graphite](http://graphite.readthedocs.org/en/latest/overview.html) is an enterprise-scale monitoring tool, use it to store your test results and render graphs.
+[Graphite](http://graphite.readthedocs.org/en/latest/overview.html) - an enterprise-scale monitoring tool, use it to store your test results and render graphs.
 
 ![Yandex.Metrics counter](https://mc.yandex.ru/watch/17743264)
