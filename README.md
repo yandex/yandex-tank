@@ -6,6 +6,7 @@ Yandex.Tank is an extensible load testing instrument for advanced linux users wh
 
 ## Get help
 [Documentation at ReadTheDocs](http://yandextank.readthedocs.org/en/latest/)
+
 [Blog (in russian)](http://clubs.ya.ru/yandex-tank/)
 
 ## See also
