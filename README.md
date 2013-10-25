@@ -1,5 +1,3 @@
-[Wiki is here!](https://github.com/yandex-load/yandex-tank/wiki)
-
 # Yandex Tank
 ## Description
 Yandex.Tank is an extensible load testing instrument for advanced linux users which is especially good as a part of automated load testing suit.
