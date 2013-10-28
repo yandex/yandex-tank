@@ -74,7 +74,8 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
                         height=400,
                         start_time=self.start_time,
                         end_time=self.end_time,
-                        prefix=self.prefix
+                        prefix=self.prefix,
+                        web_port=self.web_port,
                     )
                 )
 
