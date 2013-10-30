@@ -7,13 +7,13 @@ access is permitted and server is tuned. How to make a test?
 First Steps
 ~~~~~~~~~~~
 
-Create a file on a server with Yandex.Tank: **load.conf**
+Create a file on a server with Yandex.Tank: **load.ini**
 
 .. code-block:: bash
 
   [phantom]
-  address=23.23.23.23:80 # Target's address and port. 
-  rps_schedule=line(1, 100, 10m) # load scheme
+  address=203.0.113.1:80 ; Target's address and port. 
+  rps_schedule=line(1, 100, 10m) ; load scheme
 
 Yandex.Tank have 3 primitives for describing load scheme: 
 
@@ -42,14 +42,14 @@ intensity:
 Time duration could be defined in seconds, minutes (m) and hours (h).
 For example: ``27h103m645``
 
-For a test with constant load at 10rps for 10 minutes, ``load.conf`` should
+For a test with constant load at 10rps for 10 minutes, ``load.ini`` should
 have next lines:
 
 .. code-block:: bash
 
   [phantom] 
-  address=23.23.23.23:80 #Target's address and port. 
-  rps_schedule=const(10, 10m) #load scheme
+  address=203.0.113.1:80 ;Target's address and port. 
+  rps_schedule=const(10, 10m) ;load scheme
 
 Voilà, Yandex.Tank setup is done.
 
@@ -58,7 +58,7 @@ Preparing requests
 
 There are two ways to set up requests: URI-style and request-style. 
 
-URI-style, URIs in load.conf
+URI-style, URIs in load.ini
 ''''''''''''''''''''''''''''
 
 Update configuration file with HTTP headers and URIs:
@@ -66,9 +66,9 @@ Update configuration file with HTTP headers and URIs:
 .. code-block:: bash
 
   [phantom] 
-  address=23.23.23.23:80 # Target's address and port. 
-  rps_schedule=const(10, 10m) # load scheme
-  # Headers and URIs for GET requests 
+  address=203.0.113.1:80 ; Target's address and port. 
+  rps_schedule=const(10, 10m) ; load scheme
+  ; Headers and URIs for GET requests 
   header_http = 1.1 
   headers = [Host: www.target.example.com] 
     [Connection: close] 
@@ -193,7 +193,7 @@ include them in a file after each request. '\r' is also required.
 Run Test!
 ~~~~~~~~~
 
-1. Request specs in load.conf -- just run as ``yandex-tank``
+1. Request specs in load.ini -- just run as ``yandex-tank``
 
 2. Request specs in ammo.txt -- run as ``yandex-tank ammo.txt``
 
@@ -241,14 +241,14 @@ requests and tags:
 SSL
 ~~~
 
-To activate SSL add ``ssl = 1`` to ``load.conf``. Don't forget to change port
+To activate SSL add ``ssl = 1`` to ``load.ini``. Don't forget to change port
 number to appropriate value. Now, our basic config looks like that:
 
 .. code-block:: bash
 
   [phantom]
-  address=23.23.23.23:80 #Target's address and port .
-  rps_schedule=const (10,10m) #Load scheme
+  address=203.0.113.1:80 ;Target's address and port .
+  rps_schedule=const (10,10m) ;Load scheme
   ssl=1
 
 Autostop 
@@ -284,13 +284,13 @@ Example: ``autostop = time(1500,15)`` – stop test, if average answer
 time exceeds 1500ms
 
 So, if we want to stop test when all answers in 1 second period are 5xx
-plus some network and timing factors - add autostop line to load.conf:
+plus some network and timing factors - add autostop line to load.ini:
 
 .. code-block:: bash
 
   [phantom]
-  address=23.23.23.23:80 #Target's address and port .
-  rps_schedule=const(10, 10m) #load scheme
+  address=203.0.113.1:80 ;Target's address and port .
+  rps_schedule=const(10, 10m) ;load scheme
   [autostop]
   autostop=time(1,10)
     http(5xx,100%,1s)
@@ -300,7 +300,7 @@ Logging
 ~~~~~~~
 
 Looking into target's answers is quite useful in debugging. For doing
-that add ``writelog = 1`` to ``load.conf``. 
+that add ``writelog = 1`` to ``load.ini``. 
 
 **ATTENTION: Writing answers on
 high load leads to intensive disk i/o usage and can affect test
@@ -336,13 +336,13 @@ Example:
   HTTP/1.1 200 OK
   Content-Type: application/javascript;charset=UTF-8
 
-For ``load.conf`` like this:
+For ``load.ini`` like this:
   
 .. code-block:: bash
 
   [phantom]
-  address=23.23.23.23:80 #Target's address and port .
-  rps_schedule=const(10, 10m) #load scheme
+  address=203.0.113.1:80 ;Target's address and port .
+  rps_schedule=const(10, 10m) ;load scheme
   writelog=1
   [autostop]
   autostop=time(1,10)
@@ -388,28 +388,28 @@ use your favorite stats packet, R, for example.
 Custom timings
 ~~~~~~~~~~~~~~
 
-You can set custom timings in ``load.conf`` with ``time_periods``
+You can set custom timings in ``load.ini`` with ``time_periods``
 parameter like this:
 
 .. code-block:: bash
   
   [phantom]
-  address=23.23.23.23:80 #Target's address and port .
-  rps_schedule=const(10, 10m) #load scheme
+  address=203.0.113.1:80 ;Target's address and port .
+  rps_schedule=const(10, 10m) ;load scheme
   [aggregator]
-  time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s # the last value - 10s is considered as connect timeout.
+  time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s ; the last value - 10s is considered as connect timeout.
 
 Thread limit
 ~~~~~~~~~~~~
 
-``instances=N`` in ``load.conf`` limits number of simultanious
+``instances=N`` in ``load.ini`` limits number of simultanious
 connections (threads). Test with 10 threads:
 
 .. code-block:: bash
 
   [phantom]
-  address=23.23.23.23:80 #Target's address and port .
-  rps_schedule=const(10, 10m) #load scheme
+  address=203.0.113.1:80 ;Target's address and port .
+  rps_schedule=const(10, 10m) ;load scheme
   instances=10
 
 Dynamic thread limit
@@ -419,14 +419,14 @@ Dynamic thread limit
 active instances schedule will be performed if load scheme is not
 defined. Bear in mind that active instances number cannot be decreased
 and final number of them must be equal to ``instances`` parameter value.
-load.conf example:
+load.ini example:
 
 .. code-block:: bash
 
   [phantom]
-  address=23.23.23.23:80 #Target's address and port .
+  address=203.0.113.1:80 ;Target's address and port .
   instances_schedule = line(1,10,10m)
-  #load = const (10,10m) #Load scheme is excluded from this load.conf as we used instances_schedule parameter
+  ;load = const (10,10m) ;Load scheme is excluded from this load.ini as we used instances_schedule parameter
 
 Custom stateless protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -434,15 +434,15 @@ Custom stateless protocol
 In necessity of testing stateless HTTP-like protocol, Yandex.Tank's HTTP
 parser could be switched off, providing ability to generate load with
 any data, receiving any answer in return. To do that add
-``tank_type = 2`` to ``load.conf``. 
+``tank_type = 2`` to ``load.ini``. 
 
 **Indispensable condition: Connection close must be initiated by remote side**
 
 .. code-block:: bash
 
   [phantom]
-  address=23.23.23.23:80 #Target's address and port .
-  rps_schedule=const(10, 10m) #load scheme
+  address=203.0.113.1:80 ;Target's address and port .
+  rps_schedule=const(10, 10m) ;load scheme
   instances=10
   tank_type=2
 
@@ -451,14 +451,14 @@ Gatling
 
 If server with Yandex.Tank have several IPs, they may be
 used to avoid outcome port shortage. Use ``gatling_ip`` parameter for
-that. Load.conf:
+that. Load.ini:
 
 .. code-block:: bash
 
   [phantom]
-  address=23.23.23.23:80 #Target's address and port .
-  rps_schedule=const(10, 10m) #load scheme
+  address=203.0.113.1:80 ;Target's address and port .
+  rps_schedule=const(10, 10m) ;load scheme
   instances=10
-  gatling_ip = 23.23.23.24 23.23.23.26
+  gatling_ip = IP1 IP2
 
 **run yandex-tank with -g key**
