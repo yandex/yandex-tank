@@ -38,15 +38,15 @@ everything OK, you'll see:
 
 .. code-block:: bash
 
-	$ telnet 23.23.23.23 80 
-	Trying 23.23.23.23... 
-	Connected to 23.23.23.23. Escape character is '^]'.
+	$ telnet 203.0.113.1 80 
+	Trying 203.0.113.1... 
+	Connected to 203.0.113.1. Escape character is '^]'.
 
 Otherwise if port is unreacheable:
 
 .. code-block:: bash
 
-	$ telnet 8.8.8.8 80 Trying 8.8.8.8... 
+	$ telnet 203.0.113.1 80 Trying 203.0.113.1... 
 	telnet: Unable to connect to remote host: Connection timed out
 
 (it's just an example, programs like ``nc/nmap/wget/curl`` could be used
@@ -65,22 +65,22 @@ execution of ``tracepath`` command or it analogs
 
 .. code-block:: bash
 
-	$ tracepath 23.23.23.24  
-	1:  tank.example.com (23.23.23.23)            0.084ms pmtu 1450  
-	1:  target.load.example.com (23.23.23.24)           20.919ms reached  
-	1:  target.example.com (23.23.23.24)            0.128ms reached      
+	$ tracepath 203.0.113.1  
+	1:  tank.example.com (203.0.113.1)            0.084ms pmtu 1450  
+	1:  target.load.example.com (203.0.113.1)           20.919ms reached  
+	1:  target.example.com (203.0.113.1)            0.128ms reached      
 	Resume: pmtu 1450 hops 1 back 64``
 	Hops count = 1 means that tank and target are in closest location.
 
 	$ tracepath 24.24.24.24  
-	1:  1.example.com (124.24.24.24)                 0.084ms pmtu 1450  
-	1:  2.example.com (24.124.24.24)          0.276ms   
-	1:  3.example.com (24.24.124.24)          0.411ms   
-	2:  4.example.com (24.24.24.124)                0.514ms   
-	3:  5.example.com (241.24.24.24)              10.690ms   
-	4:  6.example.com (24.241.24.24)                  0.831ms asymm  3   
-	5:  7.example.com (24.24.241.24)                 0.512ms   
-	6:  8.example.com (24.24.24.241)                 0.525ms asymm  5   
+	1:  1.example.com (203.0.113.1)                 0.084ms pmtu 1450  
+	1:  2.example.com (203.0.113.1)          0.276ms   
+	1:  3.example.com (203.0.113.1)          0.411ms   
+	2:  4.example.com (203.0.113.1)                0.514ms   
+	3:  5.example.com (203.0.113.1)              10.690ms   
+	4:  6.example.com (203.0.113.1)                  0.831ms asymm  3   
+	5:  7.example.com (203.0.113.1)                 0.512ms   
+	6:  8.example.com (203.0.113.1)                 0.525ms asymm  5   
 	7:  no reply
 
 In second example you'd better find another closer located tank.
