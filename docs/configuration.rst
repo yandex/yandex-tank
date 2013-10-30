@@ -670,7 +670,7 @@ Sources
 
 Yandex.Tank sources ((https://github.com/yandex-load/yandex-tank here)).
 
-load.conf.example
+load.ini example
 ~~~~~~~~~~~~~~~~~
 
 ::
