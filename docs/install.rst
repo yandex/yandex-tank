@@ -18,7 +18,7 @@ or this way
 
 .. code-block:: bash
 	
-	sudo apt-get install python-software-properties
+	apt-get install software-properties-common
 	sudo add-apt-repository ppa:yandex-load/main
 
 Then update package list and install ``yandex-load-tank-base`` package:
