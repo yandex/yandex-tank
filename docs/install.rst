@@ -15,7 +15,9 @@ For instance, add following repos to ``sources.list`` :
 	deb-src http://ppa.launchpad.net/yandex-load/main/ubuntu precise main
 
 or this way 
+
 .. code-block:: bash
+	
 	sudo apt-get install python-software-properties
 	sudo add-apt-repository ppa:yandex-load/main
 
