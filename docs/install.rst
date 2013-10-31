@@ -10,7 +10,6 @@ For instance, add following repos to ``sources.list`` :
 
 .. code-block:: bash
 
-	# Ubuntu Lucid/Precise 
 	deb http://ppa.launchpad.net/yandex-load/main/ubuntu precise main  
 	deb-src http://ppa.launchpad.net/yandex-load/main/ubuntu precise main
 
@@ -27,8 +26,8 @@ Then update package list and install ``yandex-load-tank-base`` package:
 
 	sudo apt-get update && sudo apt-get install yandex-load-tank-base
 
-For mild load tests (less then 1000rps) an average laptop with 32/64bit
-Ubuntu (Lucid/Precise) would be sufficient. The tank could be easily
+For mild load tests (less then 1000rps) an average laptop with 64bit
+Ubuntu (10.04/.../13.10) would be sufficient. The tank could be easily
 used in virtual machine if queries aren't too heavy and load isn't too
 big. Otherwise it is recommended to request a physical server or a more
 capable virtual machine from your admin.
