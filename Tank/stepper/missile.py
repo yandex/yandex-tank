@@ -179,6 +179,41 @@ class LineReader(object):
                 info.status.inc_loop_count()
 
 
+class AccessLogReader(object):
+
+    '''Missiles from access log'''
+
+    def __init__(self, filename, headers=[], http_ver='1.1', **kwargs):
+        self.filename = filename
+        self.warned = False
+        self.headers = set(headers)
+        self.log = logging.getLogger(__name__)
+
+    def __iter__(self):
+        with get_opener(self.filename)(self.filename, 'rb') as ammo_file:
+            while True:
+                for line in ammo_file:
+                    info.status.af_position = ammo_file.tell()
+                    request = line.split('"')[1]
+                    method, uri, proto = request.split()
+                    http_ver = proto.split('/')[1]
+                    if method == "GET":
+                        yield (
+                            HttpAmmo(
+                                uri,
+                                headers=self.headers,
+                                http_ver=http_ver,
+                            ).to_s(), None)
+                    else:
+                        if not self.warned:
+                            self.warned = True
+                            self.log.warning("There are some skipped lines. See full log for details.")
+                        self.log.debug("Skipped line: %s (unsupported method)" % line)
+                ammo_file.seek(0)
+                info.status.af_position = 0
+                info.status.inc_loop_count()
+
+
 class UriReader(object):
     def __init__(self, filename, headers=[], http_ver='1.1', **kwargs):
         self.filename = filename
