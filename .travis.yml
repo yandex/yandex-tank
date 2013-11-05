@@ -6,8 +6,8 @@ python:
   # maintainers to fix their pypy-dev package.
 #  - "pypy"
 # command to install dependencies
-#install:
-#  - pip install . --use-mirrors
+install:
+  - pip install psutil --use-mirrors
 #  - pip install -r requirements.txt --use-mirrors
 # command to run tests
 script: nosetests
