@@ -1,6 +1,7 @@
 from collections import namedtuple
 import logging
 from sys import stdout
+import time
 
 
 StepperInfo = namedtuple(
@@ -26,6 +27,7 @@ class StepperStatus(object):
             'instances': None,
         }
         self._ammo_count = 0
+        self._old_ammo_count = 0
         self._loop_count = 0
         self._af_position = None
         self.af_size = None
@@ -34,6 +36,7 @@ class StepperStatus(object):
         self.lp_len = None
         self.lp_progress = 0
         self.af_progress = 0
+        self._timer = time.time()
 
     def publish(self, key, value):
         if key not in self.info:
@@ -92,7 +95,12 @@ class StepperStatus(object):
         return StepperInfo(**self.info)
 
     def update_view(self):
-        stdout.write("AF: %3s%%, LP: %3s%%, loops: %10s\r" % (self.af_progress, self.lp_progress, self.loop_count))
+        ammo_generated = self._ammo_count - self._old_ammo_count
+        self._old_ammo_count = self._ammo_count
+        cur_time = time.time()
+        time_delta = cur_time - self._timer
+        self._timer = cur_time
+        stdout.write("AF: %3s%%, LP: %3s%%, loops: %10s, speed: %10s mps\r" % (self.af_progress, self.lp_progress, self.loop_count, ammo_generated/time_delta))
         stdout.flush()
 
     def update_af_progress(self):

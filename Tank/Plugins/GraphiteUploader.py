@@ -32,6 +32,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
     def end_test(self, retcode):
         end_time = datetime.datetime.now() + datetime.timedelta(minutes = 1)
         self.end_time = end_time.strftime("%H:%M%%20%Y%m%d")
+        return retcode
 
     def configure(self):
         '''Read configuration'''
