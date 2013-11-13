@@ -70,7 +70,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             with open(graphite_html, 'w') as graphite_html_file:
                 graphite_html_file.write(
                     template.format(
-                        host='%s:%s' % (self.address, self.web_port),
+                        host='%s' % self.address,
                         width=1000,
                         height=400,
                         start_time=self.start_time,
