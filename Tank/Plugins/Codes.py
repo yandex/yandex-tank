@@ -1,7 +1,10 @@
-'''
-helper module to find http and net codes descriptions
-'''
+''' helper module to find http and net codes descriptions '''
 import httplib
+
+# FIXME: use the original python class for net codes
+# from os import strerror
+# from httplib import responses
+
 
 ### HTTP codes
 HTTP = httplib.responses

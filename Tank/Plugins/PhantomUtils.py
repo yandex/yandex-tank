@@ -60,7 +60,10 @@ class PhantomConfig:
 
         self.answ_log = self.core.mkstemp(".log", "answ_")
         self.core.add_artifact_file(self.answ_log)
-        self.phout_file = self.core.mkstemp(".log", "phout_")
+        self.phout_file = self.core.get_option(self.SECTION, self.OPTION_PHOUT, '')  
+        if not self.phout_file:
+            self.phout_file = self.core.mkstemp(".log", "phout_")
+            self.core.set_option(self.SECTION, self.OPTION_PHOUT, self.phout_file)
         self.core.add_artifact_file(self.phout_file)
         self.stat_log = self.core.mkstemp(".log", "phantom_stat_")
         self.core.add_artifact_file(self.stat_log)
@@ -141,7 +144,7 @@ class PhantomConfig:
                     sec_no += 1
 
             if result.rps_schedule:
-                result.rps_schedule = u'multiple'
+                result.rps_schedule = []
             else:
                 result.rps_schedule = stream.stepper_wrapper.loadscheme
             if result.loadscheme:

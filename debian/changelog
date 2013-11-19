@@ -1,3 +1,21 @@
+yandex-load-tank-base (1.4.7) precise; urgency=low
+
+  * move some depends to recommended
+  * smarter uri marker
+  * support access log format as a source
+  * generate PNG file after test
+  * add chosen_cases to phantom
+  * improve graphite uploader with html report
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 01 Nov 2013 18:13:57 +0400
+
+yandex-load-tank-base (1.4.6) precise; urgency=low
+
+  * fix some stepper bugs
+  * imporve BFG plugin
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 13 Sep 2013 17:09:19 +0400
+
 yandex-load-tank-base (1.4.5) precise; urgency=low
 
   * fix uri-style from config

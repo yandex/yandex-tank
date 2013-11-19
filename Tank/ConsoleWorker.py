@@ -1,18 +1,21 @@
-''' Provides classes to run TankCore from console environment '''
-from Tank.Plugins.ConsoleOnline import RealConsoleMarkup
-from tankcore import TankCore
+""" Provides classes to run TankCore from console environment """
 import datetime
 import fnmatch
 import logging
 import os
 import sys
-import time 
+import time
 import traceback
 import signal
 from optparse import OptionParser
 
+from Tank.Plugins.ConsoleOnline import RealConsoleMarkup
+from tankcore import TankCore
+
+
 class SingleLevelFilter(logging.Filter):
-    '''Exclude or approve one msg type at a time.    '''
+    """Exclude or approve one msg type at a time.    """
+
     def __init__(self, passlevel, reject):
         logging.Filter.__init__(self)
         self.passlevel = passlevel
@@ -20,17 +23,19 @@ class SingleLevelFilter(logging.Filter):
 
     def filter(self, record):
         if self.reject:
-            return (record.levelno != self.passlevel)
+            return record.levelno != self.passlevel
         else:
-            return (record.levelno == self.passlevel)
+            return record.levelno == self.passlevel
 
 
 def signal_handler(sig, frame):
-    ''' required for non-tty python runs to interrupt '''
+    """ required for non-tty python runs to interrupt """
     raise KeyboardInterrupt()
-    
+
+
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
+
 
 class ConsoleTank:
     """    Worker class that runs tank core accepting cmdline params    """
@@ -42,8 +47,8 @@ class ConsoleTank:
 
         self.options = options
         self.ammofile = ammofile
-        
-        self.baseconfigs_location = '/etc/yandex-tank' 
+
+        self.baseconfigs_location = '/etc/yandex-tank'
 
         self.log_filename = self.options.log
         self.core.add_artifact_file(self.log_filename)
@@ -54,29 +59,29 @@ class ConsoleTank:
 
 
     def set_baseconfigs_dir(self, directory):
-        '''        Set directory where to read configs set        '''
+        """        Set directory where to read configs set        """
         self.baseconfigs_location = directory
-        
-        
+
+
     def init_logging(self):
-        '''        Set up logging, as it is very important for console tool        '''
+        """        Set up logging, as it is very important for console tool        """
         logger = logging.getLogger()
         logger.setLevel(logging.DEBUG)
 
         # create file handler which logs even debug messages
-        if (self.log_filename):
+        if self.log_filename:
             file_handler = logging.FileHandler(self.log_filename)
             file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s"))
             logger.addHandler(file_handler)
-            
+
         # create console handler with a higher log level
         console_handler = logging.StreamHandler(sys.stdout)
         stderr_hdl = logging.StreamHandler(sys.stderr)
-        
+
         fmt_verbose = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s")
         fmt_regular = logging.Formatter("%(asctime)s %(levelname)s: %(message)s", "%H:%M:%S")
-        
+
         if self.options.verbose:
             console_handler.setLevel(logging.DEBUG)
             console_handler.setFormatter(fmt_verbose)
@@ -106,13 +111,13 @@ class ConsoleTank:
 
 
     def __override_config_from_cmdline(self):
-        ''' override config options from command line'''
-        if self.options.option: 
-            self.core.apply_shorthand_options(self.options.option)            
-    
+        """ override config options from command line"""
+        if self.options.option:
+            self.core.apply_shorthand_options(self.options.option)
+
 
     def get_default_configs(self):
-        ''' returns default configs list, from /etc and home dir '''
+        """ returns default configs list, from /etc and home dir """
         configs = []
         try:
             conf_files = os.listdir(self.baseconfigs_location)
@@ -125,14 +130,14 @@ class ConsoleTank:
 
         configs += [os.path.expanduser('~/.yandex-tank')]
         return configs
-    
-    
+
+
     def configure(self):
-        '''         Make all console-specific preparations before running Tank        '''
+        """         Make all console-specific preparations before running Tank        """
         if self.options.ignore_lock:
             self.log.warn("Lock files ignored. This is highly unrecommended practice!")
-        
-        while True:        
+
+        while True:
             try:
                 self.core.get_lock(self.options.ignore_lock)
                 break
@@ -142,13 +147,13 @@ class ConsoleTank:
                 self.log.debug("Failed to get lock: %s", traceback.format_exc(exc))
                 self.log.info("Waiting 5s for retry...")
                 time.sleep(5)
-        
+
         try:
             configs = []
-            
+
             if not self.options.no_rc:
                 configs = self.get_default_configs()
-            
+
             if not self.options.config:
                 if os.path.exists(os.path.realpath('load.ini')):
                     self.log.info("No config passed via cmdline, using ./load.ini")
@@ -163,26 +168,28 @@ class ConsoleTank:
             else:
                 for config_file in self.options.config:
                     configs.append(config_file)
-    
+
             self.core.load_configs(configs)
-    
+
             if self.ammofile:
                 self.log.debug("Ammofile: %s", self.ammofile)
                 self.core.set_option("phantom", 'ammofile', self.ammofile[0])
-    
+
             self.__override_config_from_cmdline()
-                        
+
             self.core.load_plugins()
-            
+
             if self.options.scheduled_start:
                 try:
                     self.scheduled_start = datetime.datetime.strptime(self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
                 except ValueError:
-                    self.scheduled_start = datetime.datetime.strptime(datetime.datetime.now().strftime('%Y-%m-%d ') + self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
+                    self.scheduled_start = datetime.datetime.strptime(
+                        datetime.datetime.now().strftime('%Y-%m-%d ') + self.options.scheduled_start,
+                        '%Y-%m-%d %H:%M:%S')
 
             if self.options.ignore_lock:
                 self.core.set_option(self.core.SECTION, self.IGNORE_LOCKS, "1")
-                
+
         except Exception, ex:
             self.log.info("Exception: %s", traceback.format_exc(ex))
             sys.stderr.write(RealConsoleMarkup.RED)
@@ -193,19 +200,19 @@ class ConsoleTank:
             raise ex
 
     def __graceful_shutdown(self):
-        ''' call shutdown routines '''
+        """ call shutdown routines """
         retcode = 1
         self.log.info("Trying to shutdown gracefully...")
         retcode = self.core.plugins_end_test(retcode)
         retcode = self.core.plugins_post_process(retcode)
         self.log.info("Done graceful shutdown")
         return retcode
-    
-    
+
+
     def perform_test(self):
-        '''
+        """
         Run the test sequence via Tank Core
-        '''
+        """
         self.log.info("Performing test")
         retcode = 1
         try:
@@ -217,15 +224,15 @@ class ConsoleTank:
                     self.log.debug("Not yet: %s < %s", datetime.datetime.now(), self.scheduled_start)
                     time.sleep(1)
                 self.log.info("Time has come: %s", datetime.datetime.now())
-            
+
             if self.options.manual_start:
                 raw_input("Press Enter key to start test:")
-            
+
             self.core.plugins_start_test()
             retcode = self.core.wait_for_finish()
             retcode = self.core.plugins_end_test(retcode)
             retcode = self.core.plugins_post_process(retcode)
-        
+
         except KeyboardInterrupt as ex:
             sys.stdout.write(RealConsoleMarkup.YELLOW)
             self.log.info("Do not press Ctrl+C again, the test will be broken otherwise")
@@ -239,7 +246,7 @@ class ConsoleTank:
                 self.log.debug("Caught KeyboardInterrupt again: %s", traceback.format_exc(ex))
                 self.log.info("User insists on exiting, aborting graceful shutdown...")
                 retcode = 1
-                                
+
         except Exception as ex:
             self.log.info("Exception: %s", traceback.format_exc(ex))
             sys.stderr.write(RealConsoleMarkup.RED)
@@ -248,13 +255,17 @@ class ConsoleTank:
             sys.stderr.write(RealConsoleMarkup.TOTAL_RESET)
             retcode = self.__graceful_shutdown()
             self.core.release_lock()
-        
+
         self.log.info("Done performing test with code %s", retcode)
         return retcode
 
 
 class DevNullOpts:
+    def __init__(self):
+        pass
+
     log = "/dev/null"
+
 
 class CompletionHelperOptionParser(OptionParser):
     def __init__(self):
@@ -262,7 +273,7 @@ class CompletionHelperOptionParser(OptionParser):
         self.add_option('--bash-switches-list', action='store_true', dest="list_switches", help="Options list")
         self.add_option('--bash-options-prev', action='store', dest="list_options_prev", help="Options list")
         self.add_option('--bash-options-cur', action='store', dest="list_options_cur", help="Options list")
-    
+
     def error(self, msg):
         pass
 
@@ -278,17 +289,17 @@ class CompletionHelperOptionParser(OptionParser):
                     opts.append(option.get_opt_string())
             print ' '.join(opts)
             exit(0)
-    
+
         if options.list_options_cur or options.list_options_prev:
             cmdtank = ConsoleTank(DevNullOpts(), None)
             cmdtank.core.load_configs(cmdtank.get_default_configs())
             cmdtank.core.load_plugins()
-            
+
             opts = []
             for option in cmdtank.core.get_available_options():
                 opts.append(cmdtank.core.SECTION + '.' + option + '=')
-                
-            plugin_keys = cmdtank.core.config.get_options(cmdtank.core.SECTION, cmdtank.core.PLUGIN_PREFIX)    
+
+            plugin_keys = cmdtank.core.config.get_options(cmdtank.core.SECTION, cmdtank.core.PLUGIN_PREFIX)
             for (plugin_name, plugin_path) in plugin_keys:
                 opts.append(cmdtank.core.SECTION + '.' + cmdtank.core.PLUGIN_PREFIX + plugin_name + '=')
 
@@ -297,5 +308,4 @@ class CompletionHelperOptionParser(OptionParser):
                     opts.append(plugin.SECTION + '.' + option + '=')
             print ' '.join(sorted(opts))
             exit(0)
-
 
