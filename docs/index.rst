@@ -34,3 +34,6 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+.. image:: 
+    http://mc.yandex.ru/watch/23073253
+    :align: right
