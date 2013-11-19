@@ -134,7 +134,7 @@ class SecondAggregateData:
 class SecondAggregateDataItem:
 
     ''' overall and case items has this type '''
-    QUANTILES = [0.25, 0.50, 0.75, 0.80, 0.90, 0.95, 0.98, 0.99, 1.00]
+    QUANTILES = [0.25, 0.50, 0.75, 0.80, 0.85, 0.90, 0.95, 0.98, 0.99, 1.00]
 
     def __init__(self):
         self.log = logging.getLogger(__name__)
