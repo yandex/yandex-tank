@@ -1,10 +1,12 @@
-from Tank.Plugins.Aggregator import SecondAggregateData, \
-    SecondAggregateDataTotalItem
-from tankcore import TankCore
 import logging
 import sys
 import tempfile
 import unittest
+
+from Tank.Plugins.Aggregator import SecondAggregateData, \
+    SecondAggregateDataTotalItem
+from tankcore import TankCore
+
 
 class TankTestCase(unittest.TestCase):
     formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s\t%(message)s")
@@ -18,14 +20,15 @@ class TankTestCase(unittest.TestCase):
 
     def get_aggregate_data(self, filename):
         return SecondAggregateData(SecondAggregateDataTotalItem())
-        
+
     def callback(self, data):
-        self.data = SecondAggregateData(data, SecondAggregateDataTotalItem())
+        self.data = SecondAggregateData(data)
 
     def get_core(self):
         self.core = TankCore()
         self.core.artifacts_base_dir = tempfile.mkdtemp()
         return self.core
+
 
 class FakeOptions(object):
     log = ''
