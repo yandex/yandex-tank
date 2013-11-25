@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import select
+import shlex
 import shutil
 import subprocess
 import sys
@@ -117,6 +118,9 @@ def execute(cmd, shell=False, poll_period=1, catch_out=False):
 
     stdout = ""
     stderr = ""
+
+    if isinstance(cmd, basestring):
+        cmd = shlex.split(cmd)
 
     if catch_out:
         process = subprocess.Popen(
