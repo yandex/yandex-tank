@@ -247,7 +247,7 @@ number to appropriate value. Now, our basic config looks like that:
 .. code-block:: bash
 
   [phantom]
-  address=203.0.113.1:80 ;Target's address and port .
+  address=203.0.113.1:443 ;Target's address and port .
   rps_schedule=const (10,10m) ;Load scheme
   ssl=1
 
