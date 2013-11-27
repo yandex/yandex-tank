@@ -1,15 +1,18 @@
-from Tank.MonCollector.agent.agent import CpuStat, Custom, Disk, NetTcp, NetTxRx
+import socket
 import os
 import tempfile
 import time
 import unittest
 import base64
 
+from Tank.MonCollector.agent.agent import CpuStat, Custom, Disk, NetTcp, NetTxRx
+
 
 if __name__ == '__main__':
     unittest.main()
 
-class  Mem_TestCase(unittest.TestCase):
+
+class Mem_TestCase(unittest.TestCase):
     def setUp(self):
         self.foo = CpuStat()
 
@@ -19,15 +22,18 @@ class  Mem_TestCase(unittest.TestCase):
         time.sleep(1)
         self.assertNotEquals(['0', '0'], self.foo.check())
 
-class  Custom_TestCase(unittest.TestCase):
+
+class Custom_TestCase(unittest.TestCase):
     def setUp(self):
         pass
-    #def tearDown(self):
+
+        #def tearDown(self):
     #    self.foo.dispose()
     #    self.foo = None
 
     def test_custom_(self):
-        custom_config = {'tail': [], 'call': ['ZGlmZkV4:aWZjb25maWcgLXMgZXRoMCB8IGF3ayAnJDE9PSJldGgwIiB7cHJpbnQgJDR9Jw==:1']}
+        custom_config = {'tail': [],
+                         'call': ['ZGlmZkV4:aWZjb25maWcgLXMgZXRoMCB8IGF3ayAnJDE9PSJldGgwIiB7cHJpbnQgJDR9Jw==:1']}
         self.foo = Custom(**custom_config)
 
         #self.assertEqual(x, y, "Msg");
@@ -40,7 +46,7 @@ class  Custom_TestCase(unittest.TestCase):
         assert x != y;
         time.sleep(0.5)
         print self.foo.check()
-        
+
     def test_custom_nodiff(self):
         tail_fd, tailfile = tempfile.mkstemp()
         tail = ["%s:%s:%s" % (base64.b64encode('lbl'), base64.b64encode(tailfile), 0)]
@@ -52,20 +58,20 @@ class  Custom_TestCase(unittest.TestCase):
         self.assertNotEquals(["0.0"], x)
         self.assertEquals('0', x[0])
         time.sleep(1)
-        
+
         tailval = str(time.time())
         os.write(tail_fd, "%s\n" % tailval)
         y = self.foo.check()
         self.assertNotEquals(x[1], y[1])
         self.assertEquals(tailval, y[0])
-        
+
         time.sleep(2)
         tailval = str(time.time())
         os.write(tail_fd, "%s\n" % tailval)
         z = self.foo.check()
         self.assertEquals(tailval, z[0])
         self.assertNotEquals(y[1], z[1])
-        
+
     def test_custom_fail(self):
         tail = ["%s:%s:%s" % (base64.b64encode('lbl'), base64.b64encode("notexistent"), 0)]
         call = ["%s:%s:%s" % (base64.b64encode('lbl2'), base64.b64encode("notexistent"), 0)]
@@ -74,7 +80,7 @@ class  Custom_TestCase(unittest.TestCase):
         x = self.foo.check()
         self.assertEquals("0", x[0])
         self.assertEquals("0", x[1])
-        
+
     def test_custom_fail2(self):
         custom_config = {'tail': [], 'call': ['TnVtUGhyYXNlcw==:Y2F0IC92YXIvdG1wL3N0YXQx:0']}
         self.foo = Custom(**custom_config)
@@ -82,7 +88,7 @@ class  Custom_TestCase(unittest.TestCase):
         x = self.foo.check()
 
 
-class  Disk_TestCase(unittest.TestCase):
+class Disk_TestCase(unittest.TestCase):
     def setUp(self):
         self.foo = Disk()
 
@@ -100,8 +106,7 @@ class  Disk_TestCase(unittest.TestCase):
         self.assertEquals(['Disk_read', 'Disk_write'], res)
 
 
-
-class  Net_tcp_TestCase(unittest.TestCase):
+class Net_tcp_TestCase(unittest.TestCase):
     def setUp(self):
         self.foo = NetTcp()
 
@@ -111,7 +116,7 @@ class  Net_tcp_TestCase(unittest.TestCase):
         self.assertNotEquals(['0', '0', '0', '0'], self.foo.check())
 
 
-class  Net_tx_rx_TestCase(unittest.TestCase):
+class NetTxRxTestCase(unittest.TestCase):
     def setUp(self):
         self.foo = NetTxRx()
 
@@ -119,6 +124,7 @@ class  Net_tx_rx_TestCase(unittest.TestCase):
         self.assertEquals(['0', '0'], self.foo.check())
         time.sleep(2)
         self.assertNotEquals(['0', '0'], self.foo.check())
+        socket.gethostbyname("google.com")
         time.sleep(2)
         print self.foo.check()
 
