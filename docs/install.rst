@@ -110,7 +110,7 @@ system limits:
 	net.ipv4.tcp_rmem = 16384 174760 349520 
 	net.ipv4.tcp_wmem = 16384 131072 262144
 	net.ipv4.tcp_mem = 262144 524288 1048576 
-	net.ipv4.tcp_max_orphans =
-	65536 net.ipv4.tcp_fin_timeout = 10 
+	net.ipv4.tcp_max_orphans = 65536 
+	net.ipv4.tcp_fin_timeout = 10 
 	net.ipv4.tcp_low_latency = 1
 	net.ipv4.tcp_syncookies = 0
