@@ -137,6 +137,9 @@ class ConsoleTank:
         if self.options.ignore_lock:
             self.log.warn("Lock files ignored. This is highly unrecommended practice!")
 
+        if self.options.lock_dir:
+            self.core.set_option(self.core.SECTION, "lock_dir", self.options.lock_dir)
+
         while True:
             try:
                 self.core.get_lock(self.options.ignore_lock)

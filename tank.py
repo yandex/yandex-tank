@@ -10,6 +10,7 @@ if __name__ == "__main__":
     sys.path.append(os.path.dirname(__file__))
     parser = OptionParser()
     parser.add_option('-c', '--config', action='append', help="Path to INI file containing run options, multiple options accepted")
+    parser.add_option(      '--lock-dir', action='store', dest='lock_dir', type="string", help="Directory for lock file")
     parser.add_option('-i', '--ignore-lock', action='store_true', dest='ignore_lock', help="Ignore lock files from concurrent instances, has precedence before --lock-fail")
     parser.add_option('-f', '--fail-lock', action='store_true', dest='lock_fail', help="Don't wait for lock to release, fail test instead")
     parser.add_option('-l', '--log', action='store', default="tank.log", help="Tank log file location")

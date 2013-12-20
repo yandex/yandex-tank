@@ -189,6 +189,7 @@ class TankCore:
         self.interrupted = False
         self.lock_file = None
         self.flush_config_to = None
+        self.lock_dir = None
 
     def get_available_options(self):
         return ["artifacts_base_dir", "artifacts_dir", "flush_config_to"]
@@ -496,12 +497,18 @@ class TankCore:
                 "Override option: %s => [%s] %s=%s", option_str, section, option, value)
             self.set_option(section, option, value)
 
+    def get_lock_dir(self):
+        if not self.lock_dir:
+            self.lock_dir = self.get_option(self.SECTION, "lock_dir", self.LOCK_DIR)
+
+        return os.path.expanduser(self.lock_dir)
+
     def get_lock(self, force=False):
         if not force and self.__there_is_locks():
             raise RuntimeError("There is lock files")
 
         fh, self.lock_file = tempfile.mkstemp(
-            '.lock', 'lunapark_', self.LOCK_DIR)
+            '.lock', 'lunapark_', self.get_lock_dir())
         os.close(fh)
         os.chmod(self.lock_file, 0644)
         self.config.file = self.lock_file
@@ -513,9 +520,10 @@ class TankCore:
 
     def __there_is_locks(self):
         retcode = False
-        for filename in os.listdir(self.LOCK_DIR):
+        lock_dir = self.get_lock_dir()
+        for filename in os.listdir(lock_dir):
             if fnmatch.fnmatch(filename, 'lunapark_*.lock'):
-                full_name = os.path.join(self.LOCK_DIR, filename)
+                full_name = os.path.join(lock_dir, filename)
                 self.log.warn("Lock file present: %s", full_name)
 
                 try:
