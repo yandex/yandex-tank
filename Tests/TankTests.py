@@ -40,3 +40,4 @@ class FakeOptions(object):
     no_rc = True
     manual_start = False
     scheduled_start = None
+    lock_dir = None
