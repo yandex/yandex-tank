@@ -125,6 +125,7 @@ class NetTxRxTestCase(unittest.TestCase):
         time.sleep(2)
         self.assertNotEquals(['0', '0'], self.foo.check())
         socket.gethostbyname("google.com")
+        socket.create_connection("google.com", 5000)
         time.sleep(2)
         print self.foo.check()
 
