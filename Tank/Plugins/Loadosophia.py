@@ -50,7 +50,8 @@ class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
         self.project_key = self.get_option("project", 'DEFAULT')
         self.title = self.get_option("test_title", "")
         self.color = self.get_option("color_flag", "")
-        self.online_enabled = int(self.get_option("online_enabled", "1"))
+        if self.loadosophia.token:
+            self.online_enabled = int(self.get_option("online_enabled", "1"))
 
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
