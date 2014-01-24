@@ -311,46 +311,94 @@ class StreamConfig:
 
         return config
 
-    # FIXME: this method became a piece of shit, needs refactoring
     def __resolve_address(self):
         ''' Analyse target address setting, resolve it to IP '''
+        ip_resolved = ""
         if not self.address:
             raise RuntimeError("Target address not specified")
-        try:
-            ipaddr.IPv6Address(self.address)
-            self.ipv6 = True
-            self.resolved_ip = self.address
+
+        #IPv4 check
+        if ip_resolved != "yes":
             try:
-                self.address = socket.gethostbyaddr(self.resolved_ip)[0]
-            except Exception, exc:
-                self.log.debug("Failed to get hostname for ip: %s", exc)
-                self.address = self.resolved_ip
-        except AddressValueError:
-            self.log.debug("Not ipv6 address: %s", self.address)
-            self.ipv6 = False
-            address_port = self.address.split(":")
-            self.address = address_port[0]
-            if len(address_port) > 1:
-                self.port = address_port[1]
-            try:
-                ipaddr.IPv4Address(self.address)
-                self.resolved_ip = self.address
-                try:
-                    self.address = socket.gethostbyaddr(self.resolved_ip)[0]
-                except Exception, exc:
-                    self.log.debug("Failed to get hostname for ip: %s", exc)
-                    self.address = self.resolved_ip
+                address_final = ipaddr.IPv4Address(self.address)
             except AddressValueError:
-                self.log.debug("Not ipv4 address: %s", self.address)
-                # TODO: use getaddrinfo to support IPv6
-                ip_addr = socket.gethostbyname(self.address)
-                reverse_name = socket.gethostbyaddr(ip_addr)[0]
                 self.log.debug(
-                    "Address %s ip_addr: %s, reverse-resolve: %s", self.address, ip_addr, reverse_name)
-                if reverse_name.startswith(self.address):
-                    self.resolved_ip = ip_addr
+                    "%s is not IPv4 address", self.address)
+            else:
+                self.ipv6 = False
+                ip_resolved = "yes"
+                self.resolved_ip = address_final
+                self.log.debug(
+                    "%s is IPv4 address", self.address)
+        #IPv4:port check
+        if ip_resolved != "yes":
+            try:
+                address_port = self.address.split(":")
+                address_final = ipaddr.IPv4Address(address_port[0])
+                if len(address_port) > 1:
+                    self.port = address_port[1]
+            except AddressValueError:
+                self.log.debug(
+                    "%s is not IPv4 address:port", self.address)
+            else:
+                self.ipv6 = False
+                ip_resolved = "yes"
+                self.resolved_ip = address_final
+                self.log.debug(
+                    "%s is IPv4 address and %s is port", address_final, self.port)
+        #IPv6 check
+        if ip_resolved != "yes":
+            try:
+                address_final = ipaddr.IPv6Address(self.address)
+            except AddressValueError:
+                self.log.debug(
+                    "%s is not IPv6 address", self.address)
+            else:
+                self.ipv6 = True
+                ip_resolved = "yes"
+                self.resolved_ip = address_final
+                self.log.debug(
+                    "%s is IPv6 address", address_final)
+        #hostname to ip address lookup
+        if ip_resolved != "yes":
+            try:
+                address_port = self.address.split(":")
+                ip_addr_list_of_tuples = socket.getaddrinfo(address_port[0], None, socket.AF_UNSPEC)[0]
+                ip_addr_tuple = list(ip_addr_list_of_tuples[4])
+                address_final = ip_addr_tuple[0]
+                if len(address_port) > 1:
+                    self.port = address_port[1]
+                self.log.debug(
+                    "%s resolved to IP address: %s", address_port[0], address_final)
+                #check if resolved IP is IPv4 or IPv6
+                try:
+                    ipaddr.IPv4Address(address_final)
+                except AddressValueError:
+                    self.log.debug(
+                        "Resolved address %s is not IPv4", address_final)
                 else:
-                    raise ValueError(
-                        "Address %s reverse-resolved to %s, but must match" % (self.address, reverse_name))
+                    self.ipv6 = False
+                    ip_resolved = "yes"
+                    self.resolved_ip = address_final
+                    self.log.debug(
+                        "Resolved address %s is IPv4", address_final)
+                try:
+                    ipaddr.IPv6Address(address_final)
+                except AddressValueError:
+                    self.log.debug(
+                        "Resolved address %s is not IPv6", address_final)
+                else:
+                    self.ipv6 = True
+                    ip_resolved = "yes"
+                    self.resolved_ip = address_final
+                    self.log.debug(
+                        "Resolved address %s is IPv6", address_final)
+            except socket.error:
+                raise RuntimeError(
+                    "Unable to resolve hostname", self.address)
+
+        if ip_resolved != "yes":
+            raise RuntimeError(
+                "Check what you entered as an address in config. If there is a hostname, check what you get due to DNS lookup", self.address)
 
 # ========================================================================
