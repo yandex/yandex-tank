@@ -243,14 +243,14 @@ class StreamConfig:
         self.port = self.get_option('port', '80')
         
         #address check section
-        self.ip_resolved = False
-        if not self.ip_resolved:
+        self.ip_resolved_check = False
+        if not self.ip_resolved_check:
             self.__address_ipv4_check()
-        if not self.ip_resolved:
+        if not self.ip_resolved_check:
             self.__address_ipv6_check()
-        if not self.ip_resolved:
+        if not self.ip_resolved_check:
             self.__resolve_address()
-        if not self.ip_resolved:
+        if not self.ip_resolved_check:
             raise RuntimeError(
                 "Check what you entered as an address in config. If there is a hostname, check what you get due to DNS lookup", self.address)
 
@@ -324,7 +324,7 @@ class StreamConfig:
 
     def __address_ipv4_check(self):
         ''' Analyse target address, IPv4 '''
-        self.ip_resolved = False
+        self.ip_resolved_check = False
         if not self.address:
             raise RuntimeError("Target address not specified")
         #IPv4 check
@@ -335,7 +335,7 @@ class StreamConfig:
                 "%s is not IPv4 address", self.address)
         else:
             self.ipv6 = False
-            self.ip_resolved = True
+            self.ip_resolved_check = True
             self.resolved_ip = address_final
             self.log.debug(
                 "%s is IPv4 address", self.address)
@@ -350,14 +350,14 @@ class StreamConfig:
                 "%s is not IPv4 address:port", self.address)
         else:
             self.ipv6 = False
-            self.ip_resolved = True
+            self.ip_resolved_check = True
             self.resolved_ip = address_final
             self.log.debug(
                 "%s is IPv4 address and %s is port", address_final, self.port)
  
     def __address_ipv6_check(self):
         ''' Analyse target address, IPv6 '''
-        self.ip_resolved = False
+        self.ip_resolved_check = False
         if not self.address:
             raise RuntimeError("Target address not specified")
         try:
@@ -367,14 +367,14 @@ class StreamConfig:
                 "%s is not IPv6 address", self.address)
         else:
             self.ipv6 = True
-            self.ip_resolved = True
+            self.ip_resolved_check = True
             self.resolved_ip = address_final
             self.log.debug(
                 "%s is IPv6 address", address_final)
 
     def __resolve_address(self):
         ''' Resolve hostname to IPv4/IPv6 and analyse what has been resolved '''
-        self.ip_resolved = False
+        self.ip_resolved_check = False
         if not self.address:
             raise RuntimeError("Target address not specified")
         #hostname to ip address lookup
@@ -395,7 +395,7 @@ class StreamConfig:
                     "Resolved address %s is not IPv4", address_final)
             else:
                 self.ipv6 = False
-                self.ip_resolved = True
+                self.ip_resolved_check = True
                 self.resolved_ip = address_final
                 self.log.debug(
                     "Resolved address %s is IPv4", address_final)
@@ -406,7 +406,7 @@ class StreamConfig:
                     "Resolved address %s is not IPv6", address_final)
             else:
                 self.ipv6 = True
-                self.ip_resolved = True
+                self.ip_resolved_check = True
                 self.resolved_ip = address_final
                 self.log.debug(
                     "Resolved address %s is IPv6", address_final)
