@@ -60,7 +60,7 @@ class SSHWrapper:
 
     def get_ssh_pipe(self, cmd):
         '''
-        Get open ssh pipe
+        Get open ssh pipe 
         '''
         args = ['ssh'] + self.ssh_opts + [self.host] + cmd
         self.log.debug('Executing: %s', args)
@@ -68,7 +68,7 @@ class SSHWrapper:
 
     def get_scp_pipe(self, cmd):
         '''
-        Get open scp pipe
+        Get open scp pipe 
         '''
         args = ['scp'] + self.scp_opts + cmd
         self.log.debug('Executing: %s', args)
@@ -230,7 +230,7 @@ class MonitoringCollector:
 
 
     def add_listener(self, obj):
-        ''' Add data line listener '''
+        '''         Add data line listener        '''
         self.listeners.append(obj)
 
 
@@ -336,7 +336,7 @@ class MonitoringCollector:
 
 
     def stop(self):
-        ''' Shutdown agents '''
+        ''' Shutdown  agents       '''
         logging.debug("Initiating normal finish")
         for pipe in self.agent_pipes:
             pipe.stdin.write("stop\n")
@@ -498,7 +498,7 @@ class MonitoringCollector:
         out = ''
         # Filtering data
         keys = data.rstrip().split(';')
-        if re.match('^start;', data): # make filter_conf mask
+        if re.match('^start;', data):  # make filter_conf mask
             host = keys[1]
             for i in xrange(3, len(keys)):
                 if keys[i] in filter_conf[host]:
@@ -506,12 +506,12 @@ class MonitoringCollector:
             self.log.debug("Filter mask: %s", filter_mask)
             out = 'start;'
             out += self.filtering(filter_mask, keys[1:]).rstrip(';') + '\n'
-        elif re.match('^\[debug\]', data): # log debug output
+        elif re.match('^\[debug\]', data):  # log debug output
             logging.debug('agent debug: %s', data.rstrip())
         else:
             filtered = self.filtering(filter_mask, keys)
             if filtered:
-                out = filtered + '\n' # filtering values
+                out = filtered + '\n'  # filtering values
         return out
 
     def get_agent_name(self, metric, param):
@@ -592,7 +592,7 @@ class MonitoringDataDecoder:
         data = line.strip().split(';')
         timestamp = -1
         if data[0] == 'start':
-            data.pop(0) # remove 'start'
+            data.pop(0)  # remove 'start'
             host = data.pop(0)
             if not data:
                 logging.warn("Wrong mon data line: %s", line)
