@@ -1,6 +1,4 @@
-'''
-Target monitoring via SSH
-'''
+'''Target monitoring via SSH'''
 
 from collections import defaultdict
 from lxml import etree
@@ -14,14 +12,17 @@ import signal
 import sys
 import tempfile
 import time
-import tankcore
 import fcntl
+
+import tankcore
+
 
 # FIXME: 3 synchronize times between agent and collector better
 class Config(object):
     '''
-    Config reader helper
-    '''
+Config reader helper
+'''
+
     def __init__(self, config):
         self.tree = etree.parse(config)
 
@@ -34,21 +35,24 @@ class Config(object):
             log_level = log_level_raw
         return log_level
 
+
 class SSHWrapper:
     '''
-    separate SSH calls to be able to unit test the collector
-    '''
+separate SSH calls to be able to unit test the collector
+'''
+
     def __init__(self, timeout):
         self.log = logging.getLogger(__name__)
-        self.ssh_opts = ['-q', '-o', 'StrictHostKeyChecking=no', '-o', 'PasswordAuthentication=no', '-o', 'NumberOfPasswordPrompts=0', '-o', 'ConnectTimeout=' + str(timeout)]
-        self.scp_opts = []        
+        self.ssh_opts = ['-q', '-o', 'StrictHostKeyChecking=no', '-o', 'PasswordAuthentication=no', '-o',
+                         'NumberOfPasswordPrompts=0', '-o', 'ConnectTimeout=' + str(timeout)]
+        self.scp_opts = []
         self.host = None
         self.port = None
 
     def set_host_port(self, host, port):
         '''
-        Set host and port to use
-        '''
+Set host and port to use
+'''
         self.host = host
         self.port = port
         self.scp_opts = self.ssh_opts + ['-P', self.port]
@@ -56,31 +60,30 @@ class SSHWrapper:
 
     def get_ssh_pipe(self, cmd):
         '''
-        Get open ssh pipe 
-        '''
+Get open ssh pipe
+'''
         args = ['ssh'] + self.ssh_opts + [self.host] + cmd
         self.log.debug('Executing: %s', args)
         return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid, close_fds=True)
 
     def get_scp_pipe(self, cmd):
         '''
-        Get open scp pipe 
-        '''
+Get open scp pipe
+'''
         args = ['scp'] + self.scp_opts + cmd
         self.log.debug('Executing: %s', args)
         return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid, close_fds=True)
 
 
-
 class AgentClient(object):
     '''
-    Agent client connection
-    '''
-    
+Agent client connection
+'''
+
     def __init__(self):
         self.run = []
         self.host = None
-        
+
         self.port = 22
         self.ssh = None
 
@@ -104,8 +107,8 @@ class AgentClient(object):
 
     def start(self):
         '''
-        Start remote agent
-        '''
+Start remote agent
+'''
         logging.debug('Start monitoring: %s', self.host)
         if not self.run:
             raise ValueError("Empty run string")
@@ -120,7 +123,7 @@ class AgentClient(object):
         ''' Creating config '''
         if not self.metric and not self.custom:
             raise ValueError("No metrics to collect configured")
-            
+
         cfg = open(self.path['TEMP_CONFIG'], 'w')
         cfg.write('[main]\ninterval=%s\n' % self.interval)
         cfg.write('host=%s\n' % self.host)
@@ -130,7 +133,7 @@ class AgentClient(object):
         for method in self.custom:
             if self.custom[method]:
                 cfg.write('%s=%s\n' % (method, ','.join(self.custom[method])))
-        
+
         cfg.close()
         return self.path['TEMP_CONFIG']
 
@@ -138,7 +141,7 @@ class AgentClient(object):
         """ Create folder and copy agent and metrics scripts to remote host """
         logging.info("Installing monitoring agent at %s...", self.host)
         agent_config = self.create_agent_config(loglevel)
-        
+
         self.ssh.set_host_port(self.host, self.port)
 
         # getting remote temp dir
@@ -152,7 +155,8 @@ class AgentClient(object):
         pipe.wait()
         logging.debug("Return code [%s]: %s", self.host, pipe.returncode)
         if pipe.returncode:
-            raise RuntimeError("Failed to get remote dir via SSH at %s, code %s: %s" % (self.host, pipe.returncode, pipe.stdout.read().strip()))
+            raise RuntimeError("Failed to get remote dir via SSH at %s, code %s: %s" % (
+                self.host, pipe.returncode, pipe.stdout.read().strip()))
 
         remote_dir = pipe.stdout.read().strip()
         if (remote_dir):
@@ -172,7 +176,7 @@ class AgentClient(object):
         # Copy config
         cmd = [self.path['TEMP_CONFIG'], '['+self.host+']' + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
         logging.debug("[%s] Copy config: %s", cmd, self.host)
-            
+
         pipe = self.ssh.get_scp_pipe(cmd)
         pipe.wait()
         logging.debug("AgentClient copy config exitcode: %s", pipe.returncode)
@@ -183,7 +187,8 @@ class AgentClient(object):
             debug = "DEBUG=1"
         else:
             debug = ""
-        self.run = [debug, self.python, self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
+        self.run = [debug, self.python, self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c',
+                    self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
         return agent_config
 
     def uninstall(self):
@@ -191,10 +196,10 @@ class AgentClient(object):
         fhandle, log_file = tempfile.mkstemp('.log', "agent_" + self.host + "_")
         os.close(fhandle)
         cmd = [self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_file]
-        logging.debug("Copy agent log from %s: %s" , self.host, cmd)
+        logging.debug("Copy agent log from %s: %s", self.host, cmd)
         remove = self.ssh.get_scp_pipe(cmd)
         remove.wait()
-        
+
         logging.info("Removing agent from: %s...", self.host)
         cmd = ['rm', '-r', self.path['AGENT_REMOTE_FOLDER']]
         remove = self.ssh.get_ssh_pipe(cmd)
@@ -202,11 +207,11 @@ class AgentClient(object):
         return log_file
 
 
-
 class MonitoringCollector:
     '''
-    Class to aggregate data from several collectors
-    '''
+Class to aggregate data from several collectors
+'''
+
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.config = None
@@ -225,24 +230,24 @@ class MonitoringCollector:
 
 
     def add_listener(self, obj):
-        '''         Add data line listener        '''
+        ''' Add data line listener '''
         self.listeners.append(obj)
 
 
-    def prepare(self): 
-        ''' Prepare for monitoring - install agents etc'''       
+    def prepare(self):
+        ''' Prepare for monitoring - install agents etc'''
         # Parse config
         agent_config = []
         if self.config:
             [agent_config, self.filter_conf] = self.getconfig(self.config, self.default_target)
 
-        self.log.debug("filter_conf: %s", self.filter_conf)        
-        
+        self.log.debug("filter_conf: %s", self.filter_conf)
+
         # Filtering
         for host in self.filter_conf:
             self.filter_mask[host] = []
         self.log.debug("Filter mask: %s", self.filter_mask)
-            
+
         # Creating agent for hosts
         logging.debug('Creating agents')
         for adr in agent_config:
@@ -256,21 +261,21 @@ class MonitoringCollector:
             agent.custom = adr['custom']
             agent.ssh = self.ssh_wrapper_class(self.ssh_timeout)
             self.agents.append(agent)
-        
+
         # Mass agents install
         logging.debug("Agents: %s", self.agents)
-        
+
         conf = Config(self.config)
         for agent in self.agents:
             logging.debug('Install monitoring agent. Host: %s', agent.host)
-            self.artifact_files.append(agent.install(conf.loglevel()))        
+            self.artifact_files.append(agent.install(conf.loglevel()))
 
-    def start(self):        
-        ''' Start N parallel agents ''' 
+    def start(self):
+        ''' Start N parallel agents '''
         for agent in self.agents:
             pipe = agent.start()
             self.agent_pipes.append(pipe)
-            
+
             fds = pipe.stdout.fileno()
             flags = fcntl.fcntl(fds, fcntl.F_GETFL)
             fcntl.fcntl(fds, fcntl.F_SETFL, flags | os.O_NONBLOCK)
@@ -279,18 +284,18 @@ class MonitoringCollector:
             fds = pipe.stderr.fileno()
             flags = fcntl.fcntl(fds, fcntl.F_GETFL)
             fcntl.fcntl(fds, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-            self.excepts.append(pipe.stderr)     
-            
+            self.excepts.append(pipe.stderr)
+
         logging.debug("Pipes: %s", self.agent_pipes)
-        
-        
+
+
     def poll(self):
         '''
-        Poll agents for data
-        '''
+Poll agents for data
+'''
         readable, writable, exceptional = select.select(self.outputs, self.inputs, self.excepts, 0)
         logging.debug("Streams: %s %s %s", readable, writable, exceptional)
-        
+
         # if empty run - check children
         if (not readable) or exceptional:
             for pipe in self.agent_pipes:
@@ -298,26 +303,26 @@ class MonitoringCollector:
                     logging.debug("Child died returncode: %s", pipe.returncode)
                     self.outputs.remove(pipe.stdout)
                     self.agent_pipes.remove(pipe)
-        
+
         # Handle exceptions
         for excepted in exceptional:
             data = excepted.readline()
             while data:
                 logging.error("Got exception [%s]: %s", excepted, data)
-                data = excepted.readline()                
-    
+                data = excepted.readline()
+
         while readable:
             to_read = readable.pop(0)
             # Handle outputs
-            
+
             try:
                 lines = to_read.read().split("\n")
             except IOError:
                 self.log.debug("No data available")
                 lines = []
-            
+
             for data in lines:
-                logging.debug("Got data from agent: %s", data.strip())    
+                logging.debug("Got data from agent: %s", data.strip())
                 self.send_data += self.filter_unused_data(self.filter_conf, self.filter_mask, data)
                 logging.debug("Data after filtering: %s", self.send_data)
 
@@ -326,12 +331,12 @@ class MonitoringCollector:
             self.log.info("Monitoring received first data")
         else:
             self.send_collected_data()
-            
-        return len(self.outputs)            
 
-    
+        return len(self.outputs)
+
+
     def stop(self):
-        ''' Shutdown  agents       '''
+        ''' Shutdown agents '''
         logging.debug("Initiating normal finish")
         for pipe in self.agent_pipes:
             pipe.stdin.write("stop\n")
@@ -341,7 +346,7 @@ class MonitoringCollector:
                 while tankcore.pid_exists(pipe.pid):
                     if first_try:
                         logging.debug("Killing %s with %s", pipe.pid, signal.SIGTERM)
-                        os.kill(pipe.pid, signal.SIGTERM)                        
+                        os.kill(pipe.pid, signal.SIGTERM)
                         first_try = False
                         time.sleep(0.1)
                     else:
@@ -349,7 +354,7 @@ class MonitoringCollector:
                         delay *= 2
                         logging.warn("Killing %s with %s", pipe.pid, signal.SIGKILL)
                         os.kill(pipe.pid, signal.SIGKILL)
-                        
+
         for agent in self.agents:
             self.artifact_files.append(agent.uninstall())
 
@@ -359,8 +364,8 @@ class MonitoringCollector:
         for listener in self.listeners:
             listener.monitoring_data(self.send_data)
         self.send_data = ''
-            
-        
+
+
     def getconfig(self, filename, target_hint):
         ''' Prepare config data'''
         default = {
@@ -370,15 +375,15 @@ class MonitoringCollector:
             'Disk': 'read,write',
             'Net': 'recv,send',
         }
-    
+
         default_metric = ['CPU', 'Memory', 'Disk', 'Net']
-    
+
         try:
             tree = etree.parse(filename)
         except IOError, exc:
             logging.error("Error loading config: %s", exc)
-            raise RuntimeError ("Can't read monitoring config %s" % filename)
-    
+            raise RuntimeError("Can't read monitoring config %s" % filename)
+
         hosts = tree.xpath('/Monitoring/Host')
         names = defaultdict()
         config = []
@@ -391,7 +396,7 @@ class MonitoringCollector:
                     raise ValueError("Can't use [target] keyword with no target parameter specified")
                 logging.debug("Using target hint: %s", target_hint)
                 hostname = target_hint
-            
+
             stats = []
             custom = {'tail': [], 'call': [], }
             metrics_count = 0
@@ -410,7 +415,7 @@ class MonitoringCollector:
                         agent_name = self.get_agent_name(metric.tag, elm)
                         if agent_name:
                             names[agent_name] = 1
-                # custom metric ('call' and 'tail' methods)
+                            # custom metric ('call' and 'tail' methods)
                 if (str(metric.tag)).lower() == 'custom':
                     metrics_count += 1
                     isdiff = metric.get('diff')
@@ -419,12 +424,12 @@ class MonitoringCollector:
                     stat = "%s:%s:%s" % (base64.b64encode(metric.get('label')), base64.b64encode(metric.text), isdiff)
                     stats.append('Custom:' + stat)
                     custom[metric.get('measure', 'call')].append(stat)
-    
+
             logging.debug("Metrics count: %s", metrics_count)
             logging.debug("Host len: %s", len(host))
             logging.debug("keys: %s", host.keys())
             logging.debug("values: %s", host.values())
-    
+
             # use default metrics for host
             if metrics_count == 0:
                 for metric in default_metric:
@@ -435,44 +440,43 @@ class MonitoringCollector:
                         agent_name = self.get_agent_name(metric, elm)
                         if agent_name:
                             names[agent_name] = 1
-    
+
             metric = ','.join(names.keys())
             tmp = {}
-    
+
             if metric:
                 tmp.update({'metric': metric})
             else:
-                tmp.update({'metric': 'cpu-stat'}) 
-    
+                tmp.update({'metric': 'cpu-stat'})
+
             if host.get('interval'):
                 tmp.update({'interval': host.get('interval')})
             else:
                 tmp.update({'interval': 1})
-                    
+
             if host.get('priority'):
                 tmp.update({'priority': host.get('priority')})
             else:
                 tmp.update({'priority': 0})
-    
+
             if host.get('port'):
                 tmp.update({'port': host.get('port')})
             else:
                 tmp.update({'port': '22'})
-    
+
             if host.get('python'):
                 tmp.update({'python': host.get('python')})
             else:
                 tmp.update({'python': '/usr/bin/env python'})
-                
-    
+
             tmp.update({'custom': custom})
-    
+
             tmp.update({'host': hostname})
             filter_obj[hostname] = stats
             config.append(tmp)
-    
+
         return [config, filter_obj]
-    
+
     def filtering(self, mask, filter_list):
         ''' Filtering helper '''
         host = filter_list[0]
@@ -487,14 +491,14 @@ class MonitoringCollector:
                     self.log.warn("Problems filtering data: %s with %s", mask, len(filter_list))
                     return None
         return ';'.join(res)
-            
+
     def filter_unused_data(self, filter_conf, filter_mask, data):
         ''' Filter unselected metrics from data '''
         self.log.debug("Filtering data: %s", data)
         out = ''
         # Filtering data
         keys = data.rstrip().split(';')
-        if re.match('^start;', data):  # make filter_conf mask
+        if re.match('^start;', data): # make filter_conf mask
             host = keys[1]
             for i in xrange(3, len(keys)):
                 if keys[i] in filter_conf[host]:
@@ -502,14 +506,14 @@ class MonitoringCollector:
             self.log.debug("Filter mask: %s", filter_mask)
             out = 'start;'
             out += self.filtering(filter_mask, keys[1:]).rstrip(';') + '\n'
-        elif re.match('^\[debug\]', data):  # log debug output
+        elif re.match('^\[debug\]', data): # log debug output
             logging.debug('agent debug: %s', data.rstrip())
         else:
             filtered = self.filtering(filter_mask, keys)
             if filtered:
-                out = filtered + '\n'  # filtering values
+                out = filtered + '\n' # filtering values
         return out
-    
+
     def get_agent_name(self, metric, param):
         '''Resolve metric name'''
         depend = {
@@ -555,9 +559,10 @@ class MonitoringCollector:
         else:
             return ''
 
-            
+
 class MonitoringDataListener:
     ''' Parent class for data listeners '''
+
     def monitoring_data(self, data_string):
         ''' Notification about new monitoring data lines '''
         raise NotImplementedError()
@@ -565,21 +570,21 @@ class MonitoringDataListener:
 
 class StdOutPrintMon(MonitoringDataListener):
     ''' Simple listener, writing data to stdout '''
-    
+
     def monitoring_data(self, data_string):
         sys.stdout.write(data_string)
 
 
 class MonitoringDataDecoder:
     '''
-    The class that serves converting monitoring data lines to dict
-    '''
+The class that serves converting monitoring data lines to dict
+'''
     NA = 'n/a'
 
     def __init__(self):
         self.metrics = {}
         self.log = logging.getLogger()
-    
+
     def decode_line(self, line):
         ''' convert mon line to dict '''
         is_initial = False
@@ -587,7 +592,7 @@ class MonitoringDataDecoder:
         data = line.strip().split(';')
         timestamp = -1
         if data[0] == 'start':
-            data.pop(0)  # remove 'start'
+            data.pop(0) # remove 'start'
             host = data.pop(0)
             if not data:
                 logging.warn("Wrong mon data line: %s", line)
@@ -603,16 +608,16 @@ class MonitoringDataDecoder:
         else:
             host = data.pop(0)
             timestamp = data.pop(0)
-            
+
             if host not in self.metrics.keys():
                 raise ValueError("Host %s not in started metrics: %s" % (host, self.metrics))
-            
+
             if len(self.metrics[host]) != len(data):
                 raise ValueError("Metrics len and data len differs: %s vs %s" % (len(self.metrics[host]), len(data)))
-            
+
             for metric in self.metrics[host]:
                 data_dict[metric] = data.pop(0)
-                    
+
         self.log.debug("Decoded data %s: %s", host, data_dict)
         return host, data_dict, is_initial, timestamp
 
