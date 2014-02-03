@@ -123,7 +123,11 @@ class AgentClient(object):
         ''' Creating config '''
         if not self.metric and not self.custom:
             raise ValueError("No metrics to collect configured")
-
+        #FIXME - atm it's possible to define an interval parameter in seconds only
+        try:
+            int(self.interval)
+        except:
+            raise ValueError("Monitoring interval parameter is in wrong format: '%s'. Only decimal digit (in seconds) allowed." % self.interval)
         cfg = open(self.path['TEMP_CONFIG'], 'w')
         cfg.write('[main]\ninterval=%s\n' % self.interval)
         cfg.write('host=%s\n' % self.host)
