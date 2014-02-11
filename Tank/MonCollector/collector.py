@@ -17,6 +17,7 @@ import fcntl
 import tankcore
 
 
+
 # FIXME: 3 synchronize times between agent and collector better
 class Config(object):
     '''
@@ -127,7 +128,8 @@ class AgentClient(object):
         try:
             int(self.interval)
         except:
-            raise ValueError("Monitoring interval parameter is in wrong format: '%s'. Only decimal digit (in seconds) allowed." % self.interval)
+            strn = "Monitoring interval parameter is in wrong format: '%s'. Only decimal digit (in seconds) allowed."
+            raise ValueError(strn % self.interval)
         cfg = open(self.path['TEMP_CONFIG'], 'w')
         cfg.write('[main]\ninterval=%s\n' % self.interval)
         cfg.write('host=%s\n' % self.host)
@@ -163,12 +165,13 @@ class AgentClient(object):
                 self.host, pipe.returncode, pipe.stdout.read().strip()))
 
         remote_dir = pipe.stdout.read().strip()
-        if (remote_dir):
+        if remote_dir:
             self.path['AGENT_REMOTE_FOLDER'] = remote_dir
         logging.debug("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
 
         # Copy agent
-        cmd = [self.path['AGENT_LOCAL_FOLDER'] + '/agent.py', '['+self.host+']' + ':' + self.path['AGENT_REMOTE_FOLDER']]
+        cmd = [self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
+               '[' + self.host + ']' + ':' + self.path['AGENT_REMOTE_FOLDER']]
         logging.debug("Copy agent to %s: %s", self.host, cmd)
 
         pipe = self.ssh.get_scp_pipe(cmd)
@@ -178,7 +181,7 @@ class AgentClient(object):
             raise RuntimeError("AgentClient copy exitcode: %s" % pipe.returncode)
 
         # Copy config
-        cmd = [self.path['TEMP_CONFIG'], '['+self.host+']' + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
+        cmd = [self.path['TEMP_CONFIG'], '[' + self.host + ']' + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
         logging.debug("[%s] Copy config: %s", cmd, self.host)
 
         pipe = self.ssh.get_scp_pipe(cmd)
@@ -391,7 +394,6 @@ class MonitoringCollector:
         hosts = tree.xpath('/Monitoring/Host')
         names = defaultdict()
         config = []
-        hostname = ''
         filter_obj = defaultdict(str)
         for host in hosts:
             hostname = host.get('address')
@@ -624,5 +626,3 @@ class MonitoringDataDecoder:
 
         self.log.debug("Decoded data %s: %s", host, data_dict)
         return host, data_dict, is_initial, timestamp
-
-            

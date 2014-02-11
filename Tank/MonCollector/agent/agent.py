@@ -12,6 +12,7 @@ import socket
 import sys
 import time
 from threading import Thread
+import traceback
 
 
 class AbstractMetric:
@@ -65,6 +66,7 @@ class CpuStat(AbstractMetric):
 
         # Context switches and interrups. Check.
         try:
+            # TODO: change to simple file reading
             output = Popen('cat /proc/stat | grep -E "^(ctxt|intr|cpu) "',
                            shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         except Exception:
@@ -125,7 +127,8 @@ class CpuStat(AbstractMetric):
                     result.extend([empty] * 7)
                     #                logger.debug("Result: %s" % result)
 
-        # Numproc, numthreads 
+        # Numproc, numthreads
+        # TODO: change to simple file reading
         command = ['ps ax | wc -l', "cat /proc/loadavg | cut -d' ' -f 4 | cut -d'/' -f2"]
         for cmd2 in command:
             try:
@@ -192,11 +195,11 @@ class Custom(AbstractMetric):
         return str(value)
 
 
-# TODO: use filtering egrep "($(cat /proc/mounts | grep ^/dev | cut -d' ' -f1 | xargs -i readlink -f {} | cut -d/ -f3- | tr '\n' '|')END)" /proc/diskstats
 class Disk(AbstractMetric):
     def __init__(self):
         self.read = 0
         self.write = 0
+        self.devs = self._get_devs()
 
     def columns(self, ):
         return ['Disk_read', 'Disk_write']
@@ -209,30 +212,39 @@ class Disk(AbstractMetric):
         read, writed = 0, 0
 
         try:
-            stat = Popen(["cat /proc/diskstats | awk '{print $3, $7, $11}'"],
-                         stdout=PIPE, stderr=PIPE, shell=True)
-        except Exception, e:
-            logging.error("%s: %s" % (e.__class__, str(e)))
-            result = ['', '']
-        else:
-            err = stat.stderr.read()
-            if err:
-                logging.error(err.rstrip())
-                result = ['', '']
+            with open("/proc/diskstats") as mfd:
+                stat = mfd.readlines()
+            logging.info("Stats: %s", stat)
+
+            for el in stat:
+                data = el.split()
+                if data[2] in self.devs:
+                    read += int(data[5])
+                    writed += int(data[9])
+
+            if self.read or self.write:
+                result = [str(size * (read - self.read)), str(size * (writed - self.write))]
             else:
-                for el in stat.stdout:
-                    data = el.split()
-                    read += int(data[1])
-                    try:
-                        writed += int(data[2])
-                    except:
-                        pass
-                if self.read:
-                    result = [str(size * (read - self.read)), str(size * (writed - self.write))]
-                else:
-                    result = ['', '']
-        self.read, self.write = read, writed
+                result = ['', '']
+
+            self.read, self.write = read, writed
+
+        except Exception, exc:
+            logging.error("%s: %s", exc, traceback.format_exc(exc))
+            result = ['', '']
         return result
+
+    def _get_devs(self):
+        with open("/proc/mounts") as mfd:
+            mounts = mfd.readlines()
+        logging.info("Mounts: %s", mounts)
+        devs = []
+        for mount in mounts:
+            if mount.startswith("/dev"):
+                parts = mount.split(" ")
+                devs.append(os.path.realpath(parts[0]).split(os.sep)[-1])
+        logging.info("Devs: %s", devs)
+        return devs
 
 
 class Mem(AbstractMetric):
@@ -256,6 +268,7 @@ class Mem(AbstractMetric):
     def check(self):
         result = []
         try:
+            #TODO: change to simple file reading
             output = Popen('cat /proc/meminfo', shell=True, stdout=PIPE, stderr=PIPE)
         except Exception, e:
             logging.error("%s: %s" % (e.__class__, str(e)))
@@ -392,6 +405,7 @@ class Net(AbstractMetric):
         # Current data
         recv, send = 0, 0
 
+        # TODO: change to simple file reading
         cmnd = "cat /proc/net/dev | tail -n +3 | cut -d':' -f 1,2 --output-delimiter=' ' | awk '{print $1, $2, $10}'"
         logging.debug("Starting: %s", cmnd)
         try:

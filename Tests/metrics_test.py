@@ -12,7 +12,7 @@ if __name__ == '__main__':
     unittest.main()
 
 
-class Mem_TestCase(unittest.TestCase):
+class MemTestCase(unittest.TestCase):
     def setUp(self):
         self.foo = CpuStat()
 
@@ -23,7 +23,7 @@ class Mem_TestCase(unittest.TestCase):
         self.assertNotEquals(['0', '0'], self.foo.check())
 
 
-class Custom_TestCase(unittest.TestCase):
+class CustomTestCase(unittest.TestCase):
     def setUp(self):
         pass
 
@@ -44,7 +44,7 @@ class Custom_TestCase(unittest.TestCase):
         time.sleep(1)
         y = self.foo.check()
         print y
-        assert x != y;
+        assert x != y
         time.sleep(0.5)
         print self.foo.check()
 
@@ -86,28 +86,30 @@ class Custom_TestCase(unittest.TestCase):
         custom_config = {'tail': [], 'call': ['TnVtUGhyYXNlcw==:Y2F0IC92YXIvdG1wL3N0YXQx:0']}
         self.foo = Custom(**custom_config)
 
-        x = self.foo.check()
+        self.foo.check()
 
 
-class Disk_TestCase(unittest.TestCase):
+class DiskTestCase(unittest.TestCase):
     def setUp(self):
         self.foo = Disk()
 
     def test_get(self):
         print self.foo.check()
         self.assertEquals(2, len(self.foo.check()))
-        # self.assertNotEquals(['', ''], self.foo.check()) disabled since fails on TravisCI
+        self.assertNotEquals(['', ''], self.foo.check())
         fd = tempfile.mkstemp()[0]
-        os.write(fd, ' ' * 5000)
-        time.sleep(1)
-        # self.assertNotEquals(['', ''], self.foo.check()) disabled since fails on TravisCI
+        os.write(fd, ' ' * 5000000)
+        time.sleep(5)
+        res = self.foo.check()
+        print res
+        self.assertNotEquals(['', ''], res)
 
     def test_cols(self):
         res = self.foo.columns()
         self.assertEquals(['Disk_read', 'Disk_write'], res)
 
 
-class Net_tcp_TestCase(unittest.TestCase):
+class NetTcpTestCase(unittest.TestCase):
     def setUp(self):
         self.foo = NetTcp()
 
@@ -133,4 +135,3 @@ class NetTxRxTestCase(unittest.TestCase):
     def test_net_tx_rx_cols(self):
         res = self.foo.columns()
         self.assertEquals(['Net_tx', 'Net_rx', ], res)
-
