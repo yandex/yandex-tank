@@ -85,10 +85,11 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
     
     def aggregate_second(self, second_aggregate_data):
         self.counting = []
-        for criteria in self.criterias:
-            if criteria.notify(second_aggregate_data):
-                self.log.debug("Autostop criteria requested test stop: %s", criteria)
-                self.cause_criteria = criteria
+	if !self.cause_criteria:
+	    for criteria in self.criterias:
+        	if criteria.notify(second_aggregate_data):
+            	    self.log.debug("Autostop criteria requested test stop: %s", criteria)
+            	    self.cause_criteria = criteria
     
     
     
