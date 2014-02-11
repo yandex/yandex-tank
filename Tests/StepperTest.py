@@ -1,7 +1,7 @@
 import tempfile
 import os
 
-from Tank.stepper import Stepper
+from Tank.stepper import Stepper, StepperWrapper
 from Tests.TankTests import TankTestCase
 
 

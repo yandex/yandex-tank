@@ -1,5 +1,4 @@
 ''' Utility classes for phantom module '''
-from Tank.stepper import StepperWrapper
 from ipaddr import AddressValueError
 import copy
 import ipaddr
@@ -9,10 +8,13 @@ import os
 import socket
 import string
 
+from Tank.stepper import StepperWrapper
+
+
+
 
 # TODO: use separate answ log per benchmark
 class PhantomConfig:
-
     ''' config file generator '''
     OPTION_PHOUT = "phout_file"
     SECTION = 'phantom'
@@ -60,7 +62,7 @@ class PhantomConfig:
 
         self.answ_log = self.core.mkstemp(".log", "answ_")
         self.core.add_artifact_file(self.answ_log)
-        self.phout_file = self.core.get_option(self.SECTION, self.OPTION_PHOUT, '')  
+        self.phout_file = self.core.get_option(self.SECTION, self.OPTION_PHOUT, '')
         if not self.phout_file:
             self.phout_file = self.core.mkstemp(".log", "phout_")
             self.core.set_option(self.SECTION, self.OPTION_PHOUT, self.phout_file)
@@ -77,7 +79,8 @@ class PhantomConfig:
 
         for section in self.core.config.find_sections(self.SECTION + '-'):
             self.streams.append(
-                StreamConfig(self.core, len(self.streams), self.phout_file, self.answ_log, self.answ_log_level, self.timeout, section))
+                StreamConfig(self.core, len(self.streams), self.phout_file, self.answ_log, self.answ_log_level,
+                             self.timeout, section))
 
         for stream in self.streams:
             stream.read_config()
@@ -172,7 +175,6 @@ class PhantomConfig:
 
 
 class StreamConfig:
-
     ''' each test stream's config '''
 
     OPTION_INSTANCES_LIMIT = 'instances'
@@ -241,7 +243,7 @@ class StreamConfig:
 
         self.address = self.get_option('address', 'localhost')
         self.port = self.get_option('port', '80')
-        
+
         #address check section
         self.ip_resolved_check = False
         if not self.ip_resolved_check:
@@ -252,7 +254,8 @@ class StreamConfig:
             self.__resolve_address()
         if not self.ip_resolved_check:
             raise RuntimeError(
-                "Check what you entered as an address in config. If there is a hostname, check what you get due to DNS lookup", self.address)
+                "Check what you entered as an address in config. If there is a hostname, check what you get due to DNS lookup",
+                self.address)
 
         self.stepper_wrapper.read_config()
 
@@ -272,7 +275,7 @@ class StreamConfig:
         kwargs[
             'ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s }\n transport = ssl_transport" if self.ssl else ""
         kwargs['method_stream'] = self.method_prefix + \
-            "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"
+                                  "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"
         kwargs['phout'] = self.phout_file
         kwargs['answ_log'] = self.answ_log
         kwargs['answ_log_level'] = self.answ_log_level
@@ -354,7 +357,7 @@ class StreamConfig:
             self.resolved_ip = address_final
             self.log.debug(
                 "%s is IPv4 address and %s is port", address_final, self.port)
- 
+
     def __address_ipv6_check(self):
         ''' Analyse target address, IPv6 '''
         self.ip_resolved_check = False
@@ -413,4 +416,5 @@ class StreamConfig:
         except socket.error:
             raise RuntimeError(
                 "Unable to resolve hostname", self.address)
+
 # ========================================================================

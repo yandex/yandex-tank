@@ -1,12 +1,14 @@
-from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData
-from Tank.Plugins.Phantom import PhantomPlugin, PhantomReader
-from Tests.TankTests import TankTestCase
 import os
 import time
 import unittest
+
+from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData
+from Tank.Plugins.Phantom import PhantomPlugin, PhantomReader
+from Tests.TankTests import TankTestCase
 from Tank.Plugins.PhantomUtils import StepperWrapper
 
-class  PhantomPluginTestCase(TankTestCase):
+
+class PhantomPluginTestCase(TankTestCase):
     def setUp(self):
         core = self.get_core()
         core.load_configs(['config/phantom.conf'])
@@ -26,9 +28,9 @@ class  PhantomPluginTestCase(TankTestCase):
         self.foo.configure()
         self.foo.prepare_test()
         reader = PhantomReader(AggregatorPlugin(self.foo.core), self.foo)
-        reader.phout_file=self.foo.phantom.phout_file
+        reader.phout_file = self.foo.phantom.phout_file
         self.foo.start_test()
-        
+
         while self.foo.is_test_finished() < 0:
             self.foo.log.debug("Not finished")
             reader.check_open_files()
@@ -51,10 +53,10 @@ class  PhantomPluginTestCase(TankTestCase):
             time.sleep(1)
         if self.foo.is_test_finished() != 0:
             raise RuntimeError("RC: %s" % self.foo.is_test_finished())
-        self.assertTrue(os.path.getsize("ready_conf_phout.txt")>0)
+        self.assertTrue(os.path.getsize("ready_conf_phout.txt") > 0)
         self.foo.end_test(0)
-        
-        
+
+
     def test_run_uri_style(self):
         self.foo.set_option("ammofile", "")
         self.foo.set_option("uris", "/")
@@ -79,7 +81,7 @@ class  PhantomPluginTestCase(TankTestCase):
         self.foo.configure()
         self.foo.prepare_test()
         self.foo.prepare_test()
-        
+
     def test_domain_name(self):
         self.foo.core.set_option('phantom', 'address', 'yandex.ru')
         self.foo.configure()
@@ -92,14 +94,14 @@ class  PhantomPluginTestCase(TankTestCase):
             raise RuntimeError()
         except:
             pass
-    
-    
+
+
     def test_reader(self):
         self.foo.phantom_start_time = time.time()
         reader = PhantomReader(AggregatorPlugin(self.foo.core), self.foo)
         reader.phout_file = 'data/phout_timeout_mix.txt'
         reader.check_open_files()
-        
+
         data = reader.get_next_sample(False)
         while data:
             times_sum = 0
@@ -117,8 +119,16 @@ class  PhantomPluginTestCase(TankTestCase):
         wrapper.ammo_file = 'data/dummy.ammo'
         wrapper.prepare_stepper()
         wrapper.prepare_stepper()
-        
-        
+
+    def test_stepper_instances_sched(self):
+        self.foo.core.set_option('phantom', 'instances', '1000')
+        self.foo.core.set_option('phantom', 'rps_schedule', '')
+        self.foo.core.set_option('phantom', 'instances_schedule', 'line(1,100,1m)')
+        wrapper = StepperWrapper(self.foo.core, PhantomPlugin.SECTION)
+        wrapper.ammo_file = 'data/dummy.ammo'
+        wrapper.prepare_stepper()
+        self.assertEqual(100, wrapper.instances)
+
     def test_phout_import(self):
         self.foo.core.set_option('phantom', 'phout_file', 'data/phout_timeout_mix.txt')
         self.foo.core.set_option('phantom', 'instances', '1')
@@ -134,6 +144,7 @@ class  PhantomPluginTestCase(TankTestCase):
         self.assertEqual(self.foo.is_test_finished(), 0)
         self.foo.end_test(0)
         self.foo.post_process(0)
-        
+
+
 if __name__ == '__main__':
     unittest.main()
