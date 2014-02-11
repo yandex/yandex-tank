@@ -1,5 +1,4 @@
 ''' Classes to build full console screen '''
-from Tank.Plugins import Codes
 import copy
 import fcntl
 import logging
@@ -8,12 +7,16 @@ import os
 import struct
 import termios
 
-def get_terminal_size(): 
+from Tank.Plugins import Codes
+
+
+def get_terminal_size():
     '''
     Gets width and height of terminal viewport
     '''
     default_size = (60, 140)
     env = os.environ
+
     def ioctl_gwinsz(file_d):
         '''
         Helper to get console size
@@ -23,12 +26,13 @@ def get_terminal_size():
         except Exception:
             sizes = default_size
         return sizes
+
     sizes = ioctl_gwinsz(0) or ioctl_gwinsz(1) or ioctl_gwinsz(2)
     if not sizes:
         try:
             file_d = os.open(os.ctermid(), os.O_RDONLY)
             sizes = ioctl_gwinsz(file_d)
-            os.close(file_d)
+            os.close(file_d.fileno())
         except Exception:
             pass
     if not sizes:
@@ -36,23 +40,23 @@ def get_terminal_size():
             sizes = (env['LINES'], env['COLUMNS'])
         except Exception:
             sizes = default_size
-    return int(sizes[1]), int(sizes[0])    
+    return int(sizes[1]), int(sizes[0])
 
 
 def krutilka():
-    pos=0
-    chars="|/-\\"
+    pos = 0
+    chars = "|/-\\"
     while True:
         yield chars[pos]
-        pos+=1
-        if pos>=len(chars):
-            pos=0
+        pos += 1
+        if pos >= len(chars):
+            pos = 0
 
 
 class Screen(object):
     '''     Console screen renderer class    '''
     RIGHT_PANEL_SEPARATOR = ' . '
-    
+
     def __init__(self, info_panel_width, markup_provider):
         self.log = logging.getLogger(__name__)
         self.info_panel_percent = int(info_panel_width)
@@ -62,15 +66,15 @@ class Screen(object):
         self.term_width = 120
         self.right_panel_width = 10
         self.left_panel_width = self.term_width - self.right_panel_width - len(self.RIGHT_PANEL_SEPARATOR)
-        
+
         block1 = VerticalBlock(CurrentHTTPBlock(self), CurrentNetBlock(self))
-        block2 = VerticalBlock(block1, CasesBlock(self))   
+        block2 = VerticalBlock(block1, CasesBlock(self))
         block3 = VerticalBlock(block2, TotalQuantilesBlock(self))
         block4 = VerticalBlock(block3, AnswSizesBlock(self))
         block5 = VerticalBlock(block4, AvgTimesBlock(self))
-        
+
         self.block_rows = [[CurrentTimesDistBlock(self), block5]]
-        
+
     def __get_right_line(self, widget_output):
         '''        Gets next line for right panel        '''
         right_line = ''
@@ -93,10 +97,10 @@ class Screen(object):
             for block in row:
                 block.render()
                 space_left -= block.width
-            
+
             # merge blocks output into row
             space = ' ' * int(math.floor(float(space_left) / (len(row) + 1)))
-            had_lines = True            
+            had_lines = True
             while had_lines:
                 had_lines = False
                 line = space
@@ -109,8 +113,8 @@ class Screen(object):
                         line += ' ' * block.width
                     line += space
                 lines.append(line)
-            #lines.append(".  " * (1 + self.left_panel_width / 3))
-            #lines.append("")
+                #lines.append(".  " * (1 + self.left_panel_width / 3))
+                #lines.append("")
         return lines
 
 
@@ -118,17 +122,19 @@ class Screen(object):
         '''        Main method to render screen view        '''
         self.term_width, self.term_height = get_terminal_size()
         self.log.debug("Terminal size: %sx%s", self.term_width, self.term_height)
-        self.right_panel_width = int((self.term_width - len(self.RIGHT_PANEL_SEPARATOR)) * (float(self.info_panel_percent) / 100)) - 1
-        if self.right_panel_width > 0: 
+        self.right_panel_width = int(
+            (self.term_width - len(self.RIGHT_PANEL_SEPARATOR)) * (float(self.info_panel_percent) / 100)) - 1
+        if self.right_panel_width > 0:
             self.left_panel_width = self.term_width - self.right_panel_width - len(self.RIGHT_PANEL_SEPARATOR) - 2
         else:
             self.right_panel_width = 0
             self.left_panel_width = self.term_width - 1
         self.log.debug("Left/right panels width: %s/%s", self.left_panel_width, self.right_panel_width)
 
+        widget_output = []
         if self.right_panel_width:
             widget_output = []
-            for index, widget in sorted(self.info_widgets.iteritems(), key=lambda(k, v): (v.get_index(), k)): 
+            for index, widget in sorted(self.info_widgets.iteritems(), key=lambda (k, v): (v.get_index(), k)):
                 self.log.debug("Rendering info widget #%s: %s", index, widget)
                 widget_out = widget.render(self).strip()
                 if widget_out:
@@ -138,7 +144,7 @@ class Screen(object):
         left_lines = self.__render_left_panel()
 
         self.log.debug("Composing final screen output")
-        output = []        
+        output = []
         for line_no in range(1, self.term_height):
             line = " "
 
@@ -148,28 +154,28 @@ class Screen(object):
                 if len(left_line) > self.left_panel_width:
                     if len(left_line_plain) > self.left_panel_width:
                         left_line = left_line[:self.left_panel_width] + self.markup.RESET
-                
-                left_line += (' ' * (self.left_panel_width - len(left_line_plain))) 
-                line += left_line     
+
+                left_line += (' ' * (self.left_panel_width - len(left_line_plain)))
+                line += left_line
             else:
                 line += ' ' * self.left_panel_width
             if self.right_panel_width:
-                line += (self.RIGHT_PANEL_SEPARATOR)
+                line += self.RIGHT_PANEL_SEPARATOR
                 right_line = self.__get_right_line(widget_output)
                 line += right_line
-                 
+
             output.append(line)
         return self.markup.new_line.join(output) + self.markup.new_line
 
-    
+
     def add_info_widget(self, widget):
         '''
         Add widget string to right panel of the screen
         '''
         index = widget.get_index()
-        while index in self.info_widgets.keys(): 
+        while index in self.info_widgets.keys():
             index += 1
-        self.info_widgets[widget.get_index()] = widget    
+        self.info_widgets[widget.get_index()] = widget
 
 
     def add_second_data(self, data):
@@ -178,15 +184,17 @@ class Screen(object):
         '''
         for row in self.block_rows:
             for block in row:
-                block.add_second(data)        
-        
+                block.add_second(data)
 
-# ======================================================
+
+                # ======================================================
+
 
 class AbstractBlock:
     '''
     Parent class for all left panel blocks
     '''
+
     def __init__(self, screen):
         self.log = logging.getLogger(__name__)
         self.lines = []
@@ -204,13 +212,15 @@ class AbstractBlock:
         Render method, fills .lines and .width properties with rendered data
         '''
         raise RuntimeError("Abstract method needs to be overridden")
-    
+
+
 # ======================================================
 
 class VerticalBlock(AbstractBlock):
     '''
     Block to merge two other blocks vertically
     '''
+
     def __init__(self, top_block, bottom_block):
         AbstractBlock.__init__(self, None)
         self.top = top_block
@@ -220,27 +230,28 @@ class VerticalBlock(AbstractBlock):
         self.top.render()
         self.bottom.render()
         self.width = max(self.top.width, self.bottom.width)
-        
+
         self.lines = []
         for line in self.top.lines:
             self.lines.append(line + ' ' * (self.width - self.top.width))
-        
+
         if self.top.lines and self.bottom.lines:
             self.lines.append(' ' * self.width)
-            
+
         for line in self.bottom.lines:
             self.lines.append(line + ' ' * (self.width - self.bottom.width))
-            
+
     def add_second(self, data):
         self.top.add_second(data)
         self.bottom.add_second(data)
-            
+
+
 # ======================================================
 class CurrentTimesDistBlock(AbstractBlock):
     '''
     Detailed distribution for current RPS
     '''
-    
+
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
         self.current_codes = {}
@@ -261,13 +272,13 @@ class CurrentTimesDistBlock(AbstractBlock):
         for item in data.overall.times_dist:
             self.current_count += item['count']
             self.current_max_rt = max(self.current_max_rt, item['to'])
-            if item['from'] in self.current_codes.keys(): 
+            if item['from'] in self.current_codes.keys():
                 self.current_codes[item['from']]['count'] += item['count']
             else:
                 self.current_codes[item['from']] = copy.deepcopy(item)
         self.current_duration += 1
         self.log.debug("Current times dist: %s", self.current_codes)
-      
+
     def render(self):
         self.lines = []
         quan = 0
@@ -277,7 +288,8 @@ class CurrentTimesDistBlock(AbstractBlock):
             self.width = max(self.width, len(line))
             self.lines.append(line)
         self.lines.reverse()
-        self.lines = [self.screen.markup.WHITE + 'Times for %s RPS:' % self.current_rps + self.screen.markup.RESET] + self.lines
+        self.lines = [self.screen.markup.WHITE + 'Times for %s RPS:' % self.current_rps + self.screen.markup.RESET] \
+                     + self.lines
         self.lines.append("")
 
         count_len = str(len(str(self.current_count)))
@@ -291,11 +303,11 @@ class CurrentTimesDistBlock(AbstractBlock):
         left_line = ''
         if current_times:
             item = current_times.pop(0)[1]
-            if self.current_count: 
+            if self.current_count:
                 perc = float(item['count']) / self.current_count
             else:
                 perc = 1
-            quan += perc 
+            quan += perc
             # 30691    9.26%: 010  --  025       68.03%  <  025
             count_len = str(len(str(self.current_count)))
             timing_len = str(len(str(self.current_max_rt)))
@@ -304,12 +316,13 @@ class CurrentTimesDistBlock(AbstractBlock):
             left_line = tpl % data
         return left_line, quan
 
-         
+
 # ======================================================
 
 class CurrentHTTPBlock(AbstractBlock):
     ''' Http codes with highlight'''
     TITLE = 'HTTP for %s RPS:  '
+
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
         self.times_dist = {}
@@ -329,7 +342,7 @@ class CurrentHTTPBlock(AbstractBlock):
             self.total_count = 0
             for key in self.times_dist.keys():
                 self.times_dist[key] = 0
-        
+
         for code, count in codes_dist.items():
             self.total_count += count
             self.highlight_codes.append(code)
@@ -337,18 +350,18 @@ class CurrentHTTPBlock(AbstractBlock):
                 self.times_dist[code] += count
             else:
                 self.times_dist[code] = count
-        
+
         self.log.debug("Current codes dist: %s", self.times_dist)
 
     def add_second(self, data):
         rps = data.overall.planned_requests
         codes_dist = data.overall.http_codes
         self.process_dist(rps, codes_dist)
-      
+
     def render(self):
-        self.lines = [self.screen.markup.WHITE + self.TITLE % self.current_rps + self.screen.markup.RESET] 
+        self.lines = [self.screen.markup.WHITE + self.TITLE % self.current_rps + self.screen.markup.RESET]
         #self.width = len(self.lines[0])
-        for code, count in sorted(self.times_dist.iteritems()):        
+        for code, count in sorted(self.times_dist.iteritems()):
             line = self.format_line(code, count)
             self.width = max(self.width, len(self.screen.markup.clean_markup(line)))
             self.lines.append(line)
@@ -368,7 +381,7 @@ class CurrentHTTPBlock(AbstractBlock):
         tpl = '  %' + count_len + 'd %6.2f%%: %s %s'
         data = (count, perc * 100, code, code_desc)
         left_line = tpl % data
-        
+
         if code in self.highlight_codes:
             code = str(code)
             if code[0] == '2':
@@ -381,10 +394,10 @@ class CurrentHTTPBlock(AbstractBlock):
                 left_line = self.screen.markup.RED + left_line + self.screen.markup.RESET
             else:
                 left_line = self.screen.markup.MAGENTA + left_line + self.screen.markup.RESET
-        
+
         return left_line
 
-    
+
 # ======================================================
 
 class CurrentNetBlock(CurrentHTTPBlock):
@@ -395,7 +408,7 @@ class CurrentNetBlock(CurrentHTTPBlock):
         rps = data.overall.planned_requests
         codes_dist = copy.deepcopy(data.overall.net_codes)
         self.process_dist(rps, codes_dist)
-    
+
     def format_line(self, code, count):
         if self.total_count:
             perc = float(count) / self.total_count
@@ -410,20 +423,21 @@ class CurrentNetBlock(CurrentHTTPBlock):
         tpl = '  %' + count_len + 'd %6.2f%%: %s %s'
         data = (count, perc * 100, code, code_desc)
         left_line = tpl % data
-        
+
         if code in self.highlight_codes:
             if code == '0':
                 left_line = self.screen.markup.GREEN + left_line + self.screen.markup.RESET
             else:
                 left_line = self.screen.markup.RED + left_line + self.screen.markup.RESET
-        
+
         return left_line
 
+
 # ======================================================
-            
+
 class TotalQuantilesBlock(AbstractBlock):
     ''' Total test quantiles '''
-    
+
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
         self.total_count = 0
@@ -431,8 +445,8 @@ class TotalQuantilesBlock(AbstractBlock):
         self.quantiles = {}
 
     def add_second(self, data):
-        self.quantiles=data.cumulative.quantiles
-      
+        self.quantiles = data.cumulative.quantiles
+
     def render(self):
         self.lines = []
         for quant in sorted(self.quantiles):
@@ -458,7 +472,7 @@ class TotalQuantilesBlock(AbstractBlock):
 
 class AnswSizesBlock(AbstractBlock):
     ''' Answer sizes, if available '''
-    
+
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
         self.sum_in = 0
@@ -495,7 +509,7 @@ class AnswSizesBlock(AbstractBlock):
         self.count += data.overall.RPS
         self.sum_in += data.overall.input
         self.sum_out += data.overall.output
-        
+
         self.cur_in = data.overall.input
         self.cur_out = data.overall.output
         self.cur_count = data.overall.RPS
@@ -532,7 +546,7 @@ class AvgTimesBlock(AbstractBlock):
         self.last_count = 0
 
         self.header = 'Avg Times (all / %s RPS / last):'
-        
+
     def add_second(self, data):
         if self.current_rps != data.overall.planned_requests:
             self.current_rps = data.overall.planned_requests
@@ -541,8 +555,8 @@ class AvgTimesBlock(AbstractBlock):
             self.rps_latency = 0
             self.rps_receive = 0
             self.rps_overall = 0
-            self.rps_count = 0            
-        
+            self.rps_count = 0
+
         self.rps_connect += data.overall.avg_connect_time * data.overall.RPS
         self.rps_send += data.overall.avg_send_time * data.overall.RPS
         self.rps_latency += data.overall.avg_latency * data.overall.RPS
@@ -556,7 +570,7 @@ class AvgTimesBlock(AbstractBlock):
         self.all_receive += data.overall.avg_receive_time * data.overall.RPS
         self.all_overall += data.overall.avg_response_time * data.overall.RPS
         self.all_count += data.overall.RPS
-        
+
         self.last_connect = data.overall.avg_connect_time * data.overall.RPS
         self.last_send = data.overall.avg_send_time * data.overall.RPS
         self.last_latency = data.overall.avg_latency * data.overall.RPS
@@ -567,15 +581,28 @@ class AvgTimesBlock(AbstractBlock):
     def render(self):
         self.lines = [self.screen.markup.WHITE + self.header % self.current_rps + self.screen.markup.RESET]
         if self.last_count:
-            len_all = str(len(str(max([self.all_connect, self.all_latency, self.all_overall, self.all_receive, self.all_send]))))
-            len_rps = str(len(str(max([self.rps_connect, self.rps_latency, self.rps_overall, self.rps_receive, self.rps_send]))))
-            len_last = str(len(str(max([self.last_connect, self.last_latency, self.last_overall, self.last_receive, self.last_send]))))
+            len_all = str(
+                len(str(max([self.all_connect, self.all_latency, self.all_overall, self.all_receive, self.all_send]))))
+            len_rps = str(
+                len(str(max([self.rps_connect, self.rps_latency, self.rps_overall, self.rps_receive, self.rps_send]))))
+            len_last = str(len(
+                str(max([self.last_connect, self.last_latency, self.last_overall, self.last_receive, self.last_send]))))
             tpl = "%" + len_all + "d / %" + len_rps + "d / %" + len_last + "d"
-            self.lines.append("  Overall: " + tpl % (float(self.all_overall) / self.all_count, float(self.rps_overall) / self.rps_count, float(self.last_overall) / self.last_count))
-            self.lines.append("  Connect: " + tpl % (float(self.all_connect) / self.all_count, float(self.rps_connect) / self.rps_count, float(self.last_connect) / self.last_count))
-            self.lines.append("     Send: " + tpl % (float(self.all_send) / self.all_count, float(self.rps_send) / self.rps_count, float(self.rps_send) / self.rps_count))
-            self.lines.append("  Latency: " + tpl % (float(self.all_latency) / self.all_count, float(self.rps_latency) / self.rps_count, float(self.rps_latency) / self.rps_count))
-            self.lines.append("  Receive: " + tpl % (float(self.all_receive) / self.all_count, float(self.rps_receive) / self.rps_count, float(self.rps_receive) / self.rps_count))
+            self.lines.append("  Overall: " + tpl % (
+                float(self.all_overall) / self.all_count, float(self.rps_overall) / self.rps_count,
+                float(self.last_overall) / self.last_count))
+            self.lines.append("  Connect: " + tpl % (
+                float(self.all_connect) / self.all_count, float(self.rps_connect) / self.rps_count,
+                float(self.last_connect) / self.last_count))
+            self.lines.append("     Send: " + tpl % (
+                float(self.all_send) / self.all_count, float(self.rps_send) / self.rps_count,
+                float(self.rps_send) / self.rps_count))
+            self.lines.append("  Latency: " + tpl % (
+                float(self.all_latency) / self.all_count, float(self.rps_latency) / self.rps_count,
+                float(self.rps_latency) / self.rps_count))
+            self.lines.append("  Receive: " + tpl % (
+                float(self.all_receive) / self.all_count, float(self.rps_receive) / self.rps_count,
+                float(self.rps_receive) / self.rps_count))
         else:
             self.lines.append("")
             self.lines.append("")
@@ -584,13 +611,14 @@ class AvgTimesBlock(AbstractBlock):
             self.lines.append("")
         for line in self.lines:
             self.width = max(self.width, len(self.screen.markup.clean_markup(line)))
-        
-        
+
+
 # ======================================================
 
 
 class CasesBlock(AbstractBlock):
     '''     Cases info    '''
+
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
         self.cases = {}
@@ -598,7 +626,7 @@ class CasesBlock(AbstractBlock):
         self.header = "Cumulative Cases Info:"
         self.highlight_cases = []
         self.max_case_len = 0
-        
+
     def add_second(self, data):
         self.highlight_cases = []
         for name, case in data.cases.iteritems():
@@ -609,17 +637,17 @@ class CasesBlock(AbstractBlock):
             self.cases[name][0] += case.RPS
             self.cases[name][1] += case.avg_response_time * case.RPS
             self.count += case.RPS
-        
+
     def render(self):
         self.lines = [self.screen.markup.WHITE + self.header + self.screen.markup.RESET]
         tpl = "  %s: %" + str(len(str(self.count))) + "d %5.2f%% / avg %.1f ms"
         for name, (count, resp_time) in sorted(self.cases.iteritems()):
-            line = tpl % (" "*(self.max_case_len - len(name)) + name, count, 100 * float(count) / self.count, float(resp_time) / count)
+            line = tpl % (" " * (self.max_case_len - len(name)) + name, count, 100 * float(count) / self.count,
+                          float(resp_time) / count)
             if name in self.highlight_cases:
                 self.lines.append(self.screen.markup.CYAN + line + self.screen.markup.RESET)
             else:
                 self.lines.append(line)
-                
+
         for line in self.lines:
             self.width = max(self.width, len(self.screen.markup.clean_markup(line)))
-        

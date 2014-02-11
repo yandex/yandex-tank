@@ -1,16 +1,17 @@
 ''' Plugin provides fullscreen console '''
-from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
-from Tank.Plugins.ConsoleScreen import Screen
-from tankcore import AbstractPlugin
 import logging
 import sys
 import traceback
-import os, fcntl
+
+from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
+from Tank.Plugins.ConsoleScreen import Screen
+from tankcore import AbstractPlugin
+
 
 class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
     ''' Console plugin '''
     SECTION = 'console'
-    
+
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         self.screen = None
@@ -23,10 +24,10 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
     @staticmethod
     def get_key():
         return __file__
-    
+
     def get_available_options(self):
         return ["info_panel_width", "short_only", "disable_all_colors", "disable_colors"]
-    
+
     def configure(self):
         self.info_panel_width = self.get_option("info_panel_width", self.info_panel_width)
         self.short_only = int(self.get_option("short_only", '0'))
@@ -46,8 +47,8 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
             self.screen.block_rows = []
             self.screen.info_panel_percent = 100
 
-        #nf = fcntl.fcntl(sys.stdout.fileno(), fcntl.F_UNLCK)
-        #fcntl.fcntl(sys.stdout.fileno(), fcntl.F_SETFL , nf | os.O_NONBLOCK )
+            #nf = fcntl.fcntl(sys.stdout.fileno(), fcntl.F_UNLCK)
+            #fcntl.fcntl(sys.stdout.fileno(), fcntl.F_SETFL , nf | os.O_NONBLOCK )
 
     def is_test_finished(self):
         try:
@@ -63,31 +64,31 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
                 sys.stdout.write(self.console_markup.clear)
                 sys.stdout.write(console_view)
                 sys.stdout.write(self.console_markup.TOTAL_RESET)
-        
+
             if self.remote_translator:
                 self.remote_translator.send_console(console_view)
 
         return -1
-    
-    
+
+
     def aggregate_second(self, second_aggregate_data):
-        self.screen.add_second_data(second_aggregate_data)    
+        self.screen.add_second_data(second_aggregate_data)
         if self.short_only:
             tpl = "Time: %s\tExpected RPS: %s\tActual RPS: %s\tActive Threads: %s\tAvg RT: %s"
             ovr = second_aggregate_data.overall  # just to see the next line in IDE
             data = (second_aggregate_data.time, ovr.planned_requests, ovr.RPS,
                     ovr.active_threads, ovr.avg_response_time)
             self.log.info(tpl % data)
-            
-    
+
+
     def add_info_widget(self, widget):
         ''' add right panel widget '''
         if not self.screen:
             self.log.debug("No screen instance to add widget")
         else:
             self.screen.add_info_widget(widget)
-        
-        
+
+
 # ======================================================
 
 
@@ -98,8 +99,8 @@ class RealConsoleMarkup(object):
     WHITE_ON_BLACK = '\033[37;40m'
     TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
-    new_line = "\n"
-    
+    new_line = u"\n"
+
     YELLOW = '\033[1;33m'
     RED = '\033[1;31m'
     RED_DARK = '\033[31;3m'
@@ -112,7 +113,7 @@ class RealConsoleMarkup(object):
     BG_GREEN = '\033[1;42m'
     BG_BROWN = '\033[1;43m'
     BG_CYAN = '\033[1;46m'
-    
+
     def clean_markup(self, orig_str):
         ''' clean markup from string '''
         for val in [self.YELLOW, self.RED, self.RESET,
@@ -122,6 +123,7 @@ class RealConsoleMarkup(object):
             orig_str = orig_str.replace(val, '')
         return orig_str
 
+
 # ======================================================
 # FIXME: 3 better way to have it?
 
@@ -130,8 +132,8 @@ class NoConsoleMarkup(RealConsoleMarkup):
     WHITE_ON_BLACK = ''
     TOTAL_RESET = ''
     clear = ""
-    new_line = "\n"
-    
+    new_line = u"\n"
+
     YELLOW = ''
     RED = ''
     RED_DARK = ''
@@ -145,11 +147,13 @@ class NoConsoleMarkup(RealConsoleMarkup):
     BG_BROWN = ''
     BG_CYAN = ''
 
+
 # ======================================================
 
 
 class AbstractInfoWidget:
     ''' parent class for all right panel widgets '''
+
     def __init__(self):
         self.log = logging.getLogger(__name__)
 
