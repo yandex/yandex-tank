@@ -58,7 +58,7 @@ class CpuStat(AbstractMetric):
     def check(self, ):
 
         # Empty symbol for no data
-        EMPTY = ''
+        empty = ''
 
         # resulting data array
         result = []
@@ -68,11 +68,11 @@ class CpuStat(AbstractMetric):
             output = Popen('cat /proc/stat | grep -E "^(ctxt|intr|cpu) "',
                            shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         except Exception:
-            result.append([EMPTY] * 9)
+            result.append([empty] * 9)
         else:
             err = output.stderr.read()
             if err:
-                result.extend([EMPTY] * 9)
+                result.extend([empty] * 9)
             else:
                 info = output.stdout.read()
 
@@ -99,7 +99,7 @@ class CpuStat(AbstractMetric):
                     result.extend(map(str, delta))
                 else:
                     self.last = fetch_data()
-                    result.extend([EMPTY] * 2)
+                    result.extend([empty] * 2)
                 #                logger.debug("Result: %s" % result)
 
                 # CPU. analyze.
@@ -122,7 +122,7 @@ class CpuStat(AbstractMetric):
                     self.check_prev = self.check_last
                 else:
                     self.check_prev = fetch_cpu()
-                    result.extend([EMPTY] * 7)
+                    result.extend([empty] * 7)
                     #                logger.debug("Result: %s" % result)
 
         # Numproc, numthreads 
@@ -131,11 +131,11 @@ class CpuStat(AbstractMetric):
             try:
                 output = Popen(cmd2, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
             except Exception:
-                result.append(EMPTY)
+                result.append(empty)
             else:
                 err = output.stderr.read()
                 if err:
-                    result.append(EMPTY)
+                    result.append(empty)
                 else:
                     result.append(str(int(output.stdout.read().strip()) - 1))
         return result
@@ -235,51 +235,11 @@ class Disk(AbstractMetric):
         return result
 
 
-class Io(AbstractMetric):
-    ''' Get no virtual block device names and count theys r/rw sectors '''
-
-    def __init__(self, ):
-        self.check_prev = None
-        self.check_last = None
-
-    def columns(self, ):
-        columns = []
-        self.block_devs = commands.getoutput(
-            'ls -l /sys/block/ | grep -v "virtual" | awk \'{print $8}\' | grep -v "^$"').split('\n')
-        for dev_name in self.block_devs:
-            columns.extend([dev_name + '-rsec', dev_name + '-wsec'])
-        return columns
-
-    def fetch(self, ):
-        tmp_data = []
-        result = {}
-        for dev_name in self.block_devs:
-            tmp_data = map(int, commands.getoutput('cat /proc/diskstats | grep " ' + dev_name + ' "').split()[5:])
-            result[dev_name] = tmp_data[0], tmp_data[4]
-        return result
-
-    def check(self, ):
-        if self.check_prev is not None:
-            self.check_last = self.fetch()
-            delta = []
-            for dev_name in self.block_devs:
-                delta.extend([str(self.check_last[dev_name][0] - self.check_prev[dev_name][0]),
-                              str(self.check_last[dev_name][1] - self.check_prev[dev_name][1])])
-            self.check_prev = self.check_last
-            return delta
-        else:
-            # first check
-            self.check_prev = self.fetch()
-            return ['0', '0', '0', '0', ]
-
-
-EMPTY = ''
-
-
 class Mem(AbstractMetric):
     """
     Memory statistics
     """
+    empty = ''
 
     def __init__(self):
         self.name = 'advanced memory usage'
@@ -299,21 +259,22 @@ class Mem(AbstractMetric):
             output = Popen('cat /proc/meminfo', shell=True, stdout=PIPE, stderr=PIPE)
         except Exception, e:
             logging.error("%s: %s" % (e.__class__, str(e)))
-            result.append([EMPTY] * 9)
+            result.append([self.empty] * 9)
         else:
+            data = {}
             err = output.stderr.read()
             if err:
-                result.extend([EMPTY] * 9)
+                result.extend([self.empty] * 9)
                 logging.error(err.rstrip())
             else:
                 info = output.stdout.read()
 
-                data = {}
                 for name in self.vars:
                     data[name] = 0
 
                 for l in info.splitlines():
-                    if len(l) < 2: continue
+                    if len(l) < 2:
+                        continue
                     [name, raw_value] = l.split(':')
                     #                    print "name: %s " % name
                     if name in self.vars:
@@ -332,6 +293,8 @@ class NetRetrans(AbstractMetric):
     def __init__(self, ):
         self.retr_second = None
         self.retr_first = None
+        self.fetch = None
+        self.delta = []
 
     def columns(self, ):
         return ['Net_retransmit', ]
@@ -361,6 +324,11 @@ class NetTcp(AbstractMetric):
         return self.fields
 
     def check(self, ):
+        '''
+        * check is there TCP connections in "field" state in last check
+        if note set it to 0.
+        * make output ordered as "fields" list
+        '''
         fetch = lambda: commands.getoutput("ss -an | cut -d' ' -f 1 | tail -n +2 | sort | uniq -c")
         data = {}
         result = []
@@ -368,11 +336,6 @@ class NetTcp(AbstractMetric):
         for line in raw_lines:
             value = line.split()
             data[value[1].strip()] = int(value[0].strip())
-        '''
-        * check is there TCP connections in "field" state in last check
-        if note set it to 0.
-        * make output ordered as "fields" list
-        '''
         for field in self.keys:
             if field in data:
                 result.append(str(data[field]))
@@ -385,8 +348,8 @@ class NetTxRx(AbstractMetric):
     ''' Get upped iface names and read they Tx/Rx counters in bytes '''
 
     def __init__(self, ):
-        self.prevRX = 0
-        self.prevTX = 0
+        self.prev_rx = 0
+        self.prev_tx = 0
 
     def columns(self, ):
         return ['Net_tx', 'Net_rx', ]
@@ -404,16 +367,16 @@ class NetTxRx(AbstractMetric):
         rx = int(rx)
         tx = int(tx)
 
-        if (self.prevRX == 0):
-            tTX = 0
-            tRX = 0
+        if self.prev_rx == 0:
+            t_tx = 0
+            t_rx = 0
         else:
-            tRX = rx - self.prevRX
-            tTX = tx - self.prevTX
-        self.prevRX = rx
-        self.prevTX = tx
+            t_rx = rx - self.prev_rx
+            t_tx = tx - self.prev_tx
+        self.prev_rx = rx
+        self.prev_tx = tx
 
-        return [str(tRX), str(tTX)]
+        return [str(t_rx), str(t_tx)]
 
 
 class Net(AbstractMetric):
@@ -429,10 +392,10 @@ class Net(AbstractMetric):
         # Current data
         recv, send = 0, 0
 
-        cmd = "cat /proc/net/dev | tail -n +3 | cut -d':' -f 1,2 --output-delimiter=' ' | awk '{print $1, $2, $10}'"
-        logging.debug("Starting: %s", cmd)
+        cmnd = "cat /proc/net/dev | tail -n +3 | cut -d':' -f 1,2 --output-delimiter=' ' | awk '{print $1, $2, $10}'"
+        logging.debug("Starting: %s", cmnd)
         try:
-            stat = Popen([cmd], stdout=PIPE, stderr=PIPE, shell=True)
+            stat = Popen([cmnd], stdout=PIPE, stderr=PIPE, shell=True)
         except Exception, exc:
             logging.error("Error getting net metrics: %s", exc)
             result = ['', '']
@@ -463,35 +426,6 @@ class Net(AbstractMetric):
 
 # ===========================
 
-class PidStat(AbstractMetric):
-    def __init__(self):
-        self.fields = ['pid', 'comm', 'state', 'ppid', 'pgrp', 'session', 'tty_nr', 'tpgid', 'flags',
-                       'minflt', 'cminflt', 'majflt', 'cmajflt', 'utime', 'stime', 'cutime', 'cstime',
-                       'priority', 'nice', 'num_threads', 'itrealvalue', 'starttime', 'vsize', 'rss',
-                       'rsslim', 'startcode', 'endcode', 'startstack', 'kstkesp', 'kstkeip', 'signal',
-                       'blocked', 'segignore', 'sigcatch', 'wchan', 'nswap', 'cnswap', 'exit_signal',
-                       'processor', 'rt_priority', 'policy', 'delayacct_blkio_ticks', 'guest_time',
-                       'cguest_time']
-        self.total_ticks = -1
-        self.prev_vals = []
-        self.pid = 0
-
-
-    def set_options(self, options):
-        # direct pid and pidfile
-        self.pid = 0
-
-
-    def columns(self, ):
-        return self.fields
-
-    def check(self, ):
-        loadavg_str = open('/proc/loadavg', 'r').readline().strip()
-        return map(str, loadavg_str.split()[:3])
-
-
-# ===========================
-
 def write(mesg):
     ''' console writing wraper '''
     sys.stdout.write('%s\n' % mesg)
@@ -517,7 +451,7 @@ def fixed_sleep(slp_interval, ):
         t_after = time.time()
         logging.debug('slp_interval:%s, t_delta:%s, slp_interval * 2 - t_delta = %s', slp_interval, t_delta,
                       slp_interval * 2 - t_delta)
-        if ((t_delta > slp_interval) & (slp_interval * 2 - t_delta > 0)):
+        if (t_delta > slp_interval) & (slp_interval * 2 - t_delta > 0):
             time.sleep(slp_interval * 2 - t_delta)
         else:
             if slp_interval * 2 - t_delta < 0:
@@ -538,6 +472,13 @@ class AgentWorker(Thread):
 
     def __init__(self):
         Thread.__init__(self)
+        self.c_interval = 1
+        self.tails = None
+        self.calls = None
+        self.metrics_collected = []
+        self.c_host = None
+        self.c_local_start = None
+        self.c_start = None
         self.daemon = True  # Thread auto-shutdown
         self.finished = False
         # metrics we know about
@@ -545,13 +486,11 @@ class AgentWorker(Thread):
             'cpu-la': CpuLa(),
             'cpu-stat': CpuStat(),
             'mem': Mem(),
-            'io': Io(),
             'net-retrans': NetRetrans(),
             'net-tx-rx': NetTxRx(),
             'net-tcp': NetTcp(),
             'disk': Disk(),
             'net': Net(),
-            'pid': PidStat(),
         }
 
 
@@ -686,5 +625,3 @@ if __name__ == '__main__':
     if cmd:
         logging.info("Stdin cmd received: %s", cmd)
         worker.finished = True
-            
-    
