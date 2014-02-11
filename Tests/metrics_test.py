@@ -28,6 +28,7 @@ class Custom_TestCase(unittest.TestCase):
         pass
 
         #def tearDown(self):
+
     #    self.foo.dispose()
     #    self.foo = None
 
@@ -125,7 +126,7 @@ class NetTxRxTestCase(unittest.TestCase):
         time.sleep(2)
         self.assertNotEquals(['0', '0'], self.foo.check())
         socket.gethostbyname("google.com")
-        socket.create_connection("google.com", 5000)
+        socket.create_connection(("google.com", 80), 5000)
         time.sleep(2)
         print self.foo.check()
 
