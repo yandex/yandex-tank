@@ -119,7 +119,7 @@ def execute(cmd, shell=False, poll_period=1, catch_out=False):
     stdout = ""
     stderr = ""
 
-    if isinstance(cmd, basestring):
+    if not shell and isinstance(cmd, basestring):
         cmd = shlex.split(cmd)
 
     if catch_out:
