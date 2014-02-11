@@ -109,7 +109,7 @@ def pid_exists(pid):
         return p.status != psutil.STATUS_ZOMBIE
 
 
-def execute(cmd, shell=False, poll_period=1, catch_out=False):
+def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
     """
     Wrapper for Popen
     """
@@ -402,8 +402,7 @@ class TankCore:
                 self.config.flush()
                 value = default.strip()
             else:
-                self.log.warn(
-                    "Mandatory option %s was not found in section %s", option, section)
+                self.log.warn("Mandatory option %s was not found in section %s", option, section)
                 raise ex
 
         if len(value) > 1 and value[0] == '`' and value[-1] == '`':

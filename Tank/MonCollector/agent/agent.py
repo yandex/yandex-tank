@@ -186,6 +186,7 @@ class Custom(AbstractMetric):
         return str(value)
 
 
+# TODO: use filtering egrep "($(cat /proc/mounts | grep ^/dev | cut -d' ' -f1 | xargs -i readlink -f {} | cut -d/ -f3- | tr '\n' '|')END)" /proc/diskstats
 class Disk(AbstractMetric):
     def __init__(self):
         self.read = 0
