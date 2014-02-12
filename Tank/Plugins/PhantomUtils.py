@@ -105,7 +105,7 @@ class PhantomConfig:
         filename = self.core.mkstemp(".conf", "phantom_")
         self.core.add_artifact_file(filename)
         self.log.debug("Generating phantom config: %s", filename)
-        tpl_file = open(os.path.dirname(__file__) + "/phantom.conf.tpl", 'r')
+        tpl_file = open(os.path.dirname(__file__) + "/phantom/phantom.conf.tpl", 'r')
         template_str = tpl_file.read()
         tpl_file.close()
         tpl = string.Template(template_str)
@@ -317,7 +317,7 @@ class StreamConfig:
             fname = 'phantom_benchmark_main.tpl'
         else:
             fname = 'phantom_benchmark_additional.tpl'
-        tplf = open(os.path.dirname(__file__) + '/' + fname, 'r')
+        tplf = open(os.path.dirname(__file__) + '/phantom/' + fname, 'r')
         template_str = tplf.read()
         tplf.close()
         tpl = string.Template(template_str)
