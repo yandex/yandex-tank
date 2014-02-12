@@ -5,8 +5,8 @@ Command line options
 ~~~~~~~~~~~~~~~~~~~~
 
 There are three executables in Yandex.Tank package: ``yandex-tank``,
-``yandex-tank-ab`` и ``yandex-tank-jmeter``. Last two of them just use
-different king of load gen utilities, ``ab`` (Apache Benchmark) and
+``yandex-tank-ab`` and ``yandex-tank-jmeter``. Last two of them just use
+different kind of load generation utilities, ``ab`` (Apache Benchmark) and
 ``jmeter`` (Apache JMeter), accordingly. Command line options are common
 for all three.
 
@@ -41,7 +41,7 @@ example:
     [autostop] 
     autostop=instances(80%,10)
 
-A common rule: options with
+A common rule: options with the
 same name override those set before them (in the same file or not).
 
 Default configuration files
@@ -282,6 +282,7 @@ Options
 * **args** - additional commandline arguments for JMeter
 * **jmeter_path** - path to JMeter, allows to use alternative JMeter installation. Default: jmeter
 * **buffered_seconds ** - amount of seconds to which delay aggregator, to be sure that everything were read from jmeter's results file
+* **all other options in the section** - they will be passed as User Defined Variables to JMeter
 
 Artifacts
 '''''''''

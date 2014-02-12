@@ -1,7 +1,7 @@
 Usage
 -----
 
-So, you've installed Yandex.Tank to a proper server, close to target,
+So, you've installed Yandex.Tank to a proper machine, it is close to target,
 access is permitted and server is tuned. How to make a test?
 
 First Steps
