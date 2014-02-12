@@ -27,6 +27,7 @@ class TankTestCase(unittest.TestCase):
     def get_core(self):
         self.core = TankCore()
         self.core.artifacts_base_dir = tempfile.mkdtemp()
+        self.core.artifacts_dir = self.core.artifacts_base_dir
         return self.core
 
 
