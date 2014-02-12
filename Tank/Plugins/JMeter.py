@@ -1,4 +1,5 @@
 ''' jmeter load generator support '''
+import logging
 import os
 import signal
 import subprocess
@@ -52,7 +53,7 @@ class JMeterPlugin(AbstractPlugin):
         self.jmeter_buffer_size = int(self.get_option('buffer_size', '3'))
         self.core.add_artifact_file(self.jmeter_log, True)
         self.use_argentum = eval(self.get_option('use_argentum', 'False'))
-        self.jmx = self.__add_writing_section(self.original_jmx, self.jtl_file)
+        self.jmx = self.__add_jmeter_components(self.original_jmx, self.jtl_file, self._get_variables())
 
     def prepare_test(self):
         self.args = [self.jmeter_path, "-n", "-t", self.jmx, '-j', self.jmeter_log,
@@ -112,12 +113,12 @@ class JMeterPlugin(AbstractPlugin):
         return retcode
 
 
-    def __add_writing_section(self, jmx, jtl):
+    def __add_jmeter_components(self, jmx, jtl, variables):
         ''' Genius idea by Alexey Lavrenyuk '''
         self.log.debug("Original JMX: %s", os.path.realpath(jmx))
-        src_jmx = open(jmx, 'r')
-        source_lines = src_jmx.readlines()
-        src_jmx.close()
+        with open(jmx, 'r') as src_jmx:
+            source_lines = src_jmx.readlines()
+
         try:
             closing = source_lines.pop(-1)
             closing = source_lines.pop(-1) + closing
@@ -126,20 +127,26 @@ class JMeterPlugin(AbstractPlugin):
         except Exception, exc:
             raise RuntimeError("Failed to find the end of JMX XML: %s" % exc)
 
-        tpl_filepath = '/jmeter_writer.xml'
+        tpl_filepath = '/jmeter/jmeter_writer.xml'
 
         if self.use_argentum:
-            self.log.warn("You are using argentum. Be careful.")
-            tpl_filepath = '/jmeter_argentum.xml'
+            self.log.warn("You are using argentum aggregator for JMeter. Be careful.")
+            tpl_filepath = '/jmeter/jmeter_argentum.xml'
 
-        tpl_file = open(os.path.dirname(__file__) + tpl_filepath, 'r')
-        tpl = tpl_file.read()
-        tpl_file.close()
+        with open(os.path.dirname(__file__) + tpl_filepath, 'r') as tpl_file:
+            tpl = tpl_file.read()
+
+        with open(os.path.dirname(__file__) + '/jmeter/jmeter_var_template.xml', 'r') as tpl_file:
+            udv_tpl = tpl_file.read()
+
+        udv_set = []
+        for var_name, var_value in variables.iteritems():
+            udv_set.append(udv_tpl % (var_name, var_name, var_value))
 
         try:
             file_handle, new_file = tempfile.mkstemp('.jmx', 'modified_', os.path.dirname(os.path.realpath(jmx)))
         except OSError, exc:
-            self.log.debug("Can't create new jmx near original: %s", exc)
+            self.log.debug("Can't create modified jmx near original: %s", exc)
             file_handle, new_file = tempfile.mkstemp('.jmx', 'modified_', self.core.artifacts_base_dir)
         self.log.debug("Modified JMX: %s", new_file)
         os.write(file_handle, ''.join(source_lines))
@@ -147,10 +154,19 @@ class JMeterPlugin(AbstractPlugin):
         if self.use_argentum:
             os.write(file_handle, tpl % (self.jmeter_buffer_size, jtl, "", ""))
         else:
-            os.write(file_handle, tpl % jtl)
+            os.write(file_handle, tpl % (jtl, "\n".join(udv_set)))
+
         os.write(file_handle, closing)
         os.close(file_handle)
         return new_file
+
+    def _get_variables(self):
+        res = {}
+        for option in self.core.config.get_options(self.SECTION):
+            if option[0] not in self.get_available_options():
+                res[option[0]] = option[1]
+        logging.debug("Variables: %s", res)
+        return res
 
 
 class JMeterReader(AbstractReader):
