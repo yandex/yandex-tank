@@ -353,14 +353,14 @@ class MonitoringCollector:
                 while tankcore.pid_exists(pipe.pid):
                     if first_try:
                         logging.debug("Killing %s with %s", pipe.pid, signal.SIGTERM)
-                        os.kill(pipe.pid, signal.SIGTERM)
+                        os.killpg(pipe.pid, signal.SIGTERM)
                         first_try = False
                         time.sleep(0.1)
                     else:
                         time.sleep(delay)
                         delay *= 2
                         logging.warn("Killing %s with %s", pipe.pid, signal.SIGKILL)
-                        os.kill(pipe.pid, signal.SIGKILL)
+                        os.killpg(pipe.pid, signal.SIGKILL)
 
         for agent in self.agents:
             self.artifact_files.append(agent.uninstall())

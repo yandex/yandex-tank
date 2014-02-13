@@ -1,7 +1,6 @@
 #! /usr/bin/python
 ''' The agent bundle, contains all metric classes and agent running code '''
 from optparse import OptionParser
-from subprocess import Popen, PIPE
 import ConfigParser
 import base64
 import commands
@@ -9,10 +8,12 @@ import logging
 import os
 import re
 import socket
+import subprocess
 import sys
 import time
 from threading import Thread
 import traceback
+import signal
 
 
 class AbstractMetric:
@@ -66,8 +67,8 @@ class CpuStat(AbstractMetric):
         # Context switches and interrups. Check.
         try:
             # TODO: change to simple file reading
-            output = Popen('cat /proc/stat | grep -E "^(ctxt|intr|cpu) "',
-                           shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+            output = subprocess.Popen('cat /proc/stat | grep -E "^(ctxt|intr|cpu) "',
+                                      shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except Exception:
             result.append([empty] * 9)
         else:
@@ -131,7 +132,7 @@ class CpuStat(AbstractMetric):
         command = ['ps ax | wc -l', "cat /proc/loadavg | cut -d' ' -f 4 | cut -d'/' -f2"]
         for cmd2 in command:
             try:
-                output = Popen(cmd2, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                output = subprocess.Popen(cmd2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             except Exception:
                 result.append(empty)
             else:
@@ -171,11 +172,11 @@ class Custom(AbstractMetric):
         res = []
         for el in self.tail:
             cmnd = base64.b64decode(el.split(':')[1])
-            output = Popen(['tail', '-n', '1', cmnd], stdout=PIPE).communicate()[0]
+            output = subprocess.Popen(['tail', '-n', '1', cmnd], stdout=subprocess.PIPE).communicate()[0]
             res.append(self.diff_value(el, output.strip()))
         for el in self.call:
             cmnd = base64.b64decode(el.split(':')[1])
-            output = Popen(cmnd, shell=True, stdin=PIPE, stdout=PIPE).stdout.read()
+            output = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE).stdout.read()
             res.append(self.diff_value(el, output.strip()))
         return res
 
@@ -213,7 +214,6 @@ class Disk(AbstractMetric):
         try:
             with open("/proc/diskstats") as mfd:
                 stat = mfd.readlines()
-            logging.info("Stats: %s", stat)
 
             for el in stat:
                 data = el.split()
@@ -268,7 +268,7 @@ class Mem(AbstractMetric):
         result = []
         try:
             #TODO: change to simple file reading
-            output = Popen('cat /proc/meminfo', shell=True, stdout=PIPE, stderr=PIPE)
+            output = subprocess.Popen('cat /proc/meminfo', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except Exception, e:
             logging.error("%s: %s" % (e.__class__, str(e)))
             result.append([self.empty] * 9)
@@ -408,7 +408,7 @@ class Net(AbstractMetric):
         cmnd = "cat /proc/net/dev | tail -n +3 | cut -d':' -f 1,2 --output-delimiter=' ' | awk '{print $1, $2, $10}'"
         logging.debug("Starting: %s", cmnd)
         try:
-            stat = Popen([cmnd], stdout=PIPE, stderr=PIPE, shell=True)
+            stat = subprocess.Popen([cmnd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         except Exception, exc:
             logging.error("Error getting net metrics: %s", exc)
             result = ['', '']
@@ -440,36 +440,20 @@ class Net(AbstractMetric):
 # ===========================
 
 
-def fixed_sleep(slp_interval, ):
-    ''' sleep 'interval' exclude processing time part '''
-    global t_after
-    if t_after is not None:
-        t_delta = time.time() - t_after
-        t_after = time.time()
-        logging.debug('slp_interval:%s, t_delta:%s, slp_interval * 2 - t_delta = %s', slp_interval, t_delta,
-                      slp_interval * 2 - t_delta)
-        if (t_delta > slp_interval) & (slp_interval * 2 - t_delta > 0):
-            time.sleep(slp_interval * 2 - t_delta)
-        else:
-            if slp_interval * 2 - t_delta < 0:
-                logging.warn('[negative sleep time]')
-            else:
-                time.sleep(slp_interval)
-    else:
-        # first cycle iter
-        t_after = time.time()
-        time.sleep(slp_interval)
-
 
 class AgentWorker(Thread):
     dlmtr = ';'
 
     def __init__(self):
         Thread.__init__(self)
+        self.t_after = None
+        self.startup_processes = []
         self.c_interval = 1
         self.tails = None
         self.calls = None
         self.metrics_collected = []
+        self.startups = []
+        self.shutdowns = []
         self.c_host = None
         self.c_local_start = None
         self.c_start = None
@@ -487,11 +471,19 @@ class AgentWorker(Thread):
             'net': Net(),
         }
 
+    def popen(self, cmnd):
+        return subprocess.Popen(cmnd, bufsize=0, preexec_fn=os.setsid, close_fds=True, shell=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
 
     def run(self):
+        logging.info("Running startup commands")
+        for cmnd in self.startups:
+            logging.debug("Run: %s", cmnd)
+            proc = self.popen(cmnd)
+            self.startup_processes.append(proc)
+
         logging.info("Start polling thread")
-        global t_after
-        t_after = None
         header = []
 
         sync_time = str(self.c_start + (int(time.time()) - self.c_local_start))
@@ -542,7 +534,37 @@ class AgentWorker(Thread):
             except Exception, e:
                 logging.error('Failed to convert line %s: %s', line, e)
 
-            fixed_sleep(self.c_interval)
+        self.fixed_sleep(self.c_interval)
+
+        logging.info("Terminating startup commands")
+        for proc in self.startup_processes:
+            logging.debug("Terminate: %s", proc)
+            os.killpg(proc.pid, signal.SIGTERM)
+
+        logging.info("Running shutdown commands")
+        for cmnd in self.shutdowns:
+            logging.debug("Run: %s", cmnd)
+            subprocess.call(cmnd, shell=True)
+
+        logging.info("Worker thread finished")
+
+    def fixed_sleep(self, slp_interval):
+        ''' sleep 'interval' exclude processing time part '''
+        if self.t_after is not None:
+            now = time.time()
+            t_delta = now - self.t_after
+            self.t_after = now
+            if (t_delta > slp_interval) and (slp_interval * 2 - t_delta > 0):
+                time.sleep(slp_interval * 2 - t_delta)
+            else:
+                if slp_interval * 2 - t_delta < 0:
+                    logging.warn('[negative sleep time]')
+                else:
+                    time.sleep(slp_interval)
+        else:
+            # first cycle iter
+            self.t_after = time.time()
+            time.sleep(slp_interval)
 
 
 class AgentConfig:
@@ -604,26 +626,40 @@ class AgentConfig:
             if config.has_option('custom', 'call'):
                 self.calls += config.get('custom', 'call').split(',')
 
+        if config.has_section('startup'):
+            for option in config.options('startup'):
+                if option.startswith('cmd'):
+                    self.startups.append(config.get('startup', option))
+
+        if config.has_section('shutdown'):
+            for option in config.options('shutdown'):
+                if option.startswith('cmd'):
+                    self.shutdowns.append(config.get('shutdown', option))
+
+
     def prepare_worker(self, wrk):
         # populate
         wrk.c_start = self.c_start
         wrk.c_local_start = self.c_local_start
+        wrk.c_interval = self.c_interval
         wrk.c_host = self.c_host
         wrk.metrics_collected = self.metrics_collected
         wrk.calls = self.calls
         wrk.tails = self.tails
-        wrk.c_interval = self.c_interval
+        wrk.startups = self.startups
+        wrk.shutdowns = self.shutdowns
 
 
 if __name__ == '__main__':
     fname = os.path.dirname(__file__) + "_agent.log"
+    print fname
     level = logging.DEBUG
 
     fmt = "%(asctime)s - %(filename)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(filename=fname, level=level, format=fmt)
 
     worker = AgentWorker()
-    worker.setDaemon(True)
+    worker.setDaemon(False)
 
     agent_config = AgentConfig('agent.cfg')
     agent_config.prepare_worker(worker)
@@ -631,7 +667,7 @@ if __name__ == '__main__':
     worker.start()
 
     logging.debug("Check for stdin shutdown command")
-    cmd = sys.stdin.read()
+    cmd = sys.stdin.readline()
     if cmd:
         logging.info("Stdin cmd received: %s", cmd)
         worker.finished = True
