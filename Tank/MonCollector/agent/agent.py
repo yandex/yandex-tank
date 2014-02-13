@@ -57,7 +57,6 @@ class CpuStat(AbstractMetric):
         return columns
 
     def check(self, ):
-
         # Empty symbol for no data
         empty = ''
 
@@ -440,22 +439,6 @@ class Net(AbstractMetric):
 
 # ===========================
 
-def write(mesg):
-    ''' console writing wraper '''
-    sys.stdout.write('%s\n' % mesg)
-    sys.stdout.flush()
-
-
-def setup_logging():
-    ''' Logging params '''
-    fname = os.path.dirname(__file__) + "_agent.log"
-    level = logging.DEBUG
-
-    fmt = "%(asctime)s - %(filename)s - %(name)s - %(levelname)s - %(message)s"
-    logging.basicConfig(filename=fname, level=level, format=fmt)
-
-    logging.info('Start agent')
-
 
 def fixed_sleep(slp_interval, ):
     ''' sleep 'interval' exclude processing time part '''
@@ -476,9 +459,6 @@ def fixed_sleep(slp_interval, ):
         # first cycle iter
         t_after = time.time()
         time.sleep(slp_interval)
-
-
-unixtime = lambda: str(int(time.time()))
 
 
 class AgentWorker(Thread):
@@ -565,76 +545,92 @@ class AgentWorker(Thread):
             fixed_sleep(self.c_interval)
 
 
+class AgentConfig:
+    def __init__(self, def_cfg_path):
+        self.c_interval = 1
+        self.c_host = socket.getfqdn()
+        logging.info("Start agent at host: %s\n" % self.c_host)
+        self.c_start = None
+        self.c_local_start = int(time.time())
+        self.metrics_collected = []
+        self.calls = []
+        self.tails = []
+        self.startups = []
+        self.shutdowns = []
+
+        options = self.parse_options(def_cfg_path)
+        self.parse_config(options.cfg_file)
+
+    def parse_options(self, def_cfg_path):
+        # parse options
+        parser = OptionParser()
+        parser.add_option('-c', '--config', dest='cfg_file', type='str',
+                          help='Config file path, default is: ./' + def_cfg_path,
+                          default=def_cfg_path)
+
+        parser.add_option('-t', '--timestamp', dest='timestamp', type='int',
+                          help='Caller timestamp for synchronization', default=self.c_local_start)
+        (options, args) = parser.parse_args()
+
+        self.c_start = options.timestamp
+        logging.debug("Caller timestamp: %s", options.timestamp)
+
+        return options
+
+    def parse_config(self, cfg_file='agent.cfg'):
+        # parse cfg file
+        config = ConfigParser.ConfigParser()
+        config.readfp(open(cfg_file))
+
+        # metric section
+        if config.has_option('metric', 'names'):
+            self.metrics_collected = config.get('metric', 'names').split(',')
+
+        # main section
+        if config.has_section('main'):
+            if config.has_option('main', 'interval'):
+                self.c_interval = config.getfloat('main', 'interval')
+            if config.has_option('main', 'host'):
+                self.c_host = config.get('main', 'host')
+            if config.has_option('main', 'start'):
+                self.c_start = config.getint('main', 'start')
+
+        logging.info('Agent params: %s, %s' % (self.c_interval, self.c_host))
+
+        # custom section
+        if config.has_section('custom'):
+            if config.has_option('custom', 'tail'):
+                self.tails += config.get('custom', 'tail').split(',')
+            if config.has_option('custom', 'call'):
+                self.calls += config.get('custom', 'call').split(',')
+
+    def prepare_worker(self, wrk):
+        # populate
+        wrk.c_start = self.c_start
+        wrk.c_local_start = self.c_local_start
+        wrk.c_host = self.c_host
+        wrk.metrics_collected = self.metrics_collected
+        wrk.calls = self.calls
+        wrk.tails = self.tails
+        wrk.c_interval = self.c_interval
+
+
 if __name__ == '__main__':
-    pass
+    fname = os.path.dirname(__file__) + "_agent.log"
+    level = logging.DEBUG
 
-    #def tmp():
-    # default params
-    def_cfg_path = 'agent.cfg'
-    c_interval = 1
-    c_host = socket.getfqdn()
-    c_local_start = int(time.time())
-
-    setup_logging()
-    logging.info("Start agent at host: %s\n" % c_host)
-
-
-    # parse options
-    parser = OptionParser()
-    parser.add_option('-c', '--config', dest='cfg_file', type='str',
-                      help='Config file path, default is: ./' + def_cfg_path,
-                      default=def_cfg_path)
-
-    parser.add_option('-t', '--timestamp', dest='timestamp', type='int',
-                      help='Caller timestamp for synchronization', default=c_local_start)
-    (options, args) = parser.parse_args()
-
-    c_start = options.timestamp
-    logging.debug("Caller timestamp: %s", options.timestamp)
-
-    # parse cfg file
-    config = ConfigParser.ConfigParser()
-    config.readfp(open(options.cfg_file))
-
-    # metric section
-    metrics_collected = []
-    if config.has_option('metric', 'names'):
-        metrics_collected = config.get('metric', 'names').split(',')
-
-    # main section
-    if config.has_section('main'):
-        if config.has_option('main', 'interval'):
-            c_interval = config.getfloat('main', 'interval')
-        if config.has_option('main', 'host'):
-            c_host = config.get('main', 'host')
-        if config.has_option('main', 'start'):
-            c_start = config.getint('main', 'start')
-
-    logging.info('Agent params: %s, %s' % (c_interval, c_host))
-
-    # custom section
-    calls = []
-    tails = []
-    if config.has_section('custom'):
-        if config.has_option('custom', 'tail'):
-            tails += config.get('custom', 'tail').split(',')
-        if config.has_option('custom', 'call'):
-            calls += config.get('custom', 'call').split(',')
+    fmt = "%(asctime)s - %(filename)s - %(name)s - %(levelname)s - %(message)s"
+    logging.basicConfig(filename=fname, level=level, format=fmt)
 
     worker = AgentWorker()
+    worker.setDaemon(True)
 
-    # populate
-    worker.c_start = c_start
-    worker.c_local_start = c_local_start
-    worker.c_host = c_host
-    worker.metrics_collected = metrics_collected
-    worker.calls = calls
-    worker.tails = tails
-    worker.c_interval = c_interval
+    agent_config = AgentConfig('agent.cfg')
+    agent_config.prepare_worker(worker)
 
     worker.start()
 
-    logging.debug("Ckeck for stdin shutdown command")
+    logging.debug("Check for stdin shutdown command")
     cmd = sys.stdin.read()
     if cmd:
         logging.info("Stdin cmd received: %s", cmd)
