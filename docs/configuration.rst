@@ -281,7 +281,7 @@ Options
 * **jmx** - testplan for execution
 * **args** - additional commandline arguments for JMeter
 * **jmeter_path** - path to JMeter, allows to use alternative JMeter installation. Default: jmeter
-* **buffered_seconds ** - amount of seconds to which delay aggregator, to be sure that everything were read from jmeter's results file
+* **buffered_seconds** - amount of seconds to which delay aggregator, to be sure that everything were read from jmeter's results file
 * **all other options in the section** - they will be passed as User Defined Variables to JMeter
 
 Artifacts
