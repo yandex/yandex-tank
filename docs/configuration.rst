@@ -95,7 +95,7 @@ Use indent to show that a line is a continuation of a previous one:
 
     [autostop]
     autostop=time(1,10)
-      http(404,1%,5s)   
+      http(404,1%,5s)
       net(xx,1,30)
 *Ask Yandex.Tank developers to add multiline capability for options
 where you need it!*

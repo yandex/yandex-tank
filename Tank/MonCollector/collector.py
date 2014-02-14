@@ -1,5 +1,5 @@
 '''Target monitoring via SSH'''
-
+import ConfigParser
 from collections import defaultdict
 from lxml import etree
 from subprocess import PIPE, Popen
@@ -15,6 +15,12 @@ import time
 import fcntl
 
 import tankcore
+
+
+
+
+
+
 
 
 
@@ -104,6 +110,8 @@ class AgentClient(object):
         self.interval = None
         self.metric = None
         self.custom = {}
+        self.startups = []
+        self.shutdowns = []
         self.python = '/usr/bin/env python'
 
     def start(self):
@@ -122,25 +130,30 @@ class AgentClient(object):
 
     def create_agent_config(self, loglevel):
         ''' Creating config '''
-        if not self.metric and not self.custom:
-            raise ValueError("No metrics to collect configured")
-        #FIXME - atm it's possible to define an interval parameter in seconds only
         try:
-            int(self.interval)
+            float(self.interval)
         except:
-            strn = "Monitoring interval parameter is in wrong format: '%s'. Only decimal digit (in seconds) allowed."
+            strn = "Monitoring interval parameter is in wrong format: '%s'. Only numbers allowed."
             raise ValueError(strn % self.interval)
-        cfg = open(self.path['TEMP_CONFIG'], 'w')
-        cfg.write('[main]\ninterval=%s\n' % self.interval)
-        cfg.write('host=%s\n' % self.host)
-        cfg.write('loglevel=%s\n' % loglevel)
-        cfg.write('[metric]\nnames=%s\n' % self.metric)
-        cfg.write('[custom]\n')
+
+        cfg = ConfigParser.ConfigParser()
+        cfg.set('main', 'interval', self.interval)
+        cfg.set('main', 'host', self.host)
+        cfg.set('main', 'loglevel', loglevel)
+        cfg.set('metric', 'names', self.metric)
         for method in self.custom:
             if self.custom[method]:
-                cfg.write('%s=%s\n' % (method, ','.join(self.custom[method])))
+                cfg.set('custom', method, ','.join(self.custom[method]))
 
-        cfg.close()
+        for idx, cmd in enumerate(self.startups):
+            cfg.set('startup', "cmd%s" % idx, cmd)
+
+        for idx, cmd in enumerate(self.shutdowns):
+            cfg.set('shutdown', "cmd%s" % idx, cmd)
+
+        with open(self.path['TEMP_CONFIG'], 'w') as fds:
+            cfg.write(fds)
+
         return self.path['TEMP_CONFIG']
 
     def install(self, loglevel):
@@ -266,6 +279,8 @@ class MonitoringCollector:
             agent.port = adr['port']
             agent.interval = adr['interval']
             agent.custom = adr['custom']
+            agent.startups = adr['startups']
+            agent.shutdowns = adr['shutdowns']
             agent.ssh = self.ssh_wrapper_class(self.ssh_timeout)
             self.agents.append(agent)
 
@@ -372,6 +387,98 @@ class MonitoringCollector:
             listener.monitoring_data(self.send_data)
         self.send_data = ''
 
+    # FIXME: a piese of shit and shame to a programmer
+    def get_host_config(self, default, default_metric, filter_obj, host, names, target_hint):
+        hostname = host.get('address')
+        if hostname == '[target]':
+            if not target_hint:
+                raise ValueError("Can't use [target] keyword with no target parameter specified")
+            logging.debug("Using target hint: %s", target_hint)
+            hostname = target_hint
+        stats = []
+        startups = []
+        shutdowns = []
+        custom = {'tail': [], 'call': [], }
+        metrics_count = 0
+        for metric in host:
+            # known metrics
+            if metric.tag in default.keys():
+                metrics_count += 1
+                metr_val = default[metric.tag].split(',')
+                if metric.get('measure'):
+                    metr_val = metric.get('measure').split(',')
+                for elm in metr_val:
+                    if not elm:
+                        continue
+                    stat = "%s_%s" % (metric.tag, elm)
+                    stats.append(stat)
+                    agent_name = self.get_agent_name(metric.tag, elm)
+                    if agent_name:
+                        names[agent_name] = 1
+                        # custom metric ('call' and 'tail' methods)
+            elif (str(metric.tag)).lower() == 'custom':
+                metrics_count += 1
+                isdiff = metric.get('diff')
+                if not isdiff:
+                    isdiff = 0
+                stat = "%s:%s:%s" % (base64.b64encode(metric.get('label')), base64.b64encode(metric.text), isdiff)
+                stats.append('Custom:' + stat)
+                custom[metric.get('measure', 'call')].append(stat)
+            elif (str(metric.tag)).lower() == 'startup':
+                startups.append(metric.text)
+            elif (str(metric.tag)).lower() == 'shutdown':
+                shutdowns.append(metric.text)
+
+        logging.debug("Metrics count: %s", metrics_count)
+        logging.debug("Host len: %s", len(host))
+        logging.debug("keys: %s", host.keys())
+        logging.debug("values: %s", host.values())
+
+        # use default metrics for host
+        if metrics_count == 0:
+            for metric in default_metric:
+                metr_val = default[metric].split(',')
+                for elm in metr_val:
+                    stat = "%s_%s" % (metric, elm)
+                    stats.append(stat)
+                    agent_name = self.get_agent_name(metric, elm)
+                    if agent_name:
+                        names[agent_name] = 1
+        metric = ','.join(names.keys())
+        tmp = {}
+        if metric:
+            tmp.update({'metric': metric})
+        else:
+            tmp.update({'metric': 'cpu-stat'})
+
+        if host.get('interval'):
+            tmp.update({'interval': host.get('interval')})
+        else:
+            tmp.update({'interval': 1})
+
+        if host.get('priority'):
+            tmp.update({'priority': host.get('priority')})
+        else:
+            tmp.update({'priority': 0})
+
+        if host.get('port'):
+            tmp.update({'port': host.get('port')})
+        else:
+            tmp.update({'port': '22'})
+
+        if host.get('python'):
+            tmp.update({'python': host.get('python')})
+        else:
+            tmp.update({'python': '/usr/bin/env python'})
+
+        tmp.update({'custom': custom})
+        tmp.update({'host': hostname})
+
+        tmp.update({'startups': startups})
+        tmp.update({'shutdowns': shutdowns})
+
+        filter_obj[hostname] = stats
+        return tmp
 
     def getconfig(self, filename, target_hint):
         ''' Prepare config data'''
@@ -396,90 +503,8 @@ class MonitoringCollector:
         config = []
         filter_obj = defaultdict(str)
         for host in hosts:
-            hostname = host.get('address')
-            if hostname == '[target]':
-                if not target_hint:
-                    raise ValueError("Can't use [target] keyword with no target parameter specified")
-                logging.debug("Using target hint: %s", target_hint)
-                hostname = target_hint
-
-            stats = []
-            custom = {'tail': [], 'call': [], }
-            metrics_count = 0
-            for metric in host:
-                # known metrics
-                if metric.tag in default.keys():
-                    metrics_count += 1
-                    metr_val = default[metric.tag].split(',')
-                    if metric.get('measure'):
-                        metr_val = metric.get('measure').split(',')
-                    for elm in metr_val:
-                        if not elm:
-                            continue
-                        stat = "%s_%s" % (metric.tag, elm)
-                        stats.append(stat)
-                        agent_name = self.get_agent_name(metric.tag, elm)
-                        if agent_name:
-                            names[agent_name] = 1
-                            # custom metric ('call' and 'tail' methods)
-                if (str(metric.tag)).lower() == 'custom':
-                    metrics_count += 1
-                    isdiff = metric.get('diff')
-                    if not isdiff:
-                        isdiff = 0
-                    stat = "%s:%s:%s" % (base64.b64encode(metric.get('label')), base64.b64encode(metric.text), isdiff)
-                    stats.append('Custom:' + stat)
-                    custom[metric.get('measure', 'call')].append(stat)
-
-            logging.debug("Metrics count: %s", metrics_count)
-            logging.debug("Host len: %s", len(host))
-            logging.debug("keys: %s", host.keys())
-            logging.debug("values: %s", host.values())
-
-            # use default metrics for host
-            if metrics_count == 0:
-                for metric in default_metric:
-                    metr_val = default[metric].split(',')
-                    for elm in metr_val:
-                        stat = "%s_%s" % (metric, elm)
-                        stats.append(stat)
-                        agent_name = self.get_agent_name(metric, elm)
-                        if agent_name:
-                            names[agent_name] = 1
-
-            metric = ','.join(names.keys())
-            tmp = {}
-
-            if metric:
-                tmp.update({'metric': metric})
-            else:
-                tmp.update({'metric': 'cpu-stat'})
-
-            if host.get('interval'):
-                tmp.update({'interval': host.get('interval')})
-            else:
-                tmp.update({'interval': 1})
-
-            if host.get('priority'):
-                tmp.update({'priority': host.get('priority')})
-            else:
-                tmp.update({'priority': 0})
-
-            if host.get('port'):
-                tmp.update({'port': host.get('port')})
-            else:
-                tmp.update({'port': '22'})
-
-            if host.get('python'):
-                tmp.update({'python': host.get('python')})
-            else:
-                tmp.update({'python': '/usr/bin/env python'})
-
-            tmp.update({'custom': custom})
-
-            tmp.update({'host': hostname})
-            filter_obj[hostname] = stats
-            config.append(tmp)
+            host_config = self.get_host_config(default, default_metric, filter_obj, host, names, target_hint)
+            config.append(host_config)
 
         return [config, filter_obj]
 
