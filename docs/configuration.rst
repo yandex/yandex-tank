@@ -524,6 +524,23 @@ Default logic is applied on next levels:
 2. Metrics group level: If config contain host address only, without metrics, i.e `<Host address="somehost.yandex.ru" />`, then default metrics in groups `CPU`, `Memory`, `Disk` are collected. If host has defined any metric, then only it is collected.
 3. Metric level: if metrics group is defined without attribute `measure`, then only default group metrics are collected.
    
+Startup and Shutdown elements
+****************
+There is special non-metric elements called Startup and Shutdown. Startup shell scripts will be started before metric collection. On the normal shutdown startup scripts will be stopped and shutdown scripts will run. There may be any number of Startup and Shutdown elements.
+
+Following example illustrates this feature:
+::
+
+    <Monitoring>
+        <Host address="[target]">
+            <Startup>cat /dev/urandom | hexdump | awk 'BEGIN {RS="0000"} {print length($0)}' > /tmp/urandom.txt</Startup>
+            <Custom measure="tail" label="random int tail">/tmp/urandom.txt</Custom>
+            <Custom measure="call" label="random int call">tail -n1 /tmp/urandom.txt</Custom>
+            <Shutdown>rm /tmp/urandom.txt</Shutdown>
+        </Host>
+    </Monitoring>
+
+
 
 Console on-line screen
 ^^^^^^^^^^^^^^^^^^^^^^

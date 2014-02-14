@@ -17,18 +17,8 @@ import fcntl
 import tankcore
 
 
-
-
-
-
-
-
-
-# FIXME: 3 synchronize times between agent and collector better
 class Config(object):
-    '''
-    Config reader helper
-    '''
+    '''     Config reader helper    '''
 
     def __init__(self, config):
         self.tree = etree.parse(config)
@@ -44,9 +34,7 @@ class Config(object):
 
 
 class SSHWrapper:
-    '''
-    separate SSH calls to be able to unit test the collector
-    '''
+    '''     separate SSH calls to be able to unit test the collector    '''
 
     def __init__(self, timeout):
         self.log = logging.getLogger(__name__)
@@ -57,35 +45,27 @@ class SSHWrapper:
         self.port = None
 
     def set_host_port(self, host, port):
-        '''
-        Set host and port to use
-        '''
+        '''        Set host and port to use        '''
         self.host = host
         self.port = port
         self.scp_opts = self.ssh_opts + ['-P', self.port]
         self.ssh_opts = self.ssh_opts + ['-C', '-p', self.port]
 
     def get_ssh_pipe(self, cmd):
-        '''
-        Get open ssh pipe 
-        '''
+        '''        Get open ssh pipe        '''
         args = ['ssh'] + self.ssh_opts + [self.host] + cmd
         self.log.debug('Executing: %s', args)
         return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid, close_fds=True)
 
     def get_scp_pipe(self, cmd):
-        '''
-        Get open scp pipe 
-        '''
+        '''        Get open scp pipe         '''
         args = ['scp'] + self.scp_opts + cmd
         self.log.debug('Executing: %s', args)
         return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid, close_fds=True)
 
 
 class AgentClient(object):
-    '''
-    Agent client connection
-    '''
+    '''    Agent client connection    '''
 
     def __init__(self):
         self.run = []
@@ -115,9 +95,7 @@ class AgentClient(object):
         self.python = '/usr/bin/env python'
 
     def start(self):
-        '''
-        Start remote agent
-        '''
+        '''        Start remote agent        '''
         logging.debug('Start monitoring: %s', self.host)
         if not self.run:
             raise ValueError("Empty run string")
@@ -137,17 +115,24 @@ class AgentClient(object):
             raise ValueError(strn % self.interval)
 
         cfg = ConfigParser.ConfigParser()
+        cfg.add_section('main')
         cfg.set('main', 'interval', self.interval)
         cfg.set('main', 'host', self.host)
         cfg.set('main', 'loglevel', loglevel)
+
+        cfg.add_section('metric')
         cfg.set('metric', 'names', self.metric)
+
+        cfg.add_section('custom')
         for method in self.custom:
             if self.custom[method]:
                 cfg.set('custom', method, ','.join(self.custom[method]))
 
+        cfg.add_section('startup')
         for idx, cmd in enumerate(self.startups):
             cfg.set('startup', "cmd%s" % idx, cmd)
 
+        cfg.add_section('shutdown')
         for idx, cmd in enumerate(self.shutdowns):
             cfg.set('shutdown', "cmd%s" % idx, cmd)
 
@@ -228,9 +213,7 @@ class AgentClient(object):
 
 
 class MonitoringCollector:
-    '''
-    Class to aggregate data from several collectors
-    '''
+    '''    Class to aggregate data from several collectors    '''
 
     def __init__(self):
         self.log = logging.getLogger(__name__)
@@ -312,9 +295,7 @@ class MonitoringCollector:
 
 
     def poll(self):
-        '''
-        Poll agents for data
-        '''
+        '''        Poll agents for data        '''
         readable, writable, exceptional = select.select(self.outputs, self.inputs, self.excepts, 0)
         logging.debug("Streams: %s %s %s", readable, writable, exceptional)
 
@@ -362,6 +343,10 @@ class MonitoringCollector:
         logging.debug("Initiating normal finish")
         for pipe in self.agent_pipes:
             pipe.stdin.write("stop\n")
+
+        time.sleep(1)
+
+        for pipe in self.agent_pipes:
             if pipe.pid:
                 first_try = True
                 delay = 1
@@ -607,9 +592,7 @@ class StdOutPrintMon(MonitoringDataListener):
 
 
 class MonitoringDataDecoder:
-    '''
-    The class that serves converting monitoring data lines to dict
-    '''
+    '''    The class that serves converting monitoring data lines to dict    '''
     NA = 'n/a'
 
     def __init__(self):
@@ -651,3 +634,6 @@ class MonitoringDataDecoder:
 
         self.log.debug("Decoded data %s: %s", host, data_dict)
         return host, data_dict, is_initial, timestamp
+
+
+# FIXME: 3 synchronize times between agent and collector better
