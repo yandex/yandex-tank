@@ -329,8 +329,8 @@ class NetTcp(AbstractMetric):
     ''' Read ss util output and count TCP socket's number grouped by state '''
 
     def __init__(self, ):
-        self.fields = ['Net_closewait', 'Net_estab', 'Net_listen', 'Net_timewait', ]
-        self.keys = ['CLOSE-WAIT', 'ESTAB', 'LISTEN', 'TIME-WAIT', ]
+        self.fields = ['Net_closewait', 'Net_estab', 'Net_timewait', ]
+        self.keys = ['closed', 'estab', 'timewait', ]
 
     def columns(self, ):
         return self.fields
@@ -341,13 +341,13 @@ class NetTcp(AbstractMetric):
         if note set it to 0.
         * make output ordered as "fields" list
         '''
-        fetch = lambda: commands.getoutput("ss -an | cut -d' ' -f 1 | tail -n +2 | sort | uniq -c")
+        fetch = lambda: commands.getoutput("ss -s | awk -F'(\()|(\)|(\/))' '$0 ~ \"TCP:\" {print $2}'")
         data = {}
         result = []
-        raw_lines = fetch().split('\n')
+        raw_lines = fetch().split(',')
         for line in raw_lines:
             value = line.split()
-            data[value[1].strip()] = int(value[0].strip())
+            data[value[0].strip()] = int(value[1].strip())
         for field in self.keys:
             if field in data:
                 result.append(str(data[field]))
