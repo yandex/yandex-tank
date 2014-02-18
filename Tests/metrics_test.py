@@ -115,8 +115,8 @@ class NetTcpTestCase(unittest.TestCase):
 
     def test_net_tcp_(self):
         print self.foo.check()
-        self.assertEquals(4, len(self.foo.check()))
-        self.assertNotEquals(['0', '0', '0', '0'], self.foo.check())
+        self.assertEquals(3, len(self.foo.check()))
+        self.assertNotEquals(['0', '0', '0'], self.foo.check())
 
 
 class NetTxRxTestCase(unittest.TestCase):
