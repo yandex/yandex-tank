@@ -39,7 +39,7 @@ class JMeterPlugin(AbstractPlugin):
         return __file__
 
     def get_available_options(self):
-        return ["jmx", "args", "jmeter_path", "buffer_size", "use_argentum"]
+        return ["jmx", "args", "jmeter_path", "buffer_size", "buffered_seconds", "use_argentum"]
 
     def configure(self):
         self.original_jmx = self.get_option("jmx")
@@ -50,7 +50,8 @@ class JMeterPlugin(AbstractPlugin):
         self.user_args = self.get_option("args", '')
         self.jmeter_path = self.get_option("jmeter_path", 'jmeter')
         self.jmeter_log = self.core.mkstemp('.log', 'jmeter_')
-        self.jmeter_buffer_size = int(self.get_option('buffer_size', '3'))
+        self.jmeter_buffer_size = int(self.get_option('buffer_size', 
+            self.get_option('buffered_seconds', '3')))
         self.core.add_artifact_file(self.jmeter_log, True)
         self.use_argentum = eval(self.get_option('use_argentum', 'False'))
         self.jmx = self.__add_jmeter_components(self.original_jmx, self.jtl_file, self._get_variables())
@@ -277,7 +278,7 @@ class JMeterReader(AbstractReader):
                     line = self.partial_buffer + line
                     self.partial_buffer = ''
                 data = line.rstrip().split("\t")
-                if len(data) != 9:
+                if line[-1] != '\n' or len(data) != 9:
                     self.partial_buffer = line
                     #self.log.warning("Wrong jtl line, skipped: %s", line)
                     continue
