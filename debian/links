@@ -2,3 +2,4 @@
 /usr/lib/yandex-tank/tank.py /usr/bin/yandex-tank
 /usr/lib/yandex-tank/ab.sh /usr/bin/yandex-tank-ab
 /usr/lib/yandex-tank/jmeter.sh /usr/bin/yandex-tank-jmeter
+/usr/lib/yandex-tank/bfg.sh /usr/bin/yandex-tank-bfg
