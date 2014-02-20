@@ -131,6 +131,28 @@ class PhantomPluginTestCase(TankTestCase):
         wrapper.prepare_stepper()
         self.assertEqual(100, wrapper.instances)
 
+    def test_cached_stepper_instances_sched(self):
+        
+        # Making cache file
+        self.foo.core.set_option('phantom', 'instances', '1000')
+        self.foo.core.set_option('phantom', 'rps_schedule', '')
+        self.foo.core.set_option('phantom', 'instances_schedule', 'line(1,100,1m)')
+        self.foo.core.set_option('phantom', 'ammo_file', 'data/dummy.ammo')
+        wrapper = StepperWrapper(self.foo.core, PhantomPlugin.SECTION)
+        wrapper.read_config()
+        wrapper.prepare_stepper()
+        self.tearDown()
+        
+        self.setUp()
+        self.foo.core.set_option('phantom', 'instances', '1000')
+        self.foo.core.set_option('phantom', 'rps_schedule', '')
+        self.foo.core.set_option('phantom', 'instances_schedule', 'line(1,100,1m)')
+        self.foo.core.set_option('phantom', 'ammo_file', 'data/dummy.ammo')
+        wrapper = StepperWrapper(self.foo.core, PhantomPlugin.SECTION)
+        wrapper.read_config()
+        wrapper.prepare_stepper()
+        self.assertEqual(100, wrapper.instances)
+
     def test_phout_import(self):
         self.foo.core.set_option('phantom', 'phout_file', 'data/phout_timeout_mix.txt')
         self.foo.core.set_option('phantom', 'instances', '1')
