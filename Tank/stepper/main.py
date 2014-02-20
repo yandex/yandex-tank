@@ -189,6 +189,8 @@ class StepperWrapper(object):
             self.loop_count = stepper_info.loop_count
             self.loadscheme = stepper_info.loadscheme
             self.steps = stepper_info.steps
+            if stepper_info.instances:
+                self.instances = stepper_info.instances
 
     def __si_filename(self):
         '''Return name for stepper_info json file'''
