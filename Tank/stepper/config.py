@@ -97,10 +97,10 @@ class ComponentFactory():
                         if not ammo.next()[0].isdigit():
                             self.ammo_type = 'uri'
                             self.log.info(
-                                "Setting ammo_type 'uri' because ammo is not started with digit and you did non specify ammo format.")
+                                "Setting ammo_type 'uri' because ammo is not started with digit and you did not specify ammo format")
                         else:
                             self.log.info(
-                                "I believe ammo_type is 'phantom' cause you did not specify it.")
+                                "Default ammo type ('phantom') used, use 'phantom.ammo_type' option to override it")
             else:
                 raise NotImplementedError(
                     'No such ammo type implemented: "%s"' % self.ammo_type)
@@ -112,6 +112,7 @@ class ComponentFactory():
         else:
             raise StepperConfigurationError(
                 'Ammo not found. Specify uris or ammo file')
+        self.log.info("Using %s ammo reader" % type(ammo_gen).__name__)
         return ammo_gen
 
     def get_marker(self):
