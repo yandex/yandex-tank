@@ -133,7 +133,6 @@ class StepperWrapper(object):
             self.ammo_file = os.path.expanduser(self.ammo_file)
         self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
         self.ammo_limit = int(self.get_option("ammo_limit", "-1"))
-        # TODO: 3 stepper should implement ammo_limit
 
         def make_steps(schedule):
             steps = []

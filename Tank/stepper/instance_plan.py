@@ -203,10 +203,20 @@ def create(instances_schedule):
 
     >>> take(12, LoadPlanBuilder().stairway(100, 950, 100, 30000).steps)
     [(100, 30), (200, 30), (300, 30), (400, 30), (500, 30), (600, 30), (700, 30), (800, 30), (900, 30), (950, 30)]
+
+    >>> LoadPlanBuilder().stairway(100, 950, 100, 30000).instances
+    950
+
+    >>> LoadPlanBuilder().const(3, 1000).line(5, 10, 5000).instances
+    10
+
+    >>> LoadPlanBuilder().line(1, 100, 60000).instances
+    100
     '''
     lpb = LoadPlanBuilder().add_all_steps(instances_schedule)
+    lp = lpb.create()
     info.status.publish('duration', 0)
     # info.status.publish('steps', lpb.steps)
     info.status.publish('steps', [])
     info.status.publish('instances', lpb.instances)
-    return lpb.create()
+    return lp
