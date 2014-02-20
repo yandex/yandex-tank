@@ -249,6 +249,9 @@ class UriReader(object):
                                 headers=self.headers,
                                 http_ver=self.http_ver,
                             ).to_s(), marker)
+                if info.status.ammo_count == 0:
+                    self.log.error("No ammo in uri-style file")
+                    raise AmmoFileError("No ammo! Cover me!")
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()

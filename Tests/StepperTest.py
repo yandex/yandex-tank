@@ -147,12 +147,12 @@ class StepperTestCase(TankTestCase):
         from Tank.stepper.module_exceptions import AmmoFileError
         temp_stpd = tempfile.mkstemp()[1]
         with open(temp_stpd, 'w') as stpd_file:
-            Stepper(
-                rps_schedule=[],
-                instances_schedule=[],
-                loop_limit=-1,
-                ammo_limit=10,
-                headers=[],
-                ammo_file="data/empty.uri",
-            ).write(stpd_file)
-        self.assertRaises(AmmoFileError)
+            with self.assertRaises(AmmoFileError):
+                Stepper(
+                    rps_schedule=[],
+                    instances_schedule=[],
+                    loop_limit=-1,
+                    ammo_limit=10,
+                    headers=[],
+                    ammo_file="data/empty.uri",
+                ).write(stpd_file)
