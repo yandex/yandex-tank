@@ -124,8 +124,10 @@ class PhantomPluginTestCase(TankTestCase):
         self.foo.core.set_option('phantom', 'instances', '1000')
         self.foo.core.set_option('phantom', 'rps_schedule', '')
         self.foo.core.set_option('phantom', 'instances_schedule', 'line(1,100,1m)')
+        self.foo.core.set_option('phantom', 'use_caching', '0')
+        self.foo.core.set_option('phantom', 'ammo_file', 'data/dummy.ammo')
         wrapper = StepperWrapper(self.foo.core, PhantomPlugin.SECTION)
-        wrapper.ammo_file = 'data/dummy.ammo'
+        wrapper.read_config()
         wrapper.prepare_stepper()
         self.assertEqual(100, wrapper.instances)
 
