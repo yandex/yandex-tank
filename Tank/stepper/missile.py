@@ -189,26 +189,33 @@ class AccessLogReader(object):
         self.headers = set(headers)
         self.log = logging.getLogger(__name__)
 
+    def warn(self, message):
+        if not self.warned:
+            self.warned = True
+            self.log.warning("There are some skipped lines. See full log for details.")
+        self.log.debug(message)
+
     def __iter__(self):
         with get_opener(self.filename)(self.filename, 'rb') as ammo_file:
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
-                    request = line.split('"')[1]
-                    method, uri, proto = request.split()
-                    http_ver = proto.split('/')[1]
-                    if method == "GET":
-                        yield (
-                            HttpAmmo(
-                                uri,
-                                headers=self.headers,
-                                http_ver=http_ver,
-                            ).to_s(), None)
-                    else:
-                        if not self.warned:
-                            self.warned = True
-                            self.log.warning("There are some skipped lines. See full log for details.")
-                        self.log.debug("Skipped line: %s (unsupported method)" % line)
+                    try:
+                        request = line.split('"')[1]
+                        method, uri, proto = request.split()
+                        http_ver = proto.split('/')[1]
+                        if method == "GET":
+                            yield (
+                                HttpAmmo(
+                                    uri,
+                                    headers=self.headers,
+                                    http_ver=http_ver,
+                                ).to_s(), None)
+                        else:
+                            self.warn("Skipped line: %s (unsupported method)" % line)
+                    except (ValueError, IndexError), e:
+                        self.warn("Skipped line: %s (%s)" % (line, e))
+                    
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()
