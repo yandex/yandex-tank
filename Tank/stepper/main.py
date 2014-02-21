@@ -173,30 +173,37 @@ class StepperWrapper(object):
 
     def prepare_stepper(self):
         ''' Generate test data if necessary '''
+        def publish_info(stepper_info):
+            info.status.publish('loadscheme', stepper_info.loadscheme)
+            info.status.publish('loop_count', stepper_info.loop_count)
+            info.status.publish('steps', stepper_info.steps)
+            info.status.publish('duration', stepper_info.duration)
+            info.status.publish('instances', stepper_info.instances)
+            info.status.ammo_count = stepper_info.ammo_count
+            info.status.publish('instances', stepper_info.instances)
+            return stepper_info
         if not self.stpd:
             self.stpd = self.__get_stpd_filename()
             self.core.set_option(self.section, self.OPTION_STPD, self.stpd)
             if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.__si_filename()):
                 self.log.info("Using cached stpd-file: %s", self.stpd)
-                stepper_info = self.__read_cached_options()
-                info.status.publish('loadscheme', stepper_info.loadscheme)
-                info.status.publish('loop_count', stepper_info.loop_count)
-                info.status.publish('steps', stepper_info.steps)
-                info.status.publish('duration', stepper_info.duration)
-                info.status.ammo_count = stepper_info.ammo_count
+                stepper_info = publish_info(self.__read_cached_options())  
             else:
                 if self.force_stepping and os.path.exists(self.__si_filename()):
                     os.remove(self.__si_filename())
                 self.__make_stpd_file()
                 stepper_info = info.status.get_info()
                 self.__write_cached_options(stepper_info)
-            self.ammo_count = stepper_info.ammo_count
-            self.duration = stepper_info.duration
-            self.loop_count = stepper_info.loop_count
-            self.loadscheme = stepper_info.loadscheme
-            self.steps = stepper_info.steps
-            if stepper_info.instances:
-                self.instances = stepper_info.instances
+        else:
+            self.log.info("Using specified stpd-file: %s", self.stpd)
+            stepper_info = publish_info(self.__read_cached_options())            
+        self.ammo_count = stepper_info.ammo_count
+        self.duration = stepper_info.duration
+        self.loop_count = stepper_info.loop_count
+        self.loadscheme = stepper_info.loadscheme
+        self.steps = stepper_info.steps
+        if stepper_info.instances:
+            self.instances = stepper_info.instances
 
     def __si_filename(self):
         '''Return name for stepper_info json file'''
