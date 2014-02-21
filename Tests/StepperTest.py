@@ -1,7 +1,8 @@
 import tempfile
 import os
 
-from Tank.stepper import Stepper, StepperWrapper
+from Tank.stepper import Stepper
+from Tank.stepper.format import StpdReader
 from Tests.TankTests import TankTestCase
 
 
@@ -173,3 +174,13 @@ class StepperTestCase(TankTestCase):
         self.assertNotEquals("", res)
         self.assertEquals(res.count('_two'), 0)
         self.assertEquals(res.count('_one'), 10)
+
+    def test_stpd_reader(self):
+        sr = StpdReader("data/dummy.ammo.stpd")
+        self.assertEquals(len(list(sr)), 10)
+
+    def test_bad_stpd_reader(self):
+        from Tank.stepper.module_exceptions import StpdFileError
+        sr = StpdReader("data/bad.ammo.stpd")
+        with self.assertRaises(StpdFileError):
+            list(sr)
