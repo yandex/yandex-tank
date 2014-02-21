@@ -156,3 +156,21 @@ class StepperTestCase(TankTestCase):
                     headers=[],
                     ammo_file="data/empty.uri",
                 ).write(stpd_file)
+
+    def test_chosen_cases(self):
+        temp_stpd = tempfile.mkstemp()[1]
+        with open(temp_stpd, 'w') as stpd_file:
+            Stepper(
+                rps_schedule=["const(1, 10)"],
+                loop_limit=-1,
+                ammo_limit=10,
+                uris=["/one", "/two"],
+                autocases=1,
+                headers=["[Connection: close]"],
+                chosen_cases="_one",
+            ).write(stpd_file)
+        res = open(temp_stpd, 'r').read()
+        print res
+        self.assertNotEquals("", res)
+        self.assertEquals(res.count('_two'), 0)
+        self.assertEquals(res.count('_one'), 10)
