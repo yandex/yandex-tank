@@ -1,8 +1,6 @@
 debian/yandex-load-tank-base
 debian/yandex-load-tank-base.substvars
 build-stamp
-*.stpd
-dummy.*.conf
 configure-stamp
 .project
 *.log
