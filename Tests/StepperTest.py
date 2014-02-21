@@ -170,7 +170,6 @@ class StepperTestCase(TankTestCase):
                 chosen_cases="_one",
             ).write(stpd_file)
         res = open(temp_stpd, 'r').read()
-        print res
         self.assertNotEquals("", res)
         self.assertEquals(res.count('_two'), 0)
         self.assertEquals(res.count('_one'), 10)

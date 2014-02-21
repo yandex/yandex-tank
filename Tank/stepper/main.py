@@ -37,11 +37,17 @@ class AmmoFactory(object):
         configured ComponentFactory, passed as a parameter to the
         __init__ method of this class.
         '''
-        return (ammo_tuple for ammo_tuple in (
+        ammo_stream = (ammo for ammo in (
+            (missile, marker or self.marker(missile)) 
+            for missile, marker
+            in self.ammo_generator 
+        ) if self.filter(ammo))
+        
+        return (
             (timestamp, marker or self.marker(missile), missile)
             for timestamp, (missile, marker)
-            in izip(self.load_plan, self.ammo_generator)
-        ) if self.filter(ammo_tuple))
+            in izip(self.load_plan, ammo_stream)
+        )
 
 class Stepper(object):
 
