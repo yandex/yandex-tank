@@ -169,6 +169,13 @@ class PhantomPluginTestCase(TankTestCase):
         self.foo.end_test(0)
         self.foo.post_process(0)
 
+    def test_cached_stpd_info(self):
+        self.foo.core.set_option('phantom', 'stpd_file', 'data/dummy.ammo.stpd')
+        wrapper = StepperWrapper(self.foo.core, PhantomPlugin.SECTION)
+        wrapper.read_config()
+        wrapper.prepare_stepper()
+        self.assertEqual(10, wrapper.instances)
+        self.assertEqual(60, wrapper.duration)
 
 if __name__ == '__main__':
     unittest.main()
