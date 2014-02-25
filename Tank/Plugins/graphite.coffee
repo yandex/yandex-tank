@@ -1,4 +1,12 @@
 defaultColors = ["#E67117","#8F623F","#6D3103","#F9AA6D","#F9CFB0","#E69717","#8F713F","#6D4403","#F9C36D","#F9DDB0","#1A5197","#2E435E","#032148","#6FA3E5","#A8C2E5","#0E8D84","#275855","#02433E","#63E3D9","#A0E3DE"]
+defaultPlotOptions = 
+  spline:
+    lineWidth: 2
+    states:
+      hover:
+        lineWidth: 4
+    marker:
+      enabled: false
 templates = [
     name: 'Quantiles'
     targets: [
@@ -35,12 +43,68 @@ templates = [
     ,
       metric: "%p.overall.RPS"
     ]
+  ,
+    name: 'Average response time by marker'
+    targets: [
+      metric: "%p.overall.avg_response_time"
+      function: "aliasByNode(%m, 2)"
+    ,
+      metric: "%p.markers.*.avg_response_time"
+      function: "aliasByNode(%m, 3)"
+    ]
+  ,
+    name: 'HTTP codes'
+    targets: [
+      metric: "%p.overall.http_codes.*"
+      function: "aliasByMetric(%m)"
+    ]
+    chartType: 'area'
     plotOptions:
-      spline:
-        lineWidth: 2
-        states:
-          hover:
-            lineWidth: 4
+      area:
+        lineWidth: 0
+        stacking: 'normal'
+        marker:
+          enabled: false
+  ,
+    name: 'NET codes'
+    targets: [
+      metric: "%p.overall.net_codes.*"
+      function: "aliasByMetric(%m)"
+    ]
+    chartType: 'area'
+    plotOptions:
+      area:
+        lineWidth: 0
+        stacking: 'normal'
+        marker:
+          enabled: false
+  ,
+    name: 'Cumulative quantiles'
+    targets: [
+      metric: "%p.cumulative.quantiles.100_0"
+      function: "aliasByMetric(%m)"
+    ,
+      metric: "%p.cumulative.quantiles.99_0"
+      function: "aliasByMetric(%m)"
+    ,
+      metric: "%p.cumulative.quantiles.95_0"
+      function: "aliasByMetric(%m)"
+    ,
+      metric: "%p.cumulative.quantiles.90_0"
+      function: "aliasByMetric(%m)"
+    ,
+      metric: "%p.cumulative.quantiles.75_0"
+      function: "aliasByMetric(%m)"
+    ,
+      metric: "%p.cumulative.quantiles.50_0"
+      function: "aliasByMetric(%m)"
+    ]
+    chartType: 'area'
+    colors: ["green", "#38DD00", "#A6DD00", "#DDDC00", "#DD6e00", "#DD3800", "#DD0000"]
+    plotOptions:
+      area:
+        lineWidth: 0
+        stacking: 'normal'
         marker:
           enabled: false
 ]
@@ -76,7 +140,6 @@ class GraphiteChart
   _update: ->
     link = "http://#{@params.host}:#{@params.webPort}/render?#{@_query()}"
     $(@container).attr('src', link)
-    console.log @template.plotOptions
     $.ajax(link).done (data) =>
       @chart = new Highcharts.Chart
         title:
@@ -104,7 +167,7 @@ class GraphiteChart
           zoomType: 'xy'
           renderTo: $(@container)[0]
 
-        plotOptions: @template.plotOptions
+        plotOptions: @template.plotOptions or defaultPlotOptions
         colors: @template.colors or defaultColors
 
         legend:
