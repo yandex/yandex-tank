@@ -1,5 +1,5 @@
 #! /usr/bin/python
-''' The agent bundle, contains all metric classes and agent running code '''
+""" The agent bundle, contains all metric classes and agent running code """
 from optparse import OptionParser
 import ConfigParser
 import base64
@@ -16,15 +16,27 @@ import traceback
 import signal
 
 
+def signal_handler(sig, frame):
+    """ required for non-tty python runs to interrupt """
+    raise KeyboardInterrupt()
+
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+
 class AbstractMetric:
-    ''' Parent class for all metrics '''
+    """ Parent class for all metrics """
+
+    def __init__(self):
+        pass
 
     def columns(self):
-        ''' methods should return list of columns provided by metric class '''
+        """ methods should return list of columns provided by metric class """
         raise NotImplementedError()
 
     def check(self):
-        ''' methods should return list of values provided by metric class '''
+        """ methods should return list of values provided by metric class """
         raise NotImplementedError()
 
 
@@ -38,16 +50,14 @@ class CpuLa(AbstractMetric):
 
 
 class CpuStat(AbstractMetric):
-    ''' read /proc/stat and calculate amount of time
+    """ read /proc/stat and calculate amount of time
         the CPU has spent performing different kinds of work.
-    '''
+    """
 
-    def __init__(self, ):
-        # cpu data
+    def __init__(self):
+        AbstractMetric.__init__(self)
         self.check_prev = None
         self.check_last = None
-
-        # csw, int data
         self.current = None
         self.last = None
 
@@ -69,7 +79,8 @@ class CpuStat(AbstractMetric):
             # TODO: change to simple file reading
             output = subprocess.Popen('cat /proc/stat | grep -E "^(ctxt|intr|cpu) "',
                                       shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except Exception:
+        except Exception, exc:
+            logging.error("Problems running popen", traceback.format_exc(exc))
             result.append([empty] * 9)
         else:
             err = output.stderr.read()
@@ -133,7 +144,8 @@ class CpuStat(AbstractMetric):
         for cmd2 in command:
             try:
                 output = subprocess.Popen(cmd2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            except Exception:
+            except Exception, exc:
+                logging.error("Problems running popen", traceback.format_exc(exc))
                 result.append(empty)
             else:
                 err = output.stderr.read()
@@ -153,9 +165,10 @@ def is_number(s):
 
 
 class Custom(AbstractMetric):
-    ''' custom metrics: call and tail '''
+    """ custom metrics: call and tail """
 
     def __init__(self, call, tail):
+        AbstractMetric.__init__(self)
         self.call = call
         self.tail = tail
         self.diff_values = {}
@@ -197,6 +210,7 @@ class Custom(AbstractMetric):
 
 class Disk(AbstractMetric):
     def __init__(self):
+        AbstractMetric.__init__(self)
         self.read = 0
         self.write = 0
         self.devs = self._get_devs()
@@ -233,7 +247,8 @@ class Disk(AbstractMetric):
             result = ['', '']
         return result
 
-    def _get_devs(self):
+    @staticmethod
+    def _get_devs():
         with open("/proc/mounts") as mfd:
             mounts = mfd.readlines()
         logging.info("Mounts: %s", mounts)
@@ -253,6 +268,7 @@ class Mem(AbstractMetric):
     empty = ''
 
     def __init__(self):
+        AbstractMetric.__init__(self)
         self.name = 'advanced memory usage'
         self.nick = ('used', 'buff', 'cach', 'free', 'dirty')
         self.vars = ('MemUsed', 'Buffers', 'Cached', 'MemFree', 'Dirty', 'MemTotal')
@@ -299,10 +315,11 @@ class Mem(AbstractMetric):
 
 
 class NetRetrans(AbstractMetric):
-    ''' read netstat output and
-    calculate tcp segment retransmition derivative '''
+    """ read netstat output and
+    calculate tcp segment retransmition derivative """
 
-    def __init__(self, ):
+    def __init__(self):
+        AbstractMetric.__init__(self)
         self.retr_second = None
         self.retr_first = None
         self.fetch = None
@@ -326,9 +343,10 @@ class NetRetrans(AbstractMetric):
 
 
 class NetTcp(AbstractMetric):
-    ''' Read ss util output and count TCP socket's number grouped by state '''
+    """ Read ss util output and count TCP socket's number grouped by state """
 
-    def __init__(self, ):
+    def __init__(self):
+        AbstractMetric.__init__(self)
         self.fields = ['Net_closewait', 'Net_estab', 'Net_timewait', ]
         self.keys = ['closed', 'estab', 'timewait', ]
 
@@ -336,11 +354,11 @@ class NetTcp(AbstractMetric):
         return self.fields
 
     def check(self, ):
-        '''
+        """
         * check is there TCP connections in "field" state in last check
         if note set it to 0.
         * make output ordered as "fields" list
-        '''
+        """
         fetch = lambda: commands.getoutput("ss -s | awk -F'\(|\)|\/' '/^TCP:/ {print $2}'")
         data = {}
         result = []
@@ -357,9 +375,10 @@ class NetTcp(AbstractMetric):
 
 
 class NetTxRx(AbstractMetric):
-    ''' Get upped iface names and read they Tx/Rx counters in bytes '''
+    """ Get upped iface names and read they Tx/Rx counters in bytes """
 
-    def __init__(self, ):
+    def __init__(self):
+        AbstractMetric.__init__(self)
         self.prev_rx = 0
         self.prev_tx = 0
 
@@ -367,12 +386,12 @@ class NetTxRx(AbstractMetric):
         return ['Net_tx', 'Net_rx', ]
 
     def check(self, ):
-        '''
+        """
         get network interface name which have ip addr
         which resolved fron  host FQDN.
         If we have network bonding or need to collect multiple iface
         statistic beter to change that behavior.
-        '''
+        """
         data = commands.getoutput("/sbin/ifconfig -s | awk '{rx+=$8; tx+=$4} END {print rx, tx}'")
         logging.debug("TXRX output: %s", data)
         (rx, tx) = data.split(" ")
@@ -393,6 +412,7 @@ class NetTxRx(AbstractMetric):
 
 class Net(AbstractMetric):
     def __init__(self):
+        AbstractMetric.__init__(self)
         self.recv = 0
         self.send = 0
         self.rgx = re.compile('\S+\s(\d+)\s(\d+)')
@@ -446,7 +466,7 @@ class AgentWorker(Thread):
 
     def __init__(self):
         Thread.__init__(self)
-        self.t_after = None
+        self.last_run_ts = None
         self.startup_processes = []
         self.c_interval = 1
         self.tails = None
@@ -471,7 +491,8 @@ class AgentWorker(Thread):
             'net': Net(),
         }
 
-    def popen(self, cmnd):
+    @staticmethod
+    def popen(cmnd):
         return subprocess.Popen(cmnd, bufsize=0, preexec_fn=os.setsid, close_fds=True, shell=True,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -534,7 +555,7 @@ class AgentWorker(Thread):
             except Exception, e:
                 logging.error('Failed to convert line %s: %s', line, e)
 
-        self.fixed_sleep(self.c_interval)
+            self.fixed_sleep(self.c_interval)
 
         logging.info("Terminating startup commands")
         for proc in self.startup_processes:
@@ -549,22 +570,15 @@ class AgentWorker(Thread):
         logging.info("Worker thread finished")
 
     def fixed_sleep(self, slp_interval):
-        ''' sleep 'interval' exclude processing time part '''
-        if self.t_after is not None:
-            now = time.time()
-            t_delta = now - self.t_after
-            self.t_after = now
-            if (t_delta > slp_interval) and (slp_interval * 2 - t_delta > 0):
-                time.sleep(slp_interval * 2 - t_delta)
-            else:
-                if slp_interval * 2 - t_delta < 0:
-                    logging.warn('[negative sleep time]')
-                else:
-                    time.sleep(slp_interval)
-        else:
-            # first cycle iter
-            self.t_after = time.time()
-            time.sleep(slp_interval)
+        """ sleep 'interval' exclude processing time part """
+        delay = slp_interval
+        if self.last_run_ts is not None:
+            delta = time.time() - self.last_run_ts
+            delay = slp_interval - delta
+            logging.debug("Sleep for: %s (delta %s)", delay, delta)
+
+        time.sleep(delay if delay > 0 else 0)
+        self.last_run_ts = time.time()
 
 
 class AgentConfig:
@@ -652,7 +666,6 @@ class AgentConfig:
 
 if __name__ == '__main__':
     fname = os.path.dirname(__file__) + "_agent.log"
-    print fname
     level = logging.DEBUG
 
     fmt = "%(asctime)s - %(filename)s - %(name)s - %(levelname)s - %(message)s"
@@ -666,8 +679,12 @@ if __name__ == '__main__':
 
     worker.start()
 
-    logging.debug("Check for stdin shutdown command")
-    cmd = sys.stdin.readline()
-    if cmd:
-        logging.info("Stdin cmd received: %s", cmd)
+    try:
+        logging.debug("Check for stdin shutdown command")
+        cmd = sys.stdin.readline()
+        if cmd:
+            logging.info("Stdin cmd received: %s", cmd)
+            worker.finished = True
+    except KeyboardInterrupt:
+        logging.debug("Interrupted")
         worker.finished = True
