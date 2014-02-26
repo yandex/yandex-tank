@@ -43,7 +43,10 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             port = self.get_option("port", "2003")
             self.web_port = self.get_option("web_port", "8080")
             self.prefix = self.get_option("prefix", "one_sec.yandex_tank")
-            self.template = self.get_option("template", os.path.dirname(__file__) + "/graphite.tpl")
+            default_template = "/graphite.tpl"
+            if self.get_option("js", "1") == "1":
+                default_template = "/graphite-js.tpl"
+            self.template = self.get_option("template", os.path.dirname(__file__) + default_template)
             self.graphite_client = GraphiteClient(self.prefix, self.address, port)
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(self)
@@ -69,8 +72,8 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             self.core.add_artifact_file(graphite_html)
             with open(graphite_html, 'w') as graphite_html_file:
                 graphite_html_file.write(
-                    template.format(
-                        host='%s' % self.address,
+                    string.Template(template).safe_substitute(
+                        host=self.address,
                         width=1000,
                         height=400,
                         start_time=self.start_time,
