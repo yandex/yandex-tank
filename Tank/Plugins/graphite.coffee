@@ -109,12 +109,73 @@ templates = [
           enabled: false
 ]
 
+((Highcharts, UNDEFINED) ->
+  return  unless Highcharts
+  chartProto = Highcharts.Chart::
+  legendProto = Highcharts.Legend::
+  Highcharts.extend chartProto,
+    legendSetVisibility: (display) ->
+      chart = this
+      legend = chart.legend
+      legendAllItems = undefined
+      legendAllItem = undefined
+      legendAllItemLength = undefined
+      legendOptions = chart.options.legend
+      scroller = undefined
+      extremes = undefined
+      return  if legendOptions.enabled is display
+      legendOptions.enabled = display
+      unless display
+        legendProto.destroy.call legend
+        # fix for ex-rendered items - so they will be re-rendered if needed
+        legendAllItems = legend.allItems
+        if legendAllItems
+          legendAllItem = 0
+          legendAllItemLength = legendAllItems.length
+
+          while legendAllItem < legendAllItemLength
+            legendAllItems[legendAllItem].legendItem = UNDEFINED
+            ++legendAllItem
+        # fix for chart.endResize-eventListener and legend.positionCheckboxes()
+        legend.group = {}
+      chartProto.render.call chart
+      unless legendOptions.floating
+        scroller = chart.scroller
+        if scroller and scroller.render
+          # fix scrolller // @see renderScroller() in Highcharts
+          extremes = chart.xAxis[0].getExtremes()
+          scroller.render extremes.min, extremes.max
+      return
+    legendHide: ->
+      @legendSetVisibility false
+      return
+    legendShow: ->
+      @legendSetVisibility true
+      return
+    legendToggle: ->
+      @legendSetVisibility @options.legend.enabled ^ true
+      return
+
+  return
+) Highcharts
+
 class GraphiteChart
   constructor: (parentContainer, @template) ->
+    btnHideLegend = $("
+      <button class='btn'>
+            <span class='glyphicon glyphicon-list' />
+      </button>
+    ")
+    btnHideLegend.click =>
+      if @chart
+        @chart.legendToggle()
     @container = $('<div />',
       title: @template.name
     )
-    @container.appendTo parentContainer
+    chartGroup = $('<div />')
+    btnHideLegend.appendTo chartGroup
+    @container.appendTo chartGroup
+    chartGroup.appendTo parentContainer
     @params = $(parentContainer).data()
     @options = {
       format: 'json'
@@ -177,6 +238,7 @@ class GraphiteChart
           borderWidth: 0
 
         series: @_createTimeSeries(data)
+      @chart.legendHide()
 
 $(document).ready -> 
   $('.graphite-charts').each ->
