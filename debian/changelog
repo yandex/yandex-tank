@@ -1,3 +1,27 @@
+yandex-load-tank-base (1.4.9) precise; urgency=low
+
+  * fixed monitoring collector bug
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 25 Feb 2014 13:56:31 +0400
+
+yandex-load-tank-base (1.4.8) precise; urgency=low
+
+  * add BFG startup script
+  * skip bad formatted line in stepper with access.log (fix #59)
+  * publish instances after creating load plan
+  * replaced laborious 'ss -na' by much lighter 'ss -s' in agent
+  * add buffered_seconds size. fix block-read bug with new-line
+  * Adding startups and shutdowns to collector
+  * Pass all unknown options from 'jmeter' section as Jmeter variables
+  * Use better disk statistics in agent
+  * Fix autostop overrides criteria
+  * added ipv6 address format compatibility to scp agent
+  * added address check and hostname resolve section
+  * Don't start loadosophia online if no token configured
+  * Add 85% into aggregator
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 21 Feb 2014 19:27:11 +0400
+
 yandex-load-tank-base (1.4.7) precise; urgency=low
 
   * move some depends to recommended

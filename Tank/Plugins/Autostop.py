@@ -1,4 +1,4 @@
-''' Autostop facility '''
+""" Autostop facility """
 import copy
 import logging
 import re
@@ -10,7 +10,7 @@ import tankcore
 
 
 class AutostopPlugin(AbstractPlugin, AggregateResultListener):
-    ''' Plugin that accepts criteria classes and triggers autostop '''
+    """ Plugin that accepts criteria classes and triggers autostop """
     SECTION = 'autostop'
 
     def __init__(self, core):
@@ -26,15 +26,15 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         return __file__
 
     def get_counting(self):
-        ''' get criterias that are activated '''
+        """ get criterias that are activated """
         return self.counting
 
     def add_counting(self, obj):
-        ''' add criteria that activated '''
+        """ add criteria that activated """
         self.counting += [obj]
 
     def add_criteria_class(self, criteria_class):
-        ''' add new criteria class '''
+        """ add new criteria class """
         self.custom_criterias += [criteria_class]
 
     def get_available_options(self):
@@ -75,7 +75,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
             return -1
 
     def __create_criteria(self, criteria_str):
-        ''' instantiate criteria from config string '''
+        """ instantiate criteria from config string """
         parsed = criteria_str.split("(")
         type_str = parsed[0].strip().lower()
         parsed[1] = parsed[1].split(")")[0].strip()
@@ -95,7 +95,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
 
 
 class AutostopWidget(AbstractInfoWidget):
-    ''' widget that displays counting criterias '''
+    """ widget that displays counting criterias """
 
     def __init__(self, sender):
         AbstractInfoWidget.__init__(self)
@@ -125,7 +125,7 @@ class AutostopWidget(AbstractInfoWidget):
 
 
 class AbstractCriteria:
-    ''' parent class for all criterias '''
+    """ parent class for all criterias """
     RC_TIME = 21
     RC_HTTP = 22
     RC_NET = 23
@@ -134,8 +134,9 @@ class AbstractCriteria:
         self.log = logging.getLogger(__name__)
         self.cause_second = None
 
-    def count_matched_codes(self, codes_regex, codes_dict):
-        ''' helper to aggregate codes by mask '''
+    @staticmethod
+    def count_matched_codes(codes_regex, codes_dict):
+        """ helper to aggregate codes by mask """
         total = 0
         for code, count in codes_dict.items():
             if codes_regex.match(str(code)):
@@ -143,29 +144,29 @@ class AbstractCriteria:
         return total
 
     def notify(self, aggregate_second):
-        ''' notification about aggregate data goes here '''
+        """ notification about aggregate data goes here """
         raise NotImplementedError("Abstract methods requires overriding")
 
     def get_rc(self):
-        ''' get return code for test '''
+        """ get return code for test """
         raise NotImplementedError("Abstract methods requires overriding")
 
     def explain(self):
-        ''' long explanation to show after test stop '''
+        """ long explanation to show after test stop """
         raise NotImplementedError("Abstract methods requires overriding")
 
     def widget_explain(self):
-        ''' short explanation to display in right panel '''
-        return (self.explain(), 0)
+        """ short explanation to display in right panel """
+        return self.explain(), 0
 
     @staticmethod
     def get_type_string():
-        ''' returns string that used as config name for criteria '''
+        """ returns string that used as config name for criteria """
         raise NotImplementedError("Abstract methods requires overriding")
 
 
 class AvgTimeCriteria(AbstractCriteria):
-    ''' average response time criteria '''
+    """ average response time criteria """
 
     @staticmethod
     def get_type_string():
@@ -203,11 +204,11 @@ class AvgTimeCriteria(AbstractCriteria):
 
     def widget_explain(self):
         items = (self.rt_limit, self.seconds_count, self.seconds_limit)
-        return ("Avg Time >%sms for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
+        return "Avg Time >%sms for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
 
 
 class HTTPCodesCriteria(AbstractCriteria):
-    ''' HTTP codes criteria '''
+    """ HTTP codes criteria """
 
     @staticmethod
     def get_type_string():
@@ -258,7 +259,7 @@ class HTTPCodesCriteria(AbstractCriteria):
         return self.RC_HTTP
 
     def get_level_str(self):
-        ''' format level str '''
+        """ format level str """
         if self.is_relative:
             level_str = str(100 * self.level) + "%"
         else:
@@ -271,11 +272,11 @@ class HTTPCodesCriteria(AbstractCriteria):
 
     def widget_explain(self):
         items = (self.codes_mask, self.get_level_str(), self.seconds_count, self.seconds_limit)
-        return ("HTTP %s>%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
+        return "HTTP %s>%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
 
 
 class NetCodesCriteria(AbstractCriteria):
-    ''' Net codes criteria '''
+    """ Net codes criteria """
 
     @staticmethod
     def get_type_string():
@@ -329,7 +330,7 @@ class NetCodesCriteria(AbstractCriteria):
         return self.RC_NET
 
     def get_level_str(self):
-        ''' format level str '''
+        """ format level str """
         if self.is_relative:
             level_str = str(100 * self.level) + "%"
         else:
@@ -342,11 +343,11 @@ class NetCodesCriteria(AbstractCriteria):
 
     def widget_explain(self):
         items = (self.codes_mask, self.get_level_str(), self.seconds_count, self.seconds_limit)
-        return ("Net %s>%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
+        return "Net %s>%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
 
 
 class QuantileCriteria(AbstractCriteria):
-    ''' quantile criteria '''
+    """ quantile criteria """
 
     @staticmethod
     def get_type_string():
@@ -388,5 +389,4 @@ class QuantileCriteria(AbstractCriteria):
 
     def widget_explain(self):
         items = (self.quantile, self.rt_limit, self.seconds_count, self.seconds_limit)
-        return ("%s%% >%sms for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
-   
+        return "%s%% >%sms for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit

@@ -22,4 +22,5 @@ _yandex_tank()
 complete -o default -F _yandex_tank yandex-tank && 
 complete -o default -F _yandex_tank yandex-tank-jmeter && 
 complete -o default -F _yandex_tank yandex-tank-udp &&
+complete -o default -F _yandex_tank yandex-tank-bfg &&
 complete -o default -F _yandex_tank yandex-tank-elliptics
