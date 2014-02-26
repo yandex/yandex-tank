@@ -1,4 +1,4 @@
-from module_exceptions import StepperConfigurationError
+from module_exceptions import StepperConfigurationError, AmmoFileError
 import load_plan as lp
 import instance_plan as ip
 import missile
@@ -94,13 +94,18 @@ class ComponentFactory():
             if self.ammo_type in af_readers:
                 if self.ammo_type is 'phantom':
                     with get_opener(self.ammo_file)(self.ammo_file, 'rb') as ammo:
-                        if not ammo.next()[0].isdigit():
-                            self.ammo_type = 'uri'
-                            self.log.info(
-                                "Setting ammo_type 'uri' because ammo is not started with digit and you did not specify ammo format")
-                        else:
-                            self.log.info(
-                                "Default ammo type ('phantom') used, use 'phantom.ammo_type' option to override it")
+                        try:
+                            if not ammo.next()[0].isdigit():
+                                self.ammo_type = 'uri'
+                                self.log.info(
+                                    "Setting ammo_type 'uri' because ammo is not started with digit and you did not specify ammo format")
+                            else:
+                                self.log.info(
+                                    "Default ammo type ('phantom') used, use 'phantom.ammo_type' option to override it")
+                        except StopIteration, e:
+                            self.log("Couldn't read first line of ammo file: %s" % e)
+                            raise AmmoFileError("Couldn't read first line of ammo file")
+                        
             else:
                 raise NotImplementedError(
                     'No such ammo type implemented: "%s"' % self.ammo_type)
