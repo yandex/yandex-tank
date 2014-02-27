@@ -196,7 +196,7 @@ URI-style options:
 
 * **uris** - URI list, multiline option. 
 * **headers** - HTTP headers list in the following form: ``[Header: value]``, multiline option. 
-* **header\_http** - HTTP version, default: ``1.1``
+* **header\_http** - HTTP version, default: ``1.0``
 
 stpd-file cache options: 
 
