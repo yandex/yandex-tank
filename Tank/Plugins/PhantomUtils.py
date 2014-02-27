@@ -383,7 +383,16 @@ class StreamConfig:
         #hostname to ip address lookup
         try:
             address_port = self.address.split(":")
-            ip_addr_list_of_tuples = socket.getaddrinfo(address_port[0], None, socket.AF_UNSPEC)[0]
+            #ipv4 resolve
+            try:
+                ip_addr_list_of_tuples = socket.getaddrinfo(address_port[0], None, socket.AF_INET)[0]
+                self.log.debug(
+                    "got tuples list due to DNS-A-query: %s", ip_addr_list_of_tuples)
+            #ipv6 resolve
+            except:
+                ip_addr_list_of_tuples = socket.getaddrinfo(address_port[0], None, socket.AF_INET6)[0]
+                self.log.debug(
+                    "got tuples list due to DNS-AAAA-query: %s", ip_addr_list_of_tuples)
             ip_addr_tuple = list(ip_addr_list_of_tuples[4])
             address_final = ip_addr_tuple[0]
             if len(address_port) > 1:
