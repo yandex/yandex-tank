@@ -355,6 +355,7 @@ class StreamConfig:
             self.ipv6 = False
             self.ip_resolved_check = True
             self.resolved_ip = address_final
+            self.address = address_port[0]
             self.log.debug(
                 "%s is IPv4 address and %s is port", address_final, self.port)
 
