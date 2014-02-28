@@ -6,9 +6,9 @@ from Tank.MonCollector.collector import MonitoringDataListener, MonitoringDataDe
 from tankcore import AbstractPlugin
 import datetime
 import time
-import numpy as np
-import matplotlib.pyplot as plt
+import string
 import json
+import os
 from collections import defaultdict
 
 class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
@@ -80,6 +80,8 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
     def configure(self):
         '''Read configuration'''
         self.show_graph = self.get_option("show_graph", "")
+        default_template = "/report.tpl"
+        self.template = self.get_option("template", os.path.dirname(__file__) + default_template)
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
         try:
@@ -112,5 +114,13 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
             'cases': self.cases,
             'monitoring': self.mon_data,
         }
-        print json.dumps(results)
+        template = open(self.template, 'r').read()
+        report_html = self.core.mkstemp(".html", "report_")
+        self.core.add_artifact_file(report_html)
+        with open(report_html, 'w') as report_html_file:
+            report_html_file.write(
+                string.Template(template).safe_substitute(
+                    metrics=json.dumps(results),
+                )
+            )
 

@@ -1,0 +1,21 @@
+<html>
+    <head>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+        <script src="http://code.highcharts.com/highcharts.js"></script>
+        <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+        <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+        <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+        <script type="text/javascript">
+(function(){var e,t,n,i,a,r,o=[].indexOf||function(e){for(var t=0,n=this.length;n>t;t++)if(t in this&&this[t]===e)return t;return-1};t=["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#f0f08d","#b15928"],i=["#49006a","#7a0177","#ae017e","#dd3497","#f768a1","#fa9fb5","#fcc5c0","#fde0dd","#fff7f3","#ffffff"],a=["quantiles"],n={spline:{lineWidth:2,states:{hover:{lineWidth:4}},marker:{enabled:!1}}},r={area:{lineWidth:0,stacking:"normal",marker:{enabled:!1}}},function(e,t){var n,i;e&&(n=e.Chart.prototype,i=e.Legend.prototype,e.extend(n,{legendSetVisibility:function(e){var a,r,o,l,s,d,c,h;if(a=this,o=a.legend,d=void 0,l=void 0,s=void 0,c=a.options.legend,h=void 0,r=void 0,c.enabled!==e){if(c.enabled=e,!e){if(i.destroy.call(o),d=o.allItems)for(l=0,s=d.length;s>l;)d[l].legendItem=t,++l;o.group={}}n.render.call(a),c.floating||(h=a.scroller,h&&h.render&&(r=a.xAxis[0].getExtremes(),h.render(r.min,r.max)))}},legendHide:function(){this.legendSetVisibility(!1)},legendShow:function(){this.legendSetVisibility(!0)},legendToggle:function(){this.legendSetVisibility(this.options.legend.enabled^!0)}}))}(Highcharts),e=function(){function e(e,t,n){var i,a,r=this;this.name=t,this.data=n,i=$("      <button class='btn'>            <span class='glyphicon glyphicon-list' />      </button>    "),i.click(function(){return r.chart?r.chart.legendToggle():void 0}),this.container=$("<div />",{title:this.name}),a=$("<div />"),i.appendTo(a),this.container.appendTo(a),a.appendTo(e),this.params=$(e).data()}return e.prototype._update=function(){var e,l,s;return this.chart=new Highcharts.Chart({title:{text:this.name,x:-20},xAxis:{title:{text:"Time"},type:"datetime"},yAxis:{title:{text:"Value"},plotLines:[{value:0,width:1,color:"#808080"}]},tooltip:{crosshairs:!0},chart:{type:(e=this.name,o.call(a,e)>=0?"area":"spline"),zoomType:"xy",renderTo:$(this.container)[0]},plotOptions:(l=this.name,o.call(a,l)>=0?r:n),colors:(s=this.name,o.call(a,s)>=0?i:t),legend:{layout:"vertical",align:"center",verticalAlign:"bottom",borderWidth:0},series:this.data}),this.chart.legendHide()},e}(),$(document).ready(function(){return $(".tank-charts").each(function(){var t,n,i,a,r,o,l,s;l=document.tank_metrics.overall,s=[];for(a in l)n=l[a],t=function(){var e;e=[];for(i in n)o=n[i],e.push({name:i,data:function(){var e,t,n;for(n=[],e=0,t=o.length;t>e;e++)r=o[e],n.push([1e3*r[0],r[1]]);return n}()});return e}().sort(function(e,t){return"quantiles"===a?parseFloat(e.name)<=parseFloat(t.name)?1:-1:e.name>=t.name?1:-1}),s.push(new e(this,a,t)._update());return s}),$(".monitoring-charts").each(function(){var t,n,i,a,r,o,l,s,d,c,h;c=document.tank_metrics.monitoring,h=[];for(a in c)r=c[a],t=$('<div class="panel panel-default">\n  <div class="panel-heading">\n    <h3>Metrics for '+a+'</h3>\n  </div>\n  <div class="panel-body charts-container" />\n</div>'),t.appendTo(this),h.push(function(){var a;a=[];for(l in r)i=r[l],n=function(){var e;e=[];for(o in i)d=i[o],e.push({name:o,data:function(){var e,t,n;for(n=[],e=0,t=d.length;t>e;e++)s=d[e],n.push([1e3*s[0],s[1]]);return n}()});return e}().sort(function(e,t){return"quantiles"===l?parseFloat(e.name)<=parseFloat(t.name)?1:-1:e.name>=t.name?1:-1}),a.push(new e(t.find(".charts-container"),l,n)._update());return a}());return h})})}).call(this);
+        </script>
+        <script type="text/javascript">
+document.tank_metrics = $metrics
+        </script>
+    </head>
+    <body>
+        <h2> Tank metrics </h2>
+        <div class="tank-charts"> </div>
+        <h2> Monitoring metrics </h2>
+        <div class="monitoring-charts"> </div>
+    <body>
+<html>
