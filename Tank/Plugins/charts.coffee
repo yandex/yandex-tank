@@ -139,7 +139,7 @@ class GraphiteChart
       colors: if @name in stackedGroups then stackedColors else defaultColors
 
       legend:
-        layout: "vertical"
+        layout: "horizontal"
         align: "center"
         verticalAlign: "bottom"
         borderWidth: 0
