@@ -148,6 +148,15 @@ class GraphiteChart
 
 $(document).ready -> 
   $('.tank-charts').each ->
+    chartGroup = $("""
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3>Overall tank metrics</h3>
+        </div>
+        <div class="panel-body charts-container" />
+      </div>
+    """)
+    chartGroup.appendTo this
     for name, group_data of document.tank_metrics.overall 
       data = ({
         name: key
@@ -158,7 +167,7 @@ $(document).ready ->
         else
           return if a.name >= b.name then 1 else -1
 
-      new GraphiteChart(this, name, data)._update()
+      new GraphiteChart(chartGroup.find('.charts-container'), name, data)._update()
   $('.monitoring-charts').each ->
     for host, host_data of document.tank_metrics.monitoring
       chartGroup = $("""
