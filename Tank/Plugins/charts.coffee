@@ -145,7 +145,6 @@ class GraphiteChart
         borderWidth: 0
 
       series: @data
-    @chart.legendHide()
 
 $(document).ready -> 
   $('.tank-charts').each ->
