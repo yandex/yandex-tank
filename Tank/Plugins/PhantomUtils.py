@@ -410,6 +410,7 @@ class StreamConfig:
                 self.ipv6 = False
                 self.ip_resolved_check = True
                 self.resolved_ip = address_final
+                self.address = address_port[0]
                 self.log.debug(
                     "Resolved address %s is IPv4", address_final)
             try:
@@ -421,6 +422,7 @@ class StreamConfig:
                 self.ipv6 = True
                 self.ip_resolved_check = True
                 self.resolved_ip = address_final
+                self.address = address_port[0]
                 self.log.debug(
                     "Resolved address %s is IPv6", address_final)
         except socket.error:
