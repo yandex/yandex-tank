@@ -55,6 +55,8 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         """
         @data: SecondAggregateData
         """
+        #TODO: Use ts from data
+        ts = int(time.mktime(data.time.timetuple()))
         if self.graphite_client:
             results = {}
             overall = GraphiteUploaderPlugin.__flatten(data.overall.__dict__, "overall")

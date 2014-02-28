@@ -38,17 +38,17 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
                     self.mon_data[host] = {}
                 host_data = self.mon_data[host]
                 for key, value in data.iteritems():
-                    if '_' in key:
-                        group, key = key.split('_', 1)
-                    else:
-                        group = key
-                    if group not in host_data:
-                        host_data[group] = {}
-                    group_data = host_data[group]
-                    if key not in group_data:
-                        group_data[key] = []
                     try:
                         value = float(value)
+                        if '_' in key:
+                            group, key = key.split('_', 1)
+                        else:
+                            group = key
+                        if group not in host_data:
+                            host_data[group] = {}
+                        group_data = host_data[group]
+                        if key not in group_data:
+                            group_data[key] = []
                         group_data[key].append((int(ts), value))
                     except ValueError:
                         pass
@@ -82,14 +82,18 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
         """
         @data: SecondAggregateData
         """
-        ts = int(time.time())
+        ts = int(time.mktime(data.time.timetuple()))
+        print ts
+        print data.overall
+        print data.cumulative
+        print data.cases
         self.overall_rps.append((ts, data.overall.RPS))
         for key in data.overall.quantiles.keys():
             self.overall_quantiles[key].append((ts, data.overall.quantiles[key]))
 
     def post_process(self, retcode):
-        print self.overall_quantiles
-        print self.overall_rps
+        print json.dumps(self.overall_quantiles)
+        print json.dumps(self.overall_rps)
         print json.dumps(self.mon_data)
         # colors = {
         #     25.0: "#DD0000",
