@@ -23,9 +23,20 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         self.decoder = MonitoringDataDecoder()
-        self.overall_quantiles = defaultdict(list)
-        self.overall_rps = []
         self.mon_data = {}
+        def create_storage():
+            return {
+                'avg': defaultdict(list),
+                'quantiles': defaultdict(list),
+                'threads': {
+                    'active_threads': []
+                },
+                'rps': {
+                    'RPS': []
+                },
+            }
+        self.overall = create_storage()
+        self.cases = defaultdict(create_storage)
 
     def monitoring_data(self, data_string):
         self.log.debug("Mon report data: %s", data_string)
@@ -83,51 +94,23 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
         @data: SecondAggregateData
         """
         ts = int(time.mktime(data.time.timetuple()))
-        print ts
-        print data.overall
-        print data.cumulative
-        print data.cases
-        self.overall_rps.append((ts, data.overall.RPS))
-        for key in data.overall.quantiles.keys():
-            self.overall_quantiles[key].append((ts, data.overall.quantiles[key]))
+        def add_aggreagted_second(data_item, storage):
+            data_dict = data_item.__dict__
+            avg = storage['avg']
+            for key in ["avg_connect_time", "avg_send_time", "avg_latency", "avg_receive_time"]:
+                avg[key].append((ts, data_dict.get(key, None)))
+            quantiles = storage['quantiles']
+            for key, value in data_item.quantiles.iteritems():
+                quantiles[key].append((ts, value))
+        add_aggreagted_second(data.overall, self.overall)
+        for case, case_data in data.cases.iteritems():
+            add_aggreagted_second(case_data, self.cases[case])
 
     def post_process(self, retcode):
-        print json.dumps(self.overall_quantiles)
-        print json.dumps(self.overall_rps)
-        print json.dumps(self.mon_data)
-        # colors = {
-        #     25.0: "#DD0000",
-        #     50.0: "#DD3800",
-        #     75.0: "#DD6E00",
-        #     80.0: "#DDAA00",
-        #     90.0: "#DDDC00",
-        #     95.0: "#A6DD00",
-        #     98.0: "#70DD00",
-        #     99.0: "#38DD00",
-        #     100.0: "#18BB00",
-        # }
-        # overall_rps = np.array(self.overall_rps)
-        # fig = plt.figure()
-        # oq_plot = fig.add_subplot(111)
-        # oq_plot.grid(True)
-        # oq_keys = sorted(self.overall_quantiles)
-        # legend = ["RPS"] + map(lambda x: str(int(x)), oq_keys)
-        # oq_plot.plot(overall_rps[:, 0], overall_rps[:, 1], '--')
-        # for key in reversed(oq_keys):
-        #     quantile = np.array(self.overall_quantiles[key])
-        #     oq_plot.fill_between(quantile[:, 0], quantile[:, 1], color=colors[key])
-        # # workaround: pyplot can not build a legend for fill_between
-        # # so we just draw a bunch of lines here:
-        # for key in oq_keys:
-        #     quantile = np.array(self.overall_quantiles[key])
-        #     oq_plot.plot(quantile[:, 0], quantile[:, 1], color=colors[key])
-        # plt.xlabel("Time")
-        # plt.ylabel("Quantiles, ms")
-        # plt.title("RPS and overall quantiles")
-        # oq_plot.legend(legend, loc='upper left')
-        # graph_png = self.core.mkstemp(".png", "overall_")
-        # self.core.add_artifact_file(graph_png)
-        # plt.savefig(graph_png)
-        # if self.show_graph:
-        #     plt.show()
-        # plt.close()
+        results = {
+            'overall': self.overall,
+            'cases': self.cases,
+            'monitoring': self.mon_data,
+        }
+        print json.dumps(results)
+
