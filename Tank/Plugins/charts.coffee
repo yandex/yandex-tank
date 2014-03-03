@@ -1,16 +1,14 @@
-defaultColors = [
-  "#a6cee3"
-  "#1f78b4"
-  "#b2df8a"
-  "#33a02c"
-  "#fb9a99"
-  "#e31a1c"
-  "#fdbf6f"
-  "#ff7f00"
-  "#cab2d6"
-  "#6a3d9a"
-  "#f0f08d"
-  "#b15928"
+defaultColors = colors: [
+   '#2f7ed8'
+   '#0d233a'
+   '#8bbc21'
+   '#910000'
+   '#1aadce'
+   '#492970'
+   '#f28f43'
+   '#77a1e5'
+   '#c42525'
+   '#a6c96a'
 ]
 stackedColors = [
   "#49006a"
@@ -24,7 +22,7 @@ stackedColors = [
   "#fff7f3"
   "#ffffff"
 ]
-stackedGroups = ['quantiles']
+stackedGroups = ['quantiles', 'CPU', 'http_codes', 'net_codes']
 defaultPlotOptions = 
   spline:
     lineWidth: 2
