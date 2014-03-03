@@ -168,6 +168,27 @@ $(document).ready ->
           return if a.name >= b.name then 1 else -1
 
       new GraphiteChart(chartGroup.find('.charts-container'), name, data)._update()
+    for caseName, caseData of document.tank_metrics.cases
+      chartGroup = $("""
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3>Metrics for '#{caseName}' case</h3>
+          </div>
+          <div class="panel-body charts-container" />
+        </div>
+      """)
+      chartGroup.appendTo this
+      for name, group_data of caseData
+        data = ({
+          name: key
+          data: ([v[0] * 1000, v[1]] for v in value)
+        } for key, value of group_data).sort (a, b) ->
+          if name in ['quantiles']
+            return if parseFloat(a.name) <= parseFloat(b.name) then 1 else -1
+          else
+            return if a.name >= b.name then 1 else -1
+
+        new GraphiteChart(chartGroup.find('.charts-container'), name, data)._update()
   $('.monitoring-charts').each ->
     for host, host_data of document.tank_metrics.monitoring
       chartGroup = $("""
