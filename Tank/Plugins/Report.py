@@ -34,6 +34,8 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
                 'rps': {
                     'RPS': []
                 },
+                'http_codes': defaultdict(list),
+                'net_codes': defaultdict(list),
             }
         self.overall = create_storage()
         self.cases = defaultdict(create_storage)
@@ -104,6 +106,15 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
             quantiles = storage['quantiles']
             for key, value in data_item.quantiles.iteritems():
                 quantiles[key].append((ts, value))
+            storage['threads']['active_threads'].append((ts, data_item.active_threads))
+            storage['rps']['RPS'].append((ts, data_item.RPS))
+            http_codes = storage['http_codes']
+            for key, value in data_item.http_codes.iteritems():
+                http_codes[key].append((ts, value))
+            net_codes = storage['net_codes']
+            for key, value in data_item.net_codes.iteritems():
+                net_codes[key].append((ts, value))
+
         add_aggreagted_second(data.overall, self.overall)
         for case, case_data in data.cases.iteritems():
             add_aggreagted_second(case_data, self.cases[case])
