@@ -13,9 +13,11 @@ document.tank_metrics = $metrics
         </script>
     </head>
     <body>
-        <h2> Tank metrics </h2>
-        <div class="tank-charts"> </div>
-        <h2> Monitoring metrics </h2>
-        <div class="monitoring-charts"> </div>
+        <div class="container">
+            <h2> Tank metrics </h2>
+            <div class="tank-charts"> </div>
+            <h2> Monitoring metrics </h2>
+            <div class="monitoring-charts"> </div>
+        </div>
     <body>
 <html>
