@@ -111,7 +111,8 @@ Referencing one option to another
     host=target12.load.net  
   
     [phantom]
-    address=%(host)s:8080
+    address=%(host)s
+    port=8080
     
     [monitoring]
     default_target=%(host)s
