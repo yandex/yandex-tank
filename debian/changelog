@@ -1,3 +1,12 @@
+yandex-load-tank-base (1.4.10) precise; urgency=low
+
+* Static HTML report with Highcharts graphs: tank metrics and monitoring
+* Highcharts template for Graphite reports
+* Better hostname resolve method
+* Bugfixes
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mar, 5 Feb 2014 13:56:31 +0400
+
 yandex-load-tank-base (1.4.9) precise; urgency=low
 
   * fixed monitoring collector bug
