@@ -9,12 +9,12 @@ First Steps
 
 Create a file on a server with Yandex.Tank: **load.ini**
 
-.. code-block:: bash
+::
 
   [phantom]
   address=203.0.113.1 ;Target's address
-  port=80; target's port
-  rps_schedule=line(1, 100, 10m) ; load scheme
+  port=80 ;target's port
+  rps_schedule=line(1, 100, 10m) ;load scheme
 
 Yandex.Tank have 3 primitives for describing load scheme: 
 
@@ -45,11 +45,11 @@ For example: ``27h103m645``
 For a test with constant load at 10rps for 10 minutes, ``load.ini`` should
 have next lines:
 
-.. code-block:: bash
+:: 
 
   [phantom] 
   address=203.0.113.1 ;Target's address
-  port=80; target's port. 
+  port=80 ;target's port. 
   rps_schedule=const(10, 10m) ;load scheme
 
 Voilà, Yandex.Tank setup is done.
@@ -65,12 +65,12 @@ You can use access.log file from your webserver as a source of requests.
 Just add to load.ini options `ammo_type=access` and `ammofile=/tmp/access.log` 
 where /tmp/access.log is a path to access.log file.
 
-.. code-block:: bash
+:: 
 
   [phantom] 
   address=203.0.113.1 ;Target's address
-  port=80; target's port 
-  rps_schedule=const(10, 10m) ; load scheme
+  port=80 ;target's port 
+  rps_schedule=const(10, 10m) ;load scheme
   header_http = 1.1 
   headers = [Host: www.target.example.com] 
     [Connection: close] 
@@ -84,12 +84,12 @@ URI-style, URIs in load.ini
 
 Update configuration file with HTTP headers and URIs:
 
-.. code-block:: bash
+:: 
 
   [phantom] 
   address=203.0.113.1 ;Target's address
-  port=80; target's port 
-  rps_schedule=const(10, 10m) ; load scheme
+  port=80 ;target's port 
+  rps_schedule=const(10, 10m) ;load scheme
   ; Headers and URIs for GET requests 
   header_http = 1.1 
   headers = [Host: www.target.example.com] 
@@ -99,14 +99,14 @@ Update configuration file with HTTP headers and URIs:
     /sdfg?sdf=rwerf   
     /sdfbv/swdfvs/ssfsf
 
- Parameter ``uris`` contains uri, which should be used for requests generation.
+Parameter ``uris`` contains uri, which should be used for requests generation.
 
 URI-style, URIs in file
 '''''''''''''''''''''''
 
 Create a file with declared requests: **ammo.txt**
 
-.. code-block:: bash
+::
 
   [Connection: close] 
   [Host: target.example.com] 
@@ -127,7 +127,7 @@ Full requests listed in a separate file. For more complex
 requests, like POST, you'll have to create a special file. File format
 is:
 
-.. code-block:: bash
+::
 
   [size_of_request] [tag]\n
   [request_headers]
@@ -143,7 +143,7 @@ include them in a file after each request. '\r' is also required.
 
 **sample GET requests (null body)**
 
-.. code-block:: bash
+::
 
   73 good
   GET / HTTP/1.0
@@ -162,7 +162,7 @@ include them in a file after each request. '\r' is also required.
 
 **sample POST requests (binary data)**
 
-.. code-block:: bash
+::
 
   904
   POST /upload/2 HTTP/1.0
@@ -185,7 +185,7 @@ include them in a file after each request. '\r' is also required.
 
 **sample POST multipart:**
 
-.. code-block:: bash
+::
 
   533
   POST /updateShopStatus? HTTP/1.0
@@ -239,7 +239,7 @@ Tags
 Requests could be grouped and marked by some tag. Example of file with
 requests and tags: 
 
-.. code-block:: bash
+::
 
   73 good 
   GET / HTTP/1.0 
@@ -265,7 +265,7 @@ SSL
 To activate SSL add ``ssl = 1`` to ``load.ini``. Don't forget to change port
 number to appropriate value. Now, our basic config looks like that:
 
-.. code-block:: bash
+::
 
   [phantom]
   address=203.0.113.1 ;Target's address
@@ -308,11 +308,11 @@ time exceeds 1500ms
 So, if we want to stop test when all answers in 1 second period are 5xx
 plus some network and timing factors - add autostop line to load.ini:
 
-.. code-block:: bash
+::
 
   [phantom]
   address=203.0.113.1 ;Target's address
-  port=80; target's port
+  port=80 ;target's port
   rps_schedule=const(10, 10m) ;load scheme
   [autostop]
   autostop=time(1,10)
@@ -331,7 +331,7 @@ accuracy.**
 
 Log format: 
 
-.. code-block:: bash
+::
 
   <metrics> 
   <body_request>
@@ -345,7 +345,7 @@ from the server, answer network code)
 
 Example: 
 
-.. code-block:: bash
+::
 
   user@tank:~$ head answ_*.txt 
   553 572 8056 8043 0
@@ -361,11 +361,11 @@ Example:
 
 For ``load.ini`` like this:
   
-.. code-block:: bash
+::
 
   [phantom]
   address=203.0.113.1 ;Target's address
-  port=80; target's port
+  port=80 ;target's port
   rps_schedule=const(10, 10m) ;load scheme
   writelog=1
   [autostop]
@@ -382,7 +382,7 @@ analysis (Excel/gnuplot/etc) It has following fields:
 
 Phout example:
 
-.. code-block:: bash
+::
 
   1326453006.582          1510    934     52      384     140     1249    37      478     0       404
   1326453006.582   others       1301    674     58      499     70      1116    37      478     0       404
@@ -415,11 +415,11 @@ Custom timings
 You can set custom timings in ``load.ini`` with ``time_periods``
 parameter like this:
 
-.. code-block:: bash
+::
   
   [phantom]
   address=203.0.113.1 ;Target's address
-  port=80; target's port
+  port=80 ;target's port
   rps_schedule=const(10, 10m) ;load scheme
   [aggregator]
   time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s ; the last value - 10s is considered as connect timeout.
@@ -430,11 +430,11 @@ Thread limit
 ``instances=N`` in ``load.ini`` limits number of simultanious
 connections (threads). Test with 10 threads:
 
-.. code-block:: bash
+::
 
   [phantom]
   address=203.0.113.1 ;Target's address
-  port=80; target's port
+  port=80 ;target's port
   rps_schedule=const(10, 10m) ;load scheme
   instances=10
 
@@ -447,11 +447,11 @@ defined. Bear in mind that active instances number cannot be decreased
 and final number of them must be equal to ``instances`` parameter value.
 load.ini example:
 
-.. code-block:: bash
+::
 
   [phantom]
   address=203.0.113.1 ;Target's address
-  port=80; target's port
+  port=80 ;target's port
   instances_schedule = line(1,10,10m)
   ;load = const (10,10m) ;Load scheme is excluded from this load.ini as we used instances_schedule parameter
 
@@ -465,11 +465,11 @@ any data, receiving any answer in return. To do that add
 
 **Indispensable condition: Connection close must be initiated by remote side**
 
-.. code-block:: bash
+::
 
   [phantom]
   address=203.0.113.1 ;Target's address
-  port=80; target's port
+  port=80 ;target's port
   rps_schedule=const(10, 10m) ;load scheme
   instances=10
   tank_type=2
@@ -481,11 +481,11 @@ If server with Yandex.Tank have several IPs, they may be
 used to avoid outcome port shortage. Use ``gatling_ip`` parameter for
 that. Load.ini:
 
-.. code-block:: bash
+::
 
   [phantom]
   address=203.0.113.1 ;Target's address
-  port=80; target's port
+  port=80 ;target's port
   rps_schedule=const(10, 10m) ;load scheme
   instances=10
   gatling_ip = IP1 IP2
