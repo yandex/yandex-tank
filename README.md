@@ -1,4 +1,7 @@
 # Yandex Tank
+
+![Yandex.Tank logo](/logos/tank200.jpg)
+
 ## Description
 Yandex.Tank is an extendable open source load testing tool for advanced linux users which is especially good as a part of automated load testing suit.
 
