@@ -77,7 +77,7 @@ where /tmp/access.log is a path to access.log file.
   ammofile=/tmp/access.log
   ammo_type=access
 
-Parameter ``headers`` define headers values (if it nessessary).
+Parameter ``headers`` defines headers values (if it nessessary).
 
 URI-style, URIs in load.ini
 ''''''''''''''''''''''''''''
