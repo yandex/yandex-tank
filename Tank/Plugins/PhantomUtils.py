@@ -241,7 +241,7 @@ class StreamConfig:
         self.phantom_http_field = self.get_option("phantom_http_field", "")
         self.phantom_http_entity = self.get_option("phantom_http_entity", "")
 
-        self.address = self.get_option('address', 'localhost')
+        self.address = self.get_option('address', '127.0.0.1')
         self.port = self.get_option('port', '80')
 
         #address check section

@@ -86,6 +86,21 @@ class PhantomPluginTestCase(TankTestCase):
         self.foo.core.set_option('phantom', 'address', 'yandex.ru')
         self.foo.configure()
 
+    def test_domain_name_and_port(self):
+        self.foo.core.set_option('phantom', 'address', 'yandex.ru:80')
+        self.foo.configure()
+
+    def test_ipv4(self):
+        self.foo.core.set_option('phantom', 'address', '127.0.0.1')
+        self.foo.configure()
+
+    def test_ipv6(self):
+        self.foo.core.set_option('phantom', 'address', '2a02:6b8:0:c1f::161:cd')
+        self.foo.configure()
+
+    def test_ipv4_and_port(self):
+        self.foo.core.set_option('phantom', 'address', '127.0.0.1:80')
+        self.foo.configure()
 
     def test_domain_name_fail(self):
         self.foo.core.set_option('phantom', 'address', 'ya.ru')
