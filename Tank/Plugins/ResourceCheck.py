@@ -54,6 +54,9 @@ class ResourceCheckPlugin(AbstractPlugin):
         cmd += " | tail -n 1 | awk '{print \$4}' \""
         res = tankcore.execute(cmd, True, 0.1, True)
         logging.debug("Result: %s", res)
+        if not len(res[1]):
+    	    self.log.debug("No disk usage info: %s", res[2])
+    	    return
         disk_free = res[1]
         self.log.debug("Disk free space: %s/%s", disk_free.strip(), self.disk_limit)
         if int(disk_free.strip()) < self.disk_limit:
