@@ -126,7 +126,6 @@ class ComponentFactory():
     def get_filter(self):
         if len(self.chosen_cases):
             def is_chosen_case(ammo_tuple):
-                print ammo_tuple
                 return ammo_tuple[1] in self.chosen_cases
             return is_chosen_case
         else:
