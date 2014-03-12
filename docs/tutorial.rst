@@ -141,6 +141,11 @@ Create a file with declared requests: **ammo.txt**
 File begins with optional lines [...], that contain headers which will
 be added to every request. After that section there is a list of URIs and POST bodies.
 Each URI line begins with a number which is the size of the following POST body.
+Set up ammo type in load.ini:
+
+::
+
+  ammo_type=uripost
 
 Request-style
 '''''''''''''
