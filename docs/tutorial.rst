@@ -119,6 +119,28 @@ Create a file with declared requests: **ammo.txt**
 File begins with optional lines [...], that contain headers which will
 be added to every request. After that section there is a list of URIs.
 Every URI must begin from a new line, with leading '/'.
+Each line that begins from '[' is considered a header.
+
+URI+POST-style
+''''''''''''''
+
+Create a file with declared requests: **ammo.txt**
+
+::
+
+  [Host: example.org]
+  [Connection: close] 
+  [User-Agent: Tank]  
+  5 /route/?rll=50.262025%2C53.276083~50.056015%2C53.495561&origin=1&simplify=1
+  class
+  10 /route/?rll=50.262025%2C53.276083~50.056015%2C53.495561&origin=1&simplify=1
+  hello!clas
+  7 /route/?rll=37.565147%2C55.695758~37.412796%2C55.691454&origin=1&simplify=1
+  uripost
+
+File begins with optional lines [...], that contain headers which will
+be added to every request. After that section there is a list of URIs and POST bodies.
+Each URI line begins with a number which is the size of the following POST body.
 
 Request-style
 '''''''''''''
