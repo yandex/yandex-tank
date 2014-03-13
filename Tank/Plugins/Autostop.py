@@ -2,6 +2,7 @@
 import copy
 import logging
 import re
+import json
 
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from Tank.Plugins.ConsoleOnline import AbstractInfoWidget, ConsoleOnlinePlugin
@@ -48,6 +49,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         self.add_criteria_class(NetCodesCriteria)
         self.add_criteria_class(HTTPCodesCriteria)
         self.add_criteria_class(QuantileCriteria)
+        self.add_criteria_class(SteadyCumulativeQuantilesCriteria)
 
     def prepare_test(self):
         for criteria_str in self.criteria_str.strip().split(")"):
@@ -129,6 +131,7 @@ class AbstractCriteria:
     RC_TIME = 21
     RC_HTTP = 22
     RC_NET = 23
+    RC_STEADY = 33
 
     def __init__(self):
         self.log = logging.getLogger(__name__)
@@ -390,3 +393,48 @@ class QuantileCriteria(AbstractCriteria):
     def widget_explain(self):
         items = (self.quantile, self.rt_limit, self.seconds_count, self.seconds_limit)
         return "%s%% >%sms for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
+
+
+class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
+    """ quantile criteria """
+
+    @staticmethod
+    def get_type_string():
+        return 'steady_cumulative'
+
+    def __init__(self, autostop, param_str):
+        AbstractCriteria.__init__(self)
+        self.seconds_count = 0
+        self.hash = ""
+        self.seconds_limit = float(param_str.split(',')[0])
+        self.autostop = autostop
+
+    def notify(self, aggregate_second):
+        hash = json.dumps(aggregate_second.cumulative.quantiles)
+        logging.debug("Cumulative quantiles hash: %s", hash)
+        if self.hash == hash:
+            if not self.seconds_count:
+                self.cause_second = aggregate_second
+
+            self.log.debug(self.explain())
+
+            self.seconds_count += 1
+            self.autostop.add_counting(self)
+            if self.seconds_count >= self.seconds_limit:
+                return True
+        else:
+            self.seconds_count = 0
+
+        self.hash = hash
+        return False
+
+    def get_rc(self):
+        return self.RC_STEADY
+
+    def explain(self):
+        items = (self.seconds_count, self.cause_second.time)
+        return "Cumulative percentiles are steady for %ss, since %s" % items
+
+    def widget_explain(self):
+        items = (self.seconds_count, self.seconds_limit)
+        return "Steady for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
