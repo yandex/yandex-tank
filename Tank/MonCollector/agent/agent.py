@@ -1,11 +1,10 @@
 #! /usr/bin/python
 """ The agent bundle, contains all metric classes and agent running code """
 from optparse import OptionParser
-import ConfigParser
 import base64
-import commands
 import logging
 import os
+import glob
 import re
 import socket
 import subprocess
@@ -14,6 +13,9 @@ import time
 from threading import Thread
 import traceback
 import signal
+
+import ConfigParser
+import commands
 
 
 def signal_handler(sig, frame):
@@ -256,7 +258,28 @@ class Disk(AbstractMetric):
         for mount in mounts:
             if mount.startswith("/dev"):
                 parts = mount.split(" ")
-                devs.append(os.path.realpath(parts[0]).split(os.sep)[-1])
+                rp = os.path.realpath(parts[0])
+                short_name = rp.split(os.sep)[-1]
+                if not os.path.exists(rp):
+                    logging.info("File not exists for %s , will search in block devices", rp)
+                    for dirc in glob.glob("/sys/devices/virtual/block/*"):
+                        logging.debug("Checking %s", dirc)
+                        name_path = "%s/dm/name" % dirc
+                        if os.path.exists(name_path):
+                            logging.debug("Checking %s", dirc)
+                            try:
+                                with open(name_path) as fds:
+                                    nam = fds.read().strip()
+                                    logging.info("Test: %s/%s", nam, short_name)
+                                    if nam == short_name:
+                                        dsk_name = dirc.split(os.sep)[-1]
+                                        logging.info("Found: %s", dsk_name)
+                                        devs.append(dsk_name)
+                                        break
+                            except Exception, exc:
+                                logging.info("Failed: %s", traceback.format_exc(exc))
+                else:
+                    devs.append(short_name)
         logging.info("Devs: %s", devs)
         return devs
 
