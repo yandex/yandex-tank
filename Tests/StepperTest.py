@@ -109,7 +109,7 @@ class StepperTestCase(TankTestCase):
             ).write(stpd_file)
         res = open(temp_stpd, 'r').read()
         self.assertNotEquals("", res)
-        self.assertEquals(1900, os.path.getsize(temp_stpd))
+        self.assertEquals(2985, os.path.getsize(temp_stpd))
 
 
     def test_free_inst(self):
