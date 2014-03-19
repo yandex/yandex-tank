@@ -1,9 +1,5 @@
-'''Report plugin that plots some graphs'''
+"""Report plugin that plots some graphs"""
 
-from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
-from Tank.Plugins.Monitoring import MonitoringPlugin
-from Tank.MonCollector.collector import MonitoringDataListener, MonitoringDataDecoder
-from tankcore import AbstractPlugin
 import datetime
 import time
 import string
@@ -11,19 +7,26 @@ import json
 import os
 from collections import defaultdict
 
+from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
+from Tank.Plugins.Monitoring import MonitoringPlugin
+from Tank.MonCollector.collector import MonitoringDataListener, MonitoringDataDecoder
+from tankcore import AbstractPlugin
+
+
 class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
-    '''Graphite data uploader'''
-    
+    """Graphite data uploader"""
+
     SECTION = 'report'
 
     @staticmethod
     def get_key():
         return __file__
-    
+
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         self.decoder = MonitoringDataDecoder()
         self.mon_data = {}
+
         def create_storage():
             return {
                 'avg': defaultdict(list),
@@ -37,15 +40,20 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
                 'http_codes': defaultdict(list),
                 'net_codes': defaultdict(list),
             }
+
         self.overall = create_storage()
         self.cases = defaultdict(create_storage)
+        self.start_time = None
+        self.end_time = None
+        self.show_graph = None
+        self.template = None
 
     def monitoring_data(self, data_string):
         self.log.debug("Mon report data: %s", data_string)
         for line in data_string.splitlines():
             if not line.strip():
                 continue
-            
+
             def append_data(host, ts, data):
                 if host not in self.mon_data:
                     self.mon_data[host] = {}
@@ -65,39 +73,45 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
                         group_data[key].append((int(ts), value))
                     except ValueError:
                         pass
-            host, data, _, ts = self.decoder.decode_line(line)
-            append_data(host, ts, data)
-            
+
+            host1, data1, _, ts1 = self.decoder.decode_line(line)
+            append_data(host1, ts1, data1)
+
     def get_available_options(self):
-        return []
+        return ["show_graph", "template"]
 
     def start_test(self):
         start_time = datetime.datetime.now()
         self.start_time = start_time.strftime("%H:%M%%20%Y%m%d")
 
     def end_test(self, retcode):
-        end_time = datetime.datetime.now() + datetime.timedelta(minutes = 1)
+        end_time = datetime.datetime.now() + datetime.timedelta(minutes=1)
         self.end_time = end_time.strftime("%H:%M%%20%Y%m%d")
 
     def configure(self):
-        '''Read configuration'''
+        """Read configuration"""
         self.show_graph = self.get_option("show_graph", "")
         default_template = "/report.tpl"
         self.template = self.get_option("template", os.path.dirname(__file__) + default_template)
-        aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        aggregator.add_result_listener(self)
         try:
-            self.mon = self.core.get_plugin_of_type(MonitoringPlugin)
-            if self.mon.monitoring:
-                self.mon.monitoring.add_listener(self)
+            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+            aggregator.add_result_listener(self)
+        except KeyError:
+            self.log.warning("No aggregator module, no valid report will be available")
+
+        try:
+            mon = self.core.get_plugin_of_type(MonitoringPlugin)
+            if mon.monitoring:
+                mon.monitoring.add_listener(self)
         except KeyError:
             self.log.warning("No monitoring module, monitroing report disabled")
-            
+
     def aggregate_second(self, data):
         """
         @data: SecondAggregateData
         """
         ts = int(time.mktime(data.time.timetuple()))
+
         def add_aggreagted_second(data_item, storage):
             data_dict = data_item.__dict__
             avg = storage['avg']
@@ -134,4 +148,4 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
                     metrics=json.dumps(results),
                 )
             )
-
+        return retcode
