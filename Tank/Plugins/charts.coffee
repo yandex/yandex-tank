@@ -22,7 +22,7 @@ stackedColors = [
   "#fff7f3"
   "#ffffff"
 ]
-stackedGroups = ['quantiles', 'CPU', 'http_codes', 'net_codes']
+stackedGroups = ['quantiles', 'CPU', 'http_codes', 'net_codes', 'Memory', 'avg']
 defaultPlotOptions = 
   spline:
     lineWidth: 2

@@ -178,7 +178,6 @@ class StepperWrapper(object):
             info.status.publish('loop_count', stepper_info.loop_count)
             info.status.publish('steps', stepper_info.steps)
             info.status.publish('duration', stepper_info.duration)
-            info.status.publish('instances', stepper_info.instances)
             info.status.ammo_count = stepper_info.ammo_count
             info.status.publish('instances', stepper_info.instances)
             return stepper_info
