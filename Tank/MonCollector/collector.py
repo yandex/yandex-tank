@@ -474,7 +474,7 @@ class MonitoringCollector:
         default = {
             'System': 'csw,int',
             'CPU': 'user,system,iowait',
-            'Memory': 'free,used',
+            'Memory': 'free,cached,used',
             'Disk': 'read,write',
             'Net': 'recv,send',
         }
