@@ -1,4 +1,4 @@
-''' Utility classes for phantom module '''
+""" Utility classes for phantom module """
 from ipaddr import AddressValueError
 import copy
 import ipaddr
@@ -15,7 +15,7 @@ from Tank.stepper import StepperWrapper
 
 # TODO: use separate answ log per benchmark
 class PhantomConfig:
-    ''' config file generator '''
+    """ config file generator """
     OPTION_PHOUT = "phout_file"
     SECTION = 'phantom'
 
@@ -37,7 +37,7 @@ class PhantomConfig:
         self.additional_libs = None
 
     def get_option(self, opt_name, default=None):
-        ''' get option wrapper '''
+        """ get option wrapper """
         return self.core.get_option(self.SECTION, opt_name, default)
 
     @staticmethod
@@ -48,7 +48,7 @@ class PhantomConfig:
         return opts
 
     def read_config(self):
-        '''        Read phantom tool specific options        '''
+        """        Read phantom tool specific options        """
         self.threads = self.get_option(
             "threads", str(int(multiprocessing.cpu_count() / 2) + 1))
         self.phantom_modules_path = self.get_option(
@@ -86,7 +86,7 @@ class PhantomConfig:
             stream.read_config()
 
     def compose_config(self):
-        '''        Generate phantom tool run config        '''
+        """        Generate phantom tool run config        """
         streams_config = ''
         stat_benchmarks = ''
         for stream in self.streams:
@@ -117,12 +117,12 @@ class PhantomConfig:
         return filename
 
     def set_timeout(self, timeout):
-        ''' pass timeout to all streams '''
+        """ pass timeout to all streams """
         for stream in self.streams:
             stream.timeout = timeout
 
     def get_info(self):
-        ''' get merged info about phantom conf '''
+        """ get merged info about phantom conf """
         result = copy.copy(self.streams[0])
         result.stat_log = self.stat_log
         result.steps = []
@@ -175,7 +175,7 @@ class PhantomConfig:
 
 
 class StreamConfig:
-    ''' each test stream's config '''
+    """ each test stream's config """
 
     OPTION_INSTANCES_LIMIT = 'instances'
 
@@ -209,7 +209,7 @@ class StreamConfig:
         self.method_options = None
 
     def get_option(self, option_ammofile, default=None):
-        ''' get option wrapper '''
+        """ get option wrapper """
         return self.core.get_option(self.section, option_ammofile, default)
 
     @staticmethod
@@ -223,7 +223,7 @@ class StreamConfig:
         return opts
 
     def read_config(self):
-        ''' reads config '''
+        """ reads config """
         # multi-options
         self.ssl = int(self.get_option("ssl", '0'))
         self.tank_type = self.get_option("tank_type", 'http')
@@ -258,7 +258,7 @@ class StreamConfig:
         self.stepper_wrapper.read_config()
 
     def compose_config(self):
-        ''' compose benchmark block '''
+        """ compose benchmark block """
         # step file
         self.stepper_wrapper.prepare_stepper()
         self.stpd = self.stepper_wrapper.stpd
@@ -324,7 +324,7 @@ class StreamConfig:
         return config
 
     def __address_ipv4_check(self):
-        ''' Analyse target address, IPv4 '''
+        """ Analyse target address, IPv4 """
         self.ip_resolved_check = False
         if not self.address:
             raise RuntimeError("Target address not specified")
@@ -355,12 +355,14 @@ class StreamConfig:
             if len(address_port) > 1:
                 self.port = address_port[1]
                 self.log.warning(
-                    "Address and port must be specified separately via variables 'address' and 'port'. Old behavior when \":\" was used as an address/port separator is deprecated and better to be avoided.")
+                    "Address and port should be specified separately via 'address' and 'port' options. "
+                    "Old behavior when \":\" was used as an address/port separator "
+                    "is deprecated and better be avoided")
             self.log.debug(
                 "%s is IPv4 address and %s is port", address_final, self.port)
 
     def __address_ipv6_check(self):
-        ''' Analyse target address, IPv6 '''
+        """ Analyse target address, IPv6 """
         self.ip_resolved_check = False
         if not self.address:
             raise RuntimeError("Target address not specified")
@@ -377,7 +379,7 @@ class StreamConfig:
                 "%s is IPv6 address", address_final)
 
     def __resolve_address(self):
-        ''' Resolve hostname to IPv4/IPv6 and analyse what has been resolved '''
+        """ Resolve hostname to IPv4/IPv6 and analyse what has been resolved """
         self.ip_resolved_check = False
         if not self.address:
             raise RuntimeError("Target address not specified")
@@ -387,14 +389,16 @@ class StreamConfig:
             self.port = address_port[1]
             address_port = address_port[0]
             self.log.warning(
-                "Address and port must be specified separately via variables 'address' and 'port'. Old behavior when \":\" was used as an address/port separator is deprecated and better to be avoided.")
+                "Address and port should be specified separately via 'address' and 'port' options. "
+                "Old behavior when \":\" was used as an address/port separator "
+                "is deprecated and better be avoided")
         else:
             address_port = self.address
         test_sock = None
         try:
             lookup = socket.getaddrinfo(address_port, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM)
         except socket.gaierror as msg:
-            raise RuntimeError("Unable to resolve hostname." , address_port)
+            raise RuntimeError("Unable to resolve hostname.", address_port)
         #resolve and establish a connection to resolved ip
         for res in lookup:
             af, socktype, proto, canonname, sa = res
@@ -405,6 +409,7 @@ class StreamConfig:
                 test_sock = None
                 continue
             try:
+                test_sock.settimeout(5)
                 test_sock.connect(sa)
             except socket.error as msg:
                 test_sock.close()
@@ -413,7 +418,7 @@ class StreamConfig:
             else:
                 address_final = sa[0]
                 test_sock.close()
-                try: 
+                try:
                     ipaddr.IPv4Address(address_final)
                 except AddressValueError:
                     self.log.debug(
@@ -430,7 +435,7 @@ class StreamConfig:
                     ipaddr.IPv6Address(address_final)
                 except AddressValueError:
                     self.log.debug(
-                    "Resolved address %s is not IPv6", address_final)
+                        "Resolved address %s is not IPv6", address_final)
                 else:
                     self.ipv6 = True
                     self.ip_resolved_check = True
@@ -439,4 +444,5 @@ class StreamConfig:
                     self.log.info(
                         "Successfully established connection to resolved IPv6 %s, port %s", address_final, self.port)
                     break
+
 # ========================================================================
