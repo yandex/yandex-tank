@@ -1,11 +1,16 @@
-yandex-load-tank-base (1.4.10) precise; urgency=low
+yandex-load-tank-base (1.5.0) precise; urgency=low
 
-* Static HTML report with Highcharts graphs: tank metrics and monitoring
-* Highcharts template for Graphite reports
-* Better hostname resolve method
-* Bugfixes
+  * Static HTML report with Highcharts graphs: tank metrics and monitoring
+  * Highcharts template for Graphite reports
+  * Better hostname resolve method
+  * Bugfixes
+  * collect 'cached' mem by default
+  * fix collecting disk activity on lxc containers
+  * add steady_cumulative autostop criteria
+  * don't fail test on agent shutdown problems
+  * fix rcheck on remote fs
 
- -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mar, 5 Feb 2014 13:56:31 +0400
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 19 Mar 2014 15:34:24 +0400
 
 yandex-load-tank-base (1.4.9) precise; urgency=low
 
