@@ -7,6 +7,7 @@ import multiprocessing
 import os
 import socket
 import string
+import traceback
 
 from Tank.stepper import StepperWrapper
 
@@ -253,8 +254,7 @@ class StreamConfig:
         if not self.ip_resolved_check:
             self.__resolve_address()
         if not self.ip_resolved_check:
-            raise RuntimeError(
-                "Address resolve/parse section failed.")
+            raise RuntimeError("Address resolve/parse section failed.")
         self.stepper_wrapper.read_config()
 
     def compose_config(self):
@@ -332,21 +332,18 @@ class StreamConfig:
         try:
             address_final = ipaddr.IPv4Address(self.address)
         except AddressValueError:
-            self.log.debug(
-                "%s is not IPv4 address", self.address)
+            self.log.debug("%s is not IPv4 address", self.address)
         else:
             self.ipv6 = False
             self.ip_resolved_check = True
             self.resolved_ip = address_final
-            self.log.debug(
-                "%s is IPv4 address", self.address)
+            self.log.debug("%s is IPv4 address", self.address)
         #IPv4:port check
         try:
             address_port = self.address.split(":")
             address_final = ipaddr.IPv4Address(address_port[0])
-        except AddressValueError:
-            self.log.debug(
-                "%s is not IPv4 address:port", self.address)
+        except AddressValueError, exc:
+            self.log.debug("%s is not IPv4 address:port %s", self.address, traceback.format_exc(exc))
         else:
             self.ipv6 = False
             self.ip_resolved_check = True
@@ -397,14 +394,15 @@ class StreamConfig:
         test_sock = None
         try:
             lookup = socket.getaddrinfo(address_port, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM)
-        except socket.gaierror as msg:
-            raise RuntimeError("Unable to resolve hostname.", address_port)
+        except Exception, msg:
+            logging.debug("Problems resolving target name: %s", traceback.format_exc(msg))
+            raise RuntimeError("Unable to resolve hostname for %s", address_port)
         #resolve and establish a connection to resolved ip
         for res in lookup:
             af, socktype, proto, canonname, sa = res
             try:
                 test_sock = socket.socket(af, socktype, proto)
-            except socket.error as msg:
+            except Exception as msg:
                 self.log.debug("Failed to create socket, Error code: %s", msg[0])
                 test_sock = None
                 continue
@@ -421,8 +419,7 @@ class StreamConfig:
                 try:
                     ipaddr.IPv4Address(address_final)
                 except AddressValueError:
-                    self.log.debug(
-                        "Resolved address %s is not IPv4", address_final)
+                    self.log.debug("Resolved address %s is not IPv4", address_final)
                 else:
                     self.ipv6 = False
                     self.ip_resolved_check = True
