@@ -83,9 +83,26 @@ class PhantomPluginTestCase(TankTestCase):
         self.foo.prepare_test()
 
     def test_domain_name(self):
-        self.foo.core.set_option('phantom', 'address', 'yandex.ru')
+        self.foo.core.set_option('phantom', 'address', 'yandex.ru:443')
+        self.foo.configure()
+        self.assertEqual("443", self.foo.get_info().port)
+        self.assertEqual("yandex.ru", self.foo.get_info().address)
+
+    def test_domain_name_and_port(self):
+        self.foo.core.set_option('phantom', 'address', 'yandex.ru:80')
         self.foo.configure()
 
+    def test_ipv4(self):
+        self.foo.core.set_option('phantom', 'address', '127.0.0.1')
+        self.foo.configure()
+
+    def test_ipv6(self):
+        self.foo.core.set_option('phantom', 'address', '2a02:6b8:0:c1f::161:cd')
+        self.foo.configure()
+
+    def test_ipv4_and_port(self):
+        self.foo.core.set_option('phantom', 'address', '127.0.0.1:80')
+        self.foo.configure()
 
     def test_domain_name_fail(self):
         self.foo.core.set_option('phantom', 'address', 'ya.ru')
@@ -130,6 +147,17 @@ class PhantomPluginTestCase(TankTestCase):
         wrapper.read_config()
         wrapper.prepare_stepper()
         self.assertEqual(100, wrapper.instances)
+
+    def test_stepper_instances_override(self):
+        self.foo.core.set_option('phantom', 'instances', '20000')
+        self.foo.core.set_option('phantom', 'rps_schedule', 'line(1,100,1m)')
+        self.foo.core.set_option('phantom', 'use_caching', '0')
+        self.foo.core.set_option('phantom', 'ammo_file', 'data/dummy.ammo')
+        wrapper = StepperWrapper(self.foo.core, PhantomPlugin.SECTION)
+        wrapper.read_config()
+        wrapper.prepare_stepper()
+        self.assertEqual(20000, wrapper.instances)
+
 
     def test_cached_stepper_instances_sched(self):
         

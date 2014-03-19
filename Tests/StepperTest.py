@@ -96,6 +96,22 @@ class StepperTestCase(TankTestCase):
         self.assertNotEquals("", res)
         self.assertEquals(1900, os.path.getsize(temp_stpd))
 
+
+    def test_manual_inst(self):
+        temp_stpd = tempfile.mkstemp()[1]
+        with open(temp_stpd, 'w') as stpd_file:
+            Stepper(
+                instances=20000,
+                rps_schedule=["line(1,5,15)"],
+                http_ver='1.1',
+                uris=["/", "/test"],
+                headers=["[Host: ya.ru]", "[Connection: close]"],
+            ).write(stpd_file)
+        res = open(temp_stpd, 'r').read()
+        self.assertNotEquals("", res)
+        self.assertEquals(2985, os.path.getsize(temp_stpd))
+
+
     def test_free_inst(self):
         temp_stpd = tempfile.mkstemp()[1]
         with open(temp_stpd, 'w') as stpd_file:

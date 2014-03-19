@@ -1,4 +1,4 @@
-''' Contains Phantom Plugin, Console widgets, result reader classes '''
+""" Contains Phantom Plugin, Console widgets, result reader classes """
 from Tank.Plugins import ConsoleScreen
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener, \
     AbstractReader
@@ -20,7 +20,7 @@ import datetime
 
 class PhantomPlugin(AbstractPlugin, AggregateResultListener):
 
-    '''     Plugin for running phantom tool    '''
+    """     Plugin for running phantom tool    """
 
     OPTION_CONFIG = "config"
     SECTION = PhantomConfig.SECTION
@@ -155,7 +155,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
     def is_test_finished(self):
         if not self.phout_import_mode:
             retcode = self.process.poll()
-            if retcode != None:
+            if retcode is not None:
                 self.log.info(
                     "Phantom done its work with exit code: %s", retcode)
                 return abs(retcode)
@@ -169,7 +169,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
                 return 0
 
     def end_test(self, retcode):
-        if self.process and self.process.poll() == None:
+        if self.process and self.process.poll() is None:
             self.log.warn(
                 "Terminating phantom process with PID %s", self.process.pid)
             self.process.terminate()
@@ -192,7 +192,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.log.debug("Processed ammo count: %s/", self.processed_ammo_count)
 
     def get_info(self):
-        ''' returns info object '''
+        """ returns info object """
         if not self.cached_info:
             if not self.phantom:
                 return None
@@ -202,9 +202,9 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
 
 class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
 
-    '''
+    """
     Widget that displays progressbar
-    '''
+    """
 
     def get_index(self):
         return 0
@@ -285,9 +285,9 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
 
 class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
-    '''
+    """
     Widget with information about current run state
-    '''
+    """
 
     def get_index(self):
         return 2
@@ -379,9 +379,9 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
 class PhantomReader(AbstractReader):
 
-    '''
+    """
     Adapter to read phout files
-    '''
+    """
 
     def __init__(self, owner, phantom):
         AbstractReader.__init__(self, owner)
@@ -425,7 +425,7 @@ class PhantomReader(AbstractReader):
         return self.__read_phout_data(force)
 
     def __read_stat_data(self):
-        ''' Read active instances info '''
+        """ Read active instances info """
         stat = self.stat.readlines()
         for line in stat:
             if line.startswith('time\t'):
@@ -447,7 +447,7 @@ class PhantomReader(AbstractReader):
         self.log.debug("Instances info buffer size: %s", len(self.stat_data))
 
     def __read_phout_data(self, force):
-        '''         Read phantom results        '''
+        """         Read phantom results        """
         if self.phout and len(self.data_queue) < self.buffered_seconds * 2:
             self.log.debug("Reading phout, up to 10MB...")
             phout = self.phout.readlines(10 * 1024 * 1024)
@@ -520,14 +520,14 @@ class PhantomReader(AbstractReader):
         if self.pending_second_data_queue:
             return self.__process_pending_second()
 
-        if (force and self.data_queue):
+        if force and self.data_queue:
             return self.pop_second()
         else:
             self.log.debug("No queue data!")
             return None
 
     def __aggregate_next_second(self):
-        ''' calls aggregator if there is data '''
+        """ calls aggregator if there is data """
         parsed_sec = AbstractReader.pop_second(self)
         if parsed_sec:
             self.pending_second_data_queue.append(parsed_sec)
@@ -538,7 +538,7 @@ class PhantomReader(AbstractReader):
             self.log.debug("No new seconds present")
 
     def __process_pending_second(self):
-        ''' process data in queue '''
+        """ process data in queue """
         next_time = int(
             time.mktime(self.pending_second_data_queue[0].time.timetuple()))
         if self.last_sample_time and (next_time - self.last_sample_time) > 1:
@@ -567,9 +567,9 @@ class PhantomReader(AbstractReader):
             return res
 
     def __get_expected_rps(self):
-        '''
+        """
         Mark second with expected rps
-        '''
+        """
         while self.steps and self.steps[0][1] < 1:
             self.steps.pop(0)
 
@@ -582,9 +582,9 @@ class PhantomReader(AbstractReader):
 
 class UsedInstancesCriteria(AbstractCriteria):
 
-    '''
+    """
     Autostop criteria, based on active instances count
-    '''
+    """
     RC_INST = 24
 
     @staticmethod
@@ -642,9 +642,9 @@ class UsedInstancesCriteria(AbstractCriteria):
         return self.RC_INST
 
     def get_level_str(self):
-        '''
+        """
         String value for instances level
-        '''
+        """
         if self.is_relative:
             level_str = str(100 * self.level) + "%"
         else:
@@ -658,7 +658,7 @@ class UsedInstancesCriteria(AbstractCriteria):
 
     def widget_explain(self):
         items = (self.get_level_str(), self.seconds_count, self.seconds_limit)
-        return ("Instances >%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
+        return "Instances >%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
 
 
 # ========================================================================

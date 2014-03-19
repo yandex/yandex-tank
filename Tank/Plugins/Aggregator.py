@@ -1,26 +1,30 @@
-''' Core module to calculate aggregate data '''
-from tankcore import AbstractPlugin
+""" Core module to calculate aggregate data """
 import copy
 import datetime
 import logging
 import math
-import tankcore
 import time
+
+from tankcore import AbstractPlugin
+import tankcore
 
 
 class AggregateResultListener:
+    """ listener to be notified about aggregate data """
 
-    ''' listener to be notified about aggregate data '''
+    def __init__(self):
+        pass
 
     def aggregate_second(self, second_aggregate_data):
-        ''' notification about new aggregate data '''
+        """ notification about new aggregate data """
         raise NotImplementedError("Abstract method needs to be overridden")
 
 
 class AggregatorPlugin(AbstractPlugin):
-
-    ''' Plugin that manages aggregation '''
-    default_time_periods = "1ms 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 150 200 250 300 350 400 450 500 600 650 700 750 800 850 900 950 1s 1500 2s 2500 3s 3500 4s 4500 5s 5500 6s 6500 7s 7500 8s 8500 9s 9500 10s 11s"
+    """ Plugin that manages aggregation """
+    default_time_periods = "1ms 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 " \
+                           "150 200 250 300 350 400 450 500 600 650 700 750 800 850 900 950 1s " \
+                           "1500 2s 2500 3s 3500 4s 4500 5s 5500 6s 6500 7s 7500 8s 8500 9s 9500 10s 11s"
 
     SECTION = 'aggregator'
 
@@ -72,11 +76,11 @@ class AggregatorPlugin(AbstractPlugin):
         return retcode
 
     def add_result_listener(self, listener):
-        ''' add object to data listeners '''
+        """ add object to data listeners """
         self.second_data_listeners.append(listener)
 
     def __notify_listeners(self, data):
-        ''' notify all listeners about aggregate data '''
+        """ notify all listeners about aggregate data """
         self.log.debug(
             "Notifying listeners about second: %s , %s/%s req/responses",
             data.time, data.overall.planned_requests, data.overall.RPS)
@@ -84,11 +88,11 @@ class AggregatorPlugin(AbstractPlugin):
             listener.aggregate_second(data)
 
     def get_timeout(self):
-        ''' get timeout based on time_periods last val '''
+        """ get timeout based on time_periods last val """
         return self.time_periods[-1:][0]
 
     def __generate_zero_samples(self, data):
-        ''' fill timeline gaps with zero samples '''
+        """ fill timeline gaps with zero samples """
         if not data:
             return
         while self.last_sample_time and int(time.mktime(data.time.timetuple())) - self.last_sample_time > 1:
@@ -100,7 +104,7 @@ class AggregatorPlugin(AbstractPlugin):
         self.last_sample_time = int(time.mktime(data.time.timetuple()))
 
     def __read_samples(self, limit=0, force=False):
-        ''' call reader object to read next sample set '''
+        """ call reader object to read next sample set """
         if self.reader:
             self.reader.check_open_files()
             data = self.reader.get_next_sample(force)
@@ -118,8 +122,7 @@ class AggregatorPlugin(AbstractPlugin):
 
 # ===============================================================
 class SecondAggregateData:
-
-    ''' class holds aggregate data for the second '''
+    """ class holds aggregate data for the second """
 
     def __init__(self, cimulative_item=None):
         self.cases = {}
@@ -132,8 +135,7 @@ class SecondAggregateData:
 
 
 class SecondAggregateDataItem:
-
-    ''' overall and case items has this type '''
+    """ overall and case items has this type """
     QUANTILES = [0.25, 0.50, 0.75, 0.80, 0.85, 0.90, 0.95, 0.98, 0.99, 1.00]
 
     def __init__(self):
@@ -158,8 +160,7 @@ class SecondAggregateDataItem:
 
 
 class SecondAggregateDataTotalItem:
-
-    ''' total cumulative data item '''
+    """ total cumulative data item """
 
     def __init__(self):
         self.avg_connect_time = 0
@@ -172,7 +173,7 @@ class SecondAggregateDataTotalItem:
         self.quantiles = {}
 
     def add_data(self, overall_item):
-        ''' add data to total '''
+        """ add data to total """
         for time_item in overall_item.times_dist:
             self.total_count += time_item['count']
             timing = int(time_item['from'])
@@ -182,7 +183,7 @@ class SecondAggregateDataTotalItem:
                 self.times_dist[timing] = time_item
 
     def add_raw_data(self, times_dist):
-        ''' add data to total '''
+        """ add data to total """
         for time_item in times_dist:
             self.total_count += 1
             timing = int(time_item)
@@ -193,11 +194,12 @@ class SecondAggregateDataTotalItem:
         logging.debug("Total times len: %s", len(self.times_dist))
 
     def calculate_total_quantiles(self):
-        ''' calculate total quantiles based on times dist '''
+        """ calculate total quantiles based on times dist """
         self.quantiles = {}
         quantiles = reversed(copy.copy(SecondAggregateDataItem.QUANTILES))
         timings = sorted(self.times_dist.keys(), reverse=True)
         level = 1.0
+        timing = 0
         for quan in quantiles:
             while level >= quan:
                 timing = timings.pop(0)
@@ -212,10 +214,9 @@ class SecondAggregateDataTotalItem:
 # ===============================================================
 
 class AbstractReader:
-
-    '''
+    """
     Parent class for all source reading adapters
-    '''
+    """
 
     def __init__(self, owner):
         self.aggregator = owner
@@ -225,19 +226,19 @@ class AbstractReader:
         self.data_buffer = {}
 
     def check_open_files(self):
-        ''' open files if necessary '''
+        """ open files if necessary """
         pass
 
     def close_files(self):
-        '''        Close opened handlers to avoid fd leak        '''
+        """        Close opened handlers to avoid fd leak        """
         pass
 
     def get_next_sample(self, force):
-        ''' read next sample from file '''
+        """ read next sample from file """
         pass
 
     def parse_second(self, next_time, data):
-        ''' parse buffered data to aggregate item '''
+        """ parse buffered data to aggregate item """
         self.log.debug("Parsing second: %s", next_time)
         result = self.get_zero_sample(
             datetime.datetime.fromtimestamp(next_time))
@@ -271,7 +272,7 @@ class AbstractReader:
         return result
 
     def __calculate_aggregates(self, item):
-        ''' calculate aggregates on raw data '''
+        """ calculate aggregates on raw data """
         if item.RPS:
             item.selfload = 100 * item.selfload / item.RPS
             item.avg_connect_time /= item.RPS
@@ -318,7 +319,7 @@ class AbstractReader:
             item.times_dist = times_dist_draft
 
     def __append_sample(self, result, item):
-        ''' add single sample to aggregator buffer '''
+        """ add single sample to aggregator buffer """
         for check in item:
             if check < 0:
                 self.log.error("Problem item: %s", item)
@@ -352,13 +353,13 @@ class AbstractReader:
         result.times_dist.append(overall_rt)
 
     def get_zero_sample(self, date_time):
-        ''' instantiate new aggregate data item '''
+        """ instantiate new aggregate data item """
         res = SecondAggregateData(self.cumulative)
         res.time = date_time
         return res
 
     def pop_second(self):
-        ''' pop from out queue new aggregate data item '''
+        """ pop from out queue new aggregate data item """
         self.data_queue.sort()
         next_time = self.data_queue.pop(0)
         data = self.data_buffer[next_time]
