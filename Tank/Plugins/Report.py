@@ -134,6 +134,7 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
             add_aggreagted_second(case_data, self.cases[case])
 
     def post_process(self, retcode):
+        self.log.info("Building HTML report...")
         results = {
             'overall': self.overall,
             'cases': self.cases,
