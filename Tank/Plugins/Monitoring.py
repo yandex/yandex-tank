@@ -1,23 +1,25 @@
-'''Module to provide target monitoring'''
+"""Module to provide target monitoring"""
+
+import os
+import time
+import traceback
+import fnmatch
+import datetime
 
 from Tank.MonCollector.collector import MonitoringCollector, \
     MonitoringDataListener, MonitoringDataDecoder
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.Phantom import PhantomPlugin
 from tankcore import AbstractPlugin
-import os
-import time
-import traceback
 from Tank.Plugins.Autostop import AutostopPlugin, AbstractCriteria
 import tankcore
-import fnmatch
-import datetime
+
 
 class MonitoringPlugin(AbstractPlugin):
-    '''  resource mon plugin  '''
-    
+    """  resource mon plugin  """
+
     SECTION = 'monitoring'
-    
+
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         self.jobno = None
@@ -34,10 +36,10 @@ class MonitoringPlugin(AbstractPlugin):
     @staticmethod
     def get_key():
         return __file__
-    
+
     def get_available_options(self):
         return ["config", "default_target", 'ssh_timeout']
-    
+
     def configure(self):
         self.config = self.get_option("config", 'auto').strip()
         self.default_target = self.get_option("default_target", 'localhost')
@@ -46,23 +48,23 @@ class MonitoringPlugin(AbstractPlugin):
         if self.config == 'none' or self.config == 'auto':
             self.die_on_fail = False
         else:
-            if self.config and self.config[0] == '<':                    
+            if self.config and self.config[0] == '<':
                 xmlfile = self.core.mkstemp(".xml", "monitoring_")
                 self.core.add_artifact_file(xmlfile)
                 xml = open(xmlfile, 'w')
                 xml.write(self.config)
                 xml.close()
                 self.config = xmlfile
-            
+
             if not os.path.exists(self.config):
-                raise OSError("Monitoring config file not found: %s" % self.config)         
-                    
+                raise OSError("Monitoring config file not found: %s" % self.config)
+
         if self.config == 'none':
             self.monitoring = None
-    
+
         if self.config == 'auto':
             self.config = os.path.dirname(__file__) + '/monitoring_default_config.xml'
-        
+
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
             autostop.add_criteria_class(MetricHigherCriteria)
@@ -70,9 +72,8 @@ class MonitoringPlugin(AbstractPlugin):
         except KeyError:
             self.log.debug("No autostop plugin found, not adding instances criteria")
 
-        
+
     def prepare_test(self):
-        phantom = None
         try:
             phantom = self.core.get_plugin_of_type(PhantomPlugin)
             if phantom.phout_import_mode:
@@ -92,7 +93,7 @@ class MonitoringPlugin(AbstractPlugin):
                 self.default_target = self.address_resolver.resolve_virtual(self.default_target)
             except Exception, exc:
                 self.log.error("Failed to get target info: %s", exc)
-        
+
         if not self.config or self.config == 'none':
             self.log.info("Monitoring has been disabled")
         else:
@@ -101,7 +102,7 @@ class MonitoringPlugin(AbstractPlugin):
             self.monitoring.config = self.config
             if self.default_target:
                 self.monitoring.default_target = self.default_target
-            
+
             self.data_file = self.core.mkstemp('.data', 'monitoring_')
             self.mon_saver = SaveMonToFile(self.data_file)
             self.monitoring.add_listener(self.mon_saver)
@@ -112,7 +113,7 @@ class MonitoringPlugin(AbstractPlugin):
             except Exception, ex:
                 self.log.debug("Console not found: %s", ex)
                 console = None
-            if console:    
+            if console:
                 widget = MonitoringWidget(self)
                 console.add_info_widget(widget)
                 self.monitoring.add_listener(widget)
@@ -132,8 +133,8 @@ class MonitoringPlugin(AbstractPlugin):
                 else:
                     self.log.warning("Failed to start monitoring: %s", exc)
                     self.monitoring = None
-            
-            
+
+
     def is_test_finished(self):
         if self.monitoring and not self.monitoring.poll():
             if self.die_on_fail:
@@ -142,47 +143,48 @@ class MonitoringPlugin(AbstractPlugin):
                 self.log.warn("Monitoring died unexpectedly")
                 self.monitoring = None
         return -1
-            
-            
+
+
     def end_test(self, retcode):
         self.log.info("Finishing monitoring")
         if self.monitoring:
             self.monitoring.stop()
             for log in self.monitoring.artifact_files:
                 self.core.add_artifact_file(log)
-    
+
             while self.monitoring.send_data:
                 self.log.info("Sending monitoring data rests...")
                 self.monitoring.send_collected_data()
-        
+
         if self.mon_saver:
             self.mon_saver.close()
         return retcode
-    
-    
-    
+
+
 class SaveMonToFile(MonitoringDataListener):
-    '''
+    """
     Default listener - saves data to file
-    '''
+    """
+
     def __init__(self, out_file):
+        MonitoringDataListener.__init__(self)
         if out_file:
             self.store = open(out_file, 'w')
-    
+
     def monitoring_data(self, data_string):
         self.store.write(data_string)
         self.store.flush()
-    
+
     def close(self):
-        ''' close open files '''
+        """ close open files """
         if self.store:
             self.store.close()
 
 
 class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDataDecoder):
-    '''
+    """
     Screen widget
-    '''
+    """
 
     def __init__(self, owner):
         AbstractInfoWidget.__init__(self)
@@ -192,12 +194,12 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
         self.sign = {}
         self.time = {}
         self.max_metric_len = 0
-    
+
     def get_index(self):
         return 50
-    
+
     def __handle_data_item(self, host, data):
-        ''' store metric in data tree and calc offset signs '''
+        """ store metric in data tree and calc offset signs """
         for metric, value in data.iteritems():
             if value == '' or value == self.NA:
                 value = self.NA
@@ -220,7 +222,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
         for line in data_string.split("\n"):
             if not line.strip():
                 continue
-            
+
             host, data, initial, timestamp = self.decode_line(line)
             self.time[host] = timestamp
             if initial:
@@ -230,9 +232,9 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
                     self.sign[host][metric] = 0
                     self.data[host][metric] = self.NA
             else:
-                self.__handle_data_item(host, data) 
-                
-    
+                self.__handle_data_item(host, data)
+
+
     def render(self, screen):
         if not self.owner.monitoring:
             return "Monitoring is " + screen.markup.RED + "offline" + screen.markup.RESET
@@ -246,18 +248,19 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
                         value = screen.markup.YELLOW + value + screen.markup.RESET
                     elif self.sign[hostname][metric] < 0:
                         value = screen.markup.CYAN + value + screen.markup.RESET
-                    res += "      %s%s: %s\n" % (' ' * (self.max_metric_len - len(metric)), metric.replace('_', ' '), value)
-                    
+                    res += "      %s%s: %s\n" % (
+                    ' ' * (self.max_metric_len - len(metric)), metric.replace('_', ' '), value)
+
             return res.strip()
 
-            
 
 class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, MonitoringDataDecoder):
-    ''' Parent class for metric criteria '''
+    """ Parent class for metric criteria """
+
     def __init__(self, autostop, param_str):
         AbstractCriteria.__init__(self)
         MonitoringDataDecoder.__init__(self)
-        
+
         try:
             self.mon = autostop.core.get_plugin_of_type(MonitoringPlugin)
             if self.mon.monitoring:
@@ -274,55 +277,57 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
         self.last_second = None
         self.seconds_count = 0
 
-    
+
     def monitoring_data(self, data_string):
         if self.triggered:
             return
-        
+
         for line in data_string.split("\n"):
             if not line.strip():
                 continue
-            
+
             host, data, initial, timestamp = self.decode_line(line)
             if initial or not fnmatch.fnmatch(host, self.host):
                 continue
-            
+
             if self.metric not in data.keys() or not data[self.metric] or data[self.metric] == self.NA:
                 data[self.metric] = 0
-                
-            self.log.debug("Compare %s %s/%s=%s to %s", self.get_type_string(), host, self.metric, data[self.metric], self.value_limit)
+
+            self.log.debug("Compare %s %s/%s=%s to %s", self.get_type_string(), host, self.metric, data[self.metric],
+                           self.value_limit)
             if self.comparison_fn(float(data[self.metric]), self.value_limit):
                 if not self.seconds_count:
                     self.cause_second = self.last_second
-                
+
                 self.log.debug(self.explain())
 
                 self.seconds_count += 1
                 if self.seconds_count >= self.seconds_limit:
+                    self.log.debug("Triggering autostop")
                     self.triggered = True
                     return
             else:
                 self.seconds_count = 0
-                    
-                            
+
+
     def notify(self, aggregate_second):
         if self.seconds_count:
             self.autostop.add_counting(self)
 
         self.last_second = aggregate_second
         return self.triggered
-    
+
     def comparison_fn(self, arg1, arg2):
-        ''' comparison function '''
+        """ comparison function """
         raise NotImplementedError()
 
 
-
 class MetricHigherCriteria(AbstractMetricCriteria):
-    ''' trigger if metric is higher than limit '''
+    """ trigger if metric is higher than limit """
+
     def __init__(self, autostop, param_str):
         AbstractMetricCriteria.__init__(self, autostop, param_str)
-    
+
     def get_rc(self):
         return 31
 
@@ -336,15 +341,15 @@ class MetricHigherCriteria(AbstractMetricCriteria):
 
     def widget_explain(self):
         items = (self.host, self.metric, self.value_limit, self.seconds_count, self.seconds_limit)
-        return ("%s/%s > %s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
+        return "%s/%s > %s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
 
     def comparison_fn(self, arg1, arg2):
         return arg1 > arg2
 
 
-
 class MetricLowerCriteria(AbstractMetricCriteria):
-    ''' trigger if metric is lower than limit '''
+    """ trigger if metric is lower than limit """
+
     def __init__(self, autostop, param_str):
         AbstractMetricCriteria.__init__(self, autostop, param_str)
 
@@ -361,19 +366,18 @@ class MetricLowerCriteria(AbstractMetricCriteria):
 
     def widget_explain(self):
         items = (self.host, self.metric, self.value_limit, self.seconds_count, self.seconds_limit)
-        return ("%s/%s < %s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit)
+        return "%s/%s < %s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
 
     def comparison_fn(self, arg1, arg2):
         return arg1 < arg2
 
 
-
 class AbstractResolver:
-    ''' Resolver class provides virtual to real host resolution '''
+    """ Resolver class provides virtual to real host resolution """
+
+    def __init__(self):
+        pass
+
     def resolve_virtual(self, virt_address):
-        ''' get host address by virtual '''
+        """ get host address by virtual """
         raise NotImplementedError()
-    
-    
-    
-    
