@@ -406,7 +406,7 @@ class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
         self.hash = ""
-        self.seconds_limit = float(param_str.split(',')[0])
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[0])
         self.autostop = autostop
 
     def notify(self, aggregate_second):
