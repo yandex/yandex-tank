@@ -38,7 +38,7 @@ setup_t stat_setup = setup_stat_t {
 
 
 io_t monitor_io = io_monitor_t {
-        list = { benchmark_io $stat_benchmarks }
+        list = { main_scheduler benchmark_io $stat_benchmarks }
         stat_id = default
 
         period = 1s
