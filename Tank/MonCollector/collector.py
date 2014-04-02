@@ -170,7 +170,7 @@ class AgentClient(object):
 
         # Copy agent
         cmd = [self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
-               '[' + self.host + ']' + ':' + self.path['AGENT_REMOTE_FOLDER']]
+               self.host + ':' + self.path['AGENT_REMOTE_FOLDER']]
         logging.debug("Copy agent to %s: %s", self.host, cmd)
 
         pipe = self.ssh.get_scp_pipe(cmd)
@@ -180,7 +180,7 @@ class AgentClient(object):
             raise RuntimeError("AgentClient copy exitcode: %s" % pipe.returncode)
 
         # Copy config
-        cmd = [self.path['TEMP_CONFIG'], '[' + self.host + ']' + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
+        cmd = [self.path['TEMP_CONFIG'], self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
         logging.debug("[%s] Copy config: %s", cmd, self.host)
 
         pipe = self.ssh.get_scp_pipe(cmd)
@@ -404,7 +404,7 @@ class MonitoringCollector:
                     agent_name = self.get_agent_name(metric.tag, elm)
                     if agent_name:
                         names[agent_name] = 1
-                        # custom metric ('call' and 'tail' methods)
+            # custom metric ('call' and 'tail' methods)
             elif (str(metric.tag)).lower() == 'custom':
                 metrics_count += 1
                 isdiff = metric.get('diff')
