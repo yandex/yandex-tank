@@ -254,7 +254,8 @@ class StreamConfig:
         if not self.ip_resolved_check:
             self.__resolve_address()
         if not self.ip_resolved_check:
-            raise RuntimeError("Address resolve/parse section failed.")
+            raise RuntimeError("Unable to establish test connection to specified hostname on following port or parse specified IP address. If you specified hostname as target's address, tank MUST be able to establish a test connection to the target.", self.address, self.port)
+
         self.stepper_wrapper.read_config()
 
     def compose_config(self):
@@ -406,6 +407,7 @@ class StreamConfig:
                 self.log.debug("Failed to create socket, Error code: %s", msg[0])
                 test_sock = None
                 continue
+            self.log.info("Trying to establish test connection to resolved IP: %s", sa)
             try:
                 test_sock.settimeout(5)
                 test_sock.connect(sa)
@@ -441,5 +443,4 @@ class StreamConfig:
                     self.log.info(
                         "Successfully established connection to resolved IPv6 %s, port %s", address_final, self.port)
                     break
-
 # ========================================================================
