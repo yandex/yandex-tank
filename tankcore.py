@@ -191,7 +191,8 @@ class TankCore:
         self.flush_config_to = None
         self.lock_dir = None
 
-    def get_available_options(self):
+    @staticmethod
+    def get_available_options():
         return ["artifacts_base_dir", "artifacts_dir", "flush_config_to"]
 
     def load_configs(self, configs):
@@ -659,3 +660,7 @@ class AbstractPlugin:
     def get_available_options(self):
         """ returns array containing known options for plugin """
         return []
+
+    def get_multiline_option(self, option_name, default_value=None):
+        value = self.get_option(option_name, default_value)
+        return (' '.join(value.split("\n"))).split(' ')
