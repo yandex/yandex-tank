@@ -14,6 +14,7 @@ import tempfile
 import time
 import fcntl
 import traceback
+import getpass
 
 import tankcore
 
@@ -45,16 +46,17 @@ class SSHWrapper:
         self.host = None
         self.port = None
 
-    def set_host_port(self, host, port):
+    def set_host_port(self, host, port, username):
         """        Set host and port to use        """
         self.host = host
         self.port = port
+        self.username = username
         self.scp_opts = self.ssh_opts + ['-P', self.port]
         self.ssh_opts = self.ssh_opts + ['-C', '-p', self.port]
 
     def get_ssh_pipe(self, cmd):
         """        Get open ssh pipe        """
-        args = ['ssh'] + self.ssh_opts + [self.host] + cmd
+        args = ['ssh'] + self.ssh_opts + ['-l'] + [self.username] + [self.host] + cmd
         self.log.debug('Executing: %s', args)
         return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid, close_fds=True)
 
@@ -94,6 +96,7 @@ class AgentClient(object):
         self.startups = []
         self.shutdowns = []
         self.python = '/usr/bin/env python'
+        self.username = getpass.getuser()
 
     def start(self):
         """        Start remote agent        """
@@ -120,6 +123,7 @@ class AgentClient(object):
         cfg.set('main', 'interval', self.interval)
         cfg.set('main', 'host', self.host)
         cfg.set('main', 'loglevel', loglevel)
+        cfg.set('main', 'username', self.username)
 
         cfg.add_section('metric')
         cfg.set('metric', 'names', self.metric)
@@ -144,10 +148,10 @@ class AgentClient(object):
 
     def install(self, loglevel):
         """ Create folder and copy agent and metrics scripts to remote host """
-        logging.info("Installing monitoring agent at %s...", self.host)
+        logging.info("Installing monitoring agent at %s@%s...", self.username, self.host)
         agent_config = self.create_agent_config(loglevel)
 
-        self.ssh.set_host_port(self.host, self.port)
+        self.ssh.set_host_port(self.host, self.port, self.username)
 
         # getting remote temp dir
         cmd = [self.python + ' -c "import tempfile; print tempfile.mkdtemp();"']
@@ -160,8 +164,8 @@ class AgentClient(object):
         pipe.wait()
         logging.debug("Return code [%s]: %s", self.host, pipe.returncode)
         if pipe.returncode:
-            raise RuntimeError("Failed to get remote dir via SSH at %s, code %s: %s" % (
-                self.host, pipe.returncode, pipe.stdout.read().strip()))
+            raise RuntimeError("Failed to get remote dir via SSH at %s@%s, code %s: %s" % (
+                self.username, self.host, pipe.returncode, pipe.stdout.read().strip()))
 
         remote_dir = pipe.stdout.read().strip()
         if remote_dir:
@@ -170,7 +174,7 @@ class AgentClient(object):
 
         # Copy agent
         cmd = [self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
-               self.host + ':' + self.path['AGENT_REMOTE_FOLDER']]
+               self.username+'@'+'['+self.host+']' + ':' + self.path['AGENT_REMOTE_FOLDER']]
         logging.debug("Copy agent to %s: %s", self.host, cmd)
 
         pipe = self.ssh.get_scp_pipe(cmd)
@@ -180,7 +184,7 @@ class AgentClient(object):
             raise RuntimeError("AgentClient copy exitcode: %s" % pipe.returncode)
 
         # Copy config
-        cmd = [self.path['TEMP_CONFIG'], self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
+        cmd = [self.path['TEMP_CONFIG'], self.username+'@'+'['+self.host+']' + ':' + self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
         logging.debug("[%s] Copy config: %s", cmd, self.host)
 
         pipe = self.ssh.get_scp_pipe(cmd)
@@ -202,11 +206,11 @@ class AgentClient(object):
         fhandle, log_file = tempfile.mkstemp('.log', "agent_" + self.host + "_")
         os.close(fhandle)
         cmd = [self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_file]
-        logging.debug("Copy agent log from %s: %s", self.host, cmd)
+        logging.debug("Copy agent log from %s@%s: %s", self.username, self.host, cmd)
         remove = self.ssh.get_scp_pipe(cmd)
         remove.wait()
 
-        logging.info("Removing agent from: %s...", self.host)
+        logging.info("Removing agent from: %s@%s...", self.username, self.host)
         cmd = ['rm', '-r', self.path['AGENT_REMOTE_FOLDER']]
         remove = self.ssh.get_ssh_pipe(cmd)
         remove.wait()
@@ -258,6 +262,7 @@ class MonitoringCollector:
             logging.debug('Creating agent: %s', adr)
             agent = AgentClient()
             agent.host = adr['host']
+            agent.username = adr['username']
             agent.python = adr['python']
             agent.metric = adr['metric']
             agent.port = adr['port']
@@ -379,6 +384,7 @@ class MonitoringCollector:
     # FIXME: a piese of shit and shame to a programmer
     def get_host_config(self, default, default_metric, filter_obj, host, names, target_hint):
         hostname = host.get('address')
+        username = host.get('username')
         if hostname == '[target]':
             if not target_hint:
                 raise ValueError("Can't use [target] keyword with no target parameter specified")
@@ -459,6 +465,10 @@ class MonitoringCollector:
             tmp.update({'python': host.get('python')})
         else:
             tmp.update({'python': '/usr/bin/env python'})
+        if host.get('username'):
+            tmp.update({'username': host.get('username')})
+        else:
+            tmp.update({'username': getpass.getuser()})	
 
         tmp.update({'custom': custom})
         tmp.update({'host': hostname})
