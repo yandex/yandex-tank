@@ -622,6 +622,10 @@ class AbstractPlugin:
         raise TypeError("Abstract method needs to be overridden")
 
     def __init__(self, core):
+        """
+
+        @type core: TankCore
+        """
         self.log = logging.getLogger(__name__)
         self.core = core
 

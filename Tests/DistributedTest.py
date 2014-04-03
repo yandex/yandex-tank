@@ -1,3 +1,4 @@
+import logging
 import os
 
 from Tank.Plugins.Distributed import DistributedPlugin
@@ -14,8 +15,14 @@ class DistributedPluginTestCase(TankTestCase):
 
     def test_run(self):
         self.foo.configure()
+        self.foo.prepare_test()
+        self.foo.start_test()
+        self.foo.is_test_finished()
+        self.foo.end_test(0)
+        self.foo.post_process(0)
 
 
 class FakeAPIClient(TankAPIClient):
-    def __init__(self):
-        TankAPIClient.__init__(self)
+    def __init__(self, address, port, to):
+        TankAPIClient.__init__(self, address, port, to)
+        logging.debug("Fake API client for %s", address)
