@@ -84,6 +84,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
                         web_port=self.web_port,
                     )
                 )
+        return retcode
 
     @staticmethod
     def __flatten(dic, prefix):
