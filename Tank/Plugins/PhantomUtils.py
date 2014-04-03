@@ -254,7 +254,7 @@ class StreamConfig:
         if not self.ip_resolved_check:
             self.__resolve_address()
         if not self.ip_resolved_check:
-            raise RuntimeError("Unable to establish test connection to specified hostname on following port or parse specified IP address. If you specified hostname as target's address, tank MUST be able to establish a test connection to the target.", self.address, self.port)
+            raise RuntimeError("Address parse section failed", self.address, self.port)
 
         self.stepper_wrapper.read_config()
 
@@ -443,4 +443,6 @@ class StreamConfig:
                     self.log.info(
                         "Successfully established connection to resolved IPv6 %s, port %s", address_final, self.port)
                     break
+        if not self.ip_resolved_check:
+            raise RuntimeError("Unable to establish test connection to specified hostname on following port or parse specified IP address. If you specified hostname as target's address, tank MUST be able to establish a test connection to the target.", self.address, self.port)
 # ========================================================================
