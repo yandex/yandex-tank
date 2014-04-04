@@ -16,7 +16,7 @@ class TankAPIClient:
     def __repr__(self):
         return "{%s %s:%s}" % (self.__class__.__name__, self.address, self.port)
 
-    def book(self):
+    def book(self, exclusive):
         """        get ticket        """
         self.ticket = "test"
         return True
@@ -35,4 +35,10 @@ class TankAPIClient:
         pass
 
     def interrupt(self):
+        pass
+
+    def get_artifacts_list(self):
+        return ["tank.log"]
+
+    def download_artifact(self, remote_name, local_name):
         pass

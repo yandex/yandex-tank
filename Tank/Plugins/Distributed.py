@@ -1,5 +1,7 @@
 """ Module to perform distributed tests """
 # TODO: how to deal with remote monitoring data?
+import fnmatch
+import os
 import random
 import time
 
@@ -19,8 +21,9 @@ class DistributedPlugin(AbstractPlugin):
         self.files = []
         self.artifacts_to_download = []
         self.chosen_tanks = []
+        self.exclusive_mode = 1
 
-        # regular members
+        # regular fields
         self.api_clients = []
         self.api_client_class = TankAPIClient
         self.config_file = None
@@ -28,12 +31,13 @@ class DistributedPlugin(AbstractPlugin):
 
     def get_available_options(self):
         return ["api_port", "api_timeout",
-                "tanks_pool", "tanks_count", "random_tanks",
-                "configs", "options", "files", "download_artifacts"]
+                "tanks_pool", "tanks_count", "random_tanks", "exclusive_mode"
+                                                             "configs", "options", "files", "download_artifacts"]
 
     def configure(self):
         api_port = int(self.get_option("api_port", 8003))
         api_timeout = int(self.get_option("api_timeout", 5))
+        self.exclusive_mode = int(self.get_option("exclusive_mode", self.exclusive_mode))
 
         tanks_pool = self.get_multiline_option("tanks_pool")
         count = self.get_option("tanks_count", self.tanks_count)
@@ -124,7 +128,7 @@ class DistributedPlugin(AbstractPlugin):
         while len(self.chosen_tanks) < self.tanks_count:
             self.chosen_tanks = []
             for tank in self.api_clients:
-                if len(self.chosen_tanks) < self.tanks_count and tank.book():
+                if len(self.chosen_tanks) < self.tanks_count and tank.book(self.exclusive_mode):
                     self.chosen_tanks.append(tank)
 
             if len(self.chosen_tanks) < self.tanks_count:
@@ -155,4 +159,11 @@ class DistributedPlugin(AbstractPlugin):
         self.log.debug("Done waiting preparations")
 
     def download_artifacts(self, tank):
-        artifacts=tank.get_artifacts_list()
+        artifacts = tank.get_artifacts_list()
+        for fname in self.artifacts_to_download:
+            for artifact in artifacts:
+                if fnmatch.fnmatch(artifact, fname):
+                    self.log.info("Downloading artifact from %s: %s...", tank.address, artifact)
+                    local_name = self.core.artifacts_base_dir + os.path.sep + artifact
+                    tank.download_artifact(artifact, local_name)
+                    self.core.add_artifact_file(local_name)

@@ -29,9 +29,9 @@ class FakeAPIClient(TankAPIClient):
         logging.debug("Fake API client for %s", address)
 
     def get_status(self):
-        status = int(random.random() * 5)
+        status = int(random.random() * 6)
         logging.debug("Mocking status for %s: %s", self, status)
         return status
 
-    def book(self):
+    def book(self, exclusive):
         return True
