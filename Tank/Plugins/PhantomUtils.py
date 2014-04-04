@@ -246,13 +246,22 @@ class StreamConfig:
 
         #address check section
         self.resolved_ip = None
+        #check ipv6
         if not self.resolved_ip:
-            self.__address_ipv4_check()
+            self.__ipv6_check()
+        #check ipv4
         if not self.resolved_ip:
-            self.__address_ipv6_check()
+            self.__ipv4_check()
+        #check ipv4:port
+        if not self.resolved_ip:
+            self.__address_split()
+            self.__ipv4_check()
+        #resolve hostname, connect to IP and address checks
         if not self.resolved_ip:
             self.__resolve_address()
             self.__test_connection()
+            self.__ipv4_check()
+            self.__ipv6_check()
         if not self.resolved_ip:
             raise RuntimeError("Address parse section failed", self.address, self.port)
 
@@ -323,29 +332,13 @@ class StreamConfig:
         config = tpl.substitute(kwargs)
 
         return config
-
-    def __address_ipv4_check(self):
-        """ Analyse target address, IPv4 """
-        if not self.address:
-            raise RuntimeError("Target address not specified")
-        #IPv4 check
-        try:
-            address_final = ipaddr.IPv4Address(self.address)
-        except AddressValueError:
-            self.log.debug("%s is not IPv4 address", self.address)
-        else:
-            self.ipv6 = False
-            self.resolved_ip = address_final
-            self.log.debug("%s is IPv4 address", self.address)
-        #IPv4:port check
+   
+    def __address_split(self):
         try:
             self.address_port = self.address.split(":")
-            address_final = ipaddr.IPv4Address(self.address_port[0])
-        except AddressValueError, exc:
-            self.log.debug("%s is not IPv4 address and port separated by \":\" , %s", self.address, traceback.format_exc(exc))
+        except Exception, exc:
+            self.log.debug("%s is not address and port separated by \":\" , %s", self.address, traceback.format_exc(exc))
         else:
-            self.ipv6 = False
-            self.resolved_ip = address_final
             self.address = self.address_port[0]
             if len(self.address_port) > 1:
                 self.port = self.address_port[1]
@@ -353,47 +346,50 @@ class StreamConfig:
                     "Address and port should be specified separately via 'address' and 'port' options. "
                     "Old behavior when \":\" was used as an address/port separator "
                     "is deprecated and better be avoided")
-            self.log.debug("%s is IPv4 address and %s is port", address_final, self.port)
+ 
+    def __ipv4_check(self):
+        """ Analyse target address, IPv4 """
+        if not self.address:
+            raise RuntimeError("Target address not specified")
+        #IPv4 check
+        try:
+            ipaddr.IPv4Address(self.address)
+        except AddressValueError:
+            logging.debug("%s is not IPv4 address", self.address)
+        else:
+            self.ipv6 = False
+            self.resolved_ip = self.address
+            self.log.debug("%s is IPv4 address", self.address)
 
-    def __address_ipv6_check(self):
+    def __ipv6_check(self):
         """ Analyse target address, IPv6 """
         if not self.address:
             raise RuntimeError("Target address not specified")
         try:
-            address_final = ipaddr.IPv6Address(self.address)
+            ipaddr.IPv6Address(self.address)
         except AddressValueError:
             self.log.debug("%s is not IPv6 address", self.address)
         else:
             self.ipv6 = True
-            self.resolved_ip = address_final
-            self.log.debug("%s is IPv6 address", address_final)
+            self.resolved_ip = self.address
+            self.log.debug("%s is IPv6 address", self.address)
 
     def __resolve_address(self):
         """ Resolve hostname to IPv4/IPv6 and analyse what has been resolved """
         if not self.address:
             raise RuntimeError("Target address not specified")
-        #address:port split
-        self.address_port = self.address.split(":")
-        if len(self.address_port) > 1:
-            self.port = self.address_port[1]
-            self.address_port = self.address_port[0]
-            self.log.warning(
-                "Address and port should be specified separately via 'address' and 'port' options. "
-                "Old behavior when \":\" was used as an address/port separator "
-                "is deprecated and better be avoided")
-        else:
-            self.address_port = self.address
         try:
-            lookup = socket.getaddrinfo(self.address_port, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+            lookup = socket.getaddrinfo(self.address, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM)
         except Exception, msg:
             logging.debug("Problems resolving target name: %s", traceback.format_exc(msg))
-            raise RuntimeError("Unable to resolve hostname for %s", self.address_port)
+            raise RuntimeError("Unable to resolve hostname for %s", self.address)
         else:
             self.lookup = lookup
             self.log.debug("lookup data %s", self.lookup)
 
     def __test_connection(self):
         test_sock = None
+        connected_ip = None
         for res in self.lookup:
             af, socktype, proto, canonname, sa = res
             try:
@@ -411,28 +407,10 @@ class StreamConfig:
                test_sock = None
                continue
             else:
-                address_final = sa[0]
                 test_sock.close()
-                try:
-                    ipaddr.IPv4Address(address_final)
-                except AddressValueError:
-                    self.log.debug("Resolved address %s is not IPv4", address_final)
-                else:
-                    self.ipv6 = False
-                    self.resolved_ip = address_final
-                    self.address = self.address_port
-                    self.log.info("Successfully established connection to resolved IPv4 %s, port %s", address_final, self.port)
-                    break
-                try:
-                    ipaddr.IPv6Address(address_final)
-                except AddressValueError:
-                    self.log.debug("Resolved address %s is not IPv6", address_final)
-                else:
-                    self.ipv6 = True
-                    self.resolved_ip = address_final
-                    self.address = self.address_port
-                    self.log.info("Successfully established connection to resolved IPv6 %s, port %s", address_final, self.port)
-                    break
-        if not self.resolved_ip:
+                self.address = connected_ip = sa[0]
+                self.log.info("Successfully established connection to %s, port %s", self.address, self.port)
+                return
+        if not connected_ip:
             raise RuntimeError("Unable to establish test connection to specified hostname on following port", self.address, self.port)
 # ========================================================================
