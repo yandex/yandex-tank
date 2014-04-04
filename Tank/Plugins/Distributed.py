@@ -17,7 +17,7 @@ class DistributedPlugin(AbstractPlugin):
         self.configs = []
         self.options = []
         self.files = []
-        self.download_artifacts = []
+        self.artifacts_to_download = []
         self.chosen_tanks = []
 
         # regular members
@@ -49,7 +49,7 @@ class DistributedPlugin(AbstractPlugin):
         self.configs = self.get_multiline_option("configs")
         self.options = self.get_multiline_option("options", self.options)
         self.files = self.get_multiline_option("files", self.files)
-        self.download_artifacts = self.get_multiline_option("download_artifacts", self.download_artifacts)
+        self.artifacts_to_download = self.get_multiline_option("download_artifacts", self.artifacts_to_download)
 
         # done reading options, do some preparations
 
@@ -76,11 +76,18 @@ class DistributedPlugin(AbstractPlugin):
 
     def end_test(self, retcode):
         """ call graceful shutdown for all tests """
-        return AbstractPlugin.end_test(self, retcode)
+        self.log.info("Shutting down remote tests...")
+        for tank in self.chosen_tanks:
+            tank.interrupt()
 
     def post_process(self, retcode):
         """ download artifacts """
-        return AbstractPlugin.post_process(self, retcode)
+        if self.artifacts_to_download:
+            for tank in self.chosen_tanks:
+                while tank.get_status() != TankAPIClient.FINISHED:
+                    self.log.info("Waiting for test shutdown at %s...", tank.address)
+                    time.sleep(5)
+                self.download_artifacts(tank)
 
     @staticmethod
     def get_key():
@@ -88,6 +95,28 @@ class DistributedPlugin(AbstractPlugin):
 
     def compose_load_ini(self, configs, options):
         fname = self.core.mkstemp('.ini', 'load_')
+        self.log.debug("Composing config: %s", fname)
+        with open(fname, "w") as fd:
+            for cfile in configs:
+                fd.write("# === %s ===\n" % cfile)
+                with open(cfile) as orig:
+                    fd.write(orig.read())
+                fd.write("\n\n")
+
+            if options:
+                fd.write("\n\n#Command-line options added below\n")
+
+                for option_str in options:
+                    try:
+                        section = option_str[:option_str.index('.')]
+                        option = option_str[option_str.index('.') + 1:option_str.index('=')]
+                    except ValueError:
+                        section = 'DEFAULT'
+                        option = option_str[:option_str.index('=')]
+                    value = option_str[option_str.index('=') + 1:]
+                    self.log.debug("Append option: %s => [%s] %s=%s", option_str, section, option, value)
+                    fd.write("[%s]\n%s=%s\n" % (section, option, value))
+
         return fname
 
     def choose_tanks(self):
@@ -125,3 +154,5 @@ class DistributedPlugin(AbstractPlugin):
                 time.sleep(5)
         self.log.debug("Done waiting preparations")
 
+    def download_artifacts(self, tank):
+        artifacts=tank.get_artifacts_list()

@@ -4,6 +4,7 @@ class TankAPIClient:
     PREPARING = 2
     PREPARED = 3
     TESTING = 4
+    FINISHED = 5
 
 
     def __init__(self, address, port, timeout):
@@ -31,4 +32,7 @@ class TankAPIClient:
         return None
 
     def start_test(self):
+        pass
+
+    def interrupt(self):
         pass
