@@ -1,4 +1,4 @@
-''' Classes to build full console screen '''
+""" Classes to build full console screen """
 import copy
 import fcntl
 import logging
@@ -11,21 +11,21 @@ from Tank.Plugins import Codes
 
 
 def get_terminal_size():
-    '''
+    """
     Gets width and height of terminal viewport
-    '''
+    """
     default_size = (60, 140)
     env = os.environ
 
-    def ioctl_gwinsz(file_d):
-        '''
+    def ioctl_gwinsz(file_d1):
+        """
         Helper to get console size
-        '''
+        """
         try:
-            sizes = struct.unpack('hh', fcntl.ioctl(file_d, termios.TIOCGWINSZ, '1234'))
+            sizes1 = struct.unpack('hh', fcntl.ioctl(file_d1, termios.TIOCGWINSZ, '1234'))
         except Exception:
-            sizes = default_size
-        return sizes
+            sizes1 = default_size
+        return sizes1
 
     sizes = ioctl_gwinsz(0) or ioctl_gwinsz(1) or ioctl_gwinsz(2)
     if not sizes:
@@ -54,7 +54,7 @@ def krutilka():
 
 
 class Screen(object):
-    '''     Console screen renderer class    '''
+    """     Console screen renderer class    """
     RIGHT_PANEL_SEPARATOR = ' . '
 
     def __init__(self, info_panel_width, markup_provider):
@@ -76,7 +76,7 @@ class Screen(object):
         self.block_rows = [[CurrentTimesDistBlock(self), block5]]
 
     def __get_right_line(self, widget_output):
-        '''        Gets next line for right panel        '''
+        """        Gets next line for right panel        """
         right_line = ''
         if widget_output:
             right_line = widget_output.pop(0)
@@ -88,7 +88,7 @@ class Screen(object):
 
 
     def __render_left_panel(self):
-        ''' Render left blocks '''
+        """ Render left blocks """
         self.log.debug("Rendering left blocks")
         lines = []
         for row in self.block_rows:
@@ -119,7 +119,7 @@ class Screen(object):
 
 
     def render_screen(self):
-        '''        Main method to render screen view        '''
+        """        Main method to render screen view        """
         self.term_width, self.term_height = get_terminal_size()
         self.log.debug("Terminal size: %sx%s", self.term_width, self.term_height)
         self.right_panel_width = int(
@@ -169,9 +169,9 @@ class Screen(object):
 
 
     def add_info_widget(self, widget):
-        '''
+        """
         Add widget string to right panel of the screen
-        '''
+        """
         index = widget.get_index()
         while index in self.info_widgets.keys():
             index += 1
@@ -179,9 +179,9 @@ class Screen(object):
 
 
     def add_second_data(self, data):
-        '''
+        """
         Notification method about new aggregator data
-        '''
+        """
         for row in self.block_rows:
             for block in row:
                 block.add_second(data)
@@ -191,9 +191,9 @@ class Screen(object):
 
 
 class AbstractBlock:
-    '''
+    """
     Parent class for all left panel blocks
-    '''
+    """
 
     def __init__(self, screen):
         self.log = logging.getLogger(__name__)
@@ -202,24 +202,24 @@ class AbstractBlock:
         self.screen = screen
 
     def add_second(self, data):
-        '''
+        """
         Notification about new aggregate data
-        '''
+        """
         pass
 
     def render(self):
-        '''
+        """
         Render method, fills .lines and .width properties with rendered data
-        '''
+        """
         raise RuntimeError("Abstract method needs to be overridden")
 
 
 # ======================================================
 
 class VerticalBlock(AbstractBlock):
-    '''
+    """
     Block to merge two other blocks vertically
-    '''
+    """
 
     def __init__(self, top_block, bottom_block):
         AbstractBlock.__init__(self, None)
@@ -248,9 +248,9 @@ class VerticalBlock(AbstractBlock):
 
 # ======================================================
 class CurrentTimesDistBlock(AbstractBlock):
-    '''
+    """
     Detailed distribution for current RPS
-    '''
+    """
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -288,8 +288,8 @@ class CurrentTimesDistBlock(AbstractBlock):
             self.width = max(self.width, len(line))
             self.lines.append(line)
         self.lines.reverse()
-        self.lines = [self.screen.markup.WHITE + 'Times for %s RPS:' % self.current_rps + self.screen.markup.RESET] \
-                     + self.lines
+        times = [self.screen.markup.WHITE + 'Times for %s RPS:' % self.current_rps + self.screen.markup.RESET]
+        self.lines = times + self.lines
         self.lines.append("")
 
         count_len = str(len(str(self.current_count)))
@@ -299,7 +299,7 @@ class CurrentTimesDistBlock(AbstractBlock):
         self.width = max(self.width, len(self.lines[0]))
 
     def __format_line(self, current_times, quan):
-        ''' Format dist line '''
+        """ Format dist line """
         left_line = ''
         if current_times:
             item = current_times.pop(0)[1]
@@ -320,7 +320,7 @@ class CurrentTimesDistBlock(AbstractBlock):
 # ======================================================
 
 class CurrentHTTPBlock(AbstractBlock):
-    ''' Http codes with highlight'''
+    """ Http codes with highlight"""
     TITLE = 'HTTP for %s RPS:  '
 
     def __init__(self, screen):
@@ -332,9 +332,9 @@ class CurrentHTTPBlock(AbstractBlock):
 
 
     def process_dist(self, rps, codes_dist):
-        '''
+        """
         Analyze arrived codes distribution and highlight arrived
-        '''
+        """
         self.log.debug("Arrived codes data: %s", codes_dist)
         self.highlight_codes = []
         if not self.current_rps == rps:
@@ -367,7 +367,7 @@ class CurrentHTTPBlock(AbstractBlock):
             self.lines.append(line)
 
     def format_line(self, code, count):
-        ''' format line for display '''
+        """ format line for display """
         if self.total_count:
             perc = float(count) / self.total_count
         else:
@@ -401,7 +401,7 @@ class CurrentHTTPBlock(AbstractBlock):
 # ======================================================
 
 class CurrentNetBlock(CurrentHTTPBlock):
-    ''' NET codes with highlight'''
+    """ NET codes with highlight"""
     TITLE = ' NET for %s RPS:  '
 
     def add_second(self, data):
@@ -436,7 +436,7 @@ class CurrentNetBlock(CurrentHTTPBlock):
 # ======================================================
 
 class TotalQuantilesBlock(AbstractBlock):
-    ''' Total test quantiles '''
+    """ Total test quantiles """
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -459,7 +459,7 @@ class TotalQuantilesBlock(AbstractBlock):
         self.width = max(self.width, len(self.screen.markup.clean_markup(self.lines[0])))
 
     def __format_line(self, quan, timing):
-        ''' Format line '''
+        """ Format line """
         timing_len = str(len(str(self.current_max_rt)))
         tpl = '   %3d%% < %' + timing_len + 'd ms'
         data = (quan, timing)
@@ -471,7 +471,7 @@ class TotalQuantilesBlock(AbstractBlock):
 
 
 class AnswSizesBlock(AbstractBlock):
-    ''' Answer sizes, if available '''
+    """ Answer sizes, if available """
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -506,20 +506,20 @@ class AnswSizesBlock(AbstractBlock):
             self.sum_out = 0
             self.count = 0
 
-        self.count += data.overall.RPS
+        self.count += data.overall.rps
         self.sum_in += data.overall.input
         self.sum_out += data.overall.output
 
         self.cur_in = data.overall.input
         self.cur_out = data.overall.output
-        self.cur_count = data.overall.RPS
+        self.cur_count = data.overall.rps
 
 
 # ======================================================
 
 
 class AvgTimesBlock(AbstractBlock):
-    ''' Average times breakdown '''
+    """ Average times breakdown """
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -557,26 +557,26 @@ class AvgTimesBlock(AbstractBlock):
             self.rps_overall = 0
             self.rps_count = 0
 
-        self.rps_connect += data.overall.avg_connect_time * data.overall.RPS
-        self.rps_send += data.overall.avg_send_time * data.overall.RPS
-        self.rps_latency += data.overall.avg_latency * data.overall.RPS
-        self.rps_receive += data.overall.avg_receive_time * data.overall.RPS
-        self.rps_overall += data.overall.avg_response_time * data.overall.RPS
-        self.rps_count += data.overall.RPS
+        self.rps_connect += data.overall.avg_connect_time * data.overall.rps
+        self.rps_send += data.overall.avg_send_time * data.overall.rps
+        self.rps_latency += data.overall.avg_latency * data.overall.rps
+        self.rps_receive += data.overall.avg_receive_time * data.overall.rps
+        self.rps_overall += data.overall.avg_response_time * data.overall.rps
+        self.rps_count += data.overall.rps
 
-        self.all_connect += data.overall.avg_connect_time * data.overall.RPS
-        self.all_send += data.overall.avg_send_time * data.overall.RPS
-        self.all_latency += data.overall.avg_latency * data.overall.RPS
-        self.all_receive += data.overall.avg_receive_time * data.overall.RPS
-        self.all_overall += data.overall.avg_response_time * data.overall.RPS
-        self.all_count += data.overall.RPS
+        self.all_connect += data.overall.avg_connect_time * data.overall.rps
+        self.all_send += data.overall.avg_send_time * data.overall.rps
+        self.all_latency += data.overall.avg_latency * data.overall.rps
+        self.all_receive += data.overall.avg_receive_time * data.overall.rps
+        self.all_overall += data.overall.avg_response_time * data.overall.rps
+        self.all_count += data.overall.rps
 
-        self.last_connect = data.overall.avg_connect_time * data.overall.RPS
-        self.last_send = data.overall.avg_send_time * data.overall.RPS
-        self.last_latency = data.overall.avg_latency * data.overall.RPS
-        self.last_receive = data.overall.avg_receive_time * data.overall.RPS
-        self.last_overall = data.overall.avg_response_time * data.overall.RPS
-        self.last_count = data.overall.RPS
+        self.last_connect = data.overall.avg_connect_time * data.overall.rps
+        self.last_send = data.overall.avg_send_time * data.overall.rps
+        self.last_latency = data.overall.avg_latency * data.overall.rps
+        self.last_receive = data.overall.avg_receive_time * data.overall.rps
+        self.last_overall = data.overall.avg_response_time * data.overall.rps
+        self.last_count = data.overall.rps
 
     def render(self):
         self.lines = [self.screen.markup.WHITE + self.header % self.current_rps + self.screen.markup.RESET]
@@ -617,7 +617,7 @@ class AvgTimesBlock(AbstractBlock):
 
 
 class CasesBlock(AbstractBlock):
-    '''     Cases info    '''
+    """     Cases info    """
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -634,9 +634,9 @@ class CasesBlock(AbstractBlock):
             if not name in self.cases.keys():
                 self.cases[name] = [0, 0]
                 self.max_case_len = max(self.max_case_len, len(name))
-            self.cases[name][0] += case.RPS
-            self.cases[name][1] += case.avg_response_time * case.RPS
-            self.count += case.RPS
+            self.cases[name][0] += case.rps
+            self.cases[name][1] += case.avg_response_time * case.rps
+            self.count += case.rps
 
     def render(self):
         self.lines = [self.screen.markup.WHITE + self.header + self.screen.markup.RESET]

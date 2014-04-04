@@ -1,7 +1,9 @@
-from Tests.TankTests import TankTestCase
 import unittest
+
+from Tests.TankTests import TankTestCase
 from Tank.Plugins.ApacheBenchmark import ABReader, ApacheBenchmarkPlugin
 from Tank.Plugins.Aggregator import AggregatorPlugin
+
 
 class ABTestCase(TankTestCase):
     def setUp(self):
@@ -23,7 +25,8 @@ class ABTestCase(TankTestCase):
         while reader.get_next_sample(True):
             cnt += 1
         self.assertEquals(25, cnt)
-    
+
+
 if __name__ == '__main__':
     unittest.main()
 

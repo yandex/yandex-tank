@@ -47,9 +47,9 @@ class BFG(object):
             return self.worker.terminate()
 
     def _start(self, results):
-        '''
+        """
         Worker that runs as a separate process
-        '''
+        """
         # disable signal handler from parent:
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)

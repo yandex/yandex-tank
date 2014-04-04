@@ -1,8 +1,8 @@
-'''
+"""
 Missile object and generators
 
 You should update Stepper.status.ammo_count and Stepper.status.loop_count in your custom generators!
-'''
+"""
 from util import get_opener
 from itertools import cycle
 from module_exceptions import AmmoFileError
@@ -12,7 +12,7 @@ import logging
 
 
 class HttpAmmo(object):
-    '''
+    """
     Represents HTTP missile
 
     >>> print HttpAmmo('/', []).to_s()  # doctest: +NORMALIZE_WHITESPACE
@@ -29,7 +29,7 @@ class HttpAmmo(object):
     Content-Length: 6
     <BLANKLINE>
     hello!
-    '''
+    """
 
     def __init__(self, uri, headers, method='GET', http_ver='1.1', body=''):
         self.method = method
@@ -50,15 +50,15 @@ class HttpAmmo(object):
 
 class SimpleGenerator(object):
 
-    '''
+    """
     Generates ammo based on a given sample.
-    '''
+    """
 
     def __init__(self, missile_sample):
-        '''
+        """
         Missile sample is any object that has to_s method which
         returns its string representation.
-        '''
+        """
         self.missiles = cycle([(missile_sample.to_s(), None)])
 
     def __iter__(self):
@@ -69,14 +69,14 @@ class SimpleGenerator(object):
 
 class UriStyleGenerator(object):
 
-    '''
+    """
     Generates GET ammo based on given URI list.
-    '''
+    """
 
     def __init__(self, uris, headers, http_ver='1.1'):
-        '''
+        """
         uris - a list of URIs as strings.
-        '''
+        """
         self.uri_count = len(uris)
         self.missiles = cycle(
             [(HttpAmmo(uri, headers, http_ver=http_ver).to_s(), None) for uri in uris])
@@ -89,7 +89,7 @@ class UriStyleGenerator(object):
 
 class AmmoFileReader(object):
 
-    '''Read missiles from ammo file'''
+    """Read missiles from ammo file"""
 
     def __init__(self, filename, **kwargs):
         self.filename = filename
@@ -139,7 +139,7 @@ class AmmoFileReader(object):
 
 class SlowLogReader(object):
 
-    '''Read missiles from SQL slow log. Not usable with Phantom'''
+    """Read missiles from SQL slow log. Not usable with Phantom"""
 
     def __init__(self, filename, **kwargs):
         self.filename = filename
@@ -163,7 +163,7 @@ class SlowLogReader(object):
 
 class LineReader(object):
 
-    '''One line -- one missile'''
+    """One line -- one missile"""
 
     def __init__(self, filename, **kwargs):
         self.filename = filename
@@ -181,7 +181,7 @@ class LineReader(object):
 
 class AccessLogReader(object):
 
-    '''Missiles from access log'''
+    """Missiles from access log"""
 
     def __init__(self, filename, headers=[], http_ver='1.1', **kwargs):
         self.filename = filename
@@ -258,7 +258,7 @@ class UriReader(object):
 
 class UriPostReader(object):
 
-    '''Read POST missiles from ammo file'''
+    """Read POST missiles from ammo file"""
 
     def __init__(self, filename, headers=[], http_ver='1.1', **kwargs):
         self.filename = filename

@@ -233,7 +233,7 @@ class LoadosophiaClient:
             time.sleep(1)
             status = self.get_upload_status(queue_id)
             if status['UserError']:
-                raise HTTPError("Loadosophia processing error: " + status['UserError'])
+                raise HTTPError("Loadosophia processing error: " + status['UserError'], None, None, None, None)
 
             if int(status['status']) == self.STATUS_DONE:
                 self.results_url = self.address + 'gui/' + status['TestID'] + '/'
@@ -329,7 +329,7 @@ class LoadosophiaClient:
             json_item = {
                 "ts": str(sec.time),
                 "threads": item.active_threads,
-                "rps": item.RPS,
+                "rps": item.rps,
                 "planned_rps": item.planned_requests,
                 "avg_rt": item.avg_response_time,
                 "quantiles": item.quantiles,

@@ -1,4 +1,4 @@
-''' Module to check system resources at load generator'''
+""" Module to check system resources at load generator"""
 
 import time
 import logging
@@ -8,7 +8,7 @@ import tankcore
 
 
 class ResourceCheckPlugin(AbstractPlugin):
-    '''   Plugin to check system resources    '''
+    """   Plugin to check system resources    """
     SECTION = "rcheck"
 
     @staticmethod
@@ -17,7 +17,7 @@ class ResourceCheckPlugin(AbstractPlugin):
 
 
     def __init__(self, core):
-        '''         Constructor        '''
+        """         Constructor        """
         AbstractPlugin.__init__(self, core)
         self.interval = "10s"
         self.disk_limit = 2048  # 2 GB
@@ -48,15 +48,15 @@ class ResourceCheckPlugin(AbstractPlugin):
 
 
     def __check_disk(self):
-        ''' raise exception on disk space exceeded '''
+        """ raise exception on disk space exceeded """
         cmd = "sh -c \"df --no-sync -m -P -l -x fuse -x tmpfs -x devtmpfs -x davfs -x nfs "
         cmd += self.core.artifacts_base_dir
         cmd += " | tail -n 1 | awk '{print \$4}' \""
         res = tankcore.execute(cmd, True, 0.1, True)
         logging.debug("Result: %s", res)
         if not len(res[1]):
-    	    self.log.debug("No disk usage info: %s", res[2])
-    	    return
+            self.log.debug("No disk usage info: %s", res[2])
+            return
         disk_free = res[1]
         self.log.debug("Disk free space: %s/%s", disk_free.strip(), self.disk_limit)
         if int(disk_free.strip()) < self.disk_limit:
@@ -65,10 +65,10 @@ class ResourceCheckPlugin(AbstractPlugin):
 
 
     def __check_mem(self):
-        ''' raise exception on RAM exceeded '''
+        """ raise exception on RAM exceeded """
         cmd = "free -m | awk '$1==\"-/+\" {print $4}'"
         mem_free = int(tankcore.execute(cmd, True, 0.1, True)[1].strip())
         self.log.debug("Memory free: %s/%s", mem_free, self.mem_limit)
         if mem_free < self.mem_limit:
-            raise RuntimeError("Not enough resources: free memory less than %sMB: %sMB" % (self.mem_limit, mem_free)) 
+            raise RuntimeError("Not enough resources: free memory less than %sMB: %sMB" % (self.mem_limit, mem_free))
 

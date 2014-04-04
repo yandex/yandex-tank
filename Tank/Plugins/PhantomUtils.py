@@ -14,6 +14,7 @@ from Tank.stepper import StepperWrapper
 
 
 
+
 # TODO: use separate answ log per benchmark
 class PhantomConfig:
     """ config file generator """

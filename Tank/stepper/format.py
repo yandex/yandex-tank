@@ -1,13 +1,13 @@
-'''
+"""
 Ammo formatters
-'''
+"""
 from module_exceptions import StpdFileError
 import logging
 
 class Stpd(object):
-    '''
+    """
     STPD ammo formatter
-    '''
+    """
     def __init__(self, ammo_factory):
         self.af = ammo_factory
 
@@ -16,7 +16,7 @@ class Stpd(object):
 
 class StpdReader(object):
 
-    '''Read missiles from stpd file'''
+    """Read missiles from stpd file"""
 
     def __init__(self, filename):
         self.filename = filename

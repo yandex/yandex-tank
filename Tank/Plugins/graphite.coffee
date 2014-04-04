@@ -39,9 +39,9 @@ templates = [
   ,
     name: 'RPS by marker'
     targets: [
-      metric: "%p.markers.*.RPS"
+      metric: "%p.markers.*.rps"
     ,
-      metric: "%p.overall.RPS"
+      metric: "%p.overall.rps"
     ]
   ,
     name: 'Average response time by marker'

@@ -39,7 +39,7 @@ class LogGun(AbstractPlugin):
             0,                  # receive
             0,                  # accuracy
         )
-        return (int(time.time()), data_item)
+        return int(time.time()), data_item
 
 class SqlGun(AbstractPlugin):
     SECTION = 'sql_gun'
@@ -87,7 +87,7 @@ class SqlGun(AbstractPlugin):
             0,                  # receive
             0,                  # accuracy
         )
-        return (int(time.time()), data_item)
+        return int(time.time()), data_item
 
 class CustomGun(AbstractPlugin):
     SECTION = 'custom_gun'

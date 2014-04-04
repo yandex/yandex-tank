@@ -1,14 +1,15 @@
+import unittest
+
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget, \
     RealConsoleMarkup
 from Tests.TankTests import TankTestCase
-import tempfile
-import unittest
 from Tank.Plugins.ConsoleScreen import krutilka
+
 
 class FakeConsoleMarkup(RealConsoleMarkup):
     clear = "\n[clear]\n"
     new_line = "\n"
-    
+
     YELLOW = '<y>'
     RED = '<r>'
     RED_DARK = '<rd>'
@@ -32,7 +33,7 @@ class ConsoleOnlinePluginTestCase(TankTestCase):
 
     def tearDown(self):
         del self.foo
-        self.foo = None 
+        self.foo = None
 
 
     def test_run(self):
@@ -42,25 +43,27 @@ class ConsoleOnlinePluginTestCase(TankTestCase):
         self.foo.prepare_test()
         self.foo.add_info_widget(TestWidget())
         self.foo.add_info_widget(TestWidget2())
-        
+
         self.foo.start_test()
-        k=krutilka()
+        k = krutilka()
         for i in range(1, 10):
             print k.next()
             self.foo.aggregate_second(self.data)
         self.foo.end_test(0)
         self.assertFalse(self.foo.render_exception)
-        
+
+
 class TestWidget(AbstractInfoWidget):
     def render(self, screen):
-        return "Widget Data";
+        return "Widget Data"
+
 
 class TestWidget2(AbstractInfoWidget):
     def get_index(self):
-        return 100;
-    
+        return 100
+
     def render(self, screen):
-        return "Widget Data 2";
+        return "Widget Data 2"
 
 
 if __name__ == '__main__':

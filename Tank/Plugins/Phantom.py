@@ -102,11 +102,9 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             result = tankcore.execute(args, catch_out=True)
             retcode = result[0]
             if retcode:
-                raise RuntimeError(
-                    "Config check failed. Subprocess returned code %s" % retcode)
+                raise RuntimeError("Config check failed. Subprocess returned code %s" % retcode)
             if result[2]:
-                raise RuntimeError(
-                    "Subprocess returned message: %s" % result[2])
+                raise RuntimeError("Subprocess returned message: %s" % result[2])
 
         else:
             if aggregator:
@@ -187,7 +185,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         return retcode
 
     def aggregate_second(self, second_aggregate_data):
-        self.processed_ammo_count += second_aggregate_data.overall.RPS
+        self.processed_ammo_count += second_aggregate_data.overall.rps
         self.log.debug("Processed ammo count: %s/", self.processed_ammo_count)
 
     def get_info(self):
@@ -276,7 +274,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         return res
 
     def aggregate_second(self, second_aggregate_data):
-        self.ammo_progress += second_aggregate_data.overall.RPS
+        self.ammo_progress += second_aggregate_data.overall.rps
 
 
 class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
@@ -292,7 +290,7 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.owner = sender
         self.instances = 0
         self.planned = 0
-        self.RPS = 0
+        self.rps = 0
         self.selfload = 0
         self.time_lag = 0
         self.planned_rps_duration = 0
@@ -326,10 +324,10 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
         res += "\nPlanned requests: %s for %s\nActual responses: " % (
             self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
-        if not self.planned == self.RPS:
-            res += screen.markup.YELLOW + str(self.RPS) + screen.markup.RESET
+        if not self.planned == self.rps:
+            res += screen.markup.YELLOW + str(self.rps) + screen.markup.RESET
         else:
-            res += str(self.RPS)
+            res += str(self.rps)
 
         res += "\n        Accuracy: "
         if self.selfload < 80:
@@ -358,7 +356,7 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
             self.planned = second_aggregate_data.overall.planned_requests
             self.planned_rps_duration = 1
 
-        self.RPS = second_aggregate_data.overall.RPS
+        self.rps = second_aggregate_data.overall.rps
         self.selfload = second_aggregate_data.overall.selfload
         self.time_lag = int(
             time.time() - time.mktime(second_aggregate_data.time.timetuple()))

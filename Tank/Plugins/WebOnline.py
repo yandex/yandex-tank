@@ -1,4 +1,4 @@
-''' local webserver with online graphs '''
+""" local webserver with online graphs """
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
 import json
@@ -13,7 +13,7 @@ import tankcore
 
 
 class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
-    ''' web online plugin '''
+    """ web online plugin """
     SECTION = "web"
 
     @staticmethod
@@ -73,21 +73,21 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
 
 
     def run(self):
-        if (self.server):
+        if self.server:
             address = socket.gethostname()
             self.log.info("Starting local HTTP server for online view at port: http://%s:%s/", address, self.port)
             self.server.serve_forever()
 
 
     def __calculate_quantiles(self, data):
-        ''' prepare response quantiles data '''
+        """ prepare response quantiles data """
         if not self.quantiles_data:
             header = ["timeStamp", "requestCount"]
             quantiles = [int(x) for x in sorted(data.overall.quantiles.keys(), reverse=True)]
             header += quantiles
             self.quantiles_data = [header, []]
-        item_data = {"timeStamp": time.mktime(data.time.timetuple()),
-                     "requestCount": data.overall.planned_requests if data.overall.planned_requests else data.overall.RPS}
+        req = data.overall.planned_requests if data.overall.planned_requests else data.overall.rps
+        item_data = {"timeStamp": time.mktime(data.time.timetuple()), "requestCount": req}
         for level, timing in data.overall.quantiles.iteritems():
             item_data[str(int(level))] = timing
 
@@ -97,7 +97,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
 
 
     def __calculate_avg(self, data):
-        ''' prepare response avg times data '''
+        """ prepare response avg times data """
         if not self.avg_data:
             header = ["timeStamp", "connect", "send", "latency", "receive"]
             self.avg_data = [header, []]
@@ -114,7 +114,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
 
 
     def __calculate_codes(self, data):
-        ''' prepare response codes data '''
+        """ prepare response codes data """
         if not self.codes_data:
             header = ["timeStamp", "net", "2xx", "3xx", "4xx", "5xx", "Non-HTTP"]
             self.codes_data = [header, []]
@@ -155,7 +155,7 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
 
 # http://fragments.turtlemeat.com/pythonwebserver.php
 class OnlineServer(HTTPServer):
-    ''' web server starter '''
+    """ web server starter """
 
     def __init__(self, server_address, handler_class, bind_and_activate=True):
         HTTPServer.allow_reuse_address = True
@@ -164,7 +164,7 @@ class OnlineServer(HTTPServer):
 
 
 class WebOnlineHandler(BaseHTTPRequestHandler):
-    ''' request handler '''
+    """ request handler """
 
     def __init__(self, request, client_address, server):
         self.log = logging.getLogger(__name__)
@@ -177,7 +177,7 @@ class WebOnlineHandler(BaseHTTPRequestHandler):
         self.log.debug(fmt % args)
 
     def do_GET(self):
-        ''' handle GET request '''
+        """ handle GET request """
         try:
             if self.path == '/':
                 self.send_response(200)
@@ -212,7 +212,7 @@ class WebOnlineHandler(BaseHTTPRequestHandler):
                         for code, count in sec.overall.net_codes.iteritems():
                             if code != "0":
                                 net += count
-                        data = (sec.overall.active_threads, sec.overall.planned_requests, sec.overall.RPS,
+                        data = (sec.overall.active_threads, sec.overall.planned_requests, sec.overall.rps,
                                 sec.overall.avg_response_time, net)
                     else:
                         data = (0, 0, 0, 0, 0)
