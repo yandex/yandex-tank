@@ -398,7 +398,7 @@ class StreamConfig:
                 logging.debug("Problems creating socket: %s", traceback.format_exc(msg))
                 test_sock = None
                 continue
-            self.log.info("Trying to establish test connection to resolved IP: %s", sa)
+            self.log.debug("Trying to establish test connection to resolved IP: %s", sa)
             try:
                test_sock.settimeout(5)
                test_sock.connect(sa)
@@ -409,7 +409,7 @@ class StreamConfig:
             else:
                 test_sock.close()
                 self.address = connected_ip = sa[0]
-                self.log.info("Successfully established connection to %s, port %s", self.address, self.port)
+                self.log.debug("Successfully established connection to %s, port %s", self.address, self.port)
                 return
         if not connected_ip:
             raise RuntimeError("Unable to establish test connection to specified hostname on following port", self.address, self.port)
