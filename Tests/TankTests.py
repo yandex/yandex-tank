@@ -9,6 +9,7 @@ from tankcore import TankCore
 
 
 class TankTestCase(unittest.TestCase):
+    '''
     formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s\t%(message)s")
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)
@@ -17,6 +18,7 @@ class TankTestCase(unittest.TestCase):
     ch.setFormatter(formatter)
     logger.addHandler(ch)
     logger.debug("Starting Unit Test")
+    '''
 
     def get_aggregate_data(self, filename):
         return SecondAggregateData(SecondAggregateDataTotalItem())

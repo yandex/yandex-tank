@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 
 from Tank.Plugins.Distributed import DistributedPlugin
 from Tests.TankTests import TankTestCase
@@ -26,3 +27,11 @@ class FakeAPIClient(TankAPIClient):
     def __init__(self, address, port, to):
         TankAPIClient.__init__(self, address, port, to)
         logging.debug("Fake API client for %s", address)
+
+    def get_status(self):
+        status = int(random.random() * 4)
+        logging.debug("Mocking status for %s: %s", self, status)
+        return status
+
+    def book(self):
+        return True
