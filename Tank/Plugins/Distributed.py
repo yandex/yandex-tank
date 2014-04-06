@@ -4,6 +4,7 @@ import fnmatch
 import os
 import random
 import time
+import traceback
 
 from tankcore import AbstractPlugin
 from Tank.API.client import TankAPIClient
@@ -27,7 +28,6 @@ class DistributedPlugin(AbstractPlugin):
         self.api_clients = []
         self.api_client_class = TankAPIClient
         self.config_file = None
-
 
     def get_available_options(self):
         return ["api_port", "api_timeout",
@@ -68,7 +68,6 @@ class DistributedPlugin(AbstractPlugin):
         self.choose_tanks()
         self.prepare_tanks()
 
-
     def start_test(self):
         """ starting test  """
         for tank in self.chosen_tanks:
@@ -88,7 +87,7 @@ class DistributedPlugin(AbstractPlugin):
         """ download artifacts """
         if self.artifacts_to_download:
             for tank in self.chosen_tanks:
-                while tank.get_status() != TankAPIClient.FINISHED:
+                while tank.get_test_status()["status"] != TankAPIClient.FINISHED:
                     self.log.info("Waiting for test shutdown at %s...", tank.address)
                     time.sleep(5)
                 self.download_artifacts(tank)
@@ -128,8 +127,12 @@ class DistributedPlugin(AbstractPlugin):
         while len(self.chosen_tanks) < self.tanks_count:
             self.chosen_tanks = []
             for tank in self.api_clients:
-                if len(self.chosen_tanks) < self.tanks_count and tank.book(self.exclusive_mode):
-                    self.chosen_tanks.append(tank)
+                try:
+                    if len(self.chosen_tanks) < self.tanks_count and tank.book(self.exclusive_mode):
+                        self.chosen_tanks.append(tank)
+                except Exception, exc:
+                    self.log.info("Tank %s is unavailable: %s", tank.address, exc.message)
+                    self.log.debug("Full exception: %s", traceback.format_exc(exc))
 
             if len(self.chosen_tanks) < self.tanks_count:
                 self.log.info("Not enough tanks available (%s), waiting 5sec before retry...", len(self.chosen_tanks))
@@ -137,7 +140,6 @@ class DistributedPlugin(AbstractPlugin):
                 for tank in self.chosen_tanks:
                     tank.release()
                 time.sleep(5)
-
 
     def prepare_tanks(self):
         self.log.info("Preparing chosen tanks: %s", [t.address for t in self.chosen_tanks])
@@ -149,7 +151,7 @@ class DistributedPlugin(AbstractPlugin):
             self.log.debug("Waiting tanks: %s", pending_tanks)
             new_pending = []
             for tank in pending_tanks:
-                if tank.get_status() != TankAPIClient.PREPARED:
+                if tank.get_test_status()["status"] != TankAPIClient.PREPARED:
                     new_pending.append(tank)
 
             pending_tanks = new_pending
