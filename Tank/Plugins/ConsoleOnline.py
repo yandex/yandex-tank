@@ -113,6 +113,7 @@ class RealConsoleMarkup(object):
     BG_GREEN = '\033[1;42m'
     BG_BROWN = '\033[1;43m'
     BG_CYAN = '\033[1;46m'
+    BG_DARKGRAY = '\033[100m'
 
     def clean_markup(self, orig_str):
         """ clean markup from string """

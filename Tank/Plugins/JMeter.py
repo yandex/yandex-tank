@@ -84,13 +84,11 @@ class JMeterPlugin(AbstractPlugin):
             if aggregator:
                 aggregator.add_result_listener(widget)
 
-
     def start_test(self):
         self.log.info("Starting %s with arguments: %s", self.jmeter_path, self.args)
         self.jmeter_process = subprocess.Popen(self.args, executable=self.jmeter_path, preexec_fn=os.setsid,
                                                close_fds=True)  # stderr=subprocess.PIPE, stdout=subprocess.PIPE,
         self.start_time = time.time()
-
 
     def is_test_finished(self):
         retcode = self.jmeter_process.poll()
@@ -99,7 +97,6 @@ class JMeterPlugin(AbstractPlugin):
             return retcode
         else:
             return -1
-
 
     def end_test(self, retcode):
         if self.jmeter_process:
@@ -112,7 +109,6 @@ class JMeterPlugin(AbstractPlugin):
 
         self.core.add_artifact_file(self.jmeter_log)
         return retcode
-
 
     def __add_jmeter_components(self, jmx, jtl, variables):
         """ Genius idea by Alexey Lavrenyuk """
@@ -362,7 +358,8 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         dur_seconds = int(time.time()) - int(self.jmeter.start_time)
         duration = str(datetime.timedelta(seconds=dur_seconds))
 
-        template = screen.markup.BG_MAGENTA + '~' * left_spaces + jmeter + ' ' + '~' * right_spaces + screen.markup.RESET + "\n"
+        template = screen.markup.BG_MAGENTA + '~' * left_spaces + jmeter + ' '
+        template += '~' * right_spaces + screen.markup.RESET + "\n"
         template += "     Test Plan: %s\n"
         template += "      Duration: %s\n"
         template += "Active Threads: %s\n"

@@ -5,7 +5,10 @@ import os
 import random
 import time
 import traceback
+import datetime
 
+from Tank.Plugins import ConsoleScreen
+from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from tankcore import AbstractPlugin
 from Tank.API.client import TankAPIClient
 
@@ -16,6 +19,7 @@ class DistributedPlugin(AbstractPlugin):
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         # config options
+        self.retry_interval = 5
         self.running_tests = []
         self.tanks_count = 1
         self.configs = []
@@ -31,11 +35,12 @@ class DistributedPlugin(AbstractPlugin):
         self.config_file = None
 
     def get_available_options(self):
-        return ["api_port", "api_timeout",
+        return ["api_port", "api_timeout", "retry_interval",
                 "tanks_pool", "tanks_count", "random_tanks", "exclusive_mode"
                                                              "configs", "options", "files", "download_artifacts"]
 
     def configure(self):
+        self.retry_interval = int(self.get_option("retry_interval", self.retry_interval))
         api_timeout = int(self.get_option("api_timeout", 5))
         self.exclusive_mode = int(self.get_option("exclusive_mode", self.exclusive_mode))
 
@@ -45,6 +50,9 @@ class DistributedPlugin(AbstractPlugin):
             self.tanks_count = len(tanks_pool)
         else:
             self.tanks_count = int(count)
+            if self.tanks_count < len(tanks_pool):
+                msg = "Misconfigured: tanks_count(%s) cannot be less than tanks_pool size(%s)"
+                raise ValueError(msg % (self.tanks_count, len(tanks_pool)))
 
         random_tanks = int(self.get_option("random_tanks", 0))
         if random_tanks:
@@ -65,6 +73,16 @@ class DistributedPlugin(AbstractPlugin):
 
     def prepare_test(self):
         """ choosing tanks, uploading files, calling configure and prepare """
+        try:
+            console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+        except Exception, ex:
+            self.log.debug("Console not found: %s", ex)
+            console = None
+
+        if console:
+            widget = DistributedInfoWidget(self)
+            console.add_info_widget(widget)
+
         self.choose_tanks()
         self.prepare_tanks()
 
@@ -101,7 +119,7 @@ class DistributedPlugin(AbstractPlugin):
         for tank in self.chosen_tanks:
             while tank.get_test_status()["status"] != TankAPIClient.FINISHED:
                 self.log.info("Waiting for test shutdown on %s...", tank.address)
-                time.sleep(5)
+                time.sleep(self.retry_interval)
 
     def post_process(self, retcode):
         """ download artifacts """
@@ -145,18 +163,19 @@ class DistributedPlugin(AbstractPlugin):
             self.chosen_tanks = []
             for tank in self.api_clients:
                 try:
-                    if len(self.chosen_tanks) < self.tanks_count and tank.book(self.exclusive_mode):
+                    if len(self.chosen_tanks) < self.tanks_count and tank.initiate_test(self.exclusive_mode):
                         self.chosen_tanks.append(tank)
                 except Exception, exc:
-                    self.log.info("Tank %s is unavailable: %s", tank.address, exc.message)
+                    self.log.info("Tank %s is unavailable: %s", tank.address, exc)
                     self.log.debug("Full exception: %s", traceback.format_exc(exc))
 
             if len(self.chosen_tanks) < self.tanks_count:
-                self.log.info("Not enough tanks available (%s), waiting 5sec before retry...", len(self.chosen_tanks))
+                self.log.info("Not enough tanks available (%s), waiting %ss before retry...",
+                              len(self.chosen_tanks), self.retry_interval)
                 self.log.debug("Releasing booked tanks")
                 for tank in self.chosen_tanks:
                     tank.release()
-                time.sleep(5)
+                time.sleep(self.retry_interval)
 
     def prepare_tanks(self):
         self.log.info("Preparing chosen tanks: %s", [t.address for t in self.chosen_tanks])
@@ -174,7 +193,7 @@ class DistributedPlugin(AbstractPlugin):
             pending_tanks = new_pending
             if len(pending_tanks):
                 self.log.info("Waiting tanks: %s", [t.address for t in pending_tanks])
-                time.sleep(5)
+                time.sleep(self.retry_interval)
         self.log.debug("Done waiting preparations")
 
     def download_artifacts(self, tank):
@@ -186,3 +205,39 @@ class DistributedPlugin(AbstractPlugin):
                     local_name = self.core.artifacts_base_dir + os.path.sep + artifact
                     tank.download_artifact(artifact, local_name)
                     self.core.add_artifact_file(local_name)
+
+
+class DistributedInfoWidget(AbstractInfoWidget):
+    def __init__(self, owner):
+        AbstractInfoWidget.__init__(self)
+        self.owner = owner
+        self.krutilka = ConsoleScreen.krutilka()
+
+    def get_index(self):
+        return 0
+
+    def aggregate_second(self, second_aggregate_data):
+        #self.active_threads = second_aggregate_data.overall.active_threads
+        #self.rps = second_aggregate_data.overall.rps
+        #TODO: use the data
+        pass
+
+    def render(self, screen):
+        jmeter = " Distributed Test %s" % self.krutilka.next()
+        space = screen.right_panel_width - len(jmeter) - 1
+        left_spaces = space / 2
+        right_spaces = space / 2
+
+        dur_seconds = int(time.time()) - int(self.owner.start_time)
+        duration = str(datetime.timedelta(seconds=dur_seconds))
+
+        template = screen.markup.BG_DARKGRAY + ':' * left_spaces + jmeter + ' '
+        template += ':' * right_spaces + screen.markup.RESET + "\n"
+        #TODO: add relevant data
+        #template += "     Test Plan: %s\n"
+        template += "      Duration: %s\n"
+        #template += "Active Threads: %s\n"
+        #template += "   Responses/s: %s"
+        data = duration
+
+        return template % data

@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import urllib
 
 from Tank.Plugins.Distributed import DistributedPlugin
 from Tests.TankTests import TankTestCase
@@ -49,15 +50,17 @@ class FakeAPIClient(TankAPIClient):
         self.post_data = []
 
     def query_get(self, url, params=None):
-        logging.debug(" Mocking GET request: %s with %s", url, params)
+        if params:
+            url += "?" + urllib.urlencode(params)
+        logging.debug(" Mocking GET request: %s", url)
         resp = self.get_data.pop(0)
         logging.debug("Mocking GET response: %s", resp)
         if isinstance(resp, Exception):
             raise resp
         return resp
 
-    def query_post(self, url, params=None, body=None):
-        logging.debug(" Mocking POST request: %s with %s, body:\n%s", url, params, body)
+    def query_post(self, url, params=None, ct=None, body=None):
+        logging.debug(" Mocking POST request: %s with %s, body[%s]:\n%s", url, params, ct, body)
         resp = self.post_data.pop(0)
         logging.debug("Mocking POST response: %s", resp)
         if isinstance(resp, Exception):
