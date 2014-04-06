@@ -30,6 +30,8 @@ class DistributedPluginTestCase(TankTestCase):
             mock.get_data.append({"status": TankAPIClient.FINISHING, "exclusive": 1})
             mock.get_data.append({"status": TankAPIClient.FINISHED, "exclusive": 1})
             mock.get_data.append({"status": TankAPIClient.FINISHED, "artifacts": ["tank.log", "test.log", "phout.txt"]})
+            mock.get_data.append("some content")
+            mock.get_data.append("some more content")
 
         self.foo.prepare_test()
         self.foo.start_test()
@@ -62,5 +64,8 @@ class FakeAPIClient(TankAPIClient):
             raise resp
         return resp
 
-
-
+    def query_get_to_file(self, url, params, local_name):
+        resp = self.query_get(url, params)
+        logging.debug("Saving data to %s", local_name)
+        with open(local_name, "wb") as fd:
+            fd.write("%s" % resp)

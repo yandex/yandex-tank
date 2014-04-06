@@ -39,22 +39,9 @@ class TankAPIClient:
 
     def book(self, exclusive):
         """        get ticket        """
-        if self.ticket:
-            raise RuntimeError("Already booked a ticket: %s" % self.ticket)
-
         response = self.query_get("/book_test.json", {"exclusive": exclusive})
         self.ticket = response["ticket"]
         return self.ticket
-
-    def release(self):
-        """ release ticket        """
-        if self.ticket:
-            self.query_get("/release_tank.json")
-        else:
-            logging.debug("No ticket, nothing to release")
-
-        # may I use this to clean up the state???
-        self.__init__(self.address, self.timeout, None)
 
     def get_test_status(self):
         return self.query_get("/test_status.json", {"ticket": self.ticket})
@@ -81,4 +68,3 @@ class TankAPIClient:
 
     def download_artifact(self, remote_name, local_name):
         self.query_get_to_file("/download_artifact", {"ticket": self.ticket, "filename": remote_name}, local_name)
-
