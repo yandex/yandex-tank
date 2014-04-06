@@ -8,7 +8,7 @@ import sys
 
 from Tank.API.client import TankAPIClient
 
-from Tank.API.server import TankAPIServer, TankAPIHandler
+from Tank.API.server import TankAPIServer, HTTPAPIHandler
 from tankcore import TankCore
 
 
@@ -65,7 +65,6 @@ if __name__ == "__main__":
 
     address = socket.gethostname()
     port = int(ini_reader.get_option(SECTION, "port", TankAPIClient.DEFAULT_PORT))
-    server = TankAPIServer(('', port), TankAPIHandler)
-    server.allow_reuse_address = True
+    server = TankAPIServer(('', port), HTTPAPIHandler)
     logging.info("Starting local HTTP server for online view at port: http://%s:%s/", address, port)
     server.serve_forever()

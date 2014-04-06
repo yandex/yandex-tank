@@ -3,12 +3,22 @@ import logging
 import os
 import urllib
 import urllib2
+import urlparse
 
 from Tank.API.utils import MultiPartForm
 
 
 class TankAPIClient:
     DEFAULT_PORT = 8080
+
+    # urls
+    TANK_STATUS_JSON = "/tank_status.json"
+    INTERRUPT_TEST_JSON = "/interrupt_test.json"
+    START_TEST_JSON = "/start_test.json"
+    PREPARE_TEST_JSON = "/prepare_test.json"
+    TEST_STATUS_JSON = "/test_status.json"
+    INITIATE_TEST_JSON = "/initiate_test.json"
+
     # ticket statuses
     UNKNOWN = "UNKNOWN"
     BOOKED = "BOOKED"
@@ -33,7 +43,9 @@ class TankAPIClient:
         return "{%s %s}" % (self.__class__.__name__, self.address)
 
     def __build_url(self, url, params=None):
-        if not ':' in self.address:
+        parsed=urlparse.urlparse(self.address)
+
+        if not ':' in parsed.netloc:
             url = "%s:%s%s" % (self.address, self.DEFAULT_PORT, url)
         else:
             url = self.address + url
@@ -84,16 +96,16 @@ class TankAPIClient:
             fd.write(response.read())
 
     def get_tank_status(self):
-        return self.query_get("/tank_status.json")
+        return self.query_get(self.TANK_STATUS_JSON)
 
     def initiate_test(self, exclusive):
         """        get ticket        """
-        response = self.query_get("/initiate_test.json", {"exclusive": exclusive})
+        response = self.query_get(self.INITIATE_TEST_JSON, {"exclusive": exclusive})
         self.ticket = response["ticket"]
         return self.ticket
 
     def get_test_status(self):
-        return self.query_get("/test_status.json", {"ticket": self.ticket})
+        return self.query_get(self.TEST_STATUS_JSON, {"ticket": self.ticket})
 
     def prepare_test(self, config_file, additional_files=()):
         """ send files, but do not wait for preparing """
@@ -106,13 +118,13 @@ class TankAPIClient:
             with open(extra_file) as fd:
                 body.add_file_as_string("file_%s" % extra_file, os.path.basename(extra_file), fd.read())
 
-        self.query_post("/prepare_test.json", {"ticket": self.ticket}, body.get_content_type(), str(body))
+        self.query_post(self.PREPARE_TEST_JSON, {"ticket": self.ticket}, body.get_content_type(), str(body))
 
     def start_test(self):
-        self.query_get("/start_test.json", {"ticket": self.ticket})
+        self.query_get(self.START_TEST_JSON, {"ticket": self.ticket})
 
     def interrupt(self):
-        self.query_get("/interrupt_test.json", {"ticket": self.ticket})
+        self.query_get(self.INTERRUPT_TEST_JSON, {"ticket": self.ticket})
 
     def download_artifact(self, remote_name, local_name):
         self.query_get_to_file("/download_artifact", {"ticket": self.ticket, "filename": remote_name}, local_name)

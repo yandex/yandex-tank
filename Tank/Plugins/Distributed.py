@@ -174,7 +174,7 @@ class DistributedPlugin(AbstractPlugin):
                               len(self.chosen_tanks), self.retry_interval)
                 self.log.debug("Releasing booked tanks")
                 for tank in self.chosen_tanks:
-                    tank.release()
+                    tank.interrupt()
                 time.sleep(self.retry_interval)
 
     def prepare_tanks(self):

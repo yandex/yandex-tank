@@ -3,6 +3,12 @@ from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import json
 import logging
 import os
+import tempfile
+from urllib2 import HTTPError
+import urlparse
+import datetime
+
+from Tank.API.client import TankAPIClient
 
 
 class TankAPIServer(HTTPServer):
@@ -11,64 +17,83 @@ class TankAPIServer(HTTPServer):
     def __init__(self, server_address, handler_class, bind_and_activate=True):
         HTTPServer.allow_reuse_address = True
         HTTPServer.__init__(self, server_address, handler_class, bind_and_activate)
+        self.handler = TankAPIHandler()
 
 
-class TankAPIHandler(BaseHTTPRequestHandler):
-    """ request handler """
+class HTTPAPIHandler(BaseHTTPRequestHandler):
+    """ request proxy """
 
     def __init__(self, request, client_address, server):
         BaseHTTPRequestHandler.__init__(self, request, client_address, server)
 
     def do_GET(self):
         """ handle GET request """
+        handler = self.server.handler
         try:
-            if self.path == '/':
-                self.send_response(200)
-                self.send_header('Content-Type', 'text/html')
-                self.end_headers()
+            results = handler.handle_get(self.path)
+            self.send_response(results[0])
+            for name, val in results[1].iteritems():
+                self.send_header(name, val)
+            self.end_headers()
+            self.wfile.write(results[2])
+        except HTTPError, exc:
+            self.send_error(exc.getcode(), exc.msg)
 
-                fhandle = open(os.path.dirname(__file__) + '/online.html')
-                self.wfile.write(fhandle.read())
-                fhandle.close()
 
-            elif self.path.endswith(".ico"):
-                self.send_response(200)
-                self.send_header('Content-Type', 'text/html')
-                self.end_headers()
-                self.wfile.write("")
-            elif self.path.endswith(".json"):
-                self.send_response(200)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                if self.path == '/Q.json':
-                    self.wfile.write(json.dumps(self.server.owner.quantiles_data))
-                if self.path == '/HTTP.json':
-                    self.wfile.write(json.dumps(self.server.owner.codes_data))
-                if self.path == '/Avg.json':
-                    self.wfile.write(json.dumps(self.server.owner.avg_data))
-                elif self.path == '/redirect.json':
-                    self.wfile.write('["%s"]' % self.server.owner.redirect)
-                elif self.path == '/numbers.json':
-                    sec = self.server.owner.last_sec
-                    net = 0
-                    if sec:
-                        for code, count in sec.overall.net_codes.iteritems():
-                            if code != "0":
-                                net += count
-                        data = (sec.overall.active_threads, sec.overall.planned_requests, sec.overall.rps,
-                                sec.overall.avg_response_time, net)
-                    else:
-                        data = (0, 0, 0, 0, 0)
-                    self.wfile.write('{"instances": %s, "planned": %s, "actual": %s, "avg": %s, "net": %s}' % data)
+class TankAPIHandler:
+    def __init__(self):
+        self.live_tickets = {}
+
+    def handle_get(self, path):
+        static = self.__handled_static(path)
+        if static:
+            return static
+        else:
+            parsed_path = urlparse.urlparse(path)
+            params = urlparse.parse_qs(parsed_path.query)
+            for k in params:
+                params[k] = params[k][0]
+            if parsed_path.path.endswith(".json"):
+                return 200, {'Content-Type': 'application/json'}, json.dumps(
+                    self.__handled_get_json(parsed_path.path, params))
+            elif parsed_path.path == "/download_artifact":
+                #TODO
+                return 200, {'Content-Type': 'application/octet-stream'}, ''
             else:
-                self.send_response(200)
-                self.send_header('Content-Type', 'text/html')
-                self.end_headers()
+                raise HTTPError(path, 404, "Not Found", {}, None)
 
-                fhandle = open(os.path.dirname(__file__) + self.path)
-                self.wfile.write(fhandle.read())
-                fhandle.close()
-        except IOError:
-            logging.warn("404: %s" % self.path)
-            self.send_error(404, 'File Not Found: %s' % self.path)
+    def __handled_static(self, path):
+        if path == '/' or path == '/client.html':
+            with open(os.path.dirname(__file__) + '/client.html') as fhandle:
+                return 200, {'Content-Type': 'text/html'}, fhandle.read()
+        if path == '/client.js':
+            with open(os.path.dirname(__file__) + '/client.js') as fhandle:
+                return 200, {'Content-Type': 'application/x-javascript'}, fhandle.read()
+        elif path == "/favicon.ico":
+            with open(os.path.dirname(__file__) + '/favicon.ico') as fhandle:
+                return 200, {'Content-Type': 'image/x-icon'}, fhandle.read()
+        else:
+            return False
 
+    def __handled_get_json(self, path, params):
+        logging.debug("Get JSON: %s %s", path, params)
+        if path == TankAPIClient.INITIATE_TEST_JSON:
+            if 'exclusive' in params and params['exclusive']:
+                exclusive = True
+            else:
+                exclusive = False
+
+            if exclusive and self.live_tickets:
+                raise HTTPError(path, 423, "Cannot obtain exclusive lock, the server is busy", {}, None)
+
+            ticket = self.__generate_new_ticket(exclusive)
+            logging.debug("Created new ticket: %s", ticket)
+            self.live_tickets[ticket['ticket']] = ticket
+            return ticket
+        elif path == TankAPIClient.INTERRUPT_TEST_JSON:
+            del self.live_tickets[params['ticket']]
+            return {}
+
+    def __generate_new_ticket(self, exclusive=False):
+        ticket = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.") + os.path.basename(tempfile.mktemp())
+        return {"status": TankAPIClient.BOOKED, "ticket": ticket, "exclusive": exclusive}
