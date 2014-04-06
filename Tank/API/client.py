@@ -10,13 +10,12 @@ class TankAPIClient:
     BOOKED = "BOOKED"
     PREPARING = "PREPARING"
     PREPARED = "PREPARED"
-    TESTING = "TESTING"
+    RUNNING = "RUNNING"
     FINISHING = "FINISHING"
     FINISHED = "FINISHED"
 
-    def __init__(self, address, port, timeout, ticket=None):
+    def __init__(self, address, timeout, ticket=None):
         self.timeout = timeout
-        self.port = port
         self.address = address
         if ticket:
             self.ticket = ticket
@@ -24,12 +23,15 @@ class TankAPIClient:
             self.ticket = None
 
     def __repr__(self):
-        return "{%s %s:%s}" % (self.__class__.__name__, self.address, self.port)
+        return "{%s %s}" % (self.__class__.__name__, self.address)
 
     def query_get(self, url, params=None):
         return {}
 
-    def query_post(self, url, params=None, body=None):
+    def query_post(self, url, params, body):
+        return {}
+
+    def query_get_to_file(self, url, params, local_name):
         return {}
 
     def get_tank_status(self):
@@ -40,7 +42,7 @@ class TankAPIClient:
         if self.ticket:
             raise RuntimeError("Already booked a ticket: %s" % self.ticket)
 
-        response = self.query_get("/book_tank.json", {"exclusive": exclusive})
+        response = self.query_get("/book_test.json", {"exclusive": exclusive})
         self.ticket = response["ticket"]
         return self.ticket
 
@@ -52,7 +54,7 @@ class TankAPIClient:
             logging.debug("No ticket, nothing to release")
 
         # may I use this to clean up the state???
-        self.__init__(self.address, self.port, self.timeout, None)
+        self.__init__(self.address, self.timeout, None)
 
     def get_test_status(self):
         return self.query_get("/test_status.json", {"ticket": self.ticket})
@@ -72,14 +74,11 @@ class TankAPIClient:
         self.query_post("/prepare_test.json", {"ticket": self.ticket}, str(body))
 
     def start_test(self):
-        pass
+        self.query_get("/start_test.json", {"ticket": self.ticket})
 
     def interrupt(self):
         self.query_get("/interrupt_test.json", {"ticket": self.ticket})
 
-    def get_artifacts_list(self):
-        return self.query_get("/artifacts_list.json", {"ticket": self.ticket})
-
     def download_artifact(self, remote_name, local_name):
-        pass
+        self.query_get_to_file("/download_artifact", {"ticket": self.ticket, "filename": remote_name}, local_name)
 

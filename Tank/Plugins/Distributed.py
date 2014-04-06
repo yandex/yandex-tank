@@ -16,6 +16,7 @@ class DistributedPlugin(AbstractPlugin):
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         # config options
+        self.running_tests = []
         self.tanks_count = 1
         self.configs = []
         self.options = []
@@ -35,7 +36,6 @@ class DistributedPlugin(AbstractPlugin):
                                                              "configs", "options", "files", "download_artifacts"]
 
     def configure(self):
-        api_port = int(self.get_option("api_port", 8003))
         api_timeout = int(self.get_option("api_timeout", 5))
         self.exclusive_mode = int(self.get_option("exclusive_mode", self.exclusive_mode))
 
@@ -58,7 +58,7 @@ class DistributedPlugin(AbstractPlugin):
         # done reading options, do some preparations
 
         for tank in tanks_pool:
-            self.api_clients.append(self.api_client_class(tank, api_port, api_timeout))
+            self.api_clients.append(self.api_client_class(tank, api_timeout))
 
         self.config_file = self.compose_load_ini(self.configs, self.options)
         self.core.add_artifact_file(self.config_file)
@@ -72,24 +72,41 @@ class DistributedPlugin(AbstractPlugin):
         """ starting test  """
         for tank in self.chosen_tanks:
             tank.start_test()
+            self.running_tests.append(tank)
 
     def is_test_finished(self):
         """ polling for the status of remote jobs """
-        return AbstractPlugin.is_test_finished(self)
+        retcode = AbstractPlugin.is_test_finished(self)
+        new_running = []
+        for tank in self.running_tests:
+            status = tank.get_test_status()
+            if status["status"] == TankAPIClient.RUNNING:
+                new_running.append(tank)
+            else:
+                self.log.info("Tank has finished the test: %s", tank.address)
+
+        self.running_tests = new_running
+
+        if not self.running_tests:
+            retcode = 0
+
+        return retcode
 
     def end_test(self, retcode):
         """ call graceful shutdown for all tests """
         self.log.info("Shutting down remote tests...")
-        for tank in self.chosen_tanks:
+        for tank in self.running_tests:
             tank.interrupt()
+
+        for tank in self.chosen_tanks:
+            while tank.get_test_status()["status"] != TankAPIClient.FINISHED:
+                self.log.info("Waiting for test shutdown on %s...", tank.address)
+                time.sleep(5)
 
     def post_process(self, retcode):
         """ download artifacts """
         if self.artifacts_to_download:
             for tank in self.chosen_tanks:
-                while tank.get_test_status()["status"] != TankAPIClient.FINISHED:
-                    self.log.info("Waiting for test shutdown at %s...", tank.address)
-                    time.sleep(5)
                 self.download_artifacts(tank)
 
     @staticmethod
@@ -161,7 +178,7 @@ class DistributedPlugin(AbstractPlugin):
         self.log.debug("Done waiting preparations")
 
     def download_artifacts(self, tank):
-        artifacts = tank.get_artifacts_list()
+        artifacts = tank.get_test_status()["artifacts"]
         for fname in self.artifacts_to_download:
             for artifact in artifacts:
                 if fnmatch.fnmatch(artifact, fname):
