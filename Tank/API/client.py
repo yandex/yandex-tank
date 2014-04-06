@@ -8,6 +8,7 @@ from Tank.API.utils import MultiPartForm
 
 
 class TankAPIClient:
+    DEFAULT_PORT = 8080
     # ticket statuses
     UNKNOWN = "UNKNOWN"
     BOOKED = "BOOKED"
@@ -32,7 +33,10 @@ class TankAPIClient:
         return "{%s %s}" % (self.__class__.__name__, self.address)
 
     def __build_url(self, url, params=None):
-        url = self.address + url
+        if not ':' in self.address:
+            url = "%s:%s%s" % (self.address, self.DEFAULT_PORT, url)
+        else:
+            url = self.address + url
 
         if not self.address.lower().startswith("http://") and not self.address.lower().startswith("https://"):
             url = "http://" + url
@@ -45,7 +49,7 @@ class TankAPIClient:
     def query_get(self, url, params=None):
         request = urllib2.Request(self.__build_url(url, params))
         logging.debug("API Request: %s", request.get_full_url())
-        response = urllib2.urlopen(request)
+        response = urllib2.urlopen(request, timeout=self.timeout)
         if response.getcode() != 200:
             resp = response.read()
             logging.debug("Full response: %s", resp)
@@ -59,7 +63,7 @@ class TankAPIClient:
         request.add_header('Content-Length', len(body))
         request.add_data(body)
 
-        response = urllib2.urlopen(request)
+        response = urllib2.urlopen(request, timeout=self.timeout)
         if response.getcode() != 200:
             resp = response.read()
             logging.debug("Full response: %s", resp)
@@ -69,7 +73,7 @@ class TankAPIClient:
 
     def query_get_to_file(self, url, params, local_name):
         request = urllib2.Request(self.__build_url(url, params))
-        response = urllib2.urlopen(request)
+        response = urllib2.urlopen(request, timeout=self.timeout)
         if response.getcode() != 200:
             resp = response.read()
             logging.debug("Full response: %s", resp)
