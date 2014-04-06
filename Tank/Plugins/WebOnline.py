@@ -43,7 +43,6 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.redirect = self.get_option("redirect", self.redirect)
         self.manual_stop = int(self.get_option('manual_stop', self.manual_stop))
 
-
     def prepare_test(self):
         try:
             self.server = OnlineServer(('', self.port), WebOnlineHandler)
@@ -53,10 +52,8 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         except Exception, ex:
             self.log.warning("Failed to start web results server: %s", ex)
 
-
     def start_test(self):
         self.start()
-
 
     def end_test(self, retcode):
         # self.log.info("Shutting down local server")
@@ -71,13 +68,11 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.server = None
         return retcode
 
-
     def run(self):
         if self.server:
             address = socket.gethostname()
             self.log.info("Starting local HTTP server for online view at port: http://%s:%s/", address, self.port)
             self.server.serve_forever()
-
 
     def __calculate_quantiles(self, data):
         """ prepare response quantiles data """
@@ -95,7 +90,6 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         while len(self.quantiles_data[1]) > self.interval:
             self.quantiles_data[1].pop(0)
 
-
     def __calculate_avg(self, data):
         """ prepare response avg times data """
         if not self.avg_data:
@@ -111,7 +105,6 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.avg_data[1] += [item_data]
         while len(self.avg_data[1]) > self.interval:
             self.avg_data[1].pop(0)
-
 
     def __calculate_codes(self, data):
         """ prepare response codes data """
@@ -143,7 +136,6 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.codes_data[1] += [item_data]
         while len(self.codes_data[1]) > self.interval:
             self.codes_data[1].pop(0)
-
 
     def aggregate_second(self, data):
         self.last_sec = data
@@ -228,5 +220,3 @@ class WebOnlineHandler(BaseHTTPRequestHandler):
         except IOError:
             self.log.warning("404: %s" % self.path)
             self.send_error(404, 'File Not Found: %s' % self.path)
-
-
