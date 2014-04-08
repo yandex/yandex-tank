@@ -68,7 +68,7 @@ class DistributedPlugin(AbstractPlugin):
         for tank in tanks_pool:
             self.api_clients.append(self.api_client_class(tank, api_timeout))
 
-        self.config_file = self.compose_load_ini(self.configs, self.options)
+        self.config_file = self.__compose_load_ini(self.configs, self.options)
         self.core.add_artifact_file(self.config_file)
 
     def prepare_test(self):
@@ -83,8 +83,8 @@ class DistributedPlugin(AbstractPlugin):
             widget = DistributedInfoWidget(self)
             console.add_info_widget(widget)
 
-        self.choose_tanks()
-        self.prepare_tanks()
+        self.__choose_tanks()
+        self.__prepare_tanks()
 
     def start_test(self):
         """ starting test  """
@@ -113,25 +113,37 @@ class DistributedPlugin(AbstractPlugin):
     def end_test(self, retcode):
         """ call graceful shutdown for all tests """
         self.log.info("Shutting down remote tests...")
-        for tank in self.running_tests:
-            tank.interrupt()
+        for tank in self.chosen_tanks:
+            try:
+                tank.interrupt()
+            except Exception, exc:
+                self.log.warn("Exception while interrupting %s: %s", tank.address, exc)
+                self.log.info("Retrying after %ss...", self.retry_interval)
+                time.sleep(self.retry_interval)
+                try:
+                    tank.interrupt()
+                except Exception, exc:
+                    self.log.warn("Fatal exception while interrupting %s: %s", tank.address, traceback.format_exc(exc))
 
         for tank in self.chosen_tanks:
-            while tank.get_test_status()["status"] != TankAPIClient.FINISHED:
-                self.log.info("Waiting for test shutdown on %s...", tank.address)
-                time.sleep(self.retry_interval)
+            try:
+                while tank.get_test_status()["status"] != TankAPIClient.FINISHED:
+                    self.log.info("Waiting for test shutdown on %s...", tank.address)
+                    time.sleep(self.retry_interval)
+            except Exception, exc:
+                self.log.warn("Exception while waiting %s: %s", tank.address, traceback.format_exc(exc))
 
     def post_process(self, retcode):
         """ download artifacts """
         if self.artifacts_to_download:
             for tank in self.chosen_tanks:
-                self.download_artifacts(tank)
+                self.__download_artifacts(tank)
 
     @staticmethod
     def get_key():
         return __file__
 
-    def compose_load_ini(self, configs, options):
+    def __compose_load_ini(self, configs, options):
         fname = self.core.mkstemp('.ini', 'load_')
         self.log.debug("Composing config: %s", fname)
         with open(fname, "w") as fd:
@@ -157,7 +169,7 @@ class DistributedPlugin(AbstractPlugin):
 
         return fname
 
-    def choose_tanks(self):
+    def __choose_tanks(self):
         self.log.info("Choosing %s tanks from pool: %s", self.tanks_count, [t.address for t in self.api_clients])
         while len(self.chosen_tanks) < self.tanks_count:
             self.chosen_tanks = []
@@ -177,7 +189,7 @@ class DistributedPlugin(AbstractPlugin):
                     tank.interrupt()
                 time.sleep(self.retry_interval)
 
-    def prepare_tanks(self):
+    def __prepare_tanks(self):
         self.log.info("Preparing chosen tanks: %s", [t.address for t in self.chosen_tanks])
         for tank in self.chosen_tanks:
             tank.prepare_test(self.config_file, self.files)
@@ -196,7 +208,7 @@ class DistributedPlugin(AbstractPlugin):
                 time.sleep(self.retry_interval)
         self.log.debug("Done waiting preparations")
 
-    def download_artifacts(self, tank):
+    def __download_artifacts(self, tank):
         artifacts = tank.get_test_status()["artifacts"]
         for fname in self.artifacts_to_download:
             for artifact in artifacts:

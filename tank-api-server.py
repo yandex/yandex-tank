@@ -7,7 +7,6 @@ import socket
 import sys
 
 from Tank.API.client import TankAPIClient
-
 from Tank.API.server import TankAPIServer, HTTPAPIHandler
 from tankcore import TankCore
 
@@ -29,15 +28,15 @@ def get_configs():
     return configs
 
 
-def init_logging(log_filename=None):
+def init_logging(level, log_filename=None):
     """        Set up logging, as it is very important for console tool        """
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(level)
 
     # create file handler which logs even debug messages
     if log_filename:
         file_handler = logging.FileHandler(log_filename)
-        file_handler.setLevel(logging.DEBUG)
+        file_handler.setLevel(level)
         file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s"))
         logger.addHandler(file_handler)
 
@@ -53,9 +52,10 @@ if __name__ == "__main__":
     parser.add_option('-c', '--config', action='append',
                       help="Path to INI file containing run options, multiple options accepted")
     parser.add_option('-l', '--log', action='store', default="tank.log", help="Tank log file location")
+    parser.add_option('-d', '--debug', action='store_true', help="Enable debug messages")
     options, _ = parser.parse_args()
 
-    init_logging(options.log)
+    init_logging(logging.DEBUG if options.debug else logging.INFO, options.log)
 
     ini_reader = TankCore()
     if options.config:

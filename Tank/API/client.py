@@ -9,6 +9,7 @@ from Tank.API.utils import MultiPartForm
 
 
 class TankAPIClient:
+    CONFIG = "config"
     DEFAULT_PORT = 8080
 
     # urls
@@ -43,7 +44,7 @@ class TankAPIClient:
         return "{%s %s}" % (self.__class__.__name__, self.address)
 
     def __build_url(self, url, params=None):
-        parsed=urlparse.urlparse(self.address)
+        parsed = urlparse.urlparse(self.address)
 
         if not ':' in parsed.netloc:
             url = "%s:%s%s" % (self.address, self.DEFAULT_PORT, url)
@@ -67,13 +68,16 @@ class TankAPIClient:
             logging.debug("Full response: %s", resp)
             msg = "Tank API request failed, response code %s"
             raise RuntimeError(msg % response.getcode())
-        return json.loads(response.read())
+        resp = response.read()
+        logging.debug("Response: %s", resp)
+        return json.loads(resp)
 
     def query_post(self, url, params, content_type, body):
         request = urllib2.Request(self.__build_url(url, params))
         request.add_header('Content-Type', content_type)
         request.add_header('Content-Length', len(body))
         request.add_data(body)
+        logging.debug("API Request: %s", request.get_full_url())
 
         response = urllib2.urlopen(request, timeout=self.timeout)
         if response.getcode() != 200:
@@ -81,10 +85,13 @@ class TankAPIClient:
             logging.debug("Full response: %s", resp)
             msg = "Tank API request failed, response code %s"
             raise RuntimeError(msg % response.getcode())
-        return json.loads(response.read())
+        resp = response.read()
+        logging.debug("Response: %s", resp)
+        return json.loads(resp)
 
     def query_get_to_file(self, url, params, local_name):
         request = urllib2.Request(self.__build_url(url, params))
+        logging.debug("API Request: %s", request.get_full_url())
         response = urllib2.urlopen(request, timeout=self.timeout)
         if response.getcode() != 200:
             resp = response.read()
@@ -112,7 +119,7 @@ class TankAPIClient:
         body = MultiPartForm()
 
         with open(config_file) as fd:
-            body.add_file_as_string("config", "load.ini", fd.read())
+            body.add_file_as_string(self.CONFIG, os.path.basename(config_file), fd.read())
 
         for extra_file in additional_files:
             with open(extra_file) as fd:
@@ -128,4 +135,3 @@ class TankAPIClient:
 
     def download_artifact(self, remote_name, local_name):
         self.query_get_to_file("/download_artifact", {"ticket": self.ticket, "filename": remote_name}, local_name)
-
