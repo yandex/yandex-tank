@@ -1,6 +1,7 @@
 import ctypes
 import inspect
 import logging
+import os
 from threading import Thread
 import threading
 
@@ -48,41 +49,54 @@ class InterruptibleThread(Thread):
         self.__async_raise(self.__get_my_tid(), KeyboardInterrupt())
 
 
-class PrepareThread(InterruptibleThread):
+class AbstractTankThread(InterruptibleThread):
+    def __init__(self, core, cwd):
+        """
+
+        :type core: tankcore.TankCore
+        """
+        super(AbstractTankThread, self).__init__()
+        os.chdir(cwd)
+        self.daemon = True
+        self.core = core
+        self.retcode = -1
+
+    def graceful_shutdown(self):
+        self.retcode = self.core.plugins_end_test(self.retcode)
+        self.retcode = self.core.plugins_post_process(self.retcode)
+
+
+class PrepareThread(AbstractTankThread):
     def __init__(self, core, config):
         """
 
         :type core: tankcore.TankCore
         """
-        super(PrepareThread, self).__init__()
-        self.daemon = True
-        self.core = core
+        super(PrepareThread, self).__init__(core, os.path.dirname(config))
         self.config = config
 
 
     def run(self):
         logging.info("Starting prepare")
-        self.core.load_configs([self.config])
-        self.core.load_plugins()
-        self.core.plugins_configure()
-        self.core.plugins_prepare_test()
+        try:
+            self.core.load_configs([self.config])
+            self.core.load_plugins()
+            self.core.plugins_configure()
+            self.core.plugins_prepare_test()
+            self.retcode = 0
+        except Exception, exc:
+            self.retcode = 1
+            self.graceful_shutdown()
 
 
-class TestRunThread(InterruptibleThread):
-    def __init__(self, core, config):
-        """
-
-        :type core: tankcore.TankCore
-        """
-        super(TestRunThread, self).__init__()
-        self.daemon = True
-        self.core = core
-        self.config = config
-
+class TestRunThread(AbstractTankThread):
     def run(self):
         logging.info("Starting test")
-        self.core.plugins_start_test()
-        retcode = self.core.wait_for_finish()
-        retcode = self.core.plugins_end_test(retcode)
-        retcode = self.core.plugins_post_process(retcode)
+        try:
+            self.core.plugins_start_test()
+            self.retcode = self.core.wait_for_finish()
+        except Exception, exc:
+            self.retcode = 1
+        finally:
+            self.graceful_shutdown()
 

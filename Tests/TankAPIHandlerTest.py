@@ -26,9 +26,11 @@ class TankAPIHandlerTestCase(TankTestCase):
         self.obj.handle_post(TankAPIClient.PREPARE_TEST_JSON + "?ticket=" + res["ticket"], message, fd)
         while True:
             res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + res["ticket"])[2])
-            if res['status'] == TankAPIClient.STATUS_PREPARED:
+            if res['status'] != TankAPIClient.STATUS_PREPARING:
                 break
             time.sleep(1)
+
+        self.assertEqual(TankAPIClient.STATUS_PREPARED, res['status'])
 
         self.obj.handle_get(TankAPIClient.START_TEST_JSON + "?ticket=" + res["ticket"])
         for _ in range(1, 10):
