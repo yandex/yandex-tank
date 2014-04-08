@@ -98,7 +98,7 @@ class DistributedPlugin(AbstractPlugin):
         new_running = []
         for tank in self.running_tests:
             status = tank.get_test_status()
-            if status["status"] == TankAPIClient.RUNNING:
+            if status["status"] == TankAPIClient.STATUS_RUNNING:
                 new_running.append(tank)
             else:
                 self.log.info("Tank has finished the test: %s", tank.address)
@@ -127,7 +127,7 @@ class DistributedPlugin(AbstractPlugin):
 
         for tank in self.chosen_tanks:
             try:
-                while tank.get_test_status()["status"] != TankAPIClient.FINISHED:
+                while tank.get_test_status()["status"] != TankAPIClient.STATUS_FINISHED:
                     self.log.info("Waiting for test shutdown on %s...", tank.address)
                     time.sleep(self.retry_interval)
             except Exception, exc:
@@ -199,7 +199,7 @@ class DistributedPlugin(AbstractPlugin):
             self.log.debug("Waiting tanks: %s", pending_tanks)
             new_pending = []
             for tank in pending_tanks:
-                if tank.get_test_status()["status"] != TankAPIClient.PREPARED:
+                if tank.get_test_status()["status"] != TankAPIClient.STATUS_PREPARED:
                     new_pending.append(tank)
 
             pending_tanks = new_pending
