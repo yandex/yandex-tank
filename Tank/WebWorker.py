@@ -4,6 +4,7 @@ import logging
 import os
 from threading import Thread
 import threading
+import traceback
 
 
 class InterruptibleThread(Thread):
@@ -77,7 +78,7 @@ class PrepareThread(AbstractTankThread):
 
 
     def run(self):
-        logging.info("Starting prepare")
+        logging.info("Preparing test")
         try:
             self.core.load_configs([self.config])
             self.core.load_plugins()
@@ -85,6 +86,7 @@ class PrepareThread(AbstractTankThread):
             self.core.plugins_prepare_test()
             self.retcode = 0
         except Exception, exc:
+            logging.info("Excepting during prepare: %s", traceback.format_exc(exc))
             self.retcode = 1
             self.graceful_shutdown()
 
@@ -96,6 +98,7 @@ class TestRunThread(AbstractTankThread):
             self.core.plugins_start_test()
             self.retcode = self.core.wait_for_finish()
         except Exception, exc:
+            logging.info("Excepting during test run: %s", traceback.format_exc(exc))
             self.retcode = 1
         finally:
             self.graceful_shutdown()
