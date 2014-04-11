@@ -4,9 +4,7 @@ from urllib2 import HTTPError
 import time
 
 from Tank.API.client import TankAPIClient
-
 from Tank.API.server import TankAPIHandler
-
 from Tests.TankTests import TankTestCase
 
 
@@ -49,7 +47,7 @@ class TankAPIHandlerTestCase(TankTestCase):
         res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + res["ticket"])[2])
         for artifact in res['artifacts']:
             url = TankAPIClient.DOWNLOAD_ARTIFACT_URL + "?ticket=" + res["ticket"] + "&filename=" + artifact
-            self.obj.handle_get(self.obj.handle_get(url))
+            res = self.obj.handle_get(url)
 
     def test_run_booking(self):
         res = json.loads(self.obj.handle_get(TankAPIClient.INITIATE_TEST_JSON)[2])
@@ -69,8 +67,12 @@ class TankAPIHandlerTestCase(TankTestCase):
 
 
 def record_post(handler):
+    """
+
+    :type handler: BaseHTTPRequestHandler
+    """
     with open("post.txt", "wb") as fd:
-        fd.write(handler.raw_requestline)
+        #fd.write(handler.raw_requestline)
         fd.write(str(handler.headers) + "\r\n")
         while True:
             fd.write(handler.rfile.read(1))

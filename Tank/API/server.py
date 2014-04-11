@@ -46,6 +46,7 @@ class HTTPAPIHandler(BaseHTTPRequestHandler):
             self.send_error(exc.getcode(), exc.msg)
 
     def do_POST(self):
+        record_post(self)
         try:
             results = self.server.handler.handle_post(self.path, self.headers, self.rfile)
             logging.debug("POST result: %s", results)
@@ -144,7 +145,7 @@ class TankAPIHandler:
         if exclusive and self.live_tickets:
             raise HTTPError(None, 423, "Cannot obtain exclusive lock, the server is busy", {}, None)
 
-        for ticket in self.live_tickets:
+        for ticket in self.live_tickets.values():
             if ticket['exclusive']:
                 raise HTTPError(None, 423, "Cannot book the test, the server is exclusively booked", {}, None)
 
@@ -385,3 +386,4 @@ class TestRunThread(AbstractTankThread):
             self.retcode = 1
         finally:
             self.graceful_shutdown()
+

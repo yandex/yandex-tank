@@ -1,12 +1,12 @@
 Accept-Encoding: identity
-Content-Length: 8818
+Content-Length: 8862
 Host: 127.0.0.1:8080
-Content-Type: multipart/form-data; boundary=127.0.0.1.1000.16684.1396890587.810.1
+Content-Type: multipart/form-data; boundary=127.0.0.1.1000.19740.1397215481.234.1
 Connection: close
 User-Agent: Python-urllib/2.7
 
---127.0.0.1.1000.16684.1396890587.810.1
-Content-Disposition: file; name="config"; filename="load_m86nPR.ini"
+--127.0.0.1.1000.19740.1397215481.234.1
+Content-Disposition: file; name="config"; filename="load_AQXmv4.ini"
 Content-Type: application/octet-stream
 
 # === config/load.conf ===
@@ -62,8 +62,10 @@ autocases=1
 ssh_timeout=5
 [phantom]
 rps_schedule=line(1,100,5m)
+[phantom]
+ammofile=dummy-ammo-compressed.gz
 
---127.0.0.1.1000.16684.1396890587.810.1
+--127.0.0.1.1000.19740.1397215481.234.1
 Content-Disposition: file; name="file_data/1.jmx"; filename="1.jmx"
 Content-Type: application/octet-stream
 
@@ -189,13 +191,12 @@ Content-Type: application/octet-stream
   </hashTree>
 </jmeterTestPlan>
 
---127.0.0.1.1000.16684.1396890587.810.1
+--127.0.0.1.1000.19740.1397215481.234.1
 Content-Disposition: file; name="file_data/dummy-ammo-compressed.gz"; filename="dummy-ammo-compressed.gz"
 Content-Type: application/octet-stream
 
-ï¿½ï¿½Yï¿½Q dummy.ammo 3ï¿½ï¿½rw
-Qï¿½Wï¿½		ï¿½7ï¿½3ï¿½ï¿½ï¿½ï¿½ {Iï¿½r   
---127.0.0.1.1000.16684.1396890587.810.1
+‹ŒY£Q dummy.ammo 3´àrwQÐWð		Ð7Ô3àåâå {Iˆr   
+--127.0.0.1.1000.19740.1397215481.234.1
 Content-Disposition: file; name="file_data/dummy.ammo"; filename="dummy.ammo"
 Content-Type: application/octet-stream
 
@@ -203,4 +204,4 @@ Content-Type: application/octet-stream
 GET / HTTP/1.0
 
 
---127.0.0.1.1000.16684.1396890587.810.1--
+--127.0.0.1.1000.19740.1397215481.234.1--
