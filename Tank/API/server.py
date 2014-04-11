@@ -40,13 +40,16 @@ class HTTPAPIHandler(BaseHTTPRequestHandler):
             for name, val in results[1].iteritems():
                 self.send_header(name, val)
             self.end_headers()
-            self.wfile.write(results[2])
+
+            if isinstance(results[2], file):
+                self.wfile.write(results[2].read())
+            else:
+                self.wfile.write()
         except HTTPError, exc:
             logging.info("HTTP Error Response: %s", exc)
             self.send_error(exc.getcode(), exc.msg)
 
     def do_POST(self):
-        record_post(self)
         try:
             results = self.server.handler.handle_post(self.path, self.headers, self.rfile)
             logging.debug("POST result: %s", results)
@@ -80,8 +83,8 @@ class TankAPIHandler:
                 return 200, {'Content-Type': 'application/json'}, json.dumps(
                     self.__handled_get_json(parsed_path.path, params))
             elif parsed_path.path == "/download_artifact":
-                #TODO
-                return 200, {'Content-Type': 'application/octet-stream'}, ''
+                return self.__download_artifact(params)
+
             else:
                 raise HTTPError(path, 404, "Not Found", {}, None)
 
@@ -290,6 +293,14 @@ class TankAPIHandler:
 
         return ticket
 
+    def __download_artifact(self, params):
+        ticket = self.__check_ticket(params)
+        ticket_dir = self.data_dir + os.path.sep + ticket['ticket']
+        filename = ticket_dir + os.path.sep + os.path.basename(params['filename'])
+        logging.info("Sending file: %s", filename)
+        fd = open(filename)
+        return 200, {'Content-Type': 'application/octet-stream'}, fd
+
 
 class InterruptibleThread(threading.Thread):
     def __async_raise(self, tid, exctype):
@@ -342,6 +353,7 @@ class AbstractTankThread(InterruptibleThread):
         """
         super(AbstractTankThread, self).__init__()
         os.chdir(cwd)
+        self.working_dir = cwd
         self.daemon = True
         self.core = core
         self.retcode = -1
@@ -364,6 +376,8 @@ class PrepareThread(AbstractTankThread):
     def run(self):
         logging.info("Preparing test")
         try:
+            self.core.artifacts_base_dir = self.working_dir
+            self.core.artifacts_dir = self.working_dir
             self.core.load_configs([self.config])
             self.core.load_plugins()
             self.core.plugins_configure()

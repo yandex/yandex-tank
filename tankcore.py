@@ -218,7 +218,7 @@ class TankCore:
 
         self.artifacts_base_dir = os.path.expanduser(
             self.get_option(self.SECTION, "artifacts_base_dir", self.artifacts_base_dir))
-        self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
+        self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", self.artifacts_dir)
         if self.artifacts_dir:
             self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
 

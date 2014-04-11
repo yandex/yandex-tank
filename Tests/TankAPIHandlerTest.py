@@ -1,4 +1,5 @@
 import json
+import logging
 from mimetools import Message
 from urllib2 import HTTPError
 import time
@@ -14,40 +15,46 @@ class TankAPIHandlerTestCase(TankTestCase):
 
     def test_run_usual(self):
         res = json.loads(self.obj.handle_get(TankAPIClient.INITIATE_TEST_JSON)[2])
-        self.assertNotEquals("", res["ticket"])
-        res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + res["ticket"])[2])
+        ticket = res['ticket']
+        self.assertNotEquals("", ticket)
+        res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + ticket)[2])
         self.assertEquals(TankAPIClient.STATUS_BOOKED, res["status"])
         fd = open("data/post.txt")
 
         message = Message(fd)
         message.parsetype()
-        self.obj.handle_post(TankAPIClient.PREPARE_TEST_JSON + "?ticket=" + res["ticket"], message, fd)
+        self.obj.handle_post(TankAPIClient.PREPARE_TEST_JSON + "?ticket=" + ticket, message, fd)
         while True:
-            res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + res["ticket"])[2])
+            res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + ticket)[2])
             if res['status'] != TankAPIClient.STATUS_PREPARING:
                 break
             time.sleep(1)
 
         self.assertEqual(TankAPIClient.STATUS_PREPARED, res['status'])
 
-        self.obj.handle_get(TankAPIClient.START_TEST_JSON + "?ticket=" + res["ticket"])
+        self.obj.handle_get(TankAPIClient.START_TEST_JSON + "?ticket=" + ticket)
         for _ in range(1, 10):
-            res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + res["ticket"])[2])
+            res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + ticket)[2])
             if res['status'] != TankAPIClient.STATUS_RUNNING:
                 break
             time.sleep(1)
 
-        self.obj.handle_get(TankAPIClient.INTERRUPT_TEST_JSON + "?ticket=" + res["ticket"])
+        self.obj.handle_get(TankAPIClient.INTERRUPT_TEST_JSON + "?ticket=" + ticket)
         while True:
-            res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + res["ticket"])[2])
+            res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + ticket)[2])
             if res['status'] == TankAPIClient.STATUS_FINISHED:
                 break
             time.sleep(1)
 
-        res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + res["ticket"])[2])
-        for artifact in res['artifacts']:
-            url = TankAPIClient.DOWNLOAD_ARTIFACT_URL + "?ticket=" + res["ticket"] + "&filename=" + artifact
+        res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + ticket)[2])
+        artifacts = res['artifacts']
+        art_cnt = 0
+        for artifact in artifacts:
+            url = TankAPIClient.DOWNLOAD_ARTIFACT_URL + "?ticket=" + ticket + "&filename=" + artifact
             res = self.obj.handle_get(url)
+            logging.debug(res[2].read())
+            art_cnt += 1
+        self.assertEquals(12, art_cnt)
 
     def test_run_booking(self):
         res = json.loads(self.obj.handle_get(TankAPIClient.INITIATE_TEST_JSON)[2])
