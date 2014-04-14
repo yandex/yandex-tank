@@ -136,7 +136,8 @@ class TankAPIHandler:
             "exclusive": exclusive,
             "worker": None,
             "tankcore": TankCore(),
-            "exitcode": None
+            "exitcode": None,
+            "last_error": None
         }
 
     def __initiate_test(self, params):
@@ -269,6 +270,7 @@ class TankAPIHandler:
                     ticket_obj['status'] = TankAPIClient.STATUS_PREPARED
                 else:
                     ticket_obj['exitcode'] = ticket_obj['worker'].retcode
+                    ticket_obj['last_error'] = str(ticket_obj['worker'].exception)
                     ticket_obj['status'] = TankAPIClient.STATUS_FINISHED
                     self.__move_ticket_to_offline(ticket_obj)
 
@@ -363,6 +365,7 @@ class AbstractTankThread(InterruptibleThread):
         self.daemon = True
         self.core = core
         self.retcode = -1
+        self.exception = None
 
     def graceful_shutdown(self):
         self.retcode = self.core.plugins_end_test(self.retcode)
@@ -392,6 +395,7 @@ class PrepareThread(AbstractTankThread):
         except Exception, exc:
             logging.info("Excepting during prepare: %s", traceback.format_exc(exc))
             self.retcode = 1
+            self.exception = exc
             self.graceful_shutdown()
 
 
@@ -403,6 +407,7 @@ class TestRunThread(AbstractTankThread):
             self.retcode = self.core.wait_for_finish()
         except Exception, exc:
             logging.info("Excepting during test run: %s", traceback.format_exc(exc))
+            self.exception = exc
             self.retcode = 1
         finally:
             self.graceful_shutdown()

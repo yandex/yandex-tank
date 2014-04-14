@@ -203,8 +203,11 @@ class DistributedPlugin(AbstractPlugin):
             self.log.debug("Waiting tanks: %s", pending_tanks)
             new_pending = []
             for tank in pending_tanks:
-                if tank.get_test_status()["status"] != TankAPIClient.STATUS_PREPARED:
+                status = tank.get_test_status()
+                if status["status"] == TankAPIClient.STATUS_PREPARING:
                     new_pending.append(tank)
+                elif status["status"] != TankAPIClient.STATUS_PREPARED:
+                    raise RuntimeError("Failed to prepare test on %s: %s" %(tank.address, status["last_error"]))
 
             pending_tanks = new_pending
             if len(pending_tanks):
@@ -244,7 +247,7 @@ class DistributedInfoWidget(AbstractInfoWidget):
         left_spaces = space / 2
         right_spaces = space / 2
 
-        data=[]
+        data = []
         template = screen.markup.BG_DARKGRAY + ':' * left_spaces + pbar + ' '
         template += ':' * right_spaces + screen.markup.RESET + "\n"
         #TODO: add relevant data
