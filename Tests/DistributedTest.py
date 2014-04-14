@@ -15,6 +15,20 @@ class DistributedPluginTestCase(TankTestCase):
         self.foo = DistributedPlugin(self.core)
         self.foo.api_client_class = FakeAPIClient
 
+    def test_run_minimal(self):
+        self.core = self.get_core()
+        self.core.set_option(DistributedPlugin.SECTION, "tanks_pool", "localhost")
+        self.foo = DistributedPlugin(self.core)
+        self.foo.api_client_class = FakeAPIClient
+        self.foo.configure()
+        self.foo.prepare_test()
+        self.foo.start_test()
+        self.assertEquals(-1, self.foo.is_test_finished())
+        self.assertEquals(0, self.foo.is_test_finished())
+        self.foo.end_test(0)
+        self.foo.post_process(0)
+
+
     def test_run(self):
         self.foo.configure()
 

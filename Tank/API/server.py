@@ -44,7 +44,7 @@ class HTTPAPIHandler(BaseHTTPRequestHandler):
             if isinstance(results[2], file):
                 self.wfile.write(results[2].read())
             else:
-                self.wfile.write()
+                self.wfile.write(results[2])
         except HTTPError, exc:
             logging.info("HTTP Error Response: %s", exc)
             self.send_error(exc.getcode(), exc.msg)
@@ -144,6 +144,10 @@ class TankAPIHandler:
             exclusive = True
         else:
             exclusive = False
+
+        logging.debug("Live tickets: %s", self.live_tickets)
+        for ticket in self.live_tickets.values():
+            self.__refresh_ticket_status(ticket)
 
         if exclusive and self.live_tickets:
             raise HTTPError(None, 423, "Cannot obtain exclusive lock, the server is busy", {}, None)
@@ -275,6 +279,8 @@ class TankAPIHandler:
                 else:
                     ticket_obj['exitcode'] = ticket_obj['worker'].retcode
                     ticket_obj['status'] = TankAPIClient.STATUS_FINISHED
+                self.__move_ticket_to_offline(ticket_obj)
+
 
     def __move_ticket_to_offline(self, ticket_obj):
         logging.info("Moving ticket to offline: %s", ticket_obj)

@@ -27,6 +27,10 @@ class TankTestCase(unittest.TestCase):
         self.data = SecondAggregateData(data)
 
     def get_core(self):
+        """
+
+        :rtype : TankCore
+        """
         self.core = TankCore()
         self.core.artifacts_base_dir = tempfile.mkdtemp()
         self.core.artifacts_dir = self.core.artifacts_base_dir

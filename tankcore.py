@@ -180,7 +180,7 @@ class TankCore:
         self.log = logging.getLogger(__name__)
         self.config = ConfigManager()
         self.plugins = {}
-        self.artifacts_dir = None
+        self.artifacts_dir = ''
         self.artifact_files = {}
         self.plugins_order = []
         self.artifacts_base_dir = '.'
@@ -666,5 +666,12 @@ class AbstractPlugin:
         return []
 
     def get_multiline_option(self, option_name, default_value=None):
-        value = self.get_option(option_name, default_value)
-        return (' '.join(value.split("\n"))).split(' ')
+        if default_value is not None:
+            default = ' '.join(default_value)
+        else:
+            default = None
+        value = self.get_option(option_name, default)
+        if value:
+            return (' '.join(value.split("\n"))).split(' ')
+        else:
+            return ()

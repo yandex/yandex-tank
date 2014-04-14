@@ -22,7 +22,7 @@ class DistributedPlugin(AbstractPlugin):
         self.retry_interval = 5
         self.running_tests = []
         self.tanks_count = 1
-        self.configs = []
+        self.configs = ["/dev/null"]
         self.options = []
         self.files = []
         self.artifacts_to_download = []
@@ -33,6 +33,7 @@ class DistributedPlugin(AbstractPlugin):
         self.api_clients = []
         self.api_client_class = TankAPIClient
         self.config_file = None
+        self.start_time = None
 
     def get_available_options(self):
         return ["api_port", "api_timeout", "retry_interval",
@@ -58,7 +59,7 @@ class DistributedPlugin(AbstractPlugin):
         if random_tanks:
             random.shuffle(tanks_pool)
 
-        self.configs = self.get_multiline_option("configs")
+        self.configs = self.get_multiline_option("configs", self.configs)
         self.options = self.get_multiline_option("options", self.options)
         self.files = self.get_multiline_option("files", self.files)
         self.artifacts_to_download = self.get_multiline_option("download_artifacts", self.artifacts_to_download)
@@ -138,6 +139,8 @@ class DistributedPlugin(AbstractPlugin):
         if self.artifacts_to_download:
             for tank in self.chosen_tanks:
                 self.__download_artifacts(tank)
+        # TODO: change retcode if remote codes are not zero
+        return retcode
 
     @staticmethod
     def get_key():
@@ -154,6 +157,7 @@ class DistributedPlugin(AbstractPlugin):
                 fd.write("\n\n")
 
             if options:
+                self.log.debug("Merging additional options: %s", options)
                 fd.write("\n\n#Command-line options added below\n")
 
                 for option_str in options:
@@ -235,21 +239,23 @@ class DistributedInfoWidget(AbstractInfoWidget):
         pass
 
     def render(self, screen):
-        jmeter = " Distributed Test %s" % self.krutilka.next()
-        space = screen.right_panel_width - len(jmeter) - 1
+        pbar = " Distributed Test %s" % self.krutilka.next()
+        space = screen.right_panel_width - len(pbar) - 1
         left_spaces = space / 2
         right_spaces = space / 2
 
-        dur_seconds = int(time.time()) - int(self.owner.start_time)
-        duration = str(datetime.timedelta(seconds=dur_seconds))
-
-        template = screen.markup.BG_DARKGRAY + ':' * left_spaces + jmeter + ' '
+        data=[]
+        template = screen.markup.BG_DARKGRAY + ':' * left_spaces + pbar + ' '
         template += ':' * right_spaces + screen.markup.RESET + "\n"
         #TODO: add relevant data
         #template += "     Test Plan: %s\n"
-        template += "      Duration: %s\n"
+        if self.owner.start_time:
+            dur_seconds = int(time.time()) - int(self.owner.start_time)
+            duration = str(datetime.timedelta(seconds=dur_seconds))
+            data.append(duration)
+
+            template += "      Duration: %s\n"
         #template += "Active Threads: %s\n"
         #template += "   Responses/s: %s"
-        data = duration
 
         return template % data

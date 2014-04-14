@@ -2,6 +2,8 @@ from tankcore import AbstractPlugin
 import time
 
 class DummyPlugin(AbstractPlugin):
+    SECTION = "dummy"
+
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         self.count = 0
