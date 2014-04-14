@@ -102,7 +102,12 @@ class DistributedPlugin(AbstractPlugin):
             if status["status"] == TankAPIClient.STATUS_RUNNING:
                 new_running.append(tank)
             else:
-                self.log.info("Tank has finished the test: %s", tank.address)
+                msg = "Tank %s has finished the test with code %s"
+                data = [tank.address, status["exitcode"]]
+                if status["exitcode"] != 0:
+                    msg += ": %s"
+                    data.append(status["last_error"])
+                self.log.info(msg % data)
 
         self.running_tests = new_running
 
@@ -207,7 +212,7 @@ class DistributedPlugin(AbstractPlugin):
                 if status["status"] == TankAPIClient.STATUS_PREPARING:
                     new_pending.append(tank)
                 elif status["status"] != TankAPIClient.STATUS_PREPARED:
-                    raise RuntimeError("Failed to prepare test on %s: %s" %(tank.address, status["last_error"]))
+                    raise RuntimeError("Failed to prepare test on %s: %s" % (tank.address, status["last_error"]))
 
             pending_tanks = new_pending
             if len(pending_tanks):

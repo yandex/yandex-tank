@@ -158,6 +158,8 @@ class TankAPIHandler:
                 raise HTTPError(None, 423, "Cannot book the test, the server is exclusively booked", {}, None)
 
         ticket = self.__generate_new_ticket(exclusive)
+        ticket["tankcore"].get_lock(True)
+
         logging.debug("Created new ticket: %s", ticket)
         self.live_tickets[ticket[TankAPIClient.TICKET]] = ticket
         return self.__clean_ticket_objects(ticket)
@@ -350,7 +352,7 @@ class InterruptibleThread(threading.Thread):
 
     def interrupt(self):
         logging.info("Interrupting the thread")
-        self.__async_raise(self.__get_my_tid(), KeyboardInterrupt())
+        self.__async_raise(self.__get_my_tid(), KeyboardInterrupt)
 
 
 class AbstractTankThread(InterruptibleThread):
@@ -370,6 +372,7 @@ class AbstractTankThread(InterruptibleThread):
     def graceful_shutdown(self):
         self.retcode = self.core.plugins_end_test(self.retcode)
         self.retcode = self.core.plugins_post_process(self.retcode)
+        self.core.release_lock()
 
 
 class PrepareThread(AbstractTankThread):
