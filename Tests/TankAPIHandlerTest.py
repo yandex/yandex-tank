@@ -52,7 +52,7 @@ class TankAPIHandlerTestCase(TankTestCase):
         for artifact in artifacts:
             url = TankAPIClient.DOWNLOAD_ARTIFACT_URL + "?ticket=" + ticket + "&filename=" + artifact
             res = self.obj.handle_get(url)
-            logging.debug(res[2].read())
+            logging.debug(res[2].read()[:64])
             art_cnt += 1
         self.assertEquals(12, art_cnt)
 

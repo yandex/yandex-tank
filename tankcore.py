@@ -516,6 +516,7 @@ class TankCore:
     def release_lock(self):
         self.config.file = None
         if self.lock_file and os.path.exists(self.lock_file):
+            self.log.debug("Releasing lock: %s", self.lock_file)
             os.remove(self.lock_file)
 
     def __there_is_locks(self):
