@@ -375,21 +375,19 @@ class AbstractTankThread(InterruptibleThread):
         self.exception = None
         self.file_handler = None
 
-    def graceful_shutdown(self):
-        self.retcode = self.core.plugins_end_test(self.retcode)
-        self.retcode = self.core.plugins_post_process(self.retcode)
-        self.core.release_lock()
-        logging.getLogger().removeHandler(self.file_handler)
-
-    def init_logging(self, log_file):
-        """         Set up logging, as it is very important for console tool        """
         logger = logging.getLogger()
-        self.file_handler = logging.FileHandler(log_file)
+        self.file_handler = logging.FileHandler("tank.log")
         self.file_handler.setLevel(logging.DEBUG)
         self.file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s"))
         logger.addHandler(self.file_handler)
         logger.addFilter(NoAPIMessagesFilter(logger.name))
         logging.info("Logging file added")
+
+    def graceful_shutdown(self):
+        self.retcode = self.core.plugins_end_test(self.retcode)
+        self.retcode = self.core.plugins_post_process(self.retcode)
+        self.core.release_lock()
+        logging.getLogger().removeHandler(self.file_handler)
 
 
 class PrepareThread(AbstractTankThread):
@@ -400,7 +398,6 @@ class PrepareThread(AbstractTankThread):
         """
         super(PrepareThread, self).__init__(core, os.path.dirname(config))
         self.config = config
-        self.init_logging(core.mkstemp(".log", "tank_prepare_"))
 
 
     def run(self):
@@ -421,11 +418,6 @@ class PrepareThread(AbstractTankThread):
 
 
 class TestRunThread(AbstractTankThread):
-    def __init__(self, core, cwd):
-        super(TestRunThread, self).__init__(core, cwd)
-        self.init_logging(core.mkstemp(".log", "tank_run_"))
-
-
     def run(self):
         logging.info("Starting test")
         try:
