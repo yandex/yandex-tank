@@ -355,6 +355,11 @@ class InterruptibleThread(threading.Thread):
         self.__async_raise(self.__get_my_tid(), KeyboardInterrupt)
 
 
+class NoAPIMessagesFilter(logging.Filter):
+    def filter(self, record):
+        return record.name != self.name
+
+
 class AbstractTankThread(InterruptibleThread):
     def __init__(self, core, cwd):
         """
@@ -383,6 +388,7 @@ class AbstractTankThread(InterruptibleThread):
         self.file_handler.setLevel(logging.DEBUG)
         self.file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s"))
         logger.addHandler(self.file_handler)
+        logger.addFilter(NoAPIMessagesFilter(logger.name))
         logging.info("Logging file added")
 
 
@@ -431,4 +437,3 @@ class TestRunThread(AbstractTankThread):
             self.retcode = 1
         finally:
             self.graceful_shutdown()
-
