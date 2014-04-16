@@ -31,10 +31,12 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
     def configure(self):
         self.info_panel_width = self.get_option("info_panel_width", self.info_panel_width)
         self.short_only = int(self.get_option("short_only", '0'))
-        if not int(self.get_option("disable_all_colors", '0')):
-            self.console_markup = RealConsoleMarkup()
-        else:
-            self.console_markup = NoConsoleMarkup()
+        if not self.console_markup:
+            if not int(self.get_option("disable_all_colors", '0')):
+                self.console_markup = RealConsoleMarkup()
+            else:
+                self.console_markup = NoConsoleMarkup()
+
         for color in self.get_option("disable_colors", '').split(' '):
             self.console_markup.__dict__[color] = ''
         self.screen = Screen(self.info_panel_width, self.console_markup)
@@ -164,5 +166,3 @@ class AbstractInfoWidget:
     def get_index(self):
         """ get vertical priority index """
         return 0
-
-

@@ -149,7 +149,7 @@ class Screen(object):
             line = " "
 
             if line_no > 1 and left_lines:
-                left_line = left_lines.pop(0)
+                left_line = left_lines.pop(0).rstrip()
                 left_line_plain = self.markup.clean_markup(left_line)
                 if len(left_line) > self.left_panel_width:
                     if len(left_line_plain) > self.left_panel_width:
