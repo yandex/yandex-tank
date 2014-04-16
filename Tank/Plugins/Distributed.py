@@ -240,7 +240,7 @@ class DistributedPlugin(AbstractPlugin):
         for fname in self.artifacts_to_download:
             for artifact in artifacts:
                 if fnmatch.fnmatch(artifact, fname):
-                    self.log.info("Downloading artifact from %s: %s...", tank.address, artifact)
+                    self.log.info("Downloading artifact from %s: %s", tank.address, artifact)
                     local_name = self.core.artifacts_base_dir + os.path.sep + artifact
                     tank.download_artifact(artifact, local_name)
                     self.core.add_artifact_file(local_name)

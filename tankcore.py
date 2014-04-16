@@ -556,6 +556,7 @@ class TankCore:
         """
         fd, fname = tempfile.mkstemp(suffix, prefix, self.artifacts_base_dir)
         os.close(fd)
+        os.chmod(fname, 0644)  # FIXME: chmod to parent dir's mode?
         return fname
 
 

@@ -1,6 +1,7 @@
 """ Core module to calculate aggregate data """
 import copy
 import datetime
+import json
 import logging
 import math
 import time
@@ -18,6 +19,11 @@ class AggregateResultListener:
     def aggregate_second(self, second_aggregate_data):
         """ notification about new aggregate data """
         raise NotImplementedError("Abstract method needs to be overridden")
+
+    def close(self):
+        """do possible shutdown actions
+        """
+        pass
 
 
 class AggregatorPlugin(AbstractPlugin):
@@ -59,6 +65,7 @@ class AggregatorPlugin(AbstractPlugin):
             self.SECTION, "time_periods", " ".join([str(x) for x in periods]))
         self.precise_cumulative = int(
             self.get_option("precise_cumulative", '1'))
+
 
     def start_test(self):
         if not self.reader:
@@ -103,6 +110,11 @@ class AggregatorPlugin(AbstractPlugin):
             self.__notify_listeners(zero)
         self.last_sample_time = int(time.mktime(data.time.timetuple()))
 
+    def post_process(self, retcode):
+        for listener in self.second_data_listeners:
+            listener.close()
+        return retcode
+
     def __read_samples(self, limit=0, force=False):
         """ call reader object to read next sample set """
         if self.reader:
@@ -132,6 +144,22 @@ class SecondAggregateData:
 
     def __repr__(self):
         return "SecondAggregateData[%s][%s]" % (self.time, time.mktime(self.time.timetuple()))
+
+    def __str__(self):
+        obj = {}
+        for field, val in self.__dict__.iteritems():
+            if isinstance(val, SecondAggregateDataItem) or isinstance(val, SecondAggregateDataTotalItem):
+                obj[field] = {}
+                for field2, val2 in val.__dict__.iteritems():
+                    if not isinstance(val2, logging.Logger):
+                        obj[field][field2] = val2
+            elif isinstance(val, logging.Logger):
+                pass
+            elif isinstance(val, datetime.datetime):
+                obj[field] = time.mktime(val.timetuple())
+            else:
+                obj[field] = val
+        return json.dumps(obj)
 
 
 class SecondAggregateDataItem:

@@ -1,9 +1,16 @@
+import logging
 import time
 import unittest
+import datetime
 
 from Tank.Plugins.Aggregator import AggregatorPlugin, AbstractReader, \
-    SecondAggregateDataTotalItem
+    SecondAggregateDataTotalItem, AggregateResultListener, SecondAggregateData
 from Tests.TankTests import TankTestCase
+
+
+class TestListener(AggregateResultListener):
+    def aggregate_second(self, second_aggregate_data):
+        logging.debug("Data: %s / %s", second_aggregate_data, str(second_aggregate_data))
 
 
 class AggregatorPluginTestCase(TankTestCase):
@@ -11,6 +18,7 @@ class AggregatorPluginTestCase(TankTestCase):
         core = self.get_core()
         core.load_configs(['config/aggregator.conf'])
         self.foo = AggregatorPlugin(core)
+        self.foo.add_result_listener(TestListener())
 
     def tearDown(self):
         del self.foo
@@ -20,7 +28,7 @@ class AggregatorPluginTestCase(TankTestCase):
         self.foo.configure()
         self.assertEquals(11000, self.foo.get_timeout())
         self.foo.prepare_test()
-        self.foo.reader = FakeReader(self.foo)
+        self.foo.reader = FakeReader(self.foo, 5)
         self.foo.start_test()
         retry = 0
         while self.foo.is_test_finished() < 0 and retry < 5:
@@ -32,7 +40,7 @@ class AggregatorPluginTestCase(TankTestCase):
     def test_run_final_read(self):
         self.foo.configure()
         self.foo.prepare_test()
-        self.foo.reader = FakeReader(self.foo)
+        self.foo.reader = FakeReader(self.foo, 5)
         self.foo.start_test()
         self.foo.end_test(0)
 
@@ -57,7 +65,17 @@ class AggregatorPluginTestCase(TankTestCase):
 
 
 class FakeReader(AbstractReader):
-    pass
+    def __init__(self, owner, count):
+        AbstractReader.__init__(self, owner)
+        self.count = count
+
+    def get_next_sample(self, force):
+        if not self.count:
+            return None
+        self.count -= 1
+        item = SecondAggregateData()
+        item.time = datetime.datetime.now()
+        return item
 
 
 if __name__ == '__main__':

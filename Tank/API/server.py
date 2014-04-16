@@ -14,6 +14,7 @@ import urlparse
 import datetime
 
 from Tank.API.client import TankAPIClient
+from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
 from tankcore import TankCore
 
 
@@ -49,6 +50,9 @@ class HTTPAPIHandler(BaseHTTPRequestHandler):
         except HTTPError, exc:
             logging.info("HTTP Error Response: %s", exc)
             self.send_error(exc.getcode(), exc.msg)
+        except Exception, exc:
+            logging.info("Server Error: %s", exc)
+            self.send_error(500, exc.message)
 
     def do_POST(self):
         try:
@@ -62,6 +66,9 @@ class HTTPAPIHandler(BaseHTTPRequestHandler):
         except HTTPError, exc:
             logging.info("HTTP Error Response: %s", exc)
             self.send_error(exc.getcode(), exc.msg)
+        except Exception, exc:
+            logging.info("Server Error: %s", exc)
+            self.send_error(500, exc.message)
 
 
 class TankAPIHandler:
@@ -168,7 +175,7 @@ class TankAPIHandler:
         return self.__clean_ticket_objects(ticket)
 
     def __interrupt_test(self, params):
-        interruptible = (TankAPIClient.STATUS_PREPARING, TankAPIClient.STATUS_PREPARED, TankAPIClient.STATUS_RUNNING)
+        interruptible = (TankAPIClient.STATUS_PREPARING, TankAPIClient.STATUS_RUNNING)
         ticket = self.__check_ticket(params)
         logging.debug("Begin interrupting test: %s", ticket['ticket'])
         if ticket['status'] == TankAPIClient.STATUS_BOOKED:
@@ -177,6 +184,10 @@ class TankAPIHandler:
         elif ticket['status'] in interruptible:
             logging.debug("Interrupting worker")
             ticket['worker'].interrupt()
+        elif ticket['status'] == TankAPIClient.STATUS_PREPARED:
+            logging.debug("Finalizing prepared worker")
+            ticket['worker'].graceful_shutdown()
+            ticket['status'] = TankAPIClient.STATUS_FINISHED
         elif ticket['status'] in (TankAPIClient.STATUS_FINISHING, TankAPIClient.STATUS_FINISHED):
             logging.info("No need to interrupt test in status: %s", ticket['status'])
         else:
@@ -366,11 +377,14 @@ class InterruptibleThread(threading.Thread):
         raise AssertionError("could not determine the thread's id")
 
     def interrupt(self):
-        logging.info("Interrupting the thread")
-        try:
-            self.__async_raise(self.__get_my_tid(), KeyboardInterrupt)
-        except threading.ThreadError, exc:
-            logging.debug("Failed to interrupt the thread: %s", traceback.format_exc(exc))
+        if self.isAlive():
+            logging.info("Interrupting the thread")
+            try:
+                self.__async_raise(self.__get_my_tid(), KeyboardInterrupt)
+            except threading.ThreadError, exc:
+                logging.debug("Failed to interrupt the thread: %s", traceback.format_exc(exc))
+        else:
+            logging.debug("Thread has already finished its job")
 
 
 class NoAPIMessagesFilter(logging.Filter):
@@ -419,7 +433,6 @@ class PrepareThread(AbstractTankThread):
         super(PrepareThread, self).__init__(core, os.path.dirname(config))
         self.config = config
 
-
     def run(self):
         logging.info("Preparing test")
         try:
@@ -429,6 +442,13 @@ class PrepareThread(AbstractTankThread):
             self.core.load_plugins()
             self.core.plugins_configure()
             self.core.plugins_prepare_test()
+
+            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+            if aggregator:
+                aggreg_file = self.core.mkstemp(".json", "aggregate_results_")
+                self.core.add_artifact_file(aggreg_file)
+                aggregator.add_result_listener(FileWriterAggregatorListener(aggreg_file))
+
             self.retcode = 0
         except Exception, exc:
             logging.info("Excepting during prepare: %s", traceback.format_exc(exc))
@@ -453,5 +473,20 @@ class TestRunThread(AbstractTankThread):
             self.graceful_shutdown()
             self.finish_logging()
 
-    def interrupt(self):
-        self.core.interrupted = True
+            #def interrupt(self):
+            #    self.core.interrupted = True
+
+
+class FileWriterAggregatorListener(AggregateResultListener):
+    def __init__(self, filename):
+        AggregateResultListener.__init__(self)
+        logging.debug("Writing aggregate json into file: %s", filename)
+        self.fd = open(filename, "w")
+
+    def aggregate_second(self, second_aggregate_data):
+        self.fd.write("%s\n" % str(second_aggregate_data))
+        self.fd.flush()
+
+    def close(self):
+        self.fd.close()
+
