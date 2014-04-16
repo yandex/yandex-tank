@@ -188,6 +188,7 @@ class TankAPIHandler:
             logging.debug("Finalizing prepared worker")
             ticket['worker'].graceful_shutdown()
             ticket['status'] = TankAPIClient.STATUS_FINISHED
+            ticket['exitcode'] = ticket['worker'].exitcode
         elif ticket['status'] in (TankAPIClient.STATUS_FINISHING, TankAPIClient.STATUS_FINISHED):
             logging.info("No need to interrupt test in status: %s", ticket['status'])
         else:
@@ -295,11 +296,8 @@ class TankAPIHandler:
 
         if ticket_obj['status'] == TankAPIClient.STATUS_RUNNING:
             if not ticket_obj['worker'].isAlive():
-                if ticket_obj['worker'].retcode == 0:
-                    ticket_obj['status'] = TankAPIClient.STATUS_FINISHED
-                else:
-                    ticket_obj['exitcode'] = ticket_obj['worker'].retcode
-                    ticket_obj['status'] = TankAPIClient.STATUS_FINISHED
+                ticket_obj['status'] = TankAPIClient.STATUS_FINISHED
+                ticket_obj['exitcode'] = ticket_obj['worker'].retcode
                 self.__move_ticket_to_offline(ticket_obj)
 
 

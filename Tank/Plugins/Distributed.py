@@ -111,10 +111,10 @@ class DistributedPlugin(AbstractPlugin):
                 new_running.append(tank)
             else:
                 msg = "Tank %s has finished the test with code %s"
-                data = [tank.address, status["exitcode"]]
+                data = (tank.address, status["exitcode"])
                 if status["exitcode"] != 0:
                     msg += ": %s"
-                    data.append(status["last_error"])
+                    data += (status["last_error"])
                 self.log.info(msg % data)
 
         self.running_tests = new_running
@@ -151,7 +151,7 @@ class DistributedPlugin(AbstractPlugin):
 
         if not retcode:
             for status in tank_statuses:
-                retcode = max(retcode, status["exit_code"])
+                retcode = max(retcode, status["exitcode"])
 
         return retcode
 
