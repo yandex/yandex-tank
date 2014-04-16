@@ -43,6 +43,7 @@ class HTTPAPIHandler(BaseHTTPRequestHandler):
 
             if isinstance(results[2], file):
                 self.wfile.write(results[2].read())
+                results[2].close()
             else:
                 self.wfile.write(results[2])
         except HTTPError, exc:
@@ -123,6 +124,8 @@ class TankAPIHandler:
             return self.__interrupt_test(params)
         elif path == TankAPIClient.TEST_STATUS_JSON:
             return self.__test_status(params)
+        elif path == TankAPIClient.TANK_STATUS_JSON:
+            return self.__tank_status(params)
         elif path == TankAPIClient.START_TEST_JSON:
             return self.__test_start(params)
         else:
@@ -167,9 +170,12 @@ class TankAPIHandler:
     def __interrupt_test(self, params):
         interruptible = (TankAPIClient.STATUS_PREPARING, TankAPIClient.STATUS_PREPARED, TankAPIClient.STATUS_RUNNING)
         ticket = self.__check_ticket(params)
+        logging.debug("Begin interrupting test: %s", ticket['ticket'])
         if ticket['status'] == TankAPIClient.STATUS_BOOKED:
+            logging.debug("Just deleting booking ticket")
             del self.live_tickets[params[TankAPIClient.TICKET]]
         elif ticket['status'] in interruptible:
+            logging.debug("Interrupting worker")
             ticket['worker'].interrupt()
         elif ticket['status'] in (TankAPIClient.STATUS_FINISHING, TankAPIClient.STATUS_FINISHED):
             logging.info("No need to interrupt test in status: %s", ticket['status'])
@@ -288,6 +294,7 @@ class TankAPIHandler:
 
     def __move_ticket_to_offline(self, ticket_obj):
         logging.info("Moving ticket to offline: %s", ticket_obj)
+        ticket_obj["tankcore"].release_lock()
         ticket_dir = self.data_dir + os.path.sep + ticket_obj['ticket']
         with open(ticket_dir + os.path.sep + self.TICKET_INFO_JSON, 'w') as fd:
             json_str = json.dumps(self.__clean_ticket_objects(ticket_obj))
@@ -310,6 +317,14 @@ class TankAPIHandler:
         logging.info("Sending file: %s", filename)
         fd = open(filename)
         return 200, {'Content-Type': 'application/octet-stream'}, fd
+
+    def __tank_status(self, params):
+        live = {}
+        for ticket in self.live_tickets:
+            live[ticket] = self.__clean_ticket_objects(self.live_tickets[ticket])
+        return {
+            "live_tickets": live
+        }
 
 
 class InterruptibleThread(threading.Thread):
@@ -352,7 +367,10 @@ class InterruptibleThread(threading.Thread):
 
     def interrupt(self):
         logging.info("Interrupting the thread")
-        self.__async_raise(self.__get_my_tid(), KeyboardInterrupt)
+        try:
+            self.__async_raise(self.__get_my_tid(), KeyboardInterrupt)
+        except threading.ThreadError, exc:
+            logging.debug("Failed to interrupt the thread: %s", traceback.format_exc(exc))
 
 
 class NoAPIMessagesFilter(logging.Filter):
@@ -373,20 +391,22 @@ class AbstractTankThread(InterruptibleThread):
         self.core = core
         self.retcode = -1
         self.exception = None
-        self.file_handler = None
 
         logger = logging.getLogger()
-        self.file_handler = logging.FileHandler("tank.log")
+        self.file_handler = logging.FileHandler(self.core.mkstemp(".log", "tank_"))
         self.file_handler.setLevel(logging.DEBUG)
         self.file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s"))
         logger.addHandler(self.file_handler)
-        logger.addFilter(NoAPIMessagesFilter(logger.name))
+        #logger.addFilter(NoAPIMessagesFilter(logger.name))
         logging.info("Logging file added")
 
     def graceful_shutdown(self):
         self.retcode = self.core.plugins_end_test(self.retcode)
         self.retcode = self.core.plugins_post_process(self.retcode)
         self.core.release_lock()
+
+    def finish_logging(self):
+        self.file_handler.close()
         logging.getLogger().removeHandler(self.file_handler)
 
 
@@ -415,6 +435,8 @@ class PrepareThread(AbstractTankThread):
             self.retcode = 1
             self.exception = exc
             self.graceful_shutdown()
+        finally:
+            self.finish_logging()
 
 
 class TestRunThread(AbstractTankThread):
@@ -429,3 +451,7 @@ class TestRunThread(AbstractTankThread):
             self.retcode = 1
         finally:
             self.graceful_shutdown()
+            self.finish_logging()
+
+    def interrupt(self):
+        self.core.interrupted = True

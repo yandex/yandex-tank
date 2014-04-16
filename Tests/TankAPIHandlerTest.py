@@ -58,16 +58,20 @@ class TankAPIHandlerTestCase(TankTestCase):
 
     def test_run_booking(self):
         res = json.loads(self.obj.handle_get(TankAPIClient.INITIATE_TEST_JSON)[2])
-        self.assertNotEquals("", res["ticket"])
+        ticket = res["ticket"]
+        self.assertNotEquals("", ticket)
         try:
             self.obj.handle_get(TankAPIClient.INITIATE_TEST_JSON + "?exclusive=1")
             self.fail()
         except HTTPError, exc:
             self.assertEqual(423, exc.getcode())
 
-        self.obj.handle_get(TankAPIClient.INTERRUPT_TEST_JSON + "?ticket=" + res["ticket"])
+        res = json.loads(self.obj.handle_get(TankAPIClient.TANK_STATUS_JSON)[2])
+        self.assertTrue(ticket in res["live_tickets"])
+
+        self.obj.handle_get(TankAPIClient.INTERRUPT_TEST_JSON + "?ticket=" + ticket)
         try:
-            self.obj.handle_get(TankAPIClient.INTERRUPT_TEST_JSON + "?ticket=" + res["ticket"])
+            self.obj.handle_get(TankAPIClient.INTERRUPT_TEST_JSON + "?ticket=" + ticket)
             self.fail()
         except HTTPError, exc:
             self.assertEqual(422, exc.getcode())

@@ -190,6 +190,7 @@ class TankCore:
         self.lock_file = None
         self.flush_config_to = None
         self.lock_dir = None
+        self.set_option(self.SECTION, self.PID_OPTION, str(os.getpid()))
 
     @staticmethod
     def get_available_options():
@@ -206,7 +207,7 @@ class TankCore:
         self.apply_shorthand_options(dotted_options, self.SECTION)
         self.config.flush()
         self.add_artifact_file(self.config.file)
-        self.set_option(self.SECTION, self.PID_OPTION, os.getpid())
+        self.set_option(self.SECTION, self.PID_OPTION, str(os.getpid()))
         self.flush_config_to = self.get_option(
             self.SECTION, "flush_config_to", "")
         if self.flush_config_to:
@@ -512,6 +513,7 @@ class TankCore:
         os.close(fh)
         os.chmod(self.lock_file, 0644)
         self.config.file = self.lock_file
+        self.config.flush()
 
     def release_lock(self):
         self.config.file = None

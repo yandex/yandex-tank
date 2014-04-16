@@ -34,6 +34,7 @@ class DistributedPlugin(AbstractPlugin):
         self.api_client_class = TankAPIClient
         self.config_file = None
         self.start_time = None
+        self.prev_status_check = datetime.datetime.now()
 
     def get_available_options(self):
         return ["api_port", "api_timeout", "retry_interval",
@@ -51,8 +52,8 @@ class DistributedPlugin(AbstractPlugin):
             self.tanks_count = len(tanks_pool)
         else:
             self.tanks_count = int(count)
-            if self.tanks_count < len(tanks_pool):
-                msg = "Misconfigured: tanks_count(%s) cannot be less than tanks_pool size(%s)"
+            if self.tanks_count > len(tanks_pool):
+                msg = "Misconfigured: tanks_count(%s) cannot be greater than tanks_pool size(%s)"
                 raise ValueError(msg % (self.tanks_count, len(tanks_pool)))
 
         random_tanks = int(self.get_option("random_tanks", 0))
@@ -96,6 +97,13 @@ class DistributedPlugin(AbstractPlugin):
     def is_test_finished(self):
         """ polling for the status of remote jobs """
         retcode = AbstractPlugin.is_test_finished(self)
+        now = datetime.datetime.now()
+        check_interval = now - self.prev_status_check
+        if check_interval.seconds < self.retry_interval:
+            self.log.debug("Skip tanks status check because of interval: %s", check_interval)
+            return retcode
+        self.prev_status_check = now
+
         new_running = []
         for tank in self.running_tests:
             status = tank.get_test_status()
@@ -131,20 +139,27 @@ class DistributedPlugin(AbstractPlugin):
                 except Exception, exc:
                     self.log.warn("Fatal exception while interrupting %s: %s", tank.address, traceback.format_exc(exc))
 
+        tank_statuses = []
         for tank in self.chosen_tanks:
             try:
                 while tank.get_test_status()["status"] != TankAPIClient.STATUS_FINISHED:
                     self.log.info("Waiting for test shutdown on %s...", tank.address)
                     time.sleep(self.retry_interval)
+                tank_statuses.append(tank.get_test_status())
             except Exception, exc:
                 self.log.warn("Exception while waiting %s: %s", tank.address, traceback.format_exc(exc))
+
+        if not retcode:
+            for status in tank_statuses:
+                retcode = max(retcode, status["exit_code"])
+
+        return retcode
 
     def post_process(self, retcode):
         """ download artifacts """
         if self.artifacts_to_download:
             for tank in self.chosen_tanks:
                 self.__download_artifacts(tank)
-        # TODO: change retcode if remote codes are not zero
         return retcode
 
     @staticmethod

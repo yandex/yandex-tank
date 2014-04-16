@@ -48,10 +48,11 @@ def init_logging(level, log_filename=None):
 
 
 if __name__ == "__main__":
+    sys.path.append(os.path.realpath(os.path.dirname(__file__)))
     parser = OptionParser()
     parser.add_option('-c', '--config', action='append',
                       help="Path to INI file containing run options, multiple options accepted")
-    parser.add_option('-l', '--log', action='store', default="tank.log", help="Tank log file location")
+    parser.add_option('-l', '--log', action='store', default="tank-server.log", help="Tank log file location")
     parser.add_option('-d', '--debug', action='store_true', help="Enable debug messages")
     options, _ = parser.parse_args()
 
