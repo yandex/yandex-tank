@@ -55,7 +55,7 @@ class TankAPIHandlerTestCase(TankTestCase):
             res = self.obj.handle_get(url)
             logging.debug(res[2].read()[:64])
             art_cnt += 1
-        self.assertEquals(15, art_cnt)
+        self.assertEquals(17, art_cnt)
 
     def test_run_booking(self):
         res = json.loads(self.obj.handle_get(TankAPIClient.INITIATE_TEST_JSON)[2])
