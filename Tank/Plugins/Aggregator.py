@@ -155,6 +155,11 @@ class SecondAggregateData:
                         obj[field][field2] = val2
             elif isinstance(val, logging.Logger):
                 pass
+            elif isinstance(val, dict):
+                obj[field] = {}
+                for field2, val2 in val.iteritems():
+                    if not isinstance(val2, SecondAggregateDataItem):
+                        obj[field][field2] = val2
             elif isinstance(val, datetime.datetime):
                 obj[field] = time.mktime(val.timetuple())
             else:

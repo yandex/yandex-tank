@@ -137,6 +137,10 @@ class TankAPIHandler:
         else:
             raise HTTPError(path, 404, "Not Found", {}, None)
 
+    def __del_from_live(self, name):
+        del self.live_tickets[name]
+
+
     def __initiate_test(self, params):
         if 'exclusive' in params and int(params["exclusive"]):
             exclusive = True
@@ -145,7 +149,7 @@ class TankAPIHandler:
 
         logging.debug("Live tickets: %s", self.live_tickets)
         for ticket in self.live_tickets.values():
-            ticket.refresh_status()
+            ticket.refresh_status(self.__del_from_live)
 
         if exclusive and self.live_tickets:
             raise HTTPError(None, 423, "Cannot obtain exclusive lock, the server is busy", {}, None)
@@ -173,14 +177,13 @@ class TankAPIHandler:
         ticket_name = params[TankAPIClient.TICKET]
         if ticket_name in self.live_tickets:
             ticket = self.live_tickets[ticket_name]
-            ticket.refresh_status()
+            ticket.refresh_status(self.__del_from_live)
             return ticket
         else:
             try:
-                ticket = Ticket.load_offline(self.data_dir + os.path.sep + ticket_name)
-                return ticket.json_dumpable_repr()
-            except ValueError:
-                logging.debug("No offline ticket: %s", ticket_name)
+                return Ticket.load_offline(self.data_dir + os.path.sep + ticket_name)
+            except Exception, exc:
+                logging.debug("No offline ticket%s: %s", ticket_name, traceback.format_exc(exc))
 
         raise HTTPError(None, 422, "Ticket not found", {}, None)
 
@@ -271,17 +274,18 @@ class TankAPIHandler:
         fd = open(filename)
         return 200, {'Content-Type': 'application/octet-stream'}, fd
 
-    def __tank_status(self, params):
+    def __tank_status(self, _):
         live = {}
         for ticket in self.live_tickets:
-            self.live_tickets[ticket].refresh_status()
+            self.live_tickets[ticket].refresh_status(self.__del_from_live)
             live[ticket] = self.live_tickets[ticket].json_dumpable_repr()
         return {
             "live_tickets": live
         }
 
     def __get_data_stream(self, params):
-        ticket = self.__check_ticket(params)
+        # TODO
+        #ticket = self.__check_ticket(params)
         fd = FileTailer("/var/log/syslog")
         return 200, {'Content-Type': 'application/octet-stream'}, fd
 
@@ -470,7 +474,7 @@ class Ticket:
 
         return ticket
 
-    def refresh_status(self):
+    def refresh_status(self, del_callback):
         if self.status == TankAPIClient.STATUS_PREPARING:
             if not self.worker.isAlive():
                 if self.worker.retcode == 0:
@@ -479,23 +483,23 @@ class Ticket:
                     self.exitcode = self.worker.retcode
                     self.last_error = str(self.worker.exception)
                     self.status = TankAPIClient.STATUS_FINISHED
-                    self.move_to_offline()
+                    self.move_to_offline(del_callback)
 
         if self.status == TankAPIClient.STATUS_RUNNING:
             if not self.worker.isAlive():
                 self.status = TankAPIClient.STATUS_FINISHED
                 self.exitcode = self.worker.retcode
-                self.move_to_offline()
+                self.move_to_offline(del_callback)
 
 
-    def move_to_offline(self):
+    def move_to_offline(self, del_callback):
         logging.info("Moving ticket to offline: %s", self)
         self.tankcore.release_lock()
         with open(self.data_dir + os.path.sep + self.TICKET_INFO_FILE, 'w') as fd:
             json_str = json.dumps(self.json_dumpable_repr())
             logging.debug("Offline json: %s", json_str)
             fd.write(json_str)
-        del self.live_tickets[self.name]
+        del_callback(self.name)
 
     @classmethod
     def load_offline(cls, ticket_dir):
@@ -527,4 +531,3 @@ class Ticket:
             logging.info("No need to interrupt test in status: %s", self.status)
         else:
             raise RuntimeError("Don't know what to do in this case!")
-
