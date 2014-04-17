@@ -135,3 +135,4 @@ class NetTxRxTestCase(unittest.TestCase):
     def test_net_tx_rx_cols(self):
         res = self.foo.columns()
         self.assertEquals(['Net_tx', 'Net_rx', ], res)
+

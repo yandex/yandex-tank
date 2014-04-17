@@ -1,5 +1,3 @@
-import logging
-import sys
 import tempfile
 import unittest
 
@@ -48,3 +46,8 @@ class FakeOptions(object):
     manual_start = False
     scheduled_start = None
     lock_dir = None
+
+
+if __name__ == '__main__':
+    unittest.main()
+

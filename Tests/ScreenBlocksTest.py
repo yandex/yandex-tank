@@ -1,3 +1,4 @@
+import unittest
 from Tank.Plugins.ConsoleScreen import Screen, CurrentHTTPBlock, CurrentNetBlock
 from Tests.ConsoleOnlinePluginTest import FakeConsoleMarkup
 from Tests.TankTests import TankTestCase
@@ -46,3 +47,7 @@ class BlocksTestCase(TankTestCase):
         block.render()
         print block.lines
         self.assertEquals(3, len(block.lines))
+
+if __name__ == '__main__':
+    unittest.main()
+

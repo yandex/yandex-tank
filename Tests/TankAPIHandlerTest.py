@@ -1,6 +1,7 @@
 import json
 import logging
 from mimetools import Message
+import unittest
 from urllib2 import HTTPError
 import time
 
@@ -88,3 +89,8 @@ def record_post(handler):
         while True:
             fd.write(handler.rfile.read(1))
             fd.flush()
+
+
+if __name__ == '__main__':
+    unittest.main()
+

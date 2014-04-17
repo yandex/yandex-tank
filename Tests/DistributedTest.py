@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import unittest
 import urllib
 
 from Tank.Plugins.Distributed import DistributedPlugin
@@ -86,3 +87,7 @@ class FakeAPIClient(TankAPIClient):
         logging.debug("Saving data to %s", local_name)
         with open(local_name, "wb") as fd:
             fd.write("%s" % resp)
+
+if __name__ == '__main__':
+    unittest.main()
+

@@ -1,5 +1,6 @@
 import tempfile
 import os
+import unittest
 
 from Tank.stepper import Stepper
 from Tank.stepper.format import StpdReader
@@ -200,3 +201,7 @@ class StepperTestCase(TankTestCase):
         sr = StpdReader("data/bad.ammo.stpd")
         with self.assertRaises(StpdFileError):
             list(sr)
+
+if __name__ == '__main__':
+    unittest.main()
+
