@@ -1,6 +1,7 @@
 """ Module to perform distributed tests """
 # TODO: how to deal with remote monitoring data?
 import fnmatch
+import logging
 import os
 import random
 import time
@@ -8,6 +9,7 @@ import traceback
 import datetime
 
 from Tank.Plugins import ConsoleScreen
+from Tank.Plugins.Aggregator import AggregatorPlugin, AbstractReader
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from tankcore import AbstractPlugin
 from Tank.API.client import TankAPIClient
@@ -75,6 +77,15 @@ class DistributedPlugin(AbstractPlugin):
 
     def prepare_test(self):
         """ choosing tanks, uploading files, calling configure and prepare """
+        aggregator = None
+        try:
+            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+        except Exception, ex:
+            self.log.warning("No aggregator found: %s", ex)
+
+        if aggregator:
+            aggregator.reader = DistributedReader(aggregator, self)
+
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
         except Exception, ex:
@@ -282,3 +293,24 @@ class DistributedInfoWidget(AbstractInfoWidget):
         #template += "   Responses/s: %s"
 
         return template % data
+
+
+class DistributedReader(AbstractReader):
+    def __init__(self, owner, distributed):
+        AbstractReader.__init__(self, owner)
+        self.tanks = []
+        self.distributed = distributed
+
+    def get_next_sample(self, force):
+        if not self.tanks:
+            for tank in self.distributed.running_tests:
+                self.tanks.append(tank)
+
+        for tank in self.tanks:
+            logging.debug("Reading data from %s", tank.address)
+            try:
+                fd = tank.get_results_stream()
+                line = fd.readline()
+                logging.debug("Line: %s", line)
+            except Exception, exc:
+                logging.warn("Failed to get data stream for tank %s", tank.address)

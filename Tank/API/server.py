@@ -72,8 +72,6 @@ class HTTPAPIHandler(BaseHTTPRequestHandler):
 
 
 class TankAPIHandler:
-    TICKET_INFO_JSON = "ticket_info.json"
-
     def __init__(self):
         self.data_dir = "/tmp"
         self.live_tickets = {}
@@ -90,9 +88,10 @@ class TankAPIHandler:
             if parsed_path.path.endswith(".json"):
                 return 200, {'Content-Type': 'application/json'}, json.dumps(
                     self.__handled_get_json(parsed_path.path, params))
-            elif parsed_path.path == "/download_artifact":
+            elif parsed_path.path == TankAPIClient.DOWNLOAD_ARTIFACT_URL:
                 return self.__download_artifact(params)
-
+            elif parsed_path.path == TankAPIClient.TEST_DATA_STREAM_JSON:
+                return self.__get_data_stream(params)
             else:
                 raise HTTPError(path, 404, "Not Found", {}, None)
 
@@ -138,70 +137,70 @@ class TankAPIHandler:
         else:
             raise HTTPError(path, 404, "Not Found", {}, None)
 
-    def __generate_new_ticket(self, exclusive=False):
-        ticket = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.") + os.path.basename(tempfile.mktemp())
-        return {
-            TankAPIClient.TICKET: ticket,
-            "status": TankAPIClient.STATUS_BOOKED,
-            "exclusive": exclusive,
-            "worker": None,
-            "tankcore": TankCore(),
-            "exitcode": None,
-            "last_error": None
-        }
-
     def __initiate_test(self, params):
-        if 'exclusive' in params and int(params['exclusive']):
+        if 'exclusive' in params and int(params["exclusive"]):
             exclusive = True
         else:
             exclusive = False
 
         logging.debug("Live tickets: %s", self.live_tickets)
         for ticket in self.live_tickets.values():
-            self.__refresh_ticket_status(ticket)
+            ticket.refresh_status()
 
         if exclusive and self.live_tickets:
             raise HTTPError(None, 423, "Cannot obtain exclusive lock, the server is busy", {}, None)
 
         for ticket in self.live_tickets.values():
-            if ticket['exclusive']:
-                raise HTTPError(None, 423, "Cannot book the test, the server is exclusively booked", {}, None)
+            if ticket.exclusive:
+                msg = "Cannot book the test, server is exclusively locked by %s" % ticket.name
+                raise HTTPError(None, 423, msg, {}, None)
 
-        ticket = self.__generate_new_ticket(exclusive)
-        ticket["tankcore"].get_lock(True)  # FIXME: need to work with command-line-run tanks properly
+        ticket = Ticket(self.data_dir, exclusive)
 
         logging.debug("Created new ticket: %s", ticket)
-        self.live_tickets[ticket[TankAPIClient.TICKET]] = ticket
-        return self.__clean_ticket_objects(ticket)
+        self.live_tickets[ticket.name] = ticket
+        return ticket.json_dumpable_repr()
+
+    def __check_ticket(self, params):
+        """
+
+        :rtype : Ticket
+        """
+        if not TankAPIClient.TICKET in params:
+            raise HTTPError(None, 400, "Ticket parameter was not passed", {}, None)
+
+        logging.debug("Live tickets: %s", self.live_tickets)
+        ticket_name = params[TankAPIClient.TICKET]
+        if ticket_name in self.live_tickets:
+            ticket = self.live_tickets[ticket_name]
+            ticket.refresh_status()
+            return ticket
+        else:
+            try:
+                ticket = Ticket.load_offline(self.data_dir + os.path.sep + ticket_name)
+                return ticket.json_dumpable_repr()
+            except ValueError:
+                logging.debug("No offline ticket: %s", ticket_name)
+
+        raise HTTPError(None, 422, "Ticket not found", {}, None)
+
 
     def __interrupt_test(self, params):
-        interruptible = (TankAPIClient.STATUS_PREPARING, TankAPIClient.STATUS_RUNNING)
         ticket = self.__check_ticket(params)
-        logging.debug("Begin interrupting test: %s", ticket['ticket'])
-        if ticket['status'] == TankAPIClient.STATUS_BOOKED:
+        logging.debug("Begin interrupting test: %s", ticket.name)
+        if ticket.status == TankAPIClient.STATUS_BOOKED:
             logging.debug("Just deleting booking ticket")
             del self.live_tickets[params[TankAPIClient.TICKET]]
-        elif ticket['status'] in interruptible:
-            logging.debug("Interrupting worker")
-            ticket['worker'].interrupt()
-        elif ticket['status'] == TankAPIClient.STATUS_PREPARED:
-            logging.debug("Finalizing prepared worker")
-            ticket['worker'].graceful_shutdown()
-            ticket['status'] = TankAPIClient.STATUS_FINISHED
-            ticket['exitcode'] = ticket['worker'].exitcode
-        elif ticket['status'] in (TankAPIClient.STATUS_FINISHING, TankAPIClient.STATUS_FINISHED):
-            logging.info("No need to interrupt test in status: %s", ticket['status'])
         else:
-            logging.warn("No live ticket to interrupt: %s", params[TankAPIClient.TICKET])
+            ticket.interrupt_test()
         return {}
 
     def __test_status(self, params):
         ticket_obj = self.__check_ticket(params)
-        if ticket_obj['status'] != TankAPIClient.STATUS_BOOKED:
-            ticket_dir = self.data_dir + os.path.sep + ticket_obj['ticket']
-            ticket_obj['artifacts'] = os.listdir(ticket_dir)
+        if ticket_obj.status != TankAPIClient.STATUS_BOOKED:
+            ticket_obj.artifacts = os.listdir(ticket_obj.data_dir)
 
-        return self.__clean_ticket_objects(ticket_obj)
+        return ticket_obj.json_dumpable_repr()
 
     def __prepare_test(self, params, headers, rfile):
         """
@@ -211,7 +210,7 @@ class TankAPIHandler:
         :return:
         """
         ticket = self.__check_ticket(params)
-        if ticket['status'] != TankAPIClient.STATUS_BOOKED:
+        if ticket.status != TankAPIClient.STATUS_BOOKED:
             msg = "Ticket must be in %s status to prepare the test" % TankAPIClient.STATUS_BOOKED
             raise HTTPError(None, 422, msg, {}, None)
 
@@ -229,7 +228,7 @@ class TankAPIHandler:
         form_data = cgi.FieldStorage(fp=rfile, headers=headers,
                                      environ={'REQUEST_METHOD': 'POST', 'CONTENT_TYPE': headers['Content-Type'], })
 
-        ticket_dir = self.data_dir + os.path.sep + ticket[TankAPIClient.TICKET]
+        ticket_dir = ticket.data_dir
         logging.debug("Creating ticket dir: %s", ticket_dir)
         os.mkdir(ticket_dir)
 
@@ -250,79 +249,24 @@ class TankAPIHandler:
         if load_ini is None:
             raise RuntimeError('Error: config file is empty')
 
-        ticket["worker"] = PrepareThread(ticket["tankcore"], load_ini)
-        ticket["worker"].start()
-        ticket['status'] = TankAPIClient.STATUS_PREPARING
+        ticket.worker = PrepareThread(ticket.tankcore, load_ini)
+        ticket.worker.start()
+        ticket.status = TankAPIClient.STATUS_PREPARING
         return 200, {}, {}
 
     def __test_start(self, params):
         ticket = self.__check_ticket(params)
-        if ticket["status"] != TankAPIClient.STATUS_PREPARED:
+        if ticket.status != TankAPIClient.STATUS_PREPARED:
             msg = "Ticket must be in %s status to start the test" % TankAPIClient.STATUS_PREPARED
             raise HTTPError(None, 422, msg, {}, None)
 
-        ticket["worker"] = TestRunThread(ticket["tankcore"], self.data_dir + os.path.sep + ticket[TankAPIClient.TICKET])
-        ticket["worker"].start()
-        ticket["status"] = TankAPIClient.STATUS_RUNNING
-
-    def __check_ticket(self, params):
-        if not TankAPIClient.TICKET in params:
-            raise HTTPError(None, 400, "Ticket parameter was not passed", {}, None)
-
-        logging.debug("Live tickets: %s", self.live_tickets)
-        ticket = params[TankAPIClient.TICKET]
-        if ticket in self.live_tickets:
-            ticket_obj = self.live_tickets[ticket]
-            self.__refresh_ticket_status(ticket_obj)
-            return ticket_obj
-        else:
-            ticket_dir = self.data_dir + os.path.sep + ticket
-            if os.path.isdir(ticket_dir):
-                with open(ticket_dir + os.path.sep + self.TICKET_INFO_JSON) as fd:
-                    return json.loads(fd.read())
-
-        raise HTTPError(None, 422, "Ticket not found", {}, None)
-
-    def __refresh_ticket_status(self, ticket_obj):
-        if ticket_obj['status'] == TankAPIClient.STATUS_PREPARING:
-            if not ticket_obj['worker'].isAlive():
-                if ticket_obj['worker'].retcode == 0:
-                    ticket_obj['status'] = TankAPIClient.STATUS_PREPARED
-                else:
-                    ticket_obj['exitcode'] = ticket_obj['worker'].retcode
-                    ticket_obj['last_error'] = str(ticket_obj['worker'].exception)
-                    ticket_obj['status'] = TankAPIClient.STATUS_FINISHED
-                    self.__move_ticket_to_offline(ticket_obj)
-
-        if ticket_obj['status'] == TankAPIClient.STATUS_RUNNING:
-            if not ticket_obj['worker'].isAlive():
-                ticket_obj['status'] = TankAPIClient.STATUS_FINISHED
-                ticket_obj['exitcode'] = ticket_obj['worker'].retcode
-                self.__move_ticket_to_offline(ticket_obj)
-
-
-    def __move_ticket_to_offline(self, ticket_obj):
-        logging.info("Moving ticket to offline: %s", ticket_obj)
-        ticket_obj["tankcore"].release_lock()
-        ticket_dir = self.data_dir + os.path.sep + ticket_obj['ticket']
-        with open(ticket_dir + os.path.sep + self.TICKET_INFO_JSON, 'w') as fd:
-            json_str = json.dumps(self.__clean_ticket_objects(ticket_obj))
-            logging.debug("Offline json: %s", json_str)
-            fd.write(json_str)
-        del self.live_tickets[ticket_obj['ticket']]
-
-    def __clean_ticket_objects(self, base):
-        ticket = {}
-        for key in base:
-            if key not in ('worker', "tankcore"):
-                ticket[key] = base[key]
-
-        return ticket
+        ticket.worker = TestRunThread(ticket.tankcore, ticket.data_dir)
+        ticket.worker.start()
+        ticket.status = TankAPIClient.STATUS_RUNNING
 
     def __download_artifact(self, params):
         ticket = self.__check_ticket(params)
-        ticket_dir = self.data_dir + os.path.sep + ticket['ticket']
-        filename = ticket_dir + os.path.sep + os.path.basename(params['filename'])
+        filename = ticket.data_dir + os.path.sep + os.path.basename(params['filename'])
         logging.info("Sending file: %s", filename)
         fd = open(filename)
         return 200, {'Content-Type': 'application/octet-stream'}, fd
@@ -330,10 +274,16 @@ class TankAPIHandler:
     def __tank_status(self, params):
         live = {}
         for ticket in self.live_tickets:
-            live[ticket] = self.__clean_ticket_objects(self.live_tickets[ticket])
+            self.live_tickets[ticket].refresh_status()
+            live[ticket] = self.live_tickets[ticket].json_dumpable_repr()
         return {
             "live_tickets": live
         }
+
+    def __get_data_stream(self, params):
+        ticket = self.__check_ticket(params)
+        fd = FileTailer("/var/log/syslog")
+        return 200, {'Content-Type': 'application/octet-stream'}, fd
 
 
 class InterruptibleThread(threading.Thread):
@@ -487,4 +437,94 @@ class FileWriterAggregatorListener(AggregateResultListener):
 
     def close(self):
         self.fd.close()
+
+
+class FileTailer(file):
+    def read(self, size=-1):
+        while not self.closed:
+            return self.readline()
+
+
+class Ticket:
+    TICKET_INFO_FILE = "ticket_info.json"
+
+    def __init__(self, data_dir="/tmp", exclusive=True):
+        self.name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.") + os.path.basename(tempfile.mktemp())
+        self.status = TankAPIClient.STATUS_BOOKED
+        self.exclusive = exclusive
+        self.exitcode = None
+        self.last_error = None
+        # private fields
+        self.worker = None
+        self.tankcore = TankCore()
+        self.data_dir = data_dir + os.path.sep + self.name
+        self.tankcore.get_lock(True)  # FIXME: need to work with command-line-run tanks properly
+
+    def json_dumpable_repr(self):
+        ticket = {}
+        for key in self.__dict__:
+            if key == "name":
+                ticket["ticket"] = self.__dict__[key]
+            elif key not in ('worker', "tankcore"):
+                ticket[key] = self.__dict__[key]
+
+        return ticket
+
+    def refresh_status(self):
+        if self.status == TankAPIClient.STATUS_PREPARING:
+            if not self.worker.isAlive():
+                if self.worker.retcode == 0:
+                    self.status = TankAPIClient.STATUS_PREPARED
+                else:
+                    self.exitcode = self.worker.retcode
+                    self.last_error = str(self.worker.exception)
+                    self.status = TankAPIClient.STATUS_FINISHED
+                    self.move_to_offline()
+
+        if self.status == TankAPIClient.STATUS_RUNNING:
+            if not self.worker.isAlive():
+                self.status = TankAPIClient.STATUS_FINISHED
+                self.exitcode = self.worker.retcode
+                self.move_to_offline()
+
+
+    def move_to_offline(self):
+        logging.info("Moving ticket to offline: %s", self)
+        self.tankcore.release_lock()
+        with open(self.data_dir + os.path.sep + self.TICKET_INFO_FILE, 'w') as fd:
+            json_str = json.dumps(self.json_dumpable_repr())
+            logging.debug("Offline json: %s", json_str)
+            fd.write(json_str)
+        del self.live_tickets[self.name]
+
+    @classmethod
+    def load_offline(cls, ticket_dir):
+        if os.path.isdir(ticket_dir):
+            with open(ticket_dir + os.path.sep + cls.TICKET_INFO_FILE) as fd:
+                return cls.load_json(fd.read())
+        else:
+            raise ValueError("Ticket directory not found: %s", ticket_dir)
+
+    @classmethod
+    def load_json(cls, ticket_json):
+        data = json.loads(ticket_json)
+        ticket = cls()
+        for key in data:
+            ticket.__dict__[key] = data[key]
+        return ticket
+
+    def interrupt_test(self):
+        interruptible = (TankAPIClient.STATUS_PREPARING, TankAPIClient.STATUS_RUNNING)
+        if self.status in interruptible:
+            logging.debug("Interrupting worker")
+            self.worker.interrupt()
+        elif self.status == TankAPIClient.STATUS_PREPARED:
+            logging.debug("Finalizing prepared worker")
+            self.worker.graceful_shutdown()
+            self.status = TankAPIClient.STATUS_FINISHED
+            self.exitcode = self.worker.exitcode
+        elif self.status in (TankAPIClient.STATUS_FINISHING, TankAPIClient.STATUS_FINISHED):
+            logging.info("No need to interrupt test in status: %s", self.status)
+        else:
+            raise RuntimeError("Don't know what to do in this case!")
 
