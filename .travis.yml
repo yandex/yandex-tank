@@ -7,8 +7,9 @@ python:
 #  - "pypy"
 # command to install dependencies
 install:
+  - pip install ipaddr --use-mirrors
   - pip install psutil --use-mirrors
   - pip install sqlalchemy --use-mirrors
 #  - pip install -r requirements.txt --use-mirrors
 # command to run tests
-script: nosetests
+script: cd Tests && nosetests
