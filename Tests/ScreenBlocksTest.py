@@ -1,6 +1,6 @@
 import unittest
 from Tank.Plugins.ConsoleScreen import Screen, CurrentHTTPBlock, CurrentNetBlock
-from Tests.ConsoleOnlinePluginTest import FakeConsoleMarkup
+from Tests.ConsoleOnlinePlugin_Test import FakeConsoleMarkup
 from Tests.TankTests import TankTestCase
 
 class BlocksTestCase(TankTestCase):

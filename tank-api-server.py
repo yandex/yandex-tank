@@ -67,5 +67,5 @@ if __name__ == "__main__":
     address = socket.gethostname()
     port = int(ini_reader.get_option(SECTION, "port", TankAPIClient.DEFAULT_PORT))
     server = TankAPIServer(('', port), HTTPAPIHandler)
-    logging.info("Starting local HTTP server for online view at port: http://%s:%s/", address, port)
+    logging.info("Starting HTTP server: http://%s:%s/", address, port)
     server.serve_forever()

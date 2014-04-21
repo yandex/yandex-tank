@@ -382,7 +382,7 @@ class NetTcp(AbstractMetric):
         if note set it to 0.
         * make output ordered as "fields" list
         """
-        fetch = lambda: commands.getoutput("ss -s | awk -F'\(|\)|\/' '/^TCP:/ {print $2}'")
+        fetch = lambda: commands.getoutput("ss -s | awk -F'[(|)|/]' '$0 ~ /^TCP:/ {print $2}' ")
         data = {}
         result = []
         raw_lines = fetch().split(',')

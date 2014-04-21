@@ -33,6 +33,8 @@ class DummyPlugin(AbstractPlugin):
         
     def end_test(self, retcode):
         self.log.warn("End")
+        return retcode
         
     def post_process(self, retcode):
         self.log.warn("Post-process")
+        return retcode

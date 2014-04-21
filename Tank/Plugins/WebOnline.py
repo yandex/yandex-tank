@@ -6,6 +6,7 @@ import logging
 import os.path
 import socket
 import time
+import traceback
 
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from tankcore import AbstractPlugin

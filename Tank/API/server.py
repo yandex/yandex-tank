@@ -12,6 +12,7 @@ import traceback
 from urllib2 import HTTPError
 import urlparse
 import datetime
+import time
 
 from Tank.API.client import TankAPIClient
 from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
@@ -42,6 +43,9 @@ class HTTPAPIHandler(BaseHTTPRequestHandler):
                 self.send_header(name, val)
             self.end_headers()
 
+            if isinstance(results[2], FileTailer):
+                results[2].tail_into(self.wfile)
+                results[2].close()
             if isinstance(results[2], file):
                 self.wfile.write(results[2].read())
                 results[2].close()
@@ -444,9 +448,12 @@ class FileWriterAggregatorListener(AggregateResultListener):
 
 
 class FileTailer(file):
-    def read(self, size=-1):
+    def tail_into(self, wfile):
         while not self.closed:
-            return self.readline()
+            logging.debug("Read tailed file: %s", self.name)
+            wfile.write(self.read())
+            time.sleep(1)
+        logging.debug("Closed")
 
 
 class Ticket:

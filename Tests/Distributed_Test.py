@@ -90,4 +90,3 @@ class FakeAPIClient(TankAPIClient):
 
 if __name__ == '__main__':
     unittest.main()
-
