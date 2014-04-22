@@ -7,6 +7,7 @@ python:
 #  - "pypy"
 # command to install dependencies
 install:
+  - pip install lxml --use-mirrors
   - pip install ipaddr --use-mirrors
   - pip install psutil --use-mirrors
   - pip install sqlalchemy --use-mirrors
