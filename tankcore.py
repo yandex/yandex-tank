@@ -199,6 +199,11 @@ class TankCore:
     def load_configs(self, configs):
         """        Tells core to load configs set into options storage        """
         self.log.info("Loading configs...")
+        for fname in configs:
+            if not os.path.isfile(fname):
+                # can't raise exception, since ~/.yandex-tank may not exist
+                logging.debug("Config file not found: %s", fname)
+
         self.config.load_files(configs)
         dotted_options = []
         for option, value in self.config.get_options(self.SECTION):

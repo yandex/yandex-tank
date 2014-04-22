@@ -17,7 +17,7 @@ dotted.test=passed
 someoption=somevalue
 plugin_ShellExec=Tank/Plugins/ShellExec.py
 plugin_ShellExec2=Tests/Dummy.py
-plugin_disabled=
+plugin_phantom =
 someoption=somevalue
 
 [shellexec]
@@ -36,7 +36,7 @@ custom_variable2=value2
 # === config/autostop.conf ===
 [tank]
 plugin_aggreg=Tank/Plugins/Aggregator.py
-plugin_phantom=Tank/Plugins/Phantom.py
+plugin_phantom=                       
 plugin_console=Tank/Plugins/ConsoleOnline.py
 
 [phantom]

@@ -1,8 +1,8 @@
 import ConfigParser
+import os
 import unittest
 
 from Tests.Dummy import DummyPlugin
-
 from Tests.TankTests import TankTestCase
 import tankcore
 
@@ -11,12 +11,8 @@ class TankCoreTestCase(TankTestCase):
     def setUp(self):
         self.foo = self.get_core()
 
-    def tearDown(self):
-        del self.foo
-        self.foo = None
-
     def test_tank_core_fail(self):
-        paths = ['config_err/load_err.conf']
+        paths = [os.path.dirname(__file__) + '/config_err/load_err.conf']
         self.foo.load_configs(paths)
         try:
             self.foo.load_plugins()
@@ -25,7 +21,7 @@ class TankCoreTestCase(TankTestCase):
             pass
 
     def test_tank_core(self):
-        paths = ['config/load.conf']
+        paths = [os.path.dirname(__file__) + '/config/load.conf']
         self.foo.load_configs(paths)
         self.assertEquals('passed', self.foo.get_option('dotted', 'test'))
 
