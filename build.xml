@@ -11,6 +11,7 @@ PYTHONPATH=''
 			<arg value="--all-modules" />
 			<arg value="--traverse-namespace" />
 			<arg value="--with-xcoverage" />
+			<arg value="--xcoverage-file=cobertura.xml" />
 			<arg value="--cover-inclusive" />
 			<arg value="--cover-erase" />
 			<arg value="--cover-package=${package}"/>
