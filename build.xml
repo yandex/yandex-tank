@@ -17,6 +17,9 @@ PYTHONPATH=''
 			<arg value="--cover-package=${package}"/>
 			<arg value="-v"/>
 		</exec>
+		<exec executable="coverage" dir='Tests' failonerror="true">
+			<arg value="xml" />
+        </exec>
 	</target>
 	<target name="pylint">
 		<exec executable="pylint" dir='.' output="pylint.out">
