@@ -34,6 +34,10 @@ class TankAPIHandlerTestCase(TankTestCase):
         self.assertEqual(TankAPIClient.STATUS_PREPARED, res['status'])
 
         self.obj.handle_get(TankAPIClient.START_TEST_JSON + "?ticket=" + ticket)
+
+        res = self.obj.handle_get(TankAPIClient.TEST_DATA_STREAM_JSON + "?ticket=" + ticket)
+        self.assertEqual(200, res[0])
+
         for _ in range(1, 10):
             res = json.loads(self.obj.handle_get(TankAPIClient.TEST_STATUS_JSON + "?ticket=" + ticket)[2])
             if res['status'] != TankAPIClient.STATUS_RUNNING:
@@ -56,6 +60,9 @@ class TankAPIHandlerTestCase(TankTestCase):
             logging.debug(res[2].read()[:64])
             art_cnt += 1
         self.assertEquals(9, art_cnt)
+
+        res = self.obj.handle_get(TankAPIClient.TEST_DATA_STREAM_JSON + "?ticket=" + ticket)
+        self.assertEqual(200, res[0])
 
     def test_run_booking(self):
         res = json.loads(self.obj.handle_get(TankAPIClient.INITIATE_TEST_JSON)[2])
@@ -93,4 +100,3 @@ def record_post(handler):
 
 if __name__ == '__main__':
     unittest.main()
-

@@ -12,7 +12,6 @@ import traceback
 from urllib2 import HTTPError
 import urlparse
 import datetime
-import time
 
 from Tank.API.client import TankAPIClient
 from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
@@ -43,9 +42,6 @@ class HTTPAPIHandler(BaseHTTPRequestHandler):
                 self.send_header(name, val)
             self.end_headers()
 
-            if isinstance(results[2], FileTailer):
-                results[2].tail_into(self.wfile)
-                results[2].close()
             if isinstance(results[2], file):
                 self.wfile.write(results[2].read())
                 results[2].close()
@@ -55,7 +51,7 @@ class HTTPAPIHandler(BaseHTTPRequestHandler):
             logging.info("HTTP Error Response: %s", exc)
             self.send_error(exc.getcode(), exc.msg)
         except Exception, exc:
-            logging.info("Server Error: %s", exc)
+            logging.info("Server Error: %s", traceback.format_exc(exc))
             self.send_error(500, exc.message)
 
     def do_POST(self):
@@ -95,7 +91,7 @@ class TankAPIHandler:
             elif parsed_path.path == TankAPIClient.DOWNLOAD_ARTIFACT_URL:
                 return self.__download_artifact(params)
             elif parsed_path.path == TankAPIClient.TEST_DATA_STREAM_JSON:
-                return self.__get_data_stream(params)
+                return self.__get_aggregate_data(params)
             else:
                 raise HTTPError(path, 404, "Not Found", {}, None)
 
@@ -287,11 +283,38 @@ class TankAPIHandler:
             "live_tickets": live
         }
 
-    def __get_data_stream(self, params):
-        # TODO
-        #ticket = self.__check_ticket(params)
-        fd = FileTailer("/var/log/syslog")
-        return 200, {'Content-Type': 'application/octet-stream'}, fd
+    def __get_aggregate_data(self, params):
+        ticket = self.__check_ticket(params)
+        filename = None
+        if ticket.tankcore:
+            try:
+                aggregator = ticket.tankcore.get_plugin_of_type(AggregatorPlugin)
+            except KeyError, exc:
+                logging.debug("Aggregator plugin was not found")
+                aggregator = None
+
+            if aggregator:
+                for listener in aggregator.second_data_listeners:
+                    if isinstance(listener, FileWriterAggregatorListener):
+                        filename = listener.fd.name
+
+        if not filename:
+            logging.debug("Trying to find aggregate log in artifacts")
+            for fname in os.listdir(ticket.data_dir):
+                if fname.startswith(FileWriterAggregatorListener.PREFIX) and fname.endswith(
+                        FileWriterAggregatorListener.SUFFIX):
+                    filename = ticket.data_dir + os.path.sep + fname
+                    break
+
+        if filename:
+            logging.info("Sending file: %s", filename)
+            fd = open(filename)
+            if "offset" in params:
+                logging.debug("Offset: %s", params["offset"])
+                fd.seek(int(params["offset"]))
+            return 200, {'Content-Type': 'text/plain'}, fd
+
+        return 404, {}, "No aggregate results data available"
 
 
 class InterruptibleThread(threading.Thread):
@@ -300,8 +323,7 @@ class InterruptibleThread(threading.Thread):
         #http://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread-in-python
         if not inspect.isclass(exctype):
             raise TypeError("Only types can be raised (not instances)")
-        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid,
-                                                         ctypes.py_object(exctype))
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
         if res == 0:
             raise ValueError("invalid thread id")
         elif res != 1:
@@ -343,11 +365,6 @@ class InterruptibleThread(threading.Thread):
             logging.debug("Thread has already finished its job")
 
 
-class NoAPIMessagesFilter(logging.Filter):
-    def filter(self, record):
-        return record.name != self.name
-
-
 class AbstractTankThread(InterruptibleThread):
     def __init__(self, core, cwd):
         """
@@ -367,7 +384,6 @@ class AbstractTankThread(InterruptibleThread):
         self.file_handler.setLevel(logging.DEBUG)
         self.file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s"))
         logger.addHandler(self.file_handler)
-        #logger.addFilter(NoAPIMessagesFilter(logger.name))
         logging.info("Logging file added")
 
     def graceful_shutdown(self):
@@ -401,7 +417,8 @@ class PrepareThread(AbstractTankThread):
 
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             if aggregator:
-                aggreg_file = self.core.mkstemp(".json", "aggregate_results_")
+                aggreg_file = self.core.mkstemp(FileWriterAggregatorListener.SUFFIX,
+                                                FileWriterAggregatorListener.PREFIX)
                 self.core.add_artifact_file(aggreg_file)
                 aggregator.add_result_listener(FileWriterAggregatorListener(aggreg_file))
 
@@ -434,6 +451,9 @@ class TestRunThread(AbstractTankThread):
 
 
 class FileWriterAggregatorListener(AggregateResultListener):
+    PREFIX = "aggregate_results_"
+    SUFFIX = ".jsonl"
+
     def __init__(self, filename):
         AggregateResultListener.__init__(self)
         logging.debug("Writing aggregate json into file: %s", filename)
@@ -445,15 +465,6 @@ class FileWriterAggregatorListener(AggregateResultListener):
 
     def close(self):
         self.fd.close()
-
-
-class FileTailer(file):
-    def tail_into(self, wfile):
-        while not self.closed:
-            logging.debug("Read tailed file: %s", self.name)
-            wfile.write(self.read())
-            time.sleep(1)
-        logging.debug("Closed")
 
 
 class Ticket:

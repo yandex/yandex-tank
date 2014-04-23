@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import fnmatch
 import logging
+import traceback
 from optparse import OptionParser
 import os
 import socket
@@ -20,7 +21,11 @@ def get_configs():
     """
     configs = []
     dirname = "/etc/yandex-tank"
-    conf_files = os.listdir(dirname)
+    try:
+        conf_files = os.listdir(dirname)
+    except OSError, exc:
+        logging.warn("Cannot read base configs: %s", traceback.format_exc(exc))
+        conf_files = []
     conf_files.sort()
     for filename in conf_files:
         if fnmatch.fnmatch(filename, '*.ini'):
