@@ -90,7 +90,7 @@ class TankAPIHandler:
                     self.__handled_get_json(parsed_path.path, params))
             elif parsed_path.path == TankAPIClient.DOWNLOAD_ARTIFACT_URL:
                 return self.__download_artifact(params)
-            elif parsed_path.path == TankAPIClient.TEST_DATA_STREAM_JSON:
+            elif parsed_path.path == TankAPIClient.TEST_AGGREGATE_DATA:
                 return self.__get_aggregate_data(params)
             else:
                 raise HTTPError(path, 404, "Not Found", {}, None)

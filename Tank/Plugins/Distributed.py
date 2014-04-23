@@ -80,7 +80,7 @@ class DistributedPlugin(AbstractPlugin):
         aggregator = None
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except Exception, ex:
+        except KeyError, ex:
             self.log.warning("No aggregator found: %s", ex)
 
         if aggregator:
@@ -88,7 +88,7 @@ class DistributedPlugin(AbstractPlugin):
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
-        except Exception, ex:
+        except KeyError, ex:
             self.log.debug("Console not found: %s", ex)
             console = None
 
@@ -304,13 +304,16 @@ class DistributedReader(AbstractReader):
     def get_next_sample(self, force):
         if not self.tanks:
             for tank in self.distributed.running_tests:
+                tank.aggregate_data_buffer = ""
+                tank.aggregate_data_offset = 0
                 self.tanks.append(tank)
 
         for tank in self.tanks:
             logging.debug("Reading data from %s", tank.address)
             try:
-                fd = tank.get_results_stream()
-                line = fd.readline()
-                logging.debug("Line: %s", line)
+                data = tank.get_aggregate_results(tank.aggregate_data_offset)
+                tank.aggregate_data_buffer += data
+                tank.aggregate_data_offset += len(data)
+                logging.debug("Line: %s", tank.aggregate_data_buffer)
             except Exception, exc:
                 logging.warn("Failed to get data stream for tank %s", tank.address)

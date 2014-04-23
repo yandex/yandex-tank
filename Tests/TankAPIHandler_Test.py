@@ -35,7 +35,7 @@ class TankAPIHandlerTestCase(TankTestCase):
 
         self.obj.handle_get(TankAPIClient.START_TEST_JSON + "?ticket=" + ticket)
 
-        res = self.obj.handle_get(TankAPIClient.TEST_DATA_STREAM_JSON + "?ticket=" + ticket)
+        res = self.obj.handle_get(TankAPIClient.TEST_AGGREGATE_DATA + "?ticket=" + ticket)
         self.assertEqual(200, res[0])
 
         for _ in range(1, 10):
@@ -61,7 +61,7 @@ class TankAPIHandlerTestCase(TankTestCase):
             art_cnt += 1
         self.assertEquals(9, art_cnt)
 
-        res = self.obj.handle_get(TankAPIClient.TEST_DATA_STREAM_JSON + "?ticket=" + ticket)
+        res = self.obj.handle_get(TankAPIClient.TEST_AGGREGATE_DATA + "?ticket=" + ticket)
         self.assertEqual(200, res[0])
 
     def test_run_booking(self):

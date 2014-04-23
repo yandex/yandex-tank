@@ -4,6 +4,7 @@ import time
 import unittest
 import urllib
 
+from Tank.Plugins.Aggregator import AggregatorPlugin
 from Tank.Plugins.Distributed import DistributedPlugin
 from Tests.TankTests import TankTestCase
 from Tank.API.client import TankAPIClient
@@ -13,6 +14,7 @@ class DistributedPluginTestCase(TankTestCase):
     def setUp(self):
         self.core = self.get_core()
         self.core.load_configs([os.path.dirname(__file__) + '/config/distributed.ini'])
+        self.core.load_plugins()
         self.foo = DistributedPlugin(self.core)
         self.foo.api_client_class = FakeAPIClient
 
@@ -58,6 +60,7 @@ class DistributedPluginTestCase(TankTestCase):
 
             mock.get_data.append({})
             mock.get_data.append({"status": TankAPIClient.STATUS_RUNNING, "exclusive": 1})
+            mock.get_data.append("jsonl")
             mock.get_data.append({"status": TankAPIClient.STATUS_FINISHING, "exclusive": 1, "exitcode": 0, })
             mock.get_data.append({"status": TankAPIClient.STATUS_FINISHING, "exclusive": 1, "exitcode": 0, })
             mock.get_data.append({"status": TankAPIClient.STATUS_FINISHED, "exclusive": 1, "exitcode": 0, })
@@ -69,9 +72,12 @@ class DistributedPluginTestCase(TankTestCase):
             mock.get_data.append("some more content")
 
         self.foo.prepare_test()
+        aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+
         self.foo.start_test()
         self.assertEquals(-1, self.foo.is_test_finished())
         time.sleep(self.foo.retry_interval + 1)
+        aggregator.is_test_finished()
         self.assertEquals(0, self.foo.is_test_finished())
         self.foo.end_test(0)
         self.foo.post_process(0)
@@ -83,8 +89,9 @@ class FakeAPIClient(TankAPIClient):
         logging.debug("Fake API client for %s", address)
         self.get_data = []
         self.post_data = []
+        self.text_data = []
 
-    def query_get(self, url, params=None):
+    def query_get_text(self, url, params=None):
         if params:
             url += "?" + urllib.urlencode(params)
         logging.debug(" Mocking GET request: %s", url)
@@ -93,6 +100,9 @@ class FakeAPIClient(TankAPIClient):
         if isinstance(resp, Exception):
             raise resp
         return resp
+
+    def query_get(self, url, params=None):
+        return self.query_get_text(url, params)
 
     def query_post(self, url, params=None, ct=None, body=None):
         logging.debug(" Mocking POST request: %s with %s, body[%s]:\n%s", url, params, ct, body)

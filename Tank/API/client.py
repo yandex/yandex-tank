@@ -23,7 +23,7 @@ class TankAPIClient:
     TEST_STATUS_JSON = "/test_status.json"
     INITIATE_TEST_JSON = "/initiate_test.json"
     DOWNLOAD_ARTIFACT_URL = "/download_artifact"
-    TEST_DATA_STREAM_JSON = "/aggregate_results_stream"
+    TEST_AGGREGATE_DATA = "/aggregate_results"
 
     # ticket statuses
     STATUS_BOOKED = "BOOKED"
@@ -43,9 +43,6 @@ class TankAPIClient:
             self.ticket = ticket
         else:
             self.ticket = None
-
-        self.results_stream_offset = 0
-        self.results_stream = None
 
     def __repr__(self):
         return "{%s %s}" % (self.__class__.__name__, self.address)
@@ -67,16 +64,7 @@ class TankAPIClient:
         return url
 
     def query_get(self, url, params=None):
-        request = urllib2.Request(self.__build_url(url, params))
-        logging.debug("API Request: %s", request.get_full_url())
-        response = urllib2.urlopen(request, timeout=self.timeout)
-        if response.getcode() != 200:
-            resp = response.read()
-            logging.debug("Full response: %s", resp)
-            msg = "Tank API request failed, response code %s"
-            raise RuntimeError(msg % response.getcode())
-        resp = response.read()
-        logging.debug("Response: %s", resp)
+        resp = self.query_get_text(url, params)
         return json.loads(resp)
 
     def query_post(self, url, params, content_type, body):
@@ -109,18 +97,18 @@ class TankAPIClient:
         with open(local_name, "wb") as fd:
             fd.write(response.read())
 
-    def query_get_stream(self, url, params):
+    def query_get_text(self, url, params):
         request = urllib2.Request(self.__build_url(url, params))
         logging.debug("API Request: %s", request.get_full_url())
         response = urllib2.urlopen(request, timeout=self.timeout)
-
         if response.getcode() != 200:
             resp = response.read()
             logging.debug("Full response: %s", resp)
             msg = "Tank API request failed, response code %s"
             raise RuntimeError(msg % response.getcode())
-
-        return response
+        resp = response.read()
+        logging.debug("Response: %s", resp)
+        return resp
 
     def get_tank_status(self):
         return self.query_get(self.TANK_STATUS_JSON)
@@ -157,10 +145,6 @@ class TankAPIClient:
         self.query_get_to_file(self.DOWNLOAD_ARTIFACT_URL, {self.TICKET: self.ticket, self.FILENAME: remote_name},
                                local_name)
 
-    def get_results_stream(self):
-        if not self.results_stream:
-            # TODO: handle reconnect
-            self.results_stream = self.query_get_stream(self.TEST_DATA_STREAM_JSON,
-                                                        {self.TICKET: self.ticket,
-                                                         "offset": self.results_stream_offset})
-        return self.results_stream
+    def get_aggregate_results(self, offset=0):
+        return self.query_get_text(self.TEST_AGGREGATE_DATA,
+                                                  {self.TICKET: self.ticket, "offset": offset})
