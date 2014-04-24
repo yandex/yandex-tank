@@ -1,6 +1,7 @@
 """ Module to perform distributed tests """
 # TODO: how to deal with remote monitoring data?
 import fnmatch
+import json
 import logging
 import os
 import random
@@ -300,14 +301,19 @@ class DistributedReader(AbstractReader):
         AbstractReader.__init__(self, owner)
         self.tanks = []
         self.distributed = distributed
+        self.last_timestamp = None
 
     def get_next_sample(self, force):
+        # lazy init
         if not self.tanks:
             for tank in self.distributed.running_tests:
                 tank.aggregate_data_buffer = ""
                 tank.aggregate_data_offset = 0
+                tank.aggregate_data_array = []
+                tank.aggregate_started = False
                 self.tanks.append(tank)
 
+        # read remote data
         for tank in self.tanks:
             logging.debug("Reading data from %s", tank.address)
             try:
@@ -316,4 +322,11 @@ class DistributedReader(AbstractReader):
                 tank.aggregate_data_offset += len(data)
                 logging.debug("Line: %s", tank.aggregate_data_buffer)
             except Exception, exc:
-                logging.warn("Failed to get data stream for tank %s", tank.address)
+                logging.warn("Failed to get aggregate data for tank %s: %s", tank.address, traceback.format_exc(exc))
+
+            arr = tank.aggregate_data_buffer.split("\n")
+            while len(arr) > 1:
+                tank.aggregate_data_array.append(json.loads(arr.pop(0)))
+            tank.aggregate_data_buffer = "\n".join(arr)
+
+        # search for next aggregate
