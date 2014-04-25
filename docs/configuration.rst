@@ -427,7 +427,7 @@ Configuration
 Net access and authentication
 """""""""""""""""""""""""""""
 
-Monitoring requires ssh access to hosts for copy and executing agents on them. SSH session is established with current user account, so you need to copy your public keys (ssh-copy-id) and enable nonpassword authorization on hosts.
+Monitoring requires ssh access to hosts for copy and executing agents on them. SSH session is established with user account specified by "username" parameter of Host element, otherwise current user account, so you need to copy your public keys (ssh-copy-id) and enable nonpassword authorization on hosts.
 If connection establishing failed for some reason in ``ssh_timeout`` seconds, corresponding message will be written to console and monitoring log and task will proceed further. 
 Tip: write to ``.ssh/config`` next lines to eliminate ``-A`` option in ``ssh`` 
 
@@ -470,8 +470,9 @@ Contains address and role of monitored server. Attributes:
 * ``python="<python path>"`` - the way to use alternative python version. Optional
 * ``interval="<seconds>"`` - metrics collection interval. Optional. Default: 1 second
 * ``comment="<short commentary>"`` - short notice about server's role in test. Optional. Default: empty
+* ``username="<user name>"`` - user account to connect with. Optional. Default: current user account.
 
-Example: `<Host address="localhost" comment="frontend" priority="1" interval="5" />`
+Example: `<Host address="localhost" comment="frontend" priority="1" interval="5" username="tank"/>`
 
 Metric elements
 ****************
