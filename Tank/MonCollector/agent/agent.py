@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python2
 """ The agent bundle, contains all metric classes and agent running code """
 from optparse import OptionParser
 import base64
