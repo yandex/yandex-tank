@@ -1,11 +1,12 @@
+import datetime
 import logging
 import os
 import time
 import unittest
 import urllib
 
-from Tank.Plugins.Aggregator import AggregatorPlugin
-from Tank.Plugins.Distributed import DistributedPlugin
+from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData
+from Tank.Plugins.Distributed import DistributedPlugin, DistributedReader
 from Tests.TankTests import TankTestCase
 from Tank.API.client import TankAPIClient
 
@@ -60,7 +61,7 @@ class DistributedPluginTestCase(TankTestCase):
 
             mock.get_data.append({})
             mock.get_data.append({"status": TankAPIClient.STATUS_RUNNING, "exclusive": 1})
-            mock.get_data.append("jsonl")
+            mock.get_data.append(str(SecondAggregateData()) + "\n" + str(SecondAggregateData()))
             mock.get_data.append({"status": TankAPIClient.STATUS_FINISHING, "exclusive": 1, "exitcode": 0, })
             mock.get_data.append({"status": TankAPIClient.STATUS_FINISHING, "exclusive": 1, "exitcode": 0, })
             mock.get_data.append({"status": TankAPIClient.STATUS_FINISHED, "exclusive": 1, "exitcode": 0, })
@@ -82,10 +83,107 @@ class DistributedPluginTestCase(TankTestCase):
         self.foo.end_test(0)
         self.foo.post_process(0)
 
+    def test_aggregator_reader(self):
+        self.foo.running_tests = [FakeAPIClient("test1"), FakeAPIClient("test2"), FakeAPIClient("test3")]
+        # - Not all starts at the time
+        # - Not all end the same way
+        # - may have gaps
+        zero = SecondAggregateData()
+        one = SecondAggregateData()
+        one.overall.rps = 1
+        two = SecondAggregateData()
+        two.overall.rps = 2
+        three = SecondAggregateData()
+        three.overall.rps = 3
+
+        self.foo.running_tests[0].get_data.append("")
+        self.foo.running_tests[1].get_data.append("")
+        self.foo.running_tests[2].get_data.append("")
+
+        now = datetime.datetime.now()
+
+        zero.time = now
+        one.time = now
+        two.time = now
+        three.time = now
+
+        one.time = now + datetime.timedelta(0, 2)
+        self.foo.running_tests[0].get_data.append(str(one) + "\n")
+        two.time = now + datetime.timedelta(0, 3)
+        self.foo.running_tests[0].get_data.append(str(two) + "\n")
+        three.time = now + datetime.timedelta(0, 4)
+        self.foo.running_tests[0].get_data.append(str(three) + "\n")
+        three.time = now + datetime.timedelta(0, 5)
+        self.foo.running_tests[0].get_data.append(str(three) + "\n")
+        self.foo.running_tests[0].get_data.append("")
+        self.foo.running_tests[0].get_data.append("")
+        self.foo.running_tests[0].get_data.append("")
+        self.foo.running_tests[0].get_data.append("")
+
+        self.foo.running_tests[1].get_data.append("")
+        self.foo.running_tests[1].get_data.append("")
+        one.time = now + datetime.timedelta(0, 4)
+        self.foo.running_tests[1].get_data.append(str(one) + "\n")
+        two.time = now + datetime.timedelta(0, 5)
+        self.foo.running_tests[1].get_data.append(str(two) + "\n")
+        three.time = now + datetime.timedelta(0, 6)
+        self.foo.running_tests[1].get_data.append(str(three) + "\n")
+        three.time = now + datetime.timedelta(0, 7)
+        self.foo.running_tests[1].get_data.append(str(three) + "\n")
+        self.foo.running_tests[1].get_data.append("")
+        self.foo.running_tests[1].get_data.append("")
+
+        self.foo.running_tests[2].get_data.append("")
+        self.foo.running_tests[2].get_data.append("")
+        self.foo.running_tests[2].get_data.append("")
+        one.time = now + datetime.timedelta(0, 1)
+        self.foo.running_tests[2].get_data.append(str(one) + "\n")
+        two.time = now + datetime.timedelta(0, 2)
+        self.foo.running_tests[2].get_data.append(str(two) + "\n")
+        three.time = now + datetime.timedelta(0, 3)
+        self.foo.running_tests[2].get_data.append(str(three) + "\n")
+        three.time = now + datetime.timedelta(0, 4)
+        self.foo.running_tests[2].get_data.append(str(three) + "\n")
+        self.foo.running_tests[2].get_data.append("")
+
+        # do test
+        aggregator = AggregatorPlugin(self.foo.core)
+        reader = DistributedReader(aggregator, self.foo)
+
+        res0 = reader.get_next_sample()
+        self.assertIsNone(res0)
+
+        res1 = reader.get_next_sample()
+        #self.assertIsNotNone(res1)
+        #self.assertEquals(1, res1.overall.rps)
+
+        res2 = reader.get_next_sample()
+        #self.assertIsNotNone(res2)
+        #self.assertEquals(2, res2.overall.rps)
+
+        res3 = reader.get_next_sample()
+        #self.assertIsNotNone(res3)
+        #self.assertEquals(4, res3.overall.rps)
+
+        res4 = reader.get_next_sample()
+        #self.assertIsNotNone(res4)
+
+        res5 = reader.get_next_sample()
+        #self.assertIsNotNone(res5)
+
+        res6 = reader.get_next_sample()
+        #self.assertIsNotNone(res6)
+
+        res7 = reader.get_next_sample()
+        #self.assertIsNotNone(res6)
+
+        res8 = reader.get_next_sample()
+        self.assertIsNone(res8)
+
 
 class FakeAPIClient(TankAPIClient):
-    def __init__(self, address, to):
-        TankAPIClient.__init__(self, address, to)
+    def __init__(self, address):
+        TankAPIClient.__init__(self, address, 1)
         logging.debug("Fake API client for %s", address)
         self.get_data = []
         self.post_data = []

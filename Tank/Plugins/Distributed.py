@@ -184,7 +184,7 @@ class DistributedPlugin(AbstractPlugin):
         with open(fname, "w") as fd:
             for cfile in configs:
                 fd.write("# === %s ===\n" % cfile)
-                with open(cfile) as orig:
+                with open(os.path.expanduser(cfile)) as orig:
                     fd.write(orig.read())
                 fd.write("\n\n")
 
@@ -302,10 +302,12 @@ class DistributedReader(AbstractReader):
         self.tanks = []
         self.distributed = distributed
         self.last_timestamp = None
+        self.aggregate_active_tanks = 0
 
-    def get_next_sample(self, force):
+    def get_next_sample(self, force=False):
         # lazy init
         if not self.tanks:
+            logging.debug("Using running tests for reader: %s", self.distributed.running_tests)
             for tank in self.distributed.running_tests:
                 tank.aggregate_data_buffer = ""
                 tank.aggregate_data_offset = 0
@@ -330,3 +332,8 @@ class DistributedReader(AbstractReader):
             tank.aggregate_data_buffer = "\n".join(arr)
 
         # search for next aggregate
+        for tank in self.tanks:
+            left_tanks = self.aggregate_active_tanks
+            logging.debug("Aggregate array for %s: %s", tank.address,
+                          [(x['time'], x['overall']['rps']) for x in tank.aggregate_data_array])
+            #if tank.aggregate_data_array:

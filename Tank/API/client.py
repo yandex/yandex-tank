@@ -130,7 +130,7 @@ class TankAPIClient:
             body.add_file_as_string(self.CONFIG, os.path.basename(config_file), fd.read())
 
         for extra_file in additional_files:
-            with open(extra_file) as fd:
+            with open(os.path.expanduser(extra_file)) as fd:
                 body.add_file_as_string("file_%s" % extra_file, os.path.basename(extra_file), fd.read())
 
         self.query_post(self.PREPARE_TEST_JSON, {self.TICKET: self.ticket}, body.get_content_type(), str(body))

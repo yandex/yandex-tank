@@ -157,15 +157,9 @@ class ConsoleTank:
                     self.log.info("No config passed via cmdline, using ./load.ini")
                     configs += [os.path.realpath('load.ini')]
                     self.core.add_artifact_file(os.path.realpath('load.ini'), True)
-                elif os.path.exists(os.path.realpath('load.conf')):
-                    # just for old 'lunapark' compatibility
-                    self.log.warn("Using 'load.conf' is unrecommended, please use 'load.ini' instead")
-                    conf_file = os.path.realpath('load.conf')
-                    configs += [conf_file]
-                    self.core.add_artifact_file(conf_file, True)
             else:
                 for config_file in self.options.config:
-                    configs.append(config_file)
+                    configs.append(os.path.expanduser(config_file))
 
             self.core.load_configs(configs)
 

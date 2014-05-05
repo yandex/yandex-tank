@@ -160,6 +160,7 @@ class TankAPIHandler:
                 raise HTTPError(None, 423, msg, {}, None)
 
         ticket = Ticket(self.data_dir, exclusive)
+        ticket.tankcore.get_lock(True)  # FIXME: need to work with command-line-run tanks properly
 
         logging.debug("Created new ticket: %s", ticket)
         self.live_tickets[ticket.name] = ticket
@@ -183,7 +184,7 @@ class TankAPIHandler:
             try:
                 return Ticket.load_offline(self.data_dir + os.path.sep + ticket_name)
             except Exception, exc:
-                logging.debug("No offline ticket%s: %s", ticket_name, traceback.format_exc(exc))
+                logging.debug("No offline ticket %s: %s", ticket_name, traceback.format_exc(exc))
 
         raise HTTPError(None, 422, "Ticket not found", {}, None)
 
@@ -193,6 +194,7 @@ class TankAPIHandler:
         logging.debug("Begin interrupting test: %s", ticket.name)
         if ticket.status == TankAPIClient.STATUS_BOOKED:
             logging.debug("Just deleting booking ticket")
+            ticket.tankcore.release_lock()
             del self.live_tickets[params[TankAPIClient.TICKET]]
         else:
             ticket.interrupt_test()
@@ -325,7 +327,7 @@ class InterruptibleThread(threading.Thread):
             raise TypeError("Only types can be raised (not instances)")
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
         if res == 0:
-            raise ValueError("invalid thread id")
+            raise threading.ThreadError("invalid thread id")
         elif res != 1:
             # "if it returns a number greater than one, you're in trouble,
             # and you should call it again with exc=NULL to revert the effect"
@@ -360,7 +362,7 @@ class InterruptibleThread(threading.Thread):
             try:
                 self.__async_raise(self.__get_my_tid(), KeyboardInterrupt)
             except threading.ThreadError, exc:
-                logging.debug("Failed to interrupt the thread: %s", traceback.format_exc(exc))
+                logging.warn("Failed to interrupt the thread: %s", traceback.format_exc(exc))
         else:
             logging.debug("Thread has already finished its job")
 
@@ -385,6 +387,10 @@ class AbstractTankThread(InterruptibleThread):
         self.file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s"))
         logger.addHandler(self.file_handler)
         logging.info("Logging file added")
+
+    def interrupt(self):
+        super(AbstractTankThread, self).interrupt()
+        self.core.interrupted = True
 
     def graceful_shutdown(self):
         self.retcode = self.core.plugins_end_test(self.retcode)
@@ -456,7 +462,7 @@ class FileWriterAggregatorListener(AggregateResultListener):
 
     def __init__(self, filename):
         AggregateResultListener.__init__(self)
-        logging.debug("Writing aggregate json into file: %s", filename)
+        logging.info("Writing aggregate json into file: %s", filename)
         self.fd = open(filename, "w")
 
     def aggregate_second(self, second_aggregate_data):
@@ -480,7 +486,6 @@ class Ticket:
         self.worker = None
         self.tankcore = TankCore()
         self.data_dir = data_dir + os.path.sep + self.name
-        self.tankcore.get_lock(True)  # FIXME: need to work with command-line-run tanks properly
 
     def json_dumpable_repr(self):
         ticket = {}
