@@ -93,7 +93,7 @@ class AgentClient(object):
         self.custom = {}
         self.startups = []
         self.shutdowns = []
-        self.python = '/usr/bin/env python'
+        self.python = '/usr/bin/env python2'
 
     def start(self):
         """        Start remote agent        """
@@ -458,7 +458,7 @@ class MonitoringCollector:
         if host.get('python'):
             tmp.update({'python': host.get('python')})
         else:
-            tmp.update({'python': '/usr/bin/env python'})
+            tmp.update({'python': '/usr/bin/env python2'})
 
         tmp.update({'custom': custom})
         tmp.update({'host': hostname})
