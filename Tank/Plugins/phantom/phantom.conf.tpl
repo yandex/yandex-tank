@@ -10,6 +10,7 @@ setup_t module_setup = setup_module_t {
 		io_benchmark_method_stream_source_log
 		io_benchmark_method_stream_proto_none
 		io_benchmark_method_stream_proto_http
+		io_monitor
 		
 		$additional_libs
 	}
@@ -31,10 +32,16 @@ logger = phantom_logger
 
 $benchmarks_block
 
-stat = {
-    clear = true
-    period = 1s
-    time_format = full
-    list = { benchmark_io $stat_benchmarks }
-    filename = "$stat_log"
+setup_t stat_setup = setup_stat_t {
+	list = { default }
+}
+
+io_t monitor_io = io_monitor_t {
+scheduler = main_scheduler
+	stat_id = default
+	clear = true
+	period = 1s
+	# time_format = full
+	list = { benchmark_io $stat_benchmarks }
+	filename = "$stat_log"
 }
