@@ -84,6 +84,7 @@ class PhantomPluginTestCase(TankTestCase):
 
     def test_domain_name(self):
         self.foo.core.set_option('phantom', 'address', 'yandex.ru:443')
+        self.foo.core.set_option('phantom', 'ignore_test_connection', '1')
         self.foo.configure()
         self.assertEqual("443", self.foo.get_info().port)
         self.assertEqual("yandex.ru", self.foo.get_info().address)
