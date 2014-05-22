@@ -193,6 +193,7 @@ class StreamConfig:
         self.instances = None
         self.ipv6 = None
         self.ssl = None
+        self.spdy = None
         self.address = None
         self.port = None
         self.tank_type = None
@@ -213,7 +214,7 @@ class StreamConfig:
 
     @staticmethod
     def get_available_options():
-        opts = ["ssl", "tank_type", 'gatling_ip',
+        opts = ["ssl", "spdy", "tank_type", 'gatling_ip',
                 "method_prefix", "source_log_prefix"]
         opts += ["phantom_http_line", "phantom_http_field_num",
                  "phantom_http_field", "phantom_http_entity"]
@@ -226,6 +227,7 @@ class StreamConfig:
         """ reads config """
         # multi-options
         self.ssl = int(self.get_option("ssl", '0'))
+        self.spdy = int(self.get_option("spdy", '0'))
         self.tank_type = self.get_option("tank_type", 'http')
         # TODO: refactor. Maybe we should decide how to interact with StepperWrapper here.
         self.instances = int(
@@ -273,6 +275,12 @@ class StreamConfig:
         kwargs['sequence_no'] = self.sequence_no
         kwargs[
             'ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s }\n transport = ssl_transport" if self.ssl else ""
+        if self.spdy:
+            kwargs[ 'ssl_transport'] = 'transport_t ssl_transport = spdy_transport_t { timeout = 1s protos = { "spdy/3.1" "spdy/3" "spdy/2" } } transport = ssl_transport'
+            kwargs['source'] = 'spdy_source'
+            kwargs['additional_libs'] += "\nio_benchmark_method_stream_spdy"
+        else:
+            kwargs['source'] = 'source_log'
         kwargs['method_stream'] = self.method_prefix + \
                                   "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"
         kwargs['phout'] = self.phout_file
@@ -283,8 +291,12 @@ class StreamConfig:
         kwargs['source_log_prefix'] = self.source_log_prefix
         kwargs['method_options'] = self.method_options
         if self.tank_type:
-            kwargs[
-                'proto'] = "proto=http_proto%s" % self.sequence_no if self.tank_type == 'http' else "proto=none_proto"
+            if self.spdy:
+                kwargs['proto'] = 'proto=spdy_proto'
+            elif self.tank_type == 'http':
+                kwargs['proto'] = "proto=http_proto%s" % self.sequence_no
+            else:
+                kwargs['proto'] = "proto=none_proto"
             kwargs['comment_proto'] = ""
         else:
             kwargs['proto'] = ""
