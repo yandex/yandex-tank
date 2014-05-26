@@ -56,7 +56,7 @@ class SSHWrapper:
 
     def get_ssh_pipe(self, cmd):
         """        Get open ssh pipe        """
-        args = ['ssh'] + self.ssh_opts + ['-l'] + [self.username] + [self.host] + cmd
+        args = ['ssh'] + self.ssh_opts + [self.host] + cmd
         self.log.debug('Executing: %s', args)
         return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid, close_fds=True)
 
