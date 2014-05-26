@@ -52,7 +52,7 @@ class SSHWrapper:
         self.port = port
         self.username = username
         self.scp_opts = self.ssh_opts + ['-P', self.port]
-        self.ssh_opts = self.ssh_opts + ['-C', '-p', self.port]
+        self.ssh_opts = self.ssh_opts + ['-C', '-p', self.port] + ['-l', self.username]
 
     def get_ssh_pipe(self, cmd):
         """        Get open ssh pipe        """
