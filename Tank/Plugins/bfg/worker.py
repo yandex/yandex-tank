@@ -116,7 +116,7 @@ class BFGShooter(object):
 
     def _worker(self):
         self.log.info("Started shooter process with %s threads..." % self.threads)
-        pool = [mp.Process(target=self._thread_worker) for i in xrange(0, self.threads)]
+        pool = [th.Thread(target=self._thread_worker) for i in xrange(0, self.threads)]
         map(lambda x: x.start(), pool)
         map(lambda x: x.join(), pool)
         self.log.info("Exiting shooter process...")
