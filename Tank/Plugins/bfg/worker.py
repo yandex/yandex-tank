@@ -58,8 +58,11 @@ class BFG(object):
         self.log.info("Started shooter process with %s threads..." % self.threads)
         pool = [th.Thread(target=self._thread_worker) for i in xrange(0, self.threads)]
         map(lambda x: x.start(), pool)
-        map(lambda x: x.join(), pool)
-        self.log.info("Exiting shooter process...")
+        try:
+            map(lambda x: x.join(), pool)
+            self.log.info("Exiting shooter process...")
+        except (KeyboardInterrupt, SystemExit):
+            self.quit.set()
 
     def _thread_worker(self):
         self.log.debug("Starting shooter thread...")
