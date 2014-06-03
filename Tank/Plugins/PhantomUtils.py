@@ -15,6 +15,7 @@ from Tank.stepper import StepperWrapper
 
 
 
+
 # TODO: use separate answ log per benchmark
 class PhantomConfig:
     """ config file generator """
@@ -246,7 +247,7 @@ class StreamConfig:
         self.address = self.get_option('address', '127.0.0.1')
         self.port = self.get_option('port', '80')
 
-        #address check section
+        # address check section
         self.ip_resolved_check = False
         if not self.ip_resolved_check:
             self.__address_ipv4_check()
@@ -329,7 +330,7 @@ class StreamConfig:
         self.ip_resolved_check = False
         if not self.address:
             raise RuntimeError("Target address not specified")
-        #IPv4 check
+        # IPv4 check
         try:
             address_final = ipaddr.IPv4Address(self.address)
         except AddressValueError:
@@ -381,7 +382,7 @@ class StreamConfig:
         self.ip_resolved_check = False
         if not self.address:
             raise RuntimeError("Target address not specified")
-        #address:port split
+        # address:port split
         address_port = self.address.split(":")
         if len(address_port) > 1:
             self.port = address_port[1]
@@ -443,4 +444,12 @@ class StreamConfig:
                         "Successfully established connection to resolved IPv6 %s, port %s", address_final, self.port)
                     break
 
+
 # ========================================================================
+
+class AddressWizard:
+    def __init__(self):
+        self.lookup_fn = socket.getaddrinfo
+
+    def resolve(self, address_str):
+        pass
