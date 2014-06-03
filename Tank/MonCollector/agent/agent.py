@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python2
 """ The agent bundle, contains all metric classes and agent running code """
 from optparse import OptionParser
 import base64
@@ -382,7 +382,7 @@ class NetTcp(AbstractMetric):
         if note set it to 0.
         * make output ordered as "fields" list
         """
-        fetch = lambda: commands.getoutput("ss -s | awk -F'[(|)|/]' '$0 ~ /^TCP:/ {print $2}' ")
+        fetch = lambda: commands.getoutput("ss -s | sed -ne 's/).*//;/^TCP/s/^[^(]*(//p'")
         data = {}
         result = []
         raw_lines = fetch().split(',')

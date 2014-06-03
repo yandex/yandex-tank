@@ -23,7 +23,7 @@ for all three.
 
 
 Add an ammo file name as a nameless parameter, e.g.:
-``yandex-tank ammo.txt``
+``yandex-tank ammo.txt`` or ``yandex-tank ammo.gz``
 
 Advanced configuration
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -172,7 +172,7 @@ Options
 
 Basic options: 
 
-* **ammofile** - ammo file path (ammo file is a file containing requests that are to be sent to a server) 
+* **ammofile** - ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped). 
 * **rps_schedule** - load schedule in terms of RPS 
 * **instances** - max number of instances (concurrent requests) 
 * **instances_schedule** - load schedule in terms of number of instances 

@@ -14,8 +14,6 @@ Ask your questions at [Stackoverflow](https://stackoverflow.com/), use "load tes
 ## See also
 Evgeniy Mamchits' [phantom](https://github.com/mamchits/phantom) - Phantom scalable IO Engine
 
-Gregory Komissarov's [firebat](https://github.com/greggyNapalm/firebat-console) - test tool based on Phantom
-
 Andrey Pohilko's [loadosophia](https://loadosophia.org/) - service for storing and analysing performance test results
 
 [Jenkins](https://jenkins-ci.org/) - an extendable open source continuous integration server that may be used to automate test execution.
