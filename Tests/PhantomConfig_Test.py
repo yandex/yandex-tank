@@ -64,6 +64,8 @@ class AddressWizardTestCase(TankTestCase):
             "ipv6host": "2001:db8::1"
         }
 
+        return results[host]
+
     def setUp(self):
         self.foo = AddressWizard()
         self.foo.lookup_fn = self.lookup_fn
