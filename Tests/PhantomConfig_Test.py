@@ -110,6 +110,14 @@ class AddressWizardTestCase(TankTestCase):
         res = self.foo.resolve("[ipv6host]:443")
         self.assertEquals((True, "2001:db8::1", 443), res)
 
+    def test_v4_port_resolve_braces(self):
+        res = self.foo.resolve("[ipv4host]:443")
+        self.assertEquals((False, "127.0.0.1", 443), res)
+
+    def test_v4_noport_resolve_braces(self):
+        res = self.foo.resolve("[ipv4host]")
+        self.assertEquals((False, "127.0.0.1", None), res)
+
     def test_v4_noport_noresolve_braces(self):
         res = self.foo.resolve("[127.0.0.1]")
         self.assertEquals((False, "127.0.0.1", None), res)
@@ -118,6 +126,9 @@ class AddressWizardTestCase(TankTestCase):
         res = self.foo.resolve("[ipv6host]")
         self.assertEquals((True, "2001:db8::1", None), res)
 
+    def test_v6_noport_noresolve_braces(self):
+        res = self.foo.resolve("[2001:db8::1]")
+        self.assertEquals((True, "2001:db8::1", None), res)
 
 if __name__ == '__main__':
     unittest.main()
