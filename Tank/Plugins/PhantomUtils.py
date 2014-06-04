@@ -1,15 +1,12 @@
 """ Utility classes for phantom module """
 # TODO: use separate answ log per benchmark
-from ipaddr import AddressValueError
 import copy
-import ipaddr
 import logging
 import multiprocessing
 import os
 import re
 import socket
 import string
-import traceback
 
 from Tank.stepper import StepperWrapper
 
@@ -220,6 +217,7 @@ class StreamConfig:
                  "phantom_http_field", "phantom_http_entity"]
         opts += ['address', "port", StreamConfig.OPTION_INSTANCES_LIMIT]
         opts += StepperWrapper.get_available_options()
+        opts += ["connection_test"]
         return opts
 
     def read_config(self):
@@ -236,24 +234,37 @@ class StreamConfig:
         self.source_log_prefix = self.get_option("source_log_prefix", '')
 
         self.phantom_http_line = self.get_option("phantom_http_line", "")
-        self.phantom_http_field_num = self.get_option(
-            "phantom_http_field_num", "")
+        self.phantom_http_field_num = self.get_option("phantom_http_field_num", "")
         self.phantom_http_field = self.get_option("phantom_http_field", "")
         self.phantom_http_entity = self.get_option("phantom_http_entity", "")
 
+        wizard = AddressWizard()
         self.address = self.get_option('address', '127.0.0.1')
-        self.port = self.get_option('port', '80')
+        self.ipv6, self.resolved_ip, self.port = wizard.resolve(self.address)
 
-        # address check section
-        self.ip_resolved_check = False
-        if not self.ip_resolved_check:
-            self.__address_ipv4_check()
-        if not self.ip_resolved_check:
-            self.__address_ipv6_check()
-        if not self.ip_resolved_check:
-            self.__resolve_address()
-        if not self.ip_resolved_check:
-            raise RuntimeError("Address resolve/parse section failed.")
+        if self.port is None:
+            explicit_port = self.get_option('port', '')
+            if explicit_port:
+                self.log.warn("Using phantom.port option is deprecated. Use phantom.address=[address]:port instead")
+                self.port = int(explicit_port)
+            else:
+                self.port = 80
+
+        logging.info("Resolved %s into %s:%s", self.address, self.resolved_ip, self.port)
+
+        if int(self.get_option("connection_test", "1")):
+            lookup = socket.getaddrinfo(self.resolved_ip, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+            af, socktype, proto, canonname, sa = lookup.pop(0)
+            test_sock = socket.socket(af, socktype, proto)
+            try:
+                test_sock.settimeout(5)
+                test_sock.connect(sa)
+            except Exception, exc:
+                msg = "TCP Connection test failed for %s:%s, use %s.connection_test=0 to disable it"
+                raise RuntimeError(msg % (self.resolved_ip, self.port, self.section))
+            finally:
+                test_sock.close()
+
         self.stepper_wrapper.read_config()
 
     def compose_config(self):
@@ -322,125 +333,6 @@ class StreamConfig:
 
         return config
 
-    def __address_ipv4_check(self):
-        """ Analyse target address, IPv4 """
-        self.ip_resolved_check = False
-        if not self.address:
-            raise RuntimeError("Target address not specified")
-        # IPv4 check
-        try:
-            address_final = ipaddr.IPv4Address(self.address)
-        except AddressValueError:
-            self.log.debug("%s is not IPv4 address", self.address)
-        else:
-            self.ipv6 = False
-            self.ip_resolved_check = True
-            self.resolved_ip = address_final
-            self.log.debug("%s is IPv4 address", self.address)
-        # IPv4:port check
-        try:
-            address_port = self.address.split(":")
-            address_final = ipaddr.IPv4Address(address_port[0])
-        except AddressValueError, exc:
-            self.log.debug("%s is not IPv4 address:port %s", self.address, traceback.format_exc(exc))
-        else:
-            self.ipv6 = False
-            self.ip_resolved_check = True
-            self.resolved_ip = address_final
-            self.address = address_port[0]
-            if len(address_port) > 1:
-                self.port = address_port[1]
-                self.log.warning(
-                    "Address and port should be specified separately via 'address' and 'port' options. "
-                    "Old behavior when \":\" was used as an address/port separator "
-                    "is deprecated and better be avoided")
-            self.log.debug(
-                "%s is IPv4 address and %s is port", address_final, self.port)
-
-    def __address_ipv6_check(self):
-        """ Analyse target address, IPv6 """
-        self.ip_resolved_check = False
-        if not self.address:
-            raise RuntimeError("Target address not specified")
-        try:
-            address_final = ipaddr.IPv6Address(self.address)
-        except AddressValueError:
-            self.log.debug(
-                "%s is not IPv6 address", self.address)
-        else:
-            self.ipv6 = True
-            self.ip_resolved_check = True
-            self.resolved_ip = address_final
-            self.log.debug(
-                "%s is IPv6 address", address_final)
-
-    def __resolve_address(self):
-        """ Resolve hostname to IPv4/IPv6 and analyse what has been resolved """
-        self.ip_resolved_check = False
-        if not self.address:
-            raise RuntimeError("Target address not specified")
-        # address:port split
-        address_port = self.address.split(":")
-        if len(address_port) > 1:
-            self.port = address_port[1]
-            address_port = address_port[0]
-            self.log.warning(
-                "Address and port should be specified separately via 'address' and 'port' options. "
-                "Old behavior when \":\" was used as an address/port separator "
-                "is deprecated and better be avoided")
-        else:
-            address_port = self.address
-        test_sock = None
-        try:
-            lookup = socket.getaddrinfo(address_port, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM)
-        except Exception, msg:
-            logging.debug("Problems resolving target name: %s", traceback.format_exc(msg))
-            raise RuntimeError("Unable to resolve hostname for %s", address_port)
-        # resolve and establish a connection to resolved ip
-        for res in lookup:
-            af, socktype, proto, canonname, sa = res
-            try:
-                test_sock = socket.socket(af, socktype, proto)
-            except Exception as msg:
-                self.log.debug("Failed to create socket, Error code: %s", msg[0])
-                test_sock = None
-                continue
-            try:
-                test_sock.settimeout(5)
-                test_sock.connect(sa)
-            except socket.error as msg:
-                test_sock.close()
-                test_sock = None
-                continue
-            else:
-                address_final = sa[0]
-                test_sock.close()
-                try:
-                    ipaddr.IPv4Address(address_final)
-                except AddressValueError:
-                    self.log.debug("Resolved address %s is not IPv4", address_final)
-                else:
-                    self.ipv6 = False
-                    self.ip_resolved_check = True
-                    self.resolved_ip = address_final
-                    self.address = address_port
-                    self.log.info(
-                        "Successfully established connection to resolved IPv4 %s, port %s", address_final, self.port)
-                    break
-                try:
-                    ipaddr.IPv6Address(address_final)
-                except AddressValueError:
-                    self.log.debug(
-                        "Resolved address %s is not IPv6", address_final)
-                else:
-                    self.ipv6 = True
-                    self.ip_resolved_check = True
-                    self.resolved_ip = address_final
-                    self.address = address_port
-                    self.log.info(
-                        "Successfully established connection to resolved IPv6 %s, port %s", address_final, self.port)
-                    break
-
 
 # ========================================================================
 
@@ -456,8 +348,6 @@ class AddressWizard:
         """
         logging.debug("Trying to resolve address string")
 
-        is_v6 = False
-        parsed_ip = None
         port = None
 
         braceport_pat = "^\[([^]]+)\]:(\d+)$"
@@ -483,6 +373,6 @@ class AddressWizard:
         resolved = self.lookup_fn(address_str, port)
         (family, socktype, proto, canonname, sockaddr) = resolved.pop(0)
         is_v6 = family == socket.AF_INET6
-        parsed_ip, port = sockaddr
+        parsed_ip, port = sockaddr[0], sockaddr[1]
 
         return is_v6, parsed_ip, int(port) if port else None

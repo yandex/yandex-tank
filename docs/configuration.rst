@@ -185,13 +185,14 @@ There are 3 ways to constrain requests number: by schedule with **rps_schedule**
 
 Additional options: 
 
-* **writelog** - enable verbose request/response logging. Available options: 0 - disable, all - all messages, proto_warning - 4хх+5хх+network errors, proto_error - 5хх+network errors. Default: 0 
+* **writelog** - enable verbose request/response logging. Available options: 0 - disable, all - all messages, proto_warning - 4хх+5хх+network errors, proto_error - 5хх+network errors. Default: 0
 * **ssl** - enable SSL, 1 - enable, 0 - disable, default: 0 
 * **address** - address of service to test. May contain port divided by colon for IPv4 or DN. For DN, DNS request is performed, and then reverse-DNS request to verify the correctness of name. Default: ``127.0.0.1`` 
 * **port** - port of service to test. Default: ``80`` 
 * **gatling_ip** - use multiple source addresses. List, divided by spaces. 
 * **tank_type** - protocol type: http, none (raw TCP). Default: ``http``
 * **eta_file** - where to write ETA time
+* **connection_test** - test TCP socket connection before starting the test, 1 - enable, 0 - disable, default: 1
 
 URI-style options: 
 
