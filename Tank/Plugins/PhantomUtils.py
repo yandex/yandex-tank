@@ -1,10 +1,12 @@
 """ Utility classes for phantom module """
+# TODO: use separate answ log per benchmark 
 from ipaddr import AddressValueError
 import copy
 import ipaddr
 import logging
 import multiprocessing
 import os
+import re
 import socket
 import string
 import traceback
@@ -12,11 +14,6 @@ import traceback
 from Tank.stepper import StepperWrapper
 
 
-
-
-
-
-# TODO: use separate answ log per benchmark
 class PhantomConfig:
     """ config file generator """
     OPTION_PHOUT = "phout_file"
@@ -340,7 +337,7 @@ class StreamConfig:
             self.ip_resolved_check = True
             self.resolved_ip = address_final
             self.log.debug("%s is IPv4 address", self.address)
-        #IPv4:port check
+        # IPv4:port check
         try:
             address_port = self.address.split(":")
             address_final = ipaddr.IPv4Address(address_port[0])
@@ -399,7 +396,7 @@ class StreamConfig:
         except Exception, msg:
             logging.debug("Problems resolving target name: %s", traceback.format_exc(msg))
             raise RuntimeError("Unable to resolve hostname for %s", address_port)
-        #resolve and establish a connection to resolved ip
+        # resolve and establish a connection to resolved ip
         for res in lookup:
             af, socktype, proto, canonname, sa = res
             try:
@@ -452,4 +449,30 @@ class AddressWizard:
         self.lookup_fn = socket.getaddrinfo
 
     def resolve(self, address_str):
-        pass
+        """
+
+        :param address_str:
+        :return: tuple of boolean, string, int - isIPv6, resolved_ip, port (may be null)
+        """
+        logging.debug("Trying to resolve address string")
+
+        is_v6 = False
+        parsed_ip = None
+        port = None
+
+        if re.match("\[[^]]+\]", address_str):
+            logging.debug("Braces present")
+        else:
+            logging.debug("Parsing port")
+            parts = address_str.split(":")
+            if len(parts) <= 2:  # otherwise it is v6 address
+                address_str = parts[0]
+                if len(parts) == 2:
+                    port = parts[1]
+
+        resolved = self.lookup_fn(address_str, port)
+        (family, socktype, proto, canonname, sockaddr) = resolved.pop(0)
+        is_v6 = family == socket.AF_INET6
+        parsed_ip, port = sockaddr
+
+        return is_v6, parsed_ip, int(port) if port else None

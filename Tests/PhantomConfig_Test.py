@@ -1,3 +1,4 @@
+import socket
 import unittest
 import logging
 
@@ -55,16 +56,25 @@ class PhantomConfigTestCase(TankTestCase):
 
 
 class AddressWizardTestCase(TankTestCase):
+    results = {
+        "127.0.0.1": ("127.0.0.1", socket.AF_INET),
+        "ipv4host": ("192.168.0.1", socket.AF_INET),
+        "::": ("::", socket.AF_INET6),
+        "2001:db8::1": ("2001:db8::1", socket.AF_INET6),
+        "ipv6host": ("2001:db8::1", socket.AF_INET6),
+        "exc1": socket.gaierror("Simulated error")
+    }
+
     def lookup_fn(self, host, port, family=None, socktype=None, proto=None, flags=None):
         """
         Mocking real resolver for unit testing purpose
         """
-        results = {
-            "ipv4host": "192.168.0.1",
-            "ipv6host": "2001:db8::1"
-        }
+        logging.debug("Mocking resolve %s=>%s", host, self.results[host])
 
-        return results[host]
+        if isinstance(self.results[host], IOError):
+            raise self.results[host]
+
+        return [(self.results[host][1], None, None, None, (self.results[host][0], port))]
 
     def setUp(self):
         self.foo = AddressWizard()
@@ -72,7 +82,7 @@ class AddressWizardTestCase(TankTestCase):
 
     def test_v4_noport_resolve(self):
         res = self.foo.resolve("ipv4host")
-        self.assertEquals((False, "127.0.0.1", None), res)
+        self.assertEquals((False, "192.168.0.1", None), res)
 
     def test_v6_noport_resolve(self):
         res = self.foo.resolve("ipv6host")
@@ -80,7 +90,7 @@ class AddressWizardTestCase(TankTestCase):
 
     def test_v4_port_resolve(self):
         res = self.foo.resolve("ipv4host:443")
-        self.assertEquals((False, "127.0.0.1", 443), res)
+        self.assertEquals((False, "192.168.0.1", 443), res)
 
     def test_v6_port_resolve(self):
         res = self.foo.resolve("ipv6host:443")
@@ -98,7 +108,7 @@ class AddressWizardTestCase(TankTestCase):
         res = self.foo.resolve("127.0.0.1:443")
         self.assertEquals((False, "127.0.0.1", 443), res)
 
-    def test_v6_port_noresolve(self):
+    def test_v6_port_noresolve_braces(self):
         res = self.foo.resolve("[2001:db8::1]:443")
         self.assertEquals((True, "2001:db8::1", 443), res)
 
@@ -116,7 +126,7 @@ class AddressWizardTestCase(TankTestCase):
 
     def test_v4_noport_resolve_braces(self):
         res = self.foo.resolve("[ipv4host]")
-        self.assertEquals((False, "127.0.0.1", None), res)
+        self.assertEquals((False, "192.168.0.1", None), res)
 
     def test_v4_noport_noresolve_braces(self):
         res = self.foo.resolve("[127.0.0.1]")
@@ -129,6 +139,21 @@ class AddressWizardTestCase(TankTestCase):
     def test_v6_noport_noresolve_braces(self):
         res = self.foo.resolve("[2001:db8::1]")
         self.assertEquals((True, "2001:db8::1", None), res)
+
+    def test_error1(self):
+        try:
+            res = self.foo.resolve("ipv4host:20:30")
+            self.fail()
+        except ValueError:
+            pass
+
+    def test_error2(self):
+        try:
+            res = self.foo.resolve("exc1:30")
+            self.fail()
+        except socket.gaierror:
+            pass
+
 
 if __name__ == '__main__':
     unittest.main()
