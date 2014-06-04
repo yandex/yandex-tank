@@ -69,6 +69,9 @@ class AddressWizardTestCase(TankTestCase):
         """
         Mocking real resolver for unit testing purpose
         """
+        if host not in self.results:
+            raise socket.gaierror("Host not found: %s" % host)
+
         logging.debug("Mocking resolve %s=>%s", host, self.results[host])
 
         if isinstance(self.results[host], IOError):
@@ -122,7 +125,7 @@ class AddressWizardTestCase(TankTestCase):
 
     def test_v4_port_resolve_braces(self):
         res = self.foo.resolve("[ipv4host]:443")
-        self.assertEquals((False, "127.0.0.1", 443), res)
+        self.assertEquals((False, "192.168.0.1", 443), res)
 
     def test_v4_noport_resolve_braces(self):
         res = self.foo.resolve("[ipv4host]")
@@ -144,7 +147,7 @@ class AddressWizardTestCase(TankTestCase):
         try:
             res = self.foo.resolve("ipv4host:20:30")
             self.fail()
-        except ValueError:
+        except socket.gaierror:
             pass
 
     def test_error2(self):

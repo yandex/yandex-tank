@@ -1,5 +1,5 @@
 """ Utility classes for phantom module """
-# TODO: use separate answ log per benchmark 
+# TODO: use separate answ log per benchmark
 from ipaddr import AddressValueError
 import copy
 import ipaddr
@@ -460,8 +460,18 @@ class AddressWizard:
         parsed_ip = None
         port = None
 
-        if re.match("\[[^]]+\]", address_str):
-            logging.debug("Braces present")
+        braceport_pat = "^\[([^]]+)\]:(\d+)$"
+        braceonly_pat = "^\[([^]]+)\]$"
+        if re.match(braceport_pat, address_str):
+            logging.debug("Braces and port present")
+            match = re.match(braceport_pat, address_str)
+            logging.debug("Match: %s %s ", match.group(1), match.group(2))
+            address_str, port = match.group(1), match.group(2)
+        elif re.match(braceonly_pat, address_str):
+            logging.debug("Braces only present")
+            match = re.match(braceonly_pat, address_str)
+            logging.debug("Match: %s", match.group(1))
+            address_str = match.group(1)
         else:
             logging.debug("Parsing port")
             parts = address_str.split(":")
