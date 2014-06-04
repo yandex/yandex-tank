@@ -5,7 +5,7 @@
 <img src="http://${host}:${web_port}/render/?width=${width}&height=${height}&from=${start_time}&until=${end_time}&target=aliasByMetric(color(${prefix}.overall.quantiles.25_0,%22%23DD0000%22))&target=aliasByMetric(color(${prefix}.overall.quantiles.50_0,%22%23DD3800%22))&target=aliasByMetric(color(${prefix}.overall.quantiles.75_0,%22%23DD6e00%22))&target=aliasByMetric(color(${prefix}.overall.quantiles.90_0,%22%23DDDC00%22))&target=aliasByMetric(color(${prefix}.overall.quantiles.95_0,%22%23A6DD00%22))&target=aliasByMetric(color(${prefix}.overall.quantiles.99_0,%22%2338DD00%22))&target=aliasByMetric(alpha(color(${prefix}.overall.quantiles.100_0,%22green%22),0.5))&target=aliasByMetric(${prefix}.overall.avg_response_time)&areaMode=all" />
 
 <h2>RPS by marker</h2>
-<img src="http://${host}:${web_port}/render/?width=${width}&height=${height}&from=${start_time}&until=${end_time}&target=${prefix}.markers.*.RPS&target=${prefix}.overall.RPS" />
+<img src="http://${host}:${web_port}/render/?width=${width}&height=${height}&from=${start_time}&until=${end_time}&target=${prefix}.markers.*.rps&target=${prefix}.overall.rps" />
 
 <h2>Average response time by marker</h2>
 <img src="http://${host}:${web_port}/render/?width=${width}&height=${height}&from=${start_time}&until=${end_time}&target=aliasByNode(${prefix}.overall.avg_response_time,2)&target=aliasByNode(${prefix}.markers.*.avg_response_time,3)" />

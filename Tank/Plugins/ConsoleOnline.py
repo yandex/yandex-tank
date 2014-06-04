@@ -1,4 +1,4 @@
-''' Plugin provides fullscreen console '''
+""" Plugin provides fullscreen console """
 import logging
 import sys
 import traceback
@@ -9,7 +9,7 @@ from tankcore import AbstractPlugin
 
 
 class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
-    ''' Console plugin '''
+    """ Console plugin """
     SECTION = 'console'
 
     def __init__(self, core):
@@ -31,10 +31,12 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
     def configure(self):
         self.info_panel_width = self.get_option("info_panel_width", self.info_panel_width)
         self.short_only = int(self.get_option("short_only", '0'))
-        if not int(self.get_option("disable_all_colors", '0')):
-            self.console_markup = RealConsoleMarkup()
-        else:
-            self.console_markup = NoConsoleMarkup()
+        if not self.console_markup:
+            if not int(self.get_option("disable_all_colors", '0')):
+                self.console_markup = RealConsoleMarkup()
+            else:
+                self.console_markup = NoConsoleMarkup()
+
         for color in self.get_option("disable_colors", '').split(' '):
             self.console_markup.__dict__[color] = ''
         self.screen = Screen(self.info_panel_width, self.console_markup)
@@ -76,13 +78,13 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
         if self.short_only:
             tpl = "Time: %s\tExpected RPS: %s\tActual RPS: %s\tActive Threads: %s\tAvg RT: %s"
             ovr = second_aggregate_data.overall  # just to see the next line in IDE
-            data = (second_aggregate_data.time, ovr.planned_requests, ovr.RPS,
+            data = (second_aggregate_data.time, ovr.planned_requests, ovr.rps,
                     ovr.active_threads, ovr.avg_response_time)
             self.log.info(tpl % data)
 
 
     def add_info_widget(self, widget):
-        ''' add right panel widget '''
+        """ add right panel widget """
         if not self.screen:
             self.log.debug("No screen instance to add widget")
         else:
@@ -93,9 +95,9 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
 
 
 class RealConsoleMarkup(object):
-    '''    
+    """
     Took colors from here: https://www.siafoo.net/snippet/88
-    '''
+    """
     WHITE_ON_BLACK = '\033[37;40m'
     TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
@@ -113,9 +115,10 @@ class RealConsoleMarkup(object):
     BG_GREEN = '\033[1;42m'
     BG_BROWN = '\033[1;43m'
     BG_CYAN = '\033[1;46m'
+    BG_DARKGRAY = '\033[100m'
 
     def clean_markup(self, orig_str):
-        ''' clean markup from string '''
+        """ clean markup from string """
         for val in [self.YELLOW, self.RED, self.RESET,
                     self.CYAN, self.BG_MAGENTA, self.WHITE,
                     self.BG_GREEN, self.GREEN, self.BG_BROWN,
@@ -128,7 +131,7 @@ class RealConsoleMarkup(object):
 # FIXME: 3 better way to have it?
 
 class NoConsoleMarkup(RealConsoleMarkup):
-    ''' all colors are disabled '''
+    """ all colors are disabled """
     WHITE_ON_BLACK = ''
     TOTAL_RESET = ''
     clear = ""
@@ -152,7 +155,7 @@ class NoConsoleMarkup(RealConsoleMarkup):
 
 
 class AbstractInfoWidget:
-    ''' parent class for all right panel widgets '''
+    """ parent class for all right panel widgets """
 
     def __init__(self):
         self.log = logging.getLogger(__name__)
@@ -161,7 +164,5 @@ class AbstractInfoWidget:
         raise NotImplementedError()
 
     def get_index(self):
-        ''' get vertical priority index '''
+        """ get vertical priority index """
         return 0
-
-

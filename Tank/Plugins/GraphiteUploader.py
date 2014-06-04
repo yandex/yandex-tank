@@ -1,7 +1,5 @@
-'''Graphite Uploader plugin that sends aggregated data to Graphite server'''
+"""Graphite Uploader plugin that sends aggregated data to Graphite server"""
 
-from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
-from tankcore import AbstractPlugin
 import logging
 import socket
 import string
@@ -9,18 +7,25 @@ import time
 import datetime
 import os
 
+from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
+from tankcore import AbstractPlugin
+
+
 class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
-    '''Graphite data uploader'''
-    
+    """Graphite data uploader"""
+
     SECTION = 'graphite'
 
     @staticmethod
     def get_key():
         return __file__
-    
+
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         self.graphite_client = None
+        self.start_time = None
+        self.end_time = None
+        self.address = None
 
     def get_available_options(self):
         return ["address", "port", "prefix", "web_port"]
@@ -30,14 +35,14 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         self.start_time = start_time.strftime("%H:%M%%20%Y%m%d")
 
     def end_test(self, retcode):
-        end_time = datetime.datetime.now() + datetime.timedelta(minutes = 1)
+        end_time = datetime.datetime.now() + datetime.timedelta(minutes=1)
         self.end_time = end_time.strftime("%H:%M%%20%Y%m%d")
         return retcode
 
     def configure(self):
-        '''Read configuration'''
+        """Read configuration"""
         self.address = self.get_option("address", "")
-        if self.address == "": 
+        if self.address == "":
             self.log.warning("Graphite uploader is not configured and will not send any data")
         else:
             port = self.get_option("port", "2003")
@@ -50,7 +55,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             self.graphite_client = GraphiteClient(self.prefix, self.address, port)
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(self)
-            
+
     def aggregate_second(self, data):
         """
         @data: SecondAggregateData
@@ -88,40 +93,41 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
 
     @staticmethod
     def __flatten(dic, prefix):
-        '''recursively pass through a dict and flatten it\'s "internal" dicts'''
+        """recursively pass through a dict and flatten it\'s "internal" dicts"""
         results = {}
-        if dic != None:
+        if dic is not None:
             try:
                 for key in dic.keys():
                     if type(dic[key]) in [float, int]:
                         results["%s.%s" % (prefix, str(key).translate(string.maketrans(".", "_")))] = dic[key]
                     elif type(dic[key] in [dict]):
-                        results.update(GraphiteUploaderPlugin.__flatten(dic[key], "%s.%s" % (prefix, key.translate(string.maketrans(".", "_")))))
+                        results.update(GraphiteUploaderPlugin.__flatten(dic[key], "%s.%s" % (
+                            prefix, key.translate(string.maketrans(".", "_")))))
             except AttributeError:
                 pass
         return results
 
 
-    
 class GraphiteClient(object):
-    '''Graphite client that writes metrics to Graphite server'''
+    """Graphite client that writes metrics to Graphite server"""
 
     def __init__(self, prefix, address, port):
         self.address = address
         self.port = port
         self.prefix = prefix
         self.log = logging.getLogger(__name__)
-        self.log.debug("Created a Graphite listener with address = '%s', port = '%s', prefix = '%s'" % (address, port, prefix))
+        self.log.debug(
+            "Created a Graphite listener with address = '%s', port = '%s', prefix = '%s'" % (address, port, prefix))
 
     def submit(self, results):
-        '''publish results to Graphite'''
+        """publish results to Graphite"""
         self.log.debug("Trying to send metrics to server...")
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((self.address, int(self.port)))
             for metric in results.keys():
                 sock.sendall("%s.%s\t%s\t%d\n" % \
-                    (self.prefix, metric, results[metric], time.time()))
+                             (self.prefix, metric, results[metric], time.time()))
             sock.close()
             self.log.debug("Sent metrics to graphite server")
         except Exception, exc:

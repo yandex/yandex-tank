@@ -172,7 +172,7 @@ class LoadPlanBuilder(object):
 
 
 def create(instances_schedule):
-    '''
+    """
     Creates load plan timestamps generator
 
     >>> from util import take
@@ -212,7 +212,7 @@ def create(instances_schedule):
 
     >>> LoadPlanBuilder().line(1, 100, 60000).instances
     100
-    '''
+    """
     lpb = LoadPlanBuilder().add_all_steps(instances_schedule)
     lp = lpb.create()
     info.status.publish('duration', 0)

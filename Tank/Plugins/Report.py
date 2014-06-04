@@ -121,7 +121,7 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
             for key, value in data_item.quantiles.iteritems():
                 quantiles[key].append((ts, value))
             storage['threads']['active_threads'].append((ts, data_item.active_threads))
-            storage['rps']['RPS'].append((ts, data_item.RPS))
+            storage['rps']['RPS'].append((ts, data_item.rps))
             http_codes = storage['http_codes']
             for key, value in data_item.http_codes.iteritems():
                 http_codes[key].append((ts, value))

@@ -1,15 +1,17 @@
-'''
+"""
 Contains shellexec plugin
-'''
+"""
 from tankcore import AbstractPlugin
 import tankcore
+
+
 class ShellExecPlugin(AbstractPlugin):
-    '''
+    """
     ShellExec plugin
     allows executing shell scripts before/after test
-    '''
+    """
     SECTION = 'shellexec'
-    
+
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         self.end = None
@@ -21,10 +23,10 @@ class ShellExecPlugin(AbstractPlugin):
     @staticmethod
     def get_key():
         return __file__
-    
+
     def get_available_options(self):
         return ["prepare", "start", "end", "poll", "post_process"]
-    
+
     def configure(self):
         self.prepare = self.get_option("prepare", '')
         self.start = self.get_option("start", '')
@@ -34,8 +36,8 @@ class ShellExecPlugin(AbstractPlugin):
 
     def prepare_test(self):
         if self.prepare:
-            self.execute(self.prepare)          
-            
+            self.execute(self.prepare)
+
     def start_test(self):
         if self.start:
             self.execute(self.start)
@@ -48,7 +50,7 @@ class ShellExecPlugin(AbstractPlugin):
                 self.log.warn("Non-zero exit code, interrupting test: %s", retcode)
                 return retcode
         return -1
-            
+
     def end_test(self, retcode):
         if self.end:
             self.execute(self.end)
@@ -60,9 +62,9 @@ class ShellExecPlugin(AbstractPlugin):
         return retcode
 
     def execute(self, cmd):
-        '''
+        """
         Execute and check exit code
-        '''
+        """
         self.log.info("Executing: %s", cmd)
         retcode = tankcore.execute(cmd, shell=True, poll_period=0.1)[0]
         if retcode:

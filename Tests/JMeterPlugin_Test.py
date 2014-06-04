@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 import unittest
 
@@ -11,6 +12,7 @@ class JMeterPluginTestCase(TankTestCase):
     def setUp(self):
         self.core = self.get_core()
         self.core.load_configs(['config/jmeter.conf'])
+        self.core.set_option(JMeterPlugin.SECTION, "jmeter_path", os.path.dirname(__file__) + "/jmeter_emul.sh")
         self.foo = JMeterPlugin(self.core)
 
     def tearDown(self):
@@ -25,9 +27,7 @@ class JMeterPluginTestCase(TankTestCase):
             self.foo.log.debug("Not finished")
             time.sleep(1)
         self.foo.end_test(0)
-        results = open(self.foo.jtl_file, 'r').read()
-        logging.debug("Results: %s", results)
-        self.assertNotEquals('', results.strip(), open(self.foo.jmeter_log, 'r').read())
+        self.foo.post_process(0)
 
     def test_run_interrupt(self):
         self.foo.configure()

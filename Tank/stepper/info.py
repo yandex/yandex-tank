@@ -12,9 +12,9 @@ StepperInfo = namedtuple(
 
 class StepperStatus(object):
 
-    '''
+    """
     Raises StopIteration when limits are reached.
-    '''
+    """
 
     def __init__(self):
         self.log = logging.getLogger(__name__)

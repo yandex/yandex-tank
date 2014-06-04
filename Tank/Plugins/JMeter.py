@@ -1,4 +1,4 @@
-''' jmeter load generator support '''
+""" jmeter load generator support """
 import logging
 import os
 import signal
@@ -17,7 +17,7 @@ from Tank.Plugins import ConsoleScreen
 
 
 class JMeterPlugin(AbstractPlugin):
-    ''' JMeter tank plugin '''
+    """ JMeter tank plugin """
     SECTION = 'jmeter'
 
     def __init__(self, core):
@@ -50,8 +50,8 @@ class JMeterPlugin(AbstractPlugin):
         self.user_args = self.get_option("args", '')
         self.jmeter_path = self.get_option("jmeter_path", 'jmeter')
         self.jmeter_log = self.core.mkstemp('.log', 'jmeter_')
-        self.jmeter_buffer_size = int(self.get_option('buffer_size', 
-            self.get_option('buffered_seconds', '3')))
+        self.jmeter_buffer_size = int(self.get_option('buffer_size',
+                                                      self.get_option('buffered_seconds', '3')))
         self.core.add_artifact_file(self.jmeter_log, True)
         self.use_argentum = eval(self.get_option('use_argentum', 'False'))
         self.jmx = self.__add_jmeter_components(self.original_jmx, self.jtl_file, self._get_variables())
@@ -84,13 +84,11 @@ class JMeterPlugin(AbstractPlugin):
             if aggregator:
                 aggregator.add_result_listener(widget)
 
-
     def start_test(self):
         self.log.info("Starting %s with arguments: %s", self.jmeter_path, self.args)
         self.jmeter_process = subprocess.Popen(self.args, executable=self.jmeter_path, preexec_fn=os.setsid,
                                                close_fds=True)  # stderr=subprocess.PIPE, stdout=subprocess.PIPE,
         self.start_time = time.time()
-
 
     def is_test_finished(self):
         retcode = self.jmeter_process.poll()
@@ -99,7 +97,6 @@ class JMeterPlugin(AbstractPlugin):
             return retcode
         else:
             return -1
-
 
     def end_test(self, retcode):
         if self.jmeter_process:
@@ -113,9 +110,8 @@ class JMeterPlugin(AbstractPlugin):
         self.core.add_artifact_file(self.jmeter_log)
         return retcode
 
-
     def __add_jmeter_components(self, jmx, jtl, variables):
-        ''' Genius idea by Alexey Lavrenyuk '''
+        """ Genius idea by Alexey Lavrenyuk """
         self.log.debug("Original JMX: %s", os.path.realpath(jmx))
         with open(jmx, 'r') as src_jmx:
             source_lines = src_jmx.readlines()
@@ -171,7 +167,7 @@ class JMeterPlugin(AbstractPlugin):
 
 
 class JMeterReader(AbstractReader):
-    ''' JTL files reader '''
+    """ JTL files reader """
     KNOWN_EXC = {
         "java.net.NoRouteToHostException": 113,
         "java.net.ConnectException": 110,
@@ -234,7 +230,7 @@ class JMeterReader(AbstractReader):
                     second_ag.overall.avg_receive_time = second['avg_rt'] - second['avg_lt']
                     second_ag.overall.avg_response_time = second['avg_rt']
                     second_ag.overall.avg_latency = second['avg_lt']
-                    second_ag.overall.RPS = second['th']
+                    second_ag.overall.rps = second['th']
                     second_ag.overall.active_threads = second['active_threads']
                     second_ag.overall.times_dist = second['interval_dist']
                     second_ag.overall.input = second['traffic']['inbound']
@@ -256,7 +252,7 @@ class JMeterReader(AbstractReader):
                         sampler_ag_data_item = SecondAggregateDataItem()
                         sampler_ag_data_item.case = sampler
                         sampler_ag_data_item.active_threads = second['active_threads']
-                        sampler_ag_data_item.RPS = int(second['samplers'][sampler])
+                        sampler_ag_data_item.rps = int(second['samplers'][sampler])
                         sampler_ag_data_item.times_dist = second['sampler_interval_dist'][sampler]
 
                         sampler_ag_data_item.quantiles = second['sampler_percentile'][sampler]
@@ -311,7 +307,7 @@ class JMeterReader(AbstractReader):
             return None
 
     def exc_to_net(self, param1):
-        ''' translate http code to net code '''
+        """ translate http code to net code """
         if len(param1) <= 3:
             return '1'
 
@@ -323,7 +319,7 @@ class JMeterReader(AbstractReader):
             return '1'
 
     def exc_to_http(self, param1):
-        ''' translate exception str to http code'''
+        """ translate exception str to http code"""
         if len(param1) <= 3:
             return param1
 
@@ -337,7 +333,7 @@ class JMeterReader(AbstractReader):
 # ===============================================================================
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
-    ''' Right panel widget with JMeter test info '''
+    """ Right panel widget with JMeter test info """
 
     def __init__(self, jmeter):
         AbstractInfoWidget.__init__(self)
@@ -351,7 +347,7 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
     def aggregate_second(self, second_aggregate_data):
         self.active_threads = second_aggregate_data.overall.active_threads
-        self.rps = second_aggregate_data.overall.RPS
+        self.rps = second_aggregate_data.overall.rps
 
     def render(self, screen):
         jmeter = " JMeter Test %s" % self.krutilka.next()
@@ -362,8 +358,8 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         dur_seconds = int(time.time()) - int(self.jmeter.start_time)
         duration = str(datetime.timedelta(seconds=dur_seconds))
 
-        template = screen.markup.BG_MAGENTA + '~' * left_spaces + jmeter + ' ' + '~' * right_spaces + \
-                   screen.markup.RESET + "\n"
+        template = screen.markup.BG_MAGENTA + '~' * left_spaces + jmeter + ' '
+        template += '~' * right_spaces + screen.markup.RESET + "\n"
         template += "     Test Plan: %s\n"
         template += "      Duration: %s\n"
         template += "Active Threads: %s\n"

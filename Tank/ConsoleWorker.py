@@ -57,11 +57,9 @@ class ConsoleTank:
         self.signal_count = 0
         self.scheduled_start = None
 
-
     def set_baseconfigs_dir(self, directory):
         """        Set directory where to read configs set        """
         self.baseconfigs_location = directory
-
 
     def init_logging(self):
         """        Set up logging, as it is very important for console tool        """
@@ -109,12 +107,10 @@ class ConsoleTank:
         stderr_hdl.addFilter(f_debug)
         logger.addHandler(stderr_hdl)
 
-
     def __override_config_from_cmdline(self):
         """ override config options from command line"""
         if self.options.option:
             self.core.apply_shorthand_options(self.options.option)
-
 
     def get_default_configs(self):
         """ returns default configs list, from /etc and home dir """
@@ -130,7 +126,6 @@ class ConsoleTank:
 
         configs += [os.path.expanduser('~/.yandex-tank')]
         return configs
-
 
     def configure(self):
         """         Make all console-specific preparations before running Tank        """
@@ -162,15 +157,9 @@ class ConsoleTank:
                     self.log.info("No config passed via cmdline, using ./load.ini")
                     configs += [os.path.realpath('load.ini')]
                     self.core.add_artifact_file(os.path.realpath('load.ini'), True)
-                elif os.path.exists(os.path.realpath('load.conf')):
-                    # just for old 'lunapark' compatibility
-                    self.log.warn("Using 'load.conf' is unrecommended, please use 'load.ini' instead")
-                    conf_file = os.path.realpath('load.conf')
-                    configs += [conf_file]
-                    self.core.add_artifact_file(conf_file, True)
             else:
                 for config_file in self.options.config:
-                    configs.append(config_file)
+                    configs.append(os.path.expanduser(config_file))
 
             self.core.load_configs(configs)
 
@@ -211,13 +200,11 @@ class ConsoleTank:
         self.log.info("Done graceful shutdown")
         return retcode
 
-
     def perform_test(self):
         """
         Run the test sequence via Tank Core
         """
         self.log.info("Performing test")
-        retcode = 1
         try:
             self.core.plugins_configure()
             self.core.plugins_prepare_test()
@@ -311,4 +298,3 @@ class CompletionHelperOptionParser(OptionParser):
                     opts.append(plugin.SECTION + '.' + option + '=')
             print ' '.join(sorted(opts))
             exit(0)
-

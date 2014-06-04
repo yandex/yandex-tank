@@ -1,38 +1,43 @@
-from Tank.ConsoleWorker import ConsoleTank
-from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin
-from Tests.ConsoleOnlinePluginTest import FakeConsoleMarkup
-from Tests.TankTests import FakeOptions
-import TankTests
+import os
 import logging
 import unittest
 import datetime
 
+from Tank.ConsoleWorker import ConsoleTank
+from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin
+from Tank.Plugins.Phantom import PhantomPlugin
+from Tests.ConsoleOnlinePlugin_Test import FakeConsoleMarkup
+from Tests.TankTests import FakeOptions
+import TankTests
 
-class  ConsoleWorkerTestCase(TankTests.TankTestCase):
+
+class ConsoleWorkerTestCase(TankTests.TankTestCase):
     def setUp(self):
         opts = FakeOptions()
         opts.no_rc = False
-        opts.scheduled_start=datetime.datetime.now().strftime('%H:%M:%S')
+        opts.scheduled_start = datetime.datetime.now().strftime('%H:%M:%S')
         self.foo = ConsoleTank(opts, None)
         self.foo.set_baseconfigs_dir('full')
 
     def tearDown(self):
         del self.foo
-        self.foo = None            
+        self.foo = None
 
     def test_perform(self):
         self.foo.configure()
+        self.foo.core.set_option(PhantomPlugin.SECTION, "phantom_path",
+                                 os.path.dirname(__file__) + "/phantom_emul.sh")
 
         try:
             console = self.foo.core.get_plugin_of_type(ConsoleOnlinePlugin)
             console.console_markup = FakeConsoleMarkup()
         except:
             pass
-        
+
         if self.foo.perform_test() != 0:
             raise RuntimeError()
-        
-        
+
+
     def test_option_override(self):
         options = FakeOptions()
         options.config = ["config/phantom.conf"]

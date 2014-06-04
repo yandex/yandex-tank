@@ -1,6 +1,7 @@
 """ Core module to calculate aggregate data """
 import copy
 import datetime
+import json
 import logging
 import math
 import time
@@ -18,6 +19,11 @@ class AggregateResultListener:
     def aggregate_second(self, second_aggregate_data):
         """ notification about new aggregate data """
         raise NotImplementedError("Abstract method needs to be overridden")
+
+    def close(self):
+        """do possible shutdown actions
+        """
+        pass
 
 
 class AggregatorPlugin(AbstractPlugin):
@@ -60,6 +66,7 @@ class AggregatorPlugin(AbstractPlugin):
         self.precise_cumulative = int(
             self.get_option("precise_cumulative", '1'))
 
+
     def start_test(self):
         if not self.reader:
             self.log.warning("No one had set reader for aggregate data yet...")
@@ -83,7 +90,7 @@ class AggregatorPlugin(AbstractPlugin):
         """ notify all listeners about aggregate data """
         self.log.debug(
             "Notifying listeners about second: %s , %s/%s req/responses",
-            data.time, data.overall.planned_requests, data.overall.RPS)
+            data.time, data.overall.planned_requests, data.overall.rps)
         for listener in self.second_data_listeners:
             listener.aggregate_second(data)
 
@@ -102,6 +109,11 @@ class AggregatorPlugin(AbstractPlugin):
                 datetime.datetime.fromtimestamp(self.last_sample_time))
             self.__notify_listeners(zero)
         self.last_sample_time = int(time.mktime(data.time.timetuple()))
+
+    def post_process(self, retcode):
+        for listener in self.second_data_listeners:
+            listener.close()
+        return retcode
 
     def __read_samples(self, limit=0, force=False):
         """ call reader object to read next sample set """
@@ -133,6 +145,27 @@ class SecondAggregateData:
     def __repr__(self):
         return "SecondAggregateData[%s][%s]" % (self.time, time.mktime(self.time.timetuple()))
 
+    def __str__(self):
+        obj = {}
+        for field, val in self.__dict__.iteritems():
+            if isinstance(val, SecondAggregateDataItem) or isinstance(val, SecondAggregateDataTotalItem):
+                obj[field] = {}
+                for field2, val2 in val.__dict__.iteritems():
+                    if not isinstance(val2, logging.Logger):
+                        obj[field][field2] = val2
+            elif isinstance(val, logging.Logger):
+                pass
+            elif isinstance(val, dict):
+                obj[field] = {}
+                for field2, val2 in val.iteritems():
+                    if not isinstance(val2, SecondAggregateDataItem):
+                        obj[field][field2] = val2
+            elif isinstance(val, datetime.datetime):
+                obj[field] = time.mktime(val.timetuple())
+            else:
+                obj[field] = val
+        return json.dumps(obj)
+
 
 class SecondAggregateDataItem:
     """ overall and case items has this type """
@@ -144,7 +177,7 @@ class SecondAggregateDataItem:
         self.planned_requests = 0
         self.active_threads = 0
         self.selfload = 0
-        self.RPS = 0
+        self.rps = 0
         self.http_codes = {}
         self.net_codes = {}
         self.times_dist = []
@@ -256,7 +289,7 @@ class AbstractReader:
             self.cumulative.add_raw_data(result.overall.times_dist)
 
         self.log.debug(
-            "Calculate aggregates for %s requests", result.overall.RPS)
+            "Calculate aggregates for %s requests", result.overall.rps)
         self.__calculate_aggregates(result.overall)
         for case in result.cases.values():
             self.__calculate_aggregates(case)
@@ -273,13 +306,13 @@ class AbstractReader:
 
     def __calculate_aggregates(self, item):
         """ calculate aggregates on raw data """
-        if item.RPS:
-            item.selfload = 100 * item.selfload / item.RPS
-            item.avg_connect_time /= item.RPS
-            item.avg_send_time /= item.RPS
-            item.avg_latency /= item.RPS
-            item.avg_receive_time /= item.RPS
-            item.avg_response_time /= item.RPS
+        if item.rps:
+            item.selfload = 100 * item.selfload / item.rps
+            item.avg_connect_time /= item.rps
+            item.avg_send_time /= item.rps
+            item.avg_latency /= item.rps
+            item.avg_receive_time /= item.rps
+            item.avg_response_time /= item.rps
 
             item.times_dist.sort()
             count = 0.0
@@ -293,7 +326,7 @@ class AbstractReader:
             timing = 0
             for timing in item.times_dist:
                 count += 1
-                if quantiles and (count / item.RPS) >= quantiles[0]:
+                if quantiles and (count / item.rps) >= quantiles[0]:
                     level = quantiles.pop(0)
                     item.quantiles[level * 100] = timing
 
@@ -315,7 +348,7 @@ class AbstractReader:
             if times_dist_item['count']:
                 times_dist_draft.append(times_dist_item)
 
-            item.dispersion = deviation / item.RPS
+            item.dispersion = deviation / item.rps
             item.times_dist = times_dist_draft
 
     def __append_sample(self, result, item):
@@ -330,7 +363,7 @@ class AbstractReader:
         result.case = marker
         result.active_threads = threads
         result.planned_requests = 0
-        result.RPS += 1
+        result.rps += 1
 
         if http_code and http_code != '0':
             if not http_code in result.http_codes.keys():

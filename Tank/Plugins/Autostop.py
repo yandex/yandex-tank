@@ -237,8 +237,8 @@ class HTTPCodesCriteria(AbstractCriteria):
     def notify(self, aggregate_second):
         matched_responses = self.count_matched_codes(self.codes_regex, aggregate_second.overall.http_codes)
         if self.is_relative:
-            if aggregate_second.overall.RPS:
-                matched_responses = float(matched_responses) / aggregate_second.overall.RPS
+            if aggregate_second.overall.rps:
+                matched_responses = float(matched_responses) / aggregate_second.overall.rps
             else:
                 matched_responses = 0
         self.log.debug("HTTP codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.level)
@@ -308,8 +308,8 @@ class NetCodesCriteria(AbstractCriteria):
             codes.pop('0')
         matched_responses = self.count_matched_codes(self.codes_regex, codes)
         if self.is_relative:
-            if aggregate_second.overall.RPS:
-                matched_responses = float(matched_responses) / aggregate_second.overall.RPS
+            if aggregate_second.overall.rps:
+                matched_responses = float(matched_responses) / aggregate_second.overall.rps
             else:
                 matched_responses = 0
         self.log.debug("Net codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.level)
@@ -410,9 +410,9 @@ class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
         self.autostop = autostop
 
     def notify(self, aggregate_second):
-        hash = json.dumps(aggregate_second.cumulative.quantiles)
-        logging.debug("Cumulative quantiles hash: %s", hash)
-        if self.hash == hash:
+        hash1 = json.dumps(aggregate_second.cumulative.quantiles)
+        logging.debug("Cumulative quantiles hash: %s", hash1)
+        if self.hash == hash1:
             if not self.seconds_count:
                 self.cause_second = aggregate_second
 
@@ -425,7 +425,7 @@ class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
         else:
             self.seconds_count = 0
 
-        self.hash = hash
+        self.hash = hash1
         return False
 
     def get_rc(self):

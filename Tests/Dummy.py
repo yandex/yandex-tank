@@ -2,6 +2,8 @@ from tankcore import AbstractPlugin
 import time
 
 class DummyPlugin(AbstractPlugin):
+    SECTION = "dummy"
+
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         self.count = 0
@@ -31,6 +33,8 @@ class DummyPlugin(AbstractPlugin):
         
     def end_test(self, retcode):
         self.log.warn("End")
+        return retcode
         
     def post_process(self, retcode):
         self.log.warn("Post-process")
+        return retcode

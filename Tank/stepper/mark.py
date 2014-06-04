@@ -16,13 +16,13 @@ def __mark_by_uri(missile):
 
 
 class __UriMarker(object):
-    '''
+    """
     Returns a uri marker function with requested limit
 
     >>> marker = __UriMarker(2)
     >>> marker(__test_missile)
     '_example_search'
-    '''
+    """
     def __init__(self, limit):
         self.limit = limit
 
@@ -36,7 +36,7 @@ __markers = {
 
 
 def get_marker(marker_type):
-    '''
+    """
     Returns a marker function of the requested marker_type
 
     >>> marker = get_marker('uniq')(__test_missile)
@@ -55,7 +55,7 @@ def get_marker(marker_type):
 
     >>> get_marker('3')(__test_missile)
     '_example_search_hello'
-    '''
+    """
     if marker_type and marker_type is not '0':
         try:
             limit = int(marker_type)

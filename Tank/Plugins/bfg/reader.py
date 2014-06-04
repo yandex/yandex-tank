@@ -4,9 +4,9 @@ from Tank.stepper import info as si
 
 class BFGReader(AbstractReader):
 
-    '''
+    """
     Listens results from BFG and provides them to Aggregator
-    '''
+    """
 
     def __init__(self, aggregator, bfg, result_cache_size=5):
         AbstractReader.__init__(self, aggregator)
@@ -31,9 +31,9 @@ class BFGReader(AbstractReader):
             return None
 
     def __get_expected_rps(self):
-        '''
+        """
         Mark second with expected rps
-        '''
+        """
         while self.steps and self.steps[0][1] < 1:
             self.steps.pop(0)
         

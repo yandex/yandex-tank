@@ -32,6 +32,6 @@ io_t benchmark_io$sequence_no = io_benchmark_t {
 	times = simple_times
     
 	instances = $instances   
-	human_readable_report = false   
+	#human_readable_report = false
 	scheduler = main_scheduler 
 } 

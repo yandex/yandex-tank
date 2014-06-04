@@ -12,7 +12,7 @@ from reader import BFGReader
 
 class BFGPlugin(AbstractPlugin):
 
-    ''' Big Fucking Gun plugin '''
+    """ Big Fucking Gun plugin """
     SECTION = 'bfg'
 
     def __init__(self, core):

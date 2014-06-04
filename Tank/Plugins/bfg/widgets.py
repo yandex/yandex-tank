@@ -5,14 +5,14 @@ from Tank.Plugins.ConsoleOnline import AbstractInfoWidget
 
 class BFGInfoWidget(AbstractInfoWidget):
 
-    ''' Console widget '''
+    """ Console widget """
 
     def __init__(self):
         AbstractInfoWidget.__init__(self)
         self.active_threads = 0
         self.instances = 0
         self.planned = 0
-        self.RPS = 0
+        self.rps = 0
         self.selfload = 0
         self.time_lag = 0
         self.planned_rps_duration = 0
@@ -28,7 +28,7 @@ class BFGInfoWidget(AbstractInfoWidget):
             self.planned = second_aggregate_data.overall.planned_requests
             self.planned_rps_duration = 1
 
-        self.RPS = second_aggregate_data.overall.RPS
+        self.rps = second_aggregate_data.overall.rps
         self.selfload = second_aggregate_data.overall.selfload
         self.time_lag = int(
             time.time() - time.mktime(second_aggregate_data.time.timetuple()))
@@ -41,10 +41,10 @@ class BFGInfoWidget(AbstractInfoWidget):
 
         res += "\nPlanned requests: %s for %s\nActual responses: " % (
             self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
-        if not self.planned == self.RPS:
-            res += screen.markup.YELLOW + str(self.RPS) + screen.markup.RESET
+        if not self.planned == self.rps:
+            res += screen.markup.YELLOW + str(self.rps) + screen.markup.RESET
         else:
-            res += str(self.RPS)
+            res += str(self.rps)
 
         res += "\n        Accuracy: "
         if self.selfload < 80:

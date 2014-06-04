@@ -1,4 +1,13 @@
 """ Contains Phantom Plugin, Console widgets, result reader classes """
+# FIXME: 3 there is no graceful way to interrupt the process of phout import
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
+import datetime
+
 from Tank.Plugins import ConsoleScreen
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener, \
     AbstractReader
@@ -6,20 +15,10 @@ from Tank.Plugins.Autostop import AutostopPlugin, AbstractCriteria
 from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from Tank.Plugins.PhantomUtils import PhantomConfig
 from tankcore import AbstractPlugin
-import os
-import socket
-import subprocess
-import sys
 import tankcore
-import time
-import datetime
-
-# FIXME: 3 there is no graceful way to interrupt the process in phout
-# import mode
 
 
 class PhantomPlugin(AbstractPlugin, AggregateResultListener):
-
     """     Plugin for running phantom tool    """
 
     OPTION_CONFIG = "config"
@@ -103,11 +102,9 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             result = tankcore.execute(args, catch_out=True)
             retcode = result[0]
             if retcode:
-                raise RuntimeError(
-                    "Config check failed. Subprocess returned code %s" % retcode)
+                raise RuntimeError("Config check failed. Subprocess returned code %s" % retcode)
             if result[2]:
-                raise RuntimeError(
-                    "Subprocess returned message: %s" % result[2])
+                raise RuntimeError("Subprocess returned message: %s" % result[2])
 
         else:
             if aggregator:
@@ -188,7 +185,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         return retcode
 
     def aggregate_second(self, second_aggregate_data):
-        self.processed_ammo_count += second_aggregate_data.overall.RPS
+        self.processed_ammo_count += second_aggregate_data.overall.rps
         self.log.debug("Processed ammo count: %s/", self.processed_ammo_count)
 
     def get_info(self):
@@ -201,7 +198,6 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
 
 
 class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
-
     """
     Widget that displays progressbar
     """
@@ -266,10 +262,8 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         progress_chars = '=' * (int(pb_width * progress) - 1)
         progress_chars += self.krutilka.next()
 
-        res += color_bg + progress_chars + screen.markup.RESET + color_fg + \
-            '~' * \
-            (pb_width - int(pb_width * progress)) + \
-            screen.markup.RESET + ' '
+        res += color_bg + progress_chars + screen.markup.RESET + color_fg
+        res += '~' * (pb_width - int(pb_width * progress)) + screen.markup.RESET + ' '
         res += str_perc + "\n"
 
         eta = 'ETA: %s' % eta_time
@@ -280,11 +274,10 @@ class PhantomProgressBarWidget(AbstractInfoWidget, AggregateResultListener):
         return res
 
     def aggregate_second(self, second_aggregate_data):
-        self.ammo_progress += second_aggregate_data.overall.RPS
+        self.ammo_progress += second_aggregate_data.overall.rps
 
 
 class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
-
     """
     Widget with information about current run state
     """
@@ -297,7 +290,7 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.owner = sender
         self.instances = 0
         self.planned = 0
-        self.RPS = 0
+        self.rps = 0
         self.selfload = 0
         self.time_lag = 0
         self.planned_rps_duration = 0
@@ -323,41 +316,33 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
 
         res += "Active instances: "
         if float(self.instances) / self.instances_limit > 0.8:
-            res += screen.markup.RED + \
-                str(self.instances) + screen.markup.RESET
+            res += screen.markup.RED + str(self.instances) + screen.markup.RESET
         elif float(self.instances) / self.instances_limit > 0.5:
-            res += screen.markup.YELLOW + \
-                str(self.instances) + screen.markup.RESET
+            res += screen.markup.YELLOW + str(self.instances) + screen.markup.RESET
         else:
             res += str(self.instances)
 
         res += "\nPlanned requests: %s for %s\nActual responses: " % (
             self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
-        if not self.planned == self.RPS:
-            res += screen.markup.YELLOW + str(self.RPS) + screen.markup.RESET
+        if not self.planned == self.rps:
+            res += screen.markup.YELLOW + str(self.rps) + screen.markup.RESET
         else:
-            res += str(self.RPS)
+            res += str(self.rps)
 
         res += "\n        Accuracy: "
         if self.selfload < 80:
-            res += screen.markup.RED + \
-                ('%.2f' % self.selfload) + screen.markup.RESET
+            res += screen.markup.RED + ('%.2f' % self.selfload) + screen.markup.RESET
         elif self.selfload < 95:
-            res += screen.markup.YELLOW + \
-                ('%.2f' % self.selfload) + screen.markup.RESET
+            res += screen.markup.YELLOW + ('%.2f' % self.selfload) + screen.markup.RESET
         else:
             res += ('%.2f' % self.selfload)
 
         res += "%\n        Time lag: "
         if self.time_lag > self.owner.buffered_seconds * 5:
             self.log.debug("Time lag: %s", self.time_lag)
-            res += screen.markup.RED + \
-                str(datetime.timedelta(seconds=self.time_lag)) + \
-                screen.markup.RESET
+            res += screen.markup.RED + str(datetime.timedelta(seconds=self.time_lag)) + screen.markup.RESET
         elif self.time_lag > self.owner.buffered_seconds:
-            res += screen.markup.YELLOW + \
-                str(datetime.timedelta(seconds=self.time_lag)) + \
-                screen.markup.RESET
+            res += screen.markup.YELLOW + str(datetime.timedelta(seconds=self.time_lag)) + screen.markup.RESET
         else:
             res += str(datetime.timedelta(seconds=self.time_lag))
 
@@ -371,17 +356,14 @@ class PhantomInfoWidget(AbstractInfoWidget, AggregateResultListener):
             self.planned = second_aggregate_data.overall.planned_requests
             self.planned_rps_duration = 1
 
-        self.RPS = second_aggregate_data.overall.RPS
+        self.rps = second_aggregate_data.overall.rps
         self.selfload = second_aggregate_data.overall.selfload
         self.time_lag = int(
             time.time() - time.mktime(second_aggregate_data.time.timetuple()))
 
 
 class PhantomReader(AbstractReader):
-
-    """
-    Adapter to read phout files
-    """
+    """     Adapter to read phout files    """
 
     def __init__(self, owner, phantom):
         AbstractReader.__init__(self, owner)
@@ -390,10 +372,10 @@ class PhantomReader(AbstractReader):
         self.phout = None
         self.stat = None
         self.stat_data = {}
-        self.pending_datetime = None
         self.steps = []
         self.first_request_time = sys.maxint
         self.partial_buffer = ''
+        self.stat_read_buffer = ''
         self.pending_second_data_queue = []
         self.last_sample_time = 0
         self.read_lines_count = 0
@@ -412,6 +394,7 @@ class PhantomReader(AbstractReader):
                 "Opening stat file: %s", self.phantom.phantom.stat_log)
             self.stat = open(self.phantom.phantom.stat_log, 'r')
 
+
     def close_files(self):
         if self.stat:
             self.stat.close()
@@ -419,32 +402,39 @@ class PhantomReader(AbstractReader):
         if self.phout:
             self.phout.close()
 
+
     def get_next_sample(self, force):
         if self.stat and len(self.data_queue) < self.buffered_seconds * 2:
             self.__read_stat_data()
         return self.__read_phout_data(force)
 
+
     def __read_stat_data(self):
         """ Read active instances info """
-        stat = self.stat.readlines()
-        for line in stat:
-            if line.startswith('time\t'):
-                date_str = line[len('time:\t') - 1:].strip()[:-5].strip()
-                date_obj = datetime.datetime.strptime(
-                    date_str, '%Y-%m-%d %H:%M:%S')
-                self.pending_datetime = int(time.mktime(date_obj.timetuple()))
-                self.stat_data[self.pending_datetime] = 0
-            if line.startswith('tasks\t'):
-                if not self.pending_datetime:
-                    raise RuntimeError(
-                        "Can't have tasks info without timestamp")
+        end_marker = "\n},"
+        self.stat_read_buffer += self.stat.read()
+        while end_marker in self.stat_read_buffer:
+            chunk_str = self.stat_read_buffer[:self.stat_read_buffer.find(end_marker) + len(end_marker) - 1]
+            self.stat_read_buffer = self.stat_read_buffer[self.stat_read_buffer.find(end_marker) + len(end_marker) + 1:]
+            chunk = json.loads("{%s}" % chunk_str)
+            self.log.debug("Stat chunk (left %s bytes): %s", len(self.stat_read_buffer), chunk)
 
-                self.stat_data[self.pending_datetime] += int(
-                    line[len('tasks\t'):])
-                self.log.debug(
-                    "Active instances: %s=>%s", self.pending_datetime, self.stat_data[self.pending_datetime])
+            for date_str in chunk.keys():
+                statistics = chunk[date_str]
+
+                date_obj = datetime.datetime.strptime(date_str.split(".")[0], '%Y-%m-%d %H:%M:%S')
+                pending_datetime = int(time.mktime(date_obj.timetuple()))
+                self.stat_data[pending_datetime] = 0
+
+                for benchmark_name in statistics.keys():
+                    if not benchmark_name.startswith("benchmark_io"):
+                        continue
+                    benchmark = statistics[benchmark_name]
+                    self.stat_data[pending_datetime] += benchmark["stream_method"]["mmtasks"][2]
+                self.log.debug("Active instances: %s=>%s", pending_datetime, self.stat_data[pending_datetime])
 
         self.log.debug("Instances info buffer size: %s", len(self.stat_data))
+
 
     def __read_phout_data(self, force):
         """         Read phantom results        """
@@ -499,16 +489,15 @@ class PhantomReader(AbstractReader):
             #        accuracy
             data_item = (data[1], active, rt_real / 1000, data[11], data[10],
                          int(data[8]), int(data[9]),
-                         int(data[3]) / 1000, int(data[4]) / 1000, int(
-                         data[5]) / 1000, int(data[6]) / 1000,
-                        (float(data[7]) + 1) / (rt_real + 1))
+                         int(data[3]) / 1000, int(data[4]) / 1000,
+                         int(data[5]) / 1000, int(data[6]) / 1000,
+                         (float(data[7]) + 1) / (rt_real + 1))
 
             self.data_buffer[cur_time].append(data_item)
 
         spent = time.time() - time_before
         if spent:
-            self.log.debug(
-                "Parsing speed: %s lines/sec", int(len(phout) / spent))
+            self.log.debug("Parsing speed: %s lines/sec", int(len(phout) / spent))
         self.log.debug("Read lines total: %s", self.read_lines_count)
         self.log.debug("Seconds queue: %s", self.data_queue)
         self.log.debug("Seconds buffer (up to %s): %s",
@@ -581,7 +570,6 @@ class PhantomReader(AbstractReader):
 
 
 class UsedInstancesCriteria(AbstractCriteria):
-
     """
     Autostop criteria, based on active instances count
     """
