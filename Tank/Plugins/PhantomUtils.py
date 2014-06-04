@@ -178,6 +178,8 @@ class StreamConfig:
 
     def __init__(self, core, sequence, phout, answ, answ_level, timeout, section):
         self.core = core
+        self.address_wizard = AddressWizard()
+
         self.sequence_no = sequence
         self.log = logging.getLogger(__name__)
         self.section = section
@@ -238,9 +240,8 @@ class StreamConfig:
         self.phantom_http_field = self.get_option("phantom_http_field", "")
         self.phantom_http_entity = self.get_option("phantom_http_entity", "")
 
-        wizard = AddressWizard()
         self.address = self.get_option('address', '127.0.0.1')
-        self.ipv6, self.resolved_ip, self.port = wizard.resolve(self.address)
+        self.ipv6, self.resolved_ip, self.port = self.address_wizard.resolve(self.address)
 
         if self.port is None:
             explicit_port = self.get_option('port', '')
@@ -253,17 +254,7 @@ class StreamConfig:
         logging.info("Resolved %s into %s:%s", self.address, self.resolved_ip, self.port)
 
         if int(self.get_option("connection_test", "1")):
-            lookup = socket.getaddrinfo(self.resolved_ip, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM)
-            af, socktype, proto, canonname, sa = lookup.pop(0)
-            test_sock = socket.socket(af, socktype, proto)
-            try:
-                test_sock.settimeout(5)
-                test_sock.connect(sa)
-            except Exception, exc:
-                msg = "TCP Connection test failed for %s:%s, use %s.connection_test=0 to disable it"
-                raise RuntimeError(msg % (self.resolved_ip, self.port, self.section))
-            finally:
-                test_sock.close()
+            self.address_wizard.test(self.resolved_ip, self.port)
 
         self.stepper_wrapper.read_config()
 
@@ -339,6 +330,7 @@ class StreamConfig:
 class AddressWizard:
     def __init__(self):
         self.lookup_fn = socket.getaddrinfo
+        self.socket_class = socket.socket
 
     def resolve(self, address_str):
         """
@@ -376,3 +368,16 @@ class AddressWizard:
         parsed_ip, port = sockaddr[0], sockaddr[1]
 
         return is_v6, parsed_ip, int(port) if port else None
+
+    def test(self, resolved_ip, port):
+        lookup = socket.getaddrinfo(resolved_ip, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        af, socktype, proto, canonname, sa = lookup.pop(0)
+        test_sock = self.socket_class(af, socktype, proto)
+        try:
+            test_sock.settimeout(5)
+            test_sock.connect(sa)
+        except Exception, exc:
+            msg = "TCP Connection test failed for %s:%s, use phantom.connection_test=0 to disable it"
+            raise RuntimeError(msg % (resolved_ip, port))
+        finally:
+            test_sock.close()
