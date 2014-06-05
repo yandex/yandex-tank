@@ -58,6 +58,7 @@ Preparing requests
 ~~~~~~~~~~~~~~~~~~
 
 There are several ways to set up requests: Access mode, URI-style and request-style. 
+Regardless of the chosen format, resulted file with requests could be gzipped - tank supports archived ammo files
 
 Access mode
 ''''''''''''
@@ -158,10 +159,10 @@ is:
 
   [size_of_request] [tag]\n
   [request_headers]
-  [body_of_request] \r\n
+  [body_of_request]\r\n
   [size_of_request2] [tag2]\n
   [request2_headers]
-  [body_of_request2] \r\n
+  [body_of_request2]\r\n
 
 
 where ``size_of_request`` – request size in bytes. '\r\n' symbols after

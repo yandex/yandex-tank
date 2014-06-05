@@ -596,13 +596,13 @@ class AvgTimesBlock(AbstractBlock):
                 float(self.last_connect) / self.last_count))
             self.lines.append("     Send: " + tpl % (
                 float(self.all_send) / self.all_count, float(self.rps_send) / self.rps_count,
-                float(self.rps_send) / self.rps_count))
+                float(self.last_send) / self.last_count))
             self.lines.append("  Latency: " + tpl % (
                 float(self.all_latency) / self.all_count, float(self.rps_latency) / self.rps_count,
-                float(self.rps_latency) / self.rps_count))
+                float(self.last_latency) / self.last_count))
             self.lines.append("  Receive: " + tpl % (
                 float(self.all_receive) / self.all_count, float(self.rps_receive) / self.rps_count,
-                float(self.rps_receive) / self.rps_count))
+                float(self.last_receive) / self.last_count))
         else:
             self.lines.append("")
             self.lines.append("")
