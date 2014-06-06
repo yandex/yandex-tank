@@ -124,11 +124,13 @@ class WebOnlinePlugin(AbstractPlugin, Thread, AggregateResultListener):
 
         net = 0
         for code, count in data.overall.net_codes.iteritems():
+            code = str(code)  # make sure its a string
             if code != "0":
                 net += count
         item_data['net'] = net
 
         for code, count in data.overall.http_codes.iteritems():
+            code = str(code)  # make sure its a string
             if code[0] == '2':
                 item_data['2xx'] += count
             elif code[0] == '3':
