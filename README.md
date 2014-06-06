@@ -5,7 +5,7 @@
 ## Description
 Yandex.Tank is an extendable open source load testing tool for advanced linux users which is especially good as a part of automated load testing suit.
 
-Main features:
+## Main features
 * different load generators supported:
   * Evgeniy Mamchits' [phantom](https://github.com/mamchits/phantom) is a very fast (100 000+ RPS) shooter written in C++ (default)
   * [JMeter](http://jmeter.apache.org/) is an extendable and widely known one
