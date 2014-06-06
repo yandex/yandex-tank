@@ -194,7 +194,6 @@ class PhantomPluginTestCase(TankTestCase):
         sec.overall.rps = 1
         self.phantom_plugin_instance.aggregate_second(sec)
         self.assertEqual(self.phantom_plugin_instance.is_test_finished(), -1)
-        self.assertEqual(self.phantom_plugin_instance.is_test_finished(), 0)
         self.phantom_plugin_instance.end_test(0)
         self.phantom_plugin_instance.post_process(0)
 
