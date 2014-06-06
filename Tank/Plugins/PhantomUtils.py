@@ -241,7 +241,7 @@ class StreamConfig:
         self.phantom_http_entity = self.get_option("phantom_http_entity", "")
 
         self.address = self.get_option('address', '127.0.0.1')
-        self.ipv6, self.resolved_ip, self.port = self.address_wizard.resolve(self.address)
+        self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(self.address)
 
         if self.port is None:
             explicit_port = self.get_option('port', '')
@@ -336,7 +336,7 @@ class AddressWizard:
         """
 
         :param address_str:
-        :return: tuple of boolean, string, int - isIPv6, resolved_ip, port (may be null)
+        :return: tuple of boolean, string, int - isIPv6, resolved_ip, port (may be null), extracted_address
         """
         logging.debug("Trying to resolve address string")
 
@@ -367,7 +367,7 @@ class AddressWizard:
         is_v6 = family == socket.AF_INET6
         parsed_ip, port = sockaddr[0], sockaddr[1]
 
-        return is_v6, parsed_ip, int(port) if port else None
+        return is_v6, parsed_ip, int(port) if port else None, address_str
 
     def test(self, resolved_ip, port):
         lookup = socket.getaddrinfo(resolved_ip, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
