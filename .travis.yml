@@ -8,3 +8,4 @@ install:
   - pip install psutil
   - pip install sqlalchemy
 script: cd Tests && nosetests
+
