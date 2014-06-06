@@ -1,3 +1,13 @@
+yandex-load-tank-base (1.6.0) precise; urgency=medium
+
+  * Rely on phantom pre~45 and greater in phantom configs
+  * Rework address parse/resolve functionality for phantom
+  * Fix average times block bug
+  * Added ability to specify custom user for monitroring
+  * Explicitly run yandex-tank python scripts with python2
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 06 Jun 2014 14:58:48 +0400
+
 yandex-load-tank-base (1.5.0) precise; urgency=low
 
   * Static HTML report with Highcharts graphs: tank metrics and monitoring
