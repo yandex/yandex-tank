@@ -112,7 +112,7 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
         """
         ts = int(time.mktime(data.time.timetuple()))
 
-        def add_aggreagted_second(data_item, storage):
+        def add_aggregated_second(data_item, storage):
             data_dict = data_item.__dict__
             avg = storage['avg']
             for key in ["avg_connect_time", "avg_send_time", "avg_latency", "avg_receive_time"]:
@@ -129,9 +129,9 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
             for key, value in data_item.net_codes.iteritems():
                 net_codes[key].append((ts, value))
 
-        add_aggreagted_second(data.overall, self.overall)
+        add_aggregated_second(data.overall, self.overall)
         for case, case_data in data.cases.iteritems():
-            add_aggreagted_second(case_data, self.cases[case])
+            add_aggregated_second(case_data, self.cases[case])
 
     def post_process(self, retcode):
         self.log.info("Building HTML report...")

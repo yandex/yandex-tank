@@ -5,6 +5,9 @@ yandex-load-tank-base (1.6.0) precise; urgency=medium
   * Fix average times block bug
   * Added ability to specify custom user for monitroring
   * Explicitly run yandex-tank python scripts with python2
+  * Fix instances_schedule logic
+  * Fix some BFG bugs
+  * Fix stacked quantiles bug
 
  -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 06 Jun 2014 14:58:48 +0400
 

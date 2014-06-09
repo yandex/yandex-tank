@@ -1,42 +1,74 @@
-defaultColors = colors: [
-   '#2f7ed8'
-   '#0d233a'
-   '#8bbc21'
-   '#910000'
-   '#1aadce'
-   '#492970'
-   '#f28f43'
-   '#77a1e5'
-   '#c42525'
-   '#a6c96a'
-]
-stackedColors = [
-  "#49006a"
-  "#7a0177"
-  "#ae017e"
-  "#dd3497"
-  "#f768a1"
-  "#fa9fb5"
-  "#fcc5c0"
-  "#fde0dd"
-  "#fff7f3"
-  "#ffffff"
-]
-stackedGroups = ['quantiles', 'CPU', 'http_codes', 'net_codes', 'Memory', 'avg']
-defaultPlotOptions = 
-  spline:
-    lineWidth: 2
-    states:
-      hover:
-        lineWidth: 4
-    marker:
-      enabled: false
-stackedPlotOptions = 
+colors = 
+  spline: [
+    '#2f7ed8'
+    '#0d233a'
+    '#8bbc21'
+    '#910000'
+    '#1aadce'
+    '#492970'
+    '#f28f43'
+    '#77a1e5'
+    '#c42525'
+    '#a6c96a'
+  ]
+  area: [
+    "#49006a"
+    "#7a0177"
+    "#ae017e"
+    "#dd3497"
+    "#f768a1"
+    "#fa9fb5"
+    "#fcc5c0"
+    "#fde0dd"
+    "#fff7f3"
+    "#ffffff"
+  ]
+  stacked: [
+    "#49006a"
+    "#7a0177"
+    "#ae017e"
+    "#dd3497"
+    "#f768a1"
+    "#fa9fb5"
+    "#fcc5c0"
+    "#fde0dd"
+    "#fff7f3"
+    "#ffffff"
+  ]
+
+plotOptions =
   area:
-    lineWidth: 0
-    stacking: 'normal'
-    marker:
-      enabled: false
+    area:
+      lineWidth: 0
+      marker:
+        enabled: false
+  stacked:
+    area:
+      lineWidth: 0
+      stacking: 'normal'
+      marker:
+        enabled: false
+  spline:
+    spline:
+      lineWidth: 2
+      states:
+        hover:
+          lineWidth: 4
+      marker:
+        enabled: false
+
+getChartType = (type) ->
+  if type is 'stacked'
+    return 'area'
+  else return type
+
+chartType =
+  CPU: 'stacked'
+  http_codes: 'stacked'
+  net_codes: 'stacked'
+  Memory: 'stacked'
+  avg: 'stacked'
+  quantiles: 'area'
 
 ((Highcharts, UNDEFINED) ->
   return  unless Highcharts
@@ -129,12 +161,12 @@ class GraphiteChart
         crosshairs: true
 
       chart:
-        type: if @name in stackedGroups then 'area' else 'spline'
+        type: if @name of chartType then getChartType(chartType[@name]) else 'spline'
         zoomType: 'xy'
         renderTo: $(@container)[0]
 
-      plotOptions: if @name in stackedGroups then stackedPlotOptions else defaultPlotOptions
-      colors: if @name in stackedGroups then stackedColors else defaultColors
+      plotOptions: if @name of chartType then plotOptions[chartType[@name]] else plotOptions.spline
+      colors: if @name of chartType then colors[chartType[@name]] else colors.spline
 
       legend:
         layout: "horizontal"
