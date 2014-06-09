@@ -190,6 +190,7 @@ class TankCore:
         self.lock_file = None
         self.flush_config_to = None
         self.lock_dir = None
+        self.set_option(self.SECTION, self.PID_OPTION, str(os.getpid()))
 
     def get_available_options(self):
         return ["artifacts_base_dir", "artifacts_dir", "flush_config_to"]
@@ -197,6 +198,11 @@ class TankCore:
     def load_configs(self, configs):
         """        Tells core to load configs set into options storage        """
         self.log.info("Loading configs...")
+        for fname in configs:
+            if not os.path.isfile(fname):
+                # can't raise exception, since ~/.yandex-tank may not exist
+                logging.debug("Config file not found: %s", fname)
+
         self.config.load_files(configs)
         dotted_options = []
         for option, value in self.config.get_options(self.SECTION):
@@ -205,7 +211,7 @@ class TankCore:
         self.apply_shorthand_options(dotted_options, self.SECTION)
         self.config.flush()
         self.add_artifact_file(self.config.file)
-        self.set_option(self.SECTION, self.PID_OPTION, os.getpid())
+        self.set_option(self.SECTION, self.PID_OPTION, str(os.getpid()))
         self.flush_config_to = self.get_option(
             self.SECTION, "flush_config_to", "")
         if self.flush_config_to:
@@ -217,7 +223,7 @@ class TankCore:
 
         self.artifacts_base_dir = os.path.expanduser(
             self.get_option(self.SECTION, "artifacts_base_dir", self.artifacts_base_dir))
-        self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
+        self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", self.artifacts_dir)
         if self.artifacts_dir:
             self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
 
@@ -481,6 +487,7 @@ class TankCore:
         Add file to be stored as result artifact on post-process phase
         """
         if filename:
+            logging.debug("Adding artifact file to collect (keep=%s): %s", keep_original, filename)
             self.artifact_files[filename] = keep_original
 
     def apply_shorthand_options(self, options, default_section='DEFAULT'):
@@ -511,10 +518,12 @@ class TankCore:
         os.close(fh)
         os.chmod(self.lock_file, 0644)
         self.config.file = self.lock_file
+        self.config.flush()
 
     def release_lock(self):
         self.config.file = None
         if self.lock_file and os.path.exists(self.lock_file):
+            self.log.debug("Releasing lock: %s", self.lock_file)
             os.remove(self.lock_file)
 
     def __there_is_locks(self):
@@ -545,13 +554,16 @@ class TankCore:
                     retcode = True
         return retcode
 
-    def mkstemp(self, suffix, prefix):
+    def mkstemp(self, suffix, prefix, directory=None):
         """
         Generate temp file name in artifacts base dir
         and close temp file handle
         """
-        fd, fname = tempfile.mkstemp(suffix, prefix, self.artifacts_base_dir)
+        if not directory:
+            directory = self.artifacts_base_dir
+        fd, fname = tempfile.mkstemp(suffix, prefix, directory)
         os.close(fd)
+        os.chmod(fname, 0644)  # FIXME: chmod to parent dir's mode?
         return fname
 
 
@@ -621,6 +633,10 @@ class AbstractPlugin:
         raise TypeError("Abstract method needs to be overridden")
 
     def __init__(self, core):
+        """
+
+        @type core: TankCore
+        """
         self.log = logging.getLogger(__name__)
         self.core = core
 
@@ -659,3 +675,14 @@ class AbstractPlugin:
     def get_available_options(self):
         """ returns array containing known options for plugin """
         return []
+
+    def get_multiline_option(self, option_name, default_value=None):
+        if default_value is not None:
+            default = ' '.join(default_value)
+        else:
+            default = None
+        value = self.get_option(option_name, default)
+        if value:
+            return (' '.join(value.split("\n"))).split(' ')
+        else:
+            return ()
