@@ -382,13 +382,19 @@ class NetTcp(AbstractMetric):
         if note set it to 0.
         * make output ordered as "fields" list
         """
-        fetch = lambda: commands.getoutput("ss -s | awk -F'\(|\)|\/' '/^TCP:/ {print $2}'")
+        fetch = lambda: commands.getoutput("ss -s | sed -ne '/^TCP:/p'")
+
+        regex = ( '(^[^(]+\()'
+                  '([^)]+)' )
+        matches = re.match(regex, fetch())
+        raw = matches.group(2)
+
         data = {}
         result = []
-        raw_lines = fetch().split(',')
-        for line in raw_lines:
-            value = line.split()
-            data[value[0].strip()] = int(value[1].strip())
+
+        for i in raw.split(','):
+            state,count = i.split()
+            data[state] = count.split('/')[0]
         for field in self.keys:
             if field in data:
                 result.append(str(data[field]))
