@@ -72,7 +72,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
 
             
     def end_test(self, retcode):
-        if self.process and self.process.poll() == None:
+        if self.process and self.process.poll() is None:
             self.log.warn("Terminating ab process with PID %s", self.process.pid)
             self.process.terminate()
         else:

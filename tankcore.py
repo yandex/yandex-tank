@@ -201,7 +201,7 @@ class TankCore:
         for fname in configs:
             if not os.path.isfile(fname):
                 # can't raise exception, since ~/.yandex-tank may not exist
-                logging.debug("Config file not found: %s", fname)
+                self.log.debug("Config file not found: %s", fname)
 
         self.config.load_files(configs)
         dotted_options = []
@@ -223,15 +223,12 @@ class TankCore:
 
         base_dir = self.get_option(self.SECTION, "artifacts_base_dir", self.artifacts_base_dir)
         self.artifacts_base_dir = os.path.expanduser(base_dir)
-        self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", self.artifacts_base_dir)
-        if self.artifacts_dir:
-            self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
+        self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
 
         options = self.config.get_options(self.SECTION, self.PLUGIN_PREFIX)
         for (plugin_name, plugin_path) in options:
             if not plugin_path:
-                self.log.debug(
-                    "Seems the plugin '%s' was disabled", plugin_name)
+                self.log.debug("Seems the plugin '%s' was disabled", plugin_name)
                 continue
             instance = self.__load_plugin(plugin_name, plugin_path)
             key = os.path.realpath(instance.get_key())
@@ -377,12 +374,13 @@ class TankCore:
         self.log.debug("Collecting artifacts")
         if not self.artifacts_dir:
             date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
-            self.artifacts_dir = tempfile.mkdtemp(
-                "", date_str, self.artifacts_base_dir)
+            self.artifacts_dir = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)
+        else:
+            self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
+
         if not os.path.isdir(self.artifacts_dir):
             os.makedirs(self.artifacts_dir)
-
-        os.chmod(self.artifacts_dir, 0755)
+            os.chmod(self.artifacts_dir, 0755)
 
         self.log.info("Artifacts dir: %s", self.artifacts_dir)
         for filename, keep in self.artifact_files.items():
@@ -487,7 +485,7 @@ class TankCore:
         Add file to be stored as result artifact on post-process phase
         """
         if filename:
-            logging.debug("Adding artifact file to collect (keep=%s): %s", keep_original, filename)
+            self.log.debug("Adding artifact file to collect (keep=%s): %s", keep_original, filename)
             self.artifact_files[filename] = keep_original
 
     def apply_shorthand_options(self, options, default_section='DEFAULT'):
@@ -499,8 +497,7 @@ class TankCore:
                 section = default_section
                 option = option_str[:option_str.index('=')]
             value = option_str[option_str.index('=') + 1:]
-            self.log.debug(
-                "Override option: %s => [%s] %s=%s", option_str, section, option, value)
+            self.log.debug("Override option: %s => [%s] %s=%s", option_str, section, option, value)
             self.set_option(section, option, value)
 
     def get_lock_dir(self):
@@ -539,18 +536,15 @@ class TankCore:
                     info.read(full_name)
                     pid = info.get(TankCore.SECTION, self.PID_OPTION)
                     if not pid_exists(int(pid)):
-                        self.log.debug(
-                            "Lock PID %s not exists, ignoring and trying to remove", pid)
+                        self.log.debug("Lock PID %s not exists, ignoring and trying to remove", pid)
                         try:
                             os.remove(full_name)
                         except Exception, exc:
-                            self.log.debug(
-                                "Failed to delete lock %s: %s", full_name, exc)
+                            self.log.debug("Failed to delete lock %s: %s", full_name, exc)
                     else:
                         retcode = True
                 except Exception, exc:
-                    self.log.warn(
-                        "Failed to load info from lock %s: %s", full_name, exc)
+                    self.log.warn("Failed to load info from lock %s: %s", full_name, exc)
                     retcode = True
         return retcode
 
@@ -598,8 +592,7 @@ class ConfigManager:
     def get_options(self, section, prefix=''):
         """        Get options list with requested prefix        """
         res = []
-        self.log.debug(
-            "Looking in section '%s' for options starting with '%s'", section, prefix)
+        self.log.debug("Looking in section '%s' for options starting with '%s'", section, prefix)
         try:
             for option in self.config.options(section):
                 self.log.debug("Option: %s", option)

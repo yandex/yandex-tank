@@ -10,9 +10,9 @@ if __name__ == "__main__":
     sys.path.append(os.path.dirname(__file__))
     parser = OptionParser()
     parser.add_option('-c', '--config', action='append', help="Path to INI file containing run options, multiple options accepted")
-    parser.add_option(      '--lock-dir', action='store', dest='lock_dir', type="string", help="Directory for lock file")
-    parser.add_option('-i', '--ignore-lock', action='store_true', dest='ignore_lock', help="Ignore lock files from concurrent instances, has precedence before --lock-fail")
     parser.add_option('-f', '--fail-lock', action='store_true', dest='lock_fail', help="Don't wait for lock to release, fail test instead")
+    parser.add_option('-i', '--ignore-lock', action='store_true', dest='ignore_lock', help="Ignore lock files from concurrent instances, has precedence before --lock-fail")
+    parser.add_option('-k', '--lock-dir', action='store', dest='lock_dir', type="string", help="Directory for lock file")
     parser.add_option('-l', '--log', action='store', default="tank.log", help="Tank log file location")
     parser.add_option('-m', '--manual-start', action='store_true', dest='manual_start', help="Wait for Enter key to start the test")
     parser.add_option('-n', '--no-rc', action='store_true', dest='no_rc', help="Don't load config files from /etc/yandex-tank and ~/.yandex-tank")
@@ -23,12 +23,12 @@ if __name__ == "__main__":
 
     completion_helper = CompletionHelperOptionParser()
     completion_helper.handle_request(parser)
-        
+
     options, ammofile = parser.parse_args()
 
     worker = ConsoleTank(options, ammofile)
     worker.init_logging()
-    try:     
+    try:
         worker.configure()
         rc = worker.perform_test()
         exit(rc)
@@ -36,6 +36,4 @@ if __name__ == "__main__":
         logging.error("Exception: %s", ex)
         logging.debug("Exception: %s", traceback.format_exc(ex))
         exit(1)
-        
-    
-                
+
