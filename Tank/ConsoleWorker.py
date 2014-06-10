@@ -65,7 +65,7 @@ class ConsoleTank:
 
     def init_logging(self):
         """        Set up logging, as it is very important for console tool        """
-        logger = logging.getLogger()
+        logger = logging.getLogger('')
         logger.setLevel(logging.DEBUG)
 
         # create file handler which logs even debug messages
