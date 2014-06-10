@@ -432,7 +432,10 @@ class PhantomReader(AbstractReader):
                     if not benchmark_name.startswith("benchmark_io"):
                         continue
                     benchmark = statistics[benchmark_name]
-                    self.stat_data[pending_datetime] += benchmark["stream_method"]["mmtasks"][2]
+		    for method in benchmark:
+			meth_obj=benchmark[method]
+			if "mmtasks" in meth_obj:
+                            self.stat_data[pending_datetime] += meth_obj["mmtasks"][2]
                 self.log.debug("Active instances: %s=>%s", pending_datetime, self.stat_data[pending_datetime])
 
         self.log.debug("Instances info buffer size: %s", len(self.stat_data))

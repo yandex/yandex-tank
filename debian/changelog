@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.6.2) precise; urgency=medium
+
+  * more universal phantom stat reader
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 10 Jun 2014 19:38:42 +0400
+
 yandex-load-tank-base (1.6.1) precise; urgency=medium
 
   * fix bugs for 1.6.0
