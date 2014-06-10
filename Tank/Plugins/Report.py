@@ -46,7 +46,7 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
         self.start_time = None
         self.end_time = None
         self.show_graph = None
-        self.template = None
+        self.template = os.path.dirname(__file__) + "/report.tpl"
 
     def monitoring_data(self, data_string):
         self.log.debug("Mon report data: %s", data_string)
@@ -91,8 +91,7 @@ class ReportPlugin(AbstractPlugin, AggregateResultListener, MonitoringDataListen
     def configure(self):
         """Read configuration"""
         self.show_graph = self.get_option("show_graph", "")
-        default_template = "/report.tpl"
-        self.template = self.get_option("template", os.path.dirname(__file__) + default_template)
+        self.template = self.get_option("template", self.template)
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(self)
