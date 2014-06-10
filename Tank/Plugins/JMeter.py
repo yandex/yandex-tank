@@ -230,7 +230,7 @@ class JMeterReader(AbstractReader):
                     second_ag.overall.avg_receive_time = second['avg_rt'] - second['avg_lt']
                     second_ag.overall.avg_response_time = second['avg_rt']
                     second_ag.overall.avg_latency = second['avg_lt']
-                    second_ag.overall.rps = second['th']
+                    second_ag.overall.RPS = second['th']
                     second_ag.overall.active_threads = second['active_threads']
                     second_ag.overall.times_dist = second['interval_dist']
                     second_ag.overall.input = second['traffic']['inbound']
@@ -252,7 +252,7 @@ class JMeterReader(AbstractReader):
                         sampler_ag_data_item = SecondAggregateDataItem()
                         sampler_ag_data_item.case = sampler
                         sampler_ag_data_item.active_threads = second['active_threads']
-                        sampler_ag_data_item.rps = int(second['samplers'][sampler])
+                        sampler_ag_data_item.RPS = int(second['samplers'][sampler])
                         sampler_ag_data_item.times_dist = second['sampler_interval_dist'][sampler]
 
                         sampler_ag_data_item.quantiles = second['sampler_percentile'][sampler]
@@ -340,14 +340,14 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.krutilka = ConsoleScreen.krutilka()
         self.jmeter = jmeter
         self.active_threads = 0
-        self.rps = 0
+        self.RPS = 0
 
     def get_index(self):
         return 0
 
     def aggregate_second(self, second_aggregate_data):
         self.active_threads = second_aggregate_data.overall.active_threads
-        self.rps = second_aggregate_data.overall.rps
+        self.RPS = second_aggregate_data.overall.RPS
 
     def render(self, screen):
         jmeter = " JMeter Test %s" % self.krutilka.next()
@@ -364,6 +364,6 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         template += "      Duration: %s\n"
         template += "Active Threads: %s\n"
         template += "   Responses/s: %s"
-        data = (os.path.basename(self.jmeter.original_jmx), duration, self.active_threads, self.rps)
+        data = (os.path.basename(self.jmeter.original_jmx), duration, self.active_threads, self.RPS)
 
         return template % data
