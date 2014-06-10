@@ -221,9 +221,9 @@ class TankCore:
         """        Tells core to take plugin options and instantiate plugin classes        """
         self.log.info("Loading plugins...")
 
-        self.artifacts_base_dir = os.path.expanduser(
-            self.get_option(self.SECTION, "artifacts_base_dir", self.artifacts_base_dir))
-        self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", self.artifacts_dir)
+        base_dir = self.get_option(self.SECTION, "artifacts_base_dir", self.artifacts_base_dir)
+        self.artifacts_base_dir = os.path.expanduser(base_dir)
+        self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", self.artifacts_base_dir)
         if self.artifacts_dir:
             self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
 
@@ -605,8 +605,7 @@ class ConfigManager:
                 self.log.debug("Option: %s", option)
                 if not prefix or option.find(prefix) == 0:
                     self.log.debug("Option: %s matched", option)
-                    res += [
-                        (option[len(prefix):], self.config.get(section, option))]
+                    res += [(option[len(prefix):], self.config.get(section, option))]
         except NoSectionError, ex:
             self.log.debug("No section: %s", ex)
 
