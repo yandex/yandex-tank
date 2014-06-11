@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.6.3) precise; urgency=medium
+
+  * fixed broken JMeter tests
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 11 Jun 2014 14:07:23 +0400
+
 yandex-load-tank-base (1.6.2) precise; urgency=medium
 
   * more universal phantom stat reader
