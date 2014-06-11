@@ -1,4 +1,5 @@
 [![Build Status](https://secure.travis-ci.org/yandex-load/yandex-tank.png?branch=master)](http://travis-ci.org/yandex-load/yandex-tank)
+[![Gitter chat](https://badges.gitter.im/yandex-load/yandex-tank.png)](https://gitter.im/yandex-load/yandex-tank)
 # Yandex Tank
 
 ![Quantiles chart example](/logos/screen.png)
