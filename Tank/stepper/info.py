@@ -100,9 +100,10 @@ class StepperStatus(object):
         cur_time = time.time()
         time_delta = cur_time - self._timer
         self._timer = cur_time
-        stdout.write("AF: %3s%%, LP: %3s%%, loops: %10s, speed: %5s Krps\r" % \
-            (self.af_progress, self.lp_progress, self.loop_count, int(ammo_generated / time_delta / 1000.0)))
-        stdout.flush()
+        if time_delta > 0:
+            stdout.write("AF: %3s%%, LP: %3s%%, loops: %10s, speed: %5s Krps\r" % \
+                (self.af_progress, self.lp_progress, self.loop_count, int(ammo_generated / time_delta / 1000.0)))
+            stdout.flush()
 
     def update_af_progress(self):
         if self.af_size and self.loop_limit and self.af_position is not None:
