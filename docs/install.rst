@@ -46,7 +46,7 @@ everything OK, you'll see:
 	Trying 203.0.113.1... 
 	Connected to 203.0.113.1. Escape character is '^]'.
 
-Otherwise if port is unreacheable:
+Otherwise if port is unreachable:
 
 .. code-block:: bash
 
