@@ -241,20 +241,13 @@ class StreamConfig:
         self.phantom_http_entity = self.get_option("phantom_http_entity", "")
 
         self.address = self.get_option('address', '127.0.0.1')
-        self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(self.address)
-
-        if self.port is None:
-            explicit_port = self.get_option('port', '')
-            if explicit_port:
-                self.log.warn("Using phantom.port option is deprecated. Use phantom.address=[address]:port instead")
-                self.port = int(explicit_port)
-            else:
-                self.port = 80
+        do_test_connect = int(self.get_option("connection_test", "1")) is True
+        explicit_port = self.get_option('port', '')
+        self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(self.address,
+                                                                                           do_test_connect,
+                                                                                           explicit_port)
 
         logging.info("Resolved %s into %s:%s", self.address, self.resolved_ip, self.port)
-
-        if int(self.get_option("connection_test", "1")):
-            self.address_wizard.test(self.resolved_ip, self.port)
 
         self.stepper_wrapper.read_config()
 
@@ -332,7 +325,7 @@ class AddressWizard:
         self.lookup_fn = socket.getaddrinfo
         self.socket_class = socket.socket
 
-    def resolve(self, address_str):
+    def resolve(self, address_str, do_test=False, explicit_port=False):
         """
 
         :param address_str:
@@ -360,16 +353,32 @@ class AddressWizard:
             if len(parts) <= 2:  # otherwise it is v6 address
                 address_str = parts[0]
                 if len(parts) == 2:
-                    port = parts[1]
+                    port = int(parts[1])
 
         resolved = self.lookup_fn(address_str, port)
-        (family, socktype, proto, canonname, sockaddr) = resolved.pop(0)
-        is_v6 = family == socket.AF_INET6
-        parsed_ip, port = sockaddr[0], sockaddr[1]
 
-        return is_v6, parsed_ip, int(port) if port else None, address_str
+        for (family, socktype, proto, canonname, sockaddr) in resolved:
+            is_v6 = family == socket.AF_INET6
+            parsed_ip, port = sockaddr[0], sockaddr[1]
 
-    def test(self, resolved_ip, port):
+            if do_test:
+                try:
+                    self.__test(parsed_ip, port)
+                except RuntimeError, exc:
+                    logging.warn("Failed connection test using [%s]:%s", parsed_ip, port)
+                    continue
+
+            if explicit_port:
+                logging.warn("Using phantom.port option is deprecated. Use phantom.address=[address]:port instead")
+                port = int(explicit_port)
+            elif not port:
+                port = 80
+
+            return is_v6, parsed_ip, int(port), address_str
+
+        raise RuntimeError("No suitable address found for %s" % address_str)
+
+    def __test(self, resolved_ip, port):
         lookup = socket.getaddrinfo(resolved_ip, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
         af, socktype, proto, canonname, sa = lookup.pop(0)
         test_sock = self.socket_class(af, socktype, proto)

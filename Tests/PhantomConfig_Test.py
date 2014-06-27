@@ -85,11 +85,11 @@ class AddressWizardTestCase(TankTestCase):
 
     def test_v4_noport_resolve(self):
         res = self.foo.resolve("ipv4host")
-        self.assertEquals((False, "192.168.0.1", None, "ipv4host"), res)
+        self.assertEquals((False, "192.168.0.1", 80, "ipv4host"), res)
 
     def test_v6_noport_resolve(self):
         res = self.foo.resolve("ipv6host")
-        self.assertEquals((True, "2001:db8::1", None, "ipv6host"), res)
+        self.assertEquals((True, "2001:db8::1", 80, "ipv6host"), res)
 
     def test_v4_port_resolve(self):
         res = self.foo.resolve("ipv4host:443")
@@ -101,11 +101,11 @@ class AddressWizardTestCase(TankTestCase):
 
     def test_v4_noport_noresolve(self):
         res = self.foo.resolve("127.0.0.1")
-        self.assertEquals((False, "127.0.0.1", None, "127.0.0.1"), res)
+        self.assertEquals((False, "127.0.0.1", 80, "127.0.0.1"), res)
 
     def test_v6_noport_noresolve(self):
         res = self.foo.resolve("2001:db8::1")
-        self.assertEquals((True, "2001:db8::1", None, "2001:db8::1"), res)
+        self.assertEquals((True, "2001:db8::1", 80, "2001:db8::1"), res)
 
     def test_v4_port_noresolve(self):
         res = self.foo.resolve("127.0.0.1:443")
@@ -129,19 +129,19 @@ class AddressWizardTestCase(TankTestCase):
 
     def test_v4_noport_resolve_braces(self):
         res = self.foo.resolve("[ipv4host]")
-        self.assertEquals((False, "192.168.0.1", None, "ipv4host"), res)
+        self.assertEquals((False, "192.168.0.1", 80, "ipv4host"), res)
 
     def test_v4_noport_noresolve_braces(self):
         res = self.foo.resolve("[127.0.0.1]")
-        self.assertEquals((False, "127.0.0.1", None, "127.0.0.1"), res)
+        self.assertEquals((False, "127.0.0.1", 80, "127.0.0.1"), res)
 
     def test_v6_noport_resolve_braces(self):
         res = self.foo.resolve("[ipv6host]")
-        self.assertEquals((True, "2001:db8::1", None, "ipv6host"), res)
+        self.assertEquals((True, "2001:db8::1", 80, "ipv6host"), res)
 
     def test_v6_noport_noresolve_braces(self):
         res = self.foo.resolve("[2001:db8::1]")
-        self.assertEquals((True, "2001:db8::1", None, "2001:db8::1"), res)
+        self.assertEquals((True, "2001:db8::1", 80, "2001:db8::1"), res)
 
     def test_error1(self):
         try:
