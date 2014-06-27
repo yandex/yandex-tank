@@ -392,8 +392,7 @@ class PhantomReader(AbstractReader):
                 self.steps = info.steps
 
         if not self.stat and info and os.path.exists(info.stat_log):
-            self.log.debug(
-                "Opening stat file: %s", self.phantom.phantom.stat_log)
+            self.log.debug("Opening stat file: %s", self.phantom.phantom.stat_log)
             self.stat = open(self.phantom.phantom.stat_log, 'r')
 
 
@@ -432,13 +431,14 @@ class PhantomReader(AbstractReader):
                     if not benchmark_name.startswith("benchmark_io"):
                         continue
                     benchmark = statistics[benchmark_name]
-		    for method in benchmark:
-			meth_obj=benchmark[method]
-			if "mmtasks" in meth_obj:
+                    for method in benchmark:
+                        meth_obj = benchmark[method]
+                        if "mmtasks" in meth_obj:
                             self.stat_data[pending_datetime] += meth_obj["mmtasks"][2]
                 self.log.debug("Active instances: %s=>%s", pending_datetime, self.stat_data[pending_datetime])
 
-        self.log.debug("Instances info buffer size: %s", len(self.stat_data))
+        self.log.debug("Instances info buffer size: %s / Read buffer size: %s", len(self.stat_data),
+                       len(self.stat_read_buffer))
 
 
     def __read_phout_data(self, force):
@@ -488,9 +488,9 @@ class PhantomReader(AbstractReader):
                     self.data_queue.append(cur_time)
                     self.data_buffer[cur_time] = []
 
-            #        marker, threads, overallRT, httpCode, netCode
+            # marker, threads, overallRT, httpCode, netCode
             # bytes:     sent    received
-            #        connect    send    latency    receive
+            # connect    send    latency    receive
             #        accuracy
             data_item = (data[1], active, rt_real / 1000, data[11], data[10],
                          int(data[8]), int(data[9]),
@@ -524,10 +524,13 @@ class PhantomReader(AbstractReader):
         """ calls aggregator if there is data """
         parsed_sec = AbstractReader.pop_second(self)
         if parsed_sec:
-            self.pending_second_data_queue.append(parsed_sec)
             timestamp = int(time.mktime(parsed_sec.time.timetuple()))
             if timestamp in self.stat_data.keys():
+                parsed_sec.overall.active_threads=self.stat_data[timestamp]
+                for marker in parsed_sec.cases:
+                    parsed_sec.cases[marker].active_threads=self.stat_data[timestamp]
                 del self.stat_data[timestamp]
+            self.pending_second_data_queue.append(parsed_sec)
         else:
             self.log.debug("No new seconds present")
 
@@ -537,10 +540,8 @@ class PhantomReader(AbstractReader):
             time.mktime(self.pending_second_data_queue[0].time.timetuple()))
         if self.last_sample_time and (next_time - self.last_sample_time) > 1:
             self.last_sample_time += 1
-            self.log.debug(
-                "Adding phantom zero sample: %s", self.last_sample_time)
-            res = self.get_zero_sample(
-                datetime.datetime.fromtimestamp(self.last_sample_time))
+            self.log.debug("Adding phantom zero sample: %s", self.last_sample_time)
+            res = self.get_zero_sample(datetime.datetime.fromtimestamp(self.last_sample_time))
         else:
             res = self.pending_second_data_queue.pop(0)
         self.last_sample_time = int(time.mktime(res.time.timetuple()))
