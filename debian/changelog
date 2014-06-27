@@ -1,3 +1,10 @@
+yandex-load-tank-base (1.6.4) precise; urgency=medium
+
+  * try to find available socket in resolver
+  * fix instances info reading in phantom
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 27 Jun 2014 16:56:17 +0400
+
 yandex-load-tank-base (1.6.3) precise; urgency=medium
 
   * fixed broken JMeter tests
