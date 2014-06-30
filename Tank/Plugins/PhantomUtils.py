@@ -241,7 +241,7 @@ class StreamConfig:
         self.phantom_http_entity = self.get_option("phantom_http_entity", "")
 
         self.address = self.get_option('address', '127.0.0.1')
-        do_test_connect = int(self.get_option("connection_test", "1")) is True
+        do_test_connect = int(self.get_option("connection_test", "1"))>0
         explicit_port = self.get_option('port', '')
         self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(self.address,
                                                                                            do_test_connect,
