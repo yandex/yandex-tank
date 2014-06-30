@@ -1,3 +1,9 @@
+yandex-load-tank-base (1.6.5) precise; urgency=medium
+
+  * fix connection_test option parsing
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 30 Jun 2014 16:48:52 +0400
+
 yandex-load-tank-base (1.6.4) precise; urgency=medium
 
   * try to find available socket in resolver
