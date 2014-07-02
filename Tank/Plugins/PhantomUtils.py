@@ -241,7 +241,7 @@ class StreamConfig:
         self.phantom_http_entity = self.get_option("phantom_http_entity", "")
 
         self.address = self.get_option('address', '127.0.0.1')
-        do_test_connect = int(self.get_option("connection_test", "1"))>0
+        do_test_connect = int(self.get_option("connection_test", "1")) > 0
         explicit_port = self.get_option('port', '')
         self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(self.address,
                                                                                            do_test_connect,
@@ -361,22 +361,23 @@ class AddressWizard:
             is_v6 = family == socket.AF_INET6
             parsed_ip, port = sockaddr[0], sockaddr[1]
 
-            if do_test:
-                try:
-                    self.__test(parsed_ip, port)
-                except RuntimeError, exc:
-                    logging.warn("Failed connection test using [%s]:%s", parsed_ip, port)
-                    continue
-
             if explicit_port:
                 logging.warn("Using phantom.port option is deprecated. Use phantom.address=[address]:port instead")
                 port = int(explicit_port)
             elif not port:
                 port = 80
 
+            if do_test:
+                try:
+                    self.__test(parsed_ip, port)
+                except RuntimeError, exc:
+                    logging.warn("Failed TCP connection test using [%s]:%s", parsed_ip, port)
+                    continue
+
             return is_v6, parsed_ip, int(port), address_str
 
-        raise RuntimeError("No suitable address found for %s" % address_str)
+        msg = "All connection attempts failed for %s, use phantom.connection_test=0 to disable it"
+        raise RuntimeError(msg % address_str)
 
     def __test(self, resolved_ip, port):
         lookup = socket.getaddrinfo(resolved_ip, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
