@@ -3,11 +3,20 @@
 <html  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 	<head>
 		<title>Yandex.Tank Online Test</title>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+        <script src="http://code.highcharts.com/highcharts.js"></script>
+        <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+        <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+        <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+        <!--
 		<link rel="stylesheet" href="http://loadosophia.org/img/design/styles.css" />
 		<link rel="stylesheet" href="http://loadosophia.org/img/_hlas.css" />
 		<script src="http://code.jquery.com/jquery-1.8.3.min.js" type='text/javascript'></script>
 		<script src='http://loadosophia.org/img/_hlas.js' type='text/javascript'></script>
+		-->
 		<script type="text/javascript">
+            // <!--
 			$(document).ready(rresize);
 
 			$(window).resize(function() {
@@ -80,6 +89,7 @@
 					$('#actCell').css('background-color', "white");
 				}
 			}
+			// -->
 		</script>
 		<style type="text/css">
 			body {
@@ -151,6 +161,7 @@
 			</tr>
 		</table>
 		<script type="text/javascript">
+            /*
 			var HelperQ = new AmChartsPWEHelper("Q");
 
 			HelperQ.setImagesPath("http://loadosophia.org/img/amcharts/javascript/images/");
@@ -169,8 +180,10 @@
 
 			var chartQ = HelperQ.createChart();
 			chartQ.addLabel("0", "1em", "Response Time Quantiles", "center", "black", "", 0, "true");
+			*/
 		</script>
 		<script type="text/javascript">
+            /*
 			var HelperHTTP = new AmChartsPWEHelper("HTTP");
 
 			HelperHTTP.setImagesPath("http://loadosophia.org/img/amcharts/javascript/images/");
@@ -190,8 +203,10 @@
 
 			var chartHTTP = HelperHTTP.createChart();
 			chartHTTP.addLabel("0", "1em", "Response Codes", "center", "black", "", 0, "true");
+			*/
 		</script>
 		<script type="text/javascript">
+            /*
 			var HelperAvg = new AmChartsPWEHelper("Avg");
 
 			HelperAvg.setImagesPath("http://loadosophia.org/img/amcharts/javascript/images/");
@@ -211,8 +226,10 @@
 
 			var chartAvg = HelperAvg.createChart();
 			chartAvg.addLabel("0", "1em", "Average Response Times", "center", "black", "", 0, "true");
+			*/
 
 			function refresh_all(i) {
+			/*
 				try {
 					HelperQ.validateData();
 				} catch (e) {
@@ -230,6 +247,7 @@
 				} catch (e) {
 					// drop
 				}
+            */
 
 				try {
 					refresh_numbers();
@@ -243,11 +261,8 @@
 			}
 
 			refresh_all(100);
-
 		</script><!-- footer -->
 		<div style="float: none; clear: both; text-align: center; padding-top: 1em;">
-			<small><a href="https://github.com/yandex-load/yandex-tank">Yandex.Tank</a> Tool</small>
-			<big><b title='Mathematical sign, means "For All"'>&forall;</b></big><small> Powered by <a href="http://yandex.ru/"><span style="color:red">Y</span>andex</a>, <a href='http://loadosophia.org/?utm_source=ytank&utm_medium=web&utm_campaign=footer'>Loadosophia.org</a></small>
-		</div>
+			<small><a href="https://github.com/yandex-load/yandex-tank">Yandex.Tank</a></small>
 	</body>
 </html>
