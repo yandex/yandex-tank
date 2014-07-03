@@ -331,7 +331,11 @@ class AddressWizard:
         :param address_str:
         :return: tuple of boolean, string, int - isIPv6, resolved_ip, port (may be null), extracted_address
         """
-        logging.debug("Trying to resolve address string")
+
+        if not address_str:
+            raise  RuntimeError("Mandatory option was not specified: address")
+
+        logging.debug("Trying to resolve address string: %s", address_str)
 
         port = None
 
