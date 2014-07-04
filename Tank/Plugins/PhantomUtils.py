@@ -333,7 +333,7 @@ class AddressWizard:
         """
 
         if not address_str:
-            raise  RuntimeError("Mandatory option was not specified: address")
+            raise RuntimeError("Mandatory option was not specified: address")
 
         logging.debug("Trying to resolve address string: %s", address_str)
 
@@ -360,6 +360,7 @@ class AddressWizard:
                     port = int(parts[1])
 
         resolved = self.lookup_fn(address_str, port)
+        logging.debug("Lookup result: %s", resolved)
 
         for (family, socktype, proto, canonname, sockaddr) in resolved:
             is_v6 = family == socket.AF_INET6
@@ -373,25 +374,24 @@ class AddressWizard:
 
             if do_test:
                 try:
-                    self.__test(parsed_ip, port)
+                    self.__test(family, sockaddr)
                 except RuntimeError, exc:
                     logging.warn("Failed TCP connection test using [%s]:%s", parsed_ip, port)
                     continue
 
+            logging.info("Successfully resolved address into [%s]:%s", parsed_ip, port)
             return is_v6, parsed_ip, int(port), address_str
 
         msg = "All connection attempts failed for %s, use phantom.connection_test=0 to disable it"
         raise RuntimeError(msg % address_str)
 
-    def __test(self, resolved_ip, port):
-        lookup = socket.getaddrinfo(resolved_ip, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
-        af, socktype, proto, canonname, sa = lookup.pop(0)
-        test_sock = self.socket_class(af, socktype, proto)
+    def __test(self, af, sa):
+        test_sock = self.socket_class(af)
         try:
             test_sock.settimeout(5)
             test_sock.connect(sa)
         except Exception, exc:
-            msg = "TCP Connection test failed for %s:%s, use phantom.connection_test=0 to disable it"
-            raise RuntimeError(msg % (resolved_ip, port))
+            msg = "TCP Connection test failed for [%s]:%s, use phantom.connection_test=0 to disable it"
+            raise RuntimeError(msg % (sa[0], sa[1]))
         finally:
             test_sock.close()
