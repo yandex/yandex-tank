@@ -421,11 +421,16 @@ class NetTxRx(AbstractMetric):
         If we have network bonding or need to collect multiple iface
         statistic beter to change that behavior.
         """
-        data = commands.getoutput("/sbin/ifconfig -s | awk '{rx+=$8; tx+=$4} END {print rx, tx}'")
-        logging.debug("TXRX output: %s", data)
-        (rx, tx) = data.split(" ")
-        rx = int(rx)
-        tx = int(tx)
+        data = commands.getoutput("/sbin/ifconfig -s")
+        
+        rx, tx = 0, 0
+        
+        for line in data.split('\n')[1:]:
+            counters = line.split()
+            rx += int(counters[3])
+            tx += int(counters[7])
+
+        logging.debug("Total RX/TX packets counters: %s", [str(rx), str(tx)])
 
         if self.prev_rx == 0:
             t_tx = 0
@@ -482,7 +487,7 @@ class Net(AbstractMetric):
                     result = ['', '']
 
         self.recv, self.send = recv, send
-        logging.debug("Result: %s", result)
+        logging.debug("Network recieved/sent bytes: %s", result)
         return result
 
 
