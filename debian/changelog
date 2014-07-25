@@ -1,3 +1,515 @@
+yandex-load-tank-base (1.6.7) precise; urgency=medium
+
+  * fix resolver for multi-address server
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 04 Jul 2014 18:00:02 +0400
+
+yandex-load-tank-base (1.6.6) precise; urgency=medium
+
+  * fix wrong port parsing
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 30 Jun 2014 16:53:42 +0400
+
+yandex-load-tank-base (1.6.5) precise; urgency=medium
+
+  * fix connection_test option parsing
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 30 Jun 2014 16:48:52 +0400
+
+yandex-load-tank-base (1.6.4) precise; urgency=medium
+
+  * try to find available socket in resolver
+  * fix instances info reading in phantom
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 27 Jun 2014 16:56:17 +0400
+
+yandex-load-tank-base (1.6.3) precise; urgency=medium
+
+  * fixed broken JMeter tests
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 11 Jun 2014 14:07:23 +0400
+
+yandex-load-tank-base (1.6.2) precise; urgency=medium
+
+  * more universal phantom stat reader
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 10 Jun 2014 19:38:42 +0400
+
+yandex-load-tank-base (1.6.1) precise; urgency=medium
+
+  * fix bugs for 1.6.0
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 10 Jun 2014 16:42:11 +0400
+
+yandex-load-tank-base (1.6.0) precise; urgency=medium
+
+  * Rely on phantom pre~45 and greater in phantom configs
+  * Rework address parse/resolve functionality for phantom
+  * Fix average times block bug
+  * Added ability to specify custom user for monitroring
+  * Explicitly run yandex-tank python scripts with python2
+  * Fix instances_schedule logic
+  * Fix some BFG bugs
+  * Fix stacked quantiles bug
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 06 Jun 2014 14:58:48 +0400
+
+yandex-load-tank-base (1.5.0) precise; urgency=low
+
+  * Static HTML report with Highcharts graphs: tank metrics and monitoring
+  * Highcharts template for Graphite reports
+  * Better hostname resolve method
+  * Bugfixes
+  * collect 'cached' mem by default
+  * fix collecting disk activity on lxc containers
+  * add steady_cumulative autostop criteria
+  * don't fail test on agent shutdown problems
+  * fix rcheck on remote fs
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 19 Mar 2014 15:34:24 +0400
+
+yandex-load-tank-base (1.4.9) precise; urgency=low
+
+  * fixed monitoring collector bug
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 25 Feb 2014 13:56:31 +0400
+
+yandex-load-tank-base (1.4.8) precise; urgency=low
+
+  * add BFG startup script
+  * skip bad formatted line in stepper with access.log (fix #59)
+  * publish instances after creating load plan
+  * replaced laborious 'ss -na' by much lighter 'ss -s' in agent
+  * add buffered_seconds size. fix block-read bug with new-line
+  * Adding startups and shutdowns to collector
+  * Pass all unknown options from 'jmeter' section as Jmeter variables
+  * Use better disk statistics in agent
+  * Fix autostop overrides criteria
+  * added ipv6 address format compatibility to scp agent
+  * added address check and hostname resolve section
+  * Don't start loadosophia online if no token configured
+  * Add 85% into aggregator
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 21 Feb 2014 19:27:11 +0400
+
+yandex-load-tank-base (1.4.7) precise; urgency=low
+
+  * move some depends to recommended
+  * smarter uri marker
+  * support access log format as a source
+  * generate PNG file after test
+  * add chosen_cases to phantom
+  * improve graphite uploader with html report
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 01 Nov 2013 18:13:57 +0400
+
+yandex-load-tank-base (1.4.6) precise; urgency=low
+
+  * fix some stepper bugs
+  * imporve BFG plugin
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 13 Sep 2013 17:09:19 +0400
+
+yandex-load-tank-base (1.4.5) precise; urgency=low
+
+  * fix uri-style from config
+  * fix unit tests
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 06 Sep 2013 19:53:07 +0400
+
+yandex-load-tank-base (1.4.4) precise; urgency=low
+
+  * fix uri-style from file
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 05 Sep 2013 19:03:17 +0400
+
+yandex-load-tank-base (1.4.3) precise; urgency=low
+
+  * fix stepper bugs
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 03 Sep 2013 21:20:08 +0400
+
+yandex-load-tank-base (1.4.0) precise; urgency=low
+
+  * new stepper for phantom module
+  * fix unnecessary check in aggregator
+  * fix python call for monitoring agent
+  * add BFG plugin for mysql testing
+  * fix lock file checking bug
+  * add universal phout shooter plugin
+  * optimize phout reading
+  * support argentum aggregator for JMeter plugin
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 02 Sep 2013 17:52:28 +0400
+
+yandex-load-tank-base (1.3.10) precise; urgency=low
+
+  * don't support old config format anymore
+  * don't interrupt test on local web start failure
+  * add method_options for phantom
+  * fix web online view in firefox
+  * add confog flush option to core
+  * ignore nfs in resource check
+  * add buffer size option for jmeter
+  * enable Loadosophia online by default
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 07 Jun 2013 18:04:56 +0400
+
+yandex-load-tank-base (1.3.9) precise; urgency=low
+
+  * add bash completion
+  * add support for Loadosophia.org active tests
+  * add RCAssert plugin
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 26 Mar 2013 19:43:07 +0400
+
+yandex-load-tank-base (1.3.8) precise; urgency=low
+
+  * fix and optimize phantom results reading
+  * add new phantom-stderr log file
+  * make total quantiles more precise
+  * fix qsat autostop criteria
+  * fix fd leak in jmeter plugin
+  * repair external STPD usage
+  * fix wrong cases info in screen block
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 15 Mar 2013 14:43:29 +0400
+
+yandex-load-tank-base (1.3.7) precise; urgency=low
+
+  * fix http code getting bug
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 18 Feb 2013 13:57:42 +0400
+
+yandex-load-tank-base (1.3.6) precise; urgency=low
+
+  * optimize phout reading
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 08 Feb 2013 18:11:57 +0400
+
+yandex-load-tank-base (1.3.5) precise; urgency=low
+
+  * Double limit for phout reading, fixes console bug
+  * Update progressbar on looping in stepping
+  * Add qsat autostop
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 06 Feb 2013 13:51:18 +0400
+
+yandex-load-tank-base (1.3.4) precise; urgency=high
+
+  * fix broken build
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 01 Feb 2013 19:57:04 +0400
+
+yandex-load-tank-base (1.3.3) precise; urgency=high
+
+  * fix broken phantom config
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 01 Feb 2013 19:44:26 +0400
+
+yandex-load-tank-base (1.3.2) precise; urgency=low
+
+  * add support for phantom additional modules (for elliptics project)
+  * fix phout import mode
+  * fix monitoring autostop
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 01 Feb 2013 15:49:06 +0400
+
+yandex-load-tank-base (1.3.1) precise; urgency=low
+
+  * change multi-phantom separator to dash
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 29 Jan 2013 19:34:32 +0400
+
+yandex-load-tank-base (1.3.0) precise; urgency=low
+
+  * add multi-stream phantom tests
+  * split console messages to stdout and stderr
+  * fix lost monitoring data bug
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 29 Jan 2013 14:25:57 +0400
+
+yandex-load-tank-base (1.2.5) precise; urgency=low
+
+  * correct work with external phantom conf
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 24 Jan 2013 18:01:01 +0400
+
+yandex-load-tank-base (1.2.4) precise; urgency=low
+
+  * Report poll hook exit code as test RC
+  * Fix ip resolving bugs
+  * Add manual stop for web plugin
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 17 Jan 2013 20:36:33 +0400
+
+yandex-load-tank-base (1.2.3~doomsday-fixed) precise; urgency=high
+
+  * fix phantom buffer and set it to 2 seconds
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 21 Dec 2012 15:37:55 +0400
+
+yandex-load-tank-base (1.2.3~doomsday) precise; urgency=low
+
+  * add duration to JMeter info widget
+  * add 2 total autostop criteria
+  * monitoring timestamp in info widget
+  * add 'krutilka' to info widgets to get some action
+  * allow having resolver for monitoring host
+  * ensure filemtime in stepper cache
+  * use hostname in interface instead of IP where possible
+  * fix failed samples net code for JMeter
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 21 Dec 2012 14:33:26 +0400
+
+yandex-load-tank-base (1.2.2) precise; urgency=low
+
+  * new module: tank resources check
+  * phantom address separated from resolved IP
+  * add `shell` expansion to option reading
+  * handle SIGTERM like SIGINT
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 05 Dec 2012 15:28:22 +0400
+
+yandex-load-tank-base (1.2.1) precise; urgency=low
+
+  * a pair of new autostop criteria: http_trend and negative_net
+  * add color flag and test title to loadosophia uploader
+  * direct results link for loadosophia uploader
+  * add SIGINT handler to catch kills
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 03 Dec 2012 15:59:58 +0400
+
+yandex-load-tank-base (1.2.0) precise; urgency=low
+
+  * add more graphs to web online
+  * better monitoring agent logging and shutdown
+  * allow inline monitoring config
+  * cause second fixed in total autostops
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 27 Nov 2012 15:16:59 +0400
+
+yandex-load-tank-base (1.1.9) precise; urgency=low
+
+  * remove expensive logging in phantom parser
+  * fix custom monitoring autostop failure
+  * misplaced rx/tx values
+  * enable colors for non-tty
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 23 Nov 2012 12:00:09 +0400
+
+yandex-load-tank-base (1.1.8) precise; urgency=low
+
+  * Fix lost samples and RPS data in Phantom results
+  * Don't clean console colors before sending to transmitter
+  * Kill ssh clients forcefully
+  * Less expensive threads count metric
+  * add ssh_timeout option to monitoring
+  * monitoring autostops can use wildcards in host names
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 20 Nov 2012 14:59:57 +0400
+
+yandex-load-tank-base (1.1.7) precise; urgency=low
+
+  * change screen layout
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 16 Nov 2012 17:55:50 +0400
+
+yandex-load-tank-base (1.1.6) precise; urgency=low
+
+  * fix minor bugs
+  * load.ini is default
+  * own rc codes for total autostop
+  * http 1.0 by default in uri-style ammo
+  * warning about ctrl+c
+  * fix tx/rx metrics
+  * fix tail metric
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 12 Nov 2012 19:16:34 +0400
+
+yandex-load-tank-base (1.1.5) precise; urgency=low
+
+  * fix fd leaking
+  * graphite uploader enabled by default
+  * change default config name
+  * fix gaps in expected rps
+  * fix jmeter process killing (just tried)
+  * add monitoring autostop criterias
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 25 Oct 2012 13:46:14 +0400
+
+yandex-load-tank-base (1.1.4) precise; urgency=low
+
+  * fix file descriptor leaks
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 22 Oct 2012 16:01:47 +0400
+
+yandex-load-tank-base (1.1.3) precise; urgency=high
+
+  * fix bug with phantom timeout
+  * ability to send console view to listener
+  * try to fix phantom missed records
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 17 Oct 2012 16:32:41 +0400
+
+yandex-load-tank-base (1.1.2) precise; urgency=low
+
+  * phantom class refactored
+  * fixed some bugs
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 16 Oct 2012 16:21:13 +0400
+
+yandex-load-tank-base (1.1.1) precise; urgency=low
+
+  * polish work with artifacts
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 08 Oct 2012 20:58:45 +0400
+
+yandex-load-tank-base (1.1.0) precise; urgency=low
+
+  * make core pyshared object
+  * allow external test interruption
+  * add manpages
+  * fix some bugs
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 08 Oct 2012 16:59:57 +0400
+
+yandex-load-tank-base (1.0.15) precise; urgency=low
+
+  * change core module layout
+  * add Graphite Uploader module
+  * fix some bugs
+  * add ability to disable console colors
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 04 Oct 2012 13:17:59 +0400
+
+yandex-load-tank-base (1.0.14) precise; urgency=low
+
+  * added web online module
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 02 Oct 2012 13:44:11 +0400
+
+yandex-load-tank-base (1.0.13) precise; urgency=low
+
+  * fix bug with disabled monitoring
+  * add loadosophia.org uploading module
+  * fix issue #10
+  * add manual and scheduled start to command line
+  * add ab screen widget
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 01 Oct 2012 17:46:33 +0400
+
+yandex-load-tank-base (1.0.11) precise; urgency=low
+
+  * default artiacts dir name with datetime
+  * don't interrupt test if default monitoring failed to install
+  * larger default console size
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 28 Sep 2012 13:26:54 +0400
+
+yandex-load-tank-base (1.0.10) precise; urgency=low
+
+  * remove old perl code completely
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 26 Sep 2012 18:21:37 +0400
+
+yandex-load-tank-base (1.0.9) precise; urgency=low
+
+  * add ab functionality
+  * add JMeter functionality
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Tue, 25 Sep 2012 17:29:42 +0400
+
+yandex-load-tank-base (1.0.8) precise; urgency=low
+
+  * change screen layout
+  * fix bugs reported from test usages
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 24 Sep 2012 19:16:33 +0400
+
+yandex-load-tank-base (1.0.7) precise; urgency=low
+
+  * increase aggregator speed and fix its bugs
+  * return progressbar to stepper
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 24 Sep 2012 13:54:36 +0400
+
+yandex-load-tank-base (1.0.6) precise; urgency=low
+
+  * added several screen info blocks
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Sun, 23 Sep 2012 21:01:57 +0400
+
+yandex-load-tank-base (1.0.5) precise; urgency=low
+
+  * rewrite aggregator with python
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 21 Sep 2012 17:08:27 +0400
+
+yandex-load-tank-base (1.0.4) precise; urgency=low
+
+  * add interactive metainfo querying
+  * mon agent logs as usual artifacts
+  * total quantiles block in console
+  * quantile autostop criteria
+  * tips&tricks in console
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Thu, 20 Sep 2012 11:20:27 +0400
+
+yandex-load-tank-base (1.0.3) precise; urgency=low
+
+  * implemented gatling and request limits for phantom
+  * beautified console
+  * added missing mon files
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 17 Sep 2012 22:09:59 +0400
+
+yandex-load-tank-base (1.0.2) precise; urgency=low
+
+  * added monitoring to new console
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 17 Sep 2012 13:32:12 +0400
+
+yandex-load-tank-base (1.0.1) precise; urgency=low
+
+  * many changes on the way of new tool development
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 14 Sep 2012 21:25:38 +0400
+
+yandex-load-tank-base (1.0.0) precise; urgency=low
+
+  * begin migrating to new yandex-tank tool
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 12 Sep 2012 17:43:43 +0400
+
+yandex-load-tank-base (0.2.7) precise; urgency=low
+
+  * less error messages from prd.pl
+  * some code cleanup
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 07 Sep 2012 11:55:33 +0400
+
+yandex-load-tank-base (0.2.6) precise; urgency=low
+
+  * lower phantom version requirements
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Fri, 24 Aug 2012 14:34:39 +0400
+
+yandex-load-tank-base (0.2.5) precise; urgency=low
+
+  * eliminate dpkg calls
+  * fix issue #6
+  * change CPU and disk warning criteria
+  * fix lintian warnings
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Mon, 13 Aug 2012 17:45:59 +0400
+
+yandex-load-tank-base (0.2.0) precise; urgency=low
+
+  * first build for public
+
+ -- Andrey Pohilko (undera) <undera@yandex-team.ru>  Wed, 25 Jul 2012 16:42:34 +0400
+
 yandex-load-tank-base (0.1.7) common; urgency=low
 
   * remove API host 

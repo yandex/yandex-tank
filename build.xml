@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- http://bhfsteve.blogspot.com/2012/04/automated-python-unit-testing-code_27.html
+PYTHONPATH=''
+-->
+
+<project name="Tank" default="debian">
+	<property name="package" value="Tank"/>
+	<target name="test">
+		<exec executable="nosetests" dir='Tests' failonerror="true">
+			<arg value="--with-xunit" />
+			<arg value="--all-modules" />
+			<arg value="--traverse-namespace" />
+			<arg value="--with-coverage" />
+			<arg value="--cover-inclusive" />
+			<arg value="--cover-erase" />
+			<arg value="--cover-package=${package}"/>
+			<arg value="-v"/>
+		</exec>
+	</target>
+	<target name="pylint">
+		<exec executable="pylint" dir='.' output="pylint.out">
+			<arg value="-f" />
+			<arg value="parseable" />
+			<arg value="-d" />
+			<arg value="I0011,C0301,R0201,W0703,W0122,R0902,R0903,W0232" />
+			<arg value="${package}" />
+		</exec>
+	</target>
+	<target name="debian" depends="loc,pylint,test">
+		<!--
+		<exec executable="dch" dir='.' failonerror="true">
+			<arg value="-n" />
+			<arg value="Jenkins CI build" />
+		</exec>
+		-->
+		<exec executable="debuild" dir='.' failonerror="true">
+			<arg value="-I" />
+			<arg value="-us" />
+			<arg value="-uc" />
+			<arg value="--lintian-opts"/>
+			<arg value="--fail-on-warnings"/>
+		</exec>
+		<move todir=".">
+			<fileset dir=".." includes="yandex-load-*" />
+		</move>
+	</target>
+	
+	<target name="loc">
+		<exec executable="sloccount" dir='.' failonerror="true" output="sloccount.sc">
+			<arg value="--duplicates" />
+			<arg value="--wide" />
+			<arg value="--details" />
+			<arg value="." />
+		</exec>
+	</target>
+</project>

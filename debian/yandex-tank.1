@@ -1,0 +1,100 @@
+.TH yandex-tank 1 "Oct 5, 2012" "" "YANDEX-TANK"
+.SH NAME
+yandex-tank \-  is an utility for measuring performance of web services.
+
+.SH SYNOPSIS
+.B yandex-tank | {-c |--config} [config_file]  | {-s SCHEDULED_START|--scheduled-start= SCHEDULED_START}| {-o OPTION|--option=OPTION} | {-h |--help} | {-i |--ignore-lock}| {-f |--fail-lock}| {-l LOG |--log=LOG}| {-m |--manual-start} | {-n |--no-rc} | {-q |--quiet}| {-v |--verbose}  {ammo_file}
+
+.SH DESCRIPTION
+This manual page explains the 
+.B yandex-tank
+program usage. This program is a high performance modular utility for web services load testing. 
+
+.SH OPTIONS
+.PP
+\fB-c\fP, \fB--config config_file\fP yandex-tank with given configuration file config_file. By default, load.conf from your current directory is used. Can be used several times for multiple configuration files. See details in load.conf(5).
+.PP
+\fB-i\fP, \fB--ignore-lock\fP ignore lock file, use if you want to run multiple instances of yandex-tank utility.
+.PP
+\fB-f\fP, \fB--fail-lock\fP don't wait for lock file to become free, stop test if lock file is busy.
+.PP
+\fB-l LOG\fP, \fB--log=LOG\fP path to main log file.
+.PP
+\fB-s SCHEDULED_START\fP, \fB--scheduled-start= SCHEDULED_START\fP run test in the specified moment. SCHEDULED_START has YYYY-MM-DD hh:mm:ss format.
+.PP
+\fB-m\fP, \fB--manual-start\fP yandex-tank generates all data for test execution and requests confirmation for start. Helpful in giving load at precisely chosen time (a big red button).
+.PP
+\fB-n\fP, \fB--no-rc\fP ignore default config files at /etc/yandex-tank/*.ini and /.yandex-tank
+.PP
+\fB-o OPTION\fP, \fB--option=OPTION\fP specify configuration options in command line. 
+Example: yandex-tank -o "console.short_only=1" --option="phantom.force_stepping=1"
+.PP
+\fB-q\fP, \fB--quiet\fP show only errors/warnings messages in console. Information messages will be skipped.
+.PP
+\fB-v\fP, \fB--verbose\fP show a lot more messages in console.
+.PP
+
+.B
+\fB ammo_file\fP
+file with requests in req-style or uri-style. Further reading: REQ-style - https://github.com/yandex-load/yandex-tank#request-style
+URI-style - https://github.com/yandex-load/yandex-tank#uris-in-file  
+.br
+
+
+.SH NOTES
+Be careful with config_file tuning. Incorrect configuraton could lead to network devices or/and web services overload and FBI's knocking your door.
+.SH EXAMPLE
+Simple configuration file making requests to "/" with constant rate of 10 requests per second, for 10 minutes. Server's IP and port are 127.0.0.1:80
+
+.br
+[phantom]
+.br
+address=127.0.0.1:80
+.br
+rps_schedule = const(10,10m)
+.br
+uris = /
+.br
+
+More complex example: ammo_file in req_style, web server has ipv6/ssl enabled, load profile is combined from different primitives.
+Also, request/answer logging, autostop criteries, custom aggregator and console's view settings are enabled.
+
+.br
+[phantom]
+.br
+address=2a02:6b8:0:c1f::100:1
+.br
+port=80
+.br
+rps_schedule = const (10,10m)
+.br
+  line(10,100,10m)
+.br
+  step(100,500,100,10m)
+.br
+ssl = 1
+.br
+writelog=1
+.br
+[autostop]
+.br
+autostop=time(1,10)
+.br
+  http(404,1%,5s)
+.br
+  net(xx,1,30)
+.br
+[console]
+.br
+disable_all_colors = 1
+.br
+[aggregator]
+.br
+time_periods = 1ms 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 150 200 250 300 350 400 450 500 600 650 700 750 800 850 900 950 1s
+.br
+
+.SH "SEE ALSO"
+load.conf(5) 
+.br
+
+https://github.com/yandex-load/yandex-tank#yandex-tank

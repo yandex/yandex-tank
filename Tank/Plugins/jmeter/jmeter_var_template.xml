@@ -1,0 +1,6 @@
+<elementProp name="%s" elementType="Argument">
+    <stringProp name="Argument.name">%s</stringProp>
+    <stringProp name="Argument.value">%s</stringProp>
+    <stringProp name="Argument.desc">Auto from 'jmeter' section of Yandex.Tank</stringProp>
+    <stringProp name="Argument.metadata">=</stringProp>
+</elementProp>

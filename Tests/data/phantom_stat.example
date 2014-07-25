@@ -1,0 +1,396 @@
+"2014-03-31 21:09:10.798 +0400" : {
+  "benchmark_io" : {
+    "simple_times" : {
+      "mcount" : {
+        "mcount" : { "674 -- 1074" : 18, "423 -- 674" : 37 }
+      }
+    },
+    "stream_method" : {
+      "conns" : [482, 459],
+      "in" : [1469370, 1399557],
+      "out" : [8676, 8263],
+      "mmtasks" : [0, 952, 1000],
+      "load" : 0.000,
+      "mcount" : {
+        "mcount" : { "Success" : 55 }
+      },
+      "http_proto0" : {
+        "mcount" : {
+          "mcount" : { "OK" : 55 }
+        }
+      },
+      "source_log" : {
+        "delta" : [0, 45812, 47508]
+      },
+      "loggers" : {
+        "brief_logger" : {
+          "records" : [55, 52],
+          "out" : [3701, 3524]
+        }
+      }
+    }
+  }
+},
+"2014-03-31 21:09:11.799 +0400" : {
+  "benchmark_io" : {
+    "simple_times" : {
+      "mcount" : {
+        "mcount" : { "1710 -- 2723" : 12, "1074 -- 1710" : 85, "674 -- 1074" : 5 }
+      }
+    },
+    "stream_method" : {
+      "conns" : [0, 0],
+      "in" : [1966188, 1964954],
+      "out" : [0, 0],
+      "mmtasks" : [843, 881, 945],
+      "load" : 0.000,
+      "mcount" : {
+        "mcount" : { "Success" : 102 }
+      },
+      "http_proto0" : {
+        "mcount" : {
+          "mcount" : { "OK" : 102 }
+        }
+      },
+      "source_log" : {
+        "delta" : [47508, 48016, 47508]
+      },
+      "loggers" : {
+        "brief_logger" : {
+          "records" : [102, 101],
+          "out" : [7104, 7099]
+        }
+      }
+    }
+  }
+},
+"2014-03-31 21:09:12.799 +0400" : {
+  "benchmark_io" : {
+    "simple_times" : {
+      "mcount" : {
+        "mcount" : { "2723 -- 4337" : 38, "1710 -- 2723" : 68 }
+      }
+    },
+    "stream_method" : {
+      "conns" : [144, 144],
+      "in" : [1859994, 1860232],
+      "out" : [2592, 2592],
+      "mmtasks" : [737, 784, 843],
+      "load" : 0.000,
+      "mcount" : {
+        "mcount" : { "Success" : 106 }
+      },
+      "http_proto0" : {
+        "mcount" : {
+          "mcount" : { "OK" : 106 }
+        }
+      },
+      "source_log" : {
+        "delta" : [47508, 48005, 47508]
+      },
+      "loggers" : {
+        "brief_logger" : {
+          "records" : [106, 106],
+          "out" : [7435, 7435]
+        }
+      }
+    }
+  }
+},
+"2014-03-31 21:09:13.799 +0400" : {
+  "benchmark_io" : {
+    "simple_times" : {
+      "mcount" : {
+        "mcount" : { "2723 -- 4337" : 94 }
+      }
+    },
+    "stream_method" : {
+      "conns" : [0, 0],
+      "in" : [1970467, 1970977],
+      "out" : [0, 0],
+      "mmtasks" : [643, 687, 737],
+      "load" : 0.000,
+      "mcount" : {
+        "mcount" : { "Success" : 94 }
+      },
+      "http_proto0" : {
+        "mcount" : {
+          "mcount" : { "OK" : 94 }
+        }
+      },
+      "source_log" : {
+        "delta" : [47508, 48012, 47508]
+      },
+      "loggers" : {
+        "brief_logger" : {
+          "records" : [94, 94],
+          "out" : [6722, 6723]
+        }
+      }
+    }
+  }
+},
+"2014-03-31 21:09:14.799 +0400" : {
+  "benchmark_io" : {
+    "simple_times" : {
+      "mcount" : {
+        "mcount" : { "4337 -- 6907" : 47, "2723 -- 4337" : 25 }
+      }
+    },
+    "stream_method" : {
+      "conns" : [0, 0],
+      "in" : [1643815, 1643272],
+      "out" : [0, 0],
+      "mmtasks" : [571, 598, 643],
+      "load" : 0.000,
+      "mcount" : {
+        "mcount" : { "Success" : 72 }
+      },
+      "http_proto0" : {
+        "mcount" : {
+          "mcount" : { "OK" : 72 }
+        }
+      },
+      "source_log" : {
+        "delta" : [47508, 47984, 47508]
+      },
+      "loggers" : {
+        "brief_logger" : {
+          "records" : [72, 71],
+          "out" : [5210, 5208]
+        }
+      }
+    }
+  }
+},
+"2014-03-31 21:09:15.799 +0400" : {
+  "benchmark_io" : {
+    "simple_times" : {
+      "mcount" : {
+        "mcount" : { "4337 -- 6907" : 100 }
+      }
+    },
+    "stream_method" : {
+      "conns" : [0, 0],
+      "in" : [1594333, 1594191],
+      "out" : [0, 0],
+      "mmtasks" : [471, 510, 571],
+      "load" : 0.000,
+      "mcount" : {
+        "mcount" : { "Success" : 100 }
+      },
+      "http_proto0" : {
+        "mcount" : {
+          "mcount" : { "OK" : 100 }
+        }
+      },
+      "source_log" : {
+        "delta" : [47508, 47995, 47508]
+      },
+      "loggers" : {
+        "brief_logger" : {
+          "records" : [100, 99],
+          "out" : [7269, 7268]
+        }
+      }
+    }
+  }
+},
+"2014-03-31 21:09:16.798 +0400" : {
+  "benchmark_io" : {
+    "simple_times" : {
+      "mcount" : {
+        "mcount" : { "4337 -- 6907" : 97 }
+      }
+    },
+    "stream_method" : {
+      "conns" : [56, 56],
+      "in" : [1837381, 1839245],
+      "out" : [1008, 1009],
+      "mmtasks" : [374, 416, 471],
+      "load" : 0.000,
+      "mcount" : {
+        "mcount" : { "Success" : 97 }
+      },
+      "http_proto0" : {
+        "mcount" : {
+          "mcount" : { "OK" : 97 }
+        }
+      },
+      "source_log" : {
+        "delta" : [47508, 48000, 47508]
+      },
+      "loggers" : {
+        "brief_logger" : {
+          "records" : [97, 97],
+          "out" : [7043, 7050]
+        }
+      }
+    }
+  }
+},
+"2014-03-31 21:09:17.799 +0400" : {
+  "benchmark_io" : {
+    "simple_times" : {
+      "mcount" : {
+        "mcount" : { "6907 -- 11000" : 85 }
+      }
+    },
+    "stream_method" : {
+      "conns" : [117, 116],
+      "in" : [1967289, 1965557],
+      "out" : [2106, 2104],
+      "mmtasks" : [289, 335, 374],
+      "load" : 0.000,
+      "mcount" : {
+        "mcount" : { "Success" : 85 }
+      },
+      "http_proto0" : {
+        "mcount" : {
+          "mcount" : { "OK" : 85 }
+        }
+      },
+      "source_log" : {
+        "delta" : [47508, 48005, 47508]
+      },
+      "loggers" : {
+        "brief_logger" : {
+          "records" : [85, 84],
+          "out" : [6079, 6073]
+        }
+      }
+    }
+  }
+},
+"2014-03-31 21:09:18.799 +0400" : {
+  "benchmark_io" : {
+    "simple_times" : {
+      "mcount" : {
+        "mcount" : { "6907 -- 11000" : 88 }
+      }
+    },
+    "stream_method" : {
+      "conns" : [0, 0],
+      "in" : [1443060, 1443049],
+      "out" : [0, 0],
+      "mmtasks" : [201, 233, 289],
+      "load" : 0.000,
+      "mcount" : {
+        "mcount" : { "Success" : 88 }
+      },
+      "http_proto0" : {
+        "mcount" : {
+          "mcount" : { "OK" : 88 }
+        }
+      },
+      "source_log" : {
+        "delta" : [47508, 47999, 47508]
+      },
+      "loggers" : {
+        "brief_logger" : {
+          "records" : [88, 87],
+          "out" : [6354, 6353]
+        }
+      }
+    }
+  }
+},
+"2014-03-31 21:09:19.799 +0400" : {
+  "benchmark_io" : {
+    "simple_times" : {
+      "mcount" : {
+        "mcount" : { }
+      }
+    },
+    "stream_method" : {
+      "conns" : [0, 0],
+      "in" : [0, 0],
+      "out" : [0, 0],
+      "mmtasks" : [201, 201, 201],
+      "load" : 0.000,
+      "mcount" : {
+        "mcount" : { }
+      },
+      "http_proto0" : {
+        "mcount" : {
+          "mcount" : { }
+        }
+      },
+      "source_log" : {
+        "delta" : [47508, 48013, 47508]
+      },
+      "loggers" : {
+        "brief_logger" : {
+          "records" : [0, 0],
+          "out" : [0, 0]
+        }
+      }
+    }
+  }
+},
+"2014-03-31 21:09:20.799 +0400" : {
+  "benchmark_io" : {
+    "simple_times" : {
+      "mcount" : {
+        "mcount" : { "11000 --" : 198 }
+      }
+    },
+    "stream_method" : {
+      "conns" : [0, 0],
+      "in" : [0, 0],
+      "out" : [0, 0],
+      "mmtasks" : [3, 199, 201],
+      "load" : 0.000,
+      "mcount" : {
+        "mcount" : { "Connection timed out" : 198 }
+      },
+      "http_proto0" : {
+        "mcount" : {
+          "mcount" : { }
+        }
+      },
+      "source_log" : {
+        "delta" : [47508, 47997, 47508]
+      },
+      "loggers" : {
+        "brief_logger" : {
+          "records" : [199, 198],
+          "out" : [11741, 11740]
+        }
+      }
+    }
+  }
+},
+"2014-03-31 21:09:20.799 +0400" : {
+  "benchmark_io" : {
+    "simple_times" : {
+      "mcount" : {
+        "mcount" : { "11000 --" : 3 }
+      }
+    },
+    "stream_method" : {
+      "conns" : [0, 0],
+      "in" : [0, 0],
+      "out" : [0, 0],
+      "mmtasks" : [0, 1, 3],
+      "load" : 0.000,
+      "mcount" : {
+        "mcount" : { "Connection timed out" : 3 }
+      },
+      "http_proto0" : {
+        "mcount" : {
+          "mcount" : { }
+        }
+      },
+      "source_log" : {
+        "delta" : [47508, 0, 47508]
+      },
+      "loggers" : {
+        "brief_logger" : {
+          "records" : [2, 7299],
+          "out" : [118, 430656]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+have yandex-tank && 
+_yandex_tank() 
+{
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    if [[ ${cur} == -* ]] ; then
+    	opts=`yandex-tank --bash-switches-list`
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+        return 0
+    fi
+	
+    if [[ ${prev} == -o ]] ; then
+    	opts=`yandex-tank --bash-options-prev="${prev}" --bash-options-cur="${cur}"`
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+        return 0
+    fi
+    COMPREPLY=()
+} &&
+complete -o default -F _yandex_tank yandex-tank && 
+complete -o default -F _yandex_tank yandex-tank-jmeter && 
+complete -o default -F _yandex_tank yandex-tank-udp &&
+complete -o default -F _yandex_tank yandex-tank-bfg &&
+complete -o default -F _yandex_tank yandex-tank-elliptics

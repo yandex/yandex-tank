@@ -1,0 +1,148 @@
+.TH load.conf 5 "Oct 9, 2012" "" "YANDEX-TANK CONFIGURATION FILE"
+
+.SH NAME
+load.conf \- yandex-tank(1) load test configuration file.
+
+.SH DESCRIPTION
+This manual page explains the syntax, options and parameters which used in yandex-tank(1) config. Config is a classic INI file.
+
+.SH SECTIONS
+Configuration file consists from sections and options. Each section contains options for a particular module. For example:
+.br
+[phantom]  - contains options for phantom module
+.br
+address=127.0.0.1  - address option for phantom plugin.
+
+Some options may consist of multiple strings. To do that, begin next line with an indent:
+.br
+[phantom] 
+.br
+rps_scedule = const(1,10) 
+.br
+  const(10,10m)
+.br
+.SH BASIC OPTIONS
+.B
+.TP
+address=FQDN , IP
+IP address(ipv6 supported as x:x:x:x:x:x:x:x)
+.B
+.TP
+port=PORT
+IP port
+.B
+.TP
+rps_scedule=...
+Load scheme of a test. These types of scheme stages may be used: const(RPS,DURATION), line (START_RPS,END_RPS,DURATION), step (START_RPS, END_RPS, STEP_RPS,DURATION_STEP). Load scheme is combined from multiple stages of those types: rps_schedule = line(1,10, 10) const(10,10)
+.B
+.TP
+uris=URL 
+URL relative to server's root. You can use several uri= parameters. For example:
+.br
+uris = /
+.br
+  /buy
+
+.B
+.TP
+header_http=HTTP_PROTO
+HTTP protocol versions. Versions 1.1 and 1.0 are supported, 1.0 as default
+.B
+.TP
+headers=[CUSTOM_HEADERS] 
+Additional HTTP headers:
+.br
+headers=[Connection: Close]
+.B
+.TP
+ssl=SSL_ENABLED
+ssl=1  enable SSL, in ssl=0 disable SSL, default 0
+.B
+.TP
+autostop=...
+This is a multi-string option. Autostop criteria to stop the test automaticaly. For example:
+.br
+[autostop]
+.br
+autostop=time(1,10)
+.br
+  http(404,1%,5s)
+.br
+  net(xx,1,30)
+
+Further reading: https://github.com/yandex-load/yandex-tank#auto-stop
+
+.B
+.TP
+instances=NUM
+Number of concurrent connections. 
+.B
+.TP
+writelog=NUM
+1 - enable request/answers log, 0 - disable (WARNING: disable when you have high RPS to lower the load on your generator machine)
+.B
+.TP
+time_periods=NUM,NUM2,NUM3...
+Distribution histogram boundaries, for example: 
+.br
+[aggregator]
+.br
+time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s 
+.B
+.TP
+tank_type=NUM
+1 - HTTP protocol, 2 - raw data (any stateless protocol).
+.B
+.TP
+gatling_ip=\IP\ \IP2\ \IP3\..
+Multiple source IPs.
+
+.SH EXAMPLE
+# yandex-tank config file
+.br
+[phantom]
+.br
+address=127.0.0.1
+.br
+port=80
+.br
+writelog=1
+.br
+rps_scedule = const (10,10m) 
+.br
+header_http = 1.1
+.br
+headers = [Connection: Close]
+.br
+  [target.yandex.net]
+.br
+uris= /
+.br
+#instances=10
+.br
+#instances_schedule = line (1,1000,10m)
+.br
+#tank_type=2
+.br
+#gatling_ip = 141.8.153.82 141.8.153.81
+.br
+.br
+ssl=0
+.br
+[autostop]
+.br
+autostop = http(5xx,100%,1)
+.br
+[monitoring]
+.br
+monitoring_config=none
+.br
+[aggregator]
+.br
+time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s
+.br
+.SH "SEE ALSO"
+yandex-tank (1) 
+.br
+
+https://github.com/yandex-load/yandex-tank#yandex-tank

@@ -46,7 +46,9 @@ install: build
 	# Add here commands to install the package into debian/yandex-load-tank.
 	#$(MAKE) DESTDIR=$(CURDIR)/debian/yandex-load-tank install
 
-
+build-arch: build-stamp
+build-indep: build-stamp
+      
 # Build architecture-independent files here.
 binary-indep: install
 	dh_testdir
@@ -78,6 +80,9 @@ binary-indep: install
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
+
+override_dh_pysupport:
+	dh_python2
 
 # Build architecture-dependent files here.
 binary-arch: install

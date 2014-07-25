@@ -1,0 +1,37 @@
+tank: Use  '#! /usr/bin/tank -c' header in configs and run 'chmod +x' on them to have self-starting configs
+tank: You can override any config option with command-line --option switch, like this: -o "tank.artifacts_base_dir=/tmp" 
+tank: You can make console logger more or less verbose with -v and -q command-line switches
+tank: Lock files with will fail test with -f command-line switch, or they can be ignored with -i 
+tank: Place your favorite config options in ~/.yandex-tank file and they will be applied for every tool run
+tank: Press Ctrl+C to initiate test shutdown, press it again to interrupt shutdown itself (may cause problems)
+tank: Use tank.artifacts_base_dir=~/yandex-tank-artifacts option to have all test logs saved under that directory, this helps cleaning old and unnecessary data
+tank: You can specify durations and timeouts in mixed units like 1d5h46m or 13s187ms
+tank: Options from 'DEFAULT' section in INI files are inherited by all other sections. Use it wisely to shorten your configs.
+tank: Visit our wiki to learn all Yandex.Tank capabilities: http://github.com/yandex-load/yandex-tank/wiki
+ab: Apache Benchmark module for Yandex.Tank kinda creepy, but it exists!
+ab: Remember that Apache Benchmark results available only when test is complete
+autostop: An 'instances' criteria, used with phantom module is the most efficient way to tell if the service is already overloaded
+autostop: You can easily write your standalone autostop criteria class and plug it into Autostop module, consult with developers for details 
+console: Disable full screen console with console.short_only=1 option 
+console: You can change relative width of right panel in full screen console with console.info_panel_width=50 option (value is percents of width) 
+jmeter: Sent bytes info not available in JMeter, so it is zero in JMeter module for Yandex.Tank
+jmeter: There is only two states for JMeter results - successful or not, so NET codes are either 0 or 1
+jmeter: JMeter provides only full response time and latency values, and 'full minus latency' value is put into 'receive time' inside Yandex.Tank
+jmeter: Path to alternate JMeter tool location can be set with jmeter.jmeter_path option
+jmeter: If you need supplementary JMeter command-line start switches - add them with jmeter.args option
+loadosophia: Yandex.Tank has integration features with Loadosophia.org service for storing and analysing load test results  
+monitoring: Use monitoring.config=none option to disable monitoring
+monitoring: Use monitoring.default_target=<address> option to start default monitoring for desired host
+phantom: Use phantom.stpd_file option to set pre-generated source data file and avoid generating (stepping) process
+phantom: Use phantom.config option to set predefined phantom run config (e.g. to work with multiple targets)
+phantom: Use phantom.writelog=proto_warning to record only non-successful requests
+phantom: Disable stepping cache with phantom.use_caching=0 option
+phantom: Force stepping with phantom.force_stepping=1 option
+phantom: Set phantom.cache_dir=~/yandex-tank-artifacts option to get most of stepping cache, this also helps cleaning old stepped files
+phantom: Green progressbar means progress measured by schedule, light-blue means progress measured by source data
+phantom: Use phantom.phout_file option for pre-existing phantom results file import
+shellexec: Avoid commands that run too long (a second and more) in shellexec.poll hook
+shellexec: Use shell command hooks to run test set-up and tear-down actions, like ssh calls to target or test data generation. See module help for details.
+tips: Disable these tips with tips.disable=1 option
+web: Yandex.Tank can start local web server and display fancy graphs in your web browser during the test, by default the address is http://localhost:8080/
+web: Change interval for web online graphs with web.interval option
