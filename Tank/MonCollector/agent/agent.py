@@ -421,14 +421,16 @@ class NetTxRx(AbstractMetric):
         If we have network bonding or need to collect multiple iface
         statistic beter to change that behavior.
         """
-        data = commands.getoutput("/sbin/ifconfig -s")
+        status, data = commands.getstatusoutput("/sbin/ifconfig -s")
+        logging.debug("/sbin/ifconfig output is: %s", data)
         
         rx, tx = 0, 0
         
-        for line in data.split('\n')[1:]:
-            counters = line.split()
-            rx += int(counters[3])
-            tx += int(counters[7])
+        if status == 0:
+            for line in data.split('\n')[1:]:
+                counters = line.split()
+                rx += int(counters[3])
+                tx += int(counters[7])
 
         logging.debug("Total RX/TX packets counters: %s", [str(rx), str(tx)])
 
