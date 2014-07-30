@@ -421,11 +421,27 @@ class NetTxRx(AbstractMetric):
         If we have network bonding or need to collect multiple iface
         statistic beter to change that behavior.
         """
-        data = commands.getoutput("/sbin/ifconfig -s | awk '{rx+=$8; tx+=$4} END {print rx, tx}'")
-        logging.debug("TXRX output: %s", data)
-        (rx, tx) = data.split(" ")
-        rx = int(rx)
-        tx = int(tx)
+        status, data = commands.getstatusoutput("/sbin/ifconfig -s")
+        logging.debug("/sbin/ifconfig output is: %s", data)
+        
+        rx, tx = 0, 0
+        
+        if status == 0:
+            try:
+                lines = data.split('\n')
+                position = lambda sample: lines[0].split().index(sample)
+                rx_pos = position('RX-OK')
+                tx_pos = position('TX-OK')
+
+                for line in lines[1:]:
+                    counters = line.split()
+                    if counters[rx_pos].isdigit() and counters[tx_pos].isdigit():
+                        rx += int(counters[rx_pos])
+                        tx += int(counters[tx_pos])
+            except Exception, e:
+                logging.error('Failed to parse ifconfig output %s: %s', data, e)
+                
+        logging.debug("Total RX/TX packets counters: %s", [str(rx), str(tx)])
 
         if self.prev_rx == 0:
             t_tx = 0
@@ -482,7 +498,7 @@ class Net(AbstractMetric):
                     result = ['', '']
 
         self.recv, self.send = recv, send
-        logging.debug("Result: %s", result)
+        logging.debug("Network recieved/sent bytes: %s", result)
         return result
 
 
