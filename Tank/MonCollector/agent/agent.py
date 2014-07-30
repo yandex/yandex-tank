@@ -427,11 +427,20 @@ class NetTxRx(AbstractMetric):
         rx, tx = 0, 0
         
         if status == 0:
-            for line in data.split('\n')[1:]:
-                counters = line.split()
-                rx += int(counters[3])
-                tx += int(counters[7])
+            try:
+                lines = data.split('\n')
+                position = lambda sample: lines[0].split().index(sample)
+                rx_pos = position('RX-OK')
+                tx_pos = position('TX-OK')
 
+                for line in lines[1:]:
+                    counters = line.split()
+                    if counters[rx_pos].isdigit() and counters[tx_pos].isdigit():
+                        rx += int(counters[rx_pos])
+                        tx += int(counters[tx_pos])
+            except Exception, e:
+                logging.error('Failed to parse ifconfig output %s: %s', data, e)
+                
         logging.debug("Total RX/TX packets counters: %s", [str(rx), str(tx)])
 
         if self.prev_rx == 0:
