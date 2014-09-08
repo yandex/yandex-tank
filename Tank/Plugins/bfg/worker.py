@@ -1,6 +1,7 @@
 import logging
 import time
 from Tank.stepper import StpdReader
+from zmq_reader import ZmqReader
 import multiprocessing as mp
 import threading as th
 from Queue import Empty, Full
@@ -37,9 +38,10 @@ class BFG(object):
         self.quit.set()
 
     def _feed(self):
-        plan = StpdReader(self.stpd_filename)
-        if self.cached_stpd:
-            plan = list(plan)
+        #plan = StpdReader(self.stpd_filename)
+        plan = ZmqReader()
+        #if self.cached_stpd:
+        #    plan = list(plan)
         for task in plan:
             if self.quit.is_set():
                 self.log.info("Stop feeding: gonna quit")
@@ -79,8 +81,9 @@ class BFG(object):
             except (KeyboardInterrupt, SystemExit):
                 self.quit.set()
             except Empty:
-                self.log.info("Empty queue. Exiting thread.")
-                return
+                if self.quit.is_set():
+                    self.log.info("Empty queue. Exiting thread.")
+                    return
             except Full:
                 self.log.warning("Couldn't put to result queue because it's full")
         self.log.debug("Exiting shooter thread...")
