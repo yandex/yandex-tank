@@ -11,7 +11,7 @@ def signal_handler(signum, frame):
 
 
 class BFG(object):
-    def __init__(self, gun, instances, threads, stpd_filename, cached_stpd=False):
+    def __init__(self, gun, instances, threads, stpd_filename, zmq=False, cached_stpd=False):
         self.log = logging.getLogger(__name__)
         self.log.info(
             "BFG using stpd from %s", stpd_filename)
@@ -25,6 +25,7 @@ class BFG(object):
         self.stpd_filename = stpd_filename
         self.pool = [mp.Process(target=self._worker) for i in xrange(0, self.instances)]
         self.feeder = th.Thread(target=self._feed)
+        self.zmq = zmq
 
     def start(self):
         self.start_time = time.time()
@@ -38,10 +39,12 @@ class BFG(object):
         self.quit.set()
 
     def _feed(self):
-        #plan = StpdReader(self.stpd_filename)
-        plan = ZmqReader()
-        #if self.cached_stpd:
-        #    plan = list(plan)
+        if self.zmq:
+            plan = ZmqReader()
+        else:
+            plan = StpdReader(self.stpd_filename)
+            if self.cached_stpd:
+                plan = list(plan)
         for task in plan:
             if self.quit.is_set():
                 self.log.info("Stop feeding: gonna quit")
