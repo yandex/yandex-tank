@@ -29,11 +29,16 @@ class Client(SocketConnection):
         Client.CONNECTION = None
 
 class MainHandler(tornado.web.RequestHandler):
+    cacher = None
     def get(self):
-        self.render("index.jade")
+        if cacher is not None:
+            cached_data = cacher.get_all_data()
+        else:
+            cached_data = {}
+        self.render("index.jade", cached_data=cached_data)
 
 class ReportServer(object):
-    def __init__(self):
+    def __init__(self, cacher):
         router = TornadioRouter(Client)
         self.app = tornado.web.Application(
             router.apply_routes([(r"/", MainHandler)]),
@@ -41,6 +46,7 @@ class ReportServer(object):
             static_path=os.path.join(os.path.dirname(__file__), "static"),
             debug=True,
             )
+        MainHandler.cacher = cacher
 
     def serve(self):
         def run_server():

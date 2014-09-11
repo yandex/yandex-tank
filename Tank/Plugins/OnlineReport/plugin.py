@@ -55,7 +55,7 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
 
     def prepare_test(self):
         try:
-            self.server = ReportServer()
+            self.server = ReportServer(self.cache)
             self.server.owner = self
         except Exception, ex:
             self.log.warning("Failed to start web results server: %s", ex)

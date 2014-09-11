@@ -18,3 +18,6 @@ class DataCacher(object):
     def store(self, data):
         for ts, subtree in data.iteritems():
             collect_subtree(self.storage, subtree, ts)
+
+    def get_all_data(self):
+        return self.storage
