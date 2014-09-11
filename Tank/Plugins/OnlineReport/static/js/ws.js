@@ -5,18 +5,19 @@
 
   conn.on('connect', (function(_this) {
     return function() {
-      return alert("Connection opened...");
+      return console.log("Connection opened...");
     };
   })(this));
 
   conn.on('disconnect', (function(_this) {
     return function() {
-      return alert("Connection closed...");
+      return console.log("Connection closed...");
     };
   })(this));
 
   conn.on('message', (function(_this) {
     return function(msg) {
+      console.log(JSON.parse(msg));
       return $("#msg").append("<p>" + msg + "</p>");
     };
   })(this));
