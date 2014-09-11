@@ -124,14 +124,21 @@ class AggregatorPlugin(AbstractPlugin):
 class SecondAggregateData:
     """ class holds aggregate data for the second """
 
-    def __init__(self, cimulative_item=None):
+    def __init__(self, cumulative_item=None):
         self.cases = {}
         self.time = None
         self.overall = SecondAggregateDataItem()
-        self.cumulative = cimulative_item
+        self.cumulative = cumulative_item
 
     def __repr__(self):
         return "SecondAggregateData[%s][%s]" % (self.time, time.mktime(self.time.timetuple()))
+
+    def __getstate__(self):
+        return {
+            'cases': self.cases,
+            'overall': self.overall,
+            'cumulative': self.cumulative,
+        }
 
 
 class SecondAggregateDataItem:
@@ -139,7 +146,6 @@ class SecondAggregateDataItem:
     QUANTILES = [0.25, 0.50, 0.75, 0.80, 0.85, 0.90, 0.95, 0.98, 0.99, 1.00]
 
     def __init__(self):
-        self.log = logging.getLogger(__name__)
         self.case = None
         self.planned_requests = 0
         self.active_threads = 0
@@ -158,6 +164,26 @@ class SecondAggregateDataItem:
         self.avg_receive_time = 0
         self.avg_response_time = 0
 
+    def __getstate__(self):
+        return {
+            "case": self.case,
+            "planned_requests": self.planned_requests,
+            "active_threads": self.active_threads,
+            "selfload": self.selfload,
+            "RPS": self.RPS,
+            "http_codes": self.http_codes,
+            "net_codes": self.net_codes,
+            "times_dist": self.times_dist,
+            "quantiles": self.quantiles,
+            "dispersion": self.dispersion,
+            "input": self.input,
+            "output": self.output,
+            "avg_connect_time": self.avg_connect_time,
+            "avg_send_time": self.avg_send_time,
+            "avg_latency": self.avg_latency,
+            "avg_receive_time": self.avg_receive_time,
+            "avg_response_time": self.avg_response_time,
+        }
 
 class SecondAggregateDataTotalItem:
     """ total cumulative data item """
@@ -171,6 +197,18 @@ class SecondAggregateDataTotalItem:
         self.total_count = 0
         self.times_dist = {}
         self.quantiles = {}
+
+    def __getstate__(self):
+        return {
+            "avg_connect_time": self.avg_connect_time,
+            "avg_send_time": self.avg_send_time,
+            "avg_latency": self.avg_latency,
+            "avg_receive_time": self.avg_receive_time,
+            "avg_response_time": self.avg_response_time,
+            "total_count": self.total_count,
+            "times_dist": self.times_dist,
+            "quantiles": self.quantiles,
+        }
 
     def add_data(self, overall_item):
         """ add data to total """
