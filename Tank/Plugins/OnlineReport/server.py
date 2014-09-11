@@ -31,8 +31,8 @@ class Client(SocketConnection):
 class MainHandler(tornado.web.RequestHandler):
     cacher = None
     def get(self):
-        if cacher is not None:
-            cached_data = cacher.get_all_data()
+        if MainHandler.cacher is not None:
+            cached_data = MainHandler.cacher.get_all_data()
         else:
             cached_data = {}
         self.render("index.jade", cached_data=cached_data)
