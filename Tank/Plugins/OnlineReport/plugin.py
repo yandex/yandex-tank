@@ -16,6 +16,8 @@ import tankcore
 from server import ReportServer
 from decode import decode_aggregate, decode_monitoring
 
+from cache import DataCacher
+
 class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
     ''' web online plugin '''
     SECTION = "web"
@@ -31,9 +33,7 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.port = 8080
         self.last_sec = None
         self.server = None
-        self.quantiles_data = []
-        self.codes_data = []
-        self.avg_data = []
+        self.cache = DataCacher()
 
     def get_available_options(self):
         return ["port"]
@@ -79,11 +79,13 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
 
 
     def aggregate_second(self, data):
+        data = decode_aggregate(data)
+        self.cache.store(data)
         if self.server is not None:
-            data = decode_aggregate(data)
             self.server.send(json.dumps(data))
 
     def monitoring_data(self, data):
         data = decode_monitoring(data)
+        self.cache.store(data)
         if self.server is not None and len(data):
             self.server.send(json.dumps(data))

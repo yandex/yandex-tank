@@ -19,12 +19,12 @@ def decode_monitoring(data):
         if line.strip()
     )
     data = {
-        host: {ts: {m: parse_number(v) for m, v in metrics.iteritems()}}
+        ts: {"monitoring": {host: {m: parse_number(v) for m, v in metrics.iteritems()}}}
         for host, metrics, _, ts in data_items
     }
     return data
 
 def decode_aggregate(data):
     return {
-        "overall": {uts(data.time): data.overall.__getstate__()},
+        uts(data.time): {"responses":{"overall": data.overall.__getstate__()}},
     }
