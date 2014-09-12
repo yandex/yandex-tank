@@ -4,7 +4,7 @@ import logging
 import tornado.ioloop
 import tornado.web
 import os.path
-
+import json
 from tornado import template
 from pyjade.ext.tornado import patch_tornado
 patch_tornado()
@@ -35,7 +35,7 @@ class MainHandler(tornado.web.RequestHandler):
             cached_data = MainHandler.cacher.get_all_data()
         else:
             cached_data = {}
-        self.render("index.jade", cached_data=cached_data)
+        self.render("index.jade", cached_data=json.dumps(cached_data))
 
 class ReportServer(object):
     def __init__(self, cacher):

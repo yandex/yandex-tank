@@ -5,7 +5,8 @@
 
   conn.on('connect', (function(_this) {
     return function() {
-      return console.log("Connection opened...");
+      console.log("Connection opened...");
+      return console.log(document.cached_data);
     };
   })(this));
 
@@ -17,8 +18,7 @@
 
   conn.on('message', (function(_this) {
     return function(msg) {
-      console.log(JSON.parse(msg));
-      return $("#msg").append("<p>" + msg + "</p>");
+      return console.log(JSON.parse(msg));
     };
   })(this));
 

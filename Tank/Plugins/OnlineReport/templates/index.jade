@@ -5,8 +5,9 @@ html(lang="en")
     script(src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js")
     script(src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js")
     script(src="static/js/ws.js")
+    script(type="text/javascript")
+      document.cached_data = {{cached_data}};
   body
     h1.title="Yandex.Tank report"
-    p {{cached_data}}
     p My beautiful report
     #msg
