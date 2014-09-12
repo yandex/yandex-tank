@@ -19,7 +19,7 @@ def decode_monitoring(data):
         if line.strip()
     )
     data = {
-        ts: {"monitoring": {host: {m: parse_number(v) for m, v in metrics.iteritems()}}}
+        int(ts): {"monitoring": {host: {m: parse_number(v) for m, v in metrics.iteritems()}}}
         for host, metrics, _, ts in data_items
     }
     return data
