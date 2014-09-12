@@ -9,11 +9,13 @@ html(lang="en")
     link(rel="stylesheet", href="static/css/bootstrap-theme.min.css")
     script(src="static/js/socket.io.min.js")
     script(src="static/js/jquery.min.js")
+    script(src="static/js/angular.min.js")
     script(src="static/js/bootstrap.min.js")
     script(src="static/js/ws.js")
     script(type="text/javascript")
       document.cached_data = {{cached_data}};
   body
-    h1.title="Yandex.Tank report"
-    p My beautiful report
-    #msg
+    .app(ng-app="ng-tank-report", ng-controller="TankReport")
+      h1.title="Yandex.Tank report"
+      p My beautiful report
+      #msg
