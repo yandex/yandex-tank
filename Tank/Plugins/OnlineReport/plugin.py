@@ -66,6 +66,7 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
 
 
     def end_test(self, retcode):
+        raw_input('Press Enter to stop report server.')
         del self.server
         self.server = None
         return retcode

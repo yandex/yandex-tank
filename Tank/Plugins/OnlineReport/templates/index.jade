@@ -11,6 +11,8 @@ html(lang="en")
     script(src="static/js/vendor/jquery.min.js")
     script(src="static/js/vendor/angular.min.js")
     script(src="static/js/vendor/bootstrap.min.js")
+    script(src="static/js/vendor/d3.min.js")
+    script(src="static/js/vendor/rickshaw.min.js")
     script(src="static/js/ws.js")
     script(type="text/javascript")
       document.cached_data = {{cached_data}};
@@ -26,6 +28,7 @@ html(lang="en")
       #monitoring
         .host.panel(ng-repeat="(host, metrics) in monitoringData")
           h3 {{!host}}
+          rickshaw(series="metrics | metricsToSeries", renderer="line", width="800", height="600")
           .metric.panel(ng-repeat="(metric, values) in metrics")
             h4 {{!metric}}
             {{!values}}
