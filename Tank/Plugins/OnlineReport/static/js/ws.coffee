@@ -7,17 +7,17 @@ app.controller "TankReport", ($scope) ->
   conn = new io.connect("http://#{window.location.host}")
   conn.on 'connect', () =>
     console.log("Connection opened...")
-    $scope.status = "Connected"
-    $scope.$apply()
-    console.log document.cached_data
+    #$scope.status = "Connected"
+    #$scope.$apply()
+    #console.log document.cached_data
 
   conn.on 'disconnect', () =>
     console.log("Connection closed...")
-    $scope.status = "Disonnected"
-    $scope.$apply()
+    #$scope.status = "Disonnected"
+    #$scope.$apply()
   conn.on 'message', (msg) =>
-    $scope.tankData = JSON.parse msg
-    $scope.$apply()
+    #$scope.tankData = JSON.parse msg
+    #$scope.$apply()
 
 app.filter "metricsToSeries", () ->
   (metrics) ->
@@ -41,6 +41,7 @@ app.directive "rickshaw", () ->
       series: scope.series
       width: attrs.width,
       height: attrs.height
-    scope.$watch 'series', () ->
-      if scope.series?
-        graph.render()
+    # scope.$watch 'series', () ->
+    #   console.log "Changed"
+    #   if scope.series?
+    graph.render()

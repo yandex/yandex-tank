@@ -18,11 +18,19 @@ def decode_monitoring(data):
         for line in data.splitlines()
         if line.strip()
     )
-    data = {
-        int(ts): {"monitoring": {host: {m: parse_number(v) for m, v in metrics.iteritems()}}}
-        for host, metrics, _, ts in data_items
-    }
-    return data
+    result = {}
+    for host, metrics, _, ts in data_items:
+        host_metrics = result \
+          .setdefault(int(ts), {}) \
+          .setdefault("monitoring", {}) \
+          .setdefault(host, {})
+        for metric_name, value in metrics.iteritems():
+            if '_' in metric_name:
+                group, metric_name = metric_name.split('_', 1)
+            else:
+                group = metric_name
+            host_metrics.setdefault(group, {})[metric_name] = parse_number(value)
+    return result
 
 def decode_aggregate(data):
     return {

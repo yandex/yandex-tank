@@ -26,9 +26,8 @@ html(lang="en")
           h3 {{!metric}}
           {{!values}}
       #monitoring
-        .host.panel(ng-repeat="(host, metrics) in monitoringData")
+        .host.panel(ng-repeat="(host, groups) in monitoringData")
           h3 {{!host}}
-          rickshaw(series="metrics | metricsToSeries", renderer="line", width="800", height="600")
-          .metric.panel(ng-repeat="(metric, values) in metrics")
-            h4 {{!metric}}
-            {{!values}}
+          .rs.panel(ng-repeat="(group, metrics) in groups")
+            h4 {{!group}}
+            rickshaw(series="metrics | metricsToSeries", renderer="line", width="800", height="600")

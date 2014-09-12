@@ -11,24 +11,16 @@
     conn = new io.connect("http://" + window.location.host);
     conn.on('connect', (function(_this) {
       return function() {
-        console.log("Connection opened...");
-        $scope.status = "Connected";
-        $scope.$apply();
-        return console.log(document.cached_data);
+        return console.log("Connection opened...");
       };
     })(this));
     conn.on('disconnect', (function(_this) {
       return function() {
-        console.log("Connection closed...");
-        $scope.status = "Disonnected";
-        return $scope.$apply();
+        return console.log("Connection closed...");
       };
     })(this));
     return conn.on('message', (function(_this) {
-      return function(msg) {
-        $scope.tankData = JSON.parse(msg);
-        return $scope.$apply();
-      };
+      return function(msg) {};
     })(this));
   });
 
@@ -70,11 +62,7 @@
           width: attrs.width,
           height: attrs.height
         });
-        return scope.$watch('series', function() {
-          if (scope.series != null) {
-            return graph.render();
-          }
-        });
+        return graph.render();
       }
     };
   });
