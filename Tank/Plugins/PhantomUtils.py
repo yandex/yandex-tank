@@ -2,6 +2,7 @@
 # TODO: use separate answ log per benchmark
 import copy
 import logging
+import traceback
 import multiprocessing
 import os
 import re
@@ -374,12 +375,11 @@ class AddressWizard:
 
             if do_test:
                 try:
-                    self.__test(family, sockaddr)
+                    self.__test(family, (parsed_ip, port))
                 except RuntimeError, exc:
                     logging.warn("Failed TCP connection test using [%s]:%s", parsed_ip, port)
                     continue
 
-            logging.info("Successfully resolved address into [%s]:%s", parsed_ip, port)
             return is_v6, parsed_ip, int(port), address_str
 
         msg = "All connection attempts failed for %s, use phantom.connection_test=0 to disable it"
@@ -391,6 +391,7 @@ class AddressWizard:
             test_sock.settimeout(5)
             test_sock.connect(sa)
         except Exception, exc:
+            logging.debug("Exception on connect attempt [%s]:%s : %s", sa[0], sa[1], traceback.format_exc(exc))
             msg = "TCP Connection test failed for [%s]:%s, use phantom.connection_test=0 to disable it"
             raise RuntimeError(msg % (sa[0], sa[1]))
         finally:
