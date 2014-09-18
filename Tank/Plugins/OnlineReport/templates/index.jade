@@ -24,7 +24,7 @@ html(lang="en")
       #overall
         .metric.panel(ng-repeat="(metric, values) in overallData")
           h3 {{!metric}}
-          {{!values}}
+          rickshaw(metrics="{metric: values}", renderer="line", width="800", height="600")
       #monitoring
         .host.panel(ng-repeat="(host, groups) in monitoringData")
           h3 {{!host}}
