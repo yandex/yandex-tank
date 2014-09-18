@@ -24,41 +24,33 @@
     })(this));
   });
 
-  app.filter("metricsToSeries", function() {
-    return function(metrics) {
-      var name, points, _results;
-      _results = [];
-      for (name in metrics) {
-        points = metrics[name];
-        _results.push({
-          name: name,
-          color: 'steelblue',
-          data: points.map(function(p) {
-            return {
-              x: p[0],
-              y: p[1]
-            };
-          })
-        });
-      }
-      return _results;
-    };
-  });
-
   app.directive("rickshaw", function() {
     return {
       restrict: "E",
       replace: true,
       template: "<div></div>",
       scope: {
-        series: '='
+        metrics: '='
       },
       link: function(scope, element, attrs) {
-        var graph;
+        var graph, name, points;
         graph = new Rickshaw.Graph({
           element: element[0],
           renderer: attrs.renderer,
-          series: scope.series,
+          series: (function() {
+            var _ref, _results;
+            _ref = scope.metrics;
+            _results = [];
+            for (name in _ref) {
+              points = _ref[name];
+              _results.push({
+                name: name,
+                color: 'steelblue',
+                data: points
+              });
+            }
+            return _results;
+          })(),
           width: attrs.width,
           height: attrs.height
         });
