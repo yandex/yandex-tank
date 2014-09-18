@@ -5,7 +5,10 @@ import json
 def collect_subtree(storage, subtree, ts):
     for key, node in subtree.iteritems():
         if type(node) is not dict:
-            storage.setdefault(key, []).append((ts, node))
+            storage.setdefault(key, []).append({
+                'x': ts, 
+                'y': node,
+            })
         else:
             collect_subtree(storage.setdefault(key, {}), node, ts)
 

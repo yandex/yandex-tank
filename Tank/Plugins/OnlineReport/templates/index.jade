@@ -30,4 +30,4 @@ html(lang="en")
           h3 {{!host}}
           .rs.panel(ng-repeat="(group, metrics) in groups")
             h4 {{!group}}
-            rickshaw(series="metrics | metricsToSeries", renderer="line", width="800", height="600")
+            rickshaw(metrics="metrics", renderer="line", width="800", height="600")

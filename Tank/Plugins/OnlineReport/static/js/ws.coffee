@@ -19,29 +19,24 @@ app.controller "TankReport", ($scope) ->
     #$scope.tankData = JSON.parse msg
     #$scope.$apply()
 
-app.filter "metricsToSeries", () ->
-  (metrics) ->
-    for name, points of metrics
-      name: name
-      color: 'steelblue'
-      data: points.map (p) ->
-        x: p[0]
-        y: p[1]
 
 app.directive "rickshaw", () ->
   restrict: "E"
   replace: true
   template: "<div></div>"
   scope:
-    series: '='
+    metrics: '='
   link: (scope, element, attrs) ->
+
     graph = new Rickshaw.Graph
       element: element[0]
       renderer: attrs.renderer
-      series: scope.series
+      series: (
+        {
+          name: name
+          color: 'steelblue'
+          data: points
+        } for name, points of scope.metrics)
       width: attrs.width,
       height: attrs.height
-    # scope.$watch 'series', () ->
-    #   console.log "Changed"
-    #   if scope.series?
     graph.render()
