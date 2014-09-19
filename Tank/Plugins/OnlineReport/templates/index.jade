@@ -19,32 +19,37 @@ html(lang="en")
     script(type="text/javascript")
       document.cached_data = {{cached_data}};
   body
-    .app(ng-app="ng-tank-report", ng-controller="TankReport")
-      h1.title="Yandex.Tank report"
-      p My beautiful report
+    .app.container(ng-app="ng-tank-report", ng-controller="TankReport")
+      h1.page-header Yandex.Tank online report
       #status {{!status}}
       #timings
-        .rs.panel
-          h3 {{!quantiles.name}}
-          rickshaw(
-            rickshaw-series="quantiles.series",
-            rickshaw-options="quantiles.options",
-            rickshaw-features="quantiles.features"
-          )
-        .rs.panel
-          h3 {{!rps.name}}
-          rickshaw(
-            rickshaw-series="rps.series",
-            rickshaw-options="rps.options",
-            rickshaw-features="rps.features"
-          )
-      #monitoring
-        .host.panel(ng-repeat="host in monitoringData")
-          h3 {{!host.hostname}}
-          .rs.panel(ng-repeat="group in host.groups")
-            h4 {{!group.name}}
-            rickshaw(
-              rickshaw-series="group.series",
-              rickshaw-options="group.options",
-              rickshaw-features="group.features"
+        .panel.panel-default
+          .panel-heading
+            h3.panel-title {{!quantiles.name}}
+          .panel-body
+            rickshaw.panel-body(
+              rickshaw-series="quantiles.series",
+              rickshaw-options="quantiles.options",
+              rickshaw-features="quantiles.features"
             )
+        .panel.panel-default
+          .panel-heading
+            h3.panel-title {{!rps.name}}
+          .panel-body
+            rickshaw(
+              rickshaw-series="rps.series",
+              rickshaw-options="rps.options",
+              rickshaw-features="rps.features"
+            )
+      #monitoring
+        .host(ng-repeat="host in monitoringData")
+          h3 {{!host.hostname}}
+          .panel.panel-default(ng-repeat="group in host.groups")
+            .panel-heading
+              h3.panel-title {{!group.name}}
+            .panel-body
+              rickshaw(
+                rickshaw-series="group.series",
+                rickshaw-options="group.options",
+                rickshaw-features="group.features"
+              )
