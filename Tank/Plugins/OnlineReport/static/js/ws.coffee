@@ -1,68 +1,85 @@
 app = angular.module("ng-tank-report", ["angular-rickshaw"])
 
+collect_subtree = (storage, subtree, ts) ->
+  for key, node of subtree
+    if typeof node is 'number' or typeof node is 'array'
+      storage[key].push
+        x: ts
+        y: node
+    else
+      collect_subtree(storage[key], node, ts)
+
 app.controller "TankReport", ($scope) ->
   $scope.status = "Disconnected"
-  overallData = if document.cached_data.responses then document.cached_data.responses.overall else {}
-  monitoringData = if document.cached_data.monitoring then document.cached_data.monitoring else {}
-  areaGraphs = ['CPU', 'Memory']
-  $scope.monitoringData = (
-    ({
-      hostname: hostname
-      groups: ({
-        name: groupName
-        features:
-          palette: 'spectrum14'
-          hover: {}
-          xAxis: {}
-          yAxis: {}
-          legend:
-            toggle: true
-            highlight: true
-        options:
-          renderer: if groupName in areaGraphs then 'area' else 'line'
-        series: ({
-          name: name
-          data: data
-        } for name, data of series)
-      } for groupName, series of groups)
-    } for hostname, groups of monitoringData)
-  )
-  quantiles =
-  $scope.quantiles =
-    name: "Response time quantiles"
-    features:
-      palette: 'classic9'
-      hover: {}
-      xAxis: {}
-      yAxis: {}
-      legend:
-        toggle: true
-        highlight: true
-    options:
-      renderer: 'area'
-      stack: false
-    series: ({
-      name: name
-      data: data
-    } for name, data of overallData.quantiles).sort (a, b) ->
-      return if parseFloat(a.name) <= parseFloat(b.name) then 1 else -1
-  $scope.rps =
-    name: "Responses per second"
-    features:
-      palette: 'spectrum14'
-      hover: {}
-      xAxis: {}
-      yAxis: {}
-      legend:
-        toggle: true
-        highlight: true
-    options:
-      renderer: 'line'
-    series: [
-      name: 'RPS'
-      data: overallData.RPS
-    ]
+  $scope.data = document.cached_data
+  $scope.updateData = (tankData) ->
+    for ts, storages of tankData
+      for storage, data of storages
+        collect_subtree $scope.data[storage], data, ts
+    $scope.buildSeries()
+  $scope.buildSeries = () ->
+    overallData = if $scope.data.responses then $scope.data.responses.overall else {}
+    monitoringData = if $scope.data.monitoring then $scope.data.monitoring else {}
+    areaGraphs = ['CPU', 'Memory']
+    $scope.monitoringData = (
+      ({
+        hostname: hostname
+        groups: ({
+          name: groupName
+          features:
+            palette: 'spectrum14'
+            hover: {}
+            xAxis: {}
+            yAxis: {}
+            legend:
+              toggle: true
+              highlight: true
+          options:
+            renderer: if groupName in areaGraphs then 'area' else 'line'
+          series: ({
+            name: name
+            data: data
+          } for name, data of series)
+        } for groupName, series of groups)
+      } for hostname, groups of monitoringData)
+    )
+    quantiles =
+    $scope.quantiles =
+      name: "Response time quantiles"
+      features:
+        palette: 'classic9'
+        hover: {}
+        xAxis: {}
+        yAxis: {}
+        legend:
+          toggle: true
+          highlight: true
+      options:
+        renderer: 'area'
+        stack: false
+      series: ({
+        name: name
+        data: data
+      } for name, data of overallData.quantiles).sort (a, b) ->
+        return if parseFloat(a.name) <= parseFloat(b.name) then 1 else -1
+    $scope.rps =
+      name: "Responses per second"
+      features:
+        palette: 'spectrum14'
+        hover: {}
+        xAxis: {}
+        yAxis: {}
+        legend:
+          toggle: true
+          highlight: true
+      options:
+        renderer: 'line'
+      series: [
+        name: 'RPS'
+        data: overallData.RPS
+      ]
 
+  $scope.buildSeries()
 
   conn = new io.connect("http://#{window.location.host}")
   conn.on 'connect', () =>
@@ -76,5 +93,5 @@ app.controller "TankReport", ($scope) ->
     $scope.status = "Disonnected"
     $scope.$apply()
   conn.on 'message', (msg) =>
-    #$scope.tankData = JSON.parse msg
-    #$scope.$apply()
+    tankData = JSON.parse msg
+    $scope.updateData(tankData)

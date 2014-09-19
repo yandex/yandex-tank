@@ -173,7 +173,7 @@ class SecondAggregateDataItem:
             "RPS": self.RPS,
             "http_codes": self.http_codes,
             "net_codes": self.net_codes,
-            "times_dist": self.times_dist,
+            # "times_dist": self.times_dist,
             "quantiles": self.quantiles,
             "dispersion": self.dispersion,
             "input": self.input,

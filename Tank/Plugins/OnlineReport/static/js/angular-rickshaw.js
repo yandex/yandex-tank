@@ -100,6 +100,7 @@ Based on https://github.com/ngyewch/angular-rickshaw
           }
         });
         scope.$watch("series", function(newValue, oldValue) {
+          console.log(newValue);
           if (!angular.equals(newValue, oldValue)) {
             update();
           }

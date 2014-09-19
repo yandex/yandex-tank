@@ -76,6 +76,7 @@ angular.module("angular-rickshaw", []).directive "rickshaw", ($compile) ->
       return
 
     scope.$watch "series", (newValue, oldValue) ->
+      console.log newValue
       update()  unless angular.equals(newValue, oldValue)
       return
 
