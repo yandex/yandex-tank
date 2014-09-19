@@ -7,12 +7,14 @@ html(lang="en")
     title Yandex.Tank
     link(rel="stylesheet", href="static/css/bootstrap.min.css")
     link(rel="stylesheet", href="static/css/bootstrap-theme.min.css")
+    link(rel="stylesheet", href="static/css/rickshaw.css")
     script(src="static/js/vendor/socket.io.min.js")
     script(src="static/js/vendor/jquery.min.js")
     script(src="static/js/vendor/angular.min.js")
     script(src="static/js/vendor/bootstrap.min.js")
     script(src="static/js/vendor/d3.min.js")
     script(src="static/js/vendor/rickshaw.min.js")
+    script(src="static/js/angular-rickshaw.js")
     script(src="static/js/ws.js")
     script(type="text/javascript")
       document.cached_data = {{cached_data}};
@@ -21,13 +23,28 @@ html(lang="en")
       h1.title="Yandex.Tank report"
       p My beautiful report
       #status {{!status}}
-      #overall
-        .metric.panel(ng-repeat="(metric, values) in overallData")
-          h3 {{!metric}}
-          rickshaw(metrics="{metric: values}", renderer="line", width="800", height="600")
+      #timings
+        .rs.panel
+          h3 {{!quantiles.name}}
+          rickshaw(
+            rickshaw-series="quantiles.series",
+            rickshaw-options="quantiles.options",
+            rickshaw-features="quantiles.features"
+          )
+        .rs.panel
+          h3 {{!rps.name}}
+          rickshaw(
+            rickshaw-series="rps.series",
+            rickshaw-options="rps.options",
+            rickshaw-features="rps.features"
+          )
       #monitoring
-        .host.panel(ng-repeat="(host, groups) in monitoringData")
-          h3 {{!host}}
-          .rs.panel(ng-repeat="(group, metrics) in groups")
-            h4 {{!group}}
-            rickshaw(metrics="metrics", renderer="line", width="800", height="600")
+        .host.panel(ng-repeat="host in monitoringData")
+          h3 {{!host.hostname}}
+          .rs.panel(ng-repeat="group in host.groups")
+            h4 {{!group.name}}
+            rickshaw(
+              rickshaw-series="group.series",
+              rickshaw-options="group.options",
+              rickshaw-features="group.features"
+            )
