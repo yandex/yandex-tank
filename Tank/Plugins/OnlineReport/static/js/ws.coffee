@@ -15,11 +15,10 @@ app.controller "TankReport", ($scope) ->
   $scope.updateData = (tankData) ->
     for ts, storages of tankData
       for storage, data of storages
-        collect_subtree $scope.data[storage], data, ts
-    $scope.buildSeries()
+        collect_subtree $scope.data[storage], data, +ts
+    $scope.$broadcast 'DataUpdated'
   $scope.buildSeries = () ->
     overallData = if $scope.data.responses then $scope.data.responses.overall else {}
-    monitoringData = if $scope.data.monitoring then $scope.data.monitoring else {}
     areaGraphs = ['CPU', 'Memory']
     $scope.monitoringData = (
       ({
@@ -41,9 +40,8 @@ app.controller "TankReport", ($scope) ->
             data: data
           } for name, data of series)
         } for groupName, series of groups)
-      } for hostname, groups of monitoringData)
+      } for hostname, groups of $scope.data.monitoring)
     )
-    quantiles =
     $scope.quantiles =
       name: "Response time quantiles"
       features:

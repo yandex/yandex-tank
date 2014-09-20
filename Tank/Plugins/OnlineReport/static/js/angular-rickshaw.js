@@ -14,7 +14,7 @@ Based on https://github.com/ngyewch/angular-rickshaw
         features: "=rickshawFeatures"
       },
       link: function(scope, element, attrs) {
-        var getSettings, graph, update;
+        var getSettings, update;
         getSettings = function(el) {
           var settings;
           settings = angular.copy(scope.options);
@@ -23,17 +23,17 @@ Based on https://github.com/ngyewch/angular-rickshaw
           return settings;
         };
         update = function() {
-          var graph, graphEl, highlighter, hoverConfig, hoverDetail, i, legend, legendEl, mainEl, palette, settings, shelving, time, xAxis, xAxisConfig, yAxis, yAxisConfig;
+          var graphEl, highlighter, hoverConfig, hoverDetail, i, legend, legendEl, mainEl, palette, settings, shelving, time, xAxis, xAxisConfig, yAxis, yAxisConfig;
           mainEl = angular.element(element);
           mainEl.append(graphEl);
           mainEl.empty();
           graphEl = $compile("<div></div>")(scope);
           mainEl.append(graphEl);
           settings = getSettings(graphEl[0]);
-          graph = new Rickshaw.Graph(settings);
+          scope.graph = new Rickshaw.Graph(settings);
           if (scope.features && scope.features.hover) {
             hoverConfig = {
-              graph: graph
+              graph: scope.graph
             };
             hoverConfig.xFormatter = scope.features.hover.xFormatter;
             hoverConfig.yFormatter = scope.features.hover.yFormatter;
@@ -50,10 +50,10 @@ Based on https://github.com/ngyewch/angular-rickshaw
               i++;
             }
           }
-          graph.render();
+          scope.graph.render();
           if (scope.features && scope.features.xAxis) {
             xAxisConfig = {
-              graph: graph
+              graph: scope.graph
             };
             if (scope.features.xAxis.timeUnit) {
               time = new Rickshaw.Fixtures.Time();
@@ -64,7 +64,7 @@ Based on https://github.com/ngyewch/angular-rickshaw
           }
           if (scope.features && scope.features.yAxis) {
             yAxisConfig = {
-              graph: graph
+              graph: scope.graph
             };
             if (scope.features.yAxis.tickFormat) {
               yAxisConfig.tickFormat = Rickshaw.Fixtures.Number[scope.features.yAxis.tickFormat];
@@ -76,31 +76,30 @@ Based on https://github.com/ngyewch/angular-rickshaw
             legendEl = $compile("<div></div>")(scope);
             mainEl.append(legendEl);
             legend = new Rickshaw.Graph.Legend({
-              graph: graph,
+              graph: scope.graph,
               element: legendEl[0]
             });
             if (scope.features.legend.toggle) {
               shelving = new Rickshaw.Graph.Behavior.Series.Toggle({
-                graph: graph,
+                graph: scope.graph,
                 legend: legend
               });
             }
             if (scope.features.legend.highlight) {
               highlighter = new Rickshaw.Graph.Behavior.Series.Highlight({
-                graph: graph,
+                graph: scope.graph,
                 legend: legend
               });
             }
           }
         };
-        graph = void 0;
+        scope.graph = void 0;
         scope.$watch("options", function(newValue, oldValue) {
           if (!angular.equals(newValue, oldValue)) {
             update();
           }
         });
         scope.$watch("series", function(newValue, oldValue) {
-          console.log(newValue);
           if (!angular.equals(newValue, oldValue)) {
             update();
           }
@@ -110,7 +109,10 @@ Based on https://github.com/ngyewch/angular-rickshaw
             update();
           }
         });
-        update();
+        scope.$on("DataUpdated", function() {
+          return scope.graph.update();
+        });
+        return update();
       },
       controller: function($scope, $element, $attrs) {}
     };

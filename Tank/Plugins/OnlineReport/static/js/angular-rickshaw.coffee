@@ -25,9 +25,9 @@ angular.module("angular-rickshaw", []).directive "rickshaw", ($compile) ->
       graphEl = $compile("<div></div>")(scope)
       mainEl.append graphEl
       settings = getSettings(graphEl[0])
-      graph = new Rickshaw.Graph(settings)
+      scope.graph = new Rickshaw.Graph(settings)
       if scope.features and scope.features.hover
-        hoverConfig = graph: graph
+        hoverConfig = graph: scope.graph
         hoverConfig.xFormatter = scope.features.hover.xFormatter
         hoverConfig.yFormatter = scope.features.hover.yFormatter
         hoverConfig.formatter = scope.features.hover.formatter
@@ -39,16 +39,16 @@ angular.module("angular-rickshaw", []).directive "rickshaw", ($compile) ->
         while i < settings.series.length
           settings.series[i].color = palette.color()
           i++
-      graph.render()
+      scope.graph.render()
       if scope.features and scope.features.xAxis
-        xAxisConfig = graph: graph
+        xAxisConfig = graph: scope.graph
         if scope.features.xAxis.timeUnit
           time = new Rickshaw.Fixtures.Time()
           xAxisConfig.timeUnit = time.unit(scope.features.xAxis.timeUnit)
         xAxis = new Rickshaw.Graph.Axis.Time(xAxisConfig)
         xAxis.render()
       if scope.features and scope.features.yAxis
-        yAxisConfig = graph: graph
+        yAxisConfig = graph: scope.graph
         yAxisConfig.tickFormat = Rickshaw.Fixtures.Number[scope.features.yAxis.tickFormat]  if scope.features.yAxis.tickFormat
         yAxis = new Rickshaw.Graph.Axis.Y(yAxisConfig)
         yAxis.render()
@@ -56,27 +56,26 @@ angular.module("angular-rickshaw", []).directive "rickshaw", ($compile) ->
         legendEl = $compile("<div></div>")(scope)
         mainEl.append legendEl
         legend = new Rickshaw.Graph.Legend(
-          graph: graph
+          graph: scope.graph
           element: legendEl[0]
         )
         if scope.features.legend.toggle
           shelving = new Rickshaw.Graph.Behavior.Series.Toggle(
-            graph: graph
+            graph: scope.graph
             legend: legend
           )
         if scope.features.legend.highlight
           highlighter = new Rickshaw.Graph.Behavior.Series.Highlight(
-            graph: graph
+            graph: scope.graph
             legend: legend
           )
       return
-    graph = undefined
+    scope.graph = undefined
     scope.$watch "options", (newValue, oldValue) ->
       update()  unless angular.equals(newValue, oldValue)
       return
 
     scope.$watch "series", (newValue, oldValue) ->
-      console.log newValue
       update()  unless angular.equals(newValue, oldValue)
       return
 
@@ -84,7 +83,9 @@ angular.module("angular-rickshaw", []).directive "rickshaw", ($compile) ->
       update()  unless angular.equals(newValue, oldValue)
       return
 
+    scope.$on "DataUpdated", () ->
+      scope.graph.update()
+
     update()
-    return
 
   controller: ($scope, $element, $attrs) ->

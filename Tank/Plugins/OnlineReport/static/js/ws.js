@@ -31,21 +31,21 @@
         storages = tankData[ts];
         for (storage in storages) {
           data = storages[storage];
-          collect_subtree($scope.data[storage], data, ts);
+          collect_subtree($scope.data[storage], data, +ts);
         }
       }
-      return $scope.buildSeries();
+      return $scope.$broadcast('DataUpdated');
     };
     $scope.buildSeries = function() {
-      var areaGraphs, data, groupName, groups, hostname, monitoringData, name, overallData, quantiles, series;
+      var areaGraphs, data, groupName, groups, hostname, name, overallData, series;
       overallData = $scope.data.responses ? $scope.data.responses.overall : {};
-      monitoringData = $scope.data.monitoring ? $scope.data.monitoring : {};
       areaGraphs = ['CPU', 'Memory'];
       $scope.monitoringData = (function() {
-        var _results;
+        var _ref, _results;
+        _ref = $scope.data.monitoring;
         _results = [];
-        for (hostname in monitoringData) {
-          groups = monitoringData[hostname];
+        for (hostname in _ref) {
+          groups = _ref[hostname];
           _results.push({
             hostname: hostname,
             groups: (function() {
@@ -88,7 +88,7 @@
         }
         return _results;
       })();
-      quantiles = $scope.quantiles = {
+      $scope.quantiles = {
         name: "Response time quantiles",
         features: {
           palette: 'classic9',
