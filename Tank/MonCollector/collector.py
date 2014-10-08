@@ -363,6 +363,7 @@ class MonitoringCollector:
                     if first_try:
                         logging.debug("Killing %s with %s", pipe.pid, signal.SIGTERM)
                         os.killpg(pipe.pid, signal.SIGTERM)
+                        pipe.communicate()
                         first_try = False
                         time.sleep(0.1)
                     else:
