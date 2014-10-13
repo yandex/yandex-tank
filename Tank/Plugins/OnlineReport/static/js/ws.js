@@ -21,7 +21,7 @@
     return _results;
   };
 
-  app.controller("TankReport", function($scope) {
+  app.controller("TankReport", function($scope, $element) {
     var conn;
     $scope.status = "Disconnected";
     $scope.data = document.cached_data;
@@ -102,7 +102,8 @@
         },
         options: {
           renderer: 'area',
-          stack: false
+          stack: false,
+          height: $element[0].offsetHeight - 45 - 62
         },
         series: ((function() {
           var _ref, _results;

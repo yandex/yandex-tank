@@ -30,18 +30,25 @@ class Client(SocketConnection):
 
 class MainHandler(tornado.web.RequestHandler):
     cacher = None
+    def initialize(self, template):
+        self.template = template
+
     def get(self):
         if MainHandler.cacher is not None:
             cached_data = MainHandler.cacher.get_all_data()
         else:
             cached_data = {}
-        self.render("index.jade", cached_data=json.dumps(cached_data))
+        self.render(self.template, cached_data=json.dumps(cached_data))
 
 class ReportServer(object):
     def __init__(self, cacher):
         router = TornadioRouter(Client)
         self.app = tornado.web.Application(
-            router.apply_routes([(r"/", MainHandler)]),
+            router.apply_routes([
+              (r"/", MainHandler, dict(template='index.jade')),
+              (r"/brief\.html$", MainHandler, dict(template='brief.jade')),
+              (r"/monitoring\.html$", MainHandler, dict(template='monitoring.jade')),
+            ]),
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
             debug=True,

@@ -9,7 +9,7 @@ collect_subtree = (storage, subtree, ts) ->
     else
       collect_subtree(storage[key], node, ts)
 
-app.controller "TankReport", ($scope) ->
+app.controller "TankReport", ($scope, $element) ->
   $scope.status = "Disconnected"
   $scope.data = document.cached_data
   $scope.updateData = (tankData) ->
@@ -55,6 +55,7 @@ app.controller "TankReport", ($scope) ->
       options:
         renderer: 'area'
         stack: false
+        height: $element[0].offsetHeight - 45 - 62
       series: ({
         name: name
         data: data

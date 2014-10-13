@@ -1,0 +1,36 @@
+!!! 5
+html(lang="en")
+  head
+    meta(charset="utf-8")
+    meta(http-equiv="X-UA-Compatible", content="IE=edge")
+    meta(name="viewport", content="width=device-width, initial-scale=1")
+    title Yandex.Tank
+    link(rel="stylesheet", href="static/css/bootstrap.min.css")
+    link(rel="stylesheet", href="static/css/bootstrap-theme.min.css")
+    link(rel="stylesheet", href="static/css/rickshaw.css")
+    link(rel="stylesheet", href="static/css/custom.css")
+    script(src="static/js/vendor/socket.io.min.js")
+    script(src="static/js/vendor/jquery.min.js")
+    script(src="static/js/vendor/angular.min.js")
+    script(src="static/js/vendor/bootstrap.min.js")
+    script(src="static/js/vendor/d3.min.js")
+    script(src="static/js/vendor/rickshaw.min.js")
+    script(src="static/js/angular-rickshaw.js")
+    script(src="static/js/ws.js")
+    script(type="text/javascript")
+      document.cached_data = {{cached_data}};
+  body
+    .app.container(ng-app="ng-tank-report", ng-controller="TankReport")
+      .host(ng-repeat="host in monitoringData")
+        h3 {{!host.hostname}}
+        .row
+          .col-md-5(ng-repeat="group in host.groups")
+            .panel.panel-default
+              .panel-heading
+                h3.panel-title {{!group.name}}
+              .panel-body
+                rickshaw(
+                  rickshaw-series="group.series",
+                  rickshaw-options="group.options",
+                  rickshaw-features="group.features"
+                )
