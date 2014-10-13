@@ -260,8 +260,10 @@ class Disk(AbstractMetric):
                 parts = mount.split(" ")
                 rp = os.path.realpath(parts[0])
                 short_name = rp.split(os.sep)[-1]
-                if not os.path.exists(rp):
-                    logging.info("File not exists for %s , will search in block devices", rp)
+                devs.append(short_name)
+                #Fixed due to LVM volumes on dom0 machines
+                #here we're trying to get block device name (even if mounted device file exists)
+                try:
                     for dirc in glob.glob("/sys/devices/virtual/block/*"):
                         logging.debug("Checking %s", dirc)
                         name_path = "%s/dm/name" % dirc
@@ -278,8 +280,8 @@ class Disk(AbstractMetric):
                                         break
                             except Exception, exc:
                                 logging.info("Failed: %s", traceback.format_exc(exc))
-                else:
-                    devs.append(short_name)
+                except Exception as exc:
+                    logging.info("Failed to get block device name via /sys/devices/: %s", traceback.format_exc(exc))
         logging.info("Devs: %s", devs)
         return devs
 
