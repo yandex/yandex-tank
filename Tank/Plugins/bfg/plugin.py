@@ -42,6 +42,7 @@ class BFGPlugin(AbstractPlugin):
         self.stepper_wrapper.read_config()
 
     def prepare_test(self):
+        self.log.info(self.get_option("ammo_type"))
         self.stepper_wrapper.prepare_stepper()
         gun_type = self.get_option("gun_type")
         if gun_type in self.gun_classes:
@@ -60,6 +61,7 @@ class BFGPlugin(AbstractPlugin):
             threads=self.get_option("threads", '10'),
             stpd_filename=self.stepper_wrapper.stpd,
             cached_stpd=cached_stpd,
+            zmq=self.get_option("zmq", '0') == '1'
         )
         aggregator = None
         try:
