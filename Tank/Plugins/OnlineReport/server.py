@@ -10,35 +10,39 @@ from tornado import template
 from pyjade.ext.tornado import patch_tornado
 patch_tornado()
 
-from tornadio2 import SocketConnection, TornadioRouter, SocketServer
+from tornadio2 import SocketConnection, TornadioRouter, SocketServer, event
 
 from threading import Thread
 
 
 class Client(SocketConnection):
-    CONNECTION = None
+    CONNECTIONS = set()
 
     def on_open(self, info):
-        print 'Client connected'
-        Client.CONNECTION = self
+        print 'Client connected', self
+        self.CONNECTIONS.add(self)
 
     def on_message(self, msg):
         print 'Got', msg
 
     def on_close(self):
         print 'Client disconnected'
-        Client.CONNECTION = None
+        self.CONNECTIONS.remove(self)
+
+    @event('heartbeat')
+    def on_heartbeat(self):
+        pass
 
 class MainHandler(tornado.web.RequestHandler):
-    cacher = None
-    def initialize(self, template, reportUUID):
+    def initialize(self, template, reportUUID, cacher):
         self.template = template
         self.reportUUID = reportUUID
+        self.cacher = cacher
 
     def get(self):
-        if MainHandler.cacher is not None:
+        if self.cacher is not None:
             cached_data = {
-              'data': MainHandler.cacher.get_all_data(),
+              'data': self.cacher.get_all_data(),
               'uuid': self.reportUUID,
             }
         else:
@@ -54,15 +58,14 @@ class ReportServer(object):
         self.reportUUID = uuid.uuid4().hex
         self.app = tornado.web.Application(
             router.apply_routes([
-              (r"/", MainHandler, dict(template='index.jade', reportUUID=self.reportUUID)),
-              (r"/brief\.html$", MainHandler, dict(template='brief.jade', reportUUID=self.reportUUID)),
-              (r"/monitoring\.html$", MainHandler, dict(template='monitoring.jade', reportUUID=self.reportUUID)),
+              (r"/", MainHandler, dict(template='index.jade', reportUUID=self.reportUUID, cacher=cacher)),
+              (r"/brief\.html$", MainHandler, dict(template='brief.jade', reportUUID=self.reportUUID, cacher=cacher)),
+              (r"/monitoring\.html$", MainHandler, dict(template='monitoring.jade', reportUUID=self.reportUUID, cacher=cacher)),
             ]),
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
             debug=True,
             )
-        MainHandler.cacher = cacher
 
     def serve(self):
         def run_server():
@@ -71,9 +74,13 @@ class ReportServer(object):
         th.start()
 
     def send(self, data):
-        if Client.CONNECTION is not None:
+        for connection in Client.CONNECTIONS:
             data['uuid'] = self.reportUUID
-            Client.CONNECTION.send(json.dumps(data))
+            connection.send(json.dumps(data))
+
+    def reload(self):
+        for connection in Client.CONNECTIONS:
+            connection.emit('reload')
 
 
 if __name__ == "__main__":

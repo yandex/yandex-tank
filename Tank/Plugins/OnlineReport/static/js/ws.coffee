@@ -85,17 +85,20 @@ app.controller "TankReport", ($scope, $element) ->
   conn.on 'connect', () =>
     console.log("Connection opened...")
     $scope.status = "Connected"
+    setInterval((
+      () ->conn.emit('heartbeat')
+      ), 3000)
     $scope.$apply()
 
   conn.on 'disconnect', () =>
     console.log("Connection closed...")
     $scope.status = "Disonnected"
     $scope.$apply()
+  conn.on 'reload', () =>
+    location.reload(true)
   conn.on 'message', (msg) =>
     tankData = JSON.parse msg
     if tankData.uuid and $scope.uuid != tankData.uuid
-      location.reload(true)
-    if tankData.reload
       location.reload(true)
     else
       $scope.updateData(tankData.data)

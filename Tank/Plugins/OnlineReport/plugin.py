@@ -18,7 +18,7 @@ from decode import decode_aggregate, decode_monitoring
 from cache import DataCacher
 
 class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
-    ''' web online plugin '''
+    '''Interactive report plugin '''
     SECTION = "web"
 
     @staticmethod
@@ -77,7 +77,7 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
             address = socket.gethostname()
             self.log.info("Starting local HTTP server for online view at port: http://%s:%s/", address, self.port)
             self.server.serve()
-            self.server.send({'reload': True})
+            self.server.reload()
 
 
     def aggregate_second(self, data):

@@ -155,6 +155,9 @@
       return function() {
         console.log("Connection opened...");
         $scope.status = "Connected";
+        setInterval((function() {
+          return conn.emit('heartbeat');
+        }), 3000);
         return $scope.$apply();
       };
     })(this));
@@ -165,14 +168,16 @@
         return $scope.$apply();
       };
     })(this));
+    conn.on('reload', (function(_this) {
+      return function() {
+        return location.reload(true);
+      };
+    })(this));
     return conn.on('message', (function(_this) {
       return function(msg) {
         var tankData;
         tankData = JSON.parse(msg);
         if (tankData.uuid && $scope.uuid !== tankData.uuid) {
-          location.reload(true);
-        }
-        if (tankData.reload) {
           return location.reload(true);
         } else {
           return $scope.updateData(tankData.data);
