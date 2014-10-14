@@ -20,19 +20,12 @@ io_t benchmark_io = io_benchmark_t {
 	    ${source_log_prefix}source_t source_log = ${source_log_prefix}source_log_t {
 			filename = "$stpd"     
 	    }
-
-        source_t spdy_source = spdy_source_filter_t {
-            burst = 0
-            source = source_log
-        }
 	
 	    $ssl_transport
 	    
 		$comment_proto proto_t http_proto0 = proto_http_t { 
 			$reply_limits
 		$comment_proto }
-		
-		$comment_proto proto_t spdy_proto = spdy_proto_t { }
 		
 	    $comment_proto proto_t none_proto = proto_none_t { }
 	    
@@ -44,8 +37,7 @@ io_t benchmark_io = io_benchmark_t {
 	    port = $port
 	    $bind
 	    timeout = $timeout
-
-	    source = $source
+	    source = source_log   
 	}
 	method = stream_method   
     
