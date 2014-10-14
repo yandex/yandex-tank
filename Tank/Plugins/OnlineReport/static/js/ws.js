@@ -24,7 +24,8 @@
   app.controller("TankReport", function($scope, $element) {
     var conn;
     $scope.status = "Disconnected";
-    $scope.data = document.cached_data;
+    $scope.data = document.cached_data.data;
+    $scope.uuid = document.cached_data.uuid;
     $scope.updateData = function(tankData) {
       var data, storage, storages, ts;
       for (ts in tankData) {
@@ -168,7 +169,14 @@
       return function(msg) {
         var tankData;
         tankData = JSON.parse(msg);
-        return $scope.updateData(tankData);
+        if (tankData.uuid && $scope.uuid !== tankData.uuid) {
+          location.reload(true);
+        }
+        if (tankData.reload) {
+          return location.reload(true);
+        } else {
+          return $scope.updateData(tankData.data);
+        }
       };
     })(this));
   });

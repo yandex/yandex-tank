@@ -11,7 +11,8 @@ collect_subtree = (storage, subtree, ts) ->
 
 app.controller "TankReport", ($scope, $element) ->
   $scope.status = "Disconnected"
-  $scope.data = document.cached_data
+  $scope.data = document.cached_data.data
+  $scope.uuid = document.cached_data.uuid
   $scope.updateData = (tankData) ->
     for ts, storages of tankData
       for storage, data of storages
@@ -85,7 +86,6 @@ app.controller "TankReport", ($scope, $element) ->
     console.log("Connection opened...")
     $scope.status = "Connected"
     $scope.$apply()
-    #console.log document.cached_data
 
   conn.on 'disconnect', () =>
     console.log("Connection closed...")
@@ -93,4 +93,9 @@ app.controller "TankReport", ($scope, $element) ->
     $scope.$apply()
   conn.on 'message', (msg) =>
     tankData = JSON.parse msg
-    $scope.updateData(tankData)
+    if tankData.uuid and $scope.uuid != tankData.uuid
+      location.reload(true)
+    if tankData.reload
+      location.reload(true)
+    else
+      $scope.updateData(tankData.data)

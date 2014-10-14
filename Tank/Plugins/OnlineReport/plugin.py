@@ -1,6 +1,5 @@
 ''' local webserver with online graphs '''
 from threading import Thread
-import json
 import logging
 import os.path
 import time
@@ -66,6 +65,7 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
 
 
     def end_test(self, retcode):
+        self.server.send({'reload': True})
         raw_input('Press Enter to stop report server.')
         del self.server
         self.server = None
@@ -77,16 +77,23 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
             address = socket.gethostname()
             self.log.info("Starting local HTTP server for online view at port: http://%s:%s/", address, self.port)
             self.server.serve()
+            self.server.send({'reload': True})
 
 
     def aggregate_second(self, data):
         data = decode_aggregate(data)
         self.cache.store(data)
         if self.server is not None:
-            self.server.send(json.dumps(data))
+            message = {
+                'data': data,
+            }
+            self.server.send(message)
 
     def monitoring_data(self, data):
         data = decode_monitoring(data)
         self.cache.store(data)
         if self.server is not None and len(data):
-            self.server.send(json.dumps(data))
+            message = {
+                'data': data,
+            }
+            self.server.send(message)
