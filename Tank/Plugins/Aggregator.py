@@ -166,7 +166,7 @@ class SecondAggregateDataItem:
 
     def __getstate__(self):
         return {
-            "case": self.case,
+            # "case": self.case,
             "planned_requests": self.planned_requests,
             "active_threads": self.active_threads,
             "selfload": self.selfload,
