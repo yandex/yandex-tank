@@ -81,7 +81,3 @@ class ReportServer(object):
     def reload(self):
         for connection in Client.CONNECTIONS:
             connection.emit('reload')
-
-
-if __name__ == "__main__":
-    main()

@@ -85,12 +85,13 @@ app.controller "TankReport", ($scope, $element) ->
     'reconnection limit' : 1000
     'max reconnection attempts' : 'Infinity'
   )
+  setInterval((
+    () ->conn.emit('heartbeat')
+    ), 3000)
   conn.on 'connect', () =>
     console.log("Connection opened...")
     $scope.status = "Connected"
-    setInterval((
-      () ->conn.emit('heartbeat')
-      ), 3000)
+
     $scope.$apply()
 
   conn.on 'disconnect', () =>

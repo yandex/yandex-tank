@@ -154,13 +154,13 @@
       'reconnection limit': 1000,
       'max reconnection attempts': 'Infinity'
     });
+    setInterval((function() {
+      return conn.emit('heartbeat');
+    }), 3000);
     conn.on('connect', (function(_this) {
       return function() {
         console.log("Connection opened...");
         $scope.status = "Connected";
-        setInterval((function() {
-          return conn.emit('heartbeat');
-        }), 3000);
         return $scope.$apply();
       };
     })(this));
