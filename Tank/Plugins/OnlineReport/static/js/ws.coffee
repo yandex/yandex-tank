@@ -19,7 +19,11 @@ app.controller "TankReport", ($scope, $element) ->
         collect_subtree $scope.data[storage], data, +ts
     $scope.$broadcast 'DataUpdated'
   $scope.buildSeries = () ->
-    overallData = if $scope.data.responses then $scope.data.responses.overall else {}
+    if $scope.data.responses and $scope.data.responses.overall
+      overallData = $scope.data.responses.overall
+    else
+      overallData = {}
+      setTimeout((() -> location.reload(true)), 3000)
     areaGraphs = ['CPU', 'Memory']
     $scope.monitoringData = (
       ({

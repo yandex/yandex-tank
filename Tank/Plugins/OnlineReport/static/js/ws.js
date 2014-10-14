@@ -39,7 +39,14 @@
     };
     $scope.buildSeries = function() {
       var areaGraphs, data, groupName, groups, hostname, name, overallData, series;
-      overallData = $scope.data.responses ? $scope.data.responses.overall : {};
+      if ($scope.data.responses && $scope.data.responses.overall) {
+        overallData = $scope.data.responses.overall;
+      } else {
+        overallData = {};
+        setTimeout((function() {
+          return location.reload(true);
+        }), 3000);
+      }
       areaGraphs = ['CPU', 'Memory'];
       $scope.monitoringData = (function() {
         var _ref, _results;
