@@ -150,7 +150,10 @@
       };
     };
     $scope.buildSeries();
-    conn = new io.connect("http://" + window.location.host);
+    conn = new io.connect("http://" + window.location.host, {
+      'reconnection limit': 1000,
+      'max reconnection attempts': 'Infinity'
+    });
     conn.on('connect', (function(_this) {
       return function() {
         console.log("Connection opened...");

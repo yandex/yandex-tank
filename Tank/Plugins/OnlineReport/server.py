@@ -19,7 +19,7 @@ class Client(SocketConnection):
     CONNECTIONS = set()
 
     def on_open(self, info):
-        print 'Client connected', self
+        print 'Client connected'
         self.CONNECTIONS.add(self)
 
     def on_message(self, msg):

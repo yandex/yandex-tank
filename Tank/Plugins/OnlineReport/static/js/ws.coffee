@@ -81,7 +81,10 @@ app.controller "TankReport", ($scope, $element) ->
 
   $scope.buildSeries()
 
-  conn = new io.connect("http://#{window.location.host}")
+  conn = new io.connect("http://#{window.location.host}",
+    'reconnection limit' : 1000
+    'max reconnection attempts' : 'Infinity'
+  )
   conn.on 'connect', () =>
     console.log("Connection opened...")
     $scope.status = "Connected"
