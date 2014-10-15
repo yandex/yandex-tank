@@ -630,6 +630,8 @@ class CasesBlock(AbstractBlock):
     def add_second(self, data):
         self.highlight_cases = []
         for name, case in data.cases.iteritems():
+            #decode symbols to utf-8 in order to support cyrillic symbols in cases
+            name = name.decode('utf-8')
             self.highlight_cases.append(name)
             if not name in self.cases.keys():
                 self.cases[name] = [0, 0]
