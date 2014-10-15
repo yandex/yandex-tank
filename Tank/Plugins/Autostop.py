@@ -8,6 +8,7 @@ from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from Tank.Plugins.ConsoleOnline import AbstractInfoWidget, ConsoleOnlinePlugin
 from tankcore import AbstractPlugin
 import tankcore
+import time
 
 
 class AutostopPlugin(AbstractPlugin, AggregateResultListener):
@@ -50,6 +51,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         self.add_criteria_class(HTTPCodesCriteria)
         self.add_criteria_class(QuantileCriteria)
         self.add_criteria_class(SteadyCumulativeQuantilesCriteria)
+        self.add_criteria_class(TimeLimitCriteria)
 
     def prepare_test(self):
         for criteria_str in self.criteria_str.strip().split(")"):
@@ -438,3 +440,30 @@ class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
     def widget_explain(self):
         items = (self.seconds_count, self.seconds_limit)
         return "Steady for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
+
+class TimeLimitCriteria(AbstractCriteria):
+    """ time limit criteria """
+
+    @staticmethod
+    def get_type_string():
+        return 'limit'
+
+    def __init__(self, autostop, param_str):
+        AbstractCriteria.__init__(self)
+        self.start_time = time.time()
+        self.end_time = time.time()
+        self.time_limit = tankcore.expand_to_seconds(param_str)
+
+    def notify(self, aggregate_second):
+        self.end_time = time.time()
+        return (self.end_time - self.start_time) > self.time_limit
+
+
+    def get_rc(self):
+        return self.RC_TIME
+
+    def explain(self):
+        return "Test time elapsed. Limit: %ss, actual time: %ss" % (self.time_limit, self.end_time - self.start_time)
+
+    def widget_explain(self):
+        return "Time limit: %ss, actual time: %ss" % (self.time_limit, self.end_time - self.start_time)
