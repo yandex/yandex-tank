@@ -52,6 +52,27 @@ class MainHandler(tornado.web.RequestHandler):
             }
         self.render(self.template, cached_data=json.dumps(cached_data))
 
+class JsonHandler(tornado.web.RequestHandler):
+    def initialize(self, reportUUID, cacher):
+        self.reportUUID = reportUUID
+        self.cacher = cacher
+
+    def get(self):
+        if self.cacher is not None:
+            cached_data = {
+              'data': self.cacher.get_all_data(),
+              'uuid': self.reportUUID,
+            }
+        else:
+            cached_data = {
+              'data':{},
+              'uuid': self.reportUUID,
+            }
+        self.set_status(200)
+        self.set_header("Content-type", "application/json")
+        self.finish(json.dumps(cached_data))
+
+
 class ReportServer(object):
     def __init__(self, cacher):
         router = TornadioRouter(Client)
@@ -61,6 +82,7 @@ class ReportServer(object):
               (r"/", MainHandler, dict(template='index.jade', reportUUID=self.reportUUID, cacher=cacher)),
               (r"/brief\.html$", MainHandler, dict(template='brief.jade', reportUUID=self.reportUUID, cacher=cacher)),
               (r"/monitoring\.html$", MainHandler, dict(template='monitoring.jade', reportUUID=self.reportUUID, cacher=cacher)),
+              (r"/data\.json$", JsonHandler, dict(reportUUID=self.reportUUID, cacher=cacher)),
             ]),
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
