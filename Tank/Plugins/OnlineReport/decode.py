@@ -34,5 +34,8 @@ def decode_monitoring(data):
 
 def decode_aggregate(data):
     return {
-        uts(data.time): {"responses":{"overall": data.overall.__getstate__()}},
+        uts(data.time): {"responses":{
+          "overall": data.overall.__getstate__(),
+          "cumulative": data.cumulative.__getstate__(),
+        }},
     }

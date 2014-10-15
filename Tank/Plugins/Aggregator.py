@@ -169,20 +169,20 @@ class SecondAggregateDataItem:
             # "case": self.case,
             "planned_requests": self.planned_requests,
             "active_threads": self.active_threads,
-            "selfload": self.selfload,
+            # "selfload": self.selfload,
             "RPS": self.RPS,
             "http_codes": self.http_codes,
             "net_codes": self.net_codes,
             # "times_dist": self.times_dist,
             "quantiles": self.quantiles,
-            "dispersion": self.dispersion,
-            "input": self.input,
-            "output": self.output,
-            "avg_connect_time": self.avg_connect_time,
-            "avg_send_time": self.avg_send_time,
-            "avg_latency": self.avg_latency,
-            "avg_receive_time": self.avg_receive_time,
-            "avg_response_time": self.avg_response_time,
+            # "dispersion": self.dispersion,
+            # "input": self.input,
+            # "output": self.output,
+            # "avg_connect_time": self.avg_connect_time,
+            # "avg_send_time": self.avg_send_time,
+            # "avg_latency": self.avg_latency,
+            # "avg_receive_time": self.avg_receive_time,
+            # "avg_response_time": self.avg_response_time,
         }
 
 class SecondAggregateDataTotalItem:
@@ -200,13 +200,13 @@ class SecondAggregateDataTotalItem:
 
     def __getstate__(self):
         return {
-            "avg_connect_time": self.avg_connect_time,
-            "avg_send_time": self.avg_send_time,
-            "avg_latency": self.avg_latency,
-            "avg_receive_time": self.avg_receive_time,
-            "avg_response_time": self.avg_response_time,
+            # "avg_connect_time": self.avg_connect_time,
+            # "avg_send_time": self.avg_send_time,
+            # "avg_latency": self.avg_latency,
+            # "avg_receive_time": self.avg_receive_time,
+            # "avg_response_time": self.avg_response_time,
             "total_count": self.total_count,
-            "times_dist": self.times_dist,
+            #"times_dist": self.times_dist,
             "quantiles": self.quantiles,
         }
 
