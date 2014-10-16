@@ -13,14 +13,14 @@ html(lang="en")
     link(rel="stylesheet", href="static/css/custom.css")
     script(src="https://cdn.socket.io/socket.io-1.1.0.js")
     script(src="http://code.jquery.com/jquery.min.js")
-    script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js")
+    script(src="https://code.angularjs.org/1.2.24/angular.min.js")
     script(src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js")
     script(src="http://d3js.org/d3.v3.min.js")
     script(src="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.4.6/rickshaw.min.js")
     script(type="text/javascript")
       
       document.cached_data = {{cached_data}};
-      $( document ).ready(function() {
+      (function() {
         // angular-rickshaw.js
         "use strict";
         angular.module("angular-rickshaw", []).directive("rickshaw", function($compile) {
@@ -296,7 +296,7 @@ html(lang="en")
           };
           $scope.buildSeries();
         });
-      })
+     }).call(this);
   body
     .app.container(ng-app="ng-tank-report", ng-controller="TankReport")
       h1.page-header Yandex.Tank online report
