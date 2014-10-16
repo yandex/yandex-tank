@@ -80,6 +80,7 @@ class ReportServer(object):
         self.app = tornado.web.Application(
             router.apply_routes([
               (r"/", MainHandler, dict(template='index.jade', reportUUID=self.reportUUID, cacher=cacher)),
+              (r"/offline\.html", MainHandler, dict(template='offline.jade', reportUUID=self.reportUUID, cacher=cacher)),
               (r"/brief\.html$", MainHandler, dict(template='brief.jade', reportUUID=self.reportUUID, cacher=cacher)),
               (r"/monitoring\.html$", MainHandler, dict(template='monitoring.jade', reportUUID=self.reportUUID, cacher=cacher)),
               (r"/data\.json$", JsonHandler, dict(reportUUID=self.reportUUID, cacher=cacher)),

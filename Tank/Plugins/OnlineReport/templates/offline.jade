@@ -1,0 +1,342 @@
+!!! 5
+html(lang="en")
+  head
+    meta(charset="utf-8")
+    meta(http-equiv="X-UA-Compatible", content="IE=edge")
+    meta(name="viewport", content="width=device-width, initial-scale=1")
+    title Yandex.Tank online report
+
+    link(rel="stylesheet", href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css")
+    link(rel="stylesheet", href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css")
+
+    link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.4.6/rickshaw.min.css")
+    script(src="http://code.jquery.com/jquery.min.js")
+    script(src="https://code.angularjs.org/1.2.24/angular.min.js")
+    script(src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js")
+    script(src="http://d3js.org/d3.v3.min.js")
+
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.4.6/rickshaw.min.js")
+
+    style(type='text/css')
+      .rickshaw_legend li {
+        display: inline-block;
+        padding: 0 0 0 2px;
+        min-width: 80px;
+        white-space: nowrap;
+      }
+
+    script(type="text/javascript")
+      
+      document.cached_data = {{cached_data}};
+      (function() {
+        // angular-rickshaw.js
+        "use strict";
+        angular.module("angular-rickshaw", []).directive("rickshaw", function($compile) {
+          return {
+            restrict: "EA",
+            scope: {
+              options: "=rickshawOptions",
+              series: "=rickshawSeries",
+              features: "=rickshawFeatures"
+            },
+            link: function(scope, element, attrs) {
+              var getSettings, update;
+              getSettings = function(el) {
+                var settings;
+                settings = angular.copy(scope.options);
+                settings.element = el;
+                settings.series = scope.series;
+                return settings;
+              };
+              update = function() {
+                var graphEl, highlighter, hoverConfig, hoverDetail, i, legend, legendEl, mainEl, palette, settings, shelving, time, xAxis, xAxisConfig, yAxis, yAxisConfig;
+                mainEl = angular.element(element);
+                mainEl.append(graphEl);
+                mainEl.empty();
+                graphEl = $compile("<div></div>")(scope);
+                mainEl.append(graphEl);
+                settings = getSettings(graphEl[0]);
+                scope.graph = new Rickshaw.Graph(settings);
+                if (scope.features && scope.features.hover) {
+                  hoverConfig = {
+                    graph: scope.graph
+                  };
+                  hoverConfig.xFormatter = scope.features.hover.xFormatter;
+                  hoverConfig.yFormatter = scope.features.hover.yFormatter;
+                  hoverConfig.formatter = scope.features.hover.formatter;
+                  hoverDetail = new Rickshaw.Graph.HoverDetail(hoverConfig);
+                }
+                if (scope.features && scope.features.palette) {
+                  palette = new Rickshaw.Color.Palette({
+                    scheme: scope.features.palette
+                  });
+                  i = 0;
+                  while (i < settings.series.length) {
+                    settings.series[i].color = palette.color();
+                    i++;
+                  }
+                }
+                scope.graph.render();
+                if (scope.features && scope.features.xAxis) {
+                  xAxisConfig = {
+                    graph: scope.graph
+                  };
+                  if (scope.features.xAxis.timeUnit) {
+                    time = new Rickshaw.Fixtures.Time();
+                    xAxisConfig.timeUnit = time.unit(scope.features.xAxis.timeUnit);
+                  }
+                  xAxis = new Rickshaw.Graph.Axis.Time(xAxisConfig);
+                  xAxis.render();
+                }
+                if (scope.features && scope.features.yAxis) {
+                  yAxisConfig = {
+                    graph: scope.graph
+                  };
+                  if (scope.features.yAxis.tickFormat) {
+                    yAxisConfig.tickFormat = Rickshaw.Fixtures.Number[scope.features.yAxis.tickFormat];
+                  }
+                  yAxis = new Rickshaw.Graph.Axis.Y(yAxisConfig);
+                  yAxis.render();
+                }
+                if (scope.features && scope.features.legend) {
+                  legendEl = $compile("<div></div>")(scope);
+                  mainEl.append(legendEl);
+                  legend = new Rickshaw.Graph.Legend({
+                    graph: scope.graph,
+                    element: legendEl[0]
+                  });
+                  if (scope.features.legend.toggle) {
+                    shelving = new Rickshaw.Graph.Behavior.Series.Toggle({
+                      graph: scope.graph,
+                      legend: legend
+                    });
+                  }
+                  if (scope.features.legend.highlight) {
+                    highlighter = new Rickshaw.Graph.Behavior.Series.Highlight({
+                      graph: scope.graph,
+                      legend: legend
+                    });
+                  }
+                }
+              };
+              scope.graph = void 0;
+              scope.$watch("options", function(newValue, oldValue) {
+                if (!angular.equals(newValue, oldValue)) {
+                  update();
+                }
+              });
+              scope.$watch("series", function(newValue, oldValue) {
+                if (!angular.equals(newValue, oldValue)) {
+                  update();
+                }
+              });
+              scope.$watch("features", function(newValue, oldValue) {
+                if (!angular.equals(newValue, oldValue)) {
+                  update();
+                }
+              });
+              scope.$on("DataUpdated", function() {
+                return scope.graph.update();
+              });
+              return update();
+            },
+            controller: function($scope, $element, $attrs) {}
+          };
+        });
+
+        // ws.js
+        var app, collect_subtree,
+          __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+        app = angular.module("ng-tank-report", ["angular-rickshaw"]);
+
+        collect_subtree = function(storage, subtree, ts) {
+          var key, node, _results;
+          _results = [];
+          for (key in subtree) {
+            node = subtree[key];
+            if (typeof node === 'number' || typeof node === 'array') {
+              _results.push(storage[key].push({
+                x: ts,
+                y: node
+              }));
+            } else {
+              _results.push(collect_subtree(storage[key], node, ts));
+            }
+          }
+          return _results;
+        };
+
+        app.controller("TankReport", function($scope, $element) {
+          var conn;
+          $scope.status = "Disconnected";
+          $scope.data = document.cached_data.data;
+          $scope.uuid = document.cached_data.uuid;
+          $scope.updateData = function(tankData) {
+            var data, storage, storages, ts;
+            for (ts in tankData) {
+              storages = tankData[ts];
+              for (storage in storages) {
+                data = storages[storage];
+                collect_subtree($scope.data[storage], data, +ts);
+              }
+            }
+            return $scope.$broadcast('DataUpdated');
+          };
+          $scope.buildSeries = function() {
+            var areaGraphs, data, groupName, groups, hostname, name, overallData, series;
+            if ($scope.data.responses && $scope.data.responses.overall) {
+              overallData = $scope.data.responses.overall;
+            } else {
+              overallData = {};
+              setTimeout((function() {
+                return location.reload(true);
+              }), 3000);
+            }
+            areaGraphs = ['CPU', 'Memory'];
+            $scope.monitoringData = (function() {
+              var _ref, _results;
+              _ref = $scope.data.monitoring;
+              _results = [];
+              for (hostname in _ref) {
+                groups = _ref[hostname];
+                _results.push({
+                  hostname: hostname,
+                  groups: (function() {
+                    var _results1;
+                    _results1 = [];
+                    for (groupName in groups) {
+                      series = groups[groupName];
+                      _results1.push({
+                        name: groupName,
+                        features: {
+                          palette: 'spectrum14',
+                          hover: {},
+                          xAxis: {},
+                          yAxis: {},
+                          legend: {
+                            toggle: true,
+                            highlight: true
+                          }
+                        },
+                        options: {
+                          renderer: __indexOf.call(areaGraphs, groupName) >= 0 ? 'area' : 'line'
+                        },
+                        series: (function() {
+                          var _results2;
+                          _results2 = [];
+                          for (name in series) {
+                            data = series[name];
+                            _results2.push({
+                              name: name,
+                              data: data
+                            });
+                          }
+                          return _results2;
+                        })()
+                      });
+                    }
+                    return _results1;
+                  })()
+                });
+              }
+              return _results;
+            })();
+            $scope.quantiles = {
+              name: "Response time quantiles",
+              features: {
+                palette: 'classic9',
+                hover: {},
+                xAxis: {},
+                yAxis: {},
+                legend: {
+                  toggle: true,
+                  highlight: true
+                }
+              },
+              options: {
+                renderer: 'area',
+                unstack: true,
+                // height: $element[0].offsetHeight - 45 - 62
+              },
+              series: ((function() {
+                var _ref, _results;
+                _ref = overallData.quantiles;
+                _results = [];
+                for (name in _ref) {
+                  data = _ref[name];
+                  _results.push({
+                    name: name,
+                    data: data
+                  });
+                }
+                return _results;
+              })()).sort(function(a, b) {
+                if (parseFloat(a.name) <= parseFloat(b.name)) {
+                  return 1;
+                } else {
+                  return -1;
+                }
+              })
+            };
+            return $scope.rps = {
+              name: "Responses per second",
+              features: {
+                palette: 'spectrum14',
+                hover: {},
+                xAxis: {},
+                yAxis: {},
+                legend: {
+                  toggle: true,
+                  highlight: true
+                }
+              },
+              options: {
+                renderer: 'line'
+              },
+              series: [
+                {
+                  name: 'RPS',
+                  data: overallData.RPS
+                }
+              ]
+            };
+          };
+          $scope.buildSeries();
+        });
+      }).call(this);
+  body
+    .app.container(ng-app="ng-tank-report", ng-controller="TankReport")
+      h1.page-header Yandex.Tank online report
+      #status {{!status}}
+      #timings
+        .panel.panel-default
+          .panel-heading
+            h3.panel-title {{!quantiles.name}}
+          .panel-body
+            rickshaw.panel-body(
+              rickshaw-series="quantiles.series",
+              rickshaw-options="quantiles.options",
+              rickshaw-features="quantiles.features"
+            )
+        .panel.panel-default
+          .panel-heading
+            h3.panel-title {{!rps.name}}
+          .panel-body
+            rickshaw(
+              rickshaw-series="rps.series",
+              rickshaw-options="rps.options",
+              rickshaw-features="rps.features"
+            )
+      #monitoring
+        .host(ng-repeat="host in monitoringData")
+          h3 {{!host.hostname}}
+          .panel.panel-default(ng-repeat="group in host.groups")
+            .panel-heading
+              h3.panel-title {{!group.name}}
+            .panel-body
+              rickshaw(
+                rickshaw-series="group.series",
+                rickshaw-options="group.options",
+                rickshaw-features="group.features"
+              )
