@@ -4,6 +4,7 @@ import logging
 import os.path
 import time
 import socket
+import requests
 
 from Tank.Plugins.Monitoring import MonitoringPlugin
 from Tank.MonCollector.collector import MonitoringDataListener
@@ -65,10 +66,7 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
 
 
     def end_test(self, retcode):
-        self.server.send({'reload': True})
-        raw_input('Press Enter to stop report server.')
-        del self.server
-        self.server = None
+        self.server.reload()
         return retcode
 
 
@@ -97,3 +95,16 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
                 'data': data,
             }
             self.server.send(message)
+
+    def post_process(self, retcode):
+        self.log.info("Building HTML report...")
+        report_html = self.core.mkstemp(".html", "report_")
+        self.core.add_artifact_file(report_html)
+        with open(report_html, 'w') as report_html_file:
+            report_html_file.write(
+                requests.get('http://localhost:8001/offline.html').text
+            )
+        raw_input('Press Enter to stop report server.')
+        del self.server
+        self.server = None
+        return retcode
