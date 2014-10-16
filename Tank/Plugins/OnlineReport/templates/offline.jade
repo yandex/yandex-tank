@@ -20,7 +20,7 @@ html(lang="en")
     script(type="text/javascript")
       
       document.cached_data = {{cached_data}};
-      $( document ).ready(function() {
+      (function() {
         // angular-rickshaw.js
         "use strict";
         angular.module("angular-rickshaw", []).directive("rickshaw", function($compile) {
@@ -295,8 +295,46 @@ html(lang="en")
             };
           };
           $scope.buildSeries();
+          conn = new io.connect("http://" + window.location.host, {
+            'reconnection limit': 1000,
+            'max reconnection attempts': 'Infinity'
+          });
+          setInterval((function() {
+            return conn.emit('heartbeat');
+          }), 3000);
+          conn.on('connect', (function(_this) {
+            return function() {
+              console.log("Connection opened...");
+              $scope.status = "Connected";
+              return $scope.$apply();
+            };
+          })(this));
+          conn.on('disconnect', (function(_this) {
+            return function() {
+              console.log("Connection closed...");
+              $scope.status = "Disonnected";
+              return $scope.$apply();
+            };
+          })(this));
+          conn.on('reload', (function(_this) {
+            return function() {
+              return location.reload(true);
+            };
+          })(this));
+          return conn.on('message', (function(_this) {
+            return function(msg) {
+              var tankData;
+              tankData = JSON.parse(msg);
+              if (tankData.uuid && $scope.uuid !== tankData.uuid) {
+                return location.reload(true);
+              } else {
+                return $scope.updateData(tankData.data);
+              }
+            };
+          })(this));
         });
-      })
+
+      }).call(this);
   body
     .app.container(ng-app="ng-tank-report", ng-controller="TankReport")
       h1.page-header Yandex.Tank online report
