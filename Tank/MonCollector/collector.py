@@ -384,13 +384,13 @@ class MonitoringCollector:
 
     # FIXME: a piese of shit and shame to a programmer
     def get_host_config(self, default, default_metric, filter_obj, host, names, target_hint):
-        hostname = host.get('address')
+        hostname = host.get('address').lower()
         username = host.get('username')
         if hostname == '[target]':
             if not target_hint:
                 raise ValueError("Can't use [target] keyword with no target parameter specified")
             logging.debug("Using target hint: %s", target_hint)
-            hostname = target_hint
+            hostname = target_hint.lower()
         stats = []
         startups = []
         shutdowns = []
