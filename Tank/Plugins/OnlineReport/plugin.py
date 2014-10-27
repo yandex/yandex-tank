@@ -100,11 +100,11 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.log.info("Building HTML report...")
         report_html = self.core.mkstemp(".html", "report_")
         self.core.add_artifact_file(report_html)
-        with open(report_html, 'w') as report_html_file:
-            report_html_file.write(
-                requests.get('http://localhost:8001/offline.html').text
-            )
-        raw_input('Press Enter to stop report server.')
+        #with open(report_html, 'w') as report_html_file:
+        #    report_html_file.write(
+        #        requests.get('http://localhost:8001/offline.html').text
+        #    )
+        #raw_input('Press Enter to stop report server.')
         del self.server
         self.server = None
         return retcode
