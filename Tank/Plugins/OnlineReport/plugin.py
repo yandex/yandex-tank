@@ -105,6 +105,7 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
         #        requests.get('http://localhost:8001/offline.html').text
         #    )
         #raw_input('Press Enter to stop report server.')
+        self.server.stop()
         del self.server
         self.server = None
         return retcode

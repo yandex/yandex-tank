@@ -91,10 +91,15 @@ class ReportServer(object):
             )
 
     def serve(self):
-        def run_server():
-            SocketServer(self.app)
-        th = Thread(target=run_server)
+        def run_server(server):
+            server.start() 
+
+        self.server = SocketServer(self.app, auto_start = False)
+        th = Thread(target=run_server, args=(self.server,))
         th.start()
+
+    def stop(self):
+        self.server.stop()
 
     def send(self, data):
         for connection in Client.CONNECTIONS:
