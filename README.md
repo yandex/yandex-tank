@@ -34,5 +34,3 @@ Andrey Pohilko's [loadosophia](https://loadosophia.org/) - service for storing a
 [Jenkins](https://jenkins-ci.org/) - an extendable open source continuous integration server that may be used to automate test execution.
 
 [Graphite](https://graphite.readthedocs.org/en/latest/overview.html) - an enterprise-scale monitoring tool, use it to store your test results and render graphs.
-
-![Yandex.Metrics counter](https://mc.yandex.ru/watch/17743264)
