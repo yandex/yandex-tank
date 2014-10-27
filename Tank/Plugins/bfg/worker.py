@@ -37,15 +37,17 @@ class BFG(object):
 
     def stop(self):
         self.quit.set()
+        self.plan.stop()
 
     def _feed(self):
         if self.zmq:
-            plan = ZmqReader()
+            print "Starting ZMQ: connecting to ", self.zmq
+            self.plan = ZmqReader(self.zmq)
         else:
-            plan = StpdReader(self.stpd_filename)
+            self.plan = StpdReader(self.stpd_filename)
             if self.cached_stpd:
-                plan = list(plan)
-        for task in plan:
+                self.plan = list(self.plan)
+        for task in self.plan:
             if self.quit.is_set():
                 self.log.info("Stop feeding: gonna quit")
                 return
@@ -53,9 +55,9 @@ class BFG(object):
         self.log.info("Feeded all data.")
         try:
             self.log.info("Waiting for workers")
+            self.quit.set()
             map(lambda x: x.join(), self.pool)
             self.log.info("All workers exited.")
-            self.quit.set()
         except (KeyboardInterrupt, SystemExit):
             self.quit.set()
 

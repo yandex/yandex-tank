@@ -61,7 +61,7 @@ class BFGPlugin(AbstractPlugin):
             threads=self.get_option("threads", '10'),
             stpd_filename=self.stepper_wrapper.stpd,
             cached_stpd=cached_stpd,
-            zmq=self.get_option("zmq", '0') == '1'
+            zmq=self.get_option("zmq", None)
         )
         aggregator = None
         try:
