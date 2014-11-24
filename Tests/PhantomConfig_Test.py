@@ -147,14 +147,14 @@ class AddressWizardTestCase(TankTestCase):
         try:
             res = self.foo.resolve("ipv4host:20:30")
             self.fail()
-        except socket.gaierror:
+        except:
             pass
 
     def test_error2(self):
         try:
             res = self.foo.resolve("exc1:30")
             self.fail()
-        except socket.gaierror:
+        except:
             pass
 
 
