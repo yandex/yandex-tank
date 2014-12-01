@@ -360,8 +360,13 @@ class AddressWizard:
                 if len(parts) == 2:
                     port = int(parts[1])
 
-        resolved = self.lookup_fn(address_str, port)
-        logging.debug("Lookup result: %s", resolved)
+        try:
+            resolved = self.lookup_fn(address_str, port)
+            logging.debug("Lookup result: %s", resolved)
+        except Exception as exc:
+            logging.debug("Exception trying to resolve hostname %s : %s", address_str, traceback.format_exc(exc))
+            msg = "Failed to resolve hostname: %s. Error: %s"
+            raise RuntimeError (msg % (address_str, exc))
 
         for (family, socktype, proto, canonname, sockaddr) in resolved:
             is_v6 = family == socket.AF_INET6
