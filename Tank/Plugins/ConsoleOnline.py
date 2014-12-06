@@ -2,6 +2,7 @@
 import logging
 import sys
 import traceback
+import threading
 
 from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from Tank.Plugins.ConsoleScreen import Screen
@@ -20,6 +21,10 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
         self.remote_translator = None
         self.info_panel_width = '33'
         self.short_only = 0
+        # these three provide non-blocking console output
+        self.__console_view = None
+        self.__writer_thread = None
+        self.__writer_event = None
 
     @staticmethod
     def get_key():
@@ -47,27 +52,36 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
             self.screen.block_rows = []
             self.screen.info_panel_percent = 100
 
-            #nf = fcntl.fcntl(sys.stdout.fileno(), fcntl.F_UNLCK)
-            #fcntl.fcntl(sys.stdout.fileno(), fcntl.F_SETFL , nf | os.O_NONBLOCK )
+    def __console_writer(self):
+        while True:
+          self.__writer_event.wait()
+          self.__writer_event.clear()
+
+          if self.__console_view:
+              if not self.short_only:
+                  self.log.debug("Writing console view to STDOUT")
+                  sys.stdout.write(self.console_markup.clear)
+                  sys.stdout.write(self.__console_view)
+                  sys.stdout.write(self.console_markup.TOTAL_RESET)
+
+              if self.remote_translator:
+                  self.remote_translator.send_console(console_view)
 
     def is_test_finished(self):
+        if not self.__writer_thread:
+          self.__writer_event = threading.Event()
+          self.__writer_thread = threading.Thread(target=self.__console_writer)
+          self.__writer_thread.daemon = True
+          self.__writer_thread.start()
+
         try:
-            console_view = self.screen.render_screen().encode('utf-8')
+            self.__console_view = self.screen.render_screen().encode('utf-8')
         except Exception, ex:
             self.log.warn("Exception inside render: %s", traceback.format_exc(ex))
             self.render_exception = ex
-            console_view = ""
+            self.__console_view = ""
 
-        if console_view:
-            if not self.short_only:
-                self.log.debug("Writing console view to STDOUT")
-                sys.stdout.write(self.console_markup.clear)
-                sys.stdout.write(console_view)
-                sys.stdout.write(self.console_markup.TOTAL_RESET)
-
-            if self.remote_translator:
-                self.remote_translator.send_console(console_view)
-
+        self.__writer_event.set()
         return -1
 
 
