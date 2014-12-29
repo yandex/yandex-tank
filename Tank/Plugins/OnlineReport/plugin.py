@@ -66,16 +66,15 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
 
 
     def end_test(self, retcode):
+        self.log.info("Ended test. Sending command to reload pages.")
         self.server.reload()
         return retcode
 
 
     def run(self):
         if (self.server):
-            address = socket.gethostname()
-            self.log.info("Starting local HTTP server for online view at port: http://%s:%s/", address, self.port)
             self.server.serve()
-            self.server.reload()
+            self.log.info("Server started.")
 
 
     def aggregate_second(self, data):
@@ -100,10 +99,11 @@ class OnlineReportPlugin(AbstractPlugin, Thread, AggregateResultListener):
         self.log.info("Building HTML report...")
         report_html = self.core.mkstemp(".html", "report_")
         self.core.add_artifact_file(report_html)
-        #with open(report_html, 'w') as report_html_file:
-        #    report_html_file.write(
-        #        requests.get('http://localhost:8001/offline.html').text
-        #    )
+        with open(report_html, 'w') as report_html_file:
+           report_html_file.write(
+               #requests.get('http://localhost:8001/offline.html').text
+               self.server.render_offline()
+           )
         #raw_input('Press Enter to stop report server.')
         self.server.stop()
         del self.server

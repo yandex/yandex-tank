@@ -76,6 +76,7 @@ class JsonHandler(tornado.web.RequestHandler):
 class ReportServer(object):
     def __init__(self, cacher):
         router = TornadioRouter(Client)
+        self.cacher = cacher
         self.reportUUID = uuid.uuid4().hex
         self.app = tornado.web.Application(
             router.apply_routes([
@@ -92,7 +93,7 @@ class ReportServer(object):
 
     def serve(self):
         def run_server(server):
-            server.start() 
+            tornado.ioloop.IOLoop.instance().start()
 
         self.server = SocketServer(self.app, auto_start = False)
         th = Thread(target=run_server, args=(self.server,))
@@ -109,3 +110,11 @@ class ReportServer(object):
     def reload(self):
         for connection in Client.CONNECTIONS:
             connection.emit('reload')
+
+    def render_offline(self):
+        loader = template.Loader(os.path.join(os.path.dirname(__file__), "templates"))
+        cached_data = {
+          'data': self.cacher.get_all_data(),
+          'uuid': self.reportUUID,
+        }
+        return loader.load('offline.jade').generate(cached_data=json.dumps(cached_data))
