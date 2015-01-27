@@ -103,7 +103,7 @@ class ComponentFactory():
                                 self.log.info(
                                     "Default ammo type ('phantom') used, use 'phantom.ammo_type' option to override it")
                         except StopIteration, e:
-                            self.log("Couldn't read first line of ammo file: %s" % e)
+                            self.log.exception("Couldn't read first line of ammo file")
                             raise AmmoFileError("Couldn't read first line of ammo file")
                         
             else:
