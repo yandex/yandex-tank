@@ -1,11 +1,12 @@
 ''' Cummulative Autostops '''
-from Tank.Plugins.Aggregator import AggregateResultListener
-from Tank.Plugins.Autostop import AbstractCriteria, AutostopPlugin
+from Aggregator import AggregateResultListener
+from Autostop import AbstractCriteria, AutostopPlugin
+
+from yandextank.core import AbstractPlugin
+import yandextank.core as tankcore
 
 from collections import deque
-from tankcore import AbstractPlugin
 import re
-import tankcore
 import math
 
 class TotalAutostopPlugin(AbstractPlugin, AggregateResultListener):
@@ -42,7 +43,7 @@ class TotalFracTimeCriteria(AbstractCriteria):
     @staticmethod
     def get_type_string():
         return 'total_time'
-    
+
     def __init__(self, autostop, param_str):
         AbstractCriteria.__init__(self)
         param = param_str.split(',')
@@ -96,7 +97,7 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
     @staticmethod
     def get_type_string():
         return 'total_http'
-    
+
     def __init__(self, autostop, param_str):
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
@@ -105,7 +106,7 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
         self.autostop = autostop
         self.data = deque()
         self.second_window = deque()
-        
+
         level_str = param_str.split(',')[1].strip()
         if level_str[-1:] == '%':
             self.level = float(level_str[:-1])
@@ -114,7 +115,7 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
             self.level = int(level_str)
             self.is_relative = False
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[2])
-    
+
     def notify(self, aggregate_second):
         matched_responses = self.count_matched_codes(self.codes_regex, aggregate_second.overall.http_codes)
         if self.is_relative:
@@ -154,8 +155,8 @@ class TotalHTTPCodesCriteria(AbstractCriteria):
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
             return "%s codes count higher than %s for %ss, ended at: %s" % items
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
-        return "%s codes count higher than %s for %ss, since %s" % items 
-    
+        return "%s codes count higher than %s for %ss, since %s" % items
+
     def widget_explain(self):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit)
@@ -186,7 +187,7 @@ class TotalNetCodesCriteria(AbstractCriteria):
             self.level = int(level_str)
             self.is_relative = False
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[2])
-    
+
 
     def notify(self, aggregate_second):
         codes = aggregate_second.overall.net_codes.copy()
@@ -231,10 +232,10 @@ class TotalNetCodesCriteria(AbstractCriteria):
     def explain(self):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
-            return "%s net codes count higher than %s for %ss, since %s" % items 
+            return "%s net codes count higher than %s for %ss, since %s" % items
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
-        return "%s net codes count higher than %s for %ss, since %s" % items 
-    
+        return "%s net codes count higher than %s for %ss, since %s" % items
+
     def widget_explain(self):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit)
@@ -247,7 +248,7 @@ class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
     @staticmethod
     def get_type_string():
         return 'negative_http'
-    
+
     def __init__(self, autostop, param_str):
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
@@ -256,7 +257,7 @@ class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
         self.autostop = autostop
         self.data = deque()
         self.second_window = deque()
-        
+
         level_str = param_str.split(',')[1].strip()
         if level_str[-1:] == '%':
             self.level = float(level_str[:-1])
@@ -265,7 +266,7 @@ class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
             self.level = int(level_str)
             self.is_relative = False
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[2])
-    
+
     def notify(self, aggregate_second):
         matched_responses = self.count_matched_codes(self.codes_regex, aggregate_second.overall.http_codes)
         if self.is_relative:
@@ -310,8 +311,8 @@ class TotalNegativeHTTPCodesCriteria(AbstractCriteria):
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
             return "Not %s codes count higher than %s for %ss, since %s" % items
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
-        return "Not %s codes count higher than %s for %ss, since %s" % items 
-    
+        return "Not %s codes count higher than %s for %ss, since %s" % items
+
     def widget_explain(self):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit)
@@ -324,7 +325,7 @@ class TotalNegativeNetCodesCriteria(AbstractCriteria):
     @staticmethod
     def get_type_string():
         return 'negative_net'
-    
+
     def __init__(self, autostop, param_str):
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
@@ -333,7 +334,7 @@ class TotalNegativeNetCodesCriteria(AbstractCriteria):
         self.autostop = autostop
         self.data = deque()
         self.second_window = deque()
-        
+
         level_str = param_str.split(',')[1].strip()
         if level_str[-1:] == '%':
             self.level = float(level_str[:-1])
@@ -342,7 +343,7 @@ class TotalNegativeNetCodesCriteria(AbstractCriteria):
             self.level = int(level_str)
             self.is_relative = False
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[2])
-    
+
     def notify(self, aggregate_second):
         codes = aggregate_second.overall.net_codes.copy()
         # if '0' in codes.keys():
@@ -389,8 +390,8 @@ class TotalNegativeNetCodesCriteria(AbstractCriteria):
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
             return "Not %s codes count higher than %s for %ss, since %s" % items
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit, self.cause_second.time)
-        return "Not %s codes count higher than %s for %ss, since %s" % items 
-    
+        return "Not %s codes count higher than %s for %ss, since %s" % items
+
     def widget_explain(self):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit)
@@ -404,7 +405,7 @@ class TotalHTTPTrendCriteria(AbstractCriteria):
     @staticmethod
     def get_type_string():
         return 'http_trend'
-    
+
     def __init__(self, autostop, param_str):
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
@@ -419,7 +420,7 @@ class TotalHTTPTrendCriteria(AbstractCriteria):
         self.last = 0
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[1])
         self.measurement_error = float()
-    
+
     def notify(self, aggregate_second):
         matched_responses = self.count_matched_codes(self.codes_regex, aggregate_second.overall.http_codes)
 
@@ -462,8 +463,8 @@ class TotalHTTPTrendCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.codes_mask, self.total_tan, self.measurement_error, self.seconds_limit, self.cause_second.time)
-        return "Last trend for %s http codes is %.2f +/- %.2f for %ss, since %s" % items 
-    
+        return "Last trend for %s http codes is %.2f +/- %.2f for %ss, since %s" % items
+
     def widget_explain(self):
         items = (self.codes_mask, self.total_tan, self.measurement_error, self.seconds_limit)
         return ("HTTP(%s) trend is %.2f +/- %.2f < 0 for %ss" % items, 1.0)
@@ -471,13 +472,13 @@ class TotalHTTPTrendCriteria(AbstractCriteria):
 
 
 class QuantileOfSaturationCriteria(AbstractCriteria):
-    ''' Quantile of Saturation Criteria 
+    ''' Quantile of Saturation Criteria
         example: qsat(50ms, 3m, 10%) '''
 
     @staticmethod
     def get_type_string():
         return 'qsat'
-    
+
     def __init__(self, autostop, param_str):
         AbstractCriteria.__init__(self)
         self.autostop = autostop
@@ -505,12 +506,12 @@ class QuantileOfSaturationCriteria(AbstractCriteria):
             if self.timing <= timing_item['to']:
                 return quan
         return quan
-            
+
 
     def notify(self, aggregate_second):
         quan = 100 * self.__get_timing_quantile(aggregate_second)
         self.log.debug("Quantile for %s: %s", self.timing, quan)
-        
+
         self.data.append(quan)
         self.second_window.append(aggregate_second)
 
@@ -532,12 +533,9 @@ class QuantileOfSaturationCriteria(AbstractCriteria):
     def explain(self):
         items = (self.timing, self.width, self.deviation, self.height)
         return "%sms variance for %ss: %.3f%% (<%s%%)" % items
-    
-    
+
+
     def widget_explain(self):
         level = self.height / self.deviation
         items = (self.timing, self.width, self.deviation, self.height)
         return ("%sms variance for %ss: %.3f%% (<%s%%)" % items, level)
-
-
-

@@ -9,9 +9,38 @@ import traceback
 import signal
 from optparse import OptionParser
 
-from Tank.Plugins.ConsoleOnline import RealConsoleMarkup
 from tankcore import TankCore
 
+class RealConsoleMarkup(object):
+    '''
+    Took colors from here: https://www.siafoo.net/snippet/88
+    '''
+    WHITE_ON_BLACK = '\033[37;40m'
+    TOTAL_RESET = '\033[0m'
+    clear = "\x1b[2J\x1b[H"
+    new_line = u"\n"
+
+    YELLOW = '\033[1;33m'
+    RED = '\033[1;31m'
+    RED_DARK = '\033[31;3m'
+    RESET = '\033[1;m'
+    CYAN = "\033[1;36m"
+    GREEN = "\033[1;32m"
+    WHITE = "\033[1;37m"
+    MAGENTA = '\033[1;35m'
+    BG_MAGENTA = '\033[1;45m'
+    BG_GREEN = '\033[1;42m'
+    BG_BROWN = '\033[1;43m'
+    BG_CYAN = '\033[1;46m'
+
+    def clean_markup(self, orig_str):
+        ''' clean markup from string '''
+        for val in [self.YELLOW, self.RED, self.RESET,
+                    self.CYAN, self.BG_MAGENTA, self.WHITE,
+                    self.BG_GREEN, self.GREEN, self.BG_BROWN,
+                    self.RED_DARK, self.MAGENTA, self.BG_CYAN]:
+            orig_str = orig_str.replace(val, '')
+        return orig_str
 
 class SingleLevelFilter(logging.Filter):
     """Exclude or approve one msg type at a time.    """
@@ -311,4 +340,3 @@ class CompletionHelperOptionParser(OptionParser):
                     opts.append(plugin.SECTION + '.' + option + '=')
             print ' '.join(sorted(opts))
             exit(0)
-

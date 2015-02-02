@@ -13,13 +13,13 @@ import time
 import urllib
 import urllib2
 
-from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
-from Tank.Plugins.ApacheBenchmark import ApacheBenchmarkPlugin
-from Tank.Plugins.JMeter import JMeterPlugin
-from Tank.Plugins.Monitoring import MonitoringPlugin
-from Tank.Plugins.Phantom import PhantomPlugin
-from Tank.Plugins.WebOnline import WebOnlinePlugin
-from tankcore import AbstractPlugin
+from Aggregator import AggregateResultListener, AggregatorPlugin
+from ApacheBenchmark import ApacheBenchmarkPlugin
+from JMeter import JMeterPlugin
+from Monitoring import MonitoringPlugin
+from Phantom import PhantomPlugin
+from WebOnline import WebOnlinePlugin
+from yandextank.core import AbstractPlugin
 
 
 class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
@@ -400,7 +400,7 @@ class MultiPartForm(object):
         # Build a list of lists, each containing "lines" of the
         # request.  Each part is separated by a boundary string.
         # Once the list is built, return a string where each
-        # line is separated by '\r\n'.  
+        # line is separated by '\r\n'.
         parts = []
         part_boundary = '--' + self.boundary
 

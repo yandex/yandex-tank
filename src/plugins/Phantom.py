@@ -8,14 +8,14 @@ import sys
 import time
 import datetime
 
-from Tank.Plugins import ConsoleScreen
-from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener, \
+import ConsoleScreen
+from Aggregator import AggregatorPlugin, AggregateResultListener, \
     AbstractReader
-from Tank.Plugins.Autostop import AutostopPlugin, AbstractCriteria
-from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
-from Tank.Plugins.PhantomUtils import PhantomConfig
-from tankcore import AbstractPlugin
-import tankcore
+from Autostop import AutostopPlugin, AbstractCriteria
+from ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+from PhantomUtils import PhantomConfig
+from yandextank.core import AbstractPlugin
+import yandextank.core as tankcore
 
 
 class PhantomPlugin(AbstractPlugin, AggregateResultListener):

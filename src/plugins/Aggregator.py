@@ -5,8 +5,8 @@ import logging
 import math
 import time
 
-from tankcore import AbstractPlugin
-import tankcore
+from yandextank.core import AbstractPlugin
+import yandextank.core as tankcore
 
 
 class AggregateResultListener:

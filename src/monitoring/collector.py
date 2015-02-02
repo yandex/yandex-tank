@@ -16,7 +16,7 @@ import fcntl
 import traceback
 import getpass
 
-import tankcore
+import yandextank.core as tankcore
 
 
 class Config(object):
@@ -469,7 +469,7 @@ class MonitoringCollector:
         if host.get('username'):
             tmp.update({'username': host.get('username')})
         else:
-            tmp.update({'username': getpass.getuser()})	
+            tmp.update({'username': getpass.getuser()})
 
         tmp.update({'custom': custom})
         tmp.update({'host': hostname})

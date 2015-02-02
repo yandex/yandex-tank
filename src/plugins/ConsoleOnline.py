@@ -4,9 +4,9 @@ import sys
 import traceback
 import threading
 
-from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
-from Tank.Plugins.ConsoleScreen import Screen
-from tankcore import AbstractPlugin
+from Aggregator import AggregatorPlugin, AggregateResultListener
+from ConsoleScreen import Screen
+from yandextank.core import AbstractPlugin
 
 
 class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
@@ -107,7 +107,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
 
 
 class RealConsoleMarkup(object):
-    '''    
+    '''
     Took colors from here: https://www.siafoo.net/snippet/88
     '''
     WHITE_ON_BLACK = '\033[37;40m'
@@ -177,5 +177,3 @@ class AbstractInfoWidget:
     def get_index(self):
         ''' get vertical priority index '''
         return 0
-
-

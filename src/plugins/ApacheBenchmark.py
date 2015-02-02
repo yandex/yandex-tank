@@ -1,15 +1,17 @@
 ''' AB load generator '''
-from Tank.Plugins.Aggregator import AggregatorPlugin, AbstractReader
-from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
-from tankcore import AbstractPlugin
+from Aggregator import AggregatorPlugin, AbstractReader
+from ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+
 import os
 import subprocess
-import tankcore
+
+from yandextank.core import AbstractPlugin
+import yandextank.core as tankcore
 
 class ApacheBenchmarkPlugin(AbstractPlugin):
     ''' Apache Benchmark plugin '''
     SECTION = 'ab'
-    
+
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         self.out_file = None
@@ -22,10 +24,10 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
     @staticmethod
     def get_key():
         return __file__
-    
+
     def get_available_options(self):
         return ["options", "url", "requests", "concurrency"]
-    
+
     def configure(self):
         self.options = self.get_option("options", '')
         self.url = self.get_option("url", 'http://localhost/')
@@ -43,25 +45,25 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
 
         if aggregator:
             aggregator.reader = ABReader(aggregator, self)
-            
+
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
         except Exception, ex:
             self.log.debug("Console not found: %s", ex)
             console = None
-            
-        if console:    
+
+        if console:
             widget = ABInfoWidget(self)
             console.add_info_widget(widget)
-        
-            
+
+
     def start_test(self):
         args = ['ab', '-r', '-g', self.out_file,
                 '-n', self.requests,
                 '-c', self.concurrency, self.url]
         self.log.info("Starting ab with arguments: %s", args)
         self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
-           
+
     def is_test_finished(self):
         retcode = self.process.poll()
         if retcode != None:
@@ -70,7 +72,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
         else:
             return -1
 
-            
+
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
             self.log.warn("Terminating ab process with PID %s", self.process.pid)
@@ -81,9 +83,9 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
         if self.process:
             tankcore.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
         return retcode
-            
 
- 
+
+
 class ABReader(AbstractReader):
     '''
     Adapter to read AB files
@@ -92,16 +94,16 @@ class ABReader(AbstractReader):
         AbstractReader.__init__(self, aggregator)
         self.abench = abench
         self.results = None
-    
+
     def check_open_files(self):
         if not self.results and os.path.exists(self.abench.out_file):
             self.log.debug("Opening ab out file: %s", self.abench.out_file)
             self.results = open(self.abench.out_file, 'r')
-            
+
     def close_files(self):
         if self.results:
             self.results.close()
-    
+
     def get_next_sample(self, force):
         if self.results:
             read_lines = self.results.readlines()
@@ -111,7 +113,7 @@ class ABReader(AbstractReader):
             for line in read_lines:
                 line = line.strip()
                 if not line:
-                    return None 
+                    return None
                 # Tue Sep 25 14:19:36 2012        1348568376      0       36      36      34
                 data = line.split("\t")
                 if len(data) != 6:
@@ -122,7 +124,7 @@ class ABReader(AbstractReader):
                 # dtime = int(data[3])
                 ttime = int(data[4])
                 wait = int(data[5])
-    
+
                 if not cur_time in self.data_buffer.keys():
                     self.data_queue.append(cur_time)
                     self.data_buffer[cur_time] = []
@@ -135,15 +137,15 @@ class ABReader(AbstractReader):
                 #        accuracy
                 data_item += [0]
                 self.data_buffer[cur_time].append(data_item)
-                    
+
         if self.data_queue:
             return self.pop_second()
         else:
-            return None 
-    
+            return None
+
 
 class ABInfoWidget(AbstractInfoWidget):
-    ''' Console widget '''    
+    ''' Console widget '''
     def __init__(self, abench):
         AbstractInfoWidget.__init__(self)
         self.abench = abench
@@ -152,15 +154,15 @@ class ABInfoWidget(AbstractInfoWidget):
     def get_index(self):
         return 0
 
-    def render(self, screen):        
+    def render(self, screen):
         ab_text = " Apache Benchmark Test "
-        space = screen.right_panel_width - len(ab_text) - 1 
+        space = screen.right_panel_width - len(ab_text) - 1
         left_spaces = space / 2
         right_spaces = space / 2
-        template = screen.markup.BG_BROWN + '~' * left_spaces + ab_text + ' ' + '~' * right_spaces + screen.markup.RESET + "\n" 
+        template = screen.markup.BG_BROWN + '~' * left_spaces + ab_text + ' ' + '~' * right_spaces + screen.markup.RESET + "\n"
         template += "           URL: %s\n"
         template += "   Concurrency: %s\n"
         template += "Total Requests: %s"
         data = (self.abench.url, self.abench.concurrency, self.abench.requests)
-        
+
         return template % data

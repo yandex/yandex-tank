@@ -1,5 +1,5 @@
 #! /usr/bin/env python2
-from Tank.ConsoleWorker import ConsoleTank, CompletionHelperOptionParser
+from consoleworker import ConsoleTank, CompletionHelperOptionParser
 from optparse import OptionParser
 import logging
 import os
@@ -36,4 +36,3 @@ if __name__ == "__main__":
         logging.error("Exception: %s", ex)
         logging.debug("Exception: %s", traceback.format_exc(ex))
         exit(1)
-

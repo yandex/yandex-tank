@@ -4,10 +4,10 @@ import logging
 import re
 import json
 
-from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
-from Tank.Plugins.ConsoleOnline import AbstractInfoWidget, ConsoleOnlinePlugin
-from tankcore import AbstractPlugin
-import tankcore
+from Aggregator import AggregatorPlugin, AggregateResultListener
+from ConsoleOnline import AbstractInfoWidget, ConsoleOnlinePlugin
+from yandextank.core import AbstractPlugin
+import yandextank.core as tankcore
 import time
 
 

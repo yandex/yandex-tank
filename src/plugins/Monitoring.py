@@ -6,13 +6,13 @@ import traceback
 import fnmatch
 import datetime
 
-from Tank.MonCollector.collector import MonitoringCollector, \
+from yandextank.monitoring import MonitoringCollector, \
     MonitoringDataListener, MonitoringDataDecoder
-from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
-from Tank.Plugins.Phantom import PhantomPlugin
-from tankcore import AbstractPlugin
-from Tank.Plugins.Autostop import AutostopPlugin, AbstractCriteria
-import tankcore
+from ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+from Phantom import PhantomPlugin
+from yandextank.core import AbstractPlugin
+import yandextank.core as tankcore
+from Autostop import AutostopPlugin, AbstractCriteria
 
 
 class MonitoringPlugin(AbstractPlugin):

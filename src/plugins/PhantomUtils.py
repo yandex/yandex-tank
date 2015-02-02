@@ -9,7 +9,7 @@ import re
 import socket
 import string
 
-from Tank.stepper import StepperWrapper
+from yandextank.stepper import StepperWrapper
 
 
 class PhantomConfig:

@@ -1,7 +1,7 @@
 '''Graphite Uploader plugin that sends aggregated data to Graphite server'''
 
-from Tank.Plugins.Aggregator import AggregateResultListener, AggregatorPlugin
-from tankcore import AbstractPlugin
+from Aggregator import AggregateResultListener, AggregatorPlugin
+from yandextank.core import AbstractPlugin
 import logging
 import socket
 import string
@@ -11,13 +11,13 @@ import os
 
 class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
     '''Graphite data uploader'''
-    
+
     SECTION = 'graphite'
 
     @staticmethod
     def get_key():
         return __file__
-    
+
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         self.graphite_client = None
@@ -37,7 +37,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
     def configure(self):
         '''Read configuration'''
         self.address = self.get_option("address", "")
-        if self.address == "": 
+        if self.address == "":
             self.log.warning("Graphite uploader is not configured and will not send any data")
         else:
             port = self.get_option("port", "2003")
@@ -50,7 +50,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             self.graphite_client = GraphiteClient(self.prefix, self.address, port)
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(self)
-            
+
     def aggregate_second(self, data):
         """
         @data: SecondAggregateData
@@ -102,7 +102,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         return results
 
 
-    
+
 class GraphiteClient(object):
     '''Graphite client that writes metrics to Graphite server'''
 

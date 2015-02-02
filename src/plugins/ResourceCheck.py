@@ -3,8 +3,8 @@
 import time
 import logging
 
-from tankcore import AbstractPlugin
-import tankcore
+from yandextank.core import AbstractPlugin
+import yandextank.core as tankcore
 
 
 class ResourceCheckPlugin(AbstractPlugin):
@@ -70,5 +70,4 @@ class ResourceCheckPlugin(AbstractPlugin):
         mem_free = int(tankcore.execute(cmd, True, 0.1, True)[1].strip())
         self.log.debug("Memory free: %s/%s", mem_free, self.mem_limit)
         if mem_free < self.mem_limit:
-            raise RuntimeError("Not enough resources: free memory less than %sMB: %sMB" % (self.mem_limit, mem_free)) 
-
+            raise RuntimeError("Not enough resources: free memory less than %sMB: %sMB" % (self.mem_limit, mem_free))

@@ -7,12 +7,12 @@ import time
 import datetime
 import json
 
-from Tank.Plugins.Aggregator import AbstractReader, AggregatorPlugin, \
+from Aggregator import AbstractReader, AggregatorPlugin, \
     AggregateResultListener, SecondAggregateDataItem
-from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
-from tankcore import AbstractPlugin
-import tankcore
-from Tank.Plugins import ConsoleScreen
+from ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+from yandextank.core import AbstractPlugin
+import yandextank.core as tankcore
+import ConsoleScreen
 
 
 class JMeterPlugin(AbstractPlugin):

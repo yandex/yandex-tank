@@ -7,7 +7,7 @@ import os
 import struct
 import termios
 
-from Tank.Plugins import Codes
+import Codes
 
 
 def get_terminal_size():
@@ -372,7 +372,7 @@ class CurrentHTTPBlock(AbstractBlock):
             perc = float(count) / self.total_count
         else:
             perc = 1
-        # 11083   5.07%: 304 Not Modified         
+        # 11083   5.07%: 304 Not Modified
         count_len = str(len(str(self.total_count)))
         if int(code) in Codes.HTTP:
             code_desc = Codes.HTTP[int(code)]
@@ -414,7 +414,7 @@ class CurrentNetBlock(CurrentHTTPBlock):
             perc = float(count) / self.total_count
         else:
             perc = 1
-        # 11083   5.07%: 304 Not Modified         
+        # 11083   5.07%: 304 Not Modified
         count_len = str(len(str(self.total_count)))
         if int(code) in Codes.NET:
             code_desc = Codes.NET[int(code)]
