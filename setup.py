@@ -14,7 +14,7 @@ tools for the results that they produce.
       maintainer='Alexey Lavrenuke',
       maintainer_email='direvius@gmail.com',
       url='http://yandex.github.io/yandex-tank/',
-      packages=['core', 'plugins', 'stepper', 'moncollector'],
+      packages=['yandextank'],
       license='LGPLv2',
       classifiers=[
           'Development Status :: 5 - Production/Stable',
