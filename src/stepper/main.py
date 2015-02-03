@@ -38,11 +38,11 @@ class AmmoFactory(object):
         __init__ method of this class.
         '''
         ammo_stream = (ammo for ammo in (
-            (missile, marker or self.marker(missile)) 
+            (missile, marker or self.marker(missile))
             for missile, marker
-            in self.ammo_generator 
+            in self.ammo_generator
         ) if self.filter(ammo))
-        
+
         return (
             (timestamp, marker or self.marker(missile), missile)
             for timestamp, (missile, marker)
@@ -186,7 +186,7 @@ class StepperWrapper(object):
             self.core.set_option(self.section, self.OPTION_STPD, self.stpd)
             if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.__si_filename()):
                 self.log.info("Using cached stpd-file: %s", self.stpd)
-                stepper_info = publish_info(self.__read_cached_options())  
+                stepper_info = publish_info(self.__read_cached_options())
             else:
                 if self.force_stepping and os.path.exists(self.__si_filename()):
                     os.remove(self.__si_filename())
@@ -195,7 +195,7 @@ class StepperWrapper(object):
                 self.__write_cached_options(stepper_info)
         else:
             self.log.info("Using specified stpd-file: %s", self.stpd)
-            stepper_info = publish_info(self.__read_cached_options())            
+            stepper_info = publish_info(self.__read_cached_options())
         self.ammo_count = stepper_info.ammo_count
         self.duration = stepper_info.duration
         self.loop_count = stepper_info.loop_count
