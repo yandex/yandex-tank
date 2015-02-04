@@ -6,12 +6,11 @@ import time
 import socket
 import requests
 
-from Tank.Plugins.Monitoring import MonitoringPlugin
-from Tank.MonCollector.collector import MonitoringDataListener
-
-from Tank.Plugins.Aggregator import AggregatorPlugin, AggregateResultListener
-from tankcore import AbstractPlugin
-import tankcore
+from yandextank.plugins.Monitoring import MonitoringPlugin
+from yandextank.plugins.Monitoring.collector import MonitoringDataListener
+from yandextank.plugins.Aggregator import AggregatorPlugin, AggregateResultListener
+from yandextank.core import AbstractPlugin
+import yandextank.core as tankcore
 
 from server import ReportServer
 from decode import decode_aggregate, decode_monitoring

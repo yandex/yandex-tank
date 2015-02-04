@@ -18,7 +18,6 @@ from ApacheBenchmark import ApacheBenchmarkPlugin
 from JMeter import JMeterPlugin
 from Monitoring import MonitoringPlugin
 from Phantom import PhantomPlugin
-from WebOnline import WebOnlinePlugin
 from yandextank.core import AbstractPlugin
 
 
@@ -142,14 +141,6 @@ class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
 
             if queue_id:
                 self.log.info("Loadosophia.org upload succeeded, report link: %s", self.loadosophia.results_url)
-
-            try:
-                web = self.core.get_plugin_of_type(WebOnlinePlugin)
-                if not web.redirect:
-                    web.redirect = self.loadosophia.results_url
-                    time.sleep(1)
-            except KeyError:
-                self.log.debug("Web online not found")
 
         return retcode
 

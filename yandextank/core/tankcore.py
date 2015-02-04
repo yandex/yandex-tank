@@ -187,10 +187,9 @@ class TankCore:
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.config = ConfigManager()
-        self.plugins = {}
+        self.plugins = []
         self.artifacts_dir = None
         self.artifact_files = {}
-        self.plugins_order = []
         self.artifacts_base_dir = '.'
         self.manual_start = False
         self.scheduled_start = None
@@ -240,39 +239,12 @@ class TankCore:
                 self.log.debug(
                     "Seems the plugin '%s' was disabled", plugin_name)
                 continue
-            # instance = self.__load_plugin(plugin_name, plugin_path)
             self.log.debug("Loading plugin %s from %s", plugin_name, plugin_path)
             plugin = il.import_module(plugin_path)
-            key = os.path.realpath(plugin.get_key())
-            self.plugins[key] = plugin
-            self.plugins_order.append(key)
+            instance = getattr(plugin, plugin_path.split('.')[-1] + 'Plugin')(self)
+            self.plugins.append(instance)
 
         self.log.debug("Plugin instances: %s", self.plugins)
-        self.log.debug("Plugins order: %s", self.plugins_order)
-
-    def __load_plugin(self, name, path):
-        """ Load single plugin using 'exec' statement """
-        self.log.debug("Loading plugin %s from %s", name, path)`
-        for basedir in [''] + sys.path:
-            if basedir:
-                new_dir = basedir + '/' + path
-            else:
-                new_dir = path
-            if os.path.exists(new_dir):
-                new_dir = os.path.dirname(new_dir)
-                if new_dir not in sys.path:
-                    self.log.debug('Append to path: %s', new_dir)
-                    sys.path.append(new_dir)
-        res = None
-        classname = os.path.basename(path)[:-3]
-        self.log.debug("sys.path: %s", sys.path)
-        exec("import " + classname)
-        script = "res=" + classname + "." + classname + "Plugin(self)"
-        self.log.debug("Exec: " + script)
-        exec script
-        self.log.debug("Instantiated: %s", res)
-
-        return res
 
     def plugins_configure(self):
         """        Call configure() on all plugins        """
@@ -281,8 +253,7 @@ class TankCore:
             os.chmod(self.artifacts_base_dir, 0755)
 
         self.log.info("Configuring plugins...")
-        for plugin_key in self.plugins_order:
-            plugin = self.__get_plugin_by_key(plugin_key)
+        for plugin in self.plugins:
             self.log.debug("Configuring %s", plugin)
             plugin.configure()
             self.config.flush()
@@ -292,8 +263,7 @@ class TankCore:
     def plugins_prepare_test(self):
         """ Call prepare_test() on all plugins        """
         self.log.info("Preparing test...")
-        for plugin_key in self.plugins_order:
-            plugin = self.__get_plugin_by_key(plugin_key)
+        for plugin in self.plugins:
             self.log.debug("Preparing %s", plugin)
             plugin.prepare_test()
         if self.flush_config_to:
@@ -302,8 +272,7 @@ class TankCore:
     def plugins_start_test(self):
         """        Call start_test() on all plugins        """
         self.log.info("Starting test...")
-        for plugin_key in self.plugins_order:
-            plugin = self.__get_plugin_by_key(plugin_key)
+        for plugin in self.plugins:
             self.log.debug("Starting %s", plugin)
             plugin.start_test()
         if self.flush_config_to:
@@ -318,8 +287,7 @@ class TankCore:
 
         while not self.interrupted:
             begin_time = time.time()
-            for plugin_key in self.plugins_order:
-                plugin = self.__get_plugin_by_key(plugin_key)
+            for plugin in self.plugins:
                 self.log.debug("Polling %s", plugin)
                 retcode = plugin.is_test_finished()
                 if retcode >= 0:
@@ -336,8 +304,7 @@ class TankCore:
         """        Call end_test() on all plugins        """
         self.log.info("Finishing test...")
 
-        for plugin_key in self.plugins_order:
-            plugin = self.__get_plugin_by_key(plugin_key)
+        for plugin in self.plugins:
             self.log.debug("Finalize %s", plugin)
             try:
                 self.log.debug("RC before: %s", retcode)
@@ -360,8 +327,7 @@ class TankCore:
         """
         self.log.info("Post-processing test...")
 
-        for plugin_key in self.plugins_order:
-            plugin = self.__get_plugin_by_key(plugin_key)
+        for plugin in self.plugins:
             self.log.debug("Post-process %s", plugin)
             try:
                 self.log.debug("RC before: %s", retcode)
@@ -372,7 +338,6 @@ class TankCore:
                     "Failed post-processing plugin %s: %s", plugin, ex)
                 self.log.debug(
                     "Failed post-processing plugin: %s", traceback.format_exc(ex))
-                del self.plugins[plugin_key]
                 if not retcode:
                     retcode = 1
 
@@ -444,31 +409,18 @@ class TankCore:
         self.config.config.set(section, option, value)
         self.config.flush()
 
-    def get_plugin_of_type(self, needle):
+    def get_plugin_of_type(self, plugin_class):
         """
         Retrieve a plugin of desired class, KeyError raised otherwise
         """
-        self.log.debug("Searching for plugin: %s", needle)
-        key = os.path.realpath(needle.get_key())
-
-        return self.__get_plugin_by_key(key)
-
-    def __get_plugin_by_key(self, key):
-        """
-        Get plugin from loaded by its key
-        """
-        if key in self.plugins.keys():
-            return self.plugins[key]
-
-        ext = os.path.splitext(key)[1].lower()
-
-        if ext == '.py' and key + 'c' in self.plugins.keys():  # .py => .pyc
-            return self.plugins[key + 'c']
-
-        if ext == '.pyc' and key[:-1] in self.plugins.keys():  # .pyc => .py:
-            return self.plugins[key[:-1]]
-
-        raise KeyError("Requested plugin type not found: %s" % key)
+        self.log.debug("Searching for plugin: %s", plugin_class)
+        matches = [plugin for plugin in self.plugins if isinstance(plugin, plugin_class)]
+        if len(matches) > 0:
+            if len(matches) > 1:
+                self.log.debug("More then one plugin of type %s found. Using first one.", plugin_class)
+            return matches[-1]
+        else:
+            raise KeyError("Requested plugin type not found: %s" % plugin_class)
 
     def __collect_file(self, filename, keep_original=False):
         """

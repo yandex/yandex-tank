@@ -1,5 +1,5 @@
 import time
-from Tank.MonCollector.collector import MonitoringDataDecoder
+from yandextank.plugins.Monitoring.collector import MonitoringDataDecoder
 
 mon_decoder = MonitoringDataDecoder()
 
