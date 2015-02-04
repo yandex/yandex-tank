@@ -8,9 +8,9 @@ setup(
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
-It uses other load generators as JMeter, ab or phantom inside of it for load
-generation and provides a common configuration system for them and analytic
-tools for the results that they produce.
+It uses other load generators such as JMeter, ab or phantom inside of it for
+load generation and provides a common configuration system for them and
+analytic tools for the results they produce.
 ''',
     maintainer='Alexey Lavrenuke',
     maintainer_email='direvius@gmail.com',
@@ -42,5 +42,8 @@ tools for the results that they produce.
         'console_scripts': [
             'yandex-tank = yandextank.core.cli:main',
         ],
-    }
+    },
+    data_files=[
+        ('/etc/yandex-tank', ['config/00-base.ini'])
+    ]
 )
