@@ -1,9 +1,9 @@
-from tankcore import AbstractPlugin
-from Tank.Plugins.Aggregator import AggregatorPlugin
-from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin
+from yandextank.core import AbstractPlugin
+from yandextank.plugins.Aggregator import AggregatorPlugin
+from yandextank.plugins.ConsoleOnline import ConsoleOnlinePlugin
 import logging
 import time
-from Tank.stepper import StepperWrapper
+from yandextank.stepper import StepperWrapper
 from guns import LogGun, SqlGun, CustomGun, HttpGun
 from widgets import BFGInfoWidget
 from worker import BFG

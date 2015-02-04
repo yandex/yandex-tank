@@ -1,5 +1,5 @@
-from Tank.Plugins.Aggregator import AbstractReader
-from Tank.stepper import info as si
+from yandextank.plugins.Aggregator import AbstractReader
+from yandextank.stepper import info as si
 
 
 class BFGReader(AbstractReader):

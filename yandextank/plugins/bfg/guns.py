@@ -1,6 +1,6 @@
 import time
 from collections import namedtuple
-from tankcore import AbstractPlugin
+from yandextank.core import AbstractPlugin
 import logging
 from random import randint
 import threading as th

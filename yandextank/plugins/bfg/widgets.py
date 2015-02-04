@@ -1,6 +1,6 @@
 import datetime
 import time
-from Tank.Plugins.ConsoleOnline import AbstractInfoWidget
+from yandextank.plugins.ConsoleOnline import AbstractInfoWidget
 
 
 class BFGInfoWidget(AbstractInfoWidget):

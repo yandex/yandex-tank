@@ -1,6 +1,6 @@
 import logging
 import time
-from Tank.stepper import StpdReader
+from yandextank.stepper import StpdReader
 from zmq_reader import ZmqReader
 import multiprocessing as mp
 import threading as th
