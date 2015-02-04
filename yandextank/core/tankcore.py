@@ -17,11 +17,13 @@ import time
 import traceback
 import fnmatch
 import psutil
+import importlib as il
 
 
 def log_stdout_stderr(log, stdout, stderr, comment=""):
     """
-    This function polls stdout and stderr streams and writes their contents to log
+    This function polls stdout and stderr streams and writes their contents
+    to log
     """
     readable = select.select([stdout], [], [], 0)[0]
     if stderr:
@@ -124,7 +126,12 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
 
     if catch_out:
         process = subprocess.Popen(
-            cmd, shell=shell, stderr=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
+            cmd,
+            shell=shell,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            close_fds=True
+        )
     else:
         process = subprocess.Popen(cmd, shell=shell, close_fds=True)
 
@@ -168,6 +175,7 @@ def pairs(lst):
 
 
 class TankCore:
+
     """
     JMeter + dstat inspired :)
     """
@@ -196,7 +204,7 @@ class TankCore:
         return ["artifacts_base_dir", "artifacts_dir", "flush_config_to"]
 
     def load_configs(self, configs):
-        """        Tells core to load configs set into options storage        """
+        """ Tells core to load configs set into options storage """
         self.log.info("Loading configs...")
         for fname in configs:
             if not os.path.isfile(fname):
@@ -218,29 +226,33 @@ class TankCore:
             self.config.flush(self.flush_config_to)
 
     def load_plugins(self):
-        """        Tells core to take plugin options and instantiate plugin classes        """
+        """ Tells core to take plugin options and instantiate plugin classes """
         self.log.info("Loading plugins...")
 
-        base_dir = self.get_option(self.SECTION, "artifacts_base_dir", self.artifacts_base_dir)
+        base_dir = self.get_option(
+            self.SECTION, "artifacts_base_dir", self.artifacts_base_dir)
         self.artifacts_base_dir = os.path.expanduser(base_dir)
         self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
 
         options = self.config.get_options(self.SECTION, self.PLUGIN_PREFIX)
         for (plugin_name, plugin_path) in options:
             if not plugin_path:
-                self.log.debug("Seems the plugin '%s' was disabled", plugin_name)
+                self.log.debug(
+                    "Seems the plugin '%s' was disabled", plugin_name)
                 continue
-            instance = self.__load_plugin(plugin_name, plugin_path)
-            key = os.path.realpath(instance.get_key())
-            self.plugins[key] = instance
+            # instance = self.__load_plugin(plugin_name, plugin_path)
+            self.log.debug("Loading plugin %s from %s", plugin_name, plugin_path)
+            plugin = il.import_module(plugin_path)
+            key = os.path.realpath(plugin.get_key())
+            self.plugins[key] = plugin
             self.plugins_order.append(key)
 
         self.log.debug("Plugin instances: %s", self.plugins)
         self.log.debug("Plugins order: %s", self.plugins_order)
 
     def __load_plugin(self, name, path):
-        """        Load single plugin using 'exec' statement        """
-        self.log.debug("Loading plugin %s from %s", name, path)
+        """ Load single plugin using 'exec' statement """
+        self.log.debug("Loading plugin %s from %s", name, path)`
         for basedir in [''] + sys.path:
             if basedir:
                 new_dir = basedir + '/' + path
@@ -254,11 +266,12 @@ class TankCore:
         res = None
         classname = os.path.basename(path)[:-3]
         self.log.debug("sys.path: %s", sys.path)
-        exec ("import " + classname)
+        exec("import " + classname)
         script = "res=" + classname + "." + classname + "Plugin(self)"
         self.log.debug("Exec: " + script)
         exec script
         self.log.debug("Instantiated: %s", res)
+
         return res
 
     def plugins_configure(self):
@@ -297,7 +310,7 @@ class TankCore:
             self.config.flush(self.flush_config_to)
 
     def wait_for_finish(self):
-        """        Call is_test_finished() on all plugins 'till one of them initiates exit        """
+        """ Call is_test_finished() on all plugins 'till one of them initiates exit """
 
         self.log.info("Waiting for test to finish...")
         if not self.plugins:
@@ -374,7 +387,8 @@ class TankCore:
         self.log.debug("Collecting artifacts")
         if not self.artifacts_dir:
             date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
-            self.artifacts_dir = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)
+            self.artifacts_dir = tempfile.mkdtemp(
+                "", date_str, self.artifacts_base_dir)
         else:
             self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
 
@@ -407,7 +421,8 @@ class TankCore:
                 self.config.flush()
                 value = default.strip()
             else:
-                self.log.warn("Mandatory option %s was not found in section %s", option, section)
+                self.log.warn(
+                    "Mandatory option %s was not found in section %s", option, section)
                 raise ex
 
         if len(value) > 1 and value[0] == '`' and value[-1] == '`':
@@ -486,24 +501,28 @@ class TankCore:
         Add file to be stored as result artifact on post-process phase
         """
         if filename:
-            self.log.debug("Adding artifact file to collect (keep=%s): %s", keep_original, filename)
+            self.log.debug(
+                "Adding artifact file to collect (keep=%s): %s", keep_original, filename)
             self.artifact_files[filename] = keep_original
 
     def apply_shorthand_options(self, options, default_section='DEFAULT'):
         for option_str in options:
             try:
                 section = option_str[:option_str.index('.')]
-                option = option_str[option_str.index('.') + 1:option_str.index('=')]
+                option = option_str[
+                    option_str.index('.') + 1:option_str.index('=')]
             except ValueError:
                 section = default_section
                 option = option_str[:option_str.index('=')]
             value = option_str[option_str.index('=') + 1:]
-            self.log.debug("Override option: %s => [%s] %s=%s", option_str, section, option, value)
+            self.log.debug(
+                "Override option: %s => [%s] %s=%s", option_str, section, option, value)
             self.set_option(section, option, value)
 
     def get_lock_dir(self):
         if not self.lock_dir:
-            self.lock_dir = self.get_option(self.SECTION, "lock_dir", self.LOCK_DIR)
+            self.lock_dir = self.get_option(
+                self.SECTION, "lock_dir", self.LOCK_DIR)
 
         return os.path.expanduser(self.lock_dir)
 
@@ -537,15 +556,18 @@ class TankCore:
                     info.read(full_name)
                     pid = info.get(TankCore.SECTION, self.PID_OPTION)
                     if not pid_exists(int(pid)):
-                        self.log.debug("Lock PID %s not exists, ignoring and trying to remove", pid)
+                        self.log.debug(
+                            "Lock PID %s not exists, ignoring and trying to remove", pid)
                         try:
                             os.remove(full_name)
                         except Exception, exc:
-                            self.log.debug("Failed to delete lock %s: %s", full_name, exc)
+                            self.log.debug(
+                                "Failed to delete lock %s: %s", full_name, exc)
                     else:
                         retcode = True
                 except Exception, exc:
-                    self.log.warn("Failed to load info from lock %s: %s", full_name, exc)
+                    self.log.warn(
+                        "Failed to load info from lock %s: %s", full_name, exc)
                     retcode = True
         return retcode
 
@@ -563,7 +585,8 @@ class TankCore:
 
 
 class ConfigManager:
-    """    Option storage class    """
+
+    """ Option storage class """
 
     def __init__(self):
         self.file = None
@@ -591,15 +614,17 @@ class ConfigManager:
             handle.close()
 
     def get_options(self, section, prefix=''):
-        """        Get options list with requested prefix        """
+        """ Get options list with requested prefix """
         res = []
-        self.log.debug("Looking in section '%s' for options starting with '%s'", section, prefix)
+        self.log.debug(
+            "Looking in section '%s' for options starting with '%s'", section, prefix)
         try:
             for option in self.config.options(section):
                 self.log.debug("Option: %s", option)
                 if not prefix or option.find(prefix) == 0:
                     self.log.debug("Option: %s matched", option)
-                    res += [(option[len(prefix):], self.config.get(section, option))]
+                    res += [(option[len(prefix):],
+                             self.config.get(section, option))]
         except NoSectionError, ex:
             self.log.debug("No section: %s", ex)
 
@@ -616,13 +641,14 @@ class ConfigManager:
 
 
 class AbstractPlugin:
-    """    Parent class for all plugins/modules    """
+
+    """ Parent class for all plugins/modules """
 
     SECTION = 'DEFAULT'
 
     @staticmethod
     def get_key():
-        """        Get dictionary key for plugin, should point to __file__ magic constant        """
+        """ Get dictionary key for plugin, should point to __file__ magic constant """
         raise TypeError("Abstract method needs to be overridden")
 
     def __init__(self, core):
@@ -634,7 +660,7 @@ class AbstractPlugin:
         self.core = core
 
     def configure(self):
-        """        A stage to read config values and instantiate objects        """
+        """ A stage to read config values and instantiate objects """
         pass
 
     def prepare_test(self):
@@ -646,23 +672,23 @@ class AbstractPlugin:
         pass
 
     def is_test_finished(self):
-        """        Polling call, if result differs from -1 then test end will be triggeted        """
+        """ Polling call, if result differs from -1 then test end will be triggeted """
         return -1
 
     def end_test(self, retcode):
-        """        Stop processes launched at 'start_test', change return code if necessary        """
+        """ Stop processes launched at 'start_test', change return code if necessary """
         return retcode
 
     def post_process(self, retcode):
-        """        Post-process test data        """
+        """ Post-process test data """
         return retcode
 
     def get_option(self, option_name, default_value=None):
-        """        Wrapper to get option from plugins' section        """
+        """ Wrapper to get option from plugins' section """
         return self.core.get_option(self.SECTION, option_name, default_value)
 
     def set_option(self, option_name, value):
-        """        Wrapper to set option to plugins' section        """
+        """ Wrapper to set option to plugins' section """
         return self.core.set_option(self.SECTION, option_name, value)
 
     def get_available_options(self):

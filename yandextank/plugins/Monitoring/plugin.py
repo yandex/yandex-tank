@@ -12,7 +12,7 @@ from yandextank.plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWi
 from yandextank.plugins.Phantom import PhantomPlugin
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
-from Autostop import AutostopPlugin, AbstractCriteria
+from yandextank.plugins.Autostop import AutostopPlugin, AbstractCriteria
 
 
 class MonitoringPlugin(AbstractPlugin):

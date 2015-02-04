@@ -2,13 +2,11 @@
 from consoleworker import ConsoleTank, CompletionHelperOptionParser
 from optparse import OptionParser
 import logging
-import os
 import sys
 import traceback
 
 
 def main():
-    sys.path.append(os.path.dirname(__file__))
     parser = OptionParser()
     parser.add_option(
         '-c',
