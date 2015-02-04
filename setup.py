@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
@@ -15,7 +15,7 @@ tools for the results that they produce.
     maintainer='Alexey Lavrenuke',
     maintainer_email='direvius@gmail.com',
     url='http://yandex.github.io/yandex-tank/',
-    packages=['yandextank'],
+    packages=find_packages(),
     install_requires=[
         'psutil',
         'ipaddr',
@@ -40,7 +40,7 @@ tools for the results that they produce.
     ],
     entry_points={
         'console_scripts': [
-            'yandex-tank = yandextank.core.entry:main',
+            'yandex-tank = yandextank.core.cli:main',
         ],
     }
 )
