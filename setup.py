@@ -47,6 +47,9 @@ analytic tools for the results they produce.
         ],
     },
     data_files=[
-        ('/etc/yandex-tank', ['config/00-base.ini'])
+        ('/etc/yandex-tank', [
+            'config/00-base.ini',
+            'config/monitoring_default_config.xml'
+        ])
     ]
 )
