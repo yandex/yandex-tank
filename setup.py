@@ -23,7 +23,7 @@ tools for the results that they produce.
           'Intended Audience :: End Users/Desktop',
           'Intended Audience :: Developers',
           'Intended Audience :: System Administrators',
-          'License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)','
+          'License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)',
           'Operating System :: MacOS :: MacOS X',
           'Operating System :: Microsoft :: Windows',
           'Operating System :: POSIX',
