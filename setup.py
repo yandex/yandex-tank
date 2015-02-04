@@ -16,6 +16,12 @@ tools for the results that they produce.
     maintainer_email='direvius@gmail.com',
     url='http://yandex.github.io/yandex-tank/',
     packages=['yandextank'],
+    install_requires=[
+        'psutil',
+        'ipaddr',
+        'lxml',
+        'progressbar',
+    ],
     license='LGPLv2',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
