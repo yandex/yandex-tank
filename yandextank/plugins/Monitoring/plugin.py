@@ -6,10 +6,10 @@ import traceback
 import fnmatch
 import datetime
 
-from yandextank.monitoring import MonitoringCollector, \
+from collector import MonitoringCollector, \
     MonitoringDataListener, MonitoringDataDecoder
-from ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
-from Phantom import PhantomPlugin
+from yandextank.plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+from yandextank.plugins.Phantom import PhantomPlugin
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
 from Autostop import AutostopPlugin, AbstractCriteria

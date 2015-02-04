@@ -425,9 +425,9 @@ class NetTxRx(AbstractMetric):
         """
         status, data = commands.getstatusoutput("/sbin/ifconfig -s")
         logging.debug("/sbin/ifconfig output is: %s", data)
-        
+
         rx, tx = 0, 0
-        
+
         if status == 0:
             try:
                 lines = data.split('\n')
@@ -442,7 +442,7 @@ class NetTxRx(AbstractMetric):
                         tx += int(counters[tx_pos])
             except Exception, e:
                 logging.error('Failed to parse ifconfig output %s: %s', data, e)
-                
+
         logging.debug("Total RX/TX packets counters: %s", [str(rx), str(tx)])
 
         if self.prev_rx == 0:
