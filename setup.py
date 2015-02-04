@@ -31,4 +31,8 @@ tools for the results that they produce.
           'Topic :: Software Development :: Testing',
           'Topic :: Software Development :: Testing :: Traffic Generation',
           ],
+     entry_points = {
+        'console_scripts': [
+            'yandex-tank = yandextank.core.entry:main',
+        ],
      )

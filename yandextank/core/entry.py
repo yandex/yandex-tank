@@ -6,7 +6,7 @@ import os
 import sys
 import traceback
 
-if __name__ == "__main__":
+def main():
     sys.path.append(os.path.dirname(__file__))
     parser = OptionParser()
     parser.add_option('-c', '--config', action='append', help="Path to INI file containing run options, multiple options accepted")
