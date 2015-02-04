@@ -2,7 +2,8 @@
 
 from distutils.core import setup
 
-setup(name='yandextank',
+setup(
+    name='yandextank',
     version='1.6.8',
     description='a performance measurement tool',
     longer_description='''
@@ -35,4 +36,5 @@ tools for the results that they produce.
         'console_scripts': [
             'yandex-tank = yandextank.core.entry:main',
         ],
-    )
+    }
+)
