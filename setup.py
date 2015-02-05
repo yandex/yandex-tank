@@ -24,9 +24,6 @@ analytic tools for the results they produce.
         'ipaddr',
         'lxml',
         'progressbar',
-        'tornado',
-        'pyjade',
-        'tornadio2',
     ],
     license='LGPLv2',
     classifiers=[
