@@ -7,5 +7,5 @@ install:
   - pip install ipaddr
   - pip install psutil
   - pip install sqlalchemy
-script: cd Tests && nosetests
+script: cd tests && nosetests
 
