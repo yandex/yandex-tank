@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='1.6.8',
+    version='1.7.0',
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -34,8 +34,6 @@ analytic tools for the results they produce.
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
         'License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)',
-        'Operating System :: MacOS :: MacOS X',
-        'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
         'Topic :: Software Development :: Quality Assurance',
         'Topic :: Software Development :: Testing',
@@ -72,6 +70,9 @@ analytic tools for the results they produce.
         ]),
         ('/etc/yandex-tank/TipsAndTricks', [
             'config/TipsAndTricks/tips.txt',
+        ]),
+        ('/etc/bash_completion.d', [
+            'data/yandex-tank.completion'
         ]),
     ]
 )
