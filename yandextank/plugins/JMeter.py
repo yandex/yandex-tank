@@ -123,16 +123,16 @@ class JMeterPlugin(AbstractPlugin):
         except Exception, exc:
             raise RuntimeError("Failed to find the end of JMX XML: %s" % exc)
 
-        tpl_filepath = '/etc/yandextank/JMeter/jmeter_writer.xml'
+        tpl_filepath = '/etc/yandex-tank/JMeter/jmeter_writer.xml'
 
         if self.use_argentum:
             self.log.warn("You are using argentum aggregator for JMeter. Be careful.")
-            tpl_filepath = '/etc/yandextank/JMeter/jmeter_argentum.xml'
+            tpl_filepath = '/etc/yandex-tank/JMeter/jmeter_argentum.xml'
 
         with open(tpl_filepath, 'r') as tpl_file:
             tpl = tpl_file.read()
 
-        with open('/etc/yandextank/JMeter/jmeter_var_template.xml', 'r') as tpl_file:
+        with open('/etc/yandex-tank/JMeter/jmeter_var_template.xml', 'r') as tpl_file:
             udv_tpl = tpl_file.read()
 
         udv_set = []

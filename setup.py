@@ -53,7 +53,28 @@ analytic tools for the results they produce.
     # TODO: move them all to resources maybe
     data_files=[
         ('/etc/yandex-tank', [
-            'config/*',
+            'config/00-base.ini',
+        ]),
+        ('/etc/yandex-tank/JMeter', [
+            'config/JMeter/jmeter_argentum.xml',
+            'config/JMeter/jmeter_var_template.xml',
+            'config/JMeter/jmeter_writer.xml',
+        ]),
+        ('/etc/yandex-tank/GraphiteUploader', [
+            'config/GraphiteUploader/graphite-js.tpl',
+            'config/GraphiteUploader/graphite.tpl',
+        ]),
+        ('/etc/yandex-tank/Monitoring', [
+            'config/Monitoring/agent.cfg',
+            'config/Monitoring/monitoring_default_config.xml',
+        ]),
+        ('/etc/yandex-tank/Phantom', [
+            'config/Phantom/phantom.conf.tpl',
+            'config/Phantom/phantom_benchmark_additional.tpl',
+            'config/Phantom/phantom_benchmark_main.tpl',
+        ]),
+        ('/etc/yandex-tank/TipsAndTricks', [
+            'config/TipsAndTricks/tips.txt',
         ]),
     ]
 )

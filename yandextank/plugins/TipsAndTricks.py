@@ -17,7 +17,7 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         AbstractInfoWidget.__init__(self)
-        lines = open('/etc/yandextank/TipsAndTricks/tips.txt').readlines()
+        lines = open('/etc/yandex-tank/TipsAndTricks/tips.txt').readlines()
         line = random.choice(lines)
         self.section = line[:line.index(':')]
         self.tip = line[line.index(':') + 1:].strip()

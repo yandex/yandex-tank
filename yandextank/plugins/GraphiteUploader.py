@@ -43,9 +43,9 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             port = self.get_option("port", "2003")
             self.web_port = self.get_option("web_port", "8080")
             self.prefix = self.get_option("prefix", "one_sec.yandex_tank")
-            default_template = "/etc/yandextank/GraphiteUploader/graphite.tpl"
+            default_template = "/etc/yandex-tank/GraphiteUploader/graphite.tpl"
             if self.get_option("js", "1") == "1":
-                default_template = "/etc/yandextank/GraphiteUploader/graphite-js.tpl"
+                default_template = "/etc/yandex-tank/GraphiteUploader/graphite-js.tpl"
             self.template = self.get_option("template", default_template)
             self.graphite_client = GraphiteClient(self.prefix, self.address, port)
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
