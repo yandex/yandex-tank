@@ -24,6 +24,7 @@ analytic tools for the results they produce.
         'ipaddr',
         'lxml',
         'progressbar',
+        'importlib',
     ],
     license='LGPLv2',
     classifiers=[
