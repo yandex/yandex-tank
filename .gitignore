@@ -13,3 +13,7 @@ load.ini
 tmp/
 Tests/data/modified_*.jmx
 Tests/20*/lunapark_*.lock
+build/
+dist/
+yandextank.egg-info/
+setuptools-*
