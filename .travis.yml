@@ -8,5 +8,6 @@ install:
   - pip install psutil
   - pip install sqlalchemy
   - pip install importlib
+  - pip install yandextank
 script: cd tests && nosetests
 
