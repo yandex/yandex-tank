@@ -1,7 +1,7 @@
-from Tests.TankTests import TankTestCase
+from TankTests import TankTestCase
 import unittest
-from Tank.Plugins.ApacheBenchmark import ABReader, ApacheBenchmarkPlugin
-from Tank.Plugins.Aggregator import AggregatorPlugin
+from yandextank.plugins.ApacheBenchmark import ABReader, ApacheBenchmarkPlugin
+from yandextank.plugins.Aggregator import AggregatorPlugin
 
 class ABTestCase(TankTestCase):
     def setUp(self):

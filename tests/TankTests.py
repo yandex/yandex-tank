@@ -3,9 +3,9 @@ import sys
 import tempfile
 import unittest
 
-from Tank.Plugins.Aggregator import SecondAggregateData, \
+from yandextank.plugins.Aggregator import SecondAggregateData, \
     SecondAggregateDataTotalItem
-from tankcore import TankCore
+from yandextank.core import TankCore
 
 
 class TankTestCase(unittest.TestCase):

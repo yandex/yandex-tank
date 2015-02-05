@@ -1,4 +1,4 @@
-from tankcore import AbstractPlugin
+from yandextank.core import AbstractPlugin
 import time
 
 class DummyPlugin(AbstractPlugin):

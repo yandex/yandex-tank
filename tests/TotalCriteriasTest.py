@@ -1,9 +1,9 @@
-from Tank.Plugins.Aggregator import SecondAggregateData, \
+from yandextank.plugins.Aggregator import SecondAggregateData, \
     SecondAggregateDataTotalItem
-from Tank.Plugins.TotalAutostop import TotalFracTimeCriteria, TotalHTTPCodesCriteria, TotalNegativeHTTPCodesCriteria, TotalNetCodesCriteria, TotalNegativeNetCodesCriteria, TotalHTTPTrendCriteria, QuantileOfSaturationCriteria
-from Tests.TankTests import TankTestCase
+from yandextank.plugins.TotalAutostop import TotalFracTimeCriteria, TotalHTTPCodesCriteria, TotalNegativeHTTPCodesCriteria, TotalNetCodesCriteria, TotalNegativeNetCodesCriteria, TotalHTTPTrendCriteria, QuantileOfSaturationCriteria
+from TankTests import TankTestCase
 import unittest
-from Tank.Plugins.Autostop import AutostopPlugin
+from yandextank.plugins.Autostop import AutostopPlugin
 
 class TotalCriteriasTest(TankTestCase):
     def setUp(self):

@@ -2,9 +2,9 @@ import logging
 import time
 import unittest
 
-from Tank.Plugins.JMeter import JMeterPlugin, JMeterReader
-from Tests.TankTests import TankTestCase
-from Tank.Plugins.Aggregator import AggregatorPlugin
+from yandextank.plugins.JMeter import JMeterPlugin, JMeterReader
+from TankTests import TankTestCase
+from yandextank.plugins.Aggregator import AggregatorPlugin
 
 
 class JMeterPluginTestCase(TankTestCase):

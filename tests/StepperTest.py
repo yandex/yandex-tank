@@ -1,9 +1,9 @@
 import tempfile
 import os
 
-from Tank.stepper import Stepper
-from Tank.stepper.format import StpdReader
-from Tests.TankTests import TankTestCase
+from yandextank.stepper import Stepper
+from yandextank.stepper.format import StpdReader
+from TankTests import TankTestCase
 
 
 class StepperTestCase(TankTestCase):
@@ -94,7 +94,7 @@ class StepperTestCase(TankTestCase):
             ).write(stpd_file)
         res = open(temp_stpd, 'r').read()
         self.assertNotEquals("", res)
-        self.assertEquals(1900, os.path.getsize(temp_stpd))
+        self.assertEquals(1904, os.path.getsize(temp_stpd))
 
 
     def test_manual_inst(self):
@@ -126,7 +126,7 @@ class StepperTestCase(TankTestCase):
             ).write(stpd_file)
         res = open(temp_stpd, 'r').read()
         self.assertNotEquals("", res)
-        self.assertEquals(258, os.path.getsize(temp_stpd))
+        self.assertEquals(262, os.path.getsize(temp_stpd))
 
     def test_default(self):
         temp_stpd = tempfile.mkstemp()[1]
@@ -161,7 +161,7 @@ class StepperTestCase(TankTestCase):
         self.assertEquals(1459, os.path.getsize(temp_stpd))
 
     def test_empty_uri(self):
-        from Tank.stepper.module_exceptions import AmmoFileError
+        from yandextank.stepper.module_exceptions import AmmoFileError
         temp_stpd = tempfile.mkstemp()[1]
         with open(temp_stpd, 'w') as stpd_file:
             with self.assertRaises(AmmoFileError):
@@ -196,7 +196,7 @@ class StepperTestCase(TankTestCase):
         self.assertEquals(len(list(sr)), 10)
 
     def test_bad_stpd_reader(self):
-        from Tank.stepper.module_exceptions import StpdFileError
+        from yandextank.stepper.module_exceptions import StpdFileError
         sr = StpdReader("data/bad.ammo.stpd")
         with self.assertRaises(StpdFileError):
             list(sr)

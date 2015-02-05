@@ -1,16 +1,17 @@
-from Tank.MonCollector.collector import MonitoringCollector, \
+from yandextank.plugins.Monitoring.collector import MonitoringCollector, \
     MonitoringDataListener, SSHWrapper
-from Tank.Plugins.ConsoleOnline import Screen
-from Tank.Plugins.Monitoring import MonitoringPlugin, MonitoringWidget
-from Tests.ConsoleOnlinePluginTest import FakeConsoleMarkup
-from Tests.TankTests import TankTestCase
+from yandextank.plugins.ConsoleOnline import Screen
+from yandextank.plugins.Monitoring import MonitoringPlugin, MonitoringWidget
+from ConsoleOnlinePluginTest import FakeConsoleMarkup
+from TankTests import TankTestCase
 import logging
 import time
 import tempfile
 
+
 class  MonitoringCollectorTestCase(TankTestCase):
     data = None
-    
+
     def test_collector(self):
         mon = MonitoringCollector()
         mon.config = "config/mon1.conf"

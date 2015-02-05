@@ -1,6 +1,6 @@
-from Tank.ConsoleWorker import ConsoleTank
-from Tests.TankTests import TankTestCase, FakeOptions
-from tankcore import ConfigManager
+from yandextank.core.consoleworker import ConsoleTank
+from TankTests import TankTestCase, FakeOptions
+from yandextank.core import ConfigManager
 import tempfile
 import unittest
 

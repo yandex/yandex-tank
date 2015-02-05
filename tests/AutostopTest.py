@@ -1,6 +1,6 @@
-from Tank.Plugins.Aggregator import SecondAggregateData
-from Tank.Plugins.Autostop import AutostopPlugin
-from Tests.TankTests import TankTestCase
+from yandextank.plugins.Aggregator import SecondAggregateData
+from yandextank.plugins.Autostop import AutostopPlugin
+from TankTests import TankTestCase
 import tempfile
 import unittest
 

@@ -1,12 +1,12 @@
-from Tank.Plugins.ShellExec import ShellExecPlugin
-from Tests.TankTests import TankTestCase
+from yandextank.plugins.ShellExec import ShellExecPlugin
+from TankTests import TankTestCase
 import logging
 import select
 import subprocess
-import tempfile
 import unittest
 
-class  ShellExecPluginTestCase(TankTestCase):
+
+class ShellExecPluginTestCase(TankTestCase):
     def setUp(self):
         core = self.get_core()
         core.load_configs(['config/shellexec.conf'])
@@ -21,11 +21,11 @@ class  ShellExecPluginTestCase(TankTestCase):
         self.foo.prepare_test()
         self.foo.start_test()
         self.foo.end_test(0)
-        
+
     def test_select(self):
         pipes = subprocess.Popen(["pwd"], stdout=subprocess.PIPE)
         r, w, x = select.select([pipes.stdout], [], [], 1)
         logging.info("selected: %s %s %s", r, w, x)
-        
+
 if __name__ == '__main__':
     unittest.main()

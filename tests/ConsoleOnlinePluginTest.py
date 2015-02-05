@@ -1,9 +1,9 @@
-from Tank.Plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget, \
+from yandextank.plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget, \
     RealConsoleMarkup
-from Tests.TankTests import TankTestCase
+from TankTests import TankTestCase
 import tempfile
 import unittest
-from Tank.Plugins.ConsoleScreen import krutilka
+from yandextank.plugins.ConsoleScreen import krutilka
 
 class FakeConsoleMarkup(RealConsoleMarkup):
     clear = "\n[clear]\n"

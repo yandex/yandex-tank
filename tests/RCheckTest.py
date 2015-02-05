@@ -1,8 +1,8 @@
 import unittest
 
-from Tank.Plugins.ResourceCheck import ResourceCheckPlugin
+from yandextank.plugins.ResourceCheck import ResourceCheckPlugin
 
-from Tests.TankTests import TankTestCase
+from TankTests import TankTestCase
 
 
 class RCheckTestCase(TankTestCase):

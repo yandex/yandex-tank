@@ -1,6 +1,6 @@
-from Tests.TankTests import TankTestCase
+from TankTests import TankTestCase
 import unittest
-from Tank.Plugins.RCAssert import RCAssertPlugin
+from yandextank.plugins.RCAssert import RCAssertPlugin
 
 class RCAssertTestCase(TankTestCase):
     def setUp(self):

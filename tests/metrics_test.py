@@ -5,7 +5,7 @@ import time
 import unittest
 import base64
 
-from Tank.MonCollector.agent.agent import CpuStat, Custom, Disk, NetTcp, NetTxRx
+from yandextank.plugins.Monitoring.agent.agent import CpuStat, Custom, Disk, NetTcp, NetTxRx
 
 
 if __name__ == '__main__':

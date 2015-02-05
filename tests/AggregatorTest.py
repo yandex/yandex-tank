@@ -1,9 +1,9 @@
 import time
 import unittest
 
-from Tank.Plugins.Aggregator import AggregatorPlugin, AbstractReader, \
+from yandextank.plugins.Aggregator import AggregatorPlugin, AbstractReader, \
     SecondAggregateDataTotalItem
-from Tests.TankTests import TankTestCase
+from TankTests import TankTestCase
 
 
 class AggregatorPluginTestCase(TankTestCase):

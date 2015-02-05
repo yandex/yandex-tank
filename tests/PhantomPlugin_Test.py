@@ -2,10 +2,10 @@ import os
 import time
 import unittest
 
-from Tank.Plugins.Aggregator import AggregatorPlugin, SecondAggregateData
-from Tank.Plugins.Phantom import PhantomPlugin, PhantomReader
-from Tests.TankTests import TankTestCase
-from Tank.Plugins.PhantomUtils import StepperWrapper
+from yandextank.plugins.Aggregator import AggregatorPlugin, SecondAggregateData
+from yandextank.plugins.Phantom import PhantomPlugin, PhantomReader
+from TankTests import TankTestCase
+from yandextank.plugins.PhantomUtils import StepperWrapper
 
 
 class PhantomPluginTestCase(TankTestCase):

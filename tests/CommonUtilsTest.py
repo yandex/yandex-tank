@@ -1,7 +1,7 @@
 import unittest
 
-from Tests.TankTests import TankTestCase
-import tankcore
+from TankTests import TankTestCase
+import yandextank.core as tankcore
 
 
 class CommonUtilsTest(TankTestCase):

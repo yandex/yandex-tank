@@ -1,7 +1,7 @@
 import unittest
 
-from Tests.TankTests import TankTestCase
-import tankcore
+from TankTests import TankTestCase
+import yandextank.core as tankcore
 
 
 class TankCoreTestCase(TankTestCase):
@@ -43,4 +43,3 @@ class TankCoreTestCase(TankTestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

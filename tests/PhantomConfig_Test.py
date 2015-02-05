@@ -2,9 +2,9 @@ import socket
 import unittest
 import logging
 
-from Tank.Plugins.Phantom import PhantomConfig, PhantomPlugin
-from Tests.TankTests import TankTestCase
-from Tank.Plugins.PhantomUtils import StepperWrapper, AddressWizard
+from yandextank.plugins.Phantom import PhantomConfig, PhantomPlugin
+from TankTests import TankTestCase
+from yandextank.plugins.PhantomUtils import StepperWrapper, AddressWizard
 
 
 class PhantomConfigTestCase(TankTestCase):
