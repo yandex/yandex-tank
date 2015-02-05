@@ -4,9 +4,9 @@ PYTHONPATH=''
 -->
 
 <project name="Tank" default="debian">
-	<property name="package" value="Tank"/>
+	<property name="package" value="yandextank"/>
 	<target name="test">
-		<exec executable="nosetests" dir='Tests' failonerror="true">
+		<exec executable="nosetests" dir='tests' failonerror="true">
 			<arg value="--with-xunit" />
 			<arg value="--all-modules" />
 			<arg value="--traverse-namespace" />
@@ -33,7 +33,7 @@ PYTHONPATH=''
 			<arg value="Jenkins CI build" />
 		</exec>
 		-->
-		<exec executable="debuild" dir='.' failonerror="true">
+		<!-- <exec executable="debuild" dir='.' failonerror="true">
 			<arg value="-I" />
 			<arg value="-us" />
 			<arg value="-uc" />
@@ -42,7 +42,7 @@ PYTHONPATH=''
 		</exec>
 		<move todir=".">
 			<fileset dir=".." includes="yandex-load-*" />
-		</move>
+		</move> -->
 	</target>
 	
 	<target name="loc">
