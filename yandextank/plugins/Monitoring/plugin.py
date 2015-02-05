@@ -63,7 +63,7 @@ class MonitoringPlugin(AbstractPlugin):
             self.monitoring = None
 
         if self.config == 'auto':
-            self.config = '/etc/yandex-tank/monitoring_default_config.xml'
+            self.config = '/etc/yandex-tank/Monitoring/monitoring_default_config.xml'
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
