@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import ez_setup
+ez_setup.use_setuptools()
+
 from setuptools import setup, find_packages
 
 setup(
@@ -46,10 +49,11 @@ analytic tools for the results they produce.
             'yandex-tank = yandextank.core.cli:main',
         ],
     },
+    package_data={},
+    # TODO: move them all to resources maybe
     data_files=[
         ('/etc/yandex-tank', [
-            'config/00-base.ini',
-            'config/monitoring_default_config.xml'
-        ])
+            'config/*',
+        ]),
     ]
 )

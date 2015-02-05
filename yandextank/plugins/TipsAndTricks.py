@@ -4,9 +4,9 @@ Plugin showing tool learning hints in console
 
 from ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 from yandextank.core import AbstractPlugin
-import os
 import random
 import textwrap
+
 
 class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
     '''
@@ -17,7 +17,7 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         AbstractInfoWidget.__init__(self)
-        lines = open(os.path.dirname(__file__) + '/tips.txt').readlines()
+        lines = open('/etc/yandextank/TipsAndTricks/tips.txt').readlines()
         line = random.choice(lines)
         self.section = line[:line.index(':')]
         self.tip = line[line.index(':') + 1:].strip()
@@ -45,7 +45,7 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
                 console.add_info_widget(self)
 
     def get_index(self):
-        return 10000 # really last index
+        return 10000  # really last index
 
     def render(self, screen):
         line = screen.markup.WHITE + "Tips & Tricks => " + self.section + screen.markup.RESET + ":\n  "

@@ -7,7 +7,7 @@ import socket
 import string
 import time
 import datetime
-import os
+
 
 class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
     '''Graphite data uploader'''
@@ -43,10 +43,10 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             port = self.get_option("port", "2003")
             self.web_port = self.get_option("web_port", "8080")
             self.prefix = self.get_option("prefix", "one_sec.yandex_tank")
-            default_template = "/graphite.tpl"
+            default_template = "/etc/yandextank/GraphiteUploader/graphite.tpl"
             if self.get_option("js", "1") == "1":
-                default_template = "/graphite-js.tpl"
-            self.template = self.get_option("template", os.path.dirname(__file__) + default_template)
+                default_template = "/etc/yandextank/GraphiteUploader/graphite-js.tpl"
+            self.template = self.get_option("template", default_template)
             self.graphite_client = GraphiteClient(self.prefix, self.address, port)
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(self)
@@ -56,15 +56,18 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         @data: SecondAggregateData
         """
         #TODO: Use ts from data
-        ts = int(time.mktime(data.time.timetuple()))
         if self.graphite_client:
             results = {}
-            overall = GraphiteUploaderPlugin.__flatten(data.overall.__dict__, "overall")
-            cumulative = GraphiteUploaderPlugin.__flatten(data.cumulative.__dict__, "cumulative")
+            overall = GraphiteUploaderPlugin.__flatten(
+                data.overall.__dict__, "overall")
+            cumulative = GraphiteUploaderPlugin.__flatten(
+                data.cumulative.__dict__, "cumulative")
             results.update(overall)
             results.update(cumulative)
             for marker in data.cases.keys():
-                results.update(GraphiteUploaderPlugin.__flatten(data.cases[marker].__dict__, 'markers.%s' % marker))
+                results.update(GraphiteUploaderPlugin.__flatten(
+                    data.cases[marker].__dict__, 'markers.%s' % marker)
+                )
             self.graphite_client.submit(results)
 
     def post_process(self, retcode):
@@ -88,19 +91,31 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
 
     @staticmethod
     def __flatten(dic, prefix):
-        '''recursively pass through a dict and flatten it\'s "internal" dicts'''
+        '''
+        recursively pass through a dict and flatten it\'s "internal" dicts
+        '''
         results = {}
-        if dic != None:
+        if dic is not None:
             try:
                 for key in dic.keys():
                     if type(dic[key]) in [float, int]:
-                        results["%s.%s" % (prefix, str(key).translate(string.maketrans(".", "_")))] = dic[key]
+                        results["%s.%s" % (
+                            prefix,
+                            str(key).translate(string.maketrans(".", "_"))
+                        )] = dic[key]
                     elif type(dic[key] in [dict]):
-                        results.update(GraphiteUploaderPlugin.__flatten(dic[key], "%s.%s" % (prefix, key.translate(string.maketrans(".", "_")))))
+                        results.update(
+                            GraphiteUploaderPlugin.__flatten(
+                                dic[key],
+                                "%s.%s" % (
+                                    prefix,
+                                    key.translate(string.maketrans(".", "_"))
+                                )
+                            )
+                        )
             except AttributeError:
                 pass
         return results
-
 
 
 class GraphiteClient(object):
@@ -111,7 +126,10 @@ class GraphiteClient(object):
         self.port = port
         self.prefix = prefix
         self.log = logging.getLogger(__name__)
-        self.log.debug("Created a Graphite listener with address = '%s', port = '%s', prefix = '%s'" % (address, port, prefix))
+        self.log.debug(
+            "Created a Graphite listener with address = '%s', port = '%s', prefix = '%s'" %
+            (address, port, prefix)
+        )
 
     def submit(self, results):
         '''publish results to Graphite'''
@@ -120,8 +138,10 @@ class GraphiteClient(object):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((self.address, int(self.port)))
             for metric in results.keys():
-                sock.sendall("%s.%s\t%s\t%d\n" % \
-                    (self.prefix, metric, results[metric], time.time()))
+                sock.sendall(
+                    "%s.%s\t%s\t%d\n" %
+                    (self.prefix, metric, results[metric], time.time())
+                )
             sock.close()
             self.log.debug("Sent metrics to graphite server")
         except Exception, exc:
