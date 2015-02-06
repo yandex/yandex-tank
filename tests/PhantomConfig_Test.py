@@ -4,7 +4,8 @@ import logging
 
 from yandextank.plugins.Phantom import PhantomConfig, PhantomPlugin
 from TankTests import TankTestCase
-from yandextank.plugins.PhantomUtils import StepperWrapper, AddressWizard
+from yandextank.plugins.Phantom.PhantomUtils import \
+    StepperWrapper, AddressWizard
 
 
 class PhantomConfigTestCase(TankTestCase):

@@ -5,7 +5,7 @@ import unittest
 from yandextank.plugins.Aggregator import AggregatorPlugin, SecondAggregateData
 from yandextank.plugins.Phantom import PhantomPlugin, PhantomReader
 from TankTests import TankTestCase
-from yandextank.plugins.PhantomUtils import StepperWrapper
+from yandextank.plugins.Phantom.PhantomUtils import StepperWrapper
 
 
 class PhantomPluginTestCase(TankTestCase):
