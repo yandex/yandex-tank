@@ -15,8 +15,8 @@ It uses other load generators such as JMeter, ab or phantom inside of it for
 load generation and provides a common configuration system for them and
 analytic tools for the results they produce.
 ''',
-    maintainer='Alexey Lavrenuke',
-    maintainer_email='direvius@gmail.com',
+    maintainer='Alexey Lavrenuke (load testing)',
+    maintainer_email='direvius@yandex-team.ru',
     url='http://yandex.github.io/yandex-tank/',
     packages=find_packages(),
     install_requires=[
