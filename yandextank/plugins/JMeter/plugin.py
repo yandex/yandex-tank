@@ -7,15 +7,18 @@ import time
 import datetime
 import json
 
-from Aggregator import AbstractReader, AggregatorPlugin, \
+from pkg_resources import resource_string
+from yandextank.plugins.Aggregator import AbstractReader, AggregatorPlugin, \
     AggregateResultListener, SecondAggregateDataItem
-from ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+from yandextank.plugins.ConsoleOnline import \
+    ConsoleOnlinePlugin, AbstractInfoWidget
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
-import ConsoleScreen
+import yandextank.plugins.ConsoleScreen as ConsoleScreen
 
 
 class JMeterPlugin(AbstractPlugin):
+
     """ JMeter tank plugin """
     SECTION = 'jmeter'
 
@@ -52,7 +55,8 @@ class JMeterPlugin(AbstractPlugin):
                                                       self.get_option('buffered_seconds', '3')))
         self.core.add_artifact_file(self.jmeter_log, True)
         self.use_argentum = eval(self.get_option('use_argentum', 'False'))
-        self.jmx = self.__add_jmeter_components(self.original_jmx, self.jtl_file, self._get_variables())
+        self.jmx = self.__add_jmeter_components(
+            self.original_jmx, self.jtl_file, self._get_variables())
         self.core.add_artifact_file(self.jmx)
 
     def prepare_test(self):
@@ -84,7 +88,8 @@ class JMeterPlugin(AbstractPlugin):
                 aggregator.add_result_listener(widget)
 
     def start_test(self):
-        self.log.info("Starting %s with arguments: %s", self.jmeter_path, self.args)
+        self.log.info(
+            "Starting %s with arguments: %s", self.jmeter_path, self.args)
         self.jmeter_process = subprocess.Popen(self.args, executable=self.jmeter_path, preexec_fn=os.setsid,
                                                close_fds=True)  # stderr=subprocess.PIPE, stdout=subprocess.PIPE,
         self.start_time = time.time()
@@ -92,14 +97,16 @@ class JMeterPlugin(AbstractPlugin):
     def is_test_finished(self):
         retcode = self.jmeter_process.poll()
         if retcode is not None:
-            self.log.info("JMeter process finished with exit code: %s", retcode)
+            self.log.info(
+                "JMeter process finished with exit code: %s", retcode)
             return retcode
         else:
             return -1
 
     def end_test(self, retcode):
         if self.jmeter_process:
-            self.log.info("Terminating jmeter process group with PID %s", self.jmeter_process.pid)
+            self.log.info(
+                "Terminating jmeter process group with PID %s", self.jmeter_process.pid)
             try:
                 os.killpg(self.jmeter_process.pid, signal.SIGTERM)
             except OSError, exc:
@@ -123,24 +130,23 @@ class JMeterPlugin(AbstractPlugin):
         except Exception, exc:
             raise RuntimeError("Failed to find the end of JMX XML: %s" % exc)
 
-        tpl_filepath = '/etc/yandex-tank/JMeter/jmeter_writer.xml'
+        tpl_resource = 'jmeter_writer.xml'
 
         if self.use_argentum:
-            self.log.warn("You are using argentum aggregator for JMeter. Be careful.")
-            tpl_filepath = '/etc/yandex-tank/JMeter/jmeter_argentum.xml'
+            self.log.warn(
+                "You are using argentum aggregator for JMeter. Be careful.")
+            tpl_resource = 'jmeter_argentum.xml'
 
-        with open(tpl_filepath, 'r') as tpl_file:
-            tpl = tpl_file.read()
-
-        with open('/etc/yandex-tank/JMeter/jmeter_var_template.xml', 'r') as tpl_file:
-            udv_tpl = tpl_file.read()
+        tpl = resource_string(__name__, 'config/' + tpl_resource)
+        udv_tpl = resource_string(__name__, 'config/jmeter_var_template.xml')
 
         udv_set = []
         for var_name, var_value in variables.iteritems():
             udv_set.append(udv_tpl % (var_name, var_name, var_value))
 
         try:
-            new_file = self.core.mkstemp('.jmx', 'modified_', os.path.dirname(os.path.realpath(jmx)))
+            new_file = self.core.mkstemp(
+                '.jmx', 'modified_', os.path.dirname(os.path.realpath(jmx)))
         except OSError, exc:
             self.log.debug("Can't create modified jmx near original: %s", exc)
             new_file = self.core.mkstemp('.jmx', 'modified_')
@@ -167,6 +173,7 @@ class JMeterPlugin(AbstractPlugin):
 
 
 class JMeterReader(AbstractReader):
+
     """ JTL files reader """
     KNOWN_EXC = {
         "java.net.NoRouteToHostException": 113,
@@ -224,10 +231,12 @@ class JMeterReader(AbstractReader):
                     return None
                 else:
                     # good json-object. parse it!
-                    second_ag = self.get_zero_sample(datetime.datetime.fromtimestamp(second['second']))
+                    second_ag = self.get_zero_sample(
+                        datetime.datetime.fromtimestamp(second['second']))
                     second_ag.overall.avg_connect_time = 0
                     second_ag.overall.avg_send_time = 0
-                    second_ag.overall.avg_receive_time = second['avg_rt'] - second['avg_lt']
+                    second_ag.overall.avg_receive_time = second[
+                        'avg_rt'] - second['avg_lt']
                     second_ag.overall.avg_response_time = second['avg_rt']
                     second_ag.overall.avg_latency = second['avg_lt']
                     second_ag.overall.RPS = second['th']
@@ -242,7 +251,8 @@ class JMeterReader(AbstractReader):
                     second_ag.overall.http_codes = rc_map
 
                     for percentile in second['percentile'].keys():
-                        second_ag.overall.quantiles[int(float(percentile))] = second['percentile'][percentile]
+                        second_ag.overall.quantiles[
+                            int(float(percentile))] = second['percentile'][percentile]
                         second_ag.cumulative.quantiles[int(float(percentile))] = second['cumulative_percentile'][
                             percentile]
 
@@ -251,13 +261,18 @@ class JMeterReader(AbstractReader):
                     for sampler in second['samplers'].keys():
                         sampler_ag_data_item = SecondAggregateDataItem()
                         sampler_ag_data_item.case = sampler
-                        sampler_ag_data_item.active_threads = second['active_threads']
-                        sampler_ag_data_item.RPS = int(second['samplers'][sampler])
-                        sampler_ag_data_item.times_dist = second['sampler_interval_dist'][sampler]
+                        sampler_ag_data_item.active_threads = second[
+                            'active_threads']
+                        sampler_ag_data_item.RPS = int(
+                            second['samplers'][sampler])
+                        sampler_ag_data_item.times_dist = second[
+                            'sampler_interval_dist'][sampler]
 
-                        sampler_ag_data_item.quantiles = second['sampler_percentile'][sampler]
+                        sampler_ag_data_item.quantiles = second[
+                            'sampler_percentile'][sampler]
 
-                        sampler_ag_data_item.avg_response_time = second['sampler_avg_rt'][sampler]
+                        sampler_ag_data_item.avg_response_time = second[
+                            'sampler_avg_rt'][sampler]
                         second_ag.cases[sampler] = sampler_ag_data_item
                 return second_ag
         return None
@@ -279,7 +294,8 @@ class JMeterReader(AbstractReader):
                     # self.log.warning("Wrong jtl line, skipped: %s", line)
                     continue
                 cur_time = int(data[0]) / 1000
-                netcode = '0' if data[4] == 'true' else self.exc_to_net(data[3])
+                netcode = '0' if data[
+                    4] == 'true' else self.exc_to_net(data[3])
 
                 if not cur_time in self.data_buffer.keys():
                     if self.data_queue and self.data_queue[0] >= cur_time:
@@ -290,7 +306,8 @@ class JMeterReader(AbstractReader):
                         self.data_queue.append(cur_time)
                         self.data_buffer[cur_time] = []
                 # marker, threads, overallRT, httpCode, netCode
-                data_item = [data[2], int(data[7]), int(data[1]), self.exc_to_http(data[3]), netcode]
+                data_item = [
+                    data[2], int(data[7]), int(data[1]), self.exc_to_http(data[3]), netcode]
                 # bytes:     sent    received
                 data_item += [0, int(data[5])]
                 # connect    send    latency    receive
@@ -315,7 +332,8 @@ class JMeterReader(AbstractReader):
         if exc in self.KNOWN_EXC.keys():
             return self.KNOWN_EXC[exc]
         else:
-            self.log.warning("Not known Java exception, consider adding it to dictionary: %s", param1)
+            self.log.warning(
+                "Not known Java exception, consider adding it to dictionary: %s", param1)
             return '1'
 
     def exc_to_http(self, param1):
@@ -333,6 +351,7 @@ class JMeterReader(AbstractReader):
 # ===============================================================================
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
+
     """ Right panel widget with JMeter test info """
 
     def __init__(self, jmeter):
@@ -364,6 +383,7 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         template += "      Duration: %s\n"
         template += "Active Threads: %s\n"
         template += "   Responses/s: %s"
-        data = (os.path.basename(self.jmeter.original_jmx), duration, self.active_threads, self.RPS)
+        data = (os.path.basename(self.jmeter.original_jmx),
+                duration, self.active_threads, self.RPS)
 
         return template % data

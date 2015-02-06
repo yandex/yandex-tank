@@ -8,11 +8,12 @@ import sys
 import time
 import datetime
 
-import ConsoleScreen
-from Aggregator import AggregatorPlugin, AggregateResultListener, \
-    AbstractReader
-from Autostop import AutostopPlugin, AbstractCriteria
-from ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+from yandextank.plugins import ConsoleScreen
+from yandextank.plugins.Aggregator import \
+    AggregatorPlugin, AggregateResultListener, AbstractReader
+from yandextank.plugins.Autostop import AutostopPlugin, AbstractCriteria
+from yandextank.plugins.ConsoleOnline import \
+    ConsoleOnlinePlugin, AbstractInfoWidget
 from PhantomUtils import PhantomConfig
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore

@@ -4,11 +4,11 @@ import copy
 import logging
 import traceback
 import multiprocessing
-import os
 import re
 import socket
 import string
 
+from pkg_resources import resource_string
 from yandextank.stepper import StepperWrapper
 
 
@@ -103,9 +103,7 @@ class PhantomConfig:
         filename = self.core.mkstemp(".conf", "phantom_")
         self.core.add_artifact_file(filename)
         self.log.debug("Generating phantom config: %s", filename)
-        tpl_file = open("/etc/yandex-tank/Phantom/phantom.conf.tpl", 'r')
-        template_str = tpl_file.read()
-        tpl_file.close()
+        template_str = resource_string(__name__, "config/phantom.conf.tpl")
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
 
@@ -310,9 +308,7 @@ class StreamConfig:
             fname = 'phantom_benchmark_main.tpl'
         else:
             fname = 'phantom_benchmark_additional.tpl'
-        tplf = open('/etc/yandex-tank/Phantom/' + fname, 'r')
-        template_str = tplf.read()
-        tplf.close()
+        template_str = template_str = resource_string(__name__, "config/" + fname)
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
 

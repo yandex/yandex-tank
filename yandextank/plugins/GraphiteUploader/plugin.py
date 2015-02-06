@@ -1,6 +1,8 @@
 '''Graphite Uploader plugin that sends aggregated data to Graphite server'''
 
-from Aggregator import AggregateResultListener, AggregatorPlugin
+from pkg_resources import resource_string
+from yandextank.plugins.Aggregator import \
+    AggregateResultListener, AggregatorPlugin
 from yandextank.core import AbstractPlugin
 import logging
 import socket
@@ -10,6 +12,7 @@ import datetime
 
 
 class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
+
     '''Graphite data uploader'''
 
     SECTION = 'graphite'
@@ -30,7 +33,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         self.start_time = start_time.strftime("%H:%M%%20%Y%m%d")
 
     def end_test(self, retcode):
-        end_time = datetime.datetime.now() + datetime.timedelta(minutes = 1)
+        end_time = datetime.datetime.now() + datetime.timedelta(minutes=1)
         self.end_time = end_time.strftime("%H:%M%%20%Y%m%d")
         return retcode
 
@@ -38,16 +41,22 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         '''Read configuration'''
         self.address = self.get_option("address", "")
         if self.address == "":
-            self.log.warning("Graphite uploader is not configured and will not send any data")
+            self.log.warning(
+                "Graphite uploader is not configured and will not send any data")
         else:
             port = self.get_option("port", "2003")
             self.web_port = self.get_option("web_port", "8080")
             self.prefix = self.get_option("prefix", "one_sec.yandex_tank")
-            default_template = "/etc/yandex-tank/GraphiteUploader/graphite.tpl"
-            if self.get_option("js", "1") == "1":
-                default_template = "/etc/yandex-tank/GraphiteUploader/graphite-js.tpl"
-            self.template = self.get_option("template", default_template)
-            self.graphite_client = GraphiteClient(self.prefix, self.address, port)
+            specified_template = self.get_option("template", "")
+            if specified_template != "":
+                self.template = open(specified_template, 'r').read()
+            else:
+                default_template = "graphite.tpl"
+                if self.get_option("js", "1") == "1":
+                    default_template = "graphite-js.tpl"
+                self.template = resource_string(__name__, 'config/' + default_template)
+            self.graphite_client = GraphiteClient(
+                self.prefix, self.address, port)
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(self)
 
@@ -55,7 +64,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         """
         @data: SecondAggregateData
         """
-        #TODO: Use ts from data
+        # TODO: Use ts from data
         if self.graphite_client:
             results = {}
             overall = GraphiteUploaderPlugin.__flatten(
@@ -72,12 +81,11 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
 
     def post_process(self, retcode):
         if self.graphite_client:
-            template = open(self.template, 'r').read()
             graphite_html = self.core.mkstemp(".html", "graphite_")
             self.core.add_artifact_file(graphite_html)
             with open(graphite_html, 'w') as graphite_html_file:
                 graphite_html_file.write(
-                    string.Template(template).safe_substitute(
+                    string.Template(self.template).safe_substitute(
                         host=self.address,
                         width=1000,
                         height=400,
@@ -119,6 +127,7 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
 
 
 class GraphiteClient(object):
+
     '''Graphite client that writes metrics to Graphite server'''
 
     def __init__(self, prefix, address, port):

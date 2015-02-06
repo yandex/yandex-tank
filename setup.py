@@ -45,32 +45,17 @@ analytic tools for the results they produce.
             'yandex-tank = yandextank.core.cli:main',
         ],
     },
-    package_data={},
+    package_data={
+        'yandextank.plugins.GraphiteUploader': ['config/*'],
+        'yandextank.plugins.JMeter': ['config/*'],
+        'yandextank.plugins.Monitoring': ['config/*'],
+        'yandextank.plugins.Phantom': ['config/*'],
+        'yandextank.plugins.TipsAndTricks': ['config/*'],
+    },
     # TODO: move them all to resources maybe
     data_files=[
         ('/etc/yandex-tank', [
             'config/00-base.ini',
-        ]),
-        ('/etc/yandex-tank/JMeter', [
-            'config/JMeter/jmeter_argentum.xml',
-            'config/JMeter/jmeter_var_template.xml',
-            'config/JMeter/jmeter_writer.xml',
-        ]),
-        ('/etc/yandex-tank/GraphiteUploader', [
-            'config/GraphiteUploader/graphite-js.tpl',
-            'config/GraphiteUploader/graphite.tpl',
-        ]),
-        ('/etc/yandex-tank/Monitoring', [
-            'config/Monitoring/agent.cfg',
-            'config/Monitoring/monitoring_default_config.xml',
-        ]),
-        ('/etc/yandex-tank/Phantom', [
-            'config/Phantom/phantom.conf.tpl',
-            'config/Phantom/phantom_benchmark_additional.tpl',
-            'config/Phantom/phantom_benchmark_main.tpl',
-        ]),
-        ('/etc/yandex-tank/TipsAndTricks', [
-            'config/TipsAndTricks/tips.txt',
         ]),
         ('/etc/bash_completion.d', [
             'data/yandex-tank.completion'

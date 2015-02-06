@@ -6,6 +6,7 @@ import traceback
 import fnmatch
 import datetime
 
+from pkg_resources import resource_string
 from collector import MonitoringCollector, \
     MonitoringDataListener, MonitoringDataDecoder
 from yandextank.plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
@@ -63,7 +64,10 @@ class MonitoringPlugin(AbstractPlugin):
             self.monitoring = None
 
         if self.config == 'auto':
-            self.config = '/etc/yandex-tank/Monitoring/monitoring_default_config.xml'
+            default_config = resource_string(__name__, 'config/monitoring_default_config.xml')
+            self.config = self.core.mkstemp(".xml", "monitoring_default_")
+            with open(self.config, 'w') as cfg_file:
+                cfg_file.write(default_config)
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
