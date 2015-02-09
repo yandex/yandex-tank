@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='1.7.1',
+    version='1.7.2',
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -18,7 +18,8 @@ analytic tools for the results they produce.
     maintainer='Alexey Lavrenuke (load testing)',
     maintainer_email='direvius@yandex-team.ru',
     url='http://yandex.github.io/yandex-tank/',
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests"]),
+    include_package_data=True,
     install_requires=[
         'psutil',
         'ipaddr',
@@ -46,6 +47,7 @@ analytic tools for the results they produce.
         ],
     },
     package_data={
+        'yandextank.core': ['config/*'],
         'yandextank.plugins.GraphiteUploader': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],
         'yandextank.plugins.Monitoring': ['config/*'],
@@ -54,9 +56,6 @@ analytic tools for the results they produce.
     },
     # TODO: move them all to resources maybe
     data_files=[
-        ('/etc/yandex-tank', [
-            'config/00-base.ini',
-        ]),
         ('/etc/bash_completion.d', [
             'data/yandex-tank.completion'
         ]),
