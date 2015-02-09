@@ -152,7 +152,7 @@ class ConsoleTank:
     def get_default_configs(self):
         """ returns default configs list, from /etc and home dir """
         # initialize basic defaults
-        configs = [resource_filename(__name__, '00-base.ini')]
+        configs = [resource_filename(__name__, 'config/00-base.ini')]
         try:
             conf_files = os.listdir(self.baseconfigs_location)
             conf_files.sort()
