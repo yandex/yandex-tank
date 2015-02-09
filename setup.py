@@ -19,7 +19,6 @@ analytic tools for the results they produce.
     maintainer_email='direvius@yandex-team.ru',
     url='http://yandex.github.io/yandex-tank/',
     packages=find_packages(exclude=["tests"]),
-    include_package_data=True,
     install_requires=[
         'psutil',
         'ipaddr',
