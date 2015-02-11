@@ -22,6 +22,7 @@ class ComponentFactory():
         uris=None,
         headers=None,
         autocases=None,
+        enum_ammo=False,
         ammo_type='phantom',
         chosen_cases=[],
     ):
@@ -47,7 +48,7 @@ class ComponentFactory():
         if self.uris and loop_limit:
             info.status.ammo_limit = len(self.uris) * loop_limit
         self.headers = headers
-        self.marker = get_marker(autocases)
+        self.marker = get_marker(autocases, enum_ammo)
         self.chosen_cases = chosen_cases
 
     def get_load_plan(self):

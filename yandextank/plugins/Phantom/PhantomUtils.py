@@ -33,6 +33,7 @@ class PhantomConfig:
         self.phantom_modules_path = None
         self.threads = None
         self.additional_libs = None
+        self.enum_ammo = False
 
     def get_option(self, opt_name, default=None):
         """ get option wrapper """
@@ -41,7 +42,7 @@ class PhantomConfig:
     @staticmethod
     def get_available_options():
         opts = ["threads", "phantom_modules_path",
-                "additional_libs", "writelog", ]
+                "additional_libs", "writelog", "enum_ammo", ]
         opts += StreamConfig.get_available_options()
         return opts
 

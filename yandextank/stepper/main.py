@@ -100,6 +100,7 @@ class StepperWrapper(object):
         self.uris = []
         self.headers = []
         self.autocases = 0
+        self.enum_ammo = False
         self.use_caching = True
         self.force_stepping = None
         self.ammo_type = 'phantom'
@@ -126,8 +127,12 @@ class StepperWrapper(object):
         opts = [StepperWrapper.OPTION_AMMOFILE, StepperWrapper.OPTION_LOOP,
                 StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD]
         opts += ["instances_schedule", "uris",
-                 "headers", "header_http", "autocases", "ammo_type", "ammo_limit"]
-        opts += ["use_caching", "cache_dir", "force_stepping", "file_cache", "chosen_cases"]
+                 "headers", "header_http",
+                 "autocases", "enum_ammo",
+                 "ammo_type", "ammo_limit"]
+        opts += ["use_caching", "cache_dir",
+                 "force_stepping", "file_cache",
+                 "chosen_cases"]
         return opts
 
     def read_config(self):
@@ -159,6 +164,7 @@ class StepperWrapper(object):
         self.headers = rx.findall(self.get_option("headers", ''))
         self.http_ver = self.get_option("header_http", self.http_ver)
         self.autocases = self.get_option("autocases", '0')
+        self.enum_ammo = self.get_option("enum_ammo", False)
         self.use_caching = int(self.get_option("use_caching", '1'))
 
         self.file_cache = int(self.get_option('file_cache', '8192'))
@@ -285,6 +291,7 @@ class StepperWrapper(object):
             uris=self.uris,
             headers=[header.strip('[]') for header in self.headers],
             autocases=self.autocases,
+            enum_ammo=self.enum_ammo,
             ammo_type=self.ammo_type,
             chosen_cases=self.chosen_cases,
         )

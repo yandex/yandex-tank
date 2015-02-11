@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import datetime
+import string
 
 from yandextank.plugins import ConsoleScreen
 from yandextank.plugins.Aggregator import \
@@ -44,6 +45,8 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.cached_info = None
         self.phantom_stderr = None
 
+        self.enum_ammo = False
+
     @staticmethod
     def get_key():
         return __file__
@@ -60,6 +63,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.eta_file = self.get_option("eta_file", '')
         self.core.add_artifact_file(self.eta_file)
         self.phantom_path = self.get_option("phantom_path", 'phantom')
+        self.enum_ammo = self.get_option("enum_ammo", False)
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
 
@@ -383,6 +387,7 @@ class PhantomReader(AbstractReader):
         self.last_sample_time = 0
         self.read_lines_count = 0
         self.buffered_seconds = 3
+        self.enum_ammo = self.phantom.enum_ammo
 
     def check_open_files(self):
         info = self.phantom.get_info()
@@ -493,7 +498,10 @@ class PhantomReader(AbstractReader):
             # bytes:     sent    received
             # connect    send    latency    receive
             #        accuracy
-            data_item = (data[1], active, rt_real / 1000, data[11], data[10],
+            marker = data[1]
+            if self.enum_ammo:
+                marker = string.rsplit(marker, "#", 1)[0]
+            data_item = (marker, active, rt_real / 1000, data[11], data[10],
                          int(data[8]), int(data[9]),
                          int(data[3]) / 1000, int(data[4]) / 1000,
                          int(data[5]) / 1000, int(data[6]) / 1000,
