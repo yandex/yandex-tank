@@ -16,6 +16,7 @@ def __mark_by_uri(missile):
 
 
 class __UriMarker(object):
+
     '''
     Returns a uri marker function with requested limit
 
@@ -23,11 +24,12 @@ class __UriMarker(object):
     >>> marker(__test_missile)
     '_example_search'
     '''
+
     def __init__(self, limit):
         self.limit = limit
 
     def __call__(self, missile):
-        return '_'.join(missile.split('\n', 1)[0].split(' ', 2)[1].split('?')[0].split('/')[0:self.limit+1])
+        return '_'.join(missile.split('\n', 1)[0].split(' ', 2)[1].split('?')[0].split('/')[0:self.limit + 1])
 
 __markers = {
     'uniq': lambda m: uuid4().hex,
@@ -35,7 +37,19 @@ __markers = {
 }
 
 
-def get_marker(marker_type):
+class __Enumerator(object):
+
+    def __init__(self, marker):
+        self.marker = marker
+        self.number = 0L
+
+    def __call__(self, missile):
+        marker = "%s#%d" % (self.marker(missile), self.number)
+        self.number += 1
+        return marker
+
+
+def get_marker(marker_type, enum_ammo=False):
     '''
     Returns a marker function of the requested marker_type
 
@@ -55,16 +69,25 @@ def get_marker(marker_type):
 
     >>> get_marker('3')(__test_missile)
     '_example_search_hello'
+
+    >>> marker = get_marker('3', True)
+    >>> marker(__test_missile)
+    '_example_search_hello#0'
+    >>> marker(__test_missile)
+    '_example_search_hello#1'
     '''
     if marker_type and marker_type is not '0':
         try:
             limit = int(marker_type)
-            return __UriMarker(limit)
+            marker = __UriMarker(limit)
         except ValueError:
             if marker_type in __markers:
-                return __markers[marker_type]
+                marker = __markers[marker_type]
             else:
                 raise NotImplementedError(
                     'No such marker: "%s"' % marker_type)
     else:
-        return lambda m: ''
+        marker = lambda m: ''
+    if enum_ammo:
+        marker = __Enumerator(marker)
+    return marker

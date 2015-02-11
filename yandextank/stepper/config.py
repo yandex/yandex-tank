@@ -90,7 +90,6 @@ class ComponentFactory():
                 http_ver=self.http_ver
             )
         elif self.ammo_file:
-            
             if self.ammo_type in af_readers:
                 if self.ammo_type is 'phantom':
                     with get_opener(self.ammo_file)(self.ammo_file, 'rb') as ammo:
@@ -103,9 +102,10 @@ class ComponentFactory():
                                 self.log.info(
                                     "Default ammo type ('phantom') used, use 'phantom.ammo_type' option to override it")
                         except StopIteration, e:
-                            self.log.exception("Couldn't read first line of ammo file")
-                            raise AmmoFileError("Couldn't read first line of ammo file")
-                        
+                            self.log.exception(
+                                "Couldn't read first line of ammo file")
+                            raise AmmoFileError(
+                                "Couldn't read first line of ammo file")
             else:
                 raise NotImplementedError(
                     'No such ammo type implemented: "%s"' % self.ammo_type)
