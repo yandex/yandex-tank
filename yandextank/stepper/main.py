@@ -228,7 +228,7 @@ class StepperWrapper(object):
                     self.headers) + sep + self.http_ver + sep + ";".join(self.chosen_cases)
             hashed_str += sep + self.enum_ammo
             if self.instances_schedule:
-                hashed_str += sep + self.instances
+                hashed_str += sep + str(self.instances)
 
             if self.ammo_file:
                 if not os.path.exists(self.ammo_file):
