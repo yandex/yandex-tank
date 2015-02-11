@@ -226,7 +226,7 @@ class StepperWrapper(object):
             hashed_str += sep + \
                 ";".join(self.uris) + sep + ";".join(
                     self.headers) + sep + self.http_ver + sep + ";".join(self.chosen_cases)
-            hashed_str += sep + self.enum_ammo
+            hashed_str += sep + str(self.enum_ammo)
             if self.instances_schedule:
                 hashed_str += sep + str(self.instances)
 
