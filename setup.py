@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='1.7.5',
+    version='1.7.6',
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -53,10 +53,4 @@ analytic tools for the results they produce.
         'yandextank.plugins.Phantom': ['config/*'],
         'yandextank.plugins.TipsAndTricks': ['config/*'],
     },
-    # TODO: move them all to resources maybe
-    data_files=[
-        ('/etc/bash_completion.d', [
-            'data/yandex-tank.completion'
-        ]),
-    ]
 )
