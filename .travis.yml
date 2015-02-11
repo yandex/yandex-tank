@@ -9,5 +9,4 @@ install:
   - pip install sqlalchemy
   - pip install importlib
   - pip install yandextank
-script: cd tests && nosetests
-
+script: cd tests && nosetests --with-doctest
