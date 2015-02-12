@@ -12,7 +12,6 @@ BuildRoot:  %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 Requires:   python-psutil
 Requires:   python-ipaddr
-Requires:   python-lxml
 
 
 %description

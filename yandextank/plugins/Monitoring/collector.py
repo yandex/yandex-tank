@@ -1,7 +1,7 @@
 """Target monitoring via SSH"""
 import ConfigParser
 from collections import defaultdict
-from lxml import etree
+from xml import etree
 from subprocess import PIPE, Popen
 import base64
 import logging
