@@ -22,7 +22,6 @@ analytic tools for the results they produce.
     install_requires=[
         'psutil',
         'ipaddr',
-        'lxml',
         'progressbar',
         'importlib',
     ],
