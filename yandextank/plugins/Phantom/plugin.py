@@ -104,7 +104,11 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             self.config = self.phantom.compose_config()
             args = [self.phantom_path, 'check', self.config]
 
-            result = tankcore.execute(args, catch_out=True)
+            try:
+                result = tankcore.execute(args, catch_out=True)
+            except OSError:
+                raise RuntimeError("Phantom I/O engine is not installed!")
+
             retcode = result[0]
             if retcode:
                 raise RuntimeError(
