@@ -3,18 +3,19 @@
 import time
 import logging
 
+import psutil
+
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
 
 
 class ResourceCheckPlugin(AbstractPlugin):
-    '''   Plugin to check system resources    '''
+    '''Plugin to check system resources'''
     SECTION = "rcheck"
 
     @staticmethod
     def get_key():
         return __file__
-
 
     def __init__(self, core):
         '''         Constructor        '''
@@ -55,8 +56,8 @@ class ResourceCheckPlugin(AbstractPlugin):
         res = tankcore.execute(cmd, True, 0.1, True)
         logging.debug("Result: %s", res)
         if not len(res[1]):
-    	    self.log.debug("No disk usage info: %s", res[2])
-    	    return
+            self.log.debug("No disk usage info: %s", res[2])
+            return
         disk_free = res[1]
         self.log.debug("Disk free space: %s/%s", disk_free.strip(), self.disk_limit)
         if int(disk_free.strip()) < self.disk_limit:
@@ -66,8 +67,8 @@ class ResourceCheckPlugin(AbstractPlugin):
 
     def __check_mem(self):
         ''' raise exception on RAM exceeded '''
-        cmd = "free -m | awk '$1==\"-/+\" {print $4}'"
-        mem_free = int(tankcore.execute(cmd, True, 0.1, True)[1].strip())
+        mem_free = psutil.virtual_memory().available / 2 ** 20
         self.log.debug("Memory free: %s/%s", mem_free, self.mem_limit)
         if mem_free < self.mem_limit:
-            raise RuntimeError("Not enough resources: free memory less than %sMB: %sMB" % (self.mem_limit, mem_free))
+            raise RuntimeError("Not enough resources: free memory less "
+                               "than %sMB: %sMB" % (self.mem_limit, mem_free))
