@@ -21,20 +21,17 @@ Yandex.Tank is an extendable open source load testing tool for advanced linux us
 * customizable and extendable monitoring that works over SSH
 
 ## Install from PyPI
-You will need some packages that are required for building different python libraries:
+Yandex Tank depends on some python libs. They would be installed automatically by pip, but to build them it will need the GCC and the Python headers. In Ubuntu they could be installed using this command:
 ```
-libxml2-dev libxslt1-dev python-dev zlib1g-dev
+sudo apt-get install gcc python-dev python-pip
 ```
-You will also need a GNU make for building them. In Ubuntu you can install a ```build-essential``` package. You should also install pip if you don't have it.
-Full command for Ubuntu looks like this:
-```
-sudo apt-get install python-pip build-essential libxml2-dev libxslt1-dev python-dev zlib1g-dev
-```
-You can do similar thing for your distribution. After you've installed all the packages, it is easy to install the Tank itself:
+You can do similar thing for your distribution. After you've installed this packages, you should be able install yandextank using pip:
 ```
 sudo pip install yandextank
 ```
-Remember that if you want to use ```phantom``` as a load generator you should install it separately. On Ubuntu you can do that by adding our PPA and installing ```phantom``` and ```phantom-ssl``` packages. On other distros you will maybe need to build it from sources.
+
+## Phantom
+To use Yandex Tank with ```phantom``` load generator you need to install it. On Ubuntu you can do that by adding our PPA and installing ```phantom``` and ```phantom-ssl``` packages. On other distros you will maybe need to build it from sources.
 ```
 sudo add-apt-repository ppa:yandex-load/main && sudo apt-get update
 sudo apt-get install phantom phantom-ssl
