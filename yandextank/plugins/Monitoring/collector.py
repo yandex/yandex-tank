@@ -32,7 +32,7 @@ class Config(object):
     def loglevel(self):
         """Get log level from config file. Possible values: info, debug"""
         log_level = 'info'
-        log_level_raw = self.tree.find('./Monitoring').get('loglevel')
+        log_level_raw = self.tree.getroot().get('loglevel')
         if log_level_raw in ('info', 'debug'):
             log_level = log_level_raw
         return log_level
@@ -481,7 +481,7 @@ class MonitoringCollector:
             logging.error("Error loading config: %s", exc)
             raise RuntimeError("Can't read monitoring config %s" % filename)
 
-        hosts = tree.findall('./Monitoring/Host')
+        hosts = tree.findall('Host')
         names = defaultdict()
         config = []
 
