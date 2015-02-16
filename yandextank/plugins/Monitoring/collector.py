@@ -23,11 +23,18 @@ import yandextank.core as tankcore
 logger = logging.getLogger(__name__)
 
 
+def parse_xml(config):
+    if os.path.exists(config):
+        return etree.parse(config)
+    else:
+        return etree.fromstring(config)
+
+
 class Config(object):
     """Config reader helper"""
 
     def __init__(self, config):
-        self.tree = etree.parse(config)
+        self.tree = parse_xml(config)
 
     def loglevel(self):
         """Get log level from config file. Possible values: info, debug"""
@@ -476,7 +483,7 @@ class MonitoringCollector:
         """Prepare config data"""
 
         try:
-            tree = etree.parse(filename)
+            tree = parse_xml(filename)
         except IOError as exc:
             logging.error("Error loading config: %s", exc)
             raise RuntimeError("Can't read monitoring config %s" % filename)
