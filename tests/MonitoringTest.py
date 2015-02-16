@@ -18,6 +18,11 @@ class MonitoringCollectorTestCase(TankTestCase):
         # XXX: write a better test
         assert conf
 
+    def test_inline_config(self):
+        mon = MonitoringCollector()
+        conf = mon.getconfig("<Monitoring>\n<Host address='[target]'/>\n</Monitoring>", 'localhost')
+        assert conf
+
     def test_collector(self):
         mon = MonitoringCollector()
         mon.config = "config/mon1.conf"
