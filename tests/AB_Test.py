@@ -1,4 +1,4 @@
-from TankTests import TankTestCase
+from Tank_Test import TankTestCase
 import unittest
 from yandextank.plugins.ApacheBenchmark import ABReader, ApacheBenchmarkPlugin
 from yandextank.plugins.Aggregator import AggregatorPlugin

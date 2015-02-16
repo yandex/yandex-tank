@@ -3,7 +3,7 @@ import unittest
 
 from yandextank.plugins.Aggregator import AggregatorPlugin, AbstractReader, \
     SecondAggregateDataTotalItem
-from TankTests import TankTestCase
+from Tank_Test import TankTestCase
 
 
 class AggregatorPluginTestCase(TankTestCase):

@@ -1,7 +1,7 @@
 from yandextank.core.consoleworker import ConsoleTank
 from yandextank.plugins.ConsoleOnline import ConsoleOnlinePlugin
-from ConsoleOnlinePluginTest import FakeConsoleMarkup
-from TankTests import FakeOptions
+from ConsoleOnlinePlugin_Test import FakeConsoleMarkup
+from Tank_Test import FakeOptions
 import TankTests
 import logging
 import unittest

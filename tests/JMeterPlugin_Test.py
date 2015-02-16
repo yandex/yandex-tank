@@ -3,7 +3,7 @@ import time
 import unittest
 
 from yandextank.plugins.JMeter import JMeterPlugin, JMeterReader
-from TankTests import TankTestCase
+from Tank_Test import TankTestCase
 from yandextank.plugins.Aggregator import AggregatorPlugin
 
 

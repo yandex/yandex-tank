@@ -1,6 +1,6 @@
 import unittest
 
-from TankTests import TankTestCase
+from Tank_Test import TankTestCase
 import yandextank.core as tankcore
 
 

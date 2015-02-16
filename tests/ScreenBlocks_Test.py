@@ -1,6 +1,6 @@
 from yandextank.plugins.ConsoleScreen import Screen, CurrentHTTPBlock, CurrentNetBlock
-from ConsoleOnlinePluginTest import FakeConsoleMarkup
-from TankTests import TankTestCase
+from ConsoleOnlinePlugin_Test import FakeConsoleMarkup
+from Tank_Test import TankTestCase
 
 class BlocksTestCase(TankTestCase):
     def test_HTTP(self):

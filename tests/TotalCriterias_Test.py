@@ -1,7 +1,7 @@
 from yandextank.plugins.Aggregator import SecondAggregateData, \
     SecondAggregateDataTotalItem
 from yandextank.plugins.TotalAutostop import TotalFracTimeCriteria, TotalHTTPCodesCriteria, TotalNegativeHTTPCodesCriteria, TotalNetCodesCriteria, TotalNegativeNetCodesCriteria, TotalHTTPTrendCriteria, QuantileOfSaturationCriteria
-from TankTests import TankTestCase
+from Tank_Test import TankTestCase
 import unittest
 from yandextank.plugins.Autostop import AutostopPlugin
 

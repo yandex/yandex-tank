@@ -2,8 +2,8 @@ from yandextank.plugins.Monitoring.collector import MonitoringCollector, \
     MonitoringDataListener, SSHWrapper
 from yandextank.plugins.ConsoleOnline import Screen
 from yandextank.plugins.Monitoring import MonitoringPlugin, MonitoringWidget
-from ConsoleOnlinePluginTest import FakeConsoleMarkup
-from TankTests import TankTestCase
+from ConsoleOnlinePlugin_Test import FakeConsoleMarkup
+from Tank_Test import TankTestCase
 import logging
 import time
 import tempfile

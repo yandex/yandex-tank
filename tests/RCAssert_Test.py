@@ -1,4 +1,4 @@
-from TankTests import TankTestCase
+from Tank_Test import TankTestCase
 import unittest
 from yandextank.plugins.RCAssert import RCAssertPlugin
 

@@ -1,5 +1,5 @@
 from yandextank.plugins.ShellExec import ShellExecPlugin
-from TankTests import TankTestCase
+from Tank_Test import TankTestCase
 import logging
 import select
 import subprocess

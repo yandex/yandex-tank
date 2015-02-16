@@ -1,6 +1,6 @@
 from yandextank.plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget, \
     RealConsoleMarkup
-from TankTests import TankTestCase
+from Tank_Test import TankTestCase
 import tempfile
 import unittest
 from yandextank.plugins.ConsoleScreen import krutilka

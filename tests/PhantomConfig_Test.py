@@ -3,7 +3,7 @@ import unittest
 import logging
 
 from yandextank.plugins.Phantom import PhantomConfig, PhantomPlugin
-from TankTests import TankTestCase
+from Tank_Test import TankTestCase
 from yandextank.plugins.Phantom.PhantomUtils import \
     StepperWrapper, AddressWizard
 

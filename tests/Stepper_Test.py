@@ -3,7 +3,7 @@ import os
 
 from yandextank.stepper import Stepper
 from yandextank.stepper.format import StpdReader
-from TankTests import TankTestCase
+from Tank_Test import TankTestCase
 
 
 class StepperTestCase(TankTestCase):
