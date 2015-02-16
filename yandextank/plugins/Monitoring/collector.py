@@ -32,7 +32,7 @@ class Config(object):
     def loglevel(self):
         """Get log level from config file. Possible values: info, debug"""
         log_level = 'info'
-        log_level_raw = self.tree.find('./Monitoring').get('loglevel')
+        log_level_raw = self.tree.getroot().get('loglevel')
         if log_level_raw in ('info', 'debug'):
             log_level = log_level_raw
         return log_level
@@ -386,7 +386,7 @@ class MonitoringCollector:
             listener.monitoring_data(self.send_data)
         self.send_data = ''
 
-    def get_host_config(self, filter_obj, host, names, target_hint):
+    def get_host_config(self, host, names, target_hint):
 
         default = {
             'System': 'csw,int',
@@ -440,8 +440,8 @@ class MonitoringCollector:
 
         logging.debug("Metrics count: %s", metrics_count)
         logging.debug("Host len: %s", len(host))
-        logging.debug("keys: %s", host.keys())
-        logging.debug("values: %s", host.values())
+        logging.debug("keys: %s", host.attrib.keys())
+        logging.debug("values: %s", host.attrib.values())
 
         # use default metrics for host
         if metrics_count == 0:
@@ -481,7 +481,7 @@ class MonitoringCollector:
             logging.error("Error loading config: %s", exc)
             raise RuntimeError("Can't read monitoring config %s" % filename)
 
-        hosts = tree.findall('./Monitoring/Host')
+        hosts = tree.findall('Host')
         names = defaultdict()
         config = []
 
