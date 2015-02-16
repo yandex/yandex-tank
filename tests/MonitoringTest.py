@@ -9,8 +9,14 @@ import time
 import tempfile
 
 
-class  MonitoringCollectorTestCase(TankTestCase):
+class MonitoringCollectorTestCase(TankTestCase):
     data = None
+
+    def test_config(self):
+        mon = MonitoringCollector()
+        conf = mon.getconfig("config/mon1.conf", 'localhost')
+        # XXX: write a better test
+        assert conf
 
     def test_collector(self):
         mon = MonitoringCollector()

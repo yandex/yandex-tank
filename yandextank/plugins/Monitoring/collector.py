@@ -386,7 +386,7 @@ class MonitoringCollector:
             listener.monitoring_data(self.send_data)
         self.send_data = ''
 
-    def get_host_config(self, filter_obj, host, names, target_hint):
+    def get_host_config(self, host, names, target_hint):
 
         default = {
             'System': 'csw,int',
@@ -440,8 +440,8 @@ class MonitoringCollector:
 
         logging.debug("Metrics count: %s", metrics_count)
         logging.debug("Host len: %s", len(host))
-        logging.debug("keys: %s", host.keys())
-        logging.debug("values: %s", host.values())
+        logging.debug("keys: %s", host.attrib.keys())
+        logging.debug("values: %s", host.attrib.values())
 
         # use default metrics for host
         if metrics_count == 0:
