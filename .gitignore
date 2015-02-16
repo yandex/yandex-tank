@@ -17,3 +17,5 @@ build/
 dist/
 yandextank.egg-info/
 setuptools-*
+*~
+*.swp
