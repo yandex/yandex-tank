@@ -10,6 +10,7 @@ import yandextank.core as tankcore
 
 
 class AggregateResultListener:
+
     """ listener to be notified about aggregate data """
 
     def __init__(self):
@@ -21,10 +22,15 @@ class AggregateResultListener:
 
 
 class AggregatorPlugin(AbstractPlugin):
+
     """ Plugin that manages aggregation """
-    default_time_periods = "1ms 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 " \
-                           "150 200 250 300 350 400 450 500 600 650 700 750 800 850 900 950 1s " \
-                           "1500 2s 2500 3s 3500 4s 4500 5s 5500 6s 6500 7s 7500 8s 8500 9s 9500 10s 11s"
+    default_time_periods = \
+        "1ms 2 3 4 5 6 7 8 9 10 20 " \
+        "30 40 50 60 70 80 90 100 " \
+        "150 200 250 300 350 400 450 " \
+        "500 600 650 700 750 800 850 900 950 1s " \
+        "1500 2s 2500 3s 3500 4s 4500 5s 5500 6s " \
+        "6500 7s 7500 8s 8500 9s 9500 10s 11s"
 
     SECTION = 'aggregator'
 
@@ -95,7 +101,8 @@ class AggregatorPlugin(AbstractPlugin):
         """ fill timeline gaps with zero samples """
         if not data:
             return
-        while self.last_sample_time and int(time.mktime(data.time.timetuple())) - self.last_sample_time > 1:
+        while self.last_sample_time \
+                and int(time.mktime(data.time.timetuple())) - self.last_sample_time > 1:
             self.last_sample_time += 1
             self.log.warning("Adding zero sample: %s", self.last_sample_time)
             zero = self.reader.get_zero_sample(
@@ -122,6 +129,7 @@ class AggregatorPlugin(AbstractPlugin):
 
 # ===============================================================
 class SecondAggregateData:
+
     """ class holds aggregate data for the second """
 
     def __init__(self, cumulative_item=None):
@@ -131,7 +139,8 @@ class SecondAggregateData:
         self.cumulative = cumulative_item
 
     def __repr__(self):
-        return "SecondAggregateData[%s][%s]" % (self.time, time.mktime(self.time.timetuple()))
+        return "SecondAggregateData[%s][%s]" \
+            % (self.time, time.mktime(self.time.timetuple()))
 
     def __getstate__(self):
         return {
@@ -142,6 +151,7 @@ class SecondAggregateData:
 
 
 class SecondAggregateDataItem:
+
     """ overall and case items has this type """
     QUANTILES = [0.25, 0.50, 0.75, 0.80, 0.85, 0.90, 0.95, 0.98, 0.99, 1.00]
 
@@ -185,7 +195,9 @@ class SecondAggregateDataItem:
             # "avg_response_time": self.avg_response_time,
         }
 
+
 class SecondAggregateDataTotalItem:
+
     """ total cumulative data item """
 
     def __init__(self):
@@ -252,6 +264,7 @@ class SecondAggregateDataTotalItem:
 # ===============================================================
 
 class AbstractReader:
+
     """
     Parent class for all source reading adapters
     """
