@@ -2,13 +2,13 @@ from yandextank.core.consoleworker import ConsoleTank
 from yandextank.plugins.ConsoleOnline import ConsoleOnlinePlugin
 from ConsoleOnlinePlugin_Test import FakeConsoleMarkup
 from Tank_Test import FakeOptions
-import TankTests
+import Tank_Test
 import logging
 import unittest
 import datetime
 
 
-class ConsoleWorkerTestCase(TankTests.TankTestCase):
+class ConsoleWorkerTestCase(Tank_Test.TankTestCase):
 
     def setUp(self):
         opts = FakeOptions()
