@@ -43,7 +43,7 @@ sudo apt-get install phantom phantom-ssl
 ## Get help
 Documentation at [ReadTheDocs](https://yandextank.readthedocs.org/en/latest/)
 
-Ask your questions at [Stackoverflow](https://stackoverflow.com/), use "load testing" + "yandex" tags.
+Ask your questions at [Stackoverflow](https://stackoverflow.com/), use "load-testing" + "yandex" tags.
 
 ## See also
 Evgeniy Mamchits' [phantom](https://github.com/mamchits/phantom) - Phantom scalable IO Engine
