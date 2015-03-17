@@ -714,10 +714,10 @@ class AgentConfig:
 
 if __name__ == '__main__':
     fname = os.path.dirname(__file__) + "_agent.log"
-    level = logger.DEBUG
+    level = logging.DEBUG
 
     fmt = "%(asctime)s - %(filename)s - %(name)s - %(levelname)s - %(message)s"
-    logger.basicConfig(filename=fname, level=level, format=fmt)
+    logging.basicConfig(filename=fname, level=level, format=fmt)
 
     worker = AgentWorker()
     worker.setDaemon(False)
