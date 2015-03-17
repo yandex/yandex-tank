@@ -1,7 +1,7 @@
 Yandex.Tank
 ===========
 
-Welcome to Yandex.Tank documentation. Yandex.Tank is an extensible load testing utility for unix systems. It is writtern in Python and uses different load generator modules in different languages.
+Welcome to Yandex.Tank documentation. Yandex.Tank is an extensible load testing utility for unix systems. It is written in Python and uses different load generator modules in different languages.
 
 See also
 --------
