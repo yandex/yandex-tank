@@ -82,8 +82,8 @@ class CpuStat(AbstractMetric):
             # TODO: change to simple file reading
             output = subprocess.Popen('cat /proc/stat | grep -E "^(ctxt|intr|cpu) "',
                                       shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except Exception, exc:
-            logger.error("Problems running popen", traceback.format_exc(exc))
+        except Exception:
+            logger.exception("Problems running popen")
             result.append([empty] * 9)
         else:
             err = output.stderr.read()
@@ -147,8 +147,8 @@ class CpuStat(AbstractMetric):
         for cmd2 in command:
             try:
                 output = subprocess.Popen(cmd2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            except Exception, exc:
-                logger.error("Problems running popen", traceback.format_exc(exc))
+            except Exception:
+                logger.exception("Problems running popen")
                 result.append(empty)
             else:
                 err = output.stderr.read()
