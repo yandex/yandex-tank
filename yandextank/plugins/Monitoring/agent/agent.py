@@ -17,6 +17,7 @@ import signal
 import ConfigParser
 import commands
 
+logger = logging.getLogger(__name__)
 
 def signal_handler(sig, frame):
     """ required for non-tty python runs to interrupt """
@@ -82,7 +83,7 @@ class CpuStat(AbstractMetric):
             output = subprocess.Popen('cat /proc/stat | grep -E "^(ctxt|intr|cpu) "',
                                       shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except Exception, exc:
-            logging.error("Problems running popen", traceback.format_exc(exc))
+            logger.error("Problems running popen", traceback.format_exc(exc))
             result.append([empty] * 9)
         else:
             err = output.stderr.read()
@@ -147,7 +148,7 @@ class CpuStat(AbstractMetric):
             try:
                 output = subprocess.Popen(cmd2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             except Exception, exc:
-                logging.error("Problems running popen", traceback.format_exc(exc))
+                logger.error("Problems running popen", traceback.format_exc(exc))
                 result.append(empty)
             else:
                 err = output.stderr.read()
@@ -197,7 +198,7 @@ class Custom(AbstractMetric):
 
     def diff_value(self, config_line, value):
         if not is_number(value):
-            #logging.warning("Non-numeric result string, defaulting value to 0: %s", value)
+            #logger.warning("Non-numeric result string, defaulting value to 0: %s", value)
             value = 0
         params = config_line.split(':')
         if len(params) > 2 and int(params[2]):
@@ -245,7 +246,7 @@ class Disk(AbstractMetric):
             self.read, self.write = read, writed
 
         except Exception, exc:
-            logging.error("%s: %s", exc, traceback.format_exc(exc))
+            logger.error("%s: %s", exc, traceback.format_exc(exc))
             result = ['', '']
         return result
 
@@ -253,7 +254,7 @@ class Disk(AbstractMetric):
     def _get_devs():
         with open("/proc/mounts") as mfd:
             mounts = mfd.readlines()
-        logging.info("Mounts: %s", mounts)
+        logger.info("Mounts: %s", mounts)
         devs = []
         for mount in mounts:
             if mount.startswith("/dev"):
@@ -265,24 +266,24 @@ class Disk(AbstractMetric):
                 #here we're trying to get block device name (even if mounted device file exists)
                 try:
                     for dirc in glob.glob("/sys/devices/virtual/block/*"):
-                        logging.debug("Checking %s", dirc)
+                        logger.debug("Checking %s", dirc)
                         name_path = "%s/dm/name" % dirc
                         if os.path.exists(name_path):
-                            logging.debug("Checking %s", dirc)
+                            logger.debug("Checking %s", dirc)
                             try:
                                 with open(name_path) as fds:
                                     nam = fds.read().strip()
-                                    logging.info("Test: %s/%s", nam, short_name)
+                                    logger.info("Test: %s/%s", nam, short_name)
                                     if nam == short_name:
                                         dsk_name = dirc.split(os.sep)[-1]
-                                        logging.info("Found: %s", dsk_name)
+                                        logger.info("Found: %s", dsk_name)
                                         devs.append(dsk_name)
                                         break
                             except Exception, exc:
-                                logging.info("Failed: %s", traceback.format_exc(exc))
+                                logger.info("Failed: %s", traceback.format_exc(exc))
                 except Exception as exc:
-                    logging.info("Failed to get block device name via /sys/devices/: %s", traceback.format_exc(exc))
-        logging.info("Devs: %s", devs)
+                    logger.info("Failed to get block device name via /sys/devices/: %s", traceback.format_exc(exc))
+        logger.info("Devs: %s", devs)
         return devs
 
 
@@ -302,7 +303,7 @@ class Mem(AbstractMetric):
 
     def columns(self):
         columns = ['Memory_total', 'Memory_used', 'Memory_free', 'Memory_shared', 'Memory_buff', 'Memory_cached']
-        logging.info("Start. Columns: %s" % columns)
+        logger.info("Start. Columns: %s" % columns)
         return columns
 
     def check(self):
@@ -311,14 +312,14 @@ class Mem(AbstractMetric):
             #TODO: change to simple file reading
             output = subprocess.Popen('cat /proc/meminfo', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except Exception, e:
-            logging.error("%s: %s" % (e.__class__, str(e)))
+            logger.error("%s: %s" % (e.__class__, str(e)))
             result.append([self.empty] * 9)
         else:
             data = {}
             err = output.stderr.read()
             if err:
                 result.extend([self.empty] * 9)
-                logging.error(err.rstrip())
+                logger.error(err.rstrip())
             else:
                 info = output.stdout.read()
 
@@ -424,7 +425,7 @@ class NetTxRx(AbstractMetric):
         statistic beter to change that behavior.
         """
         status, data = commands.getstatusoutput("/sbin/ifconfig -s")
-        logging.debug("/sbin/ifconfig output is: %s", data)
+        logger.debug("/sbin/ifconfig output is: %s", data)
 
         rx, tx = 0, 0
 
@@ -441,9 +442,9 @@ class NetTxRx(AbstractMetric):
                         rx += int(counters[rx_pos])
                         tx += int(counters[tx_pos])
             except Exception, e:
-                logging.error('Failed to parse ifconfig output %s: %s', data, e)
+                logger.error('Failed to parse ifconfig output %s: %s', data, e)
 
-        logging.debug("Total RX/TX packets counters: %s", [str(rx), str(tx)])
+        logger.debug("Total RX/TX packets counters: %s", [str(rx), str(tx)])
 
         if self.prev_rx == 0:
             t_tx = 0
@@ -473,17 +474,17 @@ class Net(AbstractMetric):
 
         # TODO: change to simple file reading
         cmnd = "cat /proc/net/dev | tail -n +3 | cut -d':' -f 1,2 --output-delimiter=' ' | awk '{print $1, $2, $10}'"
-        logging.debug("Starting: %s", cmnd)
+        logger.debug("Starting: %s", cmnd)
         try:
             stat = subprocess.Popen([cmnd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         except Exception, exc:
-            logging.error("Error getting net metrics: %s", exc)
+            logger.error("Error getting net metrics: %s", exc)
             result = ['', '']
 
         else:
             err = stat.stderr.read()
             if err:
-                logging.error("Error output: %s", err)
+                logger.error("Error output: %s", err)
                 result = ['', '']
             else:
                 for elm in stat.stdout:
@@ -491,16 +492,16 @@ class Net(AbstractMetric):
                     if match:
                         recv += int(match.group(1))
                         send += int(match.group(2))
-                        logging.debug("Recv/send: %s/%s", recv, send)
+                        logger.debug("Recv/send: %s/%s", recv, send)
                     else:
-                        logging.debug("Not matched: %s", elm)
+                        logger.debug("Not matched: %s", elm)
                 if self.recv:
                     result = [str(recv - self.recv), str(send - self.send)]
                 else:
                     result = ['', '']
 
         self.recv, self.send = recv, send
-        logging.debug("Network recieved/sent bytes: %s", result)
+        logger.debug("Network recieved/sent bytes: %s", result)
         return result
 
 
@@ -545,13 +546,13 @@ class AgentWorker(Thread):
 
 
     def run(self):
-        logging.info("Running startup commands")
+        logger.info("Running startup commands")
         for cmnd in self.startups:
-            logging.debug("Run: %s", cmnd)
+            logger.debug("Run: %s", cmnd)
             proc = self.popen(cmnd)
             self.startup_processes.append(proc)
 
-        logging.info("Start polling thread")
+        logger.info("Start polling thread")
         header = []
 
         sync_time = str(self.c_start + (int(time.time()) - self.c_local_start))
@@ -569,11 +570,11 @@ class AgentWorker(Thread):
         sys.stdout.write(self.dlmtr.join(header) + '\n')
         sys.stdout.flush()
 
-        logging.debug(self.dlmtr.join(header))
+        logger.debug(self.dlmtr.join(header))
 
         # check loop
         while not self.finished:
-            logging.debug('Start check')
+            logger.debug('Start check')
             line = []
             sync_time = str(self.c_start + (int(time.time()) - self.c_local_start))
             line.extend([self.c_host, sync_time])
@@ -585,36 +586,36 @@ class AgentWorker(Thread):
                     if len(data) != len(self.known_metrics[metric_name].columns()):
                         raise RuntimeError("Data len not matched columns count: %s" % data)
                 except Exception, e:
-                    logging.error('Can\'t fetch %s: %s', metric_name, e)
+                    logger.error('Can\'t fetch %s: %s', metric_name, e)
                     data = [''] * len(self.known_metrics[metric_name].columns())
                 line.extend(data)
 
-            logging.debug("line: %s" % line)
+            logger.debug("line: %s" % line)
             # custom commands
             line.extend(custom.check())
 
             # print result line
             try:
                 row = self.dlmtr.join(line)
-                logging.debug("str: %s" % row)
+                logger.debug("str: %s" % row)
                 sys.stdout.write(row + '\n')
                 sys.stdout.flush()
             except Exception, e:
-                logging.error('Failed to convert line %s: %s', line, e)
+                logger.error('Failed to convert line %s: %s', line, e)
 
             self.fixed_sleep(self.c_interval)
 
-        logging.info("Terminating startup commands")
+        logger.info("Terminating startup commands")
         for proc in self.startup_processes:
-            logging.debug("Terminate: %s", proc)
+            logger.debug("Terminate: %s", proc)
             os.killpg(proc.pid, signal.SIGTERM)
 
-        logging.info("Running shutdown commands")
+        logger.info("Running shutdown commands")
         for cmnd in self.shutdowns:
-            logging.debug("Run: %s", cmnd)
+            logger.debug("Run: %s", cmnd)
             subprocess.call(cmnd, shell=True)
 
-        logging.info("Worker thread finished")
+        logger.info("Worker thread finished")
 
     def fixed_sleep(self, slp_interval):
         """ sleep 'interval' exclude processing time part """
@@ -622,7 +623,7 @@ class AgentWorker(Thread):
         if self.last_run_ts is not None:
             delta = time.time() - self.last_run_ts
             delay = slp_interval - delta
-            logging.debug("Sleep for: %s (delta %s)", delay, delta)
+            logger.debug("Sleep for: %s (delta %s)", delay, delta)
 
         time.sleep(delay if delay > 0 else 0)
         self.last_run_ts = time.time()
@@ -632,7 +633,7 @@ class AgentConfig:
     def __init__(self, def_cfg_path):
         self.c_interval = 1
         self.c_host = socket.getfqdn()
-        logging.info("Start agent at host: %s\n" % self.c_host)
+        logger.info("Start agent at host: %s\n" % self.c_host)
         self.c_start = None
         self.c_local_start = int(time.time())
         self.metrics_collected = []
@@ -656,7 +657,7 @@ class AgentConfig:
         (options, args) = parser.parse_args()
 
         self.c_start = options.timestamp
-        logging.debug("Caller timestamp: %s", options.timestamp)
+        logger.debug("Caller timestamp: %s", options.timestamp)
 
         return options
 
@@ -678,7 +679,7 @@ class AgentConfig:
             if config.has_option('main', 'start'):
                 self.c_start = config.getint('main', 'start')
 
-        logging.info('Agent params: %s, %s' % (self.c_interval, self.c_host))
+        logger.info('Agent params: %s, %s' % (self.c_interval, self.c_host))
 
         # custom section
         if config.has_section('custom'):
@@ -713,10 +714,10 @@ class AgentConfig:
 
 if __name__ == '__main__':
     fname = os.path.dirname(__file__) + "_agent.log"
-    level = logging.DEBUG
+    level = logger.DEBUG
 
     fmt = "%(asctime)s - %(filename)s - %(name)s - %(levelname)s - %(message)s"
-    logging.basicConfig(filename=fname, level=level, format=fmt)
+    logger.basicConfig(filename=fname, level=level, format=fmt)
 
     worker = AgentWorker()
     worker.setDaemon(False)
@@ -727,11 +728,11 @@ if __name__ == '__main__':
     worker.start()
 
     try:
-        logging.debug("Check for stdin shutdown command")
+        logger.debug("Check for stdin shutdown command")
         cmd = sys.stdin.readline()
         if cmd:
-            logging.info("Stdin cmd received: %s", cmd)
+            logger.info("Stdin cmd received: %s", cmd)
             worker.finished = True
     except KeyboardInterrupt:
-        logging.debug("Interrupted")
+        logger.debug("Interrupted")
         worker.finished = True
