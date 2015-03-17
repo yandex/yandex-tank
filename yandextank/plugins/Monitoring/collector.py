@@ -109,13 +109,13 @@ class AgentClient(object):
 
     def start(self):
         """Start remote agent"""
-        logging.debug('Start monitoring: %s', self.host)
+        logger.debug('Start monitoring: %s', self.host)
         if not self.run:
             raise ValueError("Empty run string")
         self.run += ['-t', str(int(time.time()))]
-        logging.debug(self.run)
+        logger.debug(self.run)
         pipe = self.ssh.get_ssh_pipe(self.run)
-        logging.debug("Started: %s", pipe)
+        logger.debug("Started: %s", pipe)
         return pipe
 
     def create_agent_config(self, loglevel):
@@ -156,21 +156,21 @@ class AgentClient(object):
 
     def install(self, loglevel):
         """Create folder and copy agent and metrics scripts to remote host"""
-        logging.info("Installing monitoring agent at %s@%s...", self.username, self.host)
+        logger.info("Installing monitoring agent at %s@%s...", self.username, self.host)
         agent_config = self.create_agent_config(loglevel)
 
         self.ssh.set_host_port(self.host, self.port, self.username)
 
         # getting remote temp dir
         cmd = [self.python + ' -c "import tempfile; print tempfile.mkdtemp();"']
-        logging.debug("Get remote temp dir: %s", cmd)
+        logger.debug("Get remote temp dir: %s", cmd)
         pipe = self.ssh.get_ssh_pipe(cmd)
 
         err = pipe.stderr.read().strip()
         if err:
             raise RuntimeError("[%s] ssh error: '%s'" % (self.host, err))
         pipe.wait()
-        logging.debug("Return code [%s]: %s", self.host, pipe.returncode)
+        logger.debug("Return code [%s]: %s", self.host, pipe.returncode)
         if pipe.returncode:
             raise RuntimeError("Failed to get remote dir via SSH at %s@%s, code %s: %s" % (
                 self.username, self.host, pipe.returncode, pipe.stdout.read().strip()))
@@ -178,16 +178,16 @@ class AgentClient(object):
         remote_dir = pipe.stdout.read().strip()
         if remote_dir:
             self.path['AGENT_REMOTE_FOLDER'] = remote_dir
-        logging.debug("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
+        logger.debug("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
 
         # Copy agent
         cmd = [self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
                self.username+'@'+'['+self.host+']' + ':' + self.path['AGENT_REMOTE_FOLDER']]
-        logging.debug("Copy agent to %s: %s", self.host, cmd)
+        logger.debug("Copy agent to %s: %s", self.host, cmd)
 
         pipe = self.ssh.get_scp_pipe(cmd)
         pipe.wait()
-        logging.debug("AgentClient copy exitcode: %s", pipe.returncode)
+        logger.debug("AgentClient copy exitcode: %s", pipe.returncode)
         if pipe.returncode != 0:
             raise RuntimeError("AgentClient copy exitcode: %s" % pipe.returncode)
 
@@ -200,11 +200,11 @@ class AgentClient(object):
                 dirname=self.path['AGENT_REMOTE_FOLDER']
             )
         ]
-        logging.debug("[%s] Copy config: %s", cmd, self.host)
+        logger.debug("[%s] Copy config: %s", cmd, self.host)
 
         pipe = self.ssh.get_scp_pipe(cmd)
         pipe.wait()
-        logging.debug("AgentClient copy config exitcode: %s", pipe.returncode)
+        logger.debug("AgentClient copy config exitcode: %s", pipe.returncode)
         if pipe.returncode != 0:
             raise RuntimeError("AgentClient copy config exitcode: %s" % pipe.returncode)
 
@@ -221,11 +221,11 @@ class AgentClient(object):
         fhandle, log_file = tempfile.mkstemp('.log', "agent_" + self.host + "_")
         os.close(fhandle)
         cmd = [self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_file]
-        logging.debug("Copy agent log from %s@%s: %s", self.username, self.host, cmd)
+        logger.debug("Copy agent log from %s@%s: %s", self.username, self.host, cmd)
         remove = self.ssh.get_scp_pipe(cmd)
         remove.wait()
 
-        logging.info("Removing agent from: %s@%s...", self.username, self.host)
+        logger.info("Removing agent from: %s@%s...", self.username, self.host)
         cmd = ['rm', '-r', self.path['AGENT_REMOTE_FOLDER']]
         remove = self.ssh.get_ssh_pipe(cmd)
         remove.wait()
@@ -271,9 +271,9 @@ class MonitoringCollector:
         logger.debug("Filter mask: %s", self.filter_mask)
 
         # Creating agent for hosts
-        logging.debug('Creating agents')
+        logger.debug('Creating agents')
         for adr in agent_config:
-            logging.debug('Creating agent: %s', adr)
+            logger.debug('Creating agent: %s', adr)
             agent = AgentClient()
             agent.host = adr['host']
             agent.username = adr['username']
@@ -288,11 +288,11 @@ class MonitoringCollector:
             self.agents.append(agent)
 
         # Mass agents install
-        logging.debug("Agents: %s", self.agents)
+        logger.debug("Agents: %s", self.agents)
 
         conf = Config(self.config)
         for agent in self.agents:
-            logging.debug('Install monitoring agent. Host: %s', agent.host)
+            logger.debug('Install monitoring agent. Host: %s', agent.host)
             self.artifact_files.append(agent.install(conf.loglevel()))
 
     def start(self):
@@ -311,18 +311,18 @@ class MonitoringCollector:
             fcntl.fcntl(fds, fcntl.F_SETFL, flags | os.O_NONBLOCK)
             self.excepts.append(pipe.stderr)
 
-        logging.debug("Pipes: %s", self.agent_pipes)
+        logger.debug("Pipes: %s", self.agent_pipes)
 
     def poll(self):
         """Poll agents for data"""
         readable, writable, exceptional = select.select(self.outputs, self.inputs, self.excepts, 0)
-        logging.debug("Streams: %s %s %s", readable, writable, exceptional)
+        logger.debug("Streams: %s %s %s", readable, writable, exceptional)
 
         # if empty run - check children
         if (not readable) or exceptional:
             for pipe in self.agent_pipes:
                 if pipe.returncode:
-                    logging.debug("Child died returncode: %s", pipe.returncode)
+                    logger.debug("Child died returncode: %s", pipe.returncode)
                     self.outputs.remove(pipe.stdout)
                     self.agent_pipes.remove(pipe)
 
@@ -330,7 +330,7 @@ class MonitoringCollector:
         for excepted in exceptional:
             data = excepted.readline()
             while data:
-                logging.error("Got exception [%s]: %s", excepted, data)
+                logger.error("Got exception [%s]: %s", excepted, data)
                 data = excepted.readline()
 
         while readable:
@@ -344,9 +344,9 @@ class MonitoringCollector:
                 lines = []
 
             for data in lines:
-                logging.debug("Got data from agent: %s", data.strip())
+                logger.debug("Got data from agent: %s", data.strip())
                 self.send_data += self.filter_unused_data(self.filter_conf, self.filter_mask, data)
-                logging.debug("Data after filtering: %s", self.send_data)
+                logger.debug("Data after filtering: %s", self.send_data)
 
         if not self.first_data_received and self.send_data:
             self.first_data_received = True
@@ -358,12 +358,12 @@ class MonitoringCollector:
 
     def stop(self):
         """Shutdown agents"""
-        logging.debug("Initiating normal finish")
+        logger.debug("Initiating normal finish")
         for pipe in self.agent_pipes:
             try:
                 pipe.stdin.write("stop\n")
             except IOError as exc:
-                logging.warn("Problems stopping agent: %s", traceback.format_exc(exc))
+                logger.warn("Problems stopping agent: %s", traceback.format_exc(exc))
 
         time.sleep(1)
 
@@ -373,7 +373,7 @@ class MonitoringCollector:
                 delay = 1
                 while tankcore.pid_exists(pipe.pid):
                     if first_try:
-                        logging.debug("Killing %s with %s", pipe.pid, signal.SIGTERM)
+                        logger.debug("Killing %s with %s", pipe.pid, signal.SIGTERM)
                         os.killpg(pipe.pid, signal.SIGTERM)
                         pipe.communicate()
                         first_try = False
@@ -381,7 +381,7 @@ class MonitoringCollector:
                     else:
                         time.sleep(delay)
                         delay *= 2
-                        logging.warn("Killing %s with %s", pipe.pid, signal.SIGKILL)
+                        logger.warn("Killing %s with %s", pipe.pid, signal.SIGKILL)
                         os.killpg(pipe.pid, signal.SIGKILL)
 
         for agent in self.agents:
@@ -409,7 +409,7 @@ class MonitoringCollector:
         if hostname == '[target]':
             if not target_hint:
                 raise ValueError("Can't use [target] keyword with no target parameter specified")
-            logging.debug("Using target hint: %s", target_hint)
+            logger.debug("Using target hint: %s", target_hint)
             hostname = target_hint.lower()
         stats = []
         startups = []
@@ -445,10 +445,10 @@ class MonitoringCollector:
             elif (str(metric.tag)).lower() == 'shutdown':
                 shutdowns.append(metric.text)
 
-        logging.debug("Metrics count: %s", metrics_count)
-        logging.debug("Host len: %s", len(host))
-        logging.debug("keys: %s", host.attrib.keys())
-        logging.debug("values: %s", host.attrib.values())
+        logger.debug("Metrics count: %s", metrics_count)
+        logger.debug("Host len: %s", len(host))
+        logger.debug("keys: %s", host.attrib.keys())
+        logger.debug("values: %s", host.attrib.values())
 
         # use default metrics for host
         if metrics_count == 0:
@@ -485,7 +485,7 @@ class MonitoringCollector:
         try:
             tree = parse_xml(filename)
         except IOError as exc:
-            logging.error("Error loading config: %s", exc)
+            logger.error("Error loading config: %s", exc)
             raise RuntimeError("Can't read monitoring config %s" % filename)
 
         hosts = tree.findall('Host')
@@ -531,7 +531,7 @@ class MonitoringCollector:
             out = 'start;'
             out += self.filtering(filter_mask, keys[1:]).rstrip(';') + '\n'
         elif re.match('^\[debug\]', data):  # log debug output
-            logging.debug('agent debug: %s', data.rstrip())
+            logger.debug('agent debug: %s', data.rstrip())
         else:
             filtered = self.filtering(filter_mask, keys)
             if filtered:
@@ -622,7 +622,7 @@ class MonitoringDataDecoder:
             data.pop(0)  # remove 'start'
             host = data.pop(0)
             if not data:
-                logging.warn("Wrong mon data line: %s", line)
+                logger.warn("Wrong mon data line: %s", line)
             else:
                 timestamp = data.pop(0)
                 self.metrics[host] = []

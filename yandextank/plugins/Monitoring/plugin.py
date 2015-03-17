@@ -5,6 +5,9 @@ import time
 import traceback
 import fnmatch
 import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 from pkg_resources import resource_string
 from collector import MonitoringCollector, \
@@ -74,34 +77,34 @@ class MonitoringPlugin(AbstractPlugin):
             autostop.add_criteria_class(MetricHigherCriteria)
             autostop.add_criteria_class(MetricLowerCriteria)
         except KeyError:
-            self.log.debug("No autostop plugin found, not adding instances criteria")
+            logger.debug("No autostop plugin found, not adding instances criteria")
 
 
     def prepare_test(self):
         try:
             phantom = self.core.get_plugin_of_type(PhantomPlugin)
             if phantom.phout_import_mode:
-                self.log.info("Phout import mode, disabling monitoring")
+                logger.info("Phout import mode, disabling monitoring")
                 self.config = None
                 self.monitoring = None
 
             info = phantom.get_info()
             if info:
                 self.default_target = info.address
-                self.log.debug("Changed monitoring target to %s", self.default_target)
+                logger.debug("Changed monitoring target to %s", self.default_target)
         except KeyError, ex:
-            self.log.debug("Phantom plugin not found: %s", ex)
+            logger.debug("Phantom plugin not found: %s", ex)
 
         if self.address_resolver:
             try:
                 self.default_target = self.address_resolver.resolve_virtual(self.default_target)
             except Exception, exc:
-                self.log.error("Failed to get target info: %s", exc)
+                logger.error("Failed to get target info: %s", exc)
 
         if not self.config or self.config == 'none':
-            self.log.info("Monitoring has been disabled")
+            logger.info("Monitoring has been disabled")
         else:
-            self.log.info("Starting monitoring with config: %s", self.config)
+            logger.info("Starting monitoring with config: %s", self.config)
             self.core.add_artifact_file(self.config, True)
             self.monitoring.config = self.config
             if self.default_target:
@@ -115,7 +118,7 @@ class MonitoringPlugin(AbstractPlugin):
             try:
                 console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
             except Exception, ex:
-                self.log.debug("Console not found: %s", ex)
+                logger.debug("Console not found: %s", ex)
                 console = None
             if console:
                 widget = MonitoringWidget(self)
@@ -131,11 +134,11 @@ class MonitoringPlugin(AbstractPlugin):
                     self.monitoring.poll()
                     count += 1
             except Exception, exc:
-                self.log.debug("Problems starting monitoring: %s", traceback.format_exc(exc))
+                logger.debug("Problems starting monitoring: %s", traceback.format_exc(exc))
                 if self.die_on_fail:
                     raise exc
                 else:
-                    self.log.warning("Failed to start monitoring: %s", exc)
+                    logger.warning("Failed to start monitoring: %s", exc)
                     self.monitoring = None
 
 
@@ -144,20 +147,20 @@ class MonitoringPlugin(AbstractPlugin):
             if self.die_on_fail:
                 raise RuntimeError("Monitoring died unexpectedly")
             else:
-                self.log.warn("Monitoring died unexpectedly")
+                logger.warn("Monitoring died unexpectedly")
                 self.monitoring = None
         return -1
 
 
     def end_test(self, retcode):
-        self.log.info("Finishing monitoring")
+        logger.info("Finishing monitoring")
         if self.monitoring:
             self.monitoring.stop()
             for log in self.monitoring.artifact_files:
                 self.core.add_artifact_file(log)
 
             while self.monitoring.send_data:
-                self.log.info("Sending monitoring data rests...")
+                logger.info("Sending monitoring data rests...")
                 self.monitoring.send_collected_data()
 
         if self.mon_saver:
@@ -222,7 +225,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDat
 
 
     def monitoring_data(self, data_string):
-        self.log.debug("Mon widget data: %s", data_string)
+        logger.debug("Mon widget data: %s", data_string)
         for line in data_string.split("\n"):
             if not line.strip():
                 continue
@@ -270,7 +273,7 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
             if self.mon.monitoring:
                 self.mon.monitoring.add_listener(self)
         except KeyError:
-            self.log.warning("No monitoring module, mon autostop disabled")
+            logger.warning("No monitoring module, mon autostop disabled")
         self.triggered = False
         self.autostop = autostop
 
@@ -297,17 +300,17 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
             if self.metric not in data.keys() or not data[self.metric] or data[self.metric] == self.NA:
                 data[self.metric] = 0
 
-            self.log.debug("Compare %s %s/%s=%s to %s", self.get_type_string(), host, self.metric, data[self.metric],
+            logger.debug("Compare %s %s/%s=%s to %s", self.get_type_string(), host, self.metric, data[self.metric],
                            self.value_limit)
             if self.comparison_fn(float(data[self.metric]), self.value_limit):
                 if not self.seconds_count:
                     self.cause_second = self.last_second
 
-                self.log.debug(self.explain())
+                logger.debug(self.explain())
 
                 self.seconds_count += 1
                 if self.seconds_count >= self.seconds_limit:
-                    self.log.debug("Triggering autostop")
+                    logger.debug("Triggering autostop")
                     self.triggered = True
                     return
             else:
