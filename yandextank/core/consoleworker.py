@@ -361,7 +361,7 @@ class CompletionHelperOptionParser(OptionParser):
                 opts.append(
                     cmdtank.core.SECTION + '.' + cmdtank.core.PLUGIN_PREFIX + plugin_name + '=')
 
-            for plugin in cmdtank.core.plugins.values():
+            for plugin in cmdtank.core.plugins:
                 for option in plugin.get_available_options():
                     opts.append(plugin.SECTION + '.' + option + '=')
             print ' '.join(sorted(opts))
