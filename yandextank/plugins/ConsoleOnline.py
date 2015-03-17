@@ -65,7 +65,7 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
                   sys.stdout.write(self.console_markup.TOTAL_RESET)
 
               if self.remote_translator:
-                  self.remote_translator.send_console(console_view)
+                  self.remote_translator.send_console(self.__console_view)
 
     def is_test_finished(self):
         if not self.__writer_thread:
