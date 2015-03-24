@@ -7,7 +7,7 @@ Standards-Version: 3.9.1
 
 Package: yandex-tank
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, phantom (=0.14.0~pre65load2nmu)
+Depends: ${misc:Depends}, ${python:Depends}, phantom (=0.14.0~pre65load2nmu), phantom-ssl(=0.14.0~pre65load2nmu)
 Conflicts: yandex-load-tank-base
 Description: a performance measurement tool
 
