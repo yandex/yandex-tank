@@ -20,7 +20,6 @@ analytic tools for the results they produce.
         'psutil',
         'ipaddr',
         'progressbar',
-        'importlib',
     ],
     license='LGPLv2',
     classifiers=[
