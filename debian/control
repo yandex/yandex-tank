@@ -3,11 +3,14 @@ Maintainer: Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>
 Section: python
 Priority: optional
 Build-Depends: python-setuptools (>= 0.6b3), python-all (>= 2.6.6-3), debhelper (>= 7.4.3)
-Standards-Version: 3.9.1
+Standards-Version: 3.9.3
 
 Package: yandex-tank
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}, phantom (=0.14.0~pre65load2nmu), phantom-ssl(=0.14.0~pre65load2nmu)
 Conflicts: yandex-load-tank-base
-Description: a performance measurement tool
-
+Description: performance measurement tool
+ Find out about your app’s performance limits and bottlenecks in order
+ to use your resources in a most effective way. Ensure your app is scalable
+ and find a way to make it scalable. Use Yandex.Tank to choose a reliable
+ technology stack before you even started developing your product.
