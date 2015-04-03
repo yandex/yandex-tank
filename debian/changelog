@@ -1,3 +1,12 @@
+yandextank (1.7.10) precise; urgency=medium
+
+  * Fix some bugs with package pythonization
+  * Added debian packaging files
+  * Remove lxml dependency
+  * Enable 2to3 in setup.py
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Fri, 3 Apr 2015 17:37:13 +0400
+
 yandextank (1.7.4) precise; urgency=medium
 
   * enum_ammo stepper option for phantom [direvius]
