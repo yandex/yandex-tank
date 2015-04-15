@@ -518,4 +518,3 @@ that. Load.ini:
   instances=10
   gatling_ip = IP1 IP2
 
-**run yandex-tank with -g key**
