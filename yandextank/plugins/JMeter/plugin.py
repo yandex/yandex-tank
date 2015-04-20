@@ -41,7 +41,7 @@ class JMeterPlugin(AbstractPlugin):
         return __file__
 
     def get_available_options(self):
-        return ["jmx", "args", "jmeter_path", "buffer_size", "buffered_seconds", "use_argentum"]
+        return ["jmx", "args", "jmeter_path", "buffer_size", "buffered_seconds", "use_argentum", "exclude_markers", ]
 
     def configure(self):
         self.original_jmx = self.get_option("jmx")
@@ -55,6 +55,8 @@ class JMeterPlugin(AbstractPlugin):
                                                       self.get_option('buffered_seconds', '3')))
         self.core.add_artifact_file(self.jmeter_log, True)
         self.use_argentum = eval(self.get_option('use_argentum', 'False'))
+        self.exclude_markers = set(filter((lambda marker: marker != ''),
+                                                      self.get_option('exclude_markers', []).split(' ')))
         self.jmx = self.__add_jmeter_components(
             self.original_jmx, self.jtl_file, self._get_variables())
         self.core.add_artifact_file(self.jmx)

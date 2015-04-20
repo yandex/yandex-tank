@@ -52,7 +52,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         return __file__
 
     def get_available_options(self):
-        opts = ["eta_file", "phantom_path", "buffered_seconds", ]
+        opts = ["eta_file", "phantom_path", "buffered_seconds", "exclude_markers", ]
         opts += [PhantomConfig.OPTION_PHOUT, self.OPTION_CONFIG]
         opts += PhantomConfig.get_available_options()
         return opts
@@ -66,6 +66,8 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.enum_ammo = self.get_option("enum_ammo", False)
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
+        self.exclude_markers = set(filter((lambda marker: marker != ''),
+                                        self.get_option('exclude_markers', []).split(' ')))
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)

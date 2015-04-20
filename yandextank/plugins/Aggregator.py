@@ -275,6 +275,7 @@ class AbstractReader:
         self.cumulative = SecondAggregateDataTotalItem()
         self.data_queue = []
         self.data_buffer = {}
+        self.exclude_markers = set()
 
     def check_open_files(self):
         """ open files if necessary """
@@ -295,8 +296,10 @@ class AbstractReader:
             datetime.datetime.fromtimestamp(next_time))
         time_before = time.time()
         for item in data:
-            self.__append_sample(result.overall, item)
             marker = item[0]
+            if marker in self.exclude_markers:
+                continue
+            self.__append_sample(result.overall, item)
             if marker:
                 if not marker in result.cases.keys():
                     result.cases[marker] = SecondAggregateDataItem()
