@@ -40,7 +40,7 @@ sudo add-apt-repository ppa:yandex-load/main && sudo apt-get update
 sudo apt-get install phantom phantom-ssl
 ```
 
-Report plugin is a distinct project. You can found it [here](https://github.com/yandex-load/yatank-online)
+**Report plugin** is a distinct project. You can found it [here](https://github.com/yandex-load/yatank-online).
 
 ## Get help
 Documentation at [ReadTheDocs](https://yandextank.readthedocs.org/en/latest/)
