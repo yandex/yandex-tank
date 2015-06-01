@@ -63,7 +63,7 @@ class JMeterPlugin(AbstractPlugin):
 
     def prepare_test(self):
         self.args = [self.jmeter_path, "-n", "-t", self.jmx, '-j', self.jmeter_log,
-                     '-Jjmeter.save.saveservice.default_delimiter=\\t']
+                     '-Jjmeter.save.saveservice.default_delimiter=\\t', "-l", self.jtl_file]
         self.args += tankcore.splitstring(self.user_args)
 
         aggregator = None
