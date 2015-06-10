@@ -1,7 +1,7 @@
 import logging
 import time
 from yandextank.stepper import StpdReader
-from zmq_reader import ZmqReader
+from .zmq_reader import ZmqReader
 import multiprocessing as mp
 import threading as th
 from Queue import Empty, Full
@@ -14,7 +14,17 @@ class BFG(object):
     def __init__(self, gun, instances, threads, stpd_filename, zmq=False, cached_stpd=False):
         self.log = logging.getLogger(__name__)
         self.log.info(
-            "BFG using stpd from %s", stpd_filename)
+            """
+BFG using stpd from {stpd_filename}
+Instances: {instances}
+Threads per instance: {threads}
+Gun: {gun.__class__}
+""".format(
+            stpd_filename=stpd_filename,
+            instances=instances,
+            threads=threads,
+            gun=gun,
+        ))
         self.gun = gun
         self.instances = int(instances)
         self.threads = int(threads)
@@ -23,17 +33,21 @@ class BFG(object):
         self.task_queue = mp.Queue(1024)
         self.cached_stpd = cached_stpd
         self.stpd_filename = stpd_filename
-        self.pool = [mp.Process(target=self._worker) for i in xrange(0, self.instances)]
+        self.pool = [
+            mp.Process(target=self._worker) for _ in xrange(0, self.instances)]
         self.feeder = th.Thread(target=self._feed)
         self.zmq = zmq
+        self.workers_finished = False
 
     def start(self):
         self.start_time = time.time()
-        map(lambda x: x.start(), self.pool)
+        for process in self.pool:
+            process.daemon = True
+            process.start()
         self.feeder.start()
 
     def running(self):
-        return not self.quit.is_set()
+        return not self.quit.is_set() or not self.workers_finished
 
     def stop(self):
         self.quit.set()
@@ -58,12 +72,15 @@ class BFG(object):
             self.quit.set()
             map(lambda x: x.join(), self.pool)
             self.log.info("All workers exited.")
+            self.workers_finished = True
         except (KeyboardInterrupt, SystemExit):
             self.quit.set()
 
     def _worker(self):
-        self.log.info("Started shooter process with %s threads..." % self.threads)
-        pool = [th.Thread(target=self._thread_worker) for i in xrange(0, self.threads)]
+        self.log.info(
+            "Started shooter process with %s threads..." % self.threads)
+        pool = [th.Thread(
+                target=self._thread_worker) for _ in xrange(0, self.threads)]
         map(lambda x: x.start(), pool)
         try:
             map(lambda x: x.join(), pool)
@@ -76,13 +93,12 @@ class BFG(object):
         while not self.quit.is_set():
             try:
                 task = self.task_queue.get(timeout=1)
-                ts, missile, marker = task
-                planned_time = self.start_time + (ts / 1000.0)
+                timestamp, missile, marker = task
+                planned_time = self.start_time + (timestamp / 1000.0)
                 delay = planned_time - time.time()
                 if delay > 0:
                     time.sleep(delay)
-                cur_time, sample = self.gun.shoot(missile, marker)
-                self.results.put((cur_time, sample), timeout=1)
+                self.gun.shoot(missile, marker, self.results)
             except (KeyboardInterrupt, SystemExit):
                 self.quit.set()
             except Empty:
@@ -90,5 +106,6 @@ class BFG(object):
                     self.log.info("Empty queue. Exiting thread.")
                     return
             except Full:
-                self.log.warning("Couldn't put to result queue because it's full")
+                self.log.warning(
+                    "Couldn't put to result queue because it's full")
         self.log.debug("Exiting shooter thread...")

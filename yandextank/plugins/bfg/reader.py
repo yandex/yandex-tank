@@ -36,7 +36,7 @@ class BFGReader(AbstractReader):
         '''
         while self.steps and self.steps[0][1] < 1:
             self.steps.pop(0)
-        
+
         if not self.steps:
             return 0
         else:

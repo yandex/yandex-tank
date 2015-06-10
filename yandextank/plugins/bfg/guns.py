@@ -27,8 +27,8 @@ class LogGun(AbstractPlugin):
         param = self.get_option("param", '15')
         self.log.info('Initialized log gun for BFG with param = %s' % param)
 
-    def shoot(self, missile, marker):
-        self.log.debug("Missile: %s\n%s", marker, missile)
+    def shoot(self, missile, marker, results):
+        self.log.info("Missile: %s\n%s", marker, missile)
         rt = randint(2, 30000)
         data_item = Sample(
             marker,             # marker
@@ -44,7 +44,7 @@ class LogGun(AbstractPlugin):
             0,                  # receive
             0,                  # accuracy
         )
-        return (int(time.time()), data_item)
+        results.put((int(time.time()), data_item), timeout=1)
 
 class SqlGun(AbstractPlugin):
     SECTION = 'sql_gun'
@@ -54,7 +54,7 @@ class SqlGun(AbstractPlugin):
         AbstractPlugin.__init__(self, core)
         self.engine = create_engine(self.get_option("db"))
 
-    def shoot(self, missile, marker):
+    def shoot(self, missile, marker, results):
         self.log.debug("Missile: %s\n%s", marker, missile)
         start_time = time.time()
         errno = 0
@@ -92,7 +92,7 @@ class SqlGun(AbstractPlugin):
             0,                  # receive
             0,                  # accuracy
         )
-        return (int(time.time()), data_item)
+        results.put((int(time.time()), data_item), timeout=1)
 
 class CustomGun(AbstractPlugin):
     SECTION = 'custom_gun'
@@ -105,8 +105,8 @@ class CustomGun(AbstractPlugin):
         sys.path.append(module_path)
         self.module = __import__(module_name)
 
-    def shoot(self, missile, marker):
-        return self.module.shoot(self, missile, marker)
+    def shoot(self, missile, marker, results):
+        results.put(self.module.shoot(self, missile, marker), timeout=1)
 
 class HttpGun(AbstractPlugin):
     SECTION = 'http_gun'
@@ -116,7 +116,7 @@ class HttpGun(AbstractPlugin):
         AbstractPlugin.__init__(self, core)
         self.base_address = self.get_option("base_address")
 
-    def shoot(self, missile, marker):
+    def shoot(self, missile, marker, results):
         self.log.debug("Missile: %s\n%s", marker, missile)
         start_time = time.time()
         r = requests.get(self.base_address + missile)
@@ -137,4 +137,31 @@ class HttpGun(AbstractPlugin):
             0,                  # receive
             0,                  # accuracy
         )
-        return (int(time.time()), data_item)
+        results.put((int(time.time()), data_item), timeout=1)
+
+class ScenarioGun(AbstractPlugin):
+    SECTION = 'scenario_gun'
+
+    def __init__(self, core):
+        self.log = logging.getLogger(__name__)
+        AbstractPlugin.__init__(self, core)
+
+    def shoot(self, missile, marker, results):
+        start_time = time.time()
+        #TODO
+        rt = int((time.time() - start_time) * 1000)
+        data_item = Sample(
+            marker,             # marker
+            th.active_count(),  # threads
+            rt,                 # overallRT
+            200,                # httpCode
+            0,                  # netCode
+            0,                  # sent
+            0,                  # received
+            0,                  # connect
+            0,                  # send
+            rt,                 # latency
+            0,                  # receive
+            0,                  # accuracy
+        )
+        results.put((int(time.time()), data_item), timeout=1)
