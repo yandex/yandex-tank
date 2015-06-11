@@ -17,6 +17,30 @@ requests_logger.setLevel(logging.WARNING)
 Sample = namedtuple(
     'Sample', 'marker,threads,overallRT,httpCode,netCode,sent,received,connect,send,latency,receive,accuracy')
 
+from contextlib import contextmanager
+
+
+@contextmanager
+def measure(marker, err, results):
+    start_time = time.time()
+    yield
+    response_time = int((time.time() - start_time) * 1000)
+    data_item = Sample(
+        marker,             # marker
+        th.active_count(),  # threads
+        response_time,      # overall response time
+        err,                # httpCode
+        0,                  # netCode
+        0,                  # sent
+        0,                  # received
+        0,                  # connect
+        0,                  # send
+        response_time,      # latency
+        0,                  # receive
+        0,                  # accuracy
+    )
+    results.put((int(time.time()), data_item), timeout=1)
+
 
 class LogGun(AbstractPlugin):
     SECTION = 'log_gun'
@@ -147,21 +171,16 @@ class ScenarioGun(AbstractPlugin):
         AbstractPlugin.__init__(self, core)
 
     def shoot(self, missile, marker, results):
-        start_time = time.time()
-        #TODO
-        rt = int((time.time() - start_time) * 1000)
-        data_item = Sample(
-            marker,             # marker
-            th.active_count(),  # threads
-            rt,                 # overallRT
-            200,                # httpCode
-            0,                  # netCode
-            0,                  # sent
-            0,                  # received
-            0,                  # connect
-            0,                  # send
-            rt,                 # latency
-            0,                  # receive
-            0,                  # accuracy
-        )
-        results.put((int(time.time()), data_item), timeout=1)
+        err = 0
+        with measure("root", err, results):
+            #resp = requests.get("http://bsgraphite-gfe01h.yandex.ru/")
+            #err = resp.status_code
+            time.sleep(1)
+        with measure("afdb_load", err, results):
+            #resp = requests.get("http://bsgraphite-gfe01h.yandex.ru/afdb_load/")
+            #err = resp.status_code
+            time.sleep(1)
+        with measure("afdb", err, results):
+            #resp = requests.get("http://bsgraphite-gfe01h.yandex.ru/afdb/")
+            #err = resp.status_code
+            time.sleep(1)

@@ -35,7 +35,7 @@ Gun: {gun.__class__}
         self.stpd_filename = stpd_filename
         self.pool = [
             mp.Process(target=self._worker) for _ in xrange(0, self.instances)]
-        self.feeder = th.Thread(target=self._feed)
+        self.feeder = th.Thread(target=self._feed, name="Feeder")
         self.zmq = zmq
         self.workers_finished = False
 
@@ -47,7 +47,7 @@ Gun: {gun.__class__}
         self.feeder.start()
 
     def running(self):
-        return not self.quit.is_set() or not self.workers_finished
+        return not self.workers_finished
 
     def stop(self):
         self.quit.set()
@@ -66,10 +66,13 @@ Gun: {gun.__class__}
                 self.log.info("Stop feeding: gonna quit")
                 return
             self.task_queue.put(task)
-        self.log.info("Feeded all data.")
+        self.log.info(
+            "Feeded all data. Publishing %d killer tasks" % (
+                self.threads * self.instances))
+        [self.task_queue.put(None) for _ in range(
+            self.threads * self.instances)]
         try:
             self.log.info("Waiting for workers")
-            self.quit.set()
             map(lambda x: x.join(), self.pool)
             self.log.info("All workers exited.")
             self.workers_finished = True
@@ -89,10 +92,13 @@ Gun: {gun.__class__}
             self.quit.set()
 
     def _thread_worker(self):
-        self.log.debug("Starting shooter thread...")
+        self.log.info("Starting shooter thread %s", th.current_thread().name)
         while not self.quit.is_set():
             try:
                 task = self.task_queue.get(timeout=1)
+                if not task:
+                    self.log.info("%s got killer task.", th.current_thread().name)
+                    break
                 timestamp, missile, marker = task
                 planned_time = self.start_time + (timestamp / 1000.0)
                 delay = planned_time - time.time()
@@ -103,9 +109,9 @@ Gun: {gun.__class__}
                 self.quit.set()
             except Empty:
                 if self.quit.is_set():
-                    self.log.info("Empty queue. Exiting thread.")
+                    self.log.info("Empty queue. Exiting thread %s", th.current_thread().name)
                     return
             except Full:
                 self.log.warning(
                     "Couldn't put to result queue because it's full")
-        self.log.debug("Exiting shooter thread...")
+        self.log.info("Exiting shooter thread %s", th.current_thread().name)
