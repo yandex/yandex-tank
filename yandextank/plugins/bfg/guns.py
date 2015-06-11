@@ -21,7 +21,7 @@ from contextlib import contextmanager
 
 
 @contextmanager
-def measure(marker, err, results):
+def measure(marker, results):
     start_time = time.time()
     yield
     response_time = int((time.time() - start_time) * 1000)
@@ -29,7 +29,7 @@ def measure(marker, err, results):
         marker,             # marker
         th.active_count(),  # threads
         response_time,      # overall response time
-        err,                # httpCode
+        200,                # httpCode
         0,                  # netCode
         0,                  # sent
         0,                  # received
@@ -130,7 +130,7 @@ class CustomGun(AbstractPlugin):
         self.module = __import__(module_name)
 
     def shoot(self, missile, marker, results):
-        results.put(self.module.shoot(self, missile, marker), timeout=1)
+        self.module.shoot(self, missile, marker, results)
 
 class HttpGun(AbstractPlugin):
     SECTION = 'http_gun'
@@ -163,6 +163,7 @@ class HttpGun(AbstractPlugin):
         )
         results.put((int(time.time()), data_item), timeout=1)
 
+
 class ScenarioGun(AbstractPlugin):
     SECTION = 'scenario_gun'
 
@@ -171,16 +172,5 @@ class ScenarioGun(AbstractPlugin):
         AbstractPlugin.__init__(self, core)
 
     def shoot(self, missile, marker, results):
-        err = 0
-        with measure("root", err, results):
-            #resp = requests.get("http://bsgraphite-gfe01h.yandex.ru/")
-            #err = resp.status_code
-            time.sleep(1)
-        with measure("afdb_load", err, results):
-            #resp = requests.get("http://bsgraphite-gfe01h.yandex.ru/afdb_load/")
-            #err = resp.status_code
-            time.sleep(1)
-        with measure("afdb", err, results):
-            #resp = requests.get("http://bsgraphite-gfe01h.yandex.ru/afdb/")
-            #err = resp.status_code
-            time.sleep(1)
+        with measure("logon", results):
+            requests.get("http://google.com/")

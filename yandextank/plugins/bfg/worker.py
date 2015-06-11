@@ -38,6 +38,7 @@ Gun: {gun.__class__}
         self.feeder = th.Thread(target=self._feed, name="Feeder")
         self.zmq = zmq
         self.workers_finished = False
+        self.start_time = time.time()
 
     def start(self):
         self.start_time = time.time()
@@ -45,6 +46,13 @@ Gun: {gun.__class__}
             process.daemon = True
             process.start()
         self.feeder.start()
+        try:
+            self.log.info("Waiting for workers")
+            map(lambda x: x.join(), self.pool)
+            self.log.info("All workers exited.")
+            self.workers_finished = True
+        except (KeyboardInterrupt, SystemExit):
+            self.quit.set()
 
     def running(self):
         return not self.workers_finished
@@ -64,20 +72,20 @@ Gun: {gun.__class__}
         for task in self.plan:
             if self.quit.is_set():
                 self.log.info("Stop feeding: gonna quit")
+                # self.task_queue.close()
                 return
-            self.task_queue.put(task)
+            while 1:
+                try:
+                    self.task_queue.put(task, timeout=1)
+                except Full:
+                    if self.quit.is_set() or self.workers_finished:
+                        return
         self.log.info(
             "Feeded all data. Publishing %d killer tasks" % (
                 self.threads * self.instances))
-        [self.task_queue.put(None) for _ in range(
-            self.threads * self.instances)]
-        try:
-            self.log.info("Waiting for workers")
-            map(lambda x: x.join(), self.pool)
-            self.log.info("All workers exited.")
-            self.workers_finished = True
-        except (KeyboardInterrupt, SystemExit):
-            self.quit.set()
+        [self.task_queue.put(None) for _ in xrange(
+            0, self.threads * self.instances)]
+
 
     def _worker(self):
         self.log.info(
