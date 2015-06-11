@@ -68,11 +68,13 @@ Gun: {gun.__class__}
                 return
             while 1:
                 try:
-                    self.log.info(task)
                     self.task_queue.put(task, timeout=1)
+                    break
                 except Full:
                     if self.quit.is_set() or self.workers_finished:
                         return
+                    else:
+                        continue
         self.log.info(
             "Feeded all data. Publishing %d killer tasks" % (
                 self.threads * self.instances))
