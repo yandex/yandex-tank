@@ -130,7 +130,7 @@ class CustomGun(AbstractPlugin):
         self.module = __import__(module_name)
 
     def shoot(self, missile, marker, results):
-        self.module.shoot(self, missile, marker, results)
+        self.module.shoot(missile, marker, results)
 
 class HttpGun(AbstractPlugin):
     SECTION = 'http_gun'
