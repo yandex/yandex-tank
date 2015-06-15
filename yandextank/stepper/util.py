@@ -162,9 +162,9 @@ class HttpOpener(object):
                 hasher.update(self.hash)
                 tmpfile_path = "/tmp/%s" % hasher.hexdigest()
                 if os.path.exists(tmpfile_path):
-					logging.info("Ammofile has already been downloaded to %s . Using it..", tmpfile_path)
-				else:
-					logging.info("Downloading ammofile to %s", tmpfile_path)
+                	logging.info("Ammofile has already been downloaded to %s . Using it..", tmpfile_path)
+                else:
+                	logging.info("Downloading ammofile to %s", tmpfile_path)
                     data = requests.get(self.url)
                     f = open(tmpfile_path, "wb")
                     f.write(data.content)
@@ -258,8 +258,8 @@ class HttpStreamWrapper():
         if not self._content_consumed or self.buffer:
     	    try:
                 line = self.buffer[:self.buffer.index('\n')+1]
-    	    except ValueError:
-        		line = self.buffer
+            except ValueError:
+            	line = self.buffer
             self.pointer += len(line)
             self.buffer = self.buffer[len(line):]
             return line
