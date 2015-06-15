@@ -4,10 +4,10 @@ from yandextank.plugins.ConsoleOnline import ConsoleOnlinePlugin
 import logging
 import time
 from yandextank.stepper import StepperWrapper
-from guns import LogGun, SqlGun, CustomGun, HttpGun
-from widgets import BFGInfoWidget
-from worker import BFG
-from reader import BFGReader
+from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun
+from .widgets import BFGInfoWidget
+from .worker import BFG
+from .reader import BFGReader
 
 
 class BFGPlugin(AbstractPlugin):
@@ -28,6 +28,7 @@ class BFGPlugin(AbstractPlugin):
             'sql': SqlGun,
             'custom': CustomGun,
             'http': HttpGun,
+            'scenario': ScenarioGun,
         }
 
     @staticmethod
@@ -35,7 +36,9 @@ class BFGPlugin(AbstractPlugin):
         return __file__
 
     def get_available_options(self):
-        return ["gun_type", "instances", "cached_stpd"] + self.stepper_wrapper.get_available_options
+        return [
+            "gun_type", "instances",
+            "cached_stpd"] + self.stepper_wrapper.get_available_options
 
     def configure(self):
         self.log.info("Configuring BFG...")
@@ -61,7 +64,7 @@ class BFGPlugin(AbstractPlugin):
             threads=self.get_option("threads", '10'),
             stpd_filename=self.stepper_wrapper.stpd,
             cached_stpd=cached_stpd,
-            zmq=self.get_option("zmq", None)
+            zmq=self.get_option("zmq", "")
         )
         aggregator = None
         try:
