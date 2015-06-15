@@ -18,6 +18,7 @@ analytic tools for the results they produce.
         'psutil',
         'ipaddr',
         'progressbar',
+        'requests',
     ],
     license='LGPLv2',
     classifiers=[
