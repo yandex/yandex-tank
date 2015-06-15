@@ -129,6 +129,9 @@ Gun: {gun.__class__}
             self.log.debug("Exiting shooter process.")
         except (KeyboardInterrupt, SystemExit):
             self.quit.set()
+            # map(lambda x: x.join(0.2), pool)
+            # map(lambda x: x.terminate(), pool)
+            # or maybe make the Aggregator to read everything from the queue
             map(lambda x: x.join(), pool)  # wait for workers to finish
 
     def _thread_worker(self):
