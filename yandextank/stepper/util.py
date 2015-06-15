@@ -257,7 +257,7 @@ class HttpStreamWrapper():
 		        break
         if not self._content_consumed or self.buffer:
     	    try:
-                    line = self.buffer[:self.buffer.index('\n')+1]
+                line = self.buffer[:self.buffer.index('\n')+1]
     	    except ValueError:
         		line = self.buffer
             self.pointer += len(line)
