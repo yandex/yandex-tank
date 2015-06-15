@@ -155,16 +155,16 @@ class HttpOpener(object):
             self._detect_gzip()
             if not self.gzip \
             and not self.data_length or not str(self.data_length).isdigit() or int(self.data_length) > 10**8):
-            	logging.info("Ammofile data is larger than 100MB. Reading from stream..")
+                logging.info("Ammofile data is larger than 100MB. Reading from stream..")
                 return HttpStreamWrapper(self.url)
             else:
                 hasher = hashlib.md5()
                 hasher.update(self.hash)
                 tmpfile_path = "/tmp/%s" % hasher.hexdigest()
                 if os.path.exists(tmpfile_path):
-                	logging.info("Ammofile has already been downloaded to %s . Using it..", tmpfile_path)
+                    logging.info("Ammofile has already been downloaded to %s . Using it..", tmpfile_path)
                 else:
-                	logging.info("Downloading ammofile to %s", tmpfile_path)
+                    logging.info("Downloading ammofile to %s", tmpfile_path)
                     data = requests.get(self.url)
                     f = open(tmpfile_path, "wb")
                     f.write(data.content)
@@ -184,12 +184,12 @@ class HttpOpener(object):
                 stream_iterator = stream.raw.stream(2, decode_content=True)
                 gz_header = stream_iterator.next()
                 if gz_header[:2] == b'\037\213':
-					logging.info("Ammofile data is in gz format")
+                    logging.info("Ammofile data is in gz format")
                     self.gzip = True
             except:
                 logging.exception("")
-			finally:
-				stream.connection.close()
+            finally:
+                stream.connection.close()
     
     @property
     def hash(self):
@@ -198,10 +198,10 @@ class HttpOpener(object):
     
     @property
     def data_length(self): 
-		try:
-			data_length = int(self.data_info.headers.get("Content-Length", 0))
-		except:
-			data_length = 0
+        try:
+            data_length = int(self.data_info.headers.get("Content-Length", 0))
+        except:
+            data_length = 0
         return data_length
     
     
@@ -254,7 +254,7 @@ class HttpStreamWrapper():
                 self._enhance_buffer()
             except (StopIteration, TypeError, requests.exceptions.StreamConsumedError):
                 self._content_consumed = True
-		        break
+                break
         if not self._content_consumed or self.buffer:
     	    try:
                 line = self.buffer[:self.buffer.index('\n')+1]
