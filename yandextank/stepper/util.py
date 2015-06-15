@@ -154,7 +154,7 @@ class HttpOpener(object):
         if self.data_info.status_code == 200:
             self._detect_gzip()
             if not self.gzip \
-            and not self.data_length or not str(self.data_length).isdigit() or int(self.data_length) > 10**8):
+            and (not self.data_length or not str(self.data_length).isdigit() or int(self.data_length) > 10**8):
                 logging.info("Ammofile data is larger than 100MB. Reading from stream..")
                 return HttpStreamWrapper(self.url)
             else:
