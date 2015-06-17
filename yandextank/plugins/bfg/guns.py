@@ -181,6 +181,9 @@ class ScenarioGun(AbstractPlugin):
     def shoot(self, missile, marker, results):
         scenario = self.scenarios.get(marker, None)
         if scenario:
-            scenario(missile, marker, results)
+            try:
+                scenario(missile, marker, results)
+            except RuntimeError as e:
+                self.log.warning("Scenario failed with %s", e)
         else:
             self.log.warning("Scenario not found: %s", marker)
