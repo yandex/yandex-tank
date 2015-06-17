@@ -10,6 +10,7 @@ import json
 import hashlib
 import logging
 import re
+from util import get_opener
 
 
 class AmmoFactory(object):
