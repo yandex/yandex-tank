@@ -17,6 +17,7 @@ import traceback
 import fnmatch
 import psutil
 import importlib as il
+import json
 
 
 def log_stdout_stderr(log, stdout, stderr, comment=""):
@@ -304,6 +305,7 @@ class TankCore(object):
             end_time = time.time()
             diff = end_time - begin_time
             self.log.debug("Polling took %s", diff)
+            self.log.debug("Tank status:\n%s", json.dumps(self.status))
             # screen refresh every 0.5 s
             if diff < 0.5:
                 time.sleep(0.5 - diff)
