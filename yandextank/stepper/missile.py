@@ -104,7 +104,7 @@ class AmmoFileReader(object):
                     return line
                 chunk_header = line.strip('\r\n')
             return chunk_header
-        opener = get_opener(self.filename) 
+        opener = get_opener(self.filename)
         with opener(self.filename, 'rb') as ammo_file:
             info.status.af_size = opener.data_length
             chunk_header = read_chunk_header(ammo_file) #  if we got StopIteration here, the file is empty
@@ -145,7 +145,7 @@ class SlowLogReader(object):
         self.filename = filename
 
     def __iter__(self):
-        opener = get_opener(self.filename) 
+        opener = get_opener(self.filename)
         with opener(self.filename, 'rb') as ammo_file:
             info.status.af_size = opener.data_length
             request = ""
@@ -170,7 +170,7 @@ class LineReader(object):
         self.filename = filename
 
     def __iter__(self):
-        opener = get_opener(self.filename) 
+        opener = get_opener(self.filename)
         with opener(self.filename, 'rb') as ammo_file:
             info.status.af_size = opener.data_length
             while True:
@@ -199,7 +199,7 @@ class AccessLogReader(object):
         self.log.debug(message)
 
     def __iter__(self):
-        opener = get_opener(self.filename) 
+        opener = get_opener(self.filename)
         with opener(self.filename, 'rb') as ammo_file:
             info.status.af_size = opener.data_length
             while True:
@@ -220,7 +220,6 @@ class AccessLogReader(object):
                             self.warn("Skipped line: %s (unsupported method)" % line)
                     except (ValueError, IndexError), e:
                         self.warn("Skipped line: %s (%s)" % (line, e))
-                    
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()
@@ -235,7 +234,7 @@ class UriReader(object):
         self.log.info("Loading ammo from '%s' using URI format." % filename)
 
     def __iter__(self):
-        opener = get_opener(self.filename) 
+        opener = get_opener(self.filename)
         with opener(self.filename, 'rb') as ammo_file:
             info.status.af_size = opener.data_length
             while True:
@@ -263,16 +262,17 @@ class UriReader(object):
                 info.status.af_position = 0
                 info.status.inc_loop_count()
 
+
 class UriPostReader(object):
 
     '''Read POST missiles from ammo file'''
 
-    def __init__(self, filename, headers=[], http_ver='1.1', **kwargs):
+    def __init__(self, filename, headers=None, http_ver='1.1', **kwargs):
         self.filename = filename
-        self.headers = set(headers)
+        self.headers = set([]) if headers is None else set(headers)
         self.http_ver = http_ver
         self.log = logging.getLogger(__name__)
-        self.log.info("Loading ammo from '%s' using URI+POST format" % filename)
+        self.log.info("Loading ammo from '%s' using URI+POST format", filename)
 
     def __iter__(self):
         def read_chunk_header(ammo_file):
@@ -286,7 +286,7 @@ class UriPostReader(object):
                 else:
                     chunk_header = line.strip('\r\n')
             return chunk_header
-        opener = get_opener(self.filename) 
+        opener = get_opener(self.filename)
         with opener(self.filename, 'rb') as ammo_file:
             info.status.af_size = opener.data_length
             chunk_header = read_chunk_header(ammo_file) #  if we got StopIteration here, the file is empty

@@ -143,6 +143,7 @@ class HttpGun(AbstractPlugin):
 
     def shoot(self, missile, marker, results):
         self.log.debug("Missile: %s\n%s", marker, missile)
+        self.log.debug("Sending request: %s", self.base_address + missile)
         start_time = time.time()
         r = requests.get(self.base_address + missile)
         errno = 0

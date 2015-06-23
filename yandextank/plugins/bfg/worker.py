@@ -25,7 +25,7 @@ class BFG(object):
 BFG using stpd from {stpd_filename}
 Instances: {instances}
 Threads per instance: {threads}
-Gun: {gun.__class__}
+Gun: {gun.__class__.__name__}
 """.format(
             stpd_filename=stpd_filename,
             instances=instances,
