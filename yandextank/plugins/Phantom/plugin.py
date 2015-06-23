@@ -170,6 +170,11 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
                     "Phantom done its work with exit code: %s", retcode)
                 return abs(retcode)
             else:
+                info = self.get_info()
+                if info:
+                    eta = int(info.duration) - (
+                        int(time.time()) - int(self.phantom_start_time))
+                    self.publish('eta', eta)
                 return -1
         else:
             if not self.processed_ammo_count or self.did_phout_import_try != self.processed_ammo_count:
