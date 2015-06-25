@@ -1,3 +1,11 @@
+yandextank (1.7.12) trusty; urgency=medium
+
+  * New Scenario gun for BFG
+  * Fixed some bugs in BFG
+  * Support loading ammo from an http address [Dmitriy Kuznetsov]
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Thu, 25 Jun 2015 13:14:13 +0400
+
 yandextank (1.7.10) precise; urgency=medium
 
   * Fix some bugs with package pythonization
