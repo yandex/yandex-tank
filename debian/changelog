@@ -1,4 +1,4 @@
-yandextank (1.7.12) trusty; urgency=medium
+yandextank (1.7.13) trusty; urgency=medium
 
   * Support storages without HEAD method [Dmitriy Kuznetsov]
 
