@@ -1,5 +1,11 @@
 yandextank (1.7.12) trusty; urgency=medium
 
+  * Support storages without HEAD method [Dmitriy Kuznetsov]
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Mon, 29 Jun 2015 19:57:13 +0400
+
+yandextank (1.7.12) trusty; urgency=medium
+
   * New Scenario gun for BFG
   * Fixed some bugs in BFG
   * Support loading ammo from an http address [Dmitriy Kuznetsov]
