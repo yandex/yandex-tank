@@ -150,7 +150,7 @@ class HttpOpener(object):
         self.url = url
         # Meta params
         self.gzip = False
-        self.data_info = requests.head(self.url, verify=False)
+        self.data_info = requests.head(self.url, verify=False, allow_redirects=True)
 
     def __call__(self, *args, **kwargs):
         return self.open(*args, **kwargs)
@@ -180,6 +180,28 @@ class HttpOpener(object):
                     return gzip.open(tmpfile_path, mode='rb')
                 else:
                     return open(tmpfile_path, 'rb')
+        elif self.data_info.status_code == 405:
+            logging.info(
+                "Ammo storage does not support HEAD method. Will have to download file")
+            hasher = hashlib.md5()
+            hasher.update(self.hash)
+            tmpfile_path = "/tmp/%s" % hasher.hexdigest()
+            if os.path.exists(tmpfile_path):
+                logging.info(
+                        "Ammofile has already been downloaded to %s . Using it..", tmpfile_path)
+            else:
+                logging.info("Downloading ammofile to %s", tmpfile_path)
+                data = requests.get(self.url)
+                f = open(tmpfile_path, "wb")
+                f.write(data.content)
+                f.close()
+            with open(tmpfile_path, mode='rb') as f:
+                if f.read(2) == b'\037\213':
+                    self.gzip = True
+            if self.gzip:
+                return gzip.open(tmpfile_path, mode='rb')
+            else:
+                return open(tmpfile_path, 'rb')
         else:
             raise RuntimeError(
                 "Ammo file not found: %s %s" % (self.data_info.status_code, self.url))
