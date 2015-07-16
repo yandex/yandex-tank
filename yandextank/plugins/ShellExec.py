@@ -6,6 +6,7 @@ import yandextank.core as tankcore
 
 
 class ShellExecPlugin(AbstractPlugin):
+
     '''
     ShellExec plugin
     allows executing shell scripts before/after test
@@ -14,6 +15,7 @@ class ShellExecPlugin(AbstractPlugin):
 
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
+        self.catch_out = False
         self.end = None
         self.poll = None
         self.prepare = None
@@ -25,9 +27,10 @@ class ShellExecPlugin(AbstractPlugin):
         return __file__
 
     def get_available_options(self):
-        return ["prepare", "start", "end", "poll", "post_process"]
+        return ["prepare", "start", "end", "poll", "post_process", "catch_out"]
 
     def configure(self):
+        self.catch_out = True if self.get_option("catch_out", False) else False
         self.prepare = self.get_option("prepare", '')
         self.start = self.get_option("start", '')
         self.end = self.get_option("end", '')
@@ -45,9 +48,15 @@ class ShellExecPlugin(AbstractPlugin):
     def is_test_finished(self):
         if self.poll:
             self.log.info("Executing: %s", self.poll)
-            retcode = tankcore.execute(self.poll, shell=True, poll_period=0.1)[0]
+            retcode = tankcore.execute(
+                self.poll,
+                shell=True,
+                poll_period=0.1,
+                catch_out=self.catch_out
+                )[0]
             if retcode:
-                self.log.warn("Non-zero exit code, interrupting test: %s", retcode)
+                self.log.warn(
+                    "Non-zero exit code, interrupting test: %s", retcode)
                 return retcode
         return -1
 
@@ -66,6 +75,7 @@ class ShellExecPlugin(AbstractPlugin):
         Execute and check exit code
         '''
         self.log.info("Executing: %s", cmd)
-        retcode = tankcore.execute(cmd, shell=True, poll_period=0.1)[0]
+        retcode = tankcore.execute(
+            cmd, shell=True, poll_period=0.1, catch_out=self.catch_out)[0]
         if retcode:
             raise RuntimeError("Subprocess returned %s" % retcode)
