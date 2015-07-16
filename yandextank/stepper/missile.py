@@ -6,7 +6,6 @@ You should update Stepper.status.ammo_count and Stepper.status.loop_count in you
 from util import get_opener
 from itertools import cycle
 from module_exceptions import AmmoFileError
-import os.path
 import info
 import logging
 
@@ -105,8 +104,9 @@ class AmmoFileReader(object):
                     return line
                 chunk_header = line.strip('\r\n')
             return chunk_header
-        with get_opener(self.filename)(self.filename, 'rb') as ammo_file:
-            info.status.af_size = os.path.getsize(self.filename)
+        opener = get_opener(self.filename)
+        with opener(self.filename, 'rb') as ammo_file:
+            info.status.af_size = opener.data_length
             chunk_header = read_chunk_header(ammo_file) #  if we got StopIteration here, the file is empty
             while chunk_header:
                 if chunk_header is not '':
@@ -145,8 +145,9 @@ class SlowLogReader(object):
         self.filename = filename
 
     def __iter__(self):
-        with open(self.filename, 'rb') as ammo_file:
-            info.status.af_size = os.path.getsize(self.filename)
+        opener = get_opener(self.filename)
+        with opener(self.filename, 'rb') as ammo_file:
+            info.status.af_size = opener.data_length
             request = ""
             while True:
                 for line in ammo_file:
@@ -169,7 +170,9 @@ class LineReader(object):
         self.filename = filename
 
     def __iter__(self):
-        with get_opener(self.filename)(self.filename, 'rb') as ammo_file:
+        opener = get_opener(self.filename)
+        with opener(self.filename, 'rb') as ammo_file:
+            info.status.af_size = opener.data_length
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
@@ -196,7 +199,9 @@ class AccessLogReader(object):
         self.log.debug(message)
 
     def __iter__(self):
-        with get_opener(self.filename)(self.filename, 'rb') as ammo_file:
+        opener = get_opener(self.filename)
+        with opener(self.filename, 'rb') as ammo_file:
+            info.status.af_size = opener.data_length
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
@@ -215,7 +220,6 @@ class AccessLogReader(object):
                             self.warn("Skipped line: %s (unsupported method)" % line)
                     except (ValueError, IndexError), e:
                         self.warn("Skipped line: %s (%s)" % (line, e))
-                    
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()
@@ -230,7 +234,9 @@ class UriReader(object):
         self.log.info("Loading ammo from '%s' using URI format." % filename)
 
     def __iter__(self):
-        with get_opener(self.filename)(self.filename, 'rb') as ammo_file:
+        opener = get_opener(self.filename)
+        with opener(self.filename, 'rb') as ammo_file:
+            info.status.af_size = opener.data_length
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
@@ -256,16 +262,17 @@ class UriReader(object):
                 info.status.af_position = 0
                 info.status.inc_loop_count()
 
+
 class UriPostReader(object):
 
     '''Read POST missiles from ammo file'''
 
-    def __init__(self, filename, headers=[], http_ver='1.1', **kwargs):
+    def __init__(self, filename, headers=None, http_ver='1.1', **kwargs):
         self.filename = filename
-        self.headers = set(headers)
+        self.headers = set([]) if headers is None else set(headers)
         self.http_ver = http_ver
         self.log = logging.getLogger(__name__)
-        self.log.info("Loading ammo from '%s' using URI+POST format" % filename)
+        self.log.info("Loading ammo from '%s' using URI+POST format", filename)
 
     def __iter__(self):
         def read_chunk_header(ammo_file):
@@ -279,8 +286,9 @@ class UriPostReader(object):
                 else:
                     chunk_header = line.strip('\r\n')
             return chunk_header
-        with get_opener(self.filename)(self.filename, 'rb') as ammo_file:
-            info.status.af_size = os.path.getsize(self.filename)
+        opener = get_opener(self.filename)
+        with opener(self.filename, 'rb') as ammo_file:
+            info.status.af_size = opener.data_length
             chunk_header = read_chunk_header(ammo_file) #  if we got StopIteration here, the file is empty
             while chunk_header:
                 if chunk_header is not '':

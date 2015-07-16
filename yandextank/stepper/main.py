@@ -10,6 +10,7 @@ import json
 import hashlib
 import logging
 import re
+from util import get_opener
 
 
 class AmmoFactory(object):
@@ -229,21 +230,9 @@ class StepperWrapper(object):
             hashed_str += sep + str(self.enum_ammo)
             if self.instances_schedule:
                 hashed_str += sep + str(self.instances)
-
             if self.ammo_file:
-                if not os.path.exists(self.ammo_file):
-                    raise RuntimeError(
-                        "Ammo file not found: %s" % self.ammo_file)
-
-                hashed_str += sep + os.path.realpath(self.ammo_file)
-                stat = os.stat(self.ammo_file)
-                cnt = 0
-                for stat_option in stat:
-                    if cnt == 7:  # skip access time
-                        continue
-                    cnt += 1
-                    hashed_str += ";" + str(stat_option)
-                hashed_str += ";" + str(os.path.getmtime(self.ammo_file))
+                opener = get_opener(self.ammo_file)
+                hashed_str += sep + opener.hash
             else:
                 if not self.uris:
                     raise RuntimeError(

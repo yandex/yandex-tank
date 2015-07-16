@@ -17,6 +17,30 @@ requests_logger.setLevel(logging.WARNING)
 Sample = namedtuple(
     'Sample', 'marker,threads,overallRT,httpCode,netCode,sent,received,connect,send,latency,receive,accuracy')
 
+from contextlib import contextmanager
+
+
+@contextmanager
+def measure(marker, results):
+    start_time = time.time()
+    yield
+    response_time = int((time.time() - start_time) * 1000)
+    data_item = Sample(
+        marker,             # marker
+        th.active_count(),  # threads
+        response_time,      # overall response time
+        200,                # httpCode
+        0,                  # netCode
+        0,                  # sent
+        0,                  # received
+        0,                  # connect
+        0,                  # send
+        response_time,      # latency
+        0,                  # receive
+        0,                  # accuracy
+    )
+    results.put((int(time.time()), data_item), timeout=1)
+
 
 class LogGun(AbstractPlugin):
     SECTION = 'log_gun'
@@ -27,8 +51,8 @@ class LogGun(AbstractPlugin):
         param = self.get_option("param", '15')
         self.log.info('Initialized log gun for BFG with param = %s' % param)
 
-    def shoot(self, missile, marker):
-        self.log.debug("Missile: %s\n%s", marker, missile)
+    def shoot(self, missile, marker, results):
+        self.log.info("Missile: %s\n%s", marker, missile)
         rt = randint(2, 30000)
         data_item = Sample(
             marker,             # marker
@@ -44,7 +68,7 @@ class LogGun(AbstractPlugin):
             0,                  # receive
             0,                  # accuracy
         )
-        return (int(time.time()), data_item)
+        results.put((int(time.time()), data_item), timeout=1)
 
 class SqlGun(AbstractPlugin):
     SECTION = 'sql_gun'
@@ -54,7 +78,7 @@ class SqlGun(AbstractPlugin):
         AbstractPlugin.__init__(self, core)
         self.engine = create_engine(self.get_option("db"))
 
-    def shoot(self, missile, marker):
+    def shoot(self, missile, marker, results):
         self.log.debug("Missile: %s\n%s", marker, missile)
         start_time = time.time()
         errno = 0
@@ -92,7 +116,7 @@ class SqlGun(AbstractPlugin):
             0,                  # receive
             0,                  # accuracy
         )
-        return (int(time.time()), data_item)
+        results.put((int(time.time()), data_item), timeout=1)
 
 class CustomGun(AbstractPlugin):
     SECTION = 'custom_gun'
@@ -100,13 +124,14 @@ class CustomGun(AbstractPlugin):
     def __init__(self, core):
         self.log = logging.getLogger(__name__)
         AbstractPlugin.__init__(self, core)
-        module_path = self.get_option("module_path")
+        module_path = self.get_option("module_path", "")
         module_name = self.get_option("module_name")
-        sys.path.append(module_path)
+        if module_path:
+            sys.path.append(module_path)
         self.module = __import__(module_name)
 
-    def shoot(self, missile, marker):
-        return self.module.shoot(self, missile, marker)
+    def shoot(self, missile, marker, results):
+        self.module.shoot(missile, marker, results)
 
 class HttpGun(AbstractPlugin):
     SECTION = 'http_gun'
@@ -116,8 +141,9 @@ class HttpGun(AbstractPlugin):
         AbstractPlugin.__init__(self, core)
         self.base_address = self.get_option("base_address")
 
-    def shoot(self, missile, marker):
+    def shoot(self, missile, marker, results):
         self.log.debug("Missile: %s\n%s", marker, missile)
+        self.log.debug("Sending request: %s", self.base_address + missile)
         start_time = time.time()
         r = requests.get(self.base_address + missile)
         errno = 0
@@ -137,4 +163,28 @@ class HttpGun(AbstractPlugin):
             0,                  # receive
             0,                  # accuracy
         )
-        return (int(time.time()), data_item)
+        results.put((int(time.time()), data_item), timeout=1)
+
+
+class ScenarioGun(AbstractPlugin):
+    SECTION = 'scenario_gun'
+
+    def __init__(self, core):
+        self.log = logging.getLogger(__name__)
+        AbstractPlugin.__init__(self, core)
+        module_path = self.get_option("module_path", "")
+        module_name = self.get_option("module_name")
+        if module_path:
+            sys.path.append(module_path)
+        self.module = __import__(module_name)
+        self.scenarios = self.module.SCENARIOS
+
+    def shoot(self, missile, marker, results):
+        scenario = self.scenarios.get(marker, None)
+        if scenario:
+            try:
+                scenario(missile, marker, results)
+            except RuntimeError as e:
+                self.log.warning("Scenario %s failed with %s", marker, e)
+        else:
+            self.log.warning("Scenario not found: %s", marker)

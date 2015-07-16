@@ -17,6 +17,7 @@ import traceback
 import fnmatch
 import psutil
 import importlib as il
+import json
 
 
 def log_stdout_stderr(log, stdout, stderr, comment=""):
@@ -173,7 +174,16 @@ def pairs(lst):
     return itertools.izip(lst[::2], lst[1::2])
 
 
-class TankCore:
+def update_status(status, multi_key, value):
+    if len(multi_key) > 1:
+        update_status(
+            status.setdefault(multi_key[0], {}),
+            multi_key[1:], value)
+    else:
+        status[multi_key[0]] = value
+
+
+class TankCore(object):
 
     """
     JMeter + dstat inspired :)
@@ -186,6 +196,7 @@ class TankCore:
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.config = ConfigManager()
+        self.status = {}
         self.plugins = []
         self.artifacts_dir = None
         self.artifact_files = {}
@@ -294,6 +305,7 @@ class TankCore:
             end_time = time.time()
             diff = end_time - begin_time
             self.log.debug("Polling took %s", diff)
+            self.log.debug("Tank status:\n%s", json.dumps(self.status, indent=2))
             # screen refresh every 0.5 s
             if diff < 0.5:
                 time.sleep(0.5 - diff)
@@ -534,9 +546,11 @@ class TankCore:
         os.chmod(fname, 0644)  # FIXME: chmod to parent dir's mode?
         return fname
 
+    def publish(self, publisher, key, value):
+        update_status(self.status, [publisher] + key.split('.'), value)
 
-class ConfigManager:
 
+class ConfigManager(object):
     """ Option storage class """
 
     def __init__(self):
@@ -568,7 +582,8 @@ class ConfigManager:
         """ Get options list with requested prefix """
         res = []
         self.log.debug(
-            "Looking in section '%s' for options starting with '%s'", section, prefix)
+            "Looking in section '%s' for options starting with '%s'",
+            section, prefix)
         try:
             for option in self.config.options(section):
                 self.log.debug("Option: %s", option)
@@ -591,7 +606,7 @@ class ConfigManager:
         return res
 
 
-class AbstractPlugin:
+class AbstractPlugin(object):
 
     """ Parent class for all plugins/modules """
 
@@ -599,7 +614,8 @@ class AbstractPlugin:
 
     @staticmethod
     def get_key():
-        """ Get dictionary key for plugin, should point to __file__ magic constant """
+        """ Get dictionary key for plugin,
+        should point to __file__ magic constant """
         raise TypeError("Abstract method needs to be overridden")
 
     def __init__(self, core):
@@ -656,3 +672,10 @@ class AbstractPlugin:
             return (' '.join(value.split("\n"))).split(' ')
         else:
             return ()
+
+    def publish(self, key, value):
+        """publish value to status"""
+        self.log.debug(
+            "Publishing status: %s/%s: %s",
+            self.__class__.__name__, key, value)
+        self.core.publish(self.__class__.__name__, key, value)

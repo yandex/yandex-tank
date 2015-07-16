@@ -596,7 +596,7 @@ Options:
 -  **start** - the script to run on start stage
 -  **poll** - the script to run every second while the test is running
 -  **end** - the script to run on end stage
--  **postprocess** - the script to run on postprocess stage
+-  **post_process** - the script to run on postprocess stage
 
 
 AB

@@ -1,2 +1,2 @@
-from plugin import BFGPlugin
-from guns import Sample
+from .plugin import BFGPlugin as bfgPlugin
+from .guns import Sample
