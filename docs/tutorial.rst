@@ -39,6 +39,8 @@ intensity:
   minutes ``line(1, 100, 10m)`` - linear load from 1 to 100 rps, duration
   - 10 minutes
 
+You can specify complex load schemes using those primitives, for example: ``rps_schedule=line(1,10,10m) const(10,10m)`` - linear load from 1 to 10, duration 10 mins and then 10 mins of 10 RPS constant load.
+
 Time duration could be defined in seconds, minutes (m) and hours (h).
 For example: ``27h103m645``
 
@@ -53,6 +55,7 @@ have next lines:
   rps_schedule=const(10, 10m) ;load scheme
 
 Voilà, Yandex.Tank setup is done.
+
 
 Preparing requests
 ~~~~~~~~~~~~~~~~~~
