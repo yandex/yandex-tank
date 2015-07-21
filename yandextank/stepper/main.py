@@ -204,7 +204,7 @@ class StepperWrapper(object):
             self.log.info("Using specified stpd-file: %s", self.stpd)
             stepper_info = publish_info(self.__read_cached_options())
         self.core.add_artifact_file(self.stpd)
-        self.core.add_artifact_file(self.__si_filename(self.stpd))
+        self.core.add_artifact_file(self.__si_filename())
         self.ammo_count = stepper_info.ammo_count
         self.duration = stepper_info.duration
         self.loop_count = stepper_info.loop_count
