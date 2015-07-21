@@ -41,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Yandex.Tank'
-copyright = u'2012, Yandex'
+copyright = u'2015, Yandex'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -248,7 +248,7 @@ texinfo_documents = [
 epub_title = u'Yandex.Tank'
 epub_author = u'Yandex'
 epub_publisher = u'Yandex'
-epub_copyright = u'2012, Yandex'
+epub_copyright = u'2015, Yandex'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

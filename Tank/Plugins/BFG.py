@@ -1,1 +1,0 @@
-from bfg import BFGPlugin

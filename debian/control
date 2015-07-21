@@ -1,17 +1,16 @@
-Source: yandex-load-tank-base
-Section: devel
+Source: yandextank
+Maintainer: Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>
+Section: python
 Priority: optional
-Maintainer: Yandex Load Testing Team <doctornkz@yandex.ru>
-Build-Depends: debhelper (>= 7), python | python-all | python-dev | python-all-dev
+Build-Depends: python-setuptools (>= 0.6b3), python-all (>= 2.6.6-3), debhelper (>= 7.4.3)
 Standards-Version: 3.9.3
-Homepage: https://github.com/yandex-load/yandex-tank
 
-Package: yandex-load-tank-base
+Package: yandex-tank
 Architecture: all
-Depends: python (>=2.6), python-ipaddr, python-lxml, python-progressbar, python-psutil,
-	phantom(>=0.14), phantom-ssl,
-    ${misc:Depends}
-Recommends: python-mysqldb, python-sqlalchemy
-Description: Yandex.Tank (Load Testing Tool)
- turns common Debian compatible computer into heavy machinegun
-
+Depends: ${misc:Depends}, ${python:Depends}, phantom (>=0.14.0~pre65), phantom-ssl(>=0.14.0~pre65)
+Conflicts: yandex-load-tank-base
+Description: performance measurement tool
+ Find out about your app’s performance limits and bottlenecks in order
+ to use your resources in a most effective way. Ensure your app is scalable
+ and find a way to make it scalable. Use Yandex.Tank to choose a reliable
+ technology stack before you even started developing your product.

@@ -39,6 +39,8 @@ intensity:
   minutes ``line(1, 100, 10m)`` - linear load from 1 to 100 rps, duration
   - 10 minutes
 
+You can specify complex load schemes using those primitives, for example: ``rps_schedule=line(1,10,10m) const(10,10m)`` - linear load from 1 to 10, duration 10 mins and then 10 mins of 10 RPS constant load.
+
 Time duration could be defined in seconds, minutes (m) and hours (h).
 For example: ``27h103m645``
 
@@ -53,6 +55,7 @@ have next lines:
   rps_schedule=const(10, 10m) ;load scheme
 
 Voilà, Yandex.Tank setup is done.
+
 
 Preparing requests
 ~~~~~~~~~~~~~~~~~~
@@ -238,6 +241,70 @@ include them in a file after each request. '\r' is also required.
   <wsw-fields><wsw-field name="moderate-code"><wsw-value>disable</wsw-value></wsw-field></wsw-fields>
   --AGHTUNG--
 
+**sample req-style ammo generator (python):**
+
+``usage: cat data | python make_ammo.py``
+For each line of 'data' file this script will generate phantom ammo.
+Line format: ``GET||/url||case_tag||body(optional)``
+
+.. code-block:: python
+
+	#!/usr/bin/python
+	# -*- coding: utf-8 -*-
+  
+	import sys
+	
+	def make_ammo(method, url, headers, case, body):
+	    """ makes phantom ammo """
+	    #http request w/o entity body template
+	    req_template = (
+	          "%s %s HTTP/1.1\r\n"
+	          "%s\r\n"
+	          "\r\n"
+	    )
+	
+	    #http request with entity body template
+	    req_template_w_entity_body = (
+	          "%s %s HTTP/1.1\r\n"
+	          "%s\r\n"
+	          "Content-Length: %d\r\n"
+	          "\r\n"
+	          "%s\r\n"
+	    )
+	
+	    if not body:
+	        req = req_template % (method, url, headers)
+	    else:
+	        req = req_template_w_entity_body % (method, url, headers, len(body), body)
+	
+	    #phantom ammo template
+	    ammo_template = (
+	        "%d %s\n"
+	        "%s"
+	    )
+  
+	    return ammo_template % (len(req), case, req)
+  
+	def main():
+	    for stdin_line in sys.stdin:
+	        try:
+	            method, url, case, body = stdin_line.split("||")
+	            body = body.strip()
+	        except:
+	            method, url, case = stdin_line.split("||")
+	            body = None
+
+	        method, url, case = method.strip(), url.strip(), case.strip()
+	    
+	        headers = "Host: hostname.com\r\n" + \
+	            "User-Agent: tank\r\n" + \
+	            "Accept: */*\r\n" + \
+	            "Connection: Close"
+
+	        sys.stdout.write(make_ammo(method, url, headers, case, body))
+
+	if __name__ == "__main__":
+	    main()
 
 Run Test!
 ~~~~~~~~~
@@ -517,5 +584,3 @@ that. Load.ini:
   rps_schedule=const(10, 10m) ;load scheme
   instances=10
   gatling_ip = IP1 IP2
-
-**run yandex-tank with -g key**
