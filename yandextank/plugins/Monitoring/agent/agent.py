@@ -48,8 +48,11 @@ class CpuLa(AbstractMetric):
         return ['System_la1', 'System_la5', 'System_la15']
 
     def check(self, ):
-        loadavg_str = open('/proc/loadavg', 'r').readline().strip()
-        return map(str, loadavg_str.split()[:3])
+        loadavg_file = open('/proc/loadavg', 'r')
+        loadavg_data = loadavg_file.readline().strip().split()[:3]
+        result = map(str, loadavg_data)
+        loadavg_file.close()
+        return result
 
 
 class CpuStat(AbstractMetric):
@@ -59,10 +62,8 @@ class CpuStat(AbstractMetric):
 
     def __init__(self):
         AbstractMetric.__init__(self)
-        self.check_prev = None
-        self.check_last = None
-        self.current = None
-        self.last = None
+        self.prev_check = {}
+        self.current_check = {}
 
     def columns(self, ):
         columns = ['System_csw', 'System_int',
@@ -71,91 +72,98 @@ class CpuStat(AbstractMetric):
         return columns
 
     def check(self, ):
-        # Empty symbol for no data
-        empty = ''
-
         # resulting data array
         result = []
 
-        # Context switches and interrups. Check.
         try:
-            # TODO: change to simple file reading
-            output = subprocess.Popen('cat /proc/stat | grep -E "^(ctxt|intr|cpu) "',
-                                      shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except Exception:
-            logger.exception("Problems running popen")
-            result.append([empty] * 9)
+            proc_stat_file = open('/proc/stat' ,'r')
+            proc_stat_all = proc_stat_file.readlines()
+            proc_stat_file.close()
+        except Exception as exc:
+            logger.error('Error opening /proc/stat. Traceback: %s', traceback.format_exc(exc))
+            result.append([''] * 9)
         else:
-            err = output.stderr.read()
-            if err:
-                result.extend([empty] * 9)
-            else:
-                info = output.stdout.read()
+            # Parse data
+            try:
+                for stat in proc_stat_all:
+                    if stat.startswith('cpu '):
+                        self.current_check['cpu'] = map(float, stat.split("\n")[0].split()[1:8])
+                    if stat.startswith('ctxt '):
+                        self.current_check['csw'] = float(stat.split()[1])
+                    if stat.startswith('intr '):
+                        self.current_check['intr'] = float(stat.split()[1])
+            except Exception as exc:
+                logger.error('Error parsing /proc/stat data. Traceback: %s', traceback.format_exc(exc))
 
-                # CPU. Fetch data
-                cpus = info.split("\n")[0].split()[1:8]
-                fetch_cpu = lambda: map(float, cpus)
+            # Context switches and interrups delta
+            try: 
+                if not self.prev_check.get('csw') or not self.prev_check.get('intr'):
+                    self.prev_check['csw'] = self.current_check['csw']
+                    self.prev_check['intr'] = self.current_check['intr']
+                    result.extend([''] * 2)
+                else:    
+                    delta_csw = str(self.current_check['csw'] - self.prev_check['csw'])
+                    delta_intr = str(self.current_check['intr'] - self.prev_check['intr'])
+                    self.prev_check['csw'] = self.current_check['csw']
+                    self.prev_check['intr'] = self.current_check['intr']
+                    result.append(delta_csw)
+                    result.append(delta_intr)
+            except Exception as exc:
+                logger.error('Error trying to count delta of cpu interrupts and csw. Traceback: %s', traceback.format_exc(exc))
+                result.extend([''] * 2)
 
-                # Context switches and interrupts. Fetch data
-                data = []
-                for line in info.split("\n")[1:3]:
-                    if line:
-                        data.append(line.split()[1])
-                fetch_data = lambda: map(float, data)
-
-                # Context switches and interrups. Analyze.
-                if self.last:
-                    self.current = fetch_data()
-                    delta = []
-                    cnt = 0
-                    for _ in self.current:
-                        delta.append(self.current[cnt] - self.last[cnt])
-                        cnt += 1
-                    self.last = self.current
-                    result.extend(map(str, delta))
+            #CPU usage metrics delta
+            try:
+                if not self.prev_check.get('cpu'):
+                    self.prev_check['cpu'] = self.current_check['cpu']
+                    result.extend([''] * 7)
                 else:
-                    self.last = fetch_data()
-                    result.extend([empty] * 2)
-                #                logger.debug("Result: %s" % result)
-
-                # CPU. analyze.
-                #                logger.debug("CPU start.")
-                if self.check_prev is not None:
-                    self.check_last = fetch_cpu()
                     delta = []
                     cnt = 0
                     sum_val = 0
-                    for _ in self.check_last:
-                        column_delta = self.check_last[cnt] - self.check_prev[cnt]
-                        sum_val += column_delta
-                        delta.append(column_delta)
+                    for metric in self.current_check['cpu']:
+                        delta_cpu = self.current_check['cpu'][cnt] - self.prev_check['cpu'][cnt]
+                        sum_val += delta_cpu
+                        delta.append(delta_cpu)
                         cnt += 1
-
                     cnt = 0
-                    for _ in self.check_last:
+                    for metric in self.current_check['cpu']:
                         result.append(str((delta[cnt] / sum_val) * 100))
                         cnt += 1
-                    self.check_prev = self.check_last
-                else:
-                    self.check_prev = fetch_cpu()
-                    result.extend([empty] * 7)
-                    #                logger.debug("Result: %s" % result)
+                    self.prev_check['cpu'] = self.current_check['cpu']
+            except Exception as exc:
+                logger.error('Error trying to count delta of cpu usage metrics. Traceback: %s', traceback.format_exc(exc))
+                result.extend([''] * 7)
 
-        # Numproc, numthreads
-        # TODO: change to simple file reading
-        command = ['ps ax | wc -l', "cat /proc/loadavg | cut -d' ' -f 4 | cut -d'/' -f2"]
-        for cmd2 in command:
-            try:
-                output = subprocess.Popen(cmd2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            except Exception:
-                logger.exception("Problems running popen")
-                result.append(empty)
-            else:
-                err = output.stderr.read()
-                if err:
-                    result.append(empty)
+        # Numproc
+        try:
+            proc_dirs = os.listdir('/proc/')
+            pids = []
+            for element in proc_dirs:
+                try:
+                    element=int(element)
+                except Exception as exc:
+                    pass
                 else:
-                    result.append(str(int(output.stdout.read().strip()) - 1))
+                    pids.append(element)
+        except Exception as exc:
+            logger.error('Error trying to count numprocs. Traceback: %s', traceback.format_exc(exc))
+            result.append([''])
+        else:
+            result.append(str(len(pids)))
+
+        # Numthreads
+        try:
+            loadavg_file = open('/proc/loadavg' ,'r')
+            numthreads = loadavg_file.readline().split()[3].split('/')[1]
+            loadavg_file.close()
+        except Exception as exc:
+            logger.error('Error opening /proc/loadavg to get numthreads. Traceback: %s', traceback.format_exc(exc))
+            result.append([''])
+        else:
+            result.append(numthreads)
+
+        # Sample : ['localhost', '1437493895', '1088.0', '728.0', '0.0', '0.0', '6.25390869293', '93.6835522201', '0.0', '0.0', '0.0625390869293', '239', '534']
         return result
 
 
