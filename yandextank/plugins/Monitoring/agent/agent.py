@@ -48,9 +48,11 @@ class CpuLa(AbstractMetric):
         return ['System_la1', 'System_la5', 'System_la15']
 
     def check(self, ):
-        with open('/proc/loadavg', 'r') as loadavg_file:
-            result = loadavg_file.readline().strip().split()[:3]
-        return map(str, result)
+        loadavg_file = open('/proc/loadavg', 'r')
+        loadavg_data = loadavg_file.readline().strip().split()[:3]
+        result = map(str, loadavg_data)
+        loadavg_file.close()
+        return result
 
 
 class CpuStat(AbstractMetric):
@@ -74,8 +76,9 @@ class CpuStat(AbstractMetric):
         result = []
 
         try:
-            with open('/proc/stat' ,'r') as proc_stat_file:
-                proc_stat_all = proc_stat_file.readlines()
+            proc_stat_file = open('/proc/stat' ,'r')
+            proc_stat_all = proc_stat_file.readlines()
+            proc_stat_file.close()
         except Exception as exc:
             logger.error('Error opening /proc/stat. Traceback: %s', traceback.format_exc(exc))
             result.append([''] * 9)
@@ -151,8 +154,9 @@ class CpuStat(AbstractMetric):
 
         # Numthreads
         try:
-            with open('/proc/loadavg' ,'r') as loadavg_file:
-                numthreads = loadavg_file.readline().split()[3].split('/')[1]
+            loadavg_file = open('/proc/loadavg' ,'r')
+            numthreads = loadavg_file.readline().split()[3].split('/')[1]
+            loadavg_file.close()
         except Exception as exc:
             logger.error('Error opening /proc/loadavg to get numthreads. Traceback: %s', traceback.format_exc(exc))
             result.append([''])
