@@ -542,7 +542,7 @@ class MonitoringCollector:
                         filtered = self.filtering(filter_mask, keys)
                         if filtered:
                             out = filtered + '\n'  # filtering values
-                except:
+                except IndexError:
                     pass
         return out
 
