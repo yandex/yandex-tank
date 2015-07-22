@@ -250,6 +250,7 @@ class MonitoringCollector:
         self.inputs, self.outputs, self.excepts = [], [], []
         self.filter_mask = defaultdict(str)
         self.ssh_timeout = 5
+        self.load_start_time = None
 
     def add_listener(self, obj):
         self.listeners.append(obj)
@@ -533,9 +534,16 @@ class MonitoringCollector:
         elif re.match('^\[debug\]', data):  # log debug output
             logger.debug('agent debug: %s', data.rstrip())
         else:
-            filtered = self.filtering(filter_mask, keys)
-            if filtered:
-                out = filtered + '\n'  # filtering values
+            # if we are in start_test() phase, check data's timestamp with load_start_time
+            # and skip data collected before load_start_time
+            if self.load_start_time is not None:
+                try:
+                    if int(keys[1]) >= self.load_start_time:
+                        filtered = self.filtering(filter_mask, keys)
+                        if filtered:
+                            out = filtered + '\n'  # filtering values
+                except:
+                    pass
         return out
 
     def get_agent_name(self, metric, param):
