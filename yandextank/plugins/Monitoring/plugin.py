@@ -42,8 +42,9 @@ class MonitoringPlugin(AbstractPlugin):
         return __file__
 
     def start_test(self):
-        self.monitoring.load_start_time = time.time()
-        logger.debug("load_start_time = %s" % self.monitoring.load_start_time)
+        if self.monitoring:
+            self.monitoring.load_start_time = time.time()
+            logger.debug("load_start_time = %s" % self.monitoring.load_start_time)
 
     def get_available_options(self):
         return ["config", "default_target", 'ssh_timeout']
