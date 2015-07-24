@@ -190,6 +190,8 @@ class JMeterReader(AbstractReader):
         "java.io.EOFException" : 104,
         "org.apache.http.conn.ConnectTimeoutException": 110,
         "org.apache.commons.net.MalformedServerReplyException" : 71,
+        "org.apache.http.NoHttpResponseException": 32,
+        "java.io.InterruptedIOException": 32,
     }
 
     def __init__(self, owner, jmeter):
