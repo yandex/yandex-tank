@@ -295,7 +295,7 @@ class JMeterReader(AbstractReader):
                     line = self.partial_buffer + line
                     self.partial_buffer = ''
                 data = line.rstrip().split("\t")
-                if line[-1] != '\n' or len(data) != 9:
+                if line[-1] != '\n' or len(data) < 9:
                     self.partial_buffer = line
                     # self.log.warning("Wrong jtl line, skipped: %s", line)
                     continue
