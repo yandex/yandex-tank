@@ -115,15 +115,16 @@ Create a file with declared requests: **ammo.txt**
   [Connection: close] 
   [Host: target.example.com] 
   [Cookies: None] 
-  /?drg 
+  /?drg tag1
   / 
-  /buy 
+  /buy tag2 
   /buy/?rt=0&station_to=7&station_from=9
 
 File begins with optional lines [...], that contain headers which will
 be added to every request. After that section there is a list of URIs.
 Every URI must begin from a new line, with leading '/'.
 Each line that begins from '[' is considered a header.
+Request may be marked by tag, you can specify it with whitespace following URI.
 
 URI+POST-style
 ''''''''''''''
@@ -352,7 +353,7 @@ requests and tags:
   User-Agent: xxx (shell 1)
 
 ``good``, ``bad`` and ``unknown`` here are the tags.
-**RESTRICTION: latin letters allowed only.**
+**RESTRICTION: utf-8 symbols only**
 
 SSL
 ~~~
