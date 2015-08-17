@@ -1,7 +1,5 @@
-Using Yandex.Tank? Attend a dedicated event at Yandex:
-
-https://events.yandex.ru/events/meetings/03-september-2015/
-
+Event is CANCELED. Sorry for bothering you and wasting your time.
+~~https://events.yandex.ru/events/meetings/03-september-2015/~~
 
 # Yandex Tank [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Gittask](https://gittask.com/yandex/yandex-tank.svg)](https://gittask.com/yandex/yandex-tank)
 
