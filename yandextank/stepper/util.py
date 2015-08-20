@@ -150,7 +150,7 @@ class HttpOpener(object):
         self.url = url
         # Meta params
         self.gzip = False
-        self.data_info = requests.head(self.url, verify=False, allow_redirects=True)
+        self.data_info = requests.head(self.url, verify=False, allow_redirects=True, headers={'Accept-Encoding': 'identity'})
 
     def __call__(self, *args, **kwargs):
         return self.open(*args, **kwargs)
