@@ -190,6 +190,8 @@ class JMeterReader(AbstractReader):
         "java.io.EOFException" : 104,
         "org.apache.http.conn.ConnectTimeoutException": 110,
         "org.apache.commons.net.MalformedServerReplyException" : 71,
+        "org.apache.http.NoHttpResponseException": 32,
+        "java.io.InterruptedIOException": 32,
     }
 
     def __init__(self, owner, jmeter):
@@ -293,7 +295,7 @@ class JMeterReader(AbstractReader):
                     line = self.partial_buffer + line
                     self.partial_buffer = ''
                 data = line.rstrip().split("\t")
-                if line[-1] != '\n' or len(data) != 9:
+                if line[-1] != '\n' or len(data) < 9:
                     self.partial_buffer = line
                     # self.log.warning("Wrong jtl line, skipped: %s", line)
                     continue
