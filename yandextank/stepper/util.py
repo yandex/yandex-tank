@@ -210,7 +210,7 @@ class HttpOpener(object):
         stream = requests.get(self.url, stream=True, verify=False)
         if stream.status_code == 200:
             try:
-                stream_iterator = stream.raw.stream(2, decode_content=True)
+                stream_iterator = stream.raw.stream(2)
                 gz_header = stream_iterator.next()
                 if gz_header[:2] == b'\037\213':
                     logging.info("Ammofile data is in gz format")
