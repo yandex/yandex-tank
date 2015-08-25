@@ -220,6 +220,12 @@ Advanced options:
 * **source_log_prefix** - prefix, added to class name that reads source data. Default: empty
 * **method_options** - additional options for method objects. It is used for Elliptics etc. Default: empty
 
+TLS/SSL additional options (ssl=1 is required):
+
+* **ciphers** - cipher list, consists of one or more cipher strings separated by colons (see man ciphers). Default: empty. Example: ciphers = RSA:!COMPLEMENTOFALL
+* **client_certificate** - path to client certificate which is used in client's "Certificate message" in Client-authenticated TLS handshake. Default: empty
+* **client_key** - path to client's certificate's private key, used for client's "CertificateVerify message" generation in Client-authenticated TLS handshake. Default: empty
+
 Phantom http-module tuning options: 
 
 * **phantom_http_line** - First line length. Default - 1K

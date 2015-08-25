@@ -206,6 +206,9 @@ class StreamConfig:
         self.method_prefix = None
         self.source_log_prefix = None
         self.method_options = None
+        self.client_cipher_suites = None
+        self.client_certificate = None
+        self.client_key = None
 
     def get_option(self, option_ammofile, default=None):
         """ get option wrapper """
@@ -249,6 +252,9 @@ class StreamConfig:
 
         logging.info("Resolved %s into %s:%s", self.address, self.resolved_ip, self.port)
 
+        self.client_cipher_suites = self.get_option("client_cipher_suites", "")
+        self.client_certificate = self.get_option("client_certificate", "")
+        self.client_key = self.get_option("client_key", "")
         self.stepper_wrapper.read_config()
 
     def compose_config(self):
@@ -264,8 +270,24 @@ class StreamConfig:
 
         kwargs = {}
         kwargs['sequence_no'] = self.sequence_no
-        kwargs[
-            'ssl_transport'] = "transport_t ssl_transport = transport_ssl_t { timeout = 1s }\n transport = ssl_transport" if self.ssl else ""
+        if self.ssl:
+            _auth_section = ''
+            _ciphers = ''
+            ssl_template = "transport_t ssl_transport = transport_ssl_t {\n" \
+                           "                timeout = 1s\n" \
+                           "                %s\n" \
+                           "                %s}\n" \
+                           "                transport = ssl_transport"
+
+            if self.client_certificate or self.client_key:
+                _auth_section = 'auth_t def_auth = auth_t { key = "%s" cert = "%s"} auth = def_auth' \
+                                % (self.client_key, self.client_certificate)
+            if self.client_cipher_suites:
+                _ciphers = 'ciphers = "%s"' % self.client_cipher_suites
+            kwargs[
+                'ssl_transport'] = ssl_template % (_auth_section, _ciphers)
+        else:
+            kwargs['ssl_transport'] = ""
         kwargs['method_stream'] = self.method_prefix + \
                                   "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"
         kwargs['phout'] = self.phout_file
