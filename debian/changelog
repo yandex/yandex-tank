@@ -1,3 +1,15 @@
+yandextank (1.7.14) trusty; urgency=medium
+
+  * Support for for client certificates and client cipher lists (need special phantom build) [Nurlan Nugumanov]
+  * Extend JMeter known exceptions [maklaut]
+  * Some fixes for http ammo source [Dmitriy Kuznetsov]
+  * Extended autostop reason info [asekretenko]
+  * Fixes for monitoring plugin [netortik, Nurlan Nugumanov]
+  * Fix BFG Full queue exception while posting killer tasks
+  * Some improvements of the documentation [netortik, vovapi]
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Fri, 11 Sep 2015 17:03:13 +0400
+
 yandextank (1.7.13) trusty; urgency=medium
 
   * Support storages without HEAD method [Dmitriy Kuznetsov]
