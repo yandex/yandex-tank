@@ -98,8 +98,18 @@ Gun: {gun.__class__.__name__}
         self.log.info(
             "Feeded all data. Publishing %d killer tasks" % (
                 workers_count))
-        [self.task_queue.put(None, timeout=1) for _ in xrange(
-            0, workers_count)]
+        retry_delay = 1
+        for _ in range(5):
+            try:
+                [self.task_queue.put(None, timeout=1) for _ in xrange(
+                    0, workers_count)]
+                break
+            except Full:
+                self.log.debug(
+                    "Couldn't post killer tasks"
+                    " because queue is full. Retrying in %ss", retry_delay)
+                time.sleep(retry_delay)
+                retry_delay *= 2
 
         try:
             self.log.info("Waiting for workers")
