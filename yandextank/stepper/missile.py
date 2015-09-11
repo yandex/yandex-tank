@@ -11,6 +11,7 @@ import logging
 
 
 class HttpAmmo(object):
+
     '''
     Represents HTTP missile
 
@@ -107,7 +108,8 @@ class AmmoFileReader(object):
         opener = get_opener(self.filename)
         with opener(self.filename, 'rb') as ammo_file:
             info.status.af_size = opener.data_length
-            chunk_header = read_chunk_header(ammo_file) #  if we got StopIteration here, the file is empty
+            # if we got StopIteration here, the file is empty
+            chunk_header = read_chunk_header(ammo_file)
             while chunk_header:
                 if chunk_header is not '':
                     try:
@@ -115,7 +117,8 @@ class AmmoFileReader(object):
                         chunk_size = int(fields[0])
                         if chunk_size == 0:
                             if info.status.loop_count == 0:
-                                self.log.info('Zero-sized chunk in ammo file at %s. Starting over.' % ammo_file.tell())
+                                self.log.info(
+                                    'Zero-sized chunk in ammo file at %s. Starting over.' % ammo_file.tell())
                             ammo_file.seek(0)
                             info.status.inc_loop_count()
                             chunk_header = read_chunk_header(ammo_file)
@@ -162,6 +165,7 @@ class SlowLogReader(object):
                 info.status.af_position = 0
                 info.status.inc_loop_count()
 
+
 class LineReader(object):
 
     '''One line -- one missile'''
@@ -195,7 +199,8 @@ class AccessLogReader(object):
     def warn(self, message):
         if not self.warned:
             self.warned = True
-            self.log.warning("There are some skipped lines. See full log for details.")
+            self.log.warning(
+                "There are some skipped lines. See full log for details.")
         self.log.debug(message)
 
     def __iter__(self):
@@ -217,7 +222,8 @@ class AccessLogReader(object):
                                     http_ver=http_ver,
                                 ).to_s(), None)
                         else:
-                            self.warn("Skipped line: %s (unsupported method)" % line)
+                            self.warn(
+                                "Skipped line: %s (unsupported method)" % line)
                     except (ValueError, IndexError), e:
                         self.warn("Skipped line: %s (%s)" % (line, e))
                 ammo_file.seek(0)
@@ -225,10 +231,17 @@ class AccessLogReader(object):
                 info.status.inc_loop_count()
 
 
+def _parse_header(header):
+    return dict([(h.strip() for h in header.split(':', 1))])
+
+
 class UriReader(object):
+
     def __init__(self, filename, headers=[], http_ver='1.1', **kwargs):
         self.filename = filename
-        self.headers = set(headers)
+        self.headers = {}
+        for header in headers:
+            self.headers.update(_parse_header(header))
         self.http_ver = http_ver
         self.log = logging.getLogger(__name__)
         self.log.info("Loading ammo from '%s' using URI format." % filename)
@@ -241,7 +254,8 @@ class UriReader(object):
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
                     if line.startswith('['):
-                        self.headers.add(line.strip('\r\n[]\t '))
+                        self.headers.update(
+                            _parse_header(line.strip('\r\n[]\t ')))
                     elif len(line.rstrip('\r\n')):
                         fields = line.split()
                         uri = fields[0]
@@ -252,7 +266,9 @@ class UriReader(object):
                         yield (
                             HttpAmmo(
                                 uri,
-                                headers=self.headers,
+                                headers=[
+                                    ': '.join(header)
+                                    for header in self.headers.items()],
                                 http_ver=self.http_ver,
                             ).to_s(), marker)
                 if info.status.ammo_count == 0:
@@ -269,7 +285,9 @@ class UriPostReader(object):
 
     def __init__(self, filename, headers=None, http_ver='1.1', **kwargs):
         self.filename = filename
-        self.headers = set([]) if headers is None else set(headers)
+        self.headers = {}
+        for header in headers:
+            self.headers.update(_parse_header(header))
         self.http_ver = http_ver
         self.log = logging.getLogger(__name__)
         self.log.info("Loading ammo from '%s' using URI+POST format", filename)
@@ -280,7 +298,8 @@ class UriPostReader(object):
             while chunk_header is '':
                 line = ammo_file.readline()
                 if line.startswith('['):
-                        self.headers.add(line.strip('\r\n[]\t '))
+                        self.headers.update(
+                            _parse_header(line.strip('\r\n[]\t ')))
                 elif line is '':
                     return line
                 else:
@@ -289,14 +308,16 @@ class UriPostReader(object):
         opener = get_opener(self.filename)
         with opener(self.filename, 'rb') as ammo_file:
             info.status.af_size = opener.data_length
-            chunk_header = read_chunk_header(ammo_file) #  if we got StopIteration here, the file is empty
+            # if we got StopIteration here, the file is empty
+            chunk_header = read_chunk_header(ammo_file)
             while chunk_header:
                 if chunk_header is not '':
                     try:
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])
                         if chunk_size == 0:
-                            self.log.debug('Zero-sized chunk in ammo file at %s. Starting over.' % ammo_file.tell())
+                            self.log.debug(
+                                'Zero-sized chunk in ammo file at %s. Starting over.' % ammo_file.tell())
                             ammo_file.seek(0)
                             info.status.inc_loop_count()
                             chunk_header = read_chunk_header(ammo_file)
@@ -310,7 +331,9 @@ class UriPostReader(object):
                         yield (
                             HttpAmmo(
                                 uri=uri,
-                                headers=self.headers,
+                                headers=[
+                                    ': '.join(header)
+                                    for header in self.headers.items()],
                                 method='POST',
                                 body=missile,
                                 http_ver=self.http_ver,
@@ -322,7 +345,8 @@ class UriPostReader(object):
                             "Error while reading ammo file. Position: %s, header: '%s', original exception: %s" % (ammo_file.tell(), chunk_header, e))
                 chunk_header = read_chunk_header(ammo_file)
                 if chunk_header == '':
-                    self.log.debug('Reached the end of ammo file. Starting over.')
+                    self.log.debug(
+                        'Reached the end of ammo file. Starting over.')
                     ammo_file.seek(0)
                     info.status.inc_loop_count()
                     chunk_header = read_chunk_header(ammo_file)
