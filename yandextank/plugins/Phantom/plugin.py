@@ -42,8 +42,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         self.phantom_start_time = time.time()
         self.buffered_seconds = "2"
 
-        self.taskset_path = None
-        self.taskset_cpu = None
+        self.taskset_affinity = None
         self.cpu_count = mp.cpu_count()
 
         self.phantom = None
@@ -57,8 +56,8 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         return __file__
 
     def get_available_options(self):
-        opts = ["eta_file", "phantom_path", "buffered_seconds", "exclude_markers", ]
-        opts += ["taskset_path", "taskset_cpu"]
+        opts = ["eta_file", "phantom_path", "buffered_seconds", "exclude_markers"]
+        opts += 'affinity'
         opts += [PhantomConfig.OPTION_PHOUT, self.OPTION_CONFIG]
         opts += PhantomConfig.get_available_options()
         return opts
@@ -74,8 +73,7 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             self.get_option("buffered_seconds", self.buffered_seconds))
         self.exclude_markers = set(filter((lambda marker: marker != ''),
                                         self.get_option('exclude_markers', []).split(' ')))
-        self.taskset_path = self.get_option('taskset_path', 'taskset')
-        self.taskset_cpu = self.get_option('taskset_cpu', '')
+        self.taskset_affinity = self.get_option('affinity', '')
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -156,10 +154,10 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             args = [self.phantom_path, 'run', self.config]
             self.log.debug(
                 "Starting %s with arguments: %s", self.phantom_path, args)
-            if self.taskset_cpu != '':
-                args = [self.taskset_path, '-c', self.taskset_cpu] + args
+            if self.taskset_affinity != '':
+                args = [self.core.taskset_path, '-c', self.taskset_affinity] + args
                 self.log.debug(
-                    'Enabling taskset with cores: %s, cores count: %d', self.taskset_cpu, self.cpu_count)
+                    'Enabling taskset for phantom with affinity: %s, cores count: %d', self.taskset_affinity, self.cpu_count)
             self.phantom_start_time = time.time()
             phantom_stderr_file = self.core.mkstemp(
                 ".log", "phantom_stdout_stderr_")

@@ -208,11 +208,12 @@ class TankCore(object):
         self.flush_config_to = None
         self.lock_dir = None
         self.taskset_path = None
-        self.taskset_cpu = None
+        self.taskset_affinity = None
         self.set_option(self.SECTION, self.PID_OPTION, str(os.getpid()))
 
     def get_available_options(self):
-        return ["artifacts_base_dir", "artifacts_dir", "flush_config_to"]
+        return ["artifacts_base_dir", "artifacts_dir", "flush_config_to",
+                "taskset_path", "affinity"]
 
     def load_configs(self, configs):
         """ Tells core to load configs set into options storage """
@@ -245,7 +246,7 @@ class TankCore(object):
         self.artifacts_base_dir = os.path.expanduser(base_dir)
         self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
         self.taskset_path = self.get_option(self.SECTION, 'taskset_path', 'taskset')
-        self.taskset_cpu = self.get_option(self.SECTION, 'taskset_cpu', '')
+        self.taskset_affinity = self.get_option(self.SECTION, 'affinity', '')
 
         options = self.config.get_options(self.SECTION, self.PLUGIN_PREFIX)
         for (plugin_name, plugin_path) in options:
@@ -267,8 +268,8 @@ class TankCore(object):
             os.chmod(self.artifacts_base_dir, 0755)
 
         self.log.info("Configuring plugins...")
-        if self.taskset_cpu != '':
-            self.taskset(os.getpid(), self.taskset_path, self.taskset_cpu)
+        if self.taskset_affinity != '':
+            self.taskset(os.getpid(), self.taskset_path, self.taskset_affinity)
         for plugin in self.plugins:
             self.log.debug("Configuring %s", plugin)
             plugin.configure()
@@ -365,16 +366,16 @@ class TankCore(object):
 
         return retcode
 
-    def taskset(self, pid, path, cpu):
-        if cpu != '':
-            args = "%s -pc %s %s" % (path, cpu, pid)
+    def taskset(self, pid, path, affinity):
+        if affinity != '':
+            args = "%s -pc %s %s" % (path, affinity, pid)
             retcode, stdout, stderr = execute(
                 args, shell=True, poll_period=0.1, catch_out=True)
             self.log.debug('taskset stdout: %s', stdout)
             if retcode != 0:
                 raise KeyError(stderr)
             else:
-                self.log.info("Enabled taskset for pid %s with affinity %s", str(pid), cpu)
+                self.log.info("Enabled taskset for pid %s with affinity %s", str(pid), affinity)
 
     def __collect_artifacts(self):
         self.log.debug("Collecting artifacts")
