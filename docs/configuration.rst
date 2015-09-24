@@ -219,6 +219,7 @@ Advanced options:
 * **method_prefix** - object's type, that has a functionality to create test requests. Default: method_stream
 * **source_log_prefix** - prefix, added to class name that reads source data. Default: empty
 * **method_options** - additional options for method objects. It is used for Elliptics etc. Default: empty
+* **affinity** - set a phantom's CPU affinity. Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores. Default: empty
 
 TLS/SSL additional options (ssl=1 is required):
 
@@ -681,6 +682,8 @@ Options
 * **artifacts_base_dir** - base directory for artifacts storing. Temporary artifacts files are stored here. Default: current directory
 * **artifacts_dir** - directory where to keep artifacts after test. Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
 * **flush_config_to** - dump configuration options after each tank step (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file 
+* **taskset_path** - path to taskset command. Default: taskset
+* **affinity** - set a yandex-tank's (python process and load generator process) CPU affinity. Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores. Default: empty
 
 Tips&Tricks
 ^^^^^^^^^^^
