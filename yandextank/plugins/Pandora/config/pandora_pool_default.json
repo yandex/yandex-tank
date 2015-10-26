@@ -1,0 +1,34 @@
+{
+  "Name": "Pool#0",
+  "Gun": {
+    "GunType": "spdy",
+    "Parameters": {
+      "Target": "localhost:3000"
+    }
+  },
+  "AmmoProvider": {
+    "AmmoType": "jsonline/spdy",
+    "AmmoSource": "./ammo.jsonline",
+    "Loop": 0
+  },
+  "ResultListener": {
+    "ListenerType": "log/phout",
+    "Destination": "./phout.log"
+  },
+  "UserLimiter": {
+    "LimiterType": "periodic",
+    "Parameters": {
+      "BatchSize": 3,
+      "MaxCount": 18,
+      "Period": 1
+    }
+  },
+  "StartupLimiter": {
+    "LimiterType": "periodic",
+    "Parameters": {
+      "BatchSize": 2,
+      "MaxCount": 6,
+      "Period": 2
+    }
+  }
+}
