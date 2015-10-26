@@ -10,7 +10,7 @@ from yandextank.plugins.ConsoleOnline import \
     ConsoleOnlinePlugin, AbstractInfoWidget
 import yandextank.plugins.ConsoleScreen as ConsoleScreen
 import datetime
-from config import PoolConfig, PandoraConfig, periodic_schedule
+from config import PoolConfig, PandoraConfig, parse_schedule
 from reader import PandoraReader
 
 
@@ -35,7 +35,8 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
 
     def get_available_options(self):
         opts = ["pandora_cmd", "buffered_seconds",
-                "ammo", "loop", "sample_log", "config_file"]
+                "ammo", "loop", "sample_log", "config_file",
+                "startup_schedule", "user_schedule",]
         return opts
 
     def configure(self):
@@ -58,11 +59,19 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
         self.core.add_artifact_file(self.sample_log)
         pool_config.set_sample_log(self.sample_log)
 
-        # TODO: Parse startup schedule and set it
-        pool_config.set_startup_schedule(periodic_schedule(1, 1, 10))
+        startup_schedule = self.get_option("startup_schedule", "")
+        if startup_schedule:
+            pool_config.set_startup_schedule(parse_schedule(startup_schedule))
+        else:
+            raise RuntimeError(
+                "startup_schedule not specified")
 
-        # TODO: Parse user schedule and set it
-        pool_config.set_user_schedule(periodic_schedule(1, 1, 100))
+        user_schedule = self.get_option("user_schedule", "")
+        if user_schedule:
+            pool_config.set_user_schedule(parse_schedule(user_schedule))
+        else:
+            raise RuntimeError(
+                "user_schedule not specified")
 
         self.pandora_config = PandoraConfig()
         self.pandora_config.add_pool(pool_config)
