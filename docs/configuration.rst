@@ -347,6 +347,70 @@ INI file section: **[sql_gun]**
 
 * **db** - DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
 
+Pandora
+^^^^^^^
+Pandora is a load generator written in Go. For now it supports only SPDY/3, plugins for other protocols
+(HTTP/2, HTTP, Websocker, XMPP maybe) are on the way.
+
+First of all you'll need to obtain a binary of pandora and place it somewhere on your machine.
+By default, Yandex.Tank will try to just run ```pandora``` (or you could specify a path to binary in ```pandora_cmd```).
+Disable phantom first, enable Pandora plugin and then specify the parameters.
+
+::
+
+    [tank]
+    ; Disable phantom:
+    plugin_phantom=
+    ; Enable Pandora instead:
+    plugin_pandora=yandextank.plugins.Pandora
+            
+    ; Pandora config section:
+    [pandora]
+
+    ; ammo file name
+    ammo=ammo.jsonline
+
+    ; loop limit
+    loop=1000
+
+    ; each user will maintain this schedule
+    user_schedule = periodic(1, 1, 100)
+
+    ; users are started using this schedule
+    startup_schedule = periodic(1, 1, 100)
+
+    ; target host and port
+    target=localhost:3000
+
+
+Ammo format
+'''''''''''
+Pandora currently supports only one ammo format: ```jsonline```, i.e. one json doc per line.
+
+Example:
+::
+    {"uri": "/00", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
+    {"uri": "/01", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
+    {"tag": "mytag", "uri": "/02", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
+    {"uri": "/03", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
+
+Each json doc describes an HTTP request. Some of them may have a tag field, it will be used as other tags in other ammo formats.
+
+Schedules
+'''''''''
+Only one schedule type is supported now: a ```periodic``` schedule. It is defined as ```periodic(<batch_size>, <period>, <limit>)```.
+Pandora will issue one batch of size ```batch_size```, once in ```period``` seconds, maximum of ```limit``` ticks. Those ticks may be
+used in different places, for example as a limiter for user startups or as a limiter for each user request rate.
+
+Example:
+::
+
+    startup_schedule = periodic(2, 0.1, 100)
+    user_schedule = periodic(10, 15, 100)
+
+Start 2 users every 0.1 seconds, maximum of 100 users. Each user will issue requests in batches of 10 requests, every 15 seconds, maximum
+of 100 requests. All users will read from one ammo source.
+
 Auto-stop
 ^^^^^^^^^
 

@@ -94,3 +94,6 @@ def main():
         logging.error("Exception: %s", ex)
         logging.debug("Exception: %s", traceback.format_exc(ex))
         sys.exit(1)
+
+if __name__ == '__main__':
+    main()
