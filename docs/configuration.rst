@@ -353,7 +353,7 @@ Pandora is a load generator written in Go. For now it supports only SPDY/3, plug
 (HTTP/2, HTTP, Websocker, XMPP maybe) are on the way.
 
 First of all you'll need to obtain a binary of pandora and place it somewhere on your machine.
-By default, Yandex.Tank will try to just run ```pandora``` (or you could specify a path to binary in ```pandora_cmd```).
+By default, Yandex.Tank will try to just run ``pandora`` (or you could specify a path to binary in ``pandora_cmd``).
 Disable phantom first, enable Pandora plugin and then specify the parameters.
 
 ::
@@ -385,7 +385,7 @@ Disable phantom first, enable Pandora plugin and then specify the parameters.
 
 Ammo format
 '''''''''''
-Pandora currently supports only one ammo format: ```jsonline```, i.e. one json doc per line.
+Pandora currently supports only one ammo format: ``jsonline``, i.e. one json doc per line.
 
 Example:
 ::
@@ -398,8 +398,8 @@ Each json doc describes an HTTP request. Some of them may have a tag field, it w
 
 Schedules
 '''''''''
-Only one schedule type is supported now: a ```periodic``` schedule. It is defined as ```periodic(<batch_size>, <period>, <limit>)```.
-Pandora will issue one batch of size ```batch_size```, once in ```period``` seconds, maximum of ```limit``` ticks. Those ticks may be
+Only one schedule type is supported now: a ``periodic`` schedule. It is defined as ``periodic(<batch_size>, <period>, <limit>)``.
+Pandora will issue one batch of size ``batch_size``, once in ``period`` seconds, maximum of ``limit`` ticks. Those ticks may be
 used in different places, for example as a limiter for user startups or as a limiter for each user request rate.
 
 Example:
