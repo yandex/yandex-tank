@@ -70,6 +70,9 @@ class PoolConfig(object):
     def set_user_schedule(self, user_schedule):
         self.config["UserLimiter"] = user_schedule
 
+    def set_target(self, target):
+        self.config["Gun"]["Parameters"]["Target"] = target
+
     def data(self):
         return self.config
 
@@ -78,6 +81,7 @@ def main():
     pool_config = PoolConfig()
     pool_config.set_loop(1)
     pool_config.set_startup_schedule(parse_schedule("periodic(100, 100, 100)"))
+    pool_config.set_target("example.org:443")
     pandora_config = PandoraConfig()
     pandora_config.add_pool(pool_config)
     print(pandora_config.json())

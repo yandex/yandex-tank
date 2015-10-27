@@ -73,6 +73,9 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
             raise RuntimeError(
                 "user_schedule not specified")
 
+        target = self.get_option("target", "localhost:3000")
+        pool_config.set_target(target)
+
         self.pandora_config = PandoraConfig()
         self.pandora_config.add_pool(pool_config)
 
