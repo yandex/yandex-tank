@@ -1,3 +1,11 @@
+yandextank (1.7.15) trusty; urgency=medium
+
+  * Added taskset affinity for phantom and tankcore [Epikhin Mikhail]
+  * Pandora load generator support plugin
+  * Override headers anywhere in uri-style and uri+post-style ammo files
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Fri, 11 Sep 2015 17:03:13 +0400
+
 yandextank (1.7.14) trusty; urgency=medium
 
   * Support for for client certificates and client cipher lists (need special phantom build) [Nurlan Nugumanov]
