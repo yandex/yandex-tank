@@ -1,3 +1,9 @@
+yandextank (1.7.16) trusty; urgency=medium
+
+  * auto-convert old-style plugin paths
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 28 Oct 2015 16:17:23 +0400
+
 yandextank (1.7.15) trusty; urgency=medium
 
   * Added taskset affinity for phantom and tankcore [Epikhin Mikhail]
