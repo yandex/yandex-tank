@@ -26,7 +26,7 @@ def parse_schedule(schedule):
     if len(steps) > 1:
         raise NotImplementedError("Composite schedules not implemented yet")
     schedule_type, params = steps[0].split('(')
-    params = [int(p.strip()) for p in params.split(',')]
+    params = [float(p.strip()) for p in params.split(',')]
     if schedule_type in step_producers:
         return step_producers[schedule_type](*params)
     else:
