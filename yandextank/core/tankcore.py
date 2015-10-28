@@ -245,7 +245,8 @@ class TankCore(object):
             self.SECTION, "artifacts_base_dir", self.artifacts_base_dir)
         self.artifacts_base_dir = os.path.expanduser(base_dir)
         self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
-        self.taskset_path = self.get_option(self.SECTION, 'taskset_path', 'taskset')
+        self.taskset_path = self.get_option(
+            self.SECTION, 'taskset_path', 'taskset')
         self.taskset_affinity = self.get_option(self.SECTION, 'affinity', '')
 
         options = self.config.get_options(self.SECTION, self.PLUGIN_PREFIX)
@@ -254,9 +255,25 @@ class TankCore(object):
                 self.log.debug(
                     "Seems the plugin '%s' was disabled", plugin_name)
                 continue
-            self.log.debug("Loading plugin %s from %s", plugin_name, plugin_path)
+            self.log.debug(
+                "Loading plugin %s from %s",
+                plugin_name, plugin_path)
+            if '/' in plugin_path:
+                self.log.warning(
+                    "Deprecated plugin path format: %s\n"
+                    "Should be in pythonic format. Example:\n"
+                    "    plugin_jmeter=yandextank.plugins.JMeter", plugin_path)
+                if plugin_path.startswith("Tank/Plugins/"):
+                    plugin_path = "yandextank.plugins." + \
+                        plugin_path.split('/')[-1].split('.')[0]
+                    self.log.warning("Converted plugin path to %s", plugin_path)
+                else:
+                    raise ValueError(
+                        "Couldn't convert plugin path to new format:\n    %s" %
+                        plugin_path)
             plugin = il.import_module(plugin_path)
-            instance = getattr(plugin, plugin_path.split('.')[-1] + 'Plugin')(self)
+            instance = getattr(
+                plugin, plugin_path.split('.')[-1] + 'Plugin')(self)
             self.plugins.append(instance)
 
         self.log.debug("Plugin instances: %s", self.plugins)
