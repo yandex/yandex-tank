@@ -198,7 +198,7 @@ class StepperWrapper(object):
                 if self.instances and self.rps_schedule:
                     self.log.info(
                         "rps_schedule is set. Overriding cached instances param from config: %s", self.instances)
-                    stepper_info.instances = self.instances
+                    stepper_info = stepper_info._replace(instances=self.instances)
                 publish_info(stepper_info)
             else:
                 if self.force_stepping and os.path.exists(self.__si_filename()):
