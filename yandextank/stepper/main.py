@@ -126,7 +126,8 @@ class StepperWrapper(object):
     @staticmethod
     def get_available_options():
         opts = [StepperWrapper.OPTION_AMMOFILE, StepperWrapper.OPTION_LOOP,
-                StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD]
+                StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD,
+                StepperWrapper.OPTION_INSTANCES_LIMIT]
         opts += ["instances_schedule", "uris",
                  "headers", "header_http",
                  "autocases", "enum_ammo",
@@ -186,7 +187,10 @@ class StepperWrapper(object):
             info.status.publish('steps', stepper_info.steps)
             info.status.publish('duration', stepper_info.duration)
             info.status.ammo_count = stepper_info.ammo_count
-            info.status.publish('instances', stepper_info.instances)
+            if self.instances:
+                info.status.publish('instances', self.instances)
+            else:
+                info.status.publish('instances', stepper_info.instances)
             return stepper_info
         if not self.stpd:
             self.stpd = self.__get_stpd_filename()
@@ -264,7 +268,6 @@ class StepperWrapper(object):
         '''
         Write stepper info to json
         '''
-        # TODO: format json
         self.log.debug("Saving stepper info: %s", self.__si_filename())
         with open(self.__si_filename(), 'w') as si_file:
             json.dump(si._asdict(), si_file, indent=4)
