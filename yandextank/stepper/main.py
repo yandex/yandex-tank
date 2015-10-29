@@ -187,17 +187,19 @@ class StepperWrapper(object):
             info.status.publish('steps', stepper_info.steps)
             info.status.publish('duration', stepper_info.duration)
             info.status.ammo_count = stepper_info.ammo_count
-            if self.instances:
-                info.status.publish('instances', self.instances)
-            else:
-                info.status.publish('instances', stepper_info.instances)
+            info.status.publish('instances', stepper_info.instances)
             return stepper_info
         if not self.stpd:
             self.stpd = self.__get_stpd_filename()
             self.core.set_option(self.section, self.OPTION_STPD, self.stpd)
             if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.__si_filename()):
                 self.log.info("Using cached stpd-file: %s", self.stpd)
-                stepper_info = publish_info(self.__read_cached_options())
+                stepper_info = self.__read_cached_options()
+                if self.instances and self.rps_schedule:
+                    self.log.info(
+                        "rps_schedule is set. Overriding cached instances param from config: %s", self.instances)
+                    stepper_info.instances = self.instances
+                publish_info(stepper_info)
             else:
                 if self.force_stepping and os.path.exists(self.__si_filename()):
                     os.remove(self.__si_filename())
