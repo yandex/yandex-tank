@@ -1,3 +1,13 @@
+yandextank (1.7.17) trusty; urgency=medium
+
+  * bash completion
+  * psutil >= 1.2.1 dependency
+  * fix #71
+  * change default artifacts dir to ./logs
+  * small fix for pandora plugin
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 29 Oct 2015 17:07:24 +0400
+
 yandextank (1.7.16) trusty; urgency=medium
 
   * auto-convert old-style plugin paths
