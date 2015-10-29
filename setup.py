@@ -15,7 +15,7 @@ analytic tools for the results they produce.
     url='http://yandex.github.io/yandex-tank/',
     packages=find_packages(exclude=["tests"]),
     install_requires=[
-        'psutil',
+        'psutil>=1.2.1',
         'ipaddr',
         'progressbar',
         'requests',
