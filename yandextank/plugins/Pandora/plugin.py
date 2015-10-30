@@ -36,7 +36,7 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
     def get_available_options(self):
         opts = ["pandora_cmd", "buffered_seconds",
                 "ammo", "loop", "sample_log", "config_file",
-                "startup_schedule", "user_schedule",]
+                "startup_schedule", "user_schedule", "gun_type"]
         return opts
 
     def configure(self):
@@ -75,6 +75,10 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
 
         target = self.get_option("target", "localhost:3000")
         pool_config.set_target(target)
+
+        gun_type = self.get_option("gun_type", "spdy")
+        self.log.info("Pandora gun type is: %s", gun_type)
+        pool_config.set_gun_type(gun_type)
 
         self.pandora_config = PandoraConfig()
         self.pandora_config.add_pool(pool_config)

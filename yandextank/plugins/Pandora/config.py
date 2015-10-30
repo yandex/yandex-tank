@@ -73,6 +73,9 @@ class PoolConfig(object):
     def set_target(self, target):
         self.config["Gun"]["Parameters"]["Target"] = target
 
+    def set_gun_type(self, gun_type):
+        self.config["Gun"]["Type"] = gun_type
+
     def data(self):
         return self.config
 
