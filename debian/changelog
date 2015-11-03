@@ -1,3 +1,10 @@
+yandextank (1.7.18) trusty; urgency=medium
+
+  * support pandora gun type parameter
+  * psutil >= 1.2.1 dependency in debian/control
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 3 Nov 2015 13:19:54 +0400
+
 yandextank (1.7.17) trusty; urgency=medium
 
   * bash completion
