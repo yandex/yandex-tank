@@ -8,19 +8,12 @@ def uts(dt):
     return int(time.mktime(dt.timetuple()))
 
 
-def parse_number(val):
-    try:
-        return float(val)
-    except ValueError:
-        return None
-
-
-def decode_monitoring_item(item):
+def decode_monitoring_item(item, tank):
     host, metrics, _, ts = item
     return {
         "measurement": "monitoring",
         "tags": {
-            "tank": "server01",
+            "tank": tank,
             "host": item[0]
         },
         "time": ts,
@@ -37,7 +30,7 @@ def decode_monitoring(data):
     return [decode_monitoring_item(item) for item in data_items]
 
 
-def decode_aggregate(data):
+def decode_aggregate(data, tank):
     timestamp = uts(data.time)
     overall = data.overall.__getstate__()
     # cumulative = data.cumulative.__getstate__()
@@ -45,14 +38,14 @@ def decode_aggregate(data):
         {
             "measurement": "overall_quantiles",
             "tags": {
-                "host": "server01",
+                "tank": tank,
             },
             "time": timestamp,
             "fields": {str(k): v for k, v in overall['quantiles'].items()},
         }, {
             "measurement": "overall_meta",
             "tags": {
-                "host": "server01",
+                "tank": tank,
             },
             "time": timestamp,
             "fields": {
@@ -66,7 +59,7 @@ def decode_aggregate(data):
         points += [{
             "measurement": "net_codes",
             "tags": {
-                "host": "server01",
+                "tank": tank,
             },
             "time": timestamp,
             "fields": {str(k): v for k, v in overall['net_codes'].items()},
@@ -75,7 +68,7 @@ def decode_aggregate(data):
         points += [{
             "measurement": "http_codes",
             "tags": {
-                "host": "server01",
+                "tank": tank,
             },
             "time": timestamp,
             "fields": {str(k): v for k, v in overall['http_codes'].items()},

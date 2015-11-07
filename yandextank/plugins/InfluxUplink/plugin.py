@@ -27,19 +27,18 @@ class InfluxUplinkPlugin(AbstractPlugin, AggregateResultListener):
         self.client = None
 
     def get_available_options(self):
-        return ["address", "port", "prefix", "web_port"]
+        return ["address", "port", "prefix", "web_port", "tank_tag"]
 
     def start_test(self):
-        start_time = datetime.datetime.now()
-        self.start_time = start_time.strftime("%H:%M%%20%Y%m%d")
+        self.start_time = datetime.datetime.now()
 
     def end_test(self, retcode):
-        end_time = datetime.datetime.now() + datetime.timedelta(minutes=1)
-        self.end_time = end_time.strftime("%H:%M%%20%Y%m%d")
+        self.end_time = datetime.datetime.now() + datetime.timedelta(minutes=1)
         return retcode
 
     def configure(self):
         '''Read configuration'''
+        self.tank_tag = self.get_option("tank_tag", "none")
         self.client = InfluxDBClient(
             'localhost', 8086, 'root', 'root', 'mydb')
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
@@ -50,12 +49,12 @@ class InfluxUplinkPlugin(AbstractPlugin, AggregateResultListener):
         @data: SecondAggregateData
         """
         if self.client:
-            points = decode_aggregate(data)
+            points = decode_aggregate(data, self.tank_tag)
             print("Aggregated:\n%s" % points)
             self.client.write_points(points, 's')
 
     def monitoring_data(self, data):
         if self.client:
-            points = decode_monitoring(data)
+            points = decode_monitoring(data, self.tank_tag)
             print("Monitoring:\n%s" % points)
             self.client.write_points(points, 's')
