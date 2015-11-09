@@ -5,7 +5,7 @@ from pkg_resources import resource_string
 from yandextank.plugins.Aggregator import \
     AggregateResultListener, AggregatorPlugin
 from yandextank.core import AbstractPlugin
-from decode import Decoder
+from decode import Decoder, uts
 from influxdb import InfluxDBClient
 
 
@@ -45,7 +45,18 @@ class InfluxUplinkPlugin(AbstractPlugin, AggregateResultListener):
         port = int(self.get_option("port", "8086"))
         self.client = InfluxDBClient(
             address, port, 'root', 'root', 'mydb')
-        self.decoder = Decoder(self.tank_tag, self.core.get_uuid())
+        grafana_root = self.get_option("grafana_root", "http://localhost/")
+        grafana_dashboard = self.get_option("grafana_dashboard", "tank-dashboard")
+        uuid=self.core.get_uuid()
+        LOG.info(
+            "Grafana link: {grafana_root}"
+            "dashboard/db/{grafana_dashboard}?var-uuid={uuid}&from=-5m&to=now".format(
+                grafana_root=grafana_root,
+                grafana_dashboard=grafana_dashboard,
+                uuid=uuid,
+            )
+        )
+        self.decoder = Decoder(self.tank_tag, uuid)
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
 
