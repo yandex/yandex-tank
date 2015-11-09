@@ -18,6 +18,7 @@ import fnmatch
 import psutil
 import importlib as il
 import json
+import uuid
 
 
 def log_stdout_stderr(log, stdout, stderr, comment=""):
@@ -191,6 +192,7 @@ class TankCore(object):
     SECTION = 'tank'
     PLUGIN_PREFIX = 'plugin_'
     PID_OPTION = 'pid'
+    UUID_OPTION = 'uuid'
     LOCK_DIR = '/var/lock'
 
     def __init__(self):
@@ -209,7 +211,12 @@ class TankCore(object):
         self.lock_dir = None
         self.taskset_path = None
         self.taskset_affinity = None
+        self.uuid = str(uuid.uuid4())
+        self.set_option(self.SECTION, self.UUID_OPTION, self.uuid)
         self.set_option(self.SECTION, self.PID_OPTION, str(os.getpid()))
+
+    def get_uuid(self):
+        return self.uuid
 
     def get_available_options(self):
         return ["artifacts_base_dir", "artifacts_dir", "flush_config_to",
