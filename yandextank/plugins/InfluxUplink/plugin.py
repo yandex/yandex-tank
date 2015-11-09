@@ -27,7 +27,7 @@ class InfluxUplinkPlugin(AbstractPlugin, AggregateResultListener):
         self.client = None
 
     def get_available_options(self):
-        return ["address", "port", "prefix", "web_port", "tank_tag"]
+        return ["address", "port", "tank_tag"]
 
     def start_test(self):
         self.start_time = datetime.datetime.now()
@@ -39,8 +39,10 @@ class InfluxUplinkPlugin(AbstractPlugin, AggregateResultListener):
     def configure(self):
         '''Read configuration'''
         self.tank_tag = self.get_option("tank_tag", "none")
+        address = self.get_option("address", "localhost")
+        port = int(self.get_option("port", "8086"))
         self.client = InfluxDBClient(
-            'localhost', 8086, 'root', 'root', 'mydb')
+            address, port, 'root', 'root', 'mydb')
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
 
