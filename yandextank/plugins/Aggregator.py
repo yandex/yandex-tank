@@ -40,6 +40,8 @@ class AggregatorPlugin(AbstractPlugin):
 
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
+        self.log.warning(
+            "The Aggregator plugin is DEPRECATED. Please, use NumpyAggregator")
         self.process = None
         self.second_data_listeners = []
         self.preproc_out_offset = 0
