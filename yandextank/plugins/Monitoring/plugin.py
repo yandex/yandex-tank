@@ -122,7 +122,8 @@ class MonitoringPlugin(AbstractPlugin):
                 self.monitoring.default_target = self.default_target
 
             self.data_file = self.core.mkstemp('.data', 'monitoring_')
-            self.monitoring.add_listener(SaveMonToFile(self.data_file))
+            self.mon_saver = SaveMonToFile(self.data_file)
+            self.monitoring.add_listener(self.mon_saver)
             self.core.add_artifact_file(self.data_file)
 
             try:
@@ -171,6 +172,8 @@ class MonitoringPlugin(AbstractPlugin):
             while self.monitoring.send_data:
                 logger.info("Sending monitoring data rests...")
                 self.monitoring.send_collected_data()
+        if self.mon_saver:
+            self.mon_saver.close()
         return retcode
 
 
@@ -190,6 +193,7 @@ class SaveMonToFile(MonitoringDataListener):
 
     def close(self):
         """ close open files """
+        logger.debug("Closing monitoring file")
         if self.store:
             self.store.close()
 
