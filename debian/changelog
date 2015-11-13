@@ -1,3 +1,9 @@
+yandextank (1.7.19) trusty; urgency=medium
+
+  * fix some file descriptor leakages
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Fri, 13 Nov 2015 21:52:54 +0400
+
 yandextank (1.7.18) trusty; urgency=medium
 
   * support pandora gun type parameter
