@@ -16,6 +16,7 @@ import time
 import fcntl
 import traceback
 import getpass
+from contextlib import contextmanager
 
 import yandextank.core as tankcore
 
@@ -45,7 +46,7 @@ class Config(object):
         return log_level
 
 
-class SSHWrapper:
+class SSHWrapper(object):
     """Separate SSH calls to be able to unit test the collector"""
 
     def __init__(self, timeout):
@@ -67,7 +68,15 @@ class SSHWrapper:
         """Get open ssh pipe"""
         args = ['ssh'] + self.ssh_opts + [self.host] + cmd
         logger.debug('Executing: %s', args)
-        return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid, close_fds=True)
+        pipe = Popen(
+            args,
+            stdout=PIPE,
+            stderr=PIPE,
+            stdin=PIPE,
+            bufsize=0,
+            preexec_fn=os.setsid,
+            close_fds=True)
+        return pipe
 
     def get_scp_pipe(self, cmd):
         """Get open scp pipe"""
@@ -169,7 +178,7 @@ class AgentClient(object):
         err = pipe.stderr.read().strip()
         if err:
             raise RuntimeError("[%s] ssh error: '%s'" % (self.host, err))
-        pipe.wait()
+        pipe.communicate()
         logger.debug("Return code [%s]: %s", self.host, pipe.returncode)
         if pipe.returncode:
             raise RuntimeError("Failed to get remote dir via SSH at %s@%s, code %s: %s" % (
@@ -186,7 +195,7 @@ class AgentClient(object):
         logger.debug("Copy agent to %s: %s", self.host, cmd)
 
         pipe = self.ssh.get_scp_pipe(cmd)
-        pipe.wait()
+        pipe.communicate()
         logger.debug("AgentClient copy exitcode: %s", pipe.returncode)
         if pipe.returncode != 0:
             raise RuntimeError("AgentClient copy exitcode: %s" % pipe.returncode)
@@ -203,7 +212,7 @@ class AgentClient(object):
         logger.debug("[%s] Copy config: %s", cmd, self.host)
 
         pipe = self.ssh.get_scp_pipe(cmd)
-        pipe.wait()
+        pipe.communicate()
         logger.debug("AgentClient copy config exitcode: %s", pipe.returncode)
         if pipe.returncode != 0:
             raise RuntimeError("AgentClient copy config exitcode: %s" % pipe.returncode)
@@ -222,13 +231,13 @@ class AgentClient(object):
         os.close(fhandle)
         cmd = [self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_file]
         logger.debug("Copy agent log from %s@%s: %s", self.username, self.host, cmd)
-        remove = self.ssh.get_scp_pipe(cmd)
-        remove.wait()
+        pipe = self.ssh.get_scp_pipe(cmd)
+        pipe.communicate()
 
         logger.info("Removing agent from: %s@%s...", self.username, self.host)
         cmd = ['rm', '-r', self.path['AGENT_REMOTE_FOLDER']]
-        remove = self.ssh.get_ssh_pipe(cmd)
-        remove.wait()
+        pipe = self.ssh.get_ssh_pipe(cmd)
+        pipe.communicate()
         return log_file
 
 
@@ -363,6 +372,7 @@ class MonitoringCollector:
         for pipe in self.agent_pipes:
             try:
                 pipe.stdin.write("stop\n")
+                pipe.stdin.close()
             except IOError as exc:
                 logger.warn("Problems stopping agent: %s", traceback.format_exc(exc))
 
