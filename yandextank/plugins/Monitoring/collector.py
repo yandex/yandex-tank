@@ -16,7 +16,6 @@ import time
 import fcntl
 import traceback
 import getpass
-from contextlib import contextmanager
 
 import yandextank.core as tankcore
 
@@ -198,7 +197,8 @@ class AgentClient(object):
         pipe.communicate()
         logger.debug("AgentClient copy exitcode: %s", pipe.returncode)
         if pipe.returncode != 0:
-            raise RuntimeError("AgentClient copy exitcode: %s" % pipe.returncode)
+            raise RuntimeError(
+                "AgentClient copy exitcode: %s" % pipe.returncode)
 
         # Copy config
         cmd = [
@@ -215,33 +215,46 @@ class AgentClient(object):
         pipe.communicate()
         logger.debug("AgentClient copy config exitcode: %s", pipe.returncode)
         if pipe.returncode != 0:
-            raise RuntimeError("AgentClient copy config exitcode: %s" % pipe.returncode)
+            raise RuntimeError(
+                "AgentClient copy config exitcode: %s" % pipe.returncode)
 
         if os.getenv("DEBUG") or 1:
             debug = "DEBUG=1"
         else:
             debug = ""
-        self.run = [debug, self.python, self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c',
-                    self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
+        self.run = [
+            debug, self.python,
+            self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c',
+            self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
         return agent_config
 
     def uninstall(self):
         """Remove agent's files from remote host"""
         fhandle, log_file = tempfile.mkstemp('.log', "agent_" + self.host + "_")
         os.close(fhandle)
-        cmd = [self.host + ':' + self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_file]
-        logger.debug("Copy agent log from %s@%s: %s", self.username, self.host, cmd)
-        pipe = self.ssh.get_scp_pipe(cmd)
-        pipe.communicate()
+        try:
+            cmd = [
+                self.host + ':' +
+                self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_file]
+            logger.debug(
+                "Copy agent log from %s@%s: %s", self.username, self.host, cmd)
+            pipe = self.ssh.get_scp_pipe(cmd)
+            pipe.communicate()
+        except:
+            logger.warning("Exception while copying agent log", exc_info=True)
 
-        logger.info("Removing agent from: %s@%s...", self.username, self.host)
-        cmd = ['rm', '-r', self.path['AGENT_REMOTE_FOLDER']]
-        pipe = self.ssh.get_ssh_pipe(cmd)
-        pipe.communicate()
+        try:
+            logger.info(
+                "Removing agent from: %s@%s...", self.username, self.host)
+            cmd = ['rm', '-r', self.path['AGENT_REMOTE_FOLDER']]
+            pipe = self.ssh.get_ssh_pipe(cmd)
+            pipe.communicate()
+        except:
+            logger.warning("Exception while removing agent", exc_info=True)
         return log_file
 
 
-class MonitoringCollector:
+class MonitoringCollector(object):
 
     """Aggregate data from several collectors"""
 
