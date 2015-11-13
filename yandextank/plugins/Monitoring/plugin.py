@@ -116,8 +116,7 @@ class MonitoringPlugin(AbstractPlugin):
                 self.monitoring.default_target = self.default_target
 
             self.data_file = self.core.mkstemp('.data', 'monitoring_')
-            self.mon_saver = SaveMonToFile(self.data_file)
-            self.monitoring.add_listener(self.mon_saver)
+            self.monitoring.add_listener(SaveMonToFile(self.data_file))
             self.core.add_artifact_file(self.data_file)
 
             try:
@@ -167,9 +166,6 @@ class MonitoringPlugin(AbstractPlugin):
             while self.monitoring.send_data:
                 logger.info("Sending monitoring data rests...")
                 self.monitoring.send_collected_data()
-
-        if self.mon_saver:
-            self.mon_saver.close()
         return retcode
 
 
@@ -187,13 +183,16 @@ class SaveMonToFile(MonitoringDataListener):
         self.store.write(data_string)
         self.store.flush()
 
-    def close(self):
+    def __del__(self):
         """ close open files """
         if self.store:
             self.store.close()
 
 
-class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener, MonitoringDataDecoder):
+class MonitoringWidget(
+        AbstractInfoWidget,
+        MonitoringDataListener,
+        MonitoringDataDecoder):
     """
     Screen widget
     """
