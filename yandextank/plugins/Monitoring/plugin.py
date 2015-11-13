@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 from pkg_resources import resource_string
 from collector import MonitoringCollector, \
     MonitoringDataListener, MonitoringDataDecoder
-from yandextank.plugins.ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+from yandextank.plugins.ConsoleOnline import \
+    ConsoleOnlinePlugin, AbstractInfoWidget
 from yandextank.plugins.Phantom import PhantomPlugin
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
@@ -36,7 +37,6 @@ class MonitoringPlugin(AbstractPlugin):
         self.mon_saver = None
         self.address_resolver = None
 
-
     @staticmethod
     def get_key():
         return __file__
@@ -44,7 +44,8 @@ class MonitoringPlugin(AbstractPlugin):
     def start_test(self):
         if self.monitoring:
             self.monitoring.load_start_time = time.time()
-            logger.debug("load_start_time = %s" % self.monitoring.load_start_time)
+            logger.debug("load_start_time = %s" %
+                         self.monitoring.load_start_time)
 
     def get_available_options(self):
         return ["config", "default_target", 'ssh_timeout']
@@ -52,7 +53,8 @@ class MonitoringPlugin(AbstractPlugin):
     def configure(self):
         self.config = self.get_option("config", 'auto').strip()
         self.default_target = self.get_option("default_target", 'localhost')
-        self.monitoring.ssh_timeout = tankcore.expand_to_seconds(self.get_option('ssh_timeout', "5s"))
+        self.monitoring.ssh_timeout = tankcore.expand_to_seconds(
+            self.get_option('ssh_timeout', "5s"))
 
         if self.config == 'none' or self.config == 'auto':
             self.die_on_fail = False
@@ -66,13 +68,15 @@ class MonitoringPlugin(AbstractPlugin):
                 self.config = xmlfile
 
             if not os.path.exists(self.config):
-                raise OSError("Monitoring config file not found: %s" % self.config)
+                raise OSError(
+                    "Monitoring config file not found: %s" % self.config)
 
         if self.config == 'none':
             self.monitoring = None
 
         if self.config == 'auto':
-            default_config = resource_string(__name__, 'config/monitoring_default_config.xml')
+            default_config = resource_string(
+                __name__, 'config/monitoring_default_config.xml')
             self.config = self.core.mkstemp(".xml", "monitoring_default_")
             with open(self.config, 'w') as cfg_file:
                 cfg_file.write(default_config)
@@ -82,8 +86,8 @@ class MonitoringPlugin(AbstractPlugin):
             autostop.add_criteria_class(MetricHigherCriteria)
             autostop.add_criteria_class(MetricLowerCriteria)
         except KeyError:
-            logger.debug("No autostop plugin found, not adding instances criteria")
-
+            logger.debug(
+                "No autostop plugin found, not adding instances criteria")
 
     def prepare_test(self):
         try:
@@ -96,13 +100,15 @@ class MonitoringPlugin(AbstractPlugin):
             info = phantom.get_info()
             if info:
                 self.default_target = info.address
-                logger.debug("Changed monitoring target to %s", self.default_target)
+                logger.debug("Changed monitoring target to %s",
+                             self.default_target)
         except KeyError, ex:
             logger.debug("Phantom plugin not found: %s", ex)
 
         if self.address_resolver:
             try:
-                self.default_target = self.address_resolver.resolve_virtual(self.default_target)
+                self.default_target = self.address_resolver.resolve_virtual(
+                    self.default_target)
             except Exception, exc:
                 logger.error("Failed to get target info: %s", exc)
 
@@ -138,13 +144,13 @@ class MonitoringPlugin(AbstractPlugin):
                     self.monitoring.poll()
                     count += 1
             except Exception, exc:
-                logger.debug("Problems starting monitoring: %s", traceback.format_exc(exc))
+                logger.debug("Problems starting monitoring: %s",
+                             traceback.format_exc(exc))
                 if self.die_on_fail:
                     raise exc
                 else:
                     logger.warning("Failed to start monitoring: %s", exc)
                     self.monitoring = None
-
 
     def is_test_finished(self):
         if self.monitoring and not self.monitoring.poll():
@@ -154,7 +160,6 @@ class MonitoringPlugin(AbstractPlugin):
                 logger.warn("Monitoring died unexpectedly")
                 self.monitoring = None
         return -1
-
 
     def end_test(self, retcode):
         logger.info("Finishing monitoring")
@@ -183,7 +188,7 @@ class SaveMonToFile(MonitoringDataListener):
         self.store.write(data_string)
         self.store.flush()
 
-    def __del__(self):
+    def close(self):
         """ close open files """
         if self.store:
             self.store.close()
@@ -227,7 +232,6 @@ class MonitoringWidget(
                     self.sign[host][metric] = 0
                 self.data[host][metric] = "%.2f" % float(value)
 
-
     def monitoring_data(self, data_string):
         logger.debug("Mon widget data: %s", data_string)
         for line in data_string.split("\n"):
@@ -245,22 +249,24 @@ class MonitoringWidget(
             else:
                 self.__handle_data_item(host, data)
 
-
     def render(self, screen):
         if not self.owner.monitoring:
             return "Monitoring is " + screen.markup.RED + "offline" + screen.markup.RESET
         else:
-            res = "Monitoring is " + screen.markup.GREEN + "online" + screen.markup.RESET + ":\n"
+            res = "Monitoring is " + screen.markup.GREEN + \
+                "online" + screen.markup.RESET + ":\n"
             for hostname, metrics in self.data.items():
-                tm_stamp = datetime.datetime.fromtimestamp(float(self.time[hostname])).strftime('%H:%M:%S')
-                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
+                tm_stamp = datetime.datetime.fromtimestamp(
+                    float(self.time[hostname])).strftime('%H:%M:%S')
+                res += ("   " + screen.markup.CYAN + "%s" +
+                        screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
                     elif self.sign[hostname][metric] < 0:
                         value = screen.markup.CYAN + value + screen.markup.RESET
                     res += "      %s%s: %s\n" % (
-                    ' ' * (self.max_metric_len - len(metric)), metric.replace('_', ' '), value)
+                        ' ' * (self.max_metric_len - len(metric)), metric.replace('_', ' '), value)
 
             return res.strip()
 
@@ -284,10 +290,10 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
         self.host = param_str.split(',')[0].strip()
         self.metric = param_str.split(',')[1].strip()
         self.value_limit = float(param_str.split(',')[2])
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[3])
+        self.seconds_limit = tankcore.expand_to_seconds(
+            param_str.split(',')[3])
         self.last_second = None
         self.seconds_count = 0
-
 
     def monitoring_data(self, data_string):
         if self.triggered:
@@ -305,7 +311,7 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
                 data[self.metric] = 0
 
             logger.debug("Compare %s %s/%s=%s to %s", self.get_type_string(), host, self.metric, data[self.metric],
-                           self.value_limit)
+                         self.value_limit)
             if self.comparison_fn(float(data[self.metric]), self.value_limit):
                 if not self.seconds_count:
                     self.cause_second = self.last_second
@@ -319,7 +325,6 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
                     return
             else:
                 self.seconds_count = 0
-
 
     def notify(self, aggregate_second):
         if self.seconds_count:
@@ -351,7 +356,8 @@ class MetricHigherCriteria(AbstractMetricCriteria):
         return "%s/%s metric value is higher than %s for %s seconds" % items
 
     def widget_explain(self):
-        items = (self.host, self.metric, self.value_limit, self.seconds_count, self.seconds_limit)
+        items = (self.host, self.metric, self.value_limit,
+                 self.seconds_count, self.seconds_limit)
         return "%s/%s > %s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
 
     def comparison_fn(self, arg1, arg2):
@@ -376,7 +382,8 @@ class MetricLowerCriteria(AbstractMetricCriteria):
         return "%s/%s metric value is lower than %s for %s seconds" % items
 
     def widget_explain(self):
-        items = (self.host, self.metric, self.value_limit, self.seconds_count, self.seconds_limit)
+        items = (self.host, self.metric, self.value_limit,
+                 self.seconds_count, self.seconds_limit)
         return "%s/%s < %s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
 
     def comparison_fn(self, arg1, arg2):

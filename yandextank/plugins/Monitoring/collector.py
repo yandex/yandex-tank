@@ -602,7 +602,7 @@ class MonitoringCollector:
             return ''
 
 
-class MonitoringDataListener:
+class MonitoringDataListener(object):
     """Parent class for data listeners"""
 
     def __init__(self):
@@ -623,7 +623,7 @@ class StdOutPrintMon(MonitoringDataListener):
         sys.stdout.write(data_string)
 
 
-class MonitoringDataDecoder:
+class MonitoringDataDecoder(object):
     """The class that serves converting monitoring data lines to dict"""
     NA = 'n/a'
 
