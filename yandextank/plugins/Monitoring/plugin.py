@@ -152,6 +152,9 @@ class MonitoringPlugin(AbstractPlugin):
                     self.monitoring = None
 
     def is_test_finished(self):
+        if self.monitoring:
+            data_len = self.monitoring.poll()
+            logger.debug("Monitoring got %s lines", data_len)
         return -1
 
     def end_test(self, retcode):
