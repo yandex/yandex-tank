@@ -144,22 +144,20 @@ class MonitoringPlugin(AbstractPlugin):
                     time.sleep(0.2)
                     self.monitoring.poll()
                     count += 1
-            except Exception, exc:
-                logger.debug("Problems starting monitoring: %s",
-                             traceback.format_exc(exc))
+            except:
+                logger.error("Could not start monitoring", exc_info=True)
                 if self.die_on_fail:
-                    raise exc
+                    raise
                 else:
-                    logger.warning("Failed to start monitoring: %s", exc)
                     self.monitoring = None
 
     def is_test_finished(self):
-        if self.monitoring and not self.monitoring.poll():
-            if self.die_on_fail:
-                raise RuntimeError("Monitoring died unexpectedly")
-            else:
-                logger.warn("Monitoring died unexpectedly")
-                self.monitoring = None
+        # if self.monitoring and not self.monitoring.poll():
+        #     if self.die_on_fail:
+        #         raise RuntimeError("Monitoring died unexpectedly")
+        #     else:
+        #         logger.warn("Monitoring died unexpectedly")
+        #         self.monitoring = None
         return -1
 
     def end_test(self, retcode):

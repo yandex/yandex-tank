@@ -145,7 +145,7 @@ class AgentClient(object):
             'AGENT_REMOTE_FOLDER': '/var/tmp/lunapark_monitoring',
 
             # Source path on tank
-            'AGENT_LOCAL_FOLDER': os.path.dirname(__file__) + '/agent/',
+            'AGENT_LOCAL_FOLDER': os.path.dirname(__file__) + '/agent',
             'METRIC_LOCAL_FOLDER': os.path.dirname(__file__) + '/agent/metric',
 
             # Temp config path
@@ -155,15 +155,15 @@ class AgentClient(object):
     def start(self):
         """Start remote agent"""
         logger.debug('Start monitoring: %s', self.host)
-        if not self.run:
-            raise ValueError("Empty run string")
-        self.run += ['-t', str(int(time.time()))]
-        logger.debug(self.run)
         self.session = self.ssh.async_session(" ".join([
             "DEBUG=1", self.python,
             self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c',
-            self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']))
+            self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg',
+            '-t', str(int(time.time()))]))
         return self.session
+
+    def read_maybe(self):
+        return self.session.read_maybe()
 
     def create_agent_config(self, loglevel):
         """Creating config"""
@@ -236,7 +236,7 @@ class AgentClient(object):
                 self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
                 self.path['AGENT_REMOTE_FOLDER'] + '/agent.py')
             self.ssh.send_file(
-                self.path['AGENT_LOCAL_FOLDER'] + agent_config,
+                agent_config,
                 self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg')
         except:
             logger.error(
@@ -324,7 +324,10 @@ class MonitoringCollector(object):
     def poll(self):
         """Poll agents for data"""
         for agent in self.agents:
-            lines = agent.read_maybe().split("\n")
+            block = agent.read_maybe()
+            if not block:
+                continue
+            lines = block.split("\n")
 
             for data in lines:
                 logger.debug("Got data from agent: %s", data.strip())
@@ -429,7 +432,7 @@ class MonitoringCollector(object):
             'metric': metric or 'cpu-stat',
             'interval': host.get('interval', 1),
             'priority': host.get('priority', 0),
-            'port': host.get('port', '22'),
+            'port': int(host.get('port', 22)),
             'python': host.get('python', '/usr/bin/env python2'),
             'username': host.get('username', getpass.getuser()),
             'custom': custom,
