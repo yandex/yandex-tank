@@ -631,7 +631,7 @@ class ConfigManager(object):
             self.log.warning("No section: %s", ex)
 
         self.log.debug(
-            "Section: %s, prefix: %s, options:\n%s", section, prefix, res)
+            "Section: [%s] prefix: '%s' options:\n%s", section, prefix, res)
         return res
 
     def find_sections(self, prefix):
