@@ -136,21 +136,15 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
     else:
         process = subprocess.Popen(cmd, shell=shell, close_fds=True)
 
-    while process.poll() is None:
-        log.debug("Waiting for process to finish: %s", process)
-        time.sleep(poll_period)
+    stdout, stderr = process.communicate()
+    if stderr:
+        log.error("There were errors:\n%s", stderr)
 
-    if catch_out:
-        for line in process.stderr.readlines():
-            stderr += line
-            log.warn(line.strip())
-        for line in process.stdout.readlines():
-            stdout += line
-            log.debug(line.strip())
-
-    retcode = process.poll()
-    log.debug("Process exit code: %s", retcode)
-    return retcode, stdout, stderr
+    if stdout:
+        log.debug("Process output:\n%s", stdout)
+    returncode = process.returncode
+    log.debug("Process exit code: %s", returncode)
+    return returncode, stdout, stderr
 
 
 def splitstring(string):
