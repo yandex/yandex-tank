@@ -152,12 +152,6 @@ class MonitoringPlugin(AbstractPlugin):
                     self.monitoring = None
 
     def is_test_finished(self):
-        # if self.monitoring and not self.monitoring.poll():
-        #     if self.die_on_fail:
-        #         raise RuntimeError("Monitoring died unexpectedly")
-        #     else:
-        #         logger.warn("Monitoring died unexpectedly")
-        #         self.monitoring = None
         return -1
 
     def end_test(self, retcode):
