@@ -630,7 +630,8 @@ class ConfigManager(object):
         except NoSectionError, ex:
             self.log.warning("No section: %s", ex)
 
-        self.log.debug("Found options: %s", res)
+        self.log.debug(
+            "Section: %s, prefix: %s, options:\n%s", section, prefix, res)
         return res
 
     def find_sections(self, prefix):
