@@ -615,7 +615,6 @@ class ConfigManager(object):
             filename = self.file
 
         if filename:
-            self.log.debug("Flushing config to: %s", filename)
             handle = open(filename, 'wb')
             self.config.write(handle)
             handle.close()
@@ -623,18 +622,13 @@ class ConfigManager(object):
     def get_options(self, section, prefix=''):
         """ Get options list with requested prefix """
         res = []
-        self.log.debug(
-            "Looking in section '%s' for options starting with '%s'",
-            section, prefix)
         try:
             for option in self.config.options(section):
-                self.log.debug("Option: %s", option)
                 if not prefix or option.find(prefix) == 0:
-                    self.log.debug("Option: %s matched", option)
                     res += [(option[len(prefix):],
                              self.config.get(section, option))]
         except NoSectionError, ex:
-            self.log.debug("No section: %s", ex)
+            self.log.warning("No section: %s", ex)
 
         self.log.debug("Found options: %s", res)
         return res
