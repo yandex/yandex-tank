@@ -8,21 +8,15 @@ import base64
 import logging
 import os.path
 import re
-import select
-import signal
 import sys
 import tempfile
 import time
-import fcntl
-import traceback
 import getpass
 from paramiko import SSHClient, AutoAddPolicy
-from contextlib import contextmanager
-
-import yandextank.core as tankcore
 
 
 logger = logging.getLogger(__name__)
+logging.getLogger("paramiko.transport").setLevel(logging.INFO)
 
 
 def parse_xml(config):
@@ -54,7 +48,7 @@ class SecuredShell(object):
         self.port = port
         self.username = username
 
-    def __connect(self):
+    def connect(self):
         logger.debug("Opening SSH connection to {host}:{port}".format(
             host=self.host, port=self.port))
         client = SSHClient()
@@ -68,12 +62,62 @@ class SecuredShell(object):
         return client
 
     def execute(self, cmd):
-        with self.__connect() as client:
+        logger.info("Execute on %s: %s", self.host, cmd)
+        with self.connect() as client:
             _, stdout, stderr = client.exec_command(cmd)
             output = stdout.read()
             errors = stderr.read()
             err_code = stdout.channel.recv_exit_status()
         return output, errors, err_code
+
+    def rm(self, path):
+        return self.execute("rm -f %s" % path)
+
+    def rm_r(self, path):
+        return self.execute("rm -rf %s" % path)
+
+    def mkdir(self, path):
+        return self.execute("mkdir -p %s" % path)
+
+    def send_file(self, local_path, remote_path):
+        logger.info("Sending [{local}] to {host}:[{remote}]".format(
+            local=local_path, host=self.host, remote=remote_path))
+        with self.connect() as client, client.open_sftp() as sftp:
+            result = sftp.put(local_path, remote_path)
+        return result
+
+    def get_file(self, remote_path, local_path):
+        logger.info("Receiving from {host}:[{remote}] to [{local}]".format(
+            local=local_path, host=self.host, remote=remote_path))
+        with self.connect() as client, client.open_sftp() as sftp:
+            result = sftp.get(remote_path, local_path)
+        return result
+
+    def async_session(self, cmd):
+        return AsyncSession(self, cmd)
+
+
+class AsyncSession(object):
+    def __init__(self, ssh, cmd):
+        self.client = ssh.connect()
+        self.session = self.client.get_transport().open_session()
+        self.session.exec_command(cmd)
+
+    def send(self, data):
+        self.session.send(data)
+
+    def close(self):
+        self.session.close()
+        self.client.close()
+
+    def finished(self):
+        return self.session.exit_status_ready()
+
+    def read_maybe(self):
+        if self.session.recv_ready():
+            return self.session.recv(1024)
+        else:
+            return None
 
 
 class AgentClient(object):
@@ -90,12 +134,12 @@ class AgentClient(object):
         self.custom = adr['custom']
         self.startups = adr['startups']
         self.shutdowns = adr['shutdowns']
-
+        self.session = None
         self.ssh = SecuredShell(
             self.host, self.port, self.username)
 
-        temp_config = tempfile.mkstemp('.cfg', 'agent_')
-        os.close(temp_config[0])
+        handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
+        os.close(handle)
         self.path = {
             # Destination path on remote host
             'AGENT_REMOTE_FOLDER': '/var/tmp/lunapark_monitoring',
@@ -105,7 +149,7 @@ class AgentClient(object):
             'METRIC_LOCAL_FOLDER': os.path.dirname(__file__) + '/agent/metric',
 
             # Temp config path
-            'TEMP_CONFIG': temp_config[1]
+            'TEMP_CONFIG': cfg_path
         }
 
     def start(self):
@@ -115,18 +159,19 @@ class AgentClient(object):
             raise ValueError("Empty run string")
         self.run += ['-t', str(int(time.time()))]
         logger.debug(self.run)
-        #TODO!!!
-        pipe = self.ssh.get_ssh_pipe(self.run)
-        logger.debug("Started: %s", pipe)
-        return pipe
+        self.session = self.ssh.async_session(" ".join([
+            "DEBUG=1", self.python,
+            self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c',
+            self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']))
+        return self.session
 
     def create_agent_config(self, loglevel):
         """Creating config"""
         try:
             float(self.interval)
         except:
-            strn = "Monitoring interval parameter is in wrong format: '%s'. Only numbers allowed."
-            raise ValueError(strn % self.interval)
+            raise ValueError(
+                "Monitoring interval should be a number: '%s'" % self.interval)
 
         cfg = ConfigParser.ConfigParser()
         cfg.add_section('main')
@@ -161,21 +206,22 @@ class AgentClient(object):
         logger.info(
             "Installing monitoring agent at %s@%s...",
             self.username, self.host)
-        agent_config = self.create_agent_config(loglevel)
 
-        # getting remote temp dir
+        # create remote temp dir
         cmd = self.python + ' -c "import tempfile; print tempfile.mkdtemp();"'
-        logger.debug("Get remote temp dir: %s", cmd)
+        logger.info("Creating temp dir on %s", self.host)
         out, errors, err_code = self.ssh.execute(cmd)
         if errors:
-            raise RuntimeError("[%s] ssh error: '%s'" % (self.host, errors))
+            logging.error("[%s] ssh error: '%s'" % (self.host, errors))
+            return None
 
         if err_code:
-            raise RuntimeError(
+            logging.error(
                 "Failed to create remote dir via SSH"
                 " at %s@%s, code %s: %s" % (
                     self.username, self.host,
                     err_code, out.strip()))
+            return None
 
         remote_dir = out.strip()
         if remote_dir:
@@ -183,74 +229,42 @@ class AgentClient(object):
         logger.debug(
             "Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
 
-        # Copy agent
-        # TODO!
-        cmd = [
-            self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
-            self.username + '@' + '[' +
-            self.host + ']' + ':' + self.path['AGENT_REMOTE_FOLDER']]
-        logger.debug("Copy agent to %s: %s", self.host, cmd)
-
-        pipe = self.ssh.get_scp_pipe(cmd)
-        pipe.communicate()
-        logger.debug("AgentClient copy exitcode: %s", pipe.returncode)
-        if pipe.returncode != 0:
-            raise RuntimeError(
-                "AgentClient copy exitcode: %s" % pipe.returncode)
-
-        # Copy config
-        cmd = [
-            self.path['TEMP_CONFIG'],
-            '{user}@[{host}]:{dirname}/agent.cfg'.format(
-                user=self.username,
-                host=self.host,
-                dirname=self.path['AGENT_REMOTE_FOLDER']
-            )
-        ]
-        logger.debug("[%s] Copy config: %s", cmd, self.host)
-
-        pipe = self.ssh.get_scp_pipe(cmd)
-        pipe.communicate()
-        logger.debug("AgentClient copy config exitcode: %s", pipe.returncode)
-        if pipe.returncode != 0:
-            raise RuntimeError(
-                "AgentClient copy config exitcode: %s" % pipe.returncode)
-
-        if os.getenv("DEBUG") or 1:
-            debug = "DEBUG=1"
-        else:
-            debug = ""
-        self.run = [
-            debug, self.python,
-            self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c',
-            self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
+        # Copy agent and config
+        agent_config = self.create_agent_config(loglevel)
+        try:
+            self.ssh.send_file(
+                self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
+                self.path['AGENT_REMOTE_FOLDER'] + '/agent.py')
+            self.ssh.send_file(
+                self.path['AGENT_LOCAL_FOLDER'] + agent_config,
+                self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg')
+        except:
+            logger.error(
+                "Failed to install agent", exc_info=True)
+            return None
         return agent_config
 
     def uninstall(self):
-        """Remove agent's files from remote host"""
-        fhandle, log_file = tempfile.mkstemp(
+        """
+        Remove agent's files from remote host
+        """
+        if self.session:
+            self.session.send("stop\n")
+            self.session.close()
+        fhandle, log_filename = tempfile.mkstemp(
             '.log', "agent_" + self.host + "_")
         os.close(fhandle)
         try:
-            cmd = [
-                self.host + ':' +
-                self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_file]
-            logger.debug(
-                "Copy agent log from %s@%s: %s", self.username, self.host, cmd)
-            pipe = self.ssh.get_scp_pipe(cmd)
-            pipe.communicate()
+            self.ssh.get_file(
+                self.path['AGENT_REMOTE_FOLDER'] + "_agent.log",
+                log_filename)
+            self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
         except:
-            logger.warning("Exception while copying agent log", exc_info=True)
+            logger.error("Exception while uninstalling agent", exc_info=True)
 
         logger.info(
             "Removing agent from: %s@%s...", self.username, self.host)
-        cmd = ['rm -r ' + self.path['AGENT_REMOTE_FOLDER']]
-        out, errors, err_code = self.ssh.execute(cmd)
-        if errors or err_code:
-            logger.warning(
-                "Error while removing agent (exit code %s): %s",
-                err_code, errors)
-        return log_file
+        return log_filename
 
 
 class MonitoringCollector(object):
@@ -261,7 +275,7 @@ class MonitoringCollector(object):
         self.config = None
         self.default_target = None
         self.agents = []
-        self.agent_pipes = []
+        self.agent_sessions = []
         self.filter_conf = {}
         self.listeners = []
         self.first_data_received = False
@@ -283,6 +297,7 @@ class MonitoringCollector(object):
         if self.config:
             [agent_config, self.filter_conf] = self.getconfig(
                 self.config, self.default_target)
+        loglevel = Config(self.config).loglevel()
 
         logger.debug("filter_conf: %s", self.filter_conf)
 
@@ -296,64 +311,20 @@ class MonitoringCollector(object):
         for adr in agent_config:
             logger.debug('Creating agent: %s', adr)
             agent = AgentClient(adr)
-            self.agents.append(agent)
-
-        # Mass agents install
-        logger.debug("Agents: %s", self.agents)
-
-        conf = Config(self.config)
-        for agent in self.agents:
             logger.debug('Install monitoring agent. Host: %s', agent.host)
-            self.artifact_files.append(agent.install(conf.loglevel()))
+            agent_config = agent.install(loglevel)
+            if agent_config:
+                self.agents.append(agent)
+                self.artifact_files.append(agent_config)
 
     def start(self):
         """Start N parallel agents"""
-        for agent in self.agents:
-            pipe = agent.start()
-            self.agent_pipes.append(pipe)
-
-            fds = pipe.stdout.fileno()
-            flags = fcntl.fcntl(fds, fcntl.F_GETFL)
-            fcntl.fcntl(fds, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-            self.outputs.append(pipe.stdout)
-
-            fds = pipe.stderr.fileno()
-            flags = fcntl.fcntl(fds, fcntl.F_GETFL)
-            fcntl.fcntl(fds, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-            self.excepts.append(pipe.stderr)
-
-        logger.debug("Pipes: %s", self.agent_pipes)
+        [agent.start() for agent in self.agents]
 
     def poll(self):
         """Poll agents for data"""
-        readable, writable, exceptional = select.select(
-            self.outputs, self.inputs, self.excepts, 0)
-        logger.debug("Streams: %s %s %s", readable, writable, exceptional)
-
-        # if empty run - check children
-        if (not readable) or exceptional:
-            for pipe in self.agent_pipes:
-                if pipe.returncode:
-                    logger.debug("Child died returncode: %s", pipe.returncode)
-                    self.outputs.remove(pipe.stdout)
-                    self.agent_pipes.remove(pipe)
-
-        # Handle exceptions
-        for excepted in exceptional:
-            data = excepted.readline()
-            while data:
-                logger.error("Got exception [%s]: %s", excepted, data)
-                data = excepted.readline()
-
-        while readable:
-            to_read = readable.pop(0)
-            # Handle outputs
-
-            try:
-                lines = to_read.read().split("\n")
-            except IOError:
-                logger.debug("No data available")
-                lines = []
+        for agent in self.agents:
+            lines = agent.read_maybe().split("\n")
 
             for data in lines:
                 logger.debug("Got data from agent: %s", data.strip())
@@ -371,36 +342,7 @@ class MonitoringCollector(object):
 
     def stop(self):
         """Shutdown agents"""
-        logger.debug("Initiating normal finish")
-        for pipe in self.agent_pipes:
-            try:
-                pipe.stdin.write("stop\n")
-                pipe.stdin.close()
-            except IOError as exc:
-                logger.warn("Problems stopping agent: %s",
-                            traceback.format_exc(exc))
-
-        time.sleep(1)
-
-        for pipe in self.agent_pipes:
-            if pipe.pid:
-                first_try = True
-                delay = 1
-                while tankcore.pid_exists(pipe.pid):
-                    if first_try:
-                        logger.debug("Killing %s with %s",
-                                     pipe.pid, signal.SIGTERM)
-                        os.killpg(pipe.pid, signal.SIGTERM)
-                        pipe.communicate()
-                        first_try = False
-                        time.sleep(0.1)
-                    else:
-                        time.sleep(delay)
-                        delay *= 2
-                        logger.warn("Killing %s with %s",
-                                    pipe.pid, signal.SIGKILL)
-                        os.killpg(pipe.pid, signal.SIGKILL)
-
+        logger.debug("Uninstalling monitoring agents")
         for agent in self.agents:
             self.artifact_files.append(agent.uninstall())
 
@@ -426,7 +368,8 @@ class MonitoringCollector(object):
         if hostname == '[target]':
             if not target_hint:
                 raise ValueError(
-                    "Can't use [target] keyword with no target parameter specified")
+                    "Can't use [target] keyword with "
+                    "no target parameter specified")
             logger.debug("Using target hint: %s", target_hint)
             hostname = target_hint.lower()
         stats = []
