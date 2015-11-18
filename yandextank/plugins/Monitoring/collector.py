@@ -3,24 +3,20 @@
 import ConfigParser
 from collections import defaultdict
 from xml.etree import ElementTree as etree
-from subprocess import PIPE, Popen
+#from subprocess import PIPE, Popen
 import base64
 import logging
 import os.path
 import re
-import select
-import signal
 import sys
 import tempfile
 import time
-import fcntl
-import traceback
 import getpass
-
-import yandextank.core as tankcore
+from paramiko import SSHClient, AutoAddPolicy
 
 
 logger = logging.getLogger(__name__)
+logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
 
 
 def parse_xml(config):
@@ -45,94 +41,148 @@ class Config(object):
         return log_level
 
 
-class SSHWrapper(object):
-    """Separate SSH calls to be able to unit test the collector"""
+class SecuredShell(object):
 
-    def __init__(self, timeout):
-        self.ssh_opts = ['-q', '-o', 'StrictHostKeyChecking=no', '-o', 'PasswordAuthentication=no', '-o',
-                         'NumberOfPasswordPrompts=0', '-o', 'ConnectTimeout=' + str(timeout)]
-        self.scp_opts = []
-        self.host = None
-        self.port = None
-
-    def set_host_port(self, host, port, username):
-        """Set host and port to use"""
+    def __init__(self, host, port, username):
         self.host = host
         self.port = port
         self.username = username
-        self.scp_opts = self.ssh_opts + ['-P', self.port]
-        self.ssh_opts = self.ssh_opts + ['-C', '-p', self.port] + ['-l', self.username]
 
-    def get_ssh_pipe(self, cmd):
-        """Get open ssh pipe"""
-        args = ['ssh'] + self.ssh_opts + [self.host] + cmd
-        logger.debug('Executing: %s', args)
-        pipe = Popen(
-            args,
-            stdout=PIPE,
-            stderr=PIPE,
-            stdin=PIPE,
-            bufsize=0,
-            preexec_fn=os.setsid,
-            close_fds=True)
-        return pipe
+    def connect(self):
+        logger.debug("Opening SSH connection to {host}:{port}".format(
+            host=self.host, port=self.port))
+        client = SSHClient()
+        client.load_system_host_keys()
+        client.set_missing_host_key_policy(AutoAddPolicy())
+        client.connect(
+            self.host,
+            port=self.port,
+            username=self.username,
+        )
+        return client
 
-    def get_scp_pipe(self, cmd):
-        """Get open scp pipe"""
-        args = ['scp'] + self.scp_opts + cmd
-        logger.debug('Executing: %s', args)
-        return Popen(args, stdout=PIPE, stderr=PIPE, stdin=PIPE, bufsize=0, preexec_fn=os.setsid, close_fds=True)
+    def execute(self, cmd):
+        logger.info("Execute on %s: %s", self.host, cmd)
+        with self.connect() as client:
+            _, stdout, stderr = client.exec_command(cmd)
+            output = stdout.read()
+            errors = stderr.read()
+            err_code = stdout.channel.recv_exit_status()
+        return output, errors, err_code
+
+    def rm(self, path):
+        return self.execute("rm -f %s" % path)
+
+    def rm_r(self, path):
+        return self.execute("rm -rf %s" % path)
+
+    def mkdir(self, path):
+        return self.execute("mkdir -p %s" % path)
+
+    def send_file(self, local_path, remote_path):
+        logger.info("Sending [{local}] to {host}:[{remote}]".format(
+            local=local_path, host=self.host, remote=remote_path))
+        with self.connect() as client, client.open_sftp() as sftp:
+            result = sftp.put(local_path, remote_path)
+        return result
+
+    def get_file(self, remote_path, local_path):
+        logger.info("Receiving from {host}:[{remote}] to [{local}]".format(
+            local=local_path, host=self.host, remote=remote_path))
+        with self.connect() as client, client.open_sftp() as sftp:
+            result = sftp.get(remote_path, local_path)
+        return result
+
+    def async_session(self, cmd):
+        return AsyncSession(self, cmd)
+
+
+class AsyncSession(object):
+    def __init__(self, ssh, cmd):
+        self.client = ssh.connect()
+        self.session = self.client.get_transport().open_session()
+        self.session.exec_command(cmd)
+
+    def send(self, data):
+        self.session.send(data)
+
+    def close(self):
+        self.session.close()
+        self.client.close()
+
+    def finished(self):
+        return self.session.exit_status_ready()
+
+    def read_maybe(self):
+        if self.session.recv_ready():
+            return self.session.recv(4096)
+        else:
+            return None
 
 
 class AgentClient(object):
     """Agent client connection"""
 
-    def __init__(self):
+    def __init__(self, adr):
         self.run = []
-        self.host = None
+        self.host = adr['host']
+        self.username = adr['username']
+        self.python = adr['python']
+        self.metric = adr['metric']
+        self.port = adr['port']
+        self.interval = adr['interval']
+        self.custom = adr['custom']
+        self.startups = adr['startups']
+        self.shutdowns = adr['shutdowns']
+        self.session = None
+        self.buffer = ""
+        self.ssh = SecuredShell(
+            self.host, self.port, self.username)
 
-        self.port = 22
-        self.ssh = None
-
-        temp_config = tempfile.mkstemp('.cfg', 'agent_')
-        os.close(temp_config[0])
+        handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
+        os.close(handle)
         self.path = {
             # Destination path on remote host
             'AGENT_REMOTE_FOLDER': '/var/tmp/lunapark_monitoring',
 
             # Source path on tank
-            'AGENT_LOCAL_FOLDER': os.path.dirname(__file__) + '/agent/',
+            'AGENT_LOCAL_FOLDER': os.path.dirname(__file__) + '/agent',
             'METRIC_LOCAL_FOLDER': os.path.dirname(__file__) + '/agent/metric',
 
             # Temp config path
-            'TEMP_CONFIG': temp_config[1]
+            'TEMP_CONFIG': cfg_path
         }
-        self.interval = None
-        self.metric = None
-        self.custom = {}
-        self.startups = []
-        self.shutdowns = []
-        self.python = '/usr/bin/env python2'
-        self.username = getpass.getuser()
 
     def start(self):
         """Start remote agent"""
         logger.debug('Start monitoring: %s', self.host)
-        if not self.run:
-            raise ValueError("Empty run string")
-        self.run += ['-t', str(int(time.time()))]
-        logger.debug(self.run)
-        pipe = self.ssh.get_ssh_pipe(self.run)
-        logger.debug("Started: %s", pipe)
-        return pipe
+        self.session = self.ssh.async_session(" ".join([
+            "DEBUG=1", self.python,
+            self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c',
+            self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg',
+            '-t', str(int(time.time()))]))
+        return self.session
+
+    def read_maybe(self):
+        chunk = self.session.read_maybe()
+        if chunk:
+            parts = chunk.rsplit('\n', 1)
+            if len(parts) > 1:
+                ready_chunk = self.buffer + parts[0] + '\n'
+                self.buffer = parts[1]
+                return ready_chunk
+            else:
+                self.buffer += parts[0]
+                return None
+        return None
 
     def create_agent_config(self, loglevel):
         """Creating config"""
         try:
             float(self.interval)
         except:
-            strn = "Monitoring interval parameter is in wrong format: '%s'. Only numbers allowed."
-            raise ValueError(strn % self.interval)
+            raise ValueError(
+                "Monitoring interval should be a number: '%s'" % self.interval)
 
         cfg = ConfigParser.ConfigParser()
         cfg.add_section('main')
@@ -164,94 +214,68 @@ class AgentClient(object):
 
     def install(self, loglevel):
         """Create folder and copy agent and metrics scripts to remote host"""
-        logger.info("Installing monitoring agent at %s@%s...", self.username, self.host)
-        agent_config = self.create_agent_config(loglevel)
+        logger.info(
+            "Installing monitoring agent at %s@%s...",
+            self.username, self.host)
 
-        self.ssh.set_host_port(self.host, self.port, self.username)
+        # create remote temp dir
+        cmd = self.python + ' -c "import tempfile; print tempfile.mkdtemp();"'
+        logger.info("Creating temp dir on %s", self.host)
+        out, errors, err_code = self.ssh.execute(cmd)
+        if errors:
+            logging.error("[%s] ssh error: '%s'" % (self.host, errors))
+            return None
 
-        # getting remote temp dir
-        cmd = [self.python + ' -c "import tempfile; print tempfile.mkdtemp();"']
-        logger.debug("Get remote temp dir: %s", cmd)
-        pipe = self.ssh.get_ssh_pipe(cmd)
+        if err_code:
+            logging.error(
+                "Failed to create remote dir via SSH"
+                " at %s@%s, code %s: %s" % (
+                    self.username, self.host,
+                    err_code, out.strip()))
+            return None
 
-        err = pipe.stderr.read().strip()
-        if err:
-            raise RuntimeError("[%s] ssh error: '%s'" % (self.host, err))
-        pipe.communicate()
-        logger.debug("Return code [%s]: %s", self.host, pipe.returncode)
-        if pipe.returncode:
-            raise RuntimeError("Failed to get remote dir via SSH at %s@%s, code %s: %s" % (
-                self.username, self.host, pipe.returncode, pipe.stdout.read().strip()))
-
-        remote_dir = pipe.stdout.read().strip()
+        remote_dir = out.strip()
         if remote_dir:
             self.path['AGENT_REMOTE_FOLDER'] = remote_dir
-        logger.debug("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
+        logger.debug(
+            "Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
 
-        # Copy agent
-        cmd = [self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
-               self.username+'@'+'['+self.host+']' + ':' + self.path['AGENT_REMOTE_FOLDER']]
-        logger.debug("Copy agent to %s: %s", self.host, cmd)
-
-        pipe = self.ssh.get_scp_pipe(cmd)
-        pipe.communicate()
-        logger.debug("AgentClient copy exitcode: %s", pipe.returncode)
-        if pipe.returncode != 0:
-            raise RuntimeError(
-                "AgentClient copy exitcode: %s" % pipe.returncode)
-
-        # Copy config
-        cmd = [
-            self.path['TEMP_CONFIG'],
-            '{user}@[{host}]:{dirname}/agent.cfg'.format(
-                user=self.username,
-                host=self.host,
-                dirname=self.path['AGENT_REMOTE_FOLDER']
-            )
-        ]
-        logger.debug("[%s] Copy config: %s", cmd, self.host)
-
-        pipe = self.ssh.get_scp_pipe(cmd)
-        pipe.communicate()
-        logger.debug("AgentClient copy config exitcode: %s", pipe.returncode)
-        if pipe.returncode != 0:
-            raise RuntimeError(
-                "AgentClient copy config exitcode: %s" % pipe.returncode)
-
-        if os.getenv("DEBUG") or 1:
-            debug = "DEBUG=1"
-        else:
-            debug = ""
-        self.run = [
-            debug, self.python,
-            self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c',
-            self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg']
+        # Copy agent and config
+        agent_config = self.create_agent_config(loglevel)
+        try:
+            self.ssh.send_file(
+                self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
+                self.path['AGENT_REMOTE_FOLDER'] + '/agent.py')
+            self.ssh.send_file(
+                agent_config,
+                self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg')
+        except:
+            logger.error(
+                "Failed to install agent", exc_info=True)
+            return None
         return agent_config
 
     def uninstall(self):
-        """Remove agent's files from remote host"""
-        fhandle, log_file = tempfile.mkstemp('.log', "agent_" + self.host + "_")
+        """
+        Remove agent's files from remote host
+        """
+        if self.session:
+            self.session.send("stop\n")
+            self.session.close()
+        fhandle, log_filename = tempfile.mkstemp(
+            '.log', "agent_" + self.host + "_")
         os.close(fhandle)
         try:
-            cmd = [
-                self.host + ':' +
-                self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_file]
-            logger.debug(
-                "Copy agent log from %s@%s: %s", self.username, self.host, cmd)
-            pipe = self.ssh.get_scp_pipe(cmd)
-            pipe.communicate()
+            self.ssh.get_file(
+                self.path['AGENT_REMOTE_FOLDER'] + "_agent.log",
+                log_filename)
+            self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
         except:
-            logger.warning("Exception while copying agent log", exc_info=True)
+            logger.error("Exception while uninstalling agent", exc_info=True)
 
-        try:
-            logger.info(
-                "Removing agent from: %s@%s...", self.username, self.host)
-            cmd = ['rm', '-r', self.path['AGENT_REMOTE_FOLDER']]
-            pipe = self.ssh.get_ssh_pipe(cmd)
-            pipe.communicate()
-        except:
-            logger.warning("Exception while removing agent", exc_info=True)
-        return log_file
+        logger.info(
+            "Removing agent from: %s@%s...", self.username, self.host)
+        return log_filename
 
 
 class MonitoringCollector(object):
@@ -262,10 +286,9 @@ class MonitoringCollector(object):
         self.config = None
         self.default_target = None
         self.agents = []
-        self.agent_pipes = []
+        self.agent_sessions = []
         self.filter_conf = {}
         self.listeners = []
-        self.ssh_wrapper_class = SSHWrapper
         self.first_data_received = False
         self.send_data = ''
         self.artifact_files = []
@@ -278,13 +301,14 @@ class MonitoringCollector(object):
         self.listeners.append(obj)
 
     def prepare(self):
-
         """Prepare for monitoring - install agents etc"""
 
         # Parse config
         agent_config = []
         if self.config:
-            [agent_config, self.filter_conf] = self.getconfig(self.config, self.default_target)
+            [agent_config, self.filter_conf] = self.getconfig(
+                self.config, self.default_target)
+        loglevel = Config(self.config).loglevel()
 
         logger.debug("filter_conf: %s", self.filter_conf)
 
@@ -297,78 +321,29 @@ class MonitoringCollector(object):
         logger.debug('Creating agents')
         for adr in agent_config:
             logger.debug('Creating agent: %s', adr)
-            agent = AgentClient()
-            agent.host = adr['host']
-            agent.username = adr['username']
-            agent.python = adr['python']
-            agent.metric = adr['metric']
-            agent.port = adr['port']
-            agent.interval = adr['interval']
-            agent.custom = adr['custom']
-            agent.startups = adr['startups']
-            agent.shutdowns = adr['shutdowns']
-            agent.ssh = self.ssh_wrapper_class(self.ssh_timeout)
-            self.agents.append(agent)
-
-        # Mass agents install
-        logger.debug("Agents: %s", self.agents)
-
-        conf = Config(self.config)
-        for agent in self.agents:
+            agent = AgentClient(adr)
             logger.debug('Install monitoring agent. Host: %s', agent.host)
-            self.artifact_files.append(agent.install(conf.loglevel()))
+            agent_config = agent.install(loglevel)
+            if agent_config:
+                self.agents.append(agent)
+                self.artifact_files.append(agent_config)
 
     def start(self):
         """Start N parallel agents"""
-        for agent in self.agents:
-            pipe = agent.start()
-            self.agent_pipes.append(pipe)
-
-            fds = pipe.stdout.fileno()
-            flags = fcntl.fcntl(fds, fcntl.F_GETFL)
-            fcntl.fcntl(fds, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-            self.outputs.append(pipe.stdout)
-
-            fds = pipe.stderr.fileno()
-            flags = fcntl.fcntl(fds, fcntl.F_GETFL)
-            fcntl.fcntl(fds, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-            self.excepts.append(pipe.stderr)
-
-        logger.debug("Pipes: %s", self.agent_pipes)
+        [agent.start() for agent in self.agents]
 
     def poll(self):
         """Poll agents for data"""
-        readable, writable, exceptional = select.select(self.outputs, self.inputs, self.excepts, 0)
-        logger.debug("Streams: %s %s %s", readable, writable, exceptional)
-
-        # if empty run - check children
-        if (not readable) or exceptional:
-            for pipe in self.agent_pipes:
-                if pipe.returncode:
-                    logger.debug("Child died returncode: %s", pipe.returncode)
-                    self.outputs.remove(pipe.stdout)
-                    self.agent_pipes.remove(pipe)
-
-        # Handle exceptions
-        for excepted in exceptional:
-            data = excepted.readline()
-            while data:
-                logger.error("Got exception [%s]: %s", excepted, data)
-                data = excepted.readline()
-
-        while readable:
-            to_read = readable.pop(0)
-            # Handle outputs
-
-            try:
-                lines = to_read.read().split("\n")
-            except IOError:
-                logger.debug("No data available")
-                lines = []
+        for agent in self.agents:
+            block = agent.read_maybe()
+            if not block:
+                continue
+            lines = block.split("\n")
 
             for data in lines:
                 logger.debug("Got data from agent: %s", data.strip())
-                self.send_data += self.filter_unused_data(self.filter_conf, self.filter_mask, data)
+                self.send_data += self.filter_unused_data(
+                    self.filter_conf, self.filter_mask, data)
                 logger.debug("Data after filtering: %s", self.send_data)
 
         if not self.first_data_received and self.send_data:
@@ -381,33 +356,7 @@ class MonitoringCollector(object):
 
     def stop(self):
         """Shutdown agents"""
-        logger.debug("Initiating normal finish")
-        for pipe in self.agent_pipes:
-            try:
-                pipe.stdin.write("stop\n")
-                pipe.stdin.close()
-            except IOError as exc:
-                logger.warn("Problems stopping agent: %s", traceback.format_exc(exc))
-
-        time.sleep(1)
-
-        for pipe in self.agent_pipes:
-            if pipe.pid:
-                first_try = True
-                delay = 1
-                while tankcore.pid_exists(pipe.pid):
-                    if first_try:
-                        logger.debug("Killing %s with %s", pipe.pid, signal.SIGTERM)
-                        os.killpg(pipe.pid, signal.SIGTERM)
-                        pipe.communicate()
-                        first_try = False
-                        time.sleep(0.1)
-                    else:
-                        time.sleep(delay)
-                        delay *= 2
-                        logger.warn("Killing %s with %s", pipe.pid, signal.SIGKILL)
-                        os.killpg(pipe.pid, signal.SIGKILL)
-
+        logger.debug("Uninstalling monitoring agents")
         for agent in self.agents:
             self.artifact_files.append(agent.uninstall())
 
@@ -432,7 +381,9 @@ class MonitoringCollector(object):
         hostname = host.get('address').lower()
         if hostname == '[target]':
             if not target_hint:
-                raise ValueError("Can't use [target] keyword with no target parameter specified")
+                raise ValueError(
+                    "Can't use [target] keyword with "
+                    "no target parameter specified")
             logger.debug("Using target hint: %s", target_hint)
             hostname = target_hint.lower()
         stats = []
@@ -461,7 +412,8 @@ class MonitoringCollector(object):
                 isdiff = metric.get('diff')
                 if not isdiff:
                     isdiff = 0
-                stat = "%s:%s:%s" % (base64.b64encode(metric.get('label')), base64.b64encode(metric.text), isdiff)
+                stat = "%s:%s:%s" % (base64.b64encode(metric.get(
+                    'label')), base64.b64encode(metric.text), isdiff)
                 stats.append('Custom:' + stat)
                 custom[metric.get('measure', 'call')].append(stat)
             elif (str(metric.tag)).lower() == 'startup':
@@ -491,7 +443,7 @@ class MonitoringCollector(object):
             'metric': metric or 'cpu-stat',
             'interval': host.get('interval', 1),
             'priority': host.get('priority', 0),
-            'port': host.get('port', '22'),
+            'port': int(host.get('port', 22)),
             'python': host.get('python', '/usr/bin/env python2'),
             'username': host.get('username', getpass.getuser()),
             'custom': custom,
@@ -536,7 +488,8 @@ class MonitoringCollector(object):
                 try:
                     res.append(filter_list[key])
                 except IndexError:
-                    logger.warn("Problems filtering data: %s with %s", mask, len(filter_list))
+                    logger.warn("Problems filtering data: %s with %s",
+                                mask, len(filter_list))
                     return None
         return ';'.join(res)
 
@@ -659,7 +612,8 @@ class MonitoringDataDecoder(object):
                 self.metrics[host] = []
                 for metric in data:
                     if metric.startswith("Custom:"):
-                        metric = base64.standard_b64decode(metric.split(':')[1])
+                        metric = base64.standard_b64decode(
+                            metric.split(':')[1])
                     self.metrics[host].append(metric)
                     data_dict[metric] = self.NA
                     is_initial = True
@@ -668,10 +622,12 @@ class MonitoringDataDecoder(object):
             timestamp = data.pop(0)
 
             if host not in self.metrics.keys():
-                raise ValueError("Host %s not in started metrics: %s" % (host, self.metrics))
+                raise ValueError(
+                    "Host %s not in started metrics: %s" % (host, self.metrics))
 
             if len(self.metrics[host]) != len(data):
-                raise ValueError("Metrics len and data len differs: %s vs %s" % (len(self.metrics[host]), len(data)))
+                raise ValueError("Metrics len and data len differs: %s vs %s" % (
+                    len(self.metrics[host]), len(data)))
 
             for metric in self.metrics[host]:
                 data_dict[metric] = data.pop(0)

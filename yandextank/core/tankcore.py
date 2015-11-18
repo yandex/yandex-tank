@@ -136,21 +136,15 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
     else:
         process = subprocess.Popen(cmd, shell=shell, close_fds=True)
 
-    while process.poll() is None:
-        log.debug("Waiting for process to finish: %s", process)
-        time.sleep(poll_period)
+    stdout, stderr = process.communicate()
+    if stderr:
+        log.error("There were errors:\n%s", stderr)
 
-    if catch_out:
-        for line in process.stderr.readlines():
-            stderr += line
-            log.warn(line.strip())
-        for line in process.stdout.readlines():
-            stdout += line
-            log.debug(line.strip())
-
-    retcode = process.poll()
-    log.debug("Process exit code: %s", retcode)
-    return retcode, stdout, stderr
+    if stdout:
+        log.debug("Process output:\n%s", stdout)
+    returncode = process.returncode
+    log.debug("Process exit code: %s", returncode)
+    return returncode, stdout, stderr
 
 
 def splitstring(string):
@@ -615,7 +609,6 @@ class ConfigManager(object):
             filename = self.file
 
         if filename:
-            self.log.debug("Flushing config to: %s", filename)
             handle = open(filename, 'wb')
             self.config.write(handle)
             handle.close()
@@ -623,20 +616,16 @@ class ConfigManager(object):
     def get_options(self, section, prefix=''):
         """ Get options list with requested prefix """
         res = []
-        self.log.debug(
-            "Looking in section '%s' for options starting with '%s'",
-            section, prefix)
         try:
             for option in self.config.options(section):
-                self.log.debug("Option: %s", option)
                 if not prefix or option.find(prefix) == 0:
-                    self.log.debug("Option: %s matched", option)
                     res += [(option[len(prefix):],
                              self.config.get(section, option))]
         except NoSectionError, ex:
-            self.log.debug("No section: %s", ex)
+            self.log.warning("No section: %s", ex)
 
-        self.log.debug("Found options: %s", res)
+        self.log.debug(
+            "Section: [%s] prefix: '%s' options:\n%s", section, prefix, res)
         return res
 
     def find_sections(self, prefix):
