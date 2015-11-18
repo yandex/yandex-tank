@@ -16,7 +16,7 @@ from paramiko import SSHClient, AutoAddPolicy
 
 
 logger = logging.getLogger(__name__)
-logging.getLogger("paramiko.transport").setLevel(logging.INFO)
+logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
 
 
 def parse_xml(config):
