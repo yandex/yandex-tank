@@ -115,7 +115,7 @@ class AsyncSession(object):
 
     def read_maybe(self):
         if self.session.recv_ready():
-            return self.session.recv(1024)
+            return self.session.recv(4096)
         else:
             return None
 
@@ -135,6 +135,7 @@ class AgentClient(object):
         self.startups = adr['startups']
         self.shutdowns = adr['shutdowns']
         self.session = None
+        self.buffer = ""
         self.ssh = SecuredShell(
             self.host, self.port, self.username)
 
@@ -163,7 +164,17 @@ class AgentClient(object):
         return self.session
 
     def read_maybe(self):
-        return self.session.read_maybe()
+        chunk = self.session.read_maybe()
+        if chunk:
+            parts = chunk.rsplit('\n', 1)
+            if len(parts) > 1:
+                ready_chunk = self.buffer + parts[1] + '\n'
+                self.buffer = parts[0]
+                return ready_chunk
+            else:
+                self.buffer += parts[0]
+                return None
+        return None
 
     def create_agent_config(self, loglevel):
         """Creating config"""
