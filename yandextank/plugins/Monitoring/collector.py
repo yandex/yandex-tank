@@ -168,8 +168,8 @@ class AgentClient(object):
         if chunk:
             parts = chunk.rsplit('\n', 1)
             if len(parts) > 1:
-                ready_chunk = self.buffer + parts[1] + '\n'
-                self.buffer = parts[0]
+                ready_chunk = self.buffer + parts[0] + '\n'
+                self.buffer = parts[1]
                 return ready_chunk
             else:
                 self.buffer += parts[0]
