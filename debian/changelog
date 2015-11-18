@@ -1,3 +1,9 @@
+yandextank (1.7.21) trusty; urgency=medium
+
+  * fix bugs
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 18 Nov 2015 18:15:03 +0400
+
 yandextank (1.7.20) trusty; urgency=medium
 
   * migrate monitoring ssh agent to paramiko library (no pipes at all)
