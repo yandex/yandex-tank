@@ -225,6 +225,7 @@ class AgentClient(object):
             out, errors, err_code = self.ssh.execute(cmd)
         except AuthenticationException:
             logger.error("[%s] authentication failed", self.host, exc_info=True)
+            return None
         if errors:
             logging.error("[%s] ssh error: '%s'", self.host, errors)
             return None
