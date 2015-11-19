@@ -1,3 +1,9 @@
+yandextank (1.7.22) trusty; urgency=medium
+
+  * log monitoring Auth errors and don't die
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Thu, 19 Nov 2015 19:18:03 +0400
+
 yandextank (1.7.21) trusty; urgency=medium
 
   * fix bugs
