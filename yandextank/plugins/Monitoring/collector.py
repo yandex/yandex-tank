@@ -12,7 +12,7 @@ import sys
 import tempfile
 import time
 import getpass
-from paramiko import SSHClient, AutoAddPolicy
+from paramiko import SSHClient, AutoAddPolicy, AuthenticationException
 
 
 logger = logging.getLogger(__name__)
@@ -221,9 +221,12 @@ class AgentClient(object):
         # create remote temp dir
         cmd = self.python + ' -c "import tempfile; print tempfile.mkdtemp();"'
         logger.info("Creating temp dir on %s", self.host)
-        out, errors, err_code = self.ssh.execute(cmd)
+        try:
+            out, errors, err_code = self.ssh.execute(cmd)
+        except AuthenticationException:
+            logger.error("[%s] authentication failed", self.host, exc_info=True)
         if errors:
-            logging.error("[%s] ssh error: '%s'" % (self.host, errors))
+            logging.error("[%s] ssh error: '%s'", self.host, errors)
             return None
 
         if err_code:
@@ -251,7 +254,7 @@ class AgentClient(object):
                 self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg')
         except:
             logger.error(
-                "Failed to install agent", exc_info=True)
+                "Failed to install agent on %s", self.host, exc_info=True)
             return None
         return agent_config
 
