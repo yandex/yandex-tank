@@ -12,7 +12,8 @@ import sys
 import tempfile
 import time
 import getpass
-from paramiko import SSHClient, AutoAddPolicy, AuthenticationException
+from paramiko import \
+    SSHClient, AutoAddPolicy, AuthenticationException, SSHException
 
 
 logger = logging.getLogger(__name__)
@@ -223,11 +224,13 @@ class AgentClient(object):
         logger.info("Creating temp dir on %s", self.host)
         try:
             out, errors, err_code = self.ssh.execute(cmd)
-        except AuthenticationException:
-            logger.error("[%s] authentication failed", self.host, exc_info=True)
+        except (AuthenticationException, SSHException):
+            logger.error(
+                "Failed to install monitoring agent to %s",
+                self.host, exc_info=True)
             return None
         if errors:
-            logging.error("[%s] ssh error: '%s'", self.host, errors)
+            logging.error("[%s] error: '%s'", self.host, errors)
             return None
 
         if err_code:
