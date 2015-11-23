@@ -198,10 +198,10 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
             self.log.warn(
                 "Terminating phantom process with PID %s", self.process.pid)
             self.process.terminate()
-            if self.phantom_stderr:
-                self.phantom_stderr.close()
         else:
             self.log.debug("Seems phantom finished OK")
+        if self.phantom_stderr:
+            self.phantom_stderr.close()
         return retcode
 
     def post_process(self, retcode):

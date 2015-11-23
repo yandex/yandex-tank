@@ -9,7 +9,7 @@ Yandex.Tank is an extendable open source load testing tool for advanced linux us
 
 ## Main features
 * different load generators supported:
-  * Evgeniy Mamchits' [phantom](https://github.com/mamchits/phantom) is a very fast (100 000+ RPS) shooter written in C++ (default)
+  * Evgeniy Mamchits' [phantom](https://github.com/yandex-load/phantom) is a very fast (100 000+ RPS) shooter written in C++ (default)
   * [JMeter](http://jmeter.apache.org/) is an extendable and widely known one
   * BFG is an experimental Python-based generator that allows you to write your own shooter function (included)
 * customizable reports in .html with pretty interactive charts based on [highcharts](http://www.highcharts.com/) library
@@ -46,7 +46,7 @@ Documentation at [ReadTheDocs](https://yandextank.readthedocs.org/en/latest/)
 Ask your questions at [Stackoverflow](https://stackoverflow.com/), use "load-testing" + "yandex" tags.
 
 ## See also
-Evgeniy Mamchits' [phantom](https://github.com/mamchits/phantom) - Phantom scalable IO Engine
+Evgeniy Mamchits' [phantom](https://github.com/yandex-load/phantom) - Phantom scalable IO Engine
 
 Andrey Pohilko's [loadosophia](https://loadosophia.org/) - service for storing and analysing performance test results
 

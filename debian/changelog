@@ -1,3 +1,29 @@
+yandextank (1.7.22) trusty; urgency=medium
+
+  * log monitoring Auth errors and don't die
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Thu, 19 Nov 2015 19:18:03 +0400
+
+yandextank (1.7.21) trusty; urgency=medium
+
+  * fix bugs
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 18 Nov 2015 18:15:03 +0400
+
+yandextank (1.7.20) trusty; urgency=medium
+
+  * migrate monitoring ssh agent to paramiko library (no pipes at all)
+  * cache data from monitoring agents
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 18 Nov 2015 15:36:03 +0400
+
+
+yandextank (1.7.19) trusty; urgency=medium
+
+  * fix some file descriptor leakages
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Fri, 13 Nov 2015 21:52:54 +0400
+
 yandextank (1.7.18) trusty; urgency=medium
 
   * support pandora gun type parameter
