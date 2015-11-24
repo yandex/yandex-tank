@@ -10,6 +10,7 @@ import os.path
 import re
 import sys
 import tempfile
+import socket
 import time
 import getpass
 from paramiko import \
@@ -44,10 +45,11 @@ class Config(object):
 
 class SecuredShell(object):
 
-    def __init__(self, host, port, username):
+    def __init__(self, host, port, username, timeout):
         self.host = host
         self.port = port
         self.username = username
+        self.timeout = timeout
 
     def connect(self):
         logger.debug("Opening SSH connection to {host}:{port}".format(
@@ -59,6 +61,7 @@ class SecuredShell(object):
             self.host,
             port=self.port,
             username=self.username,
+            timeout=self.timeout,
         )
         return client
 
@@ -124,7 +127,7 @@ class AsyncSession(object):
 class AgentClient(object):
     """Agent client connection"""
 
-    def __init__(self, adr):
+    def __init__(self, adr, timeout):
         self.run = []
         self.host = adr['host']
         self.username = adr['username']
@@ -138,7 +141,7 @@ class AgentClient(object):
         self.session = None
         self.buffer = ""
         self.ssh = SecuredShell(
-            self.host, self.port, self.username)
+            self.host, self.port, self.username, timeout)
 
         handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
         os.close(handle)
@@ -224,7 +227,7 @@ class AgentClient(object):
         logger.info("Creating temp dir on %s", self.host)
         try:
             out, errors, err_code = self.ssh.execute(cmd)
-        except (AuthenticationException, SSHException):
+        except:
             logger.error(
                 "Failed to install monitoring agent to %s",
                 self.host, exc_info=True)
@@ -328,7 +331,7 @@ class MonitoringCollector(object):
         logger.debug('Creating agents')
         for adr in agent_config:
             logger.debug('Creating agent: %s', adr)
-            agent = AgentClient(adr)
+            agent = AgentClient(adr, timeout=self.ssh_timeout)
             logger.debug('Install monitoring agent. Host: %s', agent.host)
             agent_config = agent.install(loglevel)
             if agent_config:
