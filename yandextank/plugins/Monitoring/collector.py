@@ -10,6 +10,7 @@ import os.path
 import re
 import sys
 import tempfile
+import socket
 import time
 import getpass
 from paramiko import \
@@ -226,7 +227,7 @@ class AgentClient(object):
         logger.info("Creating temp dir on %s", self.host)
         try:
             out, errors, err_code = self.ssh.execute(cmd)
-        except (AuthenticationException, SSHException):
+        except:
             logger.error(
                 "Failed to install monitoring agent to %s",
                 self.host, exc_info=True)
