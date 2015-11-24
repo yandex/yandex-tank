@@ -24,7 +24,7 @@ phantom_config = {
 }
 
 
-class NumpyAggregator(object):
+class Worker(object):
     """
     Aggregate Pandas dataframe or dict with numpy ndarrays in it
     """
@@ -84,25 +84,26 @@ class NumpyAggregator(object):
             for key in self.config
         }
 
-def main():
 
-    aggregator = NumpyAggregator()
-    data = pd.read_csv(
-        "phout",
-        sep='\t', names=phout_columns,
-        index_col=0)
+class Aggregator(object):
+    def __init__(self, source, config):
+        self.worker = Worker(config)
+        self.source = source
+        self.groupby = 'tag'
 
-    grouped = data.groupby(lambda ts: int(ts), axis=0)
-    for ts, data in list(grouped):
-        by_tag = list(data.groupby(['tag']))
-        result = {
-            "ts": ts.item(),
-            "cases": [
-                {"tag": tag, "data": aggregator.aggregate(data)}
-                for tag, data in by_tag
-            ] if len(by_tag) else [
-                {"tag": "", "data": aggregator.aggregate(data)}],
-        }
-
-if __name__ == '__main__':
-    main()
+    def __iter__(self):
+        for ts, chunk in self.source:
+            by_tag = list(chunk.groupby([self.groupby]))
+            if len(by_tag):
+                for tag, data in by_tag:
+                    yield {
+                        'tag': tag,
+                        'ts': ts,
+                        'metrics': self.worker.aggregate(data),
+                    }
+            else:
+                yield {
+                    'tag': '',
+                    'ts': ts,
+                    'metrics': self.worker.aggregate(chunk),
+                }
