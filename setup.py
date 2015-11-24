@@ -20,6 +20,7 @@ analytic tools for the results they produce.
         'progressbar',
         'requests',
         'paramiko>=1.16.0',
+        'pandas',
     ],
     license='LGPLv2',
     classifiers=[
