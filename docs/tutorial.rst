@@ -118,12 +118,13 @@ Create a file with declared requests: **ammo.txt**
   /?drg tag1
   / 
   /buy tag2 
+  [Cookies: test]
   /buy/?rt=0&station_to=7&station_from=9
 
-File begins with optional lines [...], that contain headers which will
-be added to every request. After that section there is a list of URIs.
-Every URI must begin from a new line, with leading '/'.
-Each line that begins from '[' is considered a header.
+File consist of list of URIs and headers to be added to every request defined below.
+Every URI must begin from a new line, with leading ``/``.
+Each line that begins from ``[`` is considered as a header.
+Headers could be (re)defined in the middle of URIs, as in sample above. I.e  request ``/buy/?rt=0&station_to=7&station_from=9`` will be sent with ``Cookies: test``, not ``Cookies: None``.
 Request may be marked by tag, you can specify it with whitespace following URI.
 
 URI+POST-style
