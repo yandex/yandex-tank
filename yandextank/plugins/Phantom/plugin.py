@@ -11,7 +11,7 @@ import string
 import multiprocessing as mp
 
 from yandextank.plugins import ConsoleScreen
-from yandextank.plugins.NumpyAggregator import NumpyAggregatorPlugin as AggregatorPlugin
+from yandextank.plugins.Aggregator import AggregatorPlugin
 from yandextank.plugins.Autostop import AutostopPlugin, AbstractCriteria
 from yandextank.plugins.ConsoleOnline import \
     ConsoleOnlinePlugin, AbstractInfoWidget
@@ -97,16 +97,7 @@ class PhantomPlugin(AbstractPlugin):
         except Exception, ex:
             self.log.warning("No aggregator found: %s", ex)
 
-        if aggregator:
-            aggregator.reader = PhantomReader(aggregator, self)
-            aggregator.reader.buffered_seconds = self.buffered_seconds
-            if self.phantom:
-                self.phantom.set_timeout(aggregator.get_timeout())
-            aggregator.add_result_listener(self)
-
         if not self.config and not self.phout_import_mode:
-            if aggregator:
-                aggregator.reader.phout_file = self.phantom.phout_file
 
             # generate config
             self.config = self.phantom.compose_config()
@@ -124,11 +115,11 @@ class PhantomPlugin(AbstractPlugin):
             if result[2]:
                 raise RuntimeError(
                     "Subprocess returned message: %s" % result[2])
-
+            reader = PhantomReader(self.phantom.phout_file)
         else:
-            if aggregator:
-                aggregator.reader.phout_file = self.predefined_phout
-
+            reader = PhantomReader(self.predefined_phout)
+        if aggregator:
+            aggregator.reader = reader
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
         except Exception, ex:

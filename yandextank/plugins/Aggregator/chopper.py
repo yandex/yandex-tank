@@ -8,10 +8,9 @@ import pandas as pd
 
 class TimeChopper(object):
     """
-    TimeChopper splits incoming dataframes by seconds (they must
-    be indexed by a timestamp). Secondly chunks are cached and
-    chunks for same second from different DF are joined. Then secondly
-    chunks are passed further.
+    TimeChopper splits incoming dataframes by index. Chunks are cached and
+    chunks for same key from different DFs are joined. Then chunks are passed
+    further.
     """
     def __init__(self, source, cache_size):
         self.cache_size = cache_size

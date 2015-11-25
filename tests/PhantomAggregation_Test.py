@@ -1,6 +1,7 @@
 import unittest
 
 from yandextank.plugins.Phantom.reader import PhantomReader
+from contextlib import closing
 import threading
 import time
 import logging
@@ -49,9 +50,8 @@ class ReaderTestCase(unittest.TestCase):
         _, filepath = tempfile.mkstemp()
         print(filepath)
         with open(filepath, 'w') as phout_write:
-            with open(filepath, 'r') as phout_read:
+            with closing(PhantomReader(filepath)) as reader:
                 writer = Writer(phout_write)
-                reader = PhantomReader(phout_read)
                 writer.start()
                 while not writer.finished:
                     time.sleep(1)

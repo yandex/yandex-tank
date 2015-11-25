@@ -1,6 +1,6 @@
 ''' Contains Universal Plugin for phout-compatible shooter '''
-from yandextank.plugins.Aggregator import \
-    AggregatorPlugin, AggregateResultListener
+from yandextank.plugins.NumpyAggregator import \
+    NumpyAggregatorPlugin as AggregatorPlugin
 from yandextank.plugins.Phantom import PhantomReader
 from yandextank.core import AbstractPlugin
 import subprocess
@@ -14,8 +14,7 @@ from config import PoolConfig, PandoraConfig, parse_schedule
 from reader import PandoraReader
 
 
-class PandoraPlugin(AbstractPlugin, AggregateResultListener):
-
+class PandoraPlugin(AbstractPlugin):
     '''     Pandora load generator plugin    '''
 
     OPTION_CONFIG = "config"

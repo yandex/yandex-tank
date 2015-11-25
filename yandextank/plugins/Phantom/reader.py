@@ -16,7 +16,7 @@ phout_columns = [
     'size_in', 'net_code', 'proto_code']
 
 
-def read_chunk_string(data):
+def string_to_df(data):
     chunk = pd.read_csv(
         StringIO(data),
         sep='\t', names=phout_columns)
@@ -27,20 +27,27 @@ def read_chunk_string(data):
 
 
 class PhantomReader(object):
-    def __init__(self, file):
+    def __init__(self, filename):
         self.buffer = ""
-        self.phout = file
+        self.phout = open(filename, 'r')
+        self.closed = False
 
     def read_chunk(self):
+        if self.closed:
+            return None
         data = self.phout.read(1024 * 1024 * 10)
         if data:
             parts = data.rsplit('\n', 1)
             if len(parts) > 1:
                 ready_chunk = self.buffer + parts[0] + '\n'
                 self.buffer = parts[1]
-                return read_chunk_string(ready_chunk)
+                return string_to_df(ready_chunk)
             else:
                 self.buffer += parts[0]
         else:
             self.phout.readline()
         return None
+
+    def close(self):
+        self.closed = True
+        self.phout.close()

@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import time
 from collections import Counter
 
 
@@ -83,6 +83,19 @@ class Worker(object):
             }
             for key in self.config
         }
+
+
+class DataPoller(object):
+    def __init__(self, source, poll_period):
+        self.poll_period = poll_period
+        self.source = source
+
+    def __iter__(self):
+        while True:
+            chunk = self.source.read_chunk()
+            if chunk is not None:
+                yield chunk
+            time.sleep(self.poll_period)
 
 
 class Aggregator(object):
