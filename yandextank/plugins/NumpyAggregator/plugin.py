@@ -48,10 +48,6 @@ class NumpyAggregatorPlugin(AbstractPlugin):
         return retcode
 
     def add_result_listener(self, listener):
-        """
-        add object to data listeners
-        @listener: AggregateResultListener
-        """
         self.listeners.append(listener)
 
     def __notify_listeners(self, data):

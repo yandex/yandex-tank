@@ -585,6 +585,22 @@ class TankCore(object):
     def publish(self, publisher, key, value):
         update_status(self.status, [publisher] + key.split('.'), value)
 
+    def close(self):
+        """
+        Call close() for all plugins
+        """
+        self.log.info("Close allocated resources...")
+
+        for plugin in self.plugins:
+            self.log.debug("Close %s", plugin)
+            try:
+                plugin.close()
+            except Exception as ex:
+                self.log.error(
+                    "Failed closing plugin %s: %s", plugin, ex)
+                self.log.debug(
+                    "Failed closing plugin: %s", traceback.format_exc(ex))
+
 
 class ConfigManager(object):
     """ Option storage class """
@@ -710,3 +726,10 @@ class AbstractPlugin(object):
             "Publishing status: %s/%s: %s",
             self.__class__.__name__, key, value)
         self.core.publish(self.__class__.__name__, key, value)
+
+    def close(self):
+        """
+        Release allocated resources here.
+        Warning: don't do any logic or potentially dangerous operations
+        """
+        pass

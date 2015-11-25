@@ -304,6 +304,8 @@ class ConsoleTank:
             sys.stderr.write(RealConsoleMarkup.TOTAL_RESET)
             retcode = self.__graceful_shutdown()
             self.core.release_lock()
+        finally:
+            self.core.close()
 
         self.log.info("Done performing test with code %s", retcode)
         return retcode
