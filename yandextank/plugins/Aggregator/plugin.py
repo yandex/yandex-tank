@@ -26,7 +26,7 @@ class LoggingListener(AggregateResultListener):
     """ Log aggregated results """
 
     def on_aggregated_data(self, data):
-        LOG.info("Got aggregated sample:\n%s", data)
+        LOG.info("Got aggregated sample:\n%s", json.dumps(data, indent=2))
 
 
 class AggregatorPlugin(AbstractPlugin):

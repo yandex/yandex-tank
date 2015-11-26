@@ -23,7 +23,7 @@ class PhantomConfig:
         self.streams = []
 
         # common
-        self.timeout = 30  # TODO!!!!
+        self.timeout = 30000  # TODO!!!!
         self.answ_log = None
         self.answ_log_level = None
         self.phout_file = None

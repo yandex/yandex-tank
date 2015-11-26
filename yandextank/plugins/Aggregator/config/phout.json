@@ -1,5 +1,5 @@
 {
-    "interval_real": ["total", "max", "min", "hist", "len"],
+    "interval_real": ["total", "max", "min", "hist", "q", "len"],
     "connect_time": ["total", "max", "min", "len"],
     "send_time": ["total", "max", "min", "len"],
     "latency": ["total", "max", "min", "len"],
