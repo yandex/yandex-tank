@@ -34,7 +34,7 @@ class PhantomReader(object):
 
     def read_chunk(self):
         if self.closed:
-            return None
+            raise StopIteration
         data = self.phout.read(1024 * 1024 * 10)
         if data:
             parts = data.rsplit('\n', 1)

@@ -22,6 +22,13 @@ class AggregateResultListener(object):
         raise NotImplementedError("Abstract method needs to be overridden")
 
 
+class LoggingListener(AggregateResultListener):
+    """ Log aggregated results """
+
+    def on_aggregated_data(self, data):
+        LOG.info("Got aggregated sample:\n%s", data)
+
+
 class AggregatorPlugin(AbstractPlugin):
     """ Plugin that manages aggregation """
 
@@ -33,7 +40,7 @@ class AggregatorPlugin(AbstractPlugin):
 
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
-        self.listeners = []
+        self.listeners = [LoggingListener()]
         self.reader = None
         self.results = q.Queue()
 
@@ -66,7 +73,7 @@ class AggregatorPlugin(AbstractPlugin):
             try:
                 data.append(self.results.get_nowait())
             except q.Empty:
-                pass
+                break
         if data:
             self.__notify_listeners(data)
         return -1
