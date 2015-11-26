@@ -6,8 +6,7 @@ import math
 import os
 import struct
 import termios
-
-import Codes
+import codes
 
 
 def get_terminal_size():

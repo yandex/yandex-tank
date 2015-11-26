@@ -4,12 +4,15 @@ import sys
 import traceback
 import threading
 
-from Aggregator import AggregatorPlugin, AggregateResultListener
-from ConsoleScreen import Screen
+from yandextank.plugins.Aggregator import AggregatorPlugin, AggregateResultListener
+from screen import Screen
 from yandextank.core import AbstractPlugin
 
 
-class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
+LOG = logging.getLogger(__name__)
+
+
+class ConsolePlugin(AbstractPlugin, AggregateResultListener):
     ''' Console plugin '''
     SECTION = 'console'
 
@@ -31,10 +34,15 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
         return __file__
 
     def get_available_options(self):
-        return ["info_panel_width", "short_only", "disable_all_colors", "disable_colors"]
+        return [
+            "info_panel_width",
+            "short_only",
+            "disable_all_colors",
+            "disable_colors"]
 
     def configure(self):
-        self.info_panel_width = self.get_option("info_panel_width", self.info_panel_width)
+        self.info_panel_width = self.get_option(
+            "info_panel_width", self.info_panel_width)
         self.short_only = int(self.get_option("short_only", '0'))
         if not int(self.get_option("disable_all_colors", '0')):
             self.console_markup = RealConsoleMarkup()
@@ -48,57 +56,63 @@ class ConsoleOnlinePlugin(AbstractPlugin, AggregateResultListener):
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(self)
         except KeyError:
-            self.log.debug("No aggregator for console")
+            LOG.debug("No aggregator for console")
             self.screen.block_rows = []
             self.screen.info_panel_percent = 100
 
     def __console_writer(self):
         while True:
-          self.__writer_event.wait()
-          self.__writer_event.clear()
+            self.__writer_event.wait()
+            self.__writer_event.clear()
 
-          if self.__console_view:
-              if not self.short_only:
-                  self.log.debug("Writing console view to STDOUT")
-                  sys.stdout.write(self.console_markup.clear)
-                  sys.stdout.write(self.__console_view)
-                  sys.stdout.write(self.console_markup.TOTAL_RESET)
+            if self.__console_view:
+                if not self.short_only:
+                    LOG.debug("Writing console view to STDOUT")
+                    sys.stdout.write(self.console_markup.clear)
+                    sys.stdout.write(self.__console_view)
+                    sys.stdout.write(self.console_markup.TOTAL_RESET)
 
-              if self.remote_translator:
-                  self.remote_translator.send_console(self.__console_view)
+                if self.remote_translator:
+                    self.remote_translator.send_console(self.__console_view)
 
     def is_test_finished(self):
         if not self.__writer_thread:
-          self.__writer_event = threading.Event()
-          self.__writer_thread = threading.Thread(target=self.__console_writer)
-          self.__writer_thread.daemon = True
-          self.__writer_thread.start()
+            self.__writer_event = threading.Event()
+            self.__writer_thread = threading.Thread(
+                target=self.__console_writer)
+            self.__writer_thread.daemon = True
+            self.__writer_thread.start()
 
         try:
             self.__console_view = self.screen.render_screen().encode('utf-8')
         except Exception, ex:
-            self.log.warn("Exception inside render: %s", traceback.format_exc(ex))
+            LOG.warn("Exception inside render: %s",
+                          traceback.format_exc(ex))
             self.render_exception = ex
             self.__console_view = ""
 
         self.__writer_event.set()
         return -1
 
-
-    def aggregate_second(self, second_aggregate_data):
-        self.screen.add_second_data(second_aggregate_data)
+    def on_aggregated_data(self, data):
+        # self.screen.add_second_data(data)
         if self.short_only:
-            tpl = "Time: %s\tExpected RPS: %s\tActual RPS: %s\tActive Threads: %s\tAvg RT: %s"
-            ovr = second_aggregate_data.overall  # just to see the next line in IDE
-            data = (second_aggregate_data.time, ovr.planned_requests, ovr.RPS,
-                    ovr.active_threads, ovr.avg_response_time)
-            self.log.info(tpl % data)
-
+            for sample in data:
+                info = "ts:{ts}\ttag:{tag}\tRPS:{rps}\tavg:{avg_rt:.2f}\tmin:{q0:.2f}\tmax:{q100:.2f}\tq99:{q99:.2f} ".format(
+                    tag=sample['tag'],
+                    ts=sample['ts'],
+                    rps=sample['metrics']['interval_real']['len'],
+                    avg_rt=sample['metrics']['interval_real']['total'] / sample['metrics']['interval_real']['len'] / 1000,
+                    q0=sample['metrics']['interval_real']['min'] / 1000,
+                    q100=sample['metrics']['interval_real']['max'] / 1000,
+                    q99=sample['metrics']['interval_real']['q']['value'][-1] / 1000,
+                )
+                LOG.info(info)
 
     def add_info_widget(self, widget):
         ''' add right panel widget '''
         if not self.screen:
-            self.log.debug("No screen instance to add widget")
+            LOG.debug("No screen instance to add widget")
         else:
             self.screen.add_info_widget(widget)
 
@@ -169,7 +183,7 @@ class AbstractInfoWidget:
     ''' parent class for all right panel widgets '''
 
     def __init__(self):
-        self.log = logging.getLogger(__name__)
+        LOG = logging.getLogger(__name__)
 
     def render(self, screen):
         raise NotImplementedError()

@@ -40,7 +40,7 @@ class AggregatorPlugin(AbstractPlugin):
 
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
-        self.listeners = [LoggingListener()]
+        self.listeners = []  # [LoggingListener()]
         self.reader = None
         self.results = q.Queue()
 
