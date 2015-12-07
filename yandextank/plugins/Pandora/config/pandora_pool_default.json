@@ -1,13 +1,13 @@
 {
   "Name": "Pool#0",
   "Gun": {
-    "GunType": "spdy",
+    "GunType": "http",
     "Parameters": {
       "Target": "localhost:3000"
     }
   },
   "AmmoProvider": {
-    "AmmoType": "jsonline/spdy",
+    "AmmoType": "jsonline/http",
     "AmmoSource": "./ammo.jsonline",
     "Loop": 0
   },

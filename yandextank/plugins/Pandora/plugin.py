@@ -73,10 +73,17 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
             raise RuntimeError(
                 "user_schedule not specified")
 
+        shared_schedule = bool(int(self.get_option("shared_schedule", "1")))
+        pool_config.set_shared_schedule(shared_schedule)
+
         target = self.get_option("target", "localhost:3000")
         pool_config.set_target(target)
 
-        gun_type = self.get_option("gun_type", "spdy")
+        gun_type = self.get_option("gun_type", "http")
+        if gun_type is 'https':
+            pool_config.set_ssl(True)
+            self.log.info("SSL is on")
+            gun_type = "http"
         self.log.info("Pandora gun type is: %s", gun_type)
         pool_config.set_gun_type(gun_type)
 
