@@ -311,7 +311,7 @@ BFG is a generic gun that is able to use different kinds of cannons to shoot. To
     ; Disable phantom:
     plugin_phantom=
     ; Enable BFG instead:
-    plugin_bfg=Tank/Plugins/BFG.py
+    plugin_bfg=yandextank.plugins.bfg
             
     ; BFG config section:
     [bfg]
@@ -332,6 +332,35 @@ BFG is a generic gun that is able to use different kinds of cannons to shoot. To
     [sql_gun]
     db = mysql://user:user@localhost/
 
+Or if you want i.e to call your own module's MyService function shoot:
+
+::
+
+    [tank]
+    ; Disable phantom:
+    plugin_phantom=
+    ; Enable BFG instead:
+    plugin_bfg=yandextank.plugins.bfg
+        
+    [bfg]
+    ; process' amount
+    instances = 10
+    ; threads per process
+    threads = 40
+    ; ammo file
+    ammofile=req_json.log
+    ; gun type
+    gun_type = custom
+    ; ammo type (one line -- one request)
+    ammo_type = line
+    ; load schedule
+    rps_schedule=line(1,100,10m)
+    
+    [custom_gun]
+    ; path to your custom module
+    module_path = ./my_own_service
+    ; module name (has to provide function shoot)
+    module_name = MyService
 
 BFG Options
 '''''''''''
@@ -346,6 +375,13 @@ SQL Gun Options
 INI file section: **[sql_gun]**
 
 * **db** - DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
+
+Custom Gun Options
+''''''''''''''''''
+INI file section: **[custom_gun]**
+
+* **module_path** - path to your module
+* **module_name** - module name, has to provide function shoot, which will be called by bfg's threads to fullfill rps_schedule
 
 Pandora
 ^^^^^^^
