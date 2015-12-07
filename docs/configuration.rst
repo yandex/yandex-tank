@@ -385,8 +385,8 @@ INI file section: **[custom_gun]**
 
 Pandora
 ^^^^^^^
-Pandora is a load generator written in Go. For now it supports only SPDY/3, plugins for other protocols
-(HTTP/2, HTTP, Websocker, XMPP maybe) are on the way.
+`Pandora <https://github.com/yandex/pandora>`_ is a load generator written in Go. For now it supports only SPDY/3 and HTTP(S). Plugins for other protocols
+(HTTP/2, Websocket, XMPP) are on the way.
 
 First of all you'll need to obtain a binary of pandora and place it somewhere on your machine.
 By default, Yandex.Tank will try to just run ``pandora`` (or you could specify a path to binary in ``pandora_cmd``).
@@ -415,6 +415,10 @@ Disable phantom first, enable Pandora plugin and then specify the parameters.
     ; users are started using this schedule
     startup_schedule = periodic(1, 1, 100)
 
+    ; if shared_schedule is false, then each user is independent,
+    ; in other case they all hold to a common schedule
+    shared_schedule = 0
+
     ; target host and port
     target=localhost:3000
 
@@ -434,7 +438,7 @@ Each json doc describes an HTTP request. Some of them may have a tag field, it w
 
 Schedules
 '''''''''
-Only one schedule type is supported now: a ``periodic`` schedule. It is defined as ``periodic(<batch_size>, <period>, <limit>)``.
+The first schedule type is ``periodic`` schedule. It is defined as ``periodic(<batch_size>, <period>, <limit>)``.
 Pandora will issue one batch of size ``batch_size``, once in ``period`` seconds, maximum of ``limit`` ticks. Those ticks may be
 used in different places, for example as a limiter for user startups or as a limiter for each user request rate.
 
@@ -443,9 +447,34 @@ Example:
 
     startup_schedule = periodic(2, 0.1, 100)
     user_schedule = periodic(10, 15, 100)
+    shared_schedule = 0
 
 Start 2 users every 0.1 seconds, maximum of 100 users. Each user will issue requests in batches of 10 requests, every 15 seconds, maximum
 of 100 requests. All users will read from one ammo source.
+
+Second schedule type is ``linear``. It is defined like this: ``linear(<start_rps>, <end_rps>, <time>). Example:
+::
+
+    user_schedule = linear(.1, 10, 10m)
+    shared_schedule = 1
+
+The load will raise from .1 RPS (1 request in 10 seconds) until 10 RPS during 10 minutes. Since
+``shared_schedule`` is 1, this defines the overall load.
+
+The last schedule type is ``unlimited``. It has no parameters and users will shoot as soon
+as possible. It is convenient to use this type of load to find out maximum performance of a
+service and its level of parallelism. You should limit the loop number if you want the test
+to stop eventually. Example:
+::
+
+    loop = 1000000
+    startup_schedule = periodic(2, 10, 50)
+    user_schedule = unlimited
+    shared_schedule = 0
+
+Start 2 users every 10 seconds. Every user will shoot without any limits (next request is sended
+as soon as the previous response have been received). This is analogous to phantom's instances
+schedule mode.
 
 Auto-stop
 ^^^^^^^^^
