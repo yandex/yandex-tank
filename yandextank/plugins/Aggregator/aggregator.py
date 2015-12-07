@@ -132,9 +132,8 @@ class Aggregator(object):
                         'ts': ts,
                         'metrics': self.worker.aggregate(data),
                     }
-            else:
-                yield {
-                    'tag': '',
-                    'ts': ts,
-                    'metrics': self.worker.aggregate(chunk),
-                }
+            # overall
+            yield {
+                'ts': ts,
+                'metrics': self.worker.aggregate(chunk),
+            }

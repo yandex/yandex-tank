@@ -95,11 +95,11 @@ class ConsolePlugin(AbstractPlugin, AggregateResultListener):
         return -1
 
     def on_aggregated_data(self, data):
-        # self.screen.add_second_data(data)
+        self.screen.add_second_data(data)
         if self.short_only:
             for sample in data:
                 info = "ts:{ts}\ttag:{tag}\tRPS:{rps}\tavg:{avg_rt:.2f}\tmin:{q0:.2f}\tmax:{q100:.2f}\tq99:{q99:.2f} ".format(
-                    tag=sample['tag'],
+                    tag=sample.get('tag', 'OVERALL'),
                     ts=sample['ts'],
                     rps=sample['metrics']['interval_real']['len'],
                     avg_rt=sample['metrics']['interval_real']['total'] / sample['metrics']['interval_real']['len'] / 1000,
