@@ -1,21 +1,42 @@
 ''' Pandora config generator '''
 import json
 from pkg_resources import resource_string
+from yandextank.stepper.util import parse_duration
 
 
 def periodic_schedule(batch_size, period, limit):
-        return {
-            "LimiterType": "periodic",
-            "Parameters": {
-                "BatchSize": batch_size,
-                "MaxCount": limit,
-                "Period": period,
-            },
-        }
+    return {
+        "LimiterType": "periodic",
+        "Parameters": {
+            "BatchSize": float(batch_size),
+            "MaxCount": float(limit),
+            "Period": float(period),
+        },
+    }
+
+
+def linear_schedule(start_rps, end_rps, period):
+    return {
+        "LimiterType": "linear",
+        "Parameters": {
+            "StartRps": float(start_rps),
+            "EndRps": float(end_rps),
+            "Period": parse_duration(period) / 1000.0,
+        },
+    }
+
+
+def unlimited_schedule(*args):
+    return {
+        "LimiterType": "unlimited",
+        "Parameters": {},
+    }
 
 
 step_producers = {
     "periodic": periodic_schedule,
+    "linear": linear_schedule,
+    "unlimited": unlimited_schedule,
 }
 
 
@@ -26,7 +47,7 @@ def parse_schedule(schedule):
     if len(steps) > 1:
         raise NotImplementedError("Composite schedules not implemented yet")
     schedule_type, params = steps[0].split('(')
-    params = [float(p.strip()) for p in params.split(',')]
+    params = [p.strip() for p in params.split(',')]
     if schedule_type in step_producers:
         return step_producers[schedule_type](*params)
     else:
@@ -59,7 +80,7 @@ class PoolConfig(object):
         self.config["AmmoProvider"]["AmmoSource"] = ammo
 
     def set_loop(self, loop):
-        self.config["AmmoProvider"]["Loop"] = loop
+        self.config["AmmoProvider"]["Passes"] = loop
 
     def set_sample_log(self, sample_log):
         self.config["ResultListener"]["Destination"] = sample_log
@@ -70,8 +91,14 @@ class PoolConfig(object):
     def set_user_schedule(self, user_schedule):
         self.config["UserLimiter"] = user_schedule
 
+    def set_shared_schedule(self, shared_schedule):
+        self.config["SharedSchedule"] = shared_schedule
+
     def set_target(self, target):
         self.config["Gun"]["Parameters"]["Target"] = target
+
+    def set_ssl(self, ssl):
+        self.config["Gun"]["Parameters"]["SSL"] = ssl
 
     def set_gun_type(self, gun_type):
         self.config["Gun"]["Type"] = gun_type

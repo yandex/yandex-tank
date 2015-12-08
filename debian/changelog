@@ -1,3 +1,11 @@
+yandextank (1.7.23) trusty; urgency=medium
+
+  * update pandora plugin
+  * ssh timeout setting
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Mon, 7 Dec 2015 17:34:37 +0400
+
+
 yandextank (1.7.22) trusty; urgency=medium
 
   * log monitoring Auth errors and don't die
