@@ -18,7 +18,7 @@ analytic tools for the results they produce.
         'psutil>=1.2.1',
         'ipaddr',
         'progressbar',
-        'requests',
+        'requests>=2.5.1',
         'paramiko>=1.16.0',
     ],
     license='LGPLv2',
