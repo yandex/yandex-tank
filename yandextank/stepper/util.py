@@ -171,7 +171,7 @@ class HttpOpener(object):
                         "Ammofile has already been downloaded to %s . Using it..", tmpfile_path)
                 else:
                     logging.info("Downloading ammofile to %s", tmpfile_path)
-                    data = requests.get(self.url)
+                    data = requests.get(self.url, verify=False)
                     f = open(tmpfile_path, "wb")
                     f.write(data.content)
                     f.close()
@@ -190,7 +190,7 @@ class HttpOpener(object):
                         "Ammofile has already been downloaded to %s . Using it..", tmpfile_path)
             else:
                 logging.info("Downloading ammofile to %s", tmpfile_path)
-                data = requests.get(self.url)
+                data = requests.get(self.url, verify=False)
                 f = open(tmpfile_path, "wb")
                 f.write(data.content)
                 f.close()
