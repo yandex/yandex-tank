@@ -1,3 +1,9 @@
+yandextank (1.7.24) trusty; urgency=medium
+
+  * SHA-2 workaround 
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 09 Dec 2015 14:19:21 +0300
+
 yandextank (1.7.23) trusty; urgency=medium
 
   * update pandora plugin
