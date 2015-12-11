@@ -21,7 +21,11 @@ class PhantomConfigTestCase(TankTestCase):
 
         foo = PhantomConfig(core)
         foo.read_config()
-        foo.compose_config()
+        config = foo.compose_config()
+        conf_str = open(config).read()
+        logging.info(conf_str)
+        self.assertEquals(conf_str.count("io_benchmark_method_stream_transport_ssl"), 0)
+
 
     def test_double(self):
         core = self.get_core()
@@ -43,6 +47,8 @@ class PhantomConfigTestCase(TankTestCase):
         self.assertEquals(conf_str.count("benchmark_io "), 2)
         self.assertEquals(conf_str.count("benchmark_io1 "), 2)
         self.assertEquals(conf_str.count("benchmark_io2 "), 2)
+        self.assertEquals(conf_str.count("io_benchmark_method_stream_transport_ssl"), 1)
+
 
         conf_str = open(config).read()
         logging.info(conf_str)

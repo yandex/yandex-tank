@@ -2,12 +2,10 @@ setup_t module_setup = setup_module_t {
 	dir = "$phantom_modules_path"   
 	list = {
 	    io_monitor
-		ssl
 		io_benchmark
 		io_benchmark_method_stream
 		io_benchmark_method_stream_ipv4
 		io_benchmark_method_stream_ipv6
-		io_benchmark_method_stream_transport_ssl
 		io_benchmark_method_stream_source_log
 		io_benchmark_method_stream_proto_none
 		io_benchmark_method_stream_proto_http
