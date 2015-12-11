@@ -85,7 +85,7 @@ class PhantomConfig:
             stream.read_config()
 
         if any(stream.ssl for stream in self.streams):
-            self.additional_libs+='ssl io_benchmark_method_stream_transport_ssl'
+            self.additional_libs+=' ssl io_benchmark_method_stream_transport_ssl'
 
     def compose_config(self):
         """        Generate phantom tool run config        """
