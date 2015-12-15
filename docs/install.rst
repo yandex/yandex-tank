@@ -10,8 +10,8 @@ For instance, add following repos to ``sources.list`` :
 
 .. code-block:: bash
 
-	deb http://ppa.launchpad.net/yandex-load/main/ubuntu precise main  
-	deb-src http://ppa.launchpad.net/yandex-load/main/ubuntu precise main
+	deb http://ppa.launchpad.net/yandex-load/main/ubuntu trusty main  
+	deb-src http://ppa.launchpad.net/yandex-load/main/ubuntu trusty main
 
 or this way 
 
