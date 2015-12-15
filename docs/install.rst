@@ -21,11 +21,11 @@ or this way
 	sudo apt-get install software-properties-common
 	sudo add-apt-repository ppa:yandex-load/main
 
-Then update package list and install ``yandex-load-tank-base`` package:
+Then update package list and install ``yandex-tank`` package:
 
 .. code-block:: bash
 
-	sudo apt-get update && sudo apt-get install yandex-load-tank-base
+	sudo apt-get update && sudo apt-get install yandex-tank
 
 For mild load tests (less then 1000rps) an average laptop with 64bit
 Ubuntu (10.04/.../13.10) would be sufficient. The tank could be easily
