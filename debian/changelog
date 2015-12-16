@@ -1,3 +1,9 @@
+yandextank (1.7.25) trusty; urgency=medium
+
+  * Dependencies in debian/control 
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 16 Dec 2015 14:19:21 +0300
+
 yandextank (1.7.24) trusty; urgency=medium
 
   * SHA-2 workaround 
