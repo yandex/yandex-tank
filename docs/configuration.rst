@@ -291,6 +291,7 @@ Options
 * **args** - additional commandline arguments for JMeter
 * **jmeter_path** - path to JMeter, allows to use alternative JMeter installation. Default: jmeter
 * **buffered_seconds** - amount of seconds to which delay aggregator, to be sure that everything were read from jmeter's results file
+* **connect_time** - it sets jmeter.save.saveservice.connect_time=false if the value is '0' or empty string, jmeter.save.saveservice.connect_time=true in any other cases, empty string by default
 * **all other options in the section** - they will be passed as User Defined Variables to JMeter
 
 Artifacts
