@@ -62,16 +62,16 @@ class JMeterPlugin(AbstractPlugin):
         self.jmx = self.__add_jmeter_components(
             self.original_jmx, self.jtl_file, self._get_variables())
         self.core.add_artifact_file(self.jmx)
-        self.connect_time = self.get_option('connect_time', '').lower()
+        self.connect_time = self.get_option('connect_time', '') not in ['', '0']
 
     def prepare_test(self):
         self.args = [self.jmeter_path, "-n", "-t", self.jmx, '-j', self.jmeter_log,
                      '-Jjmeter.save.saveservice.default_delimiter=\\t']
+        connect_str = 'true'
+        if not self.connect_time:
+            connect_str = 'false'
+        self.args += ['-Jjmeter.save.saveservice.connect_time=%s' % connect_str]
         self.args += tankcore.splitstring(self.user_args)
-        if self.connect_time in ['true', 'false']:
-            self.args += ['-Jjmeter.save.saveservice.connect_time=%s' % self.connect_time]
-        else:
-            self.log.warning("connect_time option is not correct, it can be 'true' or 'false'")
 
         aggregator = None
         try:
@@ -320,7 +320,7 @@ class JMeterReader(AbstractReader):
                         self.data_buffer[cur_time] = []
 
                 connect_value = 0
-                if self.jmeter.connect_time == 'true':
+                if self.jmeter.connect_time:
                     connect_value = int(data[9])
 
                 # marker, threads, overallRT, httpCode, netCode
