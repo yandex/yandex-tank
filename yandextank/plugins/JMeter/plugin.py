@@ -41,7 +41,9 @@ class JMeterPlugin(AbstractPlugin):
         return __file__
 
     def get_available_options(self):
-        return ["jmx", "args", "jmeter_path", "buffer_size", "buffered_seconds", "use_argentum", "exclude_markers", ]
+        return ["jmx", "args", "jmeter_path", "buffer_size",
+                "buffered_seconds", "use_argentum", "exclude_markers",
+                "connect_time"]
 
     def configure(self):
         self.original_jmx = self.get_option("jmx")
@@ -60,11 +62,16 @@ class JMeterPlugin(AbstractPlugin):
         self.jmx = self.__add_jmeter_components(
             self.original_jmx, self.jtl_file, self._get_variables())
         self.core.add_artifact_file(self.jmx)
+        self.connect_time = self.get_option('connect_time', '').lower()
 
     def prepare_test(self):
         self.args = [self.jmeter_path, "-n", "-t", self.jmx, '-j', self.jmeter_log,
                      '-Jjmeter.save.saveservice.default_delimiter=\\t']
         self.args += tankcore.splitstring(self.user_args)
+        if self.connect_time in ['true', 'false']:
+            self.args += ['-Jjmeter.save.saveservice.connect_time=%s' % self.connect_time]
+        else:
+            self.log.warning("connect_time option is not correct, it can be 'true' or 'false'")
 
         aggregator = None
         try:
@@ -311,13 +318,18 @@ class JMeterReader(AbstractReader):
                     else:
                         self.data_queue.append(cur_time)
                         self.data_buffer[cur_time] = []
+
+                connect_value = 0
+                if self.jmeter.connect_time == 'true':
+                    connect_value = int(data[9])
+
                 # marker, threads, overallRT, httpCode, netCode
                 data_item = [
                     data[2], int(data[7]), int(data[1]), self.exc_to_http(data[3]), netcode]
                 # bytes:     sent    received
                 data_item += [0, int(data[5])]
                 # connect    send    latency    receive
-                data_item += [0, 0, int(data[8]), int(data[1]) - int(data[8])]
+                data_item += [connect_value, 0, int(data[8]), int(data[1]) - int(data[8])]
                 # accuracy
                 data_item += [0]
                 self.data_buffer[cur_time].append(data_item)
