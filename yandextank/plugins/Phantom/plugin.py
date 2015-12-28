@@ -197,8 +197,9 @@ class PhantomPlugin(AbstractPlugin, AggregateResultListener):
         if self.process and self.process.poll() is None:
             self.log.warn(
                 "Terminating phantom process with PID %s", self.process.pid)
-            self.process.wait()
             self.process.terminate()
+            if self.process:
+                self.process.communicate()            
         else:
             self.log.debug("Seems phantom finished OK")
         if self.phantom_stderr:
