@@ -500,6 +500,7 @@ Basic criteria types:
 * **instances** - available when phantom module is included. Stop the test if instance count is larger then specified value. Example: ``instances(80%, 30) instances(50,1m)``. Exit code - 24
 * **metric_lower** and **metric_higher** - stop test if monitored metrics are lower/higher than specified for time period. Example: metric_lower(127.0.0.1,Memory_free,500,10). Exit code - 31 and 32. **Note**: metric names (except customs) are written with underline. For hostnames masks are allowed (i.e target-\*.load.net)
 * **steady_cumulative** - Stops the test if cumulative percentiles does not change for specified interval. Example: ``steady_cumulative(1m)``. Exit code - 33
+* **limit** - Will stop test after specified period of time. Example: ``limit(1m)``.
 
 Basic criteria aren't aggregated, they are tested for each second in specified period. For example autostop=time(50,15) means "stop if average responce time for every second in 15s interval is higher than 50ms"
 

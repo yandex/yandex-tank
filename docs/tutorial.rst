@@ -61,7 +61,11 @@ Preparing requests
 ~~~~~~~~~~~~~~~~~~
 
 There are several ways to set up requests: Access mode, URI-style and request-style. 
-Regardless of the chosen format, resulted file with requests could be gzipped - tank supports archived ammo files
+Regardless of the chosen format, resulted file with requests could be gzipped - tank supports 
+archived ammo files.
+
+To specify external ammo file use `ammofile` option. Use `ammo_type` option to explicitly
+specify ammo format (if ammo type is uri-style or request-style, tank will try to guess it).
 
 Access mode
 ''''''''''''
