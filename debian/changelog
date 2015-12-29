@@ -1,3 +1,10 @@
+yandextank (1.7.27) trusty; urgency=medium
+
+  * connect_time jmeter option [Ilya Krylov]
+  * Fix Zombie Apocalypse (phantom zombie processes leakage) [Timur Torubarov] 
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Tue, 29 Dec 2015 13:06:57 +0300
+
 yandextank (1.7.26) trusty; urgency=medium
 
   * PyCrypto bug workaround
