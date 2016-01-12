@@ -20,6 +20,7 @@ analytic tools for the results they produce.
         'progressbar',
         'requests>=2.5.1',
         'paramiko>=1.16.0',
+        'pyzmq',
     ],
     license='LGPLv2',
     classifiers=[
