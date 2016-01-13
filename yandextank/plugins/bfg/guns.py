@@ -10,6 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import exc
 
 import requests
+import imp
 
 requests_logger = logging.getLogger('requests')
 requests_logger.setLevel(logging.WARNING)
@@ -128,7 +129,13 @@ class CustomGun(AbstractPlugin):
         module_name = self.get_option("module_name")
         if module_path:
             sys.path.append(module_path)
-        self.module = __import__(module_name)
+        #imp allows to avoid custom module caching
+        fp, pathname, description = imp.find_module(module_name)
+        try:
+            self.module = imp.load_module(module_name, fp, pathname, description)
+        finally:
+            if fp:
+                fp.close()
 
     def shoot(self, missile, marker, results):
         self.module.shoot(missile, marker, results)
