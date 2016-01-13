@@ -125,12 +125,10 @@ class CustomGun(AbstractPlugin):
     def __init__(self, core):
         self.log = logging.getLogger(__name__)
         AbstractPlugin.__init__(self, core)
-        module_path = self.get_option("module_path", "")
+        module_path = self.get_option("module_path", "").split()
         module_name = self.get_option("module_name")
-        if module_path:
-            sys.path.append(module_path)
         #imp allows to avoid custom module caching
-        fp, pathname, description = imp.find_module(module_name)
+        fp, pathname, description = imp.find_module(module_name, module_path)
         try:
             self.module = imp.load_module(module_name, fp, pathname, description)
         finally:
