@@ -1,3 +1,10 @@
+yandextank (1.7.28) trusty; urgency=medium
+
+  * add pyzmq dependency [Timur Torubarov]
+  * fix re-import problem in bfg [Timur Torubarov] 
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 13 Jan 2016 19:37:37 +0300
+
 yandextank (1.7.27) trusty; urgency=medium
 
   * connect_time jmeter option [Ilya Krylov]
