@@ -831,7 +831,7 @@ Options
 Sources
 ~~~~~~~
 
-Yandex.Tank sources ((https://github.com/yandex-load/yandex-tank here)).
+Yandex.Tank sources `here <https://github.com/yandex-load/yandex-tank>`_.
 
 load.ini example
 ~~~~~~~~~~~~~~~~~
