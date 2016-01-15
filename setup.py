@@ -45,6 +45,7 @@ analytic tools for the results they produce.
     },
     package_data={
         'yandextank.core': ['config/*'],
+        'yandextank.api': ['config/*'],
         'yandextank.plugins.GraphiteUploader': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],
         'yandextank.plugins.Monitoring': ['config/*'],
