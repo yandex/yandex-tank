@@ -226,14 +226,14 @@ class StepperWrapper(object):
         if self.use_caching:
             sep = "|"
             hasher = hashlib.md5()
-            hashed_str = "cache version 5" + sep + \
+            hashed_str = "cache version 6" + sep + \
                 ';'.join(self.instances_schedule) + sep + str(self.loop_limit)
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(
                 self.rps_schedule) + sep + str(self.autocases)
             hashed_str += sep + \
                 ";".join(self.uris) + sep + ";".join(
                     self.headers) + sep + self.http_ver + sep + ";".join(self.chosen_cases)
-            hashed_str += sep + str(self.enum_ammo)
+            hashed_str += sep + str(self.enum_ammo) + sep + str(self.ammo_type)
             if self.instances_schedule:
                 hashed_str += sep + str(self.instances)
             if self.ammo_file:
