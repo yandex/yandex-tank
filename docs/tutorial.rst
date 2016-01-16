@@ -178,6 +178,8 @@ where ``size_of_request`` – request size in bytes. '\r\n' symbols after
 ``body`` are ignored and not sent anywhere, but it is required to
 include them in a file after each request. '\r' is also required. 
 
+Parameter ``ammo_type`` is unnecessary, request-style is default ammo type.
+
 **sample GET requests (null body)**
 
 ::
