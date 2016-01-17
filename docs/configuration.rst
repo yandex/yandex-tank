@@ -15,6 +15,7 @@ for all three.
 - **-i, --ignore-lock** - ignore lock files 
 - **-f, --fail-lock** - don't wait for lock file, quit if it's busy. The default behaviour is to wait for lock file to become free. 
 - **-l LOG, --log=LOG** - main log file location. Default: ``./tank.log``
+- **-m, --manual-start** - tank will prepare for test and wait for Enter key to start the test. 
 - **-n, --no-rc** - don't read ``/etc/yandex-tank/*.ini`` and ``~/.yandex-tank``
 - **-o OPTION, --option=OPTION** - set an option from command line. Options set in cmd line override those have been set in configuration files. Multiple times for multiple options. Format: ``<section>.<option>=value`` Example: ``yandex-tank -o "console.short_only=1" --option="phantom.force_stepping=1"``
 - **-s SCHEDULED_START, --scheduled-start=SCHEDULED_START** - run test on specified time, date format YYYY-MM-DD hh:mm:ss or hh:mm:ss
@@ -37,7 +38,7 @@ example:
     [phantom] 
     address=example.com:80
     rps_schedule=const(100,60s)
-    
+
     [autostop] 
     autostop=instances(80%,10)
 
@@ -159,6 +160,71 @@ there.
 
 Modules
 ~~~~~~~
+
+TankCore
+^^^^^^^
+
+Core class. Represents basic steps of test execution. Simplifies plugin configuration, 
+configs reading, artifacts storing. Represents parent class for modules/plugins.
+
+INI file section: **[tank]**
+
+Options
+'''''''
+
+Basic options:
+
+* **lock_dir** - directory for lockfile. Default: ``/var/lock/``
+* **plugin_<pluginname>** - path to plugin. Empty path interpreted as disable of plugin.
+* **artifacts_base_dir** - base directory for artifacts storing. Temporary artifacts files are stored here. Default: current directory
+* **artifacts_dir** - directory where to keep artifacts after test. Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
+* **flush_config_to** - dump configuration options after each tank step (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file
+* **taskset_path** - path to taskset command. Default: taskset
+* **affinity** - set a yandex-tank's (python process and load generator process) CPU affinity. Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores. Default: empty
+
+consoleworker - cmd-line interface
+'''''''
+
+Worker class that runs and configures TankCore accepting cmdline parameters. 
+Human-friendly unix-way interface for yandex-tank. 
+Command-line options described above.
+
+apiworker - python interface
+'''''''
+
+Worker class for python. Runs and configures TankCore accepting ``dict()``. 
+Python-frinedly interface for yandex-tank.
+
+Usage sample:
+
+.. code-block:: python
+
+    from yandextank.api.apiworker import ApiWorker
+    import logging
+    import traceback
+    import sys
+
+    logger = logging.getLogger('')
+    logger.setLevel(logging.DEBUG)
+
+    #not mandatory options below:
+    options = dict()
+    options['config'] = '/path/to/config/load.ini'
+    options['manual_start'] = "1"
+    options['user_options'] = [
+        'phantom.ammofile=/path/to/ammofile',
+        'phantom.rps_schedule=const(1,2m)',
+    ]
+    log_filename = '/path/to/log/tank.log'
+    #======================================
+
+    apiworker = ApiWorker()
+    apiworker.init_logging(log_filename)
+    try:
+        apiworker.configure(options)
+        apiworker.perform_test()
+    except Exception, ex:
+        logger.error('Error trying to perform a test: %s', ex)
 
 Phantom
 ^^^^^^^
@@ -384,6 +450,70 @@ INI file section: **[custom_gun]**
 * **module_path** - path to your module
 * **module_name** - module name, has to provide function shoot, which will be called by bfg's threads to fullfill rps_schedule
 
+Sample custom gun module:
+
+.. code-block:: python
+
+  # coding=utf-8
+  import sys
+  import os
+  from Queue import Queue
+
+  import socket
+  import logging
+  import time
+  
+  from contextlib import contextmanager
+  from collections import namedtuple
+  
+  Sample = namedtuple(
+          'Sample', 'marker,threads,overallRT,httpCode,netCode,sent,received,connect,send,latency,receive,accuracy')
+  
+  @contextmanager
+  def measure(marker, queue):
+      start_ms = time.time()
+  
+      resp_code = 0
+      try:
+          yield
+      except Exception as e:
+          print marker, e
+          resp_code = 110
+  
+      response_time = int((time.time() - start_ms) * 1000)
+  
+      data_item = Sample(
+              marker,         # tag
+              1,              # threadsв
+              rt_time,        # overallRT
+              200,            # httCode
+              resp_code,      # netCode
+              0,              # sent
+              0,              # received 
+              connect_time,   # connect
+              0,              # send
+              latency_time,   # latency
+              0,              # receive
+              0,              # accuracy
+      )
+      queue.put((int(time.time()), data_item), timeout=5)
+      if resp_code != 0:
+          raise RuntimeError
+  
+  
+  def shoot(missile, marker, results):
+      sock = socket.socket()
+      try:
+          #prepare actions
+          <...some work...>
+          #test logic with metrics counting
+          with measure("markerOfRequest", results):
+              <...some useful work...>
+      except RuntimeError as e:
+          print "Scenario %s failed with %s" % (marker, e)
+      finally:
+          <...some finishing work...>
+  
 Pandora
 ^^^^^^^
 `Pandora <https://github.com/yandex/pandora>`_ is a load generator written in Go. For now it supports only SPDY/3 and HTTP(S). Plugins for other protocols
@@ -785,37 +915,6 @@ Options
 * **pass** - list of acceptable codes, delimiter - whitespace. Default: empty, no check is performed.
 * **fail_code** - exit code when check fails, integer number. Default: 10
 
-Web Online
-^^^^^^^^^^
-
-Module starts local web sever that shows online graphics. Enabled by ``plugin_web=Tank/Plugins/WebOnline.py`` in ``[tank]`` section.
-
-INI file section: **[web]**
-
-Options
-'''''''
-
-* **port** - a port to bind to on localhost. Default: 8080
-* **interval** - graphics' interval that will be shown, in seconds. Default: 60 seconds
-* **redirect** - address where to redirect browser after test stop. 
-* **manual_stop** - flag 0/1. If '1' then webserver will wait for key press from keyboard to exit
-
-Yandex.Tank kernel
-^^^^^^^^^^^^^^^^^^
-
-Python-object, that loads and execs tank modules.
-
-INI file section: **[tank]**
-
-Options
-'''''''
-
-* **artifacts_base_dir** - base directory for artifacts storing. Temporary artifacts files are stored here. Default: current directory
-* **artifacts_dir** - directory where to keep artifacts after test. Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
-* **flush_config_to** - dump configuration options after each tank step (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file 
-* **taskset_path** - path to taskset command. Default: taskset
-* **affinity** - set a yandex-tank's (python process and load generator process) CPU affinity. Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores. Default: empty
-
 Tips&Tricks
 ^^^^^^^^^^^
 
@@ -831,7 +930,7 @@ Options
 Sources
 ~~~~~~~
 
-Yandex.Tank sources `here <https://github.com/yandex-load/yandex-tank>`_.
+Yandex.Tank sources ((https://github.com/yandex/yandex-tank here)).
 
 load.ini example
 ~~~~~~~~~~~~~~~~~

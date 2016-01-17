@@ -9,6 +9,9 @@ See also
 Evgeniy Mamchits' `phantom <https://github.com/mamchits/phantom>`_ -
 Phantom scalable IO Engine
 
+Alexey Lavrenuke's `pandora <https://github.com/yandex/pandora>`_ -
+A load generator in Go language
+
 Gregory Komissarov's
 `firebat <https://github.com/greggyNapalm/firebat-console>`_ - test tool
 based on Phantom
