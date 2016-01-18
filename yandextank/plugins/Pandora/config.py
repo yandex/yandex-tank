@@ -64,7 +64,7 @@ class PandoraConfig(object):
         return {"Pools": [p.data() for p in self.pools]}
 
     def json(self):
-        return json.dumps(self.data())
+        return json.dumps(self.data(), indent=2)
 
     def add_pool(self, pool_config):
         self.pools.append(pool_config)
@@ -101,7 +101,7 @@ class PoolConfig(object):
         self.config["Gun"]["Parameters"]["SSL"] = ssl
 
     def set_gun_type(self, gun_type):
-        self.config["Gun"]["Type"] = gun_type
+        self.config["Gun"]["GunType"] = gun_type
 
     def data(self):
         return self.config
