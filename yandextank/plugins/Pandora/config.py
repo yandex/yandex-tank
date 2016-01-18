@@ -64,7 +64,7 @@ class PandoraConfig(object):
         return {"Pools": [p.data() for p in self.pools]}
 
     def json(self):
-        return json.dumps(self.data())
+        return json.dumps(self.data(), indent=2)
 
     def add_pool(self, pool_config):
         self.pools.append(pool_config)
