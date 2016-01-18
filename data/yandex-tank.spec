@@ -35,11 +35,7 @@ cp -arp Tank %{buildroot}/%{_libdir}/yandex-tank/
 cp -ap tankcore.py %{buildroot}/%{_libdir}/yandex-tank/
 cp -ap tank.py %{buildroot}/%{_libdir}/yandex-tank/
 cp -ap *.sh %{buildroot}/%{_libdir}/yandex-tank/
-ln -s %{_libdir}/yandex-tank/lunapark %{buildroot}/%{_bindir}/lunapark
 ln -s %{_libdir}/yandex-tank/tank.py %{buildroot}/%{_bindir}/yandex-tank
-ln -s %{_libdir}/yandex-tank/ab.sh %{buildroot}/%{_bindir}/yandex-tank-ab
-ln -s %{_libdir}/yandex-tank/jmeter.sh %{buildroot}/%{_bindir}/yandex-tank-jmeter
-ln -s %{_libdir}/yandex-tank/bfg.sh %{buildroot}/%{_bindir}/yandex-tank-bfg
 
 %clean
 rm -rf %{buildroot}
@@ -50,9 +46,6 @@ rm -rf %{buildroot}
 %{_sysconfdir}/bash_completion.d/yandex-tank.completion
 %{_bindir}/lunapark
 %{_bindir}/yandex-tank
-%{_bindir}/yandex-tank-ab
-%{_bindir}/yandex-tank-jmeter
-%{_bindir}/yandex-tank-bfg
 %{_libdir}/yandex-tank
 
 %changelog
