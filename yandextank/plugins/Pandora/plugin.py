@@ -80,7 +80,7 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
         pool_config.set_target(target)
 
         gun_type = self.get_option("gun_type", "http")
-        if gun_type is 'https':
+        if gun_type == 'https':
             pool_config.set_ssl(True)
             self.log.info("SSL is on")
             gun_type = "http"
