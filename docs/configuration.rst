@@ -660,6 +660,40 @@ Options
 * **web_port** - graphite frontend port, default: 8080
 * **template** - template file. Default: Tank/Plugins/graphite.tpl
 
+InfluxDB
+^^^^^^^^
+Influx uplink plugin uploads data to `InfluxDB <https://influxdata.com>`_ storage.
+Different tests will be tagged with unique IDs.
+
+Configuration:
+
+::
+
+    [tank]
+    ; Enable InfluxDB plugin:
+    plugin_influx=yandextank.plugins.InfluxUplink
+
+    [influx]
+    ; Tank name (to distinguish data from different tanks):
+    tank_tag = MyTank
+    ; Address and of InfluxDB instance:
+    address = example.org
+    port = 8086
+
+    ; If you have grafana connected to your InfluxDB, you
+    ; can specify grafana parameters and tank will generate
+    ; a link to your test:
+    grafana_root = http://example.org/grafana/
+    grafana_dashboard=tank-dashboard
+
+Options
+'''''''
+
+* **address** - graphite server
+* **port** - graphite backend port (where to send data), default: 2003
+* **web_port** - graphite frontend port, default: 8080
+* **template** - template file. Default: Tank/Plugins/graphite.tpl
+
 Loadosophia
 ^^^^^^^^^^^
 When test has been finished, module upload to Loadosophia.org test artifacts: file with answer times and files with monitoring data. The link will be shown in console output.
