@@ -344,7 +344,15 @@ Options that apply only for main section: buffered_seconds, writelog, phantom_mo
 
 JMeter
 ^^^^^^
-JMeter module uses JMeter as a load generator 
+JMeter module uses JMeter as a load generator. To enable it, disable phantom first, enable JMeter plugin and then specify the parameters for JMeter:
+
+::
+
+    [tank]
+    ; Disable phantom:
+    plugin_phantom=
+    ; Enable JMeter instead:
+    plugin_jmeter=yandextank.plugins.JMeter
 
 INI file section: **[jmeter]**
 
@@ -871,6 +879,17 @@ Apache Benchmark load generator module. As the ab utility writes results
 to file only after the test is finished, Yandex.Tank is unable to show
 the on-line statistics for the tests with ab. The data are reviewed
 after the test.
+To enable it, disable phantom first, enable AB plugin and then specify 
+the parameters for AB:
+
+::
+
+    [tank]
+    ; Disable phantom:
+    plugin_phantom=
+    ; Enable AB module instead:
+    plugin_ab=yandextank.plugins.ApacheBenchmark
+
 
 INI file section: **[ab]**
 
