@@ -1,3 +1,11 @@
+yandextank (1.7.29) trusty; urgency=medium
+
+  * pandora plugin https gun type fix
+  * invalidate ammo cache if ammo_type changed
+  * API worker [Timur Torubarov]
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Mon, 18 Jan 2016 15:59:32 +0300
+
 yandextank (1.7.28) trusty; urgency=medium
 
   * add pyzmq dependency [Timur Torubarov]
