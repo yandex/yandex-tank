@@ -101,7 +101,7 @@ class PoolConfig(object):
         self.config["Gun"]["Parameters"]["SSL"] = ssl
 
     def set_gun_type(self, gun_type):
-        self.config["Gun"]["Type"] = gun_type
+        self.config["Gun"]["GunType"] = gun_type
 
     def data(self):
         return self.config
