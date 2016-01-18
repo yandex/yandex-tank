@@ -4,11 +4,8 @@ Advanced usage
 Command line options
 ~~~~~~~~~~~~~~~~~~~~
 
-There are three executables in Yandex.Tank package: ``yandex-tank``,
-``yandex-tank-ab`` and ``yandex-tank-jmeter``. Last two of them just use
-different kind of load generation utilities, ``ab`` (Apache Benchmark) and
-``jmeter`` (Apache JMeter), accordingly. Command line options are common
-for all three.
+Yandex.Tank has an obviously named executable ``yandex-tank``. 
+Here are available command line options: 
 
 - **-h, --help** - show command line options 
 - **-c CONFIG, --config=CONFIG** - read options from INI file. It is possible to set multiple INI files by specifying the option serveral times. Default: ``./load.ini`` 
