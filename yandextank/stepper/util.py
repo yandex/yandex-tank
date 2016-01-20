@@ -35,6 +35,7 @@ def parse_duration(duration):
 
     def parse_token(time, multiplier):
         multipliers = {
+            'd': 86400,
             'h': 3600,
             'm': 60,
             's': 1,
