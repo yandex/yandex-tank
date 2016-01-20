@@ -344,7 +344,7 @@ Options that apply only for main section: buffered_seconds, writelog, phantom_mo
 
 JMeter
 ^^^^^^
-JMeter module uses JMeter as a load generator. To enable it, disable phantom first, enable JMeter plugin and then specify the parameters for JMeter:
+JMeter module uses JMeter as a load generator. To enable it, disable phantom first (unless you really want to keep it active alongside), enable JMeter plugin and then specify the parameters for JMeter:
 
 ::
 
@@ -375,7 +375,7 @@ Artifacts
 BFG
 ^^^
 (`What is BFG <http://en.wikipedia.org/wiki/BFG_(weapon)>`_)
-BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first, enable BFG plugin and then specify the parameters for BFG and for the cannon you select. For example, if you want to kill an SQL db:
+BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first  (unless you really want to keep it active alongside), enable BFG plugin and then specify the parameters for BFG and for the cannon you select. For example, if you want to kill an SQL db:
 
 ::
 
@@ -526,7 +526,7 @@ Pandora
 
 First of all you'll need to obtain a binary of pandora and place it somewhere on your machine.
 By default, Yandex.Tank will try to just run ``pandora`` (or you could specify a path to binary in ``pandora_cmd``).
-Disable phantom first, enable Pandora plugin and then specify the parameters.
+Disable phantom first (unless you really want to keep it active alongside), enable Pandora plugin and then specify the parameters.
 
 ::
 
@@ -913,7 +913,7 @@ Apache Benchmark load generator module. As the ab utility writes results
 to file only after the test is finished, Yandex.Tank is unable to show
 the on-line statistics for the tests with ab. The data are reviewed
 after the test.
-To enable it, disable phantom first, enable AB plugin and then specify 
+To enable it, disable phantom first (unless you really want to keep it active alongside), enable AB plugin and then specify 
 the parameters for AB:
 
 ::
