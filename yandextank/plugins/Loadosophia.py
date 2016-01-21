@@ -162,7 +162,7 @@ class LoadosophiaClient:
         """ Send files to loadosophia """
         if not self.token:
             msg = "Loadosophia.org uploading disabled, please set loadosophia.token option to enable it, "
-            msg += "get token at https://loadosophia.org/service/upload/token/"
+            msg += "get token at https://loadosophia.org/gui/settings/"
             self.log.warning(msg)
         else:
             if not self.address:
