@@ -1,3 +1,9 @@
+yandextank (1.7.30) trusty; urgency=medium
+
+  * support Pandora in Loadosophia plugin
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Thu, 21 Jan 2016 16:13:32 +0300
+
 yandextank (1.7.29) trusty; urgency=medium
 
   * pandora plugin https gun type fix
