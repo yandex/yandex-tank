@@ -18,6 +18,7 @@ from ApacheBenchmark import ApacheBenchmarkPlugin
 from JMeter import JMeterPlugin
 from Monitoring import MonitoringPlugin
 from Phantom import PhantomPlugin
+from Pandora import PandoraPlugin
 from yandextank.core import AbstractPlugin
 
 
@@ -118,6 +119,13 @@ class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
             main_file = jmeter.jtl_file
         except KeyError:
             self.log.debug("AB not found")
+
+        # pandora
+        try:
+            pandora = self.core.get_plugin_of_type(PandoraPlugin)
+            main_file = pandora.sample_log
+        except KeyError:
+            self.log.debug("Pandora not found")
 
 
         if not main_file:
