@@ -605,7 +605,7 @@ to stop eventually. Example:
 
     loop = 1000000
     startup_schedule = periodic(2, 10, 50)
-    user_schedule = unlimited
+    user_schedule = unlimited()
     shared_schedule = 0
 
 Start 2 users every 10 seconds. Every user will shoot without any limits (next request is sended
