@@ -650,7 +650,7 @@ Advanced criteria types:
 
 Graphite
 ^^^^^^^^
-Graphite plugin uploads data to `Graphite <http://graphite.readthedocs.org/en/0.9.12/index.html>`_ monitoring tool.
+Graphite plugin uploads data to `Graphite <http://graphite.readthedocs.org/en/0.9.12/index.html>`_ monitoring tool. Config file section: ```[graphite]```
 
 Options
 '''''''
