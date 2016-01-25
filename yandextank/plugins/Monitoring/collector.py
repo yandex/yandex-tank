@@ -409,7 +409,7 @@ class MonitoringCollector(object):
             'CPU': 'user,system,iowait',
             'Memory': 'free,cached,used',
             'Disk': 'read,write',
-            'Net': 'recv,send',
+            'Net': 'recv,send,rx,tx',
         }
 
         default_metric = ['CPU', 'Memory', 'Disk', 'Net']
