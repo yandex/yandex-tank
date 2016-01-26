@@ -29,7 +29,7 @@ class InfluxUplinkPlugin(AbstractPlugin, AggregateResultListener):
         self.decoder = None
 
     def get_available_options(self):
-        return ["address", "port", "tank_tag"]
+        return ["address", "port", "tank_tag", "grafana_root", "grafana_dashboard"]
 
     def start_test(self):
         self.start_time = datetime.datetime.now()

@@ -19,8 +19,4 @@ _yandex_tank()
     fi
     COMPREPLY=()
 } &&
-complete -o default -F _yandex_tank yandex-tank && 
-complete -o default -F _yandex_tank yandex-tank-jmeter && 
-complete -o default -F _yandex_tank yandex-tank-udp &&
-complete -o default -F _yandex_tank yandex-tank-bfg &&
-complete -o default -F _yandex_tank yandex-tank-elliptics
+complete -o default -F _yandex_tank yandex-tank

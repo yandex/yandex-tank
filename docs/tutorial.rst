@@ -4,6 +4,8 @@ Usage
 So, you've installed Yandex.Tank to a proper machine, it is close to target,
 access is permitted and server is tuned. How to make a test?
 
+This guide is for ``phantom`` load generator.
+
 First Steps
 ~~~~~~~~~~~
 
@@ -24,9 +26,10 @@ values, step - increment value, dur - step duration.
 2. ``line (a,b,dur)`` makes linear load, where ``a,b`` are start/end load, ``dur``
 - the time for linear load increase from a to b. 
 
-3. ``const (load,dur)`` makes constant load. ``load`` - rps amount, ``dur`` - load duration. You can set
-fractional load like this: ``line(1.1, 2.5, 10)`` -- from 1.1rps to 2.5 for 10 seconds. Note: ``const(0, 10)`` - 0 rps for 10 seconds, in fact 10s pause
-in a test.
+3. ``const (load,dur)`` makes constant load. ``load`` - rps amount, ``dur`` 
+- load duration. You can set fractional load like this: ``line(1.1, 2.5, 10)`` 
+-- from 1.1rps to 2.5 for 10 seconds. Note: ``const(0, 10)`` - 0 rps for 10 seconds, 
+in fact 10s pause in a test.
 
 ``step`` and ``line`` could be used with increasing and decreasing
 intensity: 
@@ -39,7 +42,9 @@ intensity:
   minutes ``line(1, 100, 10m)`` - linear load from 1 to 100 rps, duration
   - 10 minutes
 
-You can specify complex load schemes using those primitives, for example: ``rps_schedule=line(1,10,10m) const(10,10m)`` - linear load from 1 to 10, duration 10 mins and then 10 mins of 10 RPS constant load.
+You can specify complex load schemes using those primitives, 
+for example: ``rps_schedule=line(1,10,10m) const(10,10m)`` 
+- linear load from 1 to 10, duration 10 mins and then 10 mins of 10 RPS constant load.
 
 Time duration could be defined in seconds, minutes (m) and hours (h).
 For example: ``27h103m645``
@@ -60,13 +65,29 @@ Voilà, Yandex.Tank setup is done.
 Preparing requests
 ~~~~~~~~~~~~~~~~~~
 
-There are several ways to set up requests: Access mode, URI-style and request-style. 
-Regardless of the chosen format, resulted file with requests could be gzipped - tank supports archived ammo files
+There are several ways to set up requests: Access mode, URI-style, URI+POST and request-style. 
+Regardless of the chosen format, resulted file with requests could be gzipped - tank supports 
+archived ammo files.
+
+To specify external ammo file use ``ammofile`` option. You can specify URL to ammofile, http(s). 
+Small ammofiles (~<100MB) will be downloaded as is, to directory ``/tmp/<hash>``, 
+large files will be readed from stream. 
+
+::
+
+  [phantom]
+  address=203.0.113.1 ; Target's address
+  ammofile=https://yourhost.tld/path/to/ammofile.txt
+
+If ammo type is uri-style or request-style, tank will try to guess it.
+
+Use ``ammo_type`` option to explicitly specify ammo format. Don't forget to change ``ammo_type`` option
+if you switch format of your ammo, otherwise you might get errors.
 
 Access mode
 ''''''''''''
 You can use access.log file from your webserver as a source of requests.
-Just add to load.ini options `ammo_type=access` and `ammofile=/tmp/access.log` 
+Just add to load.ini options ``ammo_type=access`` and ``ammofile=/tmp/access.log`` 
 where /tmp/access.log is a path to access.log file.
 
 :: 
@@ -104,6 +125,7 @@ Update configuration file with HTTP headers and URIs:
     /sdfbv/swdfvs/ssfsf
 
 Parameter ``uris`` contains uri, which should be used for requests generation.
+Pay attention to sample above, because whitespaces in ``uris`` and ``headers`` options are important.
 
 URI-style, URIs in file
 '''''''''''''''''''''''
@@ -124,8 +146,10 @@ Create a file with declared requests: **ammo.txt**
 File consist of list of URIs and headers to be added to every request defined below.
 Every URI must begin from a new line, with leading ``/``.
 Each line that begins from ``[`` is considered as a header.
-Headers could be (re)defined in the middle of URIs, as in sample above. I.e  request ``/buy/?rt=0&station_to=7&station_from=9`` will be sent with ``Cookies: test``, not ``Cookies: None``.
-Request may be marked by tag, you can specify it with whitespace following URI.
+Headers could be (re)defined in the middle of URIs, as in sample above. 
+I.e  request ``/buy/?rt=0&station_to=7&station_from=9`` will be sent 
+with ``Cookies: test``, not ``Cookies: None``. Request may be marked by tag, 
+you can specify it with whitespace following URI.
 
 URI+POST-style
 ''''''''''''''
@@ -172,7 +196,10 @@ is:
 
 where ``size_of_request`` – request size in bytes. '\r\n' symbols after
 ``body`` are ignored and not sent anywhere, but it is required to
-include them in a file after each request. '\r' is also required. 
+include them in a file after each request. Pay attention to the sample above
+because '\r' symbols are strictly required. 
+
+Parameter ``ammo_type`` is unnecessary, request-style is default ammo type.
 
 **sample GET requests (null body)**
 
@@ -330,6 +357,9 @@ During test execution you'll see HTTP and net errors, answer times
 distribution, progressbar and other interesting data. At the same time
 file ``phout.txt`` is being written, which could be analyzed later.
 
+If you need more human-readable report, you can try Report plugin,
+You can found it `here <https://github.com/yandex-load/yatank-online>`_
+
 Tags
 ~~~~
 
@@ -354,6 +384,7 @@ requests and tags:
   User-Agent: xxx (shell 1)
 
 ``good``, ``bad`` and ``unknown`` here are the tags.
+
 **RESTRICTION: utf-8 symbols only**
 
 SSL
@@ -422,9 +453,8 @@ Logging
 Looking into target's answers is quite useful in debugging. For doing
 that add ``writelog = 1`` to ``load.ini``. 
 
-**ATTENTION: Writing answers on
-high load leads to intensive disk i/o usage and can affect test
-accuracy.** 
+**ATTENTION: Writing answers on high load leads to intensive disk i/o 
+usage and can affect test accuracy.** 
 
 Log format: 
 
@@ -502,7 +532,7 @@ installed on your Yandex.Tank system.
 Graph and statistics
 ~~~~~~~~~~~~~~~~~~~~
 
-Use included charting tool that runs as a webservice on localhost
+Use `Report plugin <https://github.com/yandex-load/yatank-online>`_ 
 OR
 use your favorite stats packet, R, for example.
 
@@ -520,6 +550,8 @@ parameter like this:
   rps_schedule=const(10, 10m) ;load scheme
   [aggregator]
   time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s ; the last value - 10s is considered as connect timeout.
+
+According to this "buckets", tanks' aggregator will aggregate test results.
 
 Thread limit
 ~~~~~~~~~~~~

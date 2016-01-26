@@ -4,17 +4,15 @@ Advanced usage
 Command line options
 ~~~~~~~~~~~~~~~~~~~~
 
-There are three executables in Yandex.Tank package: ``yandex-tank``,
-``yandex-tank-ab`` and ``yandex-tank-jmeter``. Last two of them just use
-different kind of load generation utilities, ``ab`` (Apache Benchmark) and
-``jmeter`` (Apache JMeter), accordingly. Command line options are common
-for all three.
+Yandex.Tank has an obviously named executable ``yandex-tank``. 
+Here are available command line options: 
 
 - **-h, --help** - show command line options 
 - **-c CONFIG, --config=CONFIG** - read options from INI file. It is possible to set multiple INI files by specifying the option serveral times. Default: ``./load.ini`` 
 - **-i, --ignore-lock** - ignore lock files 
 - **-f, --fail-lock** - don't wait for lock file, quit if it's busy. The default behaviour is to wait for lock file to become free. 
 - **-l LOG, --log=LOG** - main log file location. Default: ``./tank.log``
+- **-m, --manual-start** - tank will prepare for test and wait for Enter key to start the test. 
 - **-n, --no-rc** - don't read ``/etc/yandex-tank/*.ini`` and ``~/.yandex-tank``
 - **-o OPTION, --option=OPTION** - set an option from command line. Options set in cmd line override those have been set in configuration files. Multiple times for multiple options. Format: ``<section>.<option>=value`` Example: ``yandex-tank -o "console.short_only=1" --option="phantom.force_stepping=1"``
 - **-s SCHEDULED_START, --scheduled-start=SCHEDULED_START** - run test on specified time, date format YYYY-MM-DD hh:mm:ss or hh:mm:ss
@@ -37,7 +35,7 @@ example:
     [phantom] 
     address=example.com:80
     rps_schedule=const(100,60s)
-    
+
     [autostop] 
     autostop=instances(80%,10)
 
@@ -160,6 +158,71 @@ there.
 Modules
 ~~~~~~~
 
+TankCore
+^^^^^^^
+
+Core class. Represents basic steps of test execution. Simplifies plugin configuration, 
+configs reading, artifacts storing. Represents parent class for modules/plugins.
+
+INI file section: **[tank]**
+
+Options
+'''''''
+
+Basic options:
+
+* **lock_dir** - directory for lockfile. Default: ``/var/lock/``
+* **plugin_<pluginname>** - path to plugin. Empty path interpreted as disable of plugin.
+* **artifacts_base_dir** - base directory for artifacts storing. Temporary artifacts files are stored here. Default: current directory
+* **artifacts_dir** - directory where to keep artifacts after test. Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
+* **flush_config_to** - dump configuration options after each tank step (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file
+* **taskset_path** - path to taskset command. Default: taskset
+* **affinity** - set a yandex-tank's (python process and load generator process) CPU affinity. Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores. Default: empty
+
+consoleworker - cmd-line interface
+'''''''
+
+Worker class that runs and configures TankCore accepting cmdline parameters. 
+Human-friendly unix-way interface for yandex-tank. 
+Command-line options described above.
+
+apiworker - python interface
+'''''''
+
+Worker class for python. Runs and configures TankCore accepting ``dict()``. 
+Python-frinedly interface for yandex-tank.
+
+Usage sample:
+
+.. code-block:: python
+
+    from yandextank.api.apiworker import ApiWorker
+    import logging
+    import traceback
+    import sys
+
+    logger = logging.getLogger('')
+    logger.setLevel(logging.DEBUG)
+
+    #not mandatory options below:
+    options = dict()
+    options['config'] = '/path/to/config/load.ini'
+    options['manual_start'] = "1"
+    options['user_options'] = [
+        'phantom.ammofile=/path/to/ammofile',
+        'phantom.rps_schedule=const(1,2m)',
+    ]
+    log_filename = '/path/to/log/tank.log'
+    #======================================
+
+    apiworker = ApiWorker()
+    apiworker.init_logging(log_filename)
+    try:
+        apiworker.configure(options)
+        apiworker.perform_test()
+    except Exception, ex:
+        logger.error('Error trying to perform a test: %s', ex)
+
 Phantom
 ^^^^^^^
 
@@ -281,7 +344,15 @@ Options that apply only for main section: buffered_seconds, writelog, phantom_mo
 
 JMeter
 ^^^^^^
-JMeter module uses JMeter as a load generator 
+JMeter module uses JMeter as a load generator. To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable JMeter plugin and then specify the parameters for JMeter:
+
+::
+
+    [tank]
+    ; Disable phantom:
+    plugin_phantom=
+    ; Enable JMeter instead:
+    plugin_jmeter=yandextank.plugins.JMeter
 
 INI file section: **[jmeter]**
 
@@ -291,6 +362,7 @@ Options
 * **args** - additional commandline arguments for JMeter
 * **jmeter_path** - path to JMeter, allows to use alternative JMeter installation. Default: jmeter
 * **buffered_seconds** - amount of seconds to which delay aggregator, to be sure that everything were read from jmeter's results file
+* **connect_time** - it sets jmeter.save.saveservice.connect_time=false if the value is '0' or empty string, jmeter.save.saveservice.connect_time=true in any other cases, empty string by default
 * **all other options in the section** - they will be passed as User Defined Variables to JMeter
 
 Artifacts
@@ -303,7 +375,7 @@ Artifacts
 BFG
 ^^^
 (`What is BFG <http://en.wikipedia.org/wiki/BFG_(weapon)>`_)
-BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first, enable BFG plugin and then specify the parameters for BFG and for the cannon you select. For example, if you want to kill an SQL db:
+BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first  (unless you really want to keep it active alongside at your own risk), enable BFG plugin and then specify the parameters for BFG and for the cannon you select. For example, if you want to kill an SQL db:
 
 ::
 
@@ -383,6 +455,70 @@ INI file section: **[custom_gun]**
 * **module_path** - path to your module
 * **module_name** - module name, has to provide function shoot, which will be called by bfg's threads to fullfill rps_schedule
 
+Sample custom gun module:
+
+.. code-block:: python
+
+  # coding=utf-8
+  import sys
+  import os
+  from Queue import Queue
+
+  import socket
+  import logging
+  import time
+  
+  from contextlib import contextmanager
+  from collections import namedtuple
+  
+  Sample = namedtuple(
+          'Sample', 'marker,threads,overallRT,httpCode,netCode,sent,received,connect,send,latency,receive,accuracy')
+  
+  @contextmanager
+  def measure(marker, queue):
+      start_ms = time.time()
+  
+      resp_code = 0
+      try:
+          yield
+      except Exception as e:
+          print marker, e
+          resp_code = 110
+  
+      response_time = int((time.time() - start_ms) * 1000)
+  
+      data_item = Sample(
+              marker,         # tag
+              1,              # threadsв
+              rt_time,        # overallRT
+              200,            # httCode
+              resp_code,      # netCode
+              0,              # sent
+              0,              # received 
+              connect_time,   # connect
+              0,              # send
+              latency_time,   # latency
+              0,              # receive
+              0,              # accuracy
+      )
+      queue.put((int(time.time()), data_item), timeout=5)
+      if resp_code != 0:
+          raise RuntimeError
+  
+  
+  def shoot(missile, marker, results):
+      sock = socket.socket()
+      try:
+          #prepare actions
+          <...some work...>
+          #test logic with metrics counting
+          with measure("markerOfRequest", results):
+              <...some useful work...>
+      except RuntimeError as e:
+          print "Scenario %s failed with %s" % (marker, e)
+      finally:
+          <...some finishing work...>
+  
 Pandora
 ^^^^^^^
 `Pandora <https://github.com/yandex/pandora>`_ is a load generator written in Go. For now it supports only SPDY/3 and HTTP(S). Plugins for other protocols
@@ -390,7 +526,7 @@ Pandora
 
 First of all you'll need to obtain a binary of pandora and place it somewhere on your machine.
 By default, Yandex.Tank will try to just run ``pandora`` (or you could specify a path to binary in ``pandora_cmd``).
-Disable phantom first, enable Pandora plugin and then specify the parameters.
+Disable phantom first (unless you really want to keep it active alongside at your own risk), enable Pandora plugin and then specify the parameters.
 
 ::
 
@@ -469,7 +605,7 @@ to stop eventually. Example:
 
     loop = 1000000
     startup_schedule = periodic(2, 10, 50)
-    user_schedule = unlimited
+    user_schedule = unlimited()
     shared_schedule = 0
 
 Start 2 users every 10 seconds. Every user will shoot without any limits (next request is sended
@@ -499,6 +635,7 @@ Basic criteria types:
 * **instances** - available when phantom module is included. Stop the test if instance count is larger then specified value. Example: ``instances(80%, 30) instances(50,1m)``. Exit code - 24
 * **metric_lower** and **metric_higher** - stop test if monitored metrics are lower/higher than specified for time period. Example: metric_lower(127.0.0.1,Memory_free,500,10). Exit code - 31 and 32. **Note**: metric names (except customs) are written with underline. For hostnames masks are allowed (i.e target-\*.load.net)
 * **steady_cumulative** - Stops the test if cumulative percentiles does not change for specified interval. Example: ``steady_cumulative(1m)``. Exit code - 33
+* **limit** - Will stop test after specified period of time. Example: ``limit(1m)``.
 
 Basic criteria aren't aggregated, they are tested for each second in specified period. For example autostop=time(50,15) means "stop if average responce time for every second in 15s interval is higher than 50ms"
 
@@ -513,7 +650,41 @@ Advanced criteria types:
 
 Graphite
 ^^^^^^^^
-Graphite plugin uploads data to `Graphite <http://graphite.readthedocs.org/en/0.9.12/index.html>`_ monitoring tool.
+Graphite plugin uploads data to `Graphite <http://graphite.readthedocs.org/en/0.9.12/index.html>`_ monitoring tool. Config file section: ```[graphite]```
+
+Options
+'''''''
+
+* **address** - graphite server
+* **port** - graphite backend port (where to send data), default: 2003
+* **web_port** - graphite frontend port, default: 8080
+* **template** - template file. Default: Tank/Plugins/graphite.tpl
+
+InfluxDB
+^^^^^^^^
+Influx uplink plugin uploads data to `InfluxDB <https://influxdata.com>`_ storage.
+Different tests will be tagged with unique IDs.
+
+Configuration:
+
+::
+
+    [tank]
+    ; Enable InfluxDB plugin:
+    plugin_influx=yandextank.plugins.InfluxUplink
+
+    [influx]
+    ; Tank name (to distinguish data from different tanks):
+    tank_tag = MyTank
+    ; Address and of InfluxDB instance:
+    address = example.org
+    port = 8086
+
+    ; If you have grafana connected to your InfluxDB, you
+    ; can specify grafana parameters and tank will generate
+    ; a link to your test:
+    grafana_root = http://example.org/grafana/
+    grafana_dashboard=tank-dashboard
 
 Options
 '''''''
@@ -742,6 +913,17 @@ Apache Benchmark load generator module. As the ab utility writes results
 to file only after the test is finished, Yandex.Tank is unable to show
 the on-line statistics for the tests with ab. The data are reviewed
 after the test.
+To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable AB plugin and then specify 
+the parameters for AB:
+
+::
+
+    [tank]
+    ; Disable phantom:
+    plugin_phantom=
+    ; Enable AB module instead:
+    plugin_ab=yandextank.plugins.ApacheBenchmark
+
 
 INI file section: **[ab]**
 
@@ -783,37 +965,6 @@ Options
 * **pass** - list of acceptable codes, delimiter - whitespace. Default: empty, no check is performed.
 * **fail_code** - exit code when check fails, integer number. Default: 10
 
-Web Online
-^^^^^^^^^^
-
-Module starts local web sever that shows online graphics. Enabled by ``plugin_web=Tank/Plugins/WebOnline.py`` in ``[tank]`` section.
-
-INI file section: **[web]**
-
-Options
-'''''''
-
-* **port** - a port to bind to on localhost. Default: 8080
-* **interval** - graphics' interval that will be shown, in seconds. Default: 60 seconds
-* **redirect** - address where to redirect browser after test stop. 
-* **manual_stop** - flag 0/1. If '1' then webserver will wait for key press from keyboard to exit
-
-Yandex.Tank kernel
-^^^^^^^^^^^^^^^^^^
-
-Python-object, that loads and execs tank modules.
-
-INI file section: **[tank]**
-
-Options
-'''''''
-
-* **artifacts_base_dir** - base directory for artifacts storing. Temporary artifacts files are stored here. Default: current directory
-* **artifacts_dir** - directory where to keep artifacts after test. Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
-* **flush_config_to** - dump configuration options after each tank step (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file 
-* **taskset_path** - path to taskset command. Default: taskset
-* **affinity** - set a yandex-tank's (python process and load generator process) CPU affinity. Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores. Default: empty
-
 Tips&Tricks
 ^^^^^^^^^^^
 
@@ -829,7 +980,7 @@ Options
 Sources
 ~~~~~~~
 
-Yandex.Tank sources ((https://github.com/yandex-load/yandex-tank here)).
+Yandex.Tank sources ((https://github.com/yandex/yandex-tank here)).
 
 load.ini example
 ~~~~~~~~~~~~~~~~~

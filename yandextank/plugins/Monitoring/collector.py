@@ -57,12 +57,38 @@ class SecuredShell(object):
         client = SSHClient()
         client.load_system_host_keys()
         client.set_missing_host_key_policy(AutoAddPolicy())
-        client.connect(
-            self.host,
-            port=self.port,
-            username=self.username,
-            timeout=self.timeout,
-        )
+
+        try:
+            client.connect(
+                self.host,
+                port=self.port,
+                username=self.username,
+                timeout=self.timeout,
+            )
+        except ValueError, e:
+            logger.error(e)
+            logger.warning("""
+Patching Crypto.Cipher.AES.new and making another attempt.
+
+See here for the details:
+http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-parameter-not-iv/
+            """)
+            client.close()
+            import Crypto.Cipher.AES
+            orig_new = Crypto.Cipher.AES.new
+
+            def fixed_AES_new(key, *ls):
+                if Crypto.Cipher.AES.MODE_CTR == ls[0]:
+                    ls = list(ls)
+                    ls[1] = ''
+                return orig_new(key, *ls)
+            Crypto.Cipher.AES.new = fixed_AES_new
+            client.connect(
+                self.host,
+                port=self.port,
+                username=self.username,
+                timeout=self.timeout,
+            )
         return client
 
     def execute(self, cmd):
@@ -383,7 +409,7 @@ class MonitoringCollector(object):
             'CPU': 'user,system,iowait',
             'Memory': 'free,cached,used',
             'Disk': 'read,write',
-            'Net': 'recv,send',
+            'Net': 'recv,send,rx,tx',
         }
 
         default_metric = ['CPU', 'Memory', 'Disk', 'Net']

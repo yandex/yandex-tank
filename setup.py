@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='1.7.23',
+    version='1.7.30',
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -18,9 +18,10 @@ analytic tools for the results they produce.
         'psutil>=1.2.1',
         'ipaddr',
         'progressbar',
-        'requests',
+        'requests>=2.5.1',
         'paramiko>=1.16.0',
         'pandas',
+        'pyzmq',
     ],
     license='LGPLv2',
     classifiers=[
@@ -45,6 +46,7 @@ analytic tools for the results they produce.
     },
     package_data={
         'yandextank.core': ['config/*'],
+        'yandextank.api': ['config/*'],
         'yandextank.plugins.GraphiteUploader': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],
         'yandextank.plugins.Monitoring': ['config/*'],

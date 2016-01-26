@@ -8,7 +8,8 @@ Welcome to Yandex.Tank's documentation!
 :Homepage: `Yandex.Tank Homepage on Github
  <https://github.com/yandex-load/yandex-tank>`_
 :Download: `Launchpad PPA (ubuntu packages)
- <https://launchpad.net/~yandex-load/+archive/main>`_
+ <https://launchpad.net/~yandex-load/+archive/main>`_ `Pypi
+ <https://pypi.python.org/pypi/yandextank/>`_
 :Documentation: `PDF Documentation
  <https://media.readthedocs.org/pdf/yandextank/latest/yandextank.pdf>`_
 :License: `GNU LGPLv3

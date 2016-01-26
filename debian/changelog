@@ -1,3 +1,49 @@
+yandextank (1.7.30) trusty; urgency=medium
+
+  * support Pandora in Loadosophia plugin
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Thu, 21 Jan 2016 16:13:32 +0300
+
+yandextank (1.7.29) trusty; urgency=medium
+
+  * pandora plugin https gun type fix
+  * invalidate ammo cache if ammo_type changed
+  * API worker [Timur Torubarov]
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Mon, 18 Jan 2016 15:59:32 +0300
+
+yandextank (1.7.28) trusty; urgency=medium
+
+  * add pyzmq dependency [Timur Torubarov]
+  * fix re-import problem in bfg [Timur Torubarov] 
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 13 Jan 2016 19:37:37 +0300
+
+yandextank (1.7.27) trusty; urgency=medium
+
+  * connect_time jmeter option [Ilya Krylov]
+  * Fix Zombie Apocalypse (phantom zombie processes leakage) [Timur Torubarov] 
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Tue, 29 Dec 2015 13:06:57 +0300
+
+yandextank (1.7.26) trusty; urgency=medium
+
+  * PyCrypto bug workaround
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 16 Dec 2015 15:02:25 +0300
+
+yandextank (1.7.25) trusty; urgency=medium
+
+  * Dependencies in debian/control 
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 16 Dec 2015 14:19:21 +0300
+
+yandextank (1.7.24) trusty; urgency=medium
+
+  * SHA-2 workaround 
+
+ -- Alexey Lavrenuke (load testing) <direvius@yandex-team.ru>  Wed, 09 Dec 2015 14:19:21 +0300
+
 yandextank (1.7.23) trusty; urgency=medium
 
   * update pandora plugin
