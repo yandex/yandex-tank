@@ -135,6 +135,7 @@ class Screen(object):
         widget_output = []
         if self.right_panel_width:
             widget_output = []
+            self.log.debug("There are %d info widgets" % len(self.info_widgets))
             for index, widget in sorted(self.info_widgets.iteritems(), key=lambda (k, v): (v.get_index(), k)):
                 self.log.debug("Rendering info widget #%s: %s", index, widget)
                 widget_out = widget.render(self).strip()
