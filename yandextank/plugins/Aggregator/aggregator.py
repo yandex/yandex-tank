@@ -39,7 +39,7 @@ class Worker(object):
             bins = np.append(bins, np.linspace(10000, 30000, 401) * 1000)
         else:
             bins = np.array([
-                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20,
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20,
                 30, 40, 50, 60, 70, 80, 90, 100,
                 150, 200, 250, 300, 350, 400, 450,
                 500, 600, 650, 700, 750, 800, 850, 900, 950, 1000,
@@ -48,7 +48,7 @@ class Worker(object):
             ]) * 1000
 
         self.bins = bins
-        self.percentiles = np.array([50, 75, 80, 85, 90, 95, 99])
+        self.percentiles = np.array([50, 75, 80, 85, 90, 95, 98, 99, 100])
         self.config = config
         self.aggregators = {
             "hist": self._histogram,

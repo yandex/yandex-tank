@@ -10,11 +10,11 @@ import datetime
 import string
 import multiprocessing as mp
 
-from yandextank.plugins import ConsoleScreen
+import yandextank.plugins.Console.screen as ConsoleScreen
 from yandextank.plugins.Aggregator import AggregatorPlugin
 from yandextank.plugins.Autostop import AutostopPlugin, AbstractCriteria
-from yandextank.plugins.ConsoleOnline import \
-    ConsoleOnlinePlugin, AbstractInfoWidget
+from yandextank.plugins.Console import \
+    ConsolePlugin, AbstractInfoWidget
 from utils import PhantomConfig
 from reader import PhantomReader
 from yandextank.core import AbstractPlugin
@@ -121,7 +121,7 @@ class PhantomPlugin(AbstractPlugin):
         if aggregator:
             aggregator.reader = reader
         try:
-            console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+            console = self.core.get_plugin_of_type(ConsolePlugin)
         except Exception, ex:
             self.log.debug("Console not found: %s", ex)
             console = None

@@ -1,5 +1,4 @@
 ''' AB load generator '''
-from Aggregator import AggregatorPlugin, AbstractReader
 from ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 
 import os
@@ -86,7 +85,7 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
 
 
 
-class ABReader(AbstractReader):
+class ABReader(object):
     '''
     Adapter to read AB files
     '''

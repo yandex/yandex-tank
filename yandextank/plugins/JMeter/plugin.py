@@ -8,8 +8,8 @@ import datetime
 import json
 
 from pkg_resources import resource_string
-from yandextank.plugins.Aggregator import AbstractReader, AggregatorPlugin, \
-    AggregateResultListener, SecondAggregateDataItem
+from yandextank.plugins.Aggregator import AggregatorPlugin, \
+    AggregateResultListener
 from yandextank.plugins.Console import \
     ConsolePlugin, AbstractInfoWidget
 import yandextank.plugins.Console.screen as ConsoleScreen
@@ -181,7 +181,7 @@ class JMeterPlugin(AbstractPlugin):
         return res
 
 
-class JMeterReader(AbstractReader):
+class JMeterReader(object):
 
     """ JTL files reader """
     KNOWN_EXC = {
