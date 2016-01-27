@@ -10,11 +10,11 @@ import json
 from pkg_resources import resource_string
 from yandextank.plugins.Aggregator import AbstractReader, AggregatorPlugin, \
     AggregateResultListener, SecondAggregateDataItem
-from yandextank.plugins.ConsoleOnline import \
-    ConsoleOnlinePlugin, AbstractInfoWidget
+from yandextank.plugins.Console import \
+    ConsolePlugin, AbstractInfoWidget
+import yandextank.plugins.Console.screen as ConsoleScreen
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
-import yandextank.plugins.ConsoleScreen as ConsoleScreen
 
 
 class JMeterPlugin(AbstractPlugin):
@@ -85,7 +85,7 @@ class JMeterPlugin(AbstractPlugin):
             aggregator.reader.use_argentum = self.use_argentum
 
         try:
-            console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+            console = self.core.get_plugin_of_type(ConsolePlugin)
         except Exception, ex:
             self.log.debug("Console not found: %s", ex)
             console = None

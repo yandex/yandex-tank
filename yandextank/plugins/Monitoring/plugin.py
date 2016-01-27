@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 from pkg_resources import resource_string
 from collector import MonitoringCollector, \
     MonitoringDataListener, MonitoringDataDecoder
-from yandextank.plugins.ConsoleOnline import \
-    ConsoleOnlinePlugin, AbstractInfoWidget
+from yandextank.plugins.Console import \
+    ConsolePlugin, AbstractInfoWidget
 from yandextank.plugins.Phantom import PhantomPlugin
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
@@ -127,7 +127,7 @@ class MonitoringPlugin(AbstractPlugin):
             self.core.add_artifact_file(self.data_file)
 
             try:
-                console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+                console = self.core.get_plugin_of_type(ConsolePlugin)
             except Exception, ex:
                 logger.debug("Console not found: %s", ex)
                 console = None
