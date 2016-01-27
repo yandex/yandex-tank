@@ -6,7 +6,8 @@ import math
 import os
 import struct
 import termios
-import codes
+import yandextank.core.util as util
+from collections import defaultdict
 import numpy as np
 
 
@@ -69,7 +70,7 @@ class Screen(object):
 
         block1 = VerticalBlock(CurrentHTTPBlock(self), CurrentNetBlock(self))
         block2 = VerticalBlock(block1, CasesBlock(self))
-        block3 = VerticalBlock(block2, TotalQuantilesBlock(self))
+        block3 = VerticalBlock(block2, CurrentQuantilesBlock(self))
         block4 = VerticalBlock(block3, AnswSizesBlock(self))
         block5 = VerticalBlock(block4, AvgTimesBlock(self))
 
@@ -160,7 +161,9 @@ class Screen(object):
             else:
                 line += ' ' * self.left_panel_width
             if self.right_panel_width:
+                line += self.markup.WHITE
                 line += self.RIGHT_PANEL_SEPARATOR
+                line += self.markup.RESET
                 right_line = self.__get_right_line(widget_output)
                 line += right_line
 
@@ -246,7 +249,7 @@ class VerticalBlock(AbstractBlock):
 # ======================================================
 class CurrentTimesDistBlock(AbstractBlock):
     '''
-    Detailed distribution for current RPS
+    Current times distribution
     '''
 
     def __init__(self, screen):
@@ -256,12 +259,10 @@ class CurrentTimesDistBlock(AbstractBlock):
         self.width = 0
 
     def add_second(self, data):
-        if 'tag' in data:
-            return
-        self.current_rps = data["metrics"]["interval_real"]["len"]
+        self.current_rps = data["overall"]["metrics"]["interval_real"]["len"]
         self.hist = zip(
-            data["metrics"]["interval_real"]["hist"]["bins"],
-            data["metrics"]["interval_real"]["hist"]["data"],
+            data["overall"]["metrics"]["interval_real"]["hist"]["bins"],
+            data["overall"]["metrics"]["interval_real"]["hist"]["data"],
         )
 
     def render(self):
@@ -269,16 +270,16 @@ class CurrentTimesDistBlock(AbstractBlock):
         for bin, cnt in self.hist:
             line = "{cnt}({pct:.2%}) < {bin} ms".format(
                 cnt=cnt,
-                pct=cnt / self.current_rps,
+                pct=cnt / float(self.current_rps),
                 bin=bin / 1000,
             )
             self.width = max(self.width, len(line))
             self.lines.append(line)
         self.lines.reverse()
         self.lines = [
-            self.screen.markup.WHITE +
-            'Total responses: %s' % self.current_rps +
-            self.screen.markup.RESET, 'times:'] + self.lines
+            self.screen.markup.GREEN +
+            'RPS: %s' % self.current_rps +
+            self.screen.markup.RESET, '', 'Times distribution:'] + self.lines
         self.lines.append("")
 
         self.width = max(self.width, len(self.lines[0]))
@@ -288,47 +289,31 @@ class CurrentTimesDistBlock(AbstractBlock):
 
 class CurrentHTTPBlock(AbstractBlock):
     ''' Http codes with highlight'''
-    TITLE = 'HTTP for %s RPS:  '
+    TITLE = 'HTTP codes:'
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
-        self.times_dist = {}
-        self.current_rps = 0
+        self.times_dist = defaultdict(int)
         self.total_count = 0
         self.highlight_codes = []
 
 
-    def process_dist(self, rps, codes_dist):
-        '''
-        Analyze arrived codes distribution and highlight arrived
-        '''
+
+    def add_second(self, data):
+        codes_dist = data["overall"]["metrics"]["proto_code"]["count"]
+
         self.log.debug("Arrived codes data: %s", codes_dist)
         self.highlight_codes = []
-        if not self.current_rps == rps:
-            self.current_rps = rps
-            self.total_count = 0
-            for key in self.times_dist.keys():
-                self.times_dist[key] = 0
 
-        for code, count in codes_dist.items():
+        for code, count in codes_dist.iteritems():
             self.total_count += count
             self.highlight_codes.append(code)
-            if code in self.times_dist.keys():
-                self.times_dist[code] += count
-            else:
-                self.times_dist[code] = count
+            self.times_dist[code] += count
 
         self.log.debug("Current codes dist: %s", self.times_dist)
 
-    def add_second(self, data):
-        return
-        rps = data.overall.planned_requests
-        codes_dist = data.overall.http_codes
-        self.process_dist(rps, codes_dist)
-
     def render(self):
-        self.lines = [self.screen.markup.WHITE + self.TITLE % self.current_rps + self.screen.markup.RESET]
-        #self.width = len(self.lines[0])
+        self.lines = [self.screen.markup.WHITE + self.TITLE + self.screen.markup.RESET]
         for code, count in sorted(self.times_dist.iteritems()):
             line = self.format_line(code, count)
             self.width = max(self.width, len(self.screen.markup.clean_markup(line)))
@@ -342,8 +327,8 @@ class CurrentHTTPBlock(AbstractBlock):
             perc = 1
         # 11083   5.07%: 304 Not Modified
         count_len = str(len(str(self.total_count)))
-        if int(code) in Codes.HTTP:
-            code_desc = Codes.HTTP[int(code)]
+        if int(code) in util.HTTP:
+            code_desc = util.HTTP[int(code)]
         else:
             code_desc = "N/A"
         tpl = '  %' + count_len + 'd %6.2f%%: %s %s'
@@ -368,15 +353,27 @@ class CurrentHTTPBlock(AbstractBlock):
 
 # ======================================================
 
-class CurrentNetBlock(CurrentHTTPBlock):
+class CurrentNetBlock(AbstractBlock):
     ''' NET codes with highlight'''
-    TITLE = ' NET for %s RPS:  '
+    TITLE = 'NET codes:'
+
+    def __init__(self, screen):
+        AbstractBlock.__init__(self, screen)
+        self.times_dist = defaultdict(int)
+        self.total_count = 0
 
     def add_second(self, data):
-        return
-        rps = data.overall.planned_requests
-        codes_dist = copy.deepcopy(data.overall.net_codes)
-        self.process_dist(rps, codes_dist)
+        net_dist = data["overall"]["metrics"]["net_code"]["count"]
+
+        self.log.debug("Arrived net codes data: %s", net_dist)
+        self.highlight_codes = []
+
+        for code, count in net_dist.iteritems():
+            self.total_count += count
+            self.highlight_codes.append(code)
+            self.times_dist[code] += count
+
+        self.log.debug("Current net codes dist: %s", self.times_dist)
 
     def format_line(self, code, count):
         if self.total_count:
@@ -385,8 +382,8 @@ class CurrentNetBlock(CurrentHTTPBlock):
             perc = 1
         # 11083   5.07%: 304 Not Modified
         count_len = str(len(str(self.total_count)))
-        if int(code) in Codes.NET:
-            code_desc = Codes.NET[int(code)]
+        if int(code) in util.NET:
+            code_desc = util.NET[int(code)]
         else:
             code_desc = "N/A"
         tpl = '  %' + count_len + 'd %6.2f%%: %s %s'
@@ -401,11 +398,18 @@ class CurrentNetBlock(CurrentHTTPBlock):
 
         return left_line
 
+    def render(self):
+        self.lines = [self.screen.markup.WHITE + self.TITLE + self.screen.markup.RESET]
+        for code, count in sorted(self.times_dist.iteritems()):
+            line = self.format_line(code, count)
+            self.width = max(self.width, len(self.screen.markup.clean_markup(line)))
+            self.lines.append(line)
+
 
 # ======================================================
 
-class TotalQuantilesBlock(AbstractBlock):
-    ''' Total test quantiles '''
+class CurrentQuantilesBlock(AbstractBlock):
+    ''' Current test quantiles '''
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -414,8 +418,9 @@ class TotalQuantilesBlock(AbstractBlock):
         self.quantiles = {}
 
     def add_second(self, data):
-        return
-        self.quantiles = data.cumulative.quantiles
+        self.quantiles = {k: v for k, v in zip(
+            data["overall"]["metrics"]["interval_real"]["q"]["q"],
+            data["overall"]["metrics"]["interval_real"]["q"]["value"])}
 
     def render(self):
         self.lines = []
@@ -425,14 +430,14 @@ class TotalQuantilesBlock(AbstractBlock):
             self.lines.append(line)
 
         self.lines.reverse()
-        self.lines = [self.screen.markup.WHITE + 'Cumulative Percentiles:' + self.screen.markup.RESET] + self.lines
+        self.lines = [self.screen.markup.WHITE + 'Current Percentiles:' + self.screen.markup.RESET] + self.lines
         self.width = max(self.width, len(self.screen.markup.clean_markup(self.lines[0])))
 
     def __format_line(self, quan, timing):
         ''' Format line '''
         timing_len = str(len(str(self.current_max_rt)))
-        tpl = '   %3d%% < %' + timing_len + 'd ms'
-        data = (quan, timing)
+        tpl = '   %3s%% < %' + timing_len + '.2f ms'
+        data = (quan, timing / 1000.0)
         left_line = tpl % data
         return left_line
 
@@ -446,7 +451,6 @@ class AnswSizesBlock(AbstractBlock):
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
         self.sum_in = 0
-        self.current_rps = -1
         self.sum_out = 0
         self.count = 0
         self.header = screen.markup.WHITE + 'Request/Response Sizes:' + screen.markup.RESET
@@ -457,8 +461,8 @@ class AnswSizesBlock(AbstractBlock):
     def render(self):
         self.lines = [self.header]
         if self.count:
-            self.lines.append("   Avg Request at %s RPS: %d bytes" % (self.current_rps, self.sum_out / self.count))
-            self.lines.append("  Avg Response at %s RPS: %d bytes" % (self.current_rps, self.sum_in / self.count))
+            self.lines.append("   Avg Request: %d bytes" % (self.sum_out / self.count))
+            self.lines.append("  Avg Response: %d bytes" % (self.sum_in / self.count))
             self.lines.append("")
         if self.cur_count:
             self.lines.append("   Last Avg Request: %d bytes" % (self.cur_out / self.cur_count))
@@ -470,21 +474,14 @@ class AnswSizesBlock(AbstractBlock):
             self.width = max(self.width, len(self.screen.markup.clean_markup(line)))
 
     def add_second(self, data):
-        return
-        if data.overall.planned_requests != self.current_rps:
-            self.current_rps = data.overall.planned_requests
-            self.sum_in = 0
-            self.sum_out = 0
-            self.count = 0
 
-        self.count += data.overall.RPS
-        self.sum_in += data.overall.input
-        self.sum_out += data.overall.output
+        self.cur_in = data["overall"]["metrics"]["size_out"]["total"]
+        self.cur_out = data["overall"]["metrics"]["size_out"]["total"]
+        self.cur_count = data["overall"]["metrics"]["interval_real"]["len"]
 
-        self.cur_in = data.overall.input
-        self.cur_out = data.overall.output
-        self.cur_count = data.overall.RPS
-
+        self.count += self.cur_count
+        self.sum_in += self.cur_in
+        self.sum_out += self.cur_out
 
 # ======================================================
 
@@ -494,13 +491,6 @@ class AvgTimesBlock(AbstractBlock):
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
-        self.rps_connect = 0
-        self.rps_send = 0
-        self.rps_latency = 0
-        self.rps_receive = 0
-        self.rps_overall = 0
-        self.rps_count = 0
-        self.current_rps = 0
 
         self.all_connect = 0
         self.all_send = 0
@@ -516,64 +506,48 @@ class AvgTimesBlock(AbstractBlock):
         self.last_overall = 0
         self.last_count = 0
 
-        self.header = 'Avg Times (all / %s RPS / last):'
+        self.header = 'Avg Times (all / last):'
 
     def add_second(self, data):
-        return
-        if self.current_rps != data.overall.planned_requests:
-            self.current_rps = data.overall.planned_requests
-            self.rps_connect = 0
-            self.rps_send = 0
-            self.rps_latency = 0
-            self.rps_receive = 0
-            self.rps_overall = 0
-            self.rps_count = 0
+        count = data["overall"]["metrics"]["interval_real"]["len"]
+        self.last_connect = data["overall"]["metrics"]["connect_time"]["total"]
+        self.last_send = data["overall"]["metrics"]["send_time"]["total"]
+        self.last_latency = data["overall"]["metrics"]["latency"]["total"]
+        self.last_receive = data["overall"]["metrics"]["receive_time"]["total"]
+        self.last_overall = data["overall"]["metrics"]["interval_real"]["total"]
+        self.last_count = count
 
-        self.rps_connect += data.overall.avg_connect_time * data.overall.RPS
-        self.rps_send += data.overall.avg_send_time * data.overall.RPS
-        self.rps_latency += data.overall.avg_latency * data.overall.RPS
-        self.rps_receive += data.overall.avg_receive_time * data.overall.RPS
-        self.rps_overall += data.overall.avg_response_time * data.overall.RPS
-        self.rps_count += data.overall.RPS
+        self.all_connect += self.last_connect
+        self.all_send += self.last_send
+        self.all_latency += self.last_latency
+        self.all_receive += self.last_receive
+        self.all_overall += self.last_overall
+        self.all_count += count
 
-        self.all_connect += data.overall.avg_connect_time * data.overall.RPS
-        self.all_send += data.overall.avg_send_time * data.overall.RPS
-        self.all_latency += data.overall.avg_latency * data.overall.RPS
-        self.all_receive += data.overall.avg_receive_time * data.overall.RPS
-        self.all_overall += data.overall.avg_response_time * data.overall.RPS
-        self.all_count += data.overall.RPS
 
-        self.last_connect = data.overall.avg_connect_time * data.overall.RPS
-        self.last_send = data.overall.avg_send_time * data.overall.RPS
-        self.last_latency = data.overall.avg_latency * data.overall.RPS
-        self.last_receive = data.overall.avg_receive_time * data.overall.RPS
-        self.last_overall = data.overall.avg_response_time * data.overall.RPS
-        self.last_count = data.overall.RPS
 
     def render(self):
-        self.lines = [self.screen.markup.WHITE + self.header % self.current_rps + self.screen.markup.RESET]
+        self.lines = [self.screen.markup.WHITE + self.header + self.screen.markup.RESET]
         if self.last_count:
             len_all = str(
                 len(str(max([self.all_connect, self.all_latency, self.all_overall, self.all_receive, self.all_send]))))
-            len_rps = str(
-                len(str(max([self.rps_connect, self.rps_latency, self.rps_overall, self.rps_receive, self.rps_send]))))
             len_last = str(len(
                 str(max([self.last_connect, self.last_latency, self.last_overall, self.last_receive, self.last_send]))))
-            tpl = "%" + len_all + "d / %" + len_rps + "d / %" + len_last + "d"
+            tpl = "%" + len_all + "d / %" + len_last + "d"
             self.lines.append("  Overall: " + tpl % (
-                float(self.all_overall) / self.all_count, float(self.rps_overall) / self.rps_count,
+                float(self.all_overall) / self.all_count,
                 float(self.last_overall) / self.last_count))
             self.lines.append("  Connect: " + tpl % (
-                float(self.all_connect) / self.all_count, float(self.rps_connect) / self.rps_count,
+                float(self.all_connect) / self.all_count,
                 float(self.last_connect) / self.last_count))
             self.lines.append("     Send: " + tpl % (
-                float(self.all_send) / self.all_count, float(self.rps_send) / self.rps_count,
+                float(self.all_send) / self.all_count,
                 float(self.last_send) / self.last_count))
             self.lines.append("  Latency: " + tpl % (
-                float(self.all_latency) / self.all_count, float(self.rps_latency) / self.rps_count,
+                float(self.all_latency) / self.all_count,
                 float(self.last_latency) / self.last_count))
             self.lines.append("  Receive: " + tpl % (
-                float(self.all_receive) / self.all_count, float(self.rps_receive) / self.rps_count,
+                float(self.all_receive) / self.all_count,
                 float(self.last_receive) / self.last_count))
         else:
             self.lines.append("")
@@ -599,16 +573,16 @@ class CasesBlock(AbstractBlock):
         self.max_case_len = 0
 
     def add_second(self, data):
-        if "tag" not in data:
-            return
-        #decode symbols to utf-8 in order to support cyrillic symbols in cases
-        name = data["tag"].decode('utf-8')
-        if not name in self.cases.keys():
-            self.cases[name] = [0, 0]
-            self.max_case_len = max(self.max_case_len, len(name))
-        rps = data["metrics"]["interval_real"]["len"]
-        self.cases[name][0] += rps
-        self.cases[name][1] += data["metrics"]["interval_real"]["total"] / 1000
+        tagged = data["tagged"]
+        for tag_data in tagged:
+            #decode symbols to utf-8 in order to support cyrillic symbols in cases
+            name = tag_data["tag"].decode('utf-8')
+            if not name in self.cases.keys():
+                self.cases[name] = [0, 0]
+                self.max_case_len = max(self.max_case_len, len(name))
+            rps = tag_data["metrics"]["interval_real"]["len"]
+            self.cases[name][0] += rps
+            self.cases[name][1] += tag_data["metrics"]["interval_real"]["total"] / 1000
 
     def render(self):
         self.lines = [

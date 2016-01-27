@@ -1,6 +1,5 @@
 ''' Contains Universal Plugin for phout-compatible shooter '''
-from yandextank.plugins.NumpyAggregator import \
-    NumpyAggregatorPlugin as AggregatorPlugin
+from yandextank.plugins.Aggregator import AggregatorPlugin
 from yandextank.plugins.Phantom import PhantomReader
 from yandextank.core import AbstractPlugin
 import subprocess
@@ -11,7 +10,6 @@ from yandextank.plugins.ConsoleOnline import \
 import yandextank.plugins.ConsoleScreen as ConsoleScreen
 import datetime
 from config import PoolConfig, PandoraConfig, parse_schedule
-from reader import PandoraReader
 
 
 class PandoraPlugin(AbstractPlugin):
@@ -108,10 +106,7 @@ class PandoraPlugin(AbstractPlugin):
             self.log.info(
                 "Adding sample reader to aggregator. Reading samples from %s",
                 self.sample_log)
-            aggregator.reader = PandoraReader(aggregator, self)
-            aggregator.reader.buffered_seconds = self.buffered_seconds
-            aggregator.add_result_listener(self)
-            aggregator.reader.phout_file = self.sample_log
+            aggregator.reader = PhantomReader(self.sample_log)
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
@@ -159,9 +154,6 @@ class PandoraPlugin(AbstractPlugin):
 
     def get_info(self):
         return None
-
-    def aggregate_second(self, second_aggregate_data):
-        pass
 
 
 class PandoraInfoWidget(AbstractInfoWidget):

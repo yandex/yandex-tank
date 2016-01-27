@@ -125,15 +125,17 @@ class Aggregator(object):
     def __iter__(self):
         for ts, chunk in self.source:
             by_tag = list(chunk.groupby([self.groupby]))
-            if len(by_tag):
-                for tag, data in by_tag:
-                    yield {
+            yield {
+                "tagged": [
+                    {
                         'tag': tag,
                         'ts': ts,
                         'metrics': self.worker.aggregate(data),
                     }
-            # overall
-            yield {
-                'ts': ts,
-                'metrics': self.worker.aggregate(chunk),
+                    for tag, data in by_tag
+                ],
+                "overall": {
+                    'ts': ts,
+                    'metrics': self.worker.aggregate(chunk),
+                }
             }
