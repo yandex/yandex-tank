@@ -109,8 +109,7 @@ class DataPoller(object):
         self.source = source
 
     def __iter__(self):
-        while True:
-            chunk = self.source.read_chunk()
+        for chunk in self.source:
             if chunk is not None:
                 yield chunk
             time.sleep(self.poll_period)
@@ -126,16 +125,10 @@ class Aggregator(object):
         for ts, chunk in self.source:
             by_tag = list(chunk.groupby([self.groupby]))
             yield {
-                "tagged": [
-                    {
-                        'tag': tag,
-                        'ts': ts,
-                        'metrics': self.worker.aggregate(data),
-                    }
+                'ts': ts,
+                "tagged": {
+                    tag: self.worker.aggregate(data)
                     for tag, data in by_tag
-                ],
-                "overall": {
-                    'ts': ts,
-                    'metrics': self.worker.aggregate(chunk),
-                }
+                },
+                "overall": self.worker.aggregate(chunk),
             }

@@ -260,10 +260,10 @@ class CurrentTimesDistBlock(AbstractBlock):
         self.width = 0
 
     def add_second(self, data):
-        self.current_rps = data["overall"]["metrics"]["interval_real"]["len"]
+        self.current_rps = data["overall"]["interval_real"]["len"]
         self.hist = zip(
-            data["overall"]["metrics"]["interval_real"]["hist"]["bins"],
-            data["overall"]["metrics"]["interval_real"]["hist"]["data"],
+            data["overall"]["interval_real"]["hist"]["bins"],
+            data["overall"]["interval_real"]["hist"]["data"],
         )
 
     def render(self):
@@ -301,7 +301,7 @@ class CurrentHTTPBlock(AbstractBlock):
 
 
     def add_second(self, data):
-        codes_dist = data["overall"]["metrics"]["proto_code"]["count"]
+        codes_dist = data["overall"]["proto_code"]["count"]
 
         self.log.debug("Arrived codes data: %s", codes_dist)
         self.highlight_codes = []
@@ -364,7 +364,7 @@ class CurrentNetBlock(AbstractBlock):
         self.total_count = 0
 
     def add_second(self, data):
-        net_dist = data["overall"]["metrics"]["net_code"]["count"]
+        net_dist = data["overall"]["net_code"]["count"]
 
         self.log.debug("Arrived net codes data: %s", net_dist)
         self.highlight_codes = []
@@ -420,8 +420,8 @@ class CurrentQuantilesBlock(AbstractBlock):
 
     def add_second(self, data):
         self.quantiles = {k: v for k, v in zip(
-            data["overall"]["metrics"]["interval_real"]["q"]["q"],
-            data["overall"]["metrics"]["interval_real"]["q"]["value"])}
+            data["overall"]["interval_real"]["q"]["q"],
+            data["overall"]["interval_real"]["q"]["value"])}
 
     def render(self):
         self.lines = []
@@ -476,9 +476,9 @@ class AnswSizesBlock(AbstractBlock):
 
     def add_second(self, data):
 
-        self.cur_in = data["overall"]["metrics"]["size_out"]["total"]
-        self.cur_out = data["overall"]["metrics"]["size_out"]["total"]
-        self.cur_count = data["overall"]["metrics"]["interval_real"]["len"]
+        self.cur_in = data["overall"]["size_out"]["total"]
+        self.cur_out = data["overall"]["size_out"]["total"]
+        self.cur_count = data["overall"]["interval_real"]["len"]
 
         self.count += self.cur_count
         self.sum_in += self.cur_in
@@ -510,12 +510,12 @@ class AvgTimesBlock(AbstractBlock):
         self.header = 'Avg Times (all / last):'
 
     def add_second(self, data):
-        count = data["overall"]["metrics"]["interval_real"]["len"]
-        self.last_connect = data["overall"]["metrics"]["connect_time"]["total"]
-        self.last_send = data["overall"]["metrics"]["send_time"]["total"]
-        self.last_latency = data["overall"]["metrics"]["latency"]["total"]
-        self.last_receive = data["overall"]["metrics"]["receive_time"]["total"]
-        self.last_overall = data["overall"]["metrics"]["interval_real"]["total"]
+        count = data["overall"]["interval_real"]["len"]
+        self.last_connect = data["overall"]["connect_time"]["total"]
+        self.last_send = data["overall"]["send_time"]["total"]
+        self.last_latency = data["overall"]["latency"]["total"]
+        self.last_receive = data["overall"]["receive_time"]["total"]
+        self.last_overall = data["overall"]["interval_real"]["total"]
         self.last_count = count
 
         self.all_connect += self.last_connect
@@ -575,15 +575,15 @@ class CasesBlock(AbstractBlock):
 
     def add_second(self, data):
         tagged = data["tagged"]
-        for tag_data in tagged:
+        for tag_name, tag_data in tagged.iteritems():
             #decode symbols to utf-8 in order to support cyrillic symbols in cases
-            name = tag_data["tag"].decode('utf-8')
+            name = tag_name.decode('utf-8')
             if not name in self.cases.keys():
                 self.cases[name] = [0, 0]
                 self.max_case_len = max(self.max_case_len, len(name))
-            rps = tag_data["metrics"]["interval_real"]["len"]
+            rps = tag_data["interval_real"]["len"]
             self.cases[name][0] += rps
-            self.cases[name][1] += tag_data["metrics"]["interval_real"]["total"] / 1000
+            self.cases[name][1] += tag_data["interval_real"]["total"] / 1000
 
     def render(self):
         self.lines = [

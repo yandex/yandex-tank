@@ -4,6 +4,9 @@ Global metrics publishing module. Inspired by Golang's expvar module
 This implementation is not thread-safe
 """
 
+from Queue import Queue, Empty
+import time
+
 
 class ExpVar(object):
     """
@@ -56,6 +59,35 @@ class Int(Var):
     def inc(self, delta=1):
         self.value += delta
 
+
+class Metric(object):
+    """
+    This class stores generic time-series data in a queue.
+    Values are stored as (timestamp, value) tuples
+    """
+    def __init__(self):
+        self.metric = Queue()
+
+    def push(self, value, timestamp=None):
+        if timestamp is None:
+            timestamp = int(time.time())
+        elif type(timestamp) is not int:
+            raise ValueError(
+                "Timestamp should be an integer, but it is '%s'" % type(timestamp))
+        self.metric.put((timestamp, value))
+
+    def next(self):
+        try:
+            return self.metric.get_nowait()
+        except Empty:
+            raise StopIteration
+
+    def get(self):
+        # TODO: decide what we should return here
+        return None
+
+    def __iter__(self):
+        return self
 
 EV = ExpVar()
 

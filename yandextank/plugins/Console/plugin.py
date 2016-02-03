@@ -94,20 +94,22 @@ class ConsolePlugin(AbstractPlugin, AggregateResultListener):
         self.__writer_event.set()
         return -1
 
-    def on_aggregated_data(self, data):
-        self.screen.add_second_data(data)
+    def on_aggregated_data(self, data, stats):
+        # TODO: use stats data somehow
         if self.short_only:
             for sample in data:
                 overall = sample.get('overall')
                 info = "ts:{ts}\tRPS:{rps}\tavg:{avg_rt:.2f}\tmin:{q0:.2f}\tmax:{q100:.2f}\tq99:{q99:.2f} ".format(
-                    ts=overall['ts'],
-                    rps=overall['metrics']['interval_real']['len'],
-                    avg_rt=overall['metrics']['interval_real']['total'] / overall['metrics']['interval_real']['len'] / 1000,
-                    q0=overall['metrics']['interval_real']['min'] / 1000,
-                    q100=overall['metrics']['interval_real']['max'] / 1000,
-                    q99=overall['metrics']['interval_real']['q']['value'][-1] / 1000,
+                    ts=sample.get('ts'),
+                    rps=overall['interval_real']['len'],
+                    avg_rt=overall['interval_real']['total'] / overall['interval_real']['len'] / 1000,
+                    q0=overall['interval_real']['min'] / 1000,
+                    q100=overall['interval_real']['max'] / 1000,
+                    q99=overall['interval_real']['q']['value'][-1] / 1000,
                 )
                 LOG.info(info)
+        else:
+            self.screen.add_second_data(data)
 
     def add_info_widget(self, widget):
         ''' add right panel widget '''

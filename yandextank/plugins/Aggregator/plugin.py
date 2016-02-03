@@ -17,20 +17,32 @@ LOG = logging.getLogger(__name__)
 class AggregateResultListener(object):
     """ Listener interface """
 
-    def on_aggregated_data(self, data):
-        """ notification about new aggregated data """
+    def on_aggregated_data(self, data, stats):
+        """
+        notification about new aggregated data and stats
+
+        data contains aggregated metrics and stats contain non-aggregated
+        metrics from gun (like instances count, for example)
+
+        data and stats are NOT synchronized and you can get different
+        timestamps here and there. If you need to synchronize them, you
+        should cache them in your plugin
+        """
         raise NotImplementedError("Abstract method needs to be overridden")
 
 
 class LoggingListener(AggregateResultListener):
     """ Log aggregated results """
 
-    def on_aggregated_data(self, data):
+    def on_aggregated_data(self, data, stats):
         LOG.info("Got aggregated sample:\n%s", json.dumps(data, indent=2))
+        LOG.info("Stats:\n%s", json.dumps(stats, indent=2))
 
 
 class AggregatorPlugin(AbstractPlugin):
-    """ Plugin that manages aggregation """
+    """
+    Plugin that manages aggregation and stats collection
+    """
 
     SECTION = 'aggregate'
 
@@ -42,7 +54,9 @@ class AggregatorPlugin(AbstractPlugin):
         AbstractPlugin.__init__(self, core)
         self.listeners = []  # [LoggingListener()]
         self.reader = None
+        self.stats_reader = None
         self.results = q.Queue()
+        self.stats = q.Queue()
 
     def get_available_options(self):
         return []
@@ -63,6 +77,8 @@ class AggregatorPlugin(AbstractPlugin):
             )
             self.drain = Drain(pipeline, self.results)
             self.drain.start()
+            if self.stats_reader:
+                self.stats_drain = Drain(self.stats_reader, self.stats)
         else:
             raise PluginImplementationError(
                 "Generator must pass a Reader to Aggregator before starting test")
@@ -74,8 +90,14 @@ class AggregatorPlugin(AbstractPlugin):
                 data.append(self.results.get_nowait())
             except q.Empty:
                 break
-        if data:
-            self.__notify_listeners(data)
+        stats = []
+        for _ in range(self.stats.qsize()):
+            try:
+                data.append(self.stats.get_nowait())
+            except q.Empty:
+                break
+        if data or stats:
+            self.__notify_listeners(data, stats)
         return -1
 
     def end_test(self, retcode):
@@ -91,7 +113,7 @@ class AggregatorPlugin(AbstractPlugin):
     def add_result_listener(self, listener):
         self.listeners.append(listener)
 
-    def __notify_listeners(self, data):
-        """ notify all listeners about aggregate data """
+    def __notify_listeners(self, data, stats):
+        """ notify all listeners about aggregate data and stats """
         for listener in self.listeners:
-            listener.on_aggregated_data(data)
+            listener.on_aggregated_data(data, stats)

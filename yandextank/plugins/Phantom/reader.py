@@ -33,13 +33,42 @@ def string_to_df(data):
 
 
 class PhantomReader(object):
-    def __init__(self, filename, stat_filename):
+    def __init__(self, filename):
         self.buffer = ""
         self.stat_buffer = ""
         self.phout = open(filename, 'r')
-        self.stat = open(stat_filename, 'r')
         self.closed = False
-        self.instances = ev.publish("gun.instances", ev.Var({}))
+
+    def next(self):
+        if self.closed:
+            raise StopIteration
+        data = self.phout.read(1024 * 1024 * 10)
+        if data:
+            parts = data.rsplit('\n', 1)
+            if len(parts) > 1:
+                ready_chunk = self.buffer + parts[0] + '\n'
+                self.buffer = parts[1]
+                return string_to_df(ready_chunk)
+            else:
+                self.buffer += parts[0]
+        else:
+            self.phout.readline()
+        return None
+
+    def __iter__(self):
+        return self
+
+    def close(self):
+        self.closed = True
+        self.phout.close()
+
+
+class PhantomStatsReader(object):
+    def __init__(self, filename):
+        self.buffer = ""
+        self.stat_buffer = ""
+        self.stat = open(filename, 'r')
+        self.closed = False
 
         def __read_stat_data(self):
             """ Read active instances info """
@@ -80,7 +109,7 @@ class PhantomReader(object):
                 len(self.stat_data),
                 len(self.stat_read_buffer))
 
-    def __parse_stat_chunk(self):
+    def __read_stat_chunk(self):
         """
         Union buffer and chunk, split using '\n},',
         return splitted parts
@@ -97,27 +126,6 @@ class PhantomReader(object):
         else:
             self.stat_buffer += parts[0]
 
-    def __publish_phantom_stat(self):
-        chunks = self.__parse_stat_chunk()
-
-    def read_chunk(self):
-        if self.closed:
-            raise StopIteration
-        data = self.phout.read(1024 * 1024 * 10)
-        self.__publish_phantom_stat()
-        if data:
-            parts = data.rsplit('\n', 1)
-            if len(parts) > 1:
-                ready_chunk = self.buffer + parts[0] + '\n'
-                self.buffer = parts[1]
-                return string_to_df(ready_chunk)
-            else:
-                self.buffer += parts[0]
-        else:
-            self.phout.readline()
-        return None
-
     def close(self):
         self.closed = True
-        self.phout.close()
         self.stat.close()
