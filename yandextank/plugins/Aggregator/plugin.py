@@ -66,7 +66,7 @@ class AggregatorPlugin(AbstractPlugin):
             resource_string(__name__, 'config/phout.json'))
 
     def start_test(self):
-        if self.reader:
+        if self.reader and self.stats_reader:
             pipeline = Aggregator(
                 TimeChopper(
                     DataPoller(
@@ -77,11 +77,15 @@ class AggregatorPlugin(AbstractPlugin):
             )
             self.drain = Drain(pipeline, self.results)
             self.drain.start()
-            if self.stats_reader:
-                self.stats_drain = Drain(self.stats_reader, self.stats)
+            self.stats_drain = Drain(
+                DataPoller(
+                    source=self.stats_reader,
+                    poll_period=1),
+                self.stats)
+            self.stats_drain.start()
         else:
             raise PluginImplementationError(
-                "Generator must pass a Reader to Aggregator before starting test")
+                "Generator must pass a Reader and a StatsReader to Aggregator before starting test")
 
     def is_test_finished(self):
         data = []
@@ -93,7 +97,7 @@ class AggregatorPlugin(AbstractPlugin):
         stats = []
         for _ in range(self.stats.qsize()):
             try:
-                data.append(self.stats.get_nowait())
+                stats.append(self.stats.get_nowait())
             except q.Empty:
                 break
         if data or stats:
@@ -103,12 +107,16 @@ class AggregatorPlugin(AbstractPlugin):
     def end_test(self, retcode):
         if self.drain:
             self.drain.close()
+        if self.stats_drain:
+            self.stats_drain.close()
         # read all data left here
         return retcode
 
     def close(self):
         if self.reader:
             self.reader.close()
+        if self.stats_reader:
+            self.stats_reader.close()
 
     def add_result_listener(self, listener):
         self.listeners.append(listener)

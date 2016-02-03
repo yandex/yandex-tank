@@ -104,9 +104,10 @@ class PandoraPlugin(AbstractPlugin):
 
         if aggregator:
             self.log.info(
-                "Adding sample reader to aggregator. Reading samples from %s",
+                "Linking sample and stats readers to aggregator. Reading samples from %s",
                 self.sample_log)
             aggregator.reader = PhantomReader(self.sample_log)
+            aggregator.stats_reader = PandoraStatsReader()
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
@@ -154,6 +155,22 @@ class PandoraPlugin(AbstractPlugin):
 
     def get_info(self):
         return None
+
+
+class PandoraStatsReader(object):
+    def next(self):
+        return {
+            'ts': int(time.time()),
+            'metrics': {
+                'instances': 0,
+            }
+        }
+
+    def close(self):
+        pass
+
+    def __iter__(self):
+        return self
 
 
 class PandoraInfoWidget(AbstractInfoWidget):

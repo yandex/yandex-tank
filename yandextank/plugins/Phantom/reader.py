@@ -3,7 +3,6 @@ Phantom phout format reader. Read chunks from phout and produce data frames
 """
 import pandas as pd
 from StringIO import StringIO
-import yandextank.core.expvar as ev
 import logging
 import json
 import time
@@ -109,7 +108,7 @@ class PhantomStatsReader(object):
                 len(self.stat_data),
                 len(self.stat_read_buffer))
 
-    def __read_stat_chunk(self):
+    def next(self):
         """
         Union buffer and chunk, split using '\n},',
         return splitted parts
