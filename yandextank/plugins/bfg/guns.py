@@ -16,7 +16,8 @@ requests_logger = logging.getLogger('requests')
 requests_logger.setLevel(logging.WARNING)
 
 Sample = namedtuple(
-    'Sample', 'marker,threads,overallRT,httpCode,netCode,sent,received,connect,send,latency,receive,accuracy')
+    'Sample',
+    'marker,threads,overallRT,httpCode,netCode,sent,received,connect,send,latency,receive,accuracy')
 
 from contextlib import contextmanager
 
@@ -26,20 +27,19 @@ def measure(marker, results):
     start_time = time.time()
     yield
     response_time = int((time.time() - start_time) * 1000)
-    data_item = Sample(
-        marker,             # marker
-        th.active_count(),  # threads
-        response_time,      # overall response time
-        200,                # httpCode
-        0,                  # netCode
-        0,                  # sent
-        0,                  # received
-        0,                  # connect
-        0,                  # send
-        response_time,      # latency
-        0,                  # receive
-        0,                  # accuracy
-    )
+    data_item = Sample(marker,  # marker
+                       th.active_count(),  # threads
+                       response_time,  # overall response time
+                       200,  # httpCode
+                       0,  # netCode
+                       0,  # sent
+                       0,  # received
+                       0,  # connect
+                       0,  # send
+                       response_time,  # latency
+                       0,  # receive
+                       0,  # accuracy
+                       )
     results.put((int(time.time()), data_item), timeout=1)
 
 
@@ -55,21 +55,21 @@ class LogGun(AbstractPlugin):
     def shoot(self, missile, marker, results):
         self.log.info("Missile: %s\n%s", marker, missile)
         rt = randint(2, 30000)
-        data_item = Sample(
-            marker,             # marker
-            th.active_count(),  # threads
-            rt,                 # overallRT
-            0,                  # httpCode
-            0,                  # netCode
-            0,                  # sent
-            0,                  # received
-            0,                  # connect
-            0,                  # send
-            rt,                 # latency
-            0,                  # receive
-            0,                  # accuracy
-        )
+        data_item = Sample(marker,  # marker
+                           th.active_count(),  # threads
+                           rt,  # overallRT
+                           0,  # httpCode
+                           0,  # netCode
+                           0,  # sent
+                           0,  # received
+                           0,  # connect
+                           0,  # send
+                           rt,  # latency
+                           0,  # receive
+                           0,  # accuracy
+                           )
         results.put((int(time.time()), data_item), timeout=1)
+
 
 class SqlGun(AbstractPlugin):
     SECTION = 'sql_gun'
@@ -103,21 +103,21 @@ class SqlGun(AbstractPlugin):
             httpCode = 500
             self.log.debug(e)
         rt = int((time.time() - start_time) * 1000)
-        data_item = Sample(
-            marker,             # marker
-            th.active_count(),  # threads
-            rt,                 # overallRT
-            httpCode,           # httpCode
-            errno,              # netCode
-            0,                  # sent
-            0,                  # received
-            0,                  # connect
-            0,                  # send
-            rt,                 # latency
-            0,                  # receive
-            0,                  # accuracy
-        )
+        data_item = Sample(marker,  # marker
+                           th.active_count(),  # threads
+                           rt,  # overallRT
+                           httpCode,  # httpCode
+                           errno,  # netCode
+                           0,  # sent
+                           0,  # received
+                           0,  # connect
+                           0,  # send
+                           rt,  # latency
+                           0,  # receive
+                           0,  # accuracy
+                           )
         results.put((int(time.time()), data_item), timeout=1)
+
 
 class CustomGun(AbstractPlugin):
     SECTION = 'custom_gun'
@@ -130,13 +130,15 @@ class CustomGun(AbstractPlugin):
         #imp allows to avoid custom module caching
         fp, pathname, description = imp.find_module(module_name, module_path)
         try:
-            self.module = imp.load_module(module_name, fp, pathname, description)
+            self.module = imp.load_module(module_name, fp, pathname,
+                                          description)
         finally:
             if fp:
                 fp.close()
 
     def shoot(self, missile, marker, results):
         self.module.shoot(missile, marker, results)
+
 
 class HttpGun(AbstractPlugin):
     SECTION = 'http_gun'
@@ -154,20 +156,19 @@ class HttpGun(AbstractPlugin):
         errno = 0
         httpCode = r.status_code
         rt = int((time.time() - start_time) * 1000)
-        data_item = Sample(
-            marker,             # marker
-            th.active_count(),  # threads
-            rt,                 # overallRT
-            httpCode,           # httpCode
-            errno,              # netCode
-            0,                  # sent
-            0,                  # received
-            0,                  # connect
-            0,                  # send
-            rt,                 # latency
-            0,                  # receive
-            0,                  # accuracy
-        )
+        data_item = Sample(marker,  # marker
+                           th.active_count(),  # threads
+                           rt,  # overallRT
+                           httpCode,  # httpCode
+                           errno,  # netCode
+                           0,  # sent
+                           0,  # received
+                           0,  # connect
+                           0,  # send
+                           rt,  # latency
+                           0,  # receive
+                           0,  # accuracy
+                           )
         results.put((int(time.time()), data_item), timeout=1)
 
 

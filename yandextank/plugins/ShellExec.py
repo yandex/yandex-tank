@@ -6,7 +6,6 @@ import yandextank.core as tankcore
 
 
 class ShellExecPlugin(AbstractPlugin):
-
     '''
     ShellExec plugin
     allows executing shell scripts before/after test
@@ -48,15 +47,13 @@ class ShellExecPlugin(AbstractPlugin):
     def is_test_finished(self):
         if self.poll:
             self.log.info("Executing: %s", self.poll)
-            retcode = tankcore.execute(
-                self.poll,
-                shell=True,
-                poll_period=0.1,
-                catch_out=self.catch_out
-                )[0]
+            retcode = tankcore.execute(self.poll,
+                                       shell=True,
+                                       poll_period=0.1,
+                                       catch_out=self.catch_out)[0]
             if retcode:
-                self.log.warn(
-                    "Non-zero exit code, interrupting test: %s", retcode)
+                self.log.warn("Non-zero exit code, interrupting test: %s",
+                              retcode)
                 return retcode
         return -1
 
@@ -75,7 +72,9 @@ class ShellExecPlugin(AbstractPlugin):
         Execute and check exit code
         '''
         self.log.info("Executing: %s", cmd)
-        retcode = tankcore.execute(
-            cmd, shell=True, poll_period=0.1, catch_out=self.catch_out)[0]
+        retcode = tankcore.execute(cmd,
+                                   shell=True,
+                                   poll_period=0.1,
+                                   catch_out=self.catch_out)[0]
         if retcode:
             raise RuntimeError("Subprocess returned %s" % retcode)

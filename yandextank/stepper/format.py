@@ -4,18 +4,21 @@ Ammo formatters
 from module_exceptions import StpdFileError
 import logging
 
+
 class Stpd(object):
     '''
     STPD ammo formatter
     '''
+
     def __init__(self, ammo_factory):
         self.af = ammo_factory
 
     def __iter__(self):
-        return ("%s %s %s\n%s\n" % (len(missile), timestamp, marker, missile) for timestamp, marker, missile in self.af)
+        return ("%s %s %s\n%s\n" % (len(missile), timestamp, marker, missile)
+                for timestamp, marker, missile in self.af)
+
 
 class StpdReader(object):
-
     '''Read missiles from stpd file'''
 
     def __init__(self, filename):
@@ -29,7 +32,7 @@ class StpdReader(object):
             while chunk_header is '':
                 line = ammo_file.readline()
                 if line is '':
-                    return line # EOF
+                    return line  # EOF
                 chunk_header = line.strip('\r\n')
             return chunk_header
         with open(self.filename, 'rb') as ammo_file:
@@ -43,10 +46,12 @@ class StpdReader(object):
                     missile = ammo_file.read(chunk_size)
                     if len(missile) < chunk_size:
                         raise StpdFileError(
-                            "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size))
+                            "Unexpected end of file: read %s bytes instead of %s"
+                            % (len(missile), chunk_size))
                     yield (timestamp, missile, marker)
                 except (IndexError, ValueError) as e:
                     raise StpdFileError(
-                        "Error while reading ammo file. Position: %s, header: '%s', original exception: %s" % (ammo_file.tell(), chunk_header, e))
+                        "Error while reading ammo file. Position: %s, header: '%s', original exception: %s"
+                        % (ammo_file.tell(), chunk_header, e))
                 chunk_header = read_chunk_header(ammo_file)
         self.log.info("Reached the end of stpd file")

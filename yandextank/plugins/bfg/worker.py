@@ -16,22 +16,24 @@ class BFG(object):
     A BFG load generator that manages multiple workers as processes and
     threads in each of them and feeds them with tasks
     """
-    def __init__(
-            self, gun, instances, threads,
-            stpd_filename, zmq=False, cached_stpd=False):
+
+    def __init__(self,
+                 gun,
+                 instances,
+                 threads,
+                 stpd_filename,
+                 zmq=False,
+                 cached_stpd=False):
         self.log = logging.getLogger(__name__)
-        self.log.info(
-            """
+        self.log.info("""
 BFG using stpd from {stpd_filename}
 Instances: {instances}
 Threads per instance: {threads}
 Gun: {gun.__class__.__name__}
-""".format(
-            stpd_filename=stpd_filename,
-            instances=instances,
-            threads=threads,
-            gun=gun,
-        ))
+""".format(stpd_filename=stpd_filename,
+           instances=instances,
+           threads=threads,
+           gun=gun, ))
         self.gun = gun
         self.instances = int(instances)
         self.threads = int(threads)
@@ -41,7 +43,8 @@ Gun: {gun.__class__.__name__}
         self.cached_stpd = cached_stpd
         self.stpd_filename = stpd_filename
         self.pool = [
-            mp.Process(target=self._worker) for _ in xrange(0, self.instances)]
+            mp.Process(target=self._worker) for _ in xrange(0, self.instances)
+        ]
         self.feeder = th.Thread(target=self._feed, name="Feeder")
         self.zmq = zmq
         self.workers_finished = False
@@ -95,19 +98,19 @@ Gun: {gun.__class__.__name__}
                     else:
                         continue
         workers_count = self.threads * self.instances
-        self.log.info(
-            "Feeded all data. Publishing %d killer tasks" % (
-                workers_count))
+        self.log.info("Feeded all data. Publishing %d killer tasks" %
+                      (workers_count))
         retry_delay = 1
         for _ in range(5):
             try:
-                [self.task_queue.put(None, timeout=1) for _ in xrange(
-                    0, workers_count)]
+                [self.task_queue.put(None,
+                                     timeout=1)
+                 for _ in xrange(0, workers_count)]
                 break
             except Full:
-                self.log.debug(
-                    "Couldn't post killer tasks"
-                    " because queue is full. Retrying in %ss", retry_delay)
+                self.log.debug("Couldn't post killer tasks"
+                               " because queue is full. Retrying in %ss",
+                               retry_delay)
                 time.sleep(retry_delay)
                 retry_delay *= 2
 
@@ -129,10 +132,10 @@ Gun: {gun.__class__.__name__}
         A worker that runs in a distinct process and manages pool
         of thread workers that do actual jobs
         """
-        self.log.info(
-            "Started shooter process with %s threads..." % self.threads)
-        pool = [th.Thread(
-                target=self._thread_worker) for _ in xrange(0, self.threads)]
+        self.log.info("Started shooter process with %s threads..." %
+                      self.threads)
+        pool = [th.Thread(target=self._thread_worker)
+                for _ in xrange(0, self.threads)]
         map(lambda x: x.start(), pool)
         try:
             map(lambda x: x.join(), pool)
@@ -141,9 +144,7 @@ Gun: {gun.__class__.__name__}
             self.quit.set()
             map(lambda x: x.join(0.2), pool)
             [process.terminate() for process in pool if process.is_alive()]
-            map(
-                lambda x: x.join(),
-                pool)  # wait for workers to finish
+            map(lambda x: x.join(), pool)  # wait for workers to finish
 
     def _thread_worker(self):
         """
@@ -154,8 +155,8 @@ Gun: {gun.__class__.__name__}
             try:
                 task = self.task_queue.get(timeout=1)
                 if not task:
-                    self.log.info(
-                        "%s got killer task.", th.current_thread().name)
+                    self.log.info("%s got killer task.",
+                                  th.current_thread().name)
                     break
                 timestamp, missile, marker = task
                 planned_time = self.start_time + (timestamp / 1000.0)
@@ -167,9 +168,8 @@ Gun: {gun.__class__.__name__}
                 break
             except Empty:
                 if self.quit.is_set():
-                    self.log.debug(
-                        "Empty queue. Exiting thread %s",
-                        th.current_thread().name)
+                    self.log.debug("Empty queue. Exiting thread %s",
+                                   th.current_thread().name)
                     return
             except Full:
                 self.log.warning(

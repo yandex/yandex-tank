@@ -12,7 +12,6 @@ import datetime
 
 
 class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
-
     '''Graphite data uploader'''
 
     SECTION = 'graphite'
@@ -54,9 +53,10 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
                 default_template = "graphite.tpl"
                 if self.get_option("js", "1") == "1":
                     default_template = "graphite-js.tpl"
-                self.template = resource_string(__name__, 'config/' + default_template)
-            self.graphite_client = GraphiteClient(
-                self.prefix, self.address, port)
+                self.template = resource_string(__name__,
+                                                'config/' + default_template)
+            self.graphite_client = GraphiteClient(self.prefix, self.address,
+                                                  port)
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(self)
 
@@ -67,16 +67,15 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
         # TODO: Use ts from data
         if self.graphite_client:
             results = {}
-            overall = GraphiteUploaderPlugin.__flatten(
-                data.overall.__dict__, "overall")
+            overall = GraphiteUploaderPlugin.__flatten(data.overall.__dict__,
+                                                       "overall")
             cumulative = GraphiteUploaderPlugin.__flatten(
                 data.cumulative.__dict__, "cumulative")
             results.update(overall)
             results.update(cumulative)
             for marker in data.cases.keys():
-                results.update(GraphiteUploaderPlugin.__flatten(
-                    data.cases[marker].__dict__, 'markers.%s' % marker)
-                )
+                results.update(GraphiteUploaderPlugin.__flatten(data.cases[
+                    marker].__dict__, 'markers.%s' % marker))
             self.graphite_client.submit(results)
 
     def post_process(self, retcode):
@@ -84,17 +83,14 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             graphite_html = self.core.mkstemp(".html", "graphite_")
             self.core.add_artifact_file(graphite_html)
             with open(graphite_html, 'w') as graphite_html_file:
-                graphite_html_file.write(
-                    string.Template(self.template).safe_substitute(
-                        host=self.address,
-                        width=1000,
-                        height=400,
-                        start_time=self.start_time,
-                        end_time=self.end_time,
-                        prefix=self.prefix,
-                        web_port=self.web_port,
-                    )
-                )
+                graphite_html_file.write(string.Template(
+                    self.template).safe_substitute(host=self.address,
+                                                   width=1000,
+                                                   height=400,
+                                                   start_time=self.start_time,
+                                                   end_time=self.end_time,
+                                                   prefix=self.prefix,
+                                                   web_port=self.web_port, ))
         return retcode
 
     @staticmethod
@@ -107,27 +103,18 @@ class GraphiteUploaderPlugin(AbstractPlugin, AggregateResultListener):
             try:
                 for key in dic.keys():
                     if type(dic[key]) in [float, int]:
-                        results["%s.%s" % (
-                            prefix,
-                            str(key).translate(string.maketrans(".", "_"))
-                        )] = dic[key]
+                        results["%s.%s" % (prefix, str(key).translate(
+                            string.maketrans(".", "_")))] = dic[key]
                     elif type(dic[key] in [dict]):
-                        results.update(
-                            GraphiteUploaderPlugin.__flatten(
-                                dic[key],
-                                "%s.%s" % (
-                                    prefix,
-                                    key.translate(string.maketrans(".", "_"))
-                                )
-                            )
-                        )
+                        results.update(GraphiteUploaderPlugin.__flatten(dic[
+                            key], "%s.%s" % (prefix, key.translate(
+                                string.maketrans(".", "_")))))
             except AttributeError:
                 pass
         return results
 
 
 class GraphiteClient(object):
-
     '''Graphite client that writes metrics to Graphite server'''
 
     def __init__(self, prefix, address, port):
@@ -136,9 +123,8 @@ class GraphiteClient(object):
         self.prefix = prefix
         self.log = logging.getLogger(__name__)
         self.log.debug(
-            "Created a Graphite listener with address = '%s', port = '%s', prefix = '%s'" %
-            (address, port, prefix)
-        )
+            "Created a Graphite listener with address = '%s', port = '%s', prefix = '%s'"
+            % (address, port, prefix))
 
     def submit(self, results):
         '''publish results to Graphite'''
@@ -149,8 +135,7 @@ class GraphiteClient(object):
             for metric in results.keys():
                 sock.sendall(
                     "%s.%s\t%s\t%d\n" %
-                    (self.prefix, metric, results[metric], time.time())
-                )
+                    (self.prefix, metric, results[metric], time.time()))
             sock.close()
             self.log.debug("Sent metrics to graphite server")
         except Exception, exc:

@@ -9,6 +9,7 @@ from ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
 import ConsoleScreen
 import datetime
 
+
 class UniversalPhoutShooterPlugin(AbstractPlugin, AggregateResultListener):
     '''     Plugin for running any script tool    '''
 
@@ -17,8 +18,8 @@ class UniversalPhoutShooterPlugin(AbstractPlugin, AggregateResultListener):
 
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
-        self.buffered_seconds=2
-        self.process=None
+        self.buffered_seconds = 2
+        self.process = None
         self.process_stderr = None
         self.process_start_time = None
 
@@ -33,11 +34,12 @@ class UniversalPhoutShooterPlugin(AbstractPlugin, AggregateResultListener):
     def configure(self):
         # plugin part
         self.cmdline = self.get_option("cmdline")
-        self.buffered_seconds = int(self.get_option("buffered_seconds", self.buffered_seconds))
+        self.buffered_seconds = int(self.get_option("buffered_seconds",
+                                                    self.buffered_seconds))
 
         self.phout = self.get_option("phout", "")
         if not self.phout:
-            self.phout=self.core.mkstemp(".phout", "results_")
+            self.phout = self.core.mkstemp(".phout", "results_")
             # TODO: pass generated phout to the script
 
         self.core.add_artifact_file(self.phout)
@@ -67,29 +69,32 @@ class UniversalPhoutShooterPlugin(AbstractPlugin, AggregateResultListener):
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
             aggregator.add_result_listener(widget)
 
-
     def start_test(self):
         args = shlex.split(self.cmdline)
         self.log.info("Starting: %s", args)
         self.process_start_time = time.time()
-        process_stderr_file = self.core.mkstemp(".log", "phantom_stdout_stderr_")
+        process_stderr_file = self.core.mkstemp(".log",
+                                                "phantom_stdout_stderr_")
         self.core.add_artifact_file(process_stderr_file)
         self.process_stderr = open(process_stderr_file, 'w')
-        self.process = subprocess.Popen(args, stderr=self.process_stderr, stdout=self.process_stderr, close_fds=True)
-
+        self.process = subprocess.Popen(args,
+                                        stderr=self.process_stderr,
+                                        stdout=self.process_stderr,
+                                        close_fds=True)
 
     def is_test_finished(self):
         retcode = self.process.poll()
         if retcode != None:
-            self.log.info("Subprocess done its work with exit code: %s", retcode)
+            self.log.info("Subprocess done its work with exit code: %s",
+                          retcode)
             return abs(retcode)
         else:
             return -1
 
-
     def end_test(self, retcode):
         if self.process and self.process.poll() == None:
-            self.log.warn("Terminating worker process with PID %s", self.process.pid)
+            self.log.warn("Terminating worker process with PID %s",
+                          self.process.pid)
             self.process.terminate()
             if self.process_stderr:
                 self.process_stderr.close()
@@ -106,6 +111,7 @@ class UniversalPhoutShooterPlugin(AbstractPlugin, AggregateResultListener):
 
 class UniphoutInfoWidget(AbstractInfoWidget):
     ''' Right panel widget '''
+
     def __init__(self, uniphout):
         AbstractInfoWidget.__init__(self)
         self.krutilka = ConsoleScreen.krutilka()

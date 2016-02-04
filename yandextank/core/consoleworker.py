@@ -13,7 +13,6 @@ from tankcore import TankCore
 
 
 class RealConsoleMarkup(object):
-
     '''
     Took colors from here: https://www.siafoo.net/snippet/88
     '''
@@ -37,16 +36,14 @@ class RealConsoleMarkup(object):
 
     def clean_markup(self, orig_str):
         ''' clean markup from string '''
-        for val in [self.YELLOW, self.RED, self.RESET,
-                    self.CYAN, self.BG_MAGENTA, self.WHITE,
-                    self.BG_GREEN, self.GREEN, self.BG_BROWN,
-                    self.RED_DARK, self.MAGENTA, self.BG_CYAN]:
+        for val in [self.YELLOW, self.RED, self.RESET, self.CYAN,
+                    self.BG_MAGENTA, self.WHITE, self.BG_GREEN, self.GREEN,
+                    self.BG_BROWN, self.RED_DARK, self.MAGENTA, self.BG_CYAN]:
             orig_str = orig_str.replace(val, '')
         return orig_str
 
 
 class SingleLevelFilter(logging.Filter):
-
     """Exclude or approve one msg type at a time.    """
 
     def __init__(self, passlevel, reject):
@@ -71,7 +68,6 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 
 class ConsoleTank:
-
     """    Worker class that runs tank core accepting cmdline params    """
 
     IGNORE_LOCKS = "ignore_locks"
@@ -104,8 +100,8 @@ class ConsoleTank:
         if self.log_filename:
             file_handler = logging.FileHandler(self.log_filename)
             file_handler.setLevel(logging.DEBUG)
-            file_handler.setFormatter(
-                logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(message)s"))
+            file_handler.setFormatter(logging.Formatter(
+                "%(asctime)s [%(levelname)s] %(name)s %(message)s"))
             logger.addHandler(file_handler)
 
         # create console handler with a higher log level
@@ -159,10 +155,12 @@ class ConsoleTank:
             for filename in conf_files:
                 if fnmatch.fnmatch(filename, '*.ini'):
                     configs += [
-                        os.path.realpath(self.baseconfigs_location + os.sep + filename)]
+                        os.path.realpath(self.baseconfigs_location + os.sep +
+                                         filename)
+                    ]
         except OSError:
-            self.log.warn(
-                self.baseconfigs_location + ' is not acessible to get configs list')
+            self.log.warn(self.baseconfigs_location +
+                          ' is not acessible to get configs list')
 
         configs += [os.path.expanduser('~/.yandex-tank')]
         return configs
@@ -174,8 +172,8 @@ class ConsoleTank:
                 "Lock files ignored. This is highly unrecommended practice!")
 
         if self.options.lock_dir:
-            self.core.set_option(
-                self.core.SECTION, "lock_dir", self.options.lock_dir)
+            self.core.set_option(self.core.SECTION, "lock_dir",
+                                 self.options.lock_dir)
 
         while True:
             try:
@@ -184,7 +182,9 @@ class ConsoleTank:
             except Exception, exc:
                 if self.options.lock_fail:
                     raise RuntimeError("Lock file present, cannot continue")
-                self.log.info("Couldn't get lock. Will retry in 5 seconds... (%s)", str(exc))
+                self.log.info(
+                    "Couldn't get lock. Will retry in 5 seconds... (%s)",
+                    str(exc))
                 time.sleep(5)
 
         try:
@@ -227,9 +227,8 @@ class ConsoleTank:
                         self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
                 except ValueError:
                     self.scheduled_start = datetime.datetime.strptime(
-                        datetime.datetime.now().strftime(
-                            '%Y-%m-%d ') + self.options.scheduled_start,
-                        '%Y-%m-%d %H:%M:%S')
+                        datetime.datetime.now().strftime('%Y-%m-%d ') +
+                        self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
 
             if self.options.ignore_lock:
                 self.core.set_option(self.core.SECTION, self.IGNORE_LOCKS, "1")
@@ -262,11 +261,11 @@ class ConsoleTank:
             self.core.plugins_configure()
             self.core.plugins_prepare_test()
             if self.scheduled_start:
-                self.log.info(
-                    "Waiting scheduled time: %s...", self.scheduled_start)
+                self.log.info("Waiting scheduled time: %s...",
+                              self.scheduled_start)
                 while datetime.datetime.now() < self.scheduled_start:
-                    self.log.debug(
-                        "Not yet: %s < %s", datetime.datetime.now(), self.scheduled_start)
+                    self.log.debug("Not yet: %s < %s", datetime.datetime.now(),
+                                   self.scheduled_start)
                     time.sleep(1)
                 self.log.info("Time has come: %s", datetime.datetime.now())
 
@@ -285,13 +284,13 @@ class ConsoleTank:
             sys.stdout.write(RealConsoleMarkup.RESET)
             sys.stdout.write(RealConsoleMarkup.TOTAL_RESET)
             self.signal_count += 1
-            self.log.debug(
-                "Caught KeyboardInterrupt: %s", traceback.format_exc(ex))
+            self.log.debug("Caught KeyboardInterrupt: %s",
+                           traceback.format_exc(ex))
             try:
                 retcode = self.__graceful_shutdown()
             except KeyboardInterrupt as ex:
-                self.log.debug(
-                    "Caught KeyboardInterrupt again: %s", traceback.format_exc(ex))
+                self.log.debug("Caught KeyboardInterrupt again: %s",
+                               traceback.format_exc(ex))
                 self.log.info(
                     "User insists on exiting, aborting graceful shutdown...")
                 retcode = 1
@@ -312,7 +311,6 @@ class ConsoleTank:
 
 
 class DevNullOpts:
-
     def __init__(self):
         pass
 
@@ -320,15 +318,20 @@ class DevNullOpts:
 
 
 class CompletionHelperOptionParser(OptionParser):
-
     def __init__(self):
         OptionParser.__init__(self, add_help_option=False)
-        self.add_option('--bash-switches-list', action='store_true',
-                        dest="list_switches", help="Options list")
-        self.add_option('--bash-options-prev', action='store',
-                        dest="list_options_prev", help="Options list")
-        self.add_option('--bash-options-cur', action='store',
-                        dest="list_options_cur", help="Options list")
+        self.add_option('--bash-switches-list',
+                        action='store_true',
+                        dest="list_switches",
+                        help="Options list")
+        self.add_option('--bash-options-prev',
+                        action='store',
+                        dest="list_options_prev",
+                        help="Options list")
+        self.add_option('--bash-options-cur',
+                        action='store',
+                        dest="list_options_cur",
+                        help="Options list")
 
     def error(self, msg):
         pass
@@ -358,8 +361,8 @@ class CompletionHelperOptionParser(OptionParser):
             plugin_keys = cmdtank.core.config.get_options(
                 cmdtank.core.SECTION, cmdtank.core.PLUGIN_PREFIX)
             for (plugin_name, plugin_path) in plugin_keys:
-                opts.append(
-                    cmdtank.core.SECTION + '.' + cmdtank.core.PLUGIN_PREFIX + plugin_name + '=')
+                opts.append(cmdtank.core.SECTION + '.' +
+                            cmdtank.core.PLUGIN_PREFIX + plugin_name + '=')
 
             for plugin in cmdtank.core.plugins:
                 for option in plugin.get_available_options():

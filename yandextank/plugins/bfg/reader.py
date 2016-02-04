@@ -3,7 +3,6 @@ from yandextank.stepper import info as si
 
 
 class BFGReader(AbstractReader):
-
     '''
     Listens results from BFG and provides them to Aggregator
     '''

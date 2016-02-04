@@ -7,7 +7,6 @@ import base64
 
 from yandextank.plugins.Monitoring.agent.agent import CpuStat, Custom, Disk, NetTcp, NetTxRx
 
-
 if __name__ == '__main__':
     unittest.main()
 
@@ -29,12 +28,16 @@ class CustomTestCase(unittest.TestCase):
 
         #def tearDown(self):
 
-    #    self.foo.dispose()
-    #    self.foo = None
+        #    self.foo.dispose()
+        #    self.foo = None
 
     def test_custom_(self):
-        custom_config = {'tail': [],
-                         'call': ['ZGlmZkV4:aWZjb25maWcgLXMgZXRoMCB8IGF3ayAnJDE9PSJldGgwIiB7cHJpbnQgJDR9Jw==:1']}
+        custom_config = {
+            'tail': [],
+            'call':
+            ['ZGlmZkV4:aWZjb25maWcgLXMgZXRoMCB8IGF3ayAnJDE9PSJldGgwIiB7cHJpbnQgJDR9Jw==:1'
+             ]
+        }
         self.foo = Custom(**custom_config)
 
         #self.assertEqual(x, y, "Msg");
@@ -50,8 +53,10 @@ class CustomTestCase(unittest.TestCase):
 
     def test_custom_nodiff(self):
         tail_fd, tailfile = tempfile.mkstemp()
-        tail = ["%s:%s:%s" % (base64.b64encode('lbl'), base64.b64encode(tailfile), 0)]
-        call = ["%s:%s:%s" % (base64.b64encode('lbl2'), base64.b64encode("date +%s"), 0)]
+        tail = ["%s:%s:%s" %
+                (base64.b64encode('lbl'), base64.b64encode(tailfile), 0)]
+        call = ["%s:%s:%s" %
+                (base64.b64encode('lbl2'), base64.b64encode("date +%s"), 0)]
         self.foo = Custom(call, tail)
 
         x = self.foo.check()
@@ -74,8 +79,10 @@ class CustomTestCase(unittest.TestCase):
         self.assertNotEquals(y[1], z[1])
 
     def test_custom_fail(self):
-        tail = ["%s:%s:%s" % (base64.b64encode('lbl'), base64.b64encode("notexistent"), 0)]
-        call = ["%s:%s:%s" % (base64.b64encode('lbl2'), base64.b64encode("notexistent"), 0)]
+        tail = ["%s:%s:%s" %
+                (base64.b64encode('lbl'), base64.b64encode("notexistent"), 0)]
+        call = ["%s:%s:%s" %
+                (base64.b64encode('lbl2'), base64.b64encode("notexistent"), 0)]
         self.foo = Custom(call, tail)
 
         x = self.foo.check()
@@ -83,7 +90,9 @@ class CustomTestCase(unittest.TestCase):
         self.assertEquals("0", x[1])
 
     def test_custom_fail2(self):
-        custom_config = {'tail': [], 'call': ['TnVtUGhyYXNlcw==:Y2F0IC92YXIvdG1wL3N0YXQx:0']}
+        custom_config = {'tail': [],
+                         'call': ['TnVtUGhyYXNlcw==:Y2F0IC92YXIvdG1wL3N0YXQx:0'
+                                  ]}
         self.foo = Custom(**custom_config)
 
         self.foo.check()
@@ -135,4 +144,3 @@ class NetTxRxTestCase(unittest.TestCase):
     def test_net_tx_rx_cols(self):
         res = self.foo.columns()
         self.assertEquals(['Net_tx', 'Net_rx', ], res)
-

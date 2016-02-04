@@ -14,7 +14,6 @@ import yandextank.core as tankcore
 
 
 class AutostopPlugin(AbstractPlugin, AggregateResultListener):
-
     """ Plugin that accepts criteria classes and triggers autostop """
     SECTION = 'autostop'
 
@@ -52,12 +51,11 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
 
-        self.criteria_str = " ".join(
-            self.get_option("autostop", '').split("\n"))
+        self.criteria_str = " ".join(self.get_option("autostop", '').split(
+            "\n"))
         self._stop_report_path = os.path.join(
             self.core.artifacts_dir,
-            self.get_option("report_file", 'autostop_report.txt')
-        )
+            self.get_option("report_file", 'autostop_report.txt'))
 
         self.add_criteria_class(AvgTimeCriteria)
         self.add_criteria_class(NetCodesCriteria)
@@ -87,8 +85,8 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
 
     def is_test_finished(self):
         if self.cause_criteria:
-            self.log.info(
-                "Autostop criteria requested test stop: %s", self.cause_criteria.explain())
+            self.log.info("Autostop criteria requested test stop: %s",
+                          self.cause_criteria.explain())
             return self.cause_criteria.get_rc()
         else:
             return -1
@@ -102,23 +100,22 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         for criteria_class in self.custom_criterias:
             if criteria_class.get_type_string() == type_str:
                 return criteria_class(self, parsed[1])
-        raise ValueError(
-            "Unsupported autostop criteria type: %s" % criteria_str)
+        raise ValueError("Unsupported autostop criteria type: %s" %
+                         criteria_str)
 
     def aggregate_second(self, second_aggregate_data):
         self.counting = []
         if not self.cause_criteria:
             for criteria_text, criteria in self._criterias.iteritems():
                 if criteria.notify(second_aggregate_data):
-                    self.log.debug(
-                        "Autostop criteria requested test stop: %s", criteria)
+                    self.log.debug("Autostop criteria requested test stop: %s",
+                                   criteria)
                     self.cause_criteria = criteria
                     open(self._stop_report_path, 'w').write(criteria_text)
                     self.core.add_artifact_file(self._stop_report_path)
 
 
 class AutostopWidget(AbstractInfoWidget):
-
     """ widget that displays counting criterias """
 
     def __init__(self, sender):
@@ -149,7 +146,6 @@ class AutostopWidget(AbstractInfoWidget):
 
 
 class AbstractCriteria:
-
     """ parent class for all criterias """
     RC_TIME = 21
     RC_HTTP = 22
@@ -192,7 +188,6 @@ class AbstractCriteria:
 
 
 class AvgTimeCriteria(AbstractCriteria):
-
     """ average response time criteria """
 
     @staticmethod
@@ -202,10 +197,10 @@ class AvgTimeCriteria(AbstractCriteria):
     def __init__(self, autostop, param_str):
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
-        self.rt_limit = tankcore.expand_to_milliseconds(
-            param_str.split(',')[0])
-        self.seconds_limit = tankcore.expand_to_seconds(
-            param_str.split(',')[1])
+        self.rt_limit = tankcore.expand_to_milliseconds(param_str.split(',')[
+            0])
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+            1])
         self.autostop = autostop
 
     def notify(self, aggregate_second):
@@ -233,11 +228,11 @@ class AvgTimeCriteria(AbstractCriteria):
 
     def widget_explain(self):
         items = (self.rt_limit, self.seconds_count, self.seconds_limit)
-        return "Avg Time >%sms for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
+        return "Avg Time >%sms for %s/%ss" % items, float(
+            self.seconds_count) / self.seconds_limit
 
 
 class HTTPCodesCriteria(AbstractCriteria):
-
     """ HTTP codes criteria """
 
     @staticmethod
@@ -258,8 +253,8 @@ class HTTPCodesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(
-            param_str.split(',')[2])
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+            2])
 
     def notify(self, aggregate_second):
         matched_responses = self.count_matched_codes(
@@ -270,8 +265,8 @@ class HTTPCodesCriteria(AbstractCriteria):
                     matched_responses) / aggregate_second.overall.RPS
             else:
                 matched_responses = 0
-        self.log.debug("HTTP codes matching mask %s: %s/%s",
-                       self.codes_mask, matched_responses, self.level)
+        self.log.debug("HTTP codes matching mask %s: %s/%s", self.codes_mask,
+                       matched_responses, self.level)
 
         if matched_responses >= self.level:
             if not self.seconds_count:
@@ -300,18 +295,18 @@ class HTTPCodesCriteria(AbstractCriteria):
         return level_str
 
     def explain(self):
-        items = (self.codes_mask, self.get_level_str(),
-                 self.seconds_count, self.cause_second.time)
+        items = (self.codes_mask, self.get_level_str(), self.seconds_count,
+                 self.cause_second.time)
         return "%s codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
-        items = (self.codes_mask, self.get_level_str(),
-                 self.seconds_count, self.seconds_limit)
-        return "HTTP %s>%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
+        items = (self.codes_mask, self.get_level_str(), self.seconds_count,
+                 self.seconds_limit)
+        return "HTTP %s>%s for %s/%ss" % items, float(
+            self.seconds_count) / self.seconds_limit
 
 
 class NetCodesCriteria(AbstractCriteria):
-
     """ Net codes criteria """
 
     @staticmethod
@@ -332,8 +327,8 @@ class NetCodesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(
-            param_str.split(',')[2])
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+            2])
 
     def notify(self, aggregate_second):
         codes = copy.deepcopy(aggregate_second.overall.net_codes)
@@ -346,8 +341,8 @@ class NetCodesCriteria(AbstractCriteria):
                     matched_responses) / aggregate_second.overall.RPS
             else:
                 matched_responses = 0
-        self.log.debug("Net codes matching mask %s: %s/%s",
-                       self.codes_mask, matched_responses, self.level)
+        self.log.debug("Net codes matching mask %s: %s/%s", self.codes_mask,
+                       matched_responses, self.level)
 
         if matched_responses >= self.level:
             if not self.seconds_count:
@@ -376,18 +371,18 @@ class NetCodesCriteria(AbstractCriteria):
         return level_str
 
     def explain(self):
-        items = (self.codes_mask, self.get_level_str(),
-                 self.seconds_count, self.cause_second.time)
+        items = (self.codes_mask, self.get_level_str(), self.seconds_count,
+                 self.cause_second.time)
         return "%s net codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
-        items = (self.codes_mask, self.get_level_str(),
-                 self.seconds_count, self.seconds_limit)
-        return "Net %s>%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
+        items = (self.codes_mask, self.get_level_str(), self.seconds_count,
+                 self.seconds_limit)
+        return "Net %s>%s for %s/%ss" % items, float(
+            self.seconds_count) / self.seconds_limit
 
 
 class QuantileCriteria(AbstractCriteria):
-
     """ quantile criteria """
 
     @staticmethod
@@ -398,16 +393,16 @@ class QuantileCriteria(AbstractCriteria):
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
         self.quantile = float(param_str.split(',')[0])
-        self.rt_limit = tankcore.expand_to_milliseconds(
-            param_str.split(',')[1])
-        self.seconds_limit = tankcore.expand_to_seconds(
-            param_str.split(',')[2])
+        self.rt_limit = tankcore.expand_to_milliseconds(param_str.split(',')[
+            1])
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+            2])
         self.autostop = autostop
 
     def notify(self, aggregate_second):
         if self.quantile not in aggregate_second.overall.quantiles.keys():
-            self.log.warning(
-                "No quantile %s in %s", self.quantile, aggregate_second.overall.quantiles)
+            self.log.warning("No quantile %s in %s", self.quantile,
+                             aggregate_second.overall.quantiles)
         if self.quantile in aggregate_second.overall.quantiles.keys() \
                 and aggregate_second.overall.quantiles[self.quantile] > self.rt_limit:
             if not self.seconds_count:
@@ -428,18 +423,18 @@ class QuantileCriteria(AbstractCriteria):
         return self.RC_TIME
 
     def explain(self):
-        items = (self.quantile, self.rt_limit,
-                 self.seconds_count, self.cause_second.time)
+        items = (self.quantile, self.rt_limit, self.seconds_count,
+                 self.cause_second.time)
         return "Percentile %s higher than %sms for %ss, since %s" % items
 
     def widget_explain(self):
-        items = (self.quantile, self.rt_limit,
-                 self.seconds_count, self.seconds_limit)
-        return "%s%% >%sms for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
+        items = (self.quantile, self.rt_limit, self.seconds_count,
+                 self.seconds_limit)
+        return "%s%% >%sms for %s/%ss" % items, float(
+            self.seconds_count) / self.seconds_limit
 
 
 class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
-
     """ quantile criteria """
 
     @staticmethod
@@ -450,8 +445,8 @@ class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
         self.quantile_hash = ""
-        self.seconds_limit = tankcore.expand_to_seconds(
-            param_str.split(',')[0])
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+            0])
         self.autostop = autostop
 
     def notify(self, aggregate_second):
@@ -482,11 +477,11 @@ class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
 
     def widget_explain(self):
         items = (self.seconds_count, self.seconds_limit)
-        return "Steady for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
+        return "Steady for %s/%ss" % items, float(
+            self.seconds_count) / self.seconds_limit
 
 
 class TimeLimitCriteria(AbstractCriteria):
-
     """ time limit criteria """
 
     @staticmethod
@@ -507,7 +502,9 @@ class TimeLimitCriteria(AbstractCriteria):
         return self.RC_TIME
 
     def explain(self):
-        return "Test time elapsed. Limit: %ss, actual time: %ss" % (self.time_limit, self.end_time - self.start_time)
+        return "Test time elapsed. Limit: %ss, actual time: %ss" % (
+            self.time_limit, self.end_time - self.start_time)
 
     def widget_explain(self):
-        return "Time limit: %ss, actual time: %ss" % (self.time_limit, self.end_time - self.start_time)
+        return "Time limit: %ss, actual time: %ss" % (
+            self.time_limit, self.end_time - self.start_time)

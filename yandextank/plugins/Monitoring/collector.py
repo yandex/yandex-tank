@@ -16,7 +16,6 @@ import getpass
 from paramiko import \
     SSHClient, AutoAddPolicy, AuthenticationException, SSHException
 
-
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
 
@@ -44,7 +43,6 @@ class Config(object):
 
 
 class SecuredShell(object):
-
     def __init__(self, host, port, username, timeout):
         self.host = host
         self.port = port
@@ -52,19 +50,18 @@ class SecuredShell(object):
         self.timeout = timeout
 
     def connect(self):
-        logger.debug("Opening SSH connection to {host}:{port}".format(
-            host=self.host, port=self.port))
+        logger.debug(
+            "Opening SSH connection to {host}:{port}".format(host=self.host,
+                                                             port=self.port))
         client = SSHClient()
         client.load_system_host_keys()
         client.set_missing_host_key_policy(AutoAddPolicy())
 
         try:
-            client.connect(
-                self.host,
-                port=self.port,
-                username=self.username,
-                timeout=self.timeout,
-            )
+            client.connect(self.host,
+                           port=self.port,
+                           username=self.username,
+                           timeout=self.timeout, )
         except ValueError, e:
             logger.error(e)
             logger.warning("""
@@ -82,13 +79,12 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
                     ls = list(ls)
                     ls[1] = ''
                 return orig_new(key, *ls)
+
             Crypto.Cipher.AES.new = fixed_AES_new
-            client.connect(
-                self.host,
-                port=self.port,
-                username=self.username,
-                timeout=self.timeout,
-            )
+            client.connect(self.host,
+                           port=self.port,
+                           username=self.username,
+                           timeout=self.timeout, )
         return client
 
     def execute(self, cmd):
@@ -111,14 +107,18 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
 
     def send_file(self, local_path, remote_path):
         logger.info("Sending [{local}] to {host}:[{remote}]".format(
-            local=local_path, host=self.host, remote=remote_path))
+            local=local_path,
+            host=self.host,
+            remote=remote_path))
         with self.connect() as client, client.open_sftp() as sftp:
             result = sftp.put(local_path, remote_path)
         return result
 
     def get_file(self, remote_path, local_path):
         logger.info("Receiving from {host}:[{remote}] to [{local}]".format(
-            local=local_path, host=self.host, remote=remote_path))
+            local=local_path,
+            host=self.host,
+            remote=remote_path))
         with self.connect() as client, client.open_sftp() as sftp:
             result = sftp.get(remote_path, local_path)
         return result
@@ -166,8 +166,7 @@ class AgentClient(object):
         self.shutdowns = adr['shutdowns']
         self.session = None
         self.buffer = ""
-        self.ssh = SecuredShell(
-            self.host, self.port, self.username, timeout)
+        self.ssh = SecuredShell(self.host, self.port, self.username, timeout)
 
         handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
         os.close(handle)
@@ -187,10 +186,10 @@ class AgentClient(object):
         """Start remote agent"""
         logger.debug('Start monitoring: %s', self.host)
         self.session = self.ssh.async_session(" ".join([
-            "DEBUG=1", self.python,
-            self.path['AGENT_REMOTE_FOLDER'] + '/agent.py', '-c',
-            self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg',
-            '-t', str(int(time.time()))]))
+            "DEBUG=1", self.python, self.path['AGENT_REMOTE_FOLDER'] +
+            '/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg',
+            '-t', str(int(time.time()))
+        ]))
         return self.session
 
     def read_maybe(self):
@@ -211,8 +210,8 @@ class AgentClient(object):
         try:
             float(self.interval)
         except:
-            raise ValueError(
-                "Monitoring interval should be a number: '%s'" % self.interval)
+            raise ValueError("Monitoring interval should be a number: '%s'" %
+                             self.interval)
 
         cfg = ConfigParser.ConfigParser()
         cfg.add_section('main')
@@ -244,9 +243,8 @@ class AgentClient(object):
 
     def install(self, loglevel):
         """Create folder and copy agent and metrics scripts to remote host"""
-        logger.info(
-            "Installing monitoring agent at %s@%s...",
-            self.username, self.host)
+        logger.info("Installing monitoring agent at %s@%s...", self.username,
+                    self.host)
 
         # create remote temp dir
         cmd = self.python + ' -c "import tempfile; print tempfile.mkdtemp();"'
@@ -254,40 +252,37 @@ class AgentClient(object):
         try:
             out, errors, err_code = self.ssh.execute(cmd)
         except:
-            logger.error(
-                "Failed to install monitoring agent to %s",
-                self.host, exc_info=True)
+            logger.error("Failed to install monitoring agent to %s",
+                         self.host,
+                         exc_info=True)
             return None
         if errors:
             logging.error("[%s] error: '%s'", self.host, errors)
             return None
 
         if err_code:
-            logging.error(
-                "Failed to create remote dir via SSH"
-                " at %s@%s, code %s: %s" % (
-                    self.username, self.host,
-                    err_code, out.strip()))
+            logging.error("Failed to create remote dir via SSH"
+                          " at %s@%s, code %s: %s" % (self.username, self.host,
+                                                      err_code, out.strip()))
             return None
 
         remote_dir = out.strip()
         if remote_dir:
             self.path['AGENT_REMOTE_FOLDER'] = remote_dir
-        logger.debug(
-            "Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
+        logger.debug("Remote dir at %s:%s", self.host,
+                     self.path['AGENT_REMOTE_FOLDER'])
 
         # Copy agent and config
         agent_config = self.create_agent_config(loglevel)
         try:
-            self.ssh.send_file(
-                self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
-                self.path['AGENT_REMOTE_FOLDER'] + '/agent.py')
-            self.ssh.send_file(
-                agent_config,
-                self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg')
+            self.ssh.send_file(self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
+                               self.path['AGENT_REMOTE_FOLDER'] + '/agent.py')
+            self.ssh.send_file(agent_config,
+                               self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg')
         except:
-            logger.error(
-                "Failed to install agent on %s", self.host, exc_info=True)
+            logger.error("Failed to install agent on %s",
+                         self.host,
+                         exc_info=True)
             return None
         return agent_config
 
@@ -298,24 +293,21 @@ class AgentClient(object):
         if self.session:
             self.session.send("stop\n")
             self.session.close()
-        fhandle, log_filename = tempfile.mkstemp(
-            '.log', "agent_" + self.host + "_")
+        fhandle, log_filename = tempfile.mkstemp('.log',
+                                                 "agent_" + self.host + "_")
         os.close(fhandle)
         try:
-            self.ssh.get_file(
-                self.path['AGENT_REMOTE_FOLDER'] + "_agent.log",
-                log_filename)
+            self.ssh.get_file(self.path['AGENT_REMOTE_FOLDER'] + "_agent.log",
+                              log_filename)
             self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
         except:
             logger.error("Exception while uninstalling agent", exc_info=True)
 
-        logger.info(
-            "Removing agent from: %s@%s...", self.username, self.host)
+        logger.info("Removing agent from: %s@%s...", self.username, self.host)
         return log_filename
 
 
 class MonitoringCollector(object):
-
     """Aggregate data from several collectors"""
 
     def __init__(self):
@@ -417,9 +409,8 @@ class MonitoringCollector(object):
         hostname = host.get('address').lower()
         if hostname == '[target]':
             if not target_hint:
-                raise ValueError(
-                    "Can't use [target] keyword with "
-                    "no target parameter specified")
+                raise ValueError("Can't use [target] keyword with "
+                                 "no target parameter specified")
             logger.debug("Using target hint: %s", target_hint)
             hostname = target_hint.lower()
         stats = []
@@ -448,8 +439,8 @@ class MonitoringCollector(object):
                 isdiff = metric.get('diff')
                 if not isdiff:
                     isdiff = 0
-                stat = "%s:%s:%s" % (base64.b64encode(metric.get(
-                    'label')), base64.b64encode(metric.text), isdiff)
+                stat = "%s:%s:%s" % (base64.b64encode(metric.get('label')),
+                                     base64.b64encode(metric.text), isdiff)
                 stats.append('Custom:' + stat)
                 custom[metric.get('measure', 'call')].append(stat)
             elif (str(metric.tag)).lower() == 'startup':
@@ -524,8 +515,8 @@ class MonitoringCollector(object):
                 try:
                     res.append(filter_list[key])
                 except IndexError:
-                    logger.warn("Problems filtering data: %s with %s",
-                                mask, len(filter_list))
+                    logger.warn("Problems filtering data: %s with %s", mask,
+                                len(filter_list))
                     return None
         return ';'.join(res)
 
@@ -648,8 +639,8 @@ class MonitoringDataDecoder(object):
                 self.metrics[host] = []
                 for metric in data:
                     if metric.startswith("Custom:"):
-                        metric = base64.standard_b64decode(
-                            metric.split(':')[1])
+                        metric = base64.standard_b64decode(metric.split(':')[
+                            1])
                     self.metrics[host].append(metric)
                     data_dict[metric] = self.NA
                     is_initial = True
@@ -658,18 +649,17 @@ class MonitoringDataDecoder(object):
             timestamp = data.pop(0)
 
             if host not in self.metrics.keys():
-                raise ValueError(
-                    "Host %s not in started metrics: %s" % (host, self.metrics))
+                raise ValueError("Host %s not in started metrics: %s" %
+                                 (host, self.metrics))
 
             if len(self.metrics[host]) != len(data):
-                raise ValueError("Metrics len and data len differs: %s vs %s" % (
-                    len(self.metrics[host]), len(data)))
+                raise ValueError("Metrics len and data len differs: %s vs %s" %
+                                 (len(self.metrics[host]), len(data)))
 
             for metric in self.metrics[host]:
                 data_dict[metric] = data.pop(0)
 
         logger.debug("Decoded data %s: %s", host, data_dict)
         return host, data_dict, is_initial, timestamp
-
 
 # FIXME: 3 synchronize times between agent and collector better

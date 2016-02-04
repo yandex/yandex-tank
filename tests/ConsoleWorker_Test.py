@@ -9,7 +9,6 @@ import datetime
 
 
 class ConsoleWorkerTestCase(Tank_Test.TankTestCase):
-
     def setUp(self):
         opts = FakeOptions()
         opts.no_rc = False

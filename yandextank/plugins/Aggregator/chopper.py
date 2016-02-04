@@ -12,6 +12,7 @@ class TimeChopper(object):
     chunks for same key from different DFs are joined. Then chunks are passed
     further.
     """
+
     def __init__(self, source, cache_size):
         self.cache_size = cache_size
         self.source = source
@@ -23,7 +24,8 @@ class TimeChopper(object):
             for group_key, group_data in list(grouped):
                 if group_key in self.cache:
                     self.cache[group_key] = pd.concat([
-                        self.cache[group_key], group_data])
+                        self.cache[group_key], group_data
+                    ])
                 else:
                     self.cache[group_key] = group_data
                 while len(self.cache) > self.cache_size:

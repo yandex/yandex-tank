@@ -4,7 +4,6 @@ import threading as th
 
 
 class ZmqReader(object):
-
     '''Read missiles from zmq'''
 
     def __init__(self, queue):
@@ -31,7 +30,7 @@ class ZmqReader(object):
                         raise StopIteration()
                     continue
 
-                yield(data)
+                yield (data)
             except StopIteration:
                 raise
             except Exception as e:

@@ -27,5 +27,6 @@ class ShellExecPluginTestCase(TankTestCase):
         r, w, x = select.select([pipes.stdout], [], [], 1)
         logging.info("selected: %s %s %s", r, w, x)
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -3,6 +3,7 @@ import unittest
 from yandextank.plugins.ApacheBenchmark import ABReader, ApacheBenchmarkPlugin
 from yandextank.plugins.Aggregator import AggregatorPlugin
 
+
 class ABTestCase(TankTestCase):
     def setUp(self):
         self.core = self.get_core()
@@ -23,7 +24,7 @@ class ABTestCase(TankTestCase):
         while reader.get_next_sample(True):
             cnt += 1
         self.assertEquals(25, cnt)
-    
+
+
 if __name__ == '__main__':
     unittest.main()
-

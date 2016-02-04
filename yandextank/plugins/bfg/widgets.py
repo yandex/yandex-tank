@@ -4,7 +4,6 @@ from yandextank.plugins.ConsoleOnline import AbstractInfoWidget
 
 
 class BFGInfoWidget(AbstractInfoWidget):
-
     ''' Console widget '''
 
     def __init__(self):
@@ -30,8 +29,8 @@ class BFGInfoWidget(AbstractInfoWidget):
 
         self.RPS = second_aggregate_data.overall.RPS
         self.selfload = second_aggregate_data.overall.selfload
-        self.time_lag = int(
-            time.time() - time.mktime(second_aggregate_data.time.timetuple()))
+        self.time_lag = int(time.time() - time.mktime(
+            second_aggregate_data.time.timetuple()))
 
     def render(self, screen):
         res = ''
@@ -40,7 +39,8 @@ class BFGInfoWidget(AbstractInfoWidget):
         res += str(self.instances)
 
         res += "\nPlanned requests: %s for %s\nActual responses: " % (
-            self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
+            self.planned,
+            datetime.timedelta(seconds=self.planned_rps_duration))
         if not self.planned == self.RPS:
             res += screen.markup.YELLOW + str(self.RPS) + screen.markup.RESET
         else:

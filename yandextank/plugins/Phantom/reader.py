@@ -10,19 +10,15 @@ import datetime
 
 LOG = logging.getLogger(__name__)
 
-
 phout_columns = [
-    'send_ts', 'tag', 'interval_real',
-    'connect_time', 'send_time',
-    'latency', 'receive_time',
-    'interval_event', 'size_out',
-    'size_in', 'net_code', 'proto_code']
+    'send_ts', 'tag', 'interval_real', 'connect_time', 'send_time', 'latency',
+    'receive_time', 'interval_event', 'size_out', 'size_in', 'net_code',
+    'proto_code'
+]
 
 
 def string_to_df(data):
-    chunk = pd.read_csv(
-        StringIO(data),
-        sep='\t', names=phout_columns)
+    chunk = pd.read_csv(StringIO(data), sep='\t', names=phout_columns)
     chunk['receive_ts'] = chunk.send_ts + chunk.interval_real / 1e6
     chunk['receive_sec'] = chunk.receive_ts.astype(int)
     # TODO: consider configuration for the following:
@@ -77,11 +73,11 @@ class PhantomStatsReader(object):
                 chunk_str = self.stat_read_buffer[
                     :self.stat_read_buffer.find(end_marker) + len(end_marker) - 1]
                 self.stat_read_buffer = self.stat_read_buffer[
-                    self.stat_read_buffer.find(end_marker) + len(end_marker) + 1:]
+                    self.stat_read_buffer.find(end_marker) + len(
+                        end_marker) + 1:]
                 chunk = json.loads("{%s}" % chunk_str)
-                self.log.debug(
-                    "Stat chunk (left %s bytes): %s",
-                    len(self.stat_read_buffer), chunk)
+                self.log.debug("Stat chunk (left %s bytes): %s",
+                               len(self.stat_read_buffer), chunk)
 
                 for date_str in chunk.keys():
                     statistics = chunk[date_str]
@@ -98,30 +94,27 @@ class PhantomStatsReader(object):
                         for method in benchmark:
                             meth_obj = benchmark[method]
                             if "mmtasks" in meth_obj:
-                                self.stat_data[pending_datetime] += meth_obj["mmtasks"][2]
-                    self.log.debug(
-                        "Active instances: %s=>%s",
-                        pending_datetime, self.stat_data[pending_datetime])
+                                self.stat_data[pending_datetime] += meth_obj[
+                                    "mmtasks"][2]
+                    self.log.debug("Active instances: %s=>%s",
+                                   pending_datetime,
+                                   self.stat_data[pending_datetime])
 
             self.log.debug(
                 "Instances info buffer size: %s / Read buffer size: %s",
-                len(self.stat_data),
-                len(self.stat_read_buffer))
+                len(self.stat_data), len(self.stat_read_buffer))
 
     def next(self):
         """
         Union buffer and chunk, split using '\n},',
         return splitted parts
         """
-        chunk = self.stat.read(1024*1024*10)
+        chunk = self.stat.read(1024 * 1024 * 10)
         parts = chunk.rsplit('\n},', 1)
         if len(parts) > 1:
             ready_chunk = self.stat_buffer + parts[0]
             self.stat_buffer = parts[1]
-            return [
-                json.loads('{%s}}' % m)
-                for m in ready_chunk.split('\n},')
-            ]
+            return [json.loads('{%s}}' % m) for m in ready_chunk.split('\n},')]
         else:
             self.stat_buffer += parts[0]
 

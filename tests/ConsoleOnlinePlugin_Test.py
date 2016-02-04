@@ -23,7 +23,6 @@ class FakeConsoleMarkup(RealConsoleMarkup):
 
 
 class ConsoleOnlinePluginTestCase(TankTestCase):
-
     def setUp(self):
         core = self.get_core()
         core.load_configs(['config/console.conf'])
@@ -53,13 +52,11 @@ class ConsoleOnlinePluginTestCase(TankTestCase):
 
 
 class TestWidget(AbstractInfoWidget):
-
     def render(self, screen):
         return "Widget Data"
 
 
 class TestWidget2(AbstractInfoWidget):
-
     def get_index(self):
         return 100
 

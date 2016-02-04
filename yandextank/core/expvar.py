@@ -12,6 +12,7 @@ class ExpVar(object):
     """
     This class stores variables
     """
+
     def __init__(self):
         self.variables = {}
 
@@ -36,6 +37,7 @@ class Var(object):
     This class stores generic variable value.
     It is also a base class for other variable types
     """
+
     def __init__(self, value=None):
         self.value = value
 
@@ -52,8 +54,8 @@ class Var(object):
 class Int(Var):
     def __init__(self, value=0):
         if type(value) is not int:
-            raise ValueError(
-                "Value should be an integer, but it is '%s'" % type(value))
+            raise ValueError("Value should be an integer, but it is '%s'" %
+                             type(value))
         super(Int, self).__init__(value)
 
     def inc(self, delta=1):
@@ -65,6 +67,7 @@ class Metric(object):
     This class stores generic time-series data in a queue.
     Values are stored as (timestamp, value) tuples
     """
+
     def __init__(self):
         self.metric = Queue()
 
@@ -72,8 +75,8 @@ class Metric(object):
         if timestamp is None:
             timestamp = int(time.time())
         elif type(timestamp) is not int:
-            raise ValueError(
-                "Timestamp should be an integer, but it is '%s'" % type(timestamp))
+            raise ValueError("Timestamp should be an integer, but it is '%s'" %
+                             type(timestamp))
         self.metric.put((timestamp, value))
 
     def next(self):
@@ -88,6 +91,7 @@ class Metric(object):
 
     def __iter__(self):
         return self
+
 
 EV = ExpVar()
 

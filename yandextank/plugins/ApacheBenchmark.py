@@ -7,6 +7,7 @@ import subprocess
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
 
+
 class ApacheBenchmarkPlugin(AbstractPlugin):
     ''' Apache Benchmark plugin '''
     SECTION = 'ab'
@@ -55,13 +56,14 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
             widget = ABInfoWidget(self)
             console.add_info_widget(widget)
 
-
     def start_test(self):
-        args = ['ab', '-r', '-g', self.out_file,
-                '-n', self.requests,
-                '-c', self.concurrency, self.url]
+        args = ['ab', '-r', '-g', self.out_file, '-n', self.requests, '-c',
+                self.concurrency, self.url]
         self.log.info("Starting ab with arguments: %s", args)
-        self.process = subprocess.Popen(args, stderr=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
+        self.process = subprocess.Popen(args,
+                                        stderr=subprocess.PIPE,
+                                        stdout=subprocess.PIPE,
+                                        close_fds=True)
 
     def is_test_finished(self):
         retcode = self.process.poll()
@@ -71,24 +73,25 @@ class ApacheBenchmarkPlugin(AbstractPlugin):
         else:
             return -1
 
-
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            self.log.warn("Terminating ab process with PID %s", self.process.pid)
+            self.log.warn("Terminating ab process with PID %s",
+                          self.process.pid)
             self.process.terminate()
         else:
             self.log.info("Seems ab finished OK")
 
         if self.process:
-            tankcore.log_stdout_stderr(self.log, self.process.stdout, self.process.stderr, self.SECTION)
+            tankcore.log_stdout_stderr(self.log, self.process.stdout,
+                                       self.process.stderr, self.SECTION)
         return retcode
-
 
 
 class ABReader(object):
     '''
     Adapter to read AB files
     '''
+
     def __init__(self, aggregator, abench):
         AbstractReader.__init__(self, aggregator)
         self.abench = abench
@@ -145,6 +148,7 @@ class ABReader(object):
 
 class ABInfoWidget(AbstractInfoWidget):
     ''' Console widget '''
+
     def __init__(self, abench):
         AbstractInfoWidget.__init__(self)
         self.abench = abench

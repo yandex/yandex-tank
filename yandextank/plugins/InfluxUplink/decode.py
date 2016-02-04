@@ -27,11 +27,8 @@ class Decoder(object):
         }
 
     def decode_monitoring(self, data):
-        data_items = (
-            mon_decoder.decode_line(line)
-            for line in data.splitlines()
-            if line.strip()
-        )
+        data_items = (mon_decoder.decode_line(line)
+                      for line in data.splitlines() if line.strip())
         return [self.decode_monitoring_item(item) for item in data_items]
 
     def decode_aggregate(self, data):
@@ -46,8 +43,10 @@ class Decoder(object):
                     "uuid": self.uuid,
                 },
                 "time": timestamp,
-                "fields": {str(k): v for k, v in overall['quantiles'].items()},
-            }, {
+                "fields": {str(k): v
+                           for k, v in overall['quantiles'].items()},
+            },
+            {
                 "measurement": "overall_meta",
                 "tags": {
                     "tank": self.tank_tag,
@@ -69,7 +68,8 @@ class Decoder(object):
                     "uuid": self.uuid,
                 },
                 "time": timestamp,
-                "fields": {str(k): v for k, v in overall['net_codes'].items()},
+                "fields": {str(k): v
+                           for k, v in overall['net_codes'].items()},
             }]
         if overall['http_codes']:
             points += [{
@@ -79,6 +79,7 @@ class Decoder(object):
                     "uuid": self.uuid,
                 },
                 "time": timestamp,
-                "fields": {str(k): v for k, v in overall['http_codes'].items()},
+                "fields": {str(k): v
+                           for k, v in overall['http_codes'].items()},
             }]
         return points

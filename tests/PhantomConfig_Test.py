@@ -24,8 +24,8 @@ class PhantomConfigTestCase(TankTestCase):
         config = foo.compose_config()
         conf_str = open(config).read()
         logging.info(conf_str)
-        self.assertEquals(conf_str.count("io_benchmark_method_stream_transport_ssl"), 0)
-
+        self.assertEquals(
+            conf_str.count("io_benchmark_method_stream_transport_ssl"), 0)
 
     def test_double(self):
         core = self.get_core()
@@ -47,8 +47,8 @@ class PhantomConfigTestCase(TankTestCase):
         self.assertEquals(conf_str.count("benchmark_io "), 2)
         self.assertEquals(conf_str.count("benchmark_io1 "), 2)
         self.assertEquals(conf_str.count("benchmark_io2 "), 2)
-        self.assertEquals(conf_str.count("io_benchmark_method_stream_transport_ssl"), 1)
-
+        self.assertEquals(
+            conf_str.count("io_benchmark_method_stream_transport_ssl"), 1)
 
         conf_str = open(config).read()
         logging.info(conf_str)
@@ -57,9 +57,12 @@ class PhantomConfigTestCase(TankTestCase):
     def test_multiload_parsing(self):
         core = self.get_core()
         foo = StepperWrapper(core, PhantomPlugin.SECTION)
-        foo.core.set_option('phantom', 'rps_schedule', 'const(1,1) line(1,100,60)\nstep(1,10,1,10)')
+        foo.core.set_option('phantom', 'rps_schedule',
+                            'const(1,1) line(1,100,60)\nstep(1,10,1,10)')
         foo.read_config()
-        self.assertEquals(['const(1,1)', 'line(1,100,60)', 'step(1,10,1,10)'], foo.rps_schedule)
+        self.assertEquals(
+            ['const(1,1)', 'line(1,100,60)', 'step(1,10,1,10)'
+             ], foo.rps_schedule)
 
 
 class AddressWizardTestCase(TankTestCase):
@@ -72,7 +75,13 @@ class AddressWizardTestCase(TankTestCase):
         "exc1": socket.gaierror("Simulated error")
     }
 
-    def lookup_fn(self, host, port, family=None, socktype=None, proto=None, flags=None):
+    def lookup_fn(self,
+                  host,
+                  port,
+                  family=None,
+                  socktype=None,
+                  proto=None,
+                  flags=None):
         """
         Mocking real resolver for unit testing purpose
         """
@@ -84,7 +93,8 @@ class AddressWizardTestCase(TankTestCase):
         if isinstance(self.results[host], IOError):
             raise self.results[host]
 
-        return [(self.results[host][1], None, None, None, (self.results[host][0], port))]
+        return [(self.results[host][1], None, None, None,
+                 (self.results[host][0], port))]
 
     def setUp(self):
         self.foo = AddressWizard()

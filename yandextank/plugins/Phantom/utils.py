@@ -41,8 +41,11 @@ class PhantomConfig:
 
     @staticmethod
     def get_available_options():
-        opts = ["threads", "phantom_modules_path",
-                "additional_libs", "writelog", "enum_ammo", ]
+        opts = ["threads",
+                "phantom_modules_path",
+                "additional_libs",
+                "writelog",
+                "enum_ammo", ]
         opts += StreamConfig.get_available_options()
         return opts
 
@@ -50,8 +53,8 @@ class PhantomConfig:
         """        Read phantom tool specific options        """
         self.threads = self.get_option(
             "threads", str(int(multiprocessing.cpu_count() / 2) + 1))
-        self.phantom_modules_path = self.get_option(
-            "phantom_modules_path", "/usr/lib/phantom")
+        self.phantom_modules_path = self.get_option("phantom_modules_path",
+                                                    "/usr/lib/phantom")
         self.additional_libs = self.get_option("additional_libs", "")
         self.answ_log_level = self.get_option("writelog", "none")
         if self.answ_log_level == '0':
@@ -61,10 +64,12 @@ class PhantomConfig:
 
         self.answ_log = self.core.mkstemp(".log", "answ_")
         self.core.add_artifact_file(self.answ_log)
-        self.phout_file = self.core.get_option(self.SECTION, self.OPTION_PHOUT, '')
+        self.phout_file = self.core.get_option(self.SECTION, self.OPTION_PHOUT,
+                                               '')
         if not self.phout_file:
             self.phout_file = self.core.mkstemp(".log", "phout_")
-            self.core.set_option(self.SECTION, self.OPTION_PHOUT, self.phout_file)
+            self.core.set_option(self.SECTION, self.OPTION_PHOUT,
+                                 self.phout_file)
         self.core.add_artifact_file(self.phout_file)
         self.stat_log = self.core.mkstemp(".log", "phantom_stat_")
         self.core.add_artifact_file(self.stat_log)
@@ -72,20 +77,20 @@ class PhantomConfig:
         self.core.add_artifact_file(self.phantom_log)
 
         main_stream = StreamConfig(
-            self.core, len(self.streams), self.phout_file,
-            self.answ_log, self.answ_log_level, self.timeout, self.SECTION)
+            self.core, len(self.streams), self.phout_file, self.answ_log,
+            self.answ_log_level, self.timeout, self.SECTION)
         self.streams.append(main_stream)
 
         for section in self.core.config.find_sections(self.SECTION + '-'):
-            self.streams.append(
-                StreamConfig(self.core, len(self.streams), self.phout_file, self.answ_log, self.answ_log_level,
-                             self.timeout, section))
+            self.streams.append(StreamConfig(
+                self.core, len(self.streams), self.phout_file, self.answ_log,
+                self.answ_log_level, self.timeout, section))
 
         for stream in self.streams:
             stream.read_config()
 
         if any(stream.ssl for stream in self.streams):
-            self.additional_libs+=' ssl io_benchmark_method_stream_transport_ssl'
+            self.additional_libs += ' ssl io_benchmark_method_stream_transport_ssl'
 
     def compose_config(self):
         """        Generate phantom tool run config        """
@@ -165,8 +170,8 @@ class PhantomConfig:
 
             result.ammo_file += stream.stepper_wrapper.ammo_file + ' '
             result.ammo_count += stream.stepper_wrapper.ammo_count
-            result.duration = max(
-                result.duration, stream.stepper_wrapper.duration)
+            result.duration = max(result.duration,
+                                  stream.stepper_wrapper.duration)
             result.instances += stream.instances
 
         if not result.ammo_count:
@@ -179,7 +184,8 @@ class StreamConfig:
 
     OPTION_INSTANCES_LIMIT = 'instances'
 
-    def __init__(self, core, sequence, phout, answ, answ_level, timeout, section):
+    def __init__(self, core, sequence, phout, answ, answ_level, timeout,
+                 section):
         self.core = core
         self.address_wizard = AddressWizard()
 
@@ -219,8 +225,8 @@ class StreamConfig:
 
     @staticmethod
     def get_available_options():
-        opts = ["ssl", "tank_type", 'gatling_ip',
-                "method_prefix", "source_log_prefix"]
+        opts = ["ssl", "tank_type", 'gatling_ip', "method_prefix",
+                "source_log_prefix"]
         opts += ["phantom_http_line", "phantom_http_field_num",
                  "phantom_http_field", "phantom_http_entity"]
         opts += ['address', "port", StreamConfig.OPTION_INSTANCES_LIMIT]
@@ -234,26 +240,27 @@ class StreamConfig:
         self.ssl = int(self.get_option("ssl", '0'))
         self.tank_type = self.get_option("tank_type", 'http')
         # TODO: refactor. Maybe we should decide how to interact with StepperWrapper here.
-        self.instances = int(
-            self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
+        self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT,
+                                             '1000'))
         self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
         self.method_prefix = self.get_option("method_prefix", 'method_stream')
         self.method_options = self.get_option("method_options", '')
         self.source_log_prefix = self.get_option("source_log_prefix", '')
 
         self.phantom_http_line = self.get_option("phantom_http_line", "")
-        self.phantom_http_field_num = self.get_option("phantom_http_field_num", "")
+        self.phantom_http_field_num = self.get_option("phantom_http_field_num",
+                                                      "")
         self.phantom_http_field = self.get_option("phantom_http_field", "")
         self.phantom_http_entity = self.get_option("phantom_http_entity", "")
 
         self.address = self.get_option('address', '127.0.0.1')
         do_test_connect = int(self.get_option("connection_test", "1")) > 0
         explicit_port = self.get_option('port', '')
-        self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(self.address,
-                                                                                           do_test_connect,
-                                                                                           explicit_port)
+        self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(
+            self.address, do_test_connect, explicit_port)
 
-        logging.info("Resolved %s into %s:%s", self.address, self.resolved_ip, self.port)
+        logging.info("Resolved %s into %s:%s", self.address, self.resolved_ip,
+                     self.port)
 
         self.client_cipher_suites = self.get_option("client_cipher_suites", "")
         self.client_certificate = self.get_option("client_certificate", "")
@@ -287,8 +294,7 @@ class StreamConfig:
                                 % (self.client_key, self.client_certificate)
             if self.client_cipher_suites:
                 _ciphers = 'ciphers = "%s"' % self.client_cipher_suites
-            kwargs[
-                'ssl_transport'] = ssl_template % (_auth_section, _ciphers)
+            kwargs['ssl_transport'] = ssl_template % (_auth_section, _ciphers)
         else:
             kwargs['ssl_transport'] = ""
         kwargs['method_stream'] = self.method_prefix + \
@@ -334,14 +340,15 @@ class StreamConfig:
             fname = 'phantom_benchmark_main.tpl'
         else:
             fname = 'phantom_benchmark_additional.tpl'
-        template_str = template_str = resource_string(__name__, "config/" + fname)
+        template_str = template_str = resource_string(__name__,
+                                                      "config/" + fname)
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
 
         return config
 
-
 # ========================================================================
+
 
 class AddressWizard:
     def __init__(self):
@@ -386,16 +393,18 @@ class AddressWizard:
             resolved = self.lookup_fn(address_str, port)
             logging.debug("Lookup result: %s", resolved)
         except Exception as exc:
-            logging.debug("Exception trying to resolve hostname %s : %s", address_str, traceback.format_exc(exc))
+            logging.debug("Exception trying to resolve hostname %s : %s",
+                          address_str, traceback.format_exc(exc))
             msg = "Failed to resolve hostname: %s. Error: %s"
-            raise RuntimeError (msg % (address_str, exc))
+            raise RuntimeError(msg % (address_str, exc))
 
         for (family, socktype, proto, canonname, sockaddr) in resolved:
             is_v6 = family == socket.AF_INET6
             parsed_ip, port = sockaddr[0], sockaddr[1]
 
             if explicit_port:
-                logging.warn("Using phantom.port option is deprecated. Use phantom.address=[address]:port instead")
+                logging.warn(
+                    "Using phantom.port option is deprecated. Use phantom.address=[address]:port instead")
                 port = int(explicit_port)
             elif not port:
                 port = 80
@@ -404,7 +413,8 @@ class AddressWizard:
                 try:
                     self.__test(family, (parsed_ip, port))
                 except RuntimeError, exc:
-                    logging.warn("Failed TCP connection test using [%s]:%s", parsed_ip, port)
+                    logging.warn("Failed TCP connection test using [%s]:%s",
+                                 parsed_ip, port)
                     continue
 
             return is_v6, parsed_ip, int(port), address_str
@@ -418,7 +428,8 @@ class AddressWizard:
             test_sock.settimeout(5)
             test_sock.connect(sa)
         except Exception, exc:
-            logging.debug("Exception on connect attempt [%s]:%s : %s", sa[0], sa[1], traceback.format_exc(exc))
+            logging.debug("Exception on connect attempt [%s]:%s : %s", sa[0],
+                          sa[1], traceback.format_exc(exc))
             msg = "TCP Connection test failed for [%s]:%s, use phantom.connection_test=0 to disable it"
             raise RuntimeError(msg % (sa[0], sa[1]))
         finally:

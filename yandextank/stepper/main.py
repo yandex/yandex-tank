@@ -14,7 +14,6 @@ from util import get_opener
 
 
 class AmmoFactory(object):
-
     '''
     A generator that produces ammo.
     '''
@@ -38,20 +37,17 @@ class AmmoFactory(object):
         configured ComponentFactory, passed as a parameter to the
         __init__ method of this class.
         '''
-        ammo_stream = (ammo for ammo in (
-            (missile, marker or self.marker(missile))
-            for missile, marker
-            in self.ammo_generator
-        ) if self.filter(ammo))
+        ammo_stream = (ammo
+                       for ammo in ((missile, marker or self.marker(missile))
+                                    for missile, marker in self.ammo_generator)
+                       if self.filter(ammo))
 
-        return (
-            (timestamp, marker or self.marker(missile), missile)
-            for timestamp, (missile, marker)
-            in izip(self.load_plan, ammo_stream)
-        )
+        return ((timestamp, marker or self.marker(missile), missile)
+                for timestamp, (missile, marker) in izip(self.load_plan,
+                                                         ammo_stream))
+
 
 class Stepper(object):
-
     def __init__(self, **kwargs):
         info.status = info.StepperStatus()
         self.af = AmmoFactory(ComponentFactory(**kwargs))
@@ -68,7 +64,6 @@ class Stepper(object):
 
 class StepperWrapper(object):
     # TODO: review and rewrite this class
-
     '''
     Wrapper for cached stepper functionality
     '''
@@ -119,8 +114,8 @@ class StepperWrapper(object):
     def get_option(self, option_ammofile, param2=None):
         ''' get_option wrapper'''
         result = self.core.get_option(self.section, option_ammofile, param2)
-        self.log.debug(
-            "Option %s.%s = %s", self.section, option_ammofile, result)
+        self.log.debug("Option %s.%s = %s", self.section, option_ammofile,
+                       result)
         return result
 
     @staticmethod
@@ -128,12 +123,9 @@ class StepperWrapper(object):
         opts = [StepperWrapper.OPTION_AMMOFILE, StepperWrapper.OPTION_LOOP,
                 StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD,
                 StepperWrapper.OPTION_INSTANCES_LIMIT]
-        opts += ["instances_schedule", "uris",
-                 "headers", "header_http",
-                 "autocases", "enum_ammo",
-                 "ammo_type", "ammo_limit"]
-        opts += ["use_caching", "cache_dir",
-                 "force_stepping", "file_cache",
+        opts += ["instances_schedule", "uris", "headers", "header_http",
+                 "autocases", "enum_ammo", "ammo_type", "ammo_limit"]
+        opts += ["use_caching", "cache_dir", "force_stepping", "file_cache",
                  "chosen_cases"]
         return opts
 
@@ -153,12 +145,13 @@ class StepperWrapper(object):
                 if step.strip():
                     steps.append(step.strip() + ')')
             return steps
-        self.rps_schedule = make_steps(
-            self.get_option(self.OPTION_SCHEDULE, ''))
-        self.instances_schedule = make_steps(
-            self.get_option("instances_schedule", ''))
-        self.instances = int(
-            self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
+
+        self.rps_schedule = make_steps(self.get_option(self.OPTION_SCHEDULE,
+                                                       ''))
+        self.instances_schedule = make_steps(self.get_option(
+            "instances_schedule", ''))
+        self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT,
+                                             '1000'))
         self.uris = self.get_option("uris", '').strip().split("\n")
         while '' in self.uris:
             self.uris.remove('')
@@ -170,8 +163,8 @@ class StepperWrapper(object):
         self.use_caching = int(self.get_option("use_caching", '1'))
 
         self.file_cache = int(self.get_option('file_cache', '8192'))
-        cache_dir = self.core.get_option(
-            self.section, "cache_dir", self.core.artifacts_base_dir)
+        cache_dir = self.core.get_option(self.section, "cache_dir",
+                                         self.core.artifacts_base_dir)
         self.cache_dir = os.path.expanduser(cache_dir)
         self.force_stepping = int(self.get_option("force_stepping", '0'))
         self.stpd = self.get_option(self.OPTION_STPD, "")
@@ -181,6 +174,7 @@ class StepperWrapper(object):
 
     def prepare_stepper(self):
         ''' Generate test data if necessary '''
+
         def publish_info(stepper_info):
             info.status.publish('loadscheme', stepper_info.loadscheme)
             info.status.publish('loop_count', stepper_info.loop_count)
@@ -189,19 +183,24 @@ class StepperWrapper(object):
             info.status.ammo_count = stepper_info.ammo_count
             info.status.publish('instances', stepper_info.instances)
             return stepper_info
+
         if not self.stpd:
             self.stpd = self.__get_stpd_filename()
             self.core.set_option(self.section, self.OPTION_STPD, self.stpd)
-            if self.use_caching and not self.force_stepping and os.path.exists(self.stpd) and os.path.exists(self.__si_filename()):
+            if self.use_caching and not self.force_stepping and os.path.exists(
+                    self.stpd) and os.path.exists(self.__si_filename()):
                 self.log.info("Using cached stpd-file: %s", self.stpd)
                 stepper_info = self.__read_cached_options()
                 if self.instances and self.rps_schedule:
                     self.log.info(
-                        "rps_schedule is set. Overriding cached instances param from config: %s", self.instances)
-                    stepper_info = stepper_info._replace(instances=self.instances)
+                        "rps_schedule is set. Overriding cached instances param from config: %s",
+                        self.instances)
+                    stepper_info = stepper_info._replace(
+                        instances=self.instances)
                 publish_info(stepper_info)
             else:
-                if self.force_stepping and os.path.exists(self.__si_filename()):
+                if self.force_stepping and os.path.exists(self.__si_filename(
+                )):
                     os.remove(self.__si_filename())
                 self.__make_stpd_file()
                 stepper_info = info.status.get_info()
@@ -241,8 +240,7 @@ class StepperWrapper(object):
                 hashed_str += sep + opener.hash
             else:
                 if not self.uris:
-                    raise RuntimeError(
-                        "Neither ammofile nor uris specified")
+                    raise RuntimeError("Neither ammofile nor uris specified")
                 hashed_str += sep + \
                     ';'.join(self.uris) + sep + ';'.join(self.headers)
             self.log.debug("stpd-hash source: %s", hashed_str)
@@ -290,7 +288,6 @@ class StepperWrapper(object):
             autocases=self.autocases,
             enum_ammo=self.enum_ammo,
             ammo_type=self.ammo_type,
-            chosen_cases=self.chosen_cases,
-        )
+            chosen_cases=self.chosen_cases, )
         with open(self.stpd, 'w', self.file_cache) as os:
             stepper.write(os)

@@ -11,7 +11,6 @@ from .reader import BFGReader
 
 
 class BFGPlugin(AbstractPlugin):
-
     ''' Big Fucking Gun plugin '''
     SECTION = 'bfg'
 
@@ -37,8 +36,8 @@ class BFGPlugin(AbstractPlugin):
 
     def get_available_options(self):
         return [
-            "gun_type", "instances",
-            "cached_stpd"] + self.stepper_wrapper.get_available_options
+            "gun_type", "instances", "cached_stpd"
+        ] + self.stepper_wrapper.get_available_options
 
     def configure(self):
         self.log.info("Configuring BFG...")
@@ -51,21 +50,19 @@ class BFGPlugin(AbstractPlugin):
         if gun_type in self.gun_classes:
             self.gun = self.gun_classes[gun_type](self.core)
         else:
-            raise NotImplementedError(
-                'No such gun type implemented: "%s"' % gun_type)
+            raise NotImplementedError('No such gun type implemented: "%s"' %
+                                      gun_type)
         cached_stpd_option = self.get_option("cached_stpd", '0')
         if cached_stpd_option == '1':
             cached_stpd = True
         else:
             cached_stpd = False
-        self.bfg = BFG(
-            gun=self.gun,
-            instances=self.get_option("instances", '15'),
-            threads=self.get_option("threads", '10'),
-            stpd_filename=self.stepper_wrapper.stpd,
-            cached_stpd=cached_stpd,
-            zmq=self.get_option("zmq", "")
-        )
+        self.bfg = BFG(gun=self.gun,
+                       instances=self.get_option("instances", '15'),
+                       threads=self.get_option("threads", '10'),
+                       stpd_filename=self.stepper_wrapper.stpd,
+                       cached_stpd=cached_stpd,
+                       zmq=self.get_option("zmq", ""))
         aggregator = None
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
@@ -74,8 +71,9 @@ class BFGPlugin(AbstractPlugin):
 
         if aggregator:
             result_cache_size = int(self.get_option("result_cache_size", '5'))
-            aggregator.reader = BFGReader(
-                aggregator, self.bfg, result_cache_size=result_cache_size)
+            aggregator.reader = BFGReader(aggregator,
+                                          self.bfg,
+                                          result_cache_size=result_cache_size)
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)

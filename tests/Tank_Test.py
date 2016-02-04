@@ -9,7 +9,8 @@ from yandextank.core import TankCore
 
 
 class TankTestCase(unittest.TestCase):
-    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s\t%(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s\t%(message)s")
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler(sys.stdout)

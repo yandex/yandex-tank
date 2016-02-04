@@ -2,6 +2,7 @@ from yandextank.plugins.ConsoleScreen import Screen, CurrentHTTPBlock, CurrentNe
 from ConsoleOnlinePlugin_Test import FakeConsoleMarkup
 from Tank_Test import TankTestCase
 
+
 class BlocksTestCase(TankTestCase):
     def test_HTTP(self):
         screen = Screen(50, FakeConsoleMarkup())
@@ -10,7 +11,7 @@ class BlocksTestCase(TankTestCase):
         print block.lines
         self.assertEquals('<w>HTTP for 0 RPS:  <rst>', block.lines[0].strip())
         self.assertEquals(1, len(block.lines))
-    
+
         data = self.get_aggregate_data('data/preproc_single.txt')
         data.overall.planned_requests = 100
         data.overall.http_codes = {'400': 10}
@@ -32,7 +33,7 @@ class BlocksTestCase(TankTestCase):
         print block.lines
         self.assertEquals('<w> NET for 0 RPS:  <rst>', block.lines[0].strip())
         self.assertEquals(1, len(block.lines))
-    
+
         data = self.get_aggregate_data('data/preproc_single.txt')
         data.overall.planned_requests = 100
         data.overall.net_codes = {'0': 10}

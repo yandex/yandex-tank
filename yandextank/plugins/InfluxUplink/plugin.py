@@ -8,12 +8,10 @@ from yandextank.core import AbstractPlugin
 from decode import Decoder, uts
 from influxdb import InfluxDBClient
 
-
 LOG = logging.getLogger(__name__)
 
 
 class InfluxUplinkPlugin(AbstractPlugin, AggregateResultListener):
-
     '''InfluxDB data uploader'''
 
     SECTION = 'influx'
@@ -29,7 +27,8 @@ class InfluxUplinkPlugin(AbstractPlugin, AggregateResultListener):
         self.decoder = None
 
     def get_available_options(self):
-        return ["address", "port", "tank_tag", "grafana_root", "grafana_dashboard"]
+        return ["address", "port", "tank_tag", "grafana_root",
+                "grafana_dashboard"]
 
     def start_test(self):
         self.start_time = datetime.datetime.now()
@@ -43,19 +42,17 @@ class InfluxUplinkPlugin(AbstractPlugin, AggregateResultListener):
         self.tank_tag = self.get_option("tank_tag", "none")
         address = self.get_option("address", "localhost")
         port = int(self.get_option("port", "8086"))
-        self.client = InfluxDBClient(
-            address, port, 'root', 'root', 'mydb')
+        self.client = InfluxDBClient(address, port, 'root', 'root', 'mydb')
         grafana_root = self.get_option("grafana_root", "http://localhost/")
-        grafana_dashboard = self.get_option("grafana_dashboard", "tank-dashboard")
-        uuid=self.core.get_uuid()
+        grafana_dashboard = self.get_option("grafana_dashboard",
+                                            "tank-dashboard")
+        uuid = self.core.get_uuid()
         LOG.info(
             "Grafana link: {grafana_root}"
             "dashboard/db/{grafana_dashboard}?var-uuid={uuid}&from=-5m&to=now".format(
                 grafana_root=grafana_root,
                 grafana_dashboard=grafana_dashboard,
-                uuid=uuid,
-            )
-        )
+                uuid=uuid, ))
         self.decoder = Decoder(self.tank_tag, uuid)
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)

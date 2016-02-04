@@ -56,7 +56,8 @@ class PhantomPlugin(AbstractPlugin):
         return __file__
 
     def get_available_options(self):
-        opts = ["eta_file", "phantom_path", "buffered_seconds", "exclude_markers"]
+        opts = ["eta_file", "phantom_path", "buffered_seconds",
+                "exclude_markers"]
         opts += 'affinity'
         opts += [PhantomConfig.OPTION_PHOUT, self.OPTION_CONFIG]
         opts += PhantomConfig.get_available_options()
@@ -69,10 +70,11 @@ class PhantomPlugin(AbstractPlugin):
         self.core.add_artifact_file(self.eta_file)
         self.phantom_path = self.get_option("phantom_path", 'phantom')
         self.enum_ammo = self.get_option("enum_ammo", False)
-        self.buffered_seconds = int(
-            self.get_option("buffered_seconds", self.buffered_seconds))
-        self.exclude_markers = set(filter((lambda marker: marker != ''),
-                                        self.get_option('exclude_markers', []).split(' ')))
+        self.buffered_seconds = int(self.get_option("buffered_seconds",
+                                                    self.buffered_seconds))
+        self.exclude_markers = set(filter(
+            (lambda marker: marker != ''), self.get_option('exclude_markers',
+                                                           []).split(' ')))
         self.taskset_affinity = self.get_option('affinity', '')
 
         try:
@@ -83,7 +85,8 @@ class PhantomPlugin(AbstractPlugin):
                 "No autostop plugin found, not adding instances criteria")
 
         self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
-        if not self.get_option(self.OPTION_CONFIG, '') and self.predefined_phout:
+        if not self.get_option(self.OPTION_CONFIG,
+                               '') and self.predefined_phout:
             self.phout_import_mode = True
 
         if not self.config and not self.phout_import_mode:
@@ -111,10 +114,11 @@ class PhantomPlugin(AbstractPlugin):
             retcode = result[0]
             if retcode:
                 raise RuntimeError(
-                    "Config check failed. Subprocess returned code %s" % retcode)
+                    "Config check failed. Subprocess returned code %s" %
+                    retcode)
             if result[2]:
-                raise RuntimeError(
-                    "Subprocess returned message: %s" % result[2])
+                raise RuntimeError("Subprocess returned message: %s" %
+                                   result[2])
             reader = PhantomReader(self.phantom.phout_file)
         else:
             reader = PhantomReader(self.predefined_phout)
@@ -143,38 +147,43 @@ class PhantomPlugin(AbstractPlugin):
     def start_test(self):
         if not self.phout_import_mode:
             args = [self.phantom_path, 'run', self.config]
-            self.log.debug(
-                "Starting %s with arguments: %s", self.phantom_path, args)
+            self.log.debug("Starting %s with arguments: %s", self.phantom_path,
+                           args)
             if self.taskset_affinity != '':
-                args = [self.core.taskset_path, '-c', self.taskset_affinity] + args
+                args = [self.core.taskset_path, '-c', self.taskset_affinity
+                        ] + args
                 self.log.debug(
-                    'Enabling taskset for phantom with affinity: %s, cores count: %d', self.taskset_affinity, self.cpu_count)
+                    'Enabling taskset for phantom with affinity: %s, cores count: %d',
+                    self.taskset_affinity, self.cpu_count)
             self.phantom_start_time = time.time()
-            phantom_stderr_file = self.core.mkstemp(
-                ".log", "phantom_stdout_stderr_")
+            phantom_stderr_file = self.core.mkstemp(".log",
+                                                    "phantom_stdout_stderr_")
             self.core.add_artifact_file(phantom_stderr_file)
             self.phantom_stderr = open(phantom_stderr_file, 'w')
-            self.process = subprocess.Popen(
-                args, stderr=self.phantom_stderr, stdout=self.phantom_stderr, close_fds=True)
+            self.process = subprocess.Popen(args,
+                                            stderr=self.phantom_stderr,
+                                            stdout=self.phantom_stderr,
+                                            close_fds=True)
         else:
             if not os.path.exists(self.predefined_phout):
-                raise RuntimeError(
-                    "Phout file not exists for import: %s" % self.predefined_phout)
+                raise RuntimeError("Phout file not exists for import: %s" %
+                                   self.predefined_phout)
             self.log.warn(
-                "Will import phout file instead of running phantom: %s", self.predefined_phout)
+                "Will import phout file instead of running phantom: %s",
+                self.predefined_phout)
 
     def is_test_finished(self):
         if not self.phout_import_mode:
             retcode = self.process.poll()
             if retcode is not None:
-                self.log.info(
-                    "Phantom done its work with exit code: %s", retcode)
+                self.log.info("Phantom done its work with exit code: %s",
+                              retcode)
                 return abs(retcode)
             else:
                 info = self.get_info()
                 if info:
-                    eta = int(info.duration) - (
-                        int(time.time()) - int(self.phantom_start_time))
+                    eta = int(info.duration) - (int(time.time()) -
+                                                int(self.phantom_start_time))
                     self.publish('eta', eta)
                 return -1
         else:
@@ -186,11 +195,11 @@ class PhantomPlugin(AbstractPlugin):
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            self.log.warn(
-                "Terminating phantom process with PID %s", self.process.pid)
+            self.log.warn("Terminating phantom process with PID %s",
+                          self.process.pid)
             self.process.terminate()
             if self.process:
-                self.process.communicate()            
+                self.process.communicate()
         else:
             self.log.debug("Seems phantom finished OK")
         if self.phantom_stderr:
@@ -202,7 +211,8 @@ class PhantomPlugin(AbstractPlugin):
             info = self.get_info()
             if info and info.ammo_count != self.processed_ammo_count:
                 self.log.warning(
-                    "Planned ammo count %s differs from processed %s", info.ammo_count, self.processed_ammo_count)
+                    "Planned ammo count %s differs from processed %s",
+                    info.ammo_count, self.processed_ammo_count)
         return retcode
 
     def aggregate_second(self, second_aggregate_data):
@@ -260,8 +270,8 @@ class PhantomProgressBarWidget(AbstractInfoWidget):
         elif self.ammo_progress:
             left_part = self.ammo_count - self.ammo_progress
             if left_part > 0:
-                eta_secs = int(float(dur_seconds) / float(
-                    self.ammo_progress) * float(left_part))
+                eta_secs = int(float(dur_seconds) / float(self.ammo_progress) *
+                               float(left_part))
             else:
                 eta_secs = 0
             eta_time = datetime.timedelta(seconds=eta_secs)
@@ -284,8 +294,8 @@ class PhantomProgressBarWidget(AbstractInfoWidget):
         progress_chars += self.krutilka.next()
 
         res += color_bg + progress_chars + screen.markup.RESET + color_fg
-        res += '~' * (
-            pb_width - int(pb_width * progress)) + screen.markup.RESET + ' '
+        res += '~' * (pb_width - int(pb_width *
+                                     progress)) + screen.markup.RESET + ' '
         res += str_perc + "\n"
 
         eta = 'ETA: %s' % eta_time
@@ -331,22 +341,26 @@ class PhantomInfoWidget(AbstractInfoWidget):
         info = self.owner.get_info()
         if self.owner.phantom:
             template = "Hosts: %s => %s:%s\n Ammo: %s\nCount: %s\n Load: %s"
-            data = (socket.gethostname(), info.address, info.port, os.path.basename(
-                info.ammo_file), self.ammo_count, ' '.join(info.rps_schedule))
+            data = (socket.gethostname(), info.address, info.port,
+                    os.path.basename(info.ammo_file), self.ammo_count,
+                    ' '.join(info.rps_schedule))
             res = template % data
 
             res += "\n\n"
 
         res += "Active instances: "
         if float(self.instances) / self.instances_limit > 0.8:
-            res += screen.markup.RED + str(self.instances) + screen.markup.RESET
+            res += screen.markup.RED + str(
+                self.instances) + screen.markup.RESET
         elif float(self.instances) / self.instances_limit > 0.5:
-            res += screen.markup.YELLOW + str(self.instances) + screen.markup.RESET
+            res += screen.markup.YELLOW + str(
+                self.instances) + screen.markup.RESET
         else:
             res += str(self.instances)
 
         res += "\nPlanned requests: %s for %s\nActual responses: " % (
-            self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
+            self.planned,
+            datetime.timedelta(seconds=self.planned_rps_duration))
         if not self.planned == self.RPS:
             res += screen.markup.YELLOW + str(self.RPS) + screen.markup.RESET
         else:
@@ -354,18 +368,22 @@ class PhantomInfoWidget(AbstractInfoWidget):
 
         res += "\n        Accuracy: "
         if self.selfload < 80:
-            res += screen.markup.RED + ('%.2f' % self.selfload) + screen.markup.RESET
+            res += screen.markup.RED + ('%.2f' %
+                                        self.selfload) + screen.markup.RESET
         elif self.selfload < 95:
-            res += screen.markup.YELLOW + ('%.2f' % self.selfload) + screen.markup.RESET
+            res += screen.markup.YELLOW + ('%.2f' %
+                                           self.selfload) + screen.markup.RESET
         else:
             res += ('%.2f' % self.selfload)
 
         res += "%\n        Time lag: "
         if self.time_lag > self.owner.buffered_seconds * 5:
             self.log.debug("Time lag: %s", self.time_lag)
-            res += screen.markup.RED + str(datetime.timedelta(seconds=self.time_lag)) + screen.markup.RESET
+            res += screen.markup.RED + str(datetime.timedelta(
+                seconds=self.time_lag)) + screen.markup.RESET
         elif self.time_lag > self.owner.buffered_seconds:
-            res += screen.markup.YELLOW + str(datetime.timedelta(seconds=self.time_lag)) + screen.markup.RESET
+            res += screen.markup.YELLOW + str(datetime.timedelta(
+                seconds=self.time_lag)) + screen.markup.RESET
         else:
             res += str(datetime.timedelta(seconds=self.time_lag))
 
@@ -382,8 +400,8 @@ class PhantomInfoWidget(AbstractInfoWidget):
 
         self.RPS = second_aggregate_data.overall.RPS
         self.selfload = second_aggregate_data.overall.selfload
-        self.time_lag = int(
-            time.time() - time.mktime(second_aggregate_data.time.timetuple()))
+        self.time_lag = int(time.time() - time.mktime(
+            second_aggregate_data.time.timetuple()))
 
 
 class UsedInstancesCriteria(AbstractCriteria):
@@ -409,8 +427,8 @@ class UsedInstancesCriteria(AbstractCriteria):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(
-            param_str.split(',')[1])
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+            1])
 
         try:
             phantom = autostop.core.get_plugin_of_type(PhantomPlugin)
@@ -457,13 +475,13 @@ class UsedInstancesCriteria(AbstractCriteria):
         return level_str
 
     def explain(self):
-        items = (self.get_level_str(),
-                 self.seconds_count, self.cause_second.time)
+        items = (self.get_level_str(), self.seconds_count,
+                 self.cause_second.time)
         return "Testing threads (instances) utilization higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
         items = (self.get_level_str(), self.seconds_count, self.seconds_limit)
-        return "Instances >%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
-
+        return "Instances >%s for %s/%ss" % items, float(
+            self.seconds_count) / self.seconds_limit
 
 # ========================================================================

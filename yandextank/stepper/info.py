@@ -3,15 +3,11 @@ import logging
 from sys import stdout
 import time
 
-
 StepperInfo = namedtuple(
-    'StepperInfo',
-    'loop_count,steps,loadscheme,duration,ammo_count,instances'
-)
+    'StepperInfo', 'loop_count,steps,loadscheme,duration,ammo_count,instances')
 
 
 class StepperStatus(object):
-
     '''
     Raises StopIteration when limits are reached.
     '''
@@ -40,8 +36,8 @@ class StepperStatus(object):
 
     def publish(self, key, value):
         if key not in self.info:
-            raise RuntimeError(
-                "Tryed to publish to a non-existent key: %s" % key)
+            raise RuntimeError("Tryed to publish to a non-existent key: %s" %
+                               key)
         self.log.debug('Published %s to %s', value, key)
         self.info[key] = value
 
@@ -90,8 +86,8 @@ class StepperStatus(object):
         self.info['loop_count'] = self._loop_count
         for key in self.info:
             if self.info[key] is None:
-                raise RuntimeError(
-                    "Information for %s is not published yet." % key)
+                raise RuntimeError("Information for %s is not published yet." %
+                                   key)
         return StepperInfo(**self.info)
 
     def update_view(self):

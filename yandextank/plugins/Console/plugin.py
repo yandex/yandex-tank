@@ -8,7 +8,6 @@ from yandextank.plugins.Aggregator import AggregatorPlugin, AggregateResultListe
 from screen import Screen
 from yandextank.core import AbstractPlugin
 
-
 LOG = logging.getLogger(__name__)
 
 
@@ -35,14 +34,13 @@ class ConsolePlugin(AbstractPlugin, AggregateResultListener):
 
     def get_available_options(self):
         return [
-            "info_panel_width",
-            "short_only",
-            "disable_all_colors",
-            "disable_colors"]
+            "info_panel_width", "short_only", "disable_all_colors",
+            "disable_colors"
+        ]
 
     def configure(self):
-        self.info_panel_width = self.get_option(
-            "info_panel_width", self.info_panel_width)
+        self.info_panel_width = self.get_option("info_panel_width",
+                                                self.info_panel_width)
         self.short_only = int(self.get_option("short_only", '0'))
         if not int(self.get_option("disable_all_colors", '0')):
             self.console_markup = RealConsoleMarkup()
@@ -86,8 +84,7 @@ class ConsolePlugin(AbstractPlugin, AggregateResultListener):
         try:
             self.__console_view = self.screen.render_screen().encode('utf-8')
         except Exception, ex:
-            LOG.warn("Exception inside render: %s",
-                          traceback.format_exc(ex))
+            LOG.warn("Exception inside render: %s", traceback.format_exc(ex))
             self.render_exception = ex
             self.__console_view = ""
 
@@ -102,11 +99,11 @@ class ConsolePlugin(AbstractPlugin, AggregateResultListener):
                 info = "ts:{ts}\tRPS:{rps}\tavg:{avg_rt:.2f}\tmin:{q0:.2f}\tmax:{q100:.2f}\tq99:{q99:.2f} ".format(
                     ts=sample.get('ts'),
                     rps=overall['interval_real']['len'],
-                    avg_rt=overall['interval_real']['total'] / overall['interval_real']['len'] / 1000,
+                    avg_rt=overall['interval_real']['total'] / overall[
+                        'interval_real']['len'] / 1000,
                     q0=overall['interval_real']['min'] / 1000,
                     q100=overall['interval_real']['max'] / 1000,
-                    q99=overall['interval_real']['q']['value'][-1] / 1000,
-                )
+                    q99=overall['interval_real']['q']['value'][-1] / 1000, )
                 LOG.info(info)
         else:
             self.screen.add_second_data(data)
@@ -117,7 +114,6 @@ class ConsolePlugin(AbstractPlugin, AggregateResultListener):
             LOG.debug("No screen instance to add widget")
         else:
             self.screen.add_info_widget(widget)
-
 
 # ======================================================
 
@@ -146,16 +142,15 @@ class RealConsoleMarkup(object):
 
     def clean_markup(self, orig_str):
         ''' clean markup from string '''
-        for val in [self.YELLOW, self.RED, self.RESET,
-                    self.CYAN, self.BG_MAGENTA, self.WHITE,
-                    self.BG_GREEN, self.GREEN, self.BG_BROWN,
-                    self.RED_DARK, self.MAGENTA, self.BG_CYAN]:
+        for val in [self.YELLOW, self.RED, self.RESET, self.CYAN,
+                    self.BG_MAGENTA, self.WHITE, self.BG_GREEN, self.GREEN,
+                    self.BG_BROWN, self.RED_DARK, self.MAGENTA, self.BG_CYAN]:
             orig_str = orig_str.replace(val, '')
         return orig_str
 
-
 # ======================================================
 # FIXME: 3 better way to have it?
+
 
 class NoConsoleMarkup(RealConsoleMarkup):
     ''' all colors are disabled '''
@@ -176,7 +171,6 @@ class NoConsoleMarkup(RealConsoleMarkup):
     BG_GREEN = ''
     BG_BROWN = ''
     BG_CYAN = ''
-
 
 # ======================================================
 

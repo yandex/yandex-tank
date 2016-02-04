@@ -10,7 +10,6 @@ from yandextank.core.exceptions import PluginImplementationError
 from aggregator import Aggregator, DataPoller
 from chopper import TimeChopper
 
-
 LOG = logging.getLogger(__name__)
 
 
@@ -62,25 +61,22 @@ class AggregatorPlugin(AbstractPlugin):
         return []
 
     def configure(self):
-        self.aggregator_config = json.loads(
-            resource_string(__name__, 'config/phout.json'))
+        self.aggregator_config = json.loads(resource_string(
+            __name__, 'config/phout.json'))
 
     def start_test(self):
         if self.reader and self.stats_reader:
             pipeline = Aggregator(
                 TimeChopper(
-                    DataPoller(
-                        source=self.reader,
-                        poll_period=1),
+                    DataPoller(source=self.reader,
+                               poll_period=1),
                     cache_size=3),
-                self.aggregator_config
-            )
+                self.aggregator_config)
             self.drain = Drain(pipeline, self.results)
             self.drain.start()
             self.stats_drain = Drain(
-                DataPoller(
-                    source=self.stats_reader,
-                    poll_period=1),
+                DataPoller(source=self.stats_reader,
+                           poll_period=1),
                 self.stats)
             self.stats_drain.start()
         else:

@@ -4,11 +4,12 @@ from yandextank.core import ConfigManager
 import tempfile
 import unittest
 
-class  ConfigManagerTestCase(TankTestCase):
+
+class ConfigManagerTestCase(TankTestCase):
     def setUp(self):
         tank = ConsoleTank(FakeOptions(), None)
         tank.init_logging()
-        self.foo = ConfigManager()    
+        self.foo = ConfigManager()
 
     def tearDown(self):
         del self.foo
@@ -18,7 +19,7 @@ class  ConfigManagerTestCase(TankTestCase):
         confs = ['config/load_1.conf', 'config/load_2.conf']
         self.foo.load_files(confs)
         self.foo.flush()
-        
+
+
 if __name__ == '__main__':
     unittest.main()
-

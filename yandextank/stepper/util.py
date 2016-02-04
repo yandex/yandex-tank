@@ -34,12 +34,7 @@ def parse_duration(duration):
     _re_token = re.compile("([0-9.]+)([dhms]?)")
 
     def parse_token(time, multiplier):
-        multipliers = {
-            'd': 86400,
-            'h': 3600,
-            'm': 60,
-            's': 1,
-        }
+        multipliers = {'d': 86400, 'h': 3600, 'm': 60, 's': 1, }
         if multiplier:
             if multiplier in multipliers:
                 return int(float(time) * multipliers[multiplier] * 1000)
@@ -87,7 +82,6 @@ def get_opener(f_path):
 
 
 class GZOpener(object):
-
     def __init__(self, f_path):
         self.f_path = f_path
 
@@ -114,7 +108,6 @@ class GZOpener(object):
 
 
 class FSOpener(object):
-
     def __init__(self, f_path):
         self.f_path = f_path
 
@@ -141,7 +134,6 @@ class FSOpener(object):
 
 
 class HttpOpener(object):
-
     '''
     downloads small files
     for large files returns wrapped http stream
@@ -151,7 +143,10 @@ class HttpOpener(object):
         self.url = url
         # Meta params
         self.gzip = False
-        self.data_info = requests.head(self.url, verify=False, allow_redirects=True, headers={'Accept-Encoding': 'identity'})
+        self.data_info = requests.head(self.url,
+                                       verify=False,
+                                       allow_redirects=True,
+                                       headers={'Accept-Encoding': 'identity'})
 
     def __call__(self, *args, **kwargs):
         return self.open(*args, **kwargs)
@@ -159,7 +154,7 @@ class HttpOpener(object):
     def open(self, *args, **kwargs):
         if self.data_info.status_code == 200:
             self._detect_gzip()
-            if not self.gzip and self.data_length > 10 ** 8:
+            if not self.gzip and self.data_length > 10**8:
                 logging.info(
                     "Ammofile data is larger than 100MB. Reading from stream..")
                 return HttpStreamWrapper(self.url)
@@ -169,7 +164,8 @@ class HttpOpener(object):
                 tmpfile_path = "/tmp/%s" % hasher.hexdigest()
                 if os.path.exists(tmpfile_path):
                     logging.info(
-                        "Ammofile has already been downloaded to %s . Using it..", tmpfile_path)
+                        "Ammofile has already been downloaded to %s . Using it..",
+                        tmpfile_path)
                 else:
                     logging.info("Downloading ammofile to %s", tmpfile_path)
                     data = requests.get(self.url, verify=False)
@@ -188,7 +184,8 @@ class HttpOpener(object):
             tmpfile_path = "/tmp/%s" % hasher.hexdigest()
             if os.path.exists(tmpfile_path):
                 logging.info(
-                        "Ammofile has already been downloaded to %s . Using it..", tmpfile_path)
+                    "Ammofile has already been downloaded to %s . Using it..",
+                    tmpfile_path)
             else:
                 logging.info("Downloading ammofile to %s", tmpfile_path)
                 data = requests.get(self.url, verify=False)
@@ -203,8 +200,8 @@ class HttpOpener(object):
             else:
                 return open(tmpfile_path, 'rb')
         else:
-            raise RuntimeError(
-                "Ammo file not found: %s %s" % (self.data_info.status_code, self.url))
+            raise RuntimeError("Ammo file not found: %s %s" %
+                               (self.data_info.status_code, self.url))
 
     def _detect_gzip(self):
         stream = requests.get(self.url, stream=True, verify=False)
@@ -235,7 +232,6 @@ class HttpOpener(object):
 
 
 class HttpStreamWrapper():
-
     '''
     makes http stream to look like file object
     '''
@@ -262,7 +258,7 @@ class HttpStreamWrapper():
         self.stream = requests.get(self.url, stream=True, verify=False)
         self._content_consumed = False
 
-    def _enhance_buffer(self, bytes=10 ** 3):
+    def _enhance_buffer(self, bytes=10**3):
         self.buffer += self.stream.iter_content(bytes).next()
 
     def tell(self):
@@ -282,7 +278,8 @@ class HttpStreamWrapper():
         while not '\n' in self.buffer:
             try:
                 self._enhance_buffer()
-            except (StopIteration, TypeError, requests.exceptions.StreamConsumedError):
+            except (StopIteration, TypeError,
+                    requests.exceptions.StreamConsumedError):
                 self._content_consumed = True
                 break
         if not self._content_consumed or self.buffer:
@@ -299,7 +296,8 @@ class HttpStreamWrapper():
         while len(self.buffer) < chunk_size:
             try:
                 self._enhance_buffer()
-            except (StopIteration, TypeError, requests.exceptions.StreamConsumedError):
+            except (StopIteration, TypeError,
+                    requests.exceptions.StreamConsumedError):
                 break
         if len(self.buffer) > chunk_size:
             chunk = self.buffer[:chunk_size]

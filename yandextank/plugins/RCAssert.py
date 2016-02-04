@@ -1,6 +1,7 @@
 ''' Tank exit code check plugin '''
 from yandextank.core import AbstractPlugin
 
+
 class RCAssertPlugin(AbstractPlugin):
     ''' Apache Benchmark plugin '''
     SECTION = 'rcassert'
@@ -31,8 +32,11 @@ class RCAssertPlugin(AbstractPlugin):
         for code in self.ok_codes:
             self.log.debug("Comparing %s with %s codes", code, retcode)
             if code == int(retcode):
-                self.log.info("Exit code %s was changed to 0 by RCAssert plugin", code)
+                self.log.info(
+                    "Exit code %s was changed to 0 by RCAssert plugin", code)
                 return 0
 
-        self.log.info("Changing exit code to %s because RCAssert pass list was unsatisfied", self.fail_code)
+        self.log.info(
+            "Changing exit code to %s because RCAssert pass list was unsatisfied",
+            self.fail_code)
         return self.fail_code

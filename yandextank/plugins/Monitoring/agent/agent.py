@@ -19,6 +19,7 @@ import commands
 
 logger = logging.getLogger(__name__)
 
+
 def signal_handler(sig, frame):
     """ required for non-tty python runs to interrupt """
     raise KeyboardInterrupt()
@@ -66,9 +67,9 @@ class CpuStat(AbstractMetric):
         self.current_check = {}
 
     def columns(self, ):
-        columns = ['System_csw', 'System_int',
-                   'CPU_user', 'CPU_nice', 'CPU_system', 'CPU_idle', 'CPU_iowait',
-                   'CPU_irq', 'CPU_softirq', 'System_numproc', 'System_numthreads']
+        columns = ['System_csw', 'System_int', 'CPU_user', 'CPU_nice',
+                   'CPU_system', 'CPU_idle', 'CPU_iowait', 'CPU_irq',
+                   'CPU_softirq', 'System_numproc', 'System_numthreads']
         return columns
 
     def check(self, ):
@@ -76,40 +77,48 @@ class CpuStat(AbstractMetric):
         result = []
 
         try:
-            proc_stat_file = open('/proc/stat' ,'r')
+            proc_stat_file = open('/proc/stat', 'r')
             proc_stat_all = proc_stat_file.readlines()
             proc_stat_file.close()
         except Exception as exc:
-            logger.error('Error opening /proc/stat. Traceback: %s', traceback.format_exc(exc))
+            logger.error('Error opening /proc/stat. Traceback: %s',
+                         traceback.format_exc(exc))
             result.append([''] * 9)
         else:
             # Parse data
             try:
                 for stat in proc_stat_all:
                     if stat.startswith('cpu '):
-                        self.current_check['cpu'] = map(float, stat.split("\n")[0].split()[1:8])
+                        self.current_check['cpu'] = map(
+                            float, stat.split("\n")[0].split()[1:8])
                     if stat.startswith('ctxt '):
                         self.current_check['csw'] = float(stat.split()[1])
                     if stat.startswith('intr '):
                         self.current_check['intr'] = float(stat.split()[1])
             except Exception as exc:
-                logger.error('Error parsing /proc/stat data. Traceback: %s', traceback.format_exc(exc))
+                logger.error('Error parsing /proc/stat data. Traceback: %s',
+                             traceback.format_exc(exc))
 
             # Context switches and interrups delta
-            try: 
-                if not self.prev_check.get('csw') or not self.prev_check.get('intr'):
+            try:
+                if not self.prev_check.get('csw') or not self.prev_check.get(
+                        'intr'):
                     self.prev_check['csw'] = self.current_check['csw']
                     self.prev_check['intr'] = self.current_check['intr']
                     result.extend([''] * 2)
-                else:    
-                    delta_csw = str(self.current_check['csw'] - self.prev_check['csw'])
-                    delta_intr = str(self.current_check['intr'] - self.prev_check['intr'])
+                else:
+                    delta_csw = str(self.current_check['csw'] -
+                                    self.prev_check['csw'])
+                    delta_intr = str(self.current_check['intr'] -
+                                     self.prev_check['intr'])
                     self.prev_check['csw'] = self.current_check['csw']
                     self.prev_check['intr'] = self.current_check['intr']
                     result.append(delta_csw)
                     result.append(delta_intr)
             except Exception as exc:
-                logger.error('Error trying to count delta of cpu interrupts and csw. Traceback: %s', traceback.format_exc(exc))
+                logger.error(
+                    'Error trying to count delta of cpu interrupts and csw. Traceback: %s',
+                    traceback.format_exc(exc))
                 result.extend([''] * 2)
 
             #CPU usage metrics delta
@@ -122,7 +131,8 @@ class CpuStat(AbstractMetric):
                     cnt = 0
                     sum_val = 0
                     for metric in self.current_check['cpu']:
-                        delta_cpu = self.current_check['cpu'][cnt] - self.prev_check['cpu'][cnt]
+                        delta_cpu = self.current_check['cpu'][
+                            cnt] - self.prev_check['cpu'][cnt]
                         sum_val += delta_cpu
                         delta.append(delta_cpu)
                         cnt += 1
@@ -132,7 +142,9 @@ class CpuStat(AbstractMetric):
                         cnt += 1
                     self.prev_check['cpu'] = self.current_check['cpu']
             except Exception as exc:
-                logger.error('Error trying to count delta of cpu usage metrics. Traceback: %s', traceback.format_exc(exc))
+                logger.error(
+                    'Error trying to count delta of cpu usage metrics. Traceback: %s',
+                    traceback.format_exc(exc))
                 result.extend([''] * 7)
 
         # Numproc
@@ -141,24 +153,27 @@ class CpuStat(AbstractMetric):
             pids = []
             for element in proc_dirs:
                 try:
-                    element=int(element)
+                    element = int(element)
                 except Exception as exc:
                     pass
                 else:
                     pids.append(element)
         except Exception as exc:
-            logger.error('Error trying to count numprocs. Traceback: %s', traceback.format_exc(exc))
+            logger.error('Error trying to count numprocs. Traceback: %s',
+                         traceback.format_exc(exc))
             result.append([''])
         else:
             result.append(str(len(pids)))
 
         # Numthreads
         try:
-            loadavg_file = open('/proc/loadavg' ,'r')
+            loadavg_file = open('/proc/loadavg', 'r')
             numthreads = loadavg_file.readline().split()[3].split('/')[1]
             loadavg_file.close()
         except Exception as exc:
-            logger.error('Error opening /proc/loadavg to get numthreads. Traceback: %s', traceback.format_exc(exc))
+            logger.error(
+                'Error opening /proc/loadavg to get numthreads. Traceback: %s',
+                traceback.format_exc(exc))
             result.append([''])
         else:
             result.append(numthreads)
@@ -196,11 +211,15 @@ class Custom(AbstractMetric):
         res = []
         for el in self.tail:
             cmnd = base64.b64decode(el.split(':')[1])
-            output = subprocess.Popen(['tail', '-n', '1', cmnd], stdout=subprocess.PIPE).communicate()[0]
+            output = subprocess.Popen(
+                ['tail', '-n', '1', cmnd],
+                stdout=subprocess.PIPE).communicate()[0]
             res.append(self.diff_value(el, output.strip()))
         for el in self.call:
             cmnd = base64.b64decode(el.split(':')[1])
-            output = subprocess.Popen(cmnd, shell=True, stdout=subprocess.PIPE).stdout.read()
+            output = subprocess.Popen(cmnd,
+                                      shell=True,
+                                      stdout=subprocess.PIPE).stdout.read()
             res.append(self.diff_value(el, output.strip()))
         return res
 
@@ -247,7 +266,9 @@ class Disk(AbstractMetric):
                     writed += int(data[9])
 
             if self.read or self.write:
-                result = [str(size * (read - self.read)), str(size * (writed - self.write))]
+                result = [str(size *
+                              (read - self.read)), str(size *
+                                                       (writed - self.write))]
             else:
                 result = ['', '']
 
@@ -288,9 +309,12 @@ class Disk(AbstractMetric):
                                         devs.append(dsk_name)
                                         break
                             except Exception, exc:
-                                logger.info("Failed: %s", traceback.format_exc(exc))
+                                logger.info("Failed: %s",
+                                            traceback.format_exc(exc))
                 except Exception as exc:
-                    logger.info("Failed to get block device name via /sys/devices/: %s", traceback.format_exc(exc))
+                    logger.info(
+                        "Failed to get block device name via /sys/devices/: %s",
+                        traceback.format_exc(exc))
         logger.info("Devs: %s", devs)
         return devs
 
@@ -305,12 +329,14 @@ class Mem(AbstractMetric):
         AbstractMetric.__init__(self)
         self.name = 'advanced memory usage'
         self.nick = ('used', 'buff', 'cach', 'free', 'dirty')
-        self.vars = ('MemUsed', 'Buffers', 'Cached', 'MemFree', 'Dirty', 'MemTotal')
+        self.vars = ('MemUsed', 'Buffers', 'Cached', 'MemFree', 'Dirty',
+                     'MemTotal')
 
     #        self.open('/proc/meminfo')
 
     def columns(self):
-        columns = ['Memory_total', 'Memory_used', 'Memory_free', 'Memory_shared', 'Memory_buff', 'Memory_cached']
+        columns = ['Memory_total', 'Memory_used', 'Memory_free',
+                   'Memory_shared', 'Memory_buff', 'Memory_cached']
         logger.info("Start. Columns: %s" % columns)
         return columns
 
@@ -318,7 +344,10 @@ class Mem(AbstractMetric):
         result = []
         try:
             #TODO: change to simple file reading
-            output = subprocess.Popen('cat /proc/meminfo', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output = subprocess.Popen('cat /proc/meminfo',
+                                      shell=True,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
         except Exception, e:
             logger.error("%s: %s" % (e.__class__, str(e)))
             result.append([self.empty] * 9)
@@ -341,10 +370,13 @@ class Mem(AbstractMetric):
                     #                    print "name: %s " % name
                     if name in self.vars:
                         #                       print name, raw_value
-                        data.update({name: long(raw_value.split()[0]) / 1024.0})
+                        data.update({name: long(raw_value.split()[0]) / 1024.0
+                                     })
                         #                print data
-                data['MemUsed'] = data['MemTotal'] - data['MemFree'] - data['Buffers'] - data['Cached']
-            result = [data['MemTotal'], data['MemUsed'], data['MemFree'], 0, data['Buffers'], data['Cached']]
+                data['MemUsed'] = data['MemTotal'] - data['MemFree'] - data[
+                    'Buffers'] - data['Cached']
+            result = [data['MemTotal'], data['MemUsed'], data['MemFree'], 0,
+                      data['Buffers'], data['Cached']]
             return map(str, result)
 
 
@@ -395,8 +427,7 @@ class NetTcp(AbstractMetric):
         """
         fetch = lambda: commands.getoutput("ss -s | sed -ne '/^TCP:/p'")
 
-        regex = ( '(^[^(]+\()'
-                  '([^)]+)' )
+        regex = ('(^[^(]+\()' '([^)]+)')
         matches = re.match(regex, fetch())
         raw = matches.group(2)
 
@@ -404,7 +435,7 @@ class NetTcp(AbstractMetric):
         result = []
 
         for i in raw.split(','):
-            state,count = i.split()
+            state, count = i.split()
             data[state] = count.split('/')[0]
         for field in self.keys:
             if field in data:
@@ -446,7 +477,8 @@ class NetTxRx(AbstractMetric):
 
                 for line in lines[1:]:
                     counters = line.split()
-                    if counters[rx_pos].isdigit() and counters[tx_pos].isdigit():
+                    if counters[rx_pos].isdigit() and counters[tx_pos].isdigit(
+                    ):
                         rx += int(counters[rx_pos])
                         tx += int(counters[tx_pos])
             except Exception, e:
@@ -484,7 +516,10 @@ class Net(AbstractMetric):
         cmnd = "cat /proc/net/dev | tail -n +3 | cut -d':' -f 1,2 --output-delimiter=' ' | awk '{print $1, $2, $10}'"
         logger.debug("Starting: %s", cmnd)
         try:
-            stat = subprocess.Popen([cmnd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            stat = subprocess.Popen([cmnd],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    shell=True)
         except Exception, exc:
             logger.error("Error getting net metrics: %s", exc)
             result = ['', '']
@@ -512,9 +547,7 @@ class Net(AbstractMetric):
         logger.debug("Network recieved/sent bytes: %s", result)
         return result
 
-
 # ===========================
-
 
 
 class AgentWorker(Thread):
@@ -549,9 +582,13 @@ class AgentWorker(Thread):
 
     @staticmethod
     def popen(cmnd):
-        return subprocess.Popen(cmnd, bufsize=0, preexec_fn=os.setsid, close_fds=True, shell=True,
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+        return subprocess.Popen(cmnd,
+                                bufsize=0,
+                                preexec_fn=os.setsid,
+                                close_fds=True,
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
 
     def run(self):
         logger.info("Running startup commands")
@@ -564,7 +601,8 @@ class AgentWorker(Thread):
         header = []
 
         sync_time = str(self.c_start + (int(time.time()) - self.c_local_start))
-        header.extend(['start', self.c_host, sync_time])  # start compile init header
+        header.extend(['start', self.c_host, sync_time]
+                      )  # start compile init header
 
         # add metrics from config file to header
         for metric_name in self.metrics_collected:
@@ -584,18 +622,22 @@ class AgentWorker(Thread):
         while not self.finished:
             logger.debug('Start check')
             line = []
-            sync_time = str(self.c_start + (int(time.time()) - self.c_local_start))
+            sync_time = str(self.c_start + (int(time.time()) -
+                                            self.c_local_start))
             line.extend([self.c_host, sync_time])
 
             # known metrics
             for metric_name in self.metrics_collected:
                 try:
                     data = self.known_metrics[metric_name].check()
-                    if len(data) != len(self.known_metrics[metric_name].columns()):
-                        raise RuntimeError("Data len not matched columns count: %s" % data)
+                    if len(data) != len(self.known_metrics[
+                            metric_name].columns()):
+                        raise RuntimeError(
+                            "Data len not matched columns count: %s" % data)
                 except Exception, e:
                     logger.error('Can\'t fetch %s: %s', metric_name, e)
-                    data = [''] * len(self.known_metrics[metric_name].columns())
+                    data = [''
+                            ] * len(self.known_metrics[metric_name].columns())
                 line.extend(data)
 
             logger.debug("line: %s" % line)
@@ -656,12 +698,20 @@ class AgentConfig:
     def parse_options(self, def_cfg_path):
         # parse options
         parser = OptionParser()
-        parser.add_option('-c', '--config', dest='cfg_file', type='str',
-                          help='Config file path, default is: ./' + def_cfg_path,
-                          default=def_cfg_path)
+        parser.add_option(
+            '-c',
+            '--config',
+            dest='cfg_file',
+            type='str',
+            help='Config file path, default is: ./' + def_cfg_path,
+            default=def_cfg_path)
 
-        parser.add_option('-t', '--timestamp', dest='timestamp', type='int',
-                          help='Caller timestamp for synchronization', default=self.c_local_start)
+        parser.add_option('-t',
+                          '--timestamp',
+                          dest='timestamp',
+                          type='int',
+                          help='Caller timestamp for synchronization',
+                          default=self.c_local_start)
         (options, args) = parser.parse_args()
 
         self.c_start = options.timestamp
@@ -705,7 +755,6 @@ class AgentConfig:
             for option in config.options('shutdown'):
                 if option.startswith('cmd'):
                     self.shutdowns.append(config.get('shutdown', option))
-
 
     def prepare_worker(self, wrk):
         # populate

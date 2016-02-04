@@ -55,5 +55,4 @@ analytic tools for the results they produce.
         'yandextank.plugins.Pandora': ['config/*'],
         'yandextank.plugins.Aggregator': ['config/*'],
     },
-    use_2to3=True,
-)
+    use_2to3=True, )

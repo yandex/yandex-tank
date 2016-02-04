@@ -8,7 +8,6 @@ import logging
 import tempfile
 import os
 
-
 phantom_config = {
     "interval_real": ["total", "max", "min", "hist", "len"],
     "connect_time": ["total", "max", "min", "len"],
@@ -21,7 +20,6 @@ phantom_config = {
     "net_code": ["count"],
     "proto_code": ["count"],
 }
-
 
 LOG = logging.getLogger(__name__)
 
@@ -45,7 +43,6 @@ class Writer(threading.Thread):
 
 
 class ReaderTestCase(unittest.TestCase):
-
     def test_reader(self):
         _, filepath = tempfile.mkstemp()
         print(filepath)

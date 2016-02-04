@@ -5,14 +5,11 @@ import pandas as pd
 from yandextank.plugins.NumpyAggregator.chopper import TimeChopper
 from yandextank.plugins.NumpyAggregator.aggregator import Worker, Aggregator
 
-
 phout_columns = [
-    'send_ts', 'tag', 'interval_real',
-    'connect_time', 'send_time',
-    'latency', 'receive_time',
-    'interval_event', 'size_out',
-    'size_in', 'net_code', 'proto_code']
-
+    'send_ts', 'tag', 'interval_real', 'connect_time', 'send_time', 'latency',
+    'receive_time', 'interval_event', 'size_out', 'size_in', 'net_code',
+    'proto_code'
+]
 
 phantom_config = {
     "interval_real": ["total", "max", "min", "hist", "len"],
@@ -42,8 +39,7 @@ class TimeChopperTestCase(unittest.TestCase):
 
         #check we have no repeated timestamps
         self.assertEquals(
-            len(seconds_ts),
-            len(set(ts for tsl in seconds_ts for ts in tsl)))
+            len(seconds_ts), len(set(ts for tsl in seconds_ts for ts in tsl)))
 
 
 class WorkerTestCase(unittest.TestCase):
@@ -63,11 +59,10 @@ class WorkerTestCase(unittest.TestCase):
 
 class PhantomReader(object):
     def __init__(self, filename):
-        self.data_source = pd.read_csv(
-            filename,
-            sep='\t', names=phout_columns,
-            chunksize=10,
-        )
+        self.data_source = pd.read_csv(filename,
+                                       sep='\t',
+                                       names=phout_columns,
+                                       chunksize=10, )
 
     def __iter__(self):
         for chunk in self.data_source:
@@ -75,6 +70,7 @@ class PhantomReader(object):
             chunk['receive_sec'] = chunk.receive_ts.astype(int)
             chunk.set_index(['receive_sec'], inplace=True)
             yield chunk
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,7 +5,6 @@ import threading as th
 import httplib
 import logging
 
-
 LOG = logging.getLogger(__name__)
 
 
@@ -13,6 +12,7 @@ class Drain(th.Thread):
     """
     Drain a generator to a destination that answers to put(), in a thread
     """
+
     def __init__(self, source, destination):
         super(Drain, self).__init__()
         self.source = source
@@ -27,7 +27,6 @@ class Drain(th.Thread):
 
     def close(self):
         self.stop.set()
-
 
 ### HTTP codes
 HTTP = httplib.responses
@@ -60,7 +59,6 @@ WEBDAV = {
     999: 'Common Failure',
 }
 HTTP.update(WEBDAV)
-
 
 ### NET codes
 NET = {
