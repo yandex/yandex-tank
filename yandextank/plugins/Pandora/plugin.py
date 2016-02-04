@@ -10,6 +10,11 @@ from yandextank.plugins.ConsoleOnline import \
 import yandextank.plugins.ConsoleScreen as ConsoleScreen
 import datetime
 from config import PoolConfig, PandoraConfig, parse_schedule
+import requests
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PandoraPlugin(AbstractPlugin):
@@ -31,16 +36,16 @@ class PandoraPlugin(AbstractPlugin):
         return __file__
 
     def get_available_options(self):
-        opts = ["pandora_cmd", "buffered_seconds",
-                "ammo", "loop", "sample_log", "config_file",
-                "startup_schedule", "user_schedule", "gun_type"]
+        opts = ["pandora_cmd", "buffered_seconds", "ammo", "loop",
+                "sample_log", "config_file", "startup_schedule",
+                "user_schedule", "gun_type"]
         return opts
 
     def configure(self):
         # plugin part
         self.pandora_cmd = self.get_option("pandora_cmd", "pandora")
-        self.buffered_seconds = int(
-            self.get_option("buffered_seconds", self.buffered_seconds))
+        self.buffered_seconds = int(self.get_option("buffered_seconds",
+                                                    self.buffered_seconds))
 
         pool_config = PoolConfig()
 
@@ -60,15 +65,13 @@ class PandoraPlugin(AbstractPlugin):
         if startup_schedule:
             pool_config.set_startup_schedule(parse_schedule(startup_schedule))
         else:
-            raise RuntimeError(
-                "startup_schedule not specified")
+            raise RuntimeError("startup_schedule not specified")
 
         user_schedule = self.get_option("user_schedule", "")
         if user_schedule:
             pool_config.set_user_schedule(parse_schedule(user_schedule))
         else:
-            raise RuntimeError(
-                "user_schedule not specified")
+            raise RuntimeError("user_schedule not specified")
 
         shared_schedule = bool(int(self.get_option("shared_schedule", "1")))
         pool_config.set_shared_schedule(shared_schedule)
@@ -79,9 +82,9 @@ class PandoraPlugin(AbstractPlugin):
         gun_type = self.get_option("gun_type", "http")
         if gun_type == 'https':
             pool_config.set_ssl(True)
-            self.log.info("SSL is on")
+            logger.info("SSL is on")
             gun_type = "http"
-        self.log.info("Pandora gun type is: %s", gun_type)
+        logger.info("Pandora gun type is: %s", gun_type)
         pool_config.set_gun_type(gun_type)
 
         self.pandora_config = PandoraConfig()
@@ -89,8 +92,8 @@ class PandoraPlugin(AbstractPlugin):
 
         self.pandora_config_file = self.get_option("config_file", "")
         if not self.pandora_config_file:
-            self.pandora_config_file = self.core.mkstemp(
-                ".json", "pandora_config_")
+            self.pandora_config_file = self.core.mkstemp(".json",
+                                                         "pandora_config_")
         self.core.add_artifact_file(self.pandora_config_file)
         with open(self.pandora_config_file, 'w') as config_file:
             config_file.write(self.pandora_config.json())
@@ -100,10 +103,10 @@ class PandoraPlugin(AbstractPlugin):
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         except KeyError as ex:
-            self.log.warning("No aggregator found: %s", ex)
+            logger.warning("No aggregator found: %s", ex)
 
         if aggregator:
-            self.log.info(
+            logger.info(
                 "Linking sample and stats readers to aggregator. Reading samples from %s",
                 self.sample_log)
             aggregator.reader = PhantomReader(self.sample_log)
@@ -112,7 +115,7 @@ class PandoraPlugin(AbstractPlugin):
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
         except KeyError as ex:
-            self.log.debug("Console not found: %s", ex)
+            logger.debug("Console not found: %s", ex)
             console = None
 
         if console:
@@ -122,35 +125,34 @@ class PandoraPlugin(AbstractPlugin):
             aggregator.add_result_listener(widget)
 
     def start_test(self):
-        args = [self.pandora_cmd, self.pandora_config_file]
-        self.log.info("Starting: %s", args)
+        args = [self.pandora_cmd, "-expvar", self.pandora_config_file]
+        logger.info("Starting: %s", args)
         self.process_start_time = time.time()
-        process_stderr_file = self.core.mkstemp(
-            ".log", "pandora_")
+        process_stderr_file = self.core.mkstemp(".log", "pandora_")
         self.core.add_artifact_file(process_stderr_file)
         self.process_stderr = open(process_stderr_file, 'w')
-        self.process = subprocess.Popen(
-            args, stderr=self.process_stderr,
-            stdout=self.process_stderr, close_fds=True)
+        self.process = subprocess.Popen(args,
+                                        stderr=self.process_stderr,
+                                        stdout=self.process_stderr,
+                                        close_fds=True)
 
     def is_test_finished(self):
         retcode = self.process.poll()
         if retcode is not None:
-            self.log.info(
-                "Subprocess done its work with exit code: %s", retcode)
+            logger.info("Subprocess done its work with exit code: %s", retcode)
             return abs(retcode)
         else:
             return -1
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            self.log.warn(
-                "Terminating worker process with PID %s", self.process.pid)
+            logger.warn("Terminating worker process with PID %s",
+                        self.process.pid)
             self.process.terminate()
             if self.process_stderr:
                 self.process_stderr.close()
         else:
-            self.log.debug("Seems subprocess finished OK")
+            logger.debug("Seems subprocess finished OK")
         return retcode
 
     def get_info(self):
@@ -159,12 +161,28 @@ class PandoraPlugin(AbstractPlugin):
 
 class PandoraStatsReader(object):
     def next(self):
-        return {
-            'ts': int(time.time()),
-            'metrics': {
-                'instances': 0,
-            }
-        }
+        try:
+            pandora_response = requests.get("http://localhost:1234/debug/vars")
+            pandora_stat = pandora_response.json()
+
+            return {'ts': int(time.time() - 1),
+                    'metrics': {
+                        'instances': pandora_stat.get("engine_ActiveRequests"),
+                        'reqps': pandora_stat.get("engine_ReqPS"),
+                    }}
+        except requests.ConnectionError:
+            logger.info("Pandora expvar http interface is unavailable")
+        except requests.HTTPError:
+            logger.warning("Pandora expvar http interface is unavailable",
+                           exc_info=True)
+        except Exception:
+            logger.warning("Couldn't decode pandora stat:\n%s\n" %
+                           pandora_response.text,
+                           exc_info=True)
+
+        return {'ts': int(time.time() - 1),
+                'metrics': {'instances': 0,
+                            'reqps': 0}}
 
     def close(self):
         pass
@@ -174,7 +192,6 @@ class PandoraStatsReader(object):
 
 
 class PandoraInfoWidget(AbstractInfoWidget):
-
     ''' Right panel widget '''
 
     def __init__(self, pandora):
