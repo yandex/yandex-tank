@@ -4,14 +4,12 @@ from yandextank.plugins.Phantom import PhantomReader
 from yandextank.core import AbstractPlugin
 import subprocess
 import time
-import shlex
-from yandextank.plugins.ConsoleOnline import \
-    ConsoleOnlinePlugin, AbstractInfoWidget
-import yandextank.plugins.ConsoleScreen as ConsoleScreen
+from yandextank.plugins.Console import \
+    ConsolePlugin, AbstractInfoWidget
+import yandextank.plugins.Console.screen as ConsoleScreen
 import datetime
 from config import PoolConfig, PandoraConfig, parse_schedule
-import requests
-import json
+from reader import PandoraStatsReader
 import logging
 
 logger = logging.getLogger(__name__)
@@ -113,7 +111,7 @@ class PandoraPlugin(AbstractPlugin):
             aggregator.stats_reader = PandoraStatsReader()
 
         try:
-            console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+            console = self.core.get_plugin_of_type(ConsolePlugin)
         except KeyError as ex:
             logger.debug("Console not found: %s", ex)
             console = None
@@ -159,38 +157,6 @@ class PandoraPlugin(AbstractPlugin):
         return None
 
 
-class PandoraStatsReader(object):
-    def next(self):
-        try:
-            pandora_response = requests.get("http://localhost:1234/debug/vars")
-            pandora_stat = pandora_response.json()
-
-            return {'ts': int(time.time() - 1),
-                    'metrics': {
-                        'instances': pandora_stat.get("engine_ActiveRequests"),
-                        'reqps': pandora_stat.get("engine_ReqPS"),
-                    }}
-        except requests.ConnectionError:
-            logger.info("Pandora expvar http interface is unavailable")
-        except requests.HTTPError:
-            logger.warning("Pandora expvar http interface is unavailable",
-                           exc_info=True)
-        except Exception:
-            logger.warning("Couldn't decode pandora stat:\n%s\n" %
-                           pandora_response.text,
-                           exc_info=True)
-
-        return {'ts': int(time.time() - 1),
-                'metrics': {'instances': 0,
-                            'reqps': 0}}
-
-    def close(self):
-        pass
-
-    def __iter__(self):
-        return self
-
-
 class PandoraInfoWidget(AbstractInfoWidget):
     ''' Right panel widget '''
 
@@ -198,14 +164,17 @@ class PandoraInfoWidget(AbstractInfoWidget):
         AbstractInfoWidget.__init__(self)
         self.krutilka = ConsoleScreen.krutilka()
         self.owner = pandora
-        self.rps = 0
+        self.reqps = 0
+        self.active = 0
 
     def get_index(self):
         return 0
 
-    def aggregate_second(self, second_aggregate_data):
-        self.active_threads = second_aggregate_data.overall.active_threads
-        self.rps = second_aggregate_data.overall.RPS
+    def on_aggregated_data(self, data, stats):
+        #TODO
+        if len(stats):
+            self.reqps = stats[0]["metrics"]["reqps"]
+            self.active = stats[0]["metrics"]["instances"]
 
     def render(self, screen):
         text = " Pandora Test %s" % self.krutilka.next()
@@ -220,7 +189,8 @@ class PandoraInfoWidget(AbstractInfoWidget):
             text + ' ' + '~' * right_spaces + screen.markup.RESET + "\n"
         template += "Command Line: %s\n"
         template += "    Duration: %s\n"
-        template += " Responses/s: %s"
-        data = (self.owner.pandora_cmd, duration, self.rps)
+        template += "  Requests/s: %s\n"
+        template += " Active reqs: %s"
+        data = (self.owner.pandora_cmd, duration, self.reqps, self.active)
 
         return template % data

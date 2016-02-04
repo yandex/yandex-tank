@@ -695,11 +695,17 @@ class AbstractPlugin(object):
         pass
 
     def is_test_finished(self):
-        """ Polling call, if result differs from -1 then test end will be triggeted """
+        """
+        Polling call, if result differs from -1 then test end
+        will be triggeted
+        """
         return -1
 
     def end_test(self, retcode):
-        """ Stop processes launched at 'start_test', change return code if necessary """
+        """
+        Stop processes launched at 'start_test',
+        change return code if necessary
+        """
         return retcode
 
     def post_process(self, retcode):
