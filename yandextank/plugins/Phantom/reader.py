@@ -104,7 +104,7 @@ class PhantomStatsReader(object):
                 "Instances info buffer size: %s / Read buffer size: %s",
                 len(self.stat_data), len(self.stat_read_buffer))
 
-    def next(self):
+    def __iter__(self):
         """
         Union buffer and chunk, split using '\n},',
         return splitted parts
@@ -114,12 +114,10 @@ class PhantomStatsReader(object):
         if len(parts) > 1:
             ready_chunk = self.stat_buffer + parts[0]
             self.stat_buffer = parts[1]
-            return [json.loads('{%s}}' % m) for m in ready_chunk.split('\n},')]
+            for m in ready_chunk.split('\n},'):
+                yield json.loads('{%s}}' % m)
         else:
             self.stat_buffer += parts[0]
-
-    def __iter__(self):
-        return self
 
     def close(self):
         self.closed = True
