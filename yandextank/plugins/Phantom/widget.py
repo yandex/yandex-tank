@@ -171,6 +171,7 @@ class PhantomInfoWidget(AbstractInfoWidget):
         return res
 
     def on_aggregated_data(self, data, stats):
+        print(stats)
         if len(stats):
             self.planned = stats[-1]["metrics"]["reqps"]
             self.instances = stats[-1]["metrics"]["instances"]

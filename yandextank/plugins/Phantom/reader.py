@@ -8,7 +8,7 @@ import json
 import time
 import datetime
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 phout_columns = [
     'send_ts', 'tag', 'interval_real', 'connect_time', 'send_time', 'latency',
@@ -65,44 +65,23 @@ class PhantomStatsReader(object):
         self.stat = open(filename, 'r')
         self.closed = False
 
-        def __read_stat_data(self):
-            """ Read active instances info """
-            end_marker = "\n},"
-            self.stat_read_buffer += self.stat.read()
-            while end_marker in self.stat_read_buffer:
-                chunk_str = self.stat_read_buffer[
-                    :self.stat_read_buffer.find(end_marker) + len(end_marker) - 1]
-                self.stat_read_buffer = self.stat_read_buffer[
-                    self.stat_read_buffer.find(end_marker) + len(
-                        end_marker) + 1:]
-                chunk = json.loads("{%s}" % chunk_str)
-                self.log.debug("Stat chunk (left %s bytes): %s",
-                               len(self.stat_read_buffer), chunk)
-
-                for date_str in chunk.keys():
-                    statistics = chunk[date_str]
-
-                    date_obj = datetime.datetime.strptime(
-                        date_str.split(".")[0], '%Y-%m-%d %H:%M:%S')
-                    pending_datetime = int(time.mktime(date_obj.timetuple()))
-                    self.stat_data[pending_datetime] = 0
-
-                    for benchmark_name in statistics.keys():
-                        if not benchmark_name.startswith("benchmark_io"):
-                            continue
-                        benchmark = statistics[benchmark_name]
-                        for method in benchmark:
-                            meth_obj = benchmark[method]
-                            if "mmtasks" in meth_obj:
-                                self.stat_data[pending_datetime] += meth_obj[
-                                    "mmtasks"][2]
-                    self.log.debug("Active instances: %s=>%s",
-                                   pending_datetime,
-                                   self.stat_data[pending_datetime])
-
-            self.log.debug(
-                "Instances info buffer size: %s / Read buffer size: %s",
-                len(self.stat_data), len(self.stat_read_buffer))
+    def __decode_stat_data(self, chunk):
+        print(chunk)
+        for date_str, statistics in chunk.iteritems():
+            date_obj = datetime.datetime.strptime(
+                date_str.split(".")[0], '%Y-%m-%d %H:%M:%S')
+            chunk_date = int(time.mktime(date_obj.timetuple()))
+            instances = 0
+            for benchmark_name, benchmark in statistics.iteritems():
+                if not benchmark_name.startswith("benchmark_io"):
+                    continue
+                for method, meth_obj in benchmark.iteritems():
+                    if "mmtasks" in meth_obj:
+                        instances += meth_obj["mmtasks"][2]
+            logger.debug("Active instances: %s=>%s", chunk_date, instances)
+            return {'ts': chunk_date,
+                    'metrics': {'instances': instances,
+                                'reqps': 0}}
 
     def __iter__(self):
         """
@@ -115,7 +94,7 @@ class PhantomStatsReader(object):
             ready_chunk = self.stat_buffer + parts[0]
             self.stat_buffer = parts[1]
             for m in ready_chunk.split('\n},'):
-                yield json.loads('{%s}}' % m)
+                yield self.__decode_stat_data(json.loads('{%s}}' % m))
         else:
             self.stat_buffer += parts[0]
 
