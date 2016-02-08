@@ -21,7 +21,6 @@ analytic tools for the results they produce.
         'requests>=2.5.1',
         'paramiko>=1.16.0',
         'pandas',
-        'pyzmq',
     ],
     license='LGPLv2',
     classifiers=[
