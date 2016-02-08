@@ -118,6 +118,9 @@ class PhantomStatsReader(object):
         else:
             self.stat_buffer += parts[0]
 
+    def __iter__(self):
+        return self
+
     def close(self):
         self.closed = True
         self.stat.close()
