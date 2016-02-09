@@ -76,7 +76,7 @@ class AggregatorPlugin(AbstractPlugin):
             self.drain.start()
             self.stats_drain = Drain(
                 DataPoller(source=self.stats_reader,
-                           poll_period=0.5),
+                           poll_period=1),
                 self.stats)
             self.stats_drain.start()
         else:

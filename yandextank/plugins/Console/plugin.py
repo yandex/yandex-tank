@@ -96,14 +96,17 @@ class ConsolePlugin(AbstractPlugin, AggregateResultListener):
         if self.short_only:
             for sample in data:
                 overall = sample.get('overall')
-                info = "ts:{ts}\tRPS:{rps}\tavg:{avg_rt:.2f}\tmin:{q0:.2f}\tmax:{q100:.2f}\tq99:{q99:.2f} ".format(
+
+                quantiles = dict(zip(overall['interval_real']['q']['q'],
+                                     overall['interval_real']['q']['value']))
+                info = "ts:{ts}\tRPS:{rps}\tavg:{avg_rt:.2f}\tmin:{min:.2f}\tmax:{q100:.2f}\tq95:{q95:.2f} ".format(
                     ts=sample.get('ts'),
                     rps=overall['interval_real']['len'],
-                    avg_rt=overall['interval_real']['total'] / overall[
-                        'interval_real']['len'] / 1000,
-                    q0=overall['interval_real']['min'] / 1000,
-                    q100=overall['interval_real']['max'] / 1000,
-                    q99=overall['interval_real']['q']['value'][-1] / 1000, )
+                    avg_rt=float(overall['interval_real']['total']) / overall[
+                        'interval_real']['len'] / 1000.0,
+                    min=overall['interval_real']['min'] / 1000.0,
+                    q100=quantiles[100] / 1000,
+                    q95=quantiles[95] / 1000)
                 LOG.info(info)
         else:
             self.screen.add_second_data(data)
