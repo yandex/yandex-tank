@@ -8,7 +8,7 @@ import time
 import os.path
 
 from yandextank.plugins.Aggregator import AggregatorPlugin, AggregateResultListener
-from yandextank.plugins.ConsoleOnline import AbstractInfoWidget, ConsoleOnlinePlugin
+from yandextank.plugins.Console import AbstractInfoWidget, ConsolePlugin
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
 
@@ -75,7 +75,7 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         self.log.debug("Criteria objects: %s", self._criterias)
 
         try:
-            console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+            console = self.core.get_plugin_of_type(ConsolePlugin)
         except Exception, ex:  # pylint: disable=W0703
             self.log.debug("Console not found: %s", ex)
             console = None

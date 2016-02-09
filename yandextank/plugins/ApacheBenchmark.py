@@ -1,5 +1,5 @@
 ''' AB load generator '''
-from ConsoleOnline import ConsoleOnlinePlugin, AbstractInfoWidget
+from Console import AbstractInfoWidget
 
 import os
 import subprocess
