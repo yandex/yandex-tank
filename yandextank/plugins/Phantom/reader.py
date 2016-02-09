@@ -59,11 +59,13 @@ class PhantomReader(object):
 
 
 class PhantomStatsReader(object):
-    def __init__(self, filename):
+    def __init__(self, filename, phantom_info):
+        self.phantom_info = phantom_info
         self.buffer = ""
         self.stat_buffer = ""
         self.stat_filename = filename
         self.closed = False
+        self.start_time = 0
 
     def __decode_stat_data(self, chunk):
         for date_str, statistics in chunk.iteritems():
@@ -77,15 +79,22 @@ class PhantomStatsReader(object):
                 for method, meth_obj in benchmark.iteritems():
                     if "mmtasks" in meth_obj:
                         instances += meth_obj["mmtasks"][2]
+
+            offset = chunk_date - 1 - self.start_time
+            reqps = 0
+            if offset >= 0 and offset < len(self.phantom_info.steps):
+                reqps = self.phantom_info.steps[offset][0]
             yield {'ts': chunk_date - 1,
                    'metrics': {'instances': instances,
-                               'reqps': 0}}
+                               'reqps': reqps}}
 
     def __iter__(self):
         """
         Union buffer and chunk, split using '\n},',
         return splitted parts
         """
+        self.start_time = int(time.time())
+        logger.info("Phantom steps:\n%s", self.phantom_info.steps)
         with open(self.stat_filename, 'r') as stat_file:
             while not self.closed:
                 chunk = stat_file.read(1024 * 1024 * 10)

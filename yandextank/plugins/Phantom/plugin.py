@@ -1,5 +1,6 @@
 """ Contains Phantom Plugin, Console widgets, result reader classes """
 # FIXME: 3 there is no graceful way to interrupt the process of phout import
+# TODO: phout import
 import os
 import subprocess
 import time
@@ -133,7 +134,9 @@ class PhantomPlugin(AbstractPlugin):
                          " Reading samples from %s", self.predefined_phout)
         if aggregator:
             aggregator.reader = reader
-            aggregator.stats_reader = PhantomStatsReader(self.phantom.stat_log)
+            info = self.phantom.get_info()
+            aggregator.stats_reader = PhantomStatsReader(self.phantom.stat_log,
+                                                         info)
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
         except Exception, ex:
