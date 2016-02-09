@@ -3,7 +3,6 @@ from yandextank.core import AbstractPlugin
 
 
 class RCAssertPlugin(AbstractPlugin):
-    ''' Apache Benchmark plugin '''
     SECTION = 'rcassert'
 
     def __init__(self, core):
