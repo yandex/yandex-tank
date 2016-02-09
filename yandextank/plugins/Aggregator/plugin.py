@@ -76,7 +76,7 @@ class AggregatorPlugin(AbstractPlugin):
             self.drain.start()
             self.stats_drain = Drain(
                 DataPoller(source=self.stats_reader,
-                           poll_period=1),
+                           poll_period=0.5),
                 self.stats)
             self.stats_drain.start()
         else:
@@ -93,7 +93,7 @@ class AggregatorPlugin(AbstractPlugin):
         stats = []
         for _ in range(self.stats.qsize()):
             try:
-                stats.append(self.stats.get_nowait())
+                stats += self.stats.get_nowait()
             except q.Empty:
                 break
         if data or stats:

@@ -62,11 +62,10 @@ class PhantomStatsReader(object):
     def __init__(self, filename):
         self.buffer = ""
         self.stat_buffer = ""
-        self.stat = open(filename, 'r')
+        self.stat_filename = filename
         self.closed = False
 
     def __decode_stat_data(self, chunk):
-        print(chunk)
         for date_str, statistics in chunk.iteritems():
             date_obj = datetime.datetime.strptime(
                 date_str.split(".")[0], '%Y-%m-%d %H:%M:%S')
@@ -78,26 +77,30 @@ class PhantomStatsReader(object):
                 for method, meth_obj in benchmark.iteritems():
                     if "mmtasks" in meth_obj:
                         instances += meth_obj["mmtasks"][2]
-            logger.debug("Active instances: %s=>%s", chunk_date, instances)
-            return {'ts': chunk_date,
-                    'metrics': {'instances': instances,
-                                'reqps': 0}}
+            yield {'ts': chunk_date - 1,
+                   'metrics': {'instances': instances,
+                               'reqps': 0}}
 
     def __iter__(self):
         """
         Union buffer and chunk, split using '\n},',
         return splitted parts
         """
-        chunk = self.stat.read(1024 * 1024 * 10)
-        parts = chunk.rsplit('\n},', 1)
-        if len(parts) > 1:
-            ready_chunk = self.stat_buffer + parts[0]
-            self.stat_buffer = parts[1]
-            for m in ready_chunk.split('\n},'):
-                yield self.__decode_stat_data(json.loads('{%s}}' % m))
-        else:
-            self.stat_buffer += parts[0]
+        with open(self.stat_filename, 'r') as stat_file:
+            while not self.closed:
+                chunk = stat_file.read(1024 * 1024 * 10)
+                if chunk:
+                    self.stat_buffer += chunk
+                    parts = self.stat_buffer.rsplit('\n},', 1)
+                    if len(parts) > 1:
+                        ready_chunk = parts[0]
+                        self.stat_buffer = parts[1]
+                        for m in ready_chunk.split('\n},'):
+                            yield list(self.__decode_stat_data(json.loads(
+                                '{%s}}' % m)))
+                else:
+                    stat_file.readline()
+                yield None
 
     def close(self):
         self.closed = True
-        self.stat.close()

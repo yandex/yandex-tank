@@ -88,7 +88,9 @@ class PhantomProgressBarWidget(AbstractInfoWidget):
         return res
 
     def on_aggregated_data(self, data, stats):
-        self.ammo_progress += data[-1]["overall"]["interval_real"]["len"]
+        if len(data) > 0:
+            for di in data:
+                self.ammo_progress += di["overall"]["interval_real"]["len"]
 
 
 class PhantomInfoWidget(AbstractInfoWidget):
@@ -171,11 +173,11 @@ class PhantomInfoWidget(AbstractInfoWidget):
         return res
 
     def on_aggregated_data(self, data, stats):
-        print(stats)
-        if len(stats):
+        if len(data) > 0:
+            self.RPS = data[-1]["overall"]["interval_real"]["len"]
+        if len(stats) > 0:
             self.planned = stats[-1]["metrics"]["reqps"]
             self.instances = stats[-1]["metrics"]["instances"]
-            self.RPS = stats[-1]["metrics"]["resps"]
 #           TODO:
 #           self.selfload = second_aggregate_data.overall.selfload
 #           self.time_lag = int(time.time() - time.mktime(
