@@ -195,10 +195,9 @@ class Screen(object):
         '''
         Notification method about new aggregator data
         '''
-        for sample in data:
-            for row in self.block_rows:
-                for block in row:
-                    block.add_second(sample)
+        for row in self.block_rows:
+            for block in row:
+                block.add_second(data)
 
 
 class AbstractBlock:
@@ -319,8 +318,9 @@ class CurrentHTTPBlock(AbstractBlock):
         self.log.debug("Current codes dist: %s", self.times_dist)
 
     def render(self):
-        self.lines = [self.screen.markup.WHITE + self.TITLE +
-                      self.screen.markup.RESET]
+        self.lines = [
+            self.screen.markup.WHITE + self.TITLE + self.screen.markup.RESET
+        ]
         for code, count in sorted(self.times_dist.iteritems()):
             line = self.format_line(code, count)
             self.width = max(self.width,
@@ -407,8 +407,9 @@ class CurrentNetBlock(AbstractBlock):
         return left_line
 
     def render(self):
-        self.lines = [self.screen.markup.WHITE + self.TITLE +
-                      self.screen.markup.RESET]
+        self.lines = [
+            self.screen.markup.WHITE + self.TITLE + self.screen.markup.RESET
+        ]
         for code, count in sorted(self.times_dist.iteritems()):
             line = self.format_line(code, count)
             self.width = max(self.width,
@@ -542,8 +543,9 @@ class AvgTimesBlock(AbstractBlock):
         self.all_count += count
 
     def render(self):
-        self.lines = [self.screen.markup.WHITE + self.header +
-                      self.screen.markup.RESET]
+        self.lines = [
+            self.screen.markup.WHITE + self.header + self.screen.markup.RESET
+        ]
         if self.last_count:
             len_all = str(len(str(max(
                 [self.all_connect, self.all_latency, self.all_overall,

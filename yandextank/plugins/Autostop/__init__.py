@@ -1,1 +1,2 @@
 from plugin import AutostopPlugin
+from criteria import AbstractCriteria

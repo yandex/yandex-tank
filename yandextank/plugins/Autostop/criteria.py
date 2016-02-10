@@ -27,7 +27,7 @@ class AbstractCriteria(object):
                 total += count
         return total
 
-    def notify(self, aggregate_second):
+    def notify(self, data, stat):
         """ notification about aggregate data goes here """
         raise NotImplementedError("Abstract methods requires overriding")
 
@@ -65,10 +65,10 @@ class AvgTimeCriteria(AbstractCriteria):
             1])
         self.autostop = autostop
 
-    def notify(self, aggregate_second):
-        if aggregate_second.overall.avg_response_time > self.rt_limit:
+    def notify(self, data, stat):
+        if data["overall"]["interval_real"]["avg"] > self.rt_limit:
             if not self.seconds_count:
-                self.cause_second = aggregate_second
+                self.cause_second = data
 
             logger.debug(self.explain())
 
@@ -85,8 +85,11 @@ class AvgTimeCriteria(AbstractCriteria):
         return self.RC_TIME
 
     def explain(self):
-        items = (self.rt_limit, self.seconds_count, self.cause_second.time)
-        return "Average response time higher than %sms for %ss, since %s" % items
+        explanation = ("Average response time higher"
+                       " than %sms for %ss, since %s" %
+                       (self.rt_limit, self.seconds_count,
+                        self.cause_second["ts"]))
+        return explanation
 
     def widget_explain(self):
         items = (self.rt_limit, self.seconds_count, self.seconds_limit)
@@ -118,13 +121,13 @@ class HTTPCodesCriteria(AbstractCriteria):
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
             2])
 
-    def notify(self, aggregate_second):
+    def notify(self, data, stat):
         matched_responses = self.count_matched_codes(
-            self.codes_regex, aggregate_second.overall.http_codes)
+            self.codes_regex, data["overall"]["proto_code"]["count"])
         if self.is_relative:
-            if aggregate_second.overall.RPS:
-                matched_responses = float(
-                    matched_responses) / aggregate_second.overall.RPS
+            if data["overall"]["interval_real"]["len"]:
+                matched_responses = float(matched_responses) / data["overall"][
+                    "interval_real"]["len"]
             else:
                 matched_responses = 0
         logger.debug("HTTP codes matching mask %s: %s/%s", self.codes_mask,
@@ -132,7 +135,7 @@ class HTTPCodesCriteria(AbstractCriteria):
 
         if matched_responses >= self.level:
             if not self.seconds_count:
-                self.cause_second = aggregate_second
+                self.cause_second = data
 
             logger.debug(self.explain())
 
@@ -158,7 +161,7 @@ class HTTPCodesCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.codes_mask, self.get_level_str(), self.seconds_count,
-                 self.cause_second.time)
+                 self.cause_second.get('ts'))
         return "%s codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -192,15 +195,15 @@ class NetCodesCriteria(AbstractCriteria):
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
             2])
 
-    def notify(self, aggregate_second):
-        codes = copy.deepcopy(aggregate_second.overall.net_codes)
+    def notify(self, data, stat):
+        codes = copy.deepcopy(data["overall"]["net_code"]["count"])
         if '0' in codes.keys():
             codes.pop('0')
         matched_responses = self.count_matched_codes(self.codes_regex, codes)
         if self.is_relative:
-            if aggregate_second.overall.RPS:
-                matched_responses = float(
-                    matched_responses) / aggregate_second.overall.RPS
+            if data["overall"]["interval_real"]["len"]:
+                matched_responses = float(matched_responses) / data["overall"][
+                    "interval_real"]["len"]
             else:
                 matched_responses = 0
         logger.debug("Net codes matching mask %s: %s/%s", self.codes_mask,
@@ -208,7 +211,7 @@ class NetCodesCriteria(AbstractCriteria):
 
         if matched_responses >= self.level:
             if not self.seconds_count:
-                self.cause_second = aggregate_second
+                self.cause_second = data
 
             logger.debug(self.explain())
 
@@ -234,7 +237,7 @@ class NetCodesCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.codes_mask, self.get_level_str(), self.seconds_count,
-                 self.cause_second.time)
+                 self.cause_second.get("ts"))
         return "%s net codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -261,14 +264,15 @@ class QuantileCriteria(AbstractCriteria):
             2])
         self.autostop = autostop
 
-    def notify(self, aggregate_second):
-        if self.quantile not in aggregate_second.overall.quantiles.keys():
-            logger.warning("No quantile %s in %s", self.quantile,
-                           aggregate_second.overall.quantiles)
-        if self.quantile in aggregate_second.overall.quantiles.keys() \
-                and aggregate_second.overall.quantiles[self.quantile] > self.rt_limit:
+    def notify(self, data, stat):
+        quantiles = dict(zip(data["overall"]["q"]["q"], data["overall"]["q"][
+            "values"]))
+        if self.quantile not in quantiles.keys():
+            logger.warning("No quantile %s in %s", self.quantile, quantiles)
+        if self.quantile in quantiles.keys() \
+                and quantiles[self.quantile] > self.rt_limit:
             if not self.seconds_count:
-                self.cause_second = aggregate_second
+                self.cause_second = data
 
             logger.debug(self.explain())
 
@@ -286,7 +290,7 @@ class QuantileCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.quantile, self.rt_limit, self.seconds_count,
-                 self.cause_second.time)
+                 self.cause_second.get("ts"))
         return "Percentile %s higher than %sms for %ss, since %s" % items
 
     def widget_explain(self):
@@ -304,6 +308,7 @@ class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
         return 'steady_cumulative'
 
     def __init__(self, autostop, param_str):
+        raise (NotImplementedError("Cumulative quantiles not implemented"))
         AbstractCriteria.__init__(self)
         self.seconds_count = 0
         self.quantile_hash = ""
@@ -311,12 +316,14 @@ class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
             0])
         self.autostop = autostop
 
-    def notify(self, aggregate_second):
-        quantile_hash = json.dumps(aggregate_second.cumulative.quantiles)
+    def notify(self, data, stat):
+        quantiles = dict(zip(data["overall"]["q"]["q"], data["overall"]["q"][
+            "values"]))
+        quantile_hash = json.dumps(quantiles)
         logging.debug("Cumulative quantiles hash: %s", quantile_hash)
         if self.quantile_hash == quantile_hash:
             if not self.seconds_count:
-                self.cause_second = aggregate_second
+                self.cause_second = data
 
             logger.debug(self.explain())
 
@@ -356,7 +363,7 @@ class TimeLimitCriteria(AbstractCriteria):
         self.end_time = time.time()
         self.time_limit = tankcore.expand_to_seconds(param_str)
 
-    def notify(self, aggregate_second):
+    def notify(self, data, stat):
         self.end_time = time.time()
         return (self.end_time - self.start_time) > self.time_limit
 

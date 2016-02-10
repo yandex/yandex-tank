@@ -94,20 +94,23 @@ class ConsolePlugin(AbstractPlugin, AggregateResultListener):
     def on_aggregated_data(self, data, stats):
         # TODO: use stats data somehow
         if self.short_only:
-            for sample in data:
-                overall = sample.get('overall')
+            overall = data.get('overall')
 
-                quantiles = dict(zip(overall['interval_real']['q']['q'],
-                                     overall['interval_real']['q']['value']))
-                info = "ts:{ts}\tRPS:{rps}\tavg:{avg_rt:.2f}\tmin:{min:.2f}\tmax:{q100:.2f}\tq95:{q95:.2f} ".format(
-                    ts=sample.get('ts'),
+            quantiles = dict(zip(overall['interval_real']['q']['q'], overall[
+                'interval_real']['q']['value']))
+            info = (
+                "ts:{ts}\tRPS:{rps}\tavg:{avg_rt:.2f}\t"
+                "min:{min:.2f}\tmax:{q100:.2f}\tq95:{q95:.2f}\t"
+                "aggregation:{aggr_time:.2f}ms").format(
+                    ts=data.get('ts'),
                     rps=overall['interval_real']['len'],
                     avg_rt=float(overall['interval_real']['total']) / overall[
                         'interval_real']['len'] / 1000.0,
                     min=overall['interval_real']['min'] / 1000.0,
                     q100=quantiles[100] / 1000,
-                    q95=quantiles[95] / 1000)
-                LOG.info(info)
+                    q95=quantiles[95] / 1000,
+                    aggr_time=data.get('aggregation_time') * 1000)
+            LOG.info(info)
         else:
             self.screen.add_second_data(data)
 

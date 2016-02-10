@@ -10,7 +10,7 @@ from yandextank.core.exceptions import PluginImplementationError
 from aggregator import Aggregator, DataPoller
 from chopper import TimeChopper
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class AggregateResultListener(object):
@@ -23,9 +23,8 @@ class AggregateResultListener(object):
         data contains aggregated metrics and stats contain non-aggregated
         metrics from gun (like instances count, for example)
 
-        data and stats are NOT synchronized and you can get different
-        timestamps here and there. If you need to synchronize them, you
-        should cache them in your plugin
+        data and stats are cached and synchronized by timestamp. Stat items are holded
+        until corresponding data item is received and vice versa.
         """
         raise NotImplementedError("Abstract method needs to be overridden")
 
@@ -34,8 +33,8 @@ class LoggingListener(AggregateResultListener):
     """ Log aggregated results """
 
     def on_aggregated_data(self, data, stats):
-        LOG.info("Got aggregated sample:\n%s", json.dumps(data, indent=2))
-        LOG.info("Stats:\n%s", json.dumps(stats, indent=2))
+        logger.info("Got aggregated sample:\n%s", json.dumps(data, indent=2))
+        logger.info("Stats:\n%s", json.dumps(stats, indent=2))
 
 
 class AggregatorPlugin(AbstractPlugin):
@@ -56,6 +55,8 @@ class AggregatorPlugin(AbstractPlugin):
         self.stats_reader = None
         self.results = q.Queue()
         self.stats = q.Queue()
+        self.data_cache = {}
+        self.stat_cache = {}
 
     def get_available_options(self):
         return []
@@ -96,8 +97,28 @@ class AggregatorPlugin(AbstractPlugin):
                 stats += self.stats.get_nowait()
             except q.Empty:
                 break
-        if data or stats:
-            self.__notify_listeners(data, stats)
+        logger.debug("Data timestamps:\n%s" % [d.get('ts') for d in data])
+        logger.debug("Stats timestamps:\n%s" % [d.get('ts') for d in stats])
+        logger.debug("Data cache timestamps:\n%s" % self.data_cache.keys())
+        logger.debug("Stats cache timestamps:\n%s" % self.stat_cache.keys())
+        for item in data:
+            ts = item['ts']
+            if ts in self.stat_cache:
+                # send items
+                data_item = item
+                stat_item = self.stat_cache.pop(ts)
+                self.__notify_listeners(data_item, stat_item)
+            else:
+                self.data_cache[ts] = item
+        for item in stats:
+            ts = item['ts']
+            if ts in self.data_cache:
+                # send items
+                data_item = self.data_cache.pop(ts)
+                stat_item = item
+                self.__notify_listeners(data_item, stat_item)
+            else:
+                self.stat_cache[ts] = item
         return -1
 
     def end_test(self, retcode):

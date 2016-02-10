@@ -228,8 +228,8 @@ class PhantomPlugin(AbstractPlugin):
                     info.ammo_count, self.processed_ammo_count)
         return retcode
 
-    def aggregate_second(self, second_aggregate_data):
-        self.processed_ammo_count += second_aggregate_data.overall.RPS
+    def on_aggregated_data(self, data, stat):
+        self.processed_ammo_count += data["overall"]["interval_real"]["len"]
         logger.debug("Processed ammo count: %s/", self.processed_ammo_count)
 
     def get_info(self):
@@ -278,13 +278,13 @@ class UsedInstancesCriteria(AbstractCriteria):
         except KeyError:
             logger.warning("No phantom module, 'instances' autostop disabled")
 
-    def notify(self, aggregate_second):
-        threads = aggregate_second.overall.active_threads
+    def notify(self, data, stat):
+        threads = stat["metrics"]["instances"]
         if self.is_relative:
             threads = float(threads) / self.threads_limit
         if threads > self.level:
             if not self.seconds_count:
-                self.cause_second = aggregate_second
+                self.cause_second = (data, stat)
 
             logger.debug(self.explain())
 
@@ -312,7 +312,7 @@ class UsedInstancesCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.get_level_str(), self.seconds_count,
-                 self.cause_second.time)
+                 self.cause_second[0].get('ts'))
         return ("Testing threads (instances) utilization"
                 " higher than %s for %ss, since %s" % items)
 

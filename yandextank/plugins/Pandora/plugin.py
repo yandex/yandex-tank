@@ -171,9 +171,8 @@ class PandoraInfoWidget(AbstractInfoWidget):
         return 0
 
     def on_aggregated_data(self, data, stats):
-        if len(stats):
-            self.reqps = stats[-1]["metrics"]["reqps"]
-            self.active = stats[-1]["metrics"]["instances"]
+        self.reqps = stats["metrics"]["reqps"]
+        self.active = stats["metrics"]["instances"]
 
     def render(self, screen):
         text = " Pandora Test %s" % self.krutilka.next()

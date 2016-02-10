@@ -94,7 +94,7 @@ class PhantomStatsReader(object):
         return splitted parts
         """
         self.start_time = int(time.time())
-        logger.info("Phantom steps:\n%s", self.phantom_info.steps)
+        logger.debug("Phantom steps:\n%s", self.phantom_info.steps)
         with open(self.stat_filename, 'r') as stat_file:
             while not self.closed:
                 chunk = stat_file.read(1024 * 1024 * 10)

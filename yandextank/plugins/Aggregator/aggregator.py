@@ -37,64 +37,16 @@ class Worker(object):
             bins = np.append(bins, np.linspace(3000, 9990, 700) * 1000)
             bins = np.append(bins, np.linspace(10000, 30000, 401) * 1000)
         else:
+            # yapf: disable
             bins = np.array([
-                0,
-                1,
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                10,
-                20,
-                30,
-                40,
-                50,
-                60,
-                70,
-                80,
-                90,
-                100,
-                150,
-                200,
-                250,
-                300,
-                350,
-                400,
-                450,
-                500,
-                600,
-                650,
-                700,
-                750,
-                800,
-                850,
-                900,
-                950,
-                1000,
-                1500,
-                2000,
-                2500,
-                3000,
-                3500,
-                4000,
-                4500,
-                5000,
-                5500,
-                6000,
-                6500,
-                7000,
-                7500,
-                8000,
-                8500,
-                9000,
-                9500,
-                10000,
-                11000,
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                10, 20, 30, 40, 50, 60, 70, 80, 90,
+                100, 150, 200, 250, 300, 350, 400, 450,
+                500, 600, 650, 700, 750, 800, 850, 900, 950,
+                1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500,
+                5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 11000,
             ]) * 1000
+            # yapf: enable
 
         self.bins = bins
         self.percentiles = np.array([50, 75, 80, 85, 90, 95, 98, 99, 100])
@@ -173,11 +125,14 @@ class Aggregator(object):
     def __iter__(self):
         for ts, chunk in self.source:
             by_tag = list(chunk.groupby([self.groupby]))
-            yield {
-                'ts': ts,
+            start_time = time.time()
+            result = {
+                "ts": ts,
                 "tagged": {
                     tag: self.worker.aggregate(data)
                     for tag, data in by_tag
                 },
                 "overall": self.worker.aggregate(chunk),
             }
+            result["aggregation_time"] = time.time() - start_time
+            yield result
