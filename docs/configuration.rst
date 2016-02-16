@@ -585,7 +585,7 @@ Example:
     user_schedule = periodic(10, 15, 100)
     shared_schedule = 0
 
-Start 2 users every 0.1 seconds, maximum of 100 users. Each user will issue requests in batches of 10 requests, every 15 seconds, maximum
+Start 2 users every 0.1 seconds, 100 batches, maximum of 2 * 100 = 200 users. Each user will issue requests in batches of 10 requests, every 15 seconds, maximum
 of 100 requests. All users will read from one ammo source.
 
 Second schedule type is ``linear``. It is defined like this: ``linear(<start_rps>, <end_rps>, <time>). Example:

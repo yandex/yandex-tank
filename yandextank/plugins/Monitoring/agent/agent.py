@@ -650,6 +650,12 @@ class AgentWorker(Thread):
                 logger.debug("str: %s" % row)
                 sys.stdout.write(row + '\n')
                 sys.stdout.flush()
+            except IOError, e:
+                if e.errno==32:
+                    logger.error("Broken pipe, can't send data back, terminating")
+                    self.finished = True
+                else:
+                    logger.error('IOError while converting line: %s: %s', line, e)
             except Exception, e:
                 logger.error('Failed to convert line %s: %s', line, e)
 
