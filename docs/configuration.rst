@@ -445,6 +445,7 @@ INI file section: **[bfg]**
 SQL Gun Options
 '''''''''''''''
 gun_type = **sql**
+
 INI file section: **[sql_gun]**
 
 * **db** - DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
@@ -452,6 +453,7 @@ INI file section: **[sql_gun]**
 Custom Gun Options
 ''''''''''''''''''
 gun_type = **custom**
+
 INI file section: **[custom_gun]**
 
 * **module_path** - path to your module
@@ -524,6 +526,7 @@ Sample custom gun module:
 Scenario Gun Options
 ''''''''''''''''''
 gun_type = **scenario**
+
 INI file section: **[scenario_gun]**
 
 * **module_path** - path to your module
