@@ -533,6 +533,7 @@ INI file section: **[scenario_gun]**
 Sample scenario gun module:
 
 .. code-block:: python
+
   # coding=utf-8
   import requests
   import logging
