@@ -438,18 +438,22 @@ BFG Options
 '''''''''''
 INI file section: **[bfg]**
 
-* **gun_type** - what kind of gun should BFG use
+* **gun_type** - what kind of gun should BFG use.
 * **ammo_type** - what ammo parser should BFG use, default: phantom
 * other common stepper options
 
 SQL Gun Options
 '''''''''''''''
+gun_type = **sql**
+
 INI file section: **[sql_gun]**
 
 * **db** - DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
 
 Custom Gun Options
 ''''''''''''''''''
+gun_type = **custom**
+
 INI file section: **[custom_gun]**
 
 * **module_path** - path to your module
@@ -518,7 +522,110 @@ Sample custom gun module:
           print "Scenario %s failed with %s" % (marker, e)
       finally:
           <...some finishing work...>
+
+Scenario Gun Options
+''''''''''''''''''
+gun_type = **scenario**
+
+INI file section: **[scenario_gun]**
+
+* **module_path** - path to your module
+* **module_name** - module name, has to provide dict SCENARIOS, which will be called by bfg's threads according to marker of request in ammofile to fullfill rps_schedule
+* **ammofile** - ammofile. second column should by a marker of request corresponding to a function specified in SCENARIOS.
+
+Sample scenario gun module:
+
+.. code-block:: python
+
+  # coding=utf-8
+  import requests
+  import logging
+  import traceback
+  import time
+  from Queue import Queue
+  import json
+  import random
+  import socket
   
+  from contextlib import contextmanager
+  from collections import namedtuple
+  
+  logging.basicConfig()
+  logger = logging.getLogger(__name__)
+  logger.setLevel('DEBUG')
+  
+  Sample = namedtuple(
+          'Sample', 'marker,threads,overallRT,httpCode,netCode,sent,received,connect,send,latency,receive,accuracy')
+  
+  @contextmanager
+  def measure(marker, queue):
+      start_ms = time.time()
+  
+      resp_code = 0
+      httpCode = 200
+      try:
+          yield
+      except HttpCode as exc:
+          logging.info("%s for request: %s", exc.value, marker)
+          httpCode = exc.value
+      except Exception as e:
+          logging.info("error while yield: %s %s", marker, e)
+          #print 'error while yield', marker, e
+          httpCode = 600
+  
+      response_time = int((time.time() - start_ms) * 1000)
+  
+      data_item = Sample(
+              marker,  # маркер
+              1,  # число активных потоков
+              response_time,  # время отклика (основная метрика)
+              httpCode,  # код ошибки прикладного уровня
+              resp_code,  # код ошибки сетевого уровня
+              0,  # отправлено байт
+              0,  # принято байт
+              response_time,  # время соединения
+              0,  # время отправки
+              response_time,  # время от завершения отправки до начала приема
+              0,  # время приема
+              0,  # точность
+      )
+      queue.put((int(time.time()), data_item), timeout=5)
+  
+  class HttpCode(Exception):
+      def __init__(self, value):
+          self.value = value
+      def __str__(self):
+          return repr(self.value)
+  
+  def scenario_1(missile, marker, results):
+      try:
+          with measure("get_morda", results):
+              try:
+                  req = '/{0}'.format(url)
+                  get_morda_answ = requests.post(req)
+                  if get_morda_answ.status_code != 200:
+                      logger.error('Not 200 answer code for Req: %s' % req)
+                      raise HttpCode(get_morda_answ.status_code)
+                  return get_morda_answ.status_code
+              except Exception as exc:
+                  logger.error('Exception trying to get morda: %s. Url: %s', exc, req)
+                  raise
+      except RuntimeError as e:
+          logger.Error('Scenario %s failed with %s', marker, e)
+  
+  def scenario_2(missile, marker, results):
+      {...some usefull work here just like scenario_1...}
+  
+  if __name__ == '__main__':
+      scenario_1("", "", Queue())
+      scenario_2("", "", Queue())
+  
+  SCENARIOS = {
+      "scenario_1": scenario_1,
+      "scenario_2": scenario_2,
+      {... some more scenarios here ...}
+  }
+
 Pandora
 ^^^^^^^
 `Pandora <https://github.com/yandex/pandora>`_ is a load generator written in Go. For now it supports only SPDY/3 and HTTP(S). Plugins for other protocols
