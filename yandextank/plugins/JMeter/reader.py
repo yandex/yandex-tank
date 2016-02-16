@@ -29,7 +29,7 @@ KNOWN_EXC = {
 def _exc_to_net(param1):
     """ translate http code to net code """
     if len(param1) <= 3:
-        return 1
+        return 0
 
     exc = param1.split(' ')[-1]
     if exc in KNOWN_EXC.keys():
