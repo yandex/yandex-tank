@@ -14,6 +14,9 @@ from yandextank.plugins.Console import \
 import yandextank.plugins.Console.screen as ConsoleScreen
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
+from reader import JMeterReader
+
+logger = logging.getLogger(__name__)
 
 
 class JMeterPlugin(AbstractPlugin):
@@ -40,8 +43,7 @@ class JMeterPlugin(AbstractPlugin):
 
     def get_available_options(self):
         return ["jmx", "args", "jmeter_path", "buffer_size",
-                "buffered_seconds", "use_argentum", "exclude_markers",
-                "connect_time"]
+                "buffered_seconds", "exclude_markers"]
 
     def configure(self):
         self.original_jmx = self.get_option("jmx")
@@ -61,35 +63,27 @@ class JMeterPlugin(AbstractPlugin):
         self.jmx = self.__add_jmeter_components(
             self.original_jmx, self.jtl_file, self._get_variables())
         self.core.add_artifact_file(self.jmx)
-        self.connect_time = self.get_option('connect_time', '') not in ['', '0'
-                                                                        ]
 
     def prepare_test(self):
         self.args = [self.jmeter_path, "-n", "-t", self.jmx, '-j',
                      self.jmeter_log,
-                     '-Jjmeter.save.saveservice.default_delimiter=\\t']
-        connect_str = 'true'
-        if not self.connect_time:
-            connect_str = 'false'
-        self.args += ['-Jjmeter.save.saveservice.connect_time=%s' %
-                      connect_str]
+                     '-Jjmeter.save.saveservice.default_delimiter=\\t',
+                     '-Jjmeter.save.saveservice.connect_time=true']
         self.args += tankcore.splitstring(self.user_args)
 
         aggregator = None
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         except Exception, ex:
-            self.log.warning("No aggregator found: %s", ex)
+            logger.warning("No aggregator found: %s", ex)
 
         if aggregator:
-            aggregator.reader = JMeterReader(aggregator, self)
-            aggregator.reader.buffer_size = self.jmeter_buffer_size
-            aggregator.reader.use_argentum = self.use_argentum
+            aggregator.reader = JMeterReader(self.jtl_file)
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
         except Exception, ex:
-            self.log.debug("Console not found: %s", ex)
+            logger.debug("Console not found: %s", ex)
             console = None
 
         if console:
@@ -99,8 +93,8 @@ class JMeterPlugin(AbstractPlugin):
                 aggregator.add_result_listener(widget)
 
     def start_test(self):
-        self.log.info("Starting %s with arguments: %s", self.jmeter_path,
-                      self.args)
+        logger.info("Starting %s with arguments: %s", self.jmeter_path,
+                    self.args)
         self.jmeter_process = subprocess.Popen(
             self.args,
             executable=self.jmeter_path,
@@ -111,28 +105,27 @@ class JMeterPlugin(AbstractPlugin):
     def is_test_finished(self):
         retcode = self.jmeter_process.poll()
         if retcode is not None:
-            self.log.info("JMeter process finished with exit code: %s",
-                          retcode)
+            logger.info("JMeter process finished with exit code: %s", retcode)
             return retcode
         else:
             return -1
 
     def end_test(self, retcode):
         if self.jmeter_process:
-            self.log.info("Terminating jmeter process group with PID %s",
-                          self.jmeter_process.pid)
+            logger.info("Terminating jmeter process group with PID %s",
+                        self.jmeter_process.pid)
             try:
                 os.killpg(self.jmeter_process.pid, signal.SIGTERM)
             except OSError, exc:
-                self.log.debug("Seems JMeter exited itself: %s", exc)
-                # Utils.log_stdout_stderr(self.log, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
+                logger.debug("Seems JMeter exited itself: %s", exc)
+                # Utils.log_stdout_stderr(logger, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
 
         self.core.add_artifact_file(self.jmeter_log)
         return retcode
 
     def __add_jmeter_components(self, jmx, jtl, variables):
         """ Genius idea by Alexey Lavrenyuk """
-        self.log.debug("Original JMX: %s", os.path.realpath(jmx))
+        logger.debug("Original JMX: %s", os.path.realpath(jmx))
         with open(jmx, 'r') as src_jmx:
             source_lines = src_jmx.readlines()
 
@@ -140,14 +133,14 @@ class JMeterPlugin(AbstractPlugin):
             closing = source_lines.pop(-1)
             closing = source_lines.pop(-1) + closing
             closing = source_lines.pop(-1) + closing
-            self.log.debug("Closing statement: %s", closing)
+            logger.debug("Closing statement: %s", closing)
         except Exception, exc:
             raise RuntimeError("Failed to find the end of JMX XML: %s" % exc)
 
         tpl_resource = 'jmeter_writer.xml'
 
         if self.use_argentum:
-            self.log.warn(
+            logger.warn(
                 "You are using argentum aggregator for JMeter. Be careful.")
             tpl_resource = 'jmeter_argentum.xml'
 
@@ -162,17 +155,12 @@ class JMeterPlugin(AbstractPlugin):
             new_file = self.core.mkstemp(
                 '.jmx', 'modified_', os.path.dirname(os.path.realpath(jmx)))
         except OSError, exc:
-            self.log.debug("Can't create modified jmx near original: %s", exc)
+            logger.debug("Can't create modified jmx near original: %s", exc)
             new_file = self.core.mkstemp('.jmx', 'modified_')
-        self.log.debug("Modified JMX: %s", new_file)
+        logger.debug("Modified JMX: %s", new_file)
         file_handle = open(new_file, "wb")
         file_handle.write(''.join(source_lines))
-
-        if self.use_argentum:
-            file_handle.write(tpl % (self.jmeter_buffer_size, jtl, "", ""))
-        else:
-            file_handle.write(tpl % (jtl, "\n".join(udv_set)))
-
+        file_handle.write(tpl % (jtl, "\n".join(udv_set)))
         file_handle.write(closing)
         file_handle.close()
         return new_file
