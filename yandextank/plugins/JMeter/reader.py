@@ -2,6 +2,7 @@ import os
 import json
 import pandas as pd
 import numpy as np
+import time
 from StringIO import StringIO
 import logging
 
@@ -65,13 +66,30 @@ jtl_columns = [
     'receive_ts', 'interval_real', 'tag', 'retcode', 'success', 'size_in',
     'grpThreads', 'allThreads', 'latency', 'connect_time'
 ]
+jtl_types = {
+    'receive_ts': np.int64,
+    'interval_real': np.int32,
+    'tag': np.str,
+    'retcode': np.str,
+    'success': np.bool,
+    'size_in': np.int32,
+    'grpThreads': np.int32,
+    'allThreads': np.int32,
+    'latency': np.int32,
+    'connect_time': np.int32
+}
 
 
 # timeStamp,elapsed,label,responseCode,success,bytes,grpThreads,allThreads,Latency
 def string_to_df(data):
-    chunk = pd.read_csv(StringIO(data), sep='\t', names=jtl_columns)
+    chunk = pd.read_csv(
+        StringIO(data),
+        sep='\t',
+        names=jtl_columns,
+        dtype=jtl_types)
     chunk["receive_ts"] = chunk["receive_ts"] / 1000.0
     chunk['receive_sec'] = chunk["receive_ts"].astype(int)
+    chunk['interval_real'] = chunk["interval_real"] * 1000
     chunk.set_index(['receive_sec'], inplace=True)
     l = len(chunk)
     chunk['send_time'] = np.zeros(l)
@@ -112,3 +130,17 @@ class JMeterReader(object):
     def close(self):
         self.closed = True
         self.jtl.close()
+
+
+class JMeterStatsReader(object):
+    def __init__(self):
+        self.closed = False
+
+    def __iter__(self):
+        while not self.closed:
+            yield [{'ts': int(time.time()),
+                    'metrics': {'instances': 0,
+                                'reqps': 0}}]
+
+    def close(self):
+        self.closed = True
