@@ -14,7 +14,7 @@ from yandextank.plugins.Console import \
 import yandextank.plugins.Console.screen as ConsoleScreen
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
-from reader import JMeterReader, JMeterStatsReader
+from reader import JMeterReader
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class JMeterPlugin(AbstractPlugin):
 
         if aggregator:
             aggregator.reader = JMeterReader(self.jtl_file)
-            aggregator.stats_reader = JMeterStatsReader()
+            aggregator.stats_reader = aggregator.reader.stats_reader
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
@@ -189,7 +189,7 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         return 0
 
     def on_aggregated_data(self, data, stats):
-        self.active_threads = 0
+        self.active_threads = stats['metrics']['instances']
         self.RPS = data['overall']['interval_real']['len']
 
     def render(self, screen):

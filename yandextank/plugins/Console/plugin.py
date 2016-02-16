@@ -136,7 +136,7 @@ class RealConsoleMarkup(object):
     YELLOW = '\033[1;33m'
     RED = '\033[1;31m'
     RED_DARK = '\033[31;3m'
-    RESET = '\033[1;m'
+    RESET = '\033[1;m' + WHITE_ON_BLACK  # fix for MacOS console
     CYAN = "\033[1;36m"
     GREEN = "\033[1;32m"
     WHITE = "\033[1;37m"

@@ -4,6 +4,9 @@ import pandas as pd
 import numpy as np
 import time
 from StringIO import StringIO
+import yandextank.plugins.Aggregator.aggregator as agg
+from yandextank.plugins.Aggregator.chopper import TimeChopper
+import Queue as q
 import logging
 
 logger = logging.getLogger(__name__)
@@ -101,12 +104,41 @@ def string_to_df(data):
     return chunk
 
 
+class JMeterStatAggregator(object):
+    def __init__(self, source):
+        self.worker = agg.Worker({"allThreads": ["mean"]})
+        self.source = source
+
+    def __iter__(self):
+        for ts, chunk in self.source:
+            stats = self.worker.aggregate(chunk)
+            yield [{'ts': ts,
+                    'metrics': {'instances': stats['allThreads']['mean'],
+                                'reqps': 0}}]
+
+    def close(self):
+        pass
+
+
 class JMeterReader(object):
     def __init__(self, filename):
         self.buffer = ""
         self.stat_buffer = ""
         self.jtl = open(filename, 'r')
         self.closed = False
+        self.stat_queue = q.Queue()
+        self.stats_reader = JMeterStatAggregator(TimeChopper(
+            self.__read_stat_queue(), 3))
+
+    def __read_stat_queue(self):
+        while not self.closed:
+            for _ in range(self.stat_queue.qsize()):
+                try:
+                    si = self.stat_queue.get_nowait()
+                    if si is not None:
+                        yield si
+                except q.Empty:
+                    break
 
     def next(self):
         if self.closed:
@@ -117,7 +149,9 @@ class JMeterReader(object):
             if len(parts) > 1:
                 ready_chunk = self.buffer + parts[0] + '\n'
                 self.buffer = parts[1]
-                return string_to_df(ready_chunk)
+                df = string_to_df(ready_chunk)
+                self.stat_queue.put(df)
+                return df
             else:
                 self.buffer += parts[0]
         else:
@@ -130,17 +164,3 @@ class JMeterReader(object):
     def close(self):
         self.closed = True
         self.jtl.close()
-
-
-class JMeterStatsReader(object):
-    def __init__(self):
-        self.closed = False
-
-    def __iter__(self):
-        while not self.closed:
-            yield [{'ts': int(time.time()),
-                    'metrics': {'instances': 0,
-                                'reqps': 0}}]
-
-    def close(self):
-        self.closed = True
