@@ -135,8 +135,12 @@ class Stairway(Composite):
             Const(minrps + i * increment, duration)
             for i in xrange(0, n_steps + 1)
         ]
-        if (n_steps + 1) * increment < maxrps:
-            steps.append(Const(maxrps, duration))
+        if increment > 0:
+            if (min_rps + n_steps * increment) < maxrps:
+                steps.append(Const(maxrps, duration))
+        elif increment < 0:
+            if (min_rps + n_steps * increment) > maxrps:
+                steps.append(Const(maxrps, duration))
         logging.info(steps)
         super(Stairway, self).__init__(steps)
 
