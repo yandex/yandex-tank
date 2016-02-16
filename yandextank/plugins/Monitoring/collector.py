@@ -402,7 +402,7 @@ class MonitoringCollector(object):
             listener.monitoring_data(self.send_data)
         self.send_data = ''
 
-    def get_host_config(self, host, names, target_hint):
+    def get_host_config(self, host, target_hint):
 
         default = {
             'System': 'csw,int',
@@ -413,6 +413,8 @@ class MonitoringCollector(object):
         }
 
         default_metric = ['CPU', 'Memory', 'Disk', 'Net']
+
+        names = defaultdict()
 
         hostname = host.get('address').lower()
         if hostname == '[target]':
@@ -501,12 +503,11 @@ class MonitoringCollector(object):
             raise RuntimeError("Can't read monitoring config %s" % filename)
 
         hosts = tree.findall('Host')
-        names = defaultdict()
         config = []
 
         filter_obj = defaultdict(str)
         for host in hosts:
-            host_config = self.get_host_config(host, names, target_hint)
+            host_config = self.get_host_config(host, target_hint)
             # XXX: why stats should be separated?
             filter_obj.update(host_config.pop('stats'))
             config.append(host_config)
