@@ -38,8 +38,6 @@ Here are available command line options:
 
 :-o OPTION, --option=OPTION:
   Set an option from command line. 
-
-..  note: 
   Options set in cmd line override those have been set in configuration files. Multiple times for multiple options. 
 
   Format: ``<section>.<option>=value`` 
@@ -313,190 +311,229 @@ Options
 ^^^^^^^^^^^^^^^^^^^
 
 Basic options: 
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
-*ammofile*
+:ammofile:
   Ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped). 
-*rps_schedule*
+
+:rps_schedule:
   Load schedule in terms of RPS.
-*instances*
+
+:instances:
   Max number of instances (concurrent requests).
-*instances_schedule*
+
+:instances_schedule:
   Load schedule in terms of number of instances.
-*loop*
+
+:loop:
   Number of times requests from ammo file are repeated in loop.
-*ammo_limit*
+
+:ammo_limit:
   Limit request number.
-*autocases*
+
+:autocases:
   Enable marking requests automatically.
 
   Available options: 1 -- enable, 0 -- disable).
-*chosen_cases*
+
+:chosen_cases:
   Use only selected cases.
 
 There are 3 ways to constrain requests number: by schedule with ``rps_schedule``, by requests number with ``ammo_limit`` or by loop number with ``loop`` option. Tank stops if any constrain is reached. If stop reason is reached ``ammo_limit`` or ``loop`` it will be mentioned in log file. In test without ``rps_schedule`` file with requests is used one time by default.
 
 Additional options: 
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
-*writelog*
-  Default: 0.
-
+:writelog:
   Enable verbose request/response logging. 
 
-  Available options: 0 - disable, all - all messages, proto_warning - 4хх+5хх+network errors, proto_error - 5хх+network errors.
-*ssl*
   Default: 0.
 
+  Available options: 0 - disable, all - all messages, proto_warning - 4хх+5хх+network errors, proto_error - 5хх+network errors.
+
+:ssl:
   Enable SSL. 
 
-  Available options: 1 - enable, 0 - disable.
-*address*
-  Default: ``127.0.0.1``.
+  Default: 0.
 
+  Available options: 1 - enable, 0 - disable.
+
+:address:
   Address of target. 
 
+  Default: ``127.0.0.1``.
+
   Format: ``[host]:port``, ``[ipv4]:port``, ``[ipv6]:port``. Tank checks each test if port is available. 
-*port*
+
+:port (deprecated, use ``address``):
+  Port of target.
+
   Default: ``80``.
 
-  Port of target.
-*gatling_ip*
+:gatling_ip:
   Use multiple source addresses. List, divided by spaces. 
-*tank_type*
+
+:tank_type:
+  Available options: ``http`` and ``none`` (raw TCP).
+
   Default: ``http``.
 
-  Available options: ``http`` and ``none`` (raw TCP).
-*eta_file*
+:eta_file:
   Path to ETA file.
-*connection_test*
-  Default: 1.
 
+:connection_test:
   Test TCP socket connection before starting the test. 
+
+  Default: 1.
 
   Available options: 1 - enable, 0 - disable.
 
 URI-style options: 
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
-*uris*
+:uris:
   URI list, multiline option. 
-*headers*
+:headers:
   HTTP headers list in the following form: ``[Header: value]``, multiline option. 
-*header\_http*
-  Default: ``1.0``
-
+:header\_http:
   HTTP version.
 
+  Default: ``1.0``
+
+  Available options: ``1.0`` and ``1.1``. ``2.0`` is NOT supported by this load generator.
+
 stpd-file cache options: 
-~~~~~~~~~~~~
-*use_caching*
+~~~~~~~~~~~~~~~~~~~~~~~
+:use_caching:
+  Enable cache.
+
   Default: ``1``.
 
-  Enable cache.
-*cache_dir*
-  Default: base artifacts directory.
-
+:cache_dir:
   Cache files directory.
-*force_stepping*
-  Default: ``0``.
 
+  Default: base artifacts directory.
+:force_stepping:
   Force stpd file generation.
 
+  Default: ``0``.
+
 Advanced options: 
-~~~~~~~~~~~~
-*phantom_path*
+~~~~~~~~~~~~~~~~~
+:phantom_path:
+  Phantom utility path.
+
   Default: ``phantom``.
 
-  Phantom utility path.
-*phantom_modules_path*
+:phantom_modules_path:
+  Phantom modules path.
+
   Default: ``/usr/lib/phantom``.
 
-  Phantom modules path.
-*config*
+:config:
   Use given (in this option) config file for phantom instead of generated. 
-*phout_file*
+
+:phout_file:
   Import this phout instead of launching phantom (import phantom results).
-*stpd_file*
+
+:stpd_file:
   Use this stpd-file instead of generated. 
-*threads*
+
+:threads:
+  Phantom thread count.
+
   Default: ``<processor cores count>/2 + 1``.
 
-  Phantom thread count.
-*buffered_seconds*
+:buffered_seconds:
   Amount of seconds to which delay aggregator, to be sure that everything were read from phout.
-*additional_libs*
+
+:additional_libs:
   List separated by whitespaces, will be added to phantom config file in section ``module_setup`` 
-*method_prefix*
+
+:method_prefix:
+  Object's type, that has a functionality to create test requests.
+
   Default: ``method_stream``.
 
-  Object's type, that has a functionality to create test requests.
-*source_log_prefix*
-  Default: empty.
-
+:source_log_prefix:
   Prefix, added to class name that reads source data.
-*method_options*
+
   Default: empty.
 
+:method_options:
   Additional options for method objects. It is used for Elliptics etc.
-*affinity*
+
   Default: empty.
 
+:affinity:
   Set a phantom's CPU affinity. 
 
   Example: ``0-3`` enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
-TLS/SSL additional options (``ssl=1`` is required):
-~~~~~~~~~~~~
-
-*ciphers*
   Default: empty.
 
+
+TLS/SSL additional options (``ssl=1`` is required):
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:ciphers:
   Cipher list, consists of one or more cipher strings separated by colons (see man ciphers).
 
   Example: ciphers = RSA:!COMPLEMENTOFALL
-*client_certificate*
+
   Default: empty.
 
+:client_certificate:
   Path to client certificate which is used in client's "Certificate message" in Client-authenticated TLS handshake.
-*client_key*
+
   Default: empty.
 
+:client_key:
   Path to client's certificate's private key, used for client's "CertificateVerify message" generation in Client-authenticated TLS handshake.
 
-Phantom http-module tuning options: 
-~~~~~~~~~~~~
+  Default: empty.
 
-*phantom_http_line*
+
+Phantom http-module tuning options: 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:phantom_http_line:
+  First line length.
+
   Default: ``1K``.
 
-  First line length.
-*phantom_http_field_num*
+:phantom_http_field_num:
+  Headers amount.
+
   Default: ``128``.
 
-  Headers amount.
-*phantom_http_field*
+:phantom_http_field:
+  Header size.
+
   Default: ``8K``.
 
-  Header size.
-*phantom_http_entity*
+:phantom_http_entity:
   Answer ``size``. 
-  
+ 
 .. note::
   Please, keep in mind, especially if your service has large answers, that phantom doesn't read more than defined in ``phantom_http_entity``.
 
 Artifacts
 ^^^^^^^^^^^^^^^^^^^
 
-*phantom_*.conf*
+:phantom_*.conf:
   Generated configuration files.
-*phout_*.log*
+
+:phout_*.log:
   Raw results file.
-*phantom_stat_\*.log*
+
+:phantom_stat_*.log:
   Phantom statistics, aggregated by seconds.
-*answ_\*.log*
+
+:answ_*.log:
   Detailed request/response log.
-*phantom_\*.log*
+
+:phantom_*.log:
   Internal phantom log.
 
 Multi-tests
@@ -505,7 +542,9 @@ Multi-tests
 To make several simultaneous tests with phantom, add proper amount of sections with names ``phantom-_N_``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops. 
 
 Example:
+
 :: 
+
     [phantom]
     phantom_path=phantom
     ammofile=data/dummy.ammo
@@ -540,6 +579,7 @@ JMeter
 JMeter module uses JMeter as a load generator. To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable JMeter plugin and then specify the parameters for JMeter:
 
 ::
+
     [tank]
     ; Disable phantom:
     plugin_phantom=
@@ -551,31 +591,39 @@ INI file section: **[jmeter]**
 Options
 ^^^^^^^^^^^^^^^^^^^
 
-*jmx*
+:jmx:
   Testplan for execution.
-*args*
+
+:args:
   Additional commandline arguments for JMeter.
-*jmeter_path*
+
+:jmeter_path:
+  Path to JMeter, allows to use alternative JMeter installation.
+
   Default: ``jmeter``
 
-  Path to JMeter, allows to use alternative JMeter installation.
-*buffered_seconds*
+:buffered_seconds:
   Amount of seconds to which delay aggregator, to be sure that everything were read from jmeter's results file.
-*connect_time*
+
+:connect_time:
   It sets jmeter.save.saveservice.connect_time=false if the value is '0' or empty string, jmeter.save.saveservice.connect_time=true in any other cases, empty string by default.
-*all other options in the section*
+
+:all other options in the section:
   They will be passed as User Defined Variables to JMeter.
 
 Artifacts
 ^^^^^^^^^^^^^^^^^^^
 
-*<original jmx>*
+:<original jmx>:
   Original testplan.
-*<modified jmx>*
+
+:<modified jmx>:
   Modified test plan with results output section.
-*<jmeter_\*.jtl>*
+
+:<jmeter_*.jtl>:
   JMeter's results.
-*<jmeter_\*.log>*
+
+:<jmeter_*.log>:
   JMeter's log.
 
 BFG
@@ -585,6 +633,7 @@ BFG
 BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first  (unless you really want to keep it active alongside at your own risk), enable BFG plugin and then specify the parameters for BFG and for the cannon you select. For example, if you want to kill an SQL db:
 
 ::
+
     [tank]
     ; Disable phantom:
     plugin_phantom=
@@ -613,6 +662,7 @@ BFG is a generic gun that is able to use different kinds of cannons to shoot. To
 Or if you want i.e to call your own module's MyService function shoot:
 
 ::
+
     [tank]
     ; Disable phantom:
     plugin_phantom=
@@ -644,14 +694,16 @@ BFG Options
 
 INI file section: **[bfg]**
 
-*gun_type*
+:gun_type:
   What kind of gun should BFG use.
-*ammo_type*
+
+:ammo_type:
+  What ammo parser should BFG use.
+
   Default: ``phantom``.
 
-  What ammo parser should BFG use.
-*other common stepper options*
-
+:other common stepper options:
+  
 SQL Gun Options
 ^^^^^^^^^^^^^^^^^^^
 
@@ -659,7 +711,7 @@ gun_type = **sql**
 
 INI file section: **[sql_gun]**
 
-*db*
+:db:
   DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
 
 Custom Gun Options
@@ -739,17 +791,19 @@ Example:
           <...some finishing work...>
 
 Scenario Gun Options
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 gun_type = **scenario**
 
 INI file section: **[scenario_gun]**
 
-*module_path*
+:module_path:
   Path to your module.
-*module_name*
+
+:module_name:
   Module name, has to provide dict SCENARIOS, which will be called by bfg's threads according to marker of request in ammofile to fullfill rps_schedule
-*ammofile*
+
+:ammofile:
   Path to ammofile. Second column should by a marker of request corresponding to a function specified in SCENARIOS.
 
 Example:
@@ -846,7 +900,7 @@ Example:
   }
 
 Pandora
-------
+----------
 
 `Pandora <https://github.com/yandex/pandora>`_ is a load generator written in Go. For now it supports only SPDY/3 and HTTP(S). Plugins for other protocols
 (HTTP/2, Websocket, XMPP) are on the way.
@@ -856,6 +910,7 @@ By default, Yandex.Tank will try to just run ``pandora`` (or you could specify a
 Disable phantom first (unless you really want to keep it active alongside at your own risk), enable Pandora plugin and then specify the parameters.
 
 ::
+
     [tank]
     ; Disable phantom:
     plugin_phantom=
@@ -892,6 +947,7 @@ Pandora currently supports only one ammo format: ``jsonline``, i.e. one json doc
 
 Example:
 ::
+
     {"uri": "/00", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
     {"uri": "/01", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
     {"tag": "mytag", "uri": "/02", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
@@ -908,6 +964,7 @@ used in different places, for example as a limiter for user startups or as a lim
 
 Example:
 ::
+
     startup_schedule = periodic(2, 0.1, 100)
     user_schedule = periodic(10, 15, 100)
     shared_schedule = 0
@@ -915,8 +972,11 @@ Example:
 Start 2 users every 0.1 seconds, 100 batches, maximum of 2 * 100 = 200 users. Each user will issue requests in batches of 10 requests, every 15 seconds, maximum
 of 100 requests. All users will read from one ammo source.
 
-Second schedule type is ``linear``. It is defined like this: ``linear(<start_rps>, <end_rps>, <time>). Example:
+Second schedule type is ``linear``. It is defined like this: ``linear(<start_rps>, <end_rps>, <time>)``.
+
+Example:
 ::
+
     user_schedule = linear(.1, 10, 10m)
     shared_schedule = 1
 
@@ -930,6 +990,7 @@ to stop eventually.
 
 Example:
 ::
+
     loop = 1000000
     startup_schedule = periodic(2, 10, 50)
     user_schedule = unlimited()
@@ -940,7 +1001,7 @@ as soon as the previous response have been received). This is analogous to phant
 schedule mode.
 
 Auto-stop
-------
+----------
 
 The Auto-stop module gets the data from the aggregator and passes them
 to the criteria-objects that decide if we should stop the test.
@@ -950,80 +1011,140 @@ INI file section: **[autostop]**
 Options
 ^^^^^^^^^^^^^^^^^^^
 
-*autostop*
+:autostop:
   Criteria list divided by spaces, in following format: ``type(parameters)``
 
 Basic criteria types: 
 
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Name               | Example                                       | Exit Code | Description                                                                                                                                                                                                       |
-+====================+===============================================+===========+===================================================================================================================================================================================================================+
-| time               | time(1s500ms, 30s)                            | 21        | stop the test if average response time is higher then allowed                                                                                                                                                     |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| http               | http(404,10,15)                               | 22        | stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value                                                       |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| net                | net(110,10,15)                                | 23        | like ``http``, but for network codes. Use mask ``xx`` for all non-zero codes.                                                                                                                                     |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| quantile           | quantile (95,100ms,10s)                       |           | stop the test if the specified percentile is larger then specified level for as long as the time period specified. Available percentile values: 25, 50, 75, 80, 90, 95, 98, 99, 100                               |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| instances          | instances(80%, 30)                            | 24        | available when phantom module is included. Stop the test if instance count is larger then specified value                                                                                                         |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| metric_lower       | metric_lower(127.0.0.1,Memory_free,500,10)    | 31        | stop test if monitored metrics are lowerthan specified for time period                                                                                                                                            |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| metric_higher      | metric_higher(127.0.0.1,Memory_free,500,10)   | 32        | stop test if monitored metrics are higher than specified for time period                                                                                                                                          |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| steady_cumulative  | steady_cumulative(1m)                         | 33        | Stops the test if cumulative percentiles does not change for specified interval                                                                                                                                   |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| limit              | limit(1m)                                     |           | Will stop test after specified period of time                                                                                                                                                                     |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| total_time         | total_time(300ms, 70%, 3s)                    | 25        | like ``time``, but accumulate for all time period (responses that fit may not be one-after-another, but only lay into specified time period)                                                                      |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| total_http         | total_http(5xx,10%,10s)                       | 26        | like ``http``, but accumulated. See ``total_time``                                                                                                                                                                |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| total_net          | total_http(5xx,10%,10s)                       | 27        | like ``net``, but accumulated                                                                                                                                                                                     |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| negative_http      | total_net(79,10%,10s)                         | 28        | inversed ``total_http``                                                                                                                                                                                           |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| negative_net       | negative_http(2xx,10%,10s)                    | 29        | inversed ``total_net``                                                                                                                                                                                            |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| http_trend         | http_trend(2xx,10s)                           | 30        | Stop if trend for defined http codes is negative on defined period. Trend is a sum of an average coefficient for linear functions calculated for each pair points in last n seconds and standart deviation for it |
-+--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+:time:
+  Stop the test if average response time is higher then allowed. 
 
-* **time** - stop the test if average response time is higher then allowed. E.g.: ``time(1s500ms, 30s) time(50,15)``. Exit code - 21
-* **http** - stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value. Examples: ``http(404,10,15) http(5xx, 10%, 1m)``. Exit code - 22
-* **net** - like ``http``, but for network codes. Use ``xx`` for all non-zero codes. Exit code - 23
-* **quantile** - stop the test if the specified percentile is larger then specified level for as long as the time period specified. Available percentile values: 25, 50, 75, 80, 90, 95, 98, 99, 100. Example: ``quantile (95,100ms,10s)`` 
-* **instances** - available when phantom module is included. Stop the test if instance count is larger then specified value. Example: ``instances(80%, 30) instances(50,1m)``. Exit code - 24
-* **metric_lower** and **metric_higher** - stop test if monitored metrics are lower/higher than specified for time period. Example: metric_lower(127.0.0.1,Memory_free,500,10). Exit code - 31 and 32. **Note**: metric names (except customs) are written with underline. For hostnames masks are allowed (i.e target-\*.load.net)
-* **steady_cumulative** - Stops the test if cumulative percentiles does not change for specified interval. Example: ``steady_cumulative(1m)``. Exit code - 33
-* **limit** - Will stop test after specified period of time. Example: ``limit(1m)``.
+  Example: ``time(1s500ms, 30s) time(50,15)``. 
+
+  Exit code - 21
+
+:http:
+  Stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value. 
+
+  Examples: ``http(404,10,15) http(5xx, 10%, 1m)``. 
+  Exit code - 22
+
+:net:
+  Like ``http``, but for network codes. Use ``xx`` for all non-zero codes. 
+
+  Exit code - 23
+
+:quantile: 
+  Stop the test if the specified percentile is larger then specified level for as long as the time period specified. 
+
+  Available percentile values: 25, 50, 75, 80, 90, 95, 98, 99, 100. 
+
+  Example: ``quantile (95,100ms,10s)`` 
+
+:instances: 
+  Available when phantom module is included. Stop the test if instance count is larger then specified value. 
+
+  Example: ``instances(80%, 30) instances(50,1m)``. 
+
+  Exit code - 24
+
+:metric_lower and metric_higher: 
+  Stop test if monitored metrics are lower/higher than specified for time period. 
+
+  Example: metric_lower(127.0.0.1,Memory_free,500,10). 
+
+  Exit code - 31 and 32. 
+
+  **Note**: metric names (except customs) are written with underline. For hostnames masks are allowed (i.e target-\*.load.net)
+
+:steady_cumulative:
+  Stops the test if cumulative percentiles does not change for specified interval. 
+
+  Example: ``steady_cumulative(1m)``. 
+
+  Exit code - 33
+
+:limit:
+  Will stop test after specified period of time. 
+
+  Example: ``limit(1m)``.
+
 
 Basic criteria aren't aggregated, they are tested for each second in specified period. For example autostop=time(50,15) means "stop if average responce time for every second in 15s interval is higher than 50ms"
 
+
 Advanced criteria types:
 
-* **total_time** — like ``time``, but accumulate for all time period (responses that fit may not be one-after-another, but only lay into specified time period). Example: ``total_time(300ms, 70%, 3s)``. Exit code - 25
-* **total_http** — like ``http``, but accumulated. See ``total_time``. Example: ``total_http(5xx,10%,10s) total_http(3xx,40%,10s)``.  Exit code - 26
-* **total_net** — like ``net``, but accumulated. See ``total_time``. Example: ``total_net(79,10%,10s) total_net(11x,50%,15s)``  Exit code - 27
-* **negative_http** —  inversed ``total_http``. Stop if there are not enough responses that fit the specified mask. Use to be shure that server responds 200. Example: ``negative_http(2xx,10%,10s)``. Exit code: 28
-* **negative_net** — inversed ``total_net``. Stop if there are not enough responses that fit the specified mask. Example: ``negative_net(0,10%,10s)``. Exit code: 29
-* **http_trend** - Stop if trend for defined http codes is negative on defined period. Example: http_trend(2xx,10s). Exit code: 30. Trend is a sum of an average coefficient for linear functions calculated for each pair points in last n seconds and standart deviation for it
+:total_time:
+  Like ``time``, but accumulate for all time period (responses that fit may not be one-after-another, but only lay into specified time period). 
 
-Graphite
-------
+  Example: ``total_time(300ms, 70%, 3s)``. 
+
+  Exit code - 25
+
+:total_http: 
+  Like ``http``, but accumulated. See ``total_time``. 
+
+  Example: ``total_http(5xx,10%,10s) total_http(3xx,40%,10s)``.  
+
+  Exit code - 26
+
+:total_net: 
+  Like ``net``, but accumulated. See ``total_time``. 
+
+  Example: ``total_net(79,10%,10s) total_net(11x,50%,15s)``  
+
+  Exit code - 27
+
+:negative_http: 
+  Inversed ``total_http``. Stop if there are not enough responses that fit the specified mask. Use to be shure that server responds 200. 
+
+  Example: ``negative_http(2xx,10%,10s)``. 
+
+  Exit code: 28
+
+:negative_net: 
+  Inversed ``total_net``. Stop if there are not enough responses that fit the specified mask. 
+
+  Example: ``negative_net(0,10%,10s)``. 
+
+  Exit code: 29
+
+:http_trend: 
+  Stop if trend for defined http codes is negative on defined period. Trend is a sum of an average coefficient for linear functions calculated for each pair points in last n seconds and standart deviation for it
+
+  Example: http_trend(2xx,10s). 
+
+  Exit code: 30. 
+
+GraphiteUploader
+-----------------
 
 Graphite plugin uploads data to `Graphite <http://graphite.readthedocs.org/en/0.9.12/index.html>`_ monitoring tool. Config file section: ```[graphite]```
 
 Options
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^
 
-* **address** - graphite server
-* **port** - graphite backend port (where to send data), default: 2003
-* **web_port** - graphite frontend port, default: 8080
-* **template** - template file. Default: Tank/Plugins/graphite.tpl
+:address: 
+  graphite server
 
-InfluxDB
-------
+:port:
+  graphite backend port (where to send data).
+
+  Default: 2003
+
+:web_port: 
+  graphite frontend port
+
+  Default: 8080
+
+:template:
+  Template file. 
+
+  Default: yandextank/plugins/GraphiteUploader/config/graphite.tpl
+
+InfluxUplink
+--------------
 
 Influx uplink plugin uploads data to `InfluxDB <https://influxdata.com>`_ storage.
 Different tests will be tagged with unique IDs.
@@ -1052,13 +1173,21 @@ Configuration:
 Options
 ^^^^^^^^^^^^^^^^^^^
 
-* **address** - graphite server
-* **port** - graphite backend port (where to send data), default: 2003
-* **web_port** - graphite frontend port, default: 8080
-* **template** - template file. Default: Tank/Plugins/graphite.tpl
+:address:
+  Graphite server
+
+:port:
+  Graphite backend port (where to send data)
+
+  Default: 8080
+
+:template:
+  Template file. 
+
+  Default: yandextank/plugins/GraphiteUploader/config/graphite.tpl
 
 Loadosophia
-------
+-------------
 
 When test has been finished, module upload to Loadosophia.org test artifacts: file with answer times and files with monitoring data. The link will be shown in console output.
 
@@ -1067,14 +1196,23 @@ INI file section: **[loadosophia]**
 Options
 ^^^^^^^^^^^^^^^^^^^
 
-* **token** - account's access key, received on Upload Token page
-* **project** - test will be uploaded to that project
-* **test_title** - test name
-* **color_flag** - color flag, assigned to test. (gray flag = "to delete")
-* **file_prefix** - prefix that will be added to uploaded file's name (deprecated
+:token:
+  Account's access key, received on Upload Token page
+
+:project:
+  Test will be uploaded to that project
+
+:test_title:
+  Test name
+
+:color_flag:
+  Color flag, assigned to test. (gray flag = "to delete")
+
+:file_prefix:
+  Prefix that will be added to uploaded file's name (deprecated)
 
 Monitoring
-------
+-----------
 
 Runs metrics collection through ssh connect.
 
@@ -1083,23 +1221,40 @@ INI file section: **[monitoring]**
 Options
 ^^^^^^^^^^^^^^^^^^^
 
-* **config** - path to monitoring config file. Default: ``auto`` means collect default metrics from ``default_target`` host. If ``none`` is defined, monitoring won't be executed. Also it is possible to write plain multiline XML config.
-* **default_target** - an address where from collect "default" metrics. When phantom module is used, address will be obtained from it.
-* **ssh_timeout** - ssh connection timeout. Default: 5s
+:config:
+  Path to monitoring config file. 
+
+  Default: ``auto`` means collect default metrics from ``default_target`` host. If ``none`` is defined, monitoring won't be executed. Also it is possible to write plain multiline XML config.
+
+:default_target:
+  An address where from collect "default" metrics. When phantom module is used, address will be obtained from it.
+
+:ssh_timeout: 
+  Ssh connection timeout. 
+
+  Default: 5s
 
 Artifacts
 ^^^^^^^^^^^^^^^^^^^
 
-* **agent_*.cfg** - configuration files sent to hosts to run monitoring agents.
-* **agent_<host>_*.log** - monitoring agents' log files, downloaded from hosts
-* **monitoring_*.data** - data collected by monitoring agents, received by ssh.
-* **<monitoring config** - monitoring config file
+:agent_*.cfg: 
+  Configuration files sent to hosts to run monitoring agents.
+
+:agent_<host>_*.log: 
+  Monitoring agents' log files, downloaded from hosts.
+
+:monitoring_*.data: 
+  Data collected by monitoring agents, received by ssh.
+
+:<monitoring config: 
+  Monitoring config file.
 
 Configuration
 ^^^^^^^^^^^^^^^^^^^
 
+
 Net access and authentication
-"""""""""""""""""""""""""""""
+**************************
 
 Monitoring requires ssh access to hosts for copy and executing agents on them. SSH session is established with user account specified by "username" parameter of Host element, otherwise current user account, so you need to copy your public keys (ssh-copy-id) and enable nonpassword authorization on hosts.
 If connection establishing failed for some reason in ``ssh_timeout`` seconds, corresponding message will be written to console and monitoring log and task will proceed further. 
@@ -1110,8 +1265,10 @@ Tip: write to ``.ssh/config`` next lines to eliminate ``-A`` option in ``ssh``
     StrictHostKeyChecking no
     ForwardAgent yes
     
+
+
 Configuration file format
-"""""""""""""""""""""""""
+**************************
 
 Config is an XML file with structure:
 root element ``Monitoring`` includes elements ``Host`` which contains elements-metrics
@@ -1129,27 +1286,59 @@ Example:
       </Host>
     </Monitoring>
     
+
 Element ``Monitoring``
 **********************
-Global monitoring settings. Attributes:
 
-* ``loglevel`` - debug level (info, debug), optional. Default: info.
+Global monitoring settings.
 
-Element ``Host``
-****************
+:loglevel:
+  Logging level.
+
+  Available options: ``info``, ``debug``. Optional.
+ 
+  Default: info.
+
+
+Element ``Host`` 
+**********************
+
 Contains address and role of monitored server. Attributes:
 
-* ``address="<IP address or domain name>"`` - server adddress. Mandatory. Special string ``[target]`` could be used here, which means "get from the tank target address"
-* ``port="<SSH port>"`` - server's ssh port. Optional. Default: 22
-* ``python="<python path>"`` - the way to use alternative python version. Optional
-* ``interval="<seconds>"`` - metrics collection interval. Optional. Default: 1 second
-* ``comment="<short commentary>"`` - short notice about server's role in test. Optional. Default: empty
-* ``username="<user name>"`` - user account to connect with. Optional. Default: current user account.
+:address="<IP address or domain name>:
+  Server adddress. Mandatory. Special mask ``[target]`` could be used here, which means "get from the tank target address"
 
-Example: `<Host address="localhost" comment="frontend" priority="1" interval="5" username="tank"/>`
+:port="<SSH port>":
+  Server's ssh port. Optional. 
+
+  Default: 22
+
+:python="<python path>": 
+  The way to use alternative python version. Optional.
+
+:interval="<seconds>":
+  Metrics collection interval. Optional. 
+  
+  Default: 1 second
+
+:comment="<short commentary>":
+  Short notice about server's role in test. Optional. 
+
+  Default: empty
+
+:username="<user name>":
+  User account to connect with. Optional. 
+
+  Default: current user account.
+
+
+Example: 
+``<Host address="localhost" comment="frontend" priority="1" interval="5" username="tank"/>``
+
+
 
 Metric elements
-****************
+**********************
 
 Metric elements in general are set by metrics group name and particular metrics enumeration in attribute `measure`. Example: `<CPU measure="idle,user,system" />`
 
@@ -1194,7 +1383,8 @@ Custom metrics have an additional attribute `diff`, that signals to obtain as me
 Also custom metrics must have attribute `label`, which defines metric short name (only latin). `Underline symbol should be avoided.` 
 
 Monitoring default logic
-****************
+**************************
+
 Default logic is applied on next levels:
 
 1. Host level: by default target is derived from `address` in `phantom` module.
@@ -1202,10 +1392,11 @@ Default logic is applied on next levels:
 3. Metric level: if metrics group is defined without attribute `measure`, then only default group metrics are collected.
    
 Startup and Shutdown elements
-****************
+*********************************
 There is special non-metric elements called Startup and Shutdown. Startup shell scripts will be started before metric collection. On the normal shutdown startup scripts will be stopped and shutdown scripts will run. There may be any number of Startup and Shutdown elements.
 
 Following example illustrates this feature:
+
 ::
 
     <Monitoring>
@@ -1229,15 +1420,28 @@ INI file section: **[console]**
 Options
 ^^^^^^^^^^^^^^^^^^^
 
--  **short_only** - show only one-line summary instead of full-screen
-   (usefull for scripting), default: 0 (disable)
--  **info_panel_width** - relative right-panel width in percents,
-   default: 33
--  disable_all_colors - switch off color scheme, 0/1, default: 0
--  disable_colors - don't use specified colors in console. List with whitespaces. Example: ``WHITE GREEN RED CYAN MAGENTA YELLOW``
+:short_only:
+  Show only one-line summary instead of full-screen. Usefull for scripting.
+
+  Default: 0 (disabled)
+
+:info_panel_width:
+  relative right-panel width in percents,
+
+  Default: 33
+
+:disable_all_colors: 
+  Switch off color scheme
+
+  Available options: 0/1
+
+  Default: 0
+
+:disable_colors:
+  Don't use specified colors in console. List with whitespaces. Example: ``WHITE GREEN RED CYAN MAGENTA YELLOW``
 
 Aggregator
-------
+-------------
 
 The aggregator module is responsible for aggregation of data received
 from different kind of modules and transmitting that aggregated data to
@@ -1248,11 +1452,21 @@ INI file section: **[aggregator]**
 Options:
 ^^^^^^^^^^^^^^^^^^^
  
-* **time_periods** - time intervals list divided by zero. Default: ``1ms 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 150 200 250 300 350 400 450 500 600 650 700 750 800 850 900 950 1s 1500 2s 2500 3s 3500 4s 4500 5s 5500 6s 6500 7s 7500 8s 8500 9s 9500 10s 11s``
-* **precise_cumulative** - 0/1, controls the accuracy of cumulative percentile. Default: ``1``. When disabled, cumulative percentiles are calculated with ``time_periods`` precision, otherwise - up to milliseconds.
+:time_periods: 
+  time intervals list divided by zero. 
+
+  Default: ``1ms 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 150 200 250 300 350 400 450 500 600 650 700 750 800 850 900 950 1s 1500 2s 2500 3s 3500 4s 4500 5s 5500 6s 6500 7s 7500 8s 8500 9s 9500 10s 11s``
+
+:precise_cumulative: 
+  Controls the accuracy of cumulative percentile. When disabled, cumulative percentiles are calculated with ``time_periods`` precision, otherwise - up to milliseconds.
+
+  Available options: 0/1.
+
+  Default: ``1``. 
+
 
 ShellExec
-------
+-----------
 
 The ShellExec module executes the shell-scripts (hooks) on different
 stages of test, for example, you could start/stop some services just
@@ -1271,16 +1485,21 @@ INI file section: **[shellexec]**
 Options:
 ^^^^^^^^^^^^^^^^^^^
 
-*prepare*
+:prepare:
   The script to run on prepare stage.
-*start*
+
+:start:
   The script to run on start stage.
-*poll*
+
+:poll:
   The script to run every second while the test is running.
-*end*
+
+:end:
   The script to run on end stage.
-*post_process*
+
+:post_process:
   The script to run on postprocess stage
+
 
 AB
 ------
@@ -1306,18 +1525,31 @@ INI file section: **[ab]**
 Options
 ^^^^^^^^^^^^^^^^^^^
 
-* **url** - requested URL, default: ``http:**localhost/`` 
-* **requests** - total request count, default: 100 
-* **concurrency** - number of concurrent requests: 1 
-* **options** - ab command line options
+:url: 
+  Requested URL.
+
+  Default: ``http:**localhost/`` 
+
+:requests: 
+  Total request count.
+
+  Default: 100 
+
+:concurrency: 
+  Number of concurrent requests: 1.
+
+:options: 
+  ab command line options.
 
 Artifacts
 ^^^^^^^^^^^^^^^^^^^
 
--  **ab_*.log** - request log with response times
+:ab_*.log: 
+  Request log with response times.
+
 
 Resource Check
-------
+----------------
 
 Module checks free memory and disk space amount before and during test. Test stops if minimum values are reached. 
 
@@ -1326,12 +1558,24 @@ INI file section: **[rcheck]**
 Options
 ^^^^^^^^^^^^^^^^^^^
 
-* **interval** - how often to check resources. Default interval: 10s
-* **disk_limit** - Minimum free disk space in MB. Default: 2GB
-* **mem_limit** - Minimum free memory amount in MB. Default: 512MB
+:interval:
+  How often to check resources. 
+
+  Default interval: ``10s``
+
+:disk_limit:
+  Minimum free disk space in MB. 
+
+  Default: ``2GB``
+
+:mem_limit: 
+  Minimum free memory amount in MB. 
+
+  Default: ``512MB``
+
 
 RC Assert
-------
+-----------
 
 Module checks test's exit code with predefined acceptable codes. If exit code matches, it is overrides as 0. Otherwise it is replaced with code from option ``fail_code``
 
@@ -1340,21 +1584,31 @@ INI file section: **[rcassert]**
 Options
 ^^^^^^^^^^^^^^^^^^^
 
-* **pass** - list of acceptable codes, delimiter - whitespace. Default: empty, no check is performed.
-* **fail_code** - exit code when check fails, integer number. Default: 10
+:pass:
+  list of acceptable codes, delimiter - whitespace. 
+
+  Default: empty, no check is performed.
+
+:fail_code:
+  Exit code when check fails, integer number. 
+
+  Default: 10
+
 
 Tips&Tricks
-------
+------------
 
-Shows tips and tricks in fullscreen console. **If you have any
-tips&tricks, tell the developers about them**
+Shows tips and tricks in fullscreen console.
 
 INI-file section: **[tips]**
 
 Options
 ^^^^^^^^^^^^^^^^^^^
 
-* **disable** - disable tips and tricks, default: don't (0)
+:disable:
+  Disable tips and tricks.
+
+  Default: 0 (don't).
 
 Sources
 ================
