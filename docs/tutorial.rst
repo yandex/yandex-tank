@@ -4,9 +4,9 @@ Usage
 So, you've installed Yandex.Tank to a proper machine, it is close to target,
 access is permitted and server is tuned. How to make a test?
 
-Note
+.. note::
 
-This guide is for ``phantom`` load generator.
+  This guide is for ``phantom`` load generator.
 
 First Steps
 ~~~~~~~~~~~
@@ -30,8 +30,11 @@ values, step - increment value, dur - step duration.
 
 3. ``const (load,dur)`` makes constant load. ``load`` - rps amount, ``dur`` 
 - load duration. You can set fractional load like this: ``line(1.1, 2.5, 10)`` 
--- from 1.1rps to 2.5 for 10 seconds. Note: ``const(0, 10)`` - 0 rps for 10 seconds, 
-in fact 10s pause in a test.
+-- from 1.1rps to 2.5 for 10 seconds. 
+
+.. note::
+  ``const(0, 10)`` - 0 rps for 10 seconds, 
+  in fact 10s pause in a test.
 
 ``step`` and ``line`` could be used with increasing and decreasing
 intensity: 
@@ -81,12 +84,11 @@ large files will be readed from stream.
   address=203.0.113.1 ; Target's address
   ammofile=https://yourhost.tld/path/to/ammofile.txt
 
-Note
+.. note::
 
-If ammo type is uri-style or request-style, tank will try to guess it.
-
-Use ``ammo_type`` option to explicitly specify ammo format. Don't forget to change ``ammo_type`` option
-if you switch format of your ammo, otherwise you might get errors.
+  If ammo type is uri-style or request-style, tank will try to guess it.
+  Use ``ammo_type`` option to explicitly specify ammo format. Don't forget to change ``ammo_type`` option
+  if you switch format of your ammo, otherwise you might get errors.
 
 Access mode
 ''''''''''''
@@ -130,9 +132,9 @@ Update configuration file with HTTP headers and URIs:
 
 Parameter ``uris`` contains uri, which should be used for requests generation.
 
-Note
+.. note::
 
-Pay attention to sample above, because whitespaces in ``uris`` and ``headers`` options are important.
+  Pay attention to sample above, because whitespaces in ``uris`` and ``headers`` options are important.
 
 URI-style, URIs in file
 '''''''''''''''''''''''
@@ -206,24 +208,24 @@ where ``size_of_request`` – request size in bytes. '\r\n' symbols after
 include them in a file after each request. Pay attention to the sample above
 because '\r' symbols are strictly required. 
 
-Note 
+.. note:: 
 
-Parameter ``ammo_type`` is unnecessary, request-style is default ammo type.
+  Parameter ``ammo_type`` is unnecessary, request-style is default ammo type.
 
 **sample GET requests (null body)**
 
 ::
-
+  
   73 good
   GET / HTTP/1.0
   Host: xxx.tanks.example.com
   User-Agent: xxx (shell 1)
-
+  
   77 bad
   GET /abra HTTP/1.0
   Host: xxx.tanks.example.com
   User-Agent: xxx (shell 1)
-
+  
   78 unknown
   GET /ab ra HTTP/1.0
   Host: xxx.tanks.example.com
@@ -264,18 +266,18 @@ Parameter ``ammo_type`` is unnecessary, request-style is default ammo type.
   Content-Type: multipart/form-data; boundary=AGHTUNG
   Content-Length:334
   Connection: Close
-
+  
   --AGHTUNG
   Content-Disposition: form-data; name="host"
-
+  
   load-test-shop-updatestatus.ru
   --AGHTUNG
   Content-Disposition: form-data; name="user_id"
-
+  
   1
   --AGHTUNG
   Content-Disposition: form-data; name="wsw-fields"
-
+  
   <wsw-fields><wsw-field name="moderate-code"><wsw-value>disable</wsw-value></wsw-field></wsw-fields>
   --AGHTUNG--
 
@@ -433,12 +435,12 @@ requests and tags:
   GET / HTTP/1.0 
   Host: xxx.tanks.example.com 
   User-Agent: xxx (shell 1)
-
+  
   77 bad 
   GET /abra HTTP/1.0 
   Host: xxx.tanks.example.com 
   User-Agent: xxx (shell 1)
-
+  
   75 unknown 
   GET /ab HTTP/1.0 
   Host: xxx.tanks.example.com 
@@ -544,8 +546,8 @@ Example:
   User-Agent: tank
   Accept: */*
   Connection: close
-
-
+  
+  
   HTTP/1.1 200 OK
   Content-Type: application/javascript;charset=UTF-8
 
@@ -655,9 +657,9 @@ parser could be switched off, providing ability to generate load with
 any data, receiving any answer in return. To do that add
 ``tank_type = 2`` to ``load.ini``. 
 
-Note
+.. note::
 
-**Indispensable condition: Connection close must be initiated by remote side**
+  **Indispensable condition: Connection close must be initiated by remote side**
 
 ::
 
