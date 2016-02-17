@@ -4,6 +4,8 @@ Usage
 So, you've installed Yandex.Tank to a proper machine, it is close to target,
 access is permitted and server is tuned. How to make a test?
 
+Note
+
 This guide is for ``phantom`` load generator.
 
 First Steps
@@ -79,6 +81,8 @@ large files will be readed from stream.
   address=203.0.113.1 ; Target's address
   ammofile=https://yourhost.tld/path/to/ammofile.txt
 
+Note
+
 If ammo type is uri-style or request-style, tank will try to guess it.
 
 Use ``ammo_type`` option to explicitly specify ammo format. Don't forget to change ``ammo_type`` option
@@ -125,6 +129,9 @@ Update configuration file with HTTP headers and URIs:
     /sdfbv/swdfvs/ssfsf
 
 Parameter ``uris`` contains uri, which should be used for requests generation.
+
+Note
+
 Pay attention to sample above, because whitespaces in ``uris`` and ``headers`` options are important.
 
 URI-style, URIs in file
@@ -198,6 +205,8 @@ where ``size_of_request`` – request size in bytes. '\r\n' symbols after
 ``body`` are ignored and not sent anywhere, but it is required to
 include them in a file after each request. Pay attention to the sample above
 because '\r' symbols are strictly required. 
+
+Note 
 
 Parameter ``ammo_type`` is unnecessary, request-style is default ammo type.
 
@@ -465,7 +474,9 @@ HTTP and Net codes conditions
 There is an option to define specific codes (404,503,100) as well as code
 groups (3xx, 5xx, xx). Also you can define relative threshold (percent
 from the whole amount of answer per second) or absolute (amount of
-answers with specified code per second). Examples:
+answers with specified code per second). 
+
+Examples:
 
 * ``autostop = http(4xx,25%,10)`` – stop test, if amount of 4xx http codes
 in every second of last 10s period exceeds 25% of answers (relative
@@ -643,6 +654,8 @@ In necessity of testing stateless HTTP-like protocol, Yandex.Tank's HTTP
 parser could be switched off, providing ability to generate load with
 any data, receiving any answer in return. To do that add
 ``tank_type = 2`` to ``load.ini``. 
+
+Note
 
 **Indispensable condition: Connection close must be initiated by remote side**
 

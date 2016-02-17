@@ -7,7 +7,9 @@ Command line options
 Yandex.Tank has an obviously named executable ``yandex-tank``. 
 Here are available command line options: 
 
-- **-h, --help** - show command line options 
+*-h, --help*
+  show command line options
+
 - **-c CONFIG, --config=CONFIG** - read options from INI file. It is possible to set multiple INI files by specifying the option serveral times. Default: ``./load.ini`` 
 - **-i, --ignore-lock** - ignore lock files 
 - **-f, --fail-lock** - don't wait for lock file, quit if it's busy. The default behaviour is to wait for lock file to become free. 
