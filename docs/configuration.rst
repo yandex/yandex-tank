@@ -198,15 +198,12 @@ Options
 Basic options:
 
 *lock_dir*
-
   Default: ``/var/lock/``
 
   Directory for lockfile. 
-
 *plugin_<pluginname>*
 
   Path to plugin. Empty path interpreted as disable of plugin.
-
 *artifacts_base_dir*
   Default: current directory.
 
@@ -226,7 +223,7 @@ Basic options:
 
   Set a yandex-tank's (python process and load generator process) CPU affinity. 
 
-  Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
+  Example: ``0-3`` enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
 consoleworker - cmd-line interface
 ^^^^^^^^^^^^^^^^^^^
@@ -298,7 +295,9 @@ Basic options:
 *ammo_limit*
   Limit request number.
 *autocases*
-  Enable marking requests automatically (1 -- enable, 0 -- disable).
+  Enable marking requests automatically.
+
+  Available options: 1 -- enable, 0 -- disable).
 *chosen_cases*
   Use only selected cases.
 
@@ -309,29 +308,39 @@ Additional options:
 
 *writelog*
   Default: 0.
+
   Enable verbose request/response logging. 
+
   Available options: 0 - disable, all - all messages, proto_warning - 4хх+5хх+network errors, proto_error - 5хх+network errors.
 *ssl*
   Default: 0.
+
   Enable SSL. 
+
   Available options: 1 - enable, 0 - disable.
 *address*
   Default: ``127.0.0.1``.
+
   Address of target. 
+
   Format: ``[host]:port``, ``[ipv4]:port``, ``[ipv6]:port``. Tank checks each test if port is available. 
 *port*
   Default: ``80``.
+
   Port of target.
 *gatling_ip*
   Use multiple source addresses. List, divided by spaces. 
 *tank_type*
   Default: ``http``.
-  Protocol type: http, none (raw TCP).
+
+  Available options: ``http`` and ``none`` (raw TCP).
 *eta_file*
   Path to ETA file.
 *connection_test*
   Default: 1.
+
   Test TCP socket connection before starting the test. 
+
   Available options: 1 - enable, 0 - disable.
 
 URI-style options: 
@@ -343,27 +352,33 @@ URI-style options:
   HTTP headers list in the following form: ``[Header: value]``, multiline option. 
 *header\_http*
   Default: ``1.0``
+
   HTTP version.
 
 stpd-file cache options: 
 ~~~~~~~~~~~~~
 *use_caching*
   Default: ``1``.
+
   Enable cache.
 *cache_dir*
   Default: base artifacts directory.
+
   Cache files directory.
 *force_stepping*
   Default: ``0``.
+
   Force stpd file generation.
 
 Advanced options: 
 ~~~~~~~~~~~~~
 *phantom_path*
   Default: ``phantom``.
+
   Phantom utility path.
 *phantom_modules_path*
   Default: ``/usr/lib/phantom``.
+
   Phantom modules path.
 *config*
   Use given (in this option) config file for phantom instead of generated. 
@@ -373,53 +388,66 @@ Advanced options:
   Use this stpd-file instead of generated. 
 *threads*
   Default: ``<processor cores count>/2 + 1``.
+
   Phantom thread count.
 *buffered_seconds*
   Amount of seconds to which delay aggregator, to be sure that everything were read from phout.
 *additional_libs*
   List separated by whitespaces, will be added to phantom config file in section ``module_setup`` 
 *method_prefix*
-  Default: method_stream.
+  Default: ``method_stream``.
+
   Object's type, that has a functionality to create test requests.
 *source_log_prefix*
   Default: empty.
+
   Prefix, added to class name that reads source data.
 *method_options*
   Default: empty.
+
   Additional options for method objects. It is used for Elliptics etc.
 *affinity*
   Default: empty.
+
   Set a phantom's CPU affinity. 
-  Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
+
+  Example: ``0-3`` enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
 TLS/SSL additional options (``ssl=1`` is required):
 ~~~~~~~~~~~~~
 
 *ciphers*
   Default: empty.
+
   Cipher list, consists of one or more cipher strings separated by colons (see man ciphers).
+
   Example: ciphers = RSA:!COMPLEMENTOFALL
 *client_certificate*
   Default: empty.
+
   Path to client certificate which is used in client's "Certificate message" in Client-authenticated TLS handshake.
 *client_key*
   Default: empty.
+
   Path to client's certificate's private key, used for client's "CertificateVerify message" generation in Client-authenticated TLS handshake.
 
 Phantom http-module tuning options: 
 ~~~~~~~~~~~~~
 
 *phantom_http_line*
-  Default: 1K.
+  Default: ``1K``.
+
   First line length.
 *phantom_http_field_num*
-  Default: 128.
+  Default: ``128``.
+
   Headers amount.
 *phantom_http_field*
-  Default: 8K.
+  Default: ``8K``.
+
   Header size.
 *phantom_http_entity*
-  Answer size. 
+  Answer ``size``. 
   
 .. note::
   Please, keep in mind, especially if your service has large answers, that phantom doesn't read more than defined in ``phantom_http_entity``.
@@ -427,21 +455,24 @@ Phantom http-module tuning options:
 Artifacts
 ^^^^^^^^^^^^^^^^^^^
 
-*  **phantom_*.conf** - generated configuration files
-*  **phout_*.log** - raw results file
-*  **phantom_stat_*.log** - phantom statistics, aggregated by seconds
-*  **answ_*.log** - detailed request/response log
-*  **phantom_*.log** - internal phantom log
-
-
+*phantom_*.conf*
+  Generated configuration files.
+*phout_*.log*
+  Raw results file.
+*phantom_stat_\*.log*
+  Phantom statistics, aggregated by seconds.
+*answ_\*.log*
+  Detailed request/response log.
+*phantom_\*.log*
+  Internal phantom log.
 
 Multi-tests
 ^^^^^^^^^^^^^^^^^^^
 
-To make several simultaneous tests with phantom, add proper amount of sections with names ``phantom-_N_``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops. Example:
+To make several simultaneous tests with phantom, add proper amount of sections with names ``phantom-_N_``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops. 
 
+Example:
 :: 
-
     [phantom]
     phantom_path=phantom
     ammofile=data/dummy.ammo
@@ -476,7 +507,6 @@ JMeter
 JMeter module uses JMeter as a load generator. To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable JMeter plugin and then specify the parameters for JMeter:
 
 ::
-
     [tank]
     ; Disable phantom:
     plugin_phantom=
@@ -488,20 +518,32 @@ INI file section: **[jmeter]**
 Options
 ^^^^^^^^^^^^^^^^^^^
 
-* **jmx** - testplan for execution
-* **args** - additional commandline arguments for JMeter
-* **jmeter_path** - path to JMeter, allows to use alternative JMeter installation. Default: jmeter
-* **buffered_seconds** - amount of seconds to which delay aggregator, to be sure that everything were read from jmeter's results file
-* **connect_time** - it sets jmeter.save.saveservice.connect_time=false if the value is '0' or empty string, jmeter.save.saveservice.connect_time=true in any other cases, empty string by default
-* **all other options in the section** - they will be passed as User Defined Variables to JMeter
+*jmx*
+  Testplan for execution.
+*args*
+  Additional commandline arguments for JMeter.
+*jmeter_path*
+  Default: ``jmeter``
+
+  Path to JMeter, allows to use alternative JMeter installation.
+*buffered_seconds*
+  Amount of seconds to which delay aggregator, to be sure that everything were read from jmeter's results file.
+*connect_time*
+  It sets jmeter.save.saveservice.connect_time=false if the value is '0' or empty string, jmeter.save.saveservice.connect_time=true in any other cases, empty string by default.
+*all other options in the section*
+  They will be passed as User Defined Variables to JMeter.
 
 Artifacts
 ^^^^^^^^^^^^^^^^^^^
 
-* **<original jmx>** - original testplan
-* **<modified jmx>** - modified test plan with results output section
-* **<jmeter_*.jtl>** - JMeter's results
-* **<jmeter_*.log>** - JMeter's log
+*<original jmx>*
+  Original testplan.
+*<modified jmx>*
+  Modified test plan with results output section.
+*<jmeter_\*.jtl>*
+  JMeter's results.
+*<jmeter_\*.log>*
+  JMeter's log.
 
 BFG
 ------
@@ -510,7 +552,6 @@ BFG
 BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first  (unless you really want to keep it active alongside at your own risk), enable BFG plugin and then specify the parameters for BFG and for the cannon you select. For example, if you want to kill an SQL db:
 
 ::
-
     [tank]
     ; Disable phantom:
     plugin_phantom=
@@ -539,7 +580,6 @@ BFG is a generic gun that is able to use different kinds of cannons to shoot. To
 Or if you want i.e to call your own module's MyService function shoot:
 
 ::
-
     [tank]
     ; Disable phantom:
     plugin_phantom=
@@ -571,9 +611,13 @@ BFG Options
 
 INI file section: **[bfg]**
 
-* **gun_type** - what kind of gun should BFG use.
-* **ammo_type** - what ammo parser should BFG use, default: phantom
-* other common stepper options
+*gun_type*
+  What kind of gun should BFG use.
+*ammo_type*
+  Default: ``phantom``.
+
+  What ammo parser should BFG use.
+*other common stepper options*
 
 SQL Gun Options
 ^^^^^^^^^^^^^^^^^^^
@@ -582,7 +626,8 @@ gun_type = **sql**
 
 INI file section: **[sql_gun]**
 
-* **db** - DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
+*db*
+  DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
 
 Custom Gun Options
 ^^^^^^^^^^^^^^^^^^^
@@ -591,10 +636,12 @@ gun_type = **custom**
 
 INI file section: **[custom_gun]**
 
-* **module_path** - path to your module
-* **module_name** - module name, has to provide function shoot, which will be called by bfg's threads to fullfill rps_schedule
+*module_path*
+  Path to your module.
+*module_name*
+  Module name, has to provide function shoot, which will be called by bfg's threads to fullfill rps_schedule.
 
-Sample custom gun module:
+Example:
 
 .. code-block:: python
 
@@ -665,11 +712,14 @@ gun_type = **scenario**
 
 INI file section: **[scenario_gun]**
 
-* **module_path** - path to your module
-* **module_name** - module name, has to provide dict SCENARIOS, which will be called by bfg's threads according to marker of request in ammofile to fullfill rps_schedule
-* **ammofile** - ammofile. second column should by a marker of request corresponding to a function specified in SCENARIOS.
+*module_path*
+  Path to your module.
+*module_name*
+  Module name, has to provide dict SCENARIOS, which will be called by bfg's threads according to marker of request in ammofile to fullfill rps_schedule
+*ammofile*
+  Path to ammofile. Second column should by a marker of request corresponding to a function specified in SCENARIOS.
 
-Sample scenario gun module:
+Example:
 
 .. code-block:: python
 
@@ -773,7 +823,6 @@ By default, Yandex.Tank will try to just run ``pandora`` (or you could specify a
 Disable phantom first (unless you really want to keep it active alongside at your own risk), enable Pandora plugin and then specify the parameters.
 
 ::
-
     [tank]
     ; Disable phantom:
     plugin_phantom=
@@ -826,7 +875,6 @@ used in different places, for example as a limiter for user startups or as a lim
 
 Example:
 ::
-
     startup_schedule = periodic(2, 0.1, 100)
     user_schedule = periodic(10, 15, 100)
     shared_schedule = 0
@@ -836,7 +884,6 @@ of 100 requests. All users will read from one ammo source.
 
 Second schedule type is ``linear``. It is defined like this: ``linear(<start_rps>, <end_rps>, <time>). Example:
 ::
-
     user_schedule = linear(.1, 10, 10m)
     shared_schedule = 1
 
@@ -850,7 +897,6 @@ to stop eventually.
 
 Example:
 ::
-
     loop = 1000000
     startup_schedule = periodic(2, 10, 50)
     user_schedule = unlimited()
@@ -871,10 +917,17 @@ INI file section: **[autostop]**
 Options
 ^^^^^^^^^^^^^^^^^^^
 
--  **autostop** - criteria list divided by spaces, in following format:
-   ``type(parameters)``
+*autostop*
+  Criteria list divided by spaces, in following format: ``type(parameters)``
 
 Basic criteria types: 
+
+============    =============        =============   =============
+Autostop Name    Example              Exit code       Description  
+============    =============        =============   =============
+time             time(1s500ms, 30s)   21              average response time is higher then allowed
+http             http(404,10,15)      22              stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value
+============    =============        =============   =============
 
 * **time** - stop the test if average response time is higher then allowed. E.g.: ``time(1s500ms, 30s) time(50,15)``. Exit code - 21
 * **http** - stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value. Examples: ``http(404,10,15) http(5xx, 10%, 1m)``. Exit code - 22
