@@ -13,7 +13,8 @@ analytic tools for the results they produce.
     maintainer='Alexey Lavrenuke (load testing)',
     maintainer_email='direvius@yandex-team.ru',
     url='http://yandex.github.io/yandex-tank/',
-    packages=find_packages(exclude=["tests"]),
+    namespace_packages=["yandextank", "yandextank.plugins"],
+    packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
         'psutil>=1.2.1',
         'ipaddr',
