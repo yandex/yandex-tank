@@ -7,7 +7,7 @@ from yandextank.stepper import StepperWrapper
 from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun
 from .widgets import BfgInfoWidget
 from .worker import BFG
-from .reader import BfgReader
+from .reader import BfgReader, BfgStatsReader
 
 
 class BfgPlugin(AbstractPlugin):
@@ -69,7 +69,8 @@ class BfgPlugin(AbstractPlugin):
 
         if aggregator:
             result_cache_size = int(self.get_option("result_cache_size", '5'))
-            aggregator.reader = BfgReader(self.bfg)
+            aggregator.reader = BfgReader(self.bfg.results)
+            aggregator.stats_reader = BfgStatsReader()
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)

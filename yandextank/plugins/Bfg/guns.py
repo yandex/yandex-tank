@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 requests_logger = logging.getLogger('requests')
 requests_logger.setLevel(logging.WARNING)
 
+requests.packages.urllib3.disable_warnings()
+
 
 class AbstractGun(AbstractPlugin):
     def __init__(self, core):
@@ -25,7 +27,7 @@ class AbstractGun(AbstractPlugin):
     def measure(self, marker):
         start_time = time.time()
         data_item = {
-            "time": start_time,
+            "send_ts": start_time,
             "tag": marker,
             "interval_real": None,
             "connect_time": 0,
@@ -129,8 +131,13 @@ class HttpGun(AbstractGun):
         logger.debug("Missile: %s\n%s", marker, missile)
         logger.debug("Sending request: %s", self.base_address + missile)
         with self.measure(marker) as di:
-            r = requests.get(self.base_address + missile)
-            di["proto_code"] = r.status_code
+            try:
+                r = requests.get(self.base_address + missile, verify=False)
+                di["proto_code"] = r.status_code
+            except requests.ConnectionError:
+                logger.debug("Connection error", exc_info=True)
+                di["net_code"] = 1
+                di["proto_code"] = 500
 
 
 class ScenarioGun(AbstractGun):
