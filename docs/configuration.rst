@@ -1,60 +1,76 @@
+==================
 Advanced usage
---------------
+==================
 
 Command line options
-~~~~~~~~~~~~~~~~~~~~
+================
 
 Yandex.Tank has an obviously named executable ``yandex-tank``. 
 Here are available command line options: 
 
 *-h, --help*
   show command line options
-
-- **-c CONFIG, --config=CONFIG** - read options from INI file. It is possible to set multiple INI files by specifying the option serveral times. Default: ``./load.ini`` 
-- **-i, --ignore-lock** - ignore lock files 
-- **-f, --fail-lock** - don't wait for lock file, quit if it's busy. The default behaviour is to wait for lock file to become free. 
-- **-l LOG, --log=LOG** - main log file location. Default: ``./tank.log``
-- **-m, --manual-start** - tank will prepare for test and wait for Enter key to start the test. 
-- **-n, --no-rc** - don't read ``/etc/yandex-tank/*.ini`` and ``~/.yandex-tank``
-- **-o OPTION, --option=OPTION** - set an option from command line. Options set in cmd line override those have been set in configuration files. Multiple times for multiple options. Format: ``<section>.<option>=value`` Example: ``yandex-tank -o "console.short_only=1" --option="phantom.force_stepping=1"``
-- **-s SCHEDULED_START, --scheduled-start=SCHEDULED_START** - run test on specified time, date format YYYY-MM-DD hh:mm:ss or hh:mm:ss
-- **-q, --quiet** - only print WARNINGs and ERRORs to console 
-- **-v, --verbose** - print ALL messages to console. Chatty mode
-
+*-c CONFIG, --config=CONFIG*
+  Default: `./load.ini`
+  Read options from INI file. It is possible to set multiple INI files by specifying the option serveral times.
+*-i, --ignore-lock*
+  Ignore lock files.
+*-f, --fail-lock*
+  Default behaviour is to wait for lock file to become free
+  Don't wait for lock file, quit if it's busy.
+*-l LOG, --log=LOG*
+  Default: ``./tank.log``
+  Main log file location.
+*-m, --manual-start* 
+  Tank will prepare for test and wait for Enter key to start the test. 
+*-n, --no-rc*
+  Don't read ``/etc/yandex-tank/*.ini`` and ``~/.yandex-tank``
+*-o OPTION, --option=OPTION*
+  Set an option from command line. Options set in cmd line override those have been set in configuration files. Multiple times for multiple options. 
+  Format: ``<section>.<option>=value`` 
+  Example: ``yandex-tank -o "console.short_only=1" --option="phantom.force_stepping=1"``
+*-s SCHEDULED_START, --scheduled-start=SCHEDULED_START*
+  Run test on specified time, date format YYYY-MM-DD hh:mm:ss or hh:mm:ss
+*-q, --quiet*
+  Only print WARNINGs and ERRORs to console.
+*-v, --verbose*
+  Print ALL, including DEBUG, messages to console. Chatty mode.
 
 Add an ammo file name as a nameless parameter, e.g.:
 ``yandex-tank ammo.txt`` or ``yandex-tank ammo.gz``
 
 Advanced configuration
-~~~~~~~~~~~~~~~~~~~~~~
+================
 
 Configuration files organized as standard INI files. Those are files
-partitioned into named sections that contain 'name=value' records. For
-example: 
+partitioned into named sections that contain 'name=value' records. 
 
+Example:
 ::
+  [phantom] 
+  address=example.com:80
+  rps_schedule=const(100,60s)
+  
+  [autostop] 
+  autostop=instances(80%,10)
 
-    [phantom] 
-    address=example.com:80
-    rps_schedule=const(100,60s)
-
-    [autostop] 
-    autostop=instances(80%,10)
-
-A common rule: options with the
-same name override those set before them (in the same file or not).
+.. note:: 
+  A common rule: options with the
+  same name override those set before them (in the same file or not).
 
 Default configuration files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------
 
 If no ``--no-rc`` option passed, Yandex.Tank reads all ``*.ini`` from
-``/etc/yandex-tank`` directory, then a personal config file
-``~/.yandex-tank``. So you can easily put your favourite settings in
-``~/.yandex-tank``, for example, ``tank.artifacts_base_dir``,
-``phantom.cache_dir``, ``console.info_panel_width``
+``/etc/yandex-tank`` directory, then a personal config file ``~/.yandex-tank``. 
+So you can easily put your favourite settings in ``~/.yandex-tank``
+
+Example:
+::
+``tank.artifacts_base_dir``, ``phantom.cache_dir``, ``console.info_panel_width``
 
 The ``DEFAULT`` section
-^^^^^^^^^^^^^^^^^^^^^^^
+------
 
 One can use a **magic** ``DEFAULT`` section, that contains global
 options. Those options are in charge for every section: 
@@ -83,11 +99,12 @@ is an equivalent for:
     time_periods=10 20 30 100
     job_name=ask
     
-!!! Don't use global options wich have same name in different sections.
+.. note::
+  Don't use global options wich have same name in different sections.
 
 
 Multiline options
-^^^^^^^^^^^^^^^^^
+------
 
 Use indent to show that a line is a continuation of a previous one:
 
@@ -97,11 +114,14 @@ Use indent to show that a line is a continuation of a previous one:
     autostop=time(1,10)
       http(404,1%,5s)
       net(xx,1,30)
-*Ask Yandex.Tank developers to add multiline capability for options
-where you need it!*
+
+.. note::
+
+  Ask Yandex.Tank developers to add multiline capability for options
+  where you need it!*
 
 Referencing one option to another
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------
 
 ``%(optname)s`` gives you ability to reference from option to another. It helps to reduce duplication. Example:
 
@@ -109,7 +129,7 @@ Referencing one option to another
 
     [DEFAULT]
     host=target12.load.net  
-  
+    
     [phantom]
     address=%(host)s
     port=8080
@@ -121,34 +141,42 @@ Referencing one option to another
     prepare=echo Target is %(host)s
 
 Time units
-^^^^^^^^^^
+------
+
+*Default* : milliseconds. 
+
+Example:
+::
+  ``30000 == 30s`` 
+  ``time(30000,120)`` is an equivalent to ``time(30s,2m)``
 
 Time units encoding is as following: 
 
-* ``ms`` = millisecons \
+``ms``
+  millisecons
+``s``
+  seconds
+``m``
+  minutes
+``h``
+ hours 
 
-* ``s`` = seconds \
-
-* ``m`` = minutes \
-
-* ``h`` = hours 
-
-Default time unit is a millisecond. For example, ``30000 == 30s``
-``time(30000,120)`` is an equivalent to ``time(30s,2m)`` You can also
-mix them: ``1h30m15s`` or ``2s15ms``. If somewhere it is not supported - report a bug, please.
+.. note::
+  You can also  mix them: ``1h30m15s`` or ``2s15ms``. 
+  If somewhere it is not supported - report a bug, please.
 
 Shell-options
-^^^^^^^^^^
+------
 
-Option value with backquotes is evaluated in shell, for example
+Option value with backquotes is evaluated in shell.
 
+Example:
 ::
-
- [meta]
- job_name=`pwd`
+  [meta]
+  job_name=`pwd`
 
 Artifacts
-~~~~~~~~~
+================
 
 As a result Yandex.Tank produces some files (logs, results, configs
 etc). Those files are placed with care to the **artifact directory**. An
@@ -158,10 +186,10 @@ recommended to set it to a convenient place, for example,
 there.
 
 Modules
-~~~~~~~
+================
 
 TankCore
-^^^^^^^
+------
 
 Core class. Represents basic steps of test execution. Simplifies plugin configuration, 
 configs reading, artifacts storing. Represents parent class for modules/plugins.
@@ -169,32 +197,45 @@ configs reading, artifacts storing. Represents parent class for modules/plugins.
 INI file section: **[tank]**
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
 
 Basic options:
 
-* **lock_dir** - directory for lockfile. Default: ``/var/lock/``
-* **plugin_<pluginname>** - path to plugin. Empty path interpreted as disable of plugin.
-* **artifacts_base_dir** - base directory for artifacts storing. Temporary artifacts files are stored here. Default: current directory
-* **artifacts_dir** - directory where to keep artifacts after test. Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
-* **flush_config_to** - dump configuration options after each tank step (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file
-* **taskset_path** - path to taskset command. Default: taskset
-* **affinity** - set a yandex-tank's (python process and load generator process) CPU affinity. Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores. Default: empty
+*lock_dir*
+  Default: ``/var/lock/``
+  Directory for lockfile. 
+*plugin_<pluginname>*
+  Path to plugin. Empty path interpreted as disable of plugin.
+*artifacts_base_dir*
+  Default: current directory.
+  Base directory for artifacts storing. Temporary artifacts files are stored here.
+*artifacts_dir*
+  Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
+  Directory where to keep artifacts after test. 
+*flush_config_to*
+  Dump configuration options after each tank step (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file
+*taskset_path*
+  Default: taskset.
+  Path to taskset command.
+*affinity* 
+  Default: empty.
+  Set a yandex-tank's (python process and load generator process) CPU affinity. 
+  Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
 consoleworker - cmd-line interface
-'''''''
+^^^^^^^^^^^^^^^^^^^
 
 Worker class that runs and configures TankCore accepting cmdline parameters. 
 Human-friendly unix-way interface for yandex-tank. 
 Command-line options described above.
 
 apiworker - python interface
-'''''''
+^^^^^^^^^^^^^^^^^^^
 
 Worker class for python. Runs and configures TankCore accepting ``dict()``. 
 Python-frinedly interface for yandex-tank.
 
-Usage sample:
+Example:
 
 .. code-block:: python
 
@@ -226,81 +267,159 @@ Usage sample:
         logger.error('Error trying to perform a test: %s', ex)
 
 Phantom
-^^^^^^^
+------
 
 Load generator module that uses phantom utility.
 
 INI file section: **[phantom]**
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
 
 Basic options: 
+~~~~~~~~~~~~~
 
-* **ammofile** - ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped). 
-* **rps_schedule** - load schedule in terms of RPS 
-* **instances** - max number of instances (concurrent requests) 
-* **instances_schedule** - load schedule in terms of number of instances 
-* **loop** - number of times requests from ammo file are repeated in loop 
-* **ammo_limit** - limit request number
-* **autocases** - enable marking requests automatically (1 -- enable, 0 -- disable)
-* **chosen_cases** - use only selected cases
+*ammofile*
+  Ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped). 
+*rps_schedule*
+  Load schedule in terms of RPS.
+*instances*
+  Max number of instances (concurrent requests).
+*instances_schedule*
+  Load schedule in terms of number of instances.
+*loop*
+  Number of times requests from ammo file are repeated in loop.
+*ammo_limit*
+  Limit request number.
+*autocases*
+  Enable marking requests automatically (1 -- enable, 0 -- disable).
+*chosen_cases*
+  Use only selected cases.
 
-There are 3 ways to constrain requests number: by schedule with **rps_schedule**, by requests number with **ammo_limit** or by loop number with **loop** option. Tank stops if any constrain is reached. If stop reason is reached **ammo_limit** or **loop** it will be mentioned in log file. In test without **rps_schedule** file with requests is used one time by default
+There are 3 ways to constrain requests number: by schedule with ``rps_schedule``, by requests number with ``ammo_limit`` or by loop number with ``loop`` option. Tank stops if any constrain is reached. If stop reason is reached ``ammo_limit`` or ``loop`` it will be mentioned in log file. In test without ``rps_schedule`` file with requests is used one time by default.
 
 Additional options: 
+~~~~~~~~~~~~~
 
-* **writelog** - enable verbose request/response logging. Available options: 0 - disable, all - all messages, proto_warning - 4хх+5хх+network errors, proto_error - 5хх+network errors. Default: 0
-* **ssl** - enable SSL, 1 - enable, 0 - disable, default: 0 
-* **address** - address of service to test. May contain port divided by colon for IPv4 or DN. For DN, DNS request is performed, and then reverse-DNS request to verify the correctness of name. Default: ``127.0.0.1`` 
-* **port** - port of service to test. Default: ``80`` 
-* **gatling_ip** - use multiple source addresses. List, divided by spaces. 
-* **tank_type** - protocol type: http, none (raw TCP). Default: ``http``
-* **eta_file** - where to write ETA time
-* **connection_test** - test TCP socket connection before starting the test, 1 - enable, 0 - disable, default: 1
+*writelog*
+  Default: 0.
+  Enable verbose request/response logging. 
+  Available options: 0 - disable, all - all messages, proto_warning - 4хх+5хх+network errors, proto_error - 5хх+network errors.
+*ssl*
+  Default: 0.
+  Enable SSL. 
+  Available options: 1 - enable, 0 - disable.
+*address*
+  Default: ``127.0.0.1``.
+  Address of target. 
+  Format: ``[host]:port``, ``[ipv4]:port``, ``[ipv6]:port``. Tank checks each test if port is available. 
+*port*
+  Default: ``80``.
+  Port of target.
+*gatling_ip*
+  Use multiple source addresses. List, divided by spaces. 
+*tank_type*
+  Default: ``http``.
+  Protocol type: http, none (raw TCP).
+*eta_file*
+  Path to ETA file.
+*connection_test*
+  Default: 1.
+  Test TCP socket connection before starting the test. 
+  Available options: 1 - enable, 0 - disable.
 
 URI-style options: 
+~~~~~~~~~~~~~
 
-* **uris** - URI list, multiline option. 
-* **headers** - HTTP headers list in the following form: ``[Header: value]``, multiline option. 
-* **header\_http** - HTTP version, default: ``1.0``
+*uris*
+  URI list, multiline option. 
+*headers*
+  HTTP headers list in the following form: ``[Header: value]``, multiline option. 
+*header\_http*
+  Default: ``1.0``
+  HTTP version.
 
 stpd-file cache options: 
-
-* **use_caching** - enable cache, default: ``1`` 
-* **cache_dir** - cache files directory, default: base artifacts directory. 
-* **force_stepping** - force stpd file generation, default: ``0``
+~~~~~~~~~~~~~
+*use_caching*
+  Default: ``1``.
+  Enable cache.
+*cache_dir*
+  Default: base artifacts directory.
+  Cache files directory.
+*force_stepping*
+  Default: ``0``.
+  Force stpd file generation.
 
 Advanced options: 
+~~~~~~~~~~~~~
+*phantom_path*
+  Default: ``phantom``.
+  Phantom utility path.
+*phantom_modules_path*
+  Default: ``/usr/lib/phantom``.
+  Phantom modules path.
+*config*
+  Use given (in this option) config file for phantom instead of generated. 
+*phout_file*
+  Import this phout instead of launching phantom (import phantom results).
+*stpd_file*
+  Use this stpd-file instead of generated. 
+*threads*
+  Default: ``<processor cores count>/2 + 1``.
+  Phantom thread count.
+*buffered_seconds*
+  Amount of seconds to which delay aggregator, to be sure that everything were read from phout.
+*additional_libs*
+  List separated by whitespaces, will be added to phantom config file in section ``module_setup`` 
+*method_prefix*
+  Default: method_stream.
+  Object's type, that has a functionality to create test requests.
+*source_log_prefix*
+  Default: empty.
+  Prefix, added to class name that reads source data.
+*method_options*
+  Default: empty.
+  Additional options for method objects. It is used for Elliptics etc.
+*affinity*
+  Default: empty.
+  Set a phantom's CPU affinity. 
+  Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
-* **phantom_path** - phantom utility path, default: ``phantom`` 
-* **phantom_modules_path** - phantom modules path, default:``/usr/lib/phantom`` 
-* **config** - use given (in this option) config file for phantom instead of generated. 
-* **phout_file** - import this phout instead of launching phantom (import phantom results)
-* **stpd_file** - use this stpd-file instead of generated 
-* **threads** - phantom thread count, default: ``<processor cores count>/2 + 1``
-* **buffered_seconds** - amount of seconds to which delay aggregator, to be sure that everything were read from phout
-* **additional_libs** - list separated by whitespaces, will be added to phantom config file in section ``module_setup`` 
-* **method_prefix** - object's type, that has a functionality to create test requests. Default: method_stream
-* **source_log_prefix** - prefix, added to class name that reads source data. Default: empty
-* **method_options** - additional options for method objects. It is used for Elliptics etc. Default: empty
-* **affinity** - set a phantom's CPU affinity. Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores. Default: empty
+TLS/SSL additional options (``ssl=1`` is required):
+~~~~~~~~~~~~~
 
-TLS/SSL additional options (ssl=1 is required):
-
-* **ciphers** - cipher list, consists of one or more cipher strings separated by colons (see man ciphers). Default: empty. Example: ciphers = RSA:!COMPLEMENTOFALL
-* **client_certificate** - path to client certificate which is used in client's "Certificate message" in Client-authenticated TLS handshake. Default: empty
-* **client_key** - path to client's certificate's private key, used for client's "CertificateVerify message" generation in Client-authenticated TLS handshake. Default: empty
+*ciphers*
+  Default: empty.
+  Cipher list, consists of one or more cipher strings separated by colons (see man ciphers).
+  Example: ciphers = RSA:!COMPLEMENTOFALL
+*client_certificate*
+  Default: empty.
+  Path to client certificate which is used in client's "Certificate message" in Client-authenticated TLS handshake.
+*client_key*
+  Default: empty.
+  Path to client's certificate's private key, used for client's "CertificateVerify message" generation in Client-authenticated TLS handshake.
 
 Phantom http-module tuning options: 
+~~~~~~~~~~~~~
 
-* **phantom_http_line** - First line length. Default - 1K
-* **phantom_http_field_num** - Headers amount. Default - 128
-* **phantom_http_field** - Header size. Default - 8K
-* **phantom_http_entity** - Answer size. Please, keep in mind, especially if your service has large answers, that phantom doesn't read more than defined in ``phantom_http_entity``. Default - 8M
+*phantom_http_line*
+  Default: 1K.
+  First line length.
+*phantom_http_field_num*
+  Default: 128.
+  Headers amount.
+*phantom_http_field*
+  Default: 8K.
+  Header size.
+*phantom_http_entity*
+  Answer size. 
+  
+.. note::
+  Please, keep in mind, especially if your service has large answers, that phantom doesn't read more than defined in ``phantom_http_entity``.
 
 Artifacts
-'''''''''
+^^^^^^^^^^^^^^^^^^^
 
 *  **phantom_*.conf** - generated configuration files
 *  **phout_*.log** - raw results file
@@ -311,7 +430,8 @@ Artifacts
 
 
 Multi-tests
-'''''''''''
+^^^^^^^^^^^^^^^^^^^
+
 To make several simultaneous tests with phantom, add proper amount of sections with names ``phantom-_N_``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops. Example:
 
 :: 
@@ -345,7 +465,8 @@ To make several simultaneous tests with phantom, add proper amount of sections w
 Options that apply only for main section: buffered_seconds, writelog, phantom_modules_path, phout_file, config, eta_file, phantom_path
 
 JMeter
-^^^^^^
+------
+
 JMeter module uses JMeter as a load generator. To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable JMeter plugin and then specify the parameters for JMeter:
 
 ::
@@ -359,7 +480,8 @@ JMeter module uses JMeter as a load generator. To enable it, disable phantom fir
 INI file section: **[jmeter]**
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
+
 * **jmx** - testplan for execution
 * **args** - additional commandline arguments for JMeter
 * **jmeter_path** - path to JMeter, allows to use alternative JMeter installation. Default: jmeter
@@ -368,14 +490,16 @@ Options
 * **all other options in the section** - they will be passed as User Defined Variables to JMeter
 
 Artifacts
-'''''''''
+^^^^^^^^^^^^^^^^^^^
+
 * **<original jmx>** - original testplan
 * **<modified jmx>** - modified test plan with results output section
 * **<jmeter_*.jtl>** - JMeter's results
 * **<jmeter_*.log>** - JMeter's log
 
 BFG
-^^^
+------
+
 (`What is BFG <http://en.wikipedia.org/wiki/BFG_(weapon)>`_)
 BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first  (unless you really want to keep it active alongside at your own risk), enable BFG plugin and then specify the parameters for BFG and for the cannon you select. For example, if you want to kill an SQL db:
 
@@ -437,7 +561,8 @@ Or if you want i.e to call your own module's MyService function shoot:
     module_name = MyService
 
 BFG Options
-'''''''''''
+^^^^^^^^^^^^^^^^^^^
+
 INI file section: **[bfg]**
 
 * **gun_type** - what kind of gun should BFG use.
@@ -445,7 +570,8 @@ INI file section: **[bfg]**
 * other common stepper options
 
 SQL Gun Options
-'''''''''''''''
+^^^^^^^^^^^^^^^^^^^
+
 gun_type = **sql**
 
 INI file section: **[sql_gun]**
@@ -453,7 +579,8 @@ INI file section: **[sql_gun]**
 * **db** - DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
 
 Custom Gun Options
-''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^
+
 gun_type = **custom**
 
 INI file section: **[custom_gun]**
@@ -526,7 +653,8 @@ Sample custom gun module:
           <...some finishing work...>
 
 Scenario Gun Options
-''''''''''''''''''
+^^^^^^^^^^^^^^^^^^^
+
 gun_type = **scenario**
 
 INI file section: **[scenario_gun]**
@@ -629,7 +757,8 @@ Sample scenario gun module:
   }
 
 Pandora
-^^^^^^^
+------
+
 `Pandora <https://github.com/yandex/pandora>`_ is a load generator written in Go. For now it supports only SPDY/3 and HTTP(S). Plugins for other protocols
 (HTTP/2, Websocket, XMPP) are on the way.
 
@@ -669,7 +798,8 @@ Disable phantom first (unless you really want to keep it active alongside at you
 
 
 Ammo format
-'''''''''''
+^^^^^^^^^^^^^^^^^^^
+
 Pandora currently supports only one ammo format: ``jsonline``, i.e. one json doc per line.
 
 Example:
@@ -682,7 +812,8 @@ Example:
 Each json doc describes an HTTP request. Some of them may have a tag field, it will be used as other tags in other ammo formats.
 
 Schedules
-'''''''''
+^^^^^^^^^^^^^^^^^^^
+
 The first schedule type is ``periodic`` schedule. It is defined as ``periodic(<batch_size>, <period>, <limit>)``.
 Pandora will issue one batch of size ``batch_size``, once in ``period`` seconds, maximum of ``limit`` ticks. Those ticks may be
 used in different places, for example as a limiter for user startups or as a limiter for each user request rate.
@@ -709,7 +840,9 @@ The load will raise from .1 RPS (1 request in 10 seconds) until 10 RPS during 10
 The last schedule type is ``unlimited``. It has no parameters and users will shoot as soon
 as possible. It is convenient to use this type of load to find out maximum performance of a
 service and its level of parallelism. You should limit the loop number if you want the test
-to stop eventually. Example:
+to stop eventually. 
+
+Example:
 ::
 
     loop = 1000000
@@ -722,7 +855,7 @@ as soon as the previous response have been received). This is analogous to phant
 schedule mode.
 
 Auto-stop
-^^^^^^^^^
+------
 
 The Auto-stop module gets the data from the aggregator and passes them
 to the criteria-objects that decide if we should stop the test.
@@ -730,7 +863,7 @@ to the criteria-objects that decide if we should stop the test.
 INI file section: **[autostop]**
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
 
 -  **autostop** - criteria list divided by spaces, in following format:
    ``type(parameters)``
@@ -758,11 +891,12 @@ Advanced criteria types:
 * **http_trend** - Stop if trend for defined http codes is negative on defined period. Example: http_trend(2xx,10s). Exit code: 30. Trend is a sum of an average coefficient for linear functions calculated for each pair points in last n seconds and standart deviation for it
 
 Graphite
-^^^^^^^^
+------
+
 Graphite plugin uploads data to `Graphite <http://graphite.readthedocs.org/en/0.9.12/index.html>`_ monitoring tool. Config file section: ```[graphite]```
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
 
 * **address** - graphite server
 * **port** - graphite backend port (where to send data), default: 2003
@@ -770,7 +904,8 @@ Options
 * **template** - template file. Default: Tank/Plugins/graphite.tpl
 
 InfluxDB
-^^^^^^^^
+------
+
 Influx uplink plugin uploads data to `InfluxDB <https://influxdata.com>`_ storage.
 Different tests will be tagged with unique IDs.
 
@@ -796,7 +931,7 @@ Configuration:
     grafana_dashboard=tank-dashboard
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
 
 * **address** - graphite server
 * **port** - graphite backend port (where to send data), default: 2003
@@ -804,13 +939,15 @@ Options
 * **template** - template file. Default: Tank/Plugins/graphite.tpl
 
 Loadosophia
-^^^^^^^^^^^
+------
+
 When test has been finished, module upload to Loadosophia.org test artifacts: file with answer times and files with monitoring data. The link will be shown in console output.
 
 INI file section: **[loadosophia]**
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
+
 * **token** - account's access key, received on Upload Token page
 * **project** - test will be uploaded to that project
 * **test_title** - test name
@@ -818,20 +955,21 @@ Options
 * **file_prefix** - prefix that will be added to uploaded file's name (deprecated
 
 Monitoring
-^^^^^^^^^^
+------
+
 Runs metrics collection through ssh connect.
 
 INI file section: **[monitoring]**
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
 
 * **config** - path to monitoring config file. Default: ``auto`` means collect default metrics from ``default_target`` host. If ``none`` is defined, monitoring won't be executed. Also it is possible to write plain multiline XML config.
 * **default_target** - an address where from collect "default" metrics. When phantom module is used, address will be obtained from it.
 * **ssh_timeout** - ssh connection timeout. Default: 5s
 
 Artifacts
-'''''''''
+^^^^^^^^^^^^^^^^^^^
 
 * **agent_*.cfg** - configuration files sent to hosts to run monitoring agents.
 * **agent_<host>_*.log** - monitoring agents' log files, downloaded from hosts
@@ -839,7 +977,7 @@ Artifacts
 * **<monitoring config** - monitoring config file
 
 Configuration
-'''''''''''''
+^^^^^^^^^^^^^^^^^^^
 
 Net access and authentication
 """""""""""""""""""""""""""""
@@ -963,14 +1101,14 @@ Following example illustrates this feature:
 
 
 Console on-line screen
-^^^^^^^^^^^^^^^^^^^^^^
+------
 
 Shows usefull information in console while running the test
 
 INI file section: **[console]**
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
 
 -  **short_only** - show only one-line summary instead of full-screen
    (usefull for scripting), default: 0 (disable)
@@ -980,7 +1118,7 @@ Options
 -  disable_colors - don't use specified colors in console. List with whitespaces. Example: ``WHITE GREEN RED CYAN MAGENTA YELLOW``
 
 Aggregator
-^^^^^^^^^^
+------
 
 The aggregator module is responsible for aggregation of data received
 from different kind of modules and transmitting that aggregated data to
@@ -989,34 +1127,44 @@ consumer modules (Console screen module is an example of such kind).
 INI file section: **[aggregator]** 
  
 Options:
-''''''''
+^^^^^^^^^^^^^^^^^^^
  
 * **time_periods** - time intervals list divided by zero. Default: ``1ms 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 150 200 250 300 350 400 450 500 600 650 700 750 800 850 900 950 1s 1500 2s 2500 3s 3500 4s 4500 5s 5500 6s 6500 7s 7500 8s 8500 9s 9500 10s 11s``
 * **precise_cumulative** - 0/1, controls the accuracy of cumulative percentile. Default: ``1``. When disabled, cumulative percentiles are calculated with ``time_periods`` precision, otherwise - up to milliseconds.
 
 ShellExec
-^^^^^^^^^
+------
 
 The ShellExec module executes the shell-scripts (hooks) on different
 stages of test, for example, you could start/stop some services just
 before/after the test. Every hook must return 0 as an exit code or the
 test is terminated. Hook's stdout will be written to DEBUG, stderr will
-be WARNINGs. Example: ``[shellexec] start=/bin/ls -l``. Note: command quoting is not needed. That line doesn't work: ``start="/bin/ls -l"``
+be WARNINGs. 
+
+Example: ``[shellexec] start=/bin/ls -l``. 
+
+.. note::
+ 
+   Command quoting is not needed. That line doesn't work: ``start="/bin/ls -l"``
 
 INI file section: **[shellexec]**
 
 Options:
-''''''''
+^^^^^^^^^^^^^^^^^^^
 
--  **prepare** - the script to run on prepare stage
--  **start** - the script to run on start stage
--  **poll** - the script to run every second while the test is running
--  **end** - the script to run on end stage
--  **post_process** - the script to run on postprocess stage
-
+*prepare*
+  The script to run on prepare stage.
+*start*
+  The script to run on start stage.
+*poll*
+  The script to run every second while the test is running.
+*end*
+  The script to run on end stage.
+*post_process*
+  The script to run on postprocess stage
 
 AB
-^^
+------
 
 Apache Benchmark load generator module. As the ab utility writes results
 to file only after the test is finished, Yandex.Tank is unable to show
@@ -1037,7 +1185,7 @@ the parameters for AB:
 INI file section: **[ab]**
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
 
 * **url** - requested URL, default: ``http:**localhost/`` 
 * **requests** - total request count, default: 100 
@@ -1045,37 +1193,39 @@ Options
 * **options** - ab command line options
 
 Artifacts
-'''''''''
+^^^^^^^^^^^^^^^^^^^
 
 -  **ab_*.log** - request log with response times
 
 Resource Check
-^^^^^^^^^^^^^^
+------
+
 Module checks free memory and disk space amount before and during test. Test stops if minimum values are reached. 
 
 INI file section: **[rcheck]**
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
 
 * **interval** - how often to check resources. Default interval: 10s
 * **disk_limit** - Minimum free disk space in MB. Default: 2GB
 * **mem_limit** - Minimum free memory amount in MB. Default: 512MB
 
 RC Assert
-^^^^^^^^^
+------
 
 Module checks test's exit code with predefined acceptable codes. If exit code matches, it is overrides as 0. Otherwise it is replaced with code from option ``fail_code``
 
 INI file section: **[rcassert]**
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
+
 * **pass** - list of acceptable codes, delimiter - whitespace. Default: empty, no check is performed.
 * **fail_code** - exit code when check fails, integer number. Default: 10
 
 Tips&Tricks
-^^^^^^^^^^^
+------
 
 Shows tips and tricks in fullscreen console. **If you have any
 tips&tricks, tell the developers about them**
@@ -1083,16 +1233,17 @@ tips&tricks, tell the developers about them**
 INI-file section: **[tips]**
 
 Options
-'''''''
+^^^^^^^^^^^^^^^^^^^
+
 * **disable** - disable tips and tricks, default: don't (0)
 
 Sources
-~~~~~~~
+================
 
 Yandex.Tank sources ((https://github.com/yandex/yandex-tank here)).
 
 load.ini example
-~~~~~~~~~~~~~~~~~
+================
 
 ::
 
