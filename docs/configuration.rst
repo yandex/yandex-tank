@@ -3,52 +3,71 @@ Advanced usage
 ==================
 
 Command line options
-================
+============================
 
 Yandex.Tank has an obviously named executable ``yandex-tank``. 
 Here are available command line options: 
 
-*-h, --help*
+:-h, --help:
   show command line options
-*-c CONFIG, --config=CONFIG*
-  Default: `./load.ini`
-  Read options from INI file. It is possible to set multiple INI files by specifying the option serveral times.
-*-i, --ignore-lock*
+
+:-c CONFIG, --config=CONFIG:
+  Read options from INI file. 
+  It is possible to set multiple INI files by specifying the option serveral times.
+
+  Default: ``./load.ini``
+
+:-i, --ignore-lock:
   Ignore lock files.
-*-f, --fail-lock*
-  Default behaviour is to wait for lock file to become free
+
+:-f, --fail-lock:
   Don't wait for lock file, quit if it's busy.
-*-l LOG, --log=LOG*
-  Default: ``./tank.log``
+
+  Default behaviour is to wait for lock file to become free
+
+:-l LOG, --log=LOG:
   Main log file location.
-*-m, --manual-start* 
+
+  Default: ``./tank.log``
+
+:-m, --manual-start:
   Tank will prepare for test and wait for Enter key to start the test. 
-*-n, --no-rc*
+
+:-n, --no-rc:
   Don't read ``/etc/yandex-tank/*.ini`` and ``~/.yandex-tank``
-*-o OPTION, --option=OPTION*
-  Set an option from command line. Options set in cmd line override those have been set in configuration files. Multiple times for multiple options. 
+
+:-o OPTION, --option=OPTION:
+  Set an option from command line. 
+
+..  note: 
+  Options set in cmd line override those have been set in configuration files. Multiple times for multiple options. 
 
   Format: ``<section>.<option>=value`` 
 
   Example: ``yandex-tank -o "console.short_only=1" --option="phantom.force_stepping=1"``
-*-s SCHEDULED_START, --scheduled-start=SCHEDULED_START*
+
+:-s SCHEDULED_START, --scheduled-start=SCHEDULED_START:
   Run test on specified time, date format YYYY-MM-DD hh:mm:ss or hh:mm:ss
-*-q, --quiet*
+
+:-q, --quiet:
   Only print WARNINGs and ERRORs to console.
-*-v, --verbose*
+
+:-v, --verbose:
   Print ALL, including DEBUG, messages to console. Chatty mode.
+
 
 Add an ammo file name as a nameless parameter, e.g.:
 ``yandex-tank ammo.txt`` or ``yandex-tank ammo.gz``
 
 Advanced configuration
-================
+============================
 
 Configuration files organized as standard INI files. Those are files
 partitioned into named sections that contain 'name=value' records. 
 
 Example:
 ::
+
   [phantom] 
   address=example.com:80
   rps_schedule=const(100,60s)
@@ -61,7 +80,7 @@ Example:
   same name override those set before them (in the same file or not).
 
 Default configuration files
-------
+--------------------------------
 
 If no ``--no-rc`` option passed, Yandex.Tank reads all ``*.ini`` from
 ``/etc/yandex-tank`` directory, then a personal config file ``~/.yandex-tank``. 
@@ -70,12 +89,13 @@ So you can easily put your favourite settings in ``~/.yandex-tank``
 Example: ``tank.artifacts_base_dir``, ``phantom.cache_dir``, ``console.info_panel_width``
 
 The ``DEFAULT`` section
-------
+--------------------------------
 
 One can use a **magic** ``DEFAULT`` section, that contains global
 options. Those options are in charge for every section: 
 
 ::
+
     [autostop] 
     autostop=time(1,10)
     
@@ -91,6 +111,7 @@ options. Those options are in charge for every section:
 is an equivalent for:
 
 ::
+
     [DEFAULT]
     autostop=time(1,10) 
     short_only=1 
@@ -102,11 +123,12 @@ is an equivalent for:
 
 
 Multiline options
-------
+--------------------------------
 
 Use indent to show that a line is a continuation of a previous one:
 
 :: 
+
     [autostop]
     autostop=time(1,10)
       http(404,1%,5s)
@@ -118,12 +140,14 @@ Use indent to show that a line is a continuation of a previous one:
   where you need it!*
 
 Referencing one option to another
-------
+-----------------------------------
 
 ``%(optname)s`` gives you ability to reference from option to another. It helps to reduce duplication. 
 
 Example:
+
 ::
+
     [DEFAULT]
     host=target12.load.net  
     
@@ -138,12 +162,14 @@ Example:
     prepare=echo Target is %(host)s
 
 Time units
-------
+--------------------------------
 
 *Default* : milliseconds. 
 
 Example:
+
 ::
+
   ``30000 == 30s`` 
   ``time(30000,120)`` is an equivalent to ``time(30s,2m)``
 
@@ -162,12 +188,14 @@ h             hours
   You can also  mix them: ``1h30m15s`` or ``2s15ms``. 
 
 Shell-options
-------
+---------------------
 
 Option value with backquotes is evaluated in shell.
 
 Example:
+
 ::
+
   [meta]
   job_name=`pwd`
 
@@ -185,7 +213,7 @@ Modules
 ================
 
 TankCore
-------
+-----------
 
 Core class. Represents basic steps of test execution. Simplifies plugin configuration, 
 configs reading, artifacts storing. Represents parent class for modules/plugins.
@@ -197,43 +225,48 @@ Options
 
 Basic options:
 
-*lock_dir*
-  Default: ``/var/lock/``
+:lock_dir:
+  Directory for lockfile.
 
-  Directory for lockfile. 
-*plugin_<pluginname>*
+  Default: ``/var/lock/``. 
 
+:plugin_<pluginname>:
   Path to plugin. Empty path interpreted as disable of plugin.
-*artifacts_base_dir*
+
+:artifacts_base_dir:
+  Base directory for artifacts storing. Temporary artifacts files are stored here.
+
   Default: current directory.
 
-  Base directory for artifacts storing. Temporary artifacts files are stored here.
-*artifacts_dir*
+:artifacts_dir:
+  Directory where to keep artifacts after test. 
+
   Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
 
-  Directory where to keep artifacts after test. 
-*flush_config_to*
+:flush_config_to:
   Dump configuration options after each tank step (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file
-*taskset_path*
+
+:taskset_path:
+  Path to taskset command.
+
   Default: taskset.
 
-  Path to taskset command.
-*affinity* 
-  Default: empty.
-
+:affinity:
   Set a yandex-tank's (python process and load generator process) CPU affinity. 
+
+  Default: empty.
 
   Example: ``0-3`` enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
 consoleworker - cmd-line interface
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Worker class that runs and configures TankCore accepting cmdline parameters. 
 Human-friendly unix-way interface for yandex-tank. 
 Command-line options described above.
 
 apiworker - python interface
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Worker class for python. Runs and configures TankCore accepting ``dict()``. 
 Python-frinedly interface for yandex-tank.
@@ -270,7 +303,7 @@ Example:
         logger.error('Error trying to perform a test: %s', ex)
 
 Phantom
-------
+---------
 
 Load generator module that uses phantom utility.
 
@@ -280,7 +313,7 @@ Options
 ^^^^^^^^^^^^^^^^^^^
 
 Basic options: 
-~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 *ammofile*
   Ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped). 
@@ -304,7 +337,7 @@ Basic options:
 There are 3 ways to constrain requests number: by schedule with ``rps_schedule``, by requests number with ``ammo_limit`` or by loop number with ``loop`` option. Tank stops if any constrain is reached. If stop reason is reached ``ammo_limit`` or ``loop`` it will be mentioned in log file. In test without ``rps_schedule`` file with requests is used one time by default.
 
 Additional options: 
-~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 *writelog*
   Default: 0.
@@ -344,7 +377,7 @@ Additional options:
   Available options: 1 - enable, 0 - disable.
 
 URI-style options: 
-~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 *uris*
   URI list, multiline option. 
@@ -356,7 +389,7 @@ URI-style options:
   HTTP version.
 
 stpd-file cache options: 
-~~~~~~~~~~~~~
+~~~~~~~~~~~~
 *use_caching*
   Default: ``1``.
 
@@ -371,7 +404,7 @@ stpd-file cache options:
   Force stpd file generation.
 
 Advanced options: 
-~~~~~~~~~~~~~
+~~~~~~~~~~~~
 *phantom_path*
   Default: ``phantom``.
 
@@ -414,7 +447,7 @@ Advanced options:
   Example: ``0-3`` enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
 TLS/SSL additional options (``ssl=1`` is required):
-~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 *ciphers*
   Default: empty.
@@ -432,7 +465,7 @@ TLS/SSL additional options (``ssl=1`` is required):
   Path to client's certificate's private key, used for client's "CertificateVerify message" generation in Client-authenticated TLS handshake.
 
 Phantom http-module tuning options: 
-~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 *phantom_http_line*
   Default: ``1K``.
@@ -922,12 +955,39 @@ Options
 
 Basic criteria types: 
 
-============    =============        =============   =============
-Autostop Name    Example              Exit code       Description  
-============    =============        =============   =============
-time             time(1s500ms, 30s)   21              average response time is higher then allowed
-http             http(404,10,15)      22              stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value
-============    =============        =============   =============
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Name               | Example                                       | Exit Code | Description                                                                                                                                                                                                       |
++====================+===============================================+===========+===================================================================================================================================================================================================================+
+| time               | time(1s500ms, 30s)                            | 21        | stop the test if average response time is higher then allowed                                                                                                                                                     |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| http               | http(404,10,15)                               | 22        | stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value                                                       |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| net                | net(110,10,15)                                | 23        | like ``http``, but for network codes. Use mask ``xx`` for all non-zero codes.                                                                                                                                     |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| quantile           | quantile (95,100ms,10s)                       |           | stop the test if the specified percentile is larger then specified level for as long as the time period specified. Available percentile values: 25, 50, 75, 80, 90, 95, 98, 99, 100                               |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| instances          | instances(80%, 30)                            | 24        | available when phantom module is included. Stop the test if instance count is larger then specified value                                                                                                         |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| metric_lower       | metric_lower(127.0.0.1,Memory_free,500,10)    | 31        | stop test if monitored metrics are lowerthan specified for time period                                                                                                                                            |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| metric_higher      | metric_higher(127.0.0.1,Memory_free,500,10)   | 32        | stop test if monitored metrics are higher than specified for time period                                                                                                                                          |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| steady_cumulative  | steady_cumulative(1m)                         | 33        | Stops the test if cumulative percentiles does not change for specified interval                                                                                                                                   |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| limit              | limit(1m)                                     |           | Will stop test after specified period of time                                                                                                                                                                     |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| total_time         | total_time(300ms, 70%, 3s)                    | 25        | like ``time``, but accumulate for all time period (responses that fit may not be one-after-another, but only lay into specified time period)                                                                      |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| total_http         | total_http(5xx,10%,10s)                       | 26        | like ``http``, but accumulated. See ``total_time``                                                                                                                                                                |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| total_net          | total_http(5xx,10%,10s)                       | 27        | like ``net``, but accumulated                                                                                                                                                                                     |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| negative_http      | total_net(79,10%,10s)                         | 28        | inversed ``total_http``                                                                                                                                                                                           |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| negative_net       | negative_http(2xx,10%,10s)                    | 29        | inversed ``total_net``                                                                                                                                                                                            |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| http_trend         | http_trend(2xx,10s)                           | 30        | Stop if trend for defined http codes is negative on defined period. Trend is a sum of an average coefficient for linear functions calculated for each pair points in last n seconds and standart deviation for it |
++--------------------+-----------------------------------------------+-----------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 * **time** - stop the test if average response time is higher then allowed. E.g.: ``time(1s500ms, 30s) time(50,15)``. Exit code - 21
 * **http** - stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value. Examples: ``http(404,10,15) http(5xx, 10%, 1m)``. Exit code - 22
