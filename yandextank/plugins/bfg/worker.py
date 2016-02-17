@@ -1,7 +1,6 @@
 import logging
 import time
 from yandextank.stepper import StpdReader
-from .zmq_reader import ZmqReader
 import multiprocessing as mp
 import threading as th
 from Queue import Empty, Full
@@ -22,7 +21,6 @@ class BFG(object):
                  instances,
                  threads,
                  stpd_filename,
-                 zmq=False,
                  cached_stpd=False):
         self.log = logging.getLogger(__name__)
         self.log.info("""
@@ -46,7 +44,6 @@ Gun: {gun.__class__.__name__}
             mp.Process(target=self._worker) for _ in xrange(0, self.instances)
         ]
         self.feeder = th.Thread(target=self._feed, name="Feeder")
-        self.zmq = zmq
         self.workers_finished = False
 
     def start(self):
@@ -68,20 +65,14 @@ Gun: {gun.__class__.__name__}
         Say the workers to finish their jobs and quit.
         """
         self.quit.set()
-        if self.zmq:
-            self.plan.stop()
 
     def _feed(self):
         """
         A feeder that runs in distinct thread in main process.
         """
-        if self.zmq:
-            print "Starting ZMQ: connecting to ", self.zmq
-            self.plan = ZmqReader(self.zmq)
-        else:
-            self.plan = StpdReader(self.stpd_filename)
-            if self.cached_stpd:
-                self.plan = list(self.plan)
+        self.plan = StpdReader(self.stpd_filename)
+        if self.cached_stpd:
+            self.plan = list(self.plan)
         for task in self.plan:
             if self.quit.is_set():
                 self.log.info("Stop feeding: gonna quit")
