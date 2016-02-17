@@ -26,6 +26,7 @@ Contents:
    install
    tutorial
    configuration
+   core_and_modules
 
 
 Indices and tables

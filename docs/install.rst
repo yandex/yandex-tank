@@ -28,7 +28,7 @@ Remember that if you want to use phantom as a load generator you should install 
     sudo add-apt-repository ppa:yandex-load/main && sudo apt-get update
     sudo apt-get install phantom phantom-ssl
 
-Report plugin is a distinct project. You can found it `here via github <https://github.com/yandex-load/yatank-online>>`_
+Report plugin is a distinct project. You can found it `here via github <https://github.com/yandex-load/yatank-online>`_
 
 
 Installation, .deb packages
