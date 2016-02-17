@@ -27,7 +27,9 @@ Here are available command line options:
   Don't read ``/etc/yandex-tank/*.ini`` and ``~/.yandex-tank``
 *-o OPTION, --option=OPTION*
   Set an option from command line. Options set in cmd line override those have been set in configuration files. Multiple times for multiple options. 
+
   Format: ``<section>.<option>=value`` 
+
   Example: ``yandex-tank -o "console.short_only=1" --option="phantom.force_stepping=1"``
 *-s SCHEDULED_START, --scheduled-start=SCHEDULED_START*
   Run test on specified time, date format YYYY-MM-DD hh:mm:ss or hh:mm:ss
@@ -65,9 +67,7 @@ If no ``--no-rc`` option passed, Yandex.Tank reads all ``*.ini`` from
 ``/etc/yandex-tank`` directory, then a personal config file ``~/.yandex-tank``. 
 So you can easily put your favourite settings in ``~/.yandex-tank``
 
-Example:
-::
-``tank.artifacts_base_dir``, ``phantom.cache_dir``, ``console.info_panel_width``
+Example: ``tank.artifacts_base_dir``, ``phantom.cache_dir``, ``console.info_panel_width``
 
 The ``DEFAULT`` section
 ------
@@ -76,7 +76,6 @@ One can use a **magic** ``DEFAULT`` section, that contains global
 options. Those options are in charge for every section: 
 
 ::
-
     [autostop] 
     autostop=time(1,10)
     
@@ -92,7 +91,6 @@ options. Those options are in charge for every section:
 is an equivalent for:
 
 ::
-
     [DEFAULT]
     autostop=time(1,10) 
     short_only=1 
@@ -109,7 +107,6 @@ Multiline options
 Use indent to show that a line is a continuation of a previous one:
 
 :: 
-
     [autostop]
     autostop=time(1,10)
       http(404,1%,5s)
@@ -123,10 +120,10 @@ Use indent to show that a line is a continuation of a previous one:
 Referencing one option to another
 ------
 
-``%(optname)s`` gives you ability to reference from option to another. It helps to reduce duplication. Example:
+``%(optname)s`` gives you ability to reference from option to another. It helps to reduce duplication. 
 
+Example:
 ::
-
     [DEFAULT]
     host=target12.load.net  
     
@@ -152,18 +149,17 @@ Example:
 
 Time units encoding is as following: 
 
-``ms``
-  millisecons
-``s``
-  seconds
-``m``
-  minutes
-``h``
- hours 
+============= =======
+Abbreviation  Meaning
+============= =======
+ms            millisecons
+s             seconds
+m             minutes
+h             hours
+============= =======
 
 .. note::
   You can also  mix them: ``1h30m15s`` or ``2s15ms``. 
-  If somewhere it is not supported - report a bug, please.
 
 Shell-options
 ------
@@ -202,24 +198,34 @@ Options
 Basic options:
 
 *lock_dir*
+
   Default: ``/var/lock/``
+
   Directory for lockfile. 
+
 *plugin_<pluginname>*
+
   Path to plugin. Empty path interpreted as disable of plugin.
+
 *artifacts_base_dir*
   Default: current directory.
+
   Base directory for artifacts storing. Temporary artifacts files are stored here.
 *artifacts_dir*
   Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
+
   Directory where to keep artifacts after test. 
 *flush_config_to*
   Dump configuration options after each tank step (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file
 *taskset_path*
   Default: taskset.
+
   Path to taskset command.
 *affinity* 
   Default: empty.
+
   Set a yandex-tank's (python process and load generator process) CPU affinity. 
+
   Example: '0-3' enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
 consoleworker - cmd-line interface
@@ -706,18 +712,18 @@ Sample scenario gun module:
       response_time = int((time.time() - start_ms) * 1000)
   
       data_item = Sample(
-              marker,  # маркер
-              1,  # число активных потоков
-              response_time,  # время отклика (основная метрика)
-              httpCode,  # код ошибки прикладного уровня
-              resp_code,  # код ошибки сетевого уровня
-              0,  # отправлено байт
-              0,  # принято байт
-              response_time,  # время соединения
-              0,  # время отправки
-              response_time,  # время от завершения отправки до начала приема
-              0,  # время приема
-              0,  # точность
+              marker,  
+              1,  
+              response_time, 
+              httpCode,
+              resp_code,
+              0,
+              0,
+              response_time,
+              0,
+              response_time,
+              0,
+              0,
       )
       queue.put((int(time.time()), data_item), timeout=5)
   
