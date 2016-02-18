@@ -3,7 +3,8 @@ Installation
 ============
 
 .. note::
-  Currently we support ubuntu precise and trusty.
+  Currently we support ubuntu LTS precise (12.04) and trusty (14.04).
+
   Phantom load generator works fine with ``gcc<4.9``.
 
 ************************

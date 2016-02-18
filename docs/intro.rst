@@ -17,6 +17,15 @@ What are the Yandex.Tank components?
 .. note::
   Using ``phantom`` as a load generator for mild load tests (less then 1000rps) an average laptop with 64bit Ubuntu (10.04/.../13.10) would be sufficient. The tank could be easily used in virtual machine if queries aren't too heavy and load isn't too big. Otherwise it is recommended to request a physical server or a more capable virtual machine from your admin.
 
+Running Yandex.Tank
+-------------------
+Install tank to your system :doc:`install`
+Tune your system :doc:`generator_tuning`
+And run the tutorial :doc:`tutorial`
+
+Feel free to use if you are skilled enough :doc:`configuration`.
+For developers :doc:`core_and_modules`.
+
 See also
 --------
 
