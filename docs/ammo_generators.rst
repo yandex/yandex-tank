@@ -1,6 +1,6 @@
-=======================
-Sample ammo generators
-=======================
+================
+Ammo generators
+================
 
 **sample req-style ammo generator (python):**
 

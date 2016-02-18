@@ -2,12 +2,6 @@
 Modules
 =======
 
-********************
-Yandex Tank diagram
-********************
-
-.. image:: ./overview.png
-
 ********
 TankCore
 ********
@@ -16,6 +10,16 @@ Core class. Represents basic steps of test execution. Simplifies plugin configur
 configs reading, artifacts storing. Represents parent class for modules/plugins.
 
 INI file section: **[tank]**
+
+Architecture
+============
+
+.. image:: ./pic/tank-architecture.png
+
+Test lifecycle
+==============
+
+.. image:: ./pic/tank-lifecycle.png
 
 Options
 =======
@@ -111,6 +115,11 @@ Phantom
 Load generator module that uses phantom utility.
 
 INI file section: **[phantom]**
+
+How it works
+------------
+
+.. image:: ./pic/tank-stepper.png
 
 Options
 -------
@@ -498,6 +507,11 @@ Or if you want i.e to call your own module's MyService function shoot:
     module_path = ./my_own_service
     ; module name (has to provide function shoot)
     module_name = MyService
+
+How it works
+------------
+
+.. image:: ./pic/tank-bfg.png
 
 BFG Options
 -----------
