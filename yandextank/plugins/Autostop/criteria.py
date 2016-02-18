@@ -69,7 +69,7 @@ class AvgTimeCriteria(AbstractCriteria):
         if (data["overall"]["interval_real"]["total"] /
                 data["overall"]["interval_real"]["len"]) > self.rt_limit:
             if not self.seconds_count:
-                self.cause_second = data
+                self.cause_second = (data, stat)
 
             logger.debug(self.explain())
 
@@ -136,7 +136,7 @@ class HTTPCodesCriteria(AbstractCriteria):
 
         if matched_responses >= self.level:
             if not self.seconds_count:
-                self.cause_second = data
+                self.cause_second = (data, stat)
 
             logger.debug(self.explain())
 
@@ -212,7 +212,7 @@ class NetCodesCriteria(AbstractCriteria):
 
         if matched_responses >= self.level:
             if not self.seconds_count:
-                self.cause_second = data
+                self.cause_second = (data, stat)
 
             logger.debug(self.explain())
 
@@ -273,7 +273,7 @@ class QuantileCriteria(AbstractCriteria):
         if self.quantile in quantiles.keys() \
                 and quantiles[self.quantile] > self.rt_limit:
             if not self.seconds_count:
-                self.cause_second = data
+                self.cause_second = (data, stat)
 
             logger.debug(self.explain())
 
@@ -324,7 +324,7 @@ class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
         logging.debug("Cumulative quantiles hash: %s", quantile_hash)
         if self.quantile_hash == quantile_hash:
             if not self.seconds_count:
-                self.cause_second = data
+                self.cause_second = (data, stat)
 
             logger.debug(self.explain())
 
