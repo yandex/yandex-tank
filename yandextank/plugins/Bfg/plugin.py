@@ -70,7 +70,8 @@ class BfgPlugin(AbstractPlugin):
         if aggregator:
             result_cache_size = int(self.get_option("result_cache_size", '5'))
             aggregator.reader = BfgReader(self.bfg.results)
-            aggregator.stats_reader = BfgStatsReader(self.bfg.instance_counter)
+            aggregator.stats_reader = BfgStatsReader(
+                self.bfg.instance_counter, self.stepper_wrapper.steps)
 
         try:
             console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)

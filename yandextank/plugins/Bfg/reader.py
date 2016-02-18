@@ -37,18 +37,24 @@ class BfgReader(object):
 
 
 class BfgStatsReader(object):
-    def __init__(self, instance_counter):
+    def __init__(self, instance_counter, steps):
         self.closed = False
         self.last_ts = 0
+        self.steps = steps
         self.instance_counter = instance_counter
+        self.start_time = int(time.time())
 
     def __iter__(self):
         while not self.closed:
             cur_ts = int(time.time())
             if cur_ts > self.last_ts:
+                offset = cur_ts - 1 - self.start_time
+                reqps = 0
+                if offset >= 0 and offset < len(self.steps):
+                    reqps = self.steps[offset][0]
                 yield [{'ts': cur_ts,
                         'metrics': {'instances': self.instance_counter.get(),
-                                    'reqps': 0}}]
+                                    'reqps': reqps}}]
                 self.last_ts = cur_ts
             else:
                 yield []
