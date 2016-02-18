@@ -1,8 +1,10 @@
+=======
 Modules
-================
+=======
 
+********
 TankCore
------------
+********
 
 Core class. Represents basic steps of test execution. Simplifies plugin configuration, 
 configs reading, artifacts storing. Represents parent class for modules/plugins.
@@ -10,7 +12,7 @@ configs reading, artifacts storing. Represents parent class for modules/plugins.
 INI file section: **[tank]**
 
 Options
-^^^^^^^^^^^^^^^^^^^
+=======
 
 Basic options:
 
@@ -47,15 +49,17 @@ Basic options:
 
   Example: ``0-3`` enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
-consoleworker - cmd-line interface
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+consoleworker
+=============
+Consoleworker is a cmd-line interface for Yandex.Tank.
 
 Worker class that runs and configures TankCore accepting cmdline parameters. 
 Human-friendly unix-way interface for yandex-tank. 
 Command-line options described above.
 
-apiworker - python interface
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+apiworker
+=========
+ apiworker is a python interface for Yandex.Tank.
 
 Worker class for python. Runs and configures TankCore accepting ``dict()``. 
 Python-frinedly interface for yandex-tank.
@@ -91,18 +95,22 @@ Example:
     except Exception, ex:
         logger.error('Error trying to perform a test: %s', ex)
 
+***************
+Load Generators
+***************
+
 Phantom
----------
+=======
 
 Load generator module that uses phantom utility.
 
 INI file section: **[phantom]**
 
 Options
-^^^^^^^^^^^^^^^^^^^
+-------
 
-Basic options: 
-~~~~~~~~~~~~~~~
+Basic options 
+^^^^^^^^^^^^^
 
 :ammofile:
   Ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped). 
@@ -132,8 +140,8 @@ Basic options:
 
 There are 3 ways to constrain requests number: by schedule with ``rps_schedule``, by requests number with ``ammo_limit`` or by loop number with ``loop`` option. Tank stops if any constrain is reached. If stop reason is reached ``ammo_limit`` or ``loop`` it will be mentioned in log file. In test without ``rps_schedule`` file with requests is used one time by default.
 
-Additional options: 
-~~~~~~~~~~~~~~~~~~~
+Additional options
+^^^^^^^^^^^^^^^^^^
 
 :writelog:
   Enable verbose request/response logging. 
@@ -179,8 +187,8 @@ Additional options:
 
   Available options: 1 - enable, 0 - disable.
 
-URI-style options: 
-~~~~~~~~~~~~~~~~
+URI-style options
+^^^^^^^^^^^^^^^^^
 
 :uris:
   URI list, multiline option. 
@@ -193,8 +201,9 @@ URI-style options:
 
   Available options: ``1.0`` and ``1.1``. ``2.0`` is NOT supported by this load generator.
 
-stpd-file cache options: 
-~~~~~~~~~~~~~~~~~~~~~~
+stpd-file cache options
+^^^^^^^^^^^^^^^^^^^^^^^
+
 :use_caching:
   Enable cache.
 
@@ -209,8 +218,9 @@ stpd-file cache options:
 
   Default: ``0``.
 
-Advanced options: 
-~~~~~~~~~~~~~~~~
+Advanced options
+^^^^^^^^^^^^^^^^
+
 :phantom_path:
   Phantom utility path.
 
@@ -264,8 +274,11 @@ Advanced options:
   Default: empty.
 
 
-TLS/SSL additional options (``ssl=1`` is required):
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+TLS/SSL additional options
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+..note::
+  ``ssl=1`` is required
 
 :ciphers:
   Cipher list, consists of one or more cipher strings separated by colons (see man ciphers).
@@ -285,8 +298,8 @@ TLS/SSL additional options (``ssl=1`` is required):
   Default: empty.
 
 
-Phantom http-module tuning options: 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Phantom http-module tuning options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :phantom_http_line:
   First line length.
@@ -310,7 +323,7 @@ Phantom http-module tuning options:
   Please, keep in mind, especially if your service has large answers, that phantom doesn't read more than defined in ``phantom_http_entity``.
 
 Artifacts
-^^^^^^^^^^^^^^^^^^^
+---------
 
 :phantom_*.conf:
   Generated configuration files.
@@ -328,7 +341,7 @@ Artifacts
   Internal phantom log.
 
 Multi-tests
-^^^^^^^^^^^^^^^^^^^
+-----------
 
 To make several simultaneous tests with phantom, add proper amount of sections with names ``phantom-_N_``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops. 
 
@@ -365,7 +378,7 @@ Example:
 Options that apply only for main section: buffered_seconds, writelog, phantom_modules_path, phout_file, config, eta_file, phantom_path
 
 JMeter
-------
+======
 
 JMeter module uses JMeter as a load generator. To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable JMeter plugin and then specify the parameters for JMeter:
 
@@ -380,7 +393,7 @@ JMeter module uses JMeter as a load generator. To enable it, disable phantom fir
 INI file section: **[jmeter]**
 
 Options
-^^^^^^^^^^^^^^^^^^^
+-------
 
 :jmx:
   Testplan for execution.
@@ -403,7 +416,7 @@ Options
   They will be passed as User Defined Variables to JMeter.
 
 Artifacts
-^^^^^^^^^^^^^^^^^^^
+---------
 
 :<original jmx>:
   Original testplan.
@@ -418,7 +431,7 @@ Artifacts
   JMeter's log.
 
 BFG
-------
+===
 
 (`What is BFG <http://en.wikipedia.org/wiki/BFG_(weapon)>`_)
 BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first  (unless you really want to keep it active alongside at your own risk), enable BFG plugin and then specify the parameters for BFG and for the cannon you select. For example, if you want to kill an SQL db:
@@ -481,7 +494,7 @@ Or if you want i.e to call your own module's MyService function shoot:
     module_name = MyService
 
 BFG Options
-^^^^^^^^^^^^^^^^^^^
+-----------
 
 INI file section: **[bfg]**
 
@@ -496,7 +509,7 @@ INI file section: **[bfg]**
 :other common stepper options:
   
 SQL Gun Options
-^^^^^^^^^^^^^^^^^^^
+---------------
 
 gun_type = **sql**
 
@@ -506,7 +519,7 @@ INI file section: **[sql_gun]**
   DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
 
 Custom Gun Options
-^^^^^^^^^^^^^^^^^^^
+------------------
 
 gun_type = **custom**
 
@@ -582,7 +595,7 @@ Example:
           <...some finishing work...>
 
 Scenario Gun Options
-^^^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 gun_type = **scenario**
 
@@ -691,7 +704,7 @@ Example:
   }
 
 Pandora
-----------
+=======
 
 `Pandora <https://github.com/yandex/pandora>`_ is a load generator written in Go. For now it supports only SPDY/3 and HTTP(S). Plugins for other protocols
 (HTTP/2, Websocket, XMPP) are on the way.
@@ -732,7 +745,7 @@ Disable phantom first (unless you really want to keep it active alongside at you
 
 
 Ammo format
-^^^^^^^^^^^^^^^^^^^
+-----------
 
 Pandora currently supports only one ammo format: ``jsonline``, i.e. one json doc per line.
 
@@ -747,7 +760,7 @@ Example:
 Each json doc describes an HTTP request. Some of them may have a tag field, it will be used as other tags in other ammo formats.
 
 Schedules
-^^^^^^^^^^^^^^^^^^^
+---------
 
 The first schedule type is ``periodic`` schedule. It is defined as ``periodic(<batch_size>, <period>, <limit>)``.
 Pandora will issue one batch of size ``batch_size``, once in ``period`` seconds, maximum of ``limit`` ticks. Those ticks may be
@@ -791,8 +804,159 @@ Start 2 users every 10 seconds. Every user will shoot without any limits (next r
 as soon as the previous response have been received). This is analogous to phantom's instances
 schedule mode.
 
+
+AB
+------
+
+Apache Benchmark load generator module. As the ab utility writes results
+to file only after the test is finished, Yandex.Tank is unable to show
+the on-line statistics for the tests with ab. The data are reviewed
+after the test.
+To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable AB plugin and then specify 
+the parameters for AB:
+
+::
+
+    [tank]
+    ; Disable phantom:
+    plugin_phantom=
+    ; Enable AB module instead:
+    plugin_ab=yandextank.plugins.ApacheBenchmark
+
+
+INI file section: **[ab]**
+
+Options
+^^^^^^^^^^^^^^^^^^^
+
+:url: 
+  Requested URL.
+
+  Default: ``http:**localhost/`` 
+
+:requests: 
+  Total request count.
+
+  Default: 100 
+
+:concurrency: 
+  Number of concurrent requests: 1.
+
+:options: 
+  ab command line options.
+
+Artifacts
+^^^^^^^^^^^^^^^^^^^
+
+:ab_*.log: 
+  Request log with response times.
+
+
+******************
+Artifact uploaders
+******************
+
+GraphiteUploader
+================
+
+Graphite plugin uploads data to `Graphite <http://graphite.readthedocs.org/en/0.9.12/index.html>`_ monitoring tool. Config file section: ```[graphite]```
+
+Options
+-------
+
+:address: 
+  graphite server
+
+:port:
+  graphite backend port (where to send data).
+
+  Default: 2003
+
+:web_port: 
+  graphite frontend port
+
+  Default: 8080
+
+:template:
+  Template file. 
+
+  Default: yandextank/plugins/GraphiteUploader/config/graphite.tpl
+
+InfluxUplink
+============
+
+Influx uplink plugin uploads data to `InfluxDB <https://influxdata.com>`_ storage.
+Different tests will be tagged with unique IDs.
+
+Configuration:
+
+::
+
+    [tank]
+    ; Enable InfluxDB plugin:
+    plugin_influx=yandextank.plugins.InfluxUplink
+
+    [influx]
+    ; Tank name (to distinguish data from different tanks):
+    tank_tag = MyTank
+    ; Address and of InfluxDB instance:
+    address = example.org
+    port = 8086
+
+    ; If you have grafana connected to your InfluxDB, you
+    ; can specify grafana parameters and tank will generate
+    ; a link to your test:
+    grafana_root = http://example.org/grafana/
+    grafana_dashboard=tank-dashboard
+
+Options
+-------
+
+:address:
+  Graphite server
+
+:port:
+  Graphite backend port (where to send data)
+
+  Default: 8080
+
+:template:
+  Template file. 
+
+  Default: yandextank/plugins/GraphiteUploader/config/graphite.tpl
+
+Loadosophia
+===========
+
+When test has been finished, module upload to Loadosophia.org test artifacts: file with answer times and files with monitoring data. The link will be shown in console output.
+
+INI file section: **[loadosophia]**
+
+Options
+-------
+
+:token:
+  Account's access key, received on Upload Token page
+
+:project:
+  Test will be uploaded to that project
+
+:test_title:
+  Test name
+
+:color_flag:
+  Color flag, assigned to test. (gray flag = "to delete")
+
+:file_prefix:
+  Prefix that will be added to uploaded file's name (deprecated)
+
+
+***********
+Handy tools
+***********
+
 Auto-stop
-----------
+=========
 
 The Auto-stop module gets the data from the aggregator and passes them
 to the criteria-objects that decide if we should stop the test.
@@ -800,12 +964,13 @@ to the criteria-objects that decide if we should stop the test.
 INI file section: **[autostop]**
 
 Options
-^^^^^^^^^^^^^^^^^^^
+-------
 
 :autostop:
   Criteria list divided by spaces, in following format: ``type(parameters)``
 
-Basic criteria types: 
+Basic criteria types
+^^^^^^^^^^^^^^^^^^^^
 
 :time:
   Stop the test if average response time is higher then allowed. 
@@ -864,7 +1029,8 @@ Basic criteria types:
 Basic criteria aren't aggregated, they are tested for each second in specified period. For example autostop=time(50,15) means "stop if average responce time for every second in 15s interval is higher than 50ms"
 
 
-Advanced criteria types:
+Advanced criteria types
+^^^^^^^^^^^^^^^^^^^^^^^
 
 :total_time:
   Like ``time``, but accumulate for all time period (responses that fit may not be one-after-another, but only lay into specified time period). 
@@ -908,109 +1074,15 @@ Advanced criteria types:
 
   Exit code: 30. 
 
-GraphiteUploader
------------------
-
-Graphite plugin uploads data to `Graphite <http://graphite.readthedocs.org/en/0.9.12/index.html>`_ monitoring tool. Config file section: ```[graphite]```
-
-Options
-^^^^^^^^^^
-
-:address: 
-  graphite server
-
-:port:
-  graphite backend port (where to send data).
-
-  Default: 2003
-
-:web_port: 
-  graphite frontend port
-
-  Default: 8080
-
-:template:
-  Template file. 
-
-  Default: yandextank/plugins/GraphiteUploader/config/graphite.tpl
-
-InfluxUplink
---------------
-
-Influx uplink plugin uploads data to `InfluxDB <https://influxdata.com>`_ storage.
-Different tests will be tagged with unique IDs.
-
-Configuration:
-
-::
-
-    [tank]
-    ; Enable InfluxDB plugin:
-    plugin_influx=yandextank.plugins.InfluxUplink
-
-    [influx]
-    ; Tank name (to distinguish data from different tanks):
-    tank_tag = MyTank
-    ; Address and of InfluxDB instance:
-    address = example.org
-    port = 8086
-
-    ; If you have grafana connected to your InfluxDB, you
-    ; can specify grafana parameters and tank will generate
-    ; a link to your test:
-    grafana_root = http://example.org/grafana/
-    grafana_dashboard=tank-dashboard
-
-Options
-^^^^^^^^^^^^^^^^^^^
-
-:address:
-  Graphite server
-
-:port:
-  Graphite backend port (where to send data)
-
-  Default: 8080
-
-:template:
-  Template file. 
-
-  Default: yandextank/plugins/GraphiteUploader/config/graphite.tpl
-
-Loadosophia
--------------
-
-When test has been finished, module upload to Loadosophia.org test artifacts: file with answer times and files with monitoring data. The link will be shown in console output.
-
-INI file section: **[loadosophia]**
-
-Options
-^^^^^^^^^^^^^^^^^^^
-
-:token:
-  Account's access key, received on Upload Token page
-
-:project:
-  Test will be uploaded to that project
-
-:test_title:
-  Test name
-
-:color_flag:
-  Color flag, assigned to test. (gray flag = "to delete")
-
-:file_prefix:
-  Prefix that will be added to uploaded file's name (deprecated)
-
 Monitoring
------------
+==========
 
 Runs metrics collection through ssh connect.
 
 INI file section: **[monitoring]**
 
 Options
-^^^^^^^^^^^^^^^^^^^
+-------
 
 :config:
   Path to monitoring config file. 
@@ -1026,7 +1098,7 @@ Options
   Default: 5s
 
 Artifacts
-^^^^^^^^^^^^^^^^^^^
+---------
 
 :agent_*.cfg: 
   Configuration files sent to hosts to run monitoring agents.
@@ -1041,11 +1113,11 @@ Artifacts
   Monitoring config file.
 
 Configuration
-^^^^^^^^^^^^^^^^^^^
+-------------
 
 
 Net access and authentication
-**************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Monitoring requires ssh access to hosts for copy and executing agents on them. SSH session is established with user account specified by "username" parameter of Host element, otherwise current user account, so you need to copy your public keys (ssh-copy-id) and enable nonpassword authorization on hosts.
 If connection establishing failed for some reason in ``ssh_timeout`` seconds, corresponding message will be written to console and monitoring log and task will proceed further. 
@@ -1057,9 +1129,8 @@ Tip: write to ``.ssh/config`` next lines to eliminate ``-A`` option in ``ssh``
     ForwardAgent yes
     
 
-
 Configuration file format
-**************************
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Config is an XML file with structure:
 root element ``Monitoring`` includes elements ``Host`` which contains elements-metrics
@@ -1079,7 +1150,7 @@ Example:
     
 
 Element ``Monitoring``
-**********************
+^^^^^^^^^^^^^^^^^^^^^^
 
 Global monitoring settings.
 
@@ -1092,7 +1163,7 @@ Global monitoring settings.
 
 
 Element ``Host`` 
-**********************
+^^^^^^^^^^^^^^^^
 
 Contains address and role of monitored server. Attributes:
 
@@ -1129,7 +1200,7 @@ Example:
 
 
 Metric elements
-**********************
+^^^^^^^^^^^^^^^
 
 Metric elements in general are set by metrics group name and particular metrics enumeration in attribute `measure`. Example: `<CPU measure="idle,user,system" />`
 
@@ -1174,7 +1245,7 @@ Custom metrics have an additional attribute `diff`, that signals to obtain as me
 Also custom metrics must have attribute `label`, which defines metric short name (only latin). `Underline symbol should be avoided.` 
 
 Monitoring default logic
-**************************
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Default logic is applied on next levels:
 
@@ -1183,7 +1254,8 @@ Default logic is applied on next levels:
 3. Metric level: if metrics group is defined without attribute `measure`, then only default group metrics are collected.
    
 Startup and Shutdown elements
-*********************************
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 There is special non-metric elements called Startup and Shutdown. Startup shell scripts will be started before metric collection. On the normal shutdown startup scripts will be stopped and shutdown scripts will run. There may be any number of Startup and Shutdown elements.
 
 Following example illustrates this feature:
@@ -1202,14 +1274,14 @@ Following example illustrates this feature:
 
 
 Console on-line screen
-------
+======================
 
 Shows usefull information in console while running the test
 
 INI file section: **[console]**
 
 Options
-^^^^^^^^^^^^^^^^^^^
+-------
 
 :short_only:
   Show only one-line summary instead of full-screen. Usefull for scripting.
@@ -1232,7 +1304,7 @@ Options
   Don't use specified colors in console. List with whitespaces. Example: ``WHITE GREEN RED CYAN MAGENTA YELLOW``
 
 Aggregator
--------------
+==========
 
 The aggregator module is responsible for aggregation of data received
 from different kind of modules and transmitting that aggregated data to
@@ -1240,8 +1312,8 @@ consumer modules (Console screen module is an example of such kind).
 
 INI file section: **[aggregator]** 
  
-Options:
-^^^^^^^^^^^^^^^^^^^
+Options
+-------
  
 :time_periods: 
   time intervals list divided by zero. 
@@ -1257,7 +1329,7 @@ Options:
 
 
 ShellExec
------------
+=========
 
 The ShellExec module executes the shell-scripts (hooks) on different
 stages of test, for example, you could start/stop some services just
@@ -1273,8 +1345,8 @@ Example: ``[shellexec] start=/bin/ls -l``.
 
 INI file section: **[shellexec]**
 
-Options:
-^^^^^^^^^^^^^^^^^^^
+Options
+-------
 
 :prepare:
   The script to run on prepare stage.
@@ -1292,62 +1364,15 @@ Options:
   The script to run on postprocess stage
 
 
-AB
-------
-
-Apache Benchmark load generator module. As the ab utility writes results
-to file only after the test is finished, Yandex.Tank is unable to show
-the on-line statistics for the tests with ab. The data are reviewed
-after the test.
-To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable AB plugin and then specify 
-the parameters for AB:
-
-::
-
-    [tank]
-    ; Disable phantom:
-    plugin_phantom=
-    ; Enable AB module instead:
-    plugin_ab=yandextank.plugins.ApacheBenchmark
-
-
-INI file section: **[ab]**
-
-Options
-^^^^^^^^^^^^^^^^^^^
-
-:url: 
-  Requested URL.
-
-  Default: ``http:**localhost/`` 
-
-:requests: 
-  Total request count.
-
-  Default: 100 
-
-:concurrency: 
-  Number of concurrent requests: 1.
-
-:options: 
-  ab command line options.
-
-Artifacts
-^^^^^^^^^^^^^^^^^^^
-
-:ab_*.log: 
-  Request log with response times.
-
-
 Resource Check
-----------------
+==============
 
 Module checks free memory and disk space amount before and during test. Test stops if minimum values are reached. 
 
 INI file section: **[rcheck]**
 
 Options
-^^^^^^^^^^^^^^^^^^^
+-------
 
 :interval:
   How often to check resources. 
@@ -1366,14 +1391,14 @@ Options
 
 
 RC Assert
------------
+=========
 
 Module checks test's exit code with predefined acceptable codes. If exit code matches, it is overrides as 0. Otherwise it is replaced with code from option ``fail_code``
 
 INI file section: **[rcassert]**
 
 Options
-^^^^^^^^^^^^^^^^^^^
+-------
 
 :pass:
   list of acceptable codes, delimiter - whitespace. 
@@ -1387,17 +1412,16 @@ Options
 
 
 Tips&Tricks
-------------
+===========
 
 Shows tips and tricks in fullscreen console.
 
 INI-file section: **[tips]**
 
 Options
-^^^^^^^^^^^^^^^^^^^
+-------
 
 :disable:
   Disable tips and tricks.
 
   Default: 0 (don't).
-

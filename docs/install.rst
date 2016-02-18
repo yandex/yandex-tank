@@ -2,6 +2,10 @@
 Installation
 ============
 
+.. note::
+  Currently we support ubuntu precise and trusty.
+  Phantom load generator works fine with ``gcc<4.9``.
+
 ************************
 Installation, from PyPi
 ************************
