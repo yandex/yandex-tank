@@ -19,12 +19,18 @@ What are the Yandex.Tank components?
 
 Running Yandex.Tank
 -------------------
-Install tank to your system :doc:`install`
-Tune your system :doc:`generator_tuning`
-And run the tutorial :doc:`tutorial`
+1.Install tank to your system :doc:`install`
 
-Feel free to use if you are skilled enough :doc:`configuration`.
-For developers :doc:`core_and_modules`.
+2.Tune your system :doc:`generator_tuning`
+
+3.And run the tutorial :doc:`tutorial`
+
+----------
+
+4.Feel free to use if you are skilled enough :doc:`configuration`.
+
+5.For developers :doc:`core_and_modules`.
+
 
 See also
 --------
