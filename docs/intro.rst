@@ -27,7 +27,7 @@ Running Yandex.Tank
 
 ----------
 
-4.Feel free to use if you are skilled enough :doc:`configuration`.
+4.If you are skilled enough, feel free to use :doc:`configuration`.
 
 5.For developers :doc:`core_and_modules`.
 
