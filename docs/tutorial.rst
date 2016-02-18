@@ -1,15 +1,17 @@
+=========
 Tutorials
----------
+=========
 
 So, you've installed Yandex.Tank to a proper machine, it is close to target,
 access is permitted and server is tuned. How to make a test?
 
+*****************
+Phantom tutorial
+*****************
+
 .. note::
 
   This guide is for ``phantom`` load generator.
-
-First Steps
-~~~~~~~~~~~
 
 Create a file on a server with Yandex.Tank: **load.ini**
 
@@ -20,36 +22,55 @@ Create a file on a server with Yandex.Tank: **load.ini**
   port=80 ;target's port
   rps_schedule=line(1, 100, 10m) ;load scheme
 
-Yandex.Tank have 3 primitives for describing load scheme: 
+``phantom`` have 3 primitives for describing load scheme: 
+
+------------
 
 1. ``step (a,b,step,dur)`` makes stepped load, where a,b are start/end load
 values, step - increment value, dur - step duration. 
 
-2. ``line (a,b,dur)`` makes linear load, where ``a,b`` are start/end load, ``dur``
-- the time for linear load increase from a to b. 
-
-3. ``const (load,dur)`` makes constant load. ``load`` - rps amount, ``dur`` 
-- load duration. You can set fractional load like this: ``line(1.1, 2.5, 10)`` 
--- from 1.1rps to 2.5 for 10 seconds. 
-
-.. note::
-  ``const(0, 10)`` - 0 rps for 10 seconds, 
-  in fact 10s pause in a test.
-
-``step`` and ``line`` could be used with increasing and decreasing
-intensity: 
-
-* ``step(25, 5, 5, 60)`` - stepped load from 25 to 5 rps, with 5 rps steps, 
+Example:
+  ``step(25, 5, 5, 60)`` - stepped load from 25 to 5 rps, with 5 rps steps, 
   step duration 60s. ``step(5, 25, 5, 60)`` - stepped load from 5 to 25 rps, 
   with 5 rps steps, step duration 60s
 
-* ``line(100, 1, 10m)`` - linear load from 100 to 1 rps, duration - 10
+------------
+
+2. ``line (a,b,dur)`` makes linear load, where ``a,b`` are start/end load, ``dur``
+- the time for linear load increase from a to b. 
+
+Example:
+  ``line(100, 1, 10m)`` - linear load from 100 to 1 rps, duration - 10
   minutes ``line(1, 100, 10m)`` - linear load from 1 to 100 rps, duration
   - 10 minutes
 
-You can specify complex load schemes using those primitives, 
-for example: ``rps_schedule=line(1,10,10m) const(10,10m)`` 
-- linear load from 1 to 10, duration 10 mins and then 10 mins of 10 RPS constant load.
+------------
+
+3. ``const (load,dur)`` makes constant load. ``load`` - rps amount, ``dur`` 
+- load duration. 
+
+Example:
+  ``const(100,10m)`` - constant load for 100 rps for 10 mins.
+
+------------
+
+.. note::
+  You can set fractional load like this: ``line(1.1, 2.5, 10)`` 
+  -- from 1.1rps to 2.5 for 10 seconds. 
+
+.. note::
+  ``const(0, 10)`` 0 rps for 10 seconds, in fact 10s pause in a test.
+
+.. note::
+  ``step`` and ``line`` could be used with increasing and decreasing intensity: 
+
+
+You can specify complex load schemes using those primitives.
+
+Example:
+  ``rps_schedule=line(1,10,10m) const(10,10m)`` 
+  
+  linear load from 1 to 10, duration 10 mins and then 10 mins of 10 RPS constant load.
 
 Time duration could be defined in seconds, minutes (m) and hours (h).
 For example: ``27h103m645``
@@ -64,35 +85,44 @@ have next lines:
   port=80 ;target's port. 
   rps_schedule=const(10, 10m) ;load scheme
 
-Voilà, Yandex.Tank setup is done.
-
 
 Preparing requests
-~~~~~~~~~~~~~~~~~~
+===================
 
-There are several ways to set up requests: Access mode, URI-style, URI+POST and request-style. 
-Regardless of the chosen format, resulted file with requests could be gzipped - tank supports 
-archived ammo files.
+There are several ways to set up requests: 
+ * Access mode 
+ * URI-style
+ * URI+POST
+ * request-style. 
 
-To specify external ammo file use ``ammofile`` option. You can specify URL to ammofile, http(s). 
-Small ammofiles (~<100MB) will be downloaded as is, to directory ``/tmp/<hash>``, 
-large files will be readed from stream. 
-
-::
-
-  [phantom]
-  address=203.0.113.1 ; Target's address
-  ammofile=https://yourhost.tld/path/to/ammofile.txt
+.. note:: 
+  Request-style is default ammo type.
 
 .. note::
+  Regardless of the chosen format, resulted file with requests could be gzipped - tank supports archived ammo files.
 
-  If ammo type is uri-style or request-style, tank will try to guess it.
-  Use ``ammo_type`` option to explicitly specify ammo format. Don't forget to change ``ammo_type`` option
-  if you switch format of your ammo, otherwise you might get errors.
+To specify external ammo file use ``ammofile`` option. 
+
+.. note::
+  You can specify URL to ammofile, http(s). Small ammofiles (~<100MB) will be downloaded as is, to directory ``/tmp/<hash>``, large files will be readed from stream. 
+
+  Example:
+  ::
+      
+    [phantom]
+    address=203.0.113.1 ; Target's address
+    ammofile=https://yourhost.tld/path/to/ammofile.txt
+
+If ammo type is ``uri-style`` or ``request-style``, tank will try to guess it.
+
+Use ``ammo_type`` option to explicitly specify ammo format. Don't forget to change ``ammo_type`` option if you switch format of your ammo, otherwise you might get errors.
 
 Access mode
-''''''''''''
-You can use access.log file from your webserver as a source of requests.
+-----------
+
+INI-file configuration: ``ammo_type=access``
+
+You can use ``access.log`` file from your webserver as a source of requests.
 Just add to load.ini options ``ammo_type=access`` and ``ammofile=/tmp/access.log`` 
 where /tmp/access.log is a path to access.log file.
 
@@ -110,8 +140,11 @@ where /tmp/access.log is a path to access.log file.
 
 Parameter ``headers`` defines headers values (if it nessessary).
 
+
 URI-style, URIs in load.ini
-''''''''''''''''''''''''''''
+---------------------------
+
+INI-file configuration: Don't specify ``ammo_type`` explicitly for this type of ammo.
 
 Update configuration file with HTTP headers and URIs:
 
@@ -134,12 +167,14 @@ Parameter ``uris`` contains uri, which should be used for requests generation.
 
 .. note::
 
-  Pay attention to sample above, because whitespaces in ``uris`` and ``headers`` options are important.
+  Pay attention to sample above, because whitespaces in multiline ``uris`` and ``headers`` options are important.
 
 URI-style, URIs in file
-'''''''''''''''''''''''
+-----------------------
 
-Create a file with declared requests: **ammo.txt**
+INI-file configuration: ``ammo_type=uri``
+
+Create a file with declared requests: ``ammo.txt``
 
 ::
 
@@ -156,14 +191,18 @@ File consist of list of URIs and headers to be added to every request defined be
 Every URI must begin from a new line, with leading ``/``.
 Each line that begins from ``[`` is considered as a header.
 Headers could be (re)defined in the middle of URIs, as in sample above. 
-I.e  request ``/buy/?rt=0&station_to=7&station_from=9`` will be sent 
-with ``Cookies: test``, not ``Cookies: None``. Request may be marked by tag, 
-you can specify it with whitespace following URI.
+
+Example:
+  Request ``/buy/?rt=0&station_to=7&station_from=9`` will be sent with ``Cookies: test``, not ``Cookies: None``. 
+
+Request may be marked by tag, you can specify it with whitespace following URI.
 
 URI+POST-style
-''''''''''''''
+--------------
 
-Create a file with declared requests: **ammo.txt**
+INI-file configuration: ``ammo_type=uripost``
+
+Create a file with declared requests: ``ammo.txt``
 
 ::
 
@@ -182,12 +221,11 @@ be added to every request. After that section there is a list of URIs and POST b
 Each URI line begins with a number which is the size of the following POST body.
 Set up ammo type in load.ini:
 
-::
-
-  ammo_type=uripost
 
 Request-style
-'''''''''''''
+-------------
+
+INI-file configuration: ``ammo_type=phantom``
 
 Full requests listed in a separate file. For more complex
 requests, like POST, you'll have to create a special file. File format
@@ -208,9 +246,7 @@ where ``size_of_request`` – request size in bytes. '\r\n' symbols after
 include them in a file after each request. Pay attention to the sample above
 because '\r' symbols are strictly required. 
 
-.. note:: 
-
-  Parameter ``ammo_type`` is unnecessary, request-style is default ammo type.
+------------
 
 **sample GET requests (null body)**
 
@@ -230,6 +266,9 @@ because '\r' symbols are strictly required.
   GET /ab ra HTTP/1.0
   Host: xxx.tanks.example.com
   User-Agent: xxx (shell 1)
+
+------------
+
 
 **sample POST requests (binary data)**
 
@@ -253,6 +292,8 @@ because '\r' symbols are strictly required.
 
   ^.^........QMO.0^.++^zJw.ر^$^.^Ѣ.^V.J....vM.8r&.T+...{@pk%~C.G../z顲^.7....l...-.^W"cR..... .&^?u.U^^.^.....{^.^..8.^.^.I.EĂ.p...'^.3.Tq..@R8....RAiBU..1.Bd*".7+.
   .Ol.j=^.3..n....wp..,Wg.y^.T..~^..
+
+------------
 
 **sample POST multipart:**
 
@@ -281,128 +322,13 @@ because '\r' symbols are strictly required.
   <wsw-fields><wsw-field name="moderate-code"><wsw-value>disable</wsw-value></wsw-field></wsw-fields>
   --AGHTUNG--
 
-**sample req-style ammo generator (python):**
-
-``usage: cat data | python make_ammo.py``
-For each line of 'data' file this script will generate phantom ammo.
-Line format: ``GET||/url||case_tag||body(optional)``
-
-.. code-block:: python
-
-	#!/usr/bin/python
-	# -*- coding: utf-8 -*-
-  
-	import sys
-	
-	def make_ammo(method, url, headers, case, body):
-	    """ makes phantom ammo """
-	    #http request w/o entity body template
-	    req_template = (
-	          "%s %s HTTP/1.1\r\n"
-	          "%s\r\n"
-	          "\r\n"
-	    )
-	
-	    #http request with entity body template
-	    req_template_w_entity_body = (
-	          "%s %s HTTP/1.1\r\n"
-	          "%s\r\n"
-	          "Content-Length: %d\r\n"
-	          "\r\n"
-	          "%s\r\n"
-	    )
-	
-	    if not body:
-	        req = req_template % (method, url, headers)
-	    else:
-	        req = req_template_w_entity_body % (method, url, headers, len(body), body)
-	
-	    #phantom ammo template
-	    ammo_template = (
-	        "%d %s\n"
-	        "%s"
-	    )
-  
-	    return ammo_template % (len(req), case, req)
-  
-	def main():
-	    for stdin_line in sys.stdin:
-	        try:
-	            method, url, case, body = stdin_line.split("||")
-	            body = body.strip()
-	        except:
-	            method, url, case = stdin_line.split("||")
-	            body = None
-
-	        method, url, case = method.strip(), url.strip(), case.strip()
-	    
-	        headers = "Host: hostname.com\r\n" + \
-	            "User-Agent: tank\r\n" + \
-	            "Accept: */*\r\n" + \
-	            "Connection: Close"
-
-	        sys.stdout.write(make_ammo(method, url, headers, case, body))
-
-	if __name__ == "__main__":
-	    main()
-
-**sample POST multipart form-data generator (python)**
-
-.. code-block:: python
-
-  #!/usr/bin/python
-  # -*- coding: utf-8 -*-
-  import requests
-  
-  def print_request(request):
-      req = "{method} {path_url} HTTP/1.1\r\n{headers}\r\n{body}".format(
-          method = request.method,
-          path_url = request.path_url,
-          headers = ''.join('{0}: {1}\r\n'.format(k, v) for k, v in request.headers.items()),
-          body = request.body or "",
-      )
-      return "{req_size}\n{req}\r\n".format(req_size = len(req), req = req)
-    
-  #POST multipart form data
-  def post_multipart(host, port, namespace, files, headers, payload):
-      req = requests.Request(
-          'POST',
-          'https://{host}:{port}{namespace}'.format(
-              host = host,
-              port = port,
-              namespace = namespace,
-          ),
-          headers = headers,
-          data = payload,
-          files = files
-      )
-      prepared = req.prepare()
-      return print_request(prepared)
-
-  if __name__ == "__main__":
-      #usage sample below
-      host = 'test.host.ya.ru'
-      port = '8080'
-      namespace = '/some/path'
-      headers = {
-          'Host': 'ya.ru'
-      }
-      payload = {
-          'langName': 'en',
-          'apikey': '123'
-      }
-      files = {
-          'file': open('./testfile', 'rb')
-      }
-  
-      print post_multipart(host, port, namespace, files, headers, payload)
+sample ammo generators you may find on the :doc:`ammo_generators` page.
   
 
 Run Test!
-~~~~~~~~~
+=========
 
 1. Request specs in load.ini -- just run as ``yandex-tank``
-
 2. Request specs in ammo.txt -- run as ``yandex-tank ammo.txt``
 
 Yandex.Tank detects requests format and generates ultimate requests
@@ -414,7 +340,7 @@ If Yandex.Tank has been installed properly and configuration file is
 correct, the load will be given in next few seconds.
 
 Results
-~~~~~~~
+=======
 
 During test execution you'll see HTTP and net errors, answer times
 distribution, progressbar and other interesting data. At the same time
@@ -423,12 +349,14 @@ file ``phout.txt`` is being written, which could be analyzed later.
 If you need more human-readable report, you can try Report plugin,
 You can found it `here <https://github.com/yandex-load/yatank-online>`_
 
+If you need to upload results to external storage, such as Graphite or InfluxDB, you can use one of existing artifacts uploading modules :doc:`core_and_modules`
+
 Tags
-~~~~
+====
 
-Requests could be grouped and marked by some tag. Example of file with
-requests and tags: 
+Requests could be grouped and marked by some tag. 
 
+Example:
 ::
 
   73 good 
@@ -453,7 +381,7 @@ requests and tags:
   **RESTRICTION: utf-8 symbols only**
 
 SSL
-~~~
+===
 
 To activate SSL add ``ssl = 1`` to ``load.ini``. Don't forget to change port
 number to appropriate value. Now, our basic config looks like that:
@@ -467,13 +395,13 @@ number to appropriate value. Now, our basic config looks like that:
   ssl=1
 
 Autostop 
-~~~~~~~~
+========
 
 Autostop is an ability to automatically halt test execution
 if some conditions are reached. 
 
 HTTP and Net codes conditions 
-'''''''''''''''''''''''''''''
+-----------------------------
 
 There is an option to define specific codes (404,503,100) as well as code
 groups (3xx, 5xx, xx). Also you can define relative threshold (percent
@@ -482,26 +410,19 @@ answers with specified code per second).
 
 Examples:
 
-* ``autostop = http(4xx,25%,10)`` – stop test, if amount of 4xx http codes
-in every second of last 10s period exceeds 25% of answers (relative
-threshold) 
+  ``autostop = http(4xx,25%,10)`` – stop test, if amount of 4xx http codes in every second of last 10s period exceeds 25% of answers (relative threshold).
 
-* ``autostop = net(101,25,10)`` – stop test, if amount of 101
-net-codes in every second of last 10s period is more than 25 (absolute
-threshold)
+  ``autostop = net(101,25,10)`` – stop test, if amount of 101 net-codes in every second of last 10s period is more than 25 (absolute threshold).
 
-* ``autostop = net(xx,25,10)`` – stop test, if amount of
-non-zero net-codes in every second of last 10s period is more than 25
-(absolute threshold)
+  ``autostop = net(xx,25,10)`` – stop test, if amount of non-zero net-codes in every second of last 10s period is more than 25 (absolute threshold).
 
 Average time conditions
-^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------
 
-Example: ``autostop = time(1500,15)`` – stop test, if average answer
-time exceeds 1500ms
+Example: 
+  ``autostop = time(1500,15)`` – stops test, if average answer time exceeds 1500ms.
 
-So, if we want to stop test when all answers in 1 second period are 5xx
-plus some network and timing factors - add autostop line to load.ini:
+So, if we want to stop test when all answers in 1 second period are 5xx plus some network and timing factors - add autostop line to load.ini:
 
 ::
 
@@ -515,7 +436,7 @@ plus some network and timing factors - add autostop line to load.ini:
     net(xx,1,30)
 
 Logging
-~~~~~~~
+-------
 
 Looking into target's answers is quite useful in debugging. For doing
 that add ``writelog = 1`` to ``load.ini``. 
@@ -569,7 +490,7 @@ For ``load.ini`` like this:
     net(xx,1,30)
 
 Results in phout
-~~~~~~~~~~~~~~~~
+----------------
 
 phout.txt - is a per-request log. It could be used for service behaviour
 analysis (Excel/gnuplot/etc) It has following fields:
@@ -593,19 +514,18 @@ Phout example:
   1326453006.603          256     59      33      107     57      110     53      476     0       404
   1326453006.605          241     53      26      130     32      131     37      478     0       404
 
-**NOTE:** as Yandex.Tank uses phantom as an http load engine and this
-file is written by phantom, it contents depends on phantom version
-installed on your Yandex.Tank system.
+.. note::
+  contents of phout depends on phantom version installed on your Yandex.Tank system.
 
 Graph and statistics
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 Use `Report plugin <https://github.com/yandex-load/yatank-online>`_ 
 OR
 use your favorite stats packet, R, for example.
 
 Custom timings
-~~~~~~~~~~~~~~
+--------------
 
 You can set custom timings in ``load.ini`` with ``time_periods``
 parameter like this:
@@ -622,10 +542,12 @@ parameter like this:
 According to this "buckets", tanks' aggregator will aggregate test results.
 
 Thread limit
-~~~~~~~~~~~~
+------------
 
 ``instances=N`` in ``load.ini`` limits number of simultanious
-connections (threads). Test with 10 threads:
+connections (threads). 
+
+Example with 10 threads limit:
 
 ::
 
@@ -636,13 +558,14 @@ connections (threads). Test with 10 threads:
   instances=10
 
 Dynamic thread limit
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 ``instances_schedule = <instances increasing scheme>`` -- test with
 active instances schedule will be performed if load scheme is not
 defined. Bear in mind that active instances number cannot be decreased
 and final number of them must be equal to ``instances`` parameter value.
-load.ini example:
+
+Example:
 
 ::
 
@@ -650,10 +573,12 @@ load.ini example:
   address=203.0.113.1 ;Target's address
   port=80 ;target's port
   instances_schedule = line(1,10,10m)
-  ;load = const (10,10m) ;Load scheme is excluded from this load.ini as we used instances_schedule parameter
+
+.. note::
+  Load scheme is excluded from this load.ini as we used ``instances_schedule`` parameter.
 
 Custom stateless protocol
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 In necessity of testing stateless HTTP-like protocol, Yandex.Tank's HTTP
 parser could be switched off, providing ability to generate load with
@@ -674,7 +599,7 @@ any data, receiving any answer in return. To do that add
   tank_type=2
 
 Gatling 
-~~~~~~~
+-------
 
 If server with Yandex.Tank have several IPs, they may be
 used to avoid outcome port shortage. Use ``gatling_ip`` parameter for

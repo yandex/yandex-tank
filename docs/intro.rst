@@ -27,6 +27,7 @@ Contents
    tutorial
    configuration
    core_and_modules
+   ammo_generators
 
 See also
 --------
