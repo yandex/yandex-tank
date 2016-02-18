@@ -436,7 +436,7 @@ So, if we want to stop test when all answers in 1 second period are 5xx plus som
     net(xx,1,30)
 
 Logging
--------
+=======
 
 Looking into target's answers is quite useful in debugging. For doing
 that add ``writelog = 1`` to ``load.ini``. 
@@ -490,7 +490,7 @@ For ``load.ini`` like this:
     net(xx,1,30)
 
 Results in phout
-----------------
+================
 
 phout.txt - is a per-request log. It could be used for service behaviour
 analysis (Excel/gnuplot/etc) It has following fields:
@@ -518,14 +518,14 @@ Phout example:
   contents of phout depends on phantom version installed on your Yandex.Tank system.
 
 Graph and statistics
---------------------
+====================
 
 Use `Report plugin <https://github.com/yandex-load/yatank-online>`_ 
 OR
 use your favorite stats packet, R, for example.
 
 Custom timings
---------------
+==============
 
 You can set custom timings in ``load.ini`` with ``time_periods``
 parameter like this:
@@ -542,7 +542,7 @@ parameter like this:
 According to this "buckets", tanks' aggregator will aggregate test results.
 
 Thread limit
-------------
+============
 
 ``instances=N`` in ``load.ini`` limits number of simultanious
 connections (threads). 
@@ -558,7 +558,7 @@ Example with 10 threads limit:
   instances=10
 
 Dynamic thread limit
---------------------
+====================
 
 ``instances_schedule = <instances increasing scheme>`` -- test with
 active instances schedule will be performed if load scheme is not
@@ -578,7 +578,7 @@ Example:
   Load scheme is excluded from this load.ini as we used ``instances_schedule`` parameter.
 
 Custom stateless protocol
--------------------------
+=========================
 
 In necessity of testing stateless HTTP-like protocol, Yandex.Tank's HTTP
 parser could be switched off, providing ability to generate load with
@@ -599,7 +599,7 @@ any data, receiving any answer in return. To do that add
   tank_type=2
 
 Gatling 
--------
+=======
 
 If server with Yandex.Tank have several IPs, they may be
 used to avoid outcome port shortage. Use ``gatling_ip`` parameter for
