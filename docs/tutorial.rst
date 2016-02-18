@@ -1,5 +1,5 @@
-Usage
------
+Tutorials
+---------
 
 So, you've installed Yandex.Tank to a proper machine, it is close to target,
 access is permitted and server is tuned. How to make a test?
@@ -448,7 +448,9 @@ requests and tags:
 
 ``good``, ``bad`` and ``unknown`` here are the tags.
 
-**RESTRICTION: utf-8 symbols only**
+.. note::
+
+  **RESTRICTION: utf-8 symbols only**
 
 SSL
 ~~~
@@ -518,8 +520,9 @@ Logging
 Looking into target's answers is quite useful in debugging. For doing
 that add ``writelog = 1`` to ``load.ini``. 
 
-**ATTENTION: Writing answers on high load leads to intensive disk i/o 
-usage and can affect test accuracy.** 
+.. note::
+  Writing answers on high load leads to intensive disk i/o 
+  usage and can affect test accuracy.** 
 
 Log format: 
 
