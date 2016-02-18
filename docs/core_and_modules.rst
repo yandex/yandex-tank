@@ -2,6 +2,12 @@
 Modules
 =======
 
+********************
+Yandex Tank diagram
+********************
+
+.. image:: ./overview.png
+
 ********
 TankCore
 ********
