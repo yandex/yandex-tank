@@ -5,11 +5,37 @@ import multiprocessing as mp
 import threading as th
 from Queue import Empty, Full
 
+from contextlib import contextmanager
+
 logger = logging.getLogger(__name__)
 
 
 def signal_handler(signum, frame):
     pass
+
+
+class InstanceCounter(object):
+    def __init__(self):
+        self._v = mp.Value('i', 0)
+        self._lock = mp.Lock()
+
+    def inc(self):
+        with self._lock:
+            self._v.value += 1
+
+    def dec(self):
+        with self._lock:
+            self._v.value -= 1
+
+    @contextmanager
+    def context(self):
+        self.inc()
+        yield
+        self.dec()
+
+    def get(self):
+        with self._lock:
+            return self._v.value
 
 
 class BFG(object):
@@ -27,6 +53,7 @@ Gun: {gun.__class__.__name__}
            instances=instances,
            gun=gun, ))
         self.instances = int(instances)
+        self.instance_counter = InstanceCounter()
         self.results = mp.Queue()
         self.gun = gun
         self.gun.results = self.results
@@ -121,14 +148,15 @@ Gun: {gun.__class__.__name__}
             try:
                 task = self.task_queue.get(timeout=1)
                 if not task:
-                    logger.info("Got killer task.")
+                    logger.debug("Got killer task.")
                     break
                 timestamp, missile, marker = task
                 planned_time = self.start_time + (timestamp / 1000.0)
                 delay = planned_time - time.time()
                 if delay > 0:
                     time.sleep(delay)
-                self.gun.shoot(missile, marker)
+                with self.instance_counter.context():
+                    self.gun.shoot(missile, marker)
             except (KeyboardInterrupt, SystemExit):
                 break
             except Empty:

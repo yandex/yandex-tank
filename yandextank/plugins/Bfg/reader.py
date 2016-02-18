@@ -18,19 +18,6 @@ class BfgReader(object):
         self.stat_buffer = ""
         self.results = results
         self.closed = False
-        # self.stat_queue = q.Queue()
-        # self.stats_reader = JMeterStatAggregator(TimeChopper(
-        #     self.__read_stat_queue(), 3))
-
-        # def __read_stat_queue(self):
-        #     while not self.closed:
-        #         for _ in range(self.stat_queue.qsize()):
-        #             try:
-        #                 si = self.stat_queue.get_nowait()
-        #                 if si is not None:
-        #                     yield si
-        #             except q.Empty:
-        #                 break
 
     def next(self):
         if self.closed:
@@ -39,9 +26,7 @@ class BfgReader(object):
         while not self.results.empty():
             records.append(self.results.get(1))
         if records:
-            df = records_to_df(records)
-            #self.stat_queue.put(df)
-            return df
+            return records_to_df(records)
         return None
 
     def __iter__(self):
@@ -52,14 +37,21 @@ class BfgReader(object):
 
 
 class BfgStatsReader(object):
-    def __init__(self):
+    def __init__(self, instance_counter):
         self.closed = False
+        self.last_ts = 0
+        self.instance_counter = instance_counter
 
     def __iter__(self):
         while not self.closed:
-            yield [{'ts': int(time.time()),
-                    'metrics': {'instances': 0,
-                                'reqps': 0}}]
+            cur_ts = int(time.time())
+            if cur_ts > self.last_ts:
+                yield [{'ts': cur_ts,
+                        'metrics': {'instances': self.instance_counter.get(),
+                                    'reqps': 0}}]
+                self.last_ts = cur_ts
+            else:
+                yield []
 
     def close(self):
         self.closed = True

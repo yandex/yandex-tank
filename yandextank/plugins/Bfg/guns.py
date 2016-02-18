@@ -42,7 +42,7 @@ class AbstractGun(AbstractPlugin):
         }
         yield data_item
         if data_item.get("interval_real") is None:
-            data_item["interval_real"] = int((time.time() - start_time) * 1000)
+            data_item["interval_real"] = int((time.time() - start_time) * 1e6)
 
         self.results.put(data_item, timeout=1)
 
