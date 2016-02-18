@@ -89,7 +89,7 @@ class AvgTimeCriteria(AbstractCriteria):
         explanation = ("Average response time higher"
                        " than %sms for %ss, since %s" %
                        (self.rt_limit, self.seconds_count,
-                        self.cause_second["ts"]))
+                        self.cause_second[0]["ts"]))
         return explanation
 
     def widget_explain(self):
@@ -162,7 +162,7 @@ class HTTPCodesCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.codes_mask, self.get_level_str(), self.seconds_count,
-                 self.cause_second.get('ts'))
+                 self.cause_second[0].get('ts'))
         return "%s codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -238,7 +238,7 @@ class NetCodesCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.codes_mask, self.get_level_str(), self.seconds_count,
-                 self.cause_second.get("ts"))
+                 self.cause_second[0].get("ts"))
         return "%s net codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -291,7 +291,7 @@ class QuantileCriteria(AbstractCriteria):
 
     def explain(self):
         items = (self.quantile, self.rt_limit, self.seconds_count,
-                 self.cause_second.get("ts"))
+                 self.cause_second[0].get("ts"))
         return "Percentile %s higher than %sms for %ss, since %s" % items
 
     def widget_explain(self):
@@ -342,7 +342,7 @@ class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
         return self.RC_STEADY
 
     def explain(self):
-        items = (self.seconds_count, self.cause_second.time)
+        items = (self.seconds_count, self.cause_second[0]["ts"])
         return "Cumulative percentiles are steady for %ss, since %s" % items
 
     def widget_explain(self):
