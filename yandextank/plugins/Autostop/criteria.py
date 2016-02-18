@@ -66,7 +66,7 @@ class AvgTimeCriteria(AbstractCriteria):
         self.autostop = autostop
 
     def notify(self, data, stat):
-        if (data["overall"]["interval_real"]["total"] /
+        if (data["overall"]["interval_real"]["total"] / 1000.0 /
                 data["overall"]["interval_real"]["len"]) > self.rt_limit:
             if not self.seconds_count:
                 self.cause_second = (data, stat)
