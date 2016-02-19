@@ -6,24 +6,25 @@ import os.path
 from yandextank.plugins.Aggregator import AggregatorPlugin, AggregateResultListener
 from yandextank.plugins.Console import AbstractInfoWidget, ConsolePlugin
 from yandextank.core import AbstractPlugin
-import criteria as cr
+import criterions as cr
+import cumulative_criterions as cum_cr
 
 logger = logging.getLogger(__name__)
 
 
 class AutostopPlugin(AbstractPlugin, AggregateResultListener):
-    """ Plugin that accepts criteria classes and triggers autostop """
+    """ Plugin that accepts criterion classes and triggers autostop """
     SECTION = 'autostop'
 
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         AggregateResultListener.__init__(self)
 
-        self.cause_criteria = None
-        self._criterias = {}
-        self.custom_criterias = []
+        self.cause_criterion = None
+        self._criterions = {}
+        self.custom_criterions = []
         self.counting = []
-        self.criteria_str = ''
+        self.criterion_str = ''
         self._stop_report_path = ''
 
     @staticmethod
@@ -31,16 +32,16 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         return __file__
 
     def get_counting(self):
-        """ get criterias that are activated """
+        """ get criterions that are activated """
         return self.counting
 
     def add_counting(self, obj):
-        """ add criteria that activated """
+        """ add criterion that activated """
         self.counting += [obj]
 
-    def add_criteria_class(self, criteria_class):
-        """ add new criteria class """
-        self.custom_criterias += [criteria_class]
+    def add_criterion_class(self, criterion_class):
+        """ add new criterion class """
+        self.custom_criterions += [criterion_class]
 
     def get_available_options(self):
         return ["autostop", "report_file"]
@@ -49,28 +50,35 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
 
-        self.criteria_str = " ".join(self.get_option("autostop", '').split(
+        self.criterion_str = " ".join(self.get_option("autostop", '').split(
             "\n"))
         self._stop_report_path = os.path.join(
             self.core.artifacts_dir,
             self.get_option("report_file", 'autostop_report.txt'))
 
-        self.add_criteria_class(cr.AvgTimeCriteria)
-        self.add_criteria_class(cr.NetCodesCriteria)
-        self.add_criteria_class(cr.HTTPCodesCriteria)
-        self.add_criteria_class(cr.QuantileCriteria)
-        self.add_criteria_class(cr.SteadyCumulativeQuantilesCriteria)
-        self.add_criteria_class(cr.TimeLimitCriteria)
+        self.add_criterion_class(cr.AvgTimeCriterion)
+        self.add_criterion_class(cr.NetCodesCriterion)
+        self.add_criterion_class(cr.HTTPCodesCriterion)
+        self.add_criterion_class(cr.QuantileCriterion)
+        self.add_criterion_class(cr.SteadyCumulativeQuantilesCriterion)
+        self.add_criterion_class(cr.TimeLimitCriterion)
+        self.add_criterion_class(cum_cr.TotalFracTimeCriterion)
+        self.add_criterion_class(cum_cr.TotalHTTPCodesCriterion)
+        self.add_criterion_class(cum_cr.TotalNetCodesCriterion)
+        self.add_criterion_class(cum_cr.TotalNegativeHTTPCodesCriterion)
+        self.add_criterion_class(cum_cr.TotalNegativeNetCodesCriterion)
+        self.add_criterion_class(cum_cr.TotalHTTPTrendCriterion)
+        self.add_criterion_class(cum_cr.QuantileOfSaturationCriterion)
 
     def prepare_test(self):
-        for criteria_str in self.criteria_str.strip().split(")"):
-            if not criteria_str:
+        for criterion_str in self.criterion_str.strip().split(")"):
+            if not criterion_str:
                 continue
-            self.log.debug("Criteria string: %s", criteria_str)
-            self._criterias[criteria_str + ')'] = self.__create_criteria(
-                criteria_str)
+            self.log.debug("Criterion string: %s", criterion_str)
+            self._criterions[criterion_str + ')'] = self.__create_criterion(
+                criterion_str)
 
-        self.log.debug("Criteria objects: %s", self._criterias)
+        self.log.debug("Criterion objects: %s", self._criterions)
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
@@ -82,39 +90,40 @@ class AutostopPlugin(AbstractPlugin, AggregateResultListener):
             console.add_info_widget(AutostopWidget(self))
 
     def is_test_finished(self):
-        if self.cause_criteria:
-            self.log.info("Autostop criteria requested test stop: %s",
-                          self.cause_criteria.explain())
-            return self.cause_criteria.get_rc()
+        if self.cause_criterion:
+            self.log.info("Autostop criterion requested test stop: %s",
+                          self.cause_criterion.explain())
+            return self.cause_criterion.get_rc()
         else:
             return -1
 
-    def __create_criteria(self, criteria_str):
-        """ instantiate criteria from config string """
-        parsed = criteria_str.split("(")
+    def __create_criterion(self, criterion_str):
+        """ instantiate criterion from config string """
+        parsed = criterion_str.split("(")
         type_str = parsed[0].strip().lower()
         parsed[1] = parsed[1].split(")")[0].strip()
 
-        for criteria_class in self.custom_criterias:
-            if criteria_class.get_type_string() == type_str:
-                return criteria_class(self, parsed[1])
-        raise ValueError("Unsupported autostop criteria type: %s" %
-                         criteria_str)
+        for criterion_class in self.custom_criterions:
+            if criterion_class.get_type_string() == type_str:
+                return criterion_class(self, parsed[1])
+        raise ValueError("Unsupported autostop criterion type: %s" %
+                         criterion_str)
 
     def on_aggregated_data(self, data, stat):
         self.counting = []
-        if not self.cause_criteria:
-            for criteria_text, criteria in self._criterias.iteritems():
-                if criteria.notify(data, stat):
-                    self.log.debug("Autostop criteria requested test stop: %s",
-                                   criteria)
-                    self.cause_criteria = criteria
-                    open(self._stop_report_path, 'w').write(criteria_text)
+        if not self.cause_criterion:
+            for criterion_text, criterion in self._criterions.iteritems():
+                if criterion.notify(data, stat):
+                    self.log.debug(
+                        "Autostop criterion requested test stop: %s",
+                        criterion)
+                    self.cause_criterion = criterion
+                    open(self._stop_report_path, 'w').write(criterion_text)
                     self.core.add_artifact_file(self._stop_report_path)
 
 
 class AutostopWidget(AbstractInfoWidget):
-    """ widget that displays counting criterias """
+    """ widget that displays counting criterions """
 
     def __init__(self, sender):
         AbstractInfoWidget.__init__(self)

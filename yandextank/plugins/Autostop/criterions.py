@@ -8,8 +8,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class AbstractCriteria(object):
-    """ parent class for all criterias """
+class AbstractCriterion(object):
+    """ parent class for all criterions """
     RC_TIME = 21
     RC_HTTP = 22
     RC_NET = 23
@@ -45,19 +45,19 @@ class AbstractCriteria(object):
 
     @staticmethod
     def get_type_string():
-        """ returns string that used as config name for criteria """
+        """ returns string that used as config name for criterion """
         raise NotImplementedError("Abstract methods requires overriding")
 
 
-class AvgTimeCriteria(AbstractCriteria):
-    """ average response time criteria """
+class AvgTimeCriterion(AbstractCriterion):
+    """ average response time criterion """
 
     @staticmethod
     def get_type_string():
         return 'time'
 
     def __init__(self, autostop, param_str):
-        AbstractCriteria.__init__(self)
+        AbstractCriterion.__init__(self)
         self.seconds_count = 0
         self.rt_limit = tankcore.expand_to_milliseconds(param_str.split(',')[
             0])
@@ -98,15 +98,15 @@ class AvgTimeCriteria(AbstractCriteria):
             self.seconds_count) / self.seconds_limit
 
 
-class HTTPCodesCriteria(AbstractCriteria):
-    """ HTTP codes criteria """
+class HTTPCodesCriterion(AbstractCriterion):
+    """ HTTP codes criterion """
 
     @staticmethod
     def get_type_string():
         return 'http'
 
     def __init__(self, autostop, param_str):
-        AbstractCriteria.__init__(self)
+        AbstractCriterion.__init__(self)
         self.seconds_count = 0
         self.codes_mask = param_str.split(',')[0].lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
@@ -172,15 +172,15 @@ class HTTPCodesCriteria(AbstractCriteria):
             self.seconds_count) / self.seconds_limit
 
 
-class NetCodesCriteria(AbstractCriteria):
-    """ Net codes criteria """
+class NetCodesCriterion(AbstractCriterion):
+    """ Net codes criterion """
 
     @staticmethod
     def get_type_string():
         return 'net'
 
     def __init__(self, autostop, param_str):
-        AbstractCriteria.__init__(self)
+        AbstractCriterion.__init__(self)
         self.seconds_count = 0
         self.codes_mask = param_str.split(',')[0].lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
@@ -248,15 +248,15 @@ class NetCodesCriteria(AbstractCriteria):
             self.seconds_count) / self.seconds_limit
 
 
-class QuantileCriteria(AbstractCriteria):
-    """ quantile criteria """
+class QuantileCriterion(AbstractCriterion):
+    """ quantile criterion """
 
     @staticmethod
     def get_type_string():
         return 'quantile'
 
     def __init__(self, autostop, param_str):
-        AbstractCriteria.__init__(self)
+        AbstractCriterion.__init__(self)
         self.seconds_count = 0
         self.quantile = float(param_str.split(',')[0])
         self.rt_limit = tankcore.expand_to_milliseconds(param_str.split(',')[
@@ -301,8 +301,8 @@ class QuantileCriteria(AbstractCriteria):
             self.seconds_count) / self.seconds_limit
 
 
-class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
-    """ quantile criteria """
+class SteadyCumulativeQuantilesCriterion(AbstractCriterion):
+    """ quantile criterion """
 
     @staticmethod
     def get_type_string():
@@ -310,7 +310,7 @@ class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
 
     def __init__(self, autostop, param_str):
         raise (NotImplementedError("Cumulative quantiles not implemented"))
-        AbstractCriteria.__init__(self)
+        AbstractCriterion.__init__(self)
         self.seconds_count = 0
         self.quantile_hash = ""
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
@@ -351,15 +351,15 @@ class SteadyCumulativeQuantilesCriteria(AbstractCriteria):
             self.seconds_count) / self.seconds_limit
 
 
-class TimeLimitCriteria(AbstractCriteria):
-    """ time limit criteria """
+class TimeLimitCriterion(AbstractCriterion):
+    """ time limit criterion """
 
     @staticmethod
     def get_type_string():
         return 'limit'
 
     def __init__(self, autostop, param_str):
-        AbstractCriteria.__init__(self)
+        AbstractCriterion.__init__(self)
         self.start_time = time.time()
         self.end_time = time.time()
         self.time_limit = tankcore.expand_to_seconds(param_str)
