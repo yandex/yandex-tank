@@ -23,8 +23,8 @@ class AggregateResultListener(object):
         data contains aggregated metrics and stats contain non-aggregated
         metrics from gun (like instances count, for example)
 
-        data and stats are cached and synchronized by timestamp. Stat items are holded
-        until corresponding data item is received and vice versa.
+        data and stats are cached and synchronized by timestamp. Stat items
+        are holded until corresponding data item is received and vice versa.
         """
         raise NotImplementedError("Abstract method needs to be overridden")
 
@@ -55,15 +55,20 @@ class AggregatorPlugin(AbstractPlugin):
         self.stats_reader = None
         self.results = q.Queue()
         self.stats = q.Queue()
+        self.verbose_histogram = False
         self.data_cache = {}
         self.stat_cache = {}
 
     def get_available_options(self):
-        return []
+        return ["verbose_histogram"]
 
     def configure(self):
         self.aggregator_config = json.loads(resource_string(
             __name__, 'config/phout.json'))
+        verbose_histogram_option = self.get_option("verbose_histogram", "0")
+        self.verbose_histogram = int(
+            verbose_histogram_option) > 0 or verbose_histogram_option.lower(
+            ) == "true"
 
     def start_test(self):
         if self.reader and self.stats_reader:
@@ -72,7 +77,8 @@ class AggregatorPlugin(AbstractPlugin):
                     DataPoller(source=self.reader,
                                poll_period=1),
                     cache_size=3),
-                self.aggregator_config)
+                self.aggregator_config,
+                self.verbose_histogram)
             self.drain = Drain(pipeline, self.results)
             self.drain.start()
             self.stats_drain = Drain(
@@ -82,7 +88,8 @@ class AggregatorPlugin(AbstractPlugin):
             self.stats_drain.start()
         else:
             raise PluginImplementationError(
-                "Generator must pass a Reader and a StatsReader to Aggregator before starting test")
+                "Generator must pass a Reader and a StatsReader"
+                " to Aggregator before starting test")
 
     def is_test_finished(self):
         data = []

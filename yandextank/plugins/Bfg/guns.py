@@ -145,7 +145,7 @@ class ScenarioGun(AbstractGun):
 
     def __init__(self, core):
         super(ScenarioGun, self).__init__(core)
-        module_path = self.get_option("module_path", "")
+        module_path = self.get_option("module_path", "").split()
         module_name = self.get_option("module_name")
         fp, pathname, description = imp.find_module(module_name, module_path)
         try:

@@ -27,8 +27,7 @@ class Worker(object):
     Aggregate Pandas dataframe or dict with numpy ndarrays in it
     """
 
-    def __init__(self, config):
-        verbose_histogram = False
+    def __init__(self, config, verbose_histogram):
         if verbose_histogram:
             bins = np.linspace(0, 4990, 500)
             bins = np.append(bins, np.linspace(5000, 9900, 50))
@@ -117,8 +116,8 @@ class DataPoller(object):
 
 
 class Aggregator(object):
-    def __init__(self, source, config):
-        self.worker = Worker(config)
+    def __init__(self, source, config, verbose_histogram):
+        self.worker = Worker(config, verbose_histogram)
         self.source = source
         self.groupby = 'tag'
 
