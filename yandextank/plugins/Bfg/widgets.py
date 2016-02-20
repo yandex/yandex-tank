@@ -1,5 +1,5 @@
 import datetime
-from yandextank.plugins.ConsoleOnline import AbstractInfoWidget
+from yandextank.plugins.Console import AbstractInfoWidget
 
 
 class BfgInfoWidget(AbstractInfoWidget):
