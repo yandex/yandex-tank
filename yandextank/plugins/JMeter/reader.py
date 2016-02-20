@@ -106,7 +106,7 @@ def string_to_df(data):
 
 class JMeterStatAggregator(object):
     def __init__(self, source):
-        self.worker = agg.Worker({"allThreads": ["mean"]})
+        self.worker = agg.Worker({"allThreads": ["mean"]}, False)
         self.source = source
 
     def __iter__(self):
