@@ -12,7 +12,7 @@ from utils import PhantomConfig
 from reader import PhantomReader, PhantomStatsReader
 from yandextank.core import AbstractPlugin
 from yandextank.plugins.Autostop import AutostopPlugin
-from yandextank.plugins.Autostop import AbstractCriteria
+from yandextank.plugins.Autostop import AbstractCriterion
 import yandextank.core as tankcore
 
 from widget import PhantomInfoWidget, PhantomProgressBarWidget
@@ -82,10 +82,10 @@ class PhantomPlugin(AbstractPlugin):
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
-            autostop.add_criteria_class(UsedInstancesCriteria)
+            autostop.add_criterion_class(UsedInstancesCriterion)
         except KeyError:
             logger.debug(
-                "No autostop plugin found, not adding instances criteria")
+                "No autostop plugin found, not adding instances criterion")
 
         self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
         if not self.get_option(self.OPTION_CONFIG,
@@ -241,9 +241,9 @@ class PhantomPlugin(AbstractPlugin):
         return self.cached_info
 
 
-class UsedInstancesCriteria(AbstractCriteria):
+class UsedInstancesCriterion(AbstractCriterion):
     """
-    Autostop criteria, based on active instances count
+    Autostop criterion, based on active instances count
     """
     RC_INST = 24
 
@@ -252,7 +252,7 @@ class UsedInstancesCriteria(AbstractCriteria):
         return 'instances'
 
     def __init__(self, autostop, param_str):
-        AbstractCriteria.__init__(self)
+        AbstractCriterion.__init__(self)
         self.seconds_count = 0
         self.autostop = autostop
         self.threads_limit = 1
@@ -273,7 +273,7 @@ class UsedInstancesCriteria(AbstractCriteria):
             if info:
                 self.threads_limit = info.instances
             if not self.threads_limit:
-                raise ValueError("Cannot create 'instances' criteria"
+                raise ValueError("Cannot create 'instances' criterion"
                                  " with zero instances limit")
         except KeyError:
             logger.warning("No phantom module, 'instances' autostop disabled")

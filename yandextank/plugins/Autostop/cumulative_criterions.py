@@ -62,11 +62,11 @@ class TotalFracTimeCriterion(AbstractCriterion):
         idx = np.searchsorted(data["overall"]["interval_real"]["hist"]["bins"],
                               self.rt_limit)
         if idx == 0:
-            return 0
-        elif idx == len(ecdf):
             return ecdf[-1]
+        elif idx == len(ecdf):
+            return 0
         else:
-            return ecdf[idx]
+            return ecdf[-1] - ecdf[idx]
 
     def notify(self, data, stat):
         self.seconds.append((data, stat))
@@ -87,14 +87,14 @@ class TotalFracTimeCriterion(AbstractCriterion):
         return 25
 
     def explain(self):
-        return ("%.2d%% responses times higher "
+        return ("%.2f%% responses times higher "
                 "than %sms for %ss since: %s" %
-                (self.total_fail_ratio, self.rt_limit, self.window_size,
-                 self.cause_second[0]["ts"]))
+                (self.total_fail_ratio * 100, self.rt_limit / 1000,
+                 self.window_size, self.cause_second[0]["ts"]))
 
     def widget_explain(self):
-        return ("%.2d%% Times >%sms for %ss" %
-                (self.total_fail_ratio, self.rt_limit,
+        return ("%.2f%% times >%sms for %ss" %
+                (self.total_fail_ratio * 100, self.rt_limit / 1000,
                  self.window_size), self.total_fail_ratio)
 
 

@@ -17,7 +17,7 @@ from yandextank.plugins.Console import \
 from yandextank.plugins.Phantom import PhantomPlugin
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
-from yandextank.plugins.Autostop import AutostopPlugin, AbstractCriteria
+from yandextank.plugins.Autostop import AutostopPlugin, AbstractCriterion
 
 
 class MonitoringPlugin(AbstractPlugin):
@@ -83,11 +83,11 @@ class MonitoringPlugin(AbstractPlugin):
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
-            autostop.add_criteria_class(MetricHigherCriteria)
-            autostop.add_criteria_class(MetricLowerCriteria)
+            autostop.add_criterion_class(MetricHigherCriterion)
+            autostop.add_criterion_class(MetricLowerCriterion)
         except KeyError:
             logger.debug(
-                "No autostop plugin found, not adding instances criteria")
+                "No autostop plugin found, not adding instances criterion")
 
     def prepare_test(self):
         try:
@@ -269,12 +269,12 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener,
             return res.strip()
 
 
-class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener,
-                             MonitoringDataDecoder):
-    """ Parent class for metric criteria """
+class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener,
+                              MonitoringDataDecoder):
+    """ Parent class for metric criterion """
 
     def __init__(self, autostop, param_str):
-        AbstractCriteria.__init__(self)
+        AbstractCriterion.__init__(self)
         MonitoringDataDecoder.__init__(self)
 
         try:
@@ -339,11 +339,11 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener,
         raise NotImplementedError()
 
 
-class MetricHigherCriteria(AbstractMetricCriteria):
+class MetricHigherCriterion(AbstractMetricCriterion):
     """ trigger if metric is higher than limit """
 
     def __init__(self, autostop, param_str):
-        AbstractMetricCriteria.__init__(self, autostop, param_str)
+        AbstractMetricCriterion.__init__(self, autostop, param_str)
 
     def get_rc(self):
         return 31
@@ -366,11 +366,11 @@ class MetricHigherCriteria(AbstractMetricCriteria):
         return arg1 > arg2
 
 
-class MetricLowerCriteria(AbstractMetricCriteria):
+class MetricLowerCriterion(AbstractMetricCriterion):
     """ trigger if metric is lower than limit """
 
     def __init__(self, autostop, param_str):
-        AbstractMetricCriteria.__init__(self, autostop, param_str)
+        AbstractMetricCriterion.__init__(self, autostop, param_str)
 
     def get_rc(self):
         return 32
