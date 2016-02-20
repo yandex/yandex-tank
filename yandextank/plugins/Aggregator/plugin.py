@@ -42,7 +42,7 @@ class AggregatorPlugin(AbstractPlugin):
     Plugin that manages aggregation and stats collection
     """
 
-    SECTION = 'aggregate'
+    SECTION = 'aggregator'
 
     @staticmethod
     def get_key():
@@ -66,9 +66,11 @@ class AggregatorPlugin(AbstractPlugin):
         self.aggregator_config = json.loads(resource_string(
             __name__, 'config/phout.json'))
         verbose_histogram_option = self.get_option("verbose_histogram", "0")
-        self.verbose_histogram = int(
-            verbose_histogram_option) > 0 or verbose_histogram_option.lower(
-            ) == "true"
+        self.verbose_histogram = (
+            verbose_histogram_option.lower() == "true") or (
+                verbose_histogram_option.lower() == "1")
+        if self.verbose_histogram:
+            logger.info("using verbose histogram")
 
     def start_test(self):
         if self.reader and self.stats_reader:
