@@ -1,6 +1,6 @@
 from yandextank.core import AbstractPlugin
 from yandextank.plugins.Aggregator import AggregatorPlugin
-from yandextank.plugins.ConsoleOnline import ConsoleOnlinePlugin
+from yandextank.plugins.Console import ConsolePlugin
 import logging
 import time
 from yandextank.stepper import StepperWrapper
@@ -74,7 +74,7 @@ class BfgPlugin(AbstractPlugin):
                 self.bfg.instance_counter, self.stepper_wrapper.steps)
 
         try:
-            console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+            console = self.core.get_plugin_of_type(ConsolePlugin)
         except Exception, ex:
             self.log.debug("Console not found: %s", ex)
             console = None

@@ -126,17 +126,17 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         matched_responses = self.count_matched_codes(
-            self.codes_regex, aggregate_second.overall.http_codes)
+            self.codes_regex, data["overall"]["proto_code"]["count"])
         if self.is_relative:
-            if aggregate_second.overall.RPS:
-                matched_responses = float(
-                    matched_responses) / aggregate_second.overall.RPS * 100
+            if data["overall"]["interval_real"]["len"] > 0:
+                matched_responses = float(matched_responses) / data["overall"][
+                    "interval_real"]["len"] * 100
             else:
                 matched_responses = 1
         logger.debug("HTTP codes matching mask %s: %s/%s", self.codes_mask,
                      matched_responses, self.level)
         self.data.append(matched_responses)
-        self.second_window.append(aggregate_second)
+        self.second_window.append((data, stat))
         if len(self.data) > self.seconds_limit:
             self.data.popleft()
             self.second_window.popleft()
@@ -165,11 +165,11 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
     def explain(self):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                     self.cause_second.time)
+                     self.cause_second[0]["ts"])
             return ("%s codes count higher "
                     "than %s for %ss, ended at: %s" % items)
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                 self.cause_second.time)
+                 self.cause_second[0]["ts"])
         return "%s codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -207,14 +207,14 @@ class TotalNetCodesCriterion(AbstractCriterion):
             2])
 
     def notify(self, data, stat):
-        codes = aggregate_second.overall.net_codes.copy()
+        codes = data["overall"]["net_code"]["count"].copy()
         if '0' in codes.keys():
             codes.pop('0')
         matched_responses = self.count_matched_codes(self.codes_regex, codes)
         if self.is_relative:
-            if aggregate_second.overall.RPS:
-                matched_responses = float(
-                    matched_responses) / aggregate_second.overall.RPS * 100
+            if data["overall"]["interval_real"]["len"]:
+                matched_responses = float(matched_responses) / data["overall"][
+                    "interval_real"]["len"] * 100
                 logger.debug("Net codes matching mask %s: %s%%/%s",
                              self.codes_mask, round(matched_responses,
                                                     2), self.get_level_str())
@@ -225,7 +225,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
                          matched_responses, self.get_level_str())
 
         self.data.append(matched_responses)
-        self.second_window.append(aggregate_second)
+        self.second_window.append((data, stat))
         if len(self.data) > self.seconds_limit:
             self.data.popleft()
             self.second_window.popleft()
@@ -255,11 +255,11 @@ class TotalNetCodesCriterion(AbstractCriterion):
     def explain(self):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                     self.cause_second.time)
+                     self.cause_second[0]["ts"])
             return ("%s net codes count higher "
                     "than %s for %ss, since %s" % items)
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                 self.cause_second.time)
+                 self.cause_second[0]["ts"])
         return "%s net codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -298,11 +298,11 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         matched_responses = self.count_matched_codes(
-            self.codes_regex, aggregate_second.overall.http_codes)
+            self.codes_regex, data["overall"]["proto_code"]["count"])
         if self.is_relative:
-            if aggregate_second.overall.RPS:
-                matched_responses = float(
-                    matched_responses) / aggregate_second.overall.RPS * 100
+            if data["overall"]["interval_real"]["len"]:
+                matched_responses = float(matched_responses) / data["overall"][
+                    "interval_real"]["len"] * 100
                 matched_responses = 100 - matched_responses
             else:
                 matched_responses = 1
@@ -311,11 +311,11 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
                                                 1), self.level)
         else:
             matched_responses = (
-                aggregate_second.overall.RPS - matched_responses)
+                data["overall"]["interval_real"]["len"] - matched_responses)
             logger.debug("HTTP codes matching mask not %s: %s/%s",
                          self.codes_mask, matched_responses, self.level)
         self.data.append(matched_responses)
-        self.second_window.append(aggregate_second)
+        self.second_window.append((data, stat))
         if len(self.data) > self.seconds_limit:
             self.data.popleft()
             self.second_window.popleft()
@@ -345,11 +345,11 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
     def explain(self):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                     self.cause_second.time)
+                     self.cause_second[0]["ts"])
             return ("Not %s codes count higher "
                     "than %s for %ss, since %s" % items)
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                 self.cause_second.time)
+                 self.cause_second[0]["ts"])
         return "Not %s codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -387,14 +387,14 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
             2])
 
     def notify(self, data, stat):
-        codes = aggregate_second.overall.net_codes.copy()
+        codes = data["overall"]["net_code"]["count"].copy()
         # if '0' in codes.keys():
         #     codes.pop('0')
         matched_responses = self.count_matched_codes(self.codes_regex, codes)
         if self.is_relative:
-            if aggregate_second.overall.RPS:
-                matched_responses = float(
-                    matched_responses) / aggregate_second.overall.RPS * 100
+            if data["overall"]["interval_real"]["len"]:
+                matched_responses = float(matched_responses) / data["overall"][
+                    "interval_real"]["len"] * 100
                 matched_responses = 100 - matched_responses
             else:
                 matched_responses = 1
@@ -403,11 +403,11 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
                                                 1), self.level)
         else:
             matched_responses = (
-                aggregate_second.overall.RPS - matched_responses)
+                data["overall"]["interval_real"]["len"] - matched_responses)
             logger.debug("Net codes matching mask not %s: %s/%s",
                          self.codes_mask, matched_responses, self.level)
         self.data.append(matched_responses)
-        self.second_window.append(aggregate_second)
+        self.second_window.append((data, stat))
         if len(self.data) > self.seconds_limit:
             self.data.popleft()
             self.second_window.popleft()
@@ -436,11 +436,11 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
     def explain(self):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                     self.cause_second.time)
+                     self.cause_second[0]["ts"])
             return ("Not %s codes count higher "
                     "than %s for %ss, since %s" % items)
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                 self.cause_second.time)
+                 self.cause_second[0]["ts"])
         return "Not %s codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -476,10 +476,10 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         matched_responses = self.count_matched_codes(
-            self.codes_regex, aggregate_second.overall.http_codes)
+            self.codes_regex, data["overall"]["proto_code"]["count"])
 
         self.tangents.append(matched_responses - self.last)
-        self.second_window.append(aggregate_second)
+        self.second_window.append((data, stat))
 
         self.last = matched_responses
 
@@ -521,7 +521,7 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
 
     def explain(self):
         items = (self.codes_mask, self.total_tan, self.measurement_error,
-                 self.seconds_limit, self.cause_second.time)
+                 self.seconds_limit, self.cause_second[0]["ts"])
         return ("Last trend for %s http codes "
                 "is %.2f +/- %.2f for %ss, since %s" % items)
 
@@ -555,7 +555,7 @@ class QuantileOfSaturationCriterion(AbstractCriterion):
         # last deviation in percents
         self.deviation = float()
 
-    def __get_timing_quantile(self, aggr_data):
+    def __get_timing_quantile(self, data):
         ''' get quantile level for criterion timing '''
         quan = 0.0
         for timing in sorted(aggr_data.cumulative.times_dist.keys()):
@@ -568,11 +568,11 @@ class QuantileOfSaturationCriterion(AbstractCriterion):
         return quan
 
     def notify(self, data, stat):
-        quan = 100 * self.__get_timing_quantile(aggregate_second)
+        quan = 100 * self.__get_timing_quantile(data)
         logger.debug("Quantile for %s: %s", self.timing, quan)
 
         self.data.append(quan)
-        self.second_window.append(aggregate_second)
+        self.second_window.append((data, stat))
 
         if len(self.data) > self.width:
             self.autostop.add_counting(self)
