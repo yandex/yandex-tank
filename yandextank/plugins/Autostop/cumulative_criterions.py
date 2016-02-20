@@ -5,14 +5,41 @@ import yandextank.core as tankcore
 from collections import deque
 import re
 import math
+import numpy as np
 
 import logging
 
 logger = logging.getLogger(__name__)
 
 
+class WindowCounter(object):
+    def __init__(self, window_size):
+        self.window_size = window_size
+        self.value = 0.0
+        self.q = deque()
+
+    def push(self, value):
+        self.value += value
+        self.q.append(value)
+        if len(self.q) > self.window_size:
+            self.value -= self.q.popleft()
+
+    def __len__(self):
+        return len(self.q)
+
+
 class TotalFracTimeCriterion(AbstractCriterion):
-    ''' Cummulative Time Criterion '''
+    '''
+    Windowed time criterion
+
+    syntax: total_time(300ms, 70%, 3s)
+
+    Stop test if 70 percent of response times are greater then 300ms in
+    a sliding window of 3 seconds.
+
+    Warning: this criterion uses histogram to make its decision, so the
+    time boundary is rounded to aggregator bin edge.
+    '''
 
     @staticmethod
     def get_type_string():
@@ -20,53 +47,55 @@ class TotalFracTimeCriterion(AbstractCriterion):
 
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
-        param = param_str.split(',')
-        self.seconds_count = 0
-        self.rt_limit = tankcore.expand_to_milliseconds(param[0])
-        self.frac = param[1][:-1]
-        self.seconds_limit = tankcore.expand_to_seconds(param[2])
         self.autostop = autostop
-        self.data = deque()
-        self.second_window = deque()
-        self.real_frac = float()
+        param = param_str.split(',')
+        self.rt_limit = tankcore.expand_to_milliseconds(param[0]) * 1000
+        self.fail_ratio_limit = float(param[1][:-1]) / 100.0
+        self.window_size = tankcore.expand_to_seconds(param[2])
+        self.fail_counter = WindowCounter(self.window_size)
+        self.total_counter = WindowCounter(self.window_size)
+        self.total_fail_ratio = 0.0
+        self.seconds = deque()
 
-    def notify(self, aggregate_second):
-        failcnt = 0
-        cnt = 0
-        for i in reversed(aggregate_second.overall.times_dist):
-            if i['from'] >= self.rt_limit:
-                failcnt += i['count']
-            cnt += i['count']
-        if cnt != 0:
-            value = float(failcnt) / cnt
+    def __fail_count(self, data):
+        ecdf = np.cumsum(data["overall"]["interval_real"]["hist"]["data"])
+        idx = np.searchsorted(data["overall"]["interval_real"]["hist"]["bins"],
+                              self.rt_limit)
+        if idx == 0:
+            return 0
+        elif idx == len(ecdf):
+            return ecdf[-1]
         else:
-            value = 0
-        self.data.append(value)
-        self.second_window.append(aggregate_second)
-        if len(self.data) > self.seconds_limit:
-            self.data.popleft()
-            self.second_window.popleft()
+            return ecdf[idx]
 
-        self.real_frac = float(sum(self.data)) / len(self.data) * 100
-        if self.real_frac >= float(self.frac) and len(
-                self.data) >= self.seconds_limit:
-            self.cause_second = self.second_window[0]
+    def notify(self, data, stat):
+        self.seconds.append((data, stat))
+        self.fail_counter.push(self.__fail_count(data))
+        self.total_counter.push(data["overall"]["interval_real"]["len"])
+        self.total_fail_ratio = (self.fail_counter.value /
+                                 self.total_counter.value)
+        if self.total_fail_ratio >= self.fail_ratio_limit and len(
+                self.fail_counter) >= self.window_size:
+            self.cause_second = self.seconds[0]
             logger.debug(self.explain())
-            #            self.autostop.add_counting(self)
             return True
+        if len(self.seconds) > self.window_size:
+            self.seconds.popleft()
         return False
 
     def get_rc(self):
         return 25
 
     def explain(self):
-        items = (round(self.real_frac, 2), self.rt_limit, self.seconds_limit,
-                 self.cause_second.time)
-        return "%s%% responses times higher than %sms for %ss since: %s" % items
+        return ("%.2d%% responses times higher "
+                "than %sms for %ss since: %s" %
+                (self.total_fail_ratio, self.rt_limit, self.window_size,
+                 self.cause_second[0]["ts"]))
 
     def widget_explain(self):
-        items = (round(self.real_frac, 2), self.rt_limit, self.seconds_limit)
-        return ("%s%% Times >%sms for %ss" % items, self.real_frac)
+        return ("%.2d%% Times >%sms for %ss" %
+                (self.total_fail_ratio, self.rt_limit,
+                 self.window_size), self.total_fail_ratio)
 
 
 class TotalHTTPCodesCriterion(AbstractCriterion):
@@ -95,7 +124,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
             2])
 
-    def notify(self, aggregate_second):
+    def notify(self, data, stat):
         matched_responses = self.count_matched_codes(
             self.codes_regex, aggregate_second.overall.http_codes)
         if self.is_relative:
@@ -137,7 +166,8 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
                      self.cause_second.time)
-            return "%s codes count higher than %s for %ss, ended at: %s" % items
+            return ("%s codes count higher "
+                    "than %s for %ss, ended at: %s" % items)
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
                  self.cause_second.time)
         return "%s codes count higher than %s for %ss, since %s" % items
@@ -176,7 +206,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
             2])
 
-    def notify(self, aggregate_second):
+    def notify(self, data, stat):
         codes = aggregate_second.overall.net_codes.copy()
         if '0' in codes.keys():
             codes.pop('0')
@@ -226,7 +256,8 @@ class TotalNetCodesCriterion(AbstractCriterion):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
                      self.cause_second.time)
-            return "%s net codes count higher than %s for %ss, since %s" % items
+            return ("%s net codes count higher "
+                    "than %s for %ss, since %s" % items)
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
                  self.cause_second.time)
         return "%s net codes count higher than %s for %ss, since %s" % items
@@ -265,7 +296,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
             2])
 
-    def notify(self, aggregate_second):
+    def notify(self, data, stat):
         matched_responses = self.count_matched_codes(
             self.codes_regex, aggregate_second.overall.http_codes)
         if self.is_relative:
@@ -279,7 +310,8 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
                          self.codes_mask, round(matched_responses,
                                                 1), self.level)
         else:
-            matched_responses = aggregate_second.overall.RPS - matched_responses
+            matched_responses = (
+                aggregate_second.overall.RPS - matched_responses)
             logger.debug("HTTP codes matching mask not %s: %s/%s",
                          self.codes_mask, matched_responses, self.level)
         self.data.append(matched_responses)
@@ -314,7 +346,8 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
                      self.cause_second.time)
-            return "Not %s codes count higher than %s for %ss, since %s" % items
+            return ("Not %s codes count higher "
+                    "than %s for %ss, since %s" % items)
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
                  self.cause_second.time)
         return "Not %s codes count higher than %s for %ss, since %s" % items
@@ -353,7 +386,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
             2])
 
-    def notify(self, aggregate_second):
+    def notify(self, data, stat):
         codes = aggregate_second.overall.net_codes.copy()
         # if '0' in codes.keys():
         #     codes.pop('0')
@@ -369,7 +402,8 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
                          self.codes_mask, round(matched_responses,
                                                 1), self.level)
         else:
-            matched_responses = aggregate_second.overall.RPS - matched_responses
+            matched_responses = (
+                aggregate_second.overall.RPS - matched_responses)
             logger.debug("Net codes matching mask not %s: %s/%s",
                          self.codes_mask, matched_responses, self.level)
         self.data.append(matched_responses)
@@ -403,7 +437,8 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         if self.is_relative:
             items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
                      self.cause_second.time)
-            return "Not %s codes count higher than %s for %ss, since %s" % items
+            return ("Not %s codes count higher "
+                    "than %s for %ss, since %s" % items)
         items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
                  self.cause_second.time)
         return "Not %s codes count higher than %s for %ss, since %s" % items
@@ -439,7 +474,7 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
             1])
         self.measurement_error = float()
 
-    def notify(self, aggregate_second):
+    def notify(self, data, stat):
         matched_responses = self.count_matched_codes(
             self.codes_regex, aggregate_second.overall.http_codes)
 
@@ -466,7 +501,10 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
         return False
 
     def calc_measurement_error(self, tangents):
-        ''' formula for measurement error sqrt ( (sum(1, n, (k_i - <k>)**2) / (n*(n-1))) '''
+        '''
+        formula for measurement error
+        sqrt ( (sum(1, n, (k_i - <k>)**2) / (n*(n-1)))
+        '''
 
         if len(tangents) < 2:
             return 0.0
@@ -484,7 +522,8 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
     def explain(self):
         items = (self.codes_mask, self.total_tan, self.measurement_error,
                  self.seconds_limit, self.cause_second.time)
-        return "Last trend for %s http codes is %.2f +/- %.2f for %ss, since %s" % items
+        return ("Last trend for %s http codes "
+                "is %.2f +/- %.2f for %ss, since %s" % items)
 
     def widget_explain(self):
         items = (self.codes_mask, self.total_tan, self.measurement_error,
@@ -528,7 +567,7 @@ class QuantileOfSaturationCriterion(AbstractCriterion):
                 return quan
         return quan
 
-    def notify(self, aggregate_second):
+    def notify(self, data, stat):
         quan = 100 * self.__get_timing_quantile(aggregate_second)
         logger.debug("Quantile for %s: %s", self.timing, quan)
 
