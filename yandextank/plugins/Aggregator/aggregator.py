@@ -1,6 +1,9 @@
 import numpy as np
 import time
+import logging
 from collections import Counter
+
+logger = logging.getLogger(__name__)
 
 phout_columns = [
     'time', 'tag', 'interval_real', 'connect_time', 'send_time', 'latency',
@@ -133,5 +136,6 @@ class Aggregator(object):
                 },
                 "overall": self.worker.aggregate(chunk),
             }
-            result["aggregation_time"] = time.time() - start_time
+            logger.info("Aggregation time: %.2fms",
+                        (time.time() - start_time) * 1000)
             yield result

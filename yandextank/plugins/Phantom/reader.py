@@ -18,6 +18,7 @@ phout_columns = [
 
 
 def string_to_df(data):
+    start_time = time.time()
     chunk = pd.read_csv(
         StringIO(data),
         sep='\t',
@@ -28,6 +29,8 @@ def string_to_df(data):
     # TODO: consider configuration for the following:
     chunk['tag'] = chunk.tag.str.rsplit('#', 1, expand=True)[0]
     chunk.set_index(['receive_sec'], inplace=True)
+
+    logger.info("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
     return chunk
 
 
