@@ -78,11 +78,11 @@ class PhantomReader(object):
             yield self._read_phout_chunk()
             if self.closed:
                 yield self._read_phout_chunk()
+                self.phout.close()
                 return
 
     def close(self):
         self.closed = True
-        self.phout.close()
 
 
 class PhantomStatsReader(object):

@@ -59,8 +59,7 @@ class PhantomPlugin(AbstractPlugin):
         return __file__
 
     def get_available_options(self):
-        opts = ["eta_file", "phantom_path", "buffered_seconds",
-                "exclude_markers"]
+        opts = ["phantom_path", "buffered_seconds", "exclude_markers"]
         opts += 'affinity'
         opts += [PhantomConfig.OPTION_PHOUT, self.OPTION_CONFIG]
         opts += PhantomConfig.get_available_options()
@@ -69,8 +68,6 @@ class PhantomPlugin(AbstractPlugin):
     def configure(self):
         # plugin part
         self.config = self.get_option(self.OPTION_CONFIG, '')
-        self.eta_file = self.get_option("eta_file", '')
-        self.core.add_artifact_file(self.eta_file)
         self.phantom_path = self.get_option("phantom_path", 'phantom')
         self.enum_ammo = self.get_option("enum_ammo", False)
         self.buffered_seconds = int(self.get_option("buffered_seconds",
@@ -137,20 +134,18 @@ class PhantomPlugin(AbstractPlugin):
             info = self.phantom.get_info()
             aggregator.stats_reader = PhantomStatsReader(self.phantom.stat_log,
                                                          info)
+
+            aggregator.add_result_listener(self)
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
         except Exception, ex:
             logger.debug("Console not found: %s", ex)
             console = None
 
-        if console:
-            if not self.phout_import_mode:
-                widget = PhantomProgressBarWidget(self)
-                if self.eta_file:
-                    widget.eta_file = self.eta_file
-                console.add_info_widget(widget)
-                aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-                aggregator.add_result_listener(widget)
+        if console and aggregator:
+            widget = PhantomProgressBarWidget(self)
+            console.add_info_widget(widget)
+            aggregator.add_result_listener(widget)
 
             widget = PhantomInfoWidget(self)
             console.add_info_widget(widget)
