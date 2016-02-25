@@ -136,6 +136,6 @@ class Aggregator(object):
                 },
                 "overall": self.worker.aggregate(chunk),
             }
-            logger.info("Aggregation time: %.2fms",
-                        (time.time() - start_time) * 1000)
+            logger.debug("Aggregation time: %.2fms",
+                         (time.time() - start_time) * 1000)
             yield result

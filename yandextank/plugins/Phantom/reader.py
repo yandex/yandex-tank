@@ -47,7 +47,8 @@ def string_to_df(data):
     chunk['tag'] = chunk.tag.str.rsplit('#', 1, expand=True)[0]
     chunk.set_index(['receive_sec'], inplace=True)
 
-    logger.info("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
+    logger.debug("Chunk decode time: %.2fms",
+                 (time.time() - start_time) * 1000)
     return chunk
 
 
