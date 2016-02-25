@@ -59,9 +59,7 @@ class PhantomReader(object):
         self.phout = open(filename, 'r')
         self.closed = False
 
-    def next(self):
-        if self.closed:
-            raise StopIteration
+    def _read_phout_chunk(self):
         data = self.phout.read(1024 * 1024 * 10)
         if data:
             parts = data.rsplit('\n', 1)
@@ -76,7 +74,11 @@ class PhantomReader(object):
         return None
 
     def __iter__(self):
-        return self
+        while True:
+            yield self._read_phout_chunk()
+            if self.closed:
+                yield self._read_phout_chunk()
+                return
 
     def close(self):
         self.closed = True

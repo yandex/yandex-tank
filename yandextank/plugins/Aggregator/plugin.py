@@ -9,6 +9,7 @@ from yandextank.core.util import Drain
 from yandextank.core.exceptions import PluginImplementationError
 from aggregator import Aggregator, DataPoller
 from chopper import TimeChopper
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -131,11 +132,6 @@ class AggregatorPlugin(AbstractPlugin):
         return -1
 
     def end_test(self, retcode):
-        if self.drain:
-            self.drain.close()
-        if self.stats_drain:
-            self.stats_drain.close()
-        # read all data left here
         return retcode
 
     def close(self):
@@ -143,6 +139,10 @@ class AggregatorPlugin(AbstractPlugin):
             self.reader.close()
         if self.stats_reader:
             self.stats_reader.close()
+        if self.drain:
+            self.drain.close()
+        if self.stats_drain:
+            self.stats_drain.close()
 
     def add_result_listener(self, listener):
         self.listeners.append(listener)
