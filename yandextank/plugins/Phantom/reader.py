@@ -18,7 +18,11 @@ phout_columns = [
 
 
 def string_to_df(data):
-    chunk = pd.read_csv(StringIO(data), sep='\t', names=phout_columns)
+    chunk = pd.read_csv(
+        StringIO(data),
+        sep='\t',
+        names=phout_columns,
+        engine='python')
     chunk['receive_ts'] = chunk.send_ts + chunk.interval_real / 1e6
     chunk['receive_sec'] = chunk.receive_ts.astype(int)
     # TODO: consider configuration for the following:
