@@ -2,6 +2,7 @@
 Phantom phout format reader. Read chunks from phout and produce data frames
 """
 import pandas as pd
+import numpy as np
 from StringIO import StringIO
 import logging
 import json
@@ -16,6 +17,21 @@ phout_columns = [
     'proto_code'
 ]
 
+dtypes = {
+    'time': np.float64,
+    'tag': np.str,
+    'interval_real': np.int64,
+    'connect_time': np.int64,
+    'send_time': np.int64,
+    'latency': np.int64,
+    'receive_time': np.int64,
+    'interval_event': np.int64,
+    'size_out': np.int64,
+    'size_in': np.int64,
+    'net_code': np.int64,
+    'proto_code': np.int64,
+}
+
 
 def string_to_df(data):
     start_time = time.time()
@@ -23,7 +39,8 @@ def string_to_df(data):
         StringIO(data),
         sep='\t',
         names=phout_columns,
-        engine='python')
+        dtype=dtypes)
+
     chunk['receive_ts'] = chunk.send_ts + chunk.interval_real / 1e6
     chunk['receive_sec'] = chunk.receive_ts.astype(int)
     # TODO: consider configuration for the following:
