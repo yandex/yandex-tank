@@ -48,7 +48,7 @@ def string_to_df(data):
     chunk.set_index(['receive_sec'], inplace=True)
 
     logger.info("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
-    return chunk.copy()
+    return chunk
 
 
 class PhantomReader(object):
