@@ -5,7 +5,7 @@ import missile
 from mark import get_marker
 import info
 import logging
-from yandextank.core.tankcore import ResourceOpener
+from yandextank.core.resource import Opener
 
 
 class ComponentFactory():
@@ -93,7 +93,7 @@ class ComponentFactory():
         elif self.ammo_file:
             if self.ammo_type in af_readers:
                 if self.ammo_type is 'phantom':
-                    opener = ResourceOpener().get_opener(self.ammo_file)
+                    opener = Opener().get_opener(self.ammo_file)
                     with opener(self.ammo_file, 'rb') as ammo:
                         try:
                             if not ammo.next()[0].isdigit():

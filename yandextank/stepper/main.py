@@ -10,7 +10,7 @@ import json
 import hashlib
 import logging
 import re
-from yandextank.core.tankcore import ResourceOpener
+from yandextank.core.resource import Opener
 
 class AmmoFactory(object):
 
@@ -236,7 +236,7 @@ class StepperWrapper(object):
             if self.instances_schedule:
                 hashed_str += sep + str(self.instances)
             if self.ammo_file:
-                opener = ResourceOpener().get_opener(self.ammo_file)
+                opener = Opener().get_opener(self.ammo_file)
                 hashed_str += sep + opener.hash
             else:
                 if not self.uris:
