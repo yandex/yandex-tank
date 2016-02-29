@@ -19,6 +19,9 @@ import psutil
 import importlib as il
 import json
 import uuid
+import requests
+import gzip
+import hashlib
 
 
 def log_stdout_stderr(log, stdout, stderr, comment=""):
