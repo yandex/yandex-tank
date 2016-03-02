@@ -333,6 +333,8 @@ Phantom http-module tuning options
 
 :phantom_http_entity:
   Answer ``size``. 
+  
+  Default: ``8M``.
  
 .. note::
   Please, keep in mind, especially if your service has large answers, that phantom doesn't read more than defined in ``phantom_http_entity``.
