@@ -94,7 +94,10 @@ class AggregatorPlugin(AbstractPlugin):
                 "Generator must pass a Reader and a StatsReader"
                 " to Aggregator before starting test")
 
-    def is_test_finished(self):
+    def _collect_data(self):
+        """
+        Collect data, cache it and send to listeners
+        """
         data = []
         for _ in range(self.results.qsize()):
             try:
@@ -129,20 +132,23 @@ class AggregatorPlugin(AbstractPlugin):
                 self.__notify_listeners(data_item, stat_item)
             else:
                 self.stat_cache[ts] = item
+
+    def is_test_finished(self):
+        self._collect_data()
         return -1
 
     def end_test(self, retcode):
-        return retcode
-
-    def close(self):
         if self.reader:
             self.reader.close()
         if self.stats_reader:
             self.stats_reader.close()
+        time.sleep(1)  # wait for data to be completely read
+        self._collect_data()
         if self.drain:
             self.drain.close()
         if self.stats_drain:
             self.stats_drain.close()
+        return retcode
 
     def add_result_listener(self, listener):
         self.listeners.append(listener)
