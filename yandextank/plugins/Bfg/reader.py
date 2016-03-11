@@ -48,7 +48,7 @@ class BfgStatsReader(object):
         while not self.closed:
             cur_ts = int(time.time())
             if cur_ts > self.last_ts:
-                offset = cur_ts - 1 - self.start_time
+                offset = cur_ts - self.start_time
                 reqps = 0
                 if offset >= 0 and offset < len(self.steps):
                     reqps = self.steps[offset][0]
