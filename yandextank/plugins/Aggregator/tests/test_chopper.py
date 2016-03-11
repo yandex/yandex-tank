@@ -1,22 +1,35 @@
-import pytest
 import pandas as pd
 import numpy as np
 
-from yandextank.plugins.Aggregator.aggregator import phout_columns
-
 from yandextank.plugins.Aggregator.chopper import TimeChopper
 
-
-@pytest.fixture
-def data():
-    df = pd.DataFrame(
-        np.random.randint(0, 100, (10000, len(phout_columns))),
-        columns=phout_columns).set_index('time').sort_index()
-    return df
+from conftest import MAX_TS, random_split
 
 
 class TestChopper(object):
-    def test_chopper_works_for_one_chunk(self, data):
+    def test_one_chunk(self, data):
         chopper = TimeChopper([data], 5)
         result = list(chopper)
-        assert len(result) == 100
+        assert len(result) == MAX_TS
+        concatinated = pd.concat(r[1] for r in result)
+        assert len(data) == len(concatinated), "We did not lose anything"
+
+    def test_multiple_chunks(self, data):
+        chunks = random_split(data)
+        chopper = TimeChopper(chunks, 5)
+        result = list(chopper)
+        assert len(result) == MAX_TS
+        concatinated = pd.concat(r[1] for r in result)
+        assert len(data) == len(concatinated), "We did not lose anything"
+
+    def test_partially_reversed_data(self, data):
+        chunks = list(random_split(data))
+        chunks[5], chunks[6] = chunks[6], chunks[5]
+        chopper = TimeChopper(chunks, 5)
+        result = list(chopper)
+        assert (len(result) == MAX_TS,
+                "DataFrame is splitted into proper number of chunks")
+        concatinated = pd.concat(r[1] for r in result)
+        assert len(data) == len(concatinated), "We did not lose anything"
+        assert np.allclose(concatinated.values,
+                           data.values), "We did not corrupt the data"

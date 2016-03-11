@@ -10,7 +10,7 @@ class TimeChopper(object):
     """
     TimeChopper splits incoming dataframes by index. Chunks are cached and
     chunks for same key from different DFs are joined. Then chunks are passed
-    further.
+    further as (<timestamp>, <dataframe>) tuples.
     """
 
     def __init__(self, source, cache_size):
