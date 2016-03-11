@@ -23,6 +23,12 @@ analytic tools for the results they produce.
         'paramiko>=1.16.0',
         'pandas',
     ],
+    setup_requires=[
+        'pytest-runner',
+    ],
+    tests_require=[
+        'pytest',
+    ],
     license='LGPLv2',
     classifiers=[
         'Development Status :: 5 - Production/Stable',

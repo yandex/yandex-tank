@@ -19,3 +19,5 @@ yandextank.egg-info/
 setuptools-*
 .idea/
 yandex-tank.iml
+.cache/
+.eggs/
