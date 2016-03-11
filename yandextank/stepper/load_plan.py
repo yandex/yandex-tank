@@ -5,7 +5,6 @@ import re
 from util import parse_duration, solve_quadratic
 from itertools import chain, groupby
 import info
-import logging
 
 
 class Const(object):
@@ -86,13 +85,14 @@ class Line(object):
         '''
         int_rps = xrange(int(self.minrps), int(self.maxrps) + 1)
         step_duration = float(self.duration) / len(int_rps)
-        return [(rps, int(step_duration)) for rps in int_rps]
+        rps_list = [(rps, int(step_duration)) for rps in int_rps]
+        return rps_list
 
     def get_rps_list(self):
         '''
         get list of each second's rps
         '''
-        seconds = xrange(0, int(self.duration))
+        seconds = xrange(0, int(self.duration) + 1)
         rps_groups = groupby(
             [int(self.rps_at(t)) for t in seconds], lambda x: x)
         rps_list = [(rps, len(list(rpl))) for rps, rpl in rps_groups]
@@ -140,7 +140,6 @@ class Stairway(Composite):
         elif increment < 0:
             if (minrps + n_steps * increment) > maxrps:
                 steps.append(Const(maxrps, duration))
-        logging.info(steps)
         super(Stairway, self).__init__(steps)
 
 

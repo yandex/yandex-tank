@@ -199,8 +199,8 @@ class StepperWrapper(object):
                         instances=self.instances)
                 publish_info(stepper_info)
             else:
-                if self.force_stepping and os.path.exists(self.__si_filename(
-                )):
+                if (self.force_stepping and
+                        os.path.exists(self.__si_filename())):
                     os.remove(self.__si_filename())
                 self.__make_stpd_file()
                 stepper_info = info.status.get_info()
