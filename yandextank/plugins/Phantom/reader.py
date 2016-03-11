@@ -107,7 +107,7 @@ class PhantomStatsReader(object):
                     if "mmtasks" in meth_obj:
                         instances += meth_obj["mmtasks"][2]
 
-            offset = chunk_date - 1 - self.start_time
+            offset = chunk_date - self.start_time
             reqps = 0
             if offset >= 0 and offset < len(self.phantom_info.steps):
                 reqps = self.phantom_info.steps[offset][0]
