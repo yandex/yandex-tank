@@ -142,12 +142,11 @@ class AggregatorPlugin(AbstractPlugin):
             self.reader.close()
         if self.stats_reader:
             self.stats_reader.close()
-        time.sleep(1)  # wait for data to be completely read
-        self._collect_data()
         if self.drain:
-            self.drain.close()
+            self.drain.wait()
         if self.stats_drain:
-            self.stats_drain.close()
+            self.stats_drain.wait()
+        self._collect_data()
         return retcode
 
     def add_result_listener(self, listener):

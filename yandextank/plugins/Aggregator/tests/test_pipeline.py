@@ -55,9 +55,3 @@ class TestPipeline(object):
         drain = Drain(pipeline, results_queue)
         drain.run()
         assert results_queue.qsize() == MAX_TS
-
-        # for _ in range(results_queue.qsize()):
-        #     try:
-        #         results += results_queue.get_nowait()
-        #     except Empty:
-        #         break

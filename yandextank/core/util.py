@@ -17,16 +17,21 @@ class Drain(th.Thread):
         super(Drain, self).__init__()
         self.source = source
         self.destination = destination
-        self._stopped = th.Event()
+        self._finished = th.Event()
+        self._interrupted = th.Event()
 
     def run(self):
         for item in self.source:
             self.destination.put(item)
-            if self._stopped.is_set():
-                return
+            if self._interrupted.is_set():
+                break
+        self._finished.set()
+
+    def wait(self, timeout=None):
+        self._finished.wait(timeout=timeout)
 
     def close(self):
-        self._stopped.set()
+        self._interrupted.set()
 
 ### HTTP codes
 HTTP = httplib.responses
