@@ -1,6 +1,11 @@
-import unittest
+from Queue import Queue
+from yandextank.core.util import Drain
 
 
-class DrainTest(unittest.TestCase):
-    def test(self):
-        self.assertEqual(3, 4)
+class TestDrain(object):
+    def test_drain(self):
+        source = range(5)
+        destination = Queue()
+        drain = Drain(source, destination)
+        drain.run()
+        assert destination.qsize() == 5
