@@ -17,7 +17,6 @@ analytic tools for the results they produce.
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
         'psutil>=1.2.1',
-        'ipaddr',
         'progressbar',
         'requests>=2.5.1',
         'paramiko>=1.16.0',
