@@ -8,6 +8,7 @@ import logging
 import json
 import time
 import datetime
+import itertools as itt
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ class PhantomReader(object):
         self.closed = False
 
     def _read_phout_chunk(self):
-        data = self.phout.read(1024 * 1024 * 10)
+        data = self.phout.read(1024 * 1024 * 50)
         if data:
             parts = data.rsplit('\n', 1)
             if len(parts) > 1:
@@ -74,12 +75,10 @@ class PhantomReader(object):
         return None
 
     def __iter__(self):
-        while True:
+        while not self.closed:
             yield self._read_phout_chunk()
-            if self.closed:
-                yield self._read_phout_chunk()
-                self.phout.close()
-                return
+        yield self._read_phout_chunk()
+        self.phout.close()
 
     def close(self):
         self.closed = True
@@ -94,7 +93,10 @@ class PhantomStatsReader(object):
         self.closed = False
         self.start_time = 0
 
-    def __decode_stat_data(self, chunk):
+    def _decode_stat_data(self, chunk):
+        """
+        Return all items found in this chunk
+        """
         for date_str, statistics in chunk.iteritems():
             date_obj = datetime.datetime.strptime(
                 date_str.split(".")[0], '%Y-%m-%d %H:%M:%S')
@@ -115,6 +117,21 @@ class PhantomStatsReader(object):
                    'metrics': {'instances': instances,
                                'reqps': reqps}}
 
+    def _read_stat_data(self, stat_file):
+        chunk = stat_file.read(1024 * 1024 * 50)
+        if chunk:
+            self.stat_buffer += chunk
+            parts = self.stat_buffer.rsplit('\n},', 1)
+            if len(parts) > 1:
+                ready_chunk = parts[0]
+                self.stat_buffer = parts[1]
+                chunks = [json.loads('{%s}}' % s)
+                          for s in ready_chunk.split('\n},')]
+                return list(itt.chain(*(self._decode_stat_data(chunk)
+                                        for chunk in chunks)))
+        else:
+            stat_file.readline()
+
     def __iter__(self):
         """
         Union buffer and chunk, split using '\n},',
@@ -124,19 +141,8 @@ class PhantomStatsReader(object):
         logger.debug("Phantom steps:\n%s", self.phantom_info.steps)
         with open(self.stat_filename, 'r') as stat_file:
             while not self.closed:
-                chunk = stat_file.read(1024 * 1024 * 10)
-                if chunk:
-                    self.stat_buffer += chunk
-                    parts = self.stat_buffer.rsplit('\n},', 1)
-                    if len(parts) > 1:
-                        ready_chunk = parts[0]
-                        self.stat_buffer = parts[1]
-                        for m in ready_chunk.split('\n},'):
-                            yield list(self.__decode_stat_data(json.loads(
-                                '{%s}}' % m)))
-                else:
-                    stat_file.readline()
-                yield None
+                yield self._read_stat_data(stat_file)
+            yield self._read_stat_data(stat_file)
 
     def close(self):
         self.closed = True

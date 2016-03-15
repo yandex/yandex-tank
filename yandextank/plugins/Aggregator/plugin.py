@@ -140,10 +140,10 @@ class AggregatorPlugin(AbstractPlugin):
     def end_test(self, retcode):
         if self.reader:
             self.reader.close()
-        if self.stats_reader:
-            self.stats_reader.close()
         if self.drain:
             self.drain.wait()
+        if self.stats_reader:
+            self.stats_reader.close()
         if self.stats_drain:
             self.stats_drain.wait()
         self._collect_data()
