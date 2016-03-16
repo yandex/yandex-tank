@@ -12,7 +12,7 @@ from yandextank.core.util import Drain
 from conftest import MAX_TS, random_split
 
 AGGR_CONFIG = json.loads(resource_string("yandextank.plugins.Aggregator",
-                                         'config/phout.json'))
+                                         'config/phout.json').decode('utf-8'))
 
 
 class TestPipeline(object):
