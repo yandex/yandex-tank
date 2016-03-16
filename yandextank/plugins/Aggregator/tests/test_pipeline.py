@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import json
 from pkg_resources import resource_string
-from Queue import Queue, Empty
+from queue import Queue, Empty
 
 from yandextank.plugins.Aggregator.chopper import TimeChopper
 from yandextank.plugins.Aggregator.aggregator import Aggregator

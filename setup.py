@@ -16,10 +16,8 @@ analytic tools for the results they produce.
     namespace_packages=["yandextank", "yandextank.plugins"],
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
-        'psutil>=1.2.1',
-        'requests>=2.5.1',
-        'paramiko>=1.16.0',
-        'pandas>=0.18.0',
+        'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
+        'pandas>=0.18.0', 'future'
     ],
     setup_requires=[
         'pytest-runner',

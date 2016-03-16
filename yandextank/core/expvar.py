@@ -4,7 +4,7 @@ Global metrics publishing module. Inspired by Golang's expvar module
 This implementation is not thread-safe
 """
 
-from Queue import Queue, Empty
+from queue import Queue, Empty
 import time
 
 

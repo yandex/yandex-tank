@@ -3,7 +3,7 @@ import logging
 
 from pkg_resources import resource_string
 import json
-import Queue as q
+import queue as q
 from yandextank.core import AbstractPlugin
 from yandextank.core.util import Drain
 from yandextank.core.exceptions import PluginImplementationError

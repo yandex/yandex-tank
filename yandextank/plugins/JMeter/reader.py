@@ -6,7 +6,7 @@ import time
 from StringIO import StringIO
 import yandextank.plugins.Aggregator.aggregator as agg
 from yandextank.plugins.Aggregator.chopper import TimeChopper
-import Queue as q
+import queue as q
 import logging
 
 logger = logging.getLogger(__name__)

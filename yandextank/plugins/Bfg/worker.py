@@ -3,7 +3,7 @@ import time
 from yandextank.stepper import StpdReader
 import multiprocessing as mp
 import threading as th
-from Queue import Empty, Full
+from queue import Empty, Full
 
 from contextlib import contextmanager
 
