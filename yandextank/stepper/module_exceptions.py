@@ -12,5 +12,5 @@ class AmmoFileError(Exception):
 
 class StpdFileError(Exception):
     '''
-	Raised when failed to read stpd file properly.
-	'''
+    Raised when failed to read stpd file properly.
+    '''
