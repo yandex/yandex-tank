@@ -1,4 +1,3 @@
-#! /usr/bin/env python2
 from consoleworker import ConsoleTank, CompletionHelperOptionParser
 from optparse import OptionParser
 import logging
