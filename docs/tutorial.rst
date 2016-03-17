@@ -571,11 +571,17 @@ Example:
 
   [phantom]
   address=203.0.113.1 ;Target's address
-  port=80 ;target's port
+  port=80 ; target's port
   instances_schedule = line(1,10,10m)
+  loop=10000 ; ammo loops count
 
 .. note::
   Load scheme is excluded from this load.ini as we used ``instances_schedule`` parameter.
+
+.. note::
+  When using ``instances_schedule`` you should specify how many loops of
+  ammo you want to generate because tank can't find out from the schedule
+  how many ammo do you need
 
 Custom stateless protocol
 =========================
