@@ -43,7 +43,7 @@ analytic tools for the results they produce.
     ],
     entry_points={
         'console_scripts': [
-            'yandex-tank-beta = yandextank.core.cli:main',
+            'yandex-tank = yandextank.core.cli:main',
         ],
     },
     package_data={
