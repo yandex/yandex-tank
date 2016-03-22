@@ -117,7 +117,10 @@ class CustomGun(AbstractGun):
                 fp.close()
 
     def shoot(self, missile, marker):
-        self.module.shoot(missile, marker, self.measure)
+        try:
+            self.module.shoot(missile, marker, self.measure)
+        except Exception as e:
+            logger.warning("CustomGun %s failed with %s", marker, e)
 
 
 class HttpGun(AbstractGun):
@@ -161,7 +164,7 @@ class ScenarioGun(AbstractGun):
         if scenario:
             try:
                 scenario(missile, marker, self.measure)
-            except RuntimeError as e:
+            except Exception as e:
                 logger.warning("Scenario %s failed with %s", marker, e)
         else:
             logger.warning("Scenario not found: %s", marker)

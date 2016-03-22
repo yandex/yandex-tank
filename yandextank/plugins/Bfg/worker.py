@@ -166,4 +166,7 @@ Gun: {gun.__class__.__name__}
             except Full:
                 logger.warning(
                     "Couldn't put to result queue because it's full")
+            except Exception as e:
+                logger.warning("Bfg failed with %s", e)
+
         logger.debug("Exiting shooter process")
