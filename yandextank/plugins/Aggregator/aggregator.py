@@ -32,12 +32,21 @@ class Worker(object):
 
     def __init__(self, config, verbose_histogram):
         if verbose_histogram:
-            bins = np.linspace(0, 4990, 500)
-            bins = np.append(bins, np.linspace(5000, 9900, 50))
-            bins = np.append(bins, np.linspace(10, 499, 490) * 1000)
-            bins = np.append(bins, np.linspace(500, 2995, 500) * 1000)
-            bins = np.append(bins, np.linspace(3000, 9990, 700) * 1000)
-            bins = np.append(bins, np.linspace(10000, 30000, 401) * 1000)
+            bins = np.linspace(0, 4990, 500)  # 10µs accuracy
+            bins = np.append(bins,
+                             np.linspace(5000, 9900, 50))  # 100µs accuracy
+            bins = np.append(bins,
+                             np.linspace(10, 499, 490) * 1000)  # 1ms accuracy
+            bins = np.append(bins, np.linspace(500, 2995, 500) *
+                             1000)  # 5ms accuracy
+            bins = np.append(bins, np.linspace(3000, 9990, 700) *
+                             1000)  # 10ms accuracy
+            bins = np.append(bins, np.linspace(10000, 29950, 400) *
+                             1000)  # 50ms accuracy
+            bins = np.append(bins, np.linspace(30000, 119900, 900) *
+                             1000)  # 100ms accuracy
+            bins = np.append(bins, np.linspace(120, 300, 181) *
+                             1000000)  # 1s accuracy
         else:
             # yapf: disable
             bins = np.array([
@@ -47,6 +56,8 @@ class Worker(object):
                 500, 600, 650, 700, 750, 800, 850, 900, 950,
                 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500,
                 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 11000,
+                12000, 13000, 14000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000,
+                55000, 60000,
             ]) * 1000
             # yapf: enable
 
