@@ -118,7 +118,7 @@ class PhantomConfig:
         kwargs['phantom_modules_path'] = self.phantom_modules_path
         filename = self.core.mkstemp(".conf", "phantom_")
         self.core.add_artifact_file(filename)
-        self.log.debug("Generating phantom config: %s", filename)
+        logger.debug("Generating phantom config: %s", filename)
         template_str = resource_string(__name__, "config/phantom.conf.tpl")
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
@@ -149,7 +149,7 @@ class PhantomConfig:
 
         for stream in self.streams:
             sec_no = 0
-            logging.debug("Steps: %s", stream.stepper_wrapper.steps)
+            logger.debug("Steps: %s", stream.stepper_wrapper.steps)
             for item in stream.stepper_wrapper.steps:
                 for x in range(0, item[1]):
                     if len(result.steps) > sec_no:
@@ -197,7 +197,6 @@ class StreamConfig:
         self.address_wizard = AddressWizard()
 
         self.sequence_no = sequence
-        self.log = logging.getLogger(__name__)
         self.section = section
         self.stepper_wrapper = StepperWrapper(self.core, self.section)
         self.phout_file = phout
@@ -266,8 +265,8 @@ class StreamConfig:
         self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(
             self.address, do_test_connect, explicit_port)
 
-        logging.info("Resolved %s into %s:%s", self.address, self.resolved_ip,
-                     self.port)
+        logger.info("Resolved %s into %s:%s", self.address, self.resolved_ip,
+                    self.port)
 
         self.client_cipher_suites = self.get_option("client_cipher_suites", "")
         self.client_certificate = self.get_option("client_certificate", "")
@@ -372,24 +371,24 @@ class AddressWizard:
         if not address_str:
             raise RuntimeError("Mandatory option was not specified: address")
 
-        logging.debug("Trying to resolve address string: %s", address_str)
+        logger.debug("Trying to resolve address string: %s", address_str)
 
         port = None
 
         braceport_pat = "^\[([^]]+)\]:(\d+)$"
         braceonly_pat = "^\[([^]]+)\]$"
         if re.match(braceport_pat, address_str):
-            logging.debug("Braces and port present")
+            logger.debug("Braces and port present")
             match = re.match(braceport_pat, address_str)
-            logging.debug("Match: %s %s ", match.group(1), match.group(2))
+            logger.debug("Match: %s %s ", match.group(1), match.group(2))
             address_str, port = match.group(1), match.group(2)
         elif re.match(braceonly_pat, address_str):
-            logging.debug("Braces only present")
+            logger.debug("Braces only present")
             match = re.match(braceonly_pat, address_str)
-            logging.debug("Match: %s", match.group(1))
+            logger.debug("Match: %s", match.group(1))
             address_str = match.group(1)
         else:
-            logging.debug("Parsing port")
+            logger.debug("Parsing port")
             parts = address_str.split(":")
             if len(parts) <= 2:  # otherwise it is v6 address
                 address_str = parts[0]
@@ -398,10 +397,10 @@ class AddressWizard:
 
         try:
             resolved = self.lookup_fn(address_str, port)
-            logging.debug("Lookup result: %s", resolved)
+            logger.debug("Lookup result: %s", resolved)
         except Exception as exc:
-            logging.debug("Exception trying to resolve hostname %s : %s",
-                          address_str, traceback.format_exc(exc))
+            logger.debug("Exception trying to resolve hostname %s : %s",
+                         address_str, traceback.format_exc(exc))
             msg = "Failed to resolve hostname: %s. Error: %s"
             raise RuntimeError(msg % (address_str, exc))
 
@@ -410,7 +409,7 @@ class AddressWizard:
             parsed_ip, port = sockaddr[0], sockaddr[1]
 
             if explicit_port:
-                logging.warn(
+                logger.warn(
                     "Using phantom.port option is deprecated. Use phantom.address=[address]:port instead")
                 port = int(explicit_port)
             elif not port:
@@ -420,8 +419,8 @@ class AddressWizard:
                 try:
                     self.__test(family, (parsed_ip, port))
                 except RuntimeError, exc:
-                    logging.warn("Failed TCP connection test using [%s]:%s",
-                                 parsed_ip, port)
+                    logger.warn("Failed TCP connection test using [%s]:%s",
+                                parsed_ip, port)
                     continue
 
             return is_v6, parsed_ip, int(port), address_str
@@ -435,8 +434,8 @@ class AddressWizard:
             test_sock.settimeout(5)
             test_sock.connect(sa)
         except Exception, exc:
-            logging.debug("Exception on connect attempt [%s]:%s : %s", sa[0],
-                          sa[1], traceback.format_exc(exc))
+            logger.debug("Exception on connect attempt [%s]:%s : %s", sa[0],
+                         sa[1], traceback.format_exc(exc))
             msg = "TCP Connection test failed for [%s]:%s, use phantom.connection_test=0 to disable it"
             raise RuntimeError(msg % (sa[0], sa[1]))
         finally:
