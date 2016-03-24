@@ -66,11 +66,11 @@ exc_to_http = np.vectorize(_exc_to_http)
 # ]
 
 jtl_columns = [
-    'receive_ts', 'interval_real', 'tag', 'retcode', 'success', 'size_in',
+    'send_ts', 'interval_real', 'tag', 'retcode', 'success', 'size_in',
     'grpThreads', 'allThreads', 'latency', 'connect_time'
 ]
 jtl_types = {
-    'receive_ts': np.int64,
+    'send_ts': np.int64,
     'interval_real': np.int32,
     'tag': np.str,
     'retcode': np.str,
@@ -90,9 +90,9 @@ def string_to_df(data):
         sep='\t',
         names=jtl_columns,
         dtype=jtl_types)
-    chunk["receive_ts"] = chunk["receive_ts"] / 1000.0
+    chunk["receive_ts"] = (chunk["send_ts"] + chunk['interval_real']) / 1000.0
     chunk['receive_sec'] = chunk["receive_ts"].astype(int)
-    chunk['interval_real'] = chunk["interval_real"] * 1000
+    chunk['interval_real'] = chunk["interval_real"] * 1000  # convert to µs
     chunk.set_index(['receive_sec'], inplace=True)
     l = len(chunk)
     chunk['send_time'] = np.zeros(l)
