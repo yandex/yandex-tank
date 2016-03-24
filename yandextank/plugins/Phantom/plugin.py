@@ -59,8 +59,8 @@ class PhantomPlugin(AbstractPlugin):
         return __file__
 
     def get_available_options(self):
-        opts = ["phantom_path", "buffered_seconds", "exclude_markers"]
-        opts += 'affinity'
+        opts = ["phantom_path", "buffered_seconds", "exclude_markers",
+                "affinity"]
         opts += [PhantomConfig.OPTION_PHOUT, self.OPTION_CONFIG]
         opts += PhantomConfig.get_available_options()
         return opts

@@ -1,7 +1,6 @@
 """ Utility classes for phantom module """
 # TODO: use separate answ log per benchmark
 import copy
-import logging
 import traceback
 import multiprocessing
 import re
@@ -10,6 +9,11 @@ import string
 
 from pkg_resources import resource_string
 from yandextank.stepper import StepperWrapper
+from yandextank.stepper.util import parse_duration
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PhantomConfig:
@@ -19,11 +23,10 @@ class PhantomConfig:
 
     def __init__(self, core):
         self.core = core
-        self.log = logging.getLogger(__name__)
         self.streams = []
 
         # common
-        self.timeout = 30000  # TODO!!!!
+        self.timeout = 11000
         self.answ_log = None
         self.answ_log_level = None
         self.phout_file = None
@@ -45,7 +48,8 @@ class PhantomConfig:
                 "phantom_modules_path",
                 "additional_libs",
                 "writelog",
-                "enum_ammo", ]
+                "enum_ammo",
+                "timeout", ]
         opts += StreamConfig.get_available_options()
         return opts
 
@@ -61,7 +65,10 @@ class PhantomConfig:
             self.answ_log_level = 'none'
         elif self.answ_log_level == '1':
             self.answ_log_level = 'all'
-
+        self.timeout = parse_duration(self.get_option("timeout", "11s"))
+        if self.timeout > 120000:
+            logger.warning("You've set timeout over 2 minutes."
+                           " Are you a functional tester?")
         self.answ_log = self.core.mkstemp(".log", "answ_")
         self.core.add_artifact_file(self.answ_log)
         self.phout_file = self.core.get_option(self.SECTION, self.OPTION_PHOUT,
