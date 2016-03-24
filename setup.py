@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='1.8.2',
+    version='1.8.3',
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
