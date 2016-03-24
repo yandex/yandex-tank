@@ -125,13 +125,13 @@ class JMeterReader(object):
     def __init__(self, filename):
         self.buffer = ""
         self.stat_buffer = ""
-        self.jtl = open(filename, 'r')
+        self.jtl_file = filename
         self.closed = False
         self.stat_queue = q.Queue()
         self.stats_reader = JMeterStatAggregator(TimeChopper(
-            self.__read_stat_queue(), 3))
+            self._read_stat_queue(), 3))
 
-    def __read_stat_queue(self):
+    def _read_stat_queue(self):
         while not self.closed:
             for _ in range(self.stat_queue.qsize()):
                 try:
@@ -141,10 +141,8 @@ class JMeterReader(object):
                 except q.Empty:
                     break
 
-    def next(self):
-        if self.closed:
-            raise StopIteration
-        data = self.jtl.read(1024 * 1024 * 10)
+    def _read_jtl_chunk(self, jtl):
+        data = jtl.read(1024 * 1024 * 10)
         if data:
             parts = data.rsplit('\n', 1)
             if len(parts) > 1:
@@ -156,12 +154,14 @@ class JMeterReader(object):
             else:
                 self.buffer += parts[0]
         else:
-            self.jtl.readline()
+            jtl.readline()
         return None
 
     def __iter__(self):
-        return self
+        with open(self.jtl_file, 'r') as jtl:
+            while not self.closed:
+                yield self._read_jtl_chunk(jtl)
+            yield self._read_jtl_chunk(jtl)
 
     def close(self):
         self.closed = True
-        self.jtl.close()
