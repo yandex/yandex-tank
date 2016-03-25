@@ -27,6 +27,7 @@ KNOWN_EXC = {
     "org.apache.commons.net.MalformedServerReplyException": 71,
     "org.apache.http.NoHttpResponseException": 32,
     "java.io.InterruptedIOException": 32,
+    "javax.net.ssl.SSLHandshakeException": 5,
 }
 
 
@@ -72,15 +73,15 @@ jtl_columns = [
 ]
 jtl_types = {
     'send_ts': np.int64,
-    'interval_real': np.int32,
+    'interval_real': np.int64,
     'tag': np.str,
     'retcode': np.str,
     'success': np.bool,
-    'size_in': np.int32,
-    'grpThreads': np.int32,
-    'allThreads': np.int32,
-    'latency': np.int32,
-    'connect_time': np.int32
+    'size_in': np.int64,
+    'grpThreads': np.int64,
+    'allThreads': np.int64,
+    'latency': np.int64,
+    'connect_time': np.int64
 }
 
 
