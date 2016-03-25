@@ -81,7 +81,7 @@ jtl_types = {
     'grpThreads': np.int64,
     'allThreads': np.int64,
     'latency': np.int64,
-    'connect_time': np.int64
+    'connect_time': np.float64,
 }
 
 
@@ -93,10 +93,11 @@ def string_to_df(data):
         names=jtl_columns,
         dtype=jtl_types)
     chunk["receive_ts"] = (chunk["send_ts"] + chunk['interval_real']) / 1000.0
-    chunk['receive_sec'] = chunk["receive_ts"].astype(int)
+    chunk['receive_sec'] = chunk["receive_ts"].astype(np.int64)
     chunk['interval_real'] = chunk["interval_real"] * 1000  # convert to µs
     chunk.set_index(['receive_sec'], inplace=True)
     l = len(chunk)
+    chunk['connect_time'] = chunk['connect_time'].fillna(0).astype(np.int64)
     chunk['send_time'] = np.zeros(l)
     chunk['receive_time'] = np.zeros(l)
     chunk['interval_event'] = np.zeros(l)

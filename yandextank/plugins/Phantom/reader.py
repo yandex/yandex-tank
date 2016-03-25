@@ -43,7 +43,7 @@ def string_to_df(data):
         dtype=dtypes)
 
     chunk['receive_ts'] = chunk.send_ts + chunk.interval_real / 1e6
-    chunk['receive_sec'] = chunk.receive_ts.astype(int)
+    chunk['receive_sec'] = chunk.receive_ts.astype(np.int64)
     # TODO: consider configuration for the following:
     chunk['tag'] = chunk.tag.str.rsplit('#', 1, expand=True)[0]
     chunk.set_index(['receive_sec'], inplace=True)
