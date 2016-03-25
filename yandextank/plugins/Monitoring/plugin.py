@@ -327,11 +327,11 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener,
             else:
                 self.seconds_count = 0
 
-    def notify(self, aggregate_second):
+    def notify(self, data, stat):
         if self.seconds_count:
             self.autostop.add_counting(self)
 
-        self.last_second = aggregate_second
+        self.last_second = (data, stat)
         return self.triggered
 
     def comparison_fn(self, arg1, arg2):
