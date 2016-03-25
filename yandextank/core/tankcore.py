@@ -19,6 +19,7 @@ import psutil
 import importlib as il
 import json
 import uuid
+from yandextank.core.resource import Opener
 
 
 def log_stdout_stderr(log, stdout, stderr, comment=""):
@@ -216,7 +217,7 @@ class TankCore(object):
         """ Tells core to load configs set into options storage """
         self.log.info("Loading configs...")
         for fname in configs:
-            if not os.path.isfile(fname):
+            if not os.path.isfile(fname) and not fname.startswith('http'):
                 # can't raise exception, since ~/.yandex-tank may not exist
                 self.log.debug("Config file not found: %s", fname)
 
@@ -623,6 +624,12 @@ class ConfigManager(object):
     def load_files(self, configs):
         """         Read configs set into storage        """
         self.log.debug("Reading configs: %s", configs)
+        for config in configs:
+            if config.startswith('http'):
+                opener = Opener().get_opener(config)
+                config_f_path = opener.download_file()
+                configs.remove(config)
+                configs.append(config_f_path)
         try:
             self.config.read(configs)
         except Exception as ex:
