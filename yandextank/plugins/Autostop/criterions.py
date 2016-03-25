@@ -266,8 +266,8 @@ class QuantileCriterion(AbstractCriterion):
         self.autostop = autostop
 
     def notify(self, data, stat):
-        quantiles = dict(zip(data["overall"]["q"]["q"], data["overall"]["q"][
-            "values"]))
+        quantiles = dict(zip(data["overall"]["interval_real"]["q"]["q"], data[
+            "overall"]["interval_real"]["q"]["value"]))
         if self.quantile not in quantiles.keys():
             logger.warning("No quantile %s in %s", self.quantile, quantiles)
         if self.quantile in quantiles.keys() \
