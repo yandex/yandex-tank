@@ -1,4 +1,4 @@
-""" Module to have Loadosophia.org integration """
+""" Module to have BlazeMeter Sense integration """
 from urllib2 import HTTPError
 import StringIO
 import cookielib
@@ -12,7 +12,6 @@ import os
 import time
 import urllib
 import urllib2
-
 from Aggregator import AggregateResultListener, AggregatorPlugin
 from ApacheBenchmark import ApacheBenchmarkPlugin
 from JMeter import JMeterPlugin
@@ -23,7 +22,7 @@ from yandextank.core import AbstractPlugin
 
 
 class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
-    """ Tank plugin with Loadosophia.org uploading """
+    """ Tank plugin with BlazeMeter Sense uploading """
 
     SECTION = 'loadosophia'
 
@@ -47,7 +46,7 @@ class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
         return ["token", "project", "test_title", "file_prefix", "color_flag", "online_enabled"]
 
     def configure(self):
-        self.loadosophia.address = self.get_option("address", "https://loadosophia.org/")
+        self.loadosophia.address = self.get_option("address", "https://sense.blazemeter.com/")
         self.loadosophia.token = self.get_option("token", "")
         self.loadosophia.file_prefix = self.get_option("file_prefix", "")
         self.project_key = self.get_option("project", 'DEFAULT')
@@ -127,9 +126,8 @@ class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
         except KeyError:
             self.log.debug("Pandora not found")
 
-
         if not main_file:
-            self.log.warn("No file to upload to Loadosophia")
+            self.log.warn("No file to upload to BlazeMeter Sense")
         else:
             # monitoring
             mon_file = None
@@ -148,13 +146,13 @@ class LoadosophiaPlugin(AbstractPlugin, AggregateResultListener):
                     self.loadosophia.set_test_title(test_id, self.title)
 
             if queue_id:
-                self.log.info("Loadosophia.org upload succeeded, report link: %s", self.loadosophia.results_url)
+                self.log.info("BlazeMeter Sense upload succeeded, report link: %s", self.loadosophia.results_url)
 
         return retcode
 
 
-class LoadosophiaClient:
-    """ Loadosophia service client class """
+class LoadosophiaClient(object):
+    """ BlazeMeter Sense service client class """
 
     STATUS_DONE = 4
 
@@ -167,21 +165,21 @@ class LoadosophiaClient:
         self.cookie_jar = cookielib.CookieJar()
 
     def send_results(self, project, result_file, monitoring_files):
-        """ Send files to loadosophia """
+        """ Send files to Sense """
         if not self.token:
-            msg = "Loadosophia.org uploading disabled, please set loadosophia.token option to enable it, "
-            msg += "get token at https://loadosophia.org/gui/settings/"
+            msg = "BlazeMeter Sense uploading disabled, please set loadosophia.token option to enable it, "
+            msg += "get token at https://sense.blazemeter.com/gui/settings/"
             self.log.warning(msg)
         else:
             if not self.address:
                 self.log.warning(
-                    "Loadosophia.org uploading disabled, please set loadosophia.address option to enable it")
+                    "BlazeMeter Sense uploading disabled, please set loadosophia.address option to enable it")
             else:
-                self.log.info("Uploading to Loadosophia.org: %s %s %s", project, result_file, monitoring_files)
+                self.log.info("Uploading to BlazeMeter Sense: %s %s %s", project, result_file, monitoring_files)
                 if not project:
                     self.log.info("Uploading to default project, please set loadosophia.project option to change this")
                 if not result_file or not os.path.exists(result_file) or not os.path.getsize(result_file):
-                    self.log.warning("Empty results file, skip Loadosophia.org uploading: %s", result_file)
+                    self.log.warning("Empty results file, skip BlazeMeter Sense uploading: %s", result_file)
                 else:
                     return self.__send_checked_results(project, result_file, monitoring_files)
 
@@ -215,8 +213,8 @@ class LoadosophiaClient:
 
         response = urllib2.urlopen(request)
         if response.getcode() != 200:
-            self.log.debug("Full loadosophia.org response: %s", response.read())
-            msg = "Loadosophia.org upload failed, response code %s instead of 200, see log for full response text"
+            self.log.debug("Full BlazeMeter Sense response: %s", response.read())
+            msg = "BlazeMeter Sense upload failed, response code %s instead of 200, see log for full response text"
             raise RuntimeError(msg % response.getcode())
 
         resp_str = response.read()
@@ -233,12 +231,12 @@ class LoadosophiaClient:
         """ gzip file """
         out = StringIO.StringIO()
         fhandle = gzip.GzipFile(fileobj=out, mode='w')
-        fhandle.write(open(result_file, 'r').read())
+        fhandle.write(open(result_file).read())
         fhandle.close()
         return out.getvalue()
 
     def get_test_by_upload(self, queue_id):
-        self.log.info("Waiting for Loadosophia.org to process file...")
+        self.log.info("Waiting for BlazeMeter Sense to process file...")
 
         while True:
             time.sleep(1)
@@ -264,8 +262,8 @@ class LoadosophiaClient:
 
         response = urllib2.urlopen(request)
         if response.getcode() != 200:
-            self.log.debug("Full loadosophia.org response: %s", response.read())
-            msg = "Loadosophia.org request failed, response code %s instead of 200, see log for full response text"
+            self.log.debug("Full BlazeMeter Sense response: %s", response.read())
+            msg = "BlazeMeter Sense request failed, response code %s instead of 200, see log for full response text"
             raise RuntimeError(msg % response.getcode())
 
         res = json.loads(response.read())
@@ -285,8 +283,8 @@ class LoadosophiaClient:
 
         response = urllib2.urlopen(request)
         if response.getcode() != 204:
-            self.log.debug("Full loadosophia.org response: %s", response.read())
-            msg = "Loadosophia.org request failed, response code %s instead of 204, see log for full response text"
+            self.log.debug("Full BlazeMeter Sense response: %s", response.read())
+            msg = "BlazeMeter Sense request failed, response code %s instead of 204, see log for full response text"
             raise RuntimeError(msg % response.getcode())
 
     def set_test_title(self, test_id, title):
@@ -304,12 +302,12 @@ class LoadosophiaClient:
 
         response = urllib2.urlopen(request)
         if response.getcode() != 204:
-            self.log.debug("Full loadosophia.org response: %s", response.read())
-            msg = "Loadosophia.org request failed, response code %s instead of 204, see log for full response text"
+            self.log.debug("Full BlazeMeter Sense response: %s", response.read())
+            msg = "BlazeMeter Sense request failed, response code %s instead of 204, see log for full response text"
             raise RuntimeError(msg % response.getcode())
 
     def start_online(self, project, title):
-        self.log.info("Initiating Loadosophia.org active test...")
+        self.log.info("Initiating BlazeMeter Sense active test...")
         data = urllib.urlencode({'projectKey': project, 'token': self.token, 'title': title})
 
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie_jar))
