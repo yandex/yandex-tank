@@ -45,5 +45,5 @@ Gregory Komissarov's
 `firebat <https://github.com/greggyNapalm/firebat-console>`_ - test tool
 based on Phantom
 
-Andrey Pohilko's `loadosophia <http://loadosophia.org/>`_ - service for
+BlazeMeter's `Sense <http://sense.blazemeter.com/>`_ - service for
 storing and analysing performance test results

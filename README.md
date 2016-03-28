@@ -29,7 +29,7 @@ Ask your questions at [Stackoverflow](https://stackoverflow.com/), use "load-tes
 ## See also
 Evgeniy Mamchits' [phantom](https://github.com/yandex-load/phantom) - Phantom scalable IO Engine
 
-Andrey Pohilko's [loadosophia](https://loadosophia.org/) - service for storing and analysing performance test results
+BlazeMeter's [Sense](https://sense.blazemeter.com/) - service for storing and analysing performance test results
 
 [Jenkins](https://jenkins-ci.org/) - an extendable open source continuous integration server that may be used to automate test execution.
 
