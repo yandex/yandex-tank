@@ -94,15 +94,15 @@ class FileOpener(object):
         self.f_path = f_path
         self.fmt_detector = FormatDetector()
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self):
         with open(self.f_path, 'rb') as resource:
             header = resource.read(300)
         fmt = self.fmt_detector.detect_format(header)
         self.log.debug('Resource %s format detected: %s.', self.f_path, fmt)
         if fmt == 'gzip':
-            return gzip.open(*args, **kwargs)
+            return gzip.open(self.f_path, 'rb')
         else:
-            return open(*args, **kwargs)
+            return open(self.f_path, 'rb')
 
     @property
     def get_filename(self):
