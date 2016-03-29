@@ -112,8 +112,6 @@ class PhantomStatsReader(object):
             reqps = 0
             if offset >= 0 and offset < len(self.phantom_info.steps):
                 reqps = self.phantom_info.steps[offset][0]
-            logger.debug("Yielding stat: %s\t%s\t%s" %
-                         (chunk_date - 1, instances, reqps))
             yield {'ts': chunk_date - 1,
                    'metrics': {'instances': instances,
                                'reqps': reqps}}
@@ -121,10 +119,8 @@ class PhantomStatsReader(object):
     def _read_stat_data(self, stat_file):
         chunk = stat_file.read(1024 * 1024 * 50)
         if chunk:
-            logger.debug("Read chunk from stat:\n%s", chunk)
             self.stat_buffer += chunk
             parts = self.stat_buffer.rsplit('\n},', 1)
-            logger.debug("Stat buffer parts:\nleft:\n%s\nright:\n%s" % parts)
             if len(parts) > 1:
                 ready_chunk = parts[0]
                 self.stat_buffer = parts[1]
@@ -141,9 +137,7 @@ class PhantomStatsReader(object):
         return splitted parts
         """
         self.start_time = int(time.time())
-        logger.debug("Phantom steps:\n%s", self.phantom_info.steps)
         with open(self.stat_filename, 'r') as stat_file:
-            logger.debug("Open stat file: %s", self.stat_filename)
             while not self.closed:
                 yield self._read_stat_data(stat_file)
             yield self._read_stat_data(stat_file)
