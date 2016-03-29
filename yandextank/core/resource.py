@@ -5,7 +5,7 @@ import requests
 import gzip
 import hashlib
 from contextlib import closing
-
+import traceback
 
 class FormatDetector(object):
     """ Format Detector
@@ -22,30 +22,64 @@ class FormatDetector(object):
             if signature[1] == header[signature[0]:len(signature[1])]:
                 return fmt
 
-
 class Opener(object):
     """ Resource opener manager.
-        Returns opener function according to file extensions.
-        both open and gzip.open calls return fileobj.
+        Use resource_filename and resource_string methods. 
     """
 
     def __init__(self):
         self.log = logging.getLogger(__name__)
         self.path = None
+        self.openers = {
+            'http': ('http://', HttpOpener),
+            'https': ('https://', HttpOpener)
+        }
+
+    def resource_filename(self, path):
+        """
+        Args:
+            path: str, resource file url or resource file absolute/relative path.
+
+        Returns:
+            string, resource absolute path (downloads the url to /tmp)
+        """
+        return self.get_opener(path).get_filename
+
+    def resource_string(self, path):
+        """
+        Args:
+            path: str, resource file url or resource file absolute/relative path.
+
+        Returns:
+            string, file content
+        """
+        opener = self.get_opener(path)
+        filename = opener.get_filename
+        try:
+            size = os.path.getsize(filename)
+            if (size > 50 * 1024 * 1024):
+                self.log.warning('Reading large resource to memory: %s. Size: %s bytes', filename, size)
+        except Exception as exc:
+            self.log.debug('Unable to check resource size %s. %s', filename, exc)
+        with opener(filename, 'r') as resource:
+            content = resource.read()
+        return content
 
     def get_opener(self, path):
         """
         Args:
-            path: str, ammo file url or ammo file absolute/relative path.
+            path: str, resource file url or resource file absolute/relative path.
 
         Returns:
             object, to call for file open.
         """
         self.path = path
-        if self.path.startswith("http://") or self.path.startswith("https://"):
-            self.log.debug('Using HttpOpener for resource: %s', self.path)
-            opener = HttpOpener(self.path)
-        else:
+        opener = None
+        for opener_name, signature in self.openers.items():
+            if self.path.startswith(signature[0]):
+                self.log.debug('Using %s for resource: %s', signature[1], self.path)
+                opener = signature[1](self.path)
+        if not opener:
             self.log.debug('Using FileOpener for resource: %s', self.path)
             opener = FileOpener(self.path)
         return opener
@@ -68,6 +102,10 @@ class FileOpener(object):
             return gzip.open(*args, **kwargs)
         else:
             return open(*args, **kwargs)
+
+    @property
+    def get_filename(self):
+        return self.f_path
 
     @property
     def hash(self):
@@ -99,59 +137,21 @@ class HttpOpener(object):
         self.fmt_detector = FormatDetector()
         self.force_download = None
         self.data_info = None
-        try:
-            self.data_info = requests.head(
-                self.url,
-                verify=False,
-                allow_redirects=True,
-                headers={'Accept-Encoding': 'identity'},
-                timeout=10
-            )
-            self.data_info.raise_for_status()
-        except requests.exceptions.Timeout as exc:
-            raise RuntimeError(
-                'Connection timeout reached '
-                'trying to get info about resource: %s \n'
-                'via HttpOpener: %s' % (self.url, exc)
-            )
-        except requests.exceptions.ConnectionError as exc:
-            raise RuntimeError(
-                'Connection error '
-                'trying to get info about resource: %s \n'
-                'via HttpOpener: %s' % (self.url, exc)
-            )
-        except requests.exceptions.HTTPError as exc:
-            if exc.response.status_code == 405:
-                self.log.info(
-                    "Resource storage does not support HEAD method. Ignore proto error and force download file.")
-                self.force_download = True
-            else:
-                raise RuntimeError(
-                    'Invalid HTTP response '
-                    'trying to get info about resource: %s \n'
-                    'via HttpOpener: %s' % (self.url, exc)
-                )
+        self.timeout = 10
+        self.get_request_info
 
     def __call__(self, *args, **kwargs):
         return self.open(*args, **kwargs)
 
     def open(self, *args, **kwargs):
-        try:
-            with closing(requests.get(self.url, stream=True, verify=False, timeout=10)) as stream:
-                stream_iterator = stream.raw.stream(100, decode_content=True)
-                header = stream_iterator.next()
-                fmt = self.fmt_detector.detect_format(header)
-                self.log.debug('Resource %s format detected: %s.', self.url, fmt)
-        except requests.exceptions.Timeout as exc:
-            raise RuntimeError(
-                'Connection timeout reached '
-                'trying to get gzip info about resource: %s \n'
-                'via HttpOpener: %s' % (self.url, exc)
-            )
-
+        with closing(requests.get(self.url, stream=True, verify=False, timeout=self.timeout)) as stream:
+            stream_iterator = stream.raw.stream(100, decode_content=True)
+            header = stream_iterator.next()
+            fmt = self.fmt_detector.detect_format(header)
+            self.log.debug('Resource %s format detected: %s.', self.url, fmt)
         if not self.force_download and fmt != 'gzip' and self.data_length > 10 ** 8:
             self.log.info(
-                "Resource data is larger than 100MB. Reading from stream.."
+                "Resource data is not gzipped and larger than 100MB. Reading from stream.."
             )
             return HttpStreamWrapper(self.url)
         else:
@@ -186,6 +186,60 @@ class HttpOpener(object):
         return tmpfile_path
 
     @property
+    def get_filename(self):
+        config_f_path = self.download_file()
+        return config_f_path
+
+    @property
+    def get_request_info(self):
+        self.log.info('Trying to get info about resource %s', self.url)
+        try:
+            req = requests.Request('HEAD', self.url, headers={'Accept-Encoding': 'identity'})
+            session = requests.Session()
+            prepared = session.prepare_request(req)
+            self.data_info = session.send(prepared,
+                verify=False,
+                allow_redirects=True,
+                timeout=self.timeout
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
+            try:
+                self.log.warning(
+                    'Connection error trying to get info about resource %s \n'
+                    'Exception: %s \n'
+                    'Retrying...' % (self.url, exc)
+                )
+                self.data_info = session.send(prepared,
+                    verify=False,
+                    allow_redirects=True,
+                    timeout=self.timeout
+                ) 
+            except Exception as exc:
+                self.log.debug(
+                        'Connection error trying to get info about resource %s \n'
+                        'Traceback:  %s' % (traceback.format_exc(exc), self.url)
+                    )
+                raise RuntimeError(
+                    'Connection error trying to get info about resource %s.'
+                    'Exception: %s'  % (self.url, exc)
+                )
+        finally:
+            session.close()
+        try:
+            self.data_info.raise_for_status()
+        except requests.exceptions.HTTPError as exc:
+            if exc.response.status_code == 405:
+                self.log.info(
+                    "Resource storage does not support HEAD method. Ignore proto error and force download file.")
+                self.force_download = True
+            else:
+                raise RuntimeError(
+                    'Invalid HTTP response '
+                    'trying to get info about resource: %s \n'
+                    'via HttpOpener: %s' % (self.url, exc)
+                )
+
+    @property
     def hash(self):
         last_modified = self.data_info.headers.get("Last-Modified", '')
         return self.url + "|" + last_modified
@@ -194,7 +248,7 @@ class HttpOpener(object):
     def data_length(self):
         try:
             data_length = int(self.data_info.headers.get("Content-Length", 0))
-        except:  # FIXME: this exception will catch everything.
+        except Exception:  
             data_length = 0
         return data_length
 

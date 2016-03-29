@@ -216,11 +216,6 @@ class TankCore(object):
     def load_configs(self, configs):
         """ Tells core to load configs set into options storage """
         self.log.info("Loading configs...")
-        for fname in configs:
-            if not os.path.isfile(fname) and not fname.startswith('http'):
-                # can't raise exception, since ~/.yandex-tank may not exist
-                self.log.debug("Config file not found: %s", fname)
-
         self.config.load_files(configs)
         dotted_options = []
         for option, value in self.config.get_options(self.SECTION):
@@ -625,11 +620,9 @@ class ConfigManager(object):
         """         Read configs set into storage        """
         self.log.debug("Reading configs: %s", configs)
         for config in configs:
-            if config.startswith('http'):
-                opener = Opener().get_opener(config)
-                config_f_path = opener.download_file()
-                configs.remove(config)
-                configs.append(config_f_path)
+            filename = Opener().resource_filename(config)
+            configs.remove(config)
+            configs.append(filename)
         try:
             self.config.read(configs)
         except Exception as ex:
