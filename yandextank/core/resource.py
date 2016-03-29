@@ -73,7 +73,7 @@ class Opener(object):
             path: str, resource file url or resource file absolute/relative path.
 
         Returns:
-            object, to call for file open.
+            file object
         """
         self.path = path
         opener = None
@@ -85,7 +85,6 @@ class Opener(object):
             self.log.debug('Using FileOpener for resource: %s', self.path)
             opener = FileOpener(self.path)
         return opener
-
 
 class FileOpener(object):
     """ File opener.
@@ -367,3 +366,5 @@ class HttpStreamWrapper:
             return self.next()
         except StopIteration:
             return ''
+
+Opener = Opener()
