@@ -88,8 +88,8 @@ class ComponentFactory():
         elif self.ammo_file:
             if self.ammo_type in af_readers:
                 if self.ammo_type is 'phantom':
-                    opener = Opener().get_opener(self.ammo_file)
-                    with opener(self.ammo_file, 'rb') as ammo:
+                    opener = Opener.get_opener(self.ammo_file)
+                    with opener() as ammo:
                         try:
                             if not ammo.next()[0].isdigit():
                                 self.ammo_type = 'uri'
