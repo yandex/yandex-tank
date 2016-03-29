@@ -7,6 +7,7 @@ import hashlib
 from contextlib import closing
 import traceback
 
+
 class FormatDetector(object):
     """ Format Detector
     """
@@ -21,6 +22,7 @@ class FormatDetector(object):
         for fmt, signature in self.formats.iteritems():
             if signature[1] == header[signature[0]:len(signature[1])]:
                 return fmt
+
 
 class Opener(object):
     """ Resource opener manager.
@@ -57,7 +59,7 @@ class Opener(object):
         filename = opener.get_filename
         try:
             size = os.path.getsize(filename)
-            if (size > 50 * 1024 * 1024):
+            if size > 50 * 1024 * 1024:
                 self.log.warning('Reading large resource to memory: %s. Size: %s bytes', filename, size)
         except Exception as exc:
             self.log.debug('Unable to check resource size %s. %s', filename, exc)
@@ -138,7 +140,7 @@ class HttpOpener(object):
         self.force_download = None
         self.data_info = None
         self.timeout = 10
-        self.get_request_info
+        self.get_request_info()
 
     def __call__(self, *args, **kwargs):
         return self.open(*args, **kwargs)
@@ -161,7 +163,7 @@ class HttpOpener(object):
             else:
                 return open(downloaded_f_path, 'rb')
 
-    def download_file(self):
+    def download_file(self): 
         hasher = hashlib.md5()
         hasher.update(self.hash)
         tmpfile_path = "/tmp/%s" % hasher.hexdigest()
@@ -185,35 +187,31 @@ class HttpOpener(object):
             self.log.info("Successfully downloaded resource %s to %s", self.url, tmpfile_path)
         return tmpfile_path
 
-    @property
-    def get_filename(self):
-        config_f_path = self.download_file()
-        return config_f_path
-
-    @property
     def get_request_info(self):
         self.log.info('Trying to get info about resource %s', self.url)
+        req = requests.Request('HEAD', self.url, headers={'Accept-Encoding': 'identity'})
+        session = requests.Session()
+        prepared = session.prepare_request(req)
         try:
-            req = requests.Request('HEAD', self.url, headers={'Accept-Encoding': 'identity'})
-            session = requests.Session()
-            prepared = session.prepare_request(req)
-            self.data_info = session.send(prepared,
+            self.data_info = session.send(
+                prepared,
                 verify=False,
                 allow_redirects=True,
                 timeout=self.timeout
             )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
+            self.log.warning(
+                'Connection error trying to get info about resource %s \n'
+                'Exception: %s \n'
+                'Retrying...' % (self.url, exc)
+            )
             try:
-                self.log.warning(
-                    'Connection error trying to get info about resource %s \n'
-                    'Exception: %s \n'
-                    'Retrying...' % (self.url, exc)
-                )
-                self.data_info = session.send(prepared,
+                self.data_info = session.send(
+                    prepared,
                     verify=False,
                     allow_redirects=True,
                     timeout=self.timeout
-                ) 
+                )
             except Exception as exc:
                 self.log.debug(
                         'Connection error trying to get info about resource %s \n'
@@ -221,7 +219,7 @@ class HttpOpener(object):
                     )
                 raise RuntimeError(
                     'Connection error trying to get info about resource %s.'
-                    'Exception: %s'  % (self.url, exc)
+                    'Exception: %s' % (self.url, exc)
                 )
         finally:
             session.close()
@@ -240,16 +238,18 @@ class HttpOpener(object):
                 )
 
     @property
+    def get_filename(self):
+        config_f_path = self.download_file()
+        return config_f_path
+
+    @property
     def hash(self):
         last_modified = self.data_info.headers.get("Last-Modified", '')
         return self.url + "|" + last_modified
 
     @property
     def data_length(self):
-        try:
-            data_length = int(self.data_info.headers.get("Content-Length", 0))
-        except Exception:  
-            data_length = 0
+        data_length = int(self.data_info.headers.get("Content-Length", 0))
         return data_length
 
 
@@ -265,11 +265,19 @@ class HttpStreamWrapper:
         self._content_consumed = False
         try:
             self.stream = requests.get(self.url, stream=True, verify=False, timeout=10)
-        except requests.exceptions.Timeout as exc:
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
             raise RuntimeError(
-                'Connection timeout reached '
+                'Connection errors or timeout reached '
                 'trying to make stream while downloading resource: %s \n'
-                'via HttpOpener: %s' % (self.url, exc)
+                'via HttpStreamWrapper: %s' % (self.url, exc)
+            )
+        try:
+            self.stream.raise_for_status()
+        except requests.exceptions.HTTPError as exc:
+            raise RuntimeError(
+                'Invalid HTTP response'
+                'trying to open stream for resource: %s\n'
+                'via HttpStreamWrapper: %s' % (self.url, exc)
             )
 
     def __enter__(self):
@@ -286,11 +294,19 @@ class HttpStreamWrapper:
         self.stream.connection.close()
         try:
             self.stream = requests.get(self.url, stream=True, verify=False, timeout=30)
-        except requests.exceptions.Timeout as exc:
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
             raise RuntimeError(
-                'Connection timeout reached '
+                'Connection errors or timeout reached '
                 'trying to reopen stream while downloading resource: %s \n'
-                'via HttpOpener: %s' % (self.url, exc)
+                'via HttpStreamWrapper: %s' % (self.url, exc)
+            )
+        try:
+            self.stream.raise_for_status()
+        except requests.exceptions.HTTPError as exc:
+            raise RuntimeError(
+                'Invalid HTTP response'
+                'trying to reopen stream for resource: %s\n'
+                'via HttpStreamWrapper: %s' % (self.url, exc)
             )
         self._content_consumed = False
 
@@ -342,11 +358,11 @@ class HttpStreamWrapper:
         return chunk
 
     def readline(self):
-        '''
+        """
         requests iter_lines() uses splitlines() thus losing '\r\n'
         we need a different behavior for AmmoFileReader
         and we have to use our buffer because we have probably read a bunch into it already
-        '''
+        """
         try:
             return self.next()
         except StopIteration:
