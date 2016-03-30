@@ -3,9 +3,9 @@ import load_plan as lp
 import instance_plan as ip
 import missile
 from mark import get_marker
-from util import get_opener
 import info
 import logging
+from yandextank.core.resource import manager as resource
 
 
 class ComponentFactory():
@@ -88,8 +88,8 @@ class ComponentFactory():
         elif self.ammo_file:
             if self.ammo_type in af_readers:
                 if self.ammo_type is 'phantom':
-                    with get_opener(self.ammo_file)(self.ammo_file,
-                                                    'rb') as ammo:
+                    opener = resource.get_opener(self.ammo_file)
+                    with opener() as ammo:
                         try:
                             if not ammo.next()[0].isdigit():
                                 self.ammo_type = 'uri'

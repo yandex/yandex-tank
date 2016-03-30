@@ -3,11 +3,11 @@ Missile object and generators
 
 You should update Stepper.status.ammo_count and Stepper.status.loop_count in your custom generators!
 '''
-from util import get_opener
 from itertools import cycle
 from module_exceptions import AmmoFileError
 import info
 import logging
+from yandextank.core.resource import manager as resource
 
 
 class HttpAmmo(object):
@@ -105,8 +105,8 @@ class AmmoFileReader(object):
                 chunk_header = line.strip('\r\n')
             return chunk_header
 
-        opener = get_opener(self.filename)
-        with opener(self.filename, 'rb') as ammo_file:
+        opener = resource.get_opener(self.filename)
+        with opener() as ammo_file:
             info.status.af_size = opener.data_length
             # if we got StopIteration here, the file is empty
             chunk_header = read_chunk_header(ammo_file)
@@ -142,7 +142,6 @@ class AmmoFileReader(object):
                     chunk_header = read_chunk_header(ammo_file)
                 info.status.af_position = ammo_file.tell()
 
-
 class SlowLogReader(object):
     '''Read missiles from SQL slow log. Not usable with Phantom'''
 
@@ -151,7 +150,7 @@ class SlowLogReader(object):
 
     def __iter__(self):
         opener = get_opener(self.filename)
-        with opener(self.filename, 'rb') as ammo_file:
+        with opener() as ammo_file:
             info.status.af_size = opener.data_length
             request = ""
             while True:
@@ -175,8 +174,8 @@ class LineReader(object):
         self.filename = filename
 
     def __iter__(self):
-        opener = get_opener(self.filename)
-        with opener(self.filename, 'rb') as ammo_file:
+        opener = resource.get_opener(self.filename)
+        with opener() as ammo_file:
             info.status.af_size = opener.data_length
             while True:
                 for line in ammo_file:
@@ -204,8 +203,8 @@ class AccessLogReader(object):
         self.log.debug(message)
 
     def __iter__(self):
-        opener = get_opener(self.filename)
-        with opener(self.filename, 'rb') as ammo_file:
+        opener = resource.get_opener(self.filename)
+        with opener() as ammo_file:
             info.status.af_size = opener.data_length
             while True:
                 for line in ammo_file:
@@ -243,8 +242,8 @@ class UriReader(object):
         self.log.info("Loading ammo from '%s' using URI format." % filename)
 
     def __iter__(self):
-        opener = get_opener(self.filename)
-        with opener(self.filename, 'rb') as ammo_file:
+        opener = resource.get_opener(self.filename)
+        with opener() as ammo_file:
             info.status.af_size = opener.data_length
             while True:
                 for line in ammo_file:
@@ -299,8 +298,8 @@ class UriPostReader(object):
                     chunk_header = line.strip('\r\n')
             return chunk_header
 
-        opener = get_opener(self.filename)
-        with opener(self.filename, 'rb') as ammo_file:
+        opener = resource.get_opener(self.filename)
+        with opener() as ammo_file:
             info.status.af_size = opener.data_length
             # if we got StopIteration here, the file is empty
             chunk_header = read_chunk_header(ammo_file)
