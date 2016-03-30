@@ -271,7 +271,7 @@ class QuantileCriterion(AbstractCriterion):
         if self.quantile not in quantiles.keys():
             logger.warning("No quantile %s in %s", self.quantile, quantiles)
         if self.quantile in quantiles.keys() \
-                and quantiles[self.quantile] > self.rt_limit:
+                and quantiles[self.quantile] / 1000.0 > self.rt_limit:
             if not self.seconds_count:
                 self.cause_second = (data, stat)
 
