@@ -19,7 +19,7 @@ import psutil
 import importlib as il
 import json
 import uuid
-from yandextank.core.resource import Opener
+from yandextank.core.resource import manager as resource
 
 
 def log_stdout_stderr(log, stdout, stderr, comment=""):
@@ -620,7 +620,7 @@ class ConfigManager(object):
         """         Read configs set into storage        """
         self.log.debug("Reading configs: %s", configs)
         for config in configs:
-            filename = Opener.resource_filename(config)
+            filename = resource.resource_filename(config)
             configs.remove(config)
             configs.append(filename)
         try:

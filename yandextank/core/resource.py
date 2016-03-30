@@ -24,7 +24,7 @@ class FormatDetector(object):
                 return fmt
 
 
-class Opener(object):
+class ResourceManager(object):
     """ Resource opener manager.
         Use resource_filename and resource_string methods. 
     """
@@ -79,10 +79,8 @@ class Opener(object):
         opener = None
         for opener_name, signature in self.openers.items():
             if self.path.startswith(signature[0]):
-                self.log.debug('Using %s for resource: %s', signature[1], self.path)
                 opener = signature[1](self.path)
         if not opener:
-            self.log.debug('Using FileOpener for resource: %s', self.path)
             opener = FileOpener(self.path)
         return opener
 
@@ -367,4 +365,5 @@ class HttpStreamWrapper:
         except StopIteration:
             return ''
 
-Opener = Opener()
+manager = ResourceManager()
+

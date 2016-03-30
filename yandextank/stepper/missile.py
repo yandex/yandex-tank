@@ -7,7 +7,7 @@ from itertools import cycle
 from module_exceptions import AmmoFileError
 import info
 import logging
-from yandextank.core.resource import Opener
+from yandextank.core.resource import manager as resource
 
 
 class HttpAmmo(object):
@@ -105,7 +105,7 @@ class AmmoFileReader(object):
                 chunk_header = line.strip('\r\n')
             return chunk_header
 
-        opener = Opener.get_opener(self.filename)
+        opener = resource.get_opener(self.filename)
         with opener() as ammo_file:
             info.status.af_size = opener.data_length
             # if we got StopIteration here, the file is empty
@@ -174,7 +174,7 @@ class LineReader(object):
         self.filename = filename
 
     def __iter__(self):
-        opener = Opener.get_opener(self.filename)
+        opener = resource.get_opener(self.filename)
         with opener() as ammo_file:
             info.status.af_size = opener.data_length
             while True:
@@ -203,7 +203,7 @@ class AccessLogReader(object):
         self.log.debug(message)
 
     def __iter__(self):
-        opener = Opener.get_opener(self.filename)
+        opener = resource.get_opener(self.filename)
         with opener() as ammo_file:
             info.status.af_size = opener.data_length
             while True:
@@ -242,7 +242,7 @@ class UriReader(object):
         self.log.info("Loading ammo from '%s' using URI format." % filename)
 
     def __iter__(self):
-        opener = Opener.get_opener(self.filename)
+        opener = resource.get_opener(self.filename)
         with opener() as ammo_file:
             info.status.af_size = opener.data_length
             while True:
@@ -298,7 +298,7 @@ class UriPostReader(object):
                     chunk_header = line.strip('\r\n')
             return chunk_header
 
-        opener = Opener.get_opener(self.filename)
+        opener = resource.get_opener(self.filename)
         with opener() as ammo_file:
             info.status.af_size = opener.data_length
             # if we got StopIteration here, the file is empty
