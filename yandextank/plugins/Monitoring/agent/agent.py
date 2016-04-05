@@ -631,6 +631,8 @@ class AgentWorker(Thread):
 
             # known metrics
             for metric_name in self.metrics_collected:
+                if not metric_name:
+                    continue
                 try:
                     data = self.known_metrics[metric_name].check()
                     if len(data) != len(self.known_metrics[
@@ -638,8 +640,8 @@ class AgentWorker(Thread):
                         raise RuntimeError(
                             "Data len not matched columns count: %s" % data)
                 except Exception, e:
-                    logger.error('Can\'t fetch %s: %s', metric_name, e)
-                    data = [''
+                    logger.exception('Can\'t fetch %s', metric_name)
+                    data = ['0'
                             ] * len(self.known_metrics[metric_name].columns())
                 line.extend(data)
 

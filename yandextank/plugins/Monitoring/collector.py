@@ -467,9 +467,11 @@ class MonitoringCollector(object):
                         names[agent_name] = 1
 
         metric = ','.join(names.keys())
+        if not metric and not custom:
+            metric = "cpu-stat"
 
         return {
-            'metric': metric or 'cpu-stat',
+            'metric': metric,
             'interval': host.get('interval', 1),
             'priority': host.get('priority', 0),
             'port': int(host.get('port', 22)),
