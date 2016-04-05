@@ -266,9 +266,8 @@ class Disk(AbstractMetric):
                     writed += int(data[9])
 
             if self.read or self.write:
-                result = [str(size *
-                              (read - self.read)), str(size *
-                                                       (writed - self.write))]
+                result = [str(size * (read - self.read)),
+                          str(size * (writed - self.write))]
             else:
                 result = ['', '']
 
@@ -281,8 +280,12 @@ class Disk(AbstractMetric):
 
     @staticmethod
     def _get_devs():
-        with open("/proc/mounts") as mfd:
-            mounts = mfd.readlines()
+        try:
+            with open("/proc/mounts") as mfd:
+                mounts = mfd.readlines()
+        except IOError as exc:
+            logger.exception("Can't read block devices")
+            return []
         logger.info("Mounts: %s", mounts)
         devs = []
         for mount in mounts:
@@ -601,8 +604,8 @@ class AgentWorker(Thread):
         header = []
 
         sync_time = str(self.c_start + (int(time.time()) - self.c_local_start))
-        header.extend(['start', self.c_host, sync_time]
-                      )  # start compile init header
+        header.extend(
+            ['start', self.c_host, sync_time])  # start compile init header
 
         # add metrics from config file to header
         for metric_name in self.metrics_collected:
@@ -651,11 +654,13 @@ class AgentWorker(Thread):
                 sys.stdout.write(row + '\n')
                 sys.stdout.flush()
             except IOError, e:
-                if e.errno==32:
-                    logger.error("Broken pipe, can't send data back, terminating")
+                if e.errno == 32:
+                    logger.error(
+                        "Broken pipe, can't send data back, terminating")
                     self.finished = True
                 else:
-                    logger.error('IOError while converting line: %s: %s', line, e)
+                    logger.error('IOError while converting line: %s: %s', line,
+                                 e)
             except Exception, e:
                 logger.error('Failed to convert line %s: %s', line, e)
 
