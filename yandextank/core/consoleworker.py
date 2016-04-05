@@ -179,12 +179,11 @@ class ConsoleTank:
             try:
                 self.core.get_lock(self.options.ignore_lock)
                 break
-            except Exception, exc:
+            except Exception as exc:
                 if self.options.lock_fail:
                     raise RuntimeError("Lock file present, cannot continue")
-                self.log.info(
-                    "Couldn't get lock. Will retry in 5 seconds... (%s)",
-                    str(exc))
+                self.log.exception(
+                    "Couldn't get lock. Will retry in 5 seconds...")
                 time.sleep(5)
 
         try:

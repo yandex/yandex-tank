@@ -635,9 +635,8 @@ class ConfigManager(object):
             filename = self.file
 
         if filename:
-            handle = open(filename, 'wb')
-            self.config.write(handle)
-            handle.close()
+            with open(filename, 'wb') as handle:
+                self.config.write(handle)
 
     def get_options(self, section, prefix=''):
         """ Get options list with requested prefix """

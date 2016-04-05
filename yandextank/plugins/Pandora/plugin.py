@@ -1,4 +1,3 @@
-''' Contains Universal Plugin for phout-compatible shooter '''
 from yandextank.plugins.Aggregator import AggregatorPlugin
 from yandextank.plugins.Phantom import PhantomReader
 from yandextank.core import AbstractPlugin

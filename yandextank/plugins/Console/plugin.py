@@ -179,7 +179,7 @@ class NoConsoleMarkup(RealConsoleMarkup):
 # ======================================================
 
 
-class AbstractInfoWidget:
+class AbstractInfoWidget(object):
     ''' parent class for all right panel widgets '''
 
     def __init__(self):
