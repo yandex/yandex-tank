@@ -211,16 +211,20 @@ class Custom(AbstractMetric):
         res = []
         for el in self.tail:
             cmnd = base64.b64decode(el.split(':')[1])
+            logger.debug("Run custom check: tail -n 1 %s", cmnd)
             output = subprocess.Popen(
                 ['tail', '-n', '1', cmnd],
                 stdout=subprocess.PIPE).communicate()[0]
             res.append(self.diff_value(el, output.strip()))
         for el in self.call:
             cmnd = base64.b64decode(el.split(':')[1])
+
+            logger.debug("Run custom check: %s", cmnd)
             output = subprocess.Popen(cmnd,
                                       shell=True,
                                       stdout=subprocess.PIPE).stdout.read()
             res.append(self.diff_value(el, output.strip()))
+        logger.debug("Collected:\n%s", res)
         return res
 
     def diff_value(self, config_line, value):
