@@ -947,10 +947,10 @@ Options
 
   Default: yandextank/plugins/GraphiteUploader/config/graphite.tpl
 
-Loadosophia
+BlazeMeter Sense
 ===========
 
-When test has been finished, module upload to Loadosophia.org test artifacts: file with answer times and files with monitoring data. The link will be shown in console output.
+When test has been finished, module upload to BlazeMeter Senses test artifacts: file with answer times and files with monitoring data. The link will be shown in console output.
 
 INI file section: **[loadosophia]**
 

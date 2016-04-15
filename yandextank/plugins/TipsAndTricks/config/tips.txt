@@ -19,7 +19,7 @@ jmeter: There is only two states for JMeter results - successful or not, so NET 
 jmeter: JMeter provides only full response time and latency values, and 'full minus latency' value is put into 'receive time' inside Yandex.Tank
 jmeter: Path to alternate JMeter tool location can be set with jmeter.jmeter_path option
 jmeter: If you need supplementary JMeter command-line start switches - add them with jmeter.args option
-loadosophia: Yandex.Tank has integration features with Loadosophia.org service for storing and analysing load test results  
+loadosophia: Yandex.Tank has integration features with BlazeMeter Sense - service for storing and analysing load test results
 monitoring: Use monitoring.config=none option to disable monitoring
 monitoring: Use monitoring.default_target=<address> option to start default monitoring for desired host
 phantom: Use phantom.stpd_file option to set pre-generated source data file and avoid generating (stepping) process
