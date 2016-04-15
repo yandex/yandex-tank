@@ -5,11 +5,9 @@ import re
 from util import parse_duration, solve_quadratic
 from itertools import chain, groupby
 import info
-import logging
 
 
 class Const(object):
-
     '''
     Load plan with constant load
     '''
@@ -22,7 +20,8 @@ class Const(object):
         if self.rps == 0:
             return iter([])
         interval = 1000.0 / self.rps
-        return (int(i * interval) for i in xrange(0, int(self.rps * self.duration / 1000)))
+        return (int(i * interval)
+                for i in xrange(0, int(self.rps * self.duration / 1000)))
 
     def rps_at(self, t):
         '''Return rps for second t'''
@@ -47,7 +46,6 @@ class Const(object):
 
 
 class Line(object):
-
     '''Load plan with linear load'''
 
     def __init__(self, minrps, maxrps, duration):
@@ -58,8 +56,8 @@ class Line(object):
         self.k = (self.maxrps - self.minrps) / self.duration
 
     def ts(self, n):
-            root1, root2 = solve_quadratic(self.k / 2.0, self.b, -n)
-            return int(root2 * 1000)
+        root1, root2 = solve_quadratic(self.k / 2.0, self.b, -n)
+        return int(root2 * 1000)
 
     def __iter__(self):
         return (self.ts(n) for n in xrange(0, self.__len__()))
@@ -67,7 +65,8 @@ class Line(object):
     def rps_at(self, t):
         '''Return rps for second t'''
         if t <= self.duration:
-            return self.minrps + float(self.maxrps - self.minrps) * t / self.duration
+            return self.minrps + float(self.maxrps -
+                                       self.minrps) * t / self.duration
         else:
             return 0
 
@@ -77,7 +76,7 @@ class Line(object):
 
     def __len__(self):
         '''Return total ammo count'''
-        return int(self.k / 2.0 * (self.duration ** 2) + self.b * self.duration)
+        return int(self.k / 2.0 * (self.duration**2) + self.b * self.duration)
 
     def get_float_rps_list(self):
         '''
@@ -86,21 +85,21 @@ class Line(object):
         '''
         int_rps = xrange(int(self.minrps), int(self.maxrps) + 1)
         step_duration = float(self.duration) / len(int_rps)
-        return [(rps, int(step_duration)) for rps in int_rps]
+        rps_list = [(rps, int(step_duration)) for rps in int_rps]
+        return rps_list
 
     def get_rps_list(self):
         '''
         get list of each second's rps
         '''
-        seconds = xrange(0, int(self.duration))
-        rps_groups = groupby([int(self.rps_at(t))
-                              for t in seconds], lambda x: x)
+        seconds = xrange(0, int(self.duration) + 1)
+        rps_groups = groupby(
+            [int(self.rps_at(t)) for t in seconds], lambda x: x)
         rps_list = [(rps, len(list(rpl))) for rps, rpl in rps_groups]
         return rps_list
 
 
 class Composite(object):
-
     '''Load plan with multiple steps'''
 
     def __init__(self, steps):
@@ -122,11 +121,11 @@ class Composite(object):
         return sum(step.__len__() for step in self.steps)
 
     def get_rps_list(self):
-        return list(chain.from_iterable(step.get_rps_list() for step in self.steps))
+        return list(chain.from_iterable(step.get_rps_list()
+                                        for step in self.steps))
 
 
 class Stairway(Composite):
-
     def __init__(self, minrps, maxrps, increment, duration):
         if maxrps < minrps:
             increment = -increment
@@ -141,12 +140,10 @@ class Stairway(Composite):
         elif increment < 0:
             if (minrps + n_steps * increment) > maxrps:
                 steps.append(Const(maxrps, duration))
-        logging.info(steps)
         super(Stairway, self).__init__(steps)
 
 
 class StepFactory(object):
-
     @staticmethod
     def line(params):
         template = re.compile('([0-9.]+),\s*([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
@@ -161,9 +158,12 @@ class StepFactory(object):
 
     @staticmethod
     def stairway(params):
-        template = re.compile('([0-9.]+),\s*([0-9.]+),\s*([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
+        template = re.compile(
+            '([0-9.]+),\s*([0-9.]+),\s*([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
         minrps, maxrps, increment, duration = template.search(params).groups()
-        return Stairway(float(minrps), float(maxrps), float(increment), parse_duration(duration))
+        return Stairway(
+            float(minrps), float(maxrps), float(increment),
+            parse_duration(duration))
 
     @staticmethod
     def produce(step_config):
@@ -177,8 +177,8 @@ class StepFactory(object):
         if load_type in _plans:
             return _plans[load_type](params)
         else:
-            raise NotImplementedError(
-                'No such load type implemented: "%s"' % load_type)
+            raise NotImplementedError('No such load type implemented: "%s"' %
+                                      load_type)
 
 
 def create(rps_schedule):
@@ -220,7 +220,7 @@ def create(rps_schedule):
     '''
     if len(rps_schedule) > 1:
         lp = Composite([StepFactory.produce(step_config)
-                       for step_config in rps_schedule])
+                        for step_config in rps_schedule])
     else:
         lp = StepFactory.produce(rps_schedule[0])
     info.status.publish('duration', lp.get_duration() / 1000)

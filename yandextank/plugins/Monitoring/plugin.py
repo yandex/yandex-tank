@@ -12,12 +12,12 @@ logger = logging.getLogger(__name__)
 from pkg_resources import resource_string
 from collector import MonitoringCollector, \
     MonitoringDataListener, MonitoringDataDecoder
-from yandextank.plugins.ConsoleOnline import \
-    ConsoleOnlinePlugin, AbstractInfoWidget
+from yandextank.plugins.Console import \
+    ConsolePlugin, AbstractInfoWidget
 from yandextank.plugins.Phantom import PhantomPlugin
 from yandextank.core import AbstractPlugin
 import yandextank.core as tankcore
-from yandextank.plugins.Autostop import AutostopPlugin, AbstractCriteria
+from yandextank.plugins.Autostop import AutostopPlugin, AbstractCriterion
 
 
 class MonitoringPlugin(AbstractPlugin):
@@ -68,8 +68,8 @@ class MonitoringPlugin(AbstractPlugin):
                 self.config = xmlfile
 
             if not os.path.exists(self.config):
-                raise OSError(
-                    "Monitoring config file not found: %s" % self.config)
+                raise OSError("Monitoring config file not found: %s" %
+                              self.config)
 
         if self.config == 'none':
             self.monitoring = None
@@ -83,11 +83,11 @@ class MonitoringPlugin(AbstractPlugin):
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
-            autostop.add_criteria_class(MetricHigherCriteria)
-            autostop.add_criteria_class(MetricLowerCriteria)
+            autostop.add_criterion_class(MetricHigherCriterion)
+            autostop.add_criterion_class(MetricLowerCriterion)
         except KeyError:
             logger.debug(
-                "No autostop plugin found, not adding instances criteria")
+                "No autostop plugin found, not adding instances criterion")
 
     def prepare_test(self):
         try:
@@ -127,7 +127,7 @@ class MonitoringPlugin(AbstractPlugin):
             self.core.add_artifact_file(self.data_file)
 
             try:
-                console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+                console = self.core.get_plugin_of_type(ConsolePlugin)
             except Exception, ex:
                 logger.debug("Console not found: %s", ex)
                 console = None
@@ -193,10 +193,8 @@ class SaveMonToFile(MonitoringDataListener):
             self.store.close()
 
 
-class MonitoringWidget(
-        AbstractInfoWidget,
-        MonitoringDataListener,
-        MonitoringDataDecoder):
+class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener,
+                       MonitoringDataDecoder):
     """
     Screen widget
     """
@@ -255,26 +253,28 @@ class MonitoringWidget(
             res = "Monitoring is " + screen.markup.GREEN + \
                 "online" + screen.markup.RESET + ":\n"
             for hostname, metrics in self.data.items():
-                tm_stamp = datetime.datetime.fromtimestamp(
-                    float(self.time[hostname])).strftime('%H:%M:%S')
-                res += ("   " + screen.markup.CYAN + "%s" +
-                        screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
+                tm_stamp = datetime.datetime.fromtimestamp(float(self.time[
+                    hostname])).strftime('%H:%M:%S')
+                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET
+                        + " at %s:\n") % (hostname, tm_stamp)
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
                     elif self.sign[hostname][metric] < 0:
                         value = screen.markup.CYAN + value + screen.markup.RESET
                     res += "      %s%s: %s\n" % (
-                        ' ' * (self.max_metric_len - len(metric)), metric.replace('_', ' '), value)
+                        ' ' * (self.max_metric_len - len(metric)),
+                        metric.replace('_', ' '), value)
 
             return res.strip()
 
 
-class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, MonitoringDataDecoder):
-    """ Parent class for metric criteria """
+class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener,
+                              MonitoringDataDecoder):
+    """ Parent class for metric criterion """
 
     def __init__(self, autostop, param_str):
-        AbstractCriteria.__init__(self)
+        AbstractCriterion.__init__(self)
         MonitoringDataDecoder.__init__(self)
 
         try:
@@ -289,8 +289,8 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
         self.host = param_str.split(',')[0].strip()
         self.metric = param_str.split(',')[1].strip()
         self.value_limit = float(param_str.split(',')[2])
-        self.seconds_limit = tankcore.expand_to_seconds(
-            param_str.split(',')[3])
+        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+            3])
         self.last_second = None
         self.seconds_count = 0
 
@@ -306,10 +306,12 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
             if initial or not fnmatch.fnmatch(host, self.host):
                 continue
 
-            if self.metric not in data.keys() or not data[self.metric] or data[self.metric] == self.NA:
+            if self.metric not in data.keys() or not data[self.metric] or data[
+                    self.metric] == self.NA:
                 data[self.metric] = 0
 
-            logger.debug("Compare %s %s/%s=%s to %s", self.get_type_string(), host, self.metric, data[self.metric],
+            logger.debug("Compare %s %s/%s=%s to %s", self.get_type_string(),
+                         host, self.metric, data[self.metric],
                          self.value_limit)
             if self.comparison_fn(float(data[self.metric]), self.value_limit):
                 if not self.seconds_count:
@@ -325,11 +327,11 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
             else:
                 self.seconds_count = 0
 
-    def notify(self, aggregate_second):
+    def notify(self, data, stat):
         if self.seconds_count:
             self.autostop.add_counting(self)
 
-        self.last_second = aggregate_second
+        self.last_second = (data, stat)
         return self.triggered
 
     def comparison_fn(self, arg1, arg2):
@@ -337,11 +339,11 @@ class AbstractMetricCriteria(AbstractCriteria, MonitoringDataListener, Monitorin
         raise NotImplementedError()
 
 
-class MetricHigherCriteria(AbstractMetricCriteria):
+class MetricHigherCriterion(AbstractMetricCriterion):
     """ trigger if metric is higher than limit """
 
     def __init__(self, autostop, param_str):
-        AbstractMetricCriteria.__init__(self, autostop, param_str)
+        AbstractMetricCriterion.__init__(self, autostop, param_str)
 
     def get_rc(self):
         return 31
@@ -355,19 +357,20 @@ class MetricHigherCriteria(AbstractMetricCriteria):
         return "%s/%s metric value is higher than %s for %s seconds" % items
 
     def widget_explain(self):
-        items = (self.host, self.metric, self.value_limit,
-                 self.seconds_count, self.seconds_limit)
-        return "%s/%s > %s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
+        items = (self.host, self.metric, self.value_limit, self.seconds_count,
+                 self.seconds_limit)
+        return "%s/%s > %s for %s/%ss" % items, float(
+            self.seconds_count) / self.seconds_limit
 
     def comparison_fn(self, arg1, arg2):
         return arg1 > arg2
 
 
-class MetricLowerCriteria(AbstractMetricCriteria):
+class MetricLowerCriterion(AbstractMetricCriterion):
     """ trigger if metric is lower than limit """
 
     def __init__(self, autostop, param_str):
-        AbstractMetricCriteria.__init__(self, autostop, param_str)
+        AbstractMetricCriterion.__init__(self, autostop, param_str)
 
     def get_rc(self):
         return 32
@@ -381,9 +384,10 @@ class MetricLowerCriteria(AbstractMetricCriteria):
         return "%s/%s metric value is lower than %s for %s seconds" % items
 
     def widget_explain(self):
-        items = (self.host, self.metric, self.value_limit,
-                 self.seconds_count, self.seconds_limit)
-        return "%s/%s < %s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
+        items = (self.host, self.metric, self.value_limit, self.seconds_count,
+                 self.seconds_limit)
+        return "%s/%s < %s for %s/%ss" % items, float(
+            self.seconds_count) / self.seconds_limit
 
     def comparison_fn(self, arg1, arg2):
         return arg1 < arg2

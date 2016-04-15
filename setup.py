@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='1.7.31',
+    version='1.8.11',
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -13,14 +13,17 @@ analytic tools for the results they produce.
     maintainer='Alexey Lavrenuke (load testing)',
     maintainer_email='direvius@yandex-team.ru',
     url='http://yandex.github.io/yandex-tank/',
-    packages=find_packages(exclude=["tests"]),
+    namespace_packages=["yandextank", "yandextank.plugins"],
+    packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
-        'psutil>=1.2.1',
-        'ipaddr',
-        'progressbar',
-        'requests>=2.5.1',
-        'paramiko>=1.16.0',
-        'pyzmq',
+        'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
+        'pandas>=0.18.0', 'future'
+    ],
+    setup_requires=[
+        'pytest-runner',
+    ],
+    tests_require=[
+        'pytest',
     ],
     license='LGPLv2',
     classifiers=[
@@ -52,5 +55,6 @@ analytic tools for the results they produce.
         'yandextank.plugins.Phantom': ['config/*'],
         'yandextank.plugins.TipsAndTricks': ['config/*'],
         'yandextank.plugins.Pandora': ['config/*'],
+        'yandextank.plugins.Aggregator': ['config/*'],
     },
     use_2to3=True, )

@@ -5,10 +5,6 @@ Tutorials
 So, you've installed Yandex.Tank to a proper machine, it is close to target,
 access is permitted and server is tuned. How to make a test?
 
-*****************
-Phantom tutorial
-*****************
-
 .. note::
 
   This guide is for ``phantom`` load generator.
@@ -47,7 +43,12 @@ Example:
 ------------
 
 3. ``const (load,dur)`` makes constant load. ``load`` - rps amount, ``dur`` 
-- load duration. 
+- load duration. You can set fractional load like this: ``line(1.1, 2.5, 10)`` 
+-- from 1.1rps to 2.5 for 10 seconds. 
+
+.. note::
+  ``const(0, 10)`` - 0 rps for 10 seconds, 
+  in fact 10s pause in a test.
 
 Example:
   ``const(100,10m)`` - constant load for 100 rps for 10 mins.
@@ -106,6 +107,12 @@ To specify external ammo file use ``ammofile`` option.
 .. note::
   You can specify URL to ammofile, http(s). Small ammofiles (~<100MB) will be downloaded as is, to directory ``/tmp/<hash>``, large files will be readed from stream. 
 
+.. note::
+
+  If ammo type is uri-style or request-style, tank will try to guess it.
+  Use ``ammo_type`` option to explicitly specify ammo format. Don't forget to change ``ammo_type`` option
+  if you switch format of your ammo, otherwise you might get errors.
+
   Example:
   ::
       
@@ -113,9 +120,6 @@ To specify external ammo file use ``ammofile`` option.
     address=203.0.113.1 ; Target's address
     ammofile=https://yourhost.tld/path/to/ammofile.txt
 
-If ammo type is ``uri-style`` or ``request-style``, tank will try to guess it.
-
-Use ``ammo_type`` option to explicitly specify ammo format. Don't forget to change ``ammo_type`` option if you switch format of your ammo, otherwise you might get errors.
 
 Access mode
 -----------
@@ -246,7 +250,10 @@ where ``size_of_request`` – request size in bytes. '\r\n' symbols after
 include them in a file after each request. Pay attention to the sample above
 because '\r' symbols are strictly required. 
 
-------------
+.. note:: 
+
+  Parameter ``ammo_type`` is unnecessary, request-style is default ammo type.
+=======
 
 **sample GET requests (null body)**
 
@@ -323,6 +330,58 @@ because '\r' symbols are strictly required.
   --AGHTUNG--
 
 sample ammo generators you may find on the :doc:`ammo_generators` page.
+  
+
+**sample POST multipart form-data generator (python)**
+
+.. code-block:: python
+
+  #!/usr/bin/python
+  # -*- coding: utf-8 -*-
+  import requests
+  
+  def print_request(request):
+      req = "{method} {path_url} HTTP/1.1\r\n{headers}\r\n{body}".format(
+          method = request.method,
+          path_url = request.path_url,
+          headers = ''.join('{0}: {1}\r\n'.format(k, v) for k, v in request.headers.items()),
+          body = request.body or "",
+      )
+      return "{req_size}\n{req}\r\n".format(req_size = len(req), req = req)
+    
+  #POST multipart form data
+  def post_multipart(host, port, namespace, files, headers, payload):
+      req = requests.Request(
+          'POST',
+          'https://{host}:{port}{namespace}'.format(
+              host = host,
+              port = port,
+              namespace = namespace,
+          ),
+          headers = headers,
+          data = payload,
+          files = files
+      )
+      prepared = req.prepare()
+      return print_request(prepared)
+
+  if __name__ == "__main__":
+      #usage sample below
+      host = 'test.host.ya.ru'
+      port = '8080'
+      namespace = '/some/path'
+      headers = {
+          'Host': 'ya.ru'
+      }
+      payload = {
+          'langName': 'en',
+          'apikey': '123'
+      }
+      files = {
+          'file': open('./testfile', 'rb')
+      }
+  
+      print post_multipart(host, port, namespace, files, headers, payload)
   
 
 Run Test!

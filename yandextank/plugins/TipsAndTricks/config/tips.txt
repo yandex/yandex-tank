@@ -10,8 +10,8 @@ tank: Options from 'DEFAULT' section in INI files are inherited by all other sec
 tank: Visit our wiki to learn all Yandex.Tank capabilities: http://github.com/yandex-load/yandex-tank/wiki
 ab: Apache Benchmark module for Yandex.Tank kinda creepy, but it exists!
 ab: Remember that Apache Benchmark results available only when test is complete
-autostop: An 'instances' criteria, used with phantom module is the most efficient way to tell if the service is already overloaded
-autostop: You can easily write your standalone autostop criteria class and plug it into Autostop module, consult with developers for details 
+autostop: An 'instances' criterion, used with phantom module is the most efficient way to tell if the service is already overloaded
+autostop: You can easily write your standalone autostop criterion class and plug it into Autostop module, consult with developers for details 
 console: Disable full screen console with console.short_only=1 option 
 console: You can change relative width of right panel in full screen console with console.info_panel_width=50 option (value is percents of width) 
 jmeter: Sent bytes info not available in JMeter, so it is zero in JMeter module for Yandex.Tank

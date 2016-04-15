@@ -3,8 +3,8 @@ Plugin showing tool learning hints in console
 '''
 
 from pkg_resources import resource_stream
-from yandextank.plugins.ConsoleOnline import \
-    ConsoleOnlinePlugin, AbstractInfoWidget
+from yandextank.plugins.Console import \
+    ConsolePlugin, AbstractInfoWidget
 from yandextank.core import AbstractPlugin
 import random
 import textwrap
@@ -19,11 +19,13 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         AbstractInfoWidget.__init__(self)
-        lines = resource_stream(__name__, "config/tips.txt").readlines()
-        line = random.choice(lines)
+        self.lines = resource_stream(__name__, "config/tips.txt").readlines()
+        self.disable = 0
+
+        line = random.choice(self.lines)
         self.section = line[:line.index(':')]
         self.tip = line[line.index(':') + 1:].strip()
-        self.disable = 0
+        self.probability = 0.0
 
     @staticmethod
     def get_key():
@@ -38,7 +40,7 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
     def prepare_test(self):
         if not self.disable:
             try:
-                console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+                console = self.core.get_plugin_of_type(ConsolePlugin)
             except KeyError, ex:
                 self.log.debug("Console not found: %s", ex)
                 console = None
@@ -50,6 +52,13 @@ class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
         return 10000  # really last index
 
     def render(self, screen):
+        if random.random() < self.probability:
+            self.probability = 0.0
+            line = random.choice(self.lines)
+            self.section = line[:line.index(':')]
+            self.tip = line[line.index(':') + 1:].strip()
+        self.probability += 1e-3
         line = screen.markup.WHITE + "Tips & Tricks => " + self.section + screen.markup.RESET + ":\n  "
-        line += "\n  ".join(textwrap.wrap(self.tip, screen.right_panel_width - 2))
+        line += "\n  ".join(textwrap.wrap(self.tip, screen.right_panel_width -
+                                          2))
         return line

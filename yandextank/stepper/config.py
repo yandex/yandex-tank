@@ -3,29 +3,26 @@ import load_plan as lp
 import instance_plan as ip
 import missile
 from mark import get_marker
-from util import get_opener
 import info
 import logging
+from yandextank.core.resource import manager as resource
 
 
 class ComponentFactory():
-
-    def __init__(
-        self,
-        rps_schedule=None,
-        http_ver='1.1',
-        ammo_file=None,
-        instances_schedule=None,
-        instances=1000,
-        loop_limit=-1,
-        ammo_limit=-1,
-        uris=None,
-        headers=None,
-        autocases=None,
-        enum_ammo=False,
-        ammo_type='phantom',
-        chosen_cases=[],
-    ):
+    def __init__(self,
+                 rps_schedule=None,
+                 http_ver='1.1',
+                 ammo_file=None,
+                 instances_schedule=None,
+                 instances=1000,
+                 loop_limit=-1,
+                 ammo_limit=-1,
+                 uris=None,
+                 headers=None,
+                 autocases=None,
+                 enum_ammo=False,
+                 ammo_type='phantom',
+                 chosen_cases=[], ):
         self.log = logging.getLogger(__name__)
         self.ammo_file = ammo_file
         self.ammo_type = ammo_type
@@ -85,15 +82,14 @@ class ComponentFactory():
             raise StepperConfigurationError(
                 'Both uris and ammo file specified. You must specify only one of them')
         elif self.uris:
-            ammo_gen = missile.UriStyleGenerator(
-                self.uris,
-                self.headers,
-                http_ver=self.http_ver
-            )
+            ammo_gen = missile.UriStyleGenerator(self.uris,
+                                                 self.headers,
+                                                 http_ver=self.http_ver)
         elif self.ammo_file:
             if self.ammo_type in af_readers:
                 if self.ammo_type is 'phantom':
-                    with get_opener(self.ammo_file)(self.ammo_file, 'rb') as ammo:
+                    opener = resource.get_opener(self.ammo_file)
+                    with opener() as ammo:
                         try:
                             if not ammo.next()[0].isdigit():
                                 self.ammo_type = 'uri'
@@ -110,11 +106,9 @@ class ComponentFactory():
             else:
                 raise NotImplementedError(
                     'No such ammo type implemented: "%s"' % self.ammo_type)
-            ammo_gen = af_readers[self.ammo_type](
-                self.ammo_file,
-                headers=self.headers,
-                http_ver=self.http_ver
-            )
+            ammo_gen = af_readers[self.ammo_type](self.ammo_file,
+                                                  headers=self.headers,
+                                                  http_ver=self.http_ver)
         else:
             raise StepperConfigurationError(
                 'Ammo not found. Specify uris or ammo file')
@@ -126,8 +120,10 @@ class ComponentFactory():
 
     def get_filter(self):
         if len(self.chosen_cases):
+
             def is_chosen_case(ammo_tuple):
                 return ammo_tuple[1] in self.chosen_cases
+
             return is_chosen_case
         else:
             return lambda ammo_tuple: True

@@ -1,21 +1,20 @@
-''' Contains Universal Plugin for phout-compatible shooter '''
-from yandextank.plugins.Aggregator import \
-    AggregatorPlugin, AggregateResultListener
+from yandextank.plugins.Aggregator import AggregatorPlugin
 from yandextank.plugins.Phantom import PhantomReader
 from yandextank.core import AbstractPlugin
 import subprocess
 import time
-import shlex
-from yandextank.plugins.ConsoleOnline import \
-    ConsoleOnlinePlugin, AbstractInfoWidget
-import yandextank.plugins.ConsoleScreen as ConsoleScreen
+from yandextank.plugins.Console import \
+    ConsolePlugin, AbstractInfoWidget
+import yandextank.plugins.Console.screen as ConsoleScreen
 import datetime
 from config import PoolConfig, PandoraConfig, parse_schedule
-from reader import PandoraReader
+from reader import PandoraStatsReader
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-class PandoraPlugin(AbstractPlugin, AggregateResultListener):
-
+class PandoraPlugin(AbstractPlugin):
     '''     Pandora load generator plugin    '''
 
     OPTION_CONFIG = "config"
@@ -34,16 +33,16 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
         return __file__
 
     def get_available_options(self):
-        opts = ["pandora_cmd", "buffered_seconds",
-                "ammo", "loop", "sample_log", "config_file",
-                "startup_schedule", "user_schedule", "gun_type"]
+        opts = ["pandora_cmd", "buffered_seconds", "ammo", "loop",
+                "sample_log", "config_file", "startup_schedule",
+                "user_schedule", "gun_type"]
         return opts
 
     def configure(self):
         # plugin part
         self.pandora_cmd = self.get_option("pandora_cmd", "pandora")
-        self.buffered_seconds = int(
-            self.get_option("buffered_seconds", self.buffered_seconds))
+        self.buffered_seconds = int(self.get_option("buffered_seconds",
+                                                    self.buffered_seconds))
 
         pool_config = PoolConfig()
 
@@ -63,15 +62,13 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
         if startup_schedule:
             pool_config.set_startup_schedule(parse_schedule(startup_schedule))
         else:
-            raise RuntimeError(
-                "startup_schedule not specified")
+            raise RuntimeError("startup_schedule not specified")
 
         user_schedule = self.get_option("user_schedule", "")
         if user_schedule:
             pool_config.set_user_schedule(parse_schedule(user_schedule))
         else:
-            raise RuntimeError(
-                "user_schedule not specified")
+            raise RuntimeError("user_schedule not specified")
 
         shared_schedule = bool(int(self.get_option("shared_schedule", "1")))
         pool_config.set_shared_schedule(shared_schedule)
@@ -82,9 +79,9 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
         gun_type = self.get_option("gun_type", "http")
         if gun_type == 'https':
             pool_config.set_ssl(True)
-            self.log.info("SSL is on")
+            logger.info("SSL is on")
             gun_type = "http"
-        self.log.info("Pandora gun type is: %s", gun_type)
+        logger.info("Pandora gun type is: %s", gun_type)
         pool_config.set_gun_type(gun_type)
 
         self.pandora_config = PandoraConfig()
@@ -92,8 +89,8 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
 
         self.pandora_config_file = self.get_option("config_file", "")
         if not self.pandora_config_file:
-            self.pandora_config_file = self.core.mkstemp(
-                ".json", "pandora_config_")
+            self.pandora_config_file = self.core.mkstemp(".json",
+                                                         "pandora_config_")
         self.core.add_artifact_file(self.pandora_config_file)
         with open(self.pandora_config_file, 'w') as config_file:
             config_file.write(self.pandora_config.json())
@@ -103,21 +100,19 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         except KeyError as ex:
-            self.log.warning("No aggregator found: %s", ex)
+            logger.warning("No aggregator found: %s", ex)
 
         if aggregator:
-            self.log.info(
-                "Adding sample reader to aggregator. Reading samples from %s",
+            logger.info(
+                "Linking sample and stats readers to aggregator. Reading samples from %s",
                 self.sample_log)
-            aggregator.reader = PandoraReader(aggregator, self)
-            aggregator.reader.buffered_seconds = self.buffered_seconds
-            aggregator.add_result_listener(self)
-            aggregator.reader.phout_file = self.sample_log
+            aggregator.reader = PhantomReader(self.sample_log)
+            aggregator.stats_reader = PandoraStatsReader()
 
         try:
-            console = self.core.get_plugin_of_type(ConsoleOnlinePlugin)
+            console = self.core.get_plugin_of_type(ConsolePlugin)
         except KeyError as ex:
-            self.log.debug("Console not found: %s", ex)
+            logger.debug("Console not found: %s", ex)
             console = None
 
         if console:
@@ -127,60 +122,56 @@ class PandoraPlugin(AbstractPlugin, AggregateResultListener):
             aggregator.add_result_listener(widget)
 
     def start_test(self):
-        args = [self.pandora_cmd, self.pandora_config_file]
-        self.log.info("Starting: %s", args)
+        args = [self.pandora_cmd, "-expvar", self.pandora_config_file]
+        logger.info("Starting: %s", args)
         self.process_start_time = time.time()
-        process_stderr_file = self.core.mkstemp(
-            ".log", "pandora_")
+        process_stderr_file = self.core.mkstemp(".log", "pandora_")
         self.core.add_artifact_file(process_stderr_file)
         self.process_stderr = open(process_stderr_file, 'w')
-        self.process = subprocess.Popen(
-            args, stderr=self.process_stderr,
-            stdout=self.process_stderr, close_fds=True)
+        self.process = subprocess.Popen(args,
+                                        stderr=self.process_stderr,
+                                        stdout=self.process_stderr,
+                                        close_fds=True)
 
     def is_test_finished(self):
         retcode = self.process.poll()
         if retcode is not None:
-            self.log.info(
-                "Subprocess done its work with exit code: %s", retcode)
+            logger.info("Subprocess done its work with exit code: %s", retcode)
             return abs(retcode)
         else:
             return -1
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            self.log.warn(
-                "Terminating worker process with PID %s", self.process.pid)
+            logger.warn("Terminating worker process with PID %s",
+                        self.process.pid)
             self.process.terminate()
             if self.process_stderr:
                 self.process_stderr.close()
         else:
-            self.log.debug("Seems subprocess finished OK")
+            logger.debug("Seems subprocess finished OK")
         return retcode
 
     def get_info(self):
         return None
 
-    def aggregate_second(self, second_aggregate_data):
-        pass
-
 
 class PandoraInfoWidget(AbstractInfoWidget):
-
     ''' Right panel widget '''
 
     def __init__(self, pandora):
         AbstractInfoWidget.__init__(self)
         self.krutilka = ConsoleScreen.krutilka()
         self.owner = pandora
-        self.rps = 0
+        self.reqps = 0
+        self.active = 0
 
     def get_index(self):
         return 0
 
-    def aggregate_second(self, second_aggregate_data):
-        self.active_threads = second_aggregate_data.overall.active_threads
-        self.rps = second_aggregate_data.overall.RPS
+    def on_aggregated_data(self, data, stats):
+        self.reqps = stats["metrics"]["reqps"]
+        self.active = stats["metrics"]["instances"]
 
     def render(self, screen):
         text = " Pandora Test %s" % self.krutilka.next()
@@ -195,7 +186,8 @@ class PandoraInfoWidget(AbstractInfoWidget):
             text + ' ' + '~' * right_spaces + screen.markup.RESET + "\n"
         template += "Command Line: %s\n"
         template += "    Duration: %s\n"
-        template += " Responses/s: %s"
-        data = (self.owner.pandora_cmd, duration, self.rps)
+        template += "  Requests/s: %s\n"
+        template += " Active reqs: %s"
+        data = (self.owner.pandora_cmd, duration, self.reqps, self.active)
 
         return template % data

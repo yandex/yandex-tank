@@ -19,6 +19,7 @@ import psutil
 import importlib as il
 import json
 import uuid
+from yandextank.core.resource import manager as resource
 
 
 def log_stdout_stderr(log, stdout, stderr, comment=""):
@@ -93,8 +94,8 @@ def expand_time(str_time, default_unit='s', multiplier=1):
             result += value * 60 * 60 * 24 * 7
             continue
         else:
-            raise ValueError(
-                "String contains unsupported unit %s: %s" % (unit, str_time))
+            raise ValueError("String contains unsupported unit %s: %s" %
+                             (unit, str_time))
     return int(result * multiplier)
 
 
@@ -126,13 +127,11 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
         cmd = shlex.split(cmd)
 
     if catch_out:
-        process = subprocess.Popen(
-            cmd,
-            shell=shell,
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            close_fds=True
-        )
+        process = subprocess.Popen(cmd,
+                                   shell=shell,
+                                   stderr=subprocess.PIPE,
+                                   stdout=subprocess.PIPE,
+                                   close_fds=True)
     else:
         process = subprocess.Popen(cmd, shell=shell, close_fds=True)
 
@@ -172,14 +171,12 @@ def pairs(lst):
 def update_status(status, multi_key, value):
     if len(multi_key) > 1:
         update_status(
-            status.setdefault(multi_key[0], {}),
-            multi_key[1:], value)
+            status.setdefault(multi_key[0], {}), multi_key[1:], value)
     else:
         status[multi_key[0]] = value
 
 
 class TankCore(object):
-
     """
     JMeter + dstat inspired :)
     """
@@ -219,11 +216,6 @@ class TankCore(object):
     def load_configs(self, configs):
         """ Tells core to load configs set into options storage """
         self.log.info("Loading configs...")
-        for fname in configs:
-            if not os.path.isfile(fname):
-                # can't raise exception, since ~/.yandex-tank may not exist
-                self.log.debug("Config file not found: %s", fname)
-
         self.config.load_files(configs)
         dotted_options = []
         for option, value in self.config.get_options(self.SECTION):
@@ -233,48 +225,50 @@ class TankCore(object):
         self.config.flush()
         self.add_artifact_file(self.config.file)
         self.set_option(self.SECTION, self.PID_OPTION, str(os.getpid()))
-        self.flush_config_to = self.get_option(
-            self.SECTION, "flush_config_to", "")
+        self.flush_config_to = self.get_option(self.SECTION, "flush_config_to",
+                                               "")
         if self.flush_config_to:
             self.config.flush(self.flush_config_to)
 
     def load_plugins(self):
-        """ Tells core to take plugin options and instantiate plugin classes """
+        """
+        Tells core to take plugin options and instantiate plugin classes
+        """
         self.log.info("Loading plugins...")
 
-        base_dir = self.get_option(
-            self.SECTION, "artifacts_base_dir", self.artifacts_base_dir)
+        base_dir = self.get_option(self.SECTION, "artifacts_base_dir",
+                                   self.artifacts_base_dir)
         self.artifacts_base_dir = os.path.expanduser(base_dir)
         self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
-        self.taskset_path = self.get_option(
-            self.SECTION, 'taskset_path', 'taskset')
+        self.taskset_path = self.get_option(self.SECTION, 'taskset_path',
+                                            'taskset')
         self.taskset_affinity = self.get_option(self.SECTION, 'affinity', '')
 
         options = self.config.get_options(self.SECTION, self.PLUGIN_PREFIX)
         for (plugin_name, plugin_path) in options:
             if not plugin_path:
-                self.log.debug(
-                    "Seems the plugin '%s' was disabled", plugin_name)
+                self.log.debug("Seems the plugin '%s' was disabled",
+                               plugin_name)
                 continue
-            self.log.debug(
-                "Loading plugin %s from %s",
-                plugin_name, plugin_path)
+            self.log.debug("Loading plugin %s from %s", plugin_name,
+                           plugin_path)
             if '/' in plugin_path:
-                self.log.warning(
-                    "Deprecated plugin path format: %s\n"
-                    "Should be in pythonic format. Example:\n"
-                    "    plugin_jmeter=yandextank.plugins.JMeter", plugin_path)
+                self.log.warning("Deprecated plugin path format: %s\n"
+                                 "Should be in pythonic format. Example:\n"
+                                 "    plugin_jmeter=yandextank.plugins.JMeter",
+                                 plugin_path)
                 if plugin_path.startswith("Tank/Plugins/"):
                     plugin_path = "yandextank.plugins." + \
                         plugin_path.split('/')[-1].split('.')[0]
-                    self.log.warning("Converted plugin path to %s", plugin_path)
+                    self.log.warning("Converted plugin path to %s",
+                                     plugin_path)
                 else:
                     raise ValueError(
                         "Couldn't convert plugin path to new format:\n    %s" %
                         plugin_path)
             plugin = il.import_module(plugin_path)
-            instance = getattr(
-                plugin, plugin_path.split('.')[-1] + 'Plugin')(self)
+            instance = getattr(plugin,
+                               plugin_path.split('.')[-1] + 'Plugin')(self)
             self.plugins.append(instance)
 
         self.log.debug("Plugin instances: %s", self.plugins)
@@ -314,7 +308,9 @@ class TankCore(object):
             self.config.flush(self.flush_config_to)
 
     def wait_for_finish(self):
-        """ Call is_test_finished() on all plugins 'till one of them initiates exit """
+        """
+        Call is_test_finished() on all plugins 'till one of them initiates exit
+        """
 
         self.log.info("Waiting for test to finish...")
         if not self.plugins:
@@ -330,7 +326,9 @@ class TankCore(object):
             end_time = time.time()
             diff = end_time - begin_time
             self.log.debug("Polling took %s", diff)
-            self.log.debug("Tank status:\n%s", json.dumps(self.status, indent=2))
+            self.log.debug("Tank status:\n%s",
+                           json.dumps(self.status,
+                                      indent=2))
             # screen refresh every 0.5 s
             if diff < 0.5:
                 time.sleep(0.5 - diff)
@@ -348,8 +346,8 @@ class TankCore(object):
                 self.log.debug("RC after: %s", retcode)
             except Exception, ex:
                 self.log.error("Failed finishing plugin %s: %s", plugin, ex)
-                self.log.debug(
-                    "Failed finishing plugin: %s", traceback.format_exc(ex))
+                self.log.debug("Failed finishing plugin: %s",
+                               traceback.format_exc(ex))
                 if not retcode:
                     retcode = 1
 
@@ -370,10 +368,10 @@ class TankCore(object):
                 retcode = plugin.post_process(retcode)
                 self.log.debug("RC after: %s", retcode)
             except Exception, ex:
-                self.log.error(
-                    "Failed post-processing plugin %s: %s", plugin, ex)
-                self.log.debug(
-                    "Failed post-processing plugin: %s", traceback.format_exc(ex))
+                self.log.error("Failed post-processing plugin %s: %s", plugin,
+                               ex)
+                self.log.debug("Failed post-processing plugin: %s",
+                               traceback.format_exc(ex))
                 if not retcode:
                     retcode = 1
 
@@ -387,20 +385,23 @@ class TankCore(object):
     def taskset(self, pid, path, affinity):
         if affinity != '':
             args = "%s -pc %s %s" % (path, affinity, pid)
-            retcode, stdout, stderr = execute(
-                args, shell=True, poll_period=0.1, catch_out=True)
+            retcode, stdout, stderr = execute(args,
+                                              shell=True,
+                                              poll_period=0.1,
+                                              catch_out=True)
             self.log.debug('taskset stdout: %s', stdout)
             if retcode != 0:
                 raise KeyError(stderr)
             else:
-                self.log.info("Enabled taskset for pid %s with affinity %s", str(pid), affinity)
+                self.log.info("Enabled taskset for pid %s with affinity %s",
+                              str(pid), affinity)
 
     def __collect_artifacts(self):
         self.log.debug("Collecting artifacts")
         if not self.artifacts_dir:
             date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
-            self.artifacts_dir = tempfile.mkdtemp(
-                "", date_str, self.artifacts_base_dir)
+            self.artifacts_dir = tempfile.mkdtemp("", date_str,
+                                                  self.artifacts_base_dir)
         else:
             self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
 
@@ -434,15 +435,16 @@ class TankCore(object):
                 value = default.strip()
             else:
                 self.log.warn(
-                    "Mandatory option %s was not found in section %s", option, section)
+                    "Mandatory option %s was not found in section %s", option,
+                    section)
                 raise ex
 
         if len(value) > 1 and value[0] == '`' and value[-1] == '`':
             self.log.debug("Expanding shell option %s", value)
             retcode, stdout, stderr = execute(value[1:-1], True, 0.1, True)
             if retcode or stderr:
-                raise ValueError(
-                    "Error expanding option %s, RC: %s" % (value, retcode))
+                raise ValueError("Error expanding option %s, RC: %s" %
+                                 (value, retcode))
             value = stdout.strip()
 
         return value
@@ -461,13 +463,18 @@ class TankCore(object):
         Retrieve a plugin of desired class, KeyError raised otherwise
         """
         self.log.debug("Searching for plugin: %s", plugin_class)
-        matches = [plugin for plugin in self.plugins if isinstance(plugin, plugin_class)]
+        matches = [plugin
+                   for plugin in self.plugins
+                   if isinstance(plugin, plugin_class)]
         if len(matches) > 0:
             if len(matches) > 1:
-                self.log.debug("More then one plugin of type %s found. Using first one.", plugin_class)
+                self.log.debug(
+                    "More then one plugin of type %s found. Using first one.",
+                    plugin_class)
             return matches[-1]
         else:
-            raise KeyError("Requested plugin type not found: %s" % plugin_class)
+            raise KeyError("Requested plugin type not found: %s" %
+                           plugin_class)
 
     def __collect_file(self, filename, keep_original=False):
         """
@@ -500,8 +507,8 @@ class TankCore(object):
         Add file to be stored as result artifact on post-process phase
         """
         if filename:
-            self.log.debug(
-                "Adding artifact file to collect (keep=%s): %s", keep_original, filename)
+            self.log.debug("Adding artifact file to collect (keep=%s): %s",
+                           keep_original, filename)
             self.artifact_files[filename] = keep_original
 
     def apply_shorthand_options(self, options, default_section='DEFAULT'):
@@ -514,14 +521,14 @@ class TankCore(object):
                 section = default_section
                 option = option_str[:option_str.index('=')]
             value = option_str[option_str.index('=') + 1:]
-            self.log.debug(
-                "Override option: %s => [%s] %s=%s", option_str, section, option, value)
+            self.log.debug("Override option: %s => [%s] %s=%s", option_str,
+                           section, option, value)
             self.set_option(section, option, value)
 
     def get_lock_dir(self):
         if not self.lock_dir:
-            self.lock_dir = self.get_option(
-                self.SECTION, "lock_dir", self.LOCK_DIR)
+            self.lock_dir = self.get_option(self.SECTION, "lock_dir",
+                                            self.LOCK_DIR)
 
         return os.path.expanduser(self.lock_dir)
 
@@ -529,8 +536,8 @@ class TankCore(object):
         if not force and self.__there_is_locks():
             raise RuntimeError("There is lock files")
 
-        fh, self.lock_file = tempfile.mkstemp(
-            '.lock', 'lunapark_', self.get_lock_dir())
+        fh, self.lock_file = tempfile.mkstemp('.lock', 'lunapark_',
+                                              self.get_lock_dir())
         os.close(fh)
         os.chmod(self.lock_file, 0644)
         self.config.file = self.lock_file
@@ -555,18 +562,18 @@ class TankCore(object):
                     info.read(full_name)
                     pid = info.get(TankCore.SECTION, self.PID_OPTION)
                     if not pid_exists(int(pid)):
-                        self.log.debug(
-                            "Lock PID %s not exists, ignoring and trying to remove", pid)
+                        self.log.debug("Lock PID %s not exists, ignoring and "
+                                       "trying to remove", pid)
                         try:
                             os.remove(full_name)
                         except Exception, exc:
-                            self.log.debug(
-                                "Failed to delete lock %s: %s", full_name, exc)
+                            self.log.debug("Failed to delete lock %s: %s",
+                                           full_name, exc)
                     else:
                         retcode = True
                 except Exception, exc:
-                    self.log.warn(
-                        "Failed to load info from lock %s: %s", full_name, exc)
+                    self.log.warn("Failed to load info from lock %s: %s",
+                                  full_name, exc)
                     retcode = True
         return retcode
 
@@ -585,6 +592,21 @@ class TankCore(object):
     def publish(self, publisher, key, value):
         update_status(self.status, [publisher] + key.split('.'), value)
 
+    def close(self):
+        """
+        Call close() for all plugins
+        """
+        self.log.info("Close allocated resources...")
+
+        for plugin in self.plugins:
+            self.log.debug("Close %s", plugin)
+            try:
+                plugin.close()
+            except Exception as ex:
+                self.log.error("Failed closing plugin %s: %s", plugin, ex)
+                self.log.debug("Failed closing plugin: %s",
+                               traceback.format_exc(ex))
+
 
 class ConfigManager(object):
     """ Option storage class """
@@ -597,6 +619,10 @@ class ConfigManager(object):
     def load_files(self, configs):
         """         Read configs set into storage        """
         self.log.debug("Reading configs: %s", configs)
+        for config in configs:
+            filename = resource.resource_filename(config)
+            configs.remove(config)
+            configs.append(filename)
         try:
             self.config.read(configs)
         except Exception as ex:
@@ -609,9 +635,8 @@ class ConfigManager(object):
             filename = self.file
 
         if filename:
-            handle = open(filename, 'wb')
-            self.config.write(handle)
-            handle.close()
+            with open(filename, 'wb') as handle:
+                self.config.write(handle)
 
     def get_options(self, section, prefix=''):
         """ Get options list with requested prefix """
@@ -624,8 +649,8 @@ class ConfigManager(object):
         except NoSectionError, ex:
             self.log.warning("No section: %s", ex)
 
-        self.log.debug(
-            "Section: [%s] prefix: '%s' options:\n%s", section, prefix, res)
+        self.log.debug("Section: [%s] prefix: '%s' options:\n%s", section,
+                       prefix, res)
         return res
 
     def find_sections(self, prefix):
@@ -638,7 +663,6 @@ class ConfigManager(object):
 
 
 class AbstractPlugin(object):
-
     """ Parent class for all plugins/modules """
 
     SECTION = 'DEFAULT'
@@ -670,11 +694,17 @@ class AbstractPlugin(object):
         pass
 
     def is_test_finished(self):
-        """ Polling call, if result differs from -1 then test end will be triggeted """
+        """
+        Polling call, if result differs from -1 then test end
+        will be triggeted
+        """
         return -1
 
     def end_test(self, retcode):
-        """ Stop processes launched at 'start_test', change return code if necessary """
+        """
+        Stop processes launched at 'start_test',
+        change return code if necessary
+        """
         return retcode
 
     def post_process(self, retcode):
@@ -706,7 +736,13 @@ class AbstractPlugin(object):
 
     def publish(self, key, value):
         """publish value to status"""
-        self.log.debug(
-            "Publishing status: %s/%s: %s",
-            self.__class__.__name__, key, value)
+        self.log.debug("Publishing status: %s/%s: %s", self.__class__.__name__,
+                       key, value)
         self.core.publish(self.__class__.__name__, key, value)
+
+    def close(self):
+        """
+        Release allocated resources here.
+        Warning: don't do any logic or potentially dangerous operations
+        """
+        pass

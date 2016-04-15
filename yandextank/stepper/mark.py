@@ -1,6 +1,5 @@
 from uuid import uuid4
 
-
 __test_missile = """\
 POST /example/search/hello/help/us?param1=50&param2=0&param3=hello HTTP/1.1\r
 Connection: close\r
@@ -12,11 +11,11 @@ param1=50&param2=0&param3=hello
 
 
 def __mark_by_uri(missile):
-    return '_'.join(missile.split('\n', 1)[0].split(' ', 2)[1].split('?')[0].split('/'))
+    return '_'.join(missile.split('\n', 1)[0].split(' ', 2)[1].split('?')[
+        0].split('/'))
 
 
 class __UriMarker(object):
-
     '''
     Returns a uri marker function with requested limit
 
@@ -29,16 +28,14 @@ class __UriMarker(object):
         self.limit = limit
 
     def __call__(self, missile):
-        return '_'.join(missile.split('\n', 1)[0].split(' ', 2)[1].split('?')[0].split('/')[0:self.limit + 1])
+        return '_'.join(missile.split('\n', 1)[0].split(' ', 2)[1].split('?')[
+            0].split('/')[0:self.limit + 1])
 
-__markers = {
-    'uniq': lambda m: uuid4().hex,
-    'uri': __mark_by_uri,
-}
+
+__markers = {'uniq': lambda m: uuid4().hex, 'uri': __mark_by_uri, }
 
 
 class __Enumerator(object):
-
     def __init__(self, marker):
         self.marker = marker
         self.number = 0L
@@ -84,8 +81,7 @@ def get_marker(marker_type, enum_ammo=False):
             if marker_type in __markers:
                 marker = __markers[marker_type]
             else:
-                raise NotImplementedError(
-                    'No such marker: "%s"' % marker_type)
+                raise NotImplementedError('No such marker: "%s"' % marker_type)
     else:
         marker = lambda m: ''
     if enum_ammo:
