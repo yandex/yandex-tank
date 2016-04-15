@@ -40,11 +40,19 @@ class AbstractGun(AbstractPlugin):
             "net_code": 0,
             "proto_code": 200,
         }
-        yield data_item
-        if data_item.get("interval_real") is None:
-            data_item["interval_real"] = int((time.time() - start_time) * 1e6)
+        try:
+            yield data_item
+        except Exception:
+            if data_item["proto_code"] == 200:
+                data_item["proto_code"] = 500
+            if data_item["net_code"] == 0:
+                data_item["net_code"] == 1
+        finally:
+            if data_item.get("interval_real") is None:
+                data_item["interval_real"] = int(
+                    (time.time() - start_time) * 1e6)
 
-        self.results.put(data_item, timeout=1)
+            self.results.put(data_item, timeout=1)
 
 
 class LogGun(AbstractGun):
