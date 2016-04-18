@@ -56,13 +56,13 @@ class AppiumPlugin(AbstractPlugin):
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            logger.warn("Terminating appium process with PID %s",
+            logger.info("Terminating appium process with PID %s",
                         self.process.pid)
             self.process.terminate()
             if self.process_stdout:
                 self.process_stdout.close()
         else:
-            logger.debug("Appium finished OK")
+            logger.warn("Appium finished unexpectedly")
         return retcode
 
     def get_info(self):
