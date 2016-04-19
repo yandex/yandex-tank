@@ -55,6 +55,13 @@ class AbstractGun(AbstractPlugin):
 
             self.results.put(data_item, timeout=1)
 
+    def init(self):
+        pass
+
+    def shoot(self, missile, marker):
+        raise NotImplementedError(
+            "Gun should implement 'shoot(self, missile, marker)' method")
+
 
 class LogGun(AbstractGun):
     SECTION = 'log_gun'
@@ -131,6 +138,10 @@ class CustomGun(AbstractGun):
         except Exception as e:
             logger.warning("CustomGun %s failed with %s", marker, e)
 
+    def init(self):
+        if hasattr(self.module, 'init'):
+            self.module.init(self)
+
 
 class HttpGun(AbstractGun):
     SECTION = 'http_gun'
@@ -177,3 +188,7 @@ class ScenarioGun(AbstractGun):
                 logger.warning("Scenario %s failed with %s", marker, e)
         else:
             logger.warning("Scenario not found: %s", marker)
+
+    def init(self):
+        if hasattr(self.module, 'init'):
+            self.module.init(self)

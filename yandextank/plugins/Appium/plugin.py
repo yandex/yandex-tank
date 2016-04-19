@@ -45,6 +45,8 @@ class AppiumPlugin(AbstractPlugin):
                                         stderr=self.process_stdout,
                                         stdout=self.process_stdout,
                                         close_fds=True)
+        logger.info("Waiting 5 seconds for Appium to start...")
+        time.sleep(5)
 
     def is_test_finished(self):
         retcode = self.process.poll()

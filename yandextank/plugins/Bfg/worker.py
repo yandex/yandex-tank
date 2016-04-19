@@ -143,7 +143,12 @@ Gun: {gun.__class__.__name__}
         """
         A worker that does actual jobs
         """
-        logger.debug("Starting shooter process")
+        logger.debug("Init shooter process")
+        try:
+            self.gun.init()
+        except Exception:
+            logger.exception("Couldn't initialize gun. Exit shooter process")
+            return
         while not self.quit.is_set():
             try:
                 task = self.task_queue.get(timeout=1)
@@ -166,7 +171,7 @@ Gun: {gun.__class__.__name__}
             except Full:
                 logger.warning(
                     "Couldn't put to result queue because it's full")
-            except Exception as e:
-                logger.warning("Bfg failed with %s", e)
+            except Exception:
+                logger.exception("Bfg shoot exception")
 
-        logger.debug("Exiting shooter process")
+        logger.debug("Exit shooter process")
