@@ -619,12 +619,10 @@ class ConfigManager(object):
     def load_files(self, configs):
         """         Read configs set into storage        """
         self.log.debug("Reading configs: %s", configs)
-        for config in configs:
-            filename = resource.resource_filename(config)
-            configs.remove(config)
-            configs.append(filename)
+        config_filenames = [resource.resource_filename(config)
+                            for config in configs]
         try:
-            self.config.read(configs)
+            self.config.read(config_filenames)
         except Exception as ex:
             self.log.error("Can't load configs: %s", ex)
             raise ex
