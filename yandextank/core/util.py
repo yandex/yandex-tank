@@ -1,9 +1,17 @@
 '''
 Common utilities
 '''
+import os
 import threading as th
 import httplib
 import logging
+import errno
+import itertools
+import re
+import select
+import shlex
+import psutil
+import subprocess
 
 logger = logging.getLogger(__name__)
 
@@ -201,3 +209,151 @@ NET = {
     131: "State not recoverable",
     999: 'Common Failure',
 }
+
+
+
+def log_stdout_stderr(log, stdout, stderr, comment=""):
+    """
+    This function polls stdout and stderr streams and writes their contents
+    to log
+    """
+    readable = select.select([stdout], [], [], 0)[0]
+    if stderr:
+        exceptional = select.select([stderr], [], [], 0)[0]
+    else:
+        exceptional = []
+
+    log.debug("Selected: %s, %s", readable, exceptional)
+
+    for handle in readable:
+        line = handle.read()
+        readable.remove(handle)
+        if line:
+            log.debug("%s stdout: %s", comment, line.strip())
+
+    for handle in exceptional:
+        line = handle.read()
+        exceptional.remove(handle)
+        if line:
+            log.warn("%s stderr: %s", comment, line.strip())
+
+
+def expand_to_milliseconds(str_time):
+    """
+    converts 1d2s into milliseconds
+    """
+    return expand_time(str_time, 'ms', 1000)
+
+def expand_to_seconds(str_time):
+    """
+    converts 1d2s into seconds
+    """
+    return expand_time(str_time, 's', 1)
+
+def expand_time(str_time, default_unit='s', multiplier=1):
+    """
+    helper for above functions
+    """
+    parser = re.compile('(\d+)([a-zA-Z]*)')
+    parts = parser.findall(str_time)
+    result = 0.0
+    for value, unit in parts:
+        value = int(value)
+        unit = unit.lower()
+        if unit == '':
+            unit = default_unit
+
+        if unit == 'ms':
+            result += value * 0.001
+            continue
+        elif unit == 's':
+            result += value
+            continue
+        elif unit == 'm':
+            result += value * 60
+            continue
+        elif unit == 'h':
+            result += value * 60 * 60
+            continue
+        elif unit == 'd':
+            result += value * 60 * 60 * 24
+            continue
+        elif unit == 'w':
+            result += value * 60 * 60 * 24 * 7
+            continue
+        else:
+            raise ValueError("String contains unsupported unit %s: %s" %
+                             (unit, str_time))
+    return int(result * multiplier)
+
+def pid_exists(pid):
+    """Check whether pid exists in the current process table."""
+    if pid < 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except OSError, exc:
+        logging.debug("No process[%s]: %s", exc.errno, exc)
+        return exc.errno == errno.EPERM
+    else:
+        p = psutil.Process(pid)
+        return p.status != psutil.STATUS_ZOMBIE
+
+def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
+    """
+    Wrapper for Popen
+    """
+    log = logging.getLogger(__name__)
+    log.debug("Starting: %s", cmd)
+
+    stdout = ""
+    stderr = ""
+
+    if not shell and isinstance(cmd, basestring):
+        cmd = shlex.split(cmd)
+
+    if catch_out:
+        process = subprocess.Popen(cmd,
+                                   shell=shell,
+                                   stderr=subprocess.PIPE,
+                                   stdout=subprocess.PIPE,
+                                   close_fds=True)
+    else:
+        process = subprocess.Popen(cmd, shell=shell, close_fds=True)
+
+    stdout, stderr = process.communicate()
+    if stderr:
+        log.error("There were errors:\n%s", stderr)
+
+    if stdout:
+        log.debug("Process output:\n%s", stdout)
+    returncode = process.returncode
+    log.debug("Process exit code: %s", returncode)
+    return returncode, stdout, stderr
+
+def splitstring(string):
+    """
+    >>> string = 'apple orange "banana tree" green'
+    >>> splitstring(string)
+    ['apple', 'orange', 'green', '"banana tree"']
+    """
+    patt = re.compile(r'"[\w ]+"')
+    if patt.search(string):
+        quoted_item = patt.search(string).group()
+        newstring = patt.sub('', string)
+        return newstring.split() + [quoted_item]
+    else:
+        return string.split()
+
+def pairs(lst):
+    """
+    Iterate over pairs in the list
+    """
+    return itertools.izip(lst[::2], lst[1::2])
+
+def update_status(status, multi_key, value):
+    if len(multi_key) > 1:
+        update_status(
+            status.setdefault(multi_key[0], {}), multi_key[1:], value)
+    else:
+        status[multi_key[0]] = value

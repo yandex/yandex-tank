@@ -1,15 +1,15 @@
-from yandextank.plugins.Aggregator import AggregatorPlugin
-from yandextank.plugins.Phantom import PhantomReader
-from yandextank.core import AbstractPlugin
 import subprocess
 import time
-from yandextank.plugins.Console import \
-    ConsolePlugin, AbstractInfoWidget
-import yandextank.plugins.Console.screen as ConsoleScreen
 import datetime
-from config import PoolConfig, PandoraConfig, parse_schedule
-from reader import PandoraStatsReader
 import logging
+
+from ...core.interfaces import AbstractPlugin, AbstractInfoWidget
+from ..Aggregator import AggregatorPlugin
+from ..Phantom import PhantomReader
+from ..Console import ConsolePlugin
+from ..Console import screen as ConsoleScreen
+from .config import PoolConfig, PandoraConfig, parse_schedule
+from .reader import PandoraStatsReader
 
 logger = logging.getLogger(__name__)
 

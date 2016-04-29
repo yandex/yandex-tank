@@ -1,14 +1,12 @@
 import time
-from yandextank.core import AbstractPlugin
 import logging
-from random import randint
-import threading as th
-import sys
-
-from contextlib import contextmanager
-
 import requests
 import imp
+from random import randint
+from contextlib import contextmanager
+
+from ...core.interfaces import AbstractPlugin
+
 
 logger = logging.getLogger(__name__)
 

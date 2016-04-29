@@ -5,19 +5,17 @@ import os
 import subprocess
 import time
 import multiprocessing as mp
-
-from yandextank.plugins.Aggregator import AggregatorPlugin
-from yandextank.plugins.Console import ConsolePlugin
-from utils import PhantomConfig
-from reader import PhantomReader, PhantomStatsReader
-from yandextank.core import AbstractPlugin
-from yandextank.plugins.Autostop import AutostopPlugin
-from yandextank.plugins.Autostop import AbstractCriterion
-import yandextank.core as tankcore
-
-from widget import PhantomInfoWidget, PhantomProgressBarWidget
-
 import logging
+
+from ...core.util import execute, expand_to_seconds
+from ...core.interfaces import AbstractPlugin, AbstractCriterion
+from ..Aggregator import AggregatorPlugin
+from ..Console import ConsolePlugin
+from ..Autostop import AutostopPlugin
+from .utils import PhantomConfig
+from .reader import PhantomReader, PhantomStatsReader
+from .widget import PhantomInfoWidget, PhantomProgressBarWidget
+
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +105,7 @@ class PhantomPlugin(AbstractPlugin):
             args = [self.phantom_path, 'check', self.config]
 
             try:
-                result = tankcore.execute(args, catch_out=True)
+                result = execute(args, catch_out=True)
             except OSError:
                 raise RuntimeError("Phantom I/O engine is not installed!")
 
@@ -259,7 +257,7 @@ class UsedInstancesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[
             1])
 
         try:

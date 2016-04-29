@@ -1,16 +1,17 @@
 '''
 Module contains top-level generators.
 '''
-from itertools import izip
-import format as fmt
-from config import ComponentFactory
-import info
+import logging
 import os
 import json
 import hashlib
-import logging
 import re
-from yandextank.core.resource import manager as resource
+from itertools import izip
+
+from ..core.resource import manager as resource
+from .config import ComponentFactory
+from . import format as fmt
+from . import info
 
 
 class AmmoFactory(object):

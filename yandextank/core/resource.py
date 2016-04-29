@@ -4,8 +4,8 @@ import os
 import requests
 import gzip
 import hashlib
-from contextlib import closing
 import traceback
+from contextlib import closing
 
 
 class FormatDetector(object):

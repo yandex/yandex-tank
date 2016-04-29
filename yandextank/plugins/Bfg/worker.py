@@ -1,11 +1,12 @@
 import logging
 import time
-from yandextank.stepper import StpdReader
 import multiprocessing as mp
 import threading as th
 from queue import Empty, Full
-
 from contextlib import contextmanager
+
+from ...stepper import StpdReader
+
 
 logger = logging.getLogger(__name__)
 

@@ -3,20 +3,17 @@ Run maven test as load test
 """
 from __future__ import division, absolute_import
 from builtins import super
-
 import subprocess
 import time
-import re
+import logging
 
+from ...core.interfaces import AbstractPlugin
+from ...core.resource import manager as resource_manager
 from ..Aggregator import AggregatorPlugin
 from ..Console import ConsolePlugin
-from ...core import AbstractPlugin
-from ...core.resource import manager as resource_manager
-
 from .console import MavenInfoWidget
 from .reader import MavenReader, MavenStatsReader
 
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +23,7 @@ class MavenPlugin(AbstractPlugin):
     SECTION = "maven"
 
     def __init__(self, core):
+        # FIXME python version 2.7 does not support this syntax. super() should have arguments in Python 2
         super().__init__(core)
         self.maven_cmd = "mvn"
         self.process = None

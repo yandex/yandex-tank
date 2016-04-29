@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
+import logging
 import numpy as np
 import time
-import logging
 from collections import Counter
 
 logger = logging.getLogger(__name__)

@@ -1,14 +1,12 @@
 # -*- coding: UTF-8 -*-
-import os
-import json
 import pandas as pd
 import numpy as np
-import time
-from StringIO import StringIO
-import yandextank.plugins.Aggregator.aggregator as agg
-from yandextank.plugins.Aggregator.chopper import TimeChopper
 import queue as q
 import logging
+from StringIO import StringIO
+
+from ..Aggregator import aggregator as agg
+from ..Aggregator.chopper import TimeChopper
 
 logger = logging.getLogger(__name__)
 

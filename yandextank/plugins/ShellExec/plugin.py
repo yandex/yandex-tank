@@ -1,8 +1,8 @@
 '''
 Contains shellexec plugin
 '''
-from yandextank.core import AbstractPlugin
-import yandextank.core as tankcore
+from ...core.interfaces import AbstractPlugin
+from ...core import util
 
 
 class ShellExecPlugin(AbstractPlugin):
@@ -47,7 +47,7 @@ class ShellExecPlugin(AbstractPlugin):
     def is_test_finished(self):
         if self.poll:
             self.log.info("Executing: %s", self.poll)
-            retcode = tankcore.execute(self.poll,
+            retcode = util.execute(self.poll,
                                        shell=True,
                                        poll_period=0.1,
                                        catch_out=self.catch_out)[0]
@@ -72,7 +72,7 @@ class ShellExecPlugin(AbstractPlugin):
         Execute and check exit code
         '''
         self.log.info("Executing: %s", cmd)
-        retcode = tankcore.execute(cmd,
+        retcode = util.execute(cmd,
                                    shell=True,
                                    poll_period=0.1,
                                    catch_out=self.catch_out)[0]

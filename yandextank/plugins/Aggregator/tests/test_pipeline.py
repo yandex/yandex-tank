@@ -3,13 +3,13 @@ import numpy as np
 import json
 from pkg_resources import resource_string
 from queue import Queue, Empty
+from conftest import MAX_TS, random_split
 
 from yandextank.plugins.Aggregator.chopper import TimeChopper
 from yandextank.plugins.Aggregator.aggregator import Aggregator
 from yandextank.plugins.Aggregator.plugin import DataPoller
 from yandextank.core.util import Drain
 
-from conftest import MAX_TS, random_split
 
 AGGR_CONFIG = json.loads(resource_string("yandextank.plugins.Aggregator",
                                          'config/phout.json').decode('utf-8'))

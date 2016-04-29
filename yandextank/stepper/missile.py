@@ -3,11 +3,12 @@ Missile object and generators
 
 You should update Stepper.status.ammo_count and Stepper.status.loop_count in your custom generators!
 '''
-from itertools import cycle
-from module_exceptions import AmmoFileError
-import info
 import logging
-from yandextank.core.resource import manager as resource
+from itertools import cycle
+
+from ..core.resource import manager as resource
+from .module_exceptions import AmmoFileError
+from . import info
 
 
 class HttpAmmo(object):

@@ -1,52 +1,13 @@
-import yandextank.core as tankcore
 import json
 import re
 import time
 import copy
 import logging
 
+from ...core.util import expand_to_seconds, expand_to_milliseconds
+from ...core.interfaces import AbstractCriterion
+
 logger = logging.getLogger(__name__)
-
-
-class AbstractCriterion(object):
-    """ parent class for all criterions """
-    RC_TIME = 21
-    RC_HTTP = 22
-    RC_NET = 23
-    RC_STEADY = 33
-
-    def __init__(self):
-        self.cause_second = None
-
-    @staticmethod
-    def count_matched_codes(codes_regex, codes_dict):
-        """ helper to aggregate codes by mask """
-        total = 0
-        for code, count in codes_dict.items():
-            if codes_regex.match(str(code)):
-                total += count
-        return total
-
-    def notify(self, data, stat):
-        """ notification about aggregate data goes here """
-        raise NotImplementedError("Abstract methods requires overriding")
-
-    def get_rc(self):
-        """ get return code for test """
-        raise NotImplementedError("Abstract methods requires overriding")
-
-    def explain(self):
-        """ long explanation to show after test stop """
-        raise NotImplementedError("Abstract methods requires overriding")
-
-    def widget_explain(self):
-        """ short explanation to display in right panel """
-        return self.explain(), 0
-
-    @staticmethod
-    def get_type_string():
-        """ returns string that used as config name for criterion """
-        raise NotImplementedError("Abstract methods requires overriding")
 
 
 class AvgTimeCriterion(AbstractCriterion):
@@ -59,9 +20,9 @@ class AvgTimeCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        self.rt_limit = tankcore.expand_to_milliseconds(param_str.split(',')[
+        self.rt_limit = expand_to_milliseconds(param_str.split(',')[
             0])
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[
             1])
         self.autostop = autostop
 
@@ -119,7 +80,7 @@ class HTTPCodesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[
             2])
 
     def notify(self, data, stat):
@@ -193,7 +154,7 @@ class NetCodesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[
             2])
 
     def notify(self, data, stat):
@@ -259,10 +220,8 @@ class QuantileCriterion(AbstractCriterion):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
         self.quantile = float(param_str.split(',')[0])
-        self.rt_limit = tankcore.expand_to_milliseconds(param_str.split(',')[
-            1])
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
-            2])
+        self.rt_limit = expand_to_milliseconds(param_str.split(',')[1])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[2])
         self.autostop = autostop
 
     def notify(self, data, stat):
@@ -313,7 +272,7 @@ class SteadyCumulativeQuantilesCriterion(AbstractCriterion):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
         self.quantile_hash = ""
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[
             0])
         self.autostop = autostop
 
@@ -362,7 +321,7 @@ class TimeLimitCriterion(AbstractCriterion):
         AbstractCriterion.__init__(self)
         self.start_time = time.time()
         self.end_time = time.time()
-        self.time_limit = tankcore.expand_to_seconds(param_str)
+        self.time_limit = expand_to_seconds(param_str)
 
     def notify(self, data, stat):
         self.end_time = time.time()

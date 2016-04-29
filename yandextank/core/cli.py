@@ -1,8 +1,9 @@
-from consoleworker import ConsoleTank, CompletionHelperOptionParser
-from optparse import OptionParser
 import logging
 import sys
 import traceback
+from optparse import OptionParser
+
+from .consoleworker import ConsoleTank, CompletionHelperOptionParser
 
 
 def main():
