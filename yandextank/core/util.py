@@ -33,6 +33,116 @@ class Drain(th.Thread):
     def close(self):
         self._interrupted.set()
 
+
+class SecuredShell(object):
+    def __init__(self, host, port, username, timeout):
+        self.host = host
+        self.port = port
+        self.username = username
+        self.timeout = timeout
+
+    def connect(self):
+        logger.debug(
+            "Opening SSH connection to {host}:{port}".format(host=self.host,
+                                                             port=self.port))
+        client = SSHClient()
+        client.load_system_host_keys()
+        client.set_missing_host_key_policy(AutoAddPolicy())
+
+        try:
+            client.connect(self.host,
+                           port=self.port,
+                           username=self.username,
+                           timeout=self.timeout, )
+        except ValueError, e:
+            logger.error(e)
+            logger.warning("""
+Patching Crypto.Cipher.AES.new and making another attempt.
+
+See here for the details:
+http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-parameter-not-iv/
+            """)
+            client.close()
+            import Crypto.Cipher.AES
+            orig_new = Crypto.Cipher.AES.new
+
+            def fixed_AES_new(key, *ls):
+                if Crypto.Cipher.AES.MODE_CTR == ls[0]:
+                    ls = list(ls)
+                    ls[1] = ''
+                return orig_new(key, *ls)
+
+            Crypto.Cipher.AES.new = fixed_AES_new
+            client.connect(self.host,
+                           port=self.port,
+                           username=self.username,
+                           timeout=self.timeout, )
+        return client
+
+    def execute(self, cmd):
+        logger.info("Execute on %s: %s", self.host, cmd)
+        with self.connect() as client:
+            _, stdout, stderr = client.exec_command(cmd)
+            output = stdout.read()
+            errors = stderr.read()
+            err_code = stdout.channel.recv_exit_status()
+        return output, errors, err_code
+
+    def rm(self, path):
+        return self.execute("rm -f %s" % path)
+
+    def rm_r(self, path):
+        return self.execute("rm -rf %s" % path)
+
+    def mkdir(self, path):
+        return self.execute("mkdir -p %s" % path)
+
+    def send_file(self, local_path, remote_path):
+        logger.info("Sending [{local}] to {host}:[{remote}]".format(
+            local=local_path,
+            host=self.host,
+            remote=remote_path))
+        with self.connect() as client, client.open_sftp() as sftp:
+            result = sftp.put(local_path, remote_path)
+        return result
+
+    def get_file(self, remote_path, local_path):
+        logger.info("Receiving from {host}:[{remote}] to [{local}]".format(
+            local=local_path,
+            host=self.host,
+            remote=remote_path))
+        with self.connect() as client, client.open_sftp() as sftp:
+            result = sftp.get(remote_path, local_path)
+        return result
+
+    def async_session(self, cmd):
+        return AsyncSession(self, cmd)
+
+
+class AsyncSession(object):
+    def __init__(self, ssh, cmd):
+        self.client = ssh.connect()
+        self.session = self.client.get_transport().open_session()
+        self.session.get_pty()
+        self.session.exec_command(cmd)
+
+    def send(self, data):
+        self.session.send(data)
+
+    def close(self):
+        self.session.close()
+        self.client.close()
+
+    def finished(self):
+        return self.session.exit_status_ready()
+
+    def read_maybe(self):
+        if self.session.recv_ready():
+            return self.session.recv(4096)
+        else:
+            return None
+
+
 ### HTTP codes
 HTTP = httplib.responses
 
