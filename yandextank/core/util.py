@@ -4,6 +4,8 @@ Common utilities
 import threading as th
 import httplib
 import logging
+from paramiko import \
+    SSHClient, AutoAddPolicy, AuthenticationException, SSHException
 
 logger = logging.getLogger(__name__)
 
