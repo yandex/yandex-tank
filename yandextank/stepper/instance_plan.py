@@ -1,9 +1,10 @@
-from itertools import cycle, repeat, chain
-from util import parse_duration
-from module_exceptions import StepperConfigurationError
+import logging
 import re
 import info
-import logging
+from itertools import cycle, repeat, chain
+
+from .util import parse_duration
+from .module_exceptions import StepperConfigurationError
 
 
 class LoadPlanBuilder(object):

@@ -2,11 +2,10 @@
 
 import time
 import logging
-
 import psutil
 
-from yandextank.core import AbstractPlugin
-import yandextank.core as tankcore
+from ...core.interfaces import AbstractPlugin
+from ...core.util import expand_to_seconds, execute
 
 
 class ResourceCheckPlugin(AbstractPlugin):
@@ -29,7 +28,7 @@ class ResourceCheckPlugin(AbstractPlugin):
         return ["interval", "disk_limit", "mem_limit"]
 
     def configure(self):
-        self.interval = tankcore.expand_to_seconds(self.get_option(
+        self.interval = expand_to_seconds(self.get_option(
             "interval", self.interval))
         self.disk_limit = int(self.get_option("disk_limit", self.disk_limit))
         self.mem_limit = int(self.get_option("mem_limit", self.mem_limit))
@@ -53,7 +52,7 @@ class ResourceCheckPlugin(AbstractPlugin):
         cmd = "sh -c \"df --no-sync -m -P -l -x fuse -x tmpfs -x devtmpfs -x davfs -x nfs "
         cmd += self.core.artifacts_base_dir
         cmd += " | tail -n 1 | awk '{print \$4}' \""
-        res = tankcore.execute(cmd, True, 0.1, True)
+        res = execute(cmd, True, 0.1, True)
         logging.debug("Result: %s", res)
         if not len(res[1]):
             self.log.debug("No disk usage info: %s", res[2])

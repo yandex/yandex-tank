@@ -1,17 +1,16 @@
 """ Utility classes for phantom module """
 # TODO: use separate answ log per benchmark
+import logging
 import copy
 import traceback
 import multiprocessing
 import re
 import socket
 import string
-
 from pkg_resources import resource_string
-from yandextank.stepper import StepperWrapper
-from yandextank.stepper.util import parse_duration
 
-import logging
+from ...stepper import StepperWrapper
+from ...stepper.util import parse_duration
 
 logger = logging.getLogger(__name__)
 

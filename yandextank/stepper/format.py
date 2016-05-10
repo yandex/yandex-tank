@@ -1,9 +1,9 @@
 '''
 Ammo formatters
 '''
-from module_exceptions import StpdFileError
 import logging
 
+from .module_exceptions import StpdFileError
 
 class Stpd(object):
     '''

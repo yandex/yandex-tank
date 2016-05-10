@@ -3,11 +3,11 @@
 import logging
 import os.path
 
-from yandextank.plugins.Aggregator import AggregatorPlugin, AggregateResultListener
-from yandextank.plugins.Console import AbstractInfoWidget, ConsolePlugin
-from yandextank.core import AbstractPlugin
-import criterions as cr
-import cumulative_criterions as cum_cr
+from ...core.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
+from ..Aggregator import AggregatorPlugin
+from ..Console import ConsolePlugin
+from . import criterions as cr
+from . import cumulative_criterions as cum_cr
 
 logger = logging.getLogger(__name__)
 

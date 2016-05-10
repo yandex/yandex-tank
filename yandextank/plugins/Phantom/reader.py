@@ -3,12 +3,13 @@ Phantom phout format reader. Read chunks from phout and produce data frames
 """
 import pandas as pd
 import numpy as np
-from StringIO import StringIO
 import logging
 import json
 import time
 import datetime
 import itertools as itt
+from StringIO import StringIO
+
 
 logger = logging.getLogger(__name__)
 

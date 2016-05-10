@@ -1,5 +1,5 @@
 ''' Tank exit code check plugin '''
-from yandextank.core import AbstractPlugin
+from ...core.interfaces import AbstractPlugin
 
 
 class RCAssertPlugin(AbstractPlugin):

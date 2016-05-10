@@ -5,16 +5,14 @@ import signal
 import subprocess
 import time
 import datetime
-
 from pkg_resources import resource_string
-from yandextank.plugins.Aggregator import AggregatorPlugin, \
-    AggregateResultListener
-from yandextank.plugins.Console import \
-    ConsolePlugin, AbstractInfoWidget
-import yandextank.plugins.Console.screen as ConsoleScreen
-from yandextank.core import AbstractPlugin
-import yandextank.core as tankcore
-from reader import JMeterReader
+
+from ...core.util import splitstring
+from ...core.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
+from ..Aggregator import AggregatorPlugin
+from ..Console import ConsolePlugin
+from ..Console import screen as ConsoleScreen
+from .reader import JMeterReader
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +67,7 @@ class JMeterPlugin(AbstractPlugin):
                      self.jmeter_log,
                      '-Jjmeter.save.saveservice.default_delimiter=\\t',
                      '-Jjmeter.save.saveservice.connect_time=true']
-        self.args += tankcore.splitstring(self.user_args)
+        self.args += splitstring(self.user_args)
 
         aggregator = None
         try:

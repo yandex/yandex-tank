@@ -3,9 +3,10 @@ Utilities: parsers, converters, etc.
 '''
 import re
 import logging
-from itertools import islice
-from module_exceptions import StepperConfigurationError
 import math
+from itertools import islice
+
+from .module_exceptions import StepperConfigurationError
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 

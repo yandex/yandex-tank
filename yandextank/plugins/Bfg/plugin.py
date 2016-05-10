@@ -1,9 +1,10 @@
-from yandextank.core import AbstractPlugin
-from yandextank.plugins.Aggregator import AggregatorPlugin
-from yandextank.plugins.Console import ConsolePlugin
 import logging
 import time
-from yandextank.stepper import StepperWrapper
+
+from ...core.interfaces import AbstractPlugin
+from ...stepper import StepperWrapper
+from ..Aggregator import AggregatorPlugin
+from ..Console import ConsolePlugin
 from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun
 from .widgets import BfgInfoWidget
 from .worker import BFG

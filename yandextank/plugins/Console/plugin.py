@@ -4,9 +4,9 @@ import sys
 import traceback
 import threading
 
-from yandextank.plugins.Aggregator import AggregatorPlugin, AggregateResultListener
-from screen import Screen
-from yandextank.core import AbstractPlugin
+from ...core.interfaces import AbstractPlugin, AggregateResultListener
+from ..Aggregator import AggregatorPlugin
+from .screen import Screen
 
 LOG = logging.getLogger(__name__)
 
@@ -177,17 +177,3 @@ class NoConsoleMarkup(RealConsoleMarkup):
     BG_CYAN = ''
 
 # ======================================================
-
-
-class AbstractInfoWidget(object):
-    ''' parent class for all right panel widgets '''
-
-    def __init__(self):
-        LOG = logging.getLogger(__name__)
-
-    def render(self, screen):
-        raise NotImplementedError()
-
-    def get_index(self):
-        ''' get vertical priority index '''
-        return 0

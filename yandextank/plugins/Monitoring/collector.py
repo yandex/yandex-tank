@@ -1,24 +1,20 @@
 """Target monitoring via SSH"""
 
 import ConfigParser
-from collections import defaultdict
-from xml.etree import ElementTree as etree
-#from subprocess import PIPE, Popen
 import base64
 import logging
 import os.path
 import re
 import sys
 import tempfile
-import socket
 import time
 import getpass
-from paramiko import \
-    SSHClient, AutoAddPolicy, AuthenticationException, SSHException
+from collections import defaultdict
+from xml.etree import ElementTree as etree
+from paramiko import SSHClient, AutoAddPolicy, AuthenticationException, SSHException
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
-
 
 def parse_xml(config):
     if os.path.exists(config):

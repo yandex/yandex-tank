@@ -1,13 +1,12 @@
 '''
 Plugin showing tool learning hints in console
 '''
-
-from pkg_resources import resource_stream
-from yandextank.plugins.Console import \
-    ConsolePlugin, AbstractInfoWidget
-from yandextank.core import AbstractPlugin
 import random
 import textwrap
+from pkg_resources import resource_stream
+
+from ...core.interfaces import AbstractInfoWidget, AbstractPlugin
+from ..Console import ConsolePlugin
 
 
 class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):

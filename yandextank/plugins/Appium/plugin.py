@@ -1,8 +1,8 @@
-from yandextank.core import AbstractPlugin
 import subprocess
 import time
-import datetime
 import logging
+
+from ...core.interfaces import AbstractPlugin
 
 logger = logging.getLogger(__name__)
 

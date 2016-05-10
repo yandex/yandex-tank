@@ -2,10 +2,10 @@
 Load Plan generators
 '''
 import re
-from util import parse_duration, solve_quadratic
-from itertools import chain, groupby
 import info
+from itertools import chain, groupby
 
+from .util import parse_duration, solve_quadratic
 
 class Const(object):
     '''

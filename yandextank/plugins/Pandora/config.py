@@ -1,7 +1,8 @@
 ''' Pandora config generator '''
 import json
 from pkg_resources import resource_string
-from yandextank.stepper.util import parse_duration
+
+from ...stepper.util import parse_duration
 
 
 def periodic_schedule(batch_size, period, limit):
