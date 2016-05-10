@@ -267,8 +267,12 @@ class TankCore(object):
                         "Couldn't convert plugin path to new format:\n    %s" %
                         plugin_path)
             plugin = il.import_module(plugin_path)
-            instance = getattr(plugin,
-                               plugin_path.split('.')[-1] + 'Plugin')(self)
+            try:
+                instance = getattr(plugin, 'Plugin')(self)
+            except:
+                self.log.warning("Deprecated plugin classname: %s. Should be 'Plugin'", plugin)
+                instance = getattr(plugin, plugin_path.split('.')[-1] + 'Plugin')(self)
+
             self.plugins.append(instance)
 
         self.log.debug("Plugin instances: %s", self.plugins)
