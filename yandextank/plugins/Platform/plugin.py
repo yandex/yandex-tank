@@ -1,4 +1,4 @@
-''' Module to check remote system information (cross-platform) '''
+''' Module that collects remote system information '''
 
 import logging
 import getpass
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin(AbstractPlugin):
-    '''Plugin to check remote system information'''
+    '''Plugin that collects remote system information'''
     SECTION = "platform"
 
     @staticmethod
