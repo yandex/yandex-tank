@@ -84,7 +84,7 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
         return client
 
     def execute(self, cmd):
-        logger.info("Execute on %s: %s", self.host, cmd)
+        logger.debug("Execute on %s: %s", self.host, cmd)
         with self.connect() as client:
             _, stdout, stderr = client.exec_command(cmd)
             output = stdout.read()
