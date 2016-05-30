@@ -1,5 +1,6 @@
 import pandas as pd
 import time
+import itertools as itt
 
 
 def records_to_df(records):
@@ -11,6 +12,8 @@ def records_to_df(records):
     records.set_index(['receive_sec'], inplace=True)
     return records
 
+def _expand_steps(steps):
+    return list(itt.chain(*([rps] * duration for rps, duration in steps)))
 
 class BfgReader(object):
     def __init__(self, results):
@@ -40,7 +43,7 @@ class BfgStatsReader(object):
     def __init__(self, instance_counter, steps):
         self.closed = False
         self.last_ts = 0
-        self.steps = steps
+        self.steps = _expand_steps(steps)
         self.instance_counter = instance_counter
         self.start_time = int(time.time())
 
@@ -51,7 +54,7 @@ class BfgStatsReader(object):
                 offset = cur_ts - self.start_time
                 reqps = 0
                 if offset >= 0 and offset < len(self.steps):
-                    reqps = self.steps[offset][0]
+                    reqps = self.steps[offset]
                 yield [{'ts': cur_ts,
                         'metrics': {'instances': self.instance_counter.get(),
                                     'reqps': reqps}}]
