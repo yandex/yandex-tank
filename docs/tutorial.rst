@@ -43,8 +43,7 @@ Example:
 ------------
 
 3. ``const (load,dur)`` makes constant load. ``load`` - rps amount, ``dur`` 
-- load duration. You can set fractional load like this: ``line(1.1, 2.5, 10)`` 
--- from 1.1rps to 2.5 for 10 seconds. 
+- load duration. 
 
 .. note::
   ``const(0, 10)`` - 0 rps for 10 seconds, 
