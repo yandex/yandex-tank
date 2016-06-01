@@ -14,8 +14,8 @@ class LoadTest(object):
         with self.gun.measure("case2"):
             log.info("Shoot case 2: %s", missile)
 
-    def startup(self):
-        log.info("Starting up LoadTest")
+    def setup(self):
+        log.info("Setting up LoadTest")
 
     def teardown(self):
         log.info("Tearing down LoadTest")

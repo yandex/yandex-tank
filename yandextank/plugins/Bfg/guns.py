@@ -52,7 +52,7 @@ class AbstractGun(AbstractPlugin):
 
             self.results.put(data_item, timeout=1)
 
-    def startup(self):
+    def setup(self):
         pass
 
     def shoot(self, missile, marker):
@@ -139,7 +139,7 @@ class CustomGun(AbstractGun):
         except Exception as e:
             logger.warning("CustomGun %s failed with %s", marker, e)
 
-    def startup(self):
+    def setup(self):
         if hasattr(self.module, 'init'):
             self.module.init(self)
 
@@ -191,7 +191,7 @@ class ScenarioGun(AbstractGun):
         else:
             logger.warning("Scenario not found: %s", marker)
 
-    def startup(self):
+    def setup(self):
         if hasattr(self.module, 'init'):
             self.module.init(self)
 
@@ -224,9 +224,9 @@ class UltimateGun(AbstractGun):
                 (class_name, module_name))
         self.load_test = test_class(self)
 
-    def startup(self):
-        if callable(getattr(self.load_test, "startup", None)):
-            self.load_test.startup()
+    def setup(self):
+        if callable(getattr(self.load_test, "setup", None)):
+            self.load_test.setup()
 
     def teardown(self):
         if callable(getattr(self.load_test, "teardown", None)):

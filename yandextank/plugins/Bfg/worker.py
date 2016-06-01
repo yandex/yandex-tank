@@ -145,7 +145,7 @@ Gun: {gun.__class__.__name__}
         """
         logger.debug("Init shooter process")
         try:
-            self.gun.startup()
+            self.gun.setup()
         except Exception:
             logger.exception("Couldn't initialize gun. Exit shooter process")
             return
