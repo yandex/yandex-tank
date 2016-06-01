@@ -122,6 +122,7 @@ class CustomGun(AbstractGun):
 
     def __init__(self, core):
         super(CustomGun, self).__init__(core)
+        logger.warning("Custom gun is deprecated. Use Ultimate gun instead")
         module_path = self.get_option("module_path", "").split()
         module_name = self.get_option("module_name")
         fp, pathname, description = imp.find_module(module_name, module_path)
@@ -168,6 +169,7 @@ class ScenarioGun(AbstractGun):
 
     def __init__(self, core):
         super(ScenarioGun, self).__init__(core)
+        logger.warning("Scenario gun is deprecated. Use Ultimate gun instead")
         module_path = self.get_option("module_path", "").split()
         module_name = self.get_option("module_name")
         fp, pathname, description = imp.find_module(module_name, module_path)
@@ -231,6 +233,8 @@ class UltimateGun(AbstractGun):
             self.load_test.teardown()
 
     def shoot(self, missile, marker):
+        if not marker:
+            marker = "default"
         scenario = getattr(self.load_test, marker, None)
         if callable(scenario):
             try:
