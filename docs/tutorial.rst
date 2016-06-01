@@ -223,7 +223,6 @@ Create a file with declared requests: ``ammo.txt``
 File begins with optional lines [...], that contain headers which will
 be added to every request. After that section there is a list of URIs and POST bodies.
 Each URI line begins with a number which is the size of the following POST body.
-Set up ammo type in load.ini:
 
 
 Request-style
@@ -490,7 +489,7 @@ So, if we want to stop test when all answers in 1 second period are 5xx plus som
   port=80 ;target's port
   rps_schedule=const(10, 10m) ;load scheme
   [autostop]
-  autostop=time(1,10)
+  autostop=time(1000,10)
     http(5xx,100%,1s)
     net(xx,1,30)
 
