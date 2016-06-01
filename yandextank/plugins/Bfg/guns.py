@@ -7,7 +7,6 @@ from contextlib import contextmanager
 
 from ...core.interfaces import AbstractPlugin
 
-
 logger = logging.getLogger(__name__)
 
 requests_logger = logging.getLogger('requests')
@@ -53,12 +52,15 @@ class AbstractGun(AbstractPlugin):
 
             self.results.put(data_item, timeout=1)
 
-    def init(self):
+    def startup(self):
         pass
 
     def shoot(self, missile, marker):
         raise NotImplementedError(
             "Gun should implement 'shoot(self, missile, marker)' method")
+
+    def teardown(self):
+        pass
 
 
 class LogGun(AbstractGun):
@@ -136,7 +138,7 @@ class CustomGun(AbstractGun):
         except Exception as e:
             logger.warning("CustomGun %s failed with %s", marker, e)
 
-    def init(self):
+    def startup(self):
         if hasattr(self.module, 'init'):
             self.module.init(self)
 
@@ -187,6 +189,53 @@ class ScenarioGun(AbstractGun):
         else:
             logger.warning("Scenario not found: %s", marker)
 
-    def init(self):
+    def startup(self):
         if hasattr(self.module, 'init'):
             self.module.init(self)
+
+
+class UltimateGun(AbstractGun):
+    SECTION = "ultimate_gun"
+
+    def __init__(self, core):
+        super(UltimateGun, self).__init__(core)
+        class_name = self.get_option("class_name", "LoadTest")
+        module_path = self.get_option("module_path", "").split()
+        module_name = self.get_option("module_name")
+        fp, pathname, description = imp.find_module(module_name, module_path)
+        #
+        # Dirty Hack
+        #
+        # we will add current unix timestamp to the name of a module each time
+        # it is imported to be sure Python won't be able to cache it
+        #
+        try:
+            self.module = imp.load_module("%s_%d" % (module_name, time.time()),
+                                          fp, pathname, description)
+        finally:
+            if fp:
+                fp.close()
+        test_class = getattr(self.module, class_name, None)
+        if type(test_class) != type:
+            raise NotImplementedError(
+                "Class definition for '%s' was not found in '%s' module" %
+                (class_name, module_name))
+        self.load_test = test_class(self)
+
+    def startup(self):
+        if callable(getattr(self.load_test, "startup", None)):
+            self.load_test.startup()
+
+    def teardown(self):
+        if callable(getattr(self.load_test, "teardown", None)):
+            self.load_test.teardown()
+
+    def shoot(self, missile, marker):
+        scenario = getattr(self.load_test, marker, None)
+        if callable(scenario):
+            try:
+                scenario(missile)
+            except Exception as e:
+                logger.warning("Scenario %s failed with %s", marker, e)
+        else:
+            logger.warning("Scenario not found: %s", marker)
