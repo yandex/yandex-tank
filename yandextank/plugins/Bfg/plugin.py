@@ -5,7 +5,7 @@ from ...core.interfaces import AbstractPlugin
 from ...stepper import StepperWrapper
 from ..Aggregator import AggregatorPlugin
 from ..Console import ConsolePlugin
-from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun
+from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun, UltimateGun
 from .widgets import BfgInfoWidget
 from .worker import BFG
 from .reader import BfgReader, BfgStatsReader
@@ -29,6 +29,7 @@ class BfgPlugin(AbstractPlugin):
             'custom': CustomGun,
             'http': HttpGun,
             'scenario': ScenarioGun,
+            'ultimate': UltimateGun,
         }
 
     @staticmethod
