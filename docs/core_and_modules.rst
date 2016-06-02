@@ -745,53 +745,6 @@ as soon as the previous response have been received). This is analogous to phant
 schedule mode.
 
 
-AB
-------
-
-Apache Benchmark load generator module. As the ab utility writes results
-to file only after the test is finished, Yandex.Tank is unable to show
-the on-line statistics for the tests with ab. The data are reviewed
-after the test.
-To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable AB plugin and then specify 
-the parameters for AB:
-
-::
-
-    [tank]
-    ; Disable phantom:
-    plugin_phantom=
-    ; Enable AB module instead:
-    plugin_ab=yandextank.plugins.ApacheBenchmark
-
-
-INI file section: **[ab]**
-
-Options
-^^^^^^^^^^^^^^^^^^^
-
-:url: 
-  Requested URL.
-
-  Default: ``http:**localhost/`` 
-
-:requests: 
-  Total request count.
-
-  Default: 100 
-
-:concurrency: 
-  Number of concurrent requests: 1.
-
-:options: 
-  ab command line options.
-
-Artifacts
-^^^^^^^^^^^^^^^^^^^
-
-:ab_*.log: 
-  Request log with response times.
-
-
 ******************
 Artifact uploaders
 ******************
