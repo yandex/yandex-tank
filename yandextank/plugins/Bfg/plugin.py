@@ -46,7 +46,7 @@ class BfgPlugin(AbstractPlugin):
         self.stepper_wrapper.read_config()
 
     def prepare_test(self):
-        self.log.info(self.get_option("ammo_type"))
+        self.log.info("BFG using ammo type %s", self.get_option("ammo_type"))
         self.stepper_wrapper.prepare_stepper()
         gun_type = self.get_option("gun_type")
         if gun_type in self.gun_classes:

@@ -78,6 +78,26 @@ class LogGun(AbstractGun):
             di["interval_real"] = rt
 
 
+class HttpGun(AbstractGun):
+    SECTION = 'http_gun'
+
+    def __init__(self, core):
+        super(HttpGun, self).__init__(core)
+        self.base_address = self.get_option("base_address")
+
+    def shoot(self, missile, marker):
+        logger.debug("Missile: %s\n%s", marker, missile)
+        logger.debug("Sending request: %s", self.base_address + missile)
+        with self.measure(marker) as di:
+            try:
+                r = requests.get(self.base_address + missile, verify=False)
+                di["proto_code"] = r.status_code
+            except requests.ConnectionError:
+                logger.debug("Connection error", exc_info=True)
+                di["net_code"] = 1
+                di["proto_code"] = 500
+
+
 class SqlGun(AbstractGun):
     SECTION = 'sql_gun'
 
@@ -118,6 +138,9 @@ class SqlGun(AbstractGun):
 
 
 class CustomGun(AbstractGun):
+    """
+    This gun is deprecated! Use UltimateGun
+    """
     SECTION = 'custom_gun'
 
     def __init__(self, core):
@@ -144,27 +167,10 @@ class CustomGun(AbstractGun):
             self.module.init(self)
 
 
-class HttpGun(AbstractGun):
-    SECTION = 'http_gun'
-
-    def __init__(self, core):
-        super(HttpGun, self).__init__(core)
-        self.base_address = self.get_option("base_address")
-
-    def shoot(self, missile, marker):
-        logger.debug("Missile: %s\n%s", marker, missile)
-        logger.debug("Sending request: %s", self.base_address + missile)
-        with self.measure(marker) as di:
-            try:
-                r = requests.get(self.base_address + missile, verify=False)
-                di["proto_code"] = r.status_code
-            except requests.ConnectionError:
-                logger.debug("Connection error", exc_info=True)
-                di["net_code"] = 1
-                di["proto_code"] = 500
-
-
 class ScenarioGun(AbstractGun):
+    """
+    This gun is deprecated! Use UltimateGun
+    """
     SECTION = 'scenario_gun'
 
     def __init__(self, core):
