@@ -486,6 +486,7 @@ use them as an example. Using SQL gun you can try to kill an SQL db (you need sq
 But the main purpose of BFG is to support user-defined guns. Here is how you do it using 'ultimate' gun.
 
 1. Define your scenario as a python class (in a single-file module, or a package):
+
 .. code-block:: python
 
   import logging
