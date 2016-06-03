@@ -13,6 +13,7 @@ from ..Telegraf.reader import MonitoringReader
 from ..Telegraf.config import AgentConfig
 
 logger = logging.getLogger(__name__)
+logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
 
 
 def generate_file_md5(filename, blocksize=2**20):
