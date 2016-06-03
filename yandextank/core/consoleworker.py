@@ -9,7 +9,8 @@ import traceback
 import signal
 from optparse import OptionParser
 from pkg_resources import resource_filename
-from tankcore import TankCore
+
+from .tankcore import TankCore
 
 
 class RealConsoleMarkup(object):

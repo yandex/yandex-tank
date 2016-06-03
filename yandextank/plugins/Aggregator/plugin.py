@@ -1,33 +1,17 @@
 """ Core module to calculate aggregate data """
 import logging
-
-from pkg_resources import resource_string
 import json
 import queue as q
-from yandextank.core import AbstractPlugin
-from yandextank.core.util import Drain
-from yandextank.core.exceptions import PluginImplementationError
-from aggregator import Aggregator, DataPoller
-from chopper import TimeChopper
-import time
+from pkg_resources import resource_string
+
+from ...core.interfaces import AbstractPlugin
+from ...core.interfaces import AggregateResultListener
+from ...core.util import Drain
+from ...core.exceptions import PluginImplementationError
+from .aggregator import Aggregator, DataPoller
+from .chopper import TimeChopper
 
 logger = logging.getLogger(__name__)
-
-
-class AggregateResultListener(object):
-    """ Listener interface """
-
-    def on_aggregated_data(self, data, stats):
-        """
-        notification about new aggregated data and stats
-
-        data contains aggregated metrics and stats contain non-aggregated
-        metrics from gun (like instances count, for example)
-
-        data and stats are cached and synchronized by timestamp. Stat items
-        are holded until corresponding data item is received and vice versa.
-        """
-        raise NotImplementedError("Abstract method needs to be overridden")
 
 
 class LoggingListener(AggregateResultListener):

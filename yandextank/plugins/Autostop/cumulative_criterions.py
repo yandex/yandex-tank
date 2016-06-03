@@ -1,13 +1,13 @@
 ''' Cummulative Autostops '''
-from criterions import AbstractCriterion
-import yandextank.core as tankcore
-
-from collections import deque
 import re
 import math
 import numpy as np
-
 import logging
+from collections import deque
+
+from ...core.util import expand_to_milliseconds, expand_to_seconds
+from .criterions import AbstractCriterion
+
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +49,9 @@ class TotalFracTimeCriterion(AbstractCriterion):
         AbstractCriterion.__init__(self)
         self.autostop = autostop
         param = param_str.split(',')
-        self.rt_limit = tankcore.expand_to_milliseconds(param[0]) * 1000
+        self.rt_limit = expand_to_milliseconds(param[0]) * 1000
         self.fail_ratio_limit = float(param[1][:-1]) / 100.0
-        self.window_size = tankcore.expand_to_seconds(param[2])
+        self.window_size = expand_to_seconds(param[2])
         self.fail_counter = WindowCounter(self.window_size)
         self.total_counter = WindowCounter(self.window_size)
         self.total_fail_ratio = 0.0
@@ -121,7 +121,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[
             2])
 
     def notify(self, data, stat):
@@ -203,7 +203,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[
             2])
 
     def notify(self, data, stat):
@@ -293,7 +293,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[
             2])
 
     def notify(self, data, stat):
@@ -383,7 +383,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[
             2])
 
     def notify(self, data, stat):
@@ -470,7 +470,7 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
 
         self.tangents.append(0)
         self.last = 0
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[
             1])
         self.measurement_error = float()
 
@@ -551,9 +551,9 @@ class QuantileOfSaturationCriterion(AbstractCriterion):
 
     #     params = param_str.split(',')
     #     # qunatile in ms
-    #     self.timing = tankcore.expand_to_milliseconds(params[0])
+    #     self.timing = expand_to_milliseconds(params[0])
     #     # width of time in seconds
-    #     self.width = tankcore.expand_to_seconds(params[1])
+    #     self.width = expand_to_seconds(params[1])
     #     # max height of deviations in percents
     #     self.height = float(params[2].split('%')[0])
     #     # last deviation in percents

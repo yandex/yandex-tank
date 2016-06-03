@@ -1,10 +1,11 @@
-from yandextank.core import AbstractPlugin
-from yandextank.plugins.Aggregator import AggregatorPlugin
-from yandextank.plugins.Console import ConsolePlugin
 import logging
 import time
-from yandextank.stepper import StepperWrapper
-from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun
+
+from ...core.interfaces import AbstractPlugin
+from ...stepper import StepperWrapper
+from ..Aggregator import AggregatorPlugin
+from ..Console import ConsolePlugin
+from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun, UltimateGun
 from .widgets import BfgInfoWidget
 from .worker import BFG
 from .reader import BfgReader, BfgStatsReader
@@ -28,6 +29,7 @@ class BfgPlugin(AbstractPlugin):
             'custom': CustomGun,
             'http': HttpGun,
             'scenario': ScenarioGun,
+            'ultimate': UltimateGun,
         }
 
     @staticmethod
@@ -44,7 +46,7 @@ class BfgPlugin(AbstractPlugin):
         self.stepper_wrapper.read_config()
 
     def prepare_test(self):
-        self.log.info(self.get_option("ammo_type"))
+        self.log.info("BFG using ammo type %s", self.get_option("ammo_type"))
         self.stepper_wrapper.prepare_stepper()
         gun_type = self.get_option("gun_type")
         if gun_type in self.gun_classes:

@@ -1,11 +1,11 @@
 import logging
 import time
-from yandextank.stepper import StpdReader
 import multiprocessing as mp
 import threading as th
 from queue import Empty, Full
-
 from contextlib import contextmanager
+
+from ...stepper import StpdReader
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +145,7 @@ Gun: {gun.__class__.__name__}
         """
         logger.debug("Init shooter process")
         try:
-            self.gun.init()
+            self.gun.setup()
         except Exception:
             logger.exception("Couldn't initialize gun. Exit shooter process")
             return
@@ -174,4 +174,9 @@ Gun: {gun.__class__.__name__}
             except Exception:
                 logger.exception("Bfg shoot exception")
 
+        try:
+            self.gun.teardown()
+        except Exception:
+            logger.exception("Couldn't finalize gun. Exit shooter process")
+            return
         logger.debug("Exit shooter process")

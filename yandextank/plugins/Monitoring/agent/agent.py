@@ -1,6 +1,7 @@
 #! /usr/bin/env python2
 """ The agent bundle, contains all metric classes and agent running code """
-from optparse import OptionParser
+import ConfigParser
+import commands
 import base64
 import logging
 import os
@@ -10,12 +11,11 @@ import socket
 import subprocess
 import sys
 import time
-from threading import Thread
 import traceback
 import signal
+from threading import Thread
+from optparse import OptionParser
 
-import ConfigParser
-import commands
 
 logger = logging.getLogger(__name__)
 

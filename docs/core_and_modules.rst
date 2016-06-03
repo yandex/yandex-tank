@@ -451,7 +451,10 @@ BFG
 ===
 
 (`What is BFG <http://en.wikipedia.org/wiki/BFG_(weapon)>`_)
-BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first  (unless you really want to keep it active alongside at your own risk), enable BFG plugin and then specify the parameters for BFG and for the cannon you select. For example, if you want to kill an SQL db:
+BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable BFG plugin and then specify the parameters for BFG and for the gun of your choice.
+
+There are three predefined guns: Log Gun, Http Gun and SQL gun. First two are mostly for demo, if you want to implement your own gun class,
+use them as an example. Using SQL gun you can try to kill an SQL db (you need sqlalchemy for this example):
 
 ::
 
@@ -480,7 +483,52 @@ BFG is a generic gun that is able to use different kinds of cannons to shoot. To
     [sql_gun]
     db = mysql://user:user@localhost/
 
-Or if you want i.e to call your own module's MyService function shoot:
+But the main purpose of BFG is to support user-defined guns. Here is how you do it using 'ultimate' gun.
+
+1. Define your scenario as a python class (in a single-file module, or a package):
+
+.. code-block:: python
+
+  import logging
+  log = logging.getLogger(__name__)
+  
+  
+  class LoadTest(object):
+      def __init__(self, gun):
+
+          # you'll be able to call gun's methods using this field:
+          self.gun = gun
+
+          # for example, you can get something from the 'ultimate' section of a config file:
+          my_var = self.gun.get_option("my_var", "hello")
+  
+      def case1(self, missile):
+          # we use gun's measuring context to measure time.
+          # The results will be aggregated automatically:
+          with self.gun.measure("case1"):
+              log.info("Shoot case 1: %s", missile)
+
+          # there could be multiple steps in one scenario:
+          with self.gun.measure("case1_step2") as sample:
+              log.info("Shoot case 1, step 2: %s", missile)
+              # and we can set the fields of measured object manually:
+              sample["proto_code"] = 500
+
+              # the list of available fields is below
+  
+      def case2(self, missile):
+          with self.gun.measure("case2"):
+              log.info("Shoot case 2: %s", missile)
+  
+      def setup(self):
+          ''' this will be executed in each worker before the test starts '''
+          log.info("Setting up LoadTest")
+  
+      def teardown(self):
+          ''' this will be executed in each worker after the end of the test '''
+          log.info("Tearing down LoadTest")
+
+2. Define your options in a config file:
 
 ::
 
@@ -491,24 +539,38 @@ Or if you want i.e to call your own module's MyService function shoot:
     plugin_bfg=yandextank.plugins.bfg
         
     [bfg]
-    ; process' amount
+    ; parallel processes count
     instances = 10
-    ; threads per process
-    threads = 40
+    ; gun type
+    gun_type = ultimate
+
     ; ammo file
     ammofile=req_json.log
-    ; gun type
-    gun_type = custom
-    ; ammo type (one line -- one request)
-    ammo_type = line
+
     ; load schedule
     rps_schedule=line(1,100,10m)
     
-    [custom_gun]
+    [ultimate_gun]
     ; path to your custom module
     module_path = ./my_own_service
-    ; module name (has to provide function shoot)
-    module_name = MyService
+    ; python module name
+    module_name = mygun
+
+3. Create an ammo file:
+Ammo format: one line -- one request, each line begins with case name separated by tab ('\t').
+Case name defines the method of your test class that will be executed. The line itself will
+be passed to your method as 'missile' parameter.
+
+::
+
+    case1\tmy-case1-ammo
+    case2\tmy-case2-ammo
+
+.. note::
+    TIP: if each line is a JSON-encoded document, you can easily parse it
+    inside your scenario code
+
+4. Shoot em all!
 
 How it works
 ------------
@@ -526,7 +588,7 @@ INI file section: **[bfg]**
 :ammo_type:
   What ammo parser should BFG use.
 
-  Default: ``phantom``.
+  Default: ``caseline``.
 
 :other common stepper options:
   
@@ -540,190 +602,46 @@ INI file section: **[sql_gun]**
 :db:
   DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
 
-Custom Gun Options
+Ultimate Gun Options
 ------------------
 
 gun_type = **custom**
 
 INI file section: **[custom_gun]**
 
-*module_path*
-  Path to your module.
-*module_name*
-  Module name, has to provide function shoot, which will be called by bfg's threads to fullfill rps_schedule.
-
-Example:
-
-.. code-block:: python
-
-  # coding=utf-8
-  import sys
-  import os
-  from Queue import Queue
-
-  import socket
-  import logging
-  import time
-  
-  from contextlib import contextmanager
-  from collections import namedtuple
-  
-  Sample = namedtuple(
-          'Sample', 'marker,threads,overallRT,httpCode,netCode,sent,received,connect,send,latency,receive,accuracy')
-  
-  @contextmanager
-  def measure(marker, queue):
-      start_ms = time.time()
-  
-      resp_code = 0
-      try:
-          yield
-      except Exception as e:
-          print marker, e
-          resp_code = 110
-  
-      response_time = int((time.time() - start_ms) * 1000)
-  
-      data_item = Sample(
-              marker,         # tag
-              1,              # threadsв
-              rt_time,        # overallRT
-              200,            # httCode
-              resp_code,      # netCode
-              0,              # sent
-              0,              # received 
-              connect_time,   # connect
-              0,              # send
-              latency_time,   # latency
-              0,              # receive
-              0,              # accuracy
-      )
-      queue.put((int(time.time()), data_item), timeout=5)
-      if resp_code != 0:
-          raise RuntimeError
-  
-  
-  def shoot(missile, marker, results):
-      sock = socket.socket()
-      try:
-          #prepare actions
-          <...some work...>
-          #test logic with metrics counting
-          with measure("markerOfRequest", results):
-              <...some useful work...>
-      except RuntimeError as e:
-          print "Scenario %s failed with %s" % (marker, e)
-      finally:
-          <...some finishing work...>
-
-Scenario Gun Options
---------------------
-
-gun_type = **scenario**
-
-INI file section: **[scenario_gun]**
-
 :module_path:
-  Path to your module.
-
+  Path to your module
 :module_name:
-  Module name, has to provide dict SCENARIOS, which will be called by bfg's threads according to marker of request in ammofile to fullfill rps_schedule
+  Python module name
+:class_name:
+  Class that contains load scenarios, default: LoadTest
 
-:ammofile:
-  Path to ammofile. Second column should by a marker of request corresponding to a function specified in SCENARIOS.
+The fields of measuring context object and their default values:
 
-Example:
-
-.. code-block:: python
-
-  # coding=utf-8
-  import requests
-  import logging
-  import traceback
-  import time
-  from Queue import Queue
-  import json
-  import random
-  import socket
-  
-  from contextlib import contextmanager
-  from collections import namedtuple
-  
-  logging.basicConfig()
-  logger = logging.getLogger(__name__)
-  logger.setLevel('DEBUG')
-  
-  Sample = namedtuple(
-          'Sample', 'marker,threads,overallRT,httpCode,netCode,sent,received,connect,send,latency,receive,accuracy')
-  
-  @contextmanager
-  def measure(marker, queue):
-      start_ms = time.time()
-  
-      resp_code = 0
-      httpCode = 200
-      try:
-          yield
-      except HttpCode as exc:
-          logging.info("%s for request: %s", exc.value, marker)
-          httpCode = exc.value
-      except Exception as e:
-          logging.info("error while yield: %s %s", marker, e)
-          #print 'error while yield', marker, e
-          httpCode = 600
-  
-      response_time = int((time.time() - start_ms) * 1000)
-  
-      data_item = Sample(
-              marker,  
-              1,  
-              response_time, 
-              httpCode,
-              resp_code,
-              0,
-              0,
-              response_time,
-              0,
-              response_time,
-              0,
-              0,
-      )
-      queue.put((int(time.time()), data_item), timeout=5)
-  
-  class HttpCode(Exception):
-      def __init__(self, value):
-          self.value = value
-      def __str__(self):
-          return repr(self.value)
-  
-  def scenario_1(missile, marker, results):
-      try:
-          with measure("get_morda", results):
-              try:
-                  req = '/{0}'.format(url)
-                  get_morda_answ = requests.post(req)
-                  if get_morda_answ.status_code != 200:
-                      logger.error('Not 200 answer code for Req: %s' % req)
-                      raise HttpCode(get_morda_answ.status_code)
-                  return get_morda_answ.status_code
-              except Exception as exc:
-                  logger.error('Exception trying to get morda: %s. Url: %s', exc, req)
-                  raise
-      except RuntimeError as e:
-          logger.Error('Scenario %s failed with %s', marker, e)
-  
-  def scenario_2(missile, marker, results):
-      {...some usefull work here just like scenario_1...}
-  
-  if __name__ == '__main__':
-      scenario_1("", "", Queue())
-      scenario_2("", "", Queue())
-  
-  SCENARIOS = {
-      "scenario_1": scenario_1,
-      "scenario_2": scenario_2,
-      {... some more scenarios here ...}
-  }
+:send_ts:
+  A timestamp when context was entered.
+:tag:
+  A marker passed to the context.
+:interval_real:
+  The time interval from enter to exit. If the user defines his own value, it will be preserved. Microseconds.
+:connect_time:
+  Microseconds. Default: 0
+:send_time:
+  Microseconds. Default: 0
+:latency:
+  Microseconds. Default: 0
+:receive_time:
+  Microseconds. Default: 0
+:interval_event:
+  Microseconds. Default: 0
+:size_out:
+  Bytes out. Integer. Default: 0
+:size_in:
+  Bytes in. Integer. Default: 0
+:net_code:
+  Network code. Integer. Default: 0
+:proto_code:
+  Protocol code (http, for example). Integer. Default: 200
 
 Pandora
 =======
@@ -825,53 +743,6 @@ Example:
 Start 2 users every 10 seconds. Every user will shoot without any limits (next request is sended
 as soon as the previous response have been received). This is analogous to phantom's instances
 schedule mode.
-
-
-AB
-------
-
-Apache Benchmark load generator module. As the ab utility writes results
-to file only after the test is finished, Yandex.Tank is unable to show
-the on-line statistics for the tests with ab. The data are reviewed
-after the test.
-To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable AB plugin and then specify 
-the parameters for AB:
-
-::
-
-    [tank]
-    ; Disable phantom:
-    plugin_phantom=
-    ; Enable AB module instead:
-    plugin_ab=yandextank.plugins.ApacheBenchmark
-
-
-INI file section: **[ab]**
-
-Options
-^^^^^^^^^^^^^^^^^^^
-
-:url: 
-  Requested URL.
-
-  Default: ``http:**localhost/`` 
-
-:requests: 
-  Total request count.
-
-  Default: 100 
-
-:concurrency: 
-  Number of concurrent requests: 1.
-
-:options: 
-  ab command line options.
-
-Artifacts
-^^^^^^^^^^^^^^^^^^^
-
-:ab_*.log: 
-  Request log with response times.
 
 
 ******************

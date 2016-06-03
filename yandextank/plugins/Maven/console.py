@@ -1,10 +1,9 @@
 from __future__ import division, absolute_import
+import datetime
+import time
 from builtins import super
 
-import time
-import datetime
-
-from ..Console import AbstractInfoWidget
+from ...core.interfaces import AbstractInfoWidget
 from ..Console import screen as ConsoleScreen
 
 
@@ -12,6 +11,7 @@ class MavenInfoWidget(AbstractInfoWidget):
     ''' Right panel widget '''
 
     def __init__(self, owner):
+        # FIXME python version 2.7 does not support this syntax. super() should have arguments in Python 2
         super().__init__()
         self.krutilka = ConsoleScreen.krutilka()
         self.owner = owner

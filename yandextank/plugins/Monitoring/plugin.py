@@ -2,22 +2,19 @@
 
 import os
 import time
-import traceback
 import fnmatch
 import datetime
 import logging
+from pkg_resources import resource_string
+
+from ...core.util import expand_to_seconds
+from ...core.interfaces import AbstractPlugin, MonitoringDataListener, AbstractInfoWidget
+from ..Console import ConsolePlugin
+from ..Phantom import PhantomPlugin
+from ..Autostop import AutostopPlugin, AbstractCriterion
+from .collector import MonitoringCollector, MonitoringDataDecoder
 
 logger = logging.getLogger(__name__)
-
-from pkg_resources import resource_string
-from collector import MonitoringCollector, \
-    MonitoringDataListener, MonitoringDataDecoder
-from yandextank.plugins.Console import \
-    ConsolePlugin, AbstractInfoWidget
-from yandextank.plugins.Phantom import PhantomPlugin
-from yandextank.core import AbstractPlugin
-import yandextank.core as tankcore
-from yandextank.plugins.Autostop import AutostopPlugin, AbstractCriterion
 
 
 class MonitoringPlugin(AbstractPlugin):
@@ -53,7 +50,7 @@ class MonitoringPlugin(AbstractPlugin):
     def configure(self):
         self.config = self.get_option("config", 'auto').strip()
         self.default_target = self.get_option("default_target", 'localhost')
-        self.monitoring.ssh_timeout = tankcore.expand_to_seconds(
+        self.monitoring.ssh_timeout = expand_to_seconds(
             self.get_option('ssh_timeout', "5s"))
 
         if self.config == 'none' or self.config == 'auto':
@@ -289,7 +286,7 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener,
         self.host = param_str.split(',')[0].strip()
         self.metric = param_str.split(',')[1].strip()
         self.value_limit = float(param_str.split(',')[2])
-        self.seconds_limit = tankcore.expand_to_seconds(param_str.split(',')[
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[
             3])
         self.last_second = None
         self.seconds_count = 0

@@ -1,7 +1,5 @@
 from yandextank.api.apiworker import ApiWorker
 import logging
-import traceback
-import sys
 
 logger = logging.getLogger('')
 logger.setLevel(logging.DEBUG)

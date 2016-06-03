@@ -1,14 +1,13 @@
 ''' Classes to build full console screen '''
-import copy
 import fcntl
 import logging
 import math
 import os
 import struct
 import termios
-import yandextank.core.util as util
 from collections import defaultdict
-import numpy as np
+
+from ...core import util
 
 
 def get_terminal_size():

@@ -1,7 +1,7 @@
-from collections import namedtuple
 import logging
-from sys import stdout
 import time
+from collections import namedtuple
+from sys import stdout
 
 StepperInfo = namedtuple(
     'StepperInfo', 'loop_count,steps,loadscheme,duration,ammo_count,instances')

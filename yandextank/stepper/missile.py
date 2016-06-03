@@ -3,11 +3,12 @@ Missile object and generators
 
 You should update Stepper.status.ammo_count and Stepper.status.loop_count in your custom generators!
 '''
-from itertools import cycle
-from module_exceptions import AmmoFileError
-import info
 import logging
-from yandextank.core.resource import manager as resource
+from itertools import cycle
+
+from ..core.resource import manager as resource
+from .module_exceptions import AmmoFileError
+from . import info
 
 
 class HttpAmmo(object):
@@ -142,6 +143,7 @@ class AmmoFileReader(object):
                     chunk_header = read_chunk_header(ammo_file)
                 info.status.af_position = ammo_file.tell()
 
+
 class SlowLogReader(object):
     '''Read missiles from SQL slow log. Not usable with Phantom'''
 
@@ -181,6 +183,31 @@ class LineReader(object):
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
                     yield (line.rstrip('\r\n'), None)
+                ammo_file.seek(0)
+                info.status.af_position = 0
+                info.status.inc_loop_count()
+
+
+class CaseLineReader(object):
+    '''One line -- one missile with case, tab separated'''
+
+    def __init__(self, filename, **kwargs):
+        self.filename = filename
+
+    def __iter__(self):
+        opener = resource.get_opener(self.filename)
+        with opener() as ammo_file:
+            info.status.af_size = opener.data_length
+            while True:
+                for line in ammo_file:
+                    info.status.af_position = ammo_file.tell()
+                    parts = line.rstrip('\r\n').split('\t', 1)
+                    if len(parts) == 2:
+                        yield (parts[1], parts[0])
+                    elif len(parts) == 1:
+                        yield (parts[0], None)
+                    else:
+                        raise RuntimeError("Unreachable branch")
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """ Provides class to run TankCore from python """
-from yandextank.core import tankcore
 import logging
-from pkg_resources import resource_filename
 import os
 import sys
 import time
 import traceback
+import fnmatch
+from pkg_resources import resource_filename
+
+from ..core import tankcore
 
 
 class ApiWorker:

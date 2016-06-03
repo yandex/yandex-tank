@@ -1,14 +1,11 @@
 import time
-from yandextank.core import AbstractPlugin
 import logging
-from random import randint
-import threading as th
-import sys
-
-from contextlib import contextmanager
-
 import requests
 import imp
+from random import randint
+from contextlib import contextmanager
+
+from ...core.interfaces import AbstractPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -55,12 +52,15 @@ class AbstractGun(AbstractPlugin):
 
             self.results.put(data_item, timeout=1)
 
-    def init(self):
+    def setup(self):
         pass
 
     def shoot(self, missile, marker):
         raise NotImplementedError(
             "Gun should implement 'shoot(self, missile, marker)' method")
+
+    def teardown(self):
+        pass
 
 
 class LogGun(AbstractGun):
@@ -76,6 +76,26 @@ class LogGun(AbstractGun):
         rt = randint(2, 30000) * 1000
         with self.measure(marker) as di:
             di["interval_real"] = rt
+
+
+class HttpGun(AbstractGun):
+    SECTION = 'http_gun'
+
+    def __init__(self, core):
+        super(HttpGun, self).__init__(core)
+        self.base_address = self.get_option("base_address")
+
+    def shoot(self, missile, marker):
+        logger.debug("Missile: %s\n%s", marker, missile)
+        logger.debug("Sending request: %s", self.base_address + missile)
+        with self.measure(marker) as di:
+            try:
+                r = requests.get(self.base_address + missile, verify=False)
+                di["proto_code"] = r.status_code
+            except requests.ConnectionError:
+                logger.debug("Connection error", exc_info=True)
+                di["net_code"] = 1
+                di["proto_code"] = 500
 
 
 class SqlGun(AbstractGun):
@@ -118,10 +138,14 @@ class SqlGun(AbstractGun):
 
 
 class CustomGun(AbstractGun):
+    """
+    This gun is deprecated! Use UltimateGun
+    """
     SECTION = 'custom_gun'
 
     def __init__(self, core):
         super(CustomGun, self).__init__(core)
+        logger.warning("Custom gun is deprecated. Use Ultimate gun instead")
         module_path = self.get_option("module_path", "").split()
         module_name = self.get_option("module_name")
         fp, pathname, description = imp.find_module(module_name, module_path)
@@ -138,36 +162,20 @@ class CustomGun(AbstractGun):
         except Exception as e:
             logger.warning("CustomGun %s failed with %s", marker, e)
 
-    def init(self):
+    def setup(self):
         if hasattr(self.module, 'init'):
             self.module.init(self)
 
 
-class HttpGun(AbstractGun):
-    SECTION = 'http_gun'
-
-    def __init__(self, core):
-        super(HttpGun, self).__init__(core)
-        self.base_address = self.get_option("base_address")
-
-    def shoot(self, missile, marker):
-        logger.debug("Missile: %s\n%s", marker, missile)
-        logger.debug("Sending request: %s", self.base_address + missile)
-        with self.measure(marker) as di:
-            try:
-                r = requests.get(self.base_address + missile, verify=False)
-                di["proto_code"] = r.status_code
-            except requests.ConnectionError:
-                logger.debug("Connection error", exc_info=True)
-                di["net_code"] = 1
-                di["proto_code"] = 500
-
-
 class ScenarioGun(AbstractGun):
+    """
+    This gun is deprecated! Use UltimateGun
+    """
     SECTION = 'scenario_gun'
 
     def __init__(self, core):
         super(ScenarioGun, self).__init__(core)
+        logger.warning("Scenario gun is deprecated. Use Ultimate gun instead")
         module_path = self.get_option("module_path", "").split()
         module_name = self.get_option("module_name")
         fp, pathname, description = imp.find_module(module_name, module_path)
@@ -189,6 +197,55 @@ class ScenarioGun(AbstractGun):
         else:
             logger.warning("Scenario not found: %s", marker)
 
-    def init(self):
+    def setup(self):
         if hasattr(self.module, 'init'):
             self.module.init(self)
+
+
+class UltimateGun(AbstractGun):
+    SECTION = "ultimate_gun"
+
+    def __init__(self, core):
+        super(UltimateGun, self).__init__(core)
+        class_name = self.get_option("class_name", "LoadTest")
+        module_path = self.get_option("module_path", "").split()
+        module_name = self.get_option("module_name")
+        fp, pathname, description = imp.find_module(module_name, module_path)
+        #
+        # Dirty Hack
+        #
+        # we will add current unix timestamp to the name of a module each time
+        # it is imported to be sure Python won't be able to cache it
+        #
+        try:
+            self.module = imp.load_module("%s_%d" % (module_name, time.time()),
+                                          fp, pathname, description)
+        finally:
+            if fp:
+                fp.close()
+        test_class = getattr(self.module, class_name, None)
+        if type(test_class) != type:
+            raise NotImplementedError(
+                "Class definition for '%s' was not found in '%s' module" %
+                (class_name, module_name))
+        self.load_test = test_class(self)
+
+    def setup(self):
+        if callable(getattr(self.load_test, "setup", None)):
+            self.load_test.setup()
+
+    def teardown(self):
+        if callable(getattr(self.load_test, "teardown", None)):
+            self.load_test.teardown()
+
+    def shoot(self, missile, marker):
+        if not marker:
+            marker = "default"
+        scenario = getattr(self.load_test, marker, None)
+        if callable(scenario):
+            try:
+                scenario(missile)
+            except Exception as e:
+                logger.warning("Scenario %s failed with %s", marker, e)
+        else:
+            logger.warning("Scenario not found: %s", marker)

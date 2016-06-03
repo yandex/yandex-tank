@@ -2,11 +2,11 @@ import datetime
 import socket
 import os
 import time
-
-from yandextank.plugins.Console import AbstractInfoWidget
-from yandextank.plugins.Console import screen
-
 import logging
+
+from ...core.interfaces import AbstractInfoWidget
+from ..Console import screen
+
 logger = logging.getLogger(__name__)
 
 

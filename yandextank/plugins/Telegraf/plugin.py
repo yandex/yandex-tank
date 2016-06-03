@@ -10,7 +10,7 @@ import datetime
 import logging
 import json
 
-from ...core import expand_to_seconds
+from ...core.util import expand_to_seconds
 from ...core.resource import manager as resource
 from ...core.interfaces import MonitoringDataListener, AbstractPlugin, AbstractInfoWidget
 from ..Telegraf.collector import MonitoringCollector

@@ -1,5 +1,4 @@
 """Target monitoring via SSH"""
-
 import ConfigParser
 import base64
 import logging
@@ -13,6 +12,7 @@ from collections import defaultdict
 from xml.etree import ElementTree as etree
 
 from ...core.util import SecuredShell
+from ...core.interfaces import MonitoringDataListener
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
@@ -486,17 +486,6 @@ class MonitoringCollector(object):
             return depend[metric][param]
         else:
             return ''
-
-
-class MonitoringDataListener(object):
-    """Parent class for data listeners"""
-
-    def __init__(self):
-        pass
-
-    def monitoring_data(self, data_string):
-        """Notification about new monitoring data lines"""
-        raise NotImplementedError()
 
 
 class StdOutPrintMon(MonitoringDataListener):

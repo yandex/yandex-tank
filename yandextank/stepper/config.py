@@ -1,11 +1,12 @@
-from module_exceptions import StepperConfigurationError, AmmoFileError
-import load_plan as lp
-import instance_plan as ip
-import missile
-from mark import get_marker
-import info
 import logging
-from yandextank.core.resource import manager as resource
+
+from ..core.resource import manager as resource
+from .module_exceptions import StepperConfigurationError, AmmoFileError
+from .mark import get_marker
+from . import missile
+from . import info
+from . import load_plan as lp
+from . import instance_plan as ip
 
 
 class ComponentFactory():
@@ -77,6 +78,7 @@ class ComponentFactory():
             'uri': missile.UriReader,
             'uripost': missile.UriPostReader,
             'access': missile.AccessLogReader,
+            'caseline': missile.CaseLineReader,
         }
         if self.uris and self.ammo_file:
             raise StepperConfigurationError(
