@@ -323,7 +323,6 @@ NET = {
 }
 
 
-
 def log_stdout_stderr(log, stdout, stderr, comment=""):
     """
     This function polls stdout and stderr streams and writes their contents
@@ -356,11 +355,13 @@ def expand_to_milliseconds(str_time):
     """
     return expand_time(str_time, 'ms', 1000)
 
+
 def expand_to_seconds(str_time):
     """
     converts 1d2s into seconds
     """
     return expand_time(str_time, 's', 1)
+
 
 def expand_time(str_time, default_unit='s', multiplier=1):
     """
@@ -398,6 +399,7 @@ def expand_time(str_time, default_unit='s', multiplier=1):
                              (unit, str_time))
     return int(result * multiplier)
 
+
 def pid_exists(pid):
     """Check whether pid exists in the current process table."""
     if pid < 0:
@@ -410,6 +412,7 @@ def pid_exists(pid):
     else:
         p = psutil.Process(pid)
         return p.status != psutil.STATUS_ZOMBIE
+
 
 def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
     """
@@ -443,6 +446,7 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
     log.debug("Process exit code: %s", returncode)
     return returncode, stdout, stderr
 
+
 def splitstring(string):
     """
     >>> string = 'apple orange "banana tree" green'
@@ -457,11 +461,13 @@ def splitstring(string):
     else:
         return string.split()
 
+
 def pairs(lst):
     """
     Iterate over pairs in the list
     """
     return itertools.izip(lst[::2], lst[1::2])
+
 
 def update_status(status, multi_key, value):
     if len(multi_key) > 1:

@@ -488,7 +488,7 @@ So, if we want to stop test when all answers in 1 second period are 5xx plus som
   port=80 ;target's port
   rps_schedule=const(10, 10m) ;load scheme
   [autostop]
-  autostop=time(1000,10)
+  autostop=time(1s,10s)
     http(5xx,100%,1s)
     net(xx,1,30)
 
