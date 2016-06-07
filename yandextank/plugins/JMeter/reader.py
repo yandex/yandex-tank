@@ -19,6 +19,8 @@ KNOWN_EXC = {
     "java.net.SocketException": 32,
     "java.net.SocketTimeoutException": 110,
     "java.net.UnknownHostException": 14,
+    "java.net.URISyntaxException": 22,
+    "java.io.FileNotFoundException": 2,
     "java.io.IOException": 5,
     "java.io.EOFException": 104,
     "org.apache.http.conn.ConnectTimeoutException": 110,
