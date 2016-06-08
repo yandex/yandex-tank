@@ -68,16 +68,13 @@ class LocalhostClient(object):
                     copyfile(self.path['TELEGRAF_LOCAL_PATH'], self.path['TELEGRAF_REMOTE_PATH'])
                 else:
                     logger.error(
-                        'Not found telegraf at %s and unable to copy from specified path: %s', self.host, self.telegraf
-                    )
-                    raise Exception(
-                        'Telegraf not found\n'
+                        'Telegraf binary not found at specified path: %s\n'
                         'You can download telegraf binaries here: https://github.com/influxdata/telegraf\n'
-                        'or install debian package: `telegraf`'
+                        'or install debian package: `telegraf`', self.host, self.path['TELEGRAF_LOCAL_PATH']
                     )
+                    return None, None
         except Exception:
             logger.error("Failed to copy agent to %s on localhost", self.workdir, exc_info=True)
-            return None, None
         return agent_config, startup_config
 
     @staticmethod
@@ -245,13 +242,11 @@ class SSHClient(object):
                     )
                 else:
                     logger.error(
-                        'Not found telegraf at %s and unable to copy from specified path: %s', self.host, self.telegraf
-                    )
-                    raise Exception(
-                        'Telegraf not found\n'
+                        'Telegraf binary not found neither on %s nor on localhost at specified path: %s\n'
                         'You can download telegraf binaries here: https://github.com/influxdata/telegraf\n'
-                        'or install debian package: `telegraf`'
+                        'or install debian package: `telegraf`', self.host, self.path['TELEGRAF_LOCAL_PATH']
                     )
+                    return None, None
 
             self.ssh.send_file(
                 self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
