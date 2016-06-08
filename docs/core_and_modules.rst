@@ -557,14 +557,15 @@ But the main purpose of BFG is to support user-defined guns. Here is how you do 
     module_name = mygun
 
 3. Create an ammo file:
-Ammo format: one line -- one request, each line begins with case name separated by tab ('\t').
+Ammo format: one line -- one request, each line begins with case name separated by tab symbol ('\t').
 Case name defines the method of your test class that will be executed. The line itself will
-be passed to your method as 'missile' parameter.
+be passed to your method as 'missile' parameter. If there was no case name for an ammo, the 'default' case name will be used
 
 ::
 
-    case1\tmy-case1-ammo
-    case2\tmy-case2-ammo
+    case1<TAB>my-case1-ammo
+    case2<TAB>my-case2-ammo
+    my-default-case-ammo
 
 .. note::
     TIP: if each line is a JSON-encoded document, you can easily parse it

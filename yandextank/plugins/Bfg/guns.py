@@ -239,6 +239,7 @@ class UltimateGun(AbstractGun):
             self.load_test.teardown()
 
     def shoot(self, missile, marker):
+        marker = marker.rsplit("#", 1)[0]  # support enum_ammo
         if not marker:
             marker = "default"
         scenario = getattr(self.load_test, marker, None)
