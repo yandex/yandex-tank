@@ -70,7 +70,7 @@ class LocalhostClient(object):
                     logger.error(
                         'Telegraf binary not found at specified path: %s\n'
                         'You can download telegraf binaries here: https://github.com/influxdata/telegraf\n'
-                        'or install debian package: `telegraf`', self.host, self.path['TELEGRAF_LOCAL_PATH']
+                        'or install debian package: `telegraf`', self.path['TELEGRAF_LOCAL_PATH']
                     )
                     return None, None
         except Exception:
