@@ -56,8 +56,8 @@ class Plugin(AbstractPlugin):
         self.default_target = self.get_option("default_target", 'localhost')
 
         # FIXME [legacy] backward compatibility with Monitoring module configuration below.
-        self.monitoring.ssh_timeout = expand_to_seconds(
-            self.get_option('ssh_timeout', "5s"))
+        self.monitoring.ssh_timeout = expand_to_seconds(self.get_option(
+            'ssh_timeout', "5s"))
 
         if self.config == 'none' or self.config == 'auto':
             self.die_on_fail = False
@@ -84,7 +84,8 @@ class Plugin(AbstractPlugin):
             self.monitoring = None
 
         if self.config == 'auto':
-            default_config_path = "{}/config/monitoring_default_config.xml".format(os.path.dirname(__file__))
+            default_config_path = "{}/config/monitoring_default_config.xml".format(
+                os.path.dirname(__file__))
             filename = resource.resource_filename(default_config_path)
             with open(filename, 'rb') as default_config:
                 default_config_contents = default_config.read()
@@ -235,8 +236,10 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                 self.data[host] = {}
                 for metric, value in data.iteritems():
                     self.sign[host][metric] = 0
-                    self.data[host][metric] = "%.2f" % float(value)
-
+                    try:
+                        self.data[host][metric] = "%.2f" % float(value)
+                    except ValueError:
+                        self.data[host][metric] = value
 
     def render(self, screen):
         if not self.owner.monitoring:
@@ -278,11 +281,9 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
         self.host = param_str.split(',')[0].strip()
         self.metric = param_str.split(',')[1].strip()
         self.value_limit = float(param_str.split(',')[2])
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[
-            3])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[3])
         self.last_second = None
         self.seconds_count = 0
-
 
     def monitoring_data(self, data_string):
         if self.triggered:
