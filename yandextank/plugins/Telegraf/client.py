@@ -53,7 +53,6 @@ class LocalhostClient(object):
 
     def install(self):
         self.workdir = tempfile.mkdtemp()
-        # ('Linux', 'yandex-dev', '3.13.0-35-generic', '#62-Ubuntu SMP Fri Aug 15 01:58:42 UTC 2014', 'x86_64')
         logger.info("Created temp dir %s", self.workdir)
         agent_config = self.config.create_collector_config(self.workdir)
         startup_config = self.config.create_startup_config()
@@ -71,9 +70,14 @@ class LocalhostClient(object):
                     logger.error(
                         'Not found telegraf at %s and unable to copy from specified path: %s', self.host, self.telegraf
                     )
-                    raise
+                    raise Exception(
+                        'Telegraf not found\n'
+                        'You can download telegraf binaries here: https://github.com/influxdata/telegraf\n'
+                        'or install debian package: `telegraf`'
+                    )
         except Exception:
             logger.error("Failed to copy agent to %s on localhost", self.workdir, exc_info=True)
+            return None, None
         return agent_config, startup_config
 
     @staticmethod
@@ -243,7 +247,11 @@ class SSHClient(object):
                     logger.error(
                         'Not found telegraf at %s and unable to copy from specified path: %s', self.host, self.telegraf
                     )
-                    raise
+                    raise Exception(
+                        'Telegraf not found\n'
+                        'You can download telegraf binaries here: https://github.com/influxdata/telegraf\n'
+                        'or install debian package: `telegraf`'
+                    )
 
             self.ssh.send_file(
                 self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
@@ -253,7 +261,7 @@ class SSHClient(object):
             self.ssh.send_file(startup_config, self.path['AGENT_REMOTE_FOLDER'] + '/agent_startup.cfg')
         except Exception:
             logger.error("Failed to install agent on %s", self.host, exc_info=True)
-            return None
+            return None, None
 
         return agent_config, startup_config
 
