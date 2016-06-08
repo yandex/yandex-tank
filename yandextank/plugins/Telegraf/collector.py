@@ -36,14 +36,17 @@ class MonitoringCollector(object):
         # Parse config
         agent_configs = []
         if self.config:
-            agent_configs = self.config_manager.getconfig(self.config, self.default_target)
+            agent_configs = self.config_manager.getconfig(self.config,
+                                                          self.default_target)
 
         # Creating agent for hosts
         logger.debug('Creating agents')
         for config in agent_configs:
-            if config['host'] == "localhost" or config['host'] == "127.0.0.1" or config['host'] == '::1':
-                logger.debug('Creating LocalhostClient for host %s', config['host'])
-                client =  LocalhostClient(config)
+            if config['host'] == "localhost" or config[
+                    'host'] == "127.0.0.1" or config['host'] == '::1':
+                logger.debug('Creating LocalhostClient for host %s',
+                             config['host'])
+                client = LocalhostClient(config)
             else:
                 logger.debug('Creating SSHClient for host %s', config['host'])
                 client = SSHClient(config, timeout=5)
@@ -68,20 +71,19 @@ class MonitoringCollector(object):
             for collect in agent.reader:
                 for chunk in collect:
                     ts, prepared_results = chunk
-                    ready_to_send_json = json.dumps([
-                        {
-                            "timestamp": ts,
-                            "data": {
-                                agent.host: {
-                                    "comment": "test",
-                                    "metrics": prepared_results
-                                }
+                    ready_to_send_json = {
+                        "timestamp": ts,
+                        "data": {
+                            agent.host: {
+                                "comment": "test",
+                                "metrics": prepared_results
                             }
                         }
-                    ])
-                    self.send_data.append(ready_to_send_json+'\n')
+                    }
+                    self.send_data.append(ready_to_send_json)
 
-        logger.debug('Polling/decoding agents data took: %.2fms', (time.time() - start_time) * 1000)
+        logger.debug('Polling/decoding agents data took: %.2fms',
+                     (time.time() - start_time) * 1000)
 
         if not self.first_data_received and self.send_data:
             self.first_data_received = True
@@ -100,7 +102,8 @@ class MonitoringCollector(object):
 
     def send_collected_data(self):
         """sends pending data set to listeners"""
-        [listener.monitoring_data(self.send_data) for listener in self.listeners]
+        [listener.monitoring_data(self.send_data)
+         for listener in self.listeners]
         self.send_data = []
 
 
@@ -112,4 +115,3 @@ class StdOutPrintMon(MonitoringDataListener):
 
     def monitoring_data(self, data_string):
         [sys.stdout.write(chunk) for chunk in data_string]
-

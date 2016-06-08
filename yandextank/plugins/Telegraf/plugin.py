@@ -194,8 +194,9 @@ class SaveMonToFile(MonitoringDataListener):
         if out_file:
             self.store = open(out_file, 'w')
 
-    def monitoring_data(self, data_string):
-        [self.store.write(chunk) for chunk in data_string]
+    def monitoring_data(self, data):
+        self.store.write(json.dumps(data))
+        self.store.write('\n')
         self.store.flush()
 
     def close(self):
@@ -221,16 +222,13 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
     def get_index(self):
         return 50
 
-    def monitoring_data(self, data_string):
+    def monitoring_data(self, data):
         # logger.debug("Mon widget data: %s", data_string)
-        for line in data_string:
-            if not line.strip(']').strip('['):
-                continue
-            metrics_json = json.loads(line)
-            for hostname in metrics_json[0]['data']:
+        for metrics in data:
+            for hostname in metrics['data']:
                 host = hostname
-                data = metrics_json[0]['data'][hostname]['metrics']
-                timestamp = metrics_json[0]['timestamp']
+                data = metrics['data'][hostname]['metrics']
+                timestamp = metrics['timestamp']
                 self.time[host] = timestamp
                 self.sign[host] = {}
                 self.data[host] = {}
@@ -285,19 +283,15 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
         self.last_second = None
         self.seconds_count = 0
 
-    def monitoring_data(self, data_string):
+    def monitoring_data(self, data):
         if self.triggered:
             return
 
-        for line in data_string:
-            if not line.strip(']').strip('['):
-                continue
-
-            metrics_json = json.loads(line)
-            for hostname in metrics_json[0]['data']:
+        for metrics in data:
+            for hostname in metrics['data']:
                 host = hostname
-                data = metrics_json[0]['data'][hostname]['metrics']
-                timestamp = metrics_json[0]['timestamp']
+                data = metrics['data'][hostname]['metrics']
+                timestamp = metrics['timestamp']
 
             if not fnmatch.fnmatch(host, self.host):
                 continue
@@ -386,15 +380,3 @@ class MetricLowerCriterion(AbstractMetricCriterion):
 
     def comparison_fn(self, arg1, arg2):
         return arg1 < arg2
-
-
-# FIXME why is this _here_? move -> ...core.interfaces
-class AbstractResolver:
-    """ Resolver class provides virtual to real host resolution """
-
-    def __init__(self):
-        pass
-
-    def resolve_virtual(self, virt_address):
-        """ get host address by virtual """
-        raise NotImplementedError()
