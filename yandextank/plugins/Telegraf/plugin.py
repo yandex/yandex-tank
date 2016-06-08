@@ -113,8 +113,8 @@ class Plugin(AbstractPlugin):
                 self.default_target = info.address
                 logger.debug("Changed monitoring target to %s",
                              self.default_target)
-        except KeyError, ex:
-            logger.debug("Phantom plugin not found: %s", ex)
+        except KeyError:
+            logger.debug("Phantom plugin not found: %s", exc_info=True)
 
         if self.address_resolver:
             try:
