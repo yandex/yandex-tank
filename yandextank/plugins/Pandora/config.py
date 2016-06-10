@@ -76,6 +76,9 @@ class PoolConfig(object):
     def set_ammo(self, ammo):
         self.config["AmmoProvider"]["AmmoSource"] = ammo
 
+    def set_ammo_type(self, ammo_type):
+        self.config["AmmoProvider"]["AmmoType"] = ammo_type
+
     def set_loop(self, loop):
         self.config["AmmoProvider"]["Passes"] = loop
 
