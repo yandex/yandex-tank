@@ -84,6 +84,10 @@ class PandoraPlugin(AbstractPlugin):
         logger.info("Pandora gun type is: %s", gun_type)
         pool_config.set_gun_type(gun_type)
 
+        ammo_type = self.get_option("ammo_type", "jsonline/http")
+        logger.info("Pandora ammo type is: %s", ammo_type)
+        pool_config.set_ammo_type(ammo_type)
+
         self.pandora_config = PandoraConfig()
         self.pandora_config.add_pool(pool_config)
 
