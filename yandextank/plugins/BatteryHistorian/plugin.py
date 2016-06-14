@@ -45,15 +45,26 @@ class Plugin(AbstractPlugin):
         self.core.add_artifact_file(self.logfile)
 
     def prepare_test(self):
-        out = subprocess.check_output(self.cmds['enable_full_log'], shell=True)
-        out = subprocess.check_output(self.cmds['reset'], shell=True)
+        try:
+            out = subprocess.check_output(self.cmds['enable_full_log'], shell=True)
+            logger.debug('Enabling full-log: %s', out)
+            out = subprocess.check_output(self.cmds['reset'], shell=True)
+            logger.debug('Reseting battery stats: %s', out)
+        except CalledProcessError:
+            logger.error('Error trying to prepare battery historian plugin', exc_info=True)
 
     def end_test(self, retcode):
-        out = subprocess.Popen(self.cmds['dump'], stdout=subprocess.PIPE, shell=True).communicate()[0]
-        subprocess.check_output(self.cmds['disable_full_log'], shell=True)
-        subprocess.check_output(self.cmds['reset'], shell=True)
+        try:
+            logger.debug('dumping battery stats')
+            dump = subprocess.Popen(self.cmds['dump'], stdout=subprocess.PIPE, shell=True).communicate()[0]
+            out = subprocess.check_output(self.cmds['disable_full_log'], shell=True)
+            logger.debug('Disabling fulllog: %s', out)
+            out = subprocess.check_output(self.cmds['reset'], shell=True)
+            logger.debug('Battery stats reset: %s', out)
+        except CalledProcessError:
+            logger.error('Error trying to collect battery historian plugin data', exc_info=True)
         with open(self.logfile, 'w') as f:
-            f.write(out)
+            f.write(dump)
         return retcode
 
     def is_test_finished(self):
