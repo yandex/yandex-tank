@@ -292,10 +292,10 @@ Advanced options
 TLS/SSL additional options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-..note::
+.. note::
   ``ssl=1`` is required
 
-:ciphers:
+:client_cipher_suites:
   Cipher list, consists of one or more cipher strings separated by colons (see man ciphers).
 
   Example: ciphers = RSA:!COMPLEMENTOFALL
