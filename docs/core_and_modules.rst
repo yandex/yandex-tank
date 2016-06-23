@@ -292,7 +292,7 @@ Advanced options
 TLS/SSL additional options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Note:
+.. note::
   ``ssl=1`` is required
 
 :client_cipher_suites:
