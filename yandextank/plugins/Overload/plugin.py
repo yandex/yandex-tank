@@ -6,6 +6,7 @@ import copy
 import logging
 import os
 import pwd
+import json
 import socket
 import sys
 
@@ -16,7 +17,7 @@ from ..Autostop import AutostopPlugin
 from ..Console import ConsolePlugin
 from ..JMeter import JMeterPlugin
 from ..Pandora import PandoraPlugin
-from ..Monitoring import MonitoringPlugin, AbstractResolver
+from ..Telegraf import Plugin as MonitoringPlugin
 from ..Phantom import PhantomPlugin
 
 from .client import OverloadClient
@@ -298,13 +299,13 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     def get_sla_by_task(self):
         return self.api_client.get_sla_by_task(self.regression_component)
 
-    def monitoring_data(self, data_string):
+    def monitoring_data(self, data):
         if not self.jobno:
             logger.debug("No jobNo gained yet")
             return
 
         if self.retcode < 0:
-            self.api_client.push_monitoring_data(self.jobno, data_string)
+            self.api_client.push_monitoring_data(self.jobno, json.dumps(data))
         else:
             logger.warn("The test was stopped from Web interface")
 

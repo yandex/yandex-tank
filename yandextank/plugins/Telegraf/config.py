@@ -15,6 +15,7 @@ class ConfigManager(object):
     Config reader and parser helper.
     XML support
     """
+
     @staticmethod
     def parse_xml(config):
         if os.path.exists(config):
@@ -40,7 +41,8 @@ class ConfigManager(object):
         hostname = host.get('address').lower()
         if hostname == '[target]':
             if not target_hint:
-                raise ValueError("Can't use `[target]` keyword with no target parameter specified")
+                raise ValueError(
+                    "Can't use `[target]` keyword with no target parameter specified")
             logger.debug("Using target hint: %s", target_hint)
             hostname = target_hint.lower()
         custom = []
@@ -69,13 +71,14 @@ class ConfigManager(object):
             'telegraf': host.get('telegraf', '/usr/bin/telegraf'),
             'custom': custom,
             'host': hostname,
-            'startup' : startups,
-            'shutdown' : shutdowns
+            'startup': startups,
+            'shutdown': shutdowns
         }
 
 
 class AgentConfig(object):
     """ Agent config generator helper """
+
     def __init__(self, config):
         self.monitoring_data_output = None
         self.host = config['host']
@@ -89,8 +92,8 @@ class AgentConfig(object):
         if os.path.isfile(cfg_path):
             logger.info(
                 'Found agent startup config file in working directory with the same name as created for host %s'
-                'Creating new one via tempfile. This will affect predictable filenames for agent artefacts', self.host
-            )
+                'Creating new one via tempfile. This will affect predictable filenames for agent artefacts',
+                self.host)
             handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
             os.close(handle)
         try:
@@ -105,7 +108,10 @@ class AgentConfig(object):
             with open(cfg_path, 'w') as fds:
                 config.write(fds)
         except Exception as exc:
-            logger.error('Error trying to create monitoring startups config. Malformed? %s', exc, exc_info=True)
+            logger.error(
+                'Error trying to create monitoring startups config. Malformed? %s',
+                exc,
+                exc_info=True)
         return cfg_path
 
     def create_collector_config(self, workdir):
@@ -114,26 +120,30 @@ class AgentConfig(object):
         if os.path.isfile(cfg_path):
             logger.info(
                 'Found agent config file in working directory with the same name as created for host %s'
-                'Creating new one via tempfile. This will affect predictable filenames for agent artefacts', self.host
-            )
+                'Creating new one via tempfile. This will affect predictable filenames for agent artefacts',
+                self.host)
             handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
             os.close(handle)
 
         self.monitoring_data_output = "{remote_folder}/monitoring.rawdata".format(
-            remote_folder=workdir
-        )
+            remote_folder=workdir)
         try:
             config = ConfigParser.RawConfigParser()
             config.add_section("global_tags")
             config.add_section("agent")
-            config.set("agent", "interval", "'{interval}s'".format(interval=self.interval))
+            config.set("agent",
+                       "interval",
+                       "'{interval}s'".format(interval=self.interval))
             config.set("agent", "round_interval", "true")
             config.set("agent", "flush_interval", "'1s'")
             config.set("agent", "collection_jitter", "'0s'")
             config.set("agent", "flush_jitter", "'0s'")
             #outputs
             config.add_section("[outputs.file]")
-            config.set("[outputs.file]", "files", "['stdout', '{config}']".format(config=self.monitoring_data_output))
+            config.set("[outputs.file]",
+                       "files",
+                       "['stdout', '{config}']".format(
+                           config=self.monitoring_data_output))
             config.set("[outputs.file]", "data_format", "'json'")
             #inputs
             config.add_section("[inputs.mem]")
@@ -146,10 +156,12 @@ class AgentConfig(object):
             config.set("[inputs.diskio]", "devices", '["vda", "sda"]')
             config.add_section("[inputs.net]")
             config.set("[inputs.net]", "interfaces", '["eth0"]')
-            config.set("[inputs.net]", "fielddrop", '["icmp*", "ip*", "udplite*", "tcp*", "udp*"]')
+            config.set("[inputs.net]", "fielddrop",
+                       '["icmp*", "ip*", "udplite*", "tcp*", "udp*"]')
             config.add_section("[inputs.netstat]")
             config.add_section("[inputs.system]")
-            config.set("[inputs.system]", "fielddrop", '["uptime", "n_users"]')
+            config.set("[inputs.system]", "fielddrop",
+                       '["n_users", "uptime_format"]')
             config.add_section("[inputs.processes]")
             config.add_section("[inputs.kernel]")
             config.set("[inputs.kernel]", "fielddrop", '["boot_time"]')
@@ -160,15 +172,20 @@ class AgentConfig(object):
             inputs = ""
             for cmd in self.custom:
                 inputs += "[[inputs.exec]]\n"
-                inputs += 'commands = [\'/bin/bash -c "{}"\']\n'.format(cmd.get('cmd'))
+                inputs += 'commands = [\'/bin/bash -c "{}"\']\n'.format(
+                    cmd.get('cmd'))
                 inputs += "data_format = 'value'\n"
                 inputs += "data_type = 'integer'\n"
                 inputs += "name_prefix = '{}_'\n\n".format(cmd.get('label'))
                 if cmd['diff']:
-                    decoder.diff_metrics.append(decoder.find_common_names(cmd.get('label')+"_exec_value"))
+                    decoder.diff_metrics.append(decoder.find_common_names(
+                        cmd.get('label') + "_exec_value"))
 
             with open(cfg_path, 'a') as fds:
                 fds.write(inputs)
         except Exception as exc:
-            logger.error('Error trying to create monitoring config. Malformed? %s', exc, exc_info=True)
+            logger.error(
+                'Error trying to create monitoring config. Malformed? %s',
+                exc,
+                exc_info=True)
         return cfg_path
