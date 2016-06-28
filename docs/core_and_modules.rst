@@ -1319,3 +1319,20 @@ Options
   Disable tips and tricks.
 
   Default: 0 (don't).
+
+
+BatteryHistorian
+================
+
+Module collects android device battery historian log to artifacts.  
+
+INI-file section: **[battery_historian]**  
+
+Options
+-------
+
+:device_id:  
+  Android device id. Should be specified.  
+
+  Default: None (will raise an exception).  
+
