@@ -5,7 +5,7 @@
 ![Quantiles chart example](/logos/screen.png)
 
 ## Description
-Yandex.Tank is an extendable open source load testing tool for advanced linux users which is especially good as a part of automated load testing suit.
+Yandex.Tank is an extendable open source load testing tool for advanced linux users which is especially good as a part of automated load testing suite.
 
 ## Main features
 * different load generators supported:
@@ -19,20 +19,20 @@ Yandex.Tank is an extendable open source load testing tool for advanced linux us
 * customizable and extendable monitoring that works over SSH
 
 ## Installation and configuration
-Installation at [ReadTheDocs](http://yandextank.readthedocs.org/en/latest/install.html)
+Installation at [ReadTheDocs](http://yandextank.readthedocs.org/en/latest/install.html).
 
 ## Get help
-Documentation at [ReadTheDocs](https://yandextank.readthedocs.org/en/latest/)
+Documentation at [ReadTheDocs](https://yandextank.readthedocs.org/en/latest/).
 
 Ask your questions at [Stackoverflow](https://stackoverflow.com/), use "load-testing" + "yandex" tags.
 
 ## See also
-Evgeniy Mamchits' [phantom](https://github.com/yandex-load/phantom) - Phantom scalable IO Engine
+Evgeniy Mamchits' [phantom](https://github.com/yandex-load/phantom) – Phantom scalable IO Engine.
 
-BlazeMeter's [Sense](https://sense.blazemeter.com/) - service for storing and analyzing performance test results
+BlazeMeter's [Sense](https://sense.blazemeter.com/) – service for storing and analyzing performance test results.
 
-[Jenkins](https://jenkins-ci.org/) - an extendable open source continuous integration server that may be used to automate test execution.
+[Jenkins](https://jenkins-ci.org/) – an extendable open source continuous integration server that may be used to automate test execution.
 
-[Graphite](https://graphite.readthedocs.org/en/latest/overview.html) - an enterprise-scale monitoring tool, use it to store your test results and render graphs.
+[Graphite](https://graphite.readthedocs.org/en/latest/overview.html) – an enterprise-scale monitoring tool, use it to store your test results and render graphs.
 
 ![Yandex.Metrics counter](https://mc.yandex.ru/watch/17743264)

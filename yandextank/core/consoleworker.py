@@ -161,7 +161,7 @@ class ConsoleTank:
                     ]
         except OSError:
             self.log.warn(self.baseconfigs_location +
-                          ' is not acessible to get configs list')
+                          ' is not accessible to get configs list')
 
         configs += [os.path.expanduser('~/.yandex-tank')]
         return configs
