@@ -179,8 +179,8 @@ class SaveMonToFile(MonitoringDataListener):
         if out_file:
             self.store = open(out_file, 'w')
 
-    def monitoring_data(self, data_string):
-        self.store.write(data_string)
+    def monitoring_data(self, data_list):
+        [self.store.write(data) for data in data_list]
         self.store.flush()
 
     def close(self):
@@ -226,9 +226,9 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener,
                     self.sign[host][metric] = 0
                 self.data[host][metric] = "%.2f" % float(value)
 
-    def monitoring_data(self, data_string):
-        logger.debug("Mon widget data: %s", data_string)
-        for line in data_string.split("\n"):
+    def monitoring_data(self, data_list):
+        logger.debug("Mon widget data: %s", data_list)
+        for line in data_list:
             if not line.strip():
                 continue
 
@@ -291,11 +291,11 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener,
         self.last_second = None
         self.seconds_count = 0
 
-    def monitoring_data(self, data_string):
+    def monitoring_data(self, data_list):
         if self.triggered:
             return
 
-        for line in data_string.split("\n"):
+        for line in data_list:
             if not line.strip():
                 continue
 

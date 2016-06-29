@@ -208,7 +208,7 @@ class MonitoringCollector(object):
         self.filter_conf = {}
         self.listeners = []
         self.first_data_received = False
-        self.send_data = ''
+        self.send_data = []
         self.artifact_files = []
         self.inputs, self.outputs, self.excepts = [], [], []
         self.filter_mask = defaultdict(str)
@@ -260,8 +260,11 @@ class MonitoringCollector(object):
 
             for data in lines:
                 logger.debug("Got data from agent: %s", data.strip())
-                self.send_data += self.filter_unused_data(
-                    self.filter_conf, self.filter_mask, data)
+                self.send_data.append(
+                    self.filter_unused_data(
+                        self.filter_conf, self.filter_mask, data
+                    )
+                )
                 logger.debug("Data after filtering: %s", self.send_data)
 
         if not self.first_data_received and self.send_data:
@@ -280,9 +283,8 @@ class MonitoringCollector(object):
 
     def send_collected_data(self):
         """sends pending data set to listeners"""
-        for listener in self.listeners:
-            listener.monitoring_data(self.send_data)
-        self.send_data = ''
+        [listener.monitoring_data(self.send_data) for listener in self.listeners]
+        self.send_data = []
 
     def get_host_config(self, host, target_hint):
 
@@ -494,8 +496,8 @@ class StdOutPrintMon(MonitoringDataListener):
     def __init__(self):
         MonitoringDataListener.__init__(self)
 
-    def monitoring_data(self, data_string):
-        sys.stdout.write(data_string)
+    def monitoring_data(self, data_list):
+        [sys.stdout.write(data) for data in data_list]
 
 
 class MonitoringDataDecoder(object):

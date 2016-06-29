@@ -95,7 +95,7 @@ class MonitoringDataListener(object):
     def __init__(self):
         pass
 
-    def monitoring_data(self, data_string):
+    def monitoring_data(self, data):
         """Notification about new monitoring data lines"""
         raise NotImplementedError("Abstract method needs to be overridden")
 

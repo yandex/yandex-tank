@@ -120,7 +120,13 @@ class LocalhostClient(object):
                 else:
                     self.buffer += parts[0]
             else:
-                time.sleep(1)
+                try:
+                    time.sleep(1)
+                except AttributeError:
+                    logger.debug(
+                        'this exc most likely raised during interpreter shutdown\n'
+                        'otherwise something really nasty happend'
+                    )
 
     def uninstall(self):
         """

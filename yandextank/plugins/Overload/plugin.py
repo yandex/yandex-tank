@@ -299,13 +299,13 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     def get_sla_by_task(self):
         return self.api_client.get_sla_by_task(self.regression_component)
 
-    def monitoring_data(self, data):
+    def monitoring_data(self, data_list):
         if not self.jobno:
             logger.debug("No jobNo gained yet")
             return
 
         if self.retcode < 0:
-            self.api_client.push_monitoring_data(self.jobno, json.dumps(data))
+            [self.api_client.push_monitoring_data(self.jobno, data) for data in data_list]
         else:
             logger.warn("The test was stopped from Web interface")
 
