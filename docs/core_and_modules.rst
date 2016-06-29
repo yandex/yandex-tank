@@ -1166,6 +1166,25 @@ Following example illustrates this feature:
     </Monitoring>
 
 
+Telegraf
+========
+Runs metrics collection through ssh connection.
+
+Thanks to https://github.com/influxdata/telegraf for metric collection agent.
+
+INI file section: **[telegraf]**
+
+You can use old monitoring config, telegraf plugin transparently supports it.
+
+Options
+-------
+
+:config:
+  Path to monitoring config file.
+
+  Default: ``auto`` means collect default metrics from ``default_target`` host. If ``none`` is defined, monitoring won't be executed. Also it is possible to write plain multiline XML config.
+
+
 
 Console on-line screen
 ======================
