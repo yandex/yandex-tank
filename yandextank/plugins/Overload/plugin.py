@@ -305,7 +305,12 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             return
 
         if self.retcode < 0:
-            [self.api_client.push_monitoring_data(self.jobno, data) for data in data_list]
+            # FIXME remove this with old monitoring plugin
+            if len(data_list) > 0:
+                if type(data_list[0]) is str:
+                    [self.api_client.push_monitoring_data(self.jobno, data) for data in data_list]
+                else:
+                    self.api_client.push_monitoring_data(self.jobno, json.dumps(data_list))
         else:
             logger.warn("The test was stopped from Web interface")
 

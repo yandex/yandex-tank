@@ -36,7 +36,6 @@ class Plugin(AbstractPlugin):
         self.die_on_fail = True
         self.data_file = None
         self.mon_saver = None
-        self.address_resolver = None
 
     @staticmethod
     def get_key():
@@ -116,13 +115,6 @@ class Plugin(AbstractPlugin):
                              self.default_target)
         except KeyError:
             logger.debug("Phantom plugin not found: %s", exc_info=True)
-
-        if self.address_resolver:
-            try:
-                self.default_target = self.address_resolver.resolve_virtual(
-                    self.default_target)
-            except Exception, exc:
-                logger.error("Failed to get target info: %s", exc)
 
         if not self.config or self.config == 'none':
             logger.info("Monitoring has been disabled")

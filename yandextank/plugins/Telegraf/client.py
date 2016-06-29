@@ -125,7 +125,7 @@ class LocalhostClient(object):
                 except AttributeError:
                     logger.debug(
                         'this exc most likely raised during interpreter shutdown\n'
-                        'otherwise something really nasty happend'
+                        'otherwise something really nasty happend', exc_info=True
                     )
 
     def uninstall(self):
