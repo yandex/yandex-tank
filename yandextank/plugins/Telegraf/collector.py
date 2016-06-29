@@ -71,7 +71,7 @@ class MonitoringCollector(object):
             for collect in agent.reader:
                 for chunk in collect:
                     ts, prepared_results = chunk
-                    ready_to_send_json = {
+                    ready_to_send = {
                         "timestamp": ts,
                         "data": {
                             agent.host: {
@@ -80,7 +80,7 @@ class MonitoringCollector(object):
                             }
                         }
                     }
-                    self.send_data.append(ready_to_send_json)
+                    self.send_data.append(ready_to_send)
 
         logger.debug('Polling/decoding agents data took: %.2fms',
                      (time.time() - start_time) * 1000)
@@ -102,8 +102,7 @@ class MonitoringCollector(object):
 
     def send_collected_data(self):
         """sends pending data set to listeners"""
-        [listener.monitoring_data(self.send_data)
-         for listener in self.listeners]
+        [listener.monitoring_data(self.send_data) for listener in self.listeners]
         self.send_data = []
 
 
@@ -113,5 +112,5 @@ class StdOutPrintMon(MonitoringDataListener):
     def __init__(self):
         MonitoringDataListener.__init__(self)
 
-    def monitoring_data(self, data_string):
-        [sys.stdout.write(chunk) for chunk in data_string]
+    def monitoring_data(self, data_list):
+        [sys.stdout.write(data) for data in data_list]
