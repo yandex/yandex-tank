@@ -52,7 +52,6 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.is_regression = None
         self.ignore_target_lock = None
         self.port = None
-        self.api_token = None
 
     @staticmethod
     def get_key():
@@ -226,7 +225,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
         self.jobno = self.api_client.new_job(
             self.task, self.operator, socket.getfqdn(), self.target, port,
-            loadscheme, detailed_field, self.notify_list, self.api_token)
+            loadscheme, detailed_field, self.notify_list)
         web_link = "%s%s" % (self.api_client.address, self.jobno)
         logger.info("Web link: %s", web_link)
         self.publish("jobno", self.jobno)
