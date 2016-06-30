@@ -87,13 +87,13 @@ class OverloadClient(object):
             'loadscheme': loadscheme,
             'detailed_time': detailed_time,
             'notify': notify_list,
-            'api_token': self.api_token,
         }
 
         logger.debug("Job create request: %s", data)
         while True:
             try:
-                response = self.post("api/job/create.json", data)
+                response = self.post(
+                    "api/job/create.json?api_token=" + self.api_token, data)
                 self.upload_token = response[0].get('upload_token', '')
                 return response[0]['job']
             except requests.exceptions.HTTPError as ex:
@@ -108,7 +108,8 @@ class OverloadClient(object):
         raise RuntimeError("Unreachable point hit")
 
     def get_job_summary(self, jobno):
-        result = self.get('api/job/' + str(jobno) + '/summary.json')
+        result = self.get('api/job/' + str(jobno) + "/summary.json?api_token="
+                          + self.api_token)
         return result[0]
 
     def close_job(self, jobno, retcode):
@@ -133,10 +134,11 @@ class OverloadClient(object):
             'tank_type': int(tank_type),
             'command_line': cmdline,
             'starred': int(is_starred),
-            'api_token': self.api_token,
         }
 
-        response = self.post('api/job/' + str(jobno) + '/edit.json', data)
+        response = self.post(
+            'api/job/' + str(jobno) + "/edit.json?api_token=" + self.api_token,
+            data)
         return response
 
     def set_imbalance_and_dsc(self, jobno, rps, comment):
@@ -147,7 +149,9 @@ class OverloadClient(object):
             res = self.get_job_summary(jobno)
             data['description'] = (res['dsc'] + "\n" + comment).strip()
 
-        response = self.post('api/job/' + str(jobno) + '/edit.json', data)
+        response = self.post(
+            'api/job/' + str(jobno) + "/edit.json?api_token=" + self.api_token,
+            data)
         return response
 
     def second_data_to_push_item(self, data, stat, timestamp, overall, case):
@@ -280,14 +284,11 @@ class OverloadClient(object):
     def send_console(self, jobno, console):
         logger.debug("Sending console view [%s]: %s", len(console),
                      console[:64])
-        addr = "api/job/%s/console.txt" % jobno
-        self.post_raw(addr, {
-            "console": console,
-            'api_token': self.api_token,
-        })
+        addr = ("api/job/%s/console.txt?api_token=" % jobno) + self.api_token,
+        self.post_raw(addr, {"console": console, })
 
     def send_config_snapshot(self, jobno, config):
         logger.debug("Sending config snapshot")
-        addr = "api/job/%s/configinfo.txt" % jobno
-        self.post_raw(addr, {"configinfo": config,
-                             'api_token': self.api_token, })
+        addr = ("api/job/%s/configinfo.txt?api_token=" %
+                jobno) + self.api_token
+        self.post_raw(addr, {"configinfo": config, })
