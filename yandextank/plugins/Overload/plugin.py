@@ -87,13 +87,13 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                              filename)
                 logger.info(
                     "Get your Overload API token from https://overload.yandex.net and provide it via 'overload.token_file' parameter")
-                return None
+                raise RuntimeError("API token error")
             return data
         else:
             logger.error("Overload API token filename is not defined")
             logger.info(
                 "Get your Overload API token from https://overload.yandex.net and provide it via 'overload.token_file' parameter")
-            return None
+            raise RuntimeError("API token error")
 
     def configure(self):
         try:
@@ -105,10 +105,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
         self.api_client.set_api_address(self.get_option("api_address"))
         self.api_client.set_api_timeout(self.get_option("api_timeout", 30))
-        api_token = self.read_token(self.get_option("token_file", ''))
-        if not api_token:
-            return -1
-        self.api_client.set_api_token(api_token)
+        self.api_client.set_api_token(self.read_token(self.get_option(
+            "token_file", '')))
         self.task = self.get_option("task", 'DEFAULT')
         self.job_name = unicode(self.get_option("job_name", 'none').decode(
             'utf8'))
