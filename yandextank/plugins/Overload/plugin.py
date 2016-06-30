@@ -52,7 +52,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.is_regression = None
         self.ignore_target_lock = None
         self.port = None
-        self.token_file = None
+        self.api_token = None
 
     @staticmethod
     def get_key():
@@ -78,19 +78,23 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         if filename:
             logger.debug("Trying to read token from %s", filename)
             try:
-                handle = open(filename, 'r')
-                data = handle.read().strip()
-                logger.info("Read authentication token from %s, "
-                            "token length is %d bytes", filename,
-                            len(str(data)))
+                with open(filename, 'r') as handle:
+                    data = handle.read().strip()
+                    logger.info("Read authentication token from %s, "
+                                "token length is %d bytes", filename,
+                                len(str(data)))
             except IOError:
-                logger.info("Failed to read authentication token from %s",
-                            filename)
-                data = ""
+                logger.error("Failed to read Overload API token from %s",
+                             filename)
+                logger.info(
+                    "Get your Overload API token from https://overload.yandex.net and provide it via 'overload.token_file' parameter")
+                return None
             return data
         else:
-            logger.debug("token filename is not defined")
-            return ""
+            logger.error("Overload API token filename is not defined")
+            logger.info(
+                "Get your Overload API token from https://overload.yandex.net and provide it via 'overload.token_file' parameter")
+            return None
 
     def configure(self):
         try:
@@ -102,8 +106,10 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
         self.api_client.set_api_address(self.get_option("api_address"))
         self.api_client.set_api_timeout(self.get_option("api_timeout", 30))
-        self.api_client.set_token(self.read_token(self.get_option("token_file",
-                                                                  '')))
+        api_token = self.read_token(self.get_option("token_file", ''))
+        if not api_token:
+            return -1
+        self.api_client.set_api_token(api_token)
         self.task = self.get_option("task", 'DEFAULT')
         self.job_name = unicode(self.get_option("job_name", 'none').decode(
             'utf8'))
@@ -220,7 +226,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
         self.jobno = self.api_client.new_job(
             self.task, self.operator, socket.getfqdn(), self.target, port,
-            loadscheme, detailed_field, self.notify_list)
+            loadscheme, detailed_field, self.notify_list, self.api_token)
         web_link = "%s%s" % (self.api_client.address, self.jobno)
         logger.info("Web link: %s", web_link)
         self.publish("jobno", self.jobno)
@@ -308,9 +314,11 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             # FIXME remove this with old monitoring plugin
             if len(data_list) > 0:
                 if type(data_list[0]) is str:
-                    [self.api_client.push_monitoring_data(self.jobno, data) for data in data_list]
+                    [self.api_client.push_monitoring_data(self.jobno, data)
+                     for data in data_list]
                 else:
-                    self.api_client.push_monitoring_data(self.jobno, json.dumps(data_list))
+                    self.api_client.push_monitoring_data(self.jobno,
+                                                         json.dumps(data_list))
         else:
             logger.warn("The test was stopped from Web interface")
 

@@ -14,6 +14,7 @@ class OverloadClient(object):
         self.address = None
         self.token = None
         self.upload_token = ''
+        self.api_token = ""
         self.api_timeout = None
         self.session = requests.Session()
         self.session.verify = False
@@ -24,6 +25,9 @@ class OverloadClient(object):
 
     def set_api_timeout(self, timeout):
         self.api_timeout = float(timeout)
+
+    def set_api_token(self, api_token):
+        self.api_token = api_token
 
     def get_raw(self, addr):
         if not self.address:
@@ -82,7 +86,8 @@ class OverloadClient(object):
             'port': target_port,
             'loadscheme': loadscheme,
             'detailed_time': detailed_time,
-            'notify': notify_list
+            'notify': notify_list,
+            'api_token': self.api_token,
         }
 
         logger.debug("Job create request: %s", data)
@@ -107,7 +112,7 @@ class OverloadClient(object):
         return result[0]
 
     def close_job(self, jobno, retcode):
-        params = {'exitcode': str(retcode)}
+        params = {'exitcode': str(retcode), 'api_token': self.api_token, }
 
         result = self.get('api/job/' + str(jobno) + '/close.json?' +
                           urllib.urlencode(params))
@@ -127,14 +132,15 @@ class OverloadClient(object):
             'component': component,
             'tank_type': int(tank_type),
             'command_line': cmdline,
-            'starred': int(is_starred)
+            'starred': int(is_starred),
+            'api_token': self.api_token,
         }
 
         response = self.post('api/job/' + str(jobno) + '/edit.json', data)
         return response
 
     def set_imbalance_and_dsc(self, jobno, rps, comment):
-        data = {}
+        data = {'api_token': self.api_token, }
         if rps:
             data['imbalance'] = rps
         if comment:
@@ -275,13 +281,13 @@ class OverloadClient(object):
         logger.debug("Sending console view [%s]: %s", len(console),
                      console[:64])
         addr = "api/job/%s/console.txt" % jobno
-        self.post_raw(addr, console)
+        self.post_raw(addr, {
+            "console": console,
+            'api_token': self.api_token,
+        })
 
     def send_config_snapshot(self, jobno, config):
         logger.debug("Sending config snapshot")
         addr = "api/job/%s/configinfo.txt" % jobno
-        self.post_raw(addr, {"configinfo": config})
-
-    def set_token(self, token):
-        self.token = token
-        self.session.headers.update({"Authorization": "OAuth %s" % self.token})
+        self.post_raw(addr, {"configinfo": config,
+                             'api_token': self.api_token, })
