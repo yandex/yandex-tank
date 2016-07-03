@@ -36,7 +36,7 @@ class StepperStatus(object):
 
     def publish(self, key, value):
         if key not in self.info:
-            raise RuntimeError("Tryed to publish to a non-existent key: %s" %
+            raise RuntimeError("Tried to publish to a non-existent key: %s" %
                                key)
         self.log.debug('Published %s to %s', value, key)
         self.info[key] = value
