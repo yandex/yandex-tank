@@ -210,7 +210,7 @@ there.
 Sources
 ================
 
-Yandex.Tank sources ((https://github.com/yandex/yandex-tank here)).
+Yandex.Tank sources are `here <https://github.com/yandex-load/yandex-tank>`_.
 
 load.ini example
 ================
