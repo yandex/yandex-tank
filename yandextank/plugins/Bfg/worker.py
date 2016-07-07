@@ -1,8 +1,7 @@
 import logging
 import time
-import multiprocessing as mp
 import threading as th
-from queue import Empty, Full
+from queue import Empty, Full, Queue
 from contextlib import contextmanager
 
 from ...stepper import StpdReader
@@ -10,22 +9,18 @@ from ...stepper import StpdReader
 logger = logging.getLogger(__name__)
 
 
-def signal_handler(signum, frame):
-    pass
-
-
 class InstanceCounter(object):
     def __init__(self):
-        self._v = mp.Value('i', 0)
-        self._lock = mp.Lock()
+        self._v = 0
+        self._lock = th.Lock()
 
     def inc(self):
         with self._lock:
-            self._v.value += 1
+            self._v += 1
 
     def dec(self):
         with self._lock:
-            self._v.value -= 1
+            self._v -= 1
 
     @contextmanager
     def context(self):
@@ -35,7 +30,7 @@ class InstanceCounter(object):
 
     def get(self):
         with self._lock:
-            return self._v.value
+            return self._v
 
 
 class BFG(object):
@@ -54,15 +49,15 @@ Gun: {gun.__class__.__name__}
            gun=gun, ))
         self.instances = int(instances)
         self.instance_counter = InstanceCounter()
-        self.results = mp.Queue()
+        self.results = Queue()
         self.gun = gun
         self.gun.results = self.results
-        self.quit = mp.Event()
-        self.task_queue = mp.Queue(1024)
+        self.quit = False
+        self.task_queue = Queue(1024)
         self.cached_stpd = cached_stpd
         self.stpd_filename = stpd_filename
         self.pool = [
-            mp.Process(target=self._worker) for _ in xrange(0, self.instances)
+            th.Thread(target=self._worker) for _ in xrange(0, self.instances)
         ]
         self.feeder = th.Thread(target=self._feed, name="Feeder")
         self.workers_finished = False
@@ -85,7 +80,7 @@ Gun: {gun.__class__.__name__}
         """
         Say the workers to finish their jobs and quit.
         """
-        self.quit.set()
+        self.quit = True
 
     def _feed(self):
         """
@@ -95,7 +90,7 @@ Gun: {gun.__class__.__name__}
         if self.cached_stpd:
             self.plan = list(self.plan)
         for task in self.plan:
-            if self.quit.is_set():
+            if self.quit:
                 logger.info("Stop feeding: gonna quit")
                 return
             # try putting a task to a queue unless there is a quit flag
@@ -105,7 +100,7 @@ Gun: {gun.__class__.__name__}
                     self.task_queue.put(task, timeout=1)
                     break
                 except Full:
-                    if self.quit.is_set() or self.workers_finished:
+                    if self.quit or self.workers_finished:
                         return
                     else:
                         continue
@@ -132,9 +127,9 @@ Gun: {gun.__class__.__name__}
             logger.info("All workers exited.")
             self.workers_finished = True
         except (KeyboardInterrupt, SystemExit):
-            self.task_queue.close()
-            self.results.close()
-            self.quit.set()
+            #self.task_queue.close()
+            #self.results.close()
+            self.quit
             logger.info("Going to quit. Waiting for workers")
             map(lambda x: x.join(), self.pool)
             self.workers_finished = True
@@ -149,7 +144,7 @@ Gun: {gun.__class__.__name__}
         except Exception:
             logger.exception("Couldn't initialize gun. Exit shooter process")
             return
-        while not self.quit.is_set():
+        while not self.quit:
             try:
                 task = self.task_queue.get(timeout=1)
                 if not task:
@@ -165,7 +160,7 @@ Gun: {gun.__class__.__name__}
             except (KeyboardInterrupt, SystemExit):
                 break
             except Empty:
-                if self.quit.is_set():
+                if self.quit:
                     logger.debug("Empty queue. Exiting process")
                     return
             except Full:

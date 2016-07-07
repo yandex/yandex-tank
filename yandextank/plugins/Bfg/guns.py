@@ -188,6 +188,9 @@ class ScenarioGun(AbstractGun):
         self.scenarios = self.module.SCENARIOS
 
     def shoot(self, missile, marker):
+        marker = marker.rsplit("#", 1)[0]  # support enum_ammo
+        if not marker:
+            marker = "default"
         scenario = self.scenarios.get(marker, None)
         if scenario:
             try:
