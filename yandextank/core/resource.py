@@ -6,6 +6,10 @@ import gzip
 import hashlib
 import traceback
 from contextlib import closing
+import time
+import urllib3
+
+logger = logging.getLogger()
 
 
 class FormatDetector(object):
@@ -146,14 +150,18 @@ class HttpOpener(object):
         return self.open(*args, **kwargs)
 
     def open(self, *args, **kwargs):
-        with closing(requests.get(self.url,
-                                  stream=True,
-                                  verify=False,
-                                  timeout=self.timeout)) as stream:
-            stream_iterator = stream.raw.stream(100, decode_content=True)
-            header = stream_iterator.next()
-            fmt = self.fmt_detector.detect_format(header)
-            self.log.debug('Resource %s format detected: %s.', self.url, fmt)
+        with closing(
+            requests.get(
+                    self.url,
+                    stream=True,
+                    verify=False,
+                    timeout=self.timeout
+                )
+            ) as stream:
+                stream_iterator = stream.raw.stream(100, decode_content=True)
+                header = stream_iterator.next()
+                fmt = self.fmt_detector.detect_format(header)
+                self.log.debug('Resource %s format detected: %s.', self.url, fmt)
         if not self.force_download and fmt != 'gzip' and self.data_length > 10**8:
             self.log.info(
                 "Resource data is not gzipped and larger than 100MB. Reading from stream..")
@@ -258,12 +266,15 @@ class HttpStreamWrapper:
         self.url = url
         self.buffer = ''
         self.pointer = 0
+        self.stream_iterator = None
         self._content_consumed = False
+        self.chunk_size = 10 ** 3
         try:
             self.stream = requests.get(self.url,
                                        stream=True,
                                        verify=False,
                                        timeout=10)
+            self.stream_iterator = self.stream.iter_content(self.chunk_size)
         except (requests.exceptions.Timeout,
                 requests.exceptions.ConnectionError) as exc:
             raise RuntimeError(
@@ -294,6 +305,7 @@ class HttpStreamWrapper:
                                        stream=True,
                                        verify=False,
                                        timeout=30)
+            self.stream_iterator = self.stream.iter_content(self.chunk_size)
         except (requests.exceptions.Timeout,
                 requests.exceptions.ConnectionError) as exc:
             raise RuntimeError(
@@ -308,8 +320,8 @@ class HttpStreamWrapper:
                                'via HttpStreamWrapper: %s' % (self.url, exc))
         self._content_consumed = False
 
-    def _enhance_buffer(self, bytes=10**3):
-        self.buffer += self.stream.iter_content(bytes).next()
+    def _enhance_buffer(self):
+        self.buffer += self.stream_iterator.next()
 
     def tell(self):
         return self.pointer
