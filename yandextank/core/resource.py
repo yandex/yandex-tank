@@ -6,8 +6,6 @@ import gzip
 import hashlib
 import traceback
 from contextlib import closing
-import time
-import urllib3
 
 logger = logging.getLogger()
 
