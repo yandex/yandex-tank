@@ -7,7 +7,7 @@ import hashlib
 import traceback
 from contextlib import closing
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class FormatDetector(object):
@@ -15,7 +15,6 @@ class FormatDetector(object):
     """
 
     def __init__(self):
-        self.log = logging.getLogger(__name__)
         self.formats = {'gzip': (0, b'\x1f\x8b'), 'tar': (257, b'ustar\x0000')}
 
     def detect_format(self, header):
@@ -30,7 +29,6 @@ class ResourceManager(object):
     """
 
     def __init__(self):
-        self.log = logging.getLogger(__name__)
         self.path = None
         self.openers = {
             'http': ('http://', HttpOpener),
@@ -60,11 +58,11 @@ class ResourceManager(object):
         try:
             size = os.path.getsize(filename)
             if size > 50 * 1024 * 1024:
-                self.log.warning(
+                logger.warning(
                     'Reading large resource to memory: %s. Size: %s bytes',
                     filename, size)
         except Exception as exc:
-            self.log.debug('Unable to check resource size %s. %s', filename,
+            logger.debug('Unable to check resource size %s. %s', filename,
                            exc)
         with opener(filename, 'r') as resource:
             content = resource.read()
@@ -93,7 +91,6 @@ class FileOpener(object):
     """
 
     def __init__(self, f_path):
-        self.log = logging.getLogger(__name__)
         self.f_path = f_path
         self.fmt_detector = FormatDetector()
 
@@ -101,7 +98,7 @@ class FileOpener(object):
         with open(self.f_path, 'rb') as resource:
             header = resource.read(300)
         fmt = self.fmt_detector.detect_format(header)
-        self.log.debug('Resource %s format detected: %s.', self.f_path, fmt)
+        logger.debug('Resource %s format detected: %s.', self.f_path, fmt)
         if fmt == 'gzip':
             return gzip.open(self.f_path, 'rb')
         else:
@@ -136,7 +133,6 @@ class HttpOpener(object):
     """
 
     def __init__(self, url):
-        self.log = logging.getLogger(__name__)
         self.url = url
         self.fmt_detector = FormatDetector()
         self.force_download = None
@@ -159,9 +155,9 @@ class HttpOpener(object):
                 stream_iterator = stream.raw.stream(100, decode_content=True)
                 header = stream_iterator.next()
                 fmt = self.fmt_detector.detect_format(header)
-                self.log.debug('Resource %s format detected: %s.', self.url, fmt)
+                logger.debug('Resource %s format detected: %s.', self.url, fmt)
         if not self.force_download and fmt != 'gzip' and self.data_length > 10**8:
-            self.log.info(
+            logger.info(
                 "Resource data is not gzipped and larger than 100MB. Reading from stream..")
             return HttpStreamWrapper(self.url)
         else:
@@ -176,11 +172,11 @@ class HttpOpener(object):
         hasher.update(self.hash)
         tmpfile_path = "/tmp/%s" % hasher.hexdigest()
         if os.path.exists(tmpfile_path):
-            self.log.info(
+            logger.info(
                 "Resource %s has already been downloaded to %s . Using it..",
                 self.url, tmpfile_path)
         else:
-            self.log.info("Downloading resource %s to %s", self.url,
+            logger.info("Downloading resource %s to %s", self.url,
                           tmpfile_path)
             try:
                 data = requests.get(self.url, verify=False, timeout=10)
@@ -191,12 +187,12 @@ class HttpOpener(object):
             f = open(tmpfile_path, "wb")
             f.write(data.content)
             f.close()
-            self.log.info("Successfully downloaded resource %s to %s",
+            logger.info("Successfully downloaded resource %s to %s",
                           self.url, tmpfile_path)
         return tmpfile_path
 
     def get_request_info(self):
-        self.log.info('Trying to get info about resource %s', self.url)
+        logger.info('Trying to get info about resource %s', self.url)
         req = requests.Request('HEAD',
                                self.url,
                                headers={'Accept-Encoding': 'identity'})
@@ -209,7 +205,7 @@ class HttpOpener(object):
                                           timeout=self.timeout)
         except (requests.exceptions.Timeout,
                 requests.exceptions.ConnectionError) as exc:
-            self.log.warning(
+            logger.warning(
                 'Connection error trying to get info about resource %s \n'
                 'Exception: %s \n'
                 'Retrying...' % (self.url, exc))
@@ -219,7 +215,7 @@ class HttpOpener(object):
                                               allow_redirects=True,
                                               timeout=self.timeout)
             except Exception as exc:
-                self.log.debug(
+                logger.debug(
                     'Connection error trying to get info about resource %s \n'
                     'Traceback:  %s' % (traceback.format_exc(exc), self.url))
                 raise RuntimeError(
@@ -231,7 +227,7 @@ class HttpOpener(object):
             self.data_info.raise_for_status()
         except requests.exceptions.HTTPError as exc:
             if exc.response.status_code == 405:
-                self.log.info(
+                logger.info(
                     "Resource storage does not support HEAD method. Ignore proto error and force download file.")
                 self.force_download = True
             else:
