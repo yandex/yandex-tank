@@ -14,7 +14,7 @@ WORKDIR /var/loadtest
 
 RUN apt-get update && apt-get install software-properties-common -y -q && \
     add-apt-repository ppa:yandex-load/main -y && \
-    apt-get update && apt-get install -y -q python-pip python-dev build-essential gfortran libssl-dev phantom phantom-ssl && \
+    apt-get update && apt-get install -y -q python-pip python-dev build-essential gfortran libssl-dev libffi-dev phantom phantom-ssl && \
     pip install --upgrade pip && \
     pip install --upgrade setuptools
 
