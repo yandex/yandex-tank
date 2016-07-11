@@ -62,6 +62,10 @@ class JMeterPlugin(AbstractPlugin):
             self.original_jmx, self.jtl_file, self._get_variables())
         self.core.add_artifact_file(self.jmx)
 
+        jmeter_stderr_file = self.core.mkstemp(".log", "jmeter_stdout_stderr_")
+        self.core.add_artifact_file(jmeter_stderr_file)
+        self.jmeter_stderr = open(jmeter_stderr_file, 'w')
+
     def prepare_test(self):
         self.args = [self.jmeter_path, "-n", "-t", self.jmx, '-j',
                      self.jmeter_log,
@@ -94,11 +98,18 @@ class JMeterPlugin(AbstractPlugin):
     def start_test(self):
         logger.info("Starting %s with arguments: %s", self.jmeter_path,
                     self.args)
-        self.jmeter_process = subprocess.Popen(
-            self.args,
-            executable=self.jmeter_path,
-            preexec_fn=os.setsid,
-            close_fds=True)  # stderr=subprocess.PIPE, stdout=subprocess.PIPE,
+        try:
+            self.jmeter_process = subprocess.Popen(
+                self.args,
+                executable=self.jmeter_path,
+                preexec_fn=os.setsid,
+                close_fds=True,
+                stdout=self.jmeter_stderr,
+                stderr=self.jmeter_stderr
+            )
+        except OSError:
+            logger.debug("Unable to start JMeter process. Args: %s, Executable: %s", self.args, self.jmeter_path, exc_info=True)
+            raise RuntimeError("Unable to access to JMeter executable file or it does not exist: %s" % self.jmeter_path)
         self.start_time = time.time()
 
     def is_test_finished(self):
@@ -118,7 +129,8 @@ class JMeterPlugin(AbstractPlugin):
             except OSError, exc:
                 logger.debug("Seems JMeter exited itself: %s", exc)
                 # Utils.log_stdout_stderr(logger, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
-
+        if self.jmeter_stderr:
+            self.jmeter_stderr.close()
         self.core.add_artifact_file(self.jmeter_log)
         return retcode
 
