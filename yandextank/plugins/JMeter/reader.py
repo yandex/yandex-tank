@@ -34,6 +34,8 @@ KNOWN_EXC = {
 def _exc_to_net(param1):
     """ translate http code to net code """
     if len(param1) <= 3:
+        # FIXME: we're unable to use better logic here, because we should support non-http codes
+        # but, we should look for core.util.HTTP or some other common logic here
         return 0
 
     exc = param1.split(' ')[-1]
@@ -41,21 +43,26 @@ def _exc_to_net(param1):
         return KNOWN_EXC[exc]
     else:
         logger.warning(
-            "Not known Java exception, consider adding it to dictionary: %s",
-            param1)
-        return 1
-
+            "Unknown Java exception, consider adding it to dictionary: %s", param1
+        )
+        return 41
 
 def _exc_to_http(param1):
     """ translate exception str to http code"""
     if len(param1) <= 3:
-        return int(param1)
+        try:
+            int(param1)
+        except:
+            logger.error("JMeter wrote some strange data into codes column: %s", param1)
+        else:
+            return int(param1)
 
     exc = param1.split(' ')[-1]
     if exc in KNOWN_EXC.keys():
         return 0
     else:
-        return 500
+        logger.warning("Unknown Java exception, %s", param1)
+        return 0
 
 
 exc_to_net = np.vectorize(_exc_to_net)
