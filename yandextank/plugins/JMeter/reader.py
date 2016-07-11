@@ -61,7 +61,7 @@ def _exc_to_http(param1):
     if exc in KNOWN_EXC.keys():
         return 0
     else:
-        logger.warning("Unknown Java exception, %s", param1)
+        logger.warning("Unknown Java exception. %s", param1)
         return 0
 
 

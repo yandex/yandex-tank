@@ -108,7 +108,8 @@ class JMeterPlugin(AbstractPlugin):
                 stderr=self.jmeter_stderr
             )
         except OSError:
-            logger.error("Unable to start jmeter process. Args: %s, Executable: %s", self.args, self.jmeter_path, exc_info=True)
+            logger.debug("Unable to start JMeter process. Args: %s, Executable: %s", self.args, self.jmeter_path, exc_info=True)
+            raise RuntimeError("Unable to access to JMeter executable file or it does not exist: %s" % self.jmeter_path)
         self.start_time = time.time()
 
     def is_test_finished(self):
