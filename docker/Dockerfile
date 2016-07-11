@@ -20,4 +20,4 @@ RUN apt-get update && apt-get install software-properties-common -y -q && \
 
 RUN pip install https://api.github.com/repos/yandex/yandex-tank/tarball/master
 
-ENTRYPOINT /usr/bin/yandex-tank
+ENTRYPOINT /usr/local/bin/yandex-tank
