@@ -11,16 +11,16 @@ RUN adduser  --disabled-password --gecos '' yandextank && adduser yandextank sud
     export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && apt-get install software-properties-common -y && \
     add-apt-repository ppa:yandex-load/main -y && \
-    apt-get update && apt-get install -y python-pip phantom phantom-ssl && \
-    BUILD_DEPS="python-dev build-essential gfortran libssl-dev libffi-dev" && \
+    apt-get update && apt-get install -y python-pip phantom phantom-ssl
+
+RUN BUILD_DEPS="python-dev build-essential gfortran libssl-dev libffi-dev" && \
     apt-get install -y ${BUILD_DEPS} && \
     pip install --upgrade pip && \
     pip install --upgrade setuptools && \
+    pip install https://api.github.com/repos/yandex/yandex-tank/tarball/master && \
     apt-get autoremove -y ${BUILD_DEPS} && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-RUN pip install https://api.github.com/repos/yandex/yandex-tank/tarball/master
 
 USER yandextank
 
