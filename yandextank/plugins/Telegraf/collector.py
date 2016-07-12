@@ -23,7 +23,6 @@ class MonitoringCollector(object):
         self.first_data_received = False
         self.send_data = []
         self.artifact_files = []
-        self.inputs, self.outputs, self.excepts = [], [], []
         self.load_start_time = None
         self.config_manager = ConfigManager()
 
@@ -85,12 +84,14 @@ class MonitoringCollector(object):
         logger.debug('Polling/decoding agents data took: %.2fms',
                      (time.time() - start_time) * 1000)
 
+        collected_data_length = len(self.send_data)
+
         if not self.first_data_received and self.send_data:
             self.first_data_received = True
             logger.info("Monitoring received first data.")
         else:
             self.send_collected_data()
-        return len(self.outputs)
+        return collected_data_length
 
     def stop(self):
         """Shutdown agents"""
