@@ -9,7 +9,7 @@
   "AmmoProvider": {
     "AmmoType": "jsonline/http",
     "AmmoSource": "./ammo.jsonline",
-    "Loop": 0
+    "Passes": 1
   },
   "ResultListener": {
     "ListenerType": "log/phout",
