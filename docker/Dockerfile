@@ -7,7 +7,9 @@ MAINTAINER Alexey Lavrenuke <direvius@yandex-team.ru>
 
 LABEL Description="Fresh Yandex.Tank from github master branch with phantom" Vendor="Yandex" Version="0.0.3"
 
-RUN adduser  --disabled-password --gecos '' yandextank && adduser yandextank sudo && \
+# TODO: chpasswd
+
+RUN adduser --gecos '' yandextank && adduser yandextank sudo && chpasswd yandextank:yandextank && \
     export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -y sudo && \
