@@ -23,7 +23,7 @@ ENV PATH $PATH:$ANDROID_HOME/platform-tools
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
 # some street magic
-RUN echo "y" | android update sdk --no-ui --force --filter 4,5,6,platform-tools
+RUN echo "y" | android update sdk --no-ui --force --filter platform-tools
 
 RUN pip install uiautomator
 
