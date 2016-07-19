@@ -1,0 +1,29 @@
+# Android performance testing environment with yandex-tank.
+# version 0.0.1
+
+FROM direvius/yandex-tank
+
+MAINTAINER Alexey Lavrenuke <direvius@gmail.com>
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN add-apt-repository ppa:webupd8team/java && apt update && \
+    echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | debconf-set-selections && \
+    apt -y install oracle-java8-installer
+
+RUN wget https://dl.google.com/android/android-sdk_r24.4.1-linux.tgz && \
+    tar -xvzf android-sdk_r24.4.1-linux.tgz && \
+    mv android-sdk-linux /usr/local/android-sdk
+
+ENV ANDROID_HOME /usr/local/android-sdk
+ENV PATH $PATH:$ANDROID_HOME/tools
+ENV PATH $PATH:$ANDROID_HOME/platform-tools
+ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
+
+# some street magic
+RUN echo "y" | android update sdk --no-ui --force --filter 4,5,6,platform-tools
+
+RUN pip install uiautomator
+
+RUN apt install -y curl && curl -sL https://deb.nodesource.com/setup_4.x | bash - && \
+    apt install -y nodejs && npm install -g appium
