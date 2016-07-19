@@ -7,6 +7,8 @@ MAINTAINER Alexey Lavrenuke <direvius@gmail.com>
 
 ENV DEBIAN_FRONTEND noninteractive
 
+USER root
+
 RUN add-apt-repository ppa:webupd8team/java && apt update && \
     echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | debconf-set-selections && \
     apt -y install oracle-java8-installer
@@ -27,3 +29,5 @@ RUN pip install uiautomator
 
 RUN apt install -y curl && curl -sL https://deb.nodesource.com/setup_4.x | bash - && \
     apt install -y nodejs && npm install -g appium
+
+USER yandextank

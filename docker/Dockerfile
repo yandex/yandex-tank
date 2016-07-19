@@ -9,7 +9,9 @@ LABEL Description="Fresh Yandex.Tank from github master branch with phantom" Ven
 
 RUN adduser  --disabled-password --gecos '' yandextank && adduser yandextank sudo && \
     export DEBIAN_FRONTEND=noninteractive && \
-    apt-get update && apt-get install software-properties-common -y && \
+    apt-get update && \
+    apt-get install -y sudo && \
+    apt-get install software-properties-common -y && \
     add-apt-repository ppa:yandex-load/main -y && \
     apt-get update && apt-get install -y python-pip phantom phantom-ssl
 
