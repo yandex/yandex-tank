@@ -9,7 +9,7 @@ LABEL Description="Fresh Yandex.Tank from github master branch with phantom" Ven
 
 # TODO: chpasswd
 
-RUN adduser --gecos '' yandextank && adduser yandextank sudo && chpasswd yandextank:yandextank && \
+RUN useradd -m -G sudo yandextank && echo yandextank:yandextank | chpasswd && \
     export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -y sudo && \
