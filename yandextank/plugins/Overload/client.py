@@ -239,6 +239,9 @@ class OverloadClient(object):
                 if ex.response.status_code == 400:
                     logger.error('Bad request to %s: %s', uri, ex)
                     return 0
+                elif ex.response.status_code == 410:
+                    logger.info("Test has been stopped by Overload server")
+                    return 1
                 logger.warn("Failed to push second data to API,"
                             " retry in 10 sec: %s", ex)
                 time.sleep(10)  # FIXME this makes all plugins freeze
@@ -269,6 +272,9 @@ class OverloadClient(object):
                     if ex.response.status_code == 400:
                         logger.error('Bad request to %s: %s', addr, ex)
                         break
+                    elif ex.response.status_code == 410:
+                        logger.info("Test has been stopped by Overload server")
+                        return
                     logger.warning('Problems sending monitoring data,'
                                    ' retry in 10s: %s', ex)
                     time.sleep(10)  # FIXME this makes all plugins freeze
