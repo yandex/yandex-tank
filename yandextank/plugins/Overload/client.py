@@ -242,16 +242,17 @@ class OverloadClient(object):
                 elif ex.response.status_code == 410:
                     logger.info("Test has been stopped by Overload server")
                     return 1
-                logger.warn("Failed to push second data to API,"
-                            " retry in 10 sec: %s", ex)
-                time.sleep(10)  # FIXME this makes all plugins freeze
+                else:
+                    logger.warn("Unknown HTTP error while sending second data. "
+                                "Retry in 10 sec: %s", ex)
+                    time.sleep(10)  # FIXME this makes all plugins freeze
             except requests.exceptions.RequestException as ex:
                 logger.warn("Failed to push second data to API,"
                             " retry in 10 sec: %s", ex)
                 time.sleep(10)  # FIXME this makes all plugins freeze
             except Exception:  # pylint: disable=W0703
                 # something nasty happened, but we don't want to fail here
-                logger.exception("Failed to push second data to API")
+                logger.exception("Unknown exception while pushing second data to API")
                 return 0
         try:
             success = int(res[0]['success'])
@@ -275,16 +276,17 @@ class OverloadClient(object):
                     elif ex.response.status_code == 410:
                         logger.info("Test has been stopped by Overload server")
                         return
-                    logger.warning('Problems sending monitoring data,'
-                                   ' retry in 10s: %s', ex)
-                    time.sleep(10)  # FIXME this makes all plugins freeze
+                    else:
+                        logger.warning('Unknown http code while sending monitoring data,'
+                                       ' retry in 10s: %s', ex)
+                        time.sleep(10)  # FIXME this makes all plugins freeze
                 except requests.exceptions.RequestException as ex:
                     logger.warning('Problems sending monitoring data,'
                                    ' retry in 10s: %s', ex)
                     time.sleep(10)  # FIXME this makes all plugins freeze
                 except Exception:  # pylint: disable=W0703
                     # something irrecoverable happened
-                    logger.exception('Problems sending monitoring data')
+                    logger.exception("Unknown exception while pushing monitoring data to API")
                     return
 
     def send_console(self, jobno, console):
