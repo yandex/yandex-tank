@@ -7,22 +7,19 @@ MAINTAINER Alexey Lavrenuke <direvius@yandex-team.ru>
 
 LABEL Description="Fresh Yandex.Tank from github master branch with phantom" Vendor="Yandex" Version="0.0.3"
 
-# TODO: chpasswd
-
 RUN useradd -m -G sudo yandextank && echo yandextank:yandextank | chpasswd && \
     export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -y sudo && \
+    apt-get install -y wget && \
     apt-get install software-properties-common -y && \
     add-apt-repository ppa:yandex-load/main -y && \
     apt-get update && apt-get install -y python-pip phantom phantom-ssl
 
-RUN gpg \
-    --keyserver hkp://ha.pool.sks-keyservers.net \
-    --recv-keys 05CE15085FC09D18E99EFB22684A14CF2582E0C5
-
 ENV TELEGRAF_VERSION 0.13.1
-RUN wget -q https://dl.influxdata.com/telegraf/releases/telegraf_${TELEGRAF_VERSION}_amd64.deb.asc && \
+
+RUN gpg --keyserver hkp://ha.pool.sks-keyservers.net --recv-keys 05CE15085FC09D18E99EFB22684A14CF2582E0C5 && \
+    wget -q https://dl.influxdata.com/telegraf/releases/telegraf_${TELEGRAF_VERSION}_amd64.deb.asc && \
     wget -q https://dl.influxdata.com/telegraf/releases/telegraf_${TELEGRAF_VERSION}_amd64.deb && \
     gpg --batch --verify telegraf_${TELEGRAF_VERSION}_amd64.deb.asc telegraf_${TELEGRAF_VERSION}_amd64.deb && \
     dpkg -i telegraf_${TELEGRAF_VERSION}_amd64.deb && \
