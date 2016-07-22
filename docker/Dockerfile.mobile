@@ -25,7 +25,7 @@ ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 # some street magic
 RUN echo "y" | android update sdk --no-ui --force --filter platform-tools
 
-RUN pip install uiautomator
+RUN pip install uiautomator Appium-Python-Client
 
 RUN apt install -y curl && curl -sL https://deb.nodesource.com/setup_4.x | bash - && \
     apt install -y nodejs && npm install -g appium
