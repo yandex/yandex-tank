@@ -74,7 +74,7 @@ class MonitoringCollector(object):
                         "timestamp": ts,
                         "data": {
                             agent.host: {
-                                "comment": "test",
+                                "comment": agent.config.get("comment", ""),
                                 "metrics": prepared_results
                             }
                         }
