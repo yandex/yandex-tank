@@ -36,6 +36,7 @@ class LocalhostClient(object):
         self.host = "localhost"
         self.custom = config['custom']
         self.telegraf = config['telegraf']
+        self.comment = config['comment']
         self.config = AgentConfig(config)
 
         # connection
@@ -161,6 +162,7 @@ class SSHClient(object):
         self.interval = config['interval']
         self.custom = config['custom']
         self.telegraf = config['telegraf']
+        self.comment = config['comment']
         self.config = AgentConfig(config)
 
         #connection

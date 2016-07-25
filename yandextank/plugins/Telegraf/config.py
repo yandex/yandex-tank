@@ -69,6 +69,7 @@ class ConfigManager(object):
             'python': host.get('python', '/usr/bin/env python2'),
             'username': host.get('username', getpass.getuser()),
             'telegraf': host.get('telegraf', '/usr/bin/telegraf'),
+            'comment': host.get('comment', ''),
             'custom': custom,
             'host': hostname,
             'startup': startups,
@@ -86,6 +87,7 @@ class AgentConfig(object):
         self.startups = config['startup']
         self.shutdowns = config['shutdown']
         self.interval = config['interval']
+        self.comment = config['comment']
 
     def create_startup_config(self):
         cfg_path = "agent_startup_{}.cfg".format(self.host)
