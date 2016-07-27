@@ -29,31 +29,32 @@ class MonitoringReader(object):
         decode agents jsons, count diff
         """
         collect = []
-        if block:
-            for chunk in block.split('\n'):
+        for chunk in block.split('\n'):
+            if chunk:
                 try:
-                    if chunk:
-                        prepared_results = {}
-                        jsn = json.loads(chunk)
-                        for ts, values in jsn.iteritems():
-                            for key, value in values.iteritems():
-                                decoded_key = decoder.find_common_names(key)
-                                if decoded_key in decoder.diff_metrics:
-                                    if self.prev_check:
-                                        try:
-                                            value = jsn[ts][key] - self.prev_check[key]
-                                        except KeyError:
-                                            logger.debug(
-                                                'There is no diff value for metric %s.\n'
-                                                'Timestamp: %s. Is it initial data?', key, ts, exc_info=True
-                                            )
-                                            value = 0
-                                        prepared_results[decoded_key] = value
-                                else:
+                    prepared_results = {}
+                    jsn = json.loads(chunk.strip('\n'))
+                    for ts, values in jsn.iteritems():
+                        for key, value in values.iteritems():
+                            decoded_key = decoder.find_common_names(key)
+                            if decoded_key in decoder.diff_metrics:
+                                if self.prev_check:
+                                    try:
+                                        value = jsn[ts][key] - self.prev_check[key]
+                                    except KeyError:
+                                        logger.debug(
+                                            'There is no diff value for metric %s.\n'
+                                            'Timestamp: %s. Is it initial data?', key, ts, exc_info=True
+                                        )
+                                        value = 0
                                     prepared_results[decoded_key] = value
-                            self.prev_check = jsn[ts]
-                            collect.append((ts, prepared_results))
+                            else:
+                                prepared_results[decoded_key] = value
+                        self.prev_check = jsn[ts]
+                        collect.append((ts, prepared_results))
+                except ValueError:
+                    logger.info('Unable to decode monitoring json: %s', block, exc_info=True)
                 except:
-                    logger.error('Exception trying to parse agent data', exc_info=True)
-            if collect:
-                return collect
+                    logger.error('Exception trying to parse monitoring agent data', exc_info=True)
+        if collect:
+            return collect

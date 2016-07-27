@@ -76,6 +76,7 @@ class LocalhostClient(object):
                     return None, None
         except Exception:
             logger.error("Failed to copy agent to %s on localhost", self.workdir, exc_info=True)
+            return None, None
         return agent_config, startup_config
 
     @staticmethod
