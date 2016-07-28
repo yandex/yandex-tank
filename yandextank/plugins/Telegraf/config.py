@@ -140,6 +140,10 @@ class AgentConfig(object):
             config.set("agent", "flush_interval", "'1s'")
             config.set("agent", "collection_jitter", "'0s'")
             config.set("agent", "flush_jitter", "'0s'")
+            config.set("agent", "metric_buffer_limit", "10000")
+            config.set("agent", "flush_buffer_when_full", "true")
+            config.set("agent", "debug", "false")
+            config.set("agent", "quiet", "true")
             #outputs
             config.add_section("[outputs.file]")
             config.set("[outputs.file]",

@@ -9,6 +9,7 @@ from threading import Thread
 import ConfigParser
 import json
 from optparse import OptionParser
+import time
 
 logger = logging.getLogger(__name__)
 collector_logger = logging.getLogger("telegraf")
@@ -22,11 +23,23 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 
 class DataReader(object):
+    """geneartor drains a source
+    source should be file-like object and support readline()
+    """
     def __init__(self, pipe):
+        self.source = pipe
+
+    def __iter__(self):
+        while True:
+            data = self.source.readline().strip('\n')
+            if data:
+                yield data
+
+
+class DataAggregator(object):
+    """aggregate monitoring chunks"""
+    def __init__(self):
         self.buffer = ""
-        self.metrics_data = pipe
-        self.complete_second = None
-        self.aggregate_buffer = None
         self.prev_ts = None
         self.result = {}
         self.prev_ts = None
@@ -54,15 +67,10 @@ class DataReader(object):
                     self.buffer = chunk
                 if result_buffer:
                     return json.dumps(result_buffer)
+            except ValueError:
+                logger.error('Unable to decode json: %s', chunk, exc_info=True)
             except:
                 logger.error('Exception aggreagating chunks', exc_info=True)
-
-    def __iter__(self):
-        while True:
-            data = self.metrics_data.readline()
-            if data:
-                for chunk in data.split('\n'):
-                    yield self.aggregate(chunk)
 
 
 class AgentWorker(Thread):
@@ -74,8 +82,9 @@ class AgentWorker(Thread):
         self.shutdowns = []
         self.daemon = True  # Thread auto-shutdown
         self.finished = False
-        self.telegraf_reader = None
         self.telegraf_path = telegraf_path
+        self.aggregator = DataAggregator()
+        self.stdout_reader = None
 
     @staticmethod
     def popen(cmnd):
@@ -125,13 +134,19 @@ class AgentWorker(Thread):
             working_dir=self.working_dir
         )
         self.collector = self.popen(cmnd)
-        self.telegraf_reader = DataReader(self.collector.stdout)
-
+        self.stdout_reader = DataReader(self.collector.stdout)
         while not self.finished:
-            for chunk in self.telegraf_reader:
-                if chunk:
-                    logger.debug('decoded chunk : %s', chunk)
-                    sys.stdout.write(chunk+'\n')
+            try:
+                for stdout_data in self.stdout_reader:
+                    aggregate_result = self.aggregator.aggregate(stdout_data)
+                    if aggregate_result:
+                        logger.debug('aggregated ts : %s', aggregate_result)
+                        sys.stdout.write(str(aggregate_result)+'\n')
+                for stderr_data in DataReader(self.collector.stderr):
+                    logger.error('Stderr message: %s', stderr_data)
+            except:
+                logger.error('Unknown exception reading monitoring agent data', exc_info=True)
+        logger.debug('Telegraf finished')
         self.stop()
 
     def stop(self):
