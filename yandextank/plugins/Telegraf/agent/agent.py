@@ -5,14 +5,19 @@ import logging
 import os
 import sys
 import signal
-from threading import Thread
 import ConfigParser
 import json
-from optparse import OptionParser
+import threading
 import time
+
+from optparse import OptionParser
+import Queue as q
+
+
 
 logger = logging.getLogger(__name__)
 collector_logger = logging.getLogger("telegraf")
+
 
 def signal_handler(sig, frame):
     """ required for non-tty python runs to interrupt """
@@ -23,68 +28,112 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 
 class DataReader(object):
-    """geneartor drains a source
-    source should be file-like object and support readline()
-    """
-    def __init__(self, pipe):
-        self.source = pipe
+    """generator reads from source line-by-line"""
+    def __init__(self, filename, pipe=False):
+        self.pipe = pipe
+        if not self.pipe:
+            self.monout = open(filename, 'r')
+        else:
+            self.monout = filename
+        self.buffer = ""
+        self.closed = False
 
     def __iter__(self):
-        while True:
-            data = self.source.readline().strip('\n')
+        while not self.closed:
+            data = self.monout.readline()
             if data:
-                yield data
-
-
-class DataAggregator(object):
-    """aggregate monitoring chunks"""
-    def __init__(self):
-        self.buffer = ""
-        self.prev_ts = None
-        self.result = {}
-        self.prev_ts = None
-        self.buffer = ""
-
-    def aggregate(self, chunk):
-        if self.buffer or chunk:
-            try:
-                result_buffer = {}
-                if self.buffer:
-                    jsn = json.loads(self.buffer)
-                    self.buffer = ""
+                parts = data.rsplit('\n', 1)
+                if len(parts) > 1:
+                    ready_chunk = self.buffer + parts[0] + '\n'
+                    self.buffer = parts[1]
+                    yield ready_chunk
                 else:
-                    jsn = json.loads(chunk)
-                ts = str(jsn['timestamp'])
-                if ts == self.prev_ts:
-                    self.result.setdefault(ts, {})
-                    for key, value in jsn['fields'].iteritems():
-                        key = jsn['name']+"_"+key
-                        self.result[ts][key] = value
+                    self.buffer += parts[0]
+            #else:
+            #    self.buffer += self.monout.readline()
+        if not self.pipe:
+            self.monout.close()
+
+    def close(self):
+        self.closed = True
+
+
+class Consolidator(object):
+    """generator consolidates data from source, cache it by timestamp"""
+    def __init__(self, source):
+        self.source = source
+        self.results = {}
+
+    def __iter__(self):
+        for chunk in self.source:
+            #logger.info('Consolidator got %s', chunk)
+            if chunk:
+                try:
+                    data = json.loads(chunk)
+                except ValueError:
+                    logger.error('unable to decode chunk %s', chunk, exc_info=True)
                 else:
-                    self.prev_ts = ts
-                    result_buffer = self.result
-                    self.result = {}
-                    self.buffer = chunk
-                if result_buffer:
-                    return json.dumps(result_buffer)
-            except ValueError:
-                logger.error('Unable to decode json: %s', chunk, exc_info=True)
-            except:
-                logger.error('Exception aggreagating chunks', exc_info=True)
+                    try:
+                        ts = str(data['timestamp'])
+                        self.results.setdefault(ts, {})
+                        for key, value in data['fields'].iteritems():
+                            key = data['name']+"_"+key
+                            self.results[ts][key] = value
+                    except KeyError:
+                        logger.error('Malformed json from source: %s', chunk, exc_info=True)
+                    except:
+                        logger.error('Something nasty happend in consolidator work', exc_info=True)
+            #logger.info('Consolidator results lendth %s', len(self.results))
+            if len(self.results) > 5:
+                ready_to_go_index = min(self.results)
+                yield json.dumps(
+                    {
+                        ready_to_go_index: self.results.pop(ready_to_go_index, None)
+                    }
+                )
 
 
-class AgentWorker(Thread):
+
+class Drain(threading.Thread):
+    """
+    Drain a generator to a destination that answers to put(), in a thread
+    """
+
+    def __init__(self, source, destination):
+        super(Drain, self).__init__()
+        self.source = source
+        self.destination = destination
+        self._finished = threading.Event()
+        self._interrupted = threading.Event()
+
+    def run(self):
+        for item in self.source:
+            self.destination.put(item)
+            if self._interrupted.is_set():
+                break
+        self._finished.set()
+
+    def wait(self, timeout=None):
+        self._finished.wait(timeout=timeout)
+
+    def close(self):
+        self._interrupted.set()
+
+
+class AgentWorker(threading.Thread):
     def __init__(self, telegraf_path):
-        Thread.__init__(self)
+        super(AgentWorker, self).__init__()
         self.working_dir = os.path.dirname(__file__)
         self.startups = []
         self.startup_processes = []
         self.shutdowns = []
         self.daemon = True  # Thread auto-shutdown
         self.finished = False
+        self.drain = None
+        self.data_reader = None
         self.telegraf_path = telegraf_path
-        self.aggregator = DataAggregator()
-        self.stdout_reader = None
+        self.results = q.Queue()
+        self.results_err = q.Queue()
 
     @staticmethod
     def popen(cmnd):
@@ -134,19 +183,46 @@ class AgentWorker(Thread):
             working_dir=self.working_dir
         )
         self.collector = self.popen(cmnd)
-        self.stdout_reader = DataReader(self.collector.stdout)
+
+        #wait until telegraf starts
+        time.sleep(5)
+
+        telegraf_output = self.working_dir+'/monitoring.rawdata'
+
+        self.drain = Drain(
+            Consolidator(
+                DataReader(telegraf_output)
+            ),
+            self.results
+        )
+        self.drain.start()
+
+        self.drain_err = Drain(
+            DataReader(self.collector.stderr, pipe=True),
+            self.results_err
+        )
+        self.drain_err.start()
+
         while not self.finished:
-            try:
-                for stdout_data in self.stdout_reader:
-                    aggregate_result = self.aggregator.aggregate(stdout_data)
-                    if aggregate_result:
-                        logger.debug('aggregated ts : %s', aggregate_result)
-                        sys.stdout.write(str(aggregate_result)+'\n')
-                for stderr_data in DataReader(self.collector.stderr):
-                    logger.error('Stderr message: %s', stderr_data)
-            except:
-                logger.error('Unknown exception reading monitoring agent data', exc_info=True)
-        logger.debug('Telegraf finished')
+            for _ in range(self.results.qsize()):
+                try:
+                    data = self.results.get_nowait()
+                    logger.debug('send %s bytes of data to collector', len(data))
+                    sys.stdout.write(
+                        str(data)+'\n'
+                    )
+                except q.Empty:
+                    break
+                except:
+                    logger.error('Something nasty happend trying to send data', exc_info=True)
+            for _ in range(self.results_err.qsize()):
+                try:
+                    data = self.results_err.get_nowait()
+                    logger.error('Telegraf errors: %s', data)
+                except q.Empty:
+                    break
+            time.sleep(1)
+
         self.stop()
 
     def stop(self):
