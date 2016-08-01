@@ -144,7 +144,7 @@ class AgentConfig(object):
             config.add_section("[outputs.file]")
             config.set("[outputs.file]",
                        "files",
-                       "['stdout', '{config}']".format(
+                       "['{config}']".format(
                            config=self.monitoring_data_output))
             config.set("[outputs.file]", "data_format", "'json'")
             #inputs
