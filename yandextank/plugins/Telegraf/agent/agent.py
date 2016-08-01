@@ -122,7 +122,7 @@ class Drain(threading.Thread):
 
 class AgentWorker(threading.Thread):
     def __init__(self, telegraf_path):
-        threading.Thread.__init__(self)
+        super(AgentWorker, self).__init__()
         self.working_dir = os.path.dirname(__file__)
         self.startups = []
         self.startup_processes = []
