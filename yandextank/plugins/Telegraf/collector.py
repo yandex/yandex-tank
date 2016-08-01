@@ -68,19 +68,18 @@ class MonitoringCollector(object):
         start_time = time.time()
         for agent in self.agents:
             for collect in agent.reader:
-                if collect:
-                    for chunk in collect:
-                        ts, prepared_results = chunk
-                        ready_to_send = {
-                            "timestamp": ts,
-                            "data": {
-                                agent.host: {
-                                    "comment": agent.config.comment,
-                                    "metrics": prepared_results
-                                }
+                for chunk in collect:
+                    ts, prepared_results = chunk
+                    ready_to_send = {
+                        "timestamp": ts,
+                        "data": {
+                            agent.host: {
+                                "comment": agent.config.comment,
+                                "metrics": prepared_results
                             }
                         }
-                        self.send_data.append(ready_to_send)
+                    }
+                    self.send_data.append(ready_to_send)
 
         logger.debug('Polling/decoding agents data took: %.2fms',
                      (time.time() - start_time) * 1000)
@@ -91,8 +90,7 @@ class MonitoringCollector(object):
             self.first_data_received = True
             logger.info("Monitoring received first data.")
         else:
-            if self.send_data:
-                self.send_collected_data()
+            self.send_collected_data()
         return collected_data_length
 
     def stop(self):
