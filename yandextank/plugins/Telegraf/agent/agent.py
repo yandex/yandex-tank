@@ -240,7 +240,6 @@ class AgentWorker(threading.Thread):
         if not self.collector.returncode:
             self.collector.terminate()
             self.collector.wait()
-        time.sleep(5)
         self.finished = True
         sys.stderr.write('stopped\n')
         logger.info('Stopped via stdin')
