@@ -34,8 +34,6 @@ RUN BUILD_DEPS="python-dev build-essential gfortran libssl-dev libffi-dev" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-USER yandextank
-
 VOLUME ["/var/loadtest"]
 WORKDIR /var/loadtest
 ENTRYPOINT /usr/local/bin/yandex-tank
