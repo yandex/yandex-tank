@@ -174,7 +174,7 @@ class AgentConfig(object):
             inputs = ""
             for cmd in self.custom:
                 inputs += "[[inputs.exec]]\n"
-                inputs += 'commands = [\'/bin/bash -c "{}"\']\n'.format(
+                inputs += 'commands = [\'\'\' /bin/bash -c "{}" \'\'\']\n'.format(
                     cmd.get('cmd'))
                 inputs += "data_format = 'value'\n"
                 inputs += "data_type = 'integer'\n"
