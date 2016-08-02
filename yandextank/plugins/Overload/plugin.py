@@ -124,9 +124,6 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.operator = self.get_option("operator", self.operator)
         if not self.operator:
             self.operator = pwd.getpwuid(os.geteuid())[0]
-        if self.operator == 'root':
-            raise RuntimeError('We can\'t let you run yandex-tank as root. '
-                               'Don\'t waste your Force, Luke.')
         self.copy_config = self.get_option("copy_config_to", '')
         self.jobno_file = self.get_option("jobno_file", '')
 
