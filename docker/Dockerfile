@@ -7,8 +7,7 @@ MAINTAINER Alexey Lavrenuke <direvius@yandex-team.ru>
 
 LABEL Description="Fresh Yandex.Tank from github master branch with phantom" Vendor="Yandex" Version="0.0.3"
 
-RUN useradd -m -G sudo yandextank && echo yandextank:yandextank | chpasswd && \
-    export DEBIAN_FRONTEND=noninteractive && \
+RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -y sudo && \
     apt-get install -y wget && \
@@ -33,8 +32,6 @@ RUN BUILD_DEPS="python-dev build-essential gfortran libssl-dev libffi-dev" && \
     apt-get autoremove -y ${BUILD_DEPS} && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-USER yandextank
 
 VOLUME ["/var/loadtest"]
 WORKDIR /var/loadtest
