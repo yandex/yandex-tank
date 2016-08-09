@@ -87,3 +87,4 @@ system limits:
     net.ipv4.tcp_fin_timeout = 10
     net.ipv4.tcp_low_latency = 1
     net.ipv4.tcp_syncookies = 0
+    net.netfilter.nf_conntrack_max = 1048576
