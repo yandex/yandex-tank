@@ -161,7 +161,7 @@ class TankCore(object):
         """
 
         self.log.info("Waiting for test to finish...")
-        self.publish("core", "stage", "shooting")
+        self.publish("core", "stage", "shoot")
         if not self.plugins:
             raise RuntimeError("It's strange: we have no plugins loaded...")
 
