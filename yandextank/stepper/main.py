@@ -49,8 +49,9 @@ class AmmoFactory(object):
 
 
 class Stepper(object):
-    def __init__(self, **kwargs):
+    def __init__(self, core, **kwargs):
         info.status = info.StepperStatus()
+        info.status.core = core
         self.af = AmmoFactory(ComponentFactory(**kwargs))
         self.ammo = fmt.Stpd(self.af)
 
@@ -183,6 +184,12 @@ class StepperWrapper(object):
             info.status.publish('duration', stepper_info.duration)
             info.status.ammo_count = stepper_info.ammo_count
             info.status.publish('instances', stepper_info.instances)
+            self.core.publish('stepper', 'loadscheme', stepper_info.loadscheme)
+            self.core.publish('stepper', 'loop_count', stepper_info.loop_count)
+            self.core.publish('stepper', 'steps', stepper_info.steps)
+            self.core.publish('stepper', 'duration', stepper_info.duration)
+            self.core.publish('stepper', 'ammo_count', stepper_info.ammo_count)
+            self.core.publish('stepper', 'instances', stepper_info.instances)
             return stepper_info
 
         if not self.stpd:
@@ -277,6 +284,7 @@ class StepperWrapper(object):
         ''' stpd generation using Stepper class '''
         self.log.info("Making stpd-file: %s", self.stpd)
         stepper = Stepper(
+            self.core,
             rps_schedule=self.rps_schedule,
             http_ver=self.http_ver,
             ammo_file=self.ammo_file,

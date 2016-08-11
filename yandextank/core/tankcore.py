@@ -120,6 +120,7 @@ class TankCore(object):
 
     def plugins_configure(self):
         """        Call configure() on all plugins        """
+        self.publish("core", "stage", "configure")
         if not os.path.exists(self.artifacts_base_dir):
             os.makedirs(self.artifacts_base_dir)
             os.chmod(self.artifacts_base_dir, 0755)
@@ -137,6 +138,7 @@ class TankCore(object):
     def plugins_prepare_test(self):
         """ Call prepare_test() on all plugins        """
         self.log.info("Preparing test...")
+        self.publish("core", "stage", "prepare")
         for plugin in self.plugins:
             self.log.debug("Preparing %s", plugin)
             plugin.prepare_test()
@@ -146,6 +148,7 @@ class TankCore(object):
     def plugins_start_test(self):
         """        Call start_test() on all plugins        """
         self.log.info("Starting test...")
+        self.publish("core", "stage", "start")
         for plugin in self.plugins:
             self.log.debug("Starting %s", plugin)
             plugin.start_test()
@@ -158,6 +161,7 @@ class TankCore(object):
         """
 
         self.log.info("Waiting for test to finish...")
+        self.publish("core", "stage", "shooting")
         if not self.plugins:
             raise RuntimeError("It's strange: we have no plugins loaded...")
 
@@ -182,6 +186,7 @@ class TankCore(object):
     def plugins_end_test(self, retcode):
         """        Call end_test() on all plugins        """
         self.log.info("Finishing test...")
+        self.publish("core", "stage", "end")
 
         for plugin in self.plugins:
             self.log.debug("Finalize %s", plugin)
@@ -205,6 +210,7 @@ class TankCore(object):
         Call post_process() on all plugins
         """
         self.log.info("Post-processing test...")
+        self.publish("core", "stage", "post_process")
 
         for plugin in self.plugins:
             self.log.debug("Post-process %s", plugin)

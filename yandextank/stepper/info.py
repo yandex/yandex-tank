@@ -3,6 +3,8 @@ import time
 from collections import namedtuple
 from sys import stdout
 
+log = logging.getLogger(__name__)
+
 StepperInfo = namedtuple(
     'StepperInfo', 'loop_count,steps,loadscheme,duration,ammo_count,instances')
 
@@ -13,7 +15,7 @@ class StepperStatus(object):
     '''
 
     def __init__(self):
-        self.log = logging.getLogger(__name__)
+        self.core = None  # dirty hack. StepperWrapper should pass core here.
         self.info = {
             'loop_count': 0,
             'steps': None,
@@ -38,7 +40,7 @@ class StepperStatus(object):
         if key not in self.info:
             raise RuntimeError("Tried to publish to a non-existent key: %s" %
                                key)
-        self.log.debug('Published %s to %s', value, key)
+        log.debug('Published %s to %s', value, key)
         self.info[key] = value
 
     @property
@@ -60,7 +62,7 @@ class StepperStatus(object):
         self.update_lp_progress()
         if self.ammo_limit and value > self.ammo_limit:
             print
-            self.log.info("Ammo limit reached: %s", self.ammo_limit)
+            log.info("Ammo limit reached: %s", self.ammo_limit)
             raise StopIteration
 
     def inc_ammo_count(self):
@@ -75,7 +77,7 @@ class StepperStatus(object):
         self._loop_count = value
         if self.loop_limit and value >= self.loop_limit:
             print  # do not overwrite status (go to new line)
-            self.log.info("Loop limit reached: %s", self.loop_limit)
+            log.info("Loop limit reached: %s", self.loop_limit)
             raise StopIteration
 
     def inc_loop_count(self):
@@ -100,6 +102,10 @@ class StepperStatus(object):
             stdout.write("AF: %3s%%, LP: %3s%%, loops: %10s, speed: %5s Krps\r" % \
                 (self.af_progress, self.lp_progress, self.loop_count, int(ammo_generated / time_delta / 1000.0)))
             stdout.flush()
+            if self.core:
+                self.core.publish("stepper", "progress", self.lp_progress)
+                self.core.publish("stepper", "loop_count", self.loop_count)
+                self.core.publish("stepper", "speed", "%s Krps" % int(ammo_generated / time_delta / 1000.0))
 
     def update_af_progress(self):
         if self.af_size and self.loop_limit and self.af_position is not None:
