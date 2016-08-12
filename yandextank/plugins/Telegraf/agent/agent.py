@@ -49,8 +49,8 @@ class DataReader(object):
                     yield ready_chunk
                 else:
                     self.buffer += parts[0]
-            #else:
-            #    self.buffer += self.monout.readline()
+            else:
+                time.sleep(1)
         if not self.pipe:
             self.monout.close()
 
