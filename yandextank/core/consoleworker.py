@@ -102,7 +102,7 @@ class ConsoleTank:
             file_handler = logging.FileHandler(self.log_filename)
             file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(logging.Formatter(
-                "%(asctime)s [%(levelname)s] %(name)s %(message)s"))
+                "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"))
             logger.addHandler(file_handler)
 
         # create console handler with a higher log level
@@ -110,9 +110,9 @@ class ConsoleTank:
         stderr_hdl = logging.StreamHandler(sys.stderr)
 
         fmt_verbose = logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s %(message)s")
+            "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s")
         fmt_regular = logging.Formatter(
-            "%(asctime)s %(levelname)s: %(message)s", "%H:%M:%S")
+            "%(asctime)s [%(levelname)s] %(message)s", "%H:%M:%S")
 
         if self.options.verbose:
             console_handler.setLevel(logging.DEBUG)
