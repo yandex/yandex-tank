@@ -37,7 +37,7 @@ class StpdReader(object):
             return chunk_header
         with open(self.filename, 'rb') as ammo_file:
             chunk_header = read_chunk_header(ammo_file)
-            while chunk_header <> '':
+            while chunk_header != '':
                 try:
                     fields = chunk_header.split()
                     chunk_size = int(fields[0])

@@ -57,5 +57,3 @@ def solve_quadratic(a, b, c):
 
 def s_to_ms(f_sec):
     return int(f_sec * 1000.0)
-
-
