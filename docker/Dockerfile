@@ -35,4 +35,4 @@ RUN BUILD_DEPS="python-dev build-essential gfortran libssl-dev libffi-dev" && \
 
 VOLUME ["/var/loadtest"]
 WORKDIR /var/loadtest
-ENTRYPOINT /usr/local/bin/yandex-tank
+ENTRYPOINT ["/usr/local/bin/yandex-tank"]
