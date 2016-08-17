@@ -3,45 +3,63 @@ Installation
 ============
 
 .. note::
-  Currently we support ubuntu LTS precise (12.04) and trusty (14.04).
 
   Phantom load generator works fine with ``gcc<4.9``.
+
+****************
+Docker container
+****************
+
+[Install](https://www.docker.com/products/overview) docker and use this command to run Yandex.Tank:
+
+```docker run -v $(pwd):/var/loadtest -v $HOME/.ssh:/home/yandextank/.ssh -it direvius/yandex-tank```
+
+.. note::
+
+  ``$HOME/.ssh`` is mounted in order for monitoring plugin to work. It uses your ssh keys to remotely login to monitored hosts
 
 ************************
 Installation, from PyPi
 ************************
 
-You will need some packages that are required for building different python libraries:
+These are the packages that are required to build different python libraries. Install them with `apt`:
 
 .. code-block:: bash
 
-    libxml2-dev libxslt1-dev python-dev zlib1g-dev libffi-dev
+    sudo apt-get install python-pip build-essential python-dev libffi-dev gfortran libssl-dev
 
-You will also need a GNU make for building them. In Ubuntu you can install a build-essential package. You should also install pip if you don't have it. Full command for Ubuntu looks like this:
+Update your pip:
+
+.. code-block:: bash
+
+    sudo -H pip install --upgrade pip
+
+Update/install your setuptools:
 
 .. code-block:: bash
 
-    sudo apt-get install python-pip build-essential libxml2-dev libxslt1-dev python-dev zlib1g-dev libffi-dev
+    sudo -H pip install --upgrade setuptools
 
-You can do similar thing for your distribution. After you've installed all the packages, it is easy to install the Tank itself:
+Install latest Yandex.Tank from master branch:
 
 .. code-block:: bash
-    
-    sudo pip install setuptools
-    sudo pip install yandextank
 
-Remember that if you want to use phantom as a load generator you should install it separately. On Ubuntu you can do that by adding our PPA and installing phantom and phantom-ssl packages. On other distros you will maybe need to build it from sources.
+    sudo -H pip install https://api.github.com/repos/yandex/yandex-tank/tarball/master
+
+You'll probably need Phantom load generator, so install it from our ppa:
 
 .. code-block:: bash
 
     sudo add-apt-repository ppa:yandex-load/main && sudo apt-get update
     sudo apt-get install phantom phantom-ssl
 
-Report plugin is a distinct project. You can found it `here via github <https://github.com/yandex-load/yatank-online>`_
-
 ****************************
 Installation, .deb packages
 ****************************
+
+.. note::
+    
+    Currently, only old 1.7 branch release of Yandex.Tank is available from our PPA.
 
 You should add proper repositories on Debian-based environment.
 
