@@ -762,6 +762,8 @@ Yandex.Overload
 
 Overload 𝛃 is a service for performance analytics made by Yandex. We will store your performance experiments results and show them in graphic and tabular form. Your data will be available at https://overload.yandex.net.
 
+.. image:: ./pic/overload-screen.png
+
 INI file section: **[overload]**
 
 Options
