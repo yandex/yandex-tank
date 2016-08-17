@@ -10,9 +10,11 @@ Installation
 Docker container
 ****************
 
-[Install](https://www.docker.com/products/overview) docker and use this command to run Yandex.Tank:
+`Install <https://www.docker.com/products/overview>`_ docker and use this command to run Yandex.Tank:
 
-```docker run -v $(pwd):/var/loadtest -v $HOME/.ssh:/home/yandextank/.ssh -it direvius/yandex-tank```
+.. code-block:: bash
+
+    docker run -v $(pwd):/var/loadtest -v $HOME/.ssh:/home/yandextank/.ssh -it direvius/yandex-tank
 
 .. note::
 
