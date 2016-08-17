@@ -213,6 +213,7 @@ class UltimateGun(AbstractGun):
         class_name = self.get_option("class_name", "LoadTest")
         module_path = self.get_option("module_path", "").split()
         module_name = self.get_option("module_name")
+        self.init_param = self.get_option("init_param", "")
         fp, pathname, description = imp.find_module(module_name, module_path)
         #
         # Dirty Hack
@@ -235,7 +236,7 @@ class UltimateGun(AbstractGun):
 
     def setup(self):
         if callable(getattr(self.load_test, "setup", None)):
-            self.load_test.setup()
+            self.load_test.setup(self.init_param)
 
     def teardown(self):
         if callable(getattr(self.load_test, "teardown", None)):

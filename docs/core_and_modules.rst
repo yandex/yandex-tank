@@ -520,9 +520,9 @@ But the main purpose of BFG is to support user-defined guns. Here is how you do 
           with self.gun.measure("case2"):
               log.info("Shoot case 2: %s", missile)
   
-      def setup(self):
+      def setup(self, param):
           ''' this will be executed in each worker before the test starts '''
-          log.info("Setting up LoadTest")
+          log.info("Setting up LoadTest: %s", param)
   
       def teardown(self):
           ''' this will be executed in each worker after the end of the test '''
@@ -555,6 +555,8 @@ But the main purpose of BFG is to support user-defined guns. Here is how you do 
     module_path = ./my_own_service
     ; python module name
     module_name = mygun
+    ; gun initialization parameter
+    init_param = Hello
 
 3. Create an ammo file:
 Ammo format: one line -- one request, each line begins with case name separated by tab symbol ('\t').
