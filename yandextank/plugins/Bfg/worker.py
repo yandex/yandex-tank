@@ -1,36 +1,13 @@
 import logging
 import time
 import threading as th
+import multiprocessing as mp
 from queue import Empty, Full, Queue
 from contextlib import contextmanager
 
 from ...stepper import StpdReader
 
 logger = logging.getLogger(__name__)
-
-
-class InstanceCounter(object):
-    def __init__(self):
-        self._v = 0
-        self._lock = th.Lock()
-
-    def inc(self):
-        with self._lock:
-            self._v += 1
-
-    def dec(self):
-        with self._lock:
-            self._v -= 1
-
-    @contextmanager
-    def context(self):
-        self.inc()
-        yield
-        self.dec()
-
-    def get(self):
-        with self._lock:
-            return self._v
 
 
 class BFG(object):
@@ -48,19 +25,22 @@ Gun: {gun.__class__.__name__}
            instances=instances,
            gun=gun, ))
         self.instances = int(instances)
-        self.instance_counter = InstanceCounter()
-        self.results = Queue()
+        self.instance_counter = mp.Value('i')
+        self.results = mp.Queue()
         self.gun = gun
         self.gun.results = self.results
-        self.quit = False
-        self.task_queue = Queue(1024)
+        self.quit = mp.Event()
+        self.task_queue = mp.Queue(1024)
         self.cached_stpd = cached_stpd
         self.stpd_filename = stpd_filename
         self.pool = [
-            th.Thread(target=self._worker) for _ in xrange(0, self.instances)
+            mp.Process(target=self._worker) for _ in xrange(0, self.instances)
         ]
         self.feeder = th.Thread(target=self._feed, name="Feeder")
+        self.feeder.daemon = True
         self.workers_finished = False
+        self.start_time = None
+        self.plan = None
 
     def start(self):
         self.start_time = time.time()
@@ -80,7 +60,7 @@ Gun: {gun.__class__.__name__}
         """
         Say the workers to finish their jobs and quit.
         """
-        self.quit = True
+        self.quit.set()
 
     def _feed(self):
         """
@@ -90,7 +70,7 @@ Gun: {gun.__class__.__name__}
         if self.cached_stpd:
             self.plan = list(self.plan)
         for task in self.plan:
-            if self.quit:
+            if self.quit.is_set():
                 logger.info("Stop feeding: gonna quit")
                 return
             # try putting a task to a queue unless there is a quit flag
@@ -100,7 +80,7 @@ Gun: {gun.__class__.__name__}
                     self.task_queue.put(task, timeout=1)
                     break
                 except Full:
-                    if self.quit or self.workers_finished:
+                    if self.quit.is_set() or self.workers_finished:
                         return
                     else:
                         continue
@@ -127,9 +107,9 @@ Gun: {gun.__class__.__name__}
             logger.info("All workers exited.")
             self.workers_finished = True
         except (KeyboardInterrupt, SystemExit):
-            #self.task_queue.close()
-            #self.results.close()
-            self.quit
+            self.task_queue.close()
+            self.results.close()
+            self.quit.set()
             logger.info("Going to quit. Waiting for workers")
             map(lambda x: x.join(), self.pool)
             self.workers_finished = True
@@ -144,7 +124,7 @@ Gun: {gun.__class__.__name__}
         except Exception:
             logger.exception("Couldn't initialize gun. Exit shooter process")
             return
-        while not self.quit:
+        while not self.quit.is_set():
             try:
                 task = self.task_queue.get(timeout=1)
                 if not task:
@@ -155,12 +135,19 @@ Gun: {gun.__class__.__name__}
                 delay = planned_time - time.time()
                 if delay > 0:
                     time.sleep(delay)
-                with self.instance_counter.context():
+
+                try:
+                    with self.instance_counter.get_lock():
+                        self.instance_counter.value += 1
                     self.gun.shoot(missile, marker)
+                finally:
+                    with self.instance_counter.get_lock():
+                        self.instance_counter.value -= 1
+
             except (KeyboardInterrupt, SystemExit):
                 break
             except Empty:
-                if self.quit:
+                if self.quit.is_set():
                     logger.debug("Empty queue. Exiting process")
                     return
             except Full:

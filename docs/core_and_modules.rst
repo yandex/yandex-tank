@@ -520,9 +520,9 @@ But the main purpose of BFG is to support user-defined guns. Here is how you do 
           with self.gun.measure("case2"):
               log.info("Shoot case 2: %s", missile)
   
-      def setup(self):
+      def setup(self, param):
           ''' this will be executed in each worker before the test starts '''
-          log.info("Setting up LoadTest")
+          log.info("Setting up LoadTest: %s", param)
   
       def teardown(self):
           ''' this will be executed in each worker after the end of the test '''
@@ -555,6 +555,8 @@ But the main purpose of BFG is to support user-defined guns. Here is how you do 
     module_path = ./my_own_service
     ; python module name
     module_name = mygun
+    ; gun initialization parameter
+    init_param = Hello
 
 3. Create an ammo file:
 Ammo format: one line -- one request, each line begins with case name separated by tab symbol ('\t').
@@ -750,100 +752,34 @@ schedule mode.
 Artifact uploaders
 ******************
 
-GraphiteUploader
-================
+.. note::
 
-Graphite plugin uploads data to `Graphite <http://graphite.readthedocs.org/en/0.9.12/index.html>`_ monitoring tool. Config file section: ```[graphite]```
+  Graphite uploader, InfluxDB uploader and BlazeMeter Sense are not currently supported in the last Yandex.Tank version.
+  If you want one of them, use 1.7 branch.
+
+Yandex.Overload
+===============
+
+Overload 𝛃 is a service for performance analytics made by Yandex. We will store your performance experiments results and show them in graphic and tabular form. Your data will be available at https://overload.yandex.net.
+
+.. image:: ./pic/overload-screen.png
+
+INI file section: **[overload]**
 
 Options
 -------
 
-:address: 
-  graphite server
+:token_file:
+  Place your token obtained from Overload (click your profile photo) into a file and specify the path here
 
-:port:
-  graphite backend port (where to send data).
-
-  Default: 2003
-
-:web_port: 
-  graphite frontend port
-
-  Default: 8080
-
-:template:
-  Template file. 
-
-  Default: yandextank/plugins/GraphiteUploader/config/graphite.tpl
-
-InfluxUplink
-============
-
-Influx uplink plugin uploads data to `InfluxDB <https://influxdata.com>`_ storage.
-Different tests will be tagged with unique IDs.
-
-Configuration:
-
+Example:
 ::
+  [tank]
+  ; plugin is disabled by default, enable it:
+  plugin_overload=yandextank.plugins.Overload
 
-    [tank]
-    ; Enable InfluxDB plugin:
-    plugin_influx=yandextank.plugins.InfluxUplink
-
-    [influx]
-    ; Tank name (to distinguish data from different tanks):
-    tank_tag = MyTank
-    ; Address and of InfluxDB instance:
-    address = example.org
-    port = 8086
-
-    ; If you have grafana connected to your InfluxDB, you
-    ; can specify grafana parameters and tank will generate
-    ; a link to your test:
-    grafana_root = http://example.org/grafana/
-    grafana_dashboard=tank-dashboard
-
-Options
--------
-
-:address:
-  Graphite server
-
-:port:
-  Graphite backend port (where to send data)
-
-  Default: 8080
-
-:template:
-  Template file. 
-
-  Default: yandextank/plugins/GraphiteUploader/config/graphite.tpl
-
-BlazeMeter Sense
-===========
-
-When test has been finished, module upload to BlazeMeter Senses test artifacts: file with answer times and files with monitoring data. The link will be shown in console output.
-
-INI file section: **[loadosophia]**
-
-Options
--------
-
-:token:
-  Account's access key, received on Upload Token page
-
-:project:
-  Test will be uploaded to that project
-
-:test_title:
-  Test name
-
-:color_flag:
-  Color flag, assigned to test. (gray flag = "to delete")
-
-:file_prefix:
-  Prefix that will be added to uploaded file's name (deprecated)
-
+  [overload]
+  token_file=token.txt
 
 ***********
 Handy tools
