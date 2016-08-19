@@ -33,4 +33,6 @@ Ask your questions at [Stackoverflow](https://stackoverflow.com/), use "load-tes
 
 Evgeniy Mamchits' [phantom](https://github.com/yandex-load/phantom) – Phantom scalable IO Engine.
 
+[BlazeMeter Sense](https://sense.blazemeter.com) - Performance Testing Analytics by BlazeMeter. Currently only with [1.7](https://github.com/yandex/yandex-tank/tree/v1.7.32) branch
+
 ![Yandex.Metrics counter](https://mc.yandex.ru/watch/17743264)
