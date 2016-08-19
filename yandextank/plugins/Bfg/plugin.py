@@ -1,5 +1,6 @@
 import logging
 import time
+import pip
 
 from ...core.interfaces import AbstractPlugin
 from ...stepper import StepperWrapper
@@ -38,7 +39,7 @@ class BfgPlugin(AbstractPlugin):
 
     def get_available_options(self):
         return [
-            "gun_type", "instances", "cached_stpd"
+            "gun_type", "instances", "cached_stpd", "pip"
         ] + self.stepper_wrapper.get_available_options
 
     def configure(self):
@@ -46,6 +47,14 @@ class BfgPlugin(AbstractPlugin):
         self.stepper_wrapper.read_config()
 
     def prepare_test(self):
+        pip_deps = self.get_option("pip", "").splitlines()
+        self.log.info(pip_deps)
+        if pip_deps:
+            retcode = pip.main(["install", "--user"] + pip_deps)
+            if retcode != 0:
+                raise RuntimeError("Could not install required deps")
+            import site
+            reload(site)
         self.log.info("BFG using ammo type %s", self.get_option("ammo_type"))
         self.stepper_wrapper.prepare_stepper()
         gun_type = self.get_option("gun_type")
