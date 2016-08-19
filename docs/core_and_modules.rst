@@ -466,7 +466,13 @@ use them as an example. Using SQL gun you can try to kill an SQL db (you need sq
             
     ; BFG config section:
     [bfg]
-            
+    
+    ; python dependencies and/or scenario module (will be installed
+    ; with pip install --user <module>)
+    pip=mymodule
+      numpy
+      scikit-learn
+
     ; gun type -- what kind of gun should BFG use:
     gun_type=sql
             
@@ -592,6 +598,9 @@ INI file section: **[bfg]**
   What ammo parser should BFG use.
 
   Default: ``caseline``.
+
+:pip:
+  Install python modules with ``pip install --user`` before the test.
 
 :other common stepper options:
   
