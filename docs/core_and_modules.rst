@@ -780,6 +780,10 @@ Options
 
 :token_file:
   Place your token obtained from Overload (click your profile photo) into a file and specify the path here
+:job_name:
+  (Optional) Name of a job to be displayed in Yandex.Overload
+:job_dsc:
+  (Optional) Description of a job to be displayed in Yandex.Overload
 
 Example:
 ::
@@ -789,6 +793,8 @@ Example:
 
   [overload]
   token_file=token.txt
+  job_name=test
+  job_dsc=test description
 
 ***********
 Handy tools
