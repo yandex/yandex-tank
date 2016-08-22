@@ -176,7 +176,9 @@ class ScenarioGun(AbstractGun):
     def __init__(self, core):
         super(ScenarioGun, self).__init__(core)
         logger.warning("Scenario gun is deprecated. Use Ultimate gun instead")
-        module_path = self.get_option("module_path", "").split()
+        module_path = self.get_option("module_path")
+        if module_path:
+            module_path = module_path.split()
         module_name = self.get_option("module_name")
         fp, pathname, description = imp.find_module(module_name, module_path)
         try:
@@ -211,7 +213,9 @@ class UltimateGun(AbstractGun):
     def __init__(self, core):
         super(UltimateGun, self).__init__(core)
         class_name = self.get_option("class_name", "LoadTest")
-        module_path = self.get_option("module_path", "").split()
+        module_path = self.get_option("module_path")
+        if module_path:
+            module_path = module_path.split()
         module_name = self.get_option("module_name")
         self.init_param = self.get_option("init_param", "")
         fp, pathname, description = imp.find_module(module_name, module_path)
