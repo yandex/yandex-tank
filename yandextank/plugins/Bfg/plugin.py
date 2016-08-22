@@ -48,7 +48,7 @@ class BfgPlugin(AbstractPlugin):
 
     def prepare_test(self):
         pip_deps = self.get_option("pip", "").splitlines()
-        self.log.info(pip_deps)
+        self.log.info("Installing with PIP: %s", pip_deps)
         if pip_deps:
             retcode = pip.main(["install", "--user"] + pip_deps)
             if retcode != 0:
