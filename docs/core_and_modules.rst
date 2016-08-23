@@ -453,43 +453,9 @@ BFG
 (`What is BFG <http://en.wikipedia.org/wiki/BFG_(weapon)>`_)
 BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable BFG plugin and then specify the parameters for BFG and for the gun of your choice.
 
-There are three predefined guns: Log Gun, Http Gun and SQL gun. First two are mostly for demo, if you want to implement your own gun class,
-use them as an example. Using SQL gun you can try to kill an SQL db (you need sqlalchemy for this example):
+There are three predefined guns: Log Gun, Http Gun and SQL gun. First two are mostly for demo, if you want to implement your own gun class, use them as an example.
 
-::
-
-    [tank]
-    ; Disable phantom:
-    plugin_phantom=
-    ; Enable BFG instead:
-    plugin_bfg=yandextank.plugins.bfg
-            
-    ; BFG config section:
-    [bfg]
-    
-    ; python dependencies and/or scenario module (will be installed
-    ; with pip install --user <module>)
-    pip=mymodule
-      numpy
-      scikit-learn
-
-    ; gun type -- what kind of gun should BFG use:
-    gun_type=sql
-            
-    ; what ammo parser should BFG use:
-    ammo_type=slowlog
-            
-    ; stepper parameters (see phantom options):
-    instances = 200
-    ammofile=bsdb03h.sql
-    rps_schedule=line(1,1000,1m)
-    loop=500
-            
-    ; selected gun config section:
-    [sql_gun]
-    db = mysql://user:user@localhost/
-
-But the main purpose of BFG is to support user-defined guns. Here is how you do it using 'ultimate' gun.
+But the main purpose of BFG is to support user-defined scenarios in python. Here is how you do it using 'ultimate' gun.
 
 1. Define your scenario as a python class (in a single-file module, or a package):
 
