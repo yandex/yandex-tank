@@ -15,7 +15,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     add-apt-repository ppa:yandex-load/main -y && \
     apt-get update && apt-get install -y python-pip phantom phantom-ssl
 
-ENV TELEGRAF_VERSION 0.13.1
+ENV TELEGRAF_VERSION 1.0.0-rc1
 
 RUN gpg --keyserver hkp://ha.pool.sks-keyservers.net --recv-keys 05CE15085FC09D18E99EFB22684A14CF2582E0C5 && \
     wget -q https://dl.influxdata.com/telegraf/releases/telegraf_${TELEGRAF_VERSION}_amd64.deb.asc && \
