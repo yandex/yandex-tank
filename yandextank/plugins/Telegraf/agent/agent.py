@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#!/usr/bin/env python
 """ The agent bundle, contains all metric classes and agent running code """
 import subprocess
 import logging
