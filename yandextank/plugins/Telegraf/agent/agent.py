@@ -249,25 +249,30 @@ class AgentWorker(threading.Thread):
         logger.info("Worker thread finished")
 
 
-if __name__ == '__main__':
+def main():
     fname = os.path.dirname(__file__) + "/_agent.log"
     fmt = "%(asctime)s - %(filename)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(filename=fname, level=logging.DEBUG, format=fmt)
 
     parser = OptionParser()
-    parser.add_option("", "--telegraf", dest="telegraf_path",
-                  help="telegraf_path", default="/tmp/telegraf")
-    parser.add_option("", "--host", dest="hostname_path",
-                  help="telegraf_path", default="/usr/bin/telegraf")
+    parser.add_option(
+        "", "--telegraf", dest="telegraf_path",
+        help="telegraf_path",
+        default="/tmp/telegraf")
+    parser.add_option(
+        "", "--host", dest="hostname_path",
+        help="telegraf_path",
+        default="/usr/bin/telegraf")
     (options, args) = parser.parse_args()
-
 
     logger.info('Init')
     try:
         logger.info('Trying to make telegraf executable')
-        os.chmod(options.telegraf_path, 0744)
+        os.chmod(options.telegraf_path, 484)  # 0o744 compatible with old python versions
     except OSError:
-        logger.warning('Unable to set %s access rights to execute.', options.telegraf_path, exc_info=True)
+        logger.warning(
+            'Unable to set %s access rights to execute.',
+            options.telegraf_path, exc_info=True)
 
     worker = AgentWorker(options.telegraf_path)
     worker.read_startup_config()
@@ -284,3 +289,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         logger.debug("Interrupted")
         worker.stop()
+
+
+if __name__ == '__main__':
+    main()
