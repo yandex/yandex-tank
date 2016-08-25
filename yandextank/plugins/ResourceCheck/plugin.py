@@ -8,7 +8,7 @@ from ...core.interfaces import AbstractPlugin
 from ...core.util import expand_to_seconds, execute
 
 
-class ResourceCheckPlugin(AbstractPlugin):
+class Plugin(AbstractPlugin):
     '''Plugin to check system resources'''
     SECTION = "rcheck"
 

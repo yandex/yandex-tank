@@ -9,8 +9,8 @@ import logging
 
 from ...core.interfaces import AbstractPlugin
 from ...core.resource import manager as resource_manager
-from ..Aggregator import AggregatorPlugin
-from ..Console import ConsolePlugin
+from ..Aggregator import Plugin as AggregatorPlugin
+from ..Console import Plugin as ConsolePlugin
 from .console import MavenInfoWidget
 from .reader import MavenReader, MavenStatsReader
 
@@ -18,7 +18,7 @@ from .reader import MavenReader, MavenStatsReader
 logger = logging.getLogger(__name__)
 
 
-class MavenPlugin(AbstractPlugin):
+class Plugin(AbstractPlugin):
 
     SECTION = "maven"
 

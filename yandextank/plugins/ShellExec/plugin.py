@@ -5,7 +5,7 @@ from ...core.interfaces import AbstractPlugin
 from ...core import util
 
 
-class ShellExecPlugin(AbstractPlugin):
+class Plugin(AbstractPlugin):
     '''
     ShellExec plugin
     allows executing shell scripts before/after test

@@ -17,7 +17,7 @@ from .collector import MonitoringCollector, MonitoringDataDecoder
 logger = logging.getLogger(__name__)
 
 
-class MonitoringPlugin(AbstractPlugin):
+class Plugin(AbstractPlugin):
     """  resource mon plugin  """
 
     SECTION = 'monitoring'

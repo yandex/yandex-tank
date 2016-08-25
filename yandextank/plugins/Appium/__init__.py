@@ -1,1 +1,1 @@
-from plugin import AppiumPlugin
+from plugin import Plugin

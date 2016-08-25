@@ -12,13 +12,13 @@ import sys
 
 from ...core.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener, AbstractInfoWidget
 from ...core.util import expand_to_seconds
-from ..Aggregator import AggregatorPlugin
-from ..Autostop import AutostopPlugin
-from ..Console import ConsolePlugin
-from ..JMeter import JMeterPlugin
-from ..Pandora import PandoraPlugin
+from ..Aggregator import Plugin as AggregatorPlugin
+from ..Autostop import Plugin as AutostopPlugin
+from ..Console import Plugin as ConsolePlugin
+from ..JMeter import Plugin as JMeterPlugin
+from ..Pandora import Plugin as PandoraPlugin
 from ..Telegraf import Plugin as MonitoringPlugin
-from ..Phantom import PhantomPlugin
+from ..Phantom import Plugin as PhantomPlugin
 
 from .client import OverloadClient
 

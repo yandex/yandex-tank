@@ -171,7 +171,9 @@ class AgentWorker(threading.Thread):
                 'Shutdowns: %s\n', self.startups, self.shutdowns
             )
         except:
-            logger.error('Error trying to read agent startup config', exc_info=True)
+            logger.error(
+                'Error trying to read agent startup config',
+                exc_info=True)
 
     def run(self):
         logger.info("Running startup commands")
@@ -187,10 +189,14 @@ class AgentWorker(threading.Thread):
         )
         self.collector = self.popen(cmnd)
 
-        #wait until telegraf starts
-        time.sleep(5)
 
         telegraf_output = self.working_dir+'/monitoring.rawdata'
+
+        for _ in range(10):
+            logger.info("Waiting for telegraf...")
+            if os.path.isfile(telegraf_output):
+                break
+            time.sleep(1)
 
         self.drain = Drain(
             Consolidator(

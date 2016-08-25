@@ -5,7 +5,7 @@ import getpass
 
 from ...core.interfaces import AbstractPlugin
 from ..Monitoring.collector import SecuredShell
-from ..Phantom import PhantomPlugin
+from ..Phantom import Plugin as PhantomPlugin
 
 logger = logging.getLogger(__name__)
 

@@ -1,1 +1,1 @@
-from plugin import MavenPlugin
+from plugin import Plugin

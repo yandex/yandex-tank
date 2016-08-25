@@ -21,7 +21,7 @@ class Plugin(AbstractPlugin):
     SECTION = "pandora"
 
     def __init__(self, core):
-        super(PandoraPlugin, self).__init__(core)
+        super(Plugin, self).__init__(core)
         self.buffered_seconds = 2
         self.enum_ammo = False
         self.process = None

@@ -2,7 +2,7 @@
 from ...core.interfaces import AbstractPlugin
 
 
-class RCAssertPlugin(AbstractPlugin):
+class Plugin(AbstractPlugin):
     SECTION = 'rcassert'
 
     def __init__(self, core):
