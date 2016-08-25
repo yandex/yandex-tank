@@ -130,9 +130,12 @@ class AgentWorker(threading.Thread):
         self.daemon = True  # Thread auto-shutdown
         self.finished = False
         self.drain = None
+        self.drain_stdout = None
+        self.drain_err = None
         self.data_reader = None
         self.telegraf_path = telegraf_path
         self.results = q.Queue()
+        self.results_stdout = q.Queue()
         self.results_err = q.Queue()
 
     @staticmethod
@@ -197,6 +200,12 @@ class AgentWorker(threading.Thread):
         )
         self.drain.start()
 
+        self.drain_stdout = Drain(
+            DataReader(self.collector.stdout, pipe=True),
+            self.results_stdout
+        )
+        self.drain_stdout.start()
+
         self.drain_err = Drain(
             DataReader(self.collector.stderr, pipe=True),
             self.results_err
@@ -215,10 +224,18 @@ class AgentWorker(threading.Thread):
                     break
                 except:
                     logger.error('Something nasty happend trying to send data', exc_info=True)
+                        for _ in range(self.results_err.qsize()):
+            try:
+                data = self.results_err.get_nowait()
+                if data:
+                    collector_logger.info(data)
+            except q.Empty:
+                break
             for _ in range(self.results_err.qsize()):
                 try:
                     data = self.results_err.get_nowait()
-                    logger.error('Telegraf errors: %s', data)
+                    if data:
+                        collector_logger.error(data)
                 except q.Empty:
                     break
             time.sleep(1)
