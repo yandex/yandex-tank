@@ -6,10 +6,10 @@ import textwrap
 from pkg_resources import resource_stream
 
 from ...core.interfaces import AbstractInfoWidget, AbstractPlugin
-from ..Console import ConsolePlugin
+from ..Console import Plugin as ConsolePlugin
 
 
-class TipsAndTricksPlugin(AbstractPlugin, AbstractInfoWidget):
+class Plugin(AbstractPlugin, AbstractInfoWidget):
     '''
     Tips showing plugin
     '''

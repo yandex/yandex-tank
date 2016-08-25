@@ -1,1 +1,1 @@
-from plugin import BfgPlugin
+from plugin import Plugin

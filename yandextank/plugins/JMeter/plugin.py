@@ -9,15 +9,15 @@ from pkg_resources import resource_string
 
 from ...core.util import splitstring
 from ...core.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
-from ..Aggregator import AggregatorPlugin
-from ..Console import ConsolePlugin
+from ..Aggregator import Plugin as AggregatorPlugin
+from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from .reader import JMeterReader
 
 logger = logging.getLogger(__name__)
 
 
-class JMeterPlugin(AbstractPlugin):
+class Plugin(AbstractPlugin):
     """ JMeter tank plugin """
     SECTION = 'jmeter'
 

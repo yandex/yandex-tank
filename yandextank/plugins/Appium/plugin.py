@@ -7,13 +7,13 @@ from ...core.interfaces import AbstractPlugin
 logger = logging.getLogger(__name__)
 
 
-class AppiumPlugin(AbstractPlugin):
+class Plugin(AbstractPlugin):
     ''' Start appium before the test, stop after it ended '''
 
     SECTION = "appium"
 
     def __init__(self, core):
-        super(AppiumPlugin, self).__init__(core)
+        super(Plugin, self).__init__(core)
         self.appium_cmd = None
         self.appium_log = None
         self.appium_port = None

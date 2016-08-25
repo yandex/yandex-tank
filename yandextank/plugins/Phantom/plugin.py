@@ -9,9 +9,9 @@ import logging
 
 from ...core.util import execute, expand_to_seconds
 from ...core.interfaces import AbstractPlugin, AbstractCriterion
-from ..Aggregator import AggregatorPlugin
-from ..Console import ConsolePlugin
-from ..Autostop import AutostopPlugin
+from ..Aggregator import Plugin as AggregatorPlugin
+from ..Console import Plugin as ConsolePlugin
+from ..Autostop import Plugin as  AutostopPlugin
 from .utils import PhantomConfig
 from .reader import PhantomReader, PhantomStatsReader
 from .widget import PhantomInfoWidget, PhantomProgressBarWidget
@@ -20,7 +20,7 @@ from .widget import PhantomInfoWidget, PhantomProgressBarWidget
 logger = logging.getLogger(__name__)
 
 
-class PhantomPlugin(AbstractPlugin):
+class Plugin(AbstractPlugin):
     """     Plugin for running phantom tool    """
 
     OPTION_CONFIG = "config"

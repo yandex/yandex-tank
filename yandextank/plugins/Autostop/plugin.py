@@ -4,15 +4,15 @@ import logging
 import os.path
 
 from ...core.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
-from ..Aggregator import AggregatorPlugin
-from ..Console import ConsolePlugin
+from ..Aggregator import Plugin as AggregatorPlugin
+from ..Console import Plugin as ConsolePlugin
 from . import criterions as cr
 from . import cumulative_criterions as cum_cr
 
 logger = logging.getLogger(__name__)
 
 
-class AutostopPlugin(AbstractPlugin, AggregateResultListener):
+class Plugin(AbstractPlugin, AggregateResultListener):
     """ Plugin that accepts criterion classes and triggers autostop """
     SECTION = 'autostop'
 

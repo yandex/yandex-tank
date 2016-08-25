@@ -14,9 +14,9 @@ from ...core.util import expand_to_seconds
 from ...core.resource import manager as resource
 from ...core.interfaces import MonitoringDataListener, AbstractPlugin, AbstractInfoWidget
 from ..Telegraf.collector import MonitoringCollector
-from ..Console import ConsolePlugin
-from ..Phantom import PhantomPlugin
-from ..Autostop import AutostopPlugin, AbstractCriterion
+from ..Console import Plugin as ConsolePlugin
+from ..Phantom import Plugin as PhantomPlugin
+from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 
 logger = logging.getLogger(__name__)
 

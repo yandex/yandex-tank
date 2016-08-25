@@ -4,15 +4,15 @@ import pip
 
 from ...core.interfaces import AbstractPlugin
 from ...stepper import StepperWrapper
-from ..Aggregator import AggregatorPlugin
-from ..Console import ConsolePlugin
+from ..Aggregator import Plugin as AggregatorPlugin
+from ..Console import Plugin as ConsolePlugin
 from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun, UltimateGun
 from .widgets import BfgInfoWidget
 from .worker import BFG
 from .reader import BfgReader, BfgStatsReader
 
 
-class BfgPlugin(AbstractPlugin):
+class Plugin(AbstractPlugin):
     ''' Big Fucking Gun plugin '''
     SECTION = 'bfg'
 
@@ -21,7 +21,7 @@ class BfgPlugin(AbstractPlugin):
         AbstractPlugin.__init__(self, core)
         self.gun_type = None
         self.start_time = time.time()
-        self.stepper_wrapper = StepperWrapper(self.core, BfgPlugin.SECTION)
+        self.stepper_wrapper = StepperWrapper(self.core, Plugin.SECTION)
         self.log.info("Initialized BFG")
 
         self.gun_classes = {

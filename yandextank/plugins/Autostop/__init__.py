@@ -1,2 +1,2 @@
-from plugin import AutostopPlugin
+from plugin import Plugin
 from criterions import AbstractCriterion

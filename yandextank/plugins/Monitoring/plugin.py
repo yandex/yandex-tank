@@ -9,9 +9,9 @@ from pkg_resources import resource_string
 
 from ...core.util import expand_to_seconds
 from ...core.interfaces import AbstractPlugin, MonitoringDataListener, AbstractInfoWidget
-from ..Console import ConsolePlugin
-from ..Phantom import PhantomPlugin
-from ..Autostop import AutostopPlugin, AbstractCriterion
+from ..Console import Plugin as ConsolePlugin
+from ..Phantom import Plugin as PhantomPlugin
+from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 from .collector import MonitoringCollector, MonitoringDataDecoder
 
 logger = logging.getLogger(__name__)

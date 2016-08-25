@@ -5,13 +5,13 @@ import traceback
 import threading
 
 from ...core.interfaces import AbstractPlugin, AggregateResultListener
-from ..Aggregator import AggregatorPlugin
+from ..Aggregator import Plugin as AggregatorPlugin
 from .screen import Screen
 
 LOG = logging.getLogger(__name__)
 
 
-class ConsolePlugin(AbstractPlugin, AggregateResultListener):
+class Plugin(AbstractPlugin, AggregateResultListener):
     ''' Console plugin '''
     SECTION = 'console'
 

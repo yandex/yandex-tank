@@ -15,7 +15,7 @@ import Queue as q
 
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("agent")
 collector_logger = logging.getLogger("telegraf")
 
 
@@ -228,14 +228,14 @@ class AgentWorker(threading.Thread):
                 try:
                     data = self.results_stdout.get_nowait()
                     if data:
-                        collector_logger.info(data)
+                        collector_logger.info("STDOUT: %s", data)
                 except q.Empty:
                     break
             for _ in range(self.results_err.qsize()):
                 try:
                     data = self.results_err.get_nowait()
                     if data:
-                        collector_logger.error(data)
+                        collector_logger.info("STDERR: %s", data)
                 except q.Empty:
                     break
             time.sleep(1)
@@ -268,8 +268,9 @@ class AgentWorker(threading.Thread):
 
 def main():
     fname = os.path.dirname(__file__) + "/_agent.log"
-    fmt = "%(asctime)s - %(filename)s - %(name)s - %(levelname)s - %(message)s"
-    logging.basicConfig(filename=fname, level=logging.DEBUG, format=fmt)
+    logging.basicConfig(
+        level=logging.DEBUG, filename=fname,
+        format='%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(message)s')
 
     parser = OptionParser()
     parser.add_option(

@@ -22,7 +22,7 @@ class LoggingListener(AggregateResultListener):
         logger.info("Stats:\n%s", json.dumps(stats, indent=2))
 
 
-class AggregatorPlugin(AbstractPlugin):
+class Plugin(AbstractPlugin):
     """
     Plugin that manages aggregation and stats collection
     """

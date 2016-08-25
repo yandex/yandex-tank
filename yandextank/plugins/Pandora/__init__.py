@@ -1,1 +1,1 @@
-from plugin import PandoraPlugin
+from plugin import Plugin

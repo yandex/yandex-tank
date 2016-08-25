@@ -4,9 +4,9 @@ import datetime
 import logging
 
 from ...core.interfaces import AbstractPlugin, AbstractInfoWidget
-from ..Aggregator import AggregatorPlugin
+from ..Aggregator import Plugin as AggregatorPlugin
 from ..Phantom import PhantomReader
-from ..Console import ConsolePlugin
+from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from .config import PoolConfig, PandoraConfig, parse_schedule
 from .reader import PandoraStatsReader
@@ -14,7 +14,7 @@ from .reader import PandoraStatsReader
 logger = logging.getLogger(__name__)
 
 
-class PandoraPlugin(AbstractPlugin):
+class Plugin(AbstractPlugin):
     '''     Pandora load generator plugin    '''
 
     OPTION_CONFIG = "config"
