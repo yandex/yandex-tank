@@ -48,7 +48,6 @@ class LocalhostClient(object):
 
         self.path = {
             'AGENT_LOCAL_FOLDER': os.path.dirname(__file__) + '/agent',
-            'TELEGRAF_REMOTE_PATH': '/tmp/telegraf',
             'TELEGRAF_LOCAL_PATH': self.telegraf,
         }
 
@@ -61,19 +60,13 @@ class LocalhostClient(object):
             copyfile(self.path['AGENT_LOCAL_FOLDER'] + '/agent.py', self.workdir + '/agent.py')
             copyfile(agent_config, self.workdir + '/agent.cfg')
             copyfile(startup_config, self.workdir + '/agent_startup.cfg')
-            if os.path.isfile(self.path['TELEGRAF_REMOTE_PATH']):
-                logger.debug('Found local telegraf client..')
-            else:
-                logger.debug('Not found telegraf at %s. Copying..', self.path['TELEGRAF_REMOTE_PATH'])
-                if os.path.isfile(self.path['TELEGRAF_LOCAL_PATH']):
-                    copyfile(self.path['TELEGRAF_LOCAL_PATH'], self.path['TELEGRAF_REMOTE_PATH'])
-                else:
-                    logger.error(
-                        'Telegraf binary not found at specified path: %s\n'
-                        'You can download telegraf binaries here: https://github.com/influxdata/telegraf\n'
-                        'or install debian package: `telegraf`', self.path['TELEGRAF_LOCAL_PATH']
-                    )
-                    return None, None
+            if not os.path.isfile(self.path['TELEGRAF_LOCAL_PATH']):
+                logger.error(
+                    'Telegraf binary not found at specified path: %s\n'
+                    'You can download telegraf binaries here: https://github.com/influxdata/telegraf\n'
+                    'or install debian package: `telegraf`', self.path['TELEGRAF_LOCAL_PATH']
+                )
+                return None, None
         except Exception:
             logger.error("Failed to copy agent to %s on localhost", self.workdir, exc_info=True)
             return None, None
@@ -92,18 +85,15 @@ class LocalhostClient(object):
         )
 
     def start(self):
-        """Start remote agent"""
+        """Start local agent"""
         logger.info('Starting agent on localhost')
         command = "{python} {work_dir}/agent.py --telegraf {telegraf_path} --host {host}".format(
             python=self.python,
             work_dir=self.workdir,
-            telegraf_path=self.path['TELEGRAF_REMOTE_PATH'],
+            telegraf_path=self.path['TELEGRAF_LOCAL_PATH'],
             host=self.host
         )
-        try:
-            self.session = self.popen(command)
-        except Exception:
-            logger.error('Unable to run localhost agent', exc_info=True)
+        self.session = self.popen(command)
         self.reader_thread = threading.Thread(
             target=self.read_buffer
         )
