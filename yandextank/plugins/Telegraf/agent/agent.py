@@ -224,13 +224,13 @@ class AgentWorker(threading.Thread):
                     break
                 except:
                     logger.error('Something nasty happend trying to send data', exc_info=True)
-                        for _ in range(self.results_err.qsize()):
-            try:
-                data = self.results_err.get_nowait()
-                if data:
-                    collector_logger.info(data)
-            except q.Empty:
-                break
+            for _ in range(self.results_stdout.qsize()):
+                try:
+                    data = self.results_stdout.get_nowait()
+                    if data:
+                        collector_logger.info(data)
+                except q.Empty:
+                    break
             for _ in range(self.results_err.qsize()):
                 try:
                     data = self.results_err.get_nowait()
