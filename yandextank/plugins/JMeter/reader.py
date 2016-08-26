@@ -31,12 +31,15 @@ KNOWN_EXC = {
 }
 
 
-def _exc_to_net(param1):
-    """ translate http code to net code """
+def _exc_to_net(param1, success):
+    """ translate http code to net code. if accertion failed, set net code to 314 """
     if len(param1) <= 3:
         # FIXME: we're unable to use better logic here, because we should support non-http codes
         # but, we should look for core.util.HTTP or some other common logic here
-        return 0
+        if success:
+            return 0
+        else:
+            return 314
 
     exc = param1.split(' ')[-1]
     if exc in KNOWN_EXC.keys():
@@ -109,7 +112,7 @@ def string_to_df(data):
     chunk['receive_time'] = np.zeros(l)
     chunk['interval_event'] = np.zeros(l)
     chunk['size_out'] = np.zeros(l)
-    chunk['net_code'] = exc_to_net(chunk['retcode'])
+    chunk['net_code'] = exc_to_net(chunk['retcode'], chunk['success'])
     chunk['proto_code'] = exc_to_http(chunk['retcode'])
     return chunk
 
