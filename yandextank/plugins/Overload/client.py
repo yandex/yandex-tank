@@ -142,15 +142,14 @@ class OverloadClient(object):
         return response
 
     def set_imbalance_and_dsc(self, jobno, rps, comment):
-        data = {'api_token': self.api_token, }
+        data = {}
         if rps:
             data['imbalance'] = rps
         if comment:
-            res = self.get_job_summary(jobno)
-            data['description'] = (res['dsc'] + "\n" + comment).strip()
+            data['description'] = comment.strip()
 
         response = self.post(
-            'api/job/' + str(jobno) + "/edit.json?api_token=" + self.api_token,
+            'api/job/' + str(jobno) + "/set_imbalance.json?api_token=" + self.api_token,
             data)
         return response
 
