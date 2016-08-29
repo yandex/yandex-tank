@@ -568,24 +568,18 @@ INI file section: **[bfg]**
 :pip:
   Install python modules with ``pip install --user`` before the test.
 
+:init_param:
+  An initialization parameter that will be passed to your ``setup`` method.
+
 :other common stepper options:
   
-SQL Gun Options
----------------
-
-gun_type = **sql**
-
-INI file section: **[sql_gun]**
-
-:db:
-  DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
 
 Ultimate Gun Options
 ------------------
 
-gun_type = **custom**
+gun_type = **ultimate**
 
-INI file section: **[custom_gun]**
+INI file section: **[ultimate_gun]**
 
 :module_path:
   Path to your module
@@ -620,6 +614,16 @@ The fields of measuring context object and their default values:
   Network code. Integer. Default: 0
 :proto_code:
   Protocol code (http, for example). Integer. Default: 200
+
+SQL Gun Options
+---------------
+
+gun_type = **sql**
+
+INI file section: **[sql_gun]**
+
+:db:
+  DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
 
 Pandora
 =======
