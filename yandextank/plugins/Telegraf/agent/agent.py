@@ -147,7 +147,8 @@ class AgentWorker(threading.Thread):
             close_fds=True,
             shell=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
         )
 
     def read_startup_config(self, cfg_file='agent_startup.cfg'):
