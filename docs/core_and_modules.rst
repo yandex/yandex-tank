@@ -1089,7 +1089,8 @@ Following example illustrates this feature:
 
 Telegraf
 ========
-Runs metrics collection through ssh connection.
+Runs metrics collection through SSH connection. You can debug your SSH connection using ``yandex-tank-check-ssh`` tool.
+It is supplied with Yandex.Tank.
 
 Thanks to https://github.com/influxdata/telegraf for metric collection agent.
 

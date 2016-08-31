@@ -44,6 +44,7 @@ analytic tools for the results they produce.
     entry_points={
         'console_scripts': [
             'yandex-tank = yandextank.core.cli:main',
+            'yandex-tank-check-ssh = yandextank.core.util:check_ssh_connection',
         ],
     },
     package_data={

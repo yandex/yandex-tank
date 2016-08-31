@@ -12,6 +12,7 @@ import select
 import shlex
 import psutil
 import subprocess
+import argparse
 from paramiko import \
       SSHClient, AutoAddPolicy, AuthenticationException, SSHException
 
@@ -128,6 +129,32 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
     def async_session(self, cmd):
         return AsyncSession(self, cmd)
 
+def check_ssh_connection():
+    logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s %(message)s')
+    logging.getLogger("paramiko.transport").setLevel(logging.DEBUG)
+
+    parser = argparse.ArgumentParser(
+        description='Test SSH connection for monitoring.')
+    parser.add_argument(
+        '-e', '--endpoint',
+        default='example.org',
+        help='which host to try')
+
+    parser.add_argument(
+        '-u', '--username',
+        default=os.getlogin(),
+        help='SSH username')
+
+    parser.add_argument(
+        '-p', '--port',
+        default=22,
+        type=int,
+        help='SSH port')
+    args = parser.parse_args()
+    logging.info("Checking SSH to %s@%s:%d", args.username, args.endpoint, args.port)
+    ssh = SecuredShell(args.endpoint, args.port, args.username, 10)
+    print(ssh.execute("ls -l"))
 
 class AsyncSession(object):
     def __init__(self, ssh, cmd):
