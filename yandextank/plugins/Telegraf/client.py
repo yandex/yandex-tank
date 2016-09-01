@@ -81,7 +81,8 @@ class LocalhostClient(object):
             close_fds=True,
             shell=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
         )
 
     def start(self):
