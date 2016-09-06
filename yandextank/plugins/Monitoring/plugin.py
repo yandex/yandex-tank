@@ -9,6 +9,8 @@ from pkg_resources import resource_string
 
 from ...core.util import expand_to_seconds
 from ...core.interfaces import AbstractPlugin, MonitoringDataListener, AbstractInfoWidget
+#FIXME telegraf update required here
+from ..Monitoring import Plugin as MonitoringPlugin
 from ..Console import Plugin as ConsolePlugin
 from ..Phantom import Plugin as PhantomPlugin
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
