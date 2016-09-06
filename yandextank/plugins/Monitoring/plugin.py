@@ -9,8 +9,6 @@ from pkg_resources import resource_string
 
 from ...core.util import expand_to_seconds
 from ...core.interfaces import AbstractPlugin, MonitoringDataListener, AbstractInfoWidget
-#FIXME telegraf update required here
-from ..Monitoring import Plugin as MonitoringPlugin
 from ..Console import Plugin as ConsolePlugin
 from ..Phantom import Plugin as PhantomPlugin
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
@@ -277,7 +275,8 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener,
         MonitoringDataDecoder.__init__(self)
 
         try:
-            self.mon = autostop.core.get_plugin_of_type(MonitoringPlugin)
+            #FIXME telegraf update required here
+            self.mon = autostop.core.get_plugin_of_type(Plugin)
             if self.mon.monitoring:
                 self.mon.monitoring.add_listener(self)
         except KeyError:
