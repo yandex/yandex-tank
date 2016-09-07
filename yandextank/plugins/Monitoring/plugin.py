@@ -275,7 +275,8 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener,
         MonitoringDataDecoder.__init__(self)
 
         try:
-            self.mon = autostop.core.get_plugin_of_type(MonitoringPlugin)
+            #FIXME telegraf update required here
+            self.mon = autostop.core.get_plugin_of_type(Plugin)
             if self.mon.monitoring:
                 self.mon.monitoring.add_listener(self)
         except KeyError:
