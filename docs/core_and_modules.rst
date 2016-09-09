@@ -298,7 +298,7 @@ TLS/SSL additional options
 :client_cipher_suites:
   Cipher list, consists of one or more cipher strings separated by colons (see man ciphers).
 
-  Example: ciphers = RSA:!COMPLEMENTOFALL
+  Example: client_cipher_suites = RSA:!COMPLEMENTOFALL
 
   Default: empty.
 
