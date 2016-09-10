@@ -330,62 +330,6 @@ because '\r' symbols are strictly required.
 sample ammo generators you may find on the :doc:`ammo_generators` page.
   
 
-**sample POST multipart form-data generator (python)**
-
-.. code-block:: python
-
-  #!/usr/bin/python
-  # -*- coding: utf-8 -*-
-  import requests
-  
-  def print_request(request):
-      req = "{method} {path_url} HTTP/1.1\r\n{headers}\r\n{body}".format(
-          method = request.method,
-          path_url = request.path_url,
-          headers = ''.join('{0}: {1}\r\n'.format(k, v) for k, v in request.headers.items()),
-          body = request.body or "",
-      )
-      return "{req_size}\n{req}\r\n".format(req_size = len(req), req = req)
-    
-  #POST multipart form data
-  def post_multipart(host, port, namespace, files, headers, payload):
-      req = requests.Request(
-          'POST',
-          'https://{host}:{port}{namespace}'.format(
-              host = host,
-              port = port,
-              namespace = namespace,
-          ),
-          headers = headers,
-          data = payload,
-          files = files
-      )
-      prepared = req.prepare()
-      return print_request(prepared)
-
-  if __name__ == "__main__":
-      #usage sample below
-      #target's hostname and port
-      #this will be resolved to IP for TCP connection
-      host = 'test.host.ya.ru'
-      port = '8080'
-      namespace = '/some/path'
-      #below you should specify or able to operate with
-      #virtual server name on your target 
-      headers = {
-          'Host': 'ya.ru'
-      }
-      payload = {
-          'langName': 'en',
-          'apikey': '123'
-      }
-      files = {
-          # name, path_to_file, content-type, additional headers
-          'file': ('image.jpeg', open('./imagex.jpeg', 'rb'), 'image/jpeg ', {'Expires': '0'})
-      }
-  
-      print post_multipart(host, port, namespace, files, headers, payload)
-  
 
 Run Test!
 =========
