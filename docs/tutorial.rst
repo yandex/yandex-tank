@@ -365,9 +365,13 @@ sample ammo generators you may find on the :doc:`ammo_generators` page.
 
   if __name__ == "__main__":
       #usage sample below
+      #target's hostname and port
+      #this will be resolved to IP for TCP connection
       host = 'test.host.ya.ru'
       port = '8080'
       namespace = '/some/path'
+      #below you should specify or able to operate with
+      #virtual server name on your target 
       headers = {
           'Host': 'ya.ru'
       }
@@ -376,7 +380,8 @@ sample ammo generators you may find on the :doc:`ammo_generators` page.
           'apikey': '123'
       }
       files = {
-          'file': open('./testfile', 'rb')
+          # name, path_to_file, content-type, additional headers
+          'file': ('image.jpeg', open('./imagex.jpeg', 'rb'), 'image/jpeg ', {'Expires': '0'})
       }
   
       print post_multipart(host, port, namespace, files, headers, payload)
@@ -594,7 +599,11 @@ parameter like this:
   port=80 ;target's port
   rps_schedule=const(10, 10m) ;load scheme
   [aggregator]
-  time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s ; the last value - 10s is considered as connect timeout.
+  time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s
+
+.. note::
+  Please keep an eye, last value of `time_periods` is no longer used as response timeout
+  Use phantom.timeout option.
 
 According to this "buckets", tanks' aggregator will aggregate test results.
 

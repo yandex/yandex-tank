@@ -168,9 +168,21 @@ Additional options
 :ssl:
   Enable SSL. 
 
-  Default: 0.
+  Default: 0. 
 
   Available options: 1 - enable, 0 - disable.
+
+:timeout:
+  Response timeout. 
+  
+  Default: ``11s``.
+  
+.. note::
+  Default multiplier is ``seconds``. If you specify ``10``, timeout will be 10 seconds.
+  Currently we support here multipliers: 'd' for days, 'h' for hours, 'm' for minutes, 's' for seconds
+  Examples:  
+  ``0.1s`` is 100 milliseconds.
+  ``1m`` for 1 minute.
 
 :address:
   Address of target. 
@@ -384,6 +396,7 @@ Example:
     address=fe80::200:f8ff:fe21:67cf
     port=8080
     ssl=1
+    timeout=15
     instances=3
     gatling_ip=127.0.0.1 127.0.0.2
     phantom_http_line=123M
