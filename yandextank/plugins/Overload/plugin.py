@@ -17,7 +17,8 @@ from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
 from ..JMeter import Plugin as JMeterPlugin
 from ..Pandora import Plugin as PandoraPlugin
-from ..Telegraf import Plugin as MonitoringPlugin
+from ..Telegraf import Plugin as TelegrafPlugin
+from ..Monitoring import Plugin as MonitoringPlugin
 from ..Phantom import Plugin as PhantomPlugin
 
 from .client import OverloadClient
@@ -52,6 +53,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.is_regression = None
         self.ignore_target_lock = None
         self.port = None
+        self.mon = None
 
     @staticmethod
     def get_key():
@@ -128,13 +130,16 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.jobno_file = self.get_option("jobno_file", '')
 
         try:
-            mon = self.core.get_plugin_of_type(MonitoringPlugin)
+            self.mon = self.core.get_plugin_of_type(TelegrafPlugin)
         except KeyError:
-            logger.debug("Monitoring plugin not found:", exc_info=True)
-            mon = None
+            logger.debug("Telegraf plugin not found:", exc_info=True)
+            try:
+                self.mon = self.core.get_plugin_of_type(MonitoringPlugin)
+            except KeyError:
+                logger.debug("Monitoring plugin not found:", exc_info=True)
 
-        if mon and mon.monitoring:
-            mon.monitoring.add_listener(self)
+        if self.mon and self.mon.monitoring:
+            self.mon.monitoring.add_listener(self)
 
         self.__save_conf()
 
