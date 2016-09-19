@@ -530,10 +530,10 @@ Use `Report plugin <https://github.com/yandex-load/yatank-online>`_
 OR
 use your favorite stats packet, R, for example.
 
-Custom timings
+Precise timings
 ==============
 
-You can set custom timings in ``load.ini`` with ``time_periods``
+You can set precise timings in ``load.ini`` with ``verbose_histogram``
 parameter like this:
 
 ::
@@ -543,13 +543,12 @@ parameter like this:
   port=80 ;target's port
   rps_schedule=const(10, 10m) ;load scheme
   [aggregator]
-  time_periods = 10 45 50 100 150 300 500 1s 1500 2s 3s 10s
+  verbose_histogram = 1
 
 .. note::
   Please keep an eye, last value of `time_periods` is no longer used as response timeout
   Use phantom.timeout option.
 
-According to this "buckets", tanks' aggregator will aggregate test results.
 
 Thread limit
 ============

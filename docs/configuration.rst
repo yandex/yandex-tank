@@ -100,9 +100,6 @@ options. Those options are in charge for every section:
     [console] 
     short_only=1
     
-    [aggregator] 
-    time_periods=10 20 30 100
-    
     [meta] 
     job_name=ask 
 
@@ -113,7 +110,6 @@ is an equivalent for:
     [DEFAULT]
     autostop=time(1,10) 
     short_only=1 
-    time_periods=10 20 30 100
     job_name=ask
     
 .. note::
