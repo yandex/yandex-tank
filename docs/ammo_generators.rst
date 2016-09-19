@@ -102,9 +102,13 @@ Line format: ``GET||/url||case_tag||body(optional)``
 
   if __name__ == "__main__":
       #usage sample below
+      #target's hostname and port
+      #this will be resolved to IP for TCP connection      
       host = 'test.host.ya.ru'
       port = '8080'
       namespace = '/some/path'
+      #below you should specify or able to operate with
+      #virtual server name on your target
       headers = {
           'Host': 'ya.ru'
       }
@@ -113,7 +117,9 @@ Line format: ``GET||/url||case_tag||body(optional)``
           'apikey': '123'
       }
       files = {
-          'file': open('./testfile', 'rb')
+          # name, path_to_file, content-type, additional headers
+          'file': ('image.jpeg', open('./imagex.jpeg', 'rb'), 'image/jpeg ', {'Expires': '0'})
       }
   
       print post_multipart(host, port, namespace, files, headers, payload)
+
