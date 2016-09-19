@@ -22,11 +22,17 @@ logger = logging.getLogger(__name__)
 
 def signal_handler(sig, frame):
     """ required for non-tty python runs to interrupt """
+    logger.warning("Got signal %s", sig)
     raise KeyboardInterrupt()
 
-
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
+def set_sig_handler():
+    uncatchable = ['SIG_DFL','SIGSTOP','SIGKILL']
+    for sig_name in [s for s in dir(signal) if (s.startswith("SIG") and s not in uncatchable)]:
+        try:
+            sig_num = getattr(signal, sig_name)
+            signal.signal(sig_num, signal_handler)
+        except Exception, e:
+            logger.error("Can't set handler for %s, %s", sig_name, e)
 
 
 class AbstractMetric:
@@ -335,7 +341,6 @@ class Mem(AbstractMetric):
     def __init__(self):
         AbstractMetric.__init__(self)
         self.name = 'advanced memory usage'
-        self.nick = ('used', 'buff', 'cach', 'free', 'dirty')
         self.vars = ('MemUsed', 'Buffers', 'Cached', 'MemFree', 'Dirty',
                      'MemTotal')
 
@@ -350,41 +355,24 @@ class Mem(AbstractMetric):
     def check(self):
         result = []
         try:
-            #TODO: change to simple file reading
-            output = subprocess.Popen('cat /proc/meminfo',
-                                      shell=True,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE)
-        except Exception, e:
-            logger.error("%s: %s" % (e.__class__, str(e)))
-            result.append([self.empty] * 9)
-        else:
+            with open('/proc/meminfo') as f:
+                meminfo = f.readlines()
             data = {}
-            err = output.stderr.read()
-            if err:
-                result.extend([self.empty] * 9)
-                logger.error(err.rstrip())
-            else:
-                info = output.stdout.read()
-
-                for name in self.vars:
-                    data[name] = 0
-
-                for l in info.splitlines():
-                    if len(l) < 2:
-                        continue
-                    [name, raw_value] = l.split(':')
-                    #                    print "name: %s " % name
-                    if name in self.vars:
-                        #                       print name, raw_value
-                        data.update({name: long(raw_value.split()[0]) / 1024.0
-                                     })
-                        #                print data
-                data['MemUsed'] = data['MemTotal'] - data['MemFree'] - data[
-                    'Buffers'] - data['Cached']
-            result = [data['MemTotal'], data['MemUsed'], data['MemFree'], 0,
-                      data['Buffers'], data['Cached']]
-            return map(str, result)
+            for name in self.vars:
+                data[name] = 0
+            for l in meminfo:
+                if ':' not in l:
+                    continue
+                [name, raw_value] = l.split(':')
+                data.update({name: long(raw_value.split()[0]) / 1024.0})
+            data['MemUsed'] = data['MemTotal'] - data['MemFree'] - data[
+                'Buffers'] - data['Cached']
+            result = [data['MemTotal'], data['MemUsed'], data['MemFree'],
+                      0, data['Buffers'], data['Cached']]
+        except Exception, e:
+            logger.error("Can't get meminfo, %s", e, exc_info=True)
+            result.append([self.empty] * 9)
+        return map(str, result)
 
 
 class NetRetrans(AbstractMetric):
@@ -660,15 +648,8 @@ class AgentWorker(Thread):
                 sys.stdout.write(row + '\n')
                 sys.stdout.flush()
             except IOError, e:
-                if e.errno == 32:
-                    logger.error(
-                        "Broken pipe, can't send data back, terminating")
+                    logger.error("Can't send data to collector, terminating, %s", e)
                     self.finished = True
-                else:
-                    logger.error('IOError while converting line: %s: %s', line,
-                                 e)
-            except Exception, e:
-                logger.error('Failed to convert line %s: %s', line, e)
 
             self.fixed_sleep(self.c_interval)
 
@@ -793,8 +774,9 @@ if __name__ == '__main__':
     fmt = "%(asctime)s - %(filename)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(filename=fname, level=level, format=fmt)
 
+    set_sig_handler()
+
     worker = AgentWorker()
-    worker.setDaemon(False)
 
     agent_config = AgentConfig('agent.cfg')
     agent_config.prepare_worker(worker)
@@ -808,5 +790,21 @@ if __name__ == '__main__':
             logger.info("Stdin cmd received: %s", cmd)
             worker.finished = True
     except KeyboardInterrupt:
-        logger.debug("Interrupted")
+        logger.info("Interrupted")
         worker.finished = True
+    except:
+        logger.error("Unexpected exception, try to shutdown", exc_info=True)
+        worker.finished = True
+    while worker.isAlive():
+        try:
+            logger.debug("Join the worker thread, waiting for cleanup")
+            worker.join(10)
+            if worker.isAlive():
+                logger.error("Worker have not finished shutdown in "
+                              "10 seconds, going to exit anyway")
+                sys.exit(1)
+        except KeyboardInterrupt:
+            if not worker.isAlive():
+                logger.info("Worker finished")
+            else:
+                logger.info("Waiting for worker process was interrupted")
