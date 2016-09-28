@@ -426,11 +426,25 @@ Options
 :buffered_seconds:
   Amount of seconds to which delay aggregator, to be sure that everything were read from jmeter's results file.
 
-:connect_time:
-  It sets jmeter.save.saveservice.connect_time=false if the value is '0' or empty string, jmeter.save.saveservice.connect_time=true in any other cases, empty string by default.
+:jmeter_ver:
+  Which jmeter version tank should expect. Currently it affects the way connection time is logged, but may be used for other version-specific settings.
+
+  Default: ``3.0``
+
+:ext_log:
+  Available options: ``none``, ``errors``, ``all``. Add one more simple data writer which logs all possible fields in jmeter xml format, this log is saved in test dir as ``jmeter_ext_XXXX.jtl``.
+
+  Default: ``none``
 
 :all other options in the section:
   They will be passed as User Defined Variables to JMeter.
+
+Timing calculation issues
+-----------------------
+
+Since version 2.13 jmeter could measure connection time, latency and full request time (aka <interval_real> in phantom), but do it in it's own uniq way: latency include connection time but not recieve time. For the sake of consistency we recalculate <latency> as <latency - connect_time> and calculate <recieve_time> as <interval_real - latency - connect_time>>, but it does not guranteed to work perfectly in all cases (i.e. some samplers may not support latency and connect_time and you may get something strange in case of timeouts).
+
+For jmeter 2.12 and older connection time logging not avaliable, set ``jmeter_ver`` properly or you'll get an error for unknown field in Simlpe Data Writer listner added by tank.
 
 Artifacts
 ---------
