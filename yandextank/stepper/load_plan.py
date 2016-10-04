@@ -25,7 +25,7 @@ class Const(object):
 
     def rps_at(self, t):
         '''Return rps for second t'''
-        if t <= self.duration:
+        if 0 <= t <= self.duration:
             return self.rps
         else:
             return 0
@@ -39,7 +39,7 @@ class Const(object):
         return self.duration / 1000 * self.rps
 
     def get_rps_list(self):
-        return [(int(self.rps), self.duration / 1000)]
+        return [(int(self.rps), self.duration / 1000.)]
 
     def __repr__(self):
         return 'const(%s, %s)' % (self.rps, self.duration / 1000)
@@ -49,17 +49,33 @@ class Line(object):
     '''Load plan with linear load'''
 
     def __init__(self, minrps, maxrps, duration):
+        """
+
+        :param minrps:
+        :param maxrps:
+        :param duration: milliseconds
+        """
         self.minrps = float(minrps)
         self.maxrps = float(maxrps)
         self.duration = duration / 1000.0
-        self.b = self.minrps
-        self.k = (self.maxrps - self.minrps) / self.duration
+        self.slope = (self.maxrps - self.minrps) / self.duration
 
     def ts(self, n):
-        root1, root2 = solve_quadratic(self.k / 2.0, self.b, -n)
+        """
+        :param n: number of charge
+        :return: when to shoot nth charge, milliseconds
+        """
+        try:
+            root1, root2 = solve_quadratic(self.slope / 2.0, self.minrps, -n)
+        except ZeroDivisionError:
+            root2 = float(n) / self.minrps
         return int(root2 * 1000)
 
     def __iter__(self):
+        """
+
+        :return: timestamps for each charge
+        """
         return (self.ts(n) for n in xrange(0, self.__len__()))
 
     def rps_at(self, t):
@@ -71,12 +87,12 @@ class Line(object):
             return 0
 
     def get_duration(self):
-        '''Return step duration'''
+        '''Return load duration in seconds'''
         return int(self.duration * 1000)
 
     def __len__(self):
         '''Return total ammo count'''
-        return int(self.k / 2.0 * (self.duration**2) + self.b * self.duration)
+        return int(self.slope / 2.0 * (self.duration**2) + self.minrps * self.duration)
 
     def get_float_rps_list(self):
         '''
@@ -89,12 +105,14 @@ class Line(object):
         return rps_list
 
     def get_rps_list(self):
-        '''
+        """
         get list of each second's rps
-        '''
+        :returns: list of tuples (rps, duration of corresponding rps in seconds)
+        :rtype: list
+        """
         seconds = xrange(0, int(self.duration) + 1)
         rps_groups = groupby(
-            [int(self.rps_at(t)) for t in seconds], lambda x: x)
+            [round(self.rps_at(t)) for t in seconds], lambda x: x)
         rps_list = [(rps, len(list(rpl))) for rps, rpl in rps_groups]
         return rps_list
 
@@ -126,20 +144,20 @@ class Composite(object):
 
 
 class Stairway(Composite):
-    def __init__(self, minrps, maxrps, increment, duration):
+    def __init__(self, minrps, maxrps, increment, step_duration):
         if maxrps < minrps:
             increment = -increment
         n_steps = int((maxrps - minrps) / increment)
         steps = [
-            Const(minrps + i * increment, duration)
+            Const(minrps + i * increment, step_duration)
             for i in xrange(0, n_steps + 1)
         ]
         if increment > 0:
             if (minrps + n_steps * increment) < maxrps:
-                steps.append(Const(maxrps, duration))
+                steps.append(Const(maxrps, step_duration))
         elif increment < 0:
             if (minrps + n_steps * increment) > maxrps:
-                steps.append(Const(maxrps, duration))
+                steps.append(Const(maxrps, step_duration))
         super(Stairway, self).__init__(steps)
 
 
