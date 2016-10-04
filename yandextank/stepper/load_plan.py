@@ -36,7 +36,7 @@ class Const(object):
 
     def __len__(self):
         '''Return total ammo count'''
-        return self.duration / 1000 * self.rps
+        return int(self.duration / 1000 * self.rps)
 
     def get_rps_list(self):
         return [(int(self.rps), self.duration / 1000.)]
@@ -136,7 +136,7 @@ class Composite(object):
 
     def __len__(self):
         '''Return total ammo count'''
-        return sum(step.__len__() for step in self.steps)
+        return int(sum(step.__len__() for step in self.steps))
 
     def get_rps_list(self):
         return list(chain.from_iterable(step.get_rps_list()
@@ -200,42 +200,9 @@ class StepFactory(object):
 
 
 def create(rps_schedule):
-    '''
+    """
     Create Load Plan as defined in schedule. Publish info about its duration.
-
-    >>> from util import take
-
-    >>> take(100, create(['line(1, 5, 2s)']))
-    [0, 618, 1000, 1302, 1561, 1791]
-
-    >>> take(100, create(['line(1.1, 5.8, 2s)']))
-    [0, 566, 917, 1196, 1435, 1647]
-
-    >>> take(100, create(['line(5, 1, 2s)']))
-    [0, 208, 438, 697, 1000, 1381]
-
-    >>> take(100, create(['const(1, 10s)']))
-    [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]
-
-    >>> take(100, create(['const(200, 0.1s)']))
-    [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
-
-    >>> take(100, create(['const(1, 2s)', 'const(2, 2s)']))
-    [0, 1000, 2000, 2500, 3000, 3500]
-
-    >>> take(100, create(['const(1.5, 10s)']))
-    [0, 666, 1333, 2000, 2666, 3333, 4000, 4666, 5333, 6000, 6666, 7333, 8000, 8666, 9333]
-
-    >>> take(10, create(['step(1, 5, 1, 5s)']))
-    [0, 1000, 2000, 3000, 4000, 5000, 5500, 6000, 6500, 7000]
-
-    >>> take(10, create(['step(1.2, 5.7, 1.1, 5s)']))
-    [0, 833, 1666, 2500, 3333, 4166, 5000, 5434, 5869, 6304]
-
-    >>> take(10, create(['const(1, 1)']))
-    [0]
-
-    '''
+    """
     if len(rps_schedule) > 1:
         lp = Composite([StepFactory.produce(step_config)
                         for step_config in rps_schedule])

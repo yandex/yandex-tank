@@ -1,6 +1,6 @@
-import pytest
 from yandextank.stepper.load_plan import create, Const, Line, Composite, Stairway
 from yandextank.stepper.util import take
+import pytest
 
 
 class TestLine(object):
@@ -77,7 +77,7 @@ class TestLineNew(object):
     def test_iter(self, min_rps, max_rps, duration, expected_len, threshold, len_above_threshold):
         load_plan = Line(min_rps, max_rps, duration)
         assert len(load_plan) == expected_len
-        assert len(filter(lambda ts: ts >= threshold, load_plan)) == len_above_threshold
+        assert len([ts for ts in load_plan if ts >= threshold]) == len_above_threshold
 
 
 class TestComposite(object):
@@ -108,7 +108,7 @@ class TestStairway(object):
     def test_iter(self, min_rps, max_rps, increment, step_duration, expected_len, threshold, len_above_threshold):
         load_plan = Stairway(min_rps, max_rps, increment, step_duration)
         assert len(load_plan) == expected_len
-        assert len(filter(lambda ts: ts >= threshold, load_plan)) == len_above_threshold
+        assert len([ts for ts in load_plan if ts >= threshold]) == len_above_threshold
 
 
 class TestCreate(object):
@@ -125,4 +125,5 @@ class TestCreate(object):
         (['const(1, 1)'], 10, [0]),
     ])
     def test_create(self, rps_schedule, check_point, expected):
+        # pytest.set_trace()
         assert take(check_point, (create(rps_schedule))) == expected
