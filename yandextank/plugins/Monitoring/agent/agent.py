@@ -31,7 +31,7 @@ def set_sig_handler():
         try:
             sig_num = getattr(signal, sig_name)
             signal.signal(sig_num, signal_handler)
-        except Exception, e:
+        except Exception as e:
             logger.error("Can't set handler for %s, %s", sig_name, e)
 
 
@@ -283,7 +283,7 @@ class Disk(AbstractMetric):
 
             self.read, self.write = read, writed
 
-        except Exception, exc:
+        except Exception as exc:
             logger.error("%s: %s", exc, traceback.format_exc(exc))
             result = ['', '']
         return result
@@ -321,7 +321,7 @@ class Disk(AbstractMetric):
                                         logger.info("Found: %s", dsk_name)
                                         devs.append(dsk_name)
                                         break
-                            except Exception, exc:
+                            except Exception as exc:
                                 logger.info("Failed: %s",
                                             traceback.format_exc(exc))
                 except Exception as exc:
@@ -369,7 +369,7 @@ class Mem(AbstractMetric):
                 'Buffers'] - data['Cached']
             result = [data['MemTotal'], data['MemUsed'], data['MemFree'],
                       0, data['Buffers'], data['Cached']]
-        except Exception, e:
+        except Exception as e:
             logger.error("Can't get meminfo, %s", e, exc_info=True)
             result.append([self.empty] * 9)
         return map(str, result)
@@ -476,7 +476,7 @@ class NetTxRx(AbstractMetric):
                     ):
                         rx += int(counters[rx_pos])
                         tx += int(counters[tx_pos])
-            except Exception, e:
+            except Exception as e:
                 logger.error('Failed to parse ifconfig output %s: %s', data, e)
 
         logger.debug("Total RX/TX packets counters: %s", [str(rx), str(tx)])
@@ -515,7 +515,7 @@ class Net(AbstractMetric):
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
                                     shell=True)
-        except Exception, exc:
+        except Exception as exc:
             logger.error("Error getting net metrics: %s", exc)
             result = ['', '']
 
@@ -631,7 +631,7 @@ class AgentWorker(Thread):
                             metric_name].columns()):
                         raise RuntimeError(
                             "Data len not matched columns count: %s" % data)
-                except Exception, e:
+                except Exception as e:
                     logger.exception('Can\'t fetch %s', metric_name)
                     data = ['0'
                             ] * len(self.known_metrics[metric_name].columns())
@@ -647,7 +647,7 @@ class AgentWorker(Thread):
                 logger.debug("str: %s" % row)
                 sys.stdout.write(row + '\n')
                 sys.stdout.flush()
-            except IOError, e:
+            except IOError as e:
                     logger.error("Can't send data to collector, terminating, %s", e)
                     self.finished = True
 

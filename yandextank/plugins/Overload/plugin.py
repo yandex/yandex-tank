@@ -174,7 +174,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             info = phantom.get_info()
             self.target = info.address
             duration = int(info.duration)
-        except (KeyError, AttributeError), ex:
+        except (KeyError, AttributeError) as ex:
             logger.debug("No phantom plugin to get target info: %s", ex)
             self.target = socket.getfqdn()
 
@@ -197,7 +197,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                                           unicode) else info.rps_schedule
 
             loop_count = info.loop_count
-        except (KeyError, AttributeError), ex:
+        except (KeyError, AttributeError) as ex:
             logger.debug("No phantom plugin to get target info: %s", ex)
             self.target = socket.getfqdn()
             port = 80
@@ -210,13 +210,13 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         try:
             jmeter = self.core.get_plugin_of_type(JMeterPlugin)
             ammo_path = jmeter.original_jmx
-        except KeyError, ex:
+        except KeyError as ex:
             logger.debug("No jmeter plugin to get info: %s", ex)
 
         try:
             pandora = self.core.get_plugin_of_type(PandoraPlugin)
             # TODO: get info from Pandora here
-        except KeyError, ex:
+        except KeyError as ex:
             logger.debug("No pandora plugin to get info: %s", ex)
 
         detailed_field = "interval_real"

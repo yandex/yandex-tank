@@ -85,7 +85,7 @@ class Plugin(AbstractPlugin):
         aggregator = None
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except Exception, ex:
+        except Exception as ex:
             logger.warning("No aggregator found: %s", ex)
 
         if aggregator:
@@ -94,7 +94,7 @@ class Plugin(AbstractPlugin):
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
-        except Exception, ex:
+        except Exception as ex:
             logger.debug("Console not found: %s", ex)
             console = None
 
@@ -144,7 +144,7 @@ class Plugin(AbstractPlugin):
                         self.jmeter_process.pid)
             try:
                 os.killpg(self.jmeter_process.pid, signal.SIGTERM)
-            except OSError, exc:
+            except OSError as exc:
                 logger.debug("Seems JMeter exited itself: %s", exc)
                 # Utils.log_stdout_stderr(logger, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
         if self.jmeter_stderr:
@@ -163,7 +163,7 @@ class Plugin(AbstractPlugin):
             closing = source_lines.pop(-1) + closing
             closing = source_lines.pop(-1) + closing
             logger.debug("Closing statement: %s", closing)
-        except Exception, exc:
+        except Exception as exc:
             raise RuntimeError("Failed to find the end of JMX XML: %s" % exc)
 
         udv_tpl = resource_string(__name__, 'config/jmeter_var_template.xml')
@@ -193,7 +193,7 @@ class Plugin(AbstractPlugin):
         try:
             new_jmx = self.core.mkstemp(
                 '.jmx', 'modified_', os.path.dirname(os.path.realpath(jmx)))
-        except OSError, exc:
+        except OSError as exc:
             logger.debug("Can't create modified jmx near original: %s", exc)
             new_jmx = self.core.mkstemp('.jmx', 'modified_')
         logger.debug("Modified JMX: %s", new_jmx)

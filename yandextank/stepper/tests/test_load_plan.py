@@ -1,6 +1,6 @@
+import pytest
 from yandextank.stepper.load_plan import create, Const, Line, Composite, Stairway
 from yandextank.stepper.util import take
-import pytest
 
 
 class TestLine(object):
@@ -42,6 +42,7 @@ class TestLineNew(object):
         assert round(Line(min_rps, max_rps, duration).rps_at(check_point)) == expected
 
     @pytest.mark.parametrize("min_rps, max_rps, duration, check_point, expected", [
+        (0, 10, 20 * 1000, 9, (9, 2)),
         (0, 10, 30 * 1000, 0, (0, 2)),
         (0, 10, 30 * 1000, 5, (5, 3)),
         (0, 10, 30 * 1000, 10, (10, 2)),
@@ -55,7 +56,7 @@ class TestLineNew(object):
         (10, 0, 30 * 1000, 0, (10, 2)),
         (10, 0, 30 * 1000, 1, (9, 3)),
         (10, 0, 30 * 1000, 9, (1, 3)),
-        (10, 0, 30 * 1000, 10, (0, 2))
+        (10, 0, 30 * 1000, 10, (0, 2)),
     ])
     def test_get_rps_list(self, min_rps, max_rps, duration, check_point, expected):
         assert Line(min_rps, max_rps, duration).get_rps_list()[check_point] == expected

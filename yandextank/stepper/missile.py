@@ -247,7 +247,7 @@ class AccessLogReader(object):
                         else:
                             self.warn("Skipped line: %s (unsupported method)" %
                                       line)
-                    except (ValueError, IndexError), e:
+                    except (ValueError, IndexError) as e:
                         self.warn("Skipped line: %s (%s)" % (line, e))
                 ammo_file.seek(0)
                 info.status.af_position = 0

@@ -132,7 +132,7 @@ class Plugin(AbstractPlugin):
 
             try:
                 console = self.core.get_plugin_of_type(ConsolePlugin)
-            except Exception, ex:
+            except Exception as ex:
                 logger.debug("Console not found: %s", ex)
                 console = None
             if console:

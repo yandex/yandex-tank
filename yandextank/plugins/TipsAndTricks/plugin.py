@@ -40,7 +40,7 @@ class Plugin(AbstractPlugin, AbstractInfoWidget):
         if not self.disable:
             try:
                 console = self.core.get_plugin_of_type(ConsolePlugin)
-            except KeyError, ex:
+            except KeyError as ex:
                 self.log.debug("Console not found: %s", ex)
                 console = None
 

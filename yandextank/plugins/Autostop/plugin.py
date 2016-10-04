@@ -82,7 +82,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
-        except Exception, ex:  # pylint: disable=W0703
+        except Exception as ex:  # pylint: disable=W0703
             self.log.debug("Console not found: %s", ex)
             console = None
 

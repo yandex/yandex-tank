@@ -3,7 +3,7 @@ Common utilities
 '''
 import os
 import threading as th
-import httplib
+import http.client
 import logging
 import errno
 import itertools
@@ -65,7 +65,7 @@ class SecuredShell(object):
                            port=self.port,
                            username=self.username,
                            timeout=self.timeout, )
-        except ValueError, e:
+        except ValueError as e:
             logger.error(e)
             logger.warning("""
 Patching Crypto.Cipher.AES.new and making another attempt.
@@ -181,7 +181,7 @@ class AsyncSession(object):
 
 
 ### HTTP codes
-HTTP = httplib.responses
+HTTP = http.client.responses
 
 ### Extended list of HTTP status codes(WEBdav etc.)
 ### HTTP://en.wikipedia.org/wiki/List_of_HTTP_status_codes
@@ -433,7 +433,7 @@ def pid_exists(pid):
         return False
     try:
         os.kill(pid, 0)
-    except OSError, exc:
+    except OSError as exc:
         logging.debug("No process[%s]: %s", exc.errno, exc)
         return exc.errno == errno.EPERM
     else:

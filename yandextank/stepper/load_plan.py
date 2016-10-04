@@ -2,10 +2,11 @@
 Load Plan generators
 '''
 import re
-import info
 from itertools import chain, groupby
+from builtins import range
+from . import info
+from .util import parse_duration, solve_quadratic, proper_round
 
-from .util import parse_duration, solve_quadratic
 
 class Const(object):
     '''
@@ -21,7 +22,7 @@ class Const(object):
             return iter([])
         interval = 1000.0 / self.rps
         return (int(i * interval)
-                for i in xrange(0, int(self.rps * self.duration / 1000)))
+                for i in range(0, int(self.rps * self.duration / 1000)))
 
     def rps_at(self, t):
         '''Return rps for second t'''
@@ -76,13 +77,12 @@ class Line(object):
 
         :return: timestamps for each charge
         """
-        return (self.ts(n) for n in xrange(0, self.__len__()))
+        return (self.ts(n) for n in range(0, self.__len__()))
 
     def rps_at(self, t):
         '''Return rps for second t'''
-        if t <= self.duration:
-            return self.minrps + float(self.maxrps -
-                                       self.minrps) * t / self.duration
+        if 0 <= t <= self.duration:
+            return self.minrps + float(self.maxrps - self.minrps) * t / self.duration
         else:
             return 0
 
@@ -99,7 +99,7 @@ class Line(object):
         get list of constant load parts (we have no constant load at all, but tank will think so),
         with parts durations (float)
         '''
-        int_rps = xrange(int(self.minrps), int(self.maxrps) + 1)
+        int_rps = range(int(self.minrps), int(self.maxrps) + 1)
         step_duration = float(self.duration) / len(int_rps)
         rps_list = [(rps, int(step_duration)) for rps in int_rps]
         return rps_list
@@ -110,9 +110,9 @@ class Line(object):
         :returns: list of tuples (rps, duration of corresponding rps in seconds)
         :rtype: list
         """
-        seconds = xrange(0, int(self.duration) + 1)
+        seconds = range(0, int(self.duration) + 1)
         rps_groups = groupby(
-            [round(self.rps_at(t)) for t in seconds], lambda x: x)
+            [proper_round(self.rps_at(t)) for t in seconds], lambda x: x)
         rps_list = [(rps, len(list(rpl))) for rps, rpl in rps_groups]
         return rps_list
 
@@ -150,7 +150,7 @@ class Stairway(Composite):
         n_steps = int((maxrps - minrps) / increment)
         steps = [
             Const(minrps + i * increment, step_duration)
-            for i in xrange(0, n_steps + 1)
+            for i in range(0, n_steps + 1)
         ]
         if increment > 0:
             if (minrps + n_steps * increment) < maxrps:

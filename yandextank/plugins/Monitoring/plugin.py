@@ -99,14 +99,14 @@ class Plugin(AbstractPlugin):
                 self.default_target = info.address
                 logger.debug("Changed monitoring target to %s",
                              self.default_target)
-        except KeyError, ex:
+        except KeyError as ex:
             logger.debug("Phantom plugin not found: %s", ex)
 
         if self.address_resolver:
             try:
                 self.default_target = self.address_resolver.resolve_virtual(
                     self.default_target)
-            except Exception, exc:
+            except Exception as exc:
                 logger.error("Failed to get target info: %s", exc)
 
         if not self.config or self.config == 'none':
@@ -125,7 +125,7 @@ class Plugin(AbstractPlugin):
 
             try:
                 console = self.core.get_plugin_of_type(ConsolePlugin)
-            except Exception, ex:
+            except Exception as ex:
                 logger.debug("Console not found: %s", ex)
                 console = None
             if console:
