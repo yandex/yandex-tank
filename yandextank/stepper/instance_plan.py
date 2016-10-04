@@ -1,6 +1,6 @@
 import logging
 import re
-import info
+from . import info
 from itertools import cycle, repeat, chain
 
 from .util import parse_duration

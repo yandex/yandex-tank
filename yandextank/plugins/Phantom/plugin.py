@@ -95,7 +95,7 @@ class Plugin(AbstractPlugin):
         aggregator = None
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except Exception, ex:
+        except Exception as ex:
             logger.warning("No aggregator found: %s", ex)
 
         if not self.config and not self.phout_import_mode:
@@ -136,7 +136,7 @@ class Plugin(AbstractPlugin):
             aggregator.add_result_listener(self)
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
-        except Exception, ex:
+        except Exception as ex:
             logger.debug("Console not found: %s", ex)
             console = None
 

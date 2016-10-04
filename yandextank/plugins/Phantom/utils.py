@@ -417,7 +417,7 @@ class AddressWizard:
             if do_test:
                 try:
                     self.__test(family, (parsed_ip, port))
-                except RuntimeError, exc:
+                except RuntimeError as exc:
                     logger.warn("Failed TCP connection test using [%s]:%s",
                                 parsed_ip, port)
                     continue
@@ -432,7 +432,7 @@ class AddressWizard:
         try:
             test_sock.settimeout(5)
             test_sock.connect(sa)
-        except Exception, exc:
+        except Exception as exc:
             logger.debug("Exception on connect attempt [%s]:%s : %s", sa[0],
                          sa[1], traceback.format_exc(exc))
             msg = "TCP Connection test failed for [%s]:%s, use phantom.connection_test=0 to disable it"

@@ -1,5 +1,5 @@
 """ The central part of the tool: Core """
-import ConfigParser
+import configparser
 import datetime
 import logging
 import os
@@ -11,7 +11,7 @@ import fnmatch
 import importlib as il
 import json
 import uuid
-from ConfigParser import NoSectionError
+from configparser import NoSectionError
 
 from ..core.resource import manager as resource
 from ..core.util import update_status, execute, pid_exists
@@ -123,7 +123,8 @@ class TankCore(object):
         self.publish("core", "stage", "configure")
         if not os.path.exists(self.artifacts_base_dir):
             os.makedirs(self.artifacts_base_dir)
-            os.chmod(self.artifacts_base_dir, 0755)
+
+            os.chmod(self.artifacts_base_dir, 0o755)
 
         self.log.info("Configuring plugins...")
         if self.taskset_affinity != '':
@@ -194,7 +195,7 @@ class TankCore(object):
                 self.log.debug("RC before: %s", retcode)
                 plugin.end_test(retcode)
                 self.log.debug("RC after: %s", retcode)
-            except Exception, ex:
+            except Exception as ex:
                 self.log.error("Failed finishing plugin %s: %s", plugin, ex)
                 self.log.debug("Failed finishing plugin: %s",
                                traceback.format_exc(ex))
@@ -218,7 +219,7 @@ class TankCore(object):
                 self.log.debug("RC before: %s", retcode)
                 retcode = plugin.post_process(retcode)
                 self.log.debug("RC after: %s", retcode)
-            except Exception, ex:
+            except Exception as ex:
                 self.log.error("Failed post-processing plugin %s: %s", plugin,
                                ex)
                 self.log.debug("Failed post-processing plugin: %s",
@@ -259,13 +260,13 @@ class TankCore(object):
         if not os.path.isdir(self.artifacts_dir):
             os.makedirs(self.artifacts_dir)
 
-        os.chmod(self.artifacts_dir, 0755)
+        os.chmod(self.artifacts_dir, 0o755)
 
         self.log.info("Artifacts dir: %s", self.artifacts_dir)
         for filename, keep in self.artifact_files.items():
             try:
                 self.__collect_file(filename, keep)
-            except Exception, ex:
+            except Exception as ex:
                 self.log.warn("Failed to collect file %s: %s", filename, ex)
 
     def get_option(self, section, option, default=None):
@@ -351,7 +352,7 @@ class TankCore(object):
         else:
             shutil.move(filename, self.artifacts_dir)
 
-        os.chmod(dest, 0644)
+        os.chmod(dest, 0o644)
 
     def add_artifact_file(self, filename, keep_original=False):
         """
@@ -390,7 +391,7 @@ class TankCore(object):
         fh, self.lock_file = tempfile.mkstemp('.lock', 'lunapark_',
                                               self.get_lock_dir())
         os.close(fh)
-        os.chmod(self.lock_file, 0644)
+        os.chmod(self.lock_file, 0o644)
         self.config.file = self.lock_file
         self.config.flush()
 
@@ -417,12 +418,12 @@ class TankCore(object):
                                        "trying to remove", pid)
                         try:
                             os.remove(full_name)
-                        except Exception, exc:
+                        except Exception as exc:
                             self.log.debug("Failed to delete lock %s: %s",
                                            full_name, exc)
                     else:
                         retcode = True
-                except Exception, exc:
+                except Exception as exc:
                     self.log.warn("Failed to load info from lock %s: %s",
                                   full_name, exc)
                     retcode = True
@@ -437,7 +438,7 @@ class TankCore(object):
             directory = self.artifacts_base_dir
         fd, fname = tempfile.mkstemp(suffix, prefix, directory)
         os.close(fd)
-        os.chmod(fname, 0644)  # FIXME: chmod to parent dir's mode?
+        os.chmod(fname, 0o644)  # FIXME: chmod to parent dir's mode?
         return fname
 
     def publish(self, publisher, key, value):
@@ -495,7 +496,7 @@ class ConfigManager(object):
                 if not prefix or option.find(prefix) == 0:
                     res += [(option[len(prefix):],
                              self.config.get(section, option))]
-        except NoSectionError, ex:
+        except NoSectionError as ex:
             self.log.warning("No section: %s", ex)
 
         self.log.debug("Section: [%s] prefix: '%s' options:\n%s", section,

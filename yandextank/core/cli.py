@@ -82,7 +82,7 @@ def main():
         worker.configure()
         rc = worker.perform_test()
         sys.exit(rc)
-    except Exception, ex:
+    except Exception as ex:
         logging.error("Exception: %s", ex)
         logging.debug("Exception: %s", traceback.format_exc(ex))
         sys.exit(1)

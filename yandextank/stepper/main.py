@@ -6,7 +6,7 @@ import os
 import json
 import hashlib
 import re
-from itertools import izip
+from builtins import zip
 
 from ..core.resource import manager as resource
 from .config import ComponentFactory
@@ -44,7 +44,7 @@ class AmmoFactory(object):
                        if self.filter(ammo))
 
         return ((timestamp, marker or self.marker(missile), missile)
-                for timestamp, (missile, marker) in izip(self.load_plan,
+                for timestamp, (missile, marker) in zip(self.load_plan,
                                                          ammo_stream))
 
 

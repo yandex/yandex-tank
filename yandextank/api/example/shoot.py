@@ -20,5 +20,5 @@ apiworker.init_logging(log_filename)
 try:
     apiworker.configure(options)
     apiworker.perform_test()
-except Exception, ex:
+except Exception as ex:
     logger.error('Error trying to perform a test: %s', ex)

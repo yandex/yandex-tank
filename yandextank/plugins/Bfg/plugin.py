@@ -75,7 +75,7 @@ class Plugin(AbstractPlugin):
         aggregator = None
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except Exception, ex:
+        except Exception as ex:
             self.log.warning("No aggregator found: %s", ex)
 
         if aggregator:
@@ -86,7 +86,7 @@ class Plugin(AbstractPlugin):
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
-        except Exception, ex:
+        except Exception as ex:
             self.log.debug("Console not found: %s", ex)
             console = None
 

@@ -72,7 +72,7 @@ class ApiWorker:
             try:
                 self.core.get_lock(self.options.get('ignore_lock', None))
                 break
-            except Exception, exc:
+            except Exception as exc:
                 if self.options.get('lock_fail', None):
                     raise RuntimeError("Lock file present, cannot continue")
                 self.log.info(

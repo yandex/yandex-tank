@@ -1,4 +1,5 @@
 from uuid import uuid4
+from builtins import int
 
 __test_missile = """\
 POST /example/search/hello/help/us?param1=50&param2=0&param3=hello HTTP/1.1\r
@@ -38,7 +39,7 @@ __markers = {'uniq': lambda m: uuid4().hex, 'uri': __mark_by_uri, }
 class __Enumerator(object):
     def __init__(self, marker):
         self.marker = marker
-        self.number = 0L
+        self.number = int(0)
 
     def __call__(self, missile):
         marker = "%s#%d" % (self.marker(missile), self.number)

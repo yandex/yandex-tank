@@ -68,7 +68,7 @@ class Plugin(AbstractPlugin):
                 if info.address and info.address not in self.hosts:
                     logger.debug("Adding platform check of default_target %s", info.address)
                     self.hosts.append(info.address)
-        except KeyError, ex:
+        except KeyError as ex:
             logger.debug("Phantom plugin not found: %s", ex)
         for host in self.hosts:
             self.ssh = SecuredShell(host, self.port, self.username, self.timeout)

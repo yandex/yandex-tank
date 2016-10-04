@@ -57,3 +57,12 @@ def solve_quadratic(a, b, c):
 
 def s_to_ms(f_sec):
     return int(f_sec * 1000.0)
+
+
+def proper_round(n):
+    """
+    rounds float to closest int
+    :rtype: int
+    :param n: float
+    """
+    return int(n) + (n / abs(n)) * int(abs(n - int(n)) >= 0.5) if n != 0 else 0

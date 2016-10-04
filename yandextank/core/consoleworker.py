@@ -233,7 +233,7 @@ class ConsoleTank:
             if self.options.ignore_lock:
                 self.core.set_option(self.core.SECTION, self.IGNORE_LOCKS, "1")
 
-        except Exception, ex:
+        except Exception as ex:
             self.log.info("Exception: %s", traceback.format_exc(ex))
             sys.stderr.write(RealConsoleMarkup.RED)
             self.log.error("%s", ex)
