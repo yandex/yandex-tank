@@ -279,7 +279,7 @@ class TankCore(object):
 
         try:
             value = self.config.config.get(section, option).strip()
-        except ConfigParser.NoOptionError as ex:
+        except configparser.NoOptionError as ex:
             if default is not None:
                 default = str(default)
                 self.config.config.set(section, option, default)
@@ -410,7 +410,7 @@ class TankCore(object):
                 self.log.warn("Lock file present: %s", full_name)
 
                 try:
-                    info = ConfigParser.ConfigParser()
+                    info = configparser.ConfigParser()
                     info.read(full_name)
                     pid = info.get(TankCore.SECTION, self.PID_OPTION)
                     if not pid_exists(int(pid)):
@@ -466,7 +466,7 @@ class ConfigManager(object):
     def __init__(self):
         self.file = None
         self.log = logging.getLogger(__name__)
-        self.config = ConfigParser.ConfigParser()
+        self.config = configparser.ConfigParser()
 
     def load_files(self, configs):
         """         Read configs set into storage        """
