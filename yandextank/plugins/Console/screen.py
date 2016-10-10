@@ -7,7 +7,7 @@ import struct
 import termios
 from collections import defaultdict
 
-from ...core import util
+from ...common import util
 
 
 def get_terminal_size():

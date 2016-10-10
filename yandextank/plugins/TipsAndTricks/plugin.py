@@ -3,9 +3,10 @@ Plugin showing tool learning hints in console
 '''
 import random
 import textwrap
-from pkg_resources import resource_stream
 
-from ...core.interfaces import AbstractInfoWidget, AbstractPlugin
+from pkg_resources import resource_stream
+from ...common.interfaces import AbstractInfoWidget, AbstractPlugin
+
 from ..Console import Plugin as ConsolePlugin
 
 

@@ -1,17 +1,18 @@
 '''
 Module contains top-level generators.
 '''
+import hashlib
+import json
 import logging
 import os
-import json
-import hashlib
 import re
-from builtins import zip
 
-from ..core.resource import manager as resource
-from .config import ComponentFactory
+from builtins import zip
+from ..common.resource import manager as resource
+
 from . import format as fmt
 from . import info
+from .config import ComponentFactory
 
 
 class AmmoFactory(object):

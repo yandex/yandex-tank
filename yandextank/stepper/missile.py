@@ -6,9 +6,10 @@ You should update Stepper.status.ammo_count and Stepper.status.loop_count in you
 import logging
 from itertools import cycle
 
-from ..core.resource import manager as resource
-from .module_exceptions import AmmoFileError
+from ..common.resource import manager as resource
+
 from . import info
+from .module_exceptions import AmmoFileError
 
 
 class HttpAmmo(object):

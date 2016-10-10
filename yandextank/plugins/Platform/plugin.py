@@ -1,9 +1,10 @@
 ''' Module that collects remote system information '''
 
-import logging
 import getpass
+import logging
 
-from ...core.interfaces import AbstractPlugin
+from ...common.interfaces import AbstractPlugin
+
 from ..Monitoring.collector import SecuredShell
 from ..Phantom import Plugin as PhantomPlugin
 

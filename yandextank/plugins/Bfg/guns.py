@@ -1,11 +1,11 @@
-import time
-import logging
-import requests
 import imp
-from random import randint
+import logging
+import time
 from contextlib import contextmanager
+from random import randint
 
-from ...core.interfaces import AbstractPlugin
+import requests
+from ...common.interfaces import AbstractPlugin
 
 logger = logging.getLogger(__name__)
 

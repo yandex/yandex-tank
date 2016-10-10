@@ -1,8 +1,8 @@
+import logging
 import subprocess
 import time
-import logging
 
-from ...core.interfaces import AbstractPlugin
+from ...common.interfaces import AbstractPlugin
 
 logger = logging.getLogger(__name__)
 

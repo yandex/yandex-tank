@@ -1,11 +1,11 @@
 ''' Module to check system resources at load generator'''
 
-import time
 import logging
-import psutil
+import time
 
-from ...core.interfaces import AbstractPlugin
-from ...core.util import expand_to_seconds, execute
+import psutil
+from ...common.util import expand_to_seconds, execute
+from ...common.interfaces import AbstractPlugin
 
 
 class Plugin(AbstractPlugin):

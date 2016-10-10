@@ -1,21 +1,21 @@
 """ Contains Phantom Plugin, Console widgets, result reader classes """
 # FIXME: 3 there is no graceful way to interrupt the process of phout import
 # TODO: phout import
+import logging
+import multiprocessing as mp
 import os
 import subprocess
 import time
-import multiprocessing as mp
-import logging
 
-from ...core.util import execute, expand_to_seconds
-from ...core.interfaces import AbstractPlugin, AbstractCriterion
-from ..Aggregator import Plugin as AggregatorPlugin
-from ..Console import Plugin as ConsolePlugin
-from ..Autostop import Plugin as  AutostopPlugin
-from .utils import PhantomConfig
+from ...common.util import execute, expand_to_seconds
+from ...common.interfaces import AbstractPlugin, AbstractCriterion
+
 from .reader import PhantomReader, PhantomStatsReader
+from .utils import PhantomConfig
 from .widget import PhantomInfoWidget, PhantomProgressBarWidget
-
+from ..Aggregator import Plugin as AggregatorPlugin
+from ..Autostop import Plugin as  AutostopPlugin
+from ..Console import Plugin as ConsolePlugin
 
 logger = logging.getLogger(__name__)
 

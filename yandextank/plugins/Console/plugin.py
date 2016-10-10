@@ -1,12 +1,13 @@
 ''' Plugin provides fullscreen console '''
 import logging
 import sys
-import traceback
 import threading
+import traceback
 
-from ...core.interfaces import AbstractPlugin, AggregateResultListener
-from ..Aggregator import Plugin as AggregatorPlugin
+from ...common.interfaces import AbstractPlugin, AggregateResultListener
+
 from .screen import Screen
+from ..Aggregator import Plugin as AggregatorPlugin
 
 LOG = logging.getLogger(__name__)
 

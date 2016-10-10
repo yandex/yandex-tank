@@ -2,18 +2,19 @@
 Run maven test as load test
 """
 from __future__ import division, absolute_import
-from builtins import super
+
+import logging
 import subprocess
 import time
-import logging
 
-from ...core.interfaces import AbstractPlugin
-from ...core.resource import manager as resource_manager
-from ..Aggregator import Plugin as AggregatorPlugin
-from ..Console import Plugin as ConsolePlugin
+from builtins import super
+from ...common.resource import manager as resource_manager
+from ...common.interfaces import AbstractPlugin
+
 from .console import MavenInfoWidget
 from .reader import MavenReader, MavenStatsReader
-
+from ..Aggregator import Plugin as AggregatorPlugin
+from ..Console import Plugin as ConsolePlugin
 
 logger = logging.getLogger(__name__)
 

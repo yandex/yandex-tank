@@ -1,6 +1,6 @@
 import datetime
 
-from ...core.interfaces import AbstractInfoWidget
+from ...common.interfaces import AbstractInfoWidget
 
 
 class BfgInfoWidget(AbstractInfoWidget):

@@ -1,13 +1,13 @@
 ''' Cummulative Autostops '''
-import re
-import math
-import numpy as np
 import logging
+import math
+import re
 from collections import deque
 
-from ...core.util import expand_to_milliseconds, expand_to_seconds
-from .criterions import AbstractCriterion
+import numpy as np
+from ...common.util import expand_to_milliseconds, expand_to_seconds
 
+from .criterions import AbstractCriterion
 
 logger = logging.getLogger(__name__)
 

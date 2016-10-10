@@ -1,12 +1,13 @@
 import logging
 
-from ..core.resource import manager as resource
-from .module_exceptions import StepperConfigurationError, AmmoFileError
-from .mark import get_marker
-from . import missile
+from ..common.resource import manager as resource
+
 from . import info
-from . import load_plan as lp
 from . import instance_plan as ip
+from . import load_plan as lp
+from . import missile
+from .mark import get_marker
+from .module_exceptions import StepperConfigurationError, AmmoFileError
 
 
 class ComponentFactory():

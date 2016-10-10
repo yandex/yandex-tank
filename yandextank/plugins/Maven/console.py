@@ -1,9 +1,11 @@
 from __future__ import division, absolute_import
+
 import datetime
 import time
-from builtins import super
 
-from ...core.interfaces import AbstractInfoWidget
+from builtins import super
+from ...common.interfaces import AbstractInfoWidget
+
 from ..Console import screen as ConsoleScreen
 
 

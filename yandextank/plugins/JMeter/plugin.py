@@ -1,18 +1,19 @@
 """ jmeter load generator support """
+import datetime
 import logging
 import os
 import signal
 import subprocess
 import time
-import datetime
-from pkg_resources import resource_string
 
-from ...core.util import splitstring
-from ...core.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
+from pkg_resources import resource_string
+from ...common.util import splitstring
+from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
+
+from .reader import JMeterReader
 from ..Aggregator import Plugin as AggregatorPlugin
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
-from .reader import JMeterReader
 
 logger = logging.getLogger(__name__)
 

@@ -1,15 +1,16 @@
-import subprocess
-import time
 import datetime
 import logging
+import subprocess
+import time
 
-from ...core.interfaces import AbstractPlugin, AbstractInfoWidget
-from ..Aggregator import Plugin as AggregatorPlugin
-from ..Phantom import PhantomReader
-from ..Console import Plugin as ConsolePlugin
-from ..Console import screen as ConsoleScreen
+from ...common.interfaces import AbstractPlugin, AbstractInfoWidget
+
 from .config import PoolConfig, PandoraConfig, parse_schedule
 from .reader import PandoraStatsReader
+from ..Aggregator import Plugin as AggregatorPlugin
+from ..Console import Plugin as ConsolePlugin
+from ..Console import screen as ConsoleScreen
+from ..Phantom import PhantomReader
 
 logger = logging.getLogger(__name__)
 

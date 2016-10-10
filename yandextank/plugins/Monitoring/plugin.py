@@ -1,18 +1,19 @@
 """Module to provide target monitoring"""
 
+import datetime
+import fnmatch
+import logging
 import os
 import time
-import fnmatch
-import datetime
-import logging
-from pkg_resources import resource_string
 
-from ...core.util import expand_to_seconds
-from ...core.interfaces import AbstractPlugin, MonitoringDataListener, AbstractInfoWidget
+from pkg_resources import resource_string
+from ...common.util import expand_to_seconds
+from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AbstractInfoWidget, AbstractCriterion
+
+from .collector import MonitoringCollector, MonitoringDataDecoder
+from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
 from ..Phantom import Plugin as PhantomPlugin
-from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
-from .collector import MonitoringCollector, MonitoringDataDecoder
 
 logger = logging.getLogger(__name__)
 

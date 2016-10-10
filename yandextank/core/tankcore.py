@@ -1,20 +1,42 @@
 """ The central part of the tool: Core """
-import configparser
 import datetime
-import logging
-import os
-import shutil
-import tempfile
-import time
-import traceback
 import fnmatch
 import importlib as il
 import json
+import logging
+import os
+import shutil
+import socket
+import tempfile
+import time
+import traceback
 import uuid
-from configparser import NoSectionError
 
-from ..core.resource import manager as resource
-from ..core.util import update_status, execute, pid_exists
+import configparser
+from configparser import NoSectionError
+from ..common.util import update_status, execute, pid_exists
+
+from ..common.resource import manager as resource
+from ..plugins.Aggregator import Plugin as AggregatorPlugin
+from ..plugins.Monitoring import Plugin as MonitoringPlugin
+from ..plugins.Telegraf import Plugin as TelegrafPlugin
+
+
+class Job(object):
+    def __init__(self, name, description, task, version, config_copy, monitoring_plugin, aggregator_plugin, tank):
+        # type: (str, str, str, str, str, MonitoringPlugin, AggregatorPlugin, str) -> Job
+        self.name = name
+        self.description = description
+        self.task = task
+        self.version = version
+        self.config_copy = config_copy
+        self.monitoring_plugin = monitoring_plugin
+        self.aggregator_plugin = aggregator_plugin
+        self.tank = tank
+
+    def subscribe_plugin(self, plugin):
+        self.aggregator_plugin.add_result_listener(plugin)
+        self.monitoring_plugin.add_listener(plugin)
 
 
 class TankCore(object):
@@ -22,6 +44,7 @@ class TankCore(object):
     JMeter + dstat inspired :)
     """
     SECTION = 'tank'
+    SECTION_META = 'meta'
     PLUGIN_PREFIX = 'plugin_'
     PID_OPTION = 'pid'
     UUID_OPTION = 'uuid'
@@ -46,6 +69,7 @@ class TankCore(object):
         self.uuid = str(uuid.uuid4())
         self.set_option(self.SECTION, self.UUID_OPTION, self.uuid)
         self.set_option(self.SECTION, self.PID_OPTION, str(os.getpid()))
+        self.job = None
 
     def get_uuid(self):
         return self.uuid
@@ -129,6 +153,34 @@ class TankCore(object):
         self.log.info("Configuring plugins...")
         if self.taskset_affinity != '':
             self.taskset(os.getpid(), self.taskset_path, self.taskset_affinity)
+
+        # monitoring plugin
+        try:
+            mon = self.get_plugin_of_type(TelegrafPlugin)
+        except KeyError:
+            self.log.debug("Telegraf plugin not found:", exc_info=True) 
+            try:
+                mon = self.get_plugin_of_type(MonitoringPlugin)
+            except KeyError:
+                self.log.debug("Monitoring plugin not found:", exc_info=True)
+                mon = None
+                
+        # aggregator plugin
+        try:
+            aggregator = self.get_plugin_of_type(AggregatorPlugin)
+        except KeyError:
+            self.log.warning("Aggregator plugin not found:", exc_info=True)
+            aggregator = None
+
+        self.job = Job(name=self.get_option(self.SECTION_META, 'job_name', ''),
+                       description=self.get_option(self.SECTION_META, 'job_dsc', ''),
+                       task=self.get_option(self.SECTION_META, 'task', ''),
+                       version=self.get_option(self.SECTION_META, 'version', ''),
+                       config_copy=self.get_option(self.SECTION_META, 'config_copy', 'config_copy'),
+                       monitoring_plugin=mon,
+                       aggregator_plugin=aggregator,
+                       tank=socket.getfqdn())
+
         for plugin in self.plugins:
             self.log.debug("Configuring %s", plugin)
             plugin.configure()
@@ -235,7 +287,7 @@ class TankCore(object):
         return retcode
 
     def taskset(self, pid, path, affinity):
-        if affinity != '':
+        if affinity:
             args = "%s -pc %s %s" % (path, affinity, pid)
             retcode, stdout, stderr = execute(args,
                                               shell=True,

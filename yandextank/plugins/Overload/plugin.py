@@ -3,25 +3,24 @@
 # pylint: disable=missing-docstring
 import StringIO
 import copy
+import json
 import logging
 import os
 import pwd
-import json
 import socket
 import sys
 
-from ...core.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener, AbstractInfoWidget
-from ...core.util import expand_to_seconds
+from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener, AbstractInfoWidget
+
+from .client import OverloadClient
 from ..Aggregator import Plugin as AggregatorPlugin
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
 from ..JMeter import Plugin as JMeterPlugin
-from ..Pandora import Plugin as PandoraPlugin
-from ..Telegraf import Plugin as TelegrafPlugin
 from ..Monitoring import Plugin as MonitoringPlugin
+from ..Pandora import Plugin as PandoraPlugin
 from ..Phantom import Plugin as PhantomPlugin
-
-from .client import OverloadClient
+from ..Telegraf import Plugin as TelegrafPlugin
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 

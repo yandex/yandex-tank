@@ -1,18 +1,18 @@
 """Target monitoring via SSH"""
 import ConfigParser
 import base64
+import getpass
 import logging
 import os.path
 import re
 import sys
 import tempfile
 import time
-import getpass
 from collections import defaultdict
 from xml.etree import ElementTree as etree
 
-from ...core.util import SecuredShell
-from ...core.interfaces import MonitoringDataListener
+from ...common.util import SecuredShell
+from ...common.interfaces import MonitoringDataListener
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko.transport").setLevel(logging.WARNING)

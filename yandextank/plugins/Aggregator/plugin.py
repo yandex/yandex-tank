@@ -1,15 +1,16 @@
 """ Core module to calculate aggregate data """
-import logging
 import json
+import logging
+
 import queue as q
 from pkg_resources import resource_string
+from ...common.exceptions import PluginImplementationError
 
-from ...core.interfaces import AbstractPlugin
-from ...core.interfaces import AggregateResultListener
-from ...core.util import Drain
-from ...core.exceptions import PluginImplementationError
 from .aggregator import Aggregator, DataPoller
 from .chopper import TimeChopper
+from ...common.interfaces import AbstractPlugin
+from ...common.interfaces import AggregateResultListener
+from ...common.util import Drain
 
 logger = logging.getLogger(__name__)
 

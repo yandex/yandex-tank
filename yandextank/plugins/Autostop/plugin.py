@@ -3,11 +3,12 @@
 import logging
 import os.path
 
-from ...core.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
-from ..Aggregator import Plugin as AggregatorPlugin
-from ..Console import Plugin as ConsolePlugin
+from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
+
 from . import criterions as cr
 from . import cumulative_criterions as cum_cr
+from ..Aggregator import Plugin as AggregatorPlugin
+from ..Console import Plugin as ConsolePlugin
 
 logger = logging.getLogger(__name__)
 

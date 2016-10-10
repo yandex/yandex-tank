@@ -1,15 +1,13 @@
-import pandas as pd
-import numpy as np
 import json
-from pkg_resources import resource_string
-from queue import Queue, Empty
+
+import numpy as np
 from conftest import MAX_TS, random_split
-
-from yandextank.plugins.Aggregator.chopper import TimeChopper
+from pkg_resources import resource_string
+from queue import Queue
+from yandextank.common.util import Drain
 from yandextank.plugins.Aggregator.aggregator import Aggregator
+from yandextank.plugins.Aggregator.chopper import TimeChopper
 from yandextank.plugins.Aggregator.plugin import DataPoller
-from yandextank.core.util import Drain
-
 
 AGGR_CONFIG = json.loads(resource_string("yandextank.plugins.Aggregator",
                                          'config/phout.json').decode('utf-8'))
