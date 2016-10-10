@@ -1,10 +1,11 @@
 import datetime
-import socket
-import os
-import time
 import logging
+import os
+import socket
+import time
 
-from ...core.interfaces import AbstractInfoWidget
+from ...common.interfaces import AbstractInfoWidget
+
 from ..Console import screen
 
 logger = logging.getLogger(__name__)

@@ -1,5 +1,5 @@
 from queue import Queue
-from yandextank.core.util import Drain
+from yandextank.common.util import Drain
 
 
 class TestDrain(object):

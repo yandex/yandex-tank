@@ -1,15 +1,16 @@
 import logging
 import time
-import pip
 
-from ...core.interfaces import AbstractPlugin
-from ...stepper import StepperWrapper
-from ..Aggregator import Plugin as AggregatorPlugin
-from ..Console import Plugin as ConsolePlugin
+import pip
+from ...common.interfaces import AbstractPlugin
+
 from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun, UltimateGun
+from .reader import BfgReader, BfgStatsReader
 from .widgets import BfgInfoWidget
 from .worker import BFG
-from .reader import BfgReader, BfgStatsReader
+from ..Aggregator import Plugin as AggregatorPlugin
+from ..Console import Plugin as ConsolePlugin
+from ...stepper import StepperWrapper
 
 
 class Plugin(AbstractPlugin):

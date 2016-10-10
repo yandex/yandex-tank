@@ -1,11 +1,11 @@
+import copy
 import json
+import logging
 import re
 import time
-import copy
-import logging
 
-from ...core.util import expand_to_seconds, expand_to_milliseconds
-from ...core.interfaces import AbstractCriterion
+from yandextank.common.util import expand_to_seconds, expand_to_milliseconds
+from ...common.interfaces import AbstractCriterion
 
 logger = logging.getLogger(__name__)
 

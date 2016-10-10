@@ -2,9 +2,8 @@
 
 import logging
 import subprocess
-import shlex
 
-from ...core.interfaces import AbstractPlugin
+from ...common.interfaces import AbstractPlugin
 
 logger = logging.getLogger(__name__)
 

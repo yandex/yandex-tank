@@ -3,20 +3,21 @@ metrics collector - influxdata's `telegraf` - https://github.com/influxdata/tele
 backward compatibility with yandextank's Monitoring module configuration and tools.
 """
 
+import datetime
+import fnmatch
+import json
+import logging
 import os
 import time
-import fnmatch
-import datetime
-import logging
-import json
 
-from ...core.util import expand_to_seconds
-from ...core.resource import manager as resource
-from ...core.interfaces import MonitoringDataListener, AbstractPlugin, AbstractInfoWidget
-from ..Telegraf.collector import MonitoringCollector
+from ...common.resource import manager as resource
+from ...common.interfaces import MonitoringDataListener, AbstractPlugin, AbstractInfoWidget
+from ...common.util import expand_to_seconds
+
+from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 from ..Console import Plugin as ConsolePlugin
 from ..Phantom import Plugin as PhantomPlugin
-from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
+from ..Telegraf.collector import MonitoringCollector
 
 logger = logging.getLogger(__name__)
 

@@ -1,16 +1,17 @@
-import tempfile
+import Queue
+import hashlib
 import logging
 import os
 import subprocess
-import hashlib
-import Queue
+import tempfile
 import threading
 import time
 from shutil import copyfile, rmtree
 
-from ...core.util import SecuredShell
-from ..Telegraf.reader import MonitoringReader
+from ...common.util import SecuredShell
+
 from ..Telegraf.config import AgentConfig
+from ..Telegraf.reader import MonitoringReader
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko.transport").setLevel(logging.WARNING)

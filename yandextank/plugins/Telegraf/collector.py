@@ -1,10 +1,10 @@
 """Monitoring collector """
 import logging
-import time
 import sys
-import json
+import time
 
-from ...core.interfaces import MonitoringDataListener
+from ...common.interfaces import MonitoringDataListener
+
 from ..Telegraf.client import SSHClient, LocalhostClient
 from ..Telegraf.config import ConfigManager
 

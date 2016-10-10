@@ -1,25 +1,25 @@
 """ The central part of the tool: Core """
-import socket
-
-import configparser
 import datetime
-import logging
-import os
-import shutil
-import tempfile
-import time
-import traceback
 import fnmatch
 import importlib as il
 import json
+import logging
+import os
+import shutil
+import socket
+import tempfile
+import time
+import traceback
 import uuid
-from configparser import NoSectionError
 
-from ..core.resource import manager as resource
-from ..core.util import update_status, execute, pid_exists
+import configparser
+from configparser import NoSectionError
+from ..common.util import update_status, execute, pid_exists
+
+from ..common.resource import manager as resource
 from ..plugins.Aggregator import Plugin as AggregatorPlugin
-from ..plugins.Telegraf import Plugin as TelegrafPlugin
 from ..plugins.Monitoring import Plugin as MonitoringPlugin
+from ..plugins.Telegraf import Plugin as TelegrafPlugin
 
 
 class Job(object):
@@ -172,11 +172,11 @@ class TankCore(object):
             self.log.warning("Aggregator plugin not found:", exc_info=True)
             aggregator = None
 
-        self.job = Job(name=self.get_option(self.SECTION_META, 'job_name'),
-                       description=self.get_option(self.SECTION_META, 'job_description'),
-                       task=self.get_option(self.SECTION_META, 'task'),
-                       version=self.get_option(self.SECTION_META, 'version'),
-                       config_copy=self.get_option(self.SECTION_META, 'config_copy'),
+        self.job = Job(name=self.get_option(self.SECTION_META, 'job_name', ''),
+                       description=self.get_option(self.SECTION_META, 'job_dsc', ''),
+                       task=self.get_option(self.SECTION_META, 'task', ''),
+                       version=self.get_option(self.SECTION_META, 'version', ''),
+                       config_copy=self.get_option(self.SECTION_META, 'config_copy', 'config_copy'),
                        monitoring_plugin=mon,
                        aggregator_plugin=aggregator,
                        tank=socket.getfqdn())
@@ -287,7 +287,7 @@ class TankCore(object):
         return retcode
 
     def taskset(self, pid, path, affinity):
-        if affinity != '':
+        if affinity:
             args = "%s -pc %s %s" % (path, affinity, pid)
             retcode, stdout, stderr = execute(args,
                                               shell=True,
