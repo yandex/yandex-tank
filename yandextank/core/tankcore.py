@@ -11,9 +11,12 @@ import tempfile
 import time
 import traceback
 import uuid
-
 import configparser
+from builtins import str
+
 from configparser import NoSectionError
+from yandextank.common.exceptions import PluginNotPrepared
+
 from ..common.util import update_status, execute, pid_exists
 
 from ..common.resource import manager as resource
@@ -33,10 +36,21 @@ class Job(object):
         self.monitoring_plugin = monitoring_plugin
         self.aggregator_plugin = aggregator_plugin
         self.tank = tank
+        self._phantom_info = None
 
     def subscribe_plugin(self, plugin):
         self.aggregator_plugin.add_result_listener(plugin)
         self.monitoring_plugin.add_listener(plugin)
+
+    @property
+    def phantom_info(self):
+        if self._phantom_info is None:
+            raise PluginNotPrepared
+        return self._phantom_info
+
+    @phantom_info.setter
+    def phantom_info(self, info):
+        self._phantom_info = info
 
 
 class TankCore(object):
@@ -172,11 +186,11 @@ class TankCore(object):
             self.log.warning("Aggregator plugin not found:", exc_info=True)
             aggregator = None
 
-        self.job = Job(name=self.get_option(self.SECTION_META, 'job_name', ''),
-                       description=self.get_option(self.SECTION_META, 'job_dsc', ''),
-                       task=self.get_option(self.SECTION_META, 'task', ''),
-                       version=self.get_option(self.SECTION_META, 'version', ''),
-                       config_copy=self.get_option(self.SECTION_META, 'config_copy', 'config_copy'),
+        self.job = Job(name=str(self.get_option(self.SECTION_META, "job_name", 'none').decode('utf8')),
+                       description=str(self.get_option(self.SECTION_META, "job_dsc", '').decode('utf8')),
+                       task=str(self.get_option(self.SECTION_META, 'task', 'dir')),
+                       version=str(self.get_option(self.SECTION_META, 'ver', '')),
+                       config_copy=self.get_option(self.SECTION_META, 'copy_config_to', 'config_copy'),
                        monitoring_plugin=mon,
                        aggregator_plugin=aggregator,
                        tank=socket.getfqdn())

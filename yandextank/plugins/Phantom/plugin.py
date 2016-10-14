@@ -92,11 +92,7 @@ class Plugin(AbstractPlugin):
             self.phantom.read_config()
 
     def prepare_test(self):
-        aggregator = None
-        try:
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except Exception as ex:
-            logger.warning("No aggregator found: %s", ex)
+        aggregator = self.core.job.aggregator_plugin
 
         if not self.config and not self.phout_import_mode:
 
@@ -139,6 +135,8 @@ class Plugin(AbstractPlugin):
         except Exception as ex:
             logger.debug("Console not found: %s", ex)
             console = None
+
+        self.core.job.phantom_info = self.phantom.get_info()
 
         if console and aggregator:
             widget = PhantomProgressBarWidget(self)
