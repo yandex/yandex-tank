@@ -8,7 +8,7 @@ import time
 
 from pkg_resources import resource_string
 from ...common.util import splitstring
-from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
+from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget, GeneratorPlugin
 
 from .reader import JMeterReader
 from ..Aggregator import Plugin as AggregatorPlugin
@@ -18,7 +18,7 @@ from ..Console import screen as ConsoleScreen
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin):
+class Plugin(AbstractPlugin, GeneratorPlugin):
     """ JMeter tank plugin """
     SECTION = 'jmeter'
 

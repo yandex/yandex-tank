@@ -3,7 +3,7 @@ import logging
 import subprocess
 import time
 
-from ...common.interfaces import AbstractPlugin, AbstractInfoWidget
+from ...common.interfaces import AbstractPlugin, AbstractInfoWidget, GeneratorPlugin
 
 from .config import PoolConfig, PandoraConfig, parse_schedule
 from .reader import PandoraStatsReader
@@ -15,7 +15,7 @@ from ..Phantom import PhantomReader
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin):
+class Plugin(AbstractPlugin, GeneratorPlugin):
     '''     Pandora load generator plugin    '''
 
     OPTION_CONFIG = "config"
@@ -156,9 +156,6 @@ class Plugin(AbstractPlugin):
         else:
             logger.debug("Seems subprocess finished OK")
         return retcode
-
-    def get_info(self):
-        return None
 
 
 class PandoraInfoWidget(AbstractInfoWidget):
