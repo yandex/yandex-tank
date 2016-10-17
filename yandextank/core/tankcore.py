@@ -44,7 +44,7 @@ class Job(object):
     @property
     def phantom_info(self):
         if self._phantom_info is None:
-            raise PluginNotPrepared
+            raise PluginNotPrepared('Phantom')
         return self._phantom_info
 
     @phantom_info.setter
