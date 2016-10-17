@@ -185,12 +185,12 @@ class GeneratorPlugin(object):
 
     class Info(object):
         def __init__(self, target, port, instances, ammo_file, rps_schedule, duration, loop_count):
-            self.target = target,
-            self.port = port,
+            self.target = target
+            self.port = port
             self.instances = instances
-            self.ammo_file = ammo_file,
-            self.rps_schedule = rps_schedule,
-            self.duration = duration,
+            self.ammo_file = ammo_file
+            self.rps_schedule = rps_schedule
+            self.duration = duration
             self.loop_count = loop_count
 
     def get_info(self):
