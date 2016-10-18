@@ -13,7 +13,11 @@ import traceback
 import uuid
 
 import configparser
+from builtins import str
 from configparser import NoSectionError
+from yandextank.common.exceptions import PluginNotPrepared
+from yandextank.common.interfaces import GeneratorPlugin
+
 from ..common.util import update_status, execute, pid_exists
 
 from ..common.resource import manager as resource
@@ -23,8 +27,9 @@ from ..plugins.Telegraf import Plugin as TelegrafPlugin
 
 
 class Job(object):
-    def __init__(self, name, description, task, version, config_copy, monitoring_plugin, aggregator_plugin, tank):
-        # type: (str, str, str, str, str, MonitoringPlugin, AggregatorPlugin, str) -> Job
+    def __init__(self, name, description, task, version, config_copy, monitoring_plugin, aggregator_plugin, tank,
+                 generator_plugin=None):
+        # type: (str, str, str, str, str, MonitoringPlugin, AggregatorPlugin, GeneratorPlugin) -> Job
         self.name = name
         self.description = description
         self.task = task
@@ -33,6 +38,7 @@ class Job(object):
         self.monitoring_plugin = monitoring_plugin
         self.aggregator_plugin = aggregator_plugin
         self.tank = tank
+        self.generator_plugin = generator_plugin
 
     def subscribe_plugin(self, plugin):
         self.aggregator_plugin.add_result_listener(plugin)
@@ -172,13 +178,21 @@ class TankCore(object):
             self.log.warning("Aggregator plugin not found:", exc_info=True)
             aggregator = None
 
-        self.job = Job(name=self.get_option(self.SECTION_META, 'job_name', ''),
-                       description=self.get_option(self.SECTION_META, 'job_dsc', ''),
-                       task=self.get_option(self.SECTION_META, 'task', ''),
-                       version=self.get_option(self.SECTION_META, 'version', ''),
-                       config_copy=self.get_option(self.SECTION_META, 'config_copy', 'config_copy'),
+        # generator plugin
+        try:
+            gen = self.get_plugin_of_type(GeneratorPlugin)
+        except KeyError:
+            self.log.warning("Load generator not found:", exc_info=True)
+            gen = None
+
+        self.job = Job(name=str(self.get_option(self.SECTION_META, "job_name", 'none').decode('utf8')),
+                       description=str(self.get_option(self.SECTION_META, "job_dsc", '').decode('utf8')),
+                       task=str(self.get_option(self.SECTION_META, 'task', 'dir')),
+                       version=str(self.get_option(self.SECTION_META, 'ver', '')),
+                       config_copy=self.get_option(self.SECTION_META, 'copy_config_to', 'config_copy'),
                        monitoring_plugin=mon,
                        aggregator_plugin=aggregator,
+                       generator_plugin=gen,
                        tank=socket.getfqdn())
 
         for plugin in self.plugins:

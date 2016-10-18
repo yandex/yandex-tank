@@ -8,7 +8,7 @@ import subprocess
 import time
 
 from ...common.util import execute, expand_to_seconds
-from ...common.interfaces import AbstractPlugin, AbstractCriterion
+from ...common.interfaces import AbstractPlugin, AbstractCriterion, GeneratorPlugin
 
 from .reader import PhantomReader, PhantomStatsReader
 from .utils import PhantomConfig
@@ -20,7 +20,7 @@ from ..Console import Plugin as ConsolePlugin
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin):
+class Plugin(AbstractPlugin, GeneratorPlugin):
     """     Plugin for running phantom tool    """
 
     OPTION_CONFIG = "config"
@@ -92,11 +92,7 @@ class Plugin(AbstractPlugin):
             self.phantom.read_config()
 
     def prepare_test(self):
-        aggregator = None
-        try:
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except Exception as ex:
-            logger.warning("No aggregator found: %s", ex)
+        aggregator = self.core.job.aggregator_plugin
 
         if not self.config and not self.phout_import_mode:
 
