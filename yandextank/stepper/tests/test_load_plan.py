@@ -11,10 +11,10 @@ class TestLine(object):
         assert rps_list[-1][0] == 100
 
 
-@pytest.mark.parametrize("rps, duration", [
-    (100, 300),
-    (0, 300),
-    (100, 0)
+@pytest.mark.parametrize("rps, duration, rps_list", [
+    (100, 3000, [(100, 3)]),
+    (0, 3000, [(0, 3)]),
+    (100, 0, [(100, 0)])
 ])
 class TestConst(object):
     @pytest.mark.parametrize("check_point, expected", [
@@ -23,11 +23,12 @@ class TestConst(object):
         (lambda duration: duration + 1, lambda rps: 0),
         (lambda duration: -1, lambda rps: 0)
     ])
-    def test_rps_at(self, rps, duration, check_point, expected):
+    def test_rps_at(self, rps, duration, rps_list, check_point, expected):
         assert Const(rps, duration).rps_at(check_point(duration)) == expected(rps)
 
-    def test_get_rps_list(self, rps, duration):
-        assert Const(rps, duration).get_rps_list() == [(rps, duration / 1000.)]
+    def test_get_rps_list(self, rps, duration, rps_list):
+        assert Const(rps, duration).get_rps_list() == rps_list
+        assert isinstance(rps_list[0][1], int)
 
 
 class TestLineNew(object):
