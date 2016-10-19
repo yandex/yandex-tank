@@ -40,7 +40,7 @@ class Const(object):
         return int(self.duration / 1000 * self.rps)
 
     def get_rps_list(self):
-        return [(int(self.rps), self.duration / 1000.)]
+        return [(int(self.rps), self.duration / 1000)]
 
     def __repr__(self):
         return 'const(%s, %s)' % (self.rps, self.duration / 1000)
