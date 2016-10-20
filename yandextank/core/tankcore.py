@@ -42,7 +42,7 @@ class Job(object):
 
     def subscribe_plugin(self, plugin):
         self.aggregator_plugin.add_result_listener(plugin)
-        self.monitoring_plugin.add_listener(plugin)
+        self.monitoring_plugin.monitoring.add_listener(plugin)
 
 
 class TankCore(object):
