@@ -61,7 +61,8 @@ class TankCore(object):
         self.config = ConfigManager()
         self.status = {}
         self.plugins = []
-        self.artifacts_dir = None
+        self.artifacts_dir_name = None
+        self._artifacts_dir = None
         self.artifact_files = {}
         self.artifacts_base_dir = '.'
         self.manual_start = False
@@ -110,7 +111,7 @@ class TankCore(object):
         base_dir = self.get_option(self.SECTION, "artifacts_base_dir",
                                    self.artifacts_base_dir)
         self.artifacts_base_dir = os.path.expanduser(base_dir)
-        self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
+        self.artifacts_dir_name = self.get_option(self.SECTION, "artifacts_dir", "")
         self.taskset_path = self.get_option(self.SECTION, 'taskset_path',
                                             'taskset')
         self.taskset_affinity = self.get_option(self.SECTION, 'affinity', '')
@@ -130,7 +131,7 @@ class TankCore(object):
                                  plugin_path)
                 if plugin_path.startswith("Tank/Plugins/"):
                     plugin_path = "yandextank.plugins." + \
-                        plugin_path.split('/')[-1].split('.')[0]
+                                  plugin_path.split('/')[-1].split('.')[0]
                     self.log.warning("Converted plugin path to %s",
                                      plugin_path)
                 else:
@@ -164,13 +165,13 @@ class TankCore(object):
         try:
             mon = self.get_plugin_of_type(TelegrafPlugin)
         except KeyError:
-            self.log.debug("Telegraf plugin not found:", exc_info=True) 
+            self.log.debug("Telegraf plugin not found:", exc_info=True)
             try:
                 mon = self.get_plugin_of_type(MonitoringPlugin)
             except KeyError:
                 self.log.debug("Monitoring plugin not found:", exc_info=True)
                 mon = None
-                
+
         # aggregator plugin
         try:
             aggregator = self.get_plugin_of_type(AggregatorPlugin)
@@ -316,18 +317,6 @@ class TankCore(object):
 
     def __collect_artifacts(self):
         self.log.debug("Collecting artifacts")
-        if not self.artifacts_dir:
-            date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
-            self.artifacts_dir = tempfile.mkdtemp("", date_str,
-                                                  self.artifacts_base_dir)
-        else:
-            self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
-
-        if not os.path.isdir(self.artifacts_dir):
-            os.makedirs(self.artifacts_dir)
-
-        os.chmod(self.artifacts_dir, 0o755)
-
         self.log.info("Artifacts dir: %s", self.artifacts_dir)
         for filename, keep in self.artifact_files.items():
             try:
@@ -398,10 +387,6 @@ class TankCore(object):
         """
         Move or copy single file to artifacts dir
         """
-        if not self.artifacts_dir:
-            self.log.warning("No artifacts dir configured")
-            return
-
         dest = self.artifacts_dir + '/' + os.path.basename(filename)
         self.log.debug("Collecting file: %s to %s", filename, dest)
         if not filename or not os.path.exists(filename):
@@ -434,7 +419,7 @@ class TankCore(object):
             try:
                 section = option_str[:option_str.index('.')]
                 option = option_str[
-                    option_str.index('.') + 1:option_str.index('=')]
+                         option_str.index('.') + 1:option_str.index('=')]
             except ValueError:
                 section = default_section
                 option = option_str[:option_str.index('=')]
@@ -524,6 +509,19 @@ class TankCore(object):
                 self.log.error("Failed closing plugin %s: %s", plugin, ex)
                 self.log.debug("Failed closing plugin: %s",
                                traceback.format_exc(ex))
+
+    @property
+    def artifacts_dir(self):
+        if not self.artifacts_dir_name:
+            date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
+            self.artifacts_dir_name = tempfile.mkdtemp("", date_str,
+                                                       self.artifacts_base_dir)
+        if not self._artifacts_dir:
+            self._artifacts_dir = os.path.expanduser(self.artifacts_dir_name)
+            if not os.path.isdir(self.artifacts_dir):
+                os.makedirs(self.artifacts_dir)
+            os.chmod(self._artifacts_dir, 0o755)
+        return self._artifacts_dir
 
 
 class ConfigManager(object):
