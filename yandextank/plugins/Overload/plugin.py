@@ -350,6 +350,12 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         except Exception:  # pylint: disable=W0703
             logger.debug("Can't send console snapshot: %s", exc_info=True)
 
+    def make_symlink(self, name):
+        PLUGIN_DIR = os.path.join(self.core.artifacts_base_dir, self.SECTION)
+        if not os.path.exists(PLUGIN_DIR):
+            os.makedirs(PLUGIN_DIR)
+        os.symlink(self.core.artifacts_dir, os.path.join(PLUGIN_DIR, str(name)))
+
 
 class JobInfoWidget(AbstractInfoWidget):
     def __init__(self, sender):

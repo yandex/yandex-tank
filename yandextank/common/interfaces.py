@@ -88,12 +88,6 @@ class AbstractPlugin(object):
         """
         pass
 
-    def make_symlink(self, name):
-        PLUGIN_DIR = os.path.join(self.core.artifacts_base_dir, self.SECTION)
-        if not os.path.exists(PLUGIN_DIR):
-            os.makedirs(PLUGIN_DIR)
-        os.symlink(self.core.artifacts_dir, os.path.join(PLUGIN_DIR, str(name)))
-
 
 class MonitoringDataListener(object):
     """ Monitoring interface
