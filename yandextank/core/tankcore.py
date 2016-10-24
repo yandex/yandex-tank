@@ -521,6 +521,7 @@ class TankCore(object):
             if not os.path.isdir(self.artifacts_dir):
                 os.makedirs(self.artifacts_dir)
             os.chmod(self._artifacts_dir, 0o755)
+            self._artifacts_dir = os.path.abspath(self._artifacts_dir)
         return self._artifacts_dir
 
 

@@ -10,8 +10,6 @@ import pwd
 import socket
 import sys
 
-from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener, AbstractInfoWidget
-
 from .client import OverloadClient
 from ..Aggregator import Plugin as AggregatorPlugin
 from ..Autostop import Plugin as AutostopPlugin
@@ -21,6 +19,7 @@ from ..Monitoring import Plugin as MonitoringPlugin
 from ..Pandora import Plugin as PandoraPlugin
 from ..Phantom import Plugin as PhantomPlugin
 from ..Telegraf import Plugin as TelegrafPlugin
+from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener, AbstractInfoWidget
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
@@ -229,9 +228,9 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         logger.info("Web link: %s", web_link)
         self.publish("jobno", self.jobno)
         self.publish("web_link", web_link)
-        if not self._core_with_tank_api():
-            self.core.artifacts_dir = self.core.artifacts_base_dir + \
-                '/' + str(self.jobno)
+
+        self.make_symlink(self.jobno)
+        
         self.set_option("jobno", self.jobno)
         if self.jobno_file:
             logger.debug("Saving jobno to: %s", self.jobno_file)
@@ -350,6 +349,12 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             self.api_client.send_console(self.jobno, text)
         except Exception:  # pylint: disable=W0703
             logger.debug("Can't send console snapshot: %s", exc_info=True)
+
+    def make_symlink(self, name):
+        PLUGIN_DIR = os.path.join(self.core.artifacts_base_dir, self.SECTION)
+        if not os.path.exists(PLUGIN_DIR):
+            os.makedirs(PLUGIN_DIR)
+        os.symlink(self.core.artifacts_dir, os.path.join(PLUGIN_DIR, str(name)))
 
 
 class JobInfoWidget(AbstractInfoWidget):
