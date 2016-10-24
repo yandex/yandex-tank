@@ -45,6 +45,7 @@ class AbstractGun(AbstractPlugin):
                 data_item["proto_code"] = 500
             if data_item["net_code"] == 0:
                 data_item["net_code"] == 1
+            raise
         finally:
             if data_item.get("interval_real") is None:
                 data_item["interval_real"] = int((time.time() - start_time) *
