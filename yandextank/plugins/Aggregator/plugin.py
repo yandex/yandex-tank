@@ -50,7 +50,7 @@ class Plugin(AbstractPlugin):
 
     def configure(self):
         self.aggregator_config = json.loads(resource_string(
-            __name__, 'config/phout.json'))
+            __name__, 'config/phout.json').decode('utf8'))
         verbose_histogram_option = self.get_option("verbose_histogram", "0")
         self.verbose_histogram = (
             verbose_histogram_option.lower() == "true") or (

@@ -19,12 +19,11 @@ class Plugin(AbstractPlugin, AbstractInfoWidget):
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         AbstractInfoWidget.__init__(self)
-        self.lines = resource_stream(__name__, "config/tips.txt").readlines()
+        self.lines = [l.decode('utf-8') for l in resource_stream(__name__, "config/tips.txt").readlines()]
         self.disable = 0
 
         line = random.choice(self.lines)
-        self.section = line[:line.index(':')]
-        self.tip = line[line.index(':') + 1:].strip()
+        self.section, self.tip = [_.strip() for _ in line.split(':', 1)]
         self.probability = 0.0
 
     @staticmethod

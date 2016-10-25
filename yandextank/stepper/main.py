@@ -253,7 +253,7 @@ class StepperWrapper(object):
                 hashed_str += sep + \
                     ';'.join(self.uris) + sep + ';'.join(self.headers)
             self.log.debug("stpd-hash source: %s", hashed_str)
-            hasher.update(hashed_str)
+            hasher.update(hashed_str.encode('utf8'))
             if not os.path.exists(self.cache_dir):
                 os.makedirs(self.cache_dir)
             stpd = self.cache_dir + '/' + \
