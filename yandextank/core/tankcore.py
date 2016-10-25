@@ -16,6 +16,9 @@ from builtins import str
 
 from configparser import NoSectionError
 from yandextank.common.exceptions import PluginNotPrepared
+from configparser import NoSectionError
+from yandextank.common.exceptions import PluginNotPrepared
+from yandextank.common.interfaces import GeneratorPlugin
 
 from ..common.util import update_status, execute, pid_exists
 
@@ -26,8 +29,9 @@ from ..plugins.Telegraf import Plugin as TelegrafPlugin
 
 
 class Job(object):
-    def __init__(self, name, description, task, version, config_copy, monitoring_plugin, aggregator_plugin, tank):
-        # type: (str, str, str, str, str, MonitoringPlugin, AggregatorPlugin, str) -> Job
+    def __init__(self, name, description, task, version, config_copy, monitoring_plugin, aggregator_plugin, tank,
+                 generator_plugin=None):
+        # type: (str, str, str, str, str, MonitoringPlugin, AggregatorPlugin, GeneratorPlugin) -> Job
         self.name = name
         self.description = description
         self.task = task
@@ -37,10 +41,11 @@ class Job(object):
         self.aggregator_plugin = aggregator_plugin
         self.tank = tank
         self._phantom_info = None
+        self.generator_plugin = generator_plugin
 
     def subscribe_plugin(self, plugin):
         self.aggregator_plugin.add_result_listener(plugin)
-        self.monitoring_plugin.add_listener(plugin)
+        self.monitoring_plugin.monitoring.add_listener(plugin)
 
     @property
     def phantom_info(self):
@@ -69,7 +74,8 @@ class TankCore(object):
         self.config = ConfigManager()
         self.status = {}
         self.plugins = []
-        self.artifacts_dir = None
+        self.artifacts_dir_name = None
+        self._artifacts_dir = None
         self.artifact_files = {}
         self.artifacts_base_dir = '.'
         self.manual_start = False
@@ -118,7 +124,7 @@ class TankCore(object):
         base_dir = self.get_option(self.SECTION, "artifacts_base_dir",
                                    self.artifacts_base_dir)
         self.artifacts_base_dir = os.path.expanduser(base_dir)
-        self.artifacts_dir = self.get_option(self.SECTION, "artifacts_dir", "")
+        self.artifacts_dir_name = self.get_option(self.SECTION, "artifacts_dir", "")
         self.taskset_path = self.get_option(self.SECTION, 'taskset_path',
                                             'taskset')
         self.taskset_affinity = self.get_option(self.SECTION, 'affinity', '')
@@ -138,7 +144,7 @@ class TankCore(object):
                                  plugin_path)
                 if plugin_path.startswith("Tank/Plugins/"):
                     plugin_path = "yandextank.plugins." + \
-                        plugin_path.split('/')[-1].split('.')[0]
+                                  plugin_path.split('/')[-1].split('.')[0]
                     self.log.warning("Converted plugin path to %s",
                                      plugin_path)
                 else:
@@ -172,19 +178,26 @@ class TankCore(object):
         try:
             mon = self.get_plugin_of_type(TelegrafPlugin)
         except KeyError:
-            self.log.debug("Telegraf plugin not found:", exc_info=True) 
+            self.log.debug("Telegraf plugin not found:", exc_info=True)
             try:
                 mon = self.get_plugin_of_type(MonitoringPlugin)
             except KeyError:
                 self.log.debug("Monitoring plugin not found:", exc_info=True)
                 mon = None
-                
+
         # aggregator plugin
         try:
             aggregator = self.get_plugin_of_type(AggregatorPlugin)
         except KeyError:
             self.log.warning("Aggregator plugin not found:", exc_info=True)
             aggregator = None
+
+        # generator plugin
+        try:
+            gen = self.get_plugin_of_type(GeneratorPlugin)
+        except KeyError:
+            self.log.warning("Load generator not found:", exc_info=True)
+            gen = None
 
         self.job = Job(name=str(self.get_option(self.SECTION_META, "job_name", 'none').decode('utf8')),
                        description=str(self.get_option(self.SECTION_META, "job_dsc", '').decode('utf8')),
@@ -193,6 +206,7 @@ class TankCore(object):
                        config_copy=self.get_option(self.SECTION_META, 'copy_config_to', 'config_copy'),
                        monitoring_plugin=mon,
                        aggregator_plugin=aggregator,
+                       generator_plugin=gen,
                        tank=socket.getfqdn())
 
         for plugin in self.plugins:
@@ -316,18 +330,6 @@ class TankCore(object):
 
     def __collect_artifacts(self):
         self.log.debug("Collecting artifacts")
-        if not self.artifacts_dir:
-            date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
-            self.artifacts_dir = tempfile.mkdtemp("", date_str,
-                                                  self.artifacts_base_dir)
-        else:
-            self.artifacts_dir = os.path.expanduser(self.artifacts_dir)
-
-        if not os.path.isdir(self.artifacts_dir):
-            os.makedirs(self.artifacts_dir)
-
-        os.chmod(self.artifacts_dir, 0o755)
-
         self.log.info("Artifacts dir: %s", self.artifacts_dir)
         for filename, keep in self.artifact_files.items():
             try:
@@ -398,10 +400,6 @@ class TankCore(object):
         """
         Move or copy single file to artifacts dir
         """
-        if not self.artifacts_dir:
-            self.log.warning("No artifacts dir configured")
-            return
-
         dest = self.artifacts_dir + '/' + os.path.basename(filename)
         self.log.debug("Collecting file: %s to %s", filename, dest)
         if not filename or not os.path.exists(filename):
@@ -434,7 +432,7 @@ class TankCore(object):
             try:
                 section = option_str[:option_str.index('.')]
                 option = option_str[
-                    option_str.index('.') + 1:option_str.index('=')]
+                         option_str.index('.') + 1:option_str.index('=')]
             except ValueError:
                 section = default_section
                 option = option_str[:option_str.index('=')]
@@ -524,6 +522,20 @@ class TankCore(object):
                 self.log.error("Failed closing plugin %s: %s", plugin, ex)
                 self.log.debug("Failed closing plugin: %s",
                                traceback.format_exc(ex))
+
+    @property
+    def artifacts_dir(self):
+        if not self.artifacts_dir_name:
+            date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
+            self.artifacts_dir_name = tempfile.mkdtemp("", date_str,
+                                                       self.artifacts_base_dir)
+        if not self._artifacts_dir:
+            self._artifacts_dir = os.path.expanduser(self.artifacts_dir_name)
+            if not os.path.isdir(self.artifacts_dir):
+                os.makedirs(self.artifacts_dir)
+            os.chmod(self._artifacts_dir, 0o755)
+            self._artifacts_dir = os.path.abspath(self._artifacts_dir)
+        return self._artifacts_dir
 
 
 class ConfigManager(object):

@@ -2,7 +2,7 @@ import logging
 import time
 
 import pip
-from ...common.interfaces import AbstractPlugin
+from ...common.interfaces import AbstractPlugin, GeneratorPlugin
 
 from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun, UltimateGun
 from .reader import BfgReader, BfgStatsReader
@@ -13,7 +13,7 @@ from ..Console import Plugin as ConsolePlugin
 from ...stepper import StepperWrapper
 
 
-class Plugin(AbstractPlugin):
+class Plugin(AbstractPlugin, GeneratorPlugin):
     ''' Big Fucking Gun plugin '''
     SECTION = 'bfg'
 

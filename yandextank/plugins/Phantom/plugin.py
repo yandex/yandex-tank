@@ -8,7 +8,7 @@ import subprocess
 import time
 
 from ...common.util import execute, expand_to_seconds
-from ...common.interfaces import AbstractPlugin, AbstractCriterion
+from ...common.interfaces import AbstractPlugin, AbstractCriterion, GeneratorPlugin
 
 from .reader import PhantomReader, PhantomStatsReader
 from .utils import PhantomConfig
@@ -20,7 +20,7 @@ from ..Console import Plugin as ConsolePlugin
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin):
+class Plugin(AbstractPlugin, GeneratorPlugin):
     """     Plugin for running phantom tool    """
 
     OPTION_CONFIG = "config"

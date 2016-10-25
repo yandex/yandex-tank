@@ -1,4 +1,5 @@
 import logging
+import os
 
 
 class AbstractPlugin(object):
@@ -172,3 +173,27 @@ class AbstractCriterion(object):
     def get_type_string():
         """ returns string that used as config name for criterion """
         raise NotImplementedError("Abstract methods requires overriding")
+
+
+class GeneratorPlugin(object):
+    DEFAULT_INFO = {'target': 'undefined',
+                    'port': 80,
+                    'instances': 1,
+                    'ammo_file': '',
+                    'rps_schedule': [],
+                    'duration': 0,
+                    'loop_count': 0}
+
+    class Info(object):
+        def __init__(self, target, port, instances, ammo_file, rps_schedule, duration, loop_count):
+            self.target = target
+            self.port = port
+            self.instances = instances
+            self.ammo_file = ammo_file
+            self.rps_schedule = rps_schedule
+            self.duration = duration
+            self.loop_count = loop_count
+
+    def get_info(self):
+        # type: () -> Info
+        return self.Info(**self.DEFAULT_INFO)

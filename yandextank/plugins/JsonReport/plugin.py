@@ -21,24 +21,25 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         return []
 
     def configure(self):
-        try:
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except KeyError:
-            logger.debug("Aggregator plugin not found", exc_info=True)
-        else:
-            aggregator.add_result_listener(self)
-
-        try:
-            self.mon = self.core.get_plugin_of_type(TelegrafPlugin)
-        except KeyError:
-            logger.debug("Telegraf plugin not found:", exc_info=True)
-            try:
-                self.mon = self.core.get_plugin_of_type(MonitoringPlugin)
-            except KeyError:
-                logger.debug("Monitoring plugin not found:", exc_info=True)
-
-        if self.mon and self.mon.monitoring:
-            self.mon.monitoring.add_listener(self)
+        # try:
+        #     aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+        # except KeyError:
+        #     logger.debug("Aggregator plugin not found", exc_info=True)
+        # else:
+        #     aggregator.add_result_listener(self)
+        #
+        # try:
+        #     self.mon = self.core.get_plugin_of_type(TelegrafPlugin)
+        # except KeyError:
+        #     logger.debug("Telegraf plugin not found:", exc_info=True)
+        #     try:
+        #         self.mon = self.core.get_plugin_of_type(MonitoringPlugin)
+        #     except KeyError:
+        #         logger.debug("Monitoring plugin not found:", exc_info=True)
+        #
+        # if self.mon and self.mon.monitoring:
+        #     self.mon.monitoring.add_listener(self)
+        self.core.job.subscribe_plugin(self)
 
     def on_aggregated_data(self, data, stats):
         """
