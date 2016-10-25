@@ -29,9 +29,9 @@ class StpdReader(object):
     def __iter__(self):
         def read_chunk_header(ammo_file):
             chunk_header = ''
-            while chunk_header in '':
+            while not chunk_header:
                 line = ammo_file.readline().decode('utf8')
-                if line in '':
+                if not line:
                     return line  # EOF
                 chunk_header = line.strip('\r\n')
             return chunk_header

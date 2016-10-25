@@ -18,7 +18,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     SECTION = 'json_report'
 
     def get_available_options(self):
-        return []
+        return ['monitoring_log', 'test_data_log', 'test_stats_log']
 
     def configure(self):
         self.monitoring_logger = self.create_file_logger('monitoring',
