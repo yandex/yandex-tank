@@ -3,6 +3,7 @@
 # pylint: disable=missing-docstring
 
 import logging
+import os
 
 from ..Aggregator import Plugin as AggregatorPlugin
 from ..Monitoring import Plugin as MonitoringPlugin
@@ -14,40 +15,41 @@ logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     # pylint:disable=R0902
-    """ Yandex Overload analytics service client (https://overload.yandex.net) """
     SECTION = 'json_report'
 
     def get_available_options(self):
         return []
 
     def configure(self):
-        # try:
-        #     aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        # except KeyError:
-        #     logger.debug("Aggregator plugin not found", exc_info=True)
-        # else:
-        #     aggregator.add_result_listener(self)
-        #
-        # try:
-        #     self.mon = self.core.get_plugin_of_type(TelegrafPlugin)
-        # except KeyError:
-        #     logger.debug("Telegraf plugin not found:", exc_info=True)
-        #     try:
-        #         self.mon = self.core.get_plugin_of_type(MonitoringPlugin)
-        #     except KeyError:
-        #         logger.debug("Monitoring plugin not found:", exc_info=True)
-        #
-        # if self.mon and self.mon.monitoring:
-        #     self.mon.monitoring.add_listener(self)
+        self.monitoring_logger = self.create_file_logger('monitoring',
+                                                         self.get_option('monitoring_log',
+                                                                         'monitoring.log'))
+        self.aggregator_data_logger = self.create_file_logger('aggregator_data',
+                                                              self.get_option('test_data_log',
+                                                                              'test_data.log'))
+        self.stats_logger = self.create_file_logger('stats',
+                                                    self.get_option('test_stats_log',
+                                                                    'test_stats.log'))
         self.core.job.subscribe_plugin(self)
+
+    def create_file_logger(self, logger_name, file_name, formatter=None):
+        loggr = logging.getLogger(logger_name)
+        loggr.setLevel(logging.INFO)
+        handler = logging.FileHandler(os.path.join(self.core.artifacts_dir, file_name), mode='w')
+        handler.setLevel(logging.INFO)
+        if formatter:
+            handler.setFormatter(formatter)
+        loggr.addHandler(handler)
+        loggr.propagate = False
+        return loggr
 
     def on_aggregated_data(self, data, stats):
         """
         @data: aggregated data
         @stats: stats about gun
         """
-        print(data)
-        print(stats)
+        self.aggregator_data_logger.info(data)
+        self.stats_logger.info(stats)
 
     def monitoring_data(self, data_list):
-        print(data_list)
+        self.monitoring_logger.info(data_list)
