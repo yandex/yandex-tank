@@ -136,6 +136,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             logger.debug("Console not found: %s", ex)
             console = None
 
+        self.core.job.phantom_info = self.phantom.get_info()
+
         if console and aggregator:
             widget = PhantomProgressBarWidget(self)
             console.add_info_widget(widget)

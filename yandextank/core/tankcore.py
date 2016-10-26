@@ -11,9 +11,11 @@ import tempfile
 import time
 import traceback
 import uuid
-
 import configparser
 from builtins import str
+
+from configparser import NoSectionError
+from yandextank.common.exceptions import PluginNotPrepared
 from configparser import NoSectionError
 from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin
@@ -38,11 +40,22 @@ class Job(object):
         self.monitoring_plugin = monitoring_plugin
         self.aggregator_plugin = aggregator_plugin
         self.tank = tank
+        self._phantom_info = None
         self.generator_plugin = generator_plugin
 
     def subscribe_plugin(self, plugin):
         self.aggregator_plugin.add_result_listener(plugin)
         self.monitoring_plugin.monitoring.add_listener(plugin)
+
+    @property
+    def phantom_info(self):
+        if self._phantom_info is None:
+            raise PluginNotPrepared
+        return self._phantom_info
+
+    @phantom_info.setter
+    def phantom_info(self, info):
+        self._phantom_info = info
 
 
 class TankCore(object):
@@ -186,8 +199,8 @@ class TankCore(object):
             self.log.warning("Load generator not found:", exc_info=True)
             gen = None
 
-        self.job = Job(name=str(self.get_option(self.SECTION_META, "job_name", 'none').decode('utf8')),
-                       description=str(self.get_option(self.SECTION_META, "job_dsc", '').decode('utf8')),
+        self.job = Job(name=str(self.get_option(self.SECTION_META, "job_name", 'none')),
+                       description=str(self.get_option(self.SECTION_META, "job_dsc", '')),
                        task=str(self.get_option(self.SECTION_META, 'task', 'dir')),
                        version=str(self.get_option(self.SECTION_META, 'ver', '')),
                        config_copy=self.get_option(self.SECTION_META, 'copy_config_to', 'config_copy'),
@@ -550,7 +563,7 @@ class ConfigManager(object):
             filename = self.file
 
         if filename:
-            with open(filename, 'wb') as handle:
+            with open(filename, 'w') as handle:
                 self.config.write(handle)
 
     def get_options(self, section, prefix=''):
