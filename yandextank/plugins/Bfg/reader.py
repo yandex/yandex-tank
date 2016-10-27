@@ -14,7 +14,7 @@ def records_to_df(records):
 
 
 def _expand_steps(steps):
-    return list(itt.chain(*([rps] * duration for rps, duration in steps)))
+    return list(itt.chain(*[[rps] * int(duration) for rps, duration in steps]))
 
 
 class BfgReader(object):
