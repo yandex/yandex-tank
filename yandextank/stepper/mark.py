@@ -74,17 +74,19 @@ def get_marker(marker_type, enum_ammo=False):
     >>> marker(__test_missile)
     '_example_search_hello#1'
     '''
-    if marker_type and marker_type is not '0':
-        try:
-            limit = int(marker_type)
-            marker = __UriMarker(limit)
-        except ValueError:
-            if marker_type in __markers:
-                marker = __markers[marker_type]
-            else:
-                raise NotImplementedError('No such marker: "%s"' % marker_type)
-    else:
-        marker = lambda m: ''
+    try:
+        limit = int(marker_type)
+        if limit:
+            marker = __UriMarker(marker_type)
+        else:
+            marker = lambda m: ''
+    except ValueError:
+        if marker_type in __markers:
+            marker = __markers[marker_type]
+        else:
+            raise NotImplementedError('No such marker: "%s"' % marker_type)
+
+    # todo: fix u'False'
     if enum_ammo:
         marker = __Enumerator(marker)
     return marker
