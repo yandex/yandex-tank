@@ -176,7 +176,7 @@ class AbstractCriterion(object):
 
 
 class GeneratorPlugin(object):
-    DEFAULT_INFO = {'target': 'undefined',
+    DEFAULT_INFO = {'address': 'undefined',
                     'port': 80,
                     'instances': 1,
                     'ammo_file': '',
@@ -185,8 +185,8 @@ class GeneratorPlugin(object):
                     'loop_count': 0}
 
     class Info(object):
-        def __init__(self, target, port, instances, ammo_file, rps_schedule, duration, loop_count):
-            self.target = target
+        def __init__(self, address, port, instances, ammo_file, rps_schedule, duration, loop_count):
+            self.address = address
             self.port = port
             self.instances = instances
             self.ammo_file = ammo_file
