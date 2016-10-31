@@ -12,6 +12,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y sudo && \
     apt-get install -y vim && \
     apt-get install -y wget && \
+    apt-get install -y curl && \
     apt-get install software-properties-common -y && \
     add-apt-repository ppa:yandex-load/main -y && \
     apt-get update && apt-get install -y python-pip phantom phantom-ssl
