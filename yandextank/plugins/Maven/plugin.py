@@ -9,7 +9,7 @@ import time
 
 from builtins import super
 from ...common.resource import manager as resource_manager
-from ...common.interfaces import AbstractPlugin
+from ...common.interfaces import AbstractPlugin, GeneratorPlugin
 
 from .console import MavenInfoWidget
 from .reader import MavenReader, MavenStatsReader
@@ -19,7 +19,7 @@ from ..Console import Plugin as ConsolePlugin
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin):
+class Plugin(AbstractPlugin, GeneratorPlugin):
 
     SECTION = "maven"
 
@@ -47,11 +47,7 @@ class Plugin(AbstractPlugin):
         self.maven_args = self.get_option("mvn_args", '').split()
 
     def prepare_test(self):
-        aggregator = None
-        try:
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except KeyError as ex:
-            logger.warning("No aggregator found: %s", ex)
+        aggregator = self.core.job.aggregator_plugin
 
         if aggregator:
             aggregator.reader = MavenReader()
@@ -66,8 +62,8 @@ class Plugin(AbstractPlugin):
         if console:
             widget = MavenInfoWidget(self)
             console.add_info_widget(widget)
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-            aggregator.add_result_listener(widget)
+            if aggregator:
+                aggregator.add_result_listener(widget)
 
     def start_test(self):
         args = [self.maven_cmd, "test", "-Dtest=%s" % self.testcase
@@ -100,6 +96,3 @@ class Plugin(AbstractPlugin):
         else:
             logger.debug("Seems subprocess finished OK")
         return retcode
-
-    def get_info(self):
-        return None
