@@ -10,6 +10,7 @@ LABEL Description="Fresh Yandex.Tank from github master branch with phantom" Ven
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -y sudo && \
+    apt-get install -y vim && \
     apt-get install -y wget && \
     apt-get install software-properties-common -y && \
     add-apt-repository ppa:yandex-load/main -y && \
