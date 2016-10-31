@@ -40,5 +40,5 @@ RUN echo "y" | android update sdk --no-ui --force --filter platform-tools
 
 RUN pip install uiautomator Appium-Python-Client
 
-RUN curl -sL https://deb.nodesource.com/setup | bash - && \
+RUN curl -sL https://deb.nodesource.com/setup_6.x | bash - && \
     apt install -y nodejs && npm install -g appium
