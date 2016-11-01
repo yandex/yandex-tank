@@ -70,7 +70,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         else:
             cached_stpd = False
         self.bfg = BFG(gun=self.gun,
-                       instances=self.get_option("instances", '15'),
+                       instances=self.stepper_wrapper.instances,
                        stpd_filename=self.stepper_wrapper.stpd,
                        cached_stpd=cached_stpd)
         aggregator = None
