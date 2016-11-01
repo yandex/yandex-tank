@@ -45,7 +45,10 @@ class Job(object):
 
     def subscribe_plugin(self, plugin):
         self.aggregator_plugin.add_result_listener(plugin)
-        self.monitoring_plugin.monitoring.add_listener(plugin)
+        try:
+            self.monitoring_plugin.monitoring.add_listener(plugin)
+        except AttributeError:
+            logging.warning('Monitoring plugin is not enabled')
 
     @property
     def phantom_info(self):
