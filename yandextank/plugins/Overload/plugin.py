@@ -228,10 +228,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         logger.info("Web link: %s", web_link)
         self.publish("jobno", self.jobno)
         self.publish("web_link", web_link)
-
         self.make_symlink(self.jobno)
-        
-        self.set_option("jobno", self.jobno)
+        self.set_option("jobno", str(self.jobno))
         if self.jobno_file:
             logger.debug("Saving jobno to: %s", self.jobno_file)
             fdes = open(self.jobno_file, 'w')
