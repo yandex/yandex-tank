@@ -58,7 +58,7 @@ class LoadPlanBuilder(object):
 
     def stairway(self, initial_instances, final_instances, step_size,
                  step_duration):
-        step_count = (final_instances - initial_instances) / step_size
+        step_count = (final_instances - initial_instances) // step_size
         self.log.debug("Making a stairway: %s steps" % step_count)
         self.start(initial_instances - self.instances)
         for i in xrange(1, step_count + 1):
