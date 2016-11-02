@@ -12,6 +12,9 @@ import time
 import traceback
 import uuid
 import configparser
+import pkg_resources
+import sys
+import platform
 from builtins import str
 
 from configparser import NoSectionError
@@ -539,6 +542,14 @@ class TankCore(object):
             os.chmod(self._artifacts_dir, 0o755)
             self._artifacts_dir = os.path.abspath(self._artifacts_dir)
         return self._artifacts_dir
+
+    @staticmethod
+    def get_user_agent():
+        tank_agent = 'YandexTank/{}'.format(pkg_resources.require('yandextank')[0].version)
+        py_info = sys.version_info
+        python_agent = 'Python/{}.{}.{}'.format(py_info[0], py_info[1], py_info[2])
+        os_agent = 'OS/{}'.format(platform.platform())
+        return ' '.join((tank_agent, python_agent, os_agent))
 
 
 class ConfigManager(object):
