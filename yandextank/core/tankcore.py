@@ -75,15 +75,15 @@ class TankCore(object):
     UUID_OPTION = 'uuid'
     LOCK_DIR = '/var/lock'
 
-    def __init__(self):
+    def __init__(self, artifacts_base_dir=None, artifacts_dir_name=None):
         self.log = logging.getLogger(__name__)
         self.config = ConfigManager()
         self.status = {}
         self.plugins = []
-        self.artifacts_dir_name = None
+        self.artifacts_dir_name = artifacts_dir_name
         self._artifacts_dir = None
         self.artifact_files = {}
-        self.artifacts_base_dir = '.'
+        self.artifacts_base_dir = artifacts_base_dir
         self.manual_start = False
         self.scheduled_start = None
         self.interrupted = False
@@ -127,10 +127,12 @@ class TankCore(object):
         """
         self.log.info("Loading plugins...")
 
-        base_dir = self.get_option(self.SECTION, "artifacts_base_dir",
-                                   self.artifacts_base_dir)
-        self.artifacts_base_dir = os.path.expanduser(base_dir)
-        self.artifacts_dir_name = self.get_option(self.SECTION, "artifacts_dir", "")
+        if not self.artifacts_base_dir:
+            self.artifacts_base_dir = os.path.expanduser(self.get_option(self.SECTION, "artifacts_base_dir", '.'))
+
+        if not self.artifacts_dir_name:
+            self.artifacts_dir_name = self.get_option(self.SECTION, "artifacts_dir", "")
+
         self.taskset_path = self.get_option(self.SECTION, 'taskset_path',
                                             'taskset')
         self.taskset_affinity = self.get_option(self.SECTION, 'affinity', '')
@@ -531,16 +533,15 @@ class TankCore(object):
 
     @property
     def artifacts_dir(self):
-        if not self.artifacts_dir_name:
-            date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
-            self.artifacts_dir_name = tempfile.mkdtemp("", date_str,
-                                                       self.artifacts_base_dir)
         if not self._artifacts_dir:
-            self._artifacts_dir = os.path.expanduser(self.artifacts_dir_name)
-            if not os.path.isdir(self.artifacts_dir):
-                os.makedirs(self.artifacts_dir)
-            os.chmod(self._artifacts_dir, 0o755)
-            self._artifacts_dir = os.path.abspath(self._artifacts_dir)
+            if not self.artifacts_dir_name:
+                date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
+                self.artifacts_dir_name = tempfile.mkdtemp("", date_str,
+                                                           self.artifacts_base_dir)
+            elif not os.path.isdir(self.artifacts_dir_name):
+                os.makedirs(self.artifacts_dir_name)
+            os.chmod(self.artifacts_dir_name, 0o755)
+            self._artifacts_dir = os.path.abspath(self.artifacts_dir_name)
         return self._artifacts_dir
 
     @staticmethod
