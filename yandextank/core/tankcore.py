@@ -19,8 +19,6 @@ from builtins import str
 
 from configparser import NoSectionError
 from yandextank.common.exceptions import PluginNotPrepared
-from configparser import NoSectionError
-from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin
 
 from ..common.util import update_status, execute, pid_exists
@@ -482,7 +480,7 @@ class TankCore(object):
                 self.log.warn("Lock file present: %s", full_name)
 
                 try:
-                    info = configparser.ConfigParser()
+                    info = configparser.ConfigParser(strict=False)
                     info.read(full_name)
                     pid = info.get(TankCore.SECTION, self.PID_OPTION)
                     if not pid_exists(int(pid)):
@@ -559,7 +557,7 @@ class ConfigManager(object):
     def __init__(self):
         self.file = None
         self.log = logging.getLogger(__name__)
-        self.config = configparser.ConfigParser()
+        self.config = configparser.ConfigParser(strict=False)
 
     def load_files(self, configs):
         """         Read configs set into storage        """
