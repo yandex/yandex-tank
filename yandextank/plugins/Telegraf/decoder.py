@@ -18,6 +18,7 @@ class MetricsDecoder(object):
             'net_bytes_sent': 'Net_send',
             'kernel_context_switches': 'System_csw',
             'kernel_interrupts': 'System_int',
+            'kernel_processes_forked': 'System_forks',
             'processes_total': 'System_numproc',
             'processes_total_threads': 'System_numthreads',
             'system_load1': 'System_la1',
@@ -30,8 +31,11 @@ class MetricsDecoder(object):
             'cpu_usage_irq': 'CPU_irq',
             'cpu_usage_nice': 'CPU_nice',
             'cpu_usage_softirq': 'CPU_softirq',
+            'cpu_usage_steal': 'CPU_steal',
+            'cpu_usage_guest': 'CPU_guest',
             'diskio_read_bytes': 'Disk_read',
-            'diskio_write_bytes': 'Disk_write'
+            'diskio_write_bytes': 'Disk_write',
+            'nstat_TcpRetransSegs': 'Net_retransmit'
         }
 
         self.diff_metrics = [self.find_common_names(key) for key in [
@@ -39,7 +43,8 @@ class MetricsDecoder(object):
                 'diskio_read_bytes', 'diskio_write_bytes',
                 'net_packets_recv', 'net_packets_sent', 'net_bytes_recv', 'net_bytes_sent',
                 'diskio_io_time', 'diskio_read_time', 'diskio_reads', 'diskio_write_time', 'diskio_writes',
-                'kernel_processes_forked'
+                'kernel_processes_forked',
+                'nstat_TcpRetransSegs'
             ]
         ]
 
