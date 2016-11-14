@@ -66,5 +66,5 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     @property
     def is_telegraf(self):
         if self._is_telegraf is None:
-            self._is_telegraph = 'Telegraf' in self.core.job.monitoring_plugin.__module__
-        return self._is_telegraph
+            self._is_telegraf = 'Telegraf' in self.core.job.monitoring_plugin.__module__
+        return self._is_telegraf
