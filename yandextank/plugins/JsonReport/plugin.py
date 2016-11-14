@@ -59,9 +59,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         if self.is_telegraf:
             self.monitoring_logger.info(json.dumps(data_list))
         else:
-            [self.monitoring_logger.info(data) for data in data_list]
-
-        self.monitoring_logger.info(data_list)
+            [self.monitoring_logger.info(data.strip()) for data in data_list if data]
 
     @property
     def is_telegraf(self):
