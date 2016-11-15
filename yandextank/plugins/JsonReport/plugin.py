@@ -52,8 +52,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         @data: aggregated data
         @stats: stats about gun
         """
-        self.aggregator_data_logger.info(data)
-        self.stats_logger.info(stats)
+        self.aggregator_data_logger.info(json.dumps(data))
+        self.stats_logger.info(json.dumps(stats))
 
     def monitoring_data(self, data_list):
         if self.is_telegraf:
