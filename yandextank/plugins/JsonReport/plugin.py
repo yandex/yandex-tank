@@ -31,9 +31,6 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.aggregator_data_logger = self.create_file_logger('aggregator_data',
                                                               self.get_option('test_data_log',
                                                                               'test_data.log'))
-        self.stats_logger = self.create_file_logger('stats',
-                                                    self.get_option('test_stats_log',
-                                                                    'test_stats.log'))
         self.core.job.subscribe_plugin(self)
 
     def create_file_logger(self, logger_name, file_name, formatter=None):
@@ -52,8 +49,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         @data: aggregated data
         @stats: stats about gun
         """
-        self.aggregator_data_logger.info(json.dumps(data))
-        self.stats_logger.info(json.dumps(stats))
+        self.aggregator_data_logger.info(json.dumps({'data': data, 'stats': stats}))
 
     def monitoring_data(self, data_list):
         if self.is_telegraf:
