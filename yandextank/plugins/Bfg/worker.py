@@ -61,6 +61,15 @@ Gun: {gun.__class__.__name__}
         Say the workers to finish their jobs and quit.
         """
         self.quit.set()
+        while sorted([self.pool[i].is_alive() for i in xrange(len(self.pool))])[-1]:
+                time.sleep(1)
+        try:
+            while not self.task_queue.empty():
+                self.task_queue.get(timeout=0.1)
+            self.task_queue.close()
+            self.feeder.join()
+        except Exception, ex:
+            logger.info(ex)
 
     def _feed(self):
         """

@@ -149,22 +149,33 @@ class AgentConfig(object):
             config.set("[outputs.file]", "data_format", "'json'")
             #inputs
             config.add_section("[inputs.mem]")
+            config.set("[inputs.mem]", "fielddrop",
+                       '["active", "inactive", "total", "used*", "avail*"]')
+
             config.add_section("[inputs.cpu]")
-            config.set("[inputs.cpu]", "fielddrop", '["time_*"]')
-            config.add_section("[inputs.disk]")
-            config.set("[inputs.disk]", "mount_points", '["/"]')
-            config.set("[inputs.disk]", "ignore_fs", '["tmpfs", "devtmpfs"]')
+            config.set("[inputs.cpu]", "fielddrop", '["time_*", "usage_guest_nice"]')
+
             config.add_section("[inputs.diskio]")
             config.set("[inputs.diskio]", "devices", '["vda", "sda"]')
+
             config.add_section("[inputs.net]")
             config.set("[inputs.net]", "interfaces", '["eth0"]')
             config.set("[inputs.net]", "fielddrop",
-                       '["icmp*", "ip*", "udplite*", "tcp*", "udp*"]')
+                       '["icmp*", "ip*", "udplite*", "tcp*", "udp*", "drop*", "err*"]')
+
+            config.add_section("[inputs.nstat]")
+            config.set("[inputs.nstat]", "proc_net_netstat", '"/proc/net/netstat"')
+            config.set("[inputs.nstat]", "proc_net_snmp", '"/proc/net/snmp"')
+            config.set("[inputs.nstat]", "proc_net_snmp6", '"/proc/net/snmp6"')
+            config.set("[inputs.nstat]", "fieldpass",
+                       '["TcpRetransSegs"]')
+
             config.add_section("[inputs.netstat]")
+
             config.add_section("[inputs.system]")
             config.set("[inputs.system]", "fielddrop",
-                       '["n_users", "uptime_format"]')
-            config.add_section("[inputs.processes]")
+                       '["n_users", "n_cpus", "uptime*"]')
+
             config.add_section("[inputs.kernel]")
             config.set("[inputs.kernel]", "fielddrop", '["boot_time"]')
 

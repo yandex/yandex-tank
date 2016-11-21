@@ -17,7 +17,8 @@ analytic tools for the results they produce.
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
         'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
-        'pandas>=0.18.0', 'numpy>=1.11.0', 'future', 'pip>=8.1.2', 'configparser'
+        'pandas>=0.18.0', 'numpy>=1.11.0', 'future>=0.16.0',
+        'pip>=8.1.2', 'configparser>=3.5.0',
     ],
     setup_requires=[
         'pytest-runner',
