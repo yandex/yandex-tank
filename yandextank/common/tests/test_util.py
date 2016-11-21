@@ -1,7 +1,5 @@
-from Queue import Queue
-import ipaddress
-import pytest
-from yandextank.common.util import AddressWizard, Drain
+from queue import Queue
+from yandextank.common.util import Drain
 
 
 class TestDrain(object):
