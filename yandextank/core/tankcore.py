@@ -557,7 +557,7 @@ class ConfigManager(object):
     def __init__(self):
         self.file = None
         self.log = logging.getLogger(__name__)
-        self.config = ConfigParser.ConfigParser(strict=False)
+        self.config = ConfigParser.ConfigParser()
 
     def load_files(self, configs):
         """         Read configs set into storage        """
