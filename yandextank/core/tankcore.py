@@ -1,4 +1,5 @@
 """ The central part of the tool: Core """
+import ConfigParser
 import datetime
 import fnmatch
 import importlib as il
@@ -11,13 +12,12 @@ import tempfile
 import time
 import traceback
 import uuid
-import configparser
 import pkg_resources
 import sys
 import platform
 from builtins import str
 
-from configparser import NoSectionError
+from ConfigParser import NoSectionError
 from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin
 
@@ -353,7 +353,7 @@ class TankCore(object):
 
         try:
             value = self.config.config.get(section, option).strip()
-        except configparser.NoOptionError as ex:
+        except ConfigParser.NoOptionError as ex:
             if default is not None:
                 default = str(default)
                 self.config.config.set(section, option, default)
@@ -480,7 +480,7 @@ class TankCore(object):
                 self.log.warn("Lock file present: %s", full_name)
 
                 try:
-                    info = configparser.ConfigParser(strict=False)
+                    info = ConfigParser.ConfigParser()
                     info.read(full_name)
                     pid = info.get(TankCore.SECTION, self.PID_OPTION)
                     if not pid_exists(int(pid)):
@@ -557,7 +557,7 @@ class ConfigManager(object):
     def __init__(self):
         self.file = None
         self.log = logging.getLogger(__name__)
-        self.config = configparser.ConfigParser(strict=False)
+        self.config = ConfigParser.ConfigParser()
 
     def load_files(self, configs):
         """         Read configs set into storage        """

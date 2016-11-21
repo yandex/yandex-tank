@@ -1,13 +1,12 @@
 """ Utility classes for phantom module """
 # TODO: use separate answ log per benchmark
-import logging
 import copy
-import traceback
+import logging
 import multiprocessing
-import re
-import socket
 import string
+
 from pkg_resources import resource_string
+from yandextank.common.util import AddressWizard
 
 from ...stepper import StepperWrapper
 from ...stepper.util import parse_duration
@@ -355,87 +354,3 @@ class StreamConfig:
 # ========================================================================
 
 
-class AddressWizard:
-    def __init__(self):
-        self.lookup_fn = socket.getaddrinfo
-        self.socket_class = socket.socket
-
-    def resolve(self, address_str, do_test=False, explicit_port=False):
-        """
-
-        :param address_str:
-        :return: tuple of boolean, string, int - isIPv6, resolved_ip, port (may be null), extracted_address
-        """
-
-        if not address_str:
-            raise RuntimeError("Mandatory option was not specified: address")
-
-        logger.debug("Trying to resolve address string: %s", address_str)
-
-        port = None
-
-        braceport_pat = "^\[([^]]+)\]:(\d+)$"
-        braceonly_pat = "^\[([^]]+)\]$"
-        if re.match(braceport_pat, address_str):
-            logger.debug("Braces and port present")
-            match = re.match(braceport_pat, address_str)
-            logger.debug("Match: %s %s ", match.group(1), match.group(2))
-            address_str, port = match.group(1), match.group(2)
-        elif re.match(braceonly_pat, address_str):
-            logger.debug("Braces only present")
-            match = re.match(braceonly_pat, address_str)
-            logger.debug("Match: %s", match.group(1))
-            address_str = match.group(1)
-        else:
-            logger.debug("Parsing port")
-            parts = address_str.split(":")
-            if len(parts) <= 2:  # otherwise it is v6 address
-                address_str = parts[0]
-                if len(parts) == 2:
-                    port = int(parts[1])
-
-        try:
-            resolved = self.lookup_fn(address_str, port)
-            logger.debug("Lookup result: %s", resolved)
-        except Exception as exc:
-            logger.debug("Exception trying to resolve hostname %s : %s",
-                         address_str, traceback.format_exc(exc))
-            msg = "Failed to resolve hostname: %s. Error: %s"
-            raise RuntimeError(msg % (address_str, exc))
-
-        for (family, socktype, proto, canonname, sockaddr) in resolved:
-            is_v6 = family == socket.AF_INET6
-            parsed_ip, port = sockaddr[0], sockaddr[1]
-
-            if explicit_port:
-                logger.warn(
-                    "Using phantom.port option is deprecated. Use phantom.address=[address]:port instead")
-                port = int(explicit_port)
-            elif not port:
-                port = 80
-
-            if do_test:
-                try:
-                    self.__test(family, (parsed_ip, port))
-                except RuntimeError as exc:
-                    logger.warn("Failed TCP connection test using [%s]:%s",
-                                parsed_ip, port)
-                    continue
-
-            return is_v6, parsed_ip, int(port), address_str
-
-        msg = "All connection attempts failed for %s, use phantom.connection_test=0 to disable it"
-        raise RuntimeError(msg % address_str)
-
-    def __test(self, af, sa):
-        test_sock = self.socket_class(af)
-        try:
-            test_sock.settimeout(5)
-            test_sock.connect(sa)
-        except Exception as exc:
-            logger.debug("Exception on connect attempt [%s]:%s : %s", sa[0],
-                         sa[1], traceback.format_exc(exc))
-            msg = "TCP Connection test failed for [%s]:%s, use phantom.connection_test=0 to disable it"
-            raise RuntimeError(msg % (sa[0], sa[1]))
-        finally:
-            test_sock.close()
