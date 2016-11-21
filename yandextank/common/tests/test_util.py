@@ -1,5 +1,5 @@
 from Queue import Queue
-
+import ipaddress
 import pytest
 from yandextank.common.util import AddressWizard, Drain
 
@@ -22,10 +22,12 @@ class TestAddressWizard(object):
         (u'[coverage-api01i.cloud.load.maps.yandex.net]:80',
          True,
          80,
-         (True, '2a02:6b8:c01:105::568:0:14', 80, 'coverage-api01i.cloud.load.maps.yandex.net'))
+         (True, '2a02:6b8:c01:105:0:568:0:14', 80, 'coverage-api01i.cloud.load.maps.yandex.net'))
     ])
     def test_resolve(self, address_str, do_test, explicit_port, expected):
-        assert AddressWizard().resolve(address_str, do_test, explicit_port) == expected
+        result = AddressWizard().resolve(address_str, do_test, explicit_port)
+        assert ipaddress.ip_address(unicode(result[1])) == ipaddress.ip_address(unicode(expected[1]))
+        assert result[2:4]
 
 
 class TestDrain(object):
