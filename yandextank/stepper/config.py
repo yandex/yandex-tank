@@ -90,7 +90,7 @@ class ComponentFactory():
                                                  http_ver=self.http_ver)
         elif self.ammo_file:
             if self.ammo_type in af_readers:
-                if self.ammo_type is 'phantom':
+                if self.ammo_type == 'phantom':
                     opener = resource.get_opener(self.ammo_file)
                     with opener() as ammo:
                         try:
