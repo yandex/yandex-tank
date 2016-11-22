@@ -30,12 +30,15 @@ class Plugin(AbstractPlugin):
     def configure(self):
         # plugin part
         self.appium_cmd = self.get_option("appium_cmd", "appium")
+        self.appium_user = self.get_option("user", "")
         self.appium_port = self.get_option("port", "4723")
         self.appium_log = self.core.mkstemp(".log", "appium_")
         self.core.add_artifact_file(self.appium_log)
 
     def prepare_test(self):
         args = [self.appium_cmd, '-p', self.appium_port, '-g', self.appium_log]
+        if self.appium_user:
+            args = ["su", "-c", " ".join(args), self.appium_user]
         logger.info("Starting appium server: %s", args)
         self.process_start_time = time.time()
         process_stdout_file = self.core.mkstemp(".log", "appium_stdout_")
