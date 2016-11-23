@@ -32,7 +32,7 @@ from ..plugins.Telegraf import Plugin as TelegrafPlugin
 class Job(object):
     def __init__(self, name, description, task, version, config_copy, monitoring_plugin, aggregator_plugin, tank,
                  generator_plugin=None):
-        # type: (str, str, str, str, str, MonitoringPlugin, AggregatorPlugin, GeneratorPlugin) -> Job
+        # type: (unicode, unicode, unicode, unicode, unicode, MonitoringPlugin, AggregatorPlugin, GeneratorPlugin) -> Job
         self.name = name
         self.description = description
         self.task = task
@@ -205,10 +205,10 @@ class TankCore(object):
             self.log.warning("Load generator not found:", exc_info=True)
             gen = None
 
-        self.job = Job(name=str(self.get_option(self.SECTION_META, "job_name", 'none')),
-                       description=str(self.get_option(self.SECTION_META, "job_dsc", '')),
-                       task=str(self.get_option(self.SECTION_META, 'task', 'dir')),
-                       version=str(self.get_option(self.SECTION_META, 'ver', '')),
+        self.job = Job(name=self.get_option(self.SECTION_META, "job_name", 'none').decode('utf8'),
+                       description=self.get_option(self.SECTION_META, "job_dsc", '').decode('utf8'),
+                       task=self.get_option(self.SECTION_META, 'task', 'dir').decode('utf8'),
+                       version=self.get_option(self.SECTION_META, 'ver', '').decode('utf8'),
                        config_copy=self.get_option(self.SECTION_META, 'copy_config_to', 'config_copy'),
                        monitoring_plugin=mon,
                        aggregator_plugin=aggregator,
