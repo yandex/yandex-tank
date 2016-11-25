@@ -77,7 +77,7 @@ def get_marker(marker_type, enum_ammo=False):
     try:
         limit = int(marker_type)
         if limit:
-            marker = __UriMarker(marker_type)
+            marker = __UriMarker(limit)
         else:
             marker = lambda m: ''
     except ValueError:
