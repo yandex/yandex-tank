@@ -176,7 +176,7 @@ class AbstractCriterion(object):
 
 
 class GeneratorPlugin(object):
-    DEFAULT_INFO = {'address': 'undefined',
+    DEFAULT_INFO = {'address': '',
                     'port': 80,
                     'instances': 1,
                     'ammo_file': '',
