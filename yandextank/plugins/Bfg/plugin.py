@@ -34,8 +34,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             'ultimate': UltimateGun,
         }
 
-        self._info = None
-
     @staticmethod
     def get_key():
         return __file__
@@ -117,14 +115,3 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             self.log.info("Terminating BFG")
             self.bfg.stop()
         return retcode
-
-    def get_info(self):
-        if not self._info:
-            self._info = self.Info(address=self.get_option('address', ''),
-                                   port='',
-                                   instances=self.stepper_wrapper.instances,
-                                   ammo_file=self.get_option('ammofile', ''),
-                                   rps_schedule=self.get_option('rps_schedule', ''),
-                                   duration='',
-                                   loop_count=self.get_option('loop', ''))
-        return self._info
