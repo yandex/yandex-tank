@@ -238,7 +238,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
 
     def monitoring_data(self, block):
         # block sample :
-        # [{'timestamp': u'1480536634',
+        # [{'timestamp': 1480536634,
         #   'data': {
         #     'some.hostname.tld': {
         #       'comment': '',
