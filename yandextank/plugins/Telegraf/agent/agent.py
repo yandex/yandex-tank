@@ -74,7 +74,7 @@ class Consolidator(object):
                     logger.error('unable to decode chunk %s', chunk, exc_info=True)
                 else:
                     try:
-                        ts = str(data['timestamp'])
+                        ts = data['timestamp']
                         self.results.setdefault(ts, {})
                         for key, value in data['fields'].iteritems():
                             key = data['name']+"_"+key
@@ -83,7 +83,6 @@ class Consolidator(object):
                         logger.error('Malformed json from source: %s', chunk, exc_info=True)
                     except:
                         logger.error('Something nasty happend in consolidator work', exc_info=True)
-            #logger.info('Consolidator results lendth %s', len(self.results))
             if len(self.results) > 5:
                 ready_to_go_index = min(self.results)
                 yield json.dumps(
