@@ -102,8 +102,11 @@ class Plugin(AbstractPlugin):
                 "No autostop plugin found, not adding instances criterion")
 
     def prepare_test(self):
-        try:
-            phantom = self.core.get_plugin_of_type(PhantomPlugin)
+        if not self.config or self.config == 'none':
+            return
+
+        if 'Phantom' in self.core.job.generator_plugin.__module__:
+            phantom = self.core.job.generator_plugin
             if phantom.phout_import_mode:
                 logger.info("Phout import mode, disabling monitoring")
                 self.config = None
@@ -112,49 +115,43 @@ class Plugin(AbstractPlugin):
             info = phantom.get_info()
             if info:
                 self.default_target = info.address
-                logger.debug("Changed monitoring target to %s",
-                             self.default_target)
-        except KeyError:
-            logger.debug("Phantom plugin not found: %s", exc_info=True)
+                logger.debug("Changed monitoring target to %s", self.default_target)
 
-        if not self.config or self.config == 'none':
-            logger.info("Monitoring has been disabled")
-        else:
-            logger.info("Starting monitoring with config: %s", self.config)
-            self.core.add_artifact_file(self.config, True)
-            self.monitoring.config = self.config
-            if self.default_target:
-                self.monitoring.default_target = self.default_target
+        logger.info("Starting monitoring with config: %s", self.config)
+        self.core.add_artifact_file(self.config, True)
+        self.monitoring.config = self.config
+        if self.default_target:
+            self.monitoring.default_target = self.default_target
 
-            self.data_file = self.core.mkstemp('.data', 'monitoring_overall_')
-            self.mon_saver = SaveMonToFile(self.data_file)
-            self.monitoring.add_listener(self.mon_saver)
-            self.core.add_artifact_file(self.data_file)
+        self.data_file = self.core.mkstemp('.data', 'monitoring_overall_')
+        self.mon_saver = SaveMonToFile(self.data_file)
+        self.monitoring.add_listener(self.mon_saver)
+        self.core.add_artifact_file(self.data_file)
 
-            try:
-                console = self.core.get_plugin_of_type(ConsolePlugin)
-            except Exception as ex:
-                logger.debug("Console not found: %s", ex)
-                console = None
-            if console:
-                widget = MonitoringWidget(self)
-                console.add_info_widget(widget)
-                self.monitoring.add_listener(widget)
+        try:
+            console = self.core.get_plugin_of_type(ConsolePlugin)
+        except Exception as ex:
+            logger.debug("Console not found: %s", ex)
+            console = None
+        if console:
+            widget = MonitoringWidget(self)
+            console.add_info_widget(widget)
+            self.monitoring.add_listener(widget)
 
-            try:
-                self.monitoring.prepare()
-                self.monitoring.start()
-                count = 0
-                while not self.monitoring.first_data_received and count < 15 * 5:
-                    time.sleep(0.2)
-                    self.monitoring.poll()
-                    count += 1
-            except:
-                logger.error("Could not start monitoring", exc_info=True)
-                if self.die_on_fail:
-                    raise
-                else:
-                    self.monitoring = None
+        try:
+            self.monitoring.prepare()
+            self.monitoring.start()
+            count = 0
+            while not self.monitoring.first_data_received and count < 15 * 5:
+                time.sleep(0.2)
+                self.monitoring.poll()
+                count += 1
+        except:
+            logger.error("Could not start monitoring", exc_info=True)
+            if self.die_on_fail:
+                raise
+            else:
+                self.monitoring = None
 
     def is_test_finished(self):
         if self.monitoring:
@@ -215,22 +212,60 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
     def get_index(self):
         return 50
 
-    def monitoring_data(self, data):
-        # logger.debug("Mon widget data: %s", data_string)
-        for metrics in data:
-            for hostname in metrics['data']:
-                host = hostname
-                data = metrics['data'][hostname]['metrics']
-                timestamp = metrics['timestamp']
-                self.time[host] = timestamp
-                self.sign[host] = {}
-                self.data[host] = {}
-                for metric, value in data.iteritems():
+    def __handle_data_items(self, host, data):
+        """ store metric in data tree and calc offset signs
+
+        sign < 0 is CYAN, means metric value is lower then previous,
+        sign > 1 is YELLOW, means metric value is higher then prevoius,
+        sign == 0 is WHITE, means initial or equal metric value
+        """
+        for metric, value in data.iteritems():
+            if value == '':
+                self.sign[host][metric] = -1
+                self.data[host][metric] = value
+            else:
+                if not self.data[host].get(metric, None):
+                    self.sign[host][metric] = 1
+                elif float(value) > float(self.data[host][metric]):
+                    self.sign[host][metric] = 1
+                elif float(value) < float(self.data[host][metric]):
+                    self.sign[host][metric] = -1
+                else:
                     self.sign[host][metric] = 0
-                    try:
-                        self.data[host][metric] = "%.2f" % float(value)
-                    except ValueError:
-                        self.data[host][metric] = value
+                self.data[host][metric] = "%.2f" % float(value)
+
+
+    def monitoring_data(self, block):
+        # block sample :
+        # [{
+        #   'timestamp': u'1480536634',
+        #   'data': {
+        #     'some.hostname.tld': {
+        #       'comment': '',
+        #       'metrics': {
+        #         'custom:diskio_reads': 0,
+        #         'Net_send': 9922,
+        #         'CPU_steal': 0,
+        #         'Net_recv': 8489
+        #       }
+        #     }
+        #   },
+        #   ...
+        # }]
+        for chunk in block:
+            host = chunk['data'].keys()[0]
+            self.time[host] = chunk['timestamp']
+            # if initial call, we create dicts w/ data and `signs`
+            # `signs` used later to paint metrics w/ different colors
+            if not self.data.get(host, None):
+                self.data[host] = {}
+                self.sign[host] = {}
+                for key, value in chunk['data'][host]['metrics'].iteritems():
+                    self.sign[host][key] = 0
+                    self.data[host][key] = value
+            else:
+                self.__handle_data_items(host, chunk['data'][host]['metrics'])
+
 
     def render(self, screen):
         if not self.owner.monitoring:
@@ -276,15 +311,13 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
         self.last_second = None
         self.seconds_count = 0
 
-    def monitoring_data(self, data):
+    def monitoring_data(self, block):
         if self.triggered:
             return
 
-        for metrics in data:
-            for hostname in metrics['data']:
-                host = hostname
-                data = metrics['data'][hostname]['metrics']
-                timestamp = metrics['timestamp']
+        for chunk in block:
+            host = chunk['data'].keys()[0]
+            data = chunk['data'][host]['metrics']
 
             if not fnmatch.fnmatch(host, self.host):
                 continue
