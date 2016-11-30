@@ -71,7 +71,7 @@ class MonitoringCollector(object):
                 for chunk in collect:
                     ts, prepared_results = chunk
                     ready_to_send = {
-                        "timestamp": ts,
+                        "timestamp": int(ts),
                         "data": {
                             agent.host: {
                                 "comment": agent.config.comment,
