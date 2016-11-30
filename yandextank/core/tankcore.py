@@ -143,6 +143,7 @@ class TankCore(object):
                 continue
             self.log.debug("Loading plugin %s from %s", plugin_name,
                            plugin_path)
+            # FIXME cleanup an old deprecated plugin path format
             if '/' in plugin_path:
                 self.log.warning("Deprecated plugin path format: %s\n"
                                  "Should be in pythonic format. Example:\n"
