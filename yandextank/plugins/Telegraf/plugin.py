@@ -123,6 +123,7 @@ class Plugin(AbstractPlugin):
         if self.default_target:
             self.monitoring.default_target = self.default_target
 
+        # FIXME json report already save this artifact, fix pls
         self.data_file = self.core.mkstemp('.data', 'monitoring_overall_')
         self.mon_saver = SaveMonToFile(self.data_file)
         self.monitoring.add_listener(self.mon_saver)
@@ -237,16 +238,12 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
 
     def monitoring_data(self, block):
         # block sample :
-        # [{
-        #   'timestamp': u'1480536634',
+        # [{'timestamp': u'1480536634',
         #   'data': {
         #     'some.hostname.tld': {
         #       'comment': '',
         #       'metrics': {
-        #         'custom:diskio_reads': 0,
-        #         'Net_send': 9922,
-        #         'CPU_steal': 0,
-        #         'Net_recv': 8489
+        #         'custom:diskio_reads': 0, 'Net_send': 9922, 'CPU_steal': 0, 'Net_recv': 8489
         #       }
         #     }
         #   },
