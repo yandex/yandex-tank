@@ -90,6 +90,10 @@ class AgentConfig(object):
         self.comment = config['comment']
 
     def create_startup_config(self):
+        """ Startup and shutdown commands config
+        Used by agent.py on the target
+
+        """
         cfg_path = "agent_startup_{}.cfg".format(self.host)
         if os.path.isfile(cfg_path):
             logger.info(
@@ -100,15 +104,14 @@ class AgentConfig(object):
             os.close(handle)
         try:
             config = ConfigParser.RawConfigParser()
+            # FIXME incinerate such a string formatting inside a method call T_T
             config.add_section('startup')
-            for idx, cmd in enumerate(self.startups):
-                config.set('startup', "cmd%s" % idx, cmd)
-
+            [config.set('startup', "cmd%s" % idx, cmd) for idx, cmd in enumerate(self.startups)]
             config.add_section('shutdown')
-            for idx, cmd in enumerate(self.shutdowns):
-                config.set('shutdown', "cmd%s" % idx, cmd)
+            [config.set('shutdown', "cmd%s" % idx, cmd) for idx, cmd in enumerate(self.shutdowns)]
             with open(cfg_path, 'w') as fds:
                 config.write(fds)
+
         except Exception as exc:
             logger.error(
                 'Error trying to create monitoring startups config. Malformed? %s',
@@ -116,15 +119,55 @@ class AgentConfig(object):
                 exc_info=True)
         return cfg_path
 
+    def create_custom_exec_script(self):
+        """ bash script w/ custom commands inside
+        inspired by half a night trying to avoid escaping bash special characters
+
+        """
+        cfg_path = "agent_customs_{}.cfg".format(self.host)
+        if os.path.isfile(cfg_path):
+            logger.info(
+                'Found agent custom execs config file in working directory with the same name as created for host %s'
+                'Creating new one via tempfile. This will affect predictable filenames for agent artefacts',
+                self.host)
+            handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_customs_')
+            os.close(handle)
+
+        cmds = ""
+        for idx, cmd in enumerate(self.custom):
+            cmds += "-{idx}) {cmd};;\n".format(
+                idx=idx,
+                cmd=cmd['cmd']
+            )
+        customs_script = """
+        #!/bin/sh
+        while :
+        do
+            case "$1" in
+            {cmds}
+            *) break;;
+            esac
+            shift
+        done
+        """.format(cmds=cmds)
+
+        with open(cfg_path, 'w') as fds:
+            fds.write(customs_script)
+        return cfg_path
+
+
     def create_collector_config(self, workdir):
-        """Creating config"""
-        cfg_path = "agent_{}.cfg".format(self.host)
+        """ Telegraf collector config,
+        toml format
+
+        """
+        cfg_path = "agent_collector_{}.cfg".format(self.host)
         if os.path.isfile(cfg_path):
             logger.info(
                 'Found agent config file in working directory with the same name as created for host %s'
                 'Creating new one via tempfile. This will affect predictable filenames for agent artefacts',
                 self.host)
-            handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
+            handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_collector_')
             os.close(handle)
 
         self.monitoring_data_output = "{remote_folder}/monitoring.rawdata".format(
@@ -140,14 +183,16 @@ class AgentConfig(object):
             config.set("agent", "flush_interval", "'1s'")
             config.set("agent", "collection_jitter", "'0s'")
             config.set("agent", "flush_jitter", "'0s'")
-            #outputs
+
+            # outputs
             config.add_section("[outputs.file]")
             config.set("[outputs.file]",
                        "files",
                        "['{config}']".format(
                            config=self.monitoring_data_output))
             config.set("[outputs.file]", "data_format", "'json'")
-            #inputs
+
+            # inputs
             config.add_section("[inputs.mem]")
             config.set("[inputs.mem]", "fielddrop",
                        '["active", "inactive", "total", "used*", "avail*"]')
@@ -162,14 +207,12 @@ class AgentConfig(object):
             config.set("[inputs.net]", "interfaces", '["eth0"]')
             config.set("[inputs.net]", "fielddrop",
                        '["icmp*", "ip*", "udplite*", "tcp*", "udp*", "drop*", "err*"]')
-
             config.add_section("[inputs.nstat]")
             config.set("[inputs.nstat]", "proc_net_netstat", '"/proc/net/netstat"')
             config.set("[inputs.nstat]", "proc_net_snmp", '"/proc/net/snmp"')
             config.set("[inputs.nstat]", "proc_net_snmp6", '"/proc/net/snmp6"')
             config.set("[inputs.nstat]", "fieldpass",
                        '["TcpRetransSegs"]')
-
             config.add_section("[inputs.netstat]")
 
             config.add_section("[inputs.system]")
@@ -182,18 +225,21 @@ class AgentConfig(object):
             with open(cfg_path, 'w') as fds:
                 config.write(fds)
 
+            # dirty hack, this allow to avoid bash escape quoting, we're pushing shell script w/ arguments
+            # index of argument is index of custom metric in our config
             inputs = ""
-            for cmd in self.custom:
+            for idx, cmd in enumerate(self.custom):
                 inputs += "[[inputs.exec]]\n"
-                inputs += 'commands = [\'\'\' /bin/bash -c "{}" \'\'\']\n'.format(
-                    cmd.get('cmd'))
+                inputs += "commands = ['/bin/sh {workdir}/agent_customs.sh -{idx}']\n".format(
+                    workdir=workdir,
+                    idx=idx
+                )
                 inputs += "data_format = 'value'\n"
                 inputs += "data_type = 'integer'\n"
                 inputs += "name_prefix = '{}_'\n\n".format(cmd.get('label'))
                 if cmd['diff']:
                     decoder.diff_metrics.append(decoder.find_common_names(
                         cmd.get('label') + "_exec_value"))
-
             with open(cfg_path, 'a') as fds:
                 fds.write(inputs)
         except Exception as exc:

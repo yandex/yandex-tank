@@ -12,7 +12,19 @@ logger = logging.getLogger(__name__)
 
 
 class MonitoringCollector(object):
-    """Aggregate data from several collectors"""
+    """Aggregate data from several collectors
+
+    Workflow:
+    plugin creates collector
+    collector reads monitoring config and creates agents
+    collector creates configs for agents (telegraf, shutdown&startup, custom scripts)
+    collector installs agents on targets, send configs on targets
+    agent starts startups on target, then starts telegraf
+    agent reads output of telegraf, consolidates output, caches 5 seconds and then sends output to collector
+    collector polls agents for data, decodes known metrics and counts diffs for diff-like metrics
+    collector sends data to listeners
+
+    """
 
     def __init__(self):
         self.config = None
@@ -25,6 +37,10 @@ class MonitoringCollector(object):
         self.artifact_files = []
         self.load_start_time = None
         self.config_manager = ConfigManager()
+        self.clients = {
+            'localhost': LocalhostClient,
+            'ssh': SSHClient
+        }
 
     def add_listener(self, obj):
         self.listeners.append(obj)
@@ -35,20 +51,14 @@ class MonitoringCollector(object):
         # Parse config
         agent_configs = []
         if self.config:
-            agent_configs = self.config_manager.getconfig(self.config,
-                                                          self.default_target)
+            agent_configs = self.config_manager.getconfig(self.config, self.default_target)
 
         # Creating agent for hosts
-        logger.debug('Creating agents')
         for config in agent_configs:
-            if config['host'] == "localhost" or config[
-                    'host'] == "127.0.0.1" or config['host'] == '::1':
-                logger.debug('Creating LocalhostClient for host %s',
-                             config['host'])
-                client = LocalhostClient(config)
+            if config['host'] in ['localhost', '127.0.0.1', '::1']:
+                client = self.clients['localhost'](config)
             else:
-                logger.debug('Creating SSHClient for host %s', config['host'])
-                client = SSHClient(config, timeout=5)
+                client = self.clients['ssh'](config, timeout=5)
             logger.debug('Installing monitoring agent. Host: %s', client.host)
             agent_config, startup_config = client.install()
             if agent_config:
@@ -68,6 +78,9 @@ class MonitoringCollector(object):
         start_time = time.time()
         for agent in self.agents:
             for collect in agent.reader:
+                # don't crush if trash or traceback came from agent to stdout
+                if not collect:
+                    return
                 for chunk in collect:
                     ts, prepared_results = chunk
                     ready_to_send = {

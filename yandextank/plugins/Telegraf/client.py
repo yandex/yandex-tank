@@ -57,10 +57,12 @@ class LocalhostClient(object):
         logger.info("Created temp dir %s", self.workdir)
         agent_config = self.config.create_collector_config(self.workdir)
         startup_config = self.config.create_startup_config()
+        customs_script = self.config.create_custom_exec_script()
         try:
             copyfile(self.path['AGENT_LOCAL_FOLDER'] + '/agent.py', self.workdir + '/agent.py')
             copyfile(agent_config, self.workdir + '/agent.cfg')
             copyfile(startup_config, self.workdir + '/agent_startup.cfg')
+            copyfile(customs_script, self.workdir + '/agent_customs.sh')
             if not os.path.isfile(self.path['TELEGRAF_LOCAL_PATH']):
                 logger.error(
                     'Telegraf binary not found at specified path: %s\n'
@@ -210,6 +212,7 @@ class SSHClient(object):
         # create collector config
         agent_config = self.config.create_collector_config(self.path['AGENT_REMOTE_FOLDER'])
         startup_config = self.config.create_startup_config()
+        customs_script = self.config.create_custom_exec_script()
 
         # trying to detect os version/architecture and get information about telegraf client
         # DO NOT DELETE indices in string format below. Python 2.6 does not support string formatting without indices
@@ -255,6 +258,8 @@ class SSHClient(object):
             )
             self.ssh.send_file(agent_config, self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg')
             self.ssh.send_file(startup_config, self.path['AGENT_REMOTE_FOLDER'] + '/agent_startup.cfg')
+            self.ssh.send_file(customs_script, self.path['AGENT_REMOTE_FOLDER'] + '/agent_customs.sh')
+
         except Exception:
             logger.error("Failed to install agent on %s", self.host, exc_info=True)
             return None, None

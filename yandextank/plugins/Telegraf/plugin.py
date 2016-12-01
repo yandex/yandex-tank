@@ -16,7 +16,6 @@ from ...common.util import expand_to_seconds
 
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 from ..Console import Plugin as ConsolePlugin
-from ..Phantom import Plugin as PhantomPlugin
 from ..Telegraf.collector import MonitoringCollector
 
 logger = logging.getLogger(__name__)
