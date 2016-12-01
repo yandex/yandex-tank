@@ -130,7 +130,7 @@ class AgentConfig(object):
                 'Found agent custom execs config file in working directory with the same name as created for host %s'
                 'Creating new one via tempfile. This will affect predictable filenames for agent artefacts',
                 self.host)
-            handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_customs_')
+            handle, cfg_path = tempfile.mkstemp('.sh', 'agent_customs_')
             os.close(handle)
 
         cmds = ""
