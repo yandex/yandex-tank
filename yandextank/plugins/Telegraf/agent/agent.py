@@ -290,13 +290,22 @@ def main():
     (options, args) = parser.parse_args()
 
     logger.info('Init')
+    customs_script = os.path.dirname(__file__)+'/agent_customs.sh'
     try:
-        logger.info('Trying to make telegraf executable')
-        os.chmod(options.telegraf_path, 484)  # 0o744 compatible with old python versions
+        logger.info('Trying to make telegraf executable: %s', options.telegraf_path)
+        os.chmod(options.telegraf_path, 493)  # 0o755 compatible with old python versions. 744 is NOT enough
     except OSError:
         logger.warning(
             'Unable to set %s access rights to execute.',
             options.telegraf_path, exc_info=True)
+    try:
+        logger.info('Trying to make customs script executable: %s', customs_script)
+        os.chmod(customs_script, 493)  # 0o755 compatible with old python versions. 744 is NOT enough
+    except OSError:
+        logger.warning(
+            'Unable to set %s access rights to execute.',
+            customs_script, exc_info=True)
+
 
     worker = AgentWorker(options.telegraf_path)
     worker.read_startup_config()

@@ -16,7 +16,6 @@ from ...common.util import expand_to_seconds
 
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 from ..Console import Plugin as ConsolePlugin
-from ..Phantom import Plugin as PhantomPlugin
 from ..Telegraf.collector import MonitoringCollector
 
 logger = logging.getLogger(__name__)
@@ -238,7 +237,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
 
     def monitoring_data(self, block):
         # block sample :
-        # [{'timestamp': u'1480536634',
+        # [{'timestamp': 1480536634,
         #   'data': {
         #     'some.hostname.tld': {
         #       'comment': '',
