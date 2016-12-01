@@ -69,11 +69,11 @@ class LocalhostClient(object):
                     'You can download telegraf binaries here: https://github.com/influxdata/telegraf\n'
                     'or install debian package: `telegraf`', self.path['TELEGRAF_LOCAL_PATH']
                 )
-                return None, None
+                return None, None, None
         except Exception:
             logger.error("Failed to copy agent to %s on localhost", self.workdir, exc_info=True)
-            return None, None
-        return agent_config, startup_config
+            return None, None, None
+        return agent_config, startup_config, customs_script
 
     @staticmethod
     def popen(cmnd):
@@ -190,10 +190,10 @@ class SSHClient(object):
             out, errors, err_code = self.ssh.execute(cmd)
         except Exception:
             logger.error("Failed to install monitoring agent to %s", self.host, exc_info=True)
-            return None
+            return None, None, None
         if errors:
             logging.error("[%s] error: '%s'", self.host, errors)
-            return None
+            return None, None, None
 
         if err_code:
             logging.error("Failed to create remote dir via SSH at %s@%s, code %s: %s" % (
@@ -202,7 +202,7 @@ class SSHClient(object):
                 err_code,
                 out.strip())
             )
-            return None
+            return None, None, None
 
         remote_dir = out.strip()
         if remote_dir:
@@ -250,7 +250,7 @@ class SSHClient(object):
                         'You can download telegraf binaries here: https://github.com/influxdata/telegraf\n'
                         'or install debian package: `telegraf`', self.host, self.path['TELEGRAF_LOCAL_PATH']
                     )
-                    return None, None
+                    return None, None, None
 
             self.ssh.send_file(
                 self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
@@ -262,9 +262,9 @@ class SSHClient(object):
 
         except Exception:
             logger.error("Failed to install agent on %s", self.host, exc_info=True)
-            return None, None
+            return None, None, None
 
-        return agent_config, startup_config
+        return agent_config, startup_config, customs_script
 
     def start(self):
         """Start remote agent"""

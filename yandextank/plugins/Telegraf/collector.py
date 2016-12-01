@@ -60,12 +60,14 @@ class MonitoringCollector(object):
             else:
                 client = self.clients['ssh'](config, timeout=5)
             logger.debug('Installing monitoring agent. Host: %s', client.host)
-            agent_config, startup_config = client.install()
+            agent_config, startup_config, customs_script = client.install()
             if agent_config:
                 self.agents.append(client)
                 self.artifact_files.append(agent_config)
             if startup_config:
                 self.artifact_files.append(startup_config)
+            if customs_script:
+                self.artifact_files.append(customs_script)
 
     def start(self):
         """Start agents"""
@@ -80,7 +82,7 @@ class MonitoringCollector(object):
             for collect in agent.reader:
                 # don't crush if trash or traceback came from agent to stdout
                 if not collect:
-                    return
+                    return 0
                 for chunk in collect:
                     ts, prepared_results = chunk
                     ready_to_send = {
