@@ -78,6 +78,8 @@ class Consolidator(object):
                         self.results.setdefault(ts, {})
                         for key, value in data['fields'].iteritems():
                             key = data['name']+"_"+key
+                            if key.endswith('_exec_value'):
+                                key = key.replace('_exec_value','')
                             self.results[ts][key] = value
                     except KeyError:
                         logger.error('Malformed json from source: %s', chunk, exc_info=True)

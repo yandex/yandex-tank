@@ -38,6 +38,9 @@ class ConfigManager(object):
         return config
 
     def get_host_config(self, host, target_hint):
+
+        default_metrics = ['CPU', 'Memory', 'Disk', 'Net', 'System', 'Kernel']
+
         hostname = host.get('address').lower()
         if hostname == '[target]':
             if not target_hint:
@@ -48,7 +51,10 @@ class ConfigManager(object):
         custom = []
         startups = []
         shutdowns = []
+        enabled_sections = []
         for metric in host:
+            if metric.tag in default_metrics:
+                enabled_sections.append(metric.tag)
             # custom metrics
             if (str(metric.tag)).lower() == 'custom':
                 isdiff = metric.get('diff', 0)
@@ -62,8 +68,10 @@ class ConfigManager(object):
                 startups.append(metric.text)
             elif (str(metric.tag)).lower() == 'shutdown':
                 shutdowns.append(metric.text)
-
+        if len(enabled_sections) == 0:
+            enabled_sections = default_metrics
         return {
+            'enabled_sections': enabled_sections,
             'interval': host.get('interval', 1),
             'port': int(host.get('port', 22)),
             'python': host.get('python', '/usr/bin/env python2'),
@@ -88,6 +96,8 @@ class AgentConfig(object):
         self.shutdowns = config['shutdown']
         self.interval = config['interval']
         self.comment = config['comment']
+        self.enabled_sections = config['enabled_sections']
+
 
     def create_startup_config(self):
         """ Startup and shutdown commands config
@@ -192,35 +202,43 @@ class AgentConfig(object):
                            config=self.monitoring_data_output))
             config.set("[outputs.file]", "data_format", "'json'")
 
+            #enabled_sections = ['CPU', 'Memory', 'Disk', 'Net', 'System', 'Kernel']
+
             # inputs
-            config.add_section("[inputs.mem]")
-            config.set("[inputs.mem]", "fielddrop",
-                       '["active", "inactive", "total", "used*", "avail*"]')
+            if 'Memory' in self.enabled_sections:
+                config.add_section("[inputs.mem]")
+                config.set("[inputs.mem]", "fielddrop",
+                           '["active", "inactive", "total", "used*", "avail*"]')
 
-            config.add_section("[inputs.cpu]")
-            config.set("[inputs.cpu]", "fielddrop", '["time_*", "usage_guest_nice"]')
+            if 'CPU' in self.enabled_sections:
+                config.add_section("[inputs.cpu]")
+                config.set("[inputs.cpu]", "fielddrop", '["time_*", "usage_guest_nice"]')
 
-            config.add_section("[inputs.diskio]")
-            config.set("[inputs.diskio]", "devices", '["vda", "sda"]')
+            if 'Disk' in self.enabled_sections:
+                config.add_section("[inputs.diskio]")
+                config.set("[inputs.diskio]", "devices", '["vda", "sda"]')
 
-            config.add_section("[inputs.net]")
-            config.set("[inputs.net]", "interfaces", '["eth0"]')
-            config.set("[inputs.net]", "fielddrop",
-                       '["icmp*", "ip*", "udplite*", "tcp*", "udp*", "drop*", "err*"]')
-            config.add_section("[inputs.nstat]")
-            config.set("[inputs.nstat]", "proc_net_netstat", '"/proc/net/netstat"')
-            config.set("[inputs.nstat]", "proc_net_snmp", '"/proc/net/snmp"')
-            config.set("[inputs.nstat]", "proc_net_snmp6", '"/proc/net/snmp6"')
-            config.set("[inputs.nstat]", "fieldpass",
-                       '["TcpRetransSegs"]')
-            config.add_section("[inputs.netstat]")
+            if 'Net' in self.enabled_sections:
+                config.add_section("[inputs.net]")
+                config.set("[inputs.net]", "interfaces", '["eth0"]')
+                config.set("[inputs.net]", "fielddrop",
+                           '["icmp*", "ip*", "udplite*", "tcp*", "udp*", "drop*", "err*"]')
+                config.add_section("[inputs.nstat]")
+                config.set("[inputs.nstat]", "proc_net_netstat", '"/proc/net/netstat"')
+                config.set("[inputs.nstat]", "proc_net_snmp", '"/proc/net/snmp"')
+                config.set("[inputs.nstat]", "proc_net_snmp6", '"/proc/net/snmp6"')
+                config.set("[inputs.nstat]", "fieldpass",
+                           '["TcpRetransSegs"]')
+                config.add_section("[inputs.netstat]")
 
-            config.add_section("[inputs.system]")
-            config.set("[inputs.system]", "fielddrop",
-                       '["n_users", "n_cpus", "uptime*"]')
+            if 'System' in self.enabled_sections:
+                config.add_section("[inputs.system]")
+                config.set("[inputs.system]", "fielddrop",
+                           '["n_users", "n_cpus", "uptime*"]')
 
-            config.add_section("[inputs.kernel]")
-            config.set("[inputs.kernel]", "fielddrop", '["boot_time"]')
+            if 'Kernel' in self.enabled_sections:
+                config.add_section("[inputs.kernel]")
+                config.set("[inputs.kernel]", "fielddrop", '["boot_time"]')
 
             with open(cfg_path, 'w') as fds:
                 config.write(fds)
@@ -239,7 +257,7 @@ class AgentConfig(object):
                 inputs += "name_prefix = '{}_'\n\n".format(cmd.get('label'))
                 if cmd['diff']:
                     decoder.diff_metrics.append(decoder.find_common_names(
-                        cmd.get('label') + "_exec_value"))
+                        cmd.get('label')))
             with open(cfg_path, 'a') as fds:
                 fds.write(inputs)
         except Exception as exc:

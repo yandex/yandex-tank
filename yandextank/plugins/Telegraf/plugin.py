@@ -318,9 +318,16 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
             if not fnmatch.fnmatch(host, self.host):
                 continue
 
+            # some magic, converting custom metric names into names that was in config
+            for metric_name in data.keys():
+                if metric_name.startswith('custom:'):
+                    config_metric_name = metric_name.replace('custom:', '')
+                    data[config_metric_name] = data.pop(metric_name)
+
             if self.metric not in data.keys() or not data[self.metric]:
                 data[self.metric] = 0
-
+            logging.info('Metric: %s', self.metric)
+            logging.info('Data: %s', data)
             logger.debug("Compare %s %s/%s=%s to %s", self.get_type_string(),
                          host, self.metric, data[self.metric],
                          self.value_limit)
