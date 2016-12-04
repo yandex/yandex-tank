@@ -1136,6 +1136,53 @@ Options
   Default: ``auto`` means collect default metrics from ``default_target`` host. If ``none`` is defined, monitoring won't be executed. Also it is possible to write plain multiline XML config.
 
 
+
+Configuration
+-------------
+
+
+Net access and authentication
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Monitoring requires ssh access to hosts for copy and executing agents on them. SSH session is established with user account specified by "username" parameter of Host element, otherwise current user account, so you need to copy your public keys (ssh-copy-id) and enable nonpassword authorization on hosts.
+If connection establishing failed for some reason in ``ssh_timeout`` seconds, corresponding message will be written to console and monitoring log and task will proceed further.
+Tip: write to ``.ssh/config`` next lines to eliminate ``-A`` option in ``ssh``
+
+::
+
+    StrictHostKeyChecking no
+    ForwardAgent yes
+
+
+Configuration file format
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Config is an XML file with structure:
+root element ``Monitoring`` includes elements ``Host`` which contains elements-metrics
+Example:
+
+::
+
+    <Monitoring>
+        <Host address="somehost.tld" interval="1" username="netort">
+            <CPU fielddrop='["time_*", "usage_guest_nice"]'></CPU>
+            <Kernel fielddrop='["active", "inactive", "total", "used_per*", "avail*"]'></Kernel>
+            <Net fielddrop='["icmp*", "ip*", "udplite*", "tcp*", "udp*", "drop*", "err*"]' interfaces='["eth0","eth1","lo"]'></Net>
+            <System fielddrop='["n_users", "n_cpus", "uptime*"]'></System>
+            <Memory fielddrop='["active", "inactive", "total", "used_per*", "avail*"]'></Memory>
+            <Disk devices='["vda1","sda1","sda2","sda3"]'></Disk>
+            <Netstat />
+            <Custom diff="1" measure="call" label="test">curl -s -H 'Host: host.tld' 'http://localhost:6100/stat'  | python -c 'import sys, json; j = json.load(sys.stdin); print "\n".join(`c["values"]["accept"]` for c in j["charts"] if c["name"] == "localqueue_wait_time")'</Custom>
+        </Host>
+
+        <Host address="localhost" telegraf="/usr/bin/telegraf">
+            <CPU percpu="true"></CPU>
+            <NetResponse address="localhost:80" protocol="tcp" timeout="1s"></NetResponse>
+            <Net fielddrop='["icmp*", "ip*", "udplite*", "tcp*", "udp*", "drop*", "err*"]' interfaces='["eth0","eth1","docker0","lo"]'></Net>
+        </Host>
+    </Monitoring>
+
+
 Element ``Host``
 ^^^^^^^^^^^^^^^^
 
@@ -1180,7 +1227,7 @@ Metric elements
 
 Metric elements in general are set by metrics group name.
 
-There are plenty of config-wide configuration options (such as `fielddrop`, `fieldpass` etc, you can read about them here: https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
+There are plenty of config-wide configuration options (such as 'fielddrop', 'fieldpass' etc, you can read about them here: https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
 
 List of metrics group names and particular metrics in them:
 
@@ -1189,13 +1236,17 @@ List of metrics group names and particular metrics in them:
 * System
 * Memory
 * Disk
-    * devices - default: ",".join(['"vda%s","sda%s"' % (num, num) for num in range(6)])
+    * devices - default: ",".join(['"vda%s","sda%s"' % (num, num) for num in range(6)]). Format sample: ["sda1", "docker0"]
 * Net
-    * interfaces - default: ",".join(['"eth%s"' % (num) for num in range(6)])
-* Net_Response
-    * protocol - default: "tcp"
-    * address - default: ":80"
-    * timeout - default: "1s"
+    * interfaces - default: ",".join(['"eth%s"' % (num) for num in range(6)]). Format sample: ["eth0","eth1"]
+* Netstat
+* Kernel
+* NetResponse
+    * protocol - default: "tcp". Protocol, must be "tcp" or "udp"
+    * address - default: ":80". Server address and port
+    * timeout - default: "1s". Set timeout
+    * send - default: None. Optional string sent to the server
+    * expect - default: None. Optional expected string in answer
 * Custom
     * diff - default: 0
     * measure - default: call - metric value is a command or script execution output. Example: `<Custom measure="call" diff="1" label="Base size">du -hs
