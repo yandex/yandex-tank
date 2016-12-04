@@ -24,18 +24,23 @@ logger = logging.getLogger(__name__)
 class Plugin(AbstractPlugin):
     """  resource mon plugin  """
 
+    # FIXME switch to 'monitoring' section name
     SECTION = 'telegraf'
 
     def __init__(self, core):
-        AbstractPlugin.__init__(self, core)
+        super(Plugin, self).__init__(core)
         self.jobno = None
         self.default_target = None
+        self.default_config = "{path}/config/monitoring_default_config.xml".format(
+            path=os.path.dirname(__file__)
+        )
         self.config = None
         self.process = None
         self.monitoring = MonitoringCollector()
         self.die_on_fail = True
         self.data_file = None
         self.mon_saver = None
+
 
     @staticmethod
     def get_key():
@@ -44,53 +49,41 @@ class Plugin(AbstractPlugin):
     def start_test(self):
         if self.monitoring:
             self.monitoring.load_start_time = time.time()
-            logger.debug("load_start_time = %s" %
-                         self.monitoring.load_start_time)
+            logger.debug("load_start_time = %s", self.monitoring.load_start_time)
 
     def get_available_options(self):
-        return ["config", "default_target", 'ssh_timeout']
+        return ["config", "default_target", "ssh_timeout"]
 
     def configure(self):
-        self.config = self.get_option("config", 'auto').strip()
-        self.default_target = self.get_option("default_target", 'localhost')
+        self.config = self.get_option("config", "auto").strip()
+        self.default_target = self.get_option("default_target", "localhost") # legacy ?
+        if self.config.lower() == "none":
+            self.monitoring = None
+            self.die_on_fail = False
+            return
 
         # FIXME [legacy] backward compatibility with Monitoring module configuration below.
-        self.monitoring.ssh_timeout = expand_to_seconds(self.get_option(
-            'ssh_timeout', "5s"))
+        self.monitoring.ssh_timeout = expand_to_seconds(self.get_option("ssh_timeout", "5s"))
 
-        if self.config == 'none' or self.config == 'auto':
-            self.die_on_fail = False
+        # FIXME [legacy] handle raw XML config in .ini file
+        if self.config[0] == "<":
+            config_contents = self.config
+        # handle http/https url or file path
         else:
-            # FIXME [legacy] handle raw XML config in .ini file
-            if self.config[0] == '<':
-                xmlfile = self.core.mkstemp(".xml", "monitoring_")
-                self.core.add_artifact_file(xmlfile)
-                with open(xmlfile, 'w') as f:
-                    f.write(self.config)
-                self.config = xmlfile
-            # handle http/https url or file path
+            if self.config.lower() == "auto":
+                self.die_on_fail = False
+                with open(resource.resource_filename(self.default_config), 'rb') as def_config:
+                    config_contents = def_config.read()
             else:
-                filename = resource.resource_filename(self.config)
-                xmlfile = self.core.mkstemp(".xml", "monitoring_")
-                self.core.add_artifact_file(xmlfile)
-                with open(filename, 'rb') as config:
+                with open(resource.resource_filename(self.config), 'rb') as config:
                     config_contents = config.read()
-                with open(xmlfile, 'w') as f:
-                    f.write(config_contents)
-                self.config = filename
 
-        if self.config == 'none':
-            self.monitoring = None
-
-        if self.config == 'auto':
-            default_config_path = "{}/config/monitoring_default_config.xml".format(
-                os.path.dirname(__file__))
-            filename = resource.resource_filename(default_config_path)
-            with open(filename, 'rb') as default_config:
-                default_config_contents = default_config.read()
-            self.config = self.core.mkstemp(".xml", "monitoring_default_")
-            with open(self.config, 'w') as cfg_file:
-                cfg_file.write(default_config_contents)
+        # dump config contents into a file
+        xmlfile = self.core.mkstemp(".xml", "monitoring_")
+        self.core.add_artifact_file(xmlfile)
+        with open(xmlfile, "w") as f:
+            f.write(config_contents)
+        self.config = xmlfile
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -101,10 +94,10 @@ class Plugin(AbstractPlugin):
                 "No autostop plugin found, not adding instances criterion")
 
     def prepare_test(self):
-        if not self.config or self.config == 'none':
+        if not self.config or self.config.lower() == 'none':
             return
 
-        if 'Phantom' in self.core.job.generator_plugin.__module__:
+        if "Phantom" in self.core.job.generator_plugin.__module__:
             phantom = self.core.job.generator_plugin
             if phantom.phout_import_mode:
                 logger.info("Phout import mode, disabling monitoring")
@@ -123,7 +116,7 @@ class Plugin(AbstractPlugin):
             self.monitoring.default_target = self.default_target
 
         # FIXME json report already save this artifact, fix pls
-        self.data_file = self.core.mkstemp('.data', 'monitoring_overall_')
+        self.data_file = self.core.mkstemp(".data", "monitoring_overall_")
         self.mon_saver = SaveMonToFile(self.data_file)
         self.monitoring.add_listener(self.mon_saver)
         self.core.add_artifact_file(self.data_file)
@@ -326,8 +319,6 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
 
             if self.metric not in data.keys() or not data[self.metric]:
                 data[self.metric] = 0
-            logging.info('Metric: %s', self.metric)
-            logging.info('Data: %s', data)
             logger.debug("Compare %s %s/%s=%s to %s", self.get_type_string(),
                          host, self.metric, data[self.metric],
                          self.value_limit)

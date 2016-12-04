@@ -18,7 +18,6 @@ from ..JMeter import Plugin as JMeterPlugin
 from ..Monitoring import Plugin as MonitoringPlugin
 from ..Pandora import Plugin as PandoraPlugin
 from ..Phantom import Plugin as PhantomPlugin
-from ..Telegraf import Plugin as TelegrafPlugin
 from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener, AbstractInfoWidget
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
@@ -31,7 +30,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     RC_STOP_FROM_WEB = 8
 
     def __init__(self, core):
-        AbstractPlugin.__init__(self, core)
+        super(Plugin, self).__init__(core)
         self.locks_list_dict = {}
         self.api_client = OverloadClient()
         self.jobno = None
@@ -127,17 +126,10 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.copy_config = self.get_option("copy_config_to", '')
         self.jobno_file = self.get_option("jobno_file", '')
 
-        try:
-            self.mon = self.core.get_plugin_of_type(TelegrafPlugin)
-        except KeyError:
-            logger.debug("Telegraf plugin not found:", exc_info=True)
-            try:
-                self.mon = self.core.get_plugin_of_type(MonitoringPlugin)
-            except KeyError:
-                logger.debug("Monitoring plugin not found:", exc_info=True)
-
-        if self.mon and self.mon.monitoring:
-            self.mon.monitoring.add_listener(self)
+        if self.core.job.monitoring_plugin:
+            self.mon = self.core.job.monitoring_plugin
+            if self.mon.monitoring:
+                self.mon.monitoring.add_listener(self)
 
         self.__save_conf()
 
@@ -186,6 +178,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             port = info.port
             instances = info.instances
             tank_type = 1 if info.tank_type == 'http' else 2
+            # FIXME why don't we use resource_opener here?
             if info.ammo_file.startswith(
                     "http://") or info.ammo_file.startswith("https://"):
                 ammo_path = info.ammo_file
@@ -297,23 +290,16 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             return
         self.__send_data(data, stats)
 
-    def get_sla_by_task(self):
-        return self.api_client.get_sla_by_task(self.regression_component)
-
     def monitoring_data(self, data_list):
         if not self.jobno:
             logger.debug("No jobNo gained yet")
             return
 
         if self.retcode < 0:
-            # FIXME remove this with old monitoring plugin
-            if len(data_list) > 0:
-                if type(data_list[0]) is str:
-                    [self.api_client.push_monitoring_data(self.jobno, data)
-                     for data in data_list]
-                else:
-                    self.api_client.push_monitoring_data(self.jobno,
-                                                         json.dumps(data_list))
+            if 'Telegraf' in self.core.job.monitoring_plugin.__module__:
+                self.api_client.push_monitoring_data(self.jobno, json.dumps(data_list))
+            elif 'Monitoring' in self.core.job.monitoring_plugin.__module__:
+                [self.api_client.push_monitoring_data(self.jobno, data) for data in data_list if data]
         else:
             logger.warn("The test was stopped from Web interface")
 

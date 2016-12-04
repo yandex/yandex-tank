@@ -7,6 +7,11 @@ logger = logging.getLogger(__name__)
 
 class MetricsDecoder(object):
     def __init__(self):
+        """
+        translates telegraf metric names into common Monitoring metric names
+        translates `uncommon` names to `custom:`s
+
+        """
         self.known_metrics = {
             'mem_used': 'Memory_used',
             'mem_free': 'Memory_free',
