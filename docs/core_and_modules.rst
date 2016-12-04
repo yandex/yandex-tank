@@ -1183,6 +1183,7 @@ Metric elements in general are set by metrics group name.
 There are plenty of config-wide configuration options (such as `fielddrop`, `fieldpass` etc, you can read about them here: https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
 
 List of metrics group names and particular metrics in them:
+
 * CPU
     * percpu - default: false
 * System
