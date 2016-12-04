@@ -274,7 +274,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                         value = screen.markup.CYAN + value + screen.markup.RESET
                     res += "      %s%s: %s\n" % (
                         ' ' * (self.max_metric_len - len(metric)),
-                        metric.replace('_', ' '), value)
+                        metric.replace('custom:', '').replace('_', ' '), value)
 
             return res.strip()
 
