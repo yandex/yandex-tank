@@ -1125,6 +1125,8 @@ INI file section: **[telegraf]**
 
 You can use old monitoring config, telegraf plugin transparently supports it.
 
+Telegraf plugin automatically uploads telegraf collector binary to target from tank if exists.
+
 Options
 -------
 
@@ -1133,6 +1135,69 @@ Options
 
   Default: ``auto`` means collect default metrics from ``default_target`` host. If ``none`` is defined, monitoring won't be executed. Also it is possible to write plain multiline XML config.
 
+
+Element ``Host``
+^^^^^^^^^^^^^^^^
+
+Contains address and role of monitored server. Attributes:
+
+:address="<IP address or domain name>:
+  Server adddress. Mandatory. Special mask ``[target]`` could be used here, which means "get from the tank target address"
+
+:port="<SSH port>":
+  Server's ssh port. Optional.
+
+  Default: 22
+
+:python="<python path>":
+  The way to use alternative python version. Optional.
+
+:interval="<seconds>":
+  Metrics collection interval. Optional.
+
+  Default: 1 second
+
+:comment="<short commentary>":
+  Short notice about server's role in test. Optional.
+
+  Default: empty
+
+:username="<user name>":
+  User account to connect with. Optional.
+
+  Default: current user account.
+
+:telegraf="/path/to/telegraf":
+  Path to telegraf binary on remote host. Optional.
+
+  Default: `/usr/bin/telegraf`
+
+Example:
+``<Host address="localhost" comment="frontend" priority="1" interval="5" username="tank"/>``
+
+Metric elements
+^^^^^^^^^^^^^^^
+
+Metric elements in general are set by metrics group name.
+
+There are plenty of config-wide configuration options (such as `fielddrop`, `fieldpass` etc, you can read about them here: https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
+
+List of metrics group names and particular metrics in them:
+* CPU
+    * percpu - default: false
+* System
+* Memory
+* Disk
+    * devices - default: ",".join(['"vda%s","sda%s"' % (num, num) for num in range(6)])
+* Net
+    * interfaces - default: ",".join(['"eth%s"' % (num) for num in range(6)])
+* Net_Response
+    * protocol - default: "tcp"
+    * address - default: ":80"
+    * timeout - default: "1s"
+* Custom
+    * diff - default: 0
+    * measure - default: call - metric value is a command or script execution output. Example: `<Custom measure="call" diff="1" label="Base size">du -hs
 
 
 Console on-line screen
