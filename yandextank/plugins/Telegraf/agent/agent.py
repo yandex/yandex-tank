@@ -77,7 +77,24 @@ class Consolidator(object):
                         ts = data['timestamp']
                         self.results.setdefault(ts, {})
                         for key, value in data['fields'].iteritems():
+                            if data['name'] == 'diskio':
+                                data['name'] = "{metric_name}-{disk_id}".format(
+                                    metric_name=data['name'],
+                                    disk_id=data['tags']['name']
+                                )
+                            elif data['name'] == 'net':
+                                data['name'] = "{metric_name}-{interface}".format(
+                                    metric_name=data['name'],
+                                    interface=data['tags']['interface']
+                                )
+                            elif data['name'] == 'cpu':
+                                data['name'] = "{metric_name}-{cpu_id}".format(
+                                    metric_name=data['name'],
+                                    cpu_id=data['tags']['cpu']
+                                )
                             key = data['name']+"_"+key
+                            if key.endswith('_exec_value'):
+                                key = key.replace('_exec_value','')
                             self.results[ts][key] = value
                     except KeyError:
                         logger.error('Malformed json from source: %s', chunk, exc_info=True)

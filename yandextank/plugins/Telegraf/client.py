@@ -33,11 +33,8 @@ class LocalhostClient(object):
     def __init__(self, config):
         # config
         self.python = config['python']
-        self.interval = config['interval']
         self.host = "localhost"
-        self.custom = config['custom']
         self.telegraf = config['telegraf']
-        self.comment = config['comment']
         self.config = AgentConfig(config)
 
         # connection
@@ -106,31 +103,31 @@ class LocalhostClient(object):
 
     def read_buffer(self):
         while self.session:
-            chunk = self.session.stdout.read(4096)
-            if chunk:
-                parts = chunk.rsplit('\n', 1)
-                if len(parts) > 1:
-                    ready_chunk = self.buffer + parts[0] + '\n'
-                    self.buffer = parts[1]
-                    self.incoming_queue.put(ready_chunk)
-                else:
-                    self.buffer += parts[0]
-            else:
-                try:
-                    time.sleep(1)
-                except AttributeError:
-                    logger.debug(
-                        'this exc most likely raised during interpreter shutdown\n'
-                        'otherwise something really nasty happend', exc_info=True
-                    )
+            try:
+                chunk = self.session.stdout.read(4096)
+                if chunk:
+                    parts = chunk.rsplit('\n', 1)
+                    if len(parts) > 1:
+                        ready_chunk = self.buffer + parts[0] + '\n'
+                        self.buffer = parts[1]
+                        self.incoming_queue.put(ready_chunk)
+                    else:
+                        self.buffer += parts[0]
+            except ValueError:
+                logger.debug(
+                    'this exc most likely raised during interpreter shutdown\n'
+                    'otherwise something really nasty happend', exc_info=True
+                )
 
     def uninstall(self):
         """
         Remove agent's files from remote host
         """
         if self.session:
+            logging.info('Waiting monitoring data...')
             self.session.terminate()
             self.session.wait()
+            self.reader_thread.join(10)
         log_filename = "agent_{host}.log".format(host="localhost")
         data_filename = "agent_{host}.rawdata".format(host="localhost")
         try:
@@ -154,10 +151,7 @@ class SSHClient(object):
         self.username = config['username']
         self.python = config['python']
         self.port = config['port']
-        self.interval = config['interval']
-        self.custom = config['custom']
         self.telegraf = config['telegraf']
-        self.comment = config['comment']
         self.config = AgentConfig(config)
 
         #connection

@@ -70,12 +70,15 @@ class MonitoringCollector(object):
                 self.artifact_files.append(customs_script)
 
     def start(self):
-        """Start agents"""
+        """ Start agents
+
+        execute popen of agent.py on target and start output reader thread.
+        """
         [agent.start() for agent in self.agents]
         [agent.reader_thread.start() for agent in self.agents]
 
     def poll(self):
-        """Poll agents for data
+        """ Poll agents for data
         """
         start_time = time.time()
         for agent in self.agents:

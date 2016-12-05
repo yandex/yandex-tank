@@ -18,7 +18,6 @@ from ..JMeter import Plugin as JMeterPlugin
 from ..Monitoring import Plugin as MonitoringPlugin
 from ..Pandora import Plugin as PandoraPlugin
 from ..Phantom import Plugin as PhantomPlugin
-from ..Telegraf import Plugin as TelegrafPlugin
 from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener, AbstractInfoWidget
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
@@ -31,7 +30,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     RC_STOP_FROM_WEB = 8
 
     def __init__(self, core):
-        AbstractPlugin.__init__(self, core)
+        super(Plugin, self).__init__(core)
         self.locks_list_dict = {}
         self.api_client = OverloadClient()
         self.jobno = None
@@ -96,65 +95,41 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             raise RuntimeError("API token error")
 
     def configure(self):
-        try:
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except KeyError:
-            logger.debug("Aggregator plugin not found", exc_info=True)
-        else:
-            aggregator.add_result_listener(self)
+        aggregator = self.core.job.aggregator_plugin
+        aggregator.add_result_listener(self)
 
         self.api_client.set_api_address(self.get_option("api_address"))
         self.api_client.set_api_timeout(self.get_option("api_timeout", 30))
-        self.api_client.set_api_token(self.read_token(self.get_option(
-            "token_file", '')))
-        self.task = self.get_option("task", 'DEFAULT')
-        self.job_name = unicode(self.get_option("job_name", 'none').decode(
-            'utf8'))
-        if self.job_name == 'ask' and sys.stdin.isatty():
+        self.api_client.set_api_token(self.read_token(self.get_option("token_file", "")))
+        self.task = self.get_option("task", "DEFAULT")
+        self.job_name = unicode(self.get_option("job_name", "none").decode("utf8"))
+        if self.job_name == "ask" and sys.stdin.isatty():
             self.job_name = unicode(raw_input(
-                'Please, enter job_name: ').decode('utf8'))
-        self.job_dsc = unicode(self.get_option("job_dsc", '').decode('utf8'))
-        if self.job_dsc == 'ask' and sys.stdin.isatty():
-            self.job_dsc = unicode(raw_input('Please, enter job_dsc: ').decode(
-                'utf8'))
-        self.notify_list = self.get_option("notify", '').split(' ')
-        self.version_tested = unicode(self.get_option("ver", ''))
-        self.regression_component = unicode(self.get_option("component", ''))
-        self.is_regression = self.get_option("regress", '0')
+                "Please, enter job_name: ").decode("utf8"))
+        self.job_dsc = unicode(self.get_option("job_dsc", "").decode("utf8"))
+        if self.job_dsc == "ask" and sys.stdin.isatty():
+            self.job_dsc = unicode(raw_input("Please, enter job_dsc: ").decode("utf8"))
+        self.notify_list = self.get_option("notify", "").split(" ")
+        self.version_tested = unicode(self.get_option("ver", ""))
+        self.regression_component = unicode(self.get_option("component", ""))
+        self.is_regression = self.get_option("regress", "0")
         self.operator = self.get_option("operator", self.operator)
         if not self.operator:
-            self.operator = pwd.getpwuid(os.geteuid())[0]
-        self.copy_config = self.get_option("copy_config_to", '')
-        self.jobno_file = self.get_option("jobno_file", '')
-
-        try:
-            self.mon = self.core.get_plugin_of_type(TelegrafPlugin)
-        except KeyError:
-            logger.debug("Telegraf plugin not found:", exc_info=True)
             try:
-                self.mon = self.core.get_plugin_of_type(MonitoringPlugin)
-            except KeyError:
-                logger.debug("Monitoring plugin not found:", exc_info=True)
+                # Clouds and some virtual envs may fail this
+                self.operator = pwd.getpwuid(os.geteuid())[0]
+            except:
+                logger.warning('failed to getpwuid.', exc_into=True)
+                self.operator = 'unknown'
+        self.copy_config = self.get_option("copy_config_to", "")
+        self.jobno_file = self.get_option("jobno_file", "")
 
-        if self.mon and self.mon.monitoring:
-            self.mon.monitoring.add_listener(self)
+        if self.core.job.monitoring_plugin:
+            self.mon = self.core.job.monitoring_plugin
+            if self.mon.monitoring:
+                self.mon.monitoring.add_listener(self)
 
         self.__save_conf()
-
-    def _core_with_tank_api(self):
-        """
-        Return True if we are running under Tank API
-        """
-        api_found = False
-        try:
-            import yandex_tank_api.worker  # pylint: disable=F0401
-        except ImportError:
-            logger.debug("Attempt to import yandex_tank_api.worker failed")
-        else:
-            api_found = isinstance(self.core, yandex_tank_api.worker.TankCore)
-        logger.debug("We are%s running under API server", '' if api_found else
-                     ' likely not')
-        return api_found
 
     def prepare_test(self):
         try:
@@ -185,15 +160,13 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             self.target = info.address
             port = info.port
             instances = info.instances
-            tank_type = 1 if info.tank_type == 'http' else 2
-            if info.ammo_file.startswith(
-                    "http://") or info.ammo_file.startswith("https://"):
+            tank_type = 1 if info.tank_type == "http" else 2
+            # FIXME why don't we use resource_opener here?
+            if info.ammo_file.startswith("http://") or info.ammo_file.startswith("https://"):
                 ammo_path = info.ammo_file
             else:
                 ammo_path = os.path.realpath(info.ammo_file)
-            loadscheme = [] if isinstance(info.rps_schedule,
-                                          unicode) else info.rps_schedule
-
+            loadscheme = [] if isinstance(info.rps_schedule, unicode) else info.rps_schedule
             loop_count = info.loop_count
         except (KeyError, AttributeError) as ex:
             logger.debug("No phantom plugin to get target info: %s", ex)
@@ -268,11 +241,9 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             if autostop and autostop.cause_criterion:
                 rps = 0
                 if autostop.cause_criterion.cause_second:
-                    rps = autostop.cause_criterion.cause_second[1]["metrics"][
-                        "reqps"]
+                    rps = autostop.cause_criterion.cause_second[1]["metrics"]["reqps"]
                     if not rps:
-                        rps = autostop.cause_criterion.cause_second[0][
-                            "overall"]["interval_real"]["len"]
+                        rps = autostop.cause_criterion.cause_second[0]["overall"]["interval_real"]["len"]
                 self.api_client.set_imbalance_and_dsc(
                     self.jobno, rps, autostop.cause_criterion.explain())
 
@@ -297,23 +268,16 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             return
         self.__send_data(data, stats)
 
-    def get_sla_by_task(self):
-        return self.api_client.get_sla_by_task(self.regression_component)
-
     def monitoring_data(self, data_list):
         if not self.jobno:
             logger.debug("No jobNo gained yet")
             return
 
         if self.retcode < 0:
-            # FIXME remove this with old monitoring plugin
-            if len(data_list) > 0:
-                if type(data_list[0]) is str:
-                    [self.api_client.push_monitoring_data(self.jobno, data)
-                     for data in data_list]
-                else:
-                    self.api_client.push_monitoring_data(self.jobno,
-                                                         json.dumps(data_list))
+            if "Telegraf" in self.core.job.monitoring_plugin.__module__:
+                self.api_client.push_monitoring_data(self.jobno, json.dumps(data_list))
+            elif "Monitoring" in self.core.job.monitoring_plugin.__module__:
+                [self.api_client.push_monitoring_data(self.jobno, data) for data in data_list if data]
         else:
             logger.warn("The test was stopped from Web interface")
 
@@ -353,6 +317,20 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         if not os.path.exists(PLUGIN_DIR):
             os.makedirs(PLUGIN_DIR)
         os.symlink(self.core.artifacts_dir, os.path.join(PLUGIN_DIR, str(name)))
+
+    def _core_with_tank_api(self):
+        """
+        Return True if we are running under Tank API
+        """
+        api_found = False
+        try:
+            import yandex_tank_api.worker  # pylint: disable=F0401
+        except ImportError:
+            logger.debug("Attempt to import yandex_tank_api.worker failed")
+        else:
+            api_found = isinstance(self.core, yandex_tank_api.worker.TankCore)
+        logger.debug("We are%s running under API server", "" if api_found else " likely not")
+        return api_found
 
 
 class JobInfoWidget(AbstractInfoWidget):
