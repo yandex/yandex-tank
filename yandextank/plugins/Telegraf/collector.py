@@ -37,6 +37,7 @@ class MonitoringCollector(object):
         self.artifact_files = []
         self.load_start_time = None
         self.config_manager = ConfigManager()
+        self.old_style_configs = False
         self.clients = {
             'localhost': LocalhostClient,
             'ssh': SSHClient
@@ -56,9 +57,9 @@ class MonitoringCollector(object):
         # Creating agent for hosts
         for config in agent_configs:
             if config['host'] in ['localhost', '127.0.0.1', '::1']:
-                client = self.clients['localhost'](config)
+                client = self.clients['localhost'](config, self.old_style_configs)
             else:
-                client = self.clients['ssh'](config, timeout=5)
+                client = self.clients['ssh'](config, self.old_style_configs, timeout=5)
             logger.debug('Installing monitoring agent. Host: %s', client.host)
             agent_config, startup_config, customs_script = client.install()
             if agent_config:

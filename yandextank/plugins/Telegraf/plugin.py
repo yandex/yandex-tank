@@ -10,6 +10,8 @@ import logging
 import os
 import time
 
+from ConfigParser import NoOptionError
+
 from ...common.resource import manager as resource
 from ...common.interfaces import MonitoringDataListener, AbstractPlugin, AbstractInfoWidget
 from ...common.util import expand_to_seconds
@@ -24,8 +26,7 @@ logger = logging.getLogger(__name__)
 class Plugin(AbstractPlugin):
     """  resource mon plugin  """
 
-    # FIXME switch to 'monitoring' section name
-    SECTION = 'telegraf'
+    SECTION = 'telegraf' # may be redefined to 'monitoring' sometimes.
 
     def __init__(self, core):
         super(Plugin, self).__init__(core)
@@ -54,7 +55,22 @@ class Plugin(AbstractPlugin):
     def get_available_options(self):
         return ["config", "default_target", "ssh_timeout"]
 
+    def __detect_configuration(self, option_name):
+        """
+        we need to be flexible in order to determine which plugin's configuration
+        specified and make appropriate configs to metrics collector
+        """
+        try:
+            self.core.get_option(self.SECTION, option_name, None)
+        except NoOptionError:
+            logging.warning('Telegraf not found `config` option in `telegraf` section.\n'
+                          'We\'re going to use old-style monitoring configs'
+            )
+            self.SECTION = 'monitoring'
+            self.monitoring.old_style_configs = True
+
     def configure(self):
+        self.__detect_configuration("config")
         self.config = self.get_option("config", "auto").strip()
         self.default_target = self.get_option("default_target", "localhost") # legacy ?
         if self.config.lower() == "none":

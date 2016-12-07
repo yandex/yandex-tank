@@ -153,13 +153,14 @@ class ConfigManager(object):
 class AgentConfig(object):
     """ Agent config generator helper """
 
-    def __init__(self, config):
+    def __init__(self, config, old_style_configs):
         self.host = config['host']
         self.custom = config['custom']
         self.startups = config['startup']
         self.shutdowns = config['shutdown']
         self.comment = config['comment']
         self.host_config = config['host_config']
+        self.old_style_configs = old_style_configs
 
 
     def create_startup_config(self):
@@ -248,14 +249,34 @@ class AgentConfig(object):
 
         try:
             config = ConfigParser.RawConfigParser()
+
             for section in self.host_config.keys():
                 config.add_section("{section_name}".format(section_name=self.host_config[section]['name']))
-                for key, value in self.host_config[section].iteritems():
-                    if key != 'name':
-                        config.set("{section_name}".format(section_name=self.host_config[section]['name']),
-                            "{key}".format(key=key),
-                            "{value}".format(value=value)
-                        )
+                # telegraf-style config
+                if not self.old_style_configs:
+                    for key, value in self.host_config[section].iteritems():
+                        if key != 'name':
+                            config.set("{section_name}".format(section_name=self.host_config[section]['name']),
+                                "{key}".format(key=key),
+                                "{value}".format(value=value)
+                            )
+                # monitoring-style config
+                else:
+                    if section in ['Agent', 'global_tags']:
+                        for key, value in self.host_config[section].iteritems():
+                            if key != 'name':
+                                config.set("{section_name}".format(section_name=self.host_config[section]['name']),
+                                    "{key}".format(key=key),
+                                    "{value}".format(value=value)
+                                )
+                    else:
+                        for key, value in self.host_config[section].iteritems():
+                            if key in ['fielddrop', 'fieldpass', 'percpu', 'devices', 'interfaces']:
+                                config.set("{section_name}".format(section_name=self.host_config[section]['name']),
+                                    "{key}".format(key=key),
+                                    "{value}".format(value=value)
+                                )
+
 
             # outputs
             config.add_section("[outputs.file]")
