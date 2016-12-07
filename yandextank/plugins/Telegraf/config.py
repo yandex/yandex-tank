@@ -83,6 +83,7 @@ class ConfigManager(object):
                 "fielddrop": '["boot_time"]',
             }
         }
+        defaults_enabled = ['CPU', 'Memory', 'Disk', 'Net', 'System', 'Kernel']
         defaults_boolean = ['percpu', 'round_interval', 'fielddrop', 'fieldpass', 'interfaces', 'devices']
         hostname = host.get('address').lower()
         if hostname == '[target]':
@@ -95,19 +96,7 @@ class ConfigManager(object):
         startups = []
         shutdowns = []
         # agent defaults
-        host_config = {
-            "global_tags": {
-                "name": 'global_tags'
-            },
-            "Agent": {
-                "name": 'agent',
-                "interval": "'{interval}s'".format(interval=host.get('interval', 1)),
-                "round_interval": "true",
-                "flush_interval": "'1s'",
-                "collection_jitter": "'0s'",
-                "flush_jitter": "'1s'"
-            },
-        }
+        host_config = {}
         for metric in host:
             if str(metric.tag) in defaults.keys():
                 for key in defaults[metric.tag]:
@@ -135,11 +124,13 @@ class ConfigManager(object):
                 shutdowns.append(metric.text)
         if len(host_config) == 0:
             logging.info('Empty host config, using defaults')
-            host_config = defaults
+            for section in defaults_enabled:
+                host_config[section] = defaults[section]
         return {
             'host_config': host_config,
             'port': int(host.get('port', 22)),
             'python': host.get('python', '/usr/bin/env python2'),
+            'interval': host.get('interval', 1),
             'username': host.get('username', getpass.getuser()),
             'telegraf': host.get('telegraf', '/usr/bin/telegraf'),
             'comment': host.get('comment', ''),
@@ -158,6 +149,7 @@ class AgentConfig(object):
         self.custom = config['custom']
         self.startups = config['startup']
         self.shutdowns = config['shutdown']
+        self.interval = config['interval']
         self.comment = config['comment']
         self.host_config = config['host_config']
         self.old_style_configs = old_style_configs
@@ -247,13 +239,23 @@ class AgentConfig(object):
         self.monitoring_data_output = "{remote_folder}/monitoring.rawdata".format(
             remote_folder=workdir)
 
+        defaults_old_enabled = ['CPU', 'Memory', 'Disk', 'Net', 'System']
+
         try:
             config = ConfigParser.RawConfigParser()
 
+            config.add_section("global_tags")
+            config.add_section("agent")
+            config.set("agent", "interval", "'{interval}s'".format(interval=self.interval))
+            config.set("agent", "round_interval", "true")
+            config.set("agent", "flush_interval", "'1s'")
+            config.set("agent", "collection_jitter", "'0s'")
+            config.set("agent", "flush_jitter", "'1s'")
+
             for section in self.host_config.keys():
-                config.add_section("{section_name}".format(section_name=self.host_config[section]['name']))
                 # telegraf-style config
                 if not self.old_style_configs:
+                    config.add_section("{section_name}".format(section_name=self.host_config[section]['name']))
                     for key, value in self.host_config[section].iteritems():
                         if key != 'name':
                             config.set("{section_name}".format(section_name=self.host_config[section]['name']),
@@ -262,14 +264,8 @@ class AgentConfig(object):
                             )
                 # monitoring-style config
                 else:
-                    if section in ['Agent', 'global_tags']:
-                        for key, value in self.host_config[section].iteritems():
-                            if key != 'name':
-                                config.set("{section_name}".format(section_name=self.host_config[section]['name']),
-                                    "{key}".format(key=key),
-                                    "{value}".format(value=value)
-                                )
-                    else:
+                    if section in defaults_old_enabled:
+                        config.add_section("{section_name}".format(section_name=self.host_config[section]['name']))
                         for key, value in self.host_config[section].iteritems():
                             if key in ['fielddrop', 'fieldpass', 'percpu', 'devices', 'interfaces']:
                                 config.set("{section_name}".format(section_name=self.host_config[section]['name']),
