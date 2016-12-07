@@ -30,12 +30,12 @@ def generate_file_md5(filename, blocksize=2**20):
 
 class LocalhostClient(object):
     """ localhost client setup """
-    def __init__(self, config):
+    def __init__(self, config, old_style_configs):
         # config
         self.python = config['python']
         self.host = "localhost"
         self.telegraf = config['telegraf']
-        self.config = AgentConfig(config)
+        self.config = AgentConfig(config, old_style_configs)
 
         # connection
         self.incoming_queue = Queue.Queue()
@@ -145,14 +145,14 @@ class LocalhostClient(object):
 
 class SSHClient(object):
     """remote agent client setup """
-    def __init__(self, config, timeout):
+    def __init__(self, config, old_style_configs, timeout):
         #config
         self.host = config['host']
         self.username = config['username']
         self.python = config['python']
         self.port = config['port']
         self.telegraf = config['telegraf']
-        self.config = AgentConfig(config)
+        self.config = AgentConfig(config, old_style_configs)
 
         #connection
         self.session = None

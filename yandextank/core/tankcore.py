@@ -346,7 +346,8 @@ class TankCore(object):
 
     def get_option(self, section, option, default=None):
         """
-        Get an option from option storage
+        `Get` an option from option storage
+        and `set` if default specified.
         """
         if not self.config.config.has_section(section):
             self.log.debug("No section '%s', adding", section)
