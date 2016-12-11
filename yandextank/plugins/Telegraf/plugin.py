@@ -55,24 +55,56 @@ class Plugin(AbstractPlugin):
     def get_available_options(self):
         return ["config", "default_target", "ssh_timeout"]
 
-    def __detect_configuration(self, option_name):
+    def __detect_configuration(self):
         """
         we need to be flexible in order to determine which plugin's configuration
         specified and make appropriate configs to metrics collector
+
+        :return: SECTION name or None for defaults
         """
         try:
-            self.core.get_option(self.SECTION, option_name, None)
+            is_telegraf = self.core.get_option('telegraf', "config", None)
         except NoOptionError:
-            logging.warning('Telegraf not found `config` option in `telegraf` section.\n'
-                          'We\'re going to use old-style monitoring configs'
-            )
-            self.SECTION = 'monitoring'
-            self.monitoring.old_style_configs = True
+            is_telegraf = None
+        try:
+            is_monitoring = self.core.get_option('monitoring', "config", None)
+        except NoOptionError:
+            is_monitoring = None
+
+        if is_telegraf and is_monitoring:
+            raise RuntimeError('Both telegraf and monitoring configs specified. '
+                               'Clean up your config and delete one of them')
+        if is_telegraf and not is_monitoring:
+            return 'telegraf'
+        if not is_telegraf and is_monitoring:
+            return 'monitoring'
+        if not is_telegraf and not is_monitoring:
+            # defaults target logic
+            try:
+                is_telegraf_dt = self.core.get_option('telegraf', "default_target", None)
+            except NoOptionError:
+                is_telegraf_dt = None
+            try:
+                is_monitoring_dt = self.core.get_option('monitoring', "default_target", None)
+            except:
+                is_monitoring_dt = None
+            if is_telegraf_dt and is_monitoring_dt:
+                raise RuntimeError('Both telegraf and monitoring default targets specified. '
+                                   'Clean up your config and delete one of them')
+            if is_telegraf_dt and not is_monitoring_dt:
+                return
+            if not is_telegraf_dt and is_monitoring_dt:
+                self.core.set_option("telegraf", "default_target", is_monitoring_dt)
+            if not is_telegraf_dt and not is_monitoring_dt:
+                return
 
     def configure(self):
-        self.__detect_configuration("config")
+        self.detected_conf = self.__detect_configuration()
+        if self.detected_conf:
+            logging.info('Detected monitoring configuration: %s', self.detected_conf)
+            self.SECTION = self.detected_conf
         self.config = self.get_option("config", "auto").strip()
-        self.default_target = self.get_option("default_target", "localhost") # legacy ?
+        self.default_target = self.get_option("default_target", "localhost")
         if self.config.lower() == "none":
             self.monitoring = None
             self.die_on_fail = False
