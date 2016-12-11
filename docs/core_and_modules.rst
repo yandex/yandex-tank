@@ -1127,6 +1127,7 @@ You can use old monitoring config format, if you specify it in [monitoring] seci
 You can use new monitoring config format, if you specify it in [telegraf] section.
 
 Backward compatibility logic:
+
 .. image:: ./pic/monitoring_backward_compatibility_grapf.png
 
 
