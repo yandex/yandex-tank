@@ -1123,7 +1123,12 @@ Thanks to https://github.com/influxdata/telegraf for metric collection agent.
 
 INI file section: **[telegraf]**
 
-You can use old monitoring config, telegraf plugin transparently supports it.
+You can use old monitoring config format, if you specify it in [monitoring] seciton. Telegraf plugin transparently supports it.
+You can use new monitoring config format, if you specify it in [telegraf] section.
+
+Backward compatibility logic:
+.. image:: ./pic/monitoring_backward_compatibility_grapf.png
+
 
 Telegraf plugin automatically uploads telegraf collector binary to target from tank if exists.
 
@@ -1133,7 +1138,17 @@ Options
 :config:
   Path to monitoring config file.
 
-  Default: ``auto`` means collect default metrics from ``default_target`` host. If ``none`` is defined, monitoring won't be executed. Also it is possible to write plain multiline XML config.
+  Default: ``auto`` means collect default metrics from ``default_target`` host. If ``none`` is defined,
+  monitoring won't be executed. Also it is possible to write plain multiline XML config.
+
+:default_target:
+  An address where from collect "default" metrics. When phantom module is used, address will be obtained from it.
+
+:ssh_timeout:
+  Ssh connection timeout.
+
+  Default: 5s
+
 
 
 
@@ -1144,7 +1159,7 @@ Configuration
 Net access and authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Monitoring requires ssh access to hosts for copy and executing agents on them. SSH session is established with user account specified by "username" parameter of Host element, otherwise current user account, so you need to copy your public keys (ssh-copy-id) and enable nonpassword authorization on hosts.
+Telegraf requires ssh access to hosts for copy and executing agents/telegraf collector binaries on them. SSH session is established with user account specified by "username" parameter of Host element, otherwise current user account, so you need to copy your public keys (ssh-copy-id) and enable nonpassword authorization on hosts.
 If connection establishing failed for some reason in ``ssh_timeout`` seconds, corresponding message will be written to console and monitoring log and task will proceed further.
 Tip: write to ``.ssh/config`` next lines to eliminate ``-A`` option in ``ssh``
 
