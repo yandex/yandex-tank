@@ -1,0 +1,9 @@
+<Monitoring>
+  <Host address="[target]">
+       <CPU measure="idle,user,system,iowait" />
+       <System measure="la1,csw,int,numproc,numthreads" />
+       <Memory measure="free,used,cached,buff" />
+       <Disk measure="read,write"/>
+       <Net measure="recv,send,retransmit,estab,closewait,timewait"/>
+  </Host>
+</Monitoring>
