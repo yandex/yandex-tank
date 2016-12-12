@@ -72,7 +72,7 @@ class Plugin(AbstractPlugin):
             is_monitoring = None
 
         if is_telegraf and is_monitoring:
-            raise RuntimeError('Both telegraf and monitoring configs specified. '
+            raise ValueError('Both telegraf and monitoring configs specified. '
                                'Clean up your config and delete one of them')
         if is_telegraf and not is_monitoring:
             return 'telegraf'
@@ -89,7 +89,7 @@ class Plugin(AbstractPlugin):
             except:
                 is_monitoring_dt = None
             if is_telegraf_dt and is_monitoring_dt:
-                raise RuntimeError('Both telegraf and monitoring default targets specified. '
+                raise ValueError('Both telegraf and monitoring default targets specified. '
                                    'Clean up your config and delete one of them')
             if is_telegraf_dt and not is_monitoring_dt:
                 return

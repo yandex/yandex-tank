@@ -1,0 +1,18 @@
+<Monitoring>
+    <Host address="somehost.yandex.tld" interval="1" username="netort">
+        <CPU fielddrop='["time_*", "usage_guest_nice"]'></CPU>
+        <Kernel fielddrop='["active", "inactive", "total", "used_per*", "avail*"]'></Kernel>
+        <Net fielddrop='["icmp*", "ip*", "udplite*", "tcp*", "udp*", "drop*", "err*"]' interfaces='["eth0","eth1","lo"]'></Net>
+        <System fielddrop='["n_users", "n_cpus", "uptime*"]'></System>
+        <Memory fielddrop='["active", "inactive", "total", "used_per*", "avail*"]'></Memory>
+        <Disk devices='["vda1","sda1","sda2","sda3","ahalai-mahalai"]'></Disk>
+        <Netstat />
+        <Custom diff="1" measure="call" label="test">curl -s 'http://localhost:6100/stat'  | python -c 'import sys, json; j = json.load(sys.stdin); print "\n".join(`c["values"]["accept"]` for c in j["charts"] if c["name"] == "localqueue_wait_time")'</Custom>
+    </Host>
+
+    <Host address="localhost" telegraf="/usr/bin/telegraf">
+        <CPU percpu="true"></CPU>
+        <NetResponse address="ya.ru:80" protocol="tcp" timeout="1s"></NetResponse>
+        <Net fielddrop='["icmp*", "ip*", "udplite*", "tcp*", "udp*", "drop*", "err*"]' interfaces='["eth0","eth1","docker0","lo"]'></Net>
+    </Host>
+</Monitoring>
