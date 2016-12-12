@@ -6,9 +6,9 @@ import os.path
 import re
 import sys
 if sys.version_info[0] < 3:
-    from ConfigParser import ConfigParser, NoSectionError
+    import ConfigParser
 else:
-    from configparser import ConfigParser, NoSectionError
+    import configparser as ConfigParser
 import tempfile
 import time
 from collections import defaultdict
