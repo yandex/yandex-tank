@@ -144,7 +144,7 @@ class Screen(object):
             self.log.debug("There are %d info widgets" %
                            len(self.info_widgets))
             for index, widget in sorted(self.info_widgets.iteritems(),
-                                        key=lambda k, v: (v.get_index(), k)):
+                                        key=lambda(k, v): (v.get_index(), k)):
                 self.log.debug("Rendering info widget #%s: %s", index, widget)
                 widget_out = widget.render(self).strip()
                 if widget_out:
