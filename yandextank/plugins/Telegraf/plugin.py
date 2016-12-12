@@ -129,7 +129,7 @@ class Plugin(AbstractPlugin):
         # dump config contents into a file
         xmlfile = self.core.mkstemp(".xml", "monitoring_")
         self.core.add_artifact_file(xmlfile)
-        with open(xmlfile, "w") as f:
+        with open(xmlfile, "wb") as f: # output file should be in binary mode to support py3
             f.write(config_contents)
         self.config = xmlfile
 
