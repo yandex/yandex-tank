@@ -60,4 +60,4 @@ analytic tools for the results they produce.
         'yandextank.plugins.Aggregator': ['config/*'],
         'yandextank.plugins.Telegraf': ['config/*'],
     },
-    use_2to3=True, )
+    use_2to3=False, )
