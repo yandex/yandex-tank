@@ -2,7 +2,7 @@
 Monitoring stdout pipe reader. Read chunks from stdout and produce data frames
 """
 import logging
-import Queue
+import queue
 import json
 
 from ..Telegraf.decoder import decoder
@@ -21,7 +21,7 @@ class MonitoringReader(object):
         while not self.finished:
             try:
                 yield self._decode_agents_data(self.source.get_nowait())
-            except Queue.Empty:
+            except queue.Empty:
                 return
 
     def _decode_agents_data(self, block):

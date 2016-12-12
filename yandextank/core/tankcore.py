@@ -1,5 +1,4 @@
 """ The central part of the tool: Core """
-import ConfigParser
 import datetime
 import fnmatch
 import importlib as il
@@ -14,10 +13,14 @@ import traceback
 import uuid
 import pkg_resources
 import sys
+if sys.version_info[0] < 3:
+    import ConfigParser
+else:
+    import configparser as ConfigParser
+
 import platform
 from builtins import str
 
-from ConfigParser import NoSectionError
 from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin
 

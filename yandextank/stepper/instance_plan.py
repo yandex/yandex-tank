@@ -5,7 +5,7 @@ from itertools import cycle, repeat, chain
 
 from .util import parse_duration
 from .module_exceptions import StepperConfigurationError
-
+from builtins import range
 
 class LoadPlanBuilder(object):
     def __init__(self):
@@ -39,9 +39,9 @@ class LoadPlanBuilder(object):
         interval = float(duration) / (count - 1)
         start_time = self.duration
         self.generators.append(int(start_time + i * interval)
-                               for i in xrange(0, count))
+                               for i in range(0, count))
         self.steps += [(self.instances + i + 1, int(interval / 1000.0))
-                       for i in xrange(0, count)]
+                       for i in range(0, count)]
         self.instances += count
         self.duration += duration
         return self
@@ -61,7 +61,7 @@ class LoadPlanBuilder(object):
         step_count = (final_instances - initial_instances) // step_size
         self.log.debug("Making a stairway: %s steps" % step_count)
         self.start(initial_instances - self.instances)
-        for i in xrange(1, step_count + 1):
+        for i in range(1, step_count + 1):
             self.wait(step_duration).start(step_size)
         if final_instances != self.instances:
             self.wait(step_duration).start(final_instances - self.instances)

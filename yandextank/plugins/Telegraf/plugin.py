@@ -10,7 +10,11 @@ import logging
 import os
 import time
 
-from ConfigParser import NoOptionError
+import sys
+if sys.version_info[0] < 3:
+    from ConfigParser import NoOptionError
+else:
+    from configparser import NoOptionError
 
 from ...common.resource import manager as resource
 from ...common.interfaces import MonitoringDataListener, AbstractPlugin, AbstractInfoWidget

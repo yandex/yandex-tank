@@ -3,8 +3,12 @@ import os.path
 import getpass
 import logging
 import tempfile
-import ConfigParser
-
+from future.utils import iteritems
+import sys
+if sys.version_info[0] < 3:
+    import ConfigParser
+else:
+    import configparser as ConfigParser
 from ..Telegraf.decoder import decoder
 
 logger = logging.getLogger(__name__)
@@ -256,7 +260,7 @@ class AgentConfig(object):
                 # telegraf-style config
                 if not self.old_style_configs:
                     config.add_section("{section_name}".format(section_name=self.host_config[section]['name']))
-                    for key, value in self.host_config[section].iteritems():
+                    for key, value in iteritems(self.host_config[section]):
                         if key != 'name':
                             config.set("{section_name}".format(section_name=self.host_config[section]['name']),
                                 "{key}".format(key=key),
@@ -266,7 +270,7 @@ class AgentConfig(object):
                 else:
                     if section in defaults_old_enabled:
                         config.add_section("{section_name}".format(section_name=self.host_config[section]['name']))
-                        for key, value in self.host_config[section].iteritems():
+                        for key, value in iteritems(self.host_config[section]):
                             if key in ['fielddrop', 'fieldpass', 'percpu', 'devices', 'interfaces']:
                                 config.set("{section_name}".format(section_name=self.host_config[section]['name']),
                                     "{key}".format(key=key),

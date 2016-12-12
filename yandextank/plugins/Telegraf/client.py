@@ -1,4 +1,4 @@
-import Queue
+import queue
 import hashlib
 import logging
 import os
@@ -38,7 +38,7 @@ class LocalhostClient(object):
         self.config = AgentConfig(config, old_style_configs)
 
         # connection
-        self.incoming_queue = Queue.Queue()
+        self.incoming_queue = queue.Queue()
         self.buffer = ""
 
         self.workdir = None
@@ -157,7 +157,7 @@ class SSHClient(object):
         #connection
         self.session = None
         self.ssh = SecuredShell(self.host, self.port, self.username, timeout)
-        self.incoming_queue = Queue.Queue()
+        self.incoming_queue = queue.Queue()
         self.buffer = ""
 
         self.reader = MonitoringReader(self.incoming_queue)

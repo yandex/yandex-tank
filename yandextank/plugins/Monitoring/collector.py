@@ -1,11 +1,14 @@
 """Target monitoring via SSH"""
-import ConfigParser
 import base64
 import getpass
 import logging
 import os.path
 import re
 import sys
+if sys.version_info[0] < 3:
+    from ConfigParser import ConfigParser, NoSectionError
+else:
+    from configparser import ConfigParser, NoSectionError
 import tempfile
 import time
 from collections import defaultdict
