@@ -23,6 +23,16 @@ class LoggingListener(AggregateResultListener):
         logger.info("Stats:\n%s", json.dumps(stats, indent=2))
 
 
+def get_from_queue(queue):
+    data = []
+    for _ in range(queue.qsize()):
+        try:
+            data.append(queue.get_nowait())
+        except q.Empty:
+            break
+    return data
+
+
 class Plugin(AbstractPlugin):
     """
     Plugin that manages aggregation and stats collection
@@ -83,18 +93,8 @@ class Plugin(AbstractPlugin):
         """
         Collect data, cache it and send to listeners
         """
-        data = []
-        for _ in range(self.results.qsize()):
-            try:
-                data.append(self.results.get_nowait())
-            except q.Empty:
-                break
-        stats = []
-        for _ in range(self.stats.qsize()):
-            try:
-                stats += self.stats.get_nowait()
-            except q.Empty:
-                break
+        data = get_from_queue(self.results)
+        stats = get_from_queue(self.stats)
         logger.debug("Data timestamps:\n%s" % [d.get('ts') for d in data])
         logger.debug("Stats timestamps:\n%s" % [d.get('ts') for d in stats])
         logger.debug("Data cache timestamps:\n%s" % self.data_cache.keys())
@@ -126,11 +126,11 @@ class Plugin(AbstractPlugin):
         if self.reader:
             self.reader.close()
         if self.drain:
-            self.drain.wait()
+            self.drain.join()
         if self.stats_reader:
             self.stats_reader.close()
         if self.stats_drain:
-            self.stats_drain.wait()
+            self.stats_drain.join()
         self._collect_data()
         return retcode
 
