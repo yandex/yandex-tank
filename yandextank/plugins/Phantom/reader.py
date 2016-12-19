@@ -8,7 +8,7 @@ import json
 import time
 import datetime
 import itertools as itt
-from io import StringIO
+from StringIO import StringIO
 
 
 logger = logging.getLogger(__name__)
@@ -55,13 +55,14 @@ def string_to_df(data):
 
 
 class PhantomReader(object):
-    def __init__(self, filename):
+    def __init__(self, filename, cache_size=1024*1024*50):
         self.buffer = ""
         self.phout = open(filename, 'r')
         self.closed = False
+        self.cache_size = cache_size
 
     def _read_phout_chunk(self):
-        data = self.phout.read(1024 * 1024 * 50)
+        data = self.phout.read(self.cache_size)
         if data:
             parts = data.rsplit('\n', 1)
             if len(parts) > 1:
