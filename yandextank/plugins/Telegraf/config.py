@@ -300,7 +300,7 @@ class AgentConfig(object):
                     idx=idx
                 )
                 inputs += "data_format = 'value'\n"
-                inputs += "data_type = 'integer'\n"
+                inputs += "data_type = 'float'\n"
                 inputs += "name_prefix = '{}_'\n\n".format(cmd.get('label'))
                 if cmd['diff']:
                     decoder.diff_metrics['custom'].append(decoder.find_common_names(cmd.get('label')))
