@@ -32,5 +32,5 @@ class TestDrain(object):
         destination = Queue()
         drain = Drain(source, destination)
         drain.start()
-        drain.wait()
+        drain.join()
         assert destination.qsize() == 1000000
