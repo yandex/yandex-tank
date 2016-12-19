@@ -51,6 +51,9 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
 
+        import pdb
+        pdb.set_trace()
+
         self.criterion_str = " ".join(self.get_option("autostop", '').split(
             "\n"))
         self._stop_report_path = os.path.join(

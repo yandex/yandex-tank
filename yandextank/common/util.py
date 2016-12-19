@@ -31,7 +31,6 @@ class Drain(th.Thread):
         super(Drain, self).__init__()
         self.source = source
         self.destination = destination
-        self._finished = th.Event()
         self._interrupted = th.Event()
 
     def run(self):
@@ -39,10 +38,6 @@ class Drain(th.Thread):
             self.destination.put(item)
             if self._interrupted.is_set():
                 break
-        self._finished.set()
-
-    def wait(self, timeout=None):
-        self._finished.wait(timeout=timeout)
 
     def close(self):
         self._interrupted.set()
