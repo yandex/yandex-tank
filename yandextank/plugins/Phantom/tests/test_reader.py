@@ -7,7 +7,7 @@ from yandextank.plugins.Phantom.reader import PhantomReader
 class TestPhantomReader(object):
     def test_read_all(self):
         reader = PhantomReader(
-            'yandextank/plugins/Phantom/tests/phout.log',
+            'yandextank/plugins/Phantom/tests/phout.dat',
             cache_size=1024)
         df = pd.DataFrame()
         for chunk in reader:
