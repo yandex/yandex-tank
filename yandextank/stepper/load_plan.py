@@ -92,7 +92,7 @@ class Line(object):
 
     def __len__(self):
         '''Return total ammo count'''
-        return int(self.slope / 2.0 * (self.duration**2) + self.minrps * self.duration)
+        return int((self.maxrps + self.minrps) / 2.0 * self.duration)
 
     def get_float_rps_list(self):
         '''
