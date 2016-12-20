@@ -10,7 +10,7 @@ from .aggregator import Aggregator, DataPoller
 from .chopper import TimeChopper
 from ...common.interfaces import AbstractPlugin
 from ...common.interfaces import AggregateResultListener
-from ...common.util import Drain
+from ...common.util import Drain, Chopper
 
 logger = logging.getLogger(__name__)
 
@@ -80,8 +80,8 @@ class Plugin(AbstractPlugin):
             self.drain = Drain(pipeline, self.results)
             self.drain.start()
             self.stats_drain = Drain(
-                DataPoller(source=self.stats_reader,
-                           poll_period=1),
+                Chopper(DataPoller(source=self.stats_reader,
+                                   poll_period=1)),
                 self.stats)
             self.stats_drain.start()
         else:

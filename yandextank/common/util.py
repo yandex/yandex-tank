@@ -587,3 +587,14 @@ class AddressWizard:
             raise RuntimeError(msg % (sa[0], sa[1]))
         finally:
             test_sock.close()
+
+
+class Chopper(object):
+
+    def __init__(self, source):
+        self.source = source
+
+    def __iter__(self):
+        for chunk in self.source:
+            for item in chunk:
+                yield item
