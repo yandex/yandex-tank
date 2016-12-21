@@ -124,10 +124,10 @@ class LocalhostClient(object):
         Remove agent's files from remote host
         """
         if self.session:
-            logging.info('Waiting monitoring data...')
+            logger.info('Waiting monitoring data...')
             self.session.terminate()
             self.session.wait()
-            self.reader_thread.join(10)
+            self.session = None
         log_filename = "agent_{host}.log".format(host="localhost")
         data_filename = "agent_{host}.rawdata".format(host="localhost")
         try:
@@ -302,6 +302,7 @@ class SSHClient(object):
             if self.session:
                 self.session.send("stop\n")
                 self.session.close()
+                self.session = None
         except:
             logger.warning(
                 'Unable to correctly stop monitoring agent - session is broken. Pay attention to agent log (%s).',
