@@ -119,6 +119,12 @@ class MonitoringCollector(object):
             log_filename, data_filename = agent.uninstall()
             self.artifact_files.append(log_filename)
             self.artifact_files.append(data_filename)
+        for agent in self.agents:
+            try:
+                logger.debug('Waiting for agent %s reader thread to finish.', agent)
+                agent.reader_thread.join(10)
+            except:
+                logger.error('Monitoring reader thread stuck!', exc_info=True)
 
     def send_collected_data(self):
         """sends pending data set to listeners"""
