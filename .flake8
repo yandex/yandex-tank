@@ -1,0 +1,26 @@
+[flake8]
+exclude =
+    .git,
+    .cache,
+    .eggs,
+    .idea,
+    .Python,
+    docs/,
+    tmp/,
+    env/,
+    build/,
+    *.build/,
+    develop-eggs/,
+    dist/,
+    downloads/,
+    eggs/,
+    .eggs/,
+    lib/,
+    lib64/,
+    parts/,
+    sdist/,
+    var/,
+    *.egg-info/,
+    .installed.cfg,
+    *.egg
+ignore = E501

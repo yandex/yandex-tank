@@ -21,7 +21,7 @@ analytic tools for the results they produce.
         'pip>=8.1.2',
     ],
     setup_requires=[
-        'pytest-runner',
+        'pytest-runner', 'flake8',
     ],
     tests_require=[
         'pytest',
