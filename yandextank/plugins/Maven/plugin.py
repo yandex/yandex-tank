@@ -13,7 +13,6 @@ from ...common.interfaces import AbstractPlugin, GeneratorPlugin
 
 from .console import MavenInfoWidget
 from .reader import MavenReader, MavenStatsReader
-from ..Aggregator import Plugin as AggregatorPlugin
 from ..Console import Plugin as ConsolePlugin
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     SECTION = "maven"
 
     def __init__(self, core):
-        # FIXME python version 2.7 does not support this syntax. super() should have arguments in Python 2
+        # FIXME python version 2.7 does not support this syntax. super() should
+        # have arguments in Python 2
         super().__init__(core)
         self.maven_cmd = "mvn"
         self.process = None

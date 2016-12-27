@@ -33,8 +33,8 @@ class ApiWorker:
         console_handler = logging.StreamHandler(sys.stdout)
         stderr_hdl = logging.StreamHandler(sys.stderr)
 
-        fmt_verbose = logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s %(message)s")
+        # fmt_verbose = logging.Formatter(
+        #     "%(asctime)s [%(levelname)s] %(name)s %(message)s")
         fmt_regular = logging.Formatter(
             "%(asctime)s %(levelname)s: %(message)s", "%H:%M:%S")
 
@@ -134,8 +134,7 @@ class ApiWorker:
         # initialize basic defaults
         configs = [resource_filename(__name__, 'config/00-base.ini')]
         try:
-            conf_files = os.listdir(self.baseconfigs_location)
-            conf_files.sort()
+            conf_files = sorted(os.listdir(self.baseconfigs_location))
             for filename in conf_files:
                 if fnmatch.fnmatch(filename, '*.ini'):
                     configs += [

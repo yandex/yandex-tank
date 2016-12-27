@@ -184,7 +184,16 @@ class GeneratorPlugin(object):
                     'loop_count': 0}
 
     class Info(object):
-        def __init__(self, address, port, instances, ammo_file, rps_schedule, duration, loop_count):
+
+        def __init__(
+                self,
+                address,
+                port,
+                instances,
+                ammo_file,
+                rps_schedule,
+                duration,
+                loop_count):
             self.address = address
             self.port = port
             self.instances = instances

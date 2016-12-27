@@ -11,21 +11,22 @@ import socket
 import sys
 
 from .client import OverloadClient
-from ..Aggregator import Plugin as AggregatorPlugin
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
 from ..JMeter import Plugin as JMeterPlugin
 from ..Monitoring import Plugin as MonitoringPlugin
-from ..Pandora import Plugin as PandoraPlugin
+# from ..Pandora import Plugin as PandoraPlugin
 from ..Phantom import Plugin as PhantomPlugin
-from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener, AbstractInfoWidget
+from ...common.interfaces import AbstractPlugin,\
+    MonitoringDataListener, AggregateResultListener, AbstractInfoWidget
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 
 class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
-    # pylint:disable=R0902
-    """ Yandex Overload analytics service client (https://overload.yandex.net) """
+    """
+    Yandex Overload analytics service client (https://overload.yandex.net)
+    """
     SECTION = 'overload'
     RC_STOP_FROM_WEB = 8
 
@@ -100,15 +101,22 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
         self.api_client.set_api_address(self.get_option("api_address"))
         self.api_client.set_api_timeout(self.get_option("api_timeout", 30))
-        self.api_client.set_api_token(self.read_token(self.get_option("token_file", "")))
+        self.api_client.set_api_token(
+            self.read_token(
+                self.get_option(
+                    "token_file", "")))
         self.task = self.get_option("task", "DEFAULT")
-        self.job_name = unicode(self.get_option("job_name", "none").decode("utf8"))
+        self.job_name = unicode(
+            self.get_option(
+                "job_name",
+                "none").decode("utf8"))
         if self.job_name == "ask" and sys.stdin.isatty():
             self.job_name = unicode(raw_input(
                 "Please, enter job_name: ").decode("utf8"))
         self.job_dsc = unicode(self.get_option("job_dsc", "").decode("utf8"))
         if self.job_dsc == "ask" and sys.stdin.isatty():
-            self.job_dsc = unicode(raw_input("Please, enter job_dsc: ").decode("utf8"))
+            self.job_dsc = unicode(
+                raw_input("Please, enter job_dsc: ").decode("utf8"))
         self.notify_list = self.get_option("notify", "").split(" ")
         self.version_tested = unicode(self.get_option("ver", ""))
         self.regression_component = unicode(self.get_option("component", ""))
@@ -146,7 +154,6 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             phantom = self.core.get_plugin_of_type(PhantomPlugin)
             info = phantom.get_info()
             self.target = info.address
-            duration = int(info.duration)
         except (KeyError, AttributeError) as ex:
             logger.debug("No phantom plugin to get target info: %s", ex)
             self.target = socket.getfqdn()
@@ -162,11 +169,13 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             instances = info.instances
             tank_type = 1 if info.tank_type == "http" else 2
             # FIXME why don't we use resource_opener here?
-            if info.ammo_file.startswith("http://") or info.ammo_file.startswith("https://"):
+            if info.ammo_file.startswith(
+                    "http://") or info.ammo_file.startswith("https://"):
                 ammo_path = info.ammo_file
             else:
                 ammo_path = os.path.realpath(info.ammo_file)
-            loadscheme = [] if isinstance(info.rps_schedule, unicode) else info.rps_schedule
+            loadscheme = [] if isinstance(
+                info.rps_schedule, unicode) else info.rps_schedule
             loop_count = info.loop_count
         except (KeyError, AttributeError) as ex:
             logger.debug("No phantom plugin to get target info: %s", ex)
@@ -184,11 +193,11 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         except KeyError as ex:
             logger.debug("No jmeter plugin to get info: %s", ex)
 
-        try:
-            pandora = self.core.get_plugin_of_type(PandoraPlugin)
-            # TODO: get info from Pandora here
-        except KeyError as ex:
-            logger.debug("No pandora plugin to get info: %s", ex)
+        # try:
+        #     pandora = self.core.get_plugin_of_type(PandoraPlugin)
+        #     # TODO: get info from Pandora here
+        # except KeyError as ex:
+        #     logger.debug("No pandora plugin to get info: %s", ex)
 
         detailed_field = "interval_real"
 
@@ -241,9 +250,11 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             if autostop and autostop.cause_criterion:
                 rps = 0
                 if autostop.cause_criterion.cause_second:
-                    rps = autostop.cause_criterion.cause_second[1]["metrics"]["reqps"]
+                    rps = autostop.cause_criterion.cause_second[
+                        1]["metrics"]["reqps"]
                     if not rps:
-                        rps = autostop.cause_criterion.cause_second[0]["overall"]["interval_real"]["len"]
+                        rps = autostop.cause_criterion.cause_second[
+                            0]["overall"]["interval_real"]["len"]
                 self.api_client.set_imbalance_and_dsc(
                     self.jobno, rps, autostop.cause_criterion.explain())
 
@@ -275,9 +286,11 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
         if self.retcode < 0:
             if "Telegraf" in self.core.job.monitoring_plugin.__module__:
-                self.api_client.push_monitoring_data(self.jobno, json.dumps(data_list))
+                self.api_client.push_monitoring_data(
+                    self.jobno, json.dumps(data_list))
             elif "Monitoring" in self.core.job.monitoring_plugin.__module__:
-                [self.api_client.push_monitoring_data(self.jobno, data) for data in data_list if data]
+                [self.api_client.push_monitoring_data(
+                    self.jobno, data) for data in data_list if data]
         else:
             logger.warn("The test was stopped from Web interface")
 
@@ -316,7 +329,11 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         PLUGIN_DIR = os.path.join(self.core.artifacts_base_dir, self.SECTION)
         if not os.path.exists(PLUGIN_DIR):
             os.makedirs(PLUGIN_DIR)
-        os.symlink(self.core.artifacts_dir, os.path.join(PLUGIN_DIR, str(name)))
+        os.symlink(
+            self.core.artifacts_dir,
+            os.path.join(
+                PLUGIN_DIR,
+                str(name)))
 
     def _core_with_tank_api(self):
         """
@@ -329,11 +346,14 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             logger.debug("Attempt to import yandex_tank_api.worker failed")
         else:
             api_found = isinstance(self.core, yandex_tank_api.worker.TankCore)
-        logger.debug("We are%s running under API server", "" if api_found else " likely not")
+        logger.debug(
+            "We are%s running under API server",
+            "" if api_found else " likely not")
         return api_found
 
 
 class JobInfoWidget(AbstractInfoWidget):
+
     def __init__(self, sender):
         AbstractInfoWidget.__init__(self)
         self.owner = sender

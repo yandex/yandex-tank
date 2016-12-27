@@ -4,11 +4,6 @@ import getpass
 import logging
 import os.path
 import re
-import sys
-if sys.version_info[0] < 3:
-    import ConfigParser
-else:
-    import configparser as ConfigParser
 import tempfile
 import time
 from collections import defaultdict
@@ -16,6 +11,11 @@ from xml.etree import ElementTree as etree
 
 from ...common.util import SecuredShell
 from ...common.interfaces import MonitoringDataListener
+import sys
+if sys.version_info[0] < 3:
+    import ConfigParser
+else:
+    import configparser as ConfigParser
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
@@ -286,7 +286,8 @@ class MonitoringCollector(object):
 
     def send_collected_data(self):
         """sends pending data set to listeners"""
-        [listener.monitoring_data(self.send_data) for listener in self.listeners]
+        [listener.monitoring_data(self.send_data)
+         for listener in self.listeners]
         self.send_data = []
 
     def get_host_config(self, host, target_hint):

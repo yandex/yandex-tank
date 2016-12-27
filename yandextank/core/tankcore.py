@@ -13,11 +13,6 @@ import traceback
 import uuid
 import pkg_resources
 import sys
-if sys.version_info[0] < 3:
-    import ConfigParser
-else:
-    import configparser as ConfigParser
-
 import platform
 from builtins import str
 
@@ -30,14 +25,28 @@ from ..common.resource import manager as resource
 from ..plugins.Aggregator import Plugin as AggregatorPlugin
 from ..plugins.Monitoring import Plugin as MonitoringPlugin
 from ..plugins.Telegraf import Plugin as TelegrafPlugin
+if sys.version_info[0] < 3:
+    import ConfigParser
+else:
+    import configparser as ConfigParser
+
 
 logger = logging.getLogger(__name__)
 
 
 class Job(object):
 
-    def __init__(self, name, description, task, version, config_copy, monitoring_plugin, aggregator_plugin, tank,
-                 generator_plugin=None):
+    def __init__(
+            self,
+            name,
+            description,
+            task,
+            version,
+            config_copy,
+            monitoring_plugin,
+            aggregator_plugin,
+            tank,
+            generator_plugin=None):
         # type: (unicode, unicode, unicode, unicode, unicode, MonitoringPlugin,
         # AggregatorPlugin, GeneratorPlugin) -> Job
         self.name = name
@@ -170,19 +179,19 @@ class TankCore(object):
                 plugin = il.import_module(plugin_path)
             except ImportError:
                 if plugin_path.startswith("yatank_internal_"):
-                    logger.warning("Deprecated plugin path format: %s\n"
-                                   "Tank plugins are now orginized using"
-                                   " namespace packages. Example:\n"
-                                   "    plugin_jmeter=yandextank.plugins.JMeter",
-                                   plugin_path)
+                    logger.warning(
+                        "Deprecated plugin path format: %s\n"
+                        "Tank plugins are now orginized using"
+                        " namespace packages. Example:\n"
+                        "    plugin_jmeter=yandextank.plugins.JMeter", plugin_path)
                     plugin_path = plugin_path.replace(
                         "yatank_internal_", "yandextank.plugins.")
                 if plugin_path.startswith("yatank_"):
-                    logger.warning("Deprecated plugin path format: %s\n"
-                                   "Tank plugins are now orginized using"
-                                   " namespace packages. Example:\n"
-                                   "    plugin_jmeter=yandextank.plugins.JMeter",
-                                   plugin_path)
+                    logger.warning(
+                        "Deprecated plugin path format: %s\n"
+                        "Tank plugins are now orginized using"
+                        " namespace packages. Example:\n"
+                        "    plugin_jmeter=yandextank.plugins.JMeter", plugin_path)
 
                     plugin_path = plugin_path.replace(
                         "yatank_", "yandextank.plugins.")
@@ -237,19 +246,31 @@ class TankCore(object):
             logger.warning("Load generator not found:", exc_info=True)
             gen = None
 
-        self.job = Job(name=self.get_option(self.SECTION_META, "job_name", 'none').decode('utf8'),
-                       description=self.get_option(
-                           self.SECTION_META, "job_dsc", '').decode('utf8'),
-                       task=self.get_option(
-                           self.SECTION_META, 'task', 'dir').decode('utf8'),
-                       version=self.get_option(
-                           self.SECTION_META, 'ver', '').decode('utf8'),
-                       config_copy=self.get_option(
-                           self.SECTION_META, 'copy_config_to', 'config_copy'),
-                       monitoring_plugin=mon,
-                       aggregator_plugin=aggregator,
-                       generator_plugin=gen,
-                       tank=socket.getfqdn())
+        self.job = Job(
+            name=self.get_option(
+                self.SECTION_META,
+                "job_name",
+                'none').decode('utf8'),
+            description=self.get_option(
+                self.SECTION_META,
+                "job_dsc",
+                '').decode('utf8'),
+            task=self.get_option(
+                self.SECTION_META,
+                'task',
+                'dir').decode('utf8'),
+            version=self.get_option(
+                    self.SECTION_META,
+                    'ver',
+                    '').decode('utf8'),
+            config_copy=self.get_option(
+                        self.SECTION_META,
+                        'copy_config_to',
+                        'config_copy'),
+            monitoring_plugin=mon,
+            aggregator_plugin=aggregator,
+            generator_plugin=gen,
+            tank=socket.getfqdn())
 
         for plugin in self.plugins:
             logger.debug("Configuring %s", plugin)
@@ -571,8 +592,8 @@ class TankCore(object):
         if not self._artifacts_dir:
             if not self.artifacts_dir_name:
                 date_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.")
-                self.artifacts_dir_name = tempfile.mkdtemp("", date_str,
-                                                           self.artifacts_base_dir)
+                self.artifacts_dir_name = tempfile.mkdtemp(
+                    "", date_str, self.artifacts_base_dir)
             elif not os.path.isdir(self.artifacts_dir_name):
                 os.makedirs(self.artifacts_dir_name)
             os.chmod(self.artifacts_dir_name, 0o755)

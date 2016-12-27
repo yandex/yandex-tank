@@ -8,7 +8,8 @@ import time
 
 from pkg_resources import resource_string
 from ...common.util import expand_to_seconds
-from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AbstractInfoWidget, AbstractCriterion
+from ...common.interfaces import AbstractPlugin,\
+    MonitoringDataListener, AbstractInfoWidget, AbstractCriterion
 
 from .collector import MonitoringCollector, MonitoringDataDecoder
 from ..Autostop import Plugin as AutostopPlugin
@@ -253,8 +254,9 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener,
             for hostname, metrics in self.data.items():
                 tm_stamp = datetime.datetime.fromtimestamp(float(self.time[
                     hostname])).strftime('%H:%M:%S')
-                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET
-                        + " at %s:\n") % (hostname, tm_stamp)
+                res += (
+                    "   " + screen.markup.CYAN + "%s" + screen.markup.RESET +
+                    " at %s:\n") % (hostname, tm_stamp)
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
@@ -276,7 +278,7 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener,
         MonitoringDataDecoder.__init__(self)
 
         try:
-            #FIXME telegraf update required here
+            # FIXME telegraf update required here
             self.mon = autostop.core.get_plugin_of_type(Plugin)
             if self.mon.monitoring:
                 self.mon.monitoring.add_listener(self)

@@ -13,7 +13,8 @@ class MavenInfoWidget(AbstractInfoWidget):
     ''' Right panel widget '''
 
     def __init__(self, owner):
-        # FIXME python version 2.7 does not support this syntax. super() should have arguments in Python 2
+        # FIXME python version 2.7 does not support this syntax. super() should
+        # have arguments in Python 2
         super().__init__()
         self.krutilka = ConsoleScreen.krutilka()
         self.owner = owner

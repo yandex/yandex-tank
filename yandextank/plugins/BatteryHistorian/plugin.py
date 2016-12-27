@@ -22,11 +22,10 @@ class Plugin(AbstractPlugin):
         self.default_target = None
         self.device_id = None
         self.cmds = {
-            "enable_full_log" : "adb %s shell dumpsys batterystats --enable full-wake-history",
-            "disable_full_log" : "adb %s shell dumpsys batterystats --disable full-wake-history",
-            "reset" : "adb %s shell dumpsys batterystats --reset",
-            "dump": "adb %s shell dumpsys batterystats"
-        }
+            "enable_full_log": "adb %s shell dumpsys batterystats --enable full-wake-history",
+            "disable_full_log": "adb %s shell dumpsys batterystats --disable full-wake-history",
+            "reset": "adb %s shell dumpsys batterystats --reset",
+            "dump": "adb %s shell dumpsys batterystats"}
 
     def get_available_options(self):
         return ["device_id"]
@@ -43,24 +42,33 @@ class Plugin(AbstractPlugin):
     def prepare_test(self):
         if self.device_id:
             try:
-                out = subprocess.check_output(self.cmds['enable_full_log'], shell=True)
+                out = subprocess.check_output(
+                    self.cmds['enable_full_log'], shell=True)
                 logger.debug('Enabling full-log: %s', out)
                 out = subprocess.check_output(self.cmds['reset'], shell=True)
                 logger.debug('Reseting battery stats: %s', out)
-            except CalledProcessError:
-                logger.error('Error trying to prepare battery historian plugin', exc_info=True)
+            except subprocess.CalledProcessError:
+                logger.error(
+                    'Error trying to prepare battery historian plugin',
+                    exc_info=True)
 
     def end_test(self, retcode):
         if self.device_id:
             try:
                 logger.debug('dumping battery stats')
-                dump = subprocess.Popen(self.cmds['dump'], stdout=subprocess.PIPE, shell=True).communicate()[0]
-                out = subprocess.check_output(self.cmds['disable_full_log'], shell=True)
+                dump = subprocess.Popen(
+                    self.cmds['dump'],
+                    stdout=subprocess.PIPE,
+                    shell=True).communicate()[0]
+                out = subprocess.check_output(
+                    self.cmds['disable_full_log'], shell=True)
                 logger.debug('Disabling fulllog: %s', out)
                 out = subprocess.check_output(self.cmds['reset'], shell=True)
                 logger.debug('Battery stats reset: %s', out)
-            except CalledProcessError:
-                logger.error('Error trying to collect battery historian plugin data', exc_info=True)
+            except subprocess.CalledProcessError:
+                logger.error(
+                    'Error trying to collect battery historian plugin data',
+                    exc_info=True)
             with open(self.logfile, 'w') as f:
                 f.write(dump)
         return retcode

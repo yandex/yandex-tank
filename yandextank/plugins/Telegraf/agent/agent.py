@@ -14,7 +14,6 @@ from optparse import OptionParser
 import Queue as q
 
 
-
 logger = logging.getLogger("agent")
 collector_logger = logging.getLogger("telegraf")
 
@@ -23,12 +22,14 @@ def signal_handler(sig, frame):
     """ required for non-tty python runs to interrupt """
     raise KeyboardInterrupt()
 
+
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 
 class DataReader(object):
     """generator reads from source line-by-line"""
+
     def __init__(self, filename, pipe=False):
         self.pipe = pipe
         if not self.pipe:
@@ -60,18 +61,19 @@ class DataReader(object):
 
 class Consolidator(object):
     """generator consolidates data from source, cache it by timestamp"""
+
     def __init__(self, source):
         self.source = source
         self.results = {}
 
     def __iter__(self):
         for chunk in self.source:
-            #logger.info('Consolidator got %s', chunk)
             if chunk:
                 try:
                     data = json.loads(chunk)
                 except ValueError:
-                    logger.error('unable to decode chunk %s', chunk, exc_info=True)
+                    logger.error(
+                        'unable to decode chunk %s', chunk, exc_info=True)
                 else:
                     try:
                         ts = data['timestamp']
@@ -84,22 +86,23 @@ class Consolidator(object):
                                 )
                             elif data['name'] == 'net':
                                 data['name'] = "{metric_name}-{interface}".format(
-                                    metric_name=data['name'],
-                                    interface=data['tags']['interface']
-                                )
+                                    metric_name=data['name'], interface=data['tags']['interface'])
                             elif data['name'] == 'cpu':
                                 data['name'] = "{metric_name}-{cpu_id}".format(
                                     metric_name=data['name'],
                                     cpu_id=data['tags']['cpu']
                                 )
-                            key = data['name']+"_"+key
+                            key = data['name'] + "_" + key
                             if key.endswith('_exec_value'):
-                                key = key.replace('_exec_value','')
+                                key = key.replace('_exec_value', '')
                             self.results[ts][key] = value
                     except KeyError:
-                        logger.error('Malformed json from source: %s', chunk, exc_info=True)
+                        logger.error(
+                            'Malformed json from source: %s', chunk, exc_info=True)
                     except:
-                        logger.error('Something nasty happend in consolidator work', exc_info=True)
+                        logger.error(
+                            'Something nasty happend in consolidator work',
+                            exc_info=True)
             if len(self.results) > 5:
                 ready_to_go_index = min(self.results)
                 yield json.dumps(
@@ -107,7 +110,6 @@ class Consolidator(object):
                         ready_to_go_index: self.results.pop(ready_to_go_index, None)
                     }
                 )
-
 
 
 class Drain(threading.Thread):
@@ -137,6 +139,7 @@ class Drain(threading.Thread):
 
 
 class AgentWorker(threading.Thread):
+
     def __init__(self, telegraf_path):
         super(AgentWorker, self).__init__()
         self.working_dir = os.path.dirname(__file__)
@@ -206,8 +209,7 @@ class AgentWorker(threading.Thread):
         )
         self.collector = self.popen(cmnd)
 
-
-        telegraf_output = self.working_dir+'/monitoring.rawdata'
+        telegraf_output = self.working_dir + '/monitoring.rawdata'
 
         for _ in range(10):
             logger.info("Waiting for telegraf...")
@@ -239,14 +241,17 @@ class AgentWorker(threading.Thread):
             for _ in range(self.results.qsize()):
                 try:
                     data = self.results.get_nowait()
-                    logger.debug('send %s bytes of data to collector', len(data))
+                    logger.debug(
+                        'send %s bytes of data to collector', len(data))
                     sys.stdout.write(
-                        str(data)+'\n'
+                        str(data) + '\n'
                     )
                 except q.Empty:
                     break
                 except:
-                    logger.error('Something nasty happend trying to send data', exc_info=True)
+                    logger.error(
+                        'Something nasty happend trying to send data',
+                        exc_info=True)
             for _ in range(self.results_stdout.qsize()):
                 try:
                     data = self.results_stdout.get_nowait()
@@ -307,22 +312,27 @@ def main():
     (options, args) = parser.parse_args()
 
     logger.info('Init')
-    customs_script = os.path.dirname(__file__)+'/agent_customs.sh'
+    customs_script = os.path.dirname(__file__) + '/agent_customs.sh'
     try:
-        logger.info('Trying to make telegraf executable: %s', options.telegraf_path)
-        os.chmod(options.telegraf_path, 493)  # 0o755 compatible with old python versions. 744 is NOT enough
+        logger.info(
+            'Trying to make telegraf executable: %s',
+            options.telegraf_path)
+        # 0o755 compatible with old python versions. 744 is NOT enough
+        os.chmod(options.telegraf_path, 493)
     except OSError:
         logger.warning(
             'Unable to set %s access rights to execute.',
             options.telegraf_path, exc_info=True)
     try:
-        logger.info('Trying to make customs script executable: %s', customs_script)
-        os.chmod(customs_script, 493)  # 0o755 compatible with old python versions. 744 is NOT enough
+        logger.info(
+            'Trying to make customs script executable: %s',
+            customs_script)
+        # 0o755 compatible with old python versions. 744 is NOT enough
+        os.chmod(customs_script, 493)
     except OSError:
         logger.warning(
             'Unable to set %s access rights to execute.',
             customs_script, exc_info=True)
-
 
     worker = AgentWorker(options.telegraf_path)
     worker.read_startup_config()

@@ -14,9 +14,9 @@ AGGR_CONFIG = json.loads(resource_string("yandextank.plugins.Aggregator",
 
 
 class TestPipeline(object):
+
     def test_partially_reversed_data(self, data):
         results_queue = Queue()
-        results = []
         chunks = list(random_split(data))
         chunks[5], chunks[6] = chunks[6], chunks[5]
 
@@ -33,7 +33,6 @@ class TestPipeline(object):
 
     def test_slow_producer(self, data):
         results_queue = Queue()
-        results = []
         chunks = list(random_split(data))
         chunks[5], chunks[6] = chunks[6], chunks[5]
 

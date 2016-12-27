@@ -120,8 +120,8 @@ class AmmoFileReader(object):
                         if chunk_size == 0:
                             if info.status.loop_count == 0:
                                 self.log.info(
-                                    'Zero-sized chunk in ammo file at %s. Starting over.'
-                                    % ammo_file.tell())
+                                    'Zero-sized chunk in ammo file at %s. Starting over.' %
+                                    ammo_file.tell())
                             ammo_file.seek(0)
                             info.status.inc_loop_count()
                             chunk_header = read_chunk_header(ammo_file)
@@ -130,13 +130,13 @@ class AmmoFileReader(object):
                         missile = ammo_file.read(chunk_size)
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
-                                "Unexpected end of file: read %s bytes instead of %s"
-                                % (len(missile), chunk_size))
+                                "Unexpected end of file: read %s bytes instead of %s" %
+                                (len(missile), chunk_size))
                         yield (missile, marker)
                     except (IndexError, ValueError) as e:
                         raise AmmoFileError(
-                            "Error while reading ammo file. Position: %s, header: '%s', original exception: %s"
-                            % (ammo_file.tell(), chunk_header, e))
+                            "Error while reading ammo file. Position: %s, header: '%s', original exception: %s" %
+                            (ammo_file.tell(), chunk_header, e))
                 chunk_header = read_chunk_header(ammo_file)
                 if chunk_header == '':
                     ammo_file.seek(0)
@@ -260,6 +260,7 @@ def _parse_header(header):
 
 
 class UriReader(object):
+
     def __init__(self, filename, headers=[], http_ver='1.1', **kwargs):
         self.filename = filename
         self.headers = {}
@@ -338,8 +339,8 @@ class UriPostReader(object):
                         chunk_size = int(fields[0])
                         if chunk_size == 0:
                             self.log.debug(
-                                'Zero-sized chunk in ammo file at %s. Starting over.'
-                                % ammo_file.tell())
+                                'Zero-sized chunk in ammo file at %s. Starting over.' %
+                                ammo_file.tell())
                             ammo_file.seek(0)
                             info.status.inc_loop_count()
                             chunk_header = read_chunk_header(ammo_file)
@@ -349,8 +350,8 @@ class UriPostReader(object):
                         missile = ammo_file.read(chunk_size)
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
-                                "Unexpected end of file: read %s bytes instead of %s"
-                                % (len(missile), chunk_size))
+                                "Unexpected end of file: read %s bytes instead of %s" %
+                                (len(missile), chunk_size))
                         yield (HttpAmmo(uri=uri,
                                         headers=[
                                             ': '.join(header)
@@ -362,8 +363,8 @@ class UriPostReader(object):
                                marker)
                     except (IndexError, ValueError) as e:
                         raise AmmoFileError(
-                            "Error while reading ammo file. Position: %s, header: '%s', original exception: %s"
-                            % (ammo_file.tell(), chunk_header, e))
+                            "Error while reading ammo file. Position: %s, header: '%s', original exception: %s" %
+                            (ammo_file.tell(), chunk_header, e))
                 chunk_header = read_chunk_header(ammo_file)
                 if chunk_header == '':
                     self.log.debug(

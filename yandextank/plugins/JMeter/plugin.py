@@ -56,7 +56,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.jmeter_path = self.get_option('jmeter_path', 'jmeter')
         self.jmeter_log = self.core.mkstemp('.log', 'jmeter_')
         self.jmeter_ver = float(self.get_option('jmeter_ver', '3.0'))
-        self.ext_log = self.get_option('extended_log', self.get_option('ext_log', 'none'))
+        self.ext_log = self.get_option(
+            'extended_log', self.get_option(
+                'ext_log', 'none'))
         if self.ext_log not in self.ext_levels:
             self.ext_log = 'none'
         if self.ext_log != 'none':
@@ -118,20 +120,28 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 stderr=self.jmeter_stderr
             )
         except OSError:
-            logger.debug("Unable to start JMeter process. Args: %s, Executable: %s", self.args, self.jmeter_path, exc_info=True)
-            raise RuntimeError("Unable to access to JMeter executable file or it does not exist: %s" % self.jmeter_path)
+            logger.debug(
+                "Unable to start JMeter process. Args: %s, Executable: %s",
+                self.args,
+                self.jmeter_path,
+                exc_info=True)
+            raise RuntimeError(
+                "Unable to access to JMeter executable file or it does not exist: %s" %
+                self.jmeter_path)
         self.start_time = time.time()
 
     def is_test_finished(self):
         retcode = self.jmeter_process.poll()
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         if not aggregator.reader.jmeter_finished and retcode is not None:
-            logger.info("JMeter process finished with exit code: %s, waiting for aggregator", retcode)
+            logger.info(
+                "JMeter process finished with exit code: %s, waiting for aggregator",
+                retcode)
             self.retries = 0
             aggregator.reader.jmeter_finished = True
             return -1
         elif aggregator.reader.jmeter_finished is True:
-	    if aggregator.reader.agg_finished:
+            if aggregator.reader.agg_finished:
                 return retcode
             else:
                 logger.info("Waiting for aggregator to finish")
@@ -179,15 +189,18 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             save_connect = ''
 
         if self.ext_log in ['errors', 'all']:
-            level_map = {'errors':'true', 'all':'false'}
+            level_map = {'errors': 'true', 'all': 'false'}
             tpl_resource = 'jmeter_writer_ext.xml'
-            tpl_args = {'jtl':self.jtl_file, 'udv':udv,
-                        'ext_log':self.ext_log_file,
-                        'ext_level':level_map[self.ext_log],
+            tpl_args = {'jtl': self.jtl_file, 'udv': udv,
+                        'ext_log': self.ext_log_file,
+                        'ext_level': level_map[self.ext_log],
                         'save_connect': save_connect}
         else:
             tpl_resource = 'jmeter_writer.xml'
-            tpl_args = {'jtl':self.jtl_file, 'udv':udv, 'save_connect': save_connect}
+            tpl_args = {
+                'jtl': self.jtl_file,
+                'udv': udv,
+                'save_connect': save_connect}
 
         tpl = resource_string(__name__, 'config/' + tpl_resource)
 

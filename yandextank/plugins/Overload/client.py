@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 
 class OverloadClient(object):
+
     def __init__(self):
         self.address = None
         self.token = None
@@ -108,8 +109,9 @@ class OverloadClient(object):
         raise RuntimeError("Unreachable point hit")
 
     def get_job_summary(self, jobno):
-        result = self.get('api/job/' + str(jobno) + "/summary.json?api_token="
-                          + self.api_token)
+        result = self.get(
+            'api/job/' + str(jobno) +
+            "/summary.json?api_token=" + self.api_token)
         return result[0]
 
     def close_job(self, jobno, retcode):
@@ -149,7 +151,10 @@ class OverloadClient(object):
             data['description'] = comment.strip()
 
         response = self.post(
-            'api/job/' + str(jobno) + "/set_imbalance.json?api_token=" + self.api_token,
+            'api/job/' +
+            str(jobno) +
+            "/set_imbalance.json?api_token=" +
+            self.api_token,
             data)
         return response
 
@@ -242,8 +247,9 @@ class OverloadClient(object):
                     logger.info("Test has been stopped by Overload server")
                     return 1
                 else:
-                    logger.warn("Unknown HTTP error while sending second data. "
-                                "Retry in 10 sec: %s", ex)
+                    logger.warn(
+                        "Unknown HTTP error while sending second data. "
+                        "Retry in 10 sec: %s", ex)
                     time.sleep(10)  # FIXME this makes all plugins freeze
             except requests.exceptions.RequestException as ex:
                 logger.warn("Failed to push second data to API,"
@@ -251,7 +257,8 @@ class OverloadClient(object):
                 time.sleep(10)  # FIXME this makes all plugins freeze
             except Exception:  # pylint: disable=W0703
                 # something nasty happened, but we don't want to fail here
-                logger.exception("Unknown exception while pushing second data to API")
+                logger.exception(
+                    "Unknown exception while pushing second data to API")
                 return 0
         try:
             success = int(res[0]['success'])
@@ -276,8 +283,9 @@ class OverloadClient(object):
                         logger.info("Test has been stopped by Overload server")
                         return
                     else:
-                        logger.warning('Unknown http code while sending monitoring data,'
-                                       ' retry in 10s: %s', ex)
+                        logger.warning(
+                            'Unknown http code while sending monitoring data,'
+                            ' retry in 10s: %s', ex)
                         time.sleep(10)  # FIXME this makes all plugins freeze
                 except requests.exceptions.RequestException as ex:
                     logger.warning('Problems sending monitoring data,'
@@ -285,7 +293,8 @@ class OverloadClient(object):
                     time.sleep(10)  # FIXME this makes all plugins freeze
                 except Exception:  # pylint: disable=W0703
                     # something irrecoverable happened
-                    logger.exception("Unknown exception while pushing monitoring data to API")
+                    logger.exception(
+                        "Unknown exception while pushing monitoring data to API")
                     return
 
     def send_console(self, jobno, console):

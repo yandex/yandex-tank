@@ -25,9 +25,11 @@ def signal_handler(sig, frame):
     logger.warning("Got signal %s", sig)
     raise KeyboardInterrupt()
 
+
 def set_sig_handler():
-    uncatchable = ['SIG_DFL','SIGSTOP','SIGKILL']
-    for sig_name in [s for s in dir(signal) if (s.startswith("SIG") and s not in uncatchable)]:
+    uncatchable = ['SIG_DFL', 'SIGSTOP', 'SIGKILL']
+    for sig_name in [s for s in dir(signal) if (
+            s.startswith("SIG") and s not in uncatchable)]:
         try:
             sig_num = getattr(signal, sig_name)
             signal.signal(sig_num, signal_handler)
@@ -51,6 +53,7 @@ class AbstractMetric:
 
 
 class CpuLa(AbstractMetric):
+
     def columns(self, ):
         return ['System_la1', 'System_la5', 'System_la15']
 
@@ -127,7 +130,7 @@ class CpuStat(AbstractMetric):
                     traceback.format_exc(exc))
                 result.extend([''] * 2)
 
-            #CPU usage metrics delta
+            # CPU usage metrics delta
             try:
                 if not self.prev_check.get('cpu'):
                     self.prev_check['cpu'] = self.current_check['cpu']
@@ -184,7 +187,9 @@ class CpuStat(AbstractMetric):
         else:
             result.append(numthreads)
 
-        # Sample : ['localhost', '1437493895', '1088.0', '728.0', '0.0', '0.0', '6.25390869293', '93.6835522201', '0.0', '0.0', '0.0625390869293', '239', '534']
+        # Sample : ['localhost', '1437493895', '1088.0', '728.0', '0.0', '0.0',
+        # '6.25390869293', '93.6835522201', '0.0', '0.0', '0.0625390869293',
+        # '239', '534']
         return result
 
 
@@ -235,7 +240,6 @@ class Custom(AbstractMetric):
 
     def diff_value(self, config_line, value):
         if not is_number(value):
-            #logger.warning("Non-numeric result string, defaulting value to 0: %s", value)
             value = 0
         params = config_line.split(':')
         if len(params) > 2 and int(params[2]):
@@ -249,6 +253,7 @@ class Custom(AbstractMetric):
 
 
 class Disk(AbstractMetric):
+
     def __init__(self):
         AbstractMetric.__init__(self)
         self.read = 0
@@ -304,8 +309,9 @@ class Disk(AbstractMetric):
                 rp = os.path.realpath(parts[0])
                 short_name = rp.split(os.sep)[-1]
                 devs.append(short_name)
-                #Fixed due to LVM volumes on dom0 machines
-                #here we're trying to get block device name (even if mounted device file exists)
+                # Fixed due to LVM volumes on dom0 machines
+                # here we're trying to get block device name (even if mounted
+                # device file exists)
                 try:
                     for dirc in glob.glob("/sys/devices/virtual/block/*"):
                         logger.debug("Checking %s", dirc)
@@ -390,7 +396,8 @@ class NetRetrans(AbstractMetric):
         return ['Net_retransmit', ]
 
     def check(self, ):
-        self.fetch = lambda: int(commands.getoutput('netstat -s | grep "segments retransmited" | awk \'{print $1}\''))
+        self.fetch = lambda: int(commands.getoutput(
+            'netstat -s | grep "segments retransmited" | awk \'{print $1}\''))
         if self.retr_second is not None:
             self.retr_first = self.fetch()
             self.delta = []
@@ -420,7 +427,8 @@ class NetTcp(AbstractMetric):
         if note set it to 0.
         * make output ordered as "fields" list
         """
-        fetch = lambda: commands.getoutput("ss -s | sed -ne '/^TCP:/p'")
+        def fetch():
+            return commands.getoutput("ss -s | sed -ne '/^TCP:/p'")
 
         regex = ('(^[^(]+\()' '([^)]+)')
         matches = re.match(regex, fetch())
@@ -466,7 +474,9 @@ class NetTxRx(AbstractMetric):
         if status == 0:
             try:
                 lines = data.split('\n')
-                position = lambda sample: lines[0].split().index(sample)
+
+                def position(sample):
+                    return lines[0].split().index(sample)
                 rx_pos = position('RX-OK')
                 tx_pos = position('TX-OK')
 
@@ -494,6 +504,7 @@ class NetTxRx(AbstractMetric):
 
 
 class Net(AbstractMetric):
+
     def __init__(self):
         AbstractMetric.__init__(self)
         self.recv = 0
@@ -648,8 +659,9 @@ class AgentWorker(Thread):
                 sys.stdout.write(row + '\n')
                 sys.stdout.flush()
             except IOError as e:
-                    logger.error("Can't send data to collector, terminating, %s", e)
-                    self.finished = True
+                logger.error(
+                    "Can't send data to collector, terminating, %s", e)
+                self.finished = True
 
             self.fixed_sleep(self.c_interval)
 
@@ -678,6 +690,7 @@ class AgentWorker(Thread):
 
 
 class AgentConfig:
+
     def __init__(self, def_cfg_path):
         self.c_interval = 1
         self.c_host = socket.getfqdn()
@@ -801,7 +814,7 @@ if __name__ == '__main__':
             worker.join(10)
             if worker.isAlive():
                 logger.error("Worker have not finished shutdown in "
-                              "10 seconds, going to exit anyway")
+                             "10 seconds, going to exit anyway")
                 sys.exit(1)
         except KeyboardInterrupt:
             if not worker.isAlive():

@@ -16,6 +16,7 @@ requests.packages.urllib3.disable_warnings()
 
 
 class AbstractGun(AbstractPlugin):
+
     def __init__(self, core):
         super(AbstractGun, self).__init__(core)
         self.results = None
@@ -237,7 +238,7 @@ class UltimateGun(AbstractGun):
             if fp:
                 fp.close()
         test_class = getattr(self.module, class_name, None)
-        if type(test_class) != type:
+        if not isinstance(test_class, type):
             raise NotImplementedError(
                 "Class definition for '%s' was not found in '%s' module" %
                 (class_name, module_name))

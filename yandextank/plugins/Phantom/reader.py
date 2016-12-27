@@ -55,7 +55,8 @@ def string_to_df(data):
 
 
 class PhantomReader(object):
-    def __init__(self, filename, cache_size=1024*1024*50):
+
+    def __init__(self, filename, cache_size=1024 * 1024 * 50):
         self.buffer = ""
         self.phout = open(filename, 'r')
         self.closed = False
@@ -86,6 +87,7 @@ class PhantomReader(object):
 
 
 class PhantomStatsReader(object):
+
     def __init__(self, filename, phantom_info):
         self.phantom_info = phantom_info
         self.buffer = ""

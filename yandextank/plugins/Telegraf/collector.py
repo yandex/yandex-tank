@@ -52,14 +52,17 @@ class MonitoringCollector(object):
         # Parse config
         agent_configs = []
         if self.config:
-            agent_configs = self.config_manager.getconfig(self.config, self.default_target)
+            agent_configs = self.config_manager.getconfig(
+                self.config, self.default_target)
 
         # Creating agent for hosts
         for config in agent_configs:
             if config['host'] in ['localhost', '127.0.0.1', '::1']:
-                client = self.clients['localhost'](config, self.old_style_configs)
+                client = self.clients['localhost'](
+                    config, self.old_style_configs)
             else:
-                client = self.clients['ssh'](config, self.old_style_configs, timeout=5)
+                client = self.clients['ssh'](
+                    config, self.old_style_configs, timeout=5)
             logger.debug('Installing monitoring agent. Host: %s', client.host)
             agent_config, startup_config, customs_script = client.install()
             if agent_config:
@@ -121,14 +124,16 @@ class MonitoringCollector(object):
             self.artifact_files.append(data_filename)
         for agent in self.agents:
             try:
-                logger.debug('Waiting for agent %s reader thread to finish.', agent)
+                logger.debug(
+                    'Waiting for agent %s reader thread to finish.', agent)
                 agent.reader_thread.join(10)
             except:
                 logger.error('Monitoring reader thread stuck!', exc_info=True)
 
     def send_collected_data(self):
         """sends pending data set to listeners"""
-        [listener.monitoring_data(self.send_data) for listener in self.listeners]
+        [listener.monitoring_data(self.send_data)
+         for listener in self.listeners]
         self.send_data = []
 
 

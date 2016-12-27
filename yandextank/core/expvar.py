@@ -52,8 +52,9 @@ class Var(object):
 
 
 class Int(Var):
+
     def __init__(self, value=0):
-        if type(value) is not int:
+        if not isinstance(value, int):
             raise ValueError("Value should be an integer, but it is '%s'" %
                              type(value))
         super(Int, self).__init__(value)
@@ -74,7 +75,7 @@ class Metric(object):
     def push(self, value, timestamp=None):
         if timestamp is None:
             timestamp = int(time.time())
-        elif type(timestamp) is not int:
+        elif not isinstance(timestamp, int):
             raise ValueError("Timestamp should be an integer, but it is '%s'" %
                              type(timestamp))
         self.metric.put((timestamp, value))

@@ -119,6 +119,7 @@ class Worker(object):
 
 
 class DataPoller(object):
+
     def __init__(self, source, poll_period):
         self.poll_period = poll_period
         self.source = source
@@ -131,6 +132,7 @@ class DataPoller(object):
 
 
 class Aggregator(object):
+
     def __init__(self, source, config, verbose_histogram):
         self.worker = Worker(config, verbose_histogram)
         self.source = source

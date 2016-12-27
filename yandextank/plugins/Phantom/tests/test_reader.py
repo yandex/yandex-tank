@@ -4,6 +4,7 @@ from yandextank.plugins.Phantom.reader import PhantomReader
 
 
 class TestPhantomReader(object):
+
     def test_read_all(self):
         reader = PhantomReader(
             'yandextank/plugins/Phantom/tests/phout.dat',

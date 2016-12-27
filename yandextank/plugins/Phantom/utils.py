@@ -243,7 +243,8 @@ class StreamConfig:
         # multi-options
         self.ssl = int(self.get_option("ssl", '0'))
         self.tank_type = self.get_option("tank_type", 'http')
-        # TODO: refactor. Maybe we should decide how to interact with StepperWrapper here.
+        # TODO: refactor. Maybe we should decide how to interact with
+        # StepperWrapper here.
         self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT,
                                              '1000'))
         self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
@@ -302,7 +303,7 @@ class StreamConfig:
         else:
             kwargs['ssl_transport'] = ""
         kwargs['method_stream'] = self.method_prefix + \
-                                  "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"
+            "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"
         kwargs['phout'] = self.phout_file
         kwargs['answ_log'] = self.answ_log
         kwargs['answ_log_level'] = self.answ_log_level
@@ -352,5 +353,3 @@ class StreamConfig:
         return config
 
 # ========================================================================
-
-

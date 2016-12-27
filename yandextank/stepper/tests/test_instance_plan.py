@@ -3,6 +3,7 @@ from yandextank.stepper.instance_plan import LoadPlanBuilder, create
 
 from yandextank.stepper.util import take
 
+
 class TestCreate(object):
 
     @pytest.mark.parametrize('n, loadplan, expected', [

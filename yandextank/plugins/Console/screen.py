@@ -85,8 +85,8 @@ class Screen(object):
             if len(right_line) > self.right_panel_width:
                 right_line_plain = self.markup.clean_markup(right_line)
                 if len(right_line_plain) > self.right_panel_width:
-                    right_line = right_line[:
-                                            self.right_panel_width] + self.markup.RESET
+                    right_line = right_line[
+                        : self.right_panel_width] + self.markup.RESET
         return right_line
 
     def __render_left_panel(self):
@@ -117,8 +117,8 @@ class Screen(object):
                         line += ' ' * block.width
                     line += space
                 lines.append(line)
-                #lines.append(".  " * (1 + self.left_panel_width / 3))
-                #lines.append("")
+                # lines.append(".  " * (1 + self.left_panel_width / 3))
+                # lines.append("")
         return lines
 
     def render_screen(self):
@@ -130,8 +130,8 @@ class Screen(object):
             (self.term_width - len(self.RIGHT_PANEL_SEPARATOR)) *
             (float(self.info_panel_percent) / 100)) - 1
         if self.right_panel_width > 0:
-            self.left_panel_width = self.term_width - self.right_panel_width - len(
-                self.RIGHT_PANEL_SEPARATOR) - 2
+            self.left_panel_width = self.term_width - \
+                self.right_panel_width - len(self.RIGHT_PANEL_SEPARATOR) - 2
         else:
             self.right_panel_width = 0
             self.left_panel_width = self.term_width - 1
@@ -164,8 +164,8 @@ class Screen(object):
                 left_line_plain = self.markup.clean_markup(left_line)
                 if len(left_line) > self.left_panel_width:
                     if len(left_line_plain) > self.left_panel_width:
-                        left_line = left_line[:
-                                              self.left_panel_width] + self.markup.RESET
+                        left_line = left_line[
+                            : self.left_panel_width] + self.markup.RESET
 
                 left_line += (' ' *
                               (self.left_panel_width - len(left_line_plain)))
@@ -556,19 +556,19 @@ class AvgTimesBlock(AbstractBlock):
             tpl = "%" + len_all + "d / %" + len_last + "d"
             self.lines.append("  Overall: " + tpl % (float(
                 self.all_overall) / self.all_count, float(self.last_overall) /
-                                                     self.last_count))
+                self.last_count))
             self.lines.append("  Connect: " + tpl % (float(
                 self.all_connect) / self.all_count, float(self.last_connect) /
-                                                     self.last_count))
+                self.last_count))
             self.lines.append("     Send: " + tpl % (float(
                 self.all_send) / self.all_count, float(self.last_send) /
-                                                     self.last_count))
+                self.last_count))
             self.lines.append("  Latency: " + tpl % (float(
                 self.all_latency) / self.all_count, float(self.last_latency) /
-                                                     self.last_count))
+                self.last_count))
             self.lines.append("  Receive: " + tpl % (float(
                 self.all_receive) / self.all_count, float(self.last_receive) /
-                                                     self.last_count))
+                self.last_count))
         else:
             self.lines.append("")
             self.lines.append("")
@@ -595,9 +595,10 @@ class CasesBlock(AbstractBlock):
     def add_second(self, data):
         tagged = data["tagged"]
         for tag_name, tag_data in tagged.iteritems():
-            #decode symbols to utf-8 in order to support cyrillic symbols in cases
+            # decode symbols to utf-8 in order to support cyrillic symbols in
+            # cases
             name = tag_name.decode('utf-8')
-            if not name in self.cases.keys():
+            if name not in self.cases.keys():
                 self.cases[name] = [0, 0]
                 self.max_case_len = max(self.max_case_len, len(name))
             rps = tag_data["interval_real"]["len"]

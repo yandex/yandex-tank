@@ -151,8 +151,7 @@ class ConsoleTank:
         # initialize basic defaults
         configs = [resource_filename(__name__, 'config/00-base.ini')]
         try:
-            conf_files = os.listdir(self.baseconfigs_location)
-            conf_files.sort()
+            conf_files = sorted(os.listdir(self.baseconfigs_location))
             for filename in conf_files:
                 if fnmatch.fnmatch(filename, '*.ini'):
                     configs += [
@@ -311,6 +310,7 @@ class ConsoleTank:
 
 
 class DevNullOpts:
+
     def __init__(self):
         pass
 
@@ -318,6 +318,7 @@ class DevNullOpts:
 
 
 class CompletionHelperOptionParser(OptionParser):
+
     def __init__(self):
         OptionParser.__init__(self, add_help_option=False)
         self.add_option('--bash-switches-list',
@@ -344,7 +345,7 @@ class CompletionHelperOptionParser(OptionParser):
         if options.list_switches:
             opts = []
             for option in parser.option_list:
-                if not "--bash" in option.get_opt_string():
+                if "--bash" not in option.get_opt_string():
                     opts.append(option.get_opt_string())
             print ' '.join(opts)
             exit(0)

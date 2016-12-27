@@ -82,7 +82,8 @@ class Line(object):
     def rps_at(self, t):
         '''Return rps for second t'''
         if 0 <= t <= self.duration:
-            return self.minrps + float(self.maxrps - self.minrps) * t / self.duration
+            return self.minrps + \
+                float(self.maxrps - self.minrps) * t / self.duration
         else:
             return 0
 
@@ -144,6 +145,7 @@ class Composite(object):
 
 
 class Stairway(Composite):
+
     def __init__(self, minrps, maxrps, increment, step_duration):
         if maxrps < minrps:
             increment = -increment
@@ -162,6 +164,7 @@ class Stairway(Composite):
 
 
 class StepFactory(object):
+
     @staticmethod
     def line(params):
         template = re.compile('([0-9.]+),\s*([0-9.]+),\s*([0-9.]+[dhms]?)+\)')

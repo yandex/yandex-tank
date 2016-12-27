@@ -55,6 +55,7 @@ def parse_schedule(schedule):
 
 
 class PandoraConfig(object):
+
     def __init__(self):
         self.pools = []
 
@@ -69,6 +70,7 @@ class PandoraConfig(object):
 
 
 class PoolConfig(object):
+
     def __init__(self):
         self.config = json.loads(resource_string(
             __name__, 'config/pandora_pool_default.json'))

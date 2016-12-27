@@ -4,12 +4,12 @@ import getpass
 import logging
 import tempfile
 from future.utils import iteritems
+from ..Telegraf.decoder import decoder
 import sys
 if sys.version_info[0] < 3:
     import ConfigParser
 else:
     import configparser as ConfigParser
-from ..Telegraf.decoder import decoder
 
 logger = logging.getLogger(__name__)
 
@@ -55,13 +55,13 @@ class ConfigManager(object):
             "Disk": {
                 "name": '[inputs.diskio]',
                 "devices": '[{devices}]'.format(
-                    devices = ",".join(['"vda%s","sda%s"' % (num, num) for num in range(6)])
+                    devices=",".join(['"vda%s","sda%s"' % (num, num) for num in range(6)])
                 ),
             },
             "Net": {
                 "name": '[inputs.net]',
                 "interfaces": '[{interfaces}]'.format(
-                    interfaces = ",".join(['"eth%s"' % (num) for num in range(6)])
+                    interfaces=",".join(['"eth%s"' % (num) for num in range(6)])
                 ),
                 "fielddrop": '["icmp*", "ip*", "udplite*", "tcp*", "udp*", "drop*", "err*"]',
             },
@@ -88,7 +88,13 @@ class ConfigManager(object):
             }
         }
         defaults_enabled = ['CPU', 'Memory', 'Disk', 'Net', 'System', 'Kernel']
-        defaults_boolean = ['percpu', 'round_interval', 'fielddrop', 'fieldpass', 'interfaces', 'devices']
+        defaults_boolean = [
+            'percpu',
+            'round_interval',
+            'fielddrop',
+            'fieldpass',
+            'interfaces',
+            'devices']
         hostname = host.get('address').lower()
         if hostname == '[target]':
             if not target_hint:
@@ -107,11 +113,15 @@ class ConfigManager(object):
                     if key != 'name' and key not in defaults_boolean:
                         value = metric.get(key, None)
                         if value:
-                            defaults[metric.tag][key] = "'{value}'".format(value=value)
+                            defaults[
+                                metric.tag][key] = "'{value}'".format(
+                                value=value)
                     elif key in defaults_boolean:
                         value = metric.get(key, None)
                         if value:
-                            defaults[metric.tag][key] = "{value}".format(value=value)
+                            defaults[
+                                metric.tag][key] = "{value}".format(
+                                value=value)
                 host_config[metric.tag] = defaults[metric.tag]
             # custom metrics
             if (str(metric.tag)).lower() == 'custom':
@@ -158,7 +168,6 @@ class AgentConfig(object):
         self.host_config = config['host_config']
         self.old_style_configs = old_style_configs
 
-
     def create_startup_config(self):
         """ Startup and shutdown commands config
         Used by agent.py on the target
@@ -174,11 +183,14 @@ class AgentConfig(object):
             os.close(handle)
         try:
             config = ConfigParser.RawConfigParser()
-            # FIXME incinerate such a string formatting inside a method call T_T
+            # FIXME incinerate such a string formatting inside a method call
+            # T_T
             config.add_section('startup')
-            [config.set('startup', "cmd%s" % idx, cmd) for idx, cmd in enumerate(self.startups)]
+            [config.set('startup', "cmd%s" % idx, cmd)
+             for idx, cmd in enumerate(self.startups)]
             config.add_section('shutdown')
-            [config.set('shutdown', "cmd%s" % idx, cmd) for idx, cmd in enumerate(self.shutdowns)]
+            [config.set('shutdown', "cmd%s" % idx, cmd)
+             for idx, cmd in enumerate(self.shutdowns)]
             with open(cfg_path, 'w') as fds:
                 config.write(fds)
 
@@ -198,8 +210,7 @@ class AgentConfig(object):
         if os.path.isfile(cfg_path):
             logger.info(
                 'Found agent custom execs config file in working directory with the same name as created for host %s.\n'
-                'Creating new one via tempfile. This will affect predictable filenames for agent artefacts',
-                self.host)
+                'Creating new one via tempfile. This will affect predictable filenames for agent artefacts', self.host)
             handle, cfg_path = tempfile.mkstemp('.sh', 'agent_customs_')
             os.close(handle)
 
@@ -225,7 +236,6 @@ class AgentConfig(object):
             fds.write(customs_script)
         return cfg_path
 
-
     def create_collector_config(self, workdir):
         """ Telegraf collector config,
         toml format
@@ -250,7 +260,11 @@ class AgentConfig(object):
 
             config.add_section("global_tags")
             config.add_section("agent")
-            config.set("agent", "interval", "'{interval}s'".format(interval=self.interval))
+            config.set(
+                "agent",
+                "interval",
+                "'{interval}s'".format(
+                    interval=self.interval))
             config.set("agent", "round_interval", "true")
             config.set("agent", "flush_interval", "'1s'")
             config.set("agent", "collection_jitter", "'0s'")
@@ -259,24 +273,34 @@ class AgentConfig(object):
             for section in self.host_config.keys():
                 # telegraf-style config
                 if not self.old_style_configs:
-                    config.add_section("{section_name}".format(section_name=self.host_config[section]['name']))
+                    config.add_section(
+                        "{section_name}".format(
+                            section_name=self.host_config[section]['name']))
                     for key, value in iteritems(self.host_config[section]):
                         if key != 'name':
-                            config.set("{section_name}".format(section_name=self.host_config[section]['name']),
-                                "{key}".format(key=key),
-                                "{value}".format(value=value)
-                            )
+                            config.set(
+                                "{section_name}".format(
+                                    section_name=self.host_config[section]['name']), "{key}".format(
+                                    key=key), "{value}".format(
+                                    value=value))
                 # monitoring-style config
                 else:
                     if section in defaults_old_enabled:
-                        config.add_section("{section_name}".format(section_name=self.host_config[section]['name']))
+                        config.add_section(
+                            "{section_name}".format(
+                                section_name=self.host_config[section]['name']))
                         for key, value in iteritems(self.host_config[section]):
-                            if key in ['fielddrop', 'fieldpass', 'percpu', 'devices', 'interfaces']:
-                                config.set("{section_name}".format(section_name=self.host_config[section]['name']),
-                                    "{key}".format(key=key),
-                                    "{value}".format(value=value)
-                                )
-
+                            if key in [
+                                'fielddrop',
+                                'fieldpass',
+                                'percpu',
+                                'devices',
+                                    'interfaces']:
+                                config.set(
+                                    "{section_name}".format(
+                                        section_name=self.host_config[section]['name']), "{key}".format(
+                                        key=key), "{value}".format(
+                                        value=value))
 
             # outputs
             config.add_section("[outputs.file]")
@@ -285,7 +309,6 @@ class AgentConfig(object):
                        "['{config}']".format(
                            config=self.monitoring_data_output))
             config.set("[outputs.file]", "data_format", "'json'")
-
 
             with open(cfg_path, 'w') as fds:
                 config.write(fds)
@@ -296,14 +319,13 @@ class AgentConfig(object):
             for idx, cmd in enumerate(self.custom):
                 inputs += "[[inputs.exec]]\n"
                 inputs += "commands = ['/bin/sh {workdir}/agent_customs.sh -{idx}']\n".format(
-                    workdir=workdir,
-                    idx=idx
-                )
+                    workdir=workdir, idx=idx)
                 inputs += "data_format = 'value'\n"
                 inputs += "data_type = 'float'\n"
                 inputs += "name_prefix = '{}_'\n\n".format(cmd.get('label'))
                 if cmd['diff']:
-                    decoder.diff_metrics['custom'].append(decoder.find_common_names(cmd.get('label')))
+                    decoder.diff_metrics['custom'].append(
+                        decoder.find_common_names(cmd.get('label')))
 
             with open(cfg_path, 'a') as fds:
                 fds.write(inputs)

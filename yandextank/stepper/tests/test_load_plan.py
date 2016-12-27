@@ -4,6 +4,7 @@ from yandextank.stepper.util import take
 
 
 class TestLine(object):
+
     def test_get_rps_list(self):
         lp = create(["line(1, 100, 10s)"])
         rps_list = lp.get_rps_list()
@@ -17,6 +18,7 @@ class TestLine(object):
     (100, 0, [(100, 0)])
 ])
 class TestConst(object):
+
     @pytest.mark.parametrize("check_point, expected", [
         (lambda duration: 0, lambda rps: rps),
         (lambda duration: duration / 2, lambda rps: rps),
@@ -24,7 +26,9 @@ class TestConst(object):
         (lambda duration: -1, lambda rps: 0)
     ])
     def test_rps_at(self, rps, duration, rps_list, check_point, expected):
-        assert Const(rps, duration).rps_at(check_point(duration)) == expected(rps)
+        assert Const(
+            rps, duration).rps_at(
+            check_point(duration)) == expected(rps)
 
     def test_get_rps_list(self, rps, duration, rps_list):
         assert Const(rps, duration).get_rps_list() == rps_list
@@ -32,6 +36,7 @@ class TestConst(object):
 
 
 class TestLineNew(object):
+
     @pytest.mark.parametrize("min_rps, max_rps, duration, check_point, expected", [
         (0, 10, 30 * 1000, 0, 0),
         (0, 10, 30 * 1000, 10, 3),
@@ -40,7 +45,11 @@ class TestLineNew(object):
         (9, 10, 30 * 1000, 20, 10)
     ])
     def test_rps_at(self, min_rps, max_rps, duration, check_point, expected):
-        assert round(Line(min_rps, max_rps, duration).rps_at(check_point)) == expected
+        assert round(
+            Line(
+                min_rps,
+                max_rps,
+                duration).rps_at(check_point)) == expected
 
     @pytest.mark.parametrize("min_rps, max_rps, duration, check_point, expected", [
         (0, 10, 20 * 1000, 9, (9, 2)),
@@ -59,8 +68,15 @@ class TestLineNew(object):
         (10, 0, 30 * 1000, 9, (1, 3)),
         (10, 0, 30 * 1000, 10, (0, 2)),
     ])
-    def test_get_rps_list(self, min_rps, max_rps, duration, check_point, expected):
-        assert Line(min_rps, max_rps, duration).get_rps_list()[check_point] == expected
+    def test_get_rps_list(
+            self,
+            min_rps,
+            max_rps,
+            duration,
+            check_point,
+            expected):
+        assert Line(min_rps, max_rps, duration).get_rps_list()[
+            check_point] == expected
 
     @pytest.mark.parametrize("min_rps, max_rps, duration, expected_len, threshold, len_above_threshold", [
         (2, 12, 25000, 175, 5000, 160),
@@ -76,13 +92,22 @@ class TestLineNew(object):
         (10, 0, 25000, 125, 10000, 45),
         (10, 0, 25000, 125, 15000, 20),
     ])
-    def test_iter(self, min_rps, max_rps, duration, expected_len, threshold, len_above_threshold):
+    def test_iter(
+            self,
+            min_rps,
+            max_rps,
+            duration,
+            expected_len,
+            threshold,
+            len_above_threshold):
         load_plan = Line(min_rps, max_rps, duration)
         assert len(load_plan) == expected_len
-        assert len([ts for ts in load_plan if ts >= threshold]) == len_above_threshold
+        assert len([ts for ts in load_plan if ts >= threshold]
+                   ) == len_above_threshold
 
 
 class TestComposite(object):
+
     @pytest.mark.parametrize("steps, expected_len", [
         ([Line(0, 10, 20000), Const(10, 10000)], 200),
         ([Line(0, 10, 20000), Line(10, 0, 20000)], 200),
@@ -101,19 +126,30 @@ class TestComposite(object):
 
 
 class TestStairway(object):
+
     @pytest.mark.parametrize("min_rps, max_rps, increment, step_duration, expected_len, threshold, len_above_threshold",
                              [
                                  (0, 1000, 50, 3000, 31500, 9000, 31050),
                                  (0, 1000, 50, 3000, 31500, 15000, 30000),
                                  (0, 1000, 50, 3000, 31500, 45000, 15750)
                              ])
-    def test_iter(self, min_rps, max_rps, increment, step_duration, expected_len, threshold, len_above_threshold):
+    def test_iter(
+            self,
+            min_rps,
+            max_rps,
+            increment,
+            step_duration,
+            expected_len,
+            threshold,
+            len_above_threshold):
         load_plan = Stairway(min_rps, max_rps, increment, step_duration)
         assert len(load_plan) == expected_len
-        assert len([ts for ts in load_plan if ts >= threshold]) == len_above_threshold
+        assert len([ts for ts in load_plan if ts >= threshold]
+                   ) == len_above_threshold
 
 
 class TestCreate(object):
+
     @pytest.mark.parametrize('rps_schedule, check_point, expected', [
         (['line(1, 5, 2s)'], 100, [0, 618, 1000, 1302, 1561, 1791]),
         (['line(1.1, 5.8, 2s)'], 100, [0, 566, 917, 1196, 1435, 1647]),

@@ -7,7 +7,9 @@ from .util import parse_duration
 from .module_exceptions import StepperConfigurationError
 from builtins import range
 
+
 class LoadPlanBuilder(object):
+
     def __init__(self):
         self.generators = []
         self.steps = []

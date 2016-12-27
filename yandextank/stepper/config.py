@@ -11,6 +11,7 @@ from .module_exceptions import StepperConfigurationError, AmmoFileError
 
 
 class ComponentFactory():
+
     def __init__(self,
                  rps_schedule=None,
                  http_ver='1.1',

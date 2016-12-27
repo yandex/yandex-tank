@@ -18,6 +18,7 @@ def _expand_steps(steps):
 
 
 class BfgReader(object):
+
     def __init__(self, results):
         self.buffer = ""
         self.stat_buffer = ""
@@ -42,6 +43,7 @@ class BfgReader(object):
 
 
 class BfgStatsReader(object):
+
     def __init__(self, instance_counter, steps):
         self.closed = False
         self.last_ts = 0

@@ -268,7 +268,7 @@ class SteadyCumulativeQuantilesCriterion(AbstractCriterion):
         return 'steady_cumulative'
 
     def __init__(self, autostop, param_str):
-        raise (NotImplementedError("Cumulative quantiles not implemented"))
+        raise NotImplementedError
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
         self.quantile_hash = ""

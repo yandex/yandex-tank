@@ -35,7 +35,8 @@ def _exc_to_net(param1, success):
     """ translate http code to net code. if accertion failed, set net code to 314 """
     if len(param1) <= 3:
         # FIXME: we're unable to use better logic here, because we should support non-http codes
-        # but, we should look for core.util.HTTP or some other common logic here
+        # but, we should look for core.util.HTTP or some other common logic
+        # here
         if success:
             return 0
         else:
@@ -46,9 +47,10 @@ def _exc_to_net(param1, success):
         return KNOWN_EXC[exc]
     else:
         logger.warning(
-            "Unknown Java exception, consider adding it to dictionary: %s", param1
-        )
+            "Unknown Java exception, consider adding it to dictionary: %s",
+            param1)
         return 41
+
 
 def _exc_to_http(param1):
     """ translate exception str to http code"""
@@ -56,7 +58,9 @@ def _exc_to_http(param1):
         try:
             int(param1)
         except:
-            logger.error("JMeter wrote some strange data into codes column: %s", param1)
+            logger.error(
+                "JMeter wrote some strange data into codes column: %s",
+                param1)
         else:
             return int(param1)
 
@@ -94,6 +98,7 @@ jtl_types = {
     'connect_time': np.float64,
 }
 
+
 def fix_latency(row):
     if row['latency'] < row['connect_time']:
         if row['interval_real'] < row['connect_time']:
@@ -117,11 +122,15 @@ def string_to_df(data):
     chunk['interval_real'] = chunk["interval_real"] * 1000  # convert to µs
     chunk.set_index(['receive_sec'], inplace=True)
     l = len(chunk)
-    chunk['connect_time'] = (chunk['connect_time'].fillna(0) * 1000).astype(np.int64)
+    chunk['connect_time'] = (
+        chunk['connect_time'].fillna(0) *
+        1000).astype(
+        np.int64)
     chunk['latency'] = chunk['latency'] * 1000
     chunk['latency'] = chunk.apply(fix_latency, axis=1)
     chunk['send_time'] = np.zeros(l)
-    chunk['receive_time'] = chunk['interval_real'] - chunk['latency'] - chunk['connect_time']
+    chunk['receive_time'] = chunk['interval_real'] - \
+        chunk['latency'] - chunk['connect_time']
     chunk['interval_event'] = np.zeros(l)
     chunk['size_out'] = np.zeros(l)
     chunk['net_code'] = exc_to_net(chunk['retcode'], chunk['success'])
@@ -130,6 +139,7 @@ def string_to_df(data):
 
 
 class JMeterStatAggregator(object):
+
     def __init__(self, source):
         self.worker = agg.Worker({"allThreads": ["mean"]}, False)
         self.source = source
@@ -146,6 +156,7 @@ class JMeterStatAggregator(object):
 
 
 class JMeterReader(object):
+
     def __init__(self, filename):
         self.buffer = ""
         self.stat_buffer = ""

@@ -25,7 +25,9 @@ class Plugin(AbstractPlugin):
         self.port = None
         self.logfile = None
         self.default_target = None
-        _echo_wrapper = lambda cmd: 'echo "====Executing: {cmd}"; {cmd}'.format(cmd=cmd)
+
+        def _echo_wrapper(cmd):
+                return 'echo "====Executing: {cmd}"; {cmd}'.format(cmd=cmd)
         cmds = {
             "dpkg": "dpkg -l",
             "uname": "uname -a",
@@ -41,7 +43,8 @@ class Plugin(AbstractPlugin):
             "sysctl": "cat /etc/sysctl.conf",
             "lsmod": "lsmod"
         }
-        self.cmd = "%s" % ";\n".join([_echo_wrapper(cmd) for key, cmd in cmds.iteritems()])
+        self.cmd = "%s" % ";\n".join(
+            [_echo_wrapper(cmd) for key, cmd in cmds.iteritems()])
 
     def get_available_options(self):
         return ["hosts", "port", "username", "timeout"]
@@ -55,11 +58,12 @@ class Plugin(AbstractPlugin):
             self.username = self.get_option("username", getpass.getuser())
             self.timeout = int(self.get_option("timeout", 3))
         except:
-            logger.error('Exception trying to configure Platform plugin', exc_info=True)
+            logger.error(
+                'Exception trying to configure Platform plugin',
+                exc_info=True)
 
         self.logfile = self.core.mkstemp(".log", "platform_")
         self.core.add_artifact_file(self.logfile)
-
 
     def prepare_test(self):
         try:
@@ -67,24 +71,33 @@ class Plugin(AbstractPlugin):
             info = phantom.get_info()
             if info:
                 if info.address and info.address not in self.hosts:
-                    logger.debug("Adding platform check of default_target %s", info.address)
+                    logger.debug(
+                        "Adding platform check of default_target %s",
+                        info.address)
                     self.hosts.append(info.address)
         except KeyError as ex:
             logger.debug("Phantom plugin not found: %s", ex)
         for host in self.hosts:
-            self.ssh = SecuredShell(host, self.port, self.username, self.timeout)
+            self.ssh = SecuredShell(
+                host, self.port, self.username, self.timeout)
             try:
                 out, errors, err_code = self.ssh.execute(self.cmd)
             except Exception:
-                logger.warning("Failed to check remote system information at %s:%s", host, self.port)
-                logger.debug("Failed to check remote system information at %s:%s", host, self.port, exc_info=True)
+                logger.warning(
+                    "Failed to check remote system information at %s:%s",
+                    host,
+                    self.port)
+                logger.debug(
+                    "Failed to check remote system information at %s:%s",
+                    host,
+                    self.port,
+                    exc_info=True)
             else:
                 # logger.info('Remote system `%s` information: %s', host, out)
                 with open(self.logfile, 'w') as f:
                     f.write(out)
                 if errors:
                     logging.debug("[%s] error: '%s'", host, errors)
-
 
     def is_test_finished(self):
         return -1

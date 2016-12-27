@@ -9,6 +9,14 @@ import json
 import logging
 import os
 import time
+from ...common.resource import manager as resource
+from ...common.interfaces import MonitoringDataListener, \
+    AbstractPlugin, AbstractInfoWidget
+from ...common.util import expand_to_seconds
+
+from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
+from ..Console import Plugin as ConsolePlugin
+from ..Telegraf.collector import MonitoringCollector
 
 import sys
 if sys.version_info[0] < 3:
@@ -16,13 +24,6 @@ if sys.version_info[0] < 3:
 else:
     from configparser import NoOptionError
 
-from ...common.resource import manager as resource
-from ...common.interfaces import MonitoringDataListener, AbstractPlugin, AbstractInfoWidget
-from ...common.util import expand_to_seconds
-
-from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
-from ..Console import Plugin as ConsolePlugin
-from ..Telegraf.collector import MonitoringCollector
 
 logger = logging.getLogger(__name__)
 
@@ -30,22 +31,20 @@ logger = logging.getLogger(__name__)
 class Plugin(AbstractPlugin):
     """  resource mon plugin  """
 
-    SECTION = 'telegraf' # may be redefined to 'monitoring' sometimes.
+    SECTION = 'telegraf'  # may be redefined to 'monitoring' sometimes.
 
     def __init__(self, core):
         super(Plugin, self).__init__(core)
         self.jobno = None
         self.default_target = None
         self.default_config = "{path}/config/monitoring_default_config.xml".format(
-            path=os.path.dirname(__file__)
-        )
+            path=os.path.dirname(__file__))
         self.config = None
         self.process = None
         self.monitoring = MonitoringCollector()
         self.die_on_fail = True
         self.data_file = None
         self.mon_saver = None
-
 
     @staticmethod
     def get_key():
@@ -54,7 +53,9 @@ class Plugin(AbstractPlugin):
     def start_test(self):
         if self.monitoring:
             self.monitoring.load_start_time = time.time()
-            logger.debug("load_start_time = %s", self.monitoring.load_start_time)
+            logger.debug(
+                "load_start_time = %s",
+                self.monitoring.load_start_time)
 
     def get_available_options(self):
         return ["config", "default_target", "ssh_timeout"]
@@ -77,7 +78,7 @@ class Plugin(AbstractPlugin):
 
         if is_telegraf and is_monitoring:
             raise ValueError('Both telegraf and monitoring configs specified. '
-                               'Clean up your config and delete one of them')
+                             'Clean up your config and delete one of them')
         if is_telegraf and not is_monitoring:
             return 'telegraf'
         if not is_telegraf and is_monitoring:
@@ -85,27 +86,33 @@ class Plugin(AbstractPlugin):
         if not is_telegraf and not is_monitoring:
             # defaults target logic
             try:
-                is_telegraf_dt = self.core.get_option('telegraf', "default_target", None)
+                is_telegraf_dt = self.core.get_option(
+                    'telegraf', "default_target", None)
             except NoOptionError:
                 is_telegraf_dt = None
             try:
-                is_monitoring_dt = self.core.get_option('monitoring', "default_target", None)
+                is_monitoring_dt = self.core.get_option(
+                    'monitoring', "default_target", None)
             except:
                 is_monitoring_dt = None
             if is_telegraf_dt and is_monitoring_dt:
-                raise ValueError('Both telegraf and monitoring default targets specified. '
-                                   'Clean up your config and delete one of them')
+                raise ValueError(
+                    'Both telegraf and monitoring default targets specified. '
+                    'Clean up your config and delete one of them')
             if is_telegraf_dt and not is_monitoring_dt:
                 return
             if not is_telegraf_dt and is_monitoring_dt:
-                self.core.set_option("telegraf", "default_target", is_monitoring_dt)
+                self.core.set_option(
+                    "telegraf", "default_target", is_monitoring_dt)
             if not is_telegraf_dt and not is_monitoring_dt:
                 return
 
     def configure(self):
         self.detected_conf = self.__detect_configuration()
         if self.detected_conf:
-            logging.info('Detected monitoring configuration: %s', self.detected_conf)
+            logging.info(
+                'Detected monitoring configuration: %s',
+                self.detected_conf)
             self.SECTION = self.detected_conf
         self.config = self.get_option("config", "auto").strip()
         self.default_target = self.get_option("default_target", "localhost")
@@ -114,8 +121,10 @@ class Plugin(AbstractPlugin):
             self.die_on_fail = False
             return
 
-        # FIXME [legacy] backward compatibility with Monitoring module configuration below.
-        self.monitoring.ssh_timeout = expand_to_seconds(self.get_option("ssh_timeout", "5s"))
+        # FIXME [legacy] backward compatibility with Monitoring module
+        # configuration below.
+        self.monitoring.ssh_timeout = expand_to_seconds(
+            self.get_option("ssh_timeout", "5s"))
 
         # FIXME [legacy] handle raw XML config in .ini file
         if self.config[0] == "<":
@@ -133,7 +142,7 @@ class Plugin(AbstractPlugin):
         # dump config contents into a file
         xmlfile = self.core.mkstemp(".xml", "monitoring_")
         self.core.add_artifact_file(xmlfile)
-        with open(xmlfile, "wb") as f: # output file should be in binary mode to support py3
+        with open(xmlfile, "wb") as f:  # output file should be in binary mode to support py3
             f.write(config_contents)
         self.config = xmlfile
 
@@ -159,7 +168,9 @@ class Plugin(AbstractPlugin):
             info = phantom.get_info()
             if info:
                 self.default_target = info.address
-                logger.debug("Changed monitoring target to %s", self.default_target)
+                logger.debug(
+                    "Changed monitoring target to %s",
+                    self.default_target)
 
         logger.info("Starting monitoring with config: %s", self.config)
         self.core.add_artifact_file(self.config, True)
@@ -279,7 +290,6 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                     self.sign[host][metric] = 0
                 self.data[host][metric] = "%.2f" % float(value)
 
-
     def monitoring_data(self, block):
         # block sample :
         # [{'timestamp': 1480536634,
@@ -287,7 +297,10 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         #     'some.hostname.tld': {
         #       'comment': '',
         #       'metrics': {
-        #         'custom:diskio_reads': 0, 'Net_send': 9922, 'CPU_steal': 0, 'Net_recv': 8489
+        #         'custom:diskio_reads': 0,
+        #         'Net_send': 9922,
+        #         'CPU_steal': 0,
+        #         'Net_recv': 8489
         #       }
         #     }
         #   },
@@ -307,7 +320,6 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
             else:
                 self.__handle_data_items(host, chunk['data'][host]['metrics'])
 
-
     def render(self, screen):
         if not self.owner.monitoring:
             return "Monitoring is " + screen.markup.RED + "offline" + screen.markup.RESET
@@ -317,8 +329,9 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
             for hostname, metrics in self.data.items():
                 tm_stamp = datetime.datetime.fromtimestamp(float(self.time[
                     hostname])).strftime('%H:%M:%S')
-                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET
-                        + " at %s:\n") % (hostname, tm_stamp)
+                res += (
+                    "   " + screen.markup.CYAN + "%s" +
+                    screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
@@ -363,7 +376,8 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
             if not fnmatch.fnmatch(host, self.host):
                 continue
 
-            # some magic, converting custom metric names into names that was in config
+            # some magic, converting custom metric names into names that was in
+            # config
             for metric_name in data.keys():
                 if metric_name.startswith('custom:'):
                     config_metric_name = metric_name.replace('custom:', '')

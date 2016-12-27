@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 class PandoraStatsReader(object):
     # TODO: maybe make stats collection asyncronous
+
     def next(self):
         try:
             pandora_response = requests.get("http://localhost:1234/debug/vars")
@@ -17,7 +18,7 @@ class PandoraStatsReader(object):
                          'instances':
                          pandora_stat.get("engine_ActiveRequests"),
                          'reqps': pandora_stat.get("engine_ReqPS"),
-                     }}]
+            }}]
         except requests.ConnectionError:
             logger.info("Pandora expvar http interface is unavailable")
         except requests.HTTPError:

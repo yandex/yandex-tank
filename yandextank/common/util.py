@@ -43,6 +43,7 @@ class Drain(th.Thread):
 
 
 class SecuredShell(object):
+
     def __init__(self, host, port, username, timeout):
         self.host = host
         self.port = port
@@ -126,9 +127,10 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
     def async_session(self, cmd):
         return AsyncSession(self, cmd)
 
+
 def check_ssh_connection():
     logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)s %(message)s')
+                        format='%(asctime)s %(levelname)s %(message)s')
     logging.getLogger("paramiko.transport").setLevel(logging.DEBUG)
 
     parser = argparse.ArgumentParser(
@@ -149,11 +151,17 @@ def check_ssh_connection():
         type=int,
         help='SSH port')
     args = parser.parse_args()
-    logging.info("Checking SSH to %s@%s:%d", args.username, args.endpoint, args.port)
+    logging.info(
+        "Checking SSH to %s@%s:%d",
+        args.username,
+        args.endpoint,
+        args.port)
     ssh = SecuredShell(args.endpoint, args.port, args.username, 10)
     print(ssh.execute("ls -l"))
 
+
 class AsyncSession(object):
+
     def __init__(self, ssh, cmd):
         self.client = ssh.connect()
         self.session = self.client.get_transport().open_session()
@@ -177,11 +185,11 @@ class AsyncSession(object):
             return None
 
 
-### HTTP codes
+# HTTP codes
 HTTP = http.client.responses
 
-### Extended list of HTTP status codes(WEBdav etc.)
-### HTTP://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+# Extended list of HTTP status codes(WEBdav etc.)
+# HTTP://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 WEBDAV = {
     102: 'Processing',
     103: 'Checkpoint',
@@ -209,7 +217,7 @@ WEBDAV = {
 }
 HTTP.update(WEBDAV)
 
-### NET codes
+# NET codes
 NET = {
     0: "Success",
     1: "Operation not permitted",
@@ -502,6 +510,7 @@ def update_status(status, multi_key, value):
 
 
 class AddressWizard:
+
     def __init__(self):
         self.lookup_fn = socket.getaddrinfo
         self.socket_class = socket.socket

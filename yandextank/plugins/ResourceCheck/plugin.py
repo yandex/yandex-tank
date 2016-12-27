@@ -62,9 +62,9 @@ class Plugin(AbstractPlugin):
                        self.disk_limit)
         if int(disk_free.strip()) < self.disk_limit:
             raise RuntimeError(
-                "Not enough local resources: disk space less than %sMB in %s: %sMB"
-                % (self.disk_limit, self.core.artifacts_base_dir,
-                   int(disk_free.strip())))
+                "Not enough local resources: disk space less than %sMB in %s: %sMB" %
+                (self.disk_limit, self.core.artifacts_base_dir, int(
+                    disk_free.strip())))
 
     def __check_mem(self):
         ''' raise exception on RAM exceeded '''

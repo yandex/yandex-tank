@@ -7,6 +7,7 @@ from conftest import MAX_TS, random_split
 
 
 class TestChopper(object):
+
     def test_one_chunk(self, data):
         chopper = TimeChopper([data], 5)
         result = list(chopper)
@@ -27,7 +28,8 @@ class TestChopper(object):
         chunks[5], chunks[6] = chunks[6], chunks[5]
         chopper = TimeChopper(chunks, 5)
         result = list(chopper)
-        assert len(result) == MAX_TS, "DataFrame is splitted into proper number of chunks"
+        assert len(
+            result) == MAX_TS, "DataFrame is splitted into proper number of chunks"
         concatinated = pd.concat(r[1] for r in result)
         assert len(data) == len(concatinated), "We did not lose anything"
         assert np.allclose(concatinated.values,

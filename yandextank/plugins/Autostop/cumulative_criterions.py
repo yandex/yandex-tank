@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class WindowCounter(object):
+
     def __init__(self, window_size):
         self.window_size = window_size
         self.value = 0.0
@@ -541,10 +542,7 @@ class QuantileOfSaturationCriterion(AbstractCriterion):
 
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
-        raise (NotImplementedError(
-            "QuantileOfSaturationCriterion is not implemented. "
-            "If you need this kind of criterion, do not hesitate "
-            "to open an issue in Yandex.Tank project on github"))
+        raise NotImplementedError
     #     self.autostop = autostop
     #     self.data = deque()
     #     self.second_window = deque()

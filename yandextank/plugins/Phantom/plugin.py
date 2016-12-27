@@ -14,7 +14,7 @@ from .reader import PhantomReader, PhantomStatsReader
 from .utils import PhantomConfig
 from .widget import PhantomInfoWidget, PhantomProgressBarWidget
 from ..Aggregator import Plugin as AggregatorPlugin
-from ..Autostop import Plugin as  AutostopPlugin
+from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
 
 logger = logging.getLogger(__name__)

@@ -12,8 +12,7 @@ def main():
         '-c',
         '--config',
         action='append',
-        help=
-        "Path to INI file containing run options, multiple options accepted")
+        help="Path to INI file containing run options, multiple options accepted")
     parser.add_option('-f',
                       '--fail-lock',
                       action='store_true',
@@ -24,8 +23,7 @@ def main():
         '--ignore-lock',
         action='store_true',
         dest='ignore_lock',
-        help=
-        "Ignore lock files from concurrent instances, has precedence before --lock-fail")
+        help="Ignore lock files from concurrent instances, has precedence before --lock-fail")
     parser.add_option('-k',
                       '--lock-dir',
                       action='store',
@@ -47,14 +45,12 @@ def main():
         '--no-rc',
         action='store_true',
         dest='no_rc',
-        help=
-        "Don't load config files from /etc/yandex-tank and ~/.yandex-tank")
+        help="Don't load config files from /etc/yandex-tank and ~/.yandex-tank")
     parser.add_option(
         '-o',
         '--option',
         action='append',
-        help=
-        "Set config option, multiple options accepted, example: -o 'shellexec.start=pwd'")
+        help="Set config option, multiple options accepted, example: -o 'shellexec.start=pwd'")
     parser.add_option('-q',
                       '--quiet',
                       action='store_true',
@@ -64,8 +60,7 @@ def main():
         '--scheduled-start',
         action='store',
         dest='scheduled_start',
-        help=
-        "Start test at specified time, format 'YYYY-MM-DD hh:mm:ss', date part is optional")
+        help="Start test at specified time, format 'YYYY-MM-DD hh:mm:ss', date part is optional")
     parser.add_option('-v',
                       '--verbose',
                       action='store_true',

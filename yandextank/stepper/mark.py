@@ -37,6 +37,7 @@ __markers = {'uniq': lambda m: uuid4().hex, 'uri': __mark_by_uri, }
 
 
 class __Enumerator(object):
+
     def __init__(self, marker):
         self.marker = marker
         self.number = int(0)
@@ -79,7 +80,8 @@ def get_marker(marker_type, enum_ammo=False):
         if limit:
             marker = __UriMarker(limit)
         else:
-            marker = lambda m: ''
+            def marker(m):
+                return ''
     except ValueError:
         if marker_type in __markers:
             marker = __markers[marker_type]

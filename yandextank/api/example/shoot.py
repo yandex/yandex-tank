@@ -4,7 +4,7 @@ import logging
 logger = logging.getLogger('')
 logger.setLevel(logging.DEBUG)
 
-#not mandatory options below:
+# not mandatory options below:
 options = dict()
 options['config'] = '/path/to/config/load.ini'
 options['manual_start'] = "1"
@@ -13,7 +13,7 @@ options['user_options'] = [
     'phantom.rps_schedule=const(1,2m)',
 ]
 log_filename = '/path/to/log/tank.log'
-#======================================
+# ======================================
 
 apiworker = ApiWorker()
 apiworker.init_logging(log_filename)

@@ -63,7 +63,7 @@ class ResourceManager(object):
                     filename, size)
         except Exception as exc:
             logger.debug('Unable to check resource size %s. %s', filename,
-                           exc)
+                         exc)
         with opener(filename, 'r') as resource:
             content = resource.read()
         return content
@@ -146,16 +146,16 @@ class HttpOpener(object):
     def open(self, *args, **kwargs):
         with closing(
             requests.get(
-                    self.url,
-                    stream=True,
-                    verify=False,
-                    timeout=self.timeout
-                )
-            ) as stream:
-                stream_iterator = stream.raw.stream(100, decode_content=True)
-                header = stream_iterator.next()
-                fmt = self.fmt_detector.detect_format(header)
-                logger.debug('Resource %s format detected: %s.', self.url, fmt)
+                self.url,
+                stream=True,
+                verify=False,
+                timeout=self.timeout
+            )
+        ) as stream:
+            stream_iterator = stream.raw.stream(100, decode_content=True)
+            header = stream_iterator.next()
+            fmt = self.fmt_detector.detect_format(header)
+            logger.debug('Resource %s format detected: %s.', self.url, fmt)
         if not self.force_download and fmt != 'gzip' and self.data_length > 10**8:
             logger.info(
                 "Resource data is not gzipped and larger than 100MB. Reading from stream..")
@@ -177,7 +177,7 @@ class HttpOpener(object):
                 self.url, tmpfile_path)
         else:
             logger.info("Downloading resource %s to %s", self.url,
-                          tmpfile_path)
+                        tmpfile_path)
             try:
                 data = requests.get(self.url, verify=False, timeout=10)
             except requests.exceptions.Timeout as exc:
@@ -188,7 +188,7 @@ class HttpOpener(object):
             f.write(data.content)
             f.close()
             logger.info("Successfully downloaded resource %s to %s",
-                          self.url, tmpfile_path)
+                        self.url, tmpfile_path)
         return tmpfile_path
 
     def get_request_info(self):

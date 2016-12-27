@@ -1,4 +1,5 @@
 class MavenReader(object):
+
     def close(self):
         pass
 
@@ -7,6 +8,7 @@ class MavenReader(object):
 
 
 class MavenStatsReader(object):
+
     def close(self):
         pass
 
