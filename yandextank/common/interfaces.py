@@ -1,5 +1,4 @@
 import logging
-import os
 
 
 class AbstractPlugin(object):
@@ -123,7 +122,7 @@ class AbstractInfoWidget(object):
     parent class for all InfoWidgets'''
 
     def __init__(self):
-        LOG = logging.getLogger(__name__)
+        pass
 
     def render(self, screen):
         raise NotImplementedError("Abstract method needs to be overridden")

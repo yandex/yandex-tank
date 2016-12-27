@@ -16,8 +16,7 @@ import shlex
 import psutil
 import subprocess
 import argparse
-from paramiko import \
-      SSHClient, AutoAddPolicy, AuthenticationException, SSHException
+from paramiko import SSHClient, AutoAddPolicy
 
 logger = logging.getLogger(__name__)
 

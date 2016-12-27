@@ -152,7 +152,7 @@ class SlowLogReader(object):
         self.filename = filename
 
     def __iter__(self):
-        opener = get_opener(self.filename)
+        opener = resource.get_opener(self.filename)
         with opener() as ammo_file:
             info.status.af_size = opener.data_length
             request = ""

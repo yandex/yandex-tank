@@ -259,7 +259,7 @@ class UsedInstancesCriterion(AbstractCriterion):
             1])
 
         try:
-            phantom = autostop.core.get_plugin_of_type(PhantomPlugin)
+            phantom = autostop.core.get_plugin_of_type(Plugin)
             info = phantom.get_info()
             if info:
                 self.threads_limit = info.instances
