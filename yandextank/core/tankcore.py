@@ -595,7 +595,6 @@ class ConfigManager(object):
 
     def __init__(self):
         self.file = None
-        logger = logging.getLogger(__name__)
         self.config = ConfigParser.ConfigParser()
 
     def load_files(self, configs):
@@ -626,7 +625,7 @@ class ConfigManager(object):
                 if not prefix or option.find(prefix) == 0:
                     res += [(option[len(prefix):],
                              self.config.get(section, option))]
-        except NoSectionError as ex:
+        except ConfigParser.NoSectionError as ex:
             logger.warning("No section: %s", ex)
 
         logger.debug("Section: [%s] prefix: '%s' options:\n%s", section,

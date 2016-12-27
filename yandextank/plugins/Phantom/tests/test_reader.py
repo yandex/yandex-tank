@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 from yandextank.plugins.Phantom.reader import PhantomReader
 

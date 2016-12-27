@@ -80,7 +80,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             self.log.warning("No aggregator found: %s", ex)
 
         if aggregator:
-            result_cache_size = int(self.get_option("result_cache_size", '5'))
             aggregator.reader = BfgReader(self.bfg.results)
             aggregator.stats_reader = BfgStatsReader(
                 self.bfg.instance_counter, self.stepper_wrapper.steps)

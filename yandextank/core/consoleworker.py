@@ -180,7 +180,7 @@ class ConsoleTank:
             try:
                 self.core.get_lock(self.options.ignore_lock)
                 break
-            except Exception as exc:
+            except Exception:
                 if self.options.lock_fail:
                     raise RuntimeError("Lock file present, cannot continue")
                 self.log.exception(

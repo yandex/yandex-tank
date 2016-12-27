@@ -2,8 +2,7 @@ import logging
 import time
 import threading as th
 import multiprocessing as mp
-from queue import Empty, Full, Queue
-from contextlib import contextmanager
+from queue import Empty, Full
 
 from ...stepper import StpdReader
 
