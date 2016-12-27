@@ -172,8 +172,6 @@ class Plugin(AbstractPlugin):
                     "Changed monitoring target to %s",
                     self.default_target)
 
-        logger.info("Starting monitoring with config: %s", self.config)
-        self.core.add_artifact_file(self.config, True)
         self.monitoring.config = self.config
         if self.default_target:
             self.monitoring.default_target = self.default_target
