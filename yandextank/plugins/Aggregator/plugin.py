@@ -97,8 +97,6 @@ class Plugin(AbstractPlugin):
         stats = get_from_queue(self.stats)
         logger.debug("Data timestamps:\n%s" % [d.get('ts') for d in data])
         logger.debug("Stats timestamps:\n%s" % [d.get('ts') for d in stats])
-        logger.debug("Data cache timestamps:\n%s" % self.data_cache.keys())
-        logger.debug("Stats cache timestamps:\n%s" % self.stat_cache.keys())
         for item in data:
             ts = item['ts']
             if ts in self.stat_cache:
