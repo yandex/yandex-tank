@@ -6,7 +6,6 @@ logger = logging.getLogger(__name__)
 
 
 class MetricsDecoder(object):
-
     def __init__(self):
         """
         translates telegraf metric names into common Monitoring metric names
@@ -49,32 +48,22 @@ class MetricsDecoder(object):
         self.diff_metrics = {
             'cpu': [],
             'mem': [],
-            'net': [
-                'packets_recv',
-                'packets_sent',
-                'bytes_recv',
-                'bytes_sent'],
+            'net': ['packets_recv', 'packets_sent', 'bytes_recv', 'bytes_sent'],
             'nstat': ['TcpRetransSegs'],
             'net_response': [],
-            'kernel': [
-                'context_switches',
-                'interrupts',
-                'processes_forked'],
+            'kernel': ['context_switches', 'interrupts', 'processes_forked'],
             'diskio': [
-                'read_bytes',
-                'write_bytes',
-                'io_time',
-                'read_time',
-                'reads',
-                'write_time',
-                'writes'],
-            'custom': []}
+                'read_bytes', 'write_bytes', 'io_time', 'read_time', 'reads',
+                'write_time', 'writes'
+            ],
+            'custom': []
+        }
 
     def find_common_names(self, key):
         if key in self.known_metrics:
             return self.known_metrics[key]
         else:
-            return 'custom:{}'. format(key)
+            return 'custom:{}'.format(key)
 
 
 decoder = MetricsDecoder()

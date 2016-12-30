@@ -58,17 +58,21 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         return __file__
 
     def get_available_options(self):
-        opts = ["api_address",
-                "task",
-                "job_name",
-                "job_dsc",
-                "notify",
-                "ver", ]
-        opts += ["component",
-                 "regress",
-                 "operator",
-                 "copy_config_to",
-                 "jobno_file", ]
+        opts = [
+            "api_address",
+            "task",
+            "job_name",
+            "job_dsc",
+            "notify",
+            "ver",
+        ]
+        opts += [
+            "component",
+            "regress",
+            "operator",
+            "copy_config_to",
+            "jobno_file",
+        ]
         opts += ["token_file"]
         return opts
 
@@ -79,20 +83,22 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             try:
                 with open(filename, 'r') as handle:
                     data = handle.read().strip()
-                    logger.info("Read authentication token from %s, "
-                                "token length is %d bytes", filename,
-                                len(str(data)))
+                    logger.info(
+                        "Read authentication token from %s, "
+                        "token length is %d bytes", filename, len(str(data)))
             except IOError:
-                logger.error("Failed to read Overload API token from %s",
-                             filename)
+                logger.error(
+                    "Failed to read Overload API token from %s", filename)
                 logger.info(
-                    "Get your Overload API token from https://overload.yandex.net and provide it via 'overload.token_file' parameter")
+                    "Get your Overload API token from https://overload.yandex.net and provide it via 'overload.token_file' parameter"
+                )
                 raise RuntimeError("API token error")
             return data
         else:
             logger.error("Overload API token filename is not defined")
             logger.info(
-                "Get your Overload API token from https://overload.yandex.net and provide it via 'overload.token_file' parameter")
+                "Get your Overload API token from https://overload.yandex.net and provide it via 'overload.token_file' parameter"
+            )
             raise RuntimeError("API token error")
 
     def configure(self):
@@ -102,17 +108,13 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.api_client.set_api_address(self.get_option("api_address"))
         self.api_client.set_api_timeout(self.get_option("api_timeout", 30))
         self.api_client.set_api_token(
-            self.read_token(
-                self.get_option(
-                    "token_file", "")))
+            self.read_token(self.get_option("token_file", "")))
         self.task = self.get_option("task", "DEFAULT")
         self.job_name = unicode(
-            self.get_option(
-                "job_name",
-                "none").decode("utf8"))
+            self.get_option("job_name", "none").decode("utf8"))
         if self.job_name == "ask" and sys.stdin.isatty():
-            self.job_name = unicode(raw_input(
-                "Please, enter job_name: ").decode("utf8"))
+            self.job_name = unicode(
+                raw_input("Please, enter job_name: ").decode("utf8"))
         self.job_dsc = unicode(self.get_option("job_dsc", "").decode("utf8"))
         if self.job_dsc == "ask" and sys.stdin.isatty():
             self.job_dsc = unicode(
@@ -204,8 +206,9 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         logger.info("Detected target: %s", self.target)
 
         self.jobno = self.api_client.new_job(
-            self.task, self.operator, socket.getfqdn(), self.target, port,
-            loadscheme, detailed_field, self.notify_list)
+            self.task, self.operator,
+            socket.getfqdn(), self.target, port, loadscheme, detailed_field,
+            self.notify_list)
         web_link = "%s%s" % (self.api_client.address, self.jobno)
         logger.info("Web link: %s", web_link)
         self.publish("jobno", self.jobno)
@@ -250,11 +253,11 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             if autostop and autostop.cause_criterion:
                 rps = 0
                 if autostop.cause_criterion.cause_second:
-                    rps = autostop.cause_criterion.cause_second[
-                        1]["metrics"]["reqps"]
+                    rps = autostop.cause_criterion.cause_second[1]["metrics"][
+                        "reqps"]
                     if not rps:
-                        rps = autostop.cause_criterion.cause_second[
-                            0]["overall"]["interval_real"]["len"]
+                        rps = autostop.cause_criterion.cause_second[0][
+                            "overall"]["interval_real"]["len"]
                 self.api_client.set_imbalance_and_dsc(
                     self.jobno, rps, autostop.cause_criterion.explain())
 
@@ -289,8 +292,10 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                 self.api_client.push_monitoring_data(
                     self.jobno, json.dumps(data_list))
             elif "Monitoring" in self.core.job.monitoring_plugin.__module__:
-                [self.api_client.push_monitoring_data(
-                    self.jobno, data) for data in data_list if data]
+                [
+                    self.api_client.push_monitoring_data(self.jobno, data)
+                    for data in data_list if data
+                ]
         else:
             logger.warn("The test was stopped from Web interface")
 
@@ -305,8 +310,9 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             config_filename = mon.config
             if config_filename and config_filename not in ['none', 'auto']:
                 with open(config_filename) as config_file:
-                    config.set(MonitoringPlugin.SECTION, "config_contents",
-                               config_file.read())
+                    config.set(
+                        MonitoringPlugin.SECTION, "config_contents",
+                        config_file.read())
         except Exception:  # pylint: disable=W0703
             logger.debug("Can't get monitoring config", exc_info=True)
 
@@ -314,8 +320,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         config.write(output)
         if self.jobno:
             try:
-                self.api_client.send_config_snapshot(self.jobno,
-                                                     output.getvalue())
+                self.api_client.send_config_snapshot(
+                    self.jobno, output.getvalue())
             except Exception:  # pylint: disable=W0703
                 logger.debug("Can't send config snapshot: %s", exc_info=True)
 
@@ -329,11 +335,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         PLUGIN_DIR = os.path.join(self.core.artifacts_base_dir, self.SECTION)
         if not os.path.exists(PLUGIN_DIR):
             os.makedirs(PLUGIN_DIR)
-        os.symlink(
-            self.core.artifacts_dir,
-            os.path.join(
-                PLUGIN_DIR,
-                str(name)))
+        os.symlink(self.core.artifacts_dir, os.path.join(PLUGIN_DIR, str(name)))
 
     def _core_with_tank_api(self):
         """
@@ -347,13 +349,12 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         else:
             api_found = isinstance(self.core, yandex_tank_api.worker.TankCore)
         logger.debug(
-            "We are%s running under API server",
-            "" if api_found else " likely not")
+            "We are%s running under API server", ""
+            if api_found else " likely not")
         return api_found
 
 
 class JobInfoWidget(AbstractInfoWidget):
-
     def __init__(self, sender):
         AbstractInfoWidget.__init__(self)
         self.owner = sender
@@ -365,8 +366,9 @@ class JobInfoWidget(AbstractInfoWidget):
         template = "Author: " + screen.markup.RED + "%s" + \
             screen.markup.RESET + \
             "%s\n   Job: %s %s\n  Web: %s%s"
-        data = (self.owner.operator[:1], self.owner.operator[1:],
-                self.owner.jobno, self.owner.job_name,
-                self.owner.api_client.address, self.owner.jobno)
+        data = (
+            self.owner.operator[:1], self.owner.operator[1:], self.owner.jobno,
+            self.owner.job_name, self.owner.api_client.address,
+            self.owner.jobno)
 
         return template % data

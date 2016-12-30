@@ -50,20 +50,22 @@ class ConfigManager(object):
             },
             "Memory": {
                 "name": '[inputs.mem]',
-                "fielddrop": '["active", "inactive", "total", "used_per*", "avail*"]',
+                "fielddrop":
+                '["active", "inactive", "total", "used_per*", "avail*"]',
             },
             "Disk": {
                 "name": '[inputs.diskio]',
                 "devices": '[{devices}]'.format(
-                    devices=",".join(['"vda%s","sda%s"' % (num, num) for num in range(6)])
-                ),
+                    devices=",".join(
+                        ['"vda%s","sda%s"' % (num, num) for num in range(6)])),
             },
             "Net": {
                 "name": '[inputs.net]',
                 "interfaces": '[{interfaces}]'.format(
-                    interfaces=",".join(['"eth%s"' % (num) for num in range(6)])
-                ),
-                "fielddrop": '["icmp*", "ip*", "udplite*", "tcp*", "udp*", "drop*", "err*"]',
+                    interfaces=",".join(
+                        ['"eth%s"' % (num) for num in range(6)])),
+                "fielddrop":
+                '["icmp*", "ip*", "udplite*", "tcp*", "udp*", "drop*", "err*"]',
             },
             "Nstat": {
                 "name": '[inputs.nstat]',
@@ -89,17 +91,15 @@ class ConfigManager(object):
         }
         defaults_enabled = ['CPU', 'Memory', 'Disk', 'Net', 'System', 'Kernel']
         defaults_boolean = [
-            'percpu',
-            'round_interval',
-            'fielddrop',
-            'fieldpass',
-            'interfaces',
-            'devices']
+            'percpu', 'round_interval', 'fielddrop', 'fieldpass', 'interfaces',
+            'devices'
+        ]
         hostname = host.get('address').lower()
         if hostname == '[target]':
             if not target_hint:
                 raise ValueError(
-                    "Can't use `[target]` keyword with no target parameter specified")
+                    "Can't use `[target]` keyword with no target parameter specified"
+                )
             logger.debug("Using target hint: %s", target_hint)
             hostname = target_hint.lower()
         custom = []
@@ -113,14 +113,12 @@ class ConfigManager(object):
                     if key != 'name' and key not in defaults_boolean:
                         value = metric.get(key, None)
                         if value:
-                            defaults[
-                                metric.tag][key] = "'{value}'".format(
+                            defaults[metric.tag][key] = "'{value}'".format(
                                 value=value)
                     elif key in defaults_boolean:
                         value = metric.get(key, None)
                         if value:
-                            defaults[
-                                metric.tag][key] = "{value}".format(
+                            defaults[metric.tag][key] = "{value}".format(
                                 value=value)
                 host_config[metric.tag] = defaults[metric.tag]
             # custom metrics
@@ -186,11 +184,15 @@ class AgentConfig(object):
             # FIXME incinerate such a string formatting inside a method call
             # T_T
             config.add_section('startup')
-            [config.set('startup', "cmd%s" % idx, cmd)
-             for idx, cmd in enumerate(self.startups)]
+            [
+                config.set('startup', "cmd%s" % idx, cmd)
+                for idx, cmd in enumerate(self.startups)
+            ]
             config.add_section('shutdown')
-            [config.set('shutdown', "cmd%s" % idx, cmd)
-             for idx, cmd in enumerate(self.shutdowns)]
+            [
+                config.set('shutdown', "cmd%s" % idx, cmd)
+                for idx, cmd in enumerate(self.shutdowns)
+            ]
             with open(cfg_path, 'w') as fds:
                 config.write(fds)
 
@@ -210,16 +212,14 @@ class AgentConfig(object):
         if os.path.isfile(cfg_path):
             logger.info(
                 'Found agent custom execs config file in working directory with the same name as created for host %s.\n'
-                'Creating new one via tempfile. This will affect predictable filenames for agent artefacts', self.host)
+                'Creating new one via tempfile. This will affect predictable filenames for agent artefacts',
+                self.host)
             handle, cfg_path = tempfile.mkstemp('.sh', 'agent_customs_')
             os.close(handle)
 
         cmds = ""
         for idx, cmd in enumerate(self.custom):
-            cmds += "-{idx}) {cmd};;\n".format(
-                idx=idx,
-                cmd=cmd['cmd']
-            )
+            cmds += "-{idx}) {cmd};;\n".format(idx=idx, cmd=cmd['cmd'])
         customs_script = """
         #!/bin/sh
         while :
@@ -263,8 +263,7 @@ class AgentConfig(object):
             config.set(
                 "agent",
                 "interval",
-                "'{interval}s'".format(
-                    interval=self.interval))
+                "'{interval}s'".format(interval=self.interval))
             config.set("agent", "round_interval", "true")
             config.set("agent", "flush_interval", "'1s'")
             config.set("agent", "collection_jitter", "'0s'")
@@ -280,9 +279,10 @@ class AgentConfig(object):
                         if key != 'name':
                             config.set(
                                 "{section_name}".format(
-                                    section_name=self.host_config[section]['name']), "{key}".format(
-                                    key=key), "{value}".format(
-                                    value=value))
+                                    section_name=self.host_config[section][
+                                        'name']),
+                                "{key}".format(key=key),
+                                "{value}".format(value=value))
                 # monitoring-style config
                 else:
                     if section in defaults_old_enabled:
@@ -291,23 +291,22 @@ class AgentConfig(object):
                                 section_name=self.host_config[section]['name']))
                         for key, value in iteritems(self.host_config[section]):
                             if key in [
-                                'fielddrop',
-                                'fieldpass',
-                                'percpu',
-                                'devices',
-                                    'interfaces']:
+                                    'fielddrop', 'fieldpass', 'percpu',
+                                    'devices', 'interfaces'
+                            ]:
                                 config.set(
                                     "{section_name}".format(
-                                        section_name=self.host_config[section]['name']), "{key}".format(
-                                        key=key), "{value}".format(
-                                        value=value))
+                                        section_name=self.host_config[section][
+                                            'name']),
+                                    "{key}".format(key=key),
+                                    "{value}".format(value=value))
 
             # outputs
             config.add_section("[outputs.file]")
-            config.set("[outputs.file]",
-                       "files",
-                       "['{config}']".format(
-                           config=self.monitoring_data_output))
+            config.set(
+                "[outputs.file]",
+                "files",
+                "['{config}']".format(config=self.monitoring_data_output))
             config.set("[outputs.file]", "data_format", "'json'")
 
             with open(cfg_path, 'w') as fds:

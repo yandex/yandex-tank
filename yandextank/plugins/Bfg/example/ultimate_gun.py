@@ -3,7 +3,6 @@ log = logging.getLogger(__name__)
 
 
 class LoadTest(object):
-
     def __init__(self, gun):
         self.gun = gun
 

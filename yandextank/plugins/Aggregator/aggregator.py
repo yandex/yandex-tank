@@ -38,8 +38,8 @@ class Worker(object):
                              np.linspace(5000, 9900, 50))  # 100µs accuracy
             bins = np.append(bins,
                              np.linspace(10, 499, 490) * 1000)  # 1ms accuracy
-            bins = np.append(bins, np.linspace(500, 2995, 500) *
-                             1000)  # 5ms accuracy
+            bins = np.append(bins,
+                             np.linspace(500, 2995, 500) * 1000)  # 5ms accuracy
             bins = np.append(bins, np.linspace(3000, 9990, 700) *
                              1000)  # 10ms accuracy
             bins = np.append(bins, np.linspace(10000, 29950, 400) *
@@ -119,7 +119,6 @@ class Worker(object):
 
 
 class DataPoller(object):
-
     def __init__(self, source, poll_period):
         self.poll_period = poll_period
         self.source = source
@@ -132,7 +131,6 @@ class DataPoller(object):
 
 
 class Aggregator(object):
-
     def __init__(self, source, config, verbose_histogram):
         self.worker = Worker(config, verbose_histogram)
         self.source = source
@@ -144,12 +142,11 @@ class Aggregator(object):
             start_time = time.time()
             result = {
                 "ts": ts,
-                "tagged": {
-                    tag: self.worker.aggregate(data)
-                    for tag, data in by_tag
-                },
+                "tagged":
+                {tag: self.worker.aggregate(data)
+                 for tag, data in by_tag},
                 "overall": self.worker.aggregate(chunk),
             }
-            logger.debug("Aggregation time: %.2fms",
-                         (time.time() - start_time) * 1000)
+            logger.debug(
+                "Aggregation time: %.2fms", (time.time() - start_time) * 1000)
             yield result

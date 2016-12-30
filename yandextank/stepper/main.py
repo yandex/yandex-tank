@@ -39,18 +39,18 @@ class AmmoFactory(object):
         configured ComponentFactory, passed as a parameter to the
         __init__ method of this class.
         '''
-        ammo_stream = (ammo
-                       for ammo in ((missile, marker or self.marker(missile))
-                                    for missile, marker in self.ammo_generator)
-                       if self.filter(ammo))
+        ammo_stream = (
+            ammo
+            for ammo in ((missile, marker or self.marker(missile))
+                         for missile, marker in self.ammo_generator)
+            if self.filter(ammo))
 
         return ((timestamp, marker or self.marker(missile), missile)
-                for timestamp, (missile, marker) in zip(self.load_plan,
-                                                        ammo_stream))
+                for timestamp, (missile, marker
+                                ) in zip(self.load_plan, ammo_stream))
 
 
 class Stepper(object):
-
     def __init__(self, core, **kwargs):
         info.status = info.StepperStatus()
         info.status.core = core
@@ -118,19 +118,25 @@ class StepperWrapper(object):
     def get_option(self, option_ammofile, param2=None):
         ''' get_option wrapper'''
         result = self.core.get_option(self.section, option_ammofile, param2)
-        self.log.debug("Option %s.%s = %s", self.section, option_ammofile,
-                       result)
+        self.log.debug(
+            "Option %s.%s = %s", self.section, option_ammofile, result)
         return result
 
     @staticmethod
     def get_available_options():
-        opts = [StepperWrapper.OPTION_AMMOFILE, StepperWrapper.OPTION_LOOP,
-                StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD,
-                StepperWrapper.OPTION_INSTANCES_LIMIT]
-        opts += ["instances_schedule", "uris", "headers", "header_http",
-                 "autocases", "enum_ammo", "ammo_type", "ammo_limit"]
-        opts += ["use_caching", "cache_dir", "force_stepping", "file_cache",
-                 "chosen_cases"]
+        opts = [
+            StepperWrapper.OPTION_AMMOFILE, StepperWrapper.OPTION_LOOP,
+            StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD,
+            StepperWrapper.OPTION_INSTANCES_LIMIT
+        ]
+        opts += [
+            "instances_schedule", "uris", "headers", "header_http", "autocases",
+            "enum_ammo", "ammo_type", "ammo_limit"
+        ]
+        opts += [
+            "use_caching", "cache_dir", "force_stepping", "file_cache",
+            "chosen_cases"
+        ]
         return opts
 
     def read_config(self):
@@ -150,12 +156,12 @@ class StepperWrapper(object):
                     steps.append(step.strip() + ')')
             return steps
 
-        self.rps_schedule = make_steps(self.get_option(self.OPTION_SCHEDULE,
-                                                       ''))
-        self.instances_schedule = make_steps(self.get_option(
-            "instances_schedule", ''))
-        self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT,
-                                             '1000'))
+        self.rps_schedule = make_steps(
+            self.get_option(self.OPTION_SCHEDULE, ''))
+        self.instances_schedule = make_steps(
+            self.get_option("instances_schedule", ''))
+        self.instances = int(
+            self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
         self.uris = self.get_option("uris", '').strip().split("\n")
         while '' in self.uris:
             self.uris.remove('')
@@ -167,8 +173,8 @@ class StepperWrapper(object):
         self.use_caching = int(self.get_option("use_caching", '1'))
 
         self.file_cache = int(self.get_option('file_cache', '8192'))
-        cache_dir = self.core.get_option(self.section, "cache_dir",
-                                         self.core.artifacts_base_dir)
+        cache_dir = self.core.get_option(
+            self.section, "cache_dir", self.core.artifacts_base_dir)
         self.cache_dir = os.path.expanduser(cache_dir)
         self.force_stepping = int(self.get_option("force_stepping", '0'))
         self.stpd = self.get_option(self.OPTION_STPD, "")
@@ -209,7 +215,8 @@ class StepperWrapper(object):
                         instances=self.instances)
                 publish_info(stepper_info)
             else:
-                if (self.force_stepping and
+                if (
+                        self.force_stepping and
                         os.path.exists(self.__si_filename())):
                     os.remove(self.__si_filename())
                 self.__make_stpd_file()
@@ -240,7 +247,8 @@ class StepperWrapper(object):
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(
                 self.rps_schedule) + sep + str(self.autocases)
             hashed_str += sep + ";".join(self.uris) + sep + ";".join(
-                self.headers) + sep + self.http_ver + sep + ";".join(self.chosen_cases)
+                self.headers) + sep + self.http_ver + sep + ";".join(
+                    self.chosen_cases)
             hashed_str += sep + str(self.enum_ammo) + sep + str(self.ammo_type)
             if self.instances_schedule:
                 hashed_str += sep + str(self.instances)

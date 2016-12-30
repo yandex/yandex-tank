@@ -22,10 +22,13 @@ class Plugin(AbstractPlugin):
         self.default_target = None
         self.device_id = None
         self.cmds = {
-            "enable_full_log": "adb %s shell dumpsys batterystats --enable full-wake-history",
-            "disable_full_log": "adb %s shell dumpsys batterystats --disable full-wake-history",
+            "enable_full_log":
+            "adb %s shell dumpsys batterystats --enable full-wake-history",
+            "disable_full_log":
+            "adb %s shell dumpsys batterystats --disable full-wake-history",
             "reset": "adb %s shell dumpsys batterystats --reset",
-            "dump": "adb %s shell dumpsys batterystats"}
+            "dump": "adb %s shell dumpsys batterystats"
+        }
 
     def get_available_options(self):
         return ["device_id"]
@@ -57,8 +60,7 @@ class Plugin(AbstractPlugin):
             try:
                 logger.debug('dumping battery stats')
                 dump = subprocess.Popen(
-                    self.cmds['dump'],
-                    stdout=subprocess.PIPE,
+                    self.cmds['dump'], stdout=subprocess.PIPE,
                     shell=True).communicate()[0]
                 out = subprocess.check_output(
                     self.cmds['disable_full_log'], shell=True)

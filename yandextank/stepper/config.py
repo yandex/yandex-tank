@@ -11,21 +11,21 @@ from .module_exceptions import StepperConfigurationError, AmmoFileError
 
 
 class ComponentFactory():
-
-    def __init__(self,
-                 rps_schedule=None,
-                 http_ver='1.1',
-                 ammo_file=None,
-                 instances_schedule=None,
-                 instances=1000,
-                 loop_limit=-1,
-                 ammo_limit=-1,
-                 uris=None,
-                 headers=None,
-                 autocases=None,
-                 enum_ammo=False,
-                 ammo_type='phantom',
-                 chosen_cases=[], ):
+    def __init__(
+            self,
+            rps_schedule=None,
+            http_ver='1.1',
+            ammo_file=None,
+            instances_schedule=None,
+            instances=1000,
+            loop_limit=-1,
+            ammo_limit=-1,
+            uris=None,
+            headers=None,
+            autocases=None,
+            enum_ammo=False,
+            ammo_type='phantom',
+            chosen_cases=[], ):
         self.log = logging.getLogger(__name__)
         self.ammo_file = ammo_file
         self.ammo_type = ammo_type
@@ -57,7 +57,8 @@ class ComponentFactory():
         """
         if self.rps_schedule and self.instances_schedule:
             raise StepperConfigurationError(
-                'Both rps and instances schedules specified. You must specify only one of them')
+                'Both rps and instances schedules specified. You must specify only one of them'
+            )
         elif self.rps_schedule:
             info.status.publish('loadscheme', self.rps_schedule)
             return lp.create(self.rps_schedule)
@@ -84,11 +85,11 @@ class ComponentFactory():
         }
         if self.uris and self.ammo_file:
             raise StepperConfigurationError(
-                'Both uris and ammo file specified. You must specify only one of them')
+                'Both uris and ammo file specified. You must specify only one of them'
+            )
         elif self.uris:
-            ammo_gen = missile.UriStyleGenerator(self.uris,
-                                                 self.headers,
-                                                 http_ver=self.http_ver)
+            ammo_gen = missile.UriStyleGenerator(
+                self.uris, self.headers, http_ver=self.http_ver)
         elif self.ammo_file:
             if self.ammo_type in af_readers:
                 if self.ammo_type == 'phantom':
@@ -98,10 +99,12 @@ class ComponentFactory():
                             if not ammo.next()[0].isdigit():
                                 self.ammo_type = 'uri'
                                 self.log.info(
-                                    "Setting ammo_type 'uri' because ammo is not started with digit and you did not specify ammo format")
+                                    "Setting ammo_type 'uri' because ammo is not started with digit and you did not specify ammo format"
+                                )
                             else:
                                 self.log.info(
-                                    "Default ammo type ('phantom') used, use 'phantom.ammo_type' option to override it")
+                                    "Default ammo type ('phantom') used, use 'phantom.ammo_type' option to override it"
+                                )
                         except StopIteration:
                             self.log.exception(
                                 "Couldn't read first line of ammo file")
@@ -110,9 +113,8 @@ class ComponentFactory():
             else:
                 raise NotImplementedError(
                     'No such ammo type implemented: "%s"' % self.ammo_type)
-            ammo_gen = af_readers[self.ammo_type](self.ammo_file,
-                                                  headers=self.headers,
-                                                  http_ver=self.http_ver)
+            ammo_gen = af_readers[self.ammo_type](
+                self.ammo_file, headers=self.headers, http_ver=self.http_ver)
         else:
             raise StepperConfigurationError(
                 'Ammo not found. Specify uris or ammo file')

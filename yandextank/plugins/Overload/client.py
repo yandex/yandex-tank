@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 
 class OverloadClient(object):
-
     def __init__(self):
         self.address = None
         self.token = None
@@ -77,8 +76,9 @@ class OverloadClient(object):
     def get_task_data(self, task):
         return self.get("api/task/" + task + "/summary.json")
 
-    def new_job(self, task, person, tank, target_host, target_port, loadscheme,
-                detailed_time, notify_list):
+    def new_job(
+            self, task, person, tank, target_host, target_port, loadscheme,
+            detailed_time, notify_list):
         data = {
             'task': task,
             'person': person,
@@ -110,20 +110,24 @@ class OverloadClient(object):
 
     def get_job_summary(self, jobno):
         result = self.get(
-            'api/job/' + str(jobno) +
-            "/summary.json?api_token=" + self.api_token)
+            'api/job/' + str(jobno) + "/summary.json?api_token=" +
+            self.api_token)
         return result[0]
 
     def close_job(self, jobno, retcode):
-        params = {'exitcode': str(retcode), 'api_token': self.api_token, }
+        params = {
+            'exitcode': str(retcode),
+            'api_token': self.api_token,
+        }
 
-        result = self.get('api/job/' + str(jobno) + '/close.json?' +
-                          urllib.urlencode(params))
+        result = self.get(
+            'api/job/' + str(jobno) + '/close.json?' + urllib.urlencode(params))
         return result[0]['success']
 
-    def edit_job_metainfo(self, jobno, job_name, job_dsc, instances, ammo_path,
-                          loop_count, version_tested, is_regression, component,
-                          tank_type, cmdline, is_starred):
+    def edit_job_metainfo(
+            self, jobno, job_name, job_dsc, instances, ammo_path, loop_count,
+            version_tested, is_regression, component, tank_type, cmdline,
+            is_starred):
         data = {
             'name': job_name,
             'description': job_dsc,
@@ -151,11 +155,8 @@ class OverloadClient(object):
             data['description'] = comment.strip()
 
         response = self.post(
-            'api/job/' +
-            str(jobno) +
-            "/set_imbalance.json?api_token=" +
-            self.api_token,
-            data)
+            'api/job/' + str(jobno) + "/set_imbalance.json?api_token=" +
+            self.api_token, data)
         return response
 
     def second_data_to_push_item(self, data, stat, timestamp, overall, case):
@@ -191,20 +192,22 @@ class OverloadClient(object):
             }
         }
 
-        for q, value in zip(data["interval_real"]["q"]["q"],
-                            data["interval_real"]["q"]["value"]):
+        for q, value in zip(
+                data["interval_real"]["q"]["q"],
+                data["interval_real"]["q"]["value"]):
             api_data['trail']['q' + str(q)] = value / 1000.0
 
         for code, cnt in data["net_code"]["count"].iteritems():
-            api_data['net_codes'].append({'code': int(code),
-                                          'count': int(cnt)})
+            api_data['net_codes'].append({'code': int(code), 'count': int(cnt)})
 
         for code, cnt in data["proto_code"]["count"].iteritems():
-            api_data['http_codes'].append({'code': int(code),
-                                           'count': int(cnt)})
+            api_data['http_codes'].append({
+                'code': int(code),
+                'count': int(cnt)
+            })
 
-        api_data['time_intervals'] = self.convert_hist(data["interval_real"][
-            "hist"])
+        api_data['time_intervals'] = self.convert_hist(
+            data["interval_real"]["hist"])
         return api_data
 
     def convert_hist(self, hist):
@@ -228,11 +231,11 @@ class OverloadClient(object):
                 case_name = "__EMPTY__"
             if (len(case_name)) > 128:
                 raise RuntimeError('tag (case) name is too long: ' + case_name)
-            push_item = self.second_data_to_push_item(case_data, stat_item, ts,
-                                                      0, case_name)
+            push_item = self.second_data_to_push_item(
+                case_data, stat_item, ts, 0, case_name)
             items.append(push_item)
-        overall = self.second_data_to_push_item(data_item["overall"],
-                                                stat_item, ts, 1, '')
+        overall = self.second_data_to_push_item(
+            data_item["overall"], stat_item, ts, 1, '')
         items.append(overall)
 
         while True:
@@ -252,8 +255,9 @@ class OverloadClient(object):
                         "Retry in 10 sec: %s", ex)
                     time.sleep(10)  # FIXME this makes all plugins freeze
             except requests.exceptions.RequestException as ex:
-                logger.warn("Failed to push second data to API,"
-                            " retry in 10 sec: %s", ex)
+                logger.warn(
+                    "Failed to push second data to API,"
+                    " retry in 10 sec: %s", ex)
                 time.sleep(10)  # FIXME this makes all plugins freeze
             except Exception:  # pylint: disable=W0703
                 # something nasty happened, but we don't want to fail here
@@ -288,8 +292,9 @@ class OverloadClient(object):
                             ' retry in 10s: %s', ex)
                         time.sleep(10)  # FIXME this makes all plugins freeze
                 except requests.exceptions.RequestException as ex:
-                    logger.warning('Problems sending monitoring data,'
-                                   ' retry in 10s: %s', ex)
+                    logger.warning(
+                        'Problems sending monitoring data,'
+                        ' retry in 10s: %s', ex)
                     time.sleep(10)  # FIXME this makes all plugins freeze
                 except Exception:  # pylint: disable=W0703
                     # something irrecoverable happened
@@ -298,13 +303,12 @@ class OverloadClient(object):
                     return
 
     def send_console(self, jobno, console):
-        logger.debug("Sending console view [%s]: %s", len(console),
-                     console[:64])
+        logger.debug(
+            "Sending console view [%s]: %s", len(console), console[:64])
         addr = ("api/job/%s/console.txt?api_token=" % jobno) + self.api_token,
         self.post_raw(addr, {"console": console, })
 
     def send_config_snapshot(self, jobno, config):
         logger.debug("Sending config snapshot")
-        addr = ("api/job/%s/configinfo.txt?api_token=" %
-                jobno) + self.api_token
+        addr = ("api/job/%s/configinfo.txt?api_token=" % jobno) + self.api_token
         self.post_raw(addr, {"configinfo": config, })

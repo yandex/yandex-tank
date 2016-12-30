@@ -47,13 +47,14 @@ class Plugin(AbstractPlugin):
     def is_test_finished(self):
         if self.poll:
             self.log.info("Executing: %s", self.poll)
-            retcode = util.execute(self.poll,
-                                   shell=True,
-                                   poll_period=0.1,
-                                   catch_out=self.catch_out)[0]
+            retcode = util.execute(
+                self.poll,
+                shell=True,
+                poll_period=0.1,
+                catch_out=self.catch_out)[0]
             if retcode:
-                self.log.warn("Non-zero exit code, interrupting test: %s",
-                              retcode)
+                self.log.warn(
+                    "Non-zero exit code, interrupting test: %s", retcode)
                 return retcode
         return -1
 
@@ -72,9 +73,7 @@ class Plugin(AbstractPlugin):
         Execute and check exit code
         '''
         self.log.info("Executing: %s", cmd)
-        retcode = util.execute(cmd,
-                               shell=True,
-                               poll_period=0.1,
-                               catch_out=self.catch_out)[0]
+        retcode = util.execute(
+            cmd, shell=True, poll_period=0.1, catch_out=self.catch_out)[0]
         if retcode:
             raise RuntimeError("Subprocess returned %s" % retcode)

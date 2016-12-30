@@ -59,8 +59,7 @@ def _exc_to_http(param1):
             int(param1)
         except:
             logger.error(
-                "JMeter wrote some strange data into codes column: %s",
-                param1)
+                "JMeter wrote some strange data into codes column: %s", param1)
         else:
             return int(param1)
 
@@ -113,19 +112,14 @@ def fix_latency(row):
 # timeStamp,elapsed,label,responseCode,success,bytes,grpThreads,allThreads,Latency
 def string_to_df(data):
     chunk = pd.read_csv(
-        StringIO(data),
-        sep='\t',
-        names=jtl_columns,
-        dtype=jtl_types)
+        StringIO(data), sep='\t', names=jtl_columns, dtype=jtl_types)
     chunk["receive_ts"] = (chunk["send_ts"] + chunk['interval_real']) / 1000.0
     chunk['receive_sec'] = chunk["receive_ts"].astype(np.int64)
     chunk['interval_real'] = chunk["interval_real"] * 1000  # convert to µs
     chunk.set_index(['receive_sec'], inplace=True)
     l = len(chunk)
-    chunk['connect_time'] = (
-        chunk['connect_time'].fillna(0) *
-        1000).astype(
-        np.int64)
+    chunk['connect_time'] = (chunk['connect_time'].fillna(0) *
+                             1000).astype(np.int64)
     chunk['latency'] = chunk['latency'] * 1000
     chunk['latency'] = chunk.apply(fix_latency, axis=1)
     chunk['send_time'] = np.zeros(l)
@@ -139,7 +133,6 @@ def string_to_df(data):
 
 
 class JMeterStatAggregator(object):
-
     def __init__(self, source):
         self.worker = agg.Worker({"allThreads": ["mean"]}, False)
         self.source = source
@@ -147,16 +140,19 @@ class JMeterStatAggregator(object):
     def __iter__(self):
         for ts, chunk in self.source:
             stats = self.worker.aggregate(chunk)
-            yield [{'ts': ts,
-                    'metrics': {'instances': stats['allThreads']['mean'],
-                                'reqps': 0}}]
+            yield [{
+                'ts': ts,
+                'metrics': {
+                    'instances': stats['allThreads']['mean'],
+                    'reqps': 0
+                }
+            }]
 
     def close(self):
         pass
 
 
 class JMeterReader(object):
-
     def __init__(self, filename):
         self.buffer = ""
         self.stat_buffer = ""
@@ -165,8 +161,8 @@ class JMeterReader(object):
         self.agg_finished = False
         self.closed = False
         self.stat_queue = q.Queue()
-        self.stats_reader = JMeterStatAggregator(TimeChopper(
-            self._read_stat_queue(), 3))
+        self.stats_reader = JMeterStatAggregator(
+            TimeChopper(self._read_stat_queue(), 3))
 
     def _read_stat_queue(self):
         while not self.closed:

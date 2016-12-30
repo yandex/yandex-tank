@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class WindowCounter(object):
-
     def __init__(self, window_size):
         self.window_size = window_size
         self.value = 0.0
@@ -60,8 +59,8 @@ class TotalFracTimeCriterion(AbstractCriterion):
 
     def __fail_count(self, data):
         ecdf = np.cumsum(data["overall"]["interval_real"]["hist"]["data"])
-        idx = np.searchsorted(data["overall"]["interval_real"]["hist"]["bins"],
-                              self.rt_limit)
+        idx = np.searchsorted(
+            data["overall"]["interval_real"]["hist"]["bins"], self.rt_limit)
         if idx == 0:
             return ecdf[-1]
         elif idx == len(ecdf):
@@ -73,8 +72,8 @@ class TotalFracTimeCriterion(AbstractCriterion):
         self.seconds.append((data, stat))
         self.fail_counter.push(self.__fail_count(data))
         self.total_counter.push(data["overall"]["interval_real"]["len"])
-        self.total_fail_ratio = (self.fail_counter.value /
-                                 self.total_counter.value)
+        self.total_fail_ratio = (
+            self.fail_counter.value / self.total_counter.value)
         if self.total_fail_ratio >= self.fail_ratio_limit and len(
                 self.fail_counter) >= self.window_size:
             self.cause_second = self.seconds[0]
@@ -88,15 +87,17 @@ class TotalFracTimeCriterion(AbstractCriterion):
         return 25
 
     def explain(self):
-        return ("%.2f%% responses times higher "
-                "than %sms for %ss since: %s" %
-                (self.total_fail_ratio * 100, self.rt_limit / 1000,
-                 self.window_size, self.cause_second[0]["ts"]))
+        return (
+            "%.2f%% responses times higher "
+            "than %sms for %ss since: %s" % (
+                self.total_fail_ratio * 100, self.rt_limit / 1000,
+                self.window_size, self.cause_second[0]["ts"]))
 
     def widget_explain(self):
-        return ("%.2f%% times >%sms for %ss" %
-                (self.total_fail_ratio * 100, self.rt_limit / 1000,
-                 self.window_size), self.total_fail_ratio)
+        return (
+            "%.2f%% times >%sms for %ss" % (
+                self.total_fail_ratio * 100, self.rt_limit / 1000,
+                self.window_size), self.total_fail_ratio)
 
 
 class TotalHTTPCodesCriterion(AbstractCriterion):
@@ -122,8 +123,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[
-            2])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[2])
 
     def notify(self, data, stat):
         matched_responses = self.count_matched_codes(
@@ -134,8 +134,9 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
                     "interval_real"]["len"] * 100
             else:
                 matched_responses = 1
-        logger.debug("HTTP codes matching mask %s: %s/%s", self.codes_mask,
-                     matched_responses, self.level)
+        logger.debug(
+            "HTTP codes matching mask %s: %s/%s", self.codes_mask,
+            matched_responses, self.level)
         self.data.append(matched_responses)
         self.second_window.append((data, stat))
         if len(self.data) > self.seconds_limit:
@@ -144,11 +145,10 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
         queue_len = 1
         if self.is_relative:
             queue_len = len(self.data)
-        if (sum(self.data) / queue_len) >= self.level and len(
-                self.data) >= self.seconds_limit:
+        if (sum(self.data) / queue_len) >= self.level\
+                and len(self.data) >= self.seconds_limit:  # yapf:disable
             self.cause_second = self.second_window[0]
             logger.debug(self.explain())
-            #            self.autostop.add_counting(self)
             return True
         return False
 
@@ -165,12 +165,15 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
 
     def explain(self):
         if self.is_relative:
-            items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                     self.cause_second[0]["ts"])
-            return ("%s codes count higher "
-                    "than %s for %ss, ended at: %s" % items)
-        items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                 self.cause_second[0]["ts"])
+            items = (
+                self.codes_mask, self.get_level_str(), self.seconds_limit,
+                self.cause_second[0]["ts"])
+            return (
+                "%s codes count higher "
+                "than %s for %ss, ended at: %s" % items)
+        items = (
+            self.codes_mask, self.get_level_str(), self.seconds_limit,
+            self.cause_second[0]["ts"])
         return "%s codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -204,8 +207,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[
-            2])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[2])
 
     def notify(self, data, stat):
         codes = data["overall"]["net_code"]["count"].copy()
@@ -216,14 +218,15 @@ class TotalNetCodesCriterion(AbstractCriterion):
             if data["overall"]["interval_real"]["len"]:
                 matched_responses = float(matched_responses) / data["overall"][
                     "interval_real"]["len"] * 100
-                logger.debug("Net codes matching mask %s: %s%%/%s",
-                             self.codes_mask, round(matched_responses,
-                                                    2), self.get_level_str())
+                logger.debug(
+                    "Net codes matching mask %s: %s%%/%s", self.codes_mask,
+                    round(matched_responses, 2), self.get_level_str())
             else:
                 matched_responses = 1
         else:
-            logger.debug("Net codes matching mask %s: %s/%s", self.codes_mask,
-                         matched_responses, self.get_level_str())
+            logger.debug(
+                "Net codes matching mask %s: %s/%s", self.codes_mask,
+                matched_responses, self.get_level_str())
 
         self.data.append(matched_responses)
         self.second_window.append((data, stat))
@@ -234,11 +237,10 @@ class TotalNetCodesCriterion(AbstractCriterion):
         queue_len = 1
         if self.is_relative:
             queue_len = len(self.data)
-        if (sum(self.data) / queue_len) >= self.level and len(
-                self.data) >= self.seconds_limit:
+        if (sum(self.data) / queue_len) >= self.level\
+                and len(self.data) >= self.seconds_limit:  # yapf:disable
             self.cause_second = self.second_window[0]
             logger.debug(self.explain())
-            #            self.autostop.add_counting(self)
             return True
         return False
 
@@ -255,12 +257,15 @@ class TotalNetCodesCriterion(AbstractCriterion):
 
     def explain(self):
         if self.is_relative:
-            items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                     self.cause_second[0]["ts"])
-            return ("%s net codes count higher "
-                    "than %s for %ss, since %s" % items)
-        items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                 self.cause_second[0]["ts"])
+            items = (
+                self.codes_mask, self.get_level_str(), self.seconds_limit,
+                self.cause_second[0]["ts"])
+            return (
+                "%s net codes count higher "
+                "than %s for %ss, since %s" % items)
+        items = (
+            self.codes_mask, self.get_level_str(), self.seconds_limit,
+            self.cause_second[0]["ts"])
         return "%s net codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -294,8 +299,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[
-            2])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[2])
 
     def notify(self, data, stat):
         matched_responses = self.count_matched_codes(
@@ -307,14 +311,15 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
                 matched_responses = 100 - matched_responses
             else:
                 matched_responses = 1
-            logger.debug("HTTP codes matching mask not %s: %s/%s",
-                         self.codes_mask, round(matched_responses,
-                                                1), self.level)
+            logger.debug(
+                "HTTP codes matching mask not %s: %s/%s", self.codes_mask,
+                round(matched_responses, 1), self.level)
         else:
             matched_responses = (
                 data["overall"]["interval_real"]["len"] - matched_responses)
-            logger.debug("HTTP codes matching mask not %s: %s/%s",
-                         self.codes_mask, matched_responses, self.level)
+            logger.debug(
+                "HTTP codes matching mask not %s: %s/%s", self.codes_mask,
+                matched_responses, self.level)
         self.data.append(matched_responses)
         self.second_window.append((data, stat))
         if len(self.data) > self.seconds_limit:
@@ -324,11 +329,10 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         queue_len = 1
         if self.is_relative:
             queue_len = len(self.data)
-        if (sum(self.data) / queue_len) >= self.level and len(
-                self.data) >= self.seconds_limit:
+        if (sum(self.data) / queue_len) >= self.level\
+                and len(self.data) >= self.seconds_limit:  # yapf:disable
             self.cause_second = self.second_window[0]
             logger.debug(self.explain())
-            #            self.autostop.add_counting(self)
             return True
         return False
 
@@ -345,12 +349,15 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
 
     def explain(self):
         if self.is_relative:
-            items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                     self.cause_second[0]["ts"])
-            return ("Not %s codes count higher "
-                    "than %s for %ss, since %s" % items)
-        items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                 self.cause_second[0]["ts"])
+            items = (
+                self.codes_mask, self.get_level_str(), self.seconds_limit,
+                self.cause_second[0]["ts"])
+            return (
+                "Not %s codes count higher "
+                "than %s for %ss, since %s" % items)
+        items = (
+            self.codes_mask, self.get_level_str(), self.seconds_limit,
+            self.cause_second[0]["ts"])
         return "Not %s codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -384,8 +391,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[
-            2])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[2])
 
     def notify(self, data, stat):
         codes = data["overall"]["net_code"]["count"].copy()
@@ -399,14 +405,15 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
                 matched_responses = 100 - matched_responses
             else:
                 matched_responses = 1
-            logger.debug("Net codes matching mask not %s: %s/%s",
-                         self.codes_mask, round(matched_responses,
-                                                1), self.level)
+            logger.debug(
+                "Net codes matching mask not %s: %s/%s", self.codes_mask,
+                round(matched_responses, 1), self.level)
         else:
             matched_responses = (
                 data["overall"]["interval_real"]["len"] - matched_responses)
-            logger.debug("Net codes matching mask not %s: %s/%s",
-                         self.codes_mask, matched_responses, self.level)
+            logger.debug(
+                "Net codes matching mask not %s: %s/%s", self.codes_mask,
+                matched_responses, self.level)
         self.data.append(matched_responses)
         self.second_window.append((data, stat))
         if len(self.data) > self.seconds_limit:
@@ -416,8 +423,8 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         queue_len = 1
         if self.is_relative:
             queue_len = len(self.data)
-        if (sum(self.data) / queue_len) >= self.level and len(
-                self.data) >= self.seconds_limit:
+        if (sum(self.data) / queue_len) >= self.level \
+                and len(self.data) >= self.seconds_limit:  # yapf:disable
             self.cause_second = self.second_window[0]
             logger.debug(self.explain())
             return True
@@ -436,12 +443,15 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
 
     def explain(self):
         if self.is_relative:
-            items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                     self.cause_second[0]["ts"])
-            return ("Not %s codes count higher "
-                    "than %s for %ss, since %s" % items)
-        items = (self.codes_mask, self.get_level_str(), self.seconds_limit,
-                 self.cause_second[0]["ts"])
+            items = (
+                self.codes_mask, self.get_level_str(), self.seconds_limit,
+                self.cause_second[0]["ts"])
+            return (
+                "Not %s codes count higher "
+                "than %s for %ss, since %s" % items)
+        items = (
+            self.codes_mask, self.get_level_str(), self.seconds_limit,
+            self.cause_second[0]["ts"])
         return "Not %s codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -471,8 +481,7 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
 
         self.tangents.append(0)
         self.last = 0
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[
-            1])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[1])
         self.measurement_error = float()
 
     def notify(self, data, stat):
@@ -491,8 +500,9 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
         self.measurement_error = self.calc_measurement_error(self.tangents)
 
         self.total_tan = float(sum(self.tangents) / len(self.tangents))
-        logger.debug("Last trend for http codes %s: %.2f +/- %.2f",
-                     self.codes_mask, self.total_tan, self.measurement_error)
+        logger.debug(
+            "Last trend for http codes %s: %.2f +/- %.2f", self.codes_mask,
+            self.total_tan, self.measurement_error)
 
         if self.total_tan + self.measurement_error < 0:
             self.cause_second = self.second_window[0]
@@ -521,14 +531,17 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
         return 30
 
     def explain(self):
-        items = (self.codes_mask, self.total_tan, self.measurement_error,
-                 self.seconds_limit, self.cause_second[0]["ts"])
-        return ("Last trend for %s http codes "
-                "is %.2f +/- %.2f for %ss, since %s" % items)
+        items = (
+            self.codes_mask, self.total_tan, self.measurement_error,
+            self.seconds_limit, self.cause_second[0]["ts"])
+        return (
+            "Last trend for %s http codes "
+            "is %.2f +/- %.2f for %ss, since %s" % items)
 
     def widget_explain(self):
-        items = (self.codes_mask, self.total_tan, self.measurement_error,
-                 self.seconds_limit)
+        items = (
+            self.codes_mask, self.total_tan, self.measurement_error,
+            self.seconds_limit)
         return ("HTTP(%s) trend is %.2f +/- %.2f < 0 for %ss" % items, 1.0)
 
 
@@ -543,6 +556,7 @@ class QuantileOfSaturationCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         raise NotImplementedError
+
     #     self.autostop = autostop
     #     self.data = deque()
     #     self.second_window = deque()

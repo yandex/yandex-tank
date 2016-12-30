@@ -27,8 +27,9 @@ class ApiWorker:
 
         file_handler = logging.FileHandler(self.log_filename)
         file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s %(message)s"))
+        file_handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s [%(levelname)s] %(name)s %(message)s"))
         logger.addHandler(file_handler)
         console_handler = logging.StreamHandler(sys.stdout)
         stderr_hdl = logging.StreamHandler(sys.stderr)
@@ -65,8 +66,8 @@ class ApiWorker:
         """ Make preparations before running Tank """
         self.options = options
         if self.options.get('lock_dir', None):
-            self.core.set_option(self.core.SECTION, "lock_dir",
-                                 self.options['lock_dir'])
+            self.core.set_option(
+                self.core.SECTION, "lock_dir", self.options['lock_dir'])
 
         while True:
             try:
@@ -109,13 +110,14 @@ class ApiWorker:
         except KeyboardInterrupt as ex:
             self.log.info(
                 "Do not press Ctrl+C again, the test will be broken otherwise")
-            self.log.debug("Caught KeyboardInterrupt: %s",
-                           traceback.format_exc(ex))
+            self.log.debug(
+                "Caught KeyboardInterrupt: %s", traceback.format_exc(ex))
             try:
                 retcode = self.__graceful_shutdown()
             except KeyboardInterrupt as ex:
-                self.log.debug("Caught KeyboardInterrupt again: %s",
-                               traceback.format_exc(ex))
+                self.log.debug(
+                    "Caught KeyboardInterrupt again: %s",
+                    traceback.format_exc(ex))
                 self.log.info(
                     "User insists on exiting, aborting graceful shutdown...")
                 retcode = 1
@@ -138,12 +140,13 @@ class ApiWorker:
             for filename in conf_files:
                 if fnmatch.fnmatch(filename, '*.ini'):
                     configs += [
-                        os.path.realpath(self.baseconfigs_location + os.sep +
-                                         filename)
+                        os.path.realpath(
+                            self.baseconfigs_location + os.sep + filename)
                     ]
         except OSError:
-            self.log.warn(self.baseconfigs_location +
-                          ' is not accessible to get configs list')
+            self.log.warn(
+                self.baseconfigs_location +
+                ' is not accessible to get configs list')
 
         configs += [os.path.expanduser('~/.yandex-tank')]
         return configs

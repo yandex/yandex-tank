@@ -7,12 +7,18 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa:E402
 
-
 _ALL_ = "All"
 _CHARTSETS = {
-    "cpu-cpu-": {"CPU": _ALL_},
-    "net-": {"Network": {"bytes_sent", "bytes_recv"}},
-    "diskio-": {"Disk IO": {"read_bytes", "write_bytes"}, "Disk latency": {"read_time", "write_time"}},
+    "cpu-cpu-": {
+        "CPU": _ALL_
+    },
+    "net-": {
+        "Network": {"bytes_sent", "bytes_recv"}
+    },
+    "diskio-": {
+        "Disk IO": {"read_bytes", "write_bytes"},
+        "Disk latency": {"read_time", "write_time"}
+    },
 }
 _CUSTOM_PREFIX = "custom:"
 _REPORT_FILE_OPTION = "report_file"
@@ -33,7 +39,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
     def configure(self):
         self.__report_path = self.get_option(_REPORT_FILE_OPTION, "report.svg")
-        if os.path.split(self.__report_path)[0] or os.path.splitdrive(self.__report_path)[0]:
+        if os.path.split(self.__report_path)[0] or os.path.splitdrive(
+                self.__report_path)[0]:
             raise Exception("Only simple file names supported")
 
         self.__shooting_data = []
@@ -50,7 +57,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
     def post_process(self, retcode):
         monitoring_chartsets = self.__get_monitoring_chartsets()
-        min_x = self.__shooting_data[0]["ts"]  # sync start of shooting and start of monitoring
+        min_x = self.__shooting_data[0][
+            "ts"]  # sync start of shooting and start of monitoring
 
         seaborn.set(style="whitegrid", palette="Set2")
         seaborn.despine()
@@ -67,7 +75,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         plt.gca().legend(fontsize="x-small")
 
         # monitoring
-        for plot_num, chartset_data in enumerate(sorted(monitoring_chartsets.iteritems()), 1):
+        for plot_num, chartset_data in enumerate(
+                sorted(monitoring_chartsets.iteritems()), 1):
             chartset_title, signals = chartset_data
 
             plt.subplot(plot_count, 1, plot_num + 1)
@@ -96,9 +105,12 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
         for chartset_prefix, chartset_data in _CHARTSETS.iteritems():
             if signal_prefix.startswith(chartset_prefix):
-                for chartset_title, chartset_signals in chartset_data.iteritems():
+                for chartset_title, chartset_signals in chartset_data.iteritems(
+                ):
                     if chartset_signals is _ALL_ or signal_suffix in chartset_signals:
-                        return "{} {}".format(chartset_title, signal_prefix[len(chartset_prefix):])
+                        return "{} {}".format(
+                            chartset_title,
+                            signal_prefix[len(chartset_prefix):])
                 else:
                     return None
         else:
@@ -115,11 +127,13 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                     continue
 
                 signal_prefix, signal_suffix = signal_name.split("_", 1)
-                chartset_title = self.__find_monitoring_chartset(signal_prefix, signal_suffix)
+                chartset_title = self.__find_monitoring_chartset(
+                    signal_prefix, signal_suffix)
                 if not chartset_title:
                     continue
 
-                chartsets.setdefault((chartset_title), set()).add((signal_name, signal_suffix))
+                chartsets.setdefault((chartset_title), set()).add(
+                    (signal_name, signal_suffix))
 
         return chartsets
 
@@ -142,7 +156,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         y = {}
         for data in self.__shooting_data:
             timestamp = data["ts"]
-            for variant, count in data["overall"][signal_name]["count"].iteritems():
+            for variant, count in data["overall"][signal_name][
+                    "count"].iteritems():
                 x.setdefault(variant, []).append(timestamp - min_x)
                 y.setdefault(variant, []).append(count)
         return x, y

@@ -14,11 +14,10 @@ def records_to_df(records):
 
 
 def _expand_steps(steps):
-    return list(itt.chain(*[[rps] * int(duration) for rps, duration in steps]))
+    return list(itt.chain(* [[rps] * int(duration) for rps, duration in steps]))
 
 
 class BfgReader(object):
-
     def __init__(self, results):
         self.buffer = ""
         self.stat_buffer = ""
@@ -43,7 +42,6 @@ class BfgReader(object):
 
 
 class BfgStatsReader(object):
-
     def __init__(self, instance_counter, steps):
         self.closed = False
         self.last_ts = 0
@@ -59,9 +57,13 @@ class BfgStatsReader(object):
                 reqps = 0
                 if offset >= 0 and offset < len(self.steps):
                     reqps = self.steps[offset]
-                yield [{'ts': cur_ts,
-                        'metrics': {'instances': self.instance_counter.value,
-                                    'reqps': reqps}}]
+                yield [{
+                    'ts': cur_ts,
+                    'metrics': {
+                        'instances': self.instance_counter.value,
+                        'reqps': reqps
+                    }
+                }]
                 self.last_ts = cur_ts
             else:
                 yield []

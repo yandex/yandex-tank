@@ -10,7 +10,6 @@ import datetime
 import itertools as itt
 from StringIO import StringIO
 
-
 logger = logging.getLogger(__name__)
 
 phout_columns = [
@@ -38,10 +37,7 @@ dtypes = {
 def string_to_df(data):
     start_time = time.time()
     chunk = pd.read_csv(
-        StringIO(data),
-        sep='\t',
-        names=phout_columns,
-        dtype=dtypes)
+        StringIO(data), sep='\t', names=phout_columns, dtype=dtypes)
 
     chunk['receive_ts'] = chunk.send_ts + chunk.interval_real / 1e6
     chunk['receive_sec'] = chunk.receive_ts.astype(np.int64)
@@ -49,13 +45,11 @@ def string_to_df(data):
     chunk['tag'] = chunk.tag.str.rsplit('#', 1, expand=True)[0]
     chunk.set_index(['receive_sec'], inplace=True)
 
-    logger.debug("Chunk decode time: %.2fms",
-                 (time.time() - start_time) * 1000)
+    logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
     return chunk
 
 
 class PhantomReader(object):
-
     def __init__(self, filename, cache_size=1024 * 1024 * 50):
         self.buffer = ""
         self.phout = open(filename, 'r')
@@ -87,7 +81,6 @@ class PhantomReader(object):
 
 
 class PhantomStatsReader(object):
-
     def __init__(self, filename, phantom_info):
         self.phantom_info = phantom_info
         self.buffer = ""
@@ -116,9 +109,13 @@ class PhantomStatsReader(object):
             reqps = 0
             if offset >= 0 and offset < len(self.phantom_info.steps):
                 reqps = self.phantom_info.steps[offset][0]
-            yield {'ts': chunk_date - 1,
-                   'metrics': {'instances': instances,
-                               'reqps': reqps}}
+            yield {
+                'ts': chunk_date - 1,
+                'metrics': {
+                    'instances': instances,
+                    'reqps': reqps
+                }
+            }
 
     def _read_stat_data(self, stat_file):
         chunk = stat_file.read(1024 * 1024 * 50)
@@ -128,10 +125,12 @@ class PhantomStatsReader(object):
             if len(parts) > 1:
                 ready_chunk = parts[0]
                 self.stat_buffer = parts[1]
-                chunks = [json.loads('{%s}}' % s)
-                          for s in ready_chunk.split('\n},')]
-                return list(itt.chain(*(self._decode_stat_data(chunk)
-                                        for chunk in chunks)))
+                chunks = [
+                    json.loads('{%s}}' % s) for s in ready_chunk.split('\n},')
+                ]
+                return list(
+                    itt.chain(
+                        *(self._decode_stat_data(chunk) for chunk in chunks)))
         else:
             self.stat_buffer += stat_file.readline()
 

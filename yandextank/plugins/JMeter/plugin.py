@@ -44,8 +44,10 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         return __file__
 
     def get_available_options(self):
-        return ["jmx", "args", "jmeter_path", "buffer_size",
-                "buffered_seconds", "exclude_markers"]
+        return [
+            "jmx", "args", "jmeter_path", "buffer_size", "buffered_seconds",
+            "exclude_markers"
+        ]
 
     def configure(self):
         self.original_jmx = self.get_option("jmx")
@@ -57,19 +59,19 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.jmeter_log = self.core.mkstemp('.log', 'jmeter_')
         self.jmeter_ver = float(self.get_option('jmeter_ver', '3.0'))
         self.ext_log = self.get_option(
-            'extended_log', self.get_option(
-                'ext_log', 'none'))
+            'extended_log', self.get_option('ext_log', 'none'))
         if self.ext_log not in self.ext_levels:
             self.ext_log = 'none'
         if self.ext_log != 'none':
             self.ext_log_file = self.core.mkstemp('.jtl', 'jmeter_ext_')
             self.core.add_artifact_file(self.ext_log_file)
-        self.jmeter_buffer_size = int(self.get_option(
-            'buffer_size', self.get_option('buffered_seconds', '3')))
+        self.jmeter_buffer_size = int(
+            self.get_option(
+                'buffer_size', self.get_option('buffered_seconds', '3')))
         self.core.add_artifact_file(self.jmeter_log, True)
-        self.exclude_markers = set(filter(
-            (lambda marker: marker != ''), self.get_option('exclude_markers',
-                                                           []).split(' ')))
+        self.exclude_markers = set(
+            filter((lambda marker: marker != ''),
+                   self.get_option('exclude_markers', []).split(' ')))
         self.jmx = self.__add_jmeter_components(
             self.original_jmx, self.jtl_file, self._get_variables())
         self.core.add_artifact_file(self.jmx)
@@ -79,10 +81,11 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.jmeter_stderr = open(jmeter_stderr_file, 'w')
 
     def prepare_test(self):
-        self.args = [self.jmeter_path, "-n", "-t", self.jmx, '-j',
-                     self.jmeter_log,
-                     '-Jjmeter.save.saveservice.default_delimiter=\\t',
-                     '-Jjmeter.save.saveservice.connect_time=true']
+        self.args = [
+            self.jmeter_path, "-n", "-t", self.jmx, '-j', self.jmeter_log,
+            '-Jjmeter.save.saveservice.default_delimiter=\\t',
+            '-Jjmeter.save.saveservice.connect_time=true'
+        ]
         self.args += splitstring(self.user_args)
 
         aggregator = None
@@ -108,8 +111,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 aggregator.add_result_listener(widget)
 
     def start_test(self):
-        logger.info("Starting %s with arguments: %s", self.jmeter_path,
-                    self.args)
+        logger.info(
+            "Starting %s with arguments: %s", self.jmeter_path, self.args)
         try:
             self.jmeter_process = subprocess.Popen(
                 self.args,
@@ -117,8 +120,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 preexec_fn=os.setsid,
                 close_fds=True,
                 stdout=self.jmeter_stderr,
-                stderr=self.jmeter_stderr
-            )
+                stderr=self.jmeter_stderr)
         except OSError:
             logger.debug(
                 "Unable to start JMeter process. Args: %s, Executable: %s",
@@ -126,8 +128,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 self.jmeter_path,
                 exc_info=True)
             raise RuntimeError(
-                "Unable to access to JMeter executable file or it does not exist: %s" %
-                self.jmeter_path)
+                "Unable to access to JMeter executable file or it does not exist: %s"
+                % self.jmeter_path)
         self.start_time = time.time()
 
     def is_test_finished(self):
@@ -151,8 +153,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.jmeter_process:
-            logger.info("Terminating jmeter process group with PID %s",
-                        self.jmeter_process.pid)
+            logger.info(
+                "Terminating jmeter process group with PID %s",
+                self.jmeter_process.pid)
             try:
                 os.killpg(self.jmeter_process.pid, signal.SIGTERM)
             except OSError as exc:
@@ -191,16 +194,20 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         if self.ext_log in ['errors', 'all']:
             level_map = {'errors': 'true', 'all': 'false'}
             tpl_resource = 'jmeter_writer_ext.xml'
-            tpl_args = {'jtl': self.jtl_file, 'udv': udv,
-                        'ext_log': self.ext_log_file,
-                        'ext_level': level_map[self.ext_log],
-                        'save_connect': save_connect}
+            tpl_args = {
+                'jtl': self.jtl_file,
+                'udv': udv,
+                'ext_log': self.ext_log_file,
+                'ext_level': level_map[self.ext_log],
+                'save_connect': save_connect
+            }
         else:
             tpl_resource = 'jmeter_writer.xml'
             tpl_args = {
                 'jtl': self.jtl_file,
                 'udv': udv,
-                'save_connect': save_connect}
+                'save_connect': save_connect
+            }
 
         tpl = resource_string(__name__, 'config/' + tpl_resource)
 
@@ -258,7 +265,8 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         template += "      Duration: %s\n"
         template += "Active Threads: %s\n"
         template += "   Responses/s: %s"
-        data = (os.path.basename(self.jmeter.original_jmx), duration,
-                self.active_threads, self.RPS)
+        data = (
+            os.path.basename(self.jmeter.original_jmx), duration,
+            self.active_threads, self.RPS)
 
         return template % data

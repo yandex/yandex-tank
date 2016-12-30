@@ -7,12 +7,10 @@ import json
 
 from ..Telegraf.decoder import decoder
 
-
 logger = logging.getLogger(__name__)
 
 
 class MonitoringReader(object):
-
     def __init__(self, source):
         self.buffer = []
         self.source = source
@@ -43,11 +41,12 @@ class MonitoringReader(object):
                                 # key_group sample: diskio
                                 # key_name sample: io_time
                                 try:
-                                    key_group, key_name = key.split('_')[0].split(
-                                        '-')[0], '_'.join(key.split('_')[1:])
+                                    key_group, key_name = key.split('_')[
+                                        0].split('-')[0], '_'.join(
+                                            key.split('_')[1:])
                                 except:
-                                    key_group, key_name = key.split(
-                                        '_')[0], '_'.join(key.split('_')[1:])
+                                    key_group, key_name = key.split('_')[
+                                        0], '_'.join(key.split('_')[1:])
                                 if key_group in decoder.diff_metrics.keys():
                                     if key_name in decoder.diff_metrics[
                                             key_group]:
@@ -60,7 +59,10 @@ class MonitoringReader(object):
                                             except KeyError:
                                                 logger.debug(
                                                     'There is no diff value for metric %s.\n'
-                                                    'Timestamp: %s. Is it initial data?', key, ts, exc_info=True)
+                                                    'Timestamp: %s. Is it initial data?',
+                                                    key,
+                                                    ts,
+                                                    exc_info=True)
                                                 value = 0
                                             prepared_results[
                                                 decoded_key] = value
@@ -69,8 +71,7 @@ class MonitoringReader(object):
                                             key)
                                         prepared_results[decoded_key] = value
                                 else:
-                                    decoded_key = decoder.find_common_names(
-                                        key)
+                                    decoded_key = decoder.find_common_names(key)
                                     prepared_results[decoded_key] = value
                             self.prev_check = jsn[ts]
                             collect.append((ts, prepared_results))
@@ -78,8 +79,7 @@ class MonitoringReader(object):
                     logger.error(
                         'Telegraf agent send trash to output: %s', chunk)
                     logger.debug(
-                        'Telegraf agent data block w/ trash: %s',
-                        exc_info=True)
+                        'Telegraf agent data block w/ trash: %s', exc_info=True)
                     return []
                 except:
                     logger.error(

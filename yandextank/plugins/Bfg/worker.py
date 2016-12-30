@@ -16,13 +16,15 @@ class BFG(object):
     """
 
     def __init__(self, gun, instances, stpd_filename, cached_stpd=False):
-        logger.info("""
+        logger.info(
+            """
 BFG using stpd from {stpd_filename}
 Instances: {instances}
 Gun: {gun.__class__.__name__}
-""".format(stpd_filename=stpd_filename,
-           instances=instances,
-           gun=gun, ))
+""".format(
+                stpd_filename=stpd_filename,
+                instances=instances,
+                gun=gun, ))
         self.instances = int(instances)
         self.instance_counter = mp.Value('i')
         self.results = mp.Queue()
@@ -60,9 +62,12 @@ Gun: {gun.__class__.__name__}
         Say the workers to finish their jobs and quit.
         """
         self.quit.set()
-        while sorted([self.pool[i].is_alive()
-                      for i in xrange(len(self.pool))])[-1]:
+        # yapf:disable
+        while sorted([
+                self.pool[i].is_alive()
+                for i in xrange(len(self.pool))])[-1]:
             time.sleep(1)
+        # yapf:enable
         try:
             while not self.task_queue.empty():
                 self.task_queue.get(timeout=0.1)
@@ -94,19 +99,20 @@ Gun: {gun.__class__.__name__}
                     else:
                         continue
         workers_count = self.instances
-        logger.info("Feeded all data. Publishing %d killer tasks" %
-                    (workers_count))
+        logger.info(
+            "Feeded all data. Publishing %d killer tasks" % (workers_count))
         retry_delay = 1
         for _ in range(5):
             try:
-                [self.task_queue.put(None,
-                                     timeout=1)
-                 for _ in xrange(0, workers_count)]
+                [
+                    self.task_queue.put(None, timeout=1)
+                    for _ in xrange(0, workers_count)
+                ]
                 break
             except Full:
-                logger.debug("Couldn't post killer tasks"
-                             " because queue is full. Retrying in %ss",
-                             retry_delay)
+                logger.debug(
+                    "Couldn't post killer tasks"
+                    " because queue is full. Retrying in %ss", retry_delay)
                 time.sleep(retry_delay)
                 retry_delay *= 2
 
@@ -160,8 +166,7 @@ Gun: {gun.__class__.__name__}
                     logger.debug("Empty queue. Exiting process")
                     return
             except Full:
-                logger.warning(
-                    "Couldn't put to result queue because it's full")
+                logger.warning("Couldn't put to result queue because it's full")
             except Exception:
                 logger.exception("Bfg shoot exception")
 

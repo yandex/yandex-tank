@@ -33,8 +33,7 @@ class BfgInfoWidget(AbstractInfoWidget):
         res += str(self.instances)
 
         res += "\nPlanned requests: %s for %s\nActual responses: " % (
-            self.planned,
-            datetime.timedelta(seconds=self.planned_rps_duration))
+            self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
         if not self.planned == self.RPS:
             res += screen.markup.YELLOW + str(self.RPS) + screen.markup.RESET
         else:

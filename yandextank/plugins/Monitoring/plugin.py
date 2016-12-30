@@ -43,8 +43,8 @@ class Plugin(AbstractPlugin):
     def start_test(self):
         if self.monitoring:
             self.monitoring.load_start_time = time.time()
-            logger.debug("load_start_time = %s" %
-                         self.monitoring.load_start_time)
+            logger.debug(
+                "load_start_time = %s" % self.monitoring.load_start_time)
 
     def get_available_options(self):
         return ["config", "default_target", 'ssh_timeout']
@@ -67,8 +67,8 @@ class Plugin(AbstractPlugin):
                 self.config = xmlfile
 
             if not os.path.exists(self.config):
-                raise OSError("Monitoring config file not found: %s" %
-                              self.config)
+                raise OSError(
+                    "Monitoring config file not found: %s" % self.config)
 
         if self.config == 'none':
             self.monitoring = None
@@ -99,8 +99,8 @@ class Plugin(AbstractPlugin):
             info = phantom.get_info()
             if info:
                 self.default_target = info.address
-                logger.debug("Changed monitoring target to %s",
-                             self.default_target)
+                logger.debug(
+                    "Changed monitoring target to %s", self.default_target)
         except KeyError as ex:
             logger.debug("Phantom plugin not found: %s", ex)
 
@@ -192,8 +192,8 @@ class SaveMonToFile(MonitoringDataListener):
             self.store.close()
 
 
-class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener,
-                       MonitoringDataDecoder):
+class MonitoringWidget(
+        AbstractInfoWidget, MonitoringDataListener, MonitoringDataDecoder):
     """
     Screen widget
     """
@@ -252,8 +252,8 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener,
             res = "Monitoring is " + screen.markup.GREEN + \
                 "online" + screen.markup.RESET + ":\n"
             for hostname, metrics in self.data.items():
-                tm_stamp = datetime.datetime.fromtimestamp(float(self.time[
-                    hostname])).strftime('%H:%M:%S')
+                tm_stamp = datetime.datetime.fromtimestamp(
+                    float(self.time[hostname])).strftime('%H:%M:%S')
                 res += (
                     "   " + screen.markup.CYAN + "%s" + screen.markup.RESET +
                     " at %s:\n") % (hostname, tm_stamp)
@@ -269,8 +269,8 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener,
             return res.strip()
 
 
-class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener,
-                              MonitoringDataDecoder):
+class AbstractMetricCriterion(
+        AbstractCriterion, MonitoringDataListener, MonitoringDataDecoder):
     """ Parent class for metric criterion """
 
     def __init__(self, autostop, param_str):
@@ -290,8 +290,7 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener,
         self.host = param_str.split(',')[0].strip()
         self.metric = param_str.split(',')[1].strip()
         self.value_limit = float(param_str.split(',')[2])
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[
-            3])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[3])
         self.last_second = None
         self.seconds_count = 0
 
@@ -311,9 +310,10 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener,
                     self.metric] == self.NA:
                 data[self.metric] = 0
 
-            logger.debug("Compare %s %s/%s=%s to %s", self.get_type_string(),
-                         host, self.metric, data[self.metric],
-                         self.value_limit)
+            logger.debug(
+                "Compare %s %s/%s=%s to %s",
+                self.get_type_string(), host, self.metric, data[self.metric],
+                self.value_limit)
             if self.comparison_fn(float(data[self.metric]), self.value_limit):
                 if not self.seconds_count:
                     self.cause_second = self.last_second
@@ -358,8 +358,9 @@ class MetricHigherCriterion(AbstractMetricCriterion):
         return "%s/%s metric value is higher than %s for %s seconds" % items
 
     def widget_explain(self):
-        items = (self.host, self.metric, self.value_limit, self.seconds_count,
-                 self.seconds_limit)
+        items = (
+            self.host, self.metric, self.value_limit, self.seconds_count,
+            self.seconds_limit)
         return "%s/%s > %s for %s/%ss" % items, float(
             self.seconds_count) / self.seconds_limit
 
@@ -385,8 +386,9 @@ class MetricLowerCriterion(AbstractMetricCriterion):
         return "%s/%s metric value is lower than %s for %s seconds" % items
 
     def widget_explain(self):
-        items = (self.host, self.metric, self.value_limit, self.seconds_count,
-                 self.seconds_limit)
+        items = (
+            self.host, self.metric, self.value_limit, self.seconds_count,
+            self.seconds_limit)
         return "%s/%s < %s for %s/%ss" % items, float(
             self.seconds_count) / self.seconds_limit
 

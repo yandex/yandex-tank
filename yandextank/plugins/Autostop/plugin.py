@@ -51,8 +51,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
 
-        self.criterion_str = " ".join(self.get_option("autostop", '').split(
-            "\n"))
+        self.criterion_str = " ".join(
+            self.get_option("autostop", '').split("\n"))
         self._stop_report_path = os.path.join(
             self.core.artifacts_dir,
             self.get_option("report_file", 'autostop_report.txt'))
@@ -92,8 +92,9 @@ class Plugin(AbstractPlugin, AggregateResultListener):
 
     def is_test_finished(self):
         if self.cause_criterion:
-            self.log.info("Autostop criterion requested test stop: %s",
-                          self.cause_criterion.explain())
+            self.log.info(
+                "Autostop criterion requested test stop: %s",
+                self.cause_criterion.explain())
             return self.cause_criterion.get_rc()
         else:
             return -1
@@ -107,8 +108,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         for criterion_class in self.custom_criterions:
             if criterion_class.get_type_string() == type_str:
                 return criterion_class(self, parsed[1])
-        raise ValueError("Unsupported autostop criterion type: %s" %
-                         criterion_str)
+        raise ValueError(
+            "Unsupported autostop criterion type: %s" % criterion_str)
 
     def on_aggregated_data(self, data, stat):
         self.counting = []
@@ -116,8 +117,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             for criterion_text, criterion in self._criterions.iteritems():
                 if criterion.notify(data, stat):
                     self.log.debug(
-                        "Autostop criterion requested test stop: %s",
-                        criterion)
+                        "Autostop criterion requested test stop: %s", criterion)
                     self.cause_criterion = criterion
                     open(self._stop_report_path, 'w').write(criterion_text)
                     self.core.add_artifact_file(self._stop_report_path)

@@ -31,7 +31,12 @@ def parse_duration(duration):
     _re_token = re.compile("([0-9.]+)([dhms]?)")
 
     def parse_token(time, multiplier):
-        multipliers = {'d': 86400, 'h': 3600, 'm': 60, 's': 1, }
+        multipliers = {
+            'd': 86400,
+            'h': 3600,
+            'm': 60,
+            's': 1,
+        }
         if multiplier:
             if multiplier in multipliers:
                 return int(float(time) * multipliers[multiplier] * 1000)

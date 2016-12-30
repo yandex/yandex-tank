@@ -34,16 +34,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         return __file__
 
     def get_available_options(self):
-        opts = ["pandora_cmd", "buffered_seconds", "ammo", "loop",
-                "sample_log", "config_file", "startup_schedule",
-                "user_schedule", "gun_type"]
+        opts = [
+            "pandora_cmd", "buffered_seconds", "ammo", "loop", "sample_log",
+            "config_file", "startup_schedule", "user_schedule", "gun_type"
+        ]
         return opts
 
     def configure(self):
         # plugin part
         self.pandora_cmd = self.get_option("pandora_cmd", "pandora")
-        self.buffered_seconds = int(self.get_option("buffered_seconds",
-                                                    self.buffered_seconds))
+        self.buffered_seconds = int(
+            self.get_option("buffered_seconds", self.buffered_seconds))
 
         pool_config = PoolConfig()
 
@@ -94,8 +95,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
         self.pandora_config_file = self.get_option("config_file", "")
         if not self.pandora_config_file:
-            self.pandora_config_file = self.core.mkstemp(".json",
-                                                         "pandora_config_")
+            self.pandora_config_file = self.core.mkstemp(
+                ".json", "pandora_config_")
         self.core.add_artifact_file(self.pandora_config_file)
         with open(self.pandora_config_file, 'w') as config_file:
             config_file.write(self.pandora_config.json())
@@ -133,10 +134,11 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         process_stderr_file = self.core.mkstemp(".log", "pandora_")
         self.core.add_artifact_file(process_stderr_file)
         self.process_stderr = open(process_stderr_file, 'w')
-        self.process = subprocess.Popen(args,
-                                        stderr=self.process_stderr,
-                                        stdout=self.process_stderr,
-                                        close_fds=True)
+        self.process = subprocess.Popen(
+            args,
+            stderr=self.process_stderr,
+            stdout=self.process_stderr,
+            close_fds=True)
 
     def is_test_finished(self):
         retcode = self.process.poll()
@@ -148,8 +150,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            logger.warn("Terminating worker process with PID %s",
-                        self.process.pid)
+            logger.warn(
+                "Terminating worker process with PID %s", self.process.pid)
             self.process.terminate()
             if self.process_stderr:
                 self.process_stderr.close()

@@ -27,7 +27,8 @@ class Plugin(AbstractPlugin):
         self.default_target = None
 
         def _echo_wrapper(cmd):
-                return 'echo "====Executing: {cmd}"; {cmd}'.format(cmd=cmd)
+            return 'echo "====Executing: {cmd}"; {cmd}'.format(cmd=cmd)
+
         cmds = {
             "dpkg": "dpkg -l",
             "uname": "uname -a",
@@ -59,8 +60,7 @@ class Plugin(AbstractPlugin):
             self.timeout = int(self.get_option("timeout", 3))
         except:
             logger.error(
-                'Exception trying to configure Platform plugin',
-                exc_info=True)
+                'Exception trying to configure Platform plugin', exc_info=True)
 
         self.logfile = self.core.mkstemp(".log", "platform_")
         self.core.add_artifact_file(self.logfile)
@@ -84,8 +84,7 @@ class Plugin(AbstractPlugin):
                 out, errors, err_code = self.ssh.execute(self.cmd)
             except Exception:
                 logger.warning(
-                    "Failed to check remote system information at %s:%s",
-                    host,
+                    "Failed to check remote system information at %s:%s", host,
                     self.port)
                 logger.debug(
                     "Failed to check remote system information at %s:%s",

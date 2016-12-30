@@ -57,8 +57,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         return __file__
 
     def get_available_options(self):
-        opts = ["phantom_path", "buffered_seconds", "exclude_markers",
-                "affinity"]
+        opts = [
+            "phantom_path", "buffered_seconds", "exclude_markers", "affinity"
+        ]
         opts += [PhantomConfig.OPTION_PHOUT, self.OPTION_CONFIG]
         opts += PhantomConfig.get_available_options()
         return opts
@@ -68,11 +69,11 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.config = self.get_option(self.OPTION_CONFIG, '')
         self.phantom_path = self.get_option("phantom_path", 'phantom')
         self.enum_ammo = self.get_option("enum_ammo", False)
-        self.buffered_seconds = int(self.get_option("buffered_seconds",
-                                                    self.buffered_seconds))
-        self.exclude_markers = set(filter(
-            (lambda marker: marker != ''), self.get_option('exclude_markers',
-                                                           []).split(' ')))
+        self.buffered_seconds = int(
+            self.get_option("buffered_seconds", self.buffered_seconds))
+        self.exclude_markers = set(
+            filter((lambda marker: marker != ''),
+                   self.get_option('exclude_markers', []).split(' ')))
         self.taskset_affinity = self.get_option('affinity', '')
 
         try:
@@ -83,8 +84,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 "No autostop plugin found, not adding instances criterion")
 
         self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
-        if not self.get_option(self.OPTION_CONFIG,
-                               '') and self.predefined_phout:
+        if not self.get_option(
+                self.OPTION_CONFIG, '') and self.predefined_phout:
             self.phout_import_mode = True
 
         if not self.config and not self.phout_import_mode:
@@ -111,23 +112,26 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                     "Config check failed. Subprocess returned code %s" %
                     retcode)
             if result[2]:
-                raise RuntimeError("Subprocess returned message: %s" %
-                                   result[2])
+                raise RuntimeError(
+                    "Subprocess returned message: %s" % result[2])
             reader = PhantomReader(self.phantom.phout_file)
-            logger.debug("Linking sample reader to aggregator."
-                         " Reading samples from %s", self.phantom.phout_file)
+            logger.debug(
+                "Linking sample reader to aggregator."
+                " Reading samples from %s", self.phantom.phout_file)
 
-            logger.debug("Linking stats reader to aggregator."
-                         " Reading stats from %s", self.phantom.stat_log)
+            logger.debug(
+                "Linking stats reader to aggregator."
+                " Reading stats from %s", self.phantom.stat_log)
         else:
             reader = PhantomReader(self.predefined_phout)
-            logger.debug("Linking sample reader to aggregator."
-                         " Reading samples from %s", self.predefined_phout)
+            logger.debug(
+                "Linking sample reader to aggregator."
+                " Reading samples from %s", self.predefined_phout)
         if aggregator:
             aggregator.reader = reader
             info = self.phantom.get_info()
-            aggregator.stats_reader = PhantomStatsReader(self.phantom.stat_log,
-                                                         info)
+            aggregator.stats_reader = PhantomStatsReader(
+                self.phantom.stat_log, info)
 
             aggregator.add_result_listener(self)
         try:
@@ -151,27 +155,30 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def start_test(self):
         if not self.phout_import_mode:
             args = [self.phantom_path, 'run', self.config]
-            logger.debug("Starting %s with arguments: %s", self.phantom_path,
-                         args)
+            logger.debug(
+                "Starting %s with arguments: %s", self.phantom_path, args)
             if self.taskset_affinity != '':
-                args = [self.core.taskset_path, '-c', self.taskset_affinity
-                        ] + args
-                logger.debug("Enabling taskset for phantom with affinity: %s,"
-                             " cores count: %d", self.taskset_affinity,
-                             self.cpu_count)
+                args = [
+                    self.core.taskset_path, '-c', self.taskset_affinity
+                ] + args
+                logger.debug(
+                    "Enabling taskset for phantom with affinity: %s,"
+                    " cores count: %d", self.taskset_affinity, self.cpu_count)
             self.phantom_start_time = time.time()
-            phantom_stderr_file = self.core.mkstemp(".log",
-                                                    "phantom_stdout_stderr_")
+            phantom_stderr_file = self.core.mkstemp(
+                ".log", "phantom_stdout_stderr_")
             self.core.add_artifact_file(phantom_stderr_file)
             self.phantom_stderr = open(phantom_stderr_file, 'w')
-            self.process = subprocess.Popen(args,
-                                            stderr=self.phantom_stderr,
-                                            stdout=self.phantom_stderr,
-                                            close_fds=True)
+            self.process = subprocess.Popen(
+                args,
+                stderr=self.phantom_stderr,
+                stdout=self.phantom_stderr,
+                close_fds=True)
         else:
             if not os.path.exists(self.predefined_phout):
-                raise RuntimeError("Phout file not exists for import: %s" %
-                                   self.predefined_phout)
+                raise RuntimeError(
+                    "Phout file not exists for import: %s" %
+                    self.predefined_phout)
             logger.warn(
                 "Will import phout file instead of running phantom: %s",
                 self.predefined_phout)
@@ -180,14 +187,13 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         if not self.phout_import_mode:
             retcode = self.process.poll()
             if retcode is not None:
-                logger.info("Phantom done its work with exit code: %s",
-                            retcode)
+                logger.info("Phantom done its work with exit code: %s", retcode)
                 return abs(retcode)
             else:
                 info = self.get_info()
                 if info:
-                    eta = int(info.duration) - (int(time.time()) -
-                                                int(self.phantom_start_time))
+                    eta = int(info.duration) - (
+                        int(time.time()) - int(self.phantom_start_time))
                     self.publish('eta', eta)
                 return -1
         else:
@@ -199,8 +205,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            logger.warn("Terminating phantom process with PID %s",
-                        self.process.pid)
+            logger.warn(
+                "Terminating phantom process with PID %s", self.process.pid)
             self.process.terminate()
             if self.process:
                 self.process.communicate()
@@ -255,8 +261,7 @@ class UsedInstancesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[
-            1])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[1])
 
         try:
             phantom = autostop.core.get_plugin_of_type(Plugin)
@@ -264,8 +269,9 @@ class UsedInstancesCriterion(AbstractCriterion):
             if info:
                 self.threads_limit = info.instances
             if not self.threads_limit:
-                raise ValueError("Cannot create 'instances' criterion"
-                                 " with zero instances limit")
+                raise ValueError(
+                    "Cannot create 'instances' criterion"
+                    " with zero instances limit")
         except KeyError:
             logger.warning("No phantom module, 'instances' autostop disabled")
 
@@ -302,10 +308,12 @@ class UsedInstancesCriterion(AbstractCriterion):
         return level_str
 
     def explain(self):
-        items = (self.get_level_str(), self.seconds_count,
-                 self.cause_second[0].get('ts'))
-        return ("Testing threads (instances) utilization"
-                " higher than %s for %ss, since %s" % items)
+        items = (
+            self.get_level_str(), self.seconds_count,
+            self.cause_second[0].get('ts'))
+        return (
+            "Testing threads (instances) utilization"
+            " higher than %s for %ss, since %s" % items)
 
     def widget_explain(self):
         items = (self.get_level_str(), self.seconds_count, self.seconds_limit)

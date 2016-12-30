@@ -13,7 +13,6 @@ import time
 from optparse import OptionParser
 import Queue as q
 
-
 logger = logging.getLogger("agent")
 collector_logger = logging.getLogger("telegraf")
 
@@ -82,34 +81,35 @@ class Consolidator(object):
                             if data['name'] == 'diskio':
                                 data['name'] = "{metric_name}-{disk_id}".format(
                                     metric_name=data['name'],
-                                    disk_id=data['tags']['name']
-                                )
+                                    disk_id=data['tags']['name'])
                             elif data['name'] == 'net':
-                                data['name'] = "{metric_name}-{interface}".format(
-                                    metric_name=data['name'], interface=data['tags']['interface'])
+                                data[
+                                    'name'] = "{metric_name}-{interface}".format(
+                                        metric_name=data['name'],
+                                        interface=data['tags']['interface'])
                             elif data['name'] == 'cpu':
                                 data['name'] = "{metric_name}-{cpu_id}".format(
                                     metric_name=data['name'],
-                                    cpu_id=data['tags']['cpu']
-                                )
+                                    cpu_id=data['tags']['cpu'])
                             key = data['name'] + "_" + key
                             if key.endswith('_exec_value'):
                                 key = key.replace('_exec_value', '')
                             self.results[ts][key] = value
                     except KeyError:
                         logger.error(
-                            'Malformed json from source: %s', chunk, exc_info=True)
+                            'Malformed json from source: %s',
+                            chunk,
+                            exc_info=True)
                     except:
                         logger.error(
                             'Something nasty happend in consolidator work',
                             exc_info=True)
             if len(self.results) > 5:
                 ready_to_go_index = min(self.results)
-                yield json.dumps(
-                    {
-                        ready_to_go_index: self.results.pop(ready_to_go_index, None)
-                    }
-                )
+                yield json.dumps({
+                    ready_to_go_index:
+                    self.results.pop(ready_to_go_index, None)
+                })
 
 
 class Drain(threading.Thread):
@@ -139,7 +139,6 @@ class Drain(threading.Thread):
 
 
 class AgentWorker(threading.Thread):
-
     def __init__(self, telegraf_path):
         super(AgentWorker, self).__init__()
         self.working_dir = os.path.dirname(__file__)
@@ -167,8 +166,7 @@ class AgentWorker(threading.Thread):
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            stdin=subprocess.PIPE,
-        )
+            stdin=subprocess.PIPE, )
 
     def read_startup_config(self, cfg_file='agent_startup.cfg'):
         try:
@@ -188,12 +186,10 @@ class AgentWorker(threading.Thread):
             logger.info(
                 'Successfully loaded startup config.\n'
                 'Startups: %s\n'
-                'Shutdowns: %s\n', self.startups, self.shutdowns
-            )
+                'Shutdowns: %s\n', self.startups, self.shutdowns)
         except:
             logger.error(
-                'Error trying to read agent startup config',
-                exc_info=True)
+                'Error trying to read agent startup config', exc_info=True)
 
     def run(self):
         logger.info("Running startup commands")
@@ -204,9 +200,7 @@ class AgentWorker(threading.Thread):
 
         logger.info('Starting metrics collector..')
         cmnd = "{telegraf} -config {working_dir}/agent.cfg".format(
-            telegraf=self.telegraf_path,
-            working_dir=self.working_dir
-        )
+            telegraf=self.telegraf_path, working_dir=self.working_dir)
         self.collector = self.popen(cmnd)
 
         telegraf_output = self.working_dir + '/monitoring.rawdata'
@@ -218,23 +212,17 @@ class AgentWorker(threading.Thread):
             time.sleep(1)
 
         self.drain = Drain(
-            Consolidator(
-                DataReader(telegraf_output)
-            ),
-            self.results
-        )
+            Consolidator(DataReader(telegraf_output)), self.results)
         self.drain.start()
 
         self.drain_stdout = Drain(
-            DataReader(self.collector.stdout, pipe=True),
-            self.results_stdout
-        )
+            DataReader(
+                self.collector.stdout, pipe=True), self.results_stdout)
         self.drain_stdout.start()
 
         self.drain_err = Drain(
-            DataReader(self.collector.stderr, pipe=True),
-            self.results_err
-        )
+            DataReader(
+                self.collector.stderr, pipe=True), self.results_err)
         self.drain_err.start()
 
         while not self.finished:
@@ -243,9 +231,7 @@ class AgentWorker(threading.Thread):
                     data = self.results.get_nowait()
                     logger.debug(
                         'send %s bytes of data to collector', len(data))
-                    sys.stdout.write(
-                        str(data) + '\n'
-                    )
+                    sys.stdout.write(str(data) + '\n')
                 except q.Empty:
                     break
                 except:
@@ -297,16 +283,21 @@ class AgentWorker(threading.Thread):
 def main():
     fname = os.path.dirname(__file__) + "/_agent.log"
     logging.basicConfig(
-        level=logging.DEBUG, filename=fname,
+        level=logging.DEBUG,
+        filename=fname,
         format='%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(message)s')
 
     parser = OptionParser()
     parser.add_option(
-        "", "--telegraf", dest="telegraf_path",
+        "",
+        "--telegraf",
+        dest="telegraf_path",
         help="telegraf_path",
         default="/tmp/telegraf")
     parser.add_option(
-        "", "--host", dest="hostname_path",
+        "",
+        "--host",
+        dest="hostname_path",
         help="telegraf_path",
         default="/usr/bin/telegraf")
     (options, args) = parser.parse_args()
@@ -315,24 +306,24 @@ def main():
     customs_script = os.path.dirname(__file__) + '/agent_customs.sh'
     try:
         logger.info(
-            'Trying to make telegraf executable: %s',
-            options.telegraf_path)
+            'Trying to make telegraf executable: %s', options.telegraf_path)
         # 0o755 compatible with old python versions. 744 is NOT enough
         os.chmod(options.telegraf_path, 493)
     except OSError:
         logger.warning(
             'Unable to set %s access rights to execute.',
-            options.telegraf_path, exc_info=True)
+            options.telegraf_path,
+            exc_info=True)
     try:
         logger.info(
-            'Trying to make customs script executable: %s',
-            customs_script)
+            'Trying to make customs script executable: %s', customs_script)
         # 0o755 compatible with old python versions. 744 is NOT enough
         os.chmod(customs_script, 493)
     except OSError:
         logger.warning(
             'Unable to set %s access rights to execute.',
-            customs_script, exc_info=True)
+            customs_script,
+            exc_info=True)
 
     worker = AgentWorker(options.telegraf_path)
     worker.read_startup_config()

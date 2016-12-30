@@ -24,7 +24,6 @@ if sys.version_info[0] < 3:
 else:
     from configparser import NoOptionError
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -54,8 +53,7 @@ class Plugin(AbstractPlugin):
         if self.monitoring:
             self.monitoring.load_start_time = time.time()
             logger.debug(
-                "load_start_time = %s",
-                self.monitoring.load_start_time)
+                "load_start_time = %s", self.monitoring.load_start_time)
 
     def get_available_options(self):
         return ["config", "default_target", "ssh_timeout"]
@@ -77,8 +75,9 @@ class Plugin(AbstractPlugin):
             is_monitoring = None
 
         if is_telegraf and is_monitoring:
-            raise ValueError('Both telegraf and monitoring configs specified. '
-                             'Clean up your config and delete one of them')
+            raise ValueError(
+                'Both telegraf and monitoring configs specified. '
+                'Clean up your config and delete one of them')
         if is_telegraf and not is_monitoring:
             return 'telegraf'
         if not is_telegraf and is_monitoring:
@@ -111,8 +110,7 @@ class Plugin(AbstractPlugin):
         self.detected_conf = self.__detect_configuration()
         if self.detected_conf:
             logging.info(
-                'Detected monitoring configuration: %s',
-                self.detected_conf)
+                'Detected monitoring configuration: %s', self.detected_conf)
             self.SECTION = self.detected_conf
         self.config = self.get_option("config", "auto").strip()
         self.default_target = self.get_option("default_target", "localhost")
@@ -133,16 +131,21 @@ class Plugin(AbstractPlugin):
         else:
             if self.config.lower() == "auto":
                 self.die_on_fail = False
-                with open(resource.resource_filename(self.default_config), 'rb') as def_config:
+                with open(
+                        resource.resource_filename(self.default_config),
+                        'rb') as def_config:
                     config_contents = def_config.read()
             else:
-                with open(resource.resource_filename(self.config), 'rb') as config:
+                with open(resource.resource_filename(self.config),
+                          'rb') as config:
                     config_contents = config.read()
 
         # dump config contents into a file
         xmlfile = self.core.mkstemp(".xml", "monitoring_")
         self.core.add_artifact_file(xmlfile)
-        with open(xmlfile, "wb") as f:  # output file should be in binary mode to support py3
+        with open(
+                xmlfile, "wb"
+        ) as f:  # output file should be in binary mode to support py3
             f.write(config_contents)
         self.config = xmlfile
 
@@ -169,8 +172,7 @@ class Plugin(AbstractPlugin):
             if info:
                 self.default_target = info.address
                 logger.debug(
-                    "Changed monitoring target to %s",
-                    self.default_target)
+                    "Changed monitoring target to %s", self.default_target)
 
         self.monitoring.config = self.config
         if self.default_target:
@@ -325,11 +327,11 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
             res = "Monitoring is " + screen.markup.GREEN + \
                 "online" + screen.markup.RESET + ":\n"
             for hostname, metrics in self.data.items():
-                tm_stamp = datetime.datetime.fromtimestamp(float(self.time[
-                    hostname])).strftime('%H:%M:%S')
+                tm_stamp = datetime.datetime.fromtimestamp(
+                    float(self.time[hostname])).strftime('%H:%M:%S')
                 res += (
-                    "   " + screen.markup.CYAN + "%s" +
-                    screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
+                    "   " + screen.markup.CYAN + "%s" + screen.markup.RESET +
+                    " at %s:\n") % (hostname, tm_stamp)
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
@@ -383,9 +385,10 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
 
             if self.metric not in data.keys() or not data[self.metric]:
                 data[self.metric] = 0
-            logger.debug("Compare %s %s/%s=%s to %s", self.get_type_string(),
-                         host, self.metric, data[self.metric],
-                         self.value_limit)
+            logger.debug(
+                "Compare %s %s/%s=%s to %s",
+                self.get_type_string(), host, self.metric, data[self.metric],
+                self.value_limit)
             if self.comparison_fn(float(data[self.metric]), self.value_limit):
                 if not self.seconds_count:
                     self.cause_second = self.last_second
@@ -430,8 +433,9 @@ class MetricHigherCriterion(AbstractMetricCriterion):
         return "%s/%s metric value is higher than %s for %s seconds" % items
 
     def widget_explain(self):
-        items = (self.host, self.metric, self.value_limit, self.seconds_count,
-                 self.seconds_limit)
+        items = (
+            self.host, self.metric, self.value_limit, self.seconds_count,
+            self.seconds_limit)
         return "%s/%s > %s for %s/%ss" % items, float(
             self.seconds_count) / self.seconds_limit
 
@@ -457,8 +461,9 @@ class MetricLowerCriterion(AbstractMetricCriterion):
         return "%s/%s metric value is lower than %s for %s seconds" % items
 
     def widget_explain(self):
-        items = (self.host, self.metric, self.value_limit, self.seconds_count,
-                 self.seconds_limit)
+        items = (
+            self.host, self.metric, self.value_limit, self.seconds_count,
+            self.seconds_limit)
         return "%s/%s < %s for %s/%ss" % items, float(
             self.seconds_count) / self.seconds_limit
 

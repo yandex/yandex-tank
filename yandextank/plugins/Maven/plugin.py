@@ -41,8 +41,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def configure(self):
         # plugin part
-        self.pom = resource_manager.resource_filename(self.get_option(
-            "pom", "pom.xml"))
+        self.pom = resource_manager.resource_filename(
+            self.get_option("pom", "pom.xml"))
         self.testcase = self.get_option("testcase", "")
         self.maven_args = self.get_option("mvn_args", '').split()
 
@@ -73,10 +73,11 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         process_stderr_file = self.core.mkstemp(".log", "maven_")
         self.core.add_artifact_file(process_stderr_file)
         self.process_stderr = open(process_stderr_file, 'w')
-        self.process = subprocess.Popen(args,
-                                        stderr=self.process_stderr,
-                                        stdout=self.process_stderr,
-                                        close_fds=True)
+        self.process = subprocess.Popen(
+            args,
+            stderr=self.process_stderr,
+            stdout=self.process_stderr,
+            close_fds=True)
 
     def is_test_finished(self):
         retcode = self.process.poll()
@@ -88,8 +89,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            logger.warn("Terminating worker process with PID %s",
-                        self.process.pid)
+            logger.warn(
+                "Terminating worker process with PID %s", self.process.pid)
             self.process.terminate()
             if self.process_stderr:
                 self.process_stderr.close()

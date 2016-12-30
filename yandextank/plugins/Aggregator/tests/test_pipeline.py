@@ -9,12 +9,12 @@ from yandextank.plugins.Aggregator.aggregator import Aggregator
 from yandextank.plugins.Aggregator.chopper import TimeChopper
 from yandextank.plugins.Aggregator.plugin import DataPoller
 
-AGGR_CONFIG = json.loads(resource_string("yandextank.plugins.Aggregator",
-                                         'config/phout.json').decode('utf-8'))
+AGGR_CONFIG = json.loads(
+    resource_string("yandextank.plugins.Aggregator", 'config/phout.json')
+    .decode('utf-8'))
 
 
 class TestPipeline(object):
-
     def test_partially_reversed_data(self, data):
         results_queue = Queue()
         chunks = list(random_split(data))
@@ -22,9 +22,8 @@ class TestPipeline(object):
 
         pipeline = Aggregator(
             TimeChopper(
-                DataPoller(source=chunks,
-                           poll_period=0.1),
-                cache_size=3),
+                DataPoller(
+                    source=chunks, poll_period=0.1), cache_size=3),
             AGGR_CONFIG,
             False)
         drain = Drain(pipeline, results_queue)
@@ -44,9 +43,8 @@ class TestPipeline(object):
 
         pipeline = Aggregator(
             TimeChopper(
-                DataPoller(source=producer(),
-                           poll_period=0.1),
-                cache_size=3),
+                DataPoller(
+                    source=producer(), poll_period=0.1), cache_size=3),
             AGGR_CONFIG,
             False)
         drain = Drain(pipeline, results_queue)

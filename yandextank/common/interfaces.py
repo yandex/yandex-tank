@@ -76,8 +76,8 @@ class AbstractPlugin(object):
 
     def publish(self, key, value):
         """publish value to status"""
-        self.log.debug("Publishing status: %s/%s: %s", self.__class__.__name__,
-                       key, value)
+        self.log.debug(
+            "Publishing status: %s/%s: %s", self.__class__.__name__, key, value)
         self.core.publish(self.__class__.__name__, key, value)
 
     def close(self):
@@ -175,25 +175,20 @@ class AbstractCriterion(object):
 
 
 class GeneratorPlugin(object):
-    DEFAULT_INFO = {'address': '',
-                    'port': 80,
-                    'instances': 1,
-                    'ammo_file': '',
-                    'rps_schedule': [],
-                    'duration': 0,
-                    'loop_count': 0}
+    DEFAULT_INFO = {
+        'address': '',
+        'port': 80,
+        'instances': 1,
+        'ammo_file': '',
+        'rps_schedule': [],
+        'duration': 0,
+        'loop_count': 0
+    }
 
     class Info(object):
-
         def __init__(
-                self,
-                address,
-                port,
-                instances,
-                ammo_file,
-                rps_schedule,
-                duration,
-                loop_count):
+                self, address, port, instances, ammo_file, rps_schedule,
+                duration, loop_count):
             self.address = address
             self.port = port
             self.instances = instances

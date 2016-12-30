@@ -28,7 +28,10 @@ def linear_schedule(start_rps, end_rps, period):
 
 
 def unlimited_schedule(*args):
-    return {"LimiterType": "unlimited", "Parameters": {}, }
+    return {
+        "LimiterType": "unlimited",
+        "Parameters": {},
+    }
 
 
 step_producers = {
@@ -40,8 +43,8 @@ step_producers = {
 
 def parse_schedule(schedule):
     steps = [
-        step.strip()
-        for step in " ".join(schedule.split("\n")).split(')') if step.strip()
+        step.strip() for step in " ".join(schedule.split("\n")).split(')')
+        if step.strip()
     ]
     if len(steps) > 1:
         raise NotImplementedError("Composite schedules not implemented yet")
@@ -50,12 +53,11 @@ def parse_schedule(schedule):
     if schedule_type in step_producers:
         return step_producers[schedule_type](*params)
     else:
-        raise NotImplementedError("Step of type %s is not implemented" %
-                                  schedule_type)
+        raise NotImplementedError(
+            "Step of type %s is not implemented" % schedule_type)
 
 
 class PandoraConfig(object):
-
     def __init__(self):
         self.pools = []
 
@@ -70,10 +72,9 @@ class PandoraConfig(object):
 
 
 class PoolConfig(object):
-
     def __init__(self):
-        self.config = json.loads(resource_string(
-            __name__, 'config/pandora_pool_default.json'))
+        self.config = json.loads(
+            resource_string(__name__, 'config/pandora_pool_default.json'))
 
     def set_ammo(self, ammo):
         self.config["AmmoProvider"]["AmmoSource"] = ammo

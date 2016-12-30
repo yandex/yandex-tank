@@ -38,10 +38,7 @@ class MonitoringCollector(object):
         self.load_start_time = None
         self.config_manager = ConfigManager()
         self.old_style_configs = False
-        self.clients = {
-            'localhost': LocalhostClient,
-            'ssh': SSHClient
-        }
+        self.clients = {'localhost': LocalhostClient, 'ssh': SSHClient}
 
     def add_listener(self, obj):
         self.listeners.append(obj)
@@ -103,8 +100,9 @@ class MonitoringCollector(object):
                     }
                     self.send_data.append(ready_to_send)
 
-        logger.debug('Polling/decoding agents data took: %.2fms',
-                     (time.time() - start_time) * 1000)
+        logger.debug(
+            'Polling/decoding agents data took: %.2fms',
+            (time.time() - start_time) * 1000)
 
         collected_data_length = len(self.send_data)
 
@@ -132,8 +130,10 @@ class MonitoringCollector(object):
 
     def send_collected_data(self):
         """sends pending data set to listeners"""
-        [listener.monitoring_data(self.send_data)
-         for listener in self.listeners]
+        [
+            listener.monitoring_data(self.send_data)
+            for listener in self.listeners
+        ]
         self.send_data = []
 
 

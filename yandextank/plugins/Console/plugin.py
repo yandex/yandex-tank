@@ -40,8 +40,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         ]
 
     def configure(self):
-        self.info_panel_width = self.get_option("info_panel_width",
-                                                self.info_panel_width)
+        self.info_panel_width = self.get_option(
+            "info_panel_width", self.info_panel_width)
         self.short_only = int(self.get_option("short_only", '0'))
         if not int(self.get_option("disable_all_colors", '0')):
             self.console_markup = RealConsoleMarkup()
@@ -97,15 +97,17 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         if self.short_only:
             overall = data.get('overall')
 
-            quantiles = dict(zip(overall['interval_real']['q']['q'], overall[
-                'interval_real']['q']['value']))
+            quantiles = dict(
+                zip(
+                    overall['interval_real']['q']['q'], overall['interval_real']
+                    ['q']['value']))
             info = (
                 "ts:{ts}\tRPS:{rps}\tavg:{avg_rt:.2f}\t"
                 "min:{min:.2f}\tmax:{q100:.2f}\tq95:{q95:.2f}\t").format(
                     ts=data.get('ts'),
                     rps=overall['interval_real']['len'],
-                    avg_rt=float(overall['interval_real']['total']) / overall[
-                        'interval_real']['len'] / 1000.0,
+                    avg_rt=float(overall['interval_real']['total']) /
+                    overall['interval_real']['len'] / 1000.0,
                     min=overall['interval_real']['min'] / 1000.0,
                     q100=quantiles[100] / 1000,
                     q95=quantiles[95] / 1000)
@@ -119,6 +121,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             LOG.debug("No screen instance to add widget")
         else:
             self.screen.add_info_widget(widget)
+
 
 # ======================================================
 
@@ -147,11 +150,14 @@ class RealConsoleMarkup(object):
 
     def clean_markup(self, orig_str):
         ''' clean markup from string '''
-        for val in [self.YELLOW, self.RED, self.RESET, self.CYAN,
-                    self.BG_MAGENTA, self.WHITE, self.BG_GREEN, self.GREEN,
-                    self.BG_BROWN, self.RED_DARK, self.MAGENTA, self.BG_CYAN]:
+        for val in [
+                self.YELLOW, self.RED, self.RESET, self.CYAN, self.BG_MAGENTA,
+                self.WHITE, self.BG_GREEN, self.GREEN, self.BG_BROWN,
+                self.RED_DARK, self.MAGENTA, self.BG_CYAN
+        ]:
             orig_str = orig_str.replace(val, '')
         return orig_str
+
 
 # ======================================================
 # FIXME: 3 better way to have it?
@@ -176,5 +182,6 @@ class NoConsoleMarkup(RealConsoleMarkup):
     BG_GREEN = ''
     BG_BROWN = ''
     BG_CYAN = ''
+
 
 # ======================================================

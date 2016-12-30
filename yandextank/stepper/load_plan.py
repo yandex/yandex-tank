@@ -21,8 +21,9 @@ class Const(object):
         if self.rps == 0:
             return iter([])
         interval = 1000.0 / self.rps
-        return (int(i * interval)
-                for i in range(0, int(self.rps * self.duration / 1000)))
+        return (
+            int(i * interval)
+            for i in range(0, int(self.rps * self.duration / 1000)))
 
     def rps_at(self, t):
         '''Return rps for second t'''
@@ -112,8 +113,8 @@ class Line(object):
         :rtype: list
         """
         seconds = range(0, int(self.duration) + 1)
-        rps_groups = groupby(
-            [proper_round(self.rps_at(t)) for t in seconds], lambda x: x)
+        rps_groups = groupby([proper_round(self.rps_at(t)) for t in seconds],
+                             lambda x: x)
         rps_list = [(rps, len(list(rpl))) for rps, rpl in rps_groups]
         return rps_list
 
@@ -140,12 +141,11 @@ class Composite(object):
         return int(sum(step.__len__() for step in self.steps))
 
     def get_rps_list(self):
-        return list(chain.from_iterable(step.get_rps_list()
-                                        for step in self.steps))
+        return list(
+            chain.from_iterable(step.get_rps_list() for step in self.steps))
 
 
 class Stairway(Composite):
-
     def __init__(self, minrps, maxrps, increment, step_duration):
         if maxrps < minrps:
             increment = -increment
@@ -164,7 +164,6 @@ class Stairway(Composite):
 
 
 class StepFactory(object):
-
     @staticmethod
     def line(params):
         template = re.compile('([0-9.]+),\s*([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
@@ -183,8 +182,8 @@ class StepFactory(object):
             '([0-9.]+),\s*([0-9.]+),\s*([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
         minrps, maxrps, increment, duration = template.search(params).groups()
         return Stairway(
-            float(minrps), float(maxrps), float(increment),
-            parse_duration(duration))
+            float(minrps),
+            float(maxrps), float(increment), parse_duration(duration))
 
     @staticmethod
     def produce(step_config):
@@ -198,8 +197,8 @@ class StepFactory(object):
         if load_type in _plans:
             return _plans[load_type](params)
         else:
-            raise NotImplementedError('No such load type implemented: "%s"' %
-                                      load_type)
+            raise NotImplementedError(
+                'No such load type implemented: "%s"' % load_type)
 
 
 def create(rps_schedule):
@@ -207,8 +206,8 @@ def create(rps_schedule):
     Create Load Plan as defined in schedule. Publish info about its duration.
     """
     if len(rps_schedule) > 1:
-        lp = Composite([StepFactory.produce(step_config)
-                        for step_config in rps_schedule])
+        lp = Composite(
+            [StepFactory.produce(step_config) for step_config in rps_schedule])
     else:
         lp = StepFactory.produce(rps_schedule[0])
     info.status.publish('duration', lp.get_duration() / 1000)

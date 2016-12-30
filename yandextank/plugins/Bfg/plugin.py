@@ -62,17 +62,18 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         if gun_type in self.gun_classes:
             self.gun = self.gun_classes[gun_type](self.core)
         else:
-            raise NotImplementedError('No such gun type implemented: "%s"' %
-                                      gun_type)
+            raise NotImplementedError(
+                'No such gun type implemented: "%s"' % gun_type)
         cached_stpd_option = self.get_option("cached_stpd", '0')
         if cached_stpd_option == '1':
             cached_stpd = True
         else:
             cached_stpd = False
-        self.bfg = BFG(gun=self.gun,
-                       instances=self.stepper_wrapper.instances,
-                       stpd_filename=self.stepper_wrapper.stpd,
-                       cached_stpd=cached_stpd)
+        self.bfg = BFG(
+            gun=self.gun,
+            instances=self.stepper_wrapper.instances,
+            stpd_filename=self.stepper_wrapper.stpd,
+            cached_stpd=cached_stpd)
         aggregator = None
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)

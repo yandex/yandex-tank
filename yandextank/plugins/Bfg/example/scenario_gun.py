@@ -40,4 +40,7 @@ def scenario_2(missile, marker, measure):
 SCENARIOS module variable is used by Tank to choose the scenario to
 shoot with. For each missile Tank will look up missile marker in this dict.
 """
-SCENARIOS = {"scenario_1": scenario_1, "scenario_2": scenario_1, }
+SCENARIOS = {
+    "scenario_1": scenario_1,
+    "scenario_2": scenario_1,
+}

@@ -3,7 +3,6 @@ from yandextank.common.util import Drain, Chopper
 
 
 class TestDrain(object):
-
     def test_run(self):
         """
         Test drain's run function (in a same thread)
@@ -38,7 +37,6 @@ class TestDrain(object):
 
 
 class TestChopper(object):
-
     def test_output(self):
         source = (range(i) for i in range(5))
         expected = [0, 0, 1, 0, 1, 2, 0, 1, 2, 3]

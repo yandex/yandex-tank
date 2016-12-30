@@ -20,14 +20,13 @@ class AvgTimeCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        self.rt_limit = expand_to_milliseconds(param_str.split(',')[
-            0])
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[
-            1])
+        self.rt_limit = expand_to_milliseconds(param_str.split(',')[0])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[1])
         self.autostop = autostop
 
     def notify(self, data, stat):
-        if (data["overall"]["interval_real"]["total"] / 1000.0 /
+        if (
+                data["overall"]["interval_real"]["total"] / 1000.0 /
                 data["overall"]["interval_real"]["len"]) > self.rt_limit:
             if not self.seconds_count:
                 self.cause_second = (data, stat)
@@ -47,10 +46,10 @@ class AvgTimeCriterion(AbstractCriterion):
         return self.RC_TIME
 
     def explain(self):
-        explanation = ("Average response time higher"
-                       " than %sms for %ss, since %s" %
-                       (self.rt_limit, self.seconds_count,
-                        self.cause_second[0]["ts"]))
+        explanation = (
+            "Average response time higher"
+            " than %sms for %ss, since %s" %
+            (self.rt_limit, self.seconds_count, self.cause_second[0]["ts"]))
         return explanation
 
     def widget_explain(self):
@@ -80,8 +79,7 @@ class HTTPCodesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[
-            2])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[2])
 
     def notify(self, data, stat):
         matched_responses = self.count_matched_codes(
@@ -92,8 +90,9 @@ class HTTPCodesCriterion(AbstractCriterion):
                     "interval_real"]["len"]
             else:
                 matched_responses = 0
-        logger.debug("HTTP codes matching mask %s: %s/%s", self.codes_mask,
-                     matched_responses, self.level)
+        logger.debug(
+            "HTTP codes matching mask %s: %s/%s", self.codes_mask,
+            matched_responses, self.level)
 
         if matched_responses >= self.level:
             if not self.seconds_count:
@@ -122,13 +121,15 @@ class HTTPCodesCriterion(AbstractCriterion):
         return level_str
 
     def explain(self):
-        items = (self.codes_mask, self.get_level_str(), self.seconds_count,
-                 self.cause_second[0].get('ts'))
+        items = (
+            self.codes_mask, self.get_level_str(), self.seconds_count,
+            self.cause_second[0].get('ts'))
         return "%s codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
-        items = (self.codes_mask, self.get_level_str(), self.seconds_count,
-                 self.seconds_limit)
+        items = (
+            self.codes_mask, self.get_level_str(), self.seconds_count,
+            self.seconds_limit)
         return "HTTP %s>%s for %s/%ss" % items, float(
             self.seconds_count) / self.seconds_limit
 
@@ -154,8 +155,7 @@ class NetCodesCriterion(AbstractCriterion):
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[
-            2])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[2])
 
     def notify(self, data, stat):
         codes = copy.deepcopy(data["overall"]["net_code"]["count"])
@@ -168,8 +168,9 @@ class NetCodesCriterion(AbstractCriterion):
                     "interval_real"]["len"]
             else:
                 matched_responses = 0
-        logger.debug("Net codes matching mask %s: %s/%s", self.codes_mask,
-                     matched_responses, self.level)
+        logger.debug(
+            "Net codes matching mask %s: %s/%s", self.codes_mask,
+            matched_responses, self.level)
 
         if matched_responses >= self.level:
             if not self.seconds_count:
@@ -198,13 +199,15 @@ class NetCodesCriterion(AbstractCriterion):
         return level_str
 
     def explain(self):
-        items = (self.codes_mask, self.get_level_str(), self.seconds_count,
-                 self.cause_second[0].get("ts"))
+        items = (
+            self.codes_mask, self.get_level_str(), self.seconds_count,
+            self.cause_second[0].get("ts"))
         return "%s net codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
-        items = (self.codes_mask, self.get_level_str(), self.seconds_count,
-                 self.seconds_limit)
+        items = (
+            self.codes_mask, self.get_level_str(), self.seconds_count,
+            self.seconds_limit)
         return "Net %s>%s for %s/%ss" % items, float(
             self.seconds_count) / self.seconds_limit
 
@@ -225,8 +228,10 @@ class QuantileCriterion(AbstractCriterion):
         self.autostop = autostop
 
     def notify(self, data, stat):
-        quantiles = dict(zip(data["overall"]["interval_real"]["q"]["q"], data[
-            "overall"]["interval_real"]["q"]["value"]))
+        quantiles = dict(
+            zip(
+                data["overall"]["interval_real"]["q"]["q"], data["overall"][
+                    "interval_real"]["q"]["value"]))
         if self.quantile not in quantiles.keys():
             logger.warning("No quantile %s in %s", self.quantile, quantiles)
         if self.quantile in quantiles.keys() \
@@ -249,13 +254,15 @@ class QuantileCriterion(AbstractCriterion):
         return self.RC_TIME
 
     def explain(self):
-        items = (self.quantile, self.rt_limit, self.seconds_count,
-                 self.cause_second[0].get("ts"))
+        items = (
+            self.quantile, self.rt_limit, self.seconds_count,
+            self.cause_second[0].get("ts"))
         return "Percentile %s higher than %sms for %ss, since %s" % items
 
     def widget_explain(self):
-        items = (self.quantile, self.rt_limit, self.seconds_count,
-                 self.seconds_limit)
+        items = (
+            self.quantile, self.rt_limit, self.seconds_count,
+            self.seconds_limit)
         return "%s%% >%sms for %s/%ss" % items, float(
             self.seconds_count) / self.seconds_limit
 
@@ -272,13 +279,12 @@ class SteadyCumulativeQuantilesCriterion(AbstractCriterion):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
         self.quantile_hash = ""
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[
-            0])
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[0])
         self.autostop = autostop
 
     def notify(self, data, stat):
-        quantiles = dict(zip(data["overall"]["q"]["q"], data["overall"]["q"][
-            "values"]))
+        quantiles = dict(
+            zip(data["overall"]["q"]["q"], data["overall"]["q"]["values"]))
         quantile_hash = json.dumps(quantiles)
         logging.debug("Cumulative quantiles hash: %s", quantile_hash)
         if self.quantile_hash == quantile_hash:

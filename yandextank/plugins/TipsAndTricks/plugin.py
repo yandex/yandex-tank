@@ -19,8 +19,10 @@ class Plugin(AbstractPlugin, AbstractInfoWidget):
     def __init__(self, core):
         AbstractPlugin.__init__(self, core)
         AbstractInfoWidget.__init__(self)
-        self.lines = [l.decode(
-            'utf-8') for l in resource_stream(__name__, "config/tips.txt").readlines()]
+        self.lines = [
+            l.decode('utf-8')
+            for l in resource_stream(__name__, "config/tips.txt").readlines()
+        ]
         self.disable = 0
 
         line = random.choice(self.lines)
@@ -60,6 +62,6 @@ class Plugin(AbstractPlugin, AbstractInfoWidget):
         self.probability += 1e-3
         line = screen.markup.WHITE + "Tips & Tricks => " + \
             self.section + screen.markup.RESET + ":\n  "
-        line += "\n  ".join(textwrap.wrap(self.tip, screen.right_panel_width -
-                                          2))
+        line += "\n  ".join(
+            textwrap.wrap(self.tip, screen.right_panel_width - 2))
         return line

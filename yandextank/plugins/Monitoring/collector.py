@@ -78,11 +78,12 @@ class AgentClient(object):
     def start(self):
         """Start remote agent"""
         logger.debug('Start monitoring: %s', self.host)
-        self.session = self.ssh.async_session(" ".join([
-            "DEBUG=1", self.python, self.path['AGENT_REMOTE_FOLDER'] +
-            '/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg',
-            '-t', str(int(time.time()))
-        ]))
+        self.session = self.ssh.async_session(
+            " ".join([
+                "DEBUG=1", self.python, self.path['AGENT_REMOTE_FOLDER'] +
+                '/agent.py', '-c', self.path['AGENT_REMOTE_FOLDER'] +
+                '/agent.cfg', '-t', str(int(time.time()))
+            ]))
         return self.session
 
     def read_maybe(self):
@@ -103,8 +104,8 @@ class AgentClient(object):
         try:
             float(self.interval)
         except:
-            raise ValueError("Monitoring interval should be a number: '%s'" %
-                             self.interval)
+            raise ValueError(
+                "Monitoring interval should be a number: '%s'" % self.interval)
 
         cfg = ConfigParser.ConfigParser()
         cfg.add_section('main')
@@ -136,8 +137,8 @@ class AgentClient(object):
 
     def install(self, loglevel):
         """Create folder and copy agent and metrics scripts to remote host"""
-        logger.info("Installing monitoring agent at %s@%s...", self.username,
-                    self.host)
+        logger.info(
+            "Installing monitoring agent at %s@%s...", self.username, self.host)
 
         # create remote temp dir
         cmd = self.python + ' -c "import tempfile; print tempfile.mkdtemp();"'
@@ -145,37 +146,39 @@ class AgentClient(object):
         try:
             out, errors, err_code = self.ssh.execute(cmd)
         except:
-            logger.error("Failed to install monitoring agent to %s",
-                         self.host,
-                         exc_info=True)
+            logger.error(
+                "Failed to install monitoring agent to %s",
+                self.host,
+                exc_info=True)
             return None
         if errors:
             logging.error("[%s] error: '%s'", self.host, errors)
             return None
 
         if err_code:
-            logging.error("Failed to create remote dir via SSH"
-                          " at %s@%s, code %s: %s" % (self.username, self.host,
-                                                      err_code, out.strip()))
+            logging.error(
+                "Failed to create remote dir via SSH"
+                " at %s@%s, code %s: %s" %
+                (self.username, self.host, err_code, out.strip()))
             return None
 
         remote_dir = out.strip()
         if remote_dir:
             self.path['AGENT_REMOTE_FOLDER'] = remote_dir
-        logger.debug("Remote dir at %s:%s", self.host,
-                     self.path['AGENT_REMOTE_FOLDER'])
+        logger.debug(
+            "Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
 
         # Copy agent and config
         agent_config = self.create_agent_config(loglevel)
         try:
-            self.ssh.send_file(self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
-                               self.path['AGENT_REMOTE_FOLDER'] + '/agent.py')
-            self.ssh.send_file(agent_config,
-                               self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg')
+            self.ssh.send_file(
+                self.path['AGENT_LOCAL_FOLDER'] + '/agent.py',
+                self.path['AGENT_REMOTE_FOLDER'] + '/agent.py')
+            self.ssh.send_file(
+                agent_config, self.path['AGENT_REMOTE_FOLDER'] + '/agent.cfg')
         except:
-            logger.error("Failed to install agent on %s",
-                         self.host,
-                         exc_info=True)
+            logger.error(
+                "Failed to install agent on %s", self.host, exc_info=True)
             return None
         return agent_config
 
@@ -186,12 +189,12 @@ class AgentClient(object):
         if self.session:
             self.session.send("stop\n")
             self.session.close()
-        fhandle, log_filename = tempfile.mkstemp('.log',
-                                                 "agent_" + self.host + "_")
+        fhandle, log_filename = tempfile.mkstemp(
+            '.log', "agent_" + self.host + "_")
         os.close(fhandle)
         try:
-            self.ssh.get_file(self.path['AGENT_REMOTE_FOLDER'] + "_agent.log",
-                              log_filename)
+            self.ssh.get_file(
+                self.path['AGENT_REMOTE_FOLDER'] + "_agent.log", log_filename)
             self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
         except:
             logger.error("Exception while uninstalling agent", exc_info=True)
@@ -265,9 +268,7 @@ class MonitoringCollector(object):
                 logger.debug("Got data from agent: %s", data.strip())
                 self.send_data.append(
                     self.filter_unused_data(
-                        self.filter_conf, self.filter_mask, data
-                    )
-                )
+                        self.filter_conf, self.filter_mask, data))
                 logger.debug("Data after filtering: %s", self.send_data)
 
         if not self.first_data_received and self.send_data:
@@ -286,8 +287,10 @@ class MonitoringCollector(object):
 
     def send_collected_data(self):
         """sends pending data set to listeners"""
-        [listener.monitoring_data(self.send_data)
-         for listener in self.listeners]
+        [
+            listener.monitoring_data(self.send_data)
+            for listener in self.listeners
+        ]
         self.send_data = []
 
     def get_host_config(self, host, target_hint):
@@ -307,14 +310,18 @@ class MonitoringCollector(object):
         hostname = host.get('address').lower()
         if hostname == '[target]':
             if not target_hint:
-                raise ValueError("Can't use [target] keyword with "
-                                 "no target parameter specified")
+                raise ValueError(
+                    "Can't use [target] keyword with "
+                    "no target parameter specified")
             logger.debug("Using target hint: %s", target_hint)
             hostname = target_hint.lower()
         stats = []
         startups = []
         shutdowns = []
-        custom = {'tail': [], 'call': [], }
+        custom = {
+            'tail': [],
+            'call': [],
+        }
         metrics_count = 0
         for metric in host:
             # known metrics
@@ -337,8 +344,9 @@ class MonitoringCollector(object):
                 isdiff = metric.get('diff')
                 if not isdiff:
                     isdiff = 0
-                stat = "%s:%s:%s" % (base64.b64encode(metric.get('label')),
-                                     base64.b64encode(metric.text), isdiff)
+                stat = "%s:%s:%s" % (
+                    base64.b64encode(metric.get('label')),
+                    base64.b64encode(metric.text), isdiff)
                 stats.append('Custom:' + stat)
                 custom[metric.get('measure', 'call')].append(stat)
             elif (str(metric.tag)).lower() == 'startup':
@@ -379,7 +387,9 @@ class MonitoringCollector(object):
             'shutdowns': shutdowns,
 
             # XXX: should be separate?
-            'stats': {hostname: stats},
+            'stats': {
+                hostname: stats
+            },
         }
 
     def getconfig(self, filename, target_hint):
@@ -414,8 +424,9 @@ class MonitoringCollector(object):
                 try:
                     res.append(filter_list[key])
                 except IndexError:
-                    logger.warn("Problems filtering data: %s with %s", mask,
-                                len(filter_list))
+                    logger.warn(
+                        "Problems filtering data: %s with %s", mask,
+                        len(filter_list))
                     return None
         return ';'.join(res)
 
@@ -527,8 +538,7 @@ class MonitoringDataDecoder(object):
                 self.metrics[host] = []
                 for metric in data:
                     if metric.startswith("Custom:"):
-                        metric = base64.standard_b64decode(metric.split(':')[
-                            1])
+                        metric = base64.standard_b64decode(metric.split(':')[1])
                     self.metrics[host].append(metric)
                     data_dict[metric] = self.NA
                     is_initial = True
@@ -537,17 +547,19 @@ class MonitoringDataDecoder(object):
             timestamp = data.pop(0)
 
             if host not in self.metrics.keys():
-                raise ValueError("Host %s not in started metrics: %s" %
-                                 (host, self.metrics))
+                raise ValueError(
+                    "Host %s not in started metrics: %s" % (host, self.metrics))
 
             if len(self.metrics[host]) != len(data):
-                raise ValueError("Metrics len and data len differs: %s vs %s" %
-                                 (len(self.metrics[host]), len(data)))
+                raise ValueError(
+                    "Metrics len and data len differs: %s vs %s" %
+                    (len(self.metrics[host]), len(data)))
 
             for metric in self.metrics[host]:
                 data_dict[metric] = data.pop(0)
 
         logger.debug("Decoded data %s: %s", host, data_dict)
         return host, data_dict, is_initial, timestamp
+
 
 # FIXME: 3 synchronize times between agent and collector better

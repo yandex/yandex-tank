@@ -16,7 +16,6 @@ requests.packages.urllib3.disable_warnings()
 
 
 class AbstractGun(AbstractPlugin):
-
     def __init__(self, core):
         super(AbstractGun, self).__init__(core)
         self.results = None
@@ -49,8 +48,8 @@ class AbstractGun(AbstractPlugin):
             raise
         finally:
             if data_item.get("interval_real") is None:
-                data_item["interval_real"] = int((time.time() - start_time) *
-                                                 1e6)
+                data_item["interval_real"] = int(
+                    (time.time() - start_time) * 1e6)
 
             self.results.put(data_item, timeout=1)
 
@@ -152,8 +151,8 @@ class CustomGun(AbstractGun):
         module_name = self.get_option("module_name")
         fp, pathname, description = imp.find_module(module_name, module_path)
         try:
-            self.module = imp.load_module(module_name, fp, pathname,
-                                          description)
+            self.module = imp.load_module(
+                module_name, fp, pathname, description)
         finally:
             if fp:
                 fp.close()
@@ -186,8 +185,8 @@ class ScenarioGun(AbstractGun):
         module_name = self.get_option("module_name")
         fp, pathname, description = imp.find_module(module_name, module_path)
         try:
-            self.module = imp.load_module(module_name, fp, pathname,
-                                          description)
+            self.module = imp.load_module(
+                module_name, fp, pathname, description)
         finally:
             if fp:
                 fp.close()
@@ -232,8 +231,8 @@ class UltimateGun(AbstractGun):
         # it is imported to be sure Python won't be able to cache it
         #
         try:
-            self.module = imp.load_module("%s_%d" % (module_name, time.time()),
-                                          fp, pathname, description)
+            self.module = imp.load_module(
+                "%s_%d" % (module_name, time.time()), fp, pathname, description)
         finally:
             if fp:
                 fp.close()

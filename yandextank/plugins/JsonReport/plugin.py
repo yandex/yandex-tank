@@ -24,20 +24,17 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
     def configure(self):
         self.monitoring_logger = self.create_file_logger(
-            'monitoring', self.get_option(
-                'monitoring_log', 'monitoring.log'))
+            'monitoring', self.get_option('monitoring_log', 'monitoring.log'))
         self.aggregator_data_logger = self.create_file_logger(
-            'aggregator_data', self.get_option('test_data_log', 'test_data.log'))
+            'aggregator_data',
+            self.get_option('test_data_log', 'test_data.log'))
         self.core.job.subscribe_plugin(self)
 
     def create_file_logger(self, logger_name, file_name, formatter=None):
         loggr = logging.getLogger(logger_name)
         loggr.setLevel(logging.INFO)
         handler = logging.FileHandler(
-            os.path.join(
-                self.core.artifacts_dir,
-                file_name),
-            mode='w')
+            os.path.join(self.core.artifacts_dir, file_name), mode='w')
         handler.setLevel(logging.INFO)
         if formatter:
             handler.setFormatter(formatter)
@@ -51,14 +48,19 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         @stats: stats about gun
         """
         self.aggregator_data_logger.info(
-            json.dumps({'data': data, 'stats': stats}))
+            json.dumps({
+                'data': data,
+                'stats': stats
+            }))
 
     def monitoring_data(self, data_list):
         if self.is_telegraf:
             self.monitoring_logger.info(json.dumps(data_list))
         else:
-            [self.monitoring_logger.info(data.strip())
-             for data in data_list if data]
+            [
+                self.monitoring_logger.info(data.strip()) for data in data_list
+                if data
+            ]
 
     @property
     def is_telegraf(self):

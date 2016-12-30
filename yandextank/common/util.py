@@ -43,7 +43,6 @@ class Drain(th.Thread):
 
 
 class SecuredShell(object):
-
     def __init__(self, host, port, username, timeout):
         self.host = host
         self.port = port
@@ -52,20 +51,22 @@ class SecuredShell(object):
 
     def connect(self):
         logger.debug(
-            "Opening SSH connection to {host}:{port}".format(host=self.host,
-                                                             port=self.port))
+            "Opening SSH connection to {host}:{port}".format(
+                host=self.host, port=self.port))
         client = SSHClient()
         client.load_system_host_keys()
         client.set_missing_host_key_policy(AutoAddPolicy())
 
         try:
-            client.connect(self.host,
-                           port=self.port,
-                           username=self.username,
-                           timeout=self.timeout, )
+            client.connect(
+                self.host,
+                port=self.port,
+                username=self.username,
+                timeout=self.timeout, )
         except ValueError as e:
             logger.error(e)
-            logger.warning("""
+            logger.warning(
+                """
 Patching Crypto.Cipher.AES.new and making another attempt.
 
 See here for the details:
@@ -82,10 +83,11 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
                 return orig_new(key, *ls)
 
             Crypto.Cipher.AES.new = fixed_AES_new
-            client.connect(self.host,
-                           port=self.port,
-                           username=self.username,
-                           timeout=self.timeout, )
+            client.connect(
+                self.host,
+                port=self.port,
+                username=self.username,
+                timeout=self.timeout, )
         return client
 
     def execute(self, cmd):
@@ -107,19 +109,17 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
         return self.execute("mkdir -p %s" % path)
 
     def send_file(self, local_path, remote_path):
-        logger.info("Sending [{local}] to {host}:[{remote}]".format(
-            local=local_path,
-            host=self.host,
-            remote=remote_path))
+        logger.info(
+            "Sending [{local}] to {host}:[{remote}]".format(
+                local=local_path, host=self.host, remote=remote_path))
         with self.connect() as client, client.open_sftp() as sftp:
             result = sftp.put(local_path, remote_path)
         return result
 
     def get_file(self, remote_path, local_path):
-        logger.info("Receiving from {host}:[{remote}] to [{local}]".format(
-            local=local_path,
-            host=self.host,
-            remote=remote_path))
+        logger.info(
+            "Receiving from {host}:[{remote}] to [{local}]".format(
+                local=local_path, host=self.host, remote=remote_path))
         with self.connect() as client, client.open_sftp() as sftp:
             result = sftp.get(remote_path, local_path)
         return result
@@ -129,39 +129,27 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
 
 
 def check_ssh_connection():
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(levelname)s %(message)s')
+    logging.basicConfig(
+        level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
     logging.getLogger("paramiko.transport").setLevel(logging.DEBUG)
 
     parser = argparse.ArgumentParser(
         description='Test SSH connection for monitoring.')
     parser.add_argument(
-        '-e', '--endpoint',
-        default='example.org',
-        help='which host to try')
+        '-e', '--endpoint', default='example.org', help='which host to try')
 
     parser.add_argument(
-        '-u', '--username',
-        default=os.getlogin(),
-        help='SSH username')
+        '-u', '--username', default=os.getlogin(), help='SSH username')
 
-    parser.add_argument(
-        '-p', '--port',
-        default=22,
-        type=int,
-        help='SSH port')
+    parser.add_argument('-p', '--port', default=22, type=int, help='SSH port')
     args = parser.parse_args()
     logging.info(
-        "Checking SSH to %s@%s:%d",
-        args.username,
-        args.endpoint,
-        args.port)
+        "Checking SSH to %s@%s:%d", args.username, args.endpoint, args.port)
     ssh = SecuredShell(args.endpoint, args.port, args.username, 10)
     print(ssh.execute("ls -l"))
 
 
 class AsyncSession(object):
-
     def __init__(self, ssh, cmd):
         self.client = ssh.connect()
         self.session = self.client.get_transport().open_session()
@@ -427,8 +415,8 @@ def expand_time(str_time, default_unit='s', multiplier=1):
             result += value * 60 * 60 * 24 * 7
             continue
         else:
-            raise ValueError("String contains unsupported unit %s: %s" %
-                             (unit, str_time))
+            raise ValueError(
+                "String contains unsupported unit %s: %s" % (unit, str_time))
     return int(result * multiplier)
 
 
@@ -460,11 +448,12 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
         cmd = shlex.split(cmd)
 
     if catch_out:
-        process = subprocess.Popen(cmd,
-                                   shell=shell,
-                                   stderr=subprocess.PIPE,
-                                   stdout=subprocess.PIPE,
-                                   close_fds=True)
+        process = subprocess.Popen(
+            cmd,
+            shell=shell,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            close_fds=True)
     else:
         process = subprocess.Popen(cmd, shell=shell, close_fds=True)
 
@@ -503,14 +492,12 @@ def pairs(lst):
 
 def update_status(status, multi_key, value):
     if len(multi_key) > 1:
-        update_status(
-            status.setdefault(multi_key[0], {}), multi_key[1:], value)
+        update_status(status.setdefault(multi_key[0], {}), multi_key[1:], value)
     else:
         status[multi_key[0]] = value
 
 
 class AddressWizard:
-
     def __init__(self):
         self.lookup_fn = socket.getaddrinfo
         self.socket_class = socket.socket
@@ -554,8 +541,9 @@ class AddressWizard:
             resolved = self.lookup_fn(address_str, port)
             logger.debug("Lookup result: %s", resolved)
         except Exception as exc:
-            logger.debug("Exception trying to resolve hostname %s : %s",
-                         address_str, traceback.format_exc(exc))
+            logger.debug(
+                "Exception trying to resolve hostname %s : %s", address_str,
+                traceback.format_exc(exc))
             msg = "Failed to resolve hostname: %s. Error: %s"
             raise RuntimeError(msg % (address_str, exc))
 
@@ -565,7 +553,8 @@ class AddressWizard:
 
             if explicit_port:
                 logger.warn(
-                    "Using phantom.port option is deprecated. Use phantom.address=[address]:port instead")
+                    "Using phantom.port option is deprecated. Use phantom.address=[address]:port instead"
+                )
                 port = int(explicit_port)
             elif not port:
                 port = 80
@@ -574,8 +563,9 @@ class AddressWizard:
                 try:
                     self.__test(family, (parsed_ip, port))
                 except RuntimeError as exc:
-                    logger.warn("Failed TCP connection test using [%s]:%s",
-                                parsed_ip, port)
+                    logger.warn(
+                        "Failed TCP connection test using [%s]:%s", parsed_ip,
+                        port)
                     continue
 
             return is_v6, parsed_ip, int(port), address_str
@@ -589,8 +579,9 @@ class AddressWizard:
             test_sock.settimeout(5)
             test_sock.connect(sa)
         except Exception as exc:
-            logger.debug("Exception on connect attempt [%s]:%s : %s", sa[0],
-                         sa[1], traceback.format_exc(exc))
+            logger.debug(
+                "Exception on connect attempt [%s]:%s : %s", sa[0], sa[1],
+                traceback.format_exc(exc))
             msg = "TCP Connection test failed for [%s]:%s, use phantom.connection_test=0 to disable it"
             raise RuntimeError(msg % (sa[0], sa[1]))
         finally:
@@ -598,7 +589,6 @@ class AddressWizard:
 
 
 class Chopper(object):
-
     def __init__(self, source):
         self.source = source
 

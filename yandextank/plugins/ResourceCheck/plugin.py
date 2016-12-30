@@ -28,8 +28,8 @@ class Plugin(AbstractPlugin):
         return ["interval", "disk_limit", "mem_limit"]
 
     def configure(self):
-        self.interval = expand_to_seconds(self.get_option(
-            "interval", self.interval))
+        self.interval = expand_to_seconds(
+            self.get_option("interval", self.interval))
         self.disk_limit = int(self.get_option("disk_limit", self.disk_limit))
         self.mem_limit = int(self.get_option("mem_limit", self.mem_limit))
 
@@ -58,18 +58,20 @@ class Plugin(AbstractPlugin):
             self.log.debug("No disk usage info: %s", res[2])
             return
         disk_free = res[1]
-        self.log.debug("Disk free space: %s/%s", disk_free.strip(),
-                       self.disk_limit)
+        self.log.debug(
+            "Disk free space: %s/%s", disk_free.strip(), self.disk_limit)
         if int(disk_free.strip()) < self.disk_limit:
             raise RuntimeError(
-                "Not enough local resources: disk space less than %sMB in %s: %sMB" %
-                (self.disk_limit, self.core.artifacts_base_dir, int(
-                    disk_free.strip())))
+                "Not enough local resources: disk space less than %sMB in %s: %sMB"
+                % (
+                    self.disk_limit, self.core.artifacts_base_dir,
+                    int(disk_free.strip())))
 
     def __check_mem(self):
         ''' raise exception on RAM exceeded '''
         mem_free = psutil.virtual_memory().available / 2**20
         self.log.debug("Memory free: %s/%s", mem_free, self.mem_limit)
         if mem_free < self.mem_limit:
-            raise RuntimeError("Not enough resources: free memory less "
-                               "than %sMB: %sMB" % (self.mem_limit, mem_free))
+            raise RuntimeError(
+                "Not enough resources: free memory less "
+                "than %sMB: %sMB" % (self.mem_limit, mem_free))

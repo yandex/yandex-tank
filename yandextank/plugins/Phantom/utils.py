@@ -42,12 +42,14 @@ class PhantomConfig:
 
     @staticmethod
     def get_available_options():
-        opts = ["threads",
-                "phantom_modules_path",
-                "additional_libs",
-                "writelog",
-                "enum_ammo",
-                "timeout", ]
+        opts = [
+            "threads",
+            "phantom_modules_path",
+            "additional_libs",
+            "writelog",
+            "enum_ammo",
+            "timeout",
+        ]
         opts += StreamConfig.get_available_options()
         return opts
 
@@ -55,8 +57,8 @@ class PhantomConfig:
         """        Read phantom tool specific options        """
         self.threads = self.get_option(
             "threads", str(int(multiprocessing.cpu_count() / 2) + 1))
-        self.phantom_modules_path = self.get_option("phantom_modules_path",
-                                                    "/usr/lib/phantom")
+        self.phantom_modules_path = self.get_option(
+            "phantom_modules_path", "/usr/lib/phantom")
         self.additional_libs = self.get_option("additional_libs", "")
         self.answ_log_level = self.get_option("writelog", "none")
         if self.answ_log_level == '0':
@@ -65,16 +67,17 @@ class PhantomConfig:
             self.answ_log_level = 'all'
         self.timeout = parse_duration(self.get_option("timeout", "11s"))
         if self.timeout > 120000:
-            logger.warning("You've set timeout over 2 minutes."
-                           " Are you a functional tester?")
+            logger.warning(
+                "You've set timeout over 2 minutes."
+                " Are you a functional tester?")
         self.answ_log = self.core.mkstemp(".log", "answ_")
         self.core.add_artifact_file(self.answ_log)
-        self.phout_file = self.core.get_option(self.SECTION, self.OPTION_PHOUT,
-                                               '')
+        self.phout_file = self.core.get_option(
+            self.SECTION, self.OPTION_PHOUT, '')
         if not self.phout_file:
             self.phout_file = self.core.mkstemp(".log", "phout_")
-            self.core.set_option(self.SECTION, self.OPTION_PHOUT,
-                                 self.phout_file)
+            self.core.set_option(
+                self.SECTION, self.OPTION_PHOUT, self.phout_file)
         self.core.add_artifact_file(self.phout_file)
         self.stat_log = self.core.mkstemp(".log", "phantom_stat_")
         self.core.add_artifact_file(self.stat_log)
@@ -82,14 +85,17 @@ class PhantomConfig:
         self.core.add_artifact_file(self.phantom_log)
 
         main_stream = StreamConfig(
-            self.core, len(self.streams), self.phout_file, self.answ_log,
+            self.core,
+            len(self.streams), self.phout_file, self.answ_log,
             self.answ_log_level, self.timeout, self.SECTION)
         self.streams.append(main_stream)
 
         for section in self.core.config.find_sections(self.SECTION + '-'):
-            self.streams.append(StreamConfig(
-                self.core, len(self.streams), self.phout_file, self.answ_log,
-                self.answ_log_level, self.timeout, section))
+            self.streams.append(
+                StreamConfig(
+                    self.core,
+                    len(self.streams), self.phout_file, self.answ_log,
+                    self.answ_log_level, self.timeout, section))
 
         for stream in self.streams:
             stream.read_config()
@@ -175,8 +181,8 @@ class PhantomConfig:
 
             result.ammo_file += stream.stepper_wrapper.ammo_file + ' '
             result.ammo_count += stream.stepper_wrapper.ammo_count
-            result.duration = max(result.duration,
-                                  stream.stepper_wrapper.duration)
+            result.duration = max(
+                result.duration, stream.stepper_wrapper.duration)
             result.instances += stream.instances
 
         if not result.ammo_count:
@@ -189,8 +195,8 @@ class StreamConfig:
 
     OPTION_INSTANCES_LIMIT = 'instances'
 
-    def __init__(self, core, sequence, phout, answ, answ_level, timeout,
-                 section):
+    def __init__(
+            self, core, sequence, phout, answ, answ_level, timeout, section):
         self.core = core
         self.address_wizard = AddressWizard()
 
@@ -229,10 +235,14 @@ class StreamConfig:
 
     @staticmethod
     def get_available_options():
-        opts = ["ssl", "tank_type", 'gatling_ip', "method_prefix",
-                "source_log_prefix"]
-        opts += ["phantom_http_line", "phantom_http_field_num",
-                 "phantom_http_field", "phantom_http_entity"]
+        opts = [
+            "ssl", "tank_type", 'gatling_ip', "method_prefix",
+            "source_log_prefix"
+        ]
+        opts += [
+            "phantom_http_line", "phantom_http_field_num", "phantom_http_field",
+            "phantom_http_entity"
+        ]
         opts += ['address', "port", StreamConfig.OPTION_INSTANCES_LIMIT]
         opts += StepperWrapper.get_available_options()
         opts += ["connection_test"]
@@ -245,16 +255,16 @@ class StreamConfig:
         self.tank_type = self.get_option("tank_type", 'http')
         # TODO: refactor. Maybe we should decide how to interact with
         # StepperWrapper here.
-        self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT,
-                                             '1000'))
+        self.instances = int(
+            self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
         self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
         self.method_prefix = self.get_option("method_prefix", 'method_stream')
         self.method_options = self.get_option("method_options", '')
         self.source_log_prefix = self.get_option("source_log_prefix", '')
 
         self.phantom_http_line = self.get_option("phantom_http_line", "")
-        self.phantom_http_field_num = self.get_option("phantom_http_field_num",
-                                                      "")
+        self.phantom_http_field_num = self.get_option(
+            "phantom_http_field_num", "")
         self.phantom_http_field = self.get_option("phantom_http_field", "")
         self.phantom_http_entity = self.get_option("phantom_http_entity", "")
 
@@ -264,8 +274,8 @@ class StreamConfig:
         self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(
             self.address, do_test_connect, explicit_port)
 
-        logger.info("Resolved %s into %s:%s", self.address, self.resolved_ip,
-                    self.port)
+        logger.info(
+            "Resolved %s into %s:%s", self.address, self.resolved_ip, self.port)
 
         self.client_cipher_suites = self.get_option("client_cipher_suites", "")
         self.client_certificate = self.get_option("client_certificate", "")
@@ -345,11 +355,12 @@ class StreamConfig:
             fname = 'phantom_benchmark_main.tpl'
         else:
             fname = 'phantom_benchmark_additional.tpl'
-        template_str = template_str = resource_string(__name__,
-                                                      "config/" + fname)
+        template_str = template_str = resource_string(
+            __name__, "config/" + fname)
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
 
         return config
+
 
 # ========================================================================

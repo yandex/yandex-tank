@@ -23,9 +23,8 @@ class TimeChopper(object):
             grouped = chunk.groupby(level=0)
             for group_key, group_data in list(grouped):
                 if group_key in self.cache:
-                    self.cache[group_key] = pd.concat([
-                        self.cache[group_key], group_data
-                    ])
+                    self.cache[group_key] = pd.concat(
+                        [self.cache[group_key], group_data])
                 else:
                     self.cache[group_key] = group_data
                 while len(self.cache) > self.cache_size:

@@ -53,8 +53,9 @@ class PhantomProgressBarWidget(AbstractInfoWidget):
         elif self.ammo_progress:
             left_part = self.ammo_count - self.ammo_progress
             if left_part > 0:
-                eta_secs = int(float(dur_seconds) / float(self.ammo_progress) *
-                               float(left_part))
+                eta_secs = int(
+                    float(dur_seconds) / float(self.ammo_progress) *
+                    float(left_part))
             else:
                 eta_secs = 0
             eta_time = datetime.timedelta(seconds=eta_secs)
@@ -77,8 +78,8 @@ class PhantomProgressBarWidget(AbstractInfoWidget):
         progress_chars += self.krutilka.next()
 
         res += color_bg + progress_chars + screen.markup.RESET + color_fg
-        res += '~' * (pb_width - int(pb_width *
-                                     progress)) + screen.markup.RESET + ' '
+        res += '~' * (pb_width - int(pb_width * progress)
+                      ) + screen.markup.RESET + ' '
         res += str_perc + "\n"
 
         eta = 'ETA: %s' % eta_time
@@ -123,17 +124,17 @@ class PhantomInfoWidget(AbstractInfoWidget):
         info = self.owner.get_info()
         if self.owner.phantom:
             template = "Hosts: %s => %s:%s\n Ammo: %s\nCount: %s\n Load: %s"
-            data = (socket.gethostname(), info.address, info.port,
-                    os.path.basename(info.ammo_file), self.ammo_count,
-                    ' '.join(info.rps_schedule))
+            data = (
+                socket.gethostname(), info.address, info.port,
+                os.path.basename(info.ammo_file), self.ammo_count,
+                ' '.join(info.rps_schedule))
             res = template % data
 
             res += "\n\n"
 
         res += "Active instances: "
         if float(self.instances) / self.instances_limit > 0.8:
-            res += screen.markup.RED + str(
-                self.instances) + screen.markup.RESET
+            res += screen.markup.RED + str(self.instances) + screen.markup.RESET
         elif float(self.instances) / self.instances_limit > 0.5:
             res += screen.markup.YELLOW + str(
                 self.instances) + screen.markup.RESET
@@ -141,8 +142,7 @@ class PhantomInfoWidget(AbstractInfoWidget):
             res += str(self.instances)
 
         res += "\nPlanned requests: %s for %s\nActual responses: " % (
-            self.planned,
-            datetime.timedelta(seconds=self.planned_rps_duration))
+            self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
         if not self.planned == self.RPS:
             res += screen.markup.YELLOW + str(self.RPS) + screen.markup.RESET
         else:
@@ -150,22 +150,22 @@ class PhantomInfoWidget(AbstractInfoWidget):
 
         res += "\n        Accuracy: "
         if self.selfload < 80:
-            res += screen.markup.RED + ('%.2f' %
-                                        self.selfload) + screen.markup.RESET
+            res += screen.markup.RED + (
+                '%.2f' % self.selfload) + screen.markup.RESET
         elif self.selfload < 95:
-            res += screen.markup.YELLOW + ('%.2f' %
-                                           self.selfload) + screen.markup.RESET
+            res += screen.markup.YELLOW + (
+                '%.2f' % self.selfload) + screen.markup.RESET
         else:
             res += ('%.2f' % self.selfload)
 
         res += "%\n        Time lag: "
         if self.time_lag > self.owner.buffered_seconds * 5:
             logger.debug("Time lag: %s", self.time_lag)
-            res += screen.markup.RED + str(datetime.timedelta(
-                seconds=self.time_lag)) + screen.markup.RESET
+            res += screen.markup.RED + str(
+                datetime.timedelta(seconds=self.time_lag)) + screen.markup.RESET
         elif self.time_lag > self.owner.buffered_seconds:
-            res += screen.markup.YELLOW + str(datetime.timedelta(
-                seconds=self.time_lag)) + screen.markup.RESET
+            res += screen.markup.YELLOW + str(
+                datetime.timedelta(seconds=self.time_lag)) + screen.markup.RESET
         else:
             res += str(datetime.timedelta(seconds=self.time_lag))
 
@@ -175,6 +175,8 @@ class PhantomInfoWidget(AbstractInfoWidget):
         self.RPS = data["overall"]["interval_real"]["len"]
         self.planned = stats["metrics"]["reqps"]
         self.instances = stats["metrics"]["instances"]
+
+
 #           TODO:
 #           self.selfload = second_aggregate_data.overall.selfload
 #           self.time_lag = int(time.time() - time.mktime(

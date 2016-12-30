@@ -59,8 +59,8 @@ class Plugin(AbstractPlugin):
         return ["verbose_histogram"]
 
     def configure(self):
-        self.aggregator_config = json.loads(resource_string(
-            __name__, 'config/phout.json').decode('utf8'))
+        self.aggregator_config = json.loads(
+            resource_string(__name__, 'config/phout.json').decode('utf8'))
         verbose_histogram_option = self.get_option("verbose_histogram", "0")
         self.verbose_histogram = (
             verbose_histogram_option.lower() == "true") or (
@@ -72,16 +72,15 @@ class Plugin(AbstractPlugin):
         if self.reader and self.stats_reader:
             pipeline = Aggregator(
                 TimeChopper(
-                    DataPoller(source=self.reader,
-                               poll_period=1),
-                    cache_size=3),
+                    DataPoller(
+                        source=self.reader, poll_period=1), cache_size=3),
                 self.aggregator_config,
                 self.verbose_histogram)
             self.drain = Drain(pipeline, self.results)
             self.drain.start()
             self.stats_drain = Drain(
-                Chopper(DataPoller(source=self.stats_reader,
-                                   poll_period=1)),
+                Chopper(DataPoller(
+                    source=self.stats_reader, poll_period=1)),
                 self.stats)
             self.stats_drain.start()
         else:

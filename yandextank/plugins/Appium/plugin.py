@@ -44,10 +44,11 @@ class Plugin(AbstractPlugin):
         process_stdout_file = self.core.mkstemp(".log", "appium_stdout_")
         self.core.add_artifact_file(process_stdout_file)
         self.process_stdout = open(process_stdout_file, 'w')
-        self.process = subprocess.Popen(args,
-                                        stderr=self.process_stdout,
-                                        stdout=self.process_stdout,
-                                        close_fds=True)
+        self.process = subprocess.Popen(
+            args,
+            stderr=self.process_stdout,
+            stdout=self.process_stdout,
+            close_fds=True)
         logger.info("Waiting 5 seconds for Appium to start...")
         time.sleep(5)
 
@@ -61,8 +62,8 @@ class Plugin(AbstractPlugin):
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            logger.info("Terminating appium process with PID %s",
-                        self.process.pid)
+            logger.info(
+                "Terminating appium process with PID %s", self.process.pid)
             self.process.terminate()
             if self.process_stdout:
                 self.process_stdout.close()

@@ -3,14 +3,12 @@ from yandextank.plugins.Telegraf import Plugin as TelegrafPlugin
 
 
 class TestTelegrafPlugin(object):
-
     def test_plugin_configuration(self):
         """ testing telegraf plugin configuration """
         core = TankCore()
         telegraf_plugin = TelegrafPlugin(core)
         core.set_option(
-            'telegraf',
-            'config',
+            'telegraf', 'config',
             'yandextank/plugins/Telegraf/tests/telegraf_mon.xml')
         telegraf_plugin.configure()
         assert telegraf_plugin.detected_conf == 'telegraf'
@@ -20,8 +18,7 @@ class TestTelegrafPlugin(object):
         core = TankCore()
         telegraf_plugin = TelegrafPlugin(core)
         core.set_option(
-            'monitoring',
-            'config',
+            'monitoring', 'config',
             'yandextank/plugins/Telegraf/tests/old_mon.xml')
         telegraf_plugin.configure()
         assert telegraf_plugin.detected_conf == 'monitoring'
@@ -31,12 +28,10 @@ class TestTelegrafPlugin(object):
         core = TankCore()
         telegraf_plugin = TelegrafPlugin(core)
         core.set_option(
-            'monitoring',
-            'config',
+            'monitoring', 'config',
             'yandextank/plugins/Telegraf/tests/old_mon.xml')
         core.set_option(
-            'telegraf',
-            'config',
+            'telegraf', 'config',
             'yandextank/plugins/Telegraf/tests/telegraf_mon.xml')
         try:
             telegraf_plugin.configure()

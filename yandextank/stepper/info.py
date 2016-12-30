@@ -38,8 +38,8 @@ class StepperStatus(object):
 
     def publish(self, key, value):
         if key not in self.info:
-            raise RuntimeError("Tried to publish to a non-existent key: %s" %
-                               key)
+            raise RuntimeError(
+                "Tried to publish to a non-existent key: %s" % key)
         log.debug('Published %s to %s', value, key)
         self.info[key] = value
 
@@ -88,8 +88,8 @@ class StepperStatus(object):
         self.info['loop_count'] = self._loop_count
         for key in self.info:
             if self.info[key] is None:
-                raise RuntimeError("Information for %s is not published yet." %
-                                   key)
+                raise RuntimeError(
+                    "Information for %s is not published yet." % key)
         return StepperInfo(**self.info)
 
     def update_view(self):
@@ -100,15 +100,16 @@ class StepperStatus(object):
         self._timer = cur_time
         if time_delta > 0:
             stdout.write(
-                "AF: %3s%%, LP: %3s%%, loops: %10s, speed: %5s Krps\r" %
-                (self.af_progress, self.lp_progress, self.loop_count, int(
-                    ammo_generated / time_delta / 1000.0)))
+                "AF: %3s%%, LP: %3s%%, loops: %10s, speed: %5s Krps\r" % (
+                    self.af_progress, self.lp_progress, self.loop_count,
+                    int(ammo_generated / time_delta / 1000.0)))
             stdout.flush()
             if self.core:
                 self.core.publish("stepper", "progress", self.lp_progress)
                 self.core.publish("stepper", "loop_count", self.loop_count)
-                self.core.publish("stepper", "speed", "%s Krps" %
-                                  int(ammo_generated / time_delta / 1000.0))
+                self.core.publish(
+                    "stepper", "speed",
+                    "%s Krps" % int(ammo_generated / time_delta / 1000.0))
 
     def update_af_progress(self):
         if self.af_size and self.loop_limit and self.af_position is not None:
