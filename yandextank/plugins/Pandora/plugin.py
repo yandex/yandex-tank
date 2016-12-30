@@ -28,6 +28,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.process = None
         self.process_stderr = None
         self.process_start_time = None
+        self.custom_config = False
 
     @staticmethod
     def get_key():
@@ -36,12 +37,13 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def get_available_options(self):
         opts = [
             "pandora_cmd", "buffered_seconds", "ammo", "loop", "sample_log",
-            "config_file", "startup_schedule", "user_schedule", "gun_type"
+            "config_file", "startup_schedule", "user_schedule", "gun_type",
+            "custom_config"
         ]
         return opts
 
     def configure(self):
-        # plugin part
+        self.custom_config = self.get_option("custom_config", "0") == "1"
         self.pandora_cmd = self.get_option("pandora_cmd", "pandora")
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
@@ -95,11 +97,16 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
         self.pandora_config_file = self.get_option("config_file", "")
         if not self.pandora_config_file:
+            if self.custom_config:
+                raise RuntimeError(
+                    "You said you would like to use custom config,"
+                    " but you didn't specify it")
             self.pandora_config_file = self.core.mkstemp(
                 ".json", "pandora_config_")
         self.core.add_artifact_file(self.pandora_config_file)
-        with open(self.pandora_config_file, 'w') as config_file:
-            config_file.write(self.pandora_config.json())
+        if not self.custom_config:
+            with open(self.pandora_config_file, 'w') as config_file:
+                config_file.write(self.pandora_config.json())
 
     def prepare_test(self):
         aggregator = None
