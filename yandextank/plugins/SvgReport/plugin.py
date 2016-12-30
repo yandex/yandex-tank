@@ -1,12 +1,11 @@
 import os.path
-
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
 import seaborn
 
 from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa:E402
 
 
 _ALL_ = "All"
