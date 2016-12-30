@@ -1432,3 +1432,20 @@ Options
 
   Default: None (will raise an exception).  
 
+
+SvgReport
+================
+
+Module generates svg file with various test results, e.g.,
+monitoring plots, RPS during test etc.
+
+INI-file section: **[svgreport]**
+
+Options
+-------
+
+:report_file:
+  Name of report file.
+
+  Default: report.svg
+
