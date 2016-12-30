@@ -19,6 +19,7 @@ analytic tools for the results they produce.
         'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
         'pandas>=0.18.0', 'numpy>=1.11.0', 'future>=0.16.0',
         'pip>=8.1.2',
+        'matplotlib>=1.5.3', 'seaborn>=0.7.1',
     ],
     setup_requires=[
         'pytest-runner', 'flake8',
