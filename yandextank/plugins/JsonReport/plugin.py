@@ -27,9 +27,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             if self.monitoring_logger:
                 for handle in self.monitoring_logger.handlers:
                     handle.close()
-        except Exception:
-            logger.error("Failed to close JsonReport handlers", exc_info=True)
-            return -1
+        except AttributeError:
+            logger.error("Logger wasn't initialized yet", exc_info=True)
         return retcode
 
     def get_available_options(self):
