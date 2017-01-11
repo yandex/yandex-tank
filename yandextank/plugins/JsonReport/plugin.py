@@ -19,6 +19,18 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         super(Plugin, self).__init__(core)
         self._is_telegraf = None
 
+    def post_process(self, retcode):
+        try:
+            if self.aggregator_data_logger:
+                for handle in self.aggregator_data_logger.handlers:
+                    handle.close()
+            if self.monitoring_logger:
+                for handle in self.monitoring_logger.handlers:
+                    handle.close()
+        except AttributeError:
+            logger.error("Logger wasn't initialized yet", exc_info=True)
+        return retcode
+
     def get_available_options(self):
         return ['monitoring_log', 'test_data_log', 'test_stats_log']
 
