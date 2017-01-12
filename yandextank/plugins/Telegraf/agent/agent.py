@@ -46,17 +46,26 @@ class DataReader(object):
     """generator reads from source line-by-line"""
 
     def __init__(self, filename, pipe=False):
-        self.pipe = pipe
-        if not self.pipe:
-            self.monout = open(filename, 'r')
-        else:
-            self.monout = filename
         self.buffer = ""
         self.closed = False
+        self.broken = False
+        self.pipe = pipe
+
+        if not self.pipe:
+            try:
+                self.monout = open(filename, 'r')
+            except Exception as ex:
+                logger.error("Can't open source file %s: %s", filename, ex)
+                self.broken = True
+        else:
+            self.monout = filename
 
     def __iter__(self):
         while not self.closed:
-            data = self.monout.readline()
+            if self.broken:
+                data = ''
+            else:
+                data = self.monout.readline()
             if data:
                 parts = data.rsplit('\n', 1)
                 if len(parts) > 1:
@@ -66,7 +75,7 @@ class DataReader(object):
                 else:
                     self.buffer += parts[0]
             else:
-                time.sleep(1)
+                yield None
         if not self.pipe:
             self.monout.close()
 
@@ -77,55 +86,65 @@ class DataReader(object):
 class Consolidator(object):
     """generator consolidates data from source, cache it by timestamp"""
 
-    def __init__(self, source):
-        self.source = source
+    def __init__(self, sources):
+        self.sources = sources
         self.results = {}
 
+    def append_chunk(self, source, chunk):
+        try:
+            data = json.loads(chunk)
+        except ValueError:
+            logger.error('unable to decode chunk %s', chunk, exc_info=True)
+        else:
+            try:
+                ts = data['timestamp']
+                self.results.setdefault(ts, {})
+                for key, value in data['fields'].iteritems():
+                    if data['name'] == 'diskio':
+                        data['name'] = "{metric_name}-{disk_id}".format(
+                            metric_name=data['name'],
+                            disk_id=data['tags']['name'])
+                    elif data['name'] == 'net':
+                        data['name'] = "{metric_name}-{interface}".format(
+                            metric_name=data['name'],
+                            interface=data['tags']['interface'])
+                    elif data['name'] == 'cpu':
+                        data['name'] = "{metric_name}-{cpu_id}".format(
+                            metric_name=data['name'],
+                            cpu_id=data['tags']['cpu'])
+                    key = data['name'] + "_" + key
+                    if key.endswith('_exec_value'):
+                        key = key.replace('_exec_value', '')
+                    self.results[ts][key] = value
+            except KeyError:
+                logger.error(
+                    'Malformed json from source %s: %s',
+                    source,
+                    chunk,
+                    exc_info=True)
+            except:
+                logger.error(
+                    'Something nasty happend in consolidator work',
+                    exc_info=True)
+
     def __iter__(self):
-        for chunk in self.source:
-            if chunk:
-                try:
-                    data = json.loads(chunk)
-                except ValueError:
-                    logger.error(
-                        'unable to decode chunk %s', chunk, exc_info=True)
-                else:
-                    try:
-                        ts = data['timestamp']
-                        self.results.setdefault(ts, {})
-                        for key, value in data['fields'].iteritems():
-                            if data['name'] == 'diskio':
-                                data['name'] = "{metric_name}-{disk_id}".format(
-                                    metric_name=data['name'],
-                                    disk_id=data['tags']['name'])
-                            elif data['name'] == 'net':
-                                data[
-                                    'name'] = "{metric_name}-{interface}".format(
-                                        metric_name=data['name'],
-                                        interface=data['tags']['interface'])
-                            elif data['name'] == 'cpu':
-                                data['name'] = "{metric_name}-{cpu_id}".format(
-                                    metric_name=data['name'],
-                                    cpu_id=data['tags']['cpu'])
-                            key = data['name'] + "_" + key
-                            if key.endswith('_exec_value'):
-                                key = key.replace('_exec_value', '')
-                            self.results[ts][key] = value
-                    except KeyError:
-                        logger.error(
-                            'Malformed json from source: %s',
-                            chunk,
-                            exc_info=True)
-                    except:
-                        logger.error(
-                            'Something nasty happend in consolidator work',
-                            exc_info=True)
-            if len(self.results) > 5:
-                ready_to_go_index = min(self.results)
-                yield json.dumps({
-                    ready_to_go_index:
-                    self.results.pop(ready_to_go_index, None)
-                })
+        while True:
+            for s in self.sources:
+                chunk_limit = 10
+                chunks_done = 0
+                chunk = s.next()
+                while chunk and chunks_done < chunk_limit:
+                    self.append_chunk(s, chunk)
+                    chunk = s.next()
+                if len(self.results) > 2:
+                    logger.debug(
+                        'Now in buffer: %s', [i for i in self.results.keys()])
+                    dump_seconds = sorted([i for i in self.results.keys()])[:-2]
+                    for ready_second in dump_seconds:
+                        yield json.dumps({
+                            ready_second: self.results.pop(ready_second, None)
+                        })
+                time.sleep(0.5)
 
 
 class Drain(threading.Thread):
@@ -161,6 +180,7 @@ class AgentWorker(threading.Thread):
         self.startups = []
         self.startup_processes = []
         self.shutdowns = []
+        self.custom_sources = []
         self.daemon = True  # Thread auto-shutdown
         self.finished = False
         self.drain = None
@@ -199,6 +219,11 @@ class AgentWorker(threading.Thread):
                 for option in config.options('shutdown'):
                     if option.startswith('cmd'):
                         self.shutdowns.append(config.get('shutdown', option))
+
+            if config.has_section('source'):
+                for option in config.options('source'):
+                    if option.startswith('file'):
+                        self.custom_sources.append(config.get('source', option))
             logger.info(
                 'Successfully loaded startup config.\n'
                 'Startups: %s\n'
@@ -222,6 +247,7 @@ class AgentWorker(threading.Thread):
         logger.info('Started with pid %d', self.collector.pid)
 
         telegraf_output = self.working_dir + '/monitoring.rawdata'
+        sources = [telegraf_output] + self.custom_sources
 
         for _ in range(10):
             self.collector.poll()
@@ -236,7 +262,7 @@ class AgentWorker(threading.Thread):
             time.sleep(1)
 
         self.drain = Drain(
-            Consolidator(DataReader(telegraf_output)), self.results)
+            Consolidator([iter(DataReader(f)) for f in sources]), self.results)
         self.drain.start()
 
         self.drain_stdout = Drain(
