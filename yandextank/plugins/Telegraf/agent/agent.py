@@ -19,11 +19,27 @@ collector_logger = logging.getLogger("telegraf")
 
 def signal_handler(sig, frame):
     """ required for non-tty python runs to interrupt """
+    logger.warning("Got signal %s, going to stop", sig)
     raise KeyboardInterrupt()
 
 
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
+def ignore_handler(sig, frame):
+    logger.warning("Got signal %s, ignoring", sig)
+
+
+def set_sig_handler():
+    uncatchable = ['SIG_DFL', 'SIGSTOP', 'SIGKILL']
+    ignore = ['SIGCHLD', 'SIGCLD']
+    all_sig = [s for s in dir(signal) if s.startswith("SIG")]
+    for sig_name in ignore:
+        sig_num = getattr(signal, sig_name)
+        signal.signal(sig_num, ignore_handler)
+    for sig_name in [s for s in all_sig if s not in (uncatchable + ignore)]:
+        try:
+            sig_num = getattr(signal, sig_name)
+            signal.signal(sig_num, signal_handler)
+        except Exception as ex:
+            logger.error("Can't set handler for %s, %s", sig_name, ex)
 
 
 class DataReader(object):
@@ -196,17 +212,25 @@ class AgentWorker(threading.Thread):
         for cmnd in self.startups:
             logger.debug("Run: %s", cmnd)
             proc = self.popen(cmnd)
+            logger.info('Started with pid %d', proc.pid)
             self.startup_processes.append(proc)
 
         logger.info('Starting metrics collector..')
         cmnd = "{telegraf} -config {working_dir}/agent.cfg".format(
             telegraf=self.telegraf_path, working_dir=self.working_dir)
         self.collector = self.popen(cmnd)
+        logger.info('Started with pid %d', self.collector.pid)
 
         telegraf_output = self.working_dir + '/monitoring.rawdata'
 
         for _ in range(10):
-            logger.info("Waiting for telegraf...")
+            self.collector.poll()
+            if not self.collector.returncode:
+                logger.info("Waiting for telegraf...")
+            else:
+                logger.info(
+                    "Telegraf with pid %d ended with code %d",
+                    self.collector.pid, self.collector.returncode)
             if os.path.isfile(telegraf_output):
                 break
             time.sleep(1)
@@ -232,6 +256,7 @@ class AgentWorker(threading.Thread):
                     logger.debug(
                         'send %s bytes of data to collector', len(data))
                     sys.stdout.write(str(data) + '\n')
+                    sys.stdout.flush()
                 except q.Empty:
                     break
                 except:
@@ -249,35 +274,55 @@ class AgentWorker(threading.Thread):
                 try:
                     data = self.results_err.get_nowait()
                     if data:
-                        collector_logger.info("STDERR: %s", data)
+                        collector_logger.info("STDERR: %s", data.rstrip('\n'))
                 except q.Empty:
                     break
             time.sleep(1)
 
+        self.drain.close()
+        self.drain_stdout.close()
+        self.drain_err.close()
         self.stop()
+
+    def proc_stop(self, proc, kill=False):
+        proc.poll()
+        if proc.returncode is None:
+            try:
+                if kill:
+                    logger.info("Killing PID %s", proc.pid)
+                    os.killpg(proc.pid, signal.SIGKILL)
+                else:
+                    logger.debug("Terminating: %s", proc.pid)
+                    os.killpg(proc.pid, signal.SIGTERM)
+                    proc.wait()
+                    logger.info(
+                        'Retcode for PID %s %s', proc.pid, proc.returncode)
+            except OSError as ex:
+                if ex.errno == 3:
+                    logger.info("PID %s already died", proc.pid)
+
+    def kill(self):
+        logger.info("Forced stop")
+        for proc in self.startup_processes:
+            self.proc_stop(proc, kill=True)
+        self.proc_stop(self.collector, kill=True)
 
     def stop(self):
         logger.info("Terminating startup commands")
         for proc in self.startup_processes:
-            logger.debug("Terminate: %s", proc)
-            os.killpg(proc.pid, signal.SIGTERM)
+            self.proc_stop(proc)
+
+        logger.info('Terminating collector process: %s', self.collector)
+        self.proc_stop(self.collector)
 
         logger.info("Running shutdown commands")
         for cmnd in self.shutdowns:
             logger.debug("Run: %s", cmnd)
             subprocess.call(cmnd, shell=True)
 
-        logger.info('Terminating collector process: %s', self.collector)
-        if not self.collector.returncode:
-            self.collector.terminate()
-            self.collector.wait()
         self.finished = True
-        sys.stderr.write('stopped\n')
-        logger.info('Stopped via stdin')
-
-        logger.info('retcode: %s', self.collector.returncode)
-
         logger.info("Worker thread finished")
+        sys.stderr.write('stopped\n')
 
 
 def main():
@@ -336,11 +381,32 @@ def main():
         cmd = sys.stdin.readline()
         if cmd:
             logger.info("Stdin cmd received: %s", cmd)
-            worker.stop()
     except KeyboardInterrupt:
         logger.debug("Interrupted")
-        worker.stop()
+    except:
+        logger.error(
+            "Something nasty happened while waiting for stop", exc_info=True)
+    worker.finished = True
+    agent_finished = False
+    while not agent_finished:
+        try:
+            if worker.isAlive():
+                logger.debug("Join the worker thread, waiting for cleanup")
+                worker.join(10)
+            if worker.isAlive():
+                logger.error(
+                    "Worker have not finished shutdown in 10 seconds, going to exit anyway"
+                )
+                worker.kill()
+                agent_finished = True
+            else:
+                agent_finished = True
+        except:
+            logger.info(
+                "Something nasty happened while waiting for worker shutdown",
+                exc_info=True)
 
 
 if __name__ == '__main__':
+    set_sig_handler()
     main()
