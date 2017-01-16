@@ -1121,9 +1121,17 @@ It is supplied with Yandex.Tank.
 
 Thanks to https://github.com/influxdata/telegraf for metric collection agent.
 
+For using this plugin, replace old plugin ``plugin_monitoring=yandextank.plugins.Monitoring`` in .ini file with this:
+::
+
+    [tank]
+    plugin_monitoring=yandextank.plugins.Telegraf
+    
+In https://github.com/yandex/yandex-tank/blob/master/yandextank/core/config/00-base.ini it is already done. Please, don't use both ``plugin_monitoring=yandextank.plugins.Telegraf`` and ``plugin_monitoring=yandextank.plugins.Monitoring`` simultaneously.
+
 INI file section: **[telegraf]**
 
-You can use old monitoring config format, if you specify it in [monitoring] seciton. Telegraf plugin transparently supports it.
+You can use old monitoring config format, if you specify it in [monitoring] section. Telegraf plugin transparently supports it.
 You can use new monitoring config format, if you specify it in [telegraf] section.
 
 Backward compatibility logic:
