@@ -19,28 +19,53 @@ collector_logger = logging.getLogger("telegraf")
 
 def signal_handler(sig, frame):
     """ required for non-tty python runs to interrupt """
+    logger.warning("Got signal %s, going to stop", sig)
     raise KeyboardInterrupt()
 
 
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
+def ignore_handler(sig, frame):
+    logger.warning("Got signal %s, ignoring", sig)
+
+
+def set_sig_handler():
+    uncatchable = ['SIG_DFL', 'SIGSTOP', 'SIGKILL']
+    ignore = ['SIGCHLD', 'SIGCLD']
+    all_sig = [s for s in dir(signal) if s.startswith("SIG")]
+    for sig_name in ignore:
+        sig_num = getattr(signal, sig_name)
+        signal.signal(sig_num, ignore_handler)
+    for sig_name in [s for s in all_sig if s not in (uncatchable + ignore)]:
+        try:
+            sig_num = getattr(signal, sig_name)
+            signal.signal(sig_num, signal_handler)
+        except Exception as ex:
+            logger.error("Can't set handler for %s, %s", sig_name, ex)
 
 
 class DataReader(object):
     """generator reads from source line-by-line"""
 
     def __init__(self, filename, pipe=False):
-        self.pipe = pipe
-        if not self.pipe:
-            self.monout = open(filename, 'r')
-        else:
-            self.monout = filename
         self.buffer = ""
         self.closed = False
+        self.broken = False
+        self.pipe = pipe
+
+        if not self.pipe:
+            try:
+                self.monout = open(filename, 'r')
+            except Exception as ex:
+                logger.error("Can't open source file %s: %s", filename, ex)
+                self.broken = True
+        else:
+            self.monout = filename
 
     def __iter__(self):
         while not self.closed:
-            data = self.monout.readline()
+            if self.broken:
+                data = ''
+            else:
+                data = self.monout.readline()
             if data:
                 parts = data.rsplit('\n', 1)
                 if len(parts) > 1:
@@ -50,7 +75,7 @@ class DataReader(object):
                 else:
                     self.buffer += parts[0]
             else:
-                time.sleep(1)
+                yield None
         if not self.pipe:
             self.monout.close()
 
@@ -61,55 +86,65 @@ class DataReader(object):
 class Consolidator(object):
     """generator consolidates data from source, cache it by timestamp"""
 
-    def __init__(self, source):
-        self.source = source
+    def __init__(self, sources):
+        self.sources = sources
         self.results = {}
 
+    def append_chunk(self, source, chunk):
+        try:
+            data = json.loads(chunk)
+        except ValueError:
+            logger.error('unable to decode chunk %s', chunk, exc_info=True)
+        else:
+            try:
+                ts = data['timestamp']
+                self.results.setdefault(ts, {})
+                for key, value in data['fields'].iteritems():
+                    if data['name'] == 'diskio':
+                        data['name'] = "{metric_name}-{disk_id}".format(
+                            metric_name=data['name'],
+                            disk_id=data['tags']['name'])
+                    elif data['name'] == 'net':
+                        data['name'] = "{metric_name}-{interface}".format(
+                            metric_name=data['name'],
+                            interface=data['tags']['interface'])
+                    elif data['name'] == 'cpu':
+                        data['name'] = "{metric_name}-{cpu_id}".format(
+                            metric_name=data['name'],
+                            cpu_id=data['tags']['cpu'])
+                    key = data['name'] + "_" + key
+                    if key.endswith('_exec_value'):
+                        key = key.replace('_exec_value', '')
+                    self.results[ts][key] = value
+            except KeyError:
+                logger.error(
+                    'Malformed json from source %s: %s',
+                    source,
+                    chunk,
+                    exc_info=True)
+            except:
+                logger.error(
+                    'Something nasty happend in consolidator work',
+                    exc_info=True)
+
     def __iter__(self):
-        for chunk in self.source:
-            if chunk:
-                try:
-                    data = json.loads(chunk)
-                except ValueError:
-                    logger.error(
-                        'unable to decode chunk %s', chunk, exc_info=True)
-                else:
-                    try:
-                        ts = data['timestamp']
-                        self.results.setdefault(ts, {})
-                        for key, value in data['fields'].iteritems():
-                            if data['name'] == 'diskio':
-                                data['name'] = "{metric_name}-{disk_id}".format(
-                                    metric_name=data['name'],
-                                    disk_id=data['tags']['name'])
-                            elif data['name'] == 'net':
-                                data[
-                                    'name'] = "{metric_name}-{interface}".format(
-                                        metric_name=data['name'],
-                                        interface=data['tags']['interface'])
-                            elif data['name'] == 'cpu':
-                                data['name'] = "{metric_name}-{cpu_id}".format(
-                                    metric_name=data['name'],
-                                    cpu_id=data['tags']['cpu'])
-                            key = data['name'] + "_" + key
-                            if key.endswith('_exec_value'):
-                                key = key.replace('_exec_value', '')
-                            self.results[ts][key] = value
-                    except KeyError:
-                        logger.error(
-                            'Malformed json from source: %s',
-                            chunk,
-                            exc_info=True)
-                    except:
-                        logger.error(
-                            'Something nasty happend in consolidator work',
-                            exc_info=True)
-            if len(self.results) > 5:
-                ready_to_go_index = min(self.results)
-                yield json.dumps({
-                    ready_to_go_index:
-                    self.results.pop(ready_to_go_index, None)
-                })
+        while True:
+            for s in self.sources:
+                chunk_limit = 10
+                chunks_done = 0
+                chunk = s.next()
+                while chunk and chunks_done < chunk_limit:
+                    self.append_chunk(s, chunk)
+                    chunk = s.next()
+                if len(self.results) > 2:
+                    logger.debug(
+                        'Now in buffer: %s', [i for i in self.results.keys()])
+                    dump_seconds = sorted([i for i in self.results.keys()])[:-2]
+                    for ready_second in dump_seconds:
+                        yield json.dumps({
+                            ready_second: self.results.pop(ready_second, None)
+                        })
+                time.sleep(0.5)
 
 
 class Drain(threading.Thread):
@@ -145,6 +180,7 @@ class AgentWorker(threading.Thread):
         self.startups = []
         self.startup_processes = []
         self.shutdowns = []
+        self.custom_sources = []
         self.daemon = True  # Thread auto-shutdown
         self.finished = False
         self.drain = None
@@ -183,6 +219,11 @@ class AgentWorker(threading.Thread):
                 for option in config.options('shutdown'):
                     if option.startswith('cmd'):
                         self.shutdowns.append(config.get('shutdown', option))
+
+            if config.has_section('source'):
+                for option in config.options('source'):
+                    if option.startswith('file'):
+                        self.custom_sources.append(config.get('source', option))
             logger.info(
                 'Successfully loaded startup config.\n'
                 'Startups: %s\n'
@@ -196,23 +237,32 @@ class AgentWorker(threading.Thread):
         for cmnd in self.startups:
             logger.debug("Run: %s", cmnd)
             proc = self.popen(cmnd)
+            logger.info('Started with pid %d', proc.pid)
             self.startup_processes.append(proc)
 
         logger.info('Starting metrics collector..')
         cmnd = "{telegraf} -config {working_dir}/agent.cfg".format(
             telegraf=self.telegraf_path, working_dir=self.working_dir)
         self.collector = self.popen(cmnd)
+        logger.info('Started with pid %d', self.collector.pid)
 
         telegraf_output = self.working_dir + '/monitoring.rawdata'
+        sources = [telegraf_output] + self.custom_sources
 
         for _ in range(10):
-            logger.info("Waiting for telegraf...")
+            self.collector.poll()
+            if not self.collector.returncode:
+                logger.info("Waiting for telegraf...")
+            else:
+                logger.info(
+                    "Telegraf with pid %d ended with code %d",
+                    self.collector.pid, self.collector.returncode)
             if os.path.isfile(telegraf_output):
                 break
             time.sleep(1)
 
         self.drain = Drain(
-            Consolidator(DataReader(telegraf_output)), self.results)
+            Consolidator([iter(DataReader(f)) for f in sources]), self.results)
         self.drain.start()
 
         self.drain_stdout = Drain(
@@ -232,6 +282,7 @@ class AgentWorker(threading.Thread):
                     logger.debug(
                         'send %s bytes of data to collector', len(data))
                     sys.stdout.write(str(data) + '\n')
+                    sys.stdout.flush()
                 except q.Empty:
                     break
                 except:
@@ -249,35 +300,55 @@ class AgentWorker(threading.Thread):
                 try:
                     data = self.results_err.get_nowait()
                     if data:
-                        collector_logger.info("STDERR: %s", data)
+                        collector_logger.info("STDERR: %s", data.rstrip('\n'))
                 except q.Empty:
                     break
             time.sleep(1)
 
+        self.drain.close()
+        self.drain_stdout.close()
+        self.drain_err.close()
         self.stop()
+
+    def proc_stop(self, proc, kill=False):
+        proc.poll()
+        if proc.returncode is None:
+            try:
+                if kill:
+                    logger.info("Killing PID %s", proc.pid)
+                    os.killpg(proc.pid, signal.SIGKILL)
+                else:
+                    logger.debug("Terminating: %s", proc.pid)
+                    os.killpg(proc.pid, signal.SIGTERM)
+                    proc.wait()
+                    logger.info(
+                        'Retcode for PID %s %s', proc.pid, proc.returncode)
+            except OSError as ex:
+                if ex.errno == 3:
+                    logger.info("PID %s already died", proc.pid)
+
+    def kill(self):
+        logger.info("Forced stop")
+        for proc in self.startup_processes:
+            self.proc_stop(proc, kill=True)
+        self.proc_stop(self.collector, kill=True)
 
     def stop(self):
         logger.info("Terminating startup commands")
         for proc in self.startup_processes:
-            logger.debug("Terminate: %s", proc)
-            os.killpg(proc.pid, signal.SIGTERM)
+            self.proc_stop(proc)
+
+        logger.info('Terminating collector process: %s', self.collector)
+        self.proc_stop(self.collector)
 
         logger.info("Running shutdown commands")
         for cmnd in self.shutdowns:
             logger.debug("Run: %s", cmnd)
             subprocess.call(cmnd, shell=True)
 
-        logger.info('Terminating collector process: %s', self.collector)
-        if not self.collector.returncode:
-            self.collector.terminate()
-            self.collector.wait()
         self.finished = True
-        sys.stderr.write('stopped\n')
-        logger.info('Stopped via stdin')
-
-        logger.info('retcode: %s', self.collector.returncode)
-
         logger.info("Worker thread finished")
+        sys.stderr.write('stopped\n')
 
 
 def main():
@@ -336,11 +407,32 @@ def main():
         cmd = sys.stdin.readline()
         if cmd:
             logger.info("Stdin cmd received: %s", cmd)
-            worker.stop()
     except KeyboardInterrupt:
         logger.debug("Interrupted")
-        worker.stop()
+    except:
+        logger.error(
+            "Something nasty happened while waiting for stop", exc_info=True)
+    worker.finished = True
+    agent_finished = False
+    while not agent_finished:
+        try:
+            if worker.isAlive():
+                logger.debug("Join the worker thread, waiting for cleanup")
+                worker.join(10)
+            if worker.isAlive():
+                logger.error(
+                    "Worker have not finished shutdown in 10 seconds, going to exit anyway"
+                )
+                worker.kill()
+                agent_finished = True
+            else:
+                agent_finished = True
+        except:
+            logger.info(
+                "Something nasty happened while waiting for worker shutdown",
+                exc_info=True)
 
 
 if __name__ == '__main__':
+    set_sig_handler()
     main()

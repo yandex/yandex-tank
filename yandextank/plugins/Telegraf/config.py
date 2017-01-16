@@ -105,6 +105,7 @@ class ConfigManager(object):
         custom = []
         startups = []
         shutdowns = []
+        sources = []
         # agent defaults
         host_config = {}
         for metric in host:
@@ -134,11 +135,13 @@ class ConfigManager(object):
                 startups.append(metric.text)
             elif (str(metric.tag)).lower() == 'shutdown':
                 shutdowns.append(metric.text)
+            elif (str(metric.tag)).lower() == 'source':
+                sources.append(metric.text)
         if len(host_config) == 0:
             logging.info('Empty host config, using defaults')
             for section in defaults_enabled:
                 host_config[section] = defaults[section]
-        return {
+        result = {
             'host_config': host_config,
             'port': int(host.get('port', 22)),
             'python': host.get('python', '/usr/bin/env python2'),
@@ -149,8 +152,11 @@ class ConfigManager(object):
             'custom': custom,
             'host': hostname,
             'startup': startups,
-            'shutdown': shutdowns
+            'shutdown': shutdowns,
+            'source': sources
         }
+        logger.info("Result config %s", result)
+        return result
 
 
 class AgentConfig(object):
@@ -161,6 +167,7 @@ class AgentConfig(object):
         self.custom = config['custom']
         self.startups = config['startup']
         self.shutdowns = config['shutdown']
+        self.sources = config['source']
         self.interval = config['interval']
         self.comment = config['comment']
         self.host_config = config['host_config']
@@ -192,6 +199,11 @@ class AgentConfig(object):
             [
                 config.set('shutdown', "cmd%s" % idx, cmd)
                 for idx, cmd in enumerate(self.shutdowns)
+            ]
+            config.add_section('source')
+            [
+                config.set('source', "file%s" % idx, path)
+                for idx, path in enumerate(self.sources)
             ]
             with open(cfg_path, 'w') as fds:
                 config.write(fds)
