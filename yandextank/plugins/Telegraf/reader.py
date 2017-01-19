@@ -41,21 +41,15 @@ class MonitoringReader(object):
                                 # key_group sample: diskio
                                 # key_name sample: io_time
                                 try:
-                                    key_group, key_name = key.split('_')[
-                                        0].split('-')[0], '_'.join(
-                                            key.split('_')[1:])
+                                    key_group, key_name = key.split('_')[0].split('-')[0], '_'.join(key.split('_')[1:])
                                 except:
-                                    key_group, key_name = key.split('_')[
-                                        0], '_'.join(key.split('_')[1:])
+                                    key_group, key_name = key.split('_')[0], '_'.join(key.split('_')[1:])
                                 if key_group in decoder.diff_metrics.keys():
-                                    if key_name in decoder.diff_metrics[
-                                            key_group]:
-                                        decoded_key = decoder.find_common_names(
-                                            key)
+                                    if key_name in decoder.diff_metrics[key_group]:
+                                        decoded_key = decoder.find_common_names(key)
                                         if self.prev_check:
                                             try:
-                                                value = jsn[ts][
-                                                    key] - self.prev_check[key]
+                                                value = jsn[ts][key] - self.prev_check[key]
                                             except KeyError:
                                                 logger.debug(
                                                     'There is no diff value for metric %s.\n'
@@ -64,11 +58,9 @@ class MonitoringReader(object):
                                                     ts,
                                                     exc_info=True)
                                                 value = 0
-                                            prepared_results[
-                                                decoded_key] = value
+                                            prepared_results[decoded_key] = value
                                     else:
-                                        decoded_key = decoder.find_common_names(
-                                            key)
+                                        decoded_key = decoder.find_common_names(key)
                                         prepared_results[decoded_key] = value
                                 else:
                                     decoded_key = decoder.find_common_names(key)

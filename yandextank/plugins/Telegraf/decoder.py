@@ -9,7 +9,7 @@ class MetricsDecoder(object):
     def __init__(self):
         """
         translates telegraf metric names into common Monitoring metric names
-        translates `uncommon` names to `custom:`s
+        translates `uncommon` names to `custom:%s`s
 
         """
         self.known_metrics = {
@@ -25,16 +25,7 @@ class MetricsDecoder(object):
             'system_load1': 'System_la1',
             'system_load5': 'System_la5',
             'system_load15': 'System_la15',
-            # 'cpu_usage_user': 'CPU_user',
-            # 'cpu_usage_system': 'CPU_system',
-            # 'cpu_usage_idle': 'CPU_idle',
-            # 'cpu_usage_iowait': 'CPU_iowait',
-            # 'cpu_usage_irq': 'CPU_irq',
-            # 'cpu_usage_nice': 'CPU_nice',
-            # 'cpu_usage_softirq': 'CPU_softirq',
-            # 'cpu_usage_steal': 'CPU_steal',
-            # 'cpu_usage_guest': 'CPU_guest',
-            'nstat_TcpRetransSegs': 'Net_retransmit'
+            'nstat_TcpRetransSegs': 'Net_retransmit',
             # those guys became inactive due to net interface names and disk ids
             # we don't need unknown id data here
             # 'net_packets_recv': 'Net_rx',
@@ -43,6 +34,17 @@ class MetricsDecoder(object):
             # 'net_bytes_sent': 'Net_send',
             # 'diskio_read_bytes': 'Disk_read',
             # 'diskio_write_bytes': 'Disk_write',
+            # ----------
+            # remove this crunch after front refactoring
+            # 'cpu-cpu-total_usage_user': 'CPU_user',
+            # 'cpu-cpu-total_usage_system': 'CPU_system',
+            # 'cpu-cpu-total_usage_idle': 'CPU_idle',
+            # 'cpu-cpu-total_usage_iowait': 'CPU_iowait',
+            # 'cpu-cpu-total_usage_irq': 'CPU_irq',
+            # 'cpu-cpu-total_usage_nice': 'CPU_nice',
+            # 'cpu-cpu-total_usage_softirq': 'CPU_softirq',
+            # 'cpu-cpu-total_usage_steal': 'CPU_steal',
+            # 'cpu-cpu-total_usage_guest': 'CPU_guest'
         }
 
         self.diff_metrics = {
@@ -51,7 +53,7 @@ class MetricsDecoder(object):
             'net': ['packets_recv', 'packets_sent', 'bytes_recv', 'bytes_sent'],
             'nstat': ['TcpRetransSegs'],
             'net_response': [],
-            'kernel': ['context_switches', 'interrupts', 'processes_forked'],
+            'kernel': ['context_switches', 'interrupts', 'processes_forked', 'vmstat_pgfault', 'vmstat_pgmajfault'],
             'diskio': [
                 'read_bytes', 'write_bytes', 'io_time', 'read_time', 'reads',
                 'write_time', 'writes'
