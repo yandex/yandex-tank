@@ -1198,6 +1198,11 @@ Example:
             <Netstat />
             <Custom diff="1" measure="call" label="test">curl -s -H 'Host: host.tld' 'http://localhost:6100/stat'  | python -c 'import sys, json; j = json.load(sys.stdin); print "\n".join(`c["values"]["accept"]` for c in j["charts"] if c["name"] == "localqueue_wait_time")'</Custom>
             <Source>/path/to/file</Source>
+            <TelegrafRaw>
+                [[inputs.ping]]
+                urls = ["127.0.0.1"]
+                count = 1
+            </TelegrafRaw>
         </Host>
 
         <Host address="localhost" telegraf="/usr/bin/telegraf">
@@ -1266,6 +1271,7 @@ List of metrics group names and particular metrics in them:
     * interfaces - default: ",".join(['"eth%s"' % (num) for num in range(6)]). Format sample: ["eth0","eth1"]
 * Netstat
 * Kernel
+* KernelVmstat
 * NetResponse
     * protocol - default: "tcp". Protocol, must be "tcp" or "udp"
     * address - default: ":80". Server address and port
@@ -1275,6 +1281,8 @@ List of metrics group names and particular metrics in them:
 * Custom
     * diff - default: 0
     * measure - default: call - metric value is a command or script execution output. Example: `<Custom measure="call" diff="1" label="Base size">du -s /var/lib/mysql/ | awk '{print $1}'</Custom>`
+* TelegrafRaw
+    * raw telegraf TOML format, transparently added to final collector config 
 * Source additional source file in telegraf json format, can be used to add custom metrics that needs complex processing and do not fit into standart custom metrics (like log parsing with aggregation)
 
 
