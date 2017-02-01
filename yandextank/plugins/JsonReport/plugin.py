@@ -33,7 +33,6 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                                              mode='wb')
         self.core.job.subscribe_plugin(self)
 
-
     def on_aggregated_data(self, data, stats):
         """
         @data: aggregated data
