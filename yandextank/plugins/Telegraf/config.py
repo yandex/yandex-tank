@@ -87,6 +87,10 @@ class ConfigManager(object):
             "Kernel": {
                 "name": '[inputs.kernel]',
                 "fielddrop": '["boot_time"]',
+            },
+            "KernelVmstat": {
+                "name": '[inputs.kernel_vmstat]',
+                "fieldpass": '["pgfault", "pgmajfault"]',
             }
         }
         defaults_enabled = ['CPU', 'Memory', 'Disk', 'Net', 'System', 'Kernel']
@@ -106,6 +110,7 @@ class ConfigManager(object):
         startups = []
         shutdowns = []
         sources = []
+        telegrafraw = []
         # agent defaults
         host_config = {}
         for metric in host:
@@ -137,6 +142,8 @@ class ConfigManager(object):
                 shutdowns.append(metric.text)
             elif (str(metric.tag)).lower() == 'source':
                 sources.append(metric.text)
+            elif (str(metric.tag)).lower() == 'telegrafraw':
+                telegrafraw.append(metric.text)
         if len(host_config) == 0:
             logging.info('Empty host config, using defaults')
             for section in defaults_enabled:
@@ -153,7 +160,8 @@ class ConfigManager(object):
             'host': hostname,
             'startup': startups,
             'shutdown': shutdowns,
-            'source': sources
+            'source': sources,
+            'telegrafraw': telegrafraw
         }
         logger.info("Result config %s", result)
         return result
@@ -170,6 +178,7 @@ class AgentConfig(object):
         self.sources = config['source']
         self.interval = config['interval']
         self.comment = config['comment']
+        self.telegrafraw = config['telegrafraw']
         self.host_config = config['host_config']
         self.old_style_configs = old_style_configs
 
@@ -340,6 +349,14 @@ class AgentConfig(object):
 
             with open(cfg_path, 'a') as fds:
                 fds.write(inputs)
+
+            # telegraf raw configuration into xml
+            telegraf_raw = ""
+            for element in self.telegrafraw:
+                telegraf_raw += element
+
+            with open(cfg_path, 'a') as fds:
+                fds.write(telegraf_raw)
 
         except Exception as exc:
             logger.error(
