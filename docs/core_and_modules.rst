@@ -916,203 +916,6 @@ Advanced criteria types
 
   Exit code - 30
 
-Monitoring
-==========
-
-Runs metrics collection through ssh connect.
-
-INI file section: **[monitoring]**
-
-Options
--------
-
-:config:
-  Path to monitoring config file. 
-
-  Default: ``auto`` means collect default metrics from ``default_target`` host. If ``none`` is defined, monitoring won't be executed. Also it is possible to write plain multiline XML config.
-
-:default_target:
-  An address where from collect "default" metrics. When phantom module is used, address will be obtained from it.
-
-:ssh_timeout: 
-  Ssh connection timeout. 
-
-  Default: 5s
-
-Artifacts
----------
-
-:agent_*.cfg: 
-  Configuration files sent to hosts to run monitoring agents.
-
-:agent_<host>_*.log: 
-  Monitoring agents' log files, downloaded from hosts.
-
-:monitoring_*.data: 
-  Data collected by monitoring agents, received by ssh.
-
-:<monitoring config: 
-  Monitoring config file.
-
-Configuration
--------------
-
-
-Net access and authentication
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Monitoring requires ssh access to hosts for copy and executing agents on them. SSH session is established with user account specified by "username" parameter of Host element, otherwise current user account, so you need to copy your public keys (ssh-copy-id) and enable nonpassword authorization on hosts.
-If connection establishing failed for some reason in ``ssh_timeout`` seconds, corresponding message will be written to console and monitoring log and task will proceed further. 
-Tip: write to ``.ssh/config`` next lines to eliminate ``-A`` option in ``ssh`` 
-
-:: 
-    
-    StrictHostKeyChecking no
-    ForwardAgent yes
-    
-
-Configuration file format
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Config is an XML file with structure:
-root element ``Monitoring`` includes elements ``Host`` which contains elements-metrics
-Example:
-
-::
-
-    <Monitoring>
-      <Host address="xxx.load.net">
-        <CPU measure="user,system,iowait"/>
-        <System measure="csw,int"/>
-        <Memory measure="free,used"/>
-        <Disk measure="read,write"/>
-        <Net measure="recv,send"/>
-      </Host>
-    </Monitoring>
-    
-
-Element ``Monitoring``
-^^^^^^^^^^^^^^^^^^^^^^
-
-Global monitoring settings.
-
-:loglevel:
-  Logging level.
-
-  Available options: ``info``, ``debug``. Optional.
- 
-  Default: info.
-
-
-Element ``Host`` 
-^^^^^^^^^^^^^^^^
-
-Contains address and role of monitored server. Attributes:
-
-:address="<IP address or domain name>:
-  Server adddress. Mandatory. Special mask ``[target]`` could be used here, which means "get from the tank target address"
-
-:port="<SSH port>":
-  Server's ssh port. Optional. 
-
-  Default: 22
-
-:python="<python path>": 
-  The way to use alternative python version. Optional.
-
-:interval="<seconds>":
-  Metrics collection interval. Optional. 
-  
-  Default: 1 second
-
-:comment="<short commentary>":
-  Short notice about server's role in test. Optional. 
-
-  Default: empty
-
-:username="<user name>":
-  User account to connect with. Optional. 
-
-  Default: current user account.
-
-
-Example: 
-``<Host address="localhost" comment="frontend" priority="1" interval="5" username="tank"/>``
-
-
-
-Metric elements
-^^^^^^^^^^^^^^^
-
-Metric elements in general are set by metrics group name and particular metrics enumeration in attribute `measure`. Example: `<CPU measure="idle,user,system" />`
-
-List of metrics group names and particular metrics in them:
-
-* CPU
-    * idle
-    * user - default 
-    * system - default
-    * iowait - default
-    * nice
-* System
-    * la1 - load average 1 min
-    * la5 - ...
-    * la15 - ...
-    * csw - context switches, default
-    * int - interrupts, default
-    * numproc - process amount in system
-    * numthreads - threads amount in system
-* Memory
-    * free - default
-    * used - default
-    * cached
-    * buff
-* Disk
-    * read  - default
-    * write - default
-* Net
-    * recv - bytes received, default
-    * send - bytes sent,  default
-    * tx - outgoing packet rate
-    * rx - incoming packet rate 
-    * retransmit - retransmit amount
-    * estab - number of sockets in ESTABLISHED state
-    * closewait - number of sockets in CLOSEWAIT
-    * timewait - number of sockets in TIMEWAIT
-* Custom
-    * tail - metric value is read from file's last line, file path is specified in node text. Example: `<Custom measure="tail" label="size history">/tmp/dbsize.log</Custom>`
-    * call - metric value is a command or script execution output. Example: `<Custom measure="call" diff="1" label="Base size">du -hs /usr/mysql/data</Custom>`
-
-Custom metrics have an additional attribute `diff`, that signals to obtain as metric value the difference between previous and current value. So in example above, not the file size, but the dynamic of changes in size will be written.
-Also custom metrics must have attribute `label`, which defines metric short name (only latin). `Underline symbol should be avoided.` 
-
-Monitoring default logic
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-Default logic is applied on next levels:
-
-1. Host level: by default target is derived from `address` in `phantom` module.
-2. Metrics group level: If config contain host address only, without metrics, i.e `<Host address="somehost.yandex.ru" />`, then default metrics in groups `CPU`, `Memory`, `Disk` are collected. If host has defined any metric, then only it is collected.
-3. Metric level: if metrics group is defined without attribute `measure`, then only default group metrics are collected.
-   
-Startup and Shutdown elements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-There is special non-metric elements called Startup and Shutdown. Startup shell scripts will be started before metric collection. On the normal shutdown startup scripts will be stopped and shutdown scripts will run. There may be any number of Startup and Shutdown elements.
-
-Following example illustrates this feature:
-
-::
-
-    <Monitoring>
-        <Host address="[target]">
-            <Startup>cat /dev/urandom | hexdump | awk 'BEGIN {RS="0000"} {print length($0)}' > /tmp/urandom.txt</Startup>
-            <Custom measure="tail" label="random int tail">/tmp/urandom.txt</Custom>
-            <Custom measure="call" label="random int call">tail -n1 /tmp/urandom.txt</Custom>
-            <Shutdown>rm /tmp/urandom.txt</Shutdown>
-        </Host>
-    </Monitoring>
-
 
 Telegraf
 ========
@@ -1250,7 +1053,7 @@ Contains address and role of monitored server. Attributes:
   Default: `/usr/bin/telegraf`
 
 Example:
-``<Host address="localhost" comment="frontend" priority="1" interval="5" username="tank"/>``
+``<Host address="localhost" comment="frontend" interval="5" username="tank"/>``
 
 Metric elements
 ^^^^^^^^^^^^^^^
@@ -1467,3 +1270,205 @@ Options
 
   Default: report.svg
 
+
+
+**********
+Deprecated
+**********
+
+Monitoring
+==========
+
+Runs metrics collection through ssh connect.
+
+INI file section: **[monitoring]**
+
+Options
+-------
+
+:config:
+  Path to monitoring config file.
+
+  Default: ``auto`` means collect default metrics from ``default_target`` host. If ``none`` is defined, monitoring won't be executed. Also it is possible to write plain multiline XML config.
+
+:default_target:
+  An address where from collect "default" metrics. When phantom module is used, address will be obtained from it.
+
+:ssh_timeout:
+  Ssh connection timeout.
+
+  Default: 5s
+
+Artifacts
+---------
+
+:agent_*.cfg:
+  Configuration files sent to hosts to run monitoring agents.
+
+:agent_<host>_*.log:
+  Monitoring agents' log files, downloaded from hosts.
+
+:monitoring_*.data:
+  Data collected by monitoring agents, received by ssh.
+
+:<monitoring config:
+  Monitoring config file.
+
+Configuration
+-------------
+
+
+Net access and authentication
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Monitoring requires ssh access to hosts for copy and executing agents on them. SSH session is established with user account specified by "username" parameter of Host element, otherwise current user account, so you need to copy your public keys (ssh-copy-id) and enable nonpassword authorization on hosts.
+If connection establishing failed for some reason in ``ssh_timeout`` seconds, corresponding message will be written to console and monitoring log and task will proceed further.
+Tip: write to ``.ssh/config`` next lines to eliminate ``-A`` option in ``ssh``
+
+::
+
+    StrictHostKeyChecking no
+    ForwardAgent yes
+
+
+Configuration file format
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Config is an XML file with structure:
+root element ``Monitoring`` includes elements ``Host`` which contains elements-metrics
+Example:
+
+::
+
+    <Monitoring>
+      <Host address="xxx.load.net">
+        <CPU measure="user,system,iowait"/>
+        <System measure="csw,int"/>
+        <Memory measure="free,used"/>
+        <Disk measure="read,write"/>
+        <Net measure="recv,send"/>
+      </Host>
+    </Monitoring>
+
+
+Element ``Monitoring``
+^^^^^^^^^^^^^^^^^^^^^^
+
+Global monitoring settings.
+
+:loglevel:
+  Logging level.
+
+  Available options: ``info``, ``debug``. Optional.
+
+  Default: info.
+
+
+Element ``Host``
+^^^^^^^^^^^^^^^^
+
+Contains address and role of monitored server. Attributes:
+
+:address="<IP address or domain name>:
+  Server adddress. Mandatory. Special mask ``[target]`` could be used here, which means "get from the tank target address"
+
+:port="<SSH port>":
+  Server's ssh port. Optional.
+
+  Default: 22
+
+:python="<python path>":
+  The way to use alternative python version. Optional.
+
+:interval="<seconds>":
+  Metrics collection interval. Optional.
+
+  Default: 1 second
+
+:comment="<short commentary>":
+  Short notice about server's role in test. Optional.
+
+  Default: empty
+
+:username="<user name>":
+  User account to connect with. Optional.
+
+  Default: current user account.
+
+
+Example:
+``<Host address="localhost" comment="frontend" priority="1" interval="5" username="tank"/>``
+
+
+
+Metric elements
+^^^^^^^^^^^^^^^
+
+Metric elements in general are set by metrics group name and particular metrics enumeration in attribute `measure`. Example: `<CPU measure="idle,user,system" />`
+
+List of metrics group names and particular metrics in them:
+
+* CPU
+    * idle
+    * user - default
+    * system - default
+    * iowait - default
+    * nice
+* System
+    * la1 - load average 1 min
+    * la5 - ...
+    * la15 - ...
+    * csw - context switches, default
+    * int - interrupts, default
+    * numproc - process amount in system
+    * numthreads - threads amount in system
+* Memory
+    * free - default
+    * used - default
+    * cached
+    * buff
+* Disk
+    * read  - default
+    * write - default
+* Net
+    * recv - bytes received, default
+    * send - bytes sent,  default
+    * tx - outgoing packet rate
+    * rx - incoming packet rate
+    * retransmit - retransmit amount
+    * estab - number of sockets in ESTABLISHED state
+    * closewait - number of sockets in CLOSEWAIT
+    * timewait - number of sockets in TIMEWAIT
+* Custom
+    * tail - metric value is read from file's last line, file path is specified in node text. Example: `<Custom measure="tail" label="size history">/tmp/dbsize.log</Custom>`
+    * call - metric value is a command or script execution output. Example: `<Custom measure="call" diff="1" label="Base size">du -hs /usr/mysql/data</Custom>`
+
+Custom metrics have an additional attribute `diff`, that signals to obtain as metric value the difference between previous and current value. So in example above, not the file size, but the dynamic of changes in size will be written.
+Also custom metrics must have attribute `label`, which defines metric short name (only latin). `Underline symbol should be avoided.`
+
+Monitoring default logic
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Default logic is applied on next levels:
+
+1. Host level: by default target is derived from `address` in `phantom` module.
+2. Metrics group level: If config contain host address only, without metrics, i.e `<Host address="somehost.yandex.ru" />`, then default metrics in groups `CPU`, `Memory`, `Disk` are collected. If host has defined any metric, then only it is collected.
+3. Metric level: if metrics group is defined without attribute `measure`, then only default group metrics are collected.
+
+Startup and Shutdown elements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There is special non-metric elements called Startup and Shutdown. Startup shell scripts will be started before metric collection. On the normal shutdown startup scripts will be stopped and shutdown scripts will run. There may be any number of Startup and Shutdown elements.
+
+Following example illustrates this feature:
+
+::
+
+    <Monitoring>
+        <Host address="[target]">
+            <Startup>cat /dev/urandom | hexdump | awk 'BEGIN {RS="0000"} {print length($0)}' > /tmp/urandom.txt</Startup>
+            <Custom measure="tail" label="random int tail">/tmp/urandom.txt</Custom>
+            <Custom measure="call" label="random int call">tail -n1 /tmp/urandom.txt</Custom>
+            <Shutdown>rm /tmp/urandom.txt</Shutdown>
+        </Host>
+    </Monitoring>
