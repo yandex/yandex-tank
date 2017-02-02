@@ -535,7 +535,7 @@ But the main purpose of BFG is to support user-defined scenarios in python. Here
     ; Disable phantom:
     plugin_phantom=
     ; Enable BFG instead:
-    plugin_bfg=yandextank.plugins.bfg
+    plugin_bfg=yandextank.plugins.Bfg
         
     [bfg]
     ; parallel processes count
