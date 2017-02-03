@@ -32,8 +32,11 @@ def set_sig_handler():
     ignore = ['SIGCHLD', 'SIGCLD']
     all_sig = [s for s in dir(signal) if s.startswith("SIG")]
     for sig_name in ignore:
-        sig_num = getattr(signal, sig_name)
-        signal.signal(sig_num, ignore_handler)
+        try:
+            sig_num = getattr(signal, sig_name)
+            signal.signal(sig_num, ignore_handler)
+        except Exception:
+            pass
     for sig_name in [s for s in all_sig if s not in (uncatchable + ignore)]:
         try:
             sig_num = getattr(signal, sig_name)
