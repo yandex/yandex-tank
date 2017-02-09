@@ -61,7 +61,7 @@ Installation, .deb packages
 
 .. note::
     
-    Currently, only old 1.7 branch release of Yandex.Tank is available from our PPA.
+    It's quite an old tank release in PPA, better to avoid it.
 
 You should add proper repositories on Debian-based environment.
 
