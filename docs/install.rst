@@ -61,7 +61,7 @@ Installation, .deb packages
 
 .. note::
     
-    It's quite an old tank release in PPA, better to avoid it.
+    **Deprecated**. Deb packages aren't renewed in PPA. 
 
 You should add proper repositories on Debian-based environment.
 
