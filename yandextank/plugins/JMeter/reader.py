@@ -126,7 +126,7 @@ def string_to_df(data):
     chunk['receive_time'] = chunk['interval_real'] - \
         chunk['latency'] - chunk['connect_time']
     chunk['interval_event'] = np.zeros(l)
-    chunk['size_out'] = np.zeros(l)
+    chunk['size_out'] = np.zeros(l).astype(int)
     chunk['net_code'] = exc_to_net(chunk['retcode'], chunk['success'])
     chunk['proto_code'] = exc_to_http(chunk['retcode'])
     return chunk
@@ -134,7 +134,7 @@ def string_to_df(data):
 
 class JMeterStatAggregator(object):
     def __init__(self, source):
-        self.worker = agg.Worker({"allThreads": ["mean"]}, False)
+        self.worker = agg.Worker({"allThreads": ["max"]}, False)
         self.source = source
 
     def __iter__(self):
@@ -143,7 +143,7 @@ class JMeterStatAggregator(object):
             yield [{
                 'ts': ts,
                 'metrics': {
-                    'instances': stats['allThreads']['mean'],
+                    'instances': stats['allThreads']['max'],
                     'reqps': 0
                 }
             }]
