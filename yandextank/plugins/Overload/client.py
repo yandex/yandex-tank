@@ -19,6 +19,11 @@ class OverloadClient(object):
         self.session = requests.Session()
         self.session.verify = False
         self.session.headers.update({"User-Agent": "tank"})
+        if "https" in requests.utils.getproxies():
+           logger.info("Connecting via proxy %s" % requests.utils.getproxies()['https'])
+           self.session.proxies = requests.utils.getproxies()
+        else:
+           logger.info("Proxy not set")
 
     def set_api_address(self, addr):
         self.address = addr
