@@ -2,6 +2,7 @@
 Common utilities
 '''
 import os
+import pwd
 import socket
 import threading as th
 import traceback
@@ -139,7 +140,7 @@ def check_ssh_connection():
         '-e', '--endpoint', default='example.org', help='which host to try')
 
     parser.add_argument(
-        '-u', '--username', default=os.getlogin(), help='SSH username')
+        '-u', '--username', default=pwd.getpwuid(os.getuid())[0], help='SSH username')
 
     parser.add_argument('-p', '--port', default=22, type=int, help='SSH port')
     args = parser.parse_args()
