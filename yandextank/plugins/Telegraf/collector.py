@@ -3,6 +3,8 @@ import logging
 import sys
 import time
 
+import copy
+
 from ...common.interfaces import MonitoringDataListener
 
 from ..Telegraf.client import SSHClient, LocalhostClient
@@ -33,7 +35,7 @@ class MonitoringCollector(object):
         self.agent_sessions = []
         self.listeners = []
         self.first_data_received = False
-        self.send_data = []
+        self.__collected_data = []
         self.artifact_files = []
         self.load_start_time = None
         self.config_manager = ConfigManager()
@@ -98,15 +100,15 @@ class MonitoringCollector(object):
                             }
                         }
                     }
-                    self.send_data.append(ready_to_send)
+                    self.__collected_data.append(ready_to_send)
 
         logger.debug(
             'Polling/decoding agents data took: %.2fms',
             (time.time() - start_time) * 1000)
 
-        collected_data_length = len(self.send_data)
+        collected_data_length = len(self.__collected_data)
 
-        if not self.first_data_received and self.send_data:
+        if not self.first_data_received and self.__collected_data:
             self.first_data_received = True
             logger.info("Monitoring received first data.")
         else:
@@ -130,11 +132,10 @@ class MonitoringCollector(object):
 
     def send_collected_data(self):
         """sends pending data set to listeners"""
-        [
-            listener.monitoring_data(self.send_data)
-            for listener in self.listeners
-        ]
-        self.send_data = []
+        data = self.__collected_data[:]
+        self.__collected_data = []
+        for listener in self.listeners:
+            listener.monitoring_data(copy.deepcopy(data))
 
 
 class StdOutPrintMon(MonitoringDataListener):
