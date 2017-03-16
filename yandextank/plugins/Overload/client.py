@@ -253,7 +253,7 @@ class OverloadClient(object):
                     return 0
                 elif ex.response.status_code == 410:
                     logger.info("Test has been stopped by Overload server")
-                    return 1
+                    return 0
                 else:
                     logger.warn(
                         "Unknown HTTP error while sending second data. "
