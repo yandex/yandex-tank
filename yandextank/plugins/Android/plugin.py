@@ -5,6 +5,7 @@ import urllib
 import sys
 import glob
 
+from pkg_resources import resource_filename
 from ...common.interfaces import AbstractPlugin, GeneratorPlugin
 from .reader import AndroidReader, AndroidStatsReader
 
@@ -17,18 +18,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def __init__(self, core):
         super(Plugin, self).__init__(core)
-        self.apk = None
-        self.test = None
-        self.clazz = None
+        self.apk_path = None
+        self.test_path = None
         self.package = None
+        self.clazz = None
+        self.device = None
         self.process_test = None
         self.process_grabber = None
-        self.apk_path = "./app.apk"
-        self.test_path = "./app-test.apk"
-        self.lightning_path = "./lightning.apk"
+        self.apk = "./app.apk"
+        self.test = "./app-test.apk"
         self.grab_log = "./output.bin"
         self.event_log = "./events.log"
-        self.device = None
 
     @staticmethod
     def get_key():
@@ -40,8 +40,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def configure(self):
         # plugin part
-        self.apk = self.get_option("apk")
-        self.test = self.get_option("test")
+        self.apk_path = self.get_option("apk")
+        self.test_path = self.get_option("test")
         self.clazz = self.get_option("class")
         self.package = self.get_option("package")
 
@@ -68,14 +68,11 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         except Exception:
             logger.info("Device not found")
 
-        logger.info("Download lightning...")
-        urllib.urlretrieve("http://storage-int.mdst.yandex.net:80/get-pogoda/4268/lightning.apk", self.lightning_path)
-
         logger.info("Download apk...")
-        urllib.urlretrieve(self.apk, self.apk_path)
+        urllib.urlretrieve(self.apk_path, self.apk)
 
         logger.info("Download test...")
-        urllib.urlretrieve(self.test, self.test_path)
+        urllib.urlretrieve(self.test_path, self.test)
 
         logger.info("Uninstall the lightning...")
         subprocess.check_output(["adb", "uninstall", "net.yandex.overload.lightning"])
@@ -86,14 +83,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         logger.info("Uninstall the test...")
         subprocess.check_output(["adb", "uninstall", '{}.test'.format(self.package)])
 
+        lightning = resource_filename(__name__, 'binary/lightning.apk')
+        logger.info("Get from resources " + lightning)
+
         logger.info("Install the lightning...")
-        subprocess.check_output(["adb", "install", self.lightning_path])
+        subprocess.check_output(["adb", "install", lightning])
 
         logger.info("Install the apk...")
-        subprocess.check_output(["adb", "install", self.apk_path])
+        subprocess.check_output(["adb", "install", self.apk])
 
         logger.info("Install the test...")
-        subprocess.check_output(["adb", "install", self.test_path])
+        subprocess.check_output(["adb", "install", self.test])
 
         logger.info("Clear logcat...")
         subprocess.check_output(["adb", "logcat", "-c"])
@@ -109,7 +109,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                           "net.yandex.overload.lightning/net.yandex.overload.lightning.MainActivity"])
         time.sleep(12)
 
-        args = ["adb", "shell", "am", "instrument", "-w", "-e", "class", self.clazz, '{}.test/android.support.test.runner.AndroidJUnitRunner'.format(self.package)]
+        args = ["adb", "shell", "am", "instrument", "-w", "-e", "class", self.clazz,
+                '{}.test/android.support.test.runner.AndroidJUnitRunner'.format(self.package)]
         logger.info("Starting: %s", args)
         self.process_test = subprocess.Popen(
             args)
