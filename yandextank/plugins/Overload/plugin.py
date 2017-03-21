@@ -30,8 +30,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     SECTION = 'overload'
     RC_STOP_FROM_WEB = 8
 
-    def __init__(self, core):
-        super(Plugin, self).__init__(core)
+    def __init__(self, core, config_section):
+        super(Plugin, self).__init__(core, config_section)
         self.locks_list_dict = {}
         self.api_client = OverloadClient()
         self.jobno = None

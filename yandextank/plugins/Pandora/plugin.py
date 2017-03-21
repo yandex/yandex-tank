@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin(AbstractPlugin, GeneratorPlugin):
-    '''     Pandora load generator plugin    '''
+    '''    Pandora load generator plugin    '''
 
     OPTION_CONFIG = "config"
     SECTION = "pandora"
 
-    def __init__(self, core):
-        super(Plugin, self).__init__(core)
+    def __init__(self, core, config_section):
+        super(Plugin, self).__init__(core, config_section)
         self.buffered_seconds = 2
         self.enum_ammo = False
         self.process = None

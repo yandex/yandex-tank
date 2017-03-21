@@ -76,6 +76,14 @@ class Job(object):
         self._phantom_info = info
 
 
+def parse_plugin(s):
+    try:
+        plugin, config_section = s.split()
+    except ValueError:
+        plugin, config_section = s, None
+    return plugin, config_section
+
+
 class TankCore(object):
     """
     JMeter + dstat inspired :)
@@ -153,7 +161,8 @@ class TankCore(object):
         self.taskset_affinity = self.get_option(self.SECTION, 'affinity', '')
 
         options = self.config.get_options(self.SECTION, self.PLUGIN_PREFIX)
-        for (plugin_name, plugin_path) in options:
+        for (plugin_name, plugin) in options:
+            plugin_path, config_section = parse_plugin(plugin)
             if not plugin_path:
                 logger.debug("Seems the plugin '%s' was disabled", plugin_name)
                 continue
@@ -197,7 +206,7 @@ class TankCore(object):
                 logger.warning("Patched plugin path: %s", plugin_path)
                 plugin = il.import_module(plugin_path)
             try:
-                instance = getattr(plugin, 'Plugin')(self)
+                instance = getattr(plugin, 'Plugin')(self, config_section)
             except:
                 logger.warning(
                     "Deprecated plugin classname: %s. Should be 'Plugin'",
