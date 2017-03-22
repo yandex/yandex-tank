@@ -25,6 +25,7 @@ from ..common.resource import manager as resource
 from ..plugins.Aggregator import Plugin as AggregatorPlugin
 from ..plugins.Monitoring import Plugin as MonitoringPlugin
 from ..plugins.Telegraf import Plugin as TelegrafPlugin
+
 if sys.version_info[0] < 3:
     import ConfigParser
 else:
@@ -36,22 +37,12 @@ logger = logging.getLogger(__name__)
 class Job(object):
     def __init__(
             self,
-            name,
-            description,
-            task,
-            version,
-            config_copy,
             monitoring_plugin,
             aggregator_plugin,
             tank,
             generator_plugin=None):
         # type: (unicode, unicode, unicode, unicode, unicode, MonitoringPlugin,
         # AggregatorPlugin, GeneratorPlugin) -> Job
-        self.name = name
-        self.description = description
-        self.task = task
-        self.version = version
-        self.config_copy = config_copy
         self.monitoring_plugin = monitoring_plugin
         self.aggregator_plugin = aggregator_plugin
         self.tank = tank
@@ -255,21 +246,10 @@ class TankCore(object):
             logger.warning("Load generator not found:", exc_info=True)
             gen = None
 
-        self.job = Job(
-            name=self.get_option(self.SECTION_META, "job_name",
-                                 'none').decode('utf8'),
-            description=self.get_option(self.SECTION_META, "job_dsc",
-                                        '').decode('utf8'),
-            task=self.get_option(self.SECTION_META, 'task',
-                                 'dir').decode('utf8'),
-            version=self.get_option(self.SECTION_META, 'ver',
-                                    '').decode('utf8'),
-            config_copy=self.get_option(
-                self.SECTION_META, 'copy_config_to', 'config_copy'),
-            monitoring_plugin=mon,
-            aggregator_plugin=aggregator,
-            generator_plugin=gen,
-            tank=socket.getfqdn())
+        self.job = Job(monitoring_plugin=mon,
+                       aggregator_plugin=aggregator,
+                       generator_plugin=gen,
+                       tank=socket.getfqdn())
 
         for plugin in self.plugins:
             logger.debug("Configuring %s", plugin)
@@ -447,7 +427,7 @@ class TankCore(object):
         matches = [
             plugin for plugin in self.plugins
             if isinstance(plugin, plugin_class)
-        ]
+            ]
         if len(matches) > 0:
             if len(matches) > 1:
                 logger.debug(
@@ -624,7 +604,7 @@ class ConfigManager(object):
         logger.debug("Reading configs: %s", configs)
         config_filenames = [
             resource.resource_filename(config) for config in configs
-        ]
+            ]
         try:
             self.config.read(config_filenames)
         except Exception as ex:

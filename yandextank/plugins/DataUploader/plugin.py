@@ -3,7 +3,6 @@
 # pylint: disable=line-too-long
 # pylint: disable=missing-docstring
 import copy
-import datetime
 import logging
 import os
 import pwd
@@ -11,19 +10,19 @@ import re
 import sys
 import time
 from StringIO import StringIO
+from urlparse import urljoin
 
-import pkg_resources
 from queue import Empty, Queue
 from builtins import str
 import requests
 import threading
 
-from ...common.interfaces import AbstractPlugin,\
+from ...common.interfaces import AbstractPlugin, \
     MonitoringDataListener, AggregateResultListener, AbstractInfoWidget
 from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
-from .client import KSHMAPIClient
+from .client import KSHMAPIClient, OverloadClient
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
@@ -52,6 +51,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     """API Client class for Yandex KSHM web service"""
     SECTION = 'meta'
     RC_STOP_FROM_WEB = 8
+    VERSION = '3.0'
 
     def __init__(self, core, config_section):
         AbstractPlugin.__init__(self, core, config_section)
@@ -70,6 +70,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.send_status_period = 10
         self._generator_info = None
         self._is_telegraf = None
+        self.backend_type = BackendTypes.identify_backend(self.SECTION)
+        self._task = None
+        self._api_token = ''
 
     @staticmethod
     def get_key():
@@ -123,18 +126,21 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.send_status_period = expand_to_seconds(
             self.get_option('send_status_period', '10'))
 
-    def check_task_is_open(self, task):
+    def check_task_is_open(self):
+        if self.backend_type == BackendTypes.OVERLOAD:
+            return
         TASK_TIP = 'The task should be connected to Lunapark. Open startrek task page, click "actions" -> "load testing".'
-        logger.debug("Check if task %s is open", task)
+
+        logger.debug("Check if task %s is open", self.task)
         try:
-            task_data = self.lp_job.get_task_data(task)[0]
+            task_data = self.lp_job.get_task_data(self.task)[0]
             try:
                 task_status = task_data['status']
                 if task_status == 'Open':
-                    logger.info("Task %s is ok", task)
+                    logger.info("Task %s is ok", self.task)
                     self.task_name = str(task_data['name'])
                 else:
-                    logger.info("Task %s:" % task)
+                    logger.info("Task %s:" % self.task)
                     logger.info(task_data)
                     raise RuntimeError("Task is not open")
             except KeyError:
@@ -142,18 +148,18 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                     error = task_data['error']
                     raise RuntimeError(
                         "Task %s error: %s\n%s" %
-                        (task, error, TASK_TIP))
+                        (self.task, error, TASK_TIP))
                 except KeyError:
                     raise RuntimeError(
                         'Unknown task data format:\n{}'.format(task_data))
         except requests.exceptions.HTTPError as ex:
-            logger.error("Failed to check task status for '%s': %s", task, ex)
+            logger.error("Failed to check task status for '%s': %s", self.task, ex)
             if ex.response.status_code == 404:
-                raise RuntimeError("Task not found: %s\n%s" % (task, TASK_TIP))
+                raise RuntimeError("Task not found: %s\n%s" % (self.task, TASK_TIP))
             elif ex.response.status_code == 500 or ex.response.status_code == 400:
                 raise RuntimeError(
                     "Unable to check task staus, id: %s, error code: %s" %
-                    (task, ex.response.status_code))
+                    (self.task, ex.response.status_code))
             raise ex
 
     @staticmethod
@@ -176,10 +182,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             os.getcwd())
 
     def prepare_test(self):
-        task = self.core.job.task
-        if task == 'dir':
-            task = self.search_task_from_cwd(os.getcwd())
-
         info = self.core.job.generator_plugin.get_info()
         self.target = info.address
         logger.info("Detected target: %s", self.target)
@@ -204,9 +206,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         try:
             if self.lp_job._number:
                 self.make_symlink(self.lp_job._number)
-                self.check_task_is_open(task)
+                self.check_task_is_open()
             else:
-                self.check_task_is_open(task)
+                self.check_task_is_open()
                 self.lp_job.create()
                 self.make_symlink(self.lp_job.number)
         except (KSHMAPIClient.JobNotCreated, KSHMAPIClient.NotAvailable, KSHMAPIClient.NetworkError) as e:
@@ -268,8 +270,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         monitoring.start()
         self.monitoring = monitoring
 
-        web_link = "%s%s" % (
-            self.lp_job.api_client.base_url, self.lp_job.number)
+        web_link = urljoin(self.lp_job.api_client.base_url, str(self.lp_job.number))
         logger.info("Web link: %s", web_link)
 
         self.publish("jobno", self.lp_job.number)
@@ -374,7 +375,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         else:
             api_found = isinstance(self.core, yandex_tank_api.worker.TankCore)
         logger.debug("We are%s running under API server", '' if api_found else
-                     ' likely not')
+        ' likely not')
         return api_found
 
     def __send_status(self):
@@ -447,7 +448,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         logger.info('Closing Monitoring uploader thread')
 
     def __save_conf(self):
-        config_copy = self.core.job.config_copy
+        config_copy = self.get_option('copy_config_to', '')
         if config_copy:
             self.core.config.flush(config_copy)
 
@@ -519,8 +520,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 str(name)))
 
     def _get_user_agent(self):
-        plugin_agent = 'Lunapark/{}'.format(
-            pkg_resources.require('yatank-internal-lunapark')[0].version)
+        plugin_agent = 'Uploader/{}'.format(self.VERSION)
         return ' '.join((plugin_agent,
                          self.core.get_user_agent()))
 
@@ -536,33 +536,90 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             raise
 
     def __get_api_client(self):
-        return KSHMAPIClient(base_url=self.get_option('api_address'),
-                             writer_url=self.get_option('writer_endpoint', ""),
-                             network_attempts=int(self.get_option('network_attempts', 60)),
-                             api_attempts=int(self.get_option('api_attempts', 60)),
-                             maintenance_attempts=int(self.get_option('maintenance_attempts', 10)),
-                             network_timeout=int(self.get_option('network_timeout', 10)),
-                             api_timeout=int(self.get_option('api_timeout', 10)),
-                             maintenance_timeout=int(self.get_option('maintenance_timeout', 60)),
-                             connection_timeout=int(self.get_option('connection_timeout', 30)),
-                             user_agent=self._get_user_agent())
+        if self.backend_type == BackendTypes.LUNAPARK:
+            client = KSHMAPIClient
+            self._api_token = None
+        elif self.backend_type == BackendTypes.OVERLOAD:
+            client = OverloadClient
+            self._api_token = self.read_token(self.get_option("token_file", ""))
+        else:
+            raise RuntimeError("Backend type doesn't match any of the expected")
+
+        return client(base_url=self.get_option('api_address'),
+                      writer_url=self.get_option('writer_endpoint', ""),
+                      network_attempts=int(self.get_option('network_attempts', 60)),
+                      api_attempts=int(self.get_option('api_attempts', 60)),
+                      maintenance_attempts=int(self.get_option('maintenance_attempts', 10)),
+                      network_timeout=int(self.get_option('network_timeout', 10)),
+                      api_timeout=int(self.get_option('api_timeout', 10)),
+                      maintenance_timeout=int(self.get_option('maintenance_timeout', 60)),
+                      connection_timeout=int(self.get_option('connection_timeout', 30)),
+                      user_agent=self._get_user_agent(),
+                      api_token=self.api_token)
 
     def __get_lp_job(self, target, port, loadscheme):
         api_client = self.__get_api_client()
-        return LPJob.from_core_job(self.core.job,
-                                   api_client,
-                                   target_host=target,
-                                   target_port=port,
-                                   number=self.get_option('jobno', ''),
-                                   token=self.get_option('upload_token', ''),
-                                   operator=self.__get_operator(),
-                                   notify_list=self.get_option("notify", '').split(' '),
-                                   loadscheme=loadscheme,
-                                   log_data_requests=bool(int(self.get_option('log_data_requests', '0'))),
-                                   log_monitoring_requests=bool(int(self.get_option('log_monitoring_requests', '0'))),
-                                   log_status_requests=bool(int(self.get_option('log_status_requests', '0'))),
-                                   log_other_requests=bool(int(self.get_option('log_other_requests', '0'))),
-                                   )
+        return LPJob(client=api_client,
+                     target_host=target,
+                     target_port=port,
+                     number=self.get_option('jobno', ''),
+                     token=self.get_option('upload_token', ''),
+                     person=self.__get_operator(),
+                     task=self.task,
+                     name=self.get_option('job_name', 'none').decode('utf8'),
+                     description=self.get_option('job_dsc', '').decode('utf8'),
+                     tank=self.core.job.tank,
+                     notify_list=self.get_option("notify", '').split(' '),
+                     load_scheme=loadscheme,
+                     log_data_requests=bool(int(self.get_option('log_data_requests', '0'))),
+                     log_monitoring_requests=bool(int(self.get_option('log_monitoring_requests', '0'))),
+                     log_status_requests=bool(int(self.get_option('log_status_requests', '0'))),
+                     log_other_requests=bool(int(self.get_option('log_other_requests', '0'))), )
+
+    @property
+    def task(self):
+        if self._task is None:
+            task = self.get_option('task', '')
+            if task == 'dir':
+                task = self.search_task_from_cwd(os.getcwd())
+            self._task = task
+        return self._task
+
+    @property
+    def api_token(self):
+        if self._api_token == '':
+            if self.backend_type == BackendTypes.LUNAPARK:
+                self._api_token = None
+            elif self.backend_type == BackendTypes.OVERLOAD:
+                self._api_token = self.read_token(self.get_option("token_file", ""))
+            else:
+                raise RuntimeError("Backend type doesn't match any of the expected")
+        return self._api_token
+
+    @staticmethod
+    def read_token(filename):
+        if filename:
+            logger.debug("Trying to read token from %s", filename)
+            try:
+                with open(filename, 'r') as handle:
+                    data = handle.read().strip()
+                    logger.info(
+                        "Read authentication token from %s, "
+                        "token length is %d bytes", filename, len(str(data)))
+            except IOError:
+                logger.error(
+                    "Failed to read Overload API token from %s", filename)
+                logger.info(
+                    "Get your Overload API token from https://overload.yandex.net and provide it via 'overload.token_file' parameter"
+                )
+                raise RuntimeError("API token error")
+            return data
+        else:
+            logger.error("Overload API token filename is not defined")
+            logger.info(
+                "Get your Overload API token from https://overload.yandex.net and provide it via 'overload.token_file' parameter"
+            )
+            raise RuntimeError("API token error")
 
 
 class JobInfoWidget(AbstractInfoWidget):
@@ -579,9 +636,9 @@ class JobInfoWidget(AbstractInfoWidget):
                    screen.markup.RESET + \
                    "%s\n   Job: %s %s\n  Task: %s %s\n   Web: %s%s"
         data = (self.owner.lp_job.person[:1], self.owner.lp_job.person[1:],
-                self.owner.lp_job.number, self.owner.lp_job.name, self.owner.core.job.task,
+                self.owner.lp_job.number, self.owner.lp_job.name, self.owner.lp_job.task,
                 # todo: task_name from api_client.get_task_data()
-                self.owner.core.job.task, self.owner.lp_job.api_client.base_url,
+                self.owner.lp_job.task, self.owner.lp_job.api_client.base_url,
                 self.owner.lp_job.number)
 
         return template % data
@@ -704,44 +761,6 @@ class LPJob(object):
                                                             notify_list=self.notify_list,
                                                             trace=self.log_other_requests)
         logger.info('Job created: {}'.format(self._number))
-
-    @classmethod
-    def from_core_job(
-            cls,
-            job,
-            client,
-            target_host,
-            target_port,
-            operator,
-            log_data_requests,
-            log_other_requests,
-            log_status_requests,
-            log_monitoring_requests,
-            number=None,
-            token=None,
-            is_alive=True,
-            notify_list=None,
-            loadscheme=None):
-        # type: (Job, KSHMAPIClient) -> LPJob
-        return cls(
-            target_host=target_host,
-            target_port=target_port,
-            number=number,
-            token=token,
-            is_alive=is_alive,
-            client=client,
-            person=operator,
-            task=job.task,
-            notify_list=notify_list,
-            tank=job.tank,
-            description=job.description,
-            name=job.name,
-            version=job.version,
-            load_scheme=loadscheme,
-            log_data_requests=log_data_requests,
-            log_other_requests=log_other_requests,
-            log_status_requests=log_status_requests,
-            log_monitoring_requests=log_monitoring_requests)
 
     def send_status(self, status):
         if self._number and self.is_alive:

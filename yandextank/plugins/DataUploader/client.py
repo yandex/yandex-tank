@@ -28,7 +28,8 @@ class KSHMAPIClient(object):
             api_timeout=5,
             maintenance_timeout=15,
             connection_timeout=5.0,
-            user_agent=None):
+            user_agent=None,
+            api_token=None):
         self.user_agent = user_agent
         self.connection_timeout = connection_timeout
         self._base_url = base_url
@@ -45,6 +46,7 @@ class KSHMAPIClient(object):
         self.api_timeout = api_timeout
         self.maintenance_attempts = maintenance_attempts
         self.maintenance_timeout = maintenance_timeout
+        self.params = {'api_token': api_token} if api_token else {}
 
     @property
     def base_url(self):
@@ -147,12 +149,10 @@ class KSHMAPIClient(object):
         url = urljoin(self.base_url, path)
         if json:
             request = requests.Request(
-                http_method, url, json=json, headers={
-                    'User-Agent': self.user_agent})
+                http_method, url, json=json, headers={'User-Agent': self.user_agent}, params=self.params)
         else:
             request = requests.Request(
-                http_method, url, data=data, headers={
-                    'User-Agent': self.user_agent})
+                http_method, url, data=data, headers={'User-Agent': self.user_agent}, params=self.params)
         network_timeouts = self.network_timeouts()
         maintenance_timeouts = self.maintenance_timeouts()
         while True:
@@ -584,3 +584,12 @@ class KSHMAPIClient(object):
         logger.debug("Sending config snapshot")
         addr = "api/job/%s/configinfo.txt" % jobno
         self.__post_raw(addr, {"configinfo": config}, trace=trace)
+
+
+class OverloadClient(KSHMAPIClient):
+
+    def send_status(self, jobno, upload_token, status, trace=False):
+        return
+
+    def lock_target(self, target, duration, trace=False):
+        return
