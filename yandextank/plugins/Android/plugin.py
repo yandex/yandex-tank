@@ -4,14 +4,15 @@ import time
 import urllib
 import sys
 import glob
+import os
 from multiprocessing import Process
+from signal import SIGKILL
 
 try:
-    import volta
+    from volta.analysis import grab, uploader
 except Exception:
-    print "Please install volta. https://github.com/yandex-load/volta"
+    raise RuntimeError("Please install volta. https://github.com/yandex-load/volta")
 
-from volta.analysis import grab, uploader
 from pkg_resources import resource_filename
 from ...common.interfaces import AbstractPlugin, GeneratorPlugin
 from .reader import AndroidReader, AndroidStatsReader
@@ -20,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin(AbstractPlugin, GeneratorPlugin):
-
     SECTION = "android"
 
     def __init__(self, core):
@@ -33,6 +33,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.device = None
         self.test_runner = None
         self.process_test = None
+        self.process_stderr = None
         self.process_grabber = None
         self.apk = "./app.apk"
         self.test = "./app-test.apk"
@@ -122,15 +123,25 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             self.process_grabber = Process(target=grab.main, args=(args,))
             self.process_grabber.start()
 
+        process_stderr_file = self.core.mkstemp(".log", "android_")
+        self.core.add_artifact_file(process_stderr_file)
+        self.process_stderr = open(process_stderr_file, 'w')
+
         logger.info("Start flashlight...")
-        subprocess.Popen(["adb", "shell", "am", "start", "-n",
-                          "net.yandex.overload.lightning/net.yandex.overload.lightning.MainActivity"])
+        args = ["adb", "shell", "am", "start", "-n",
+                "net.yandex.overload.lightning/net.yandex.overload.lightning.MainActivity"]
+        subprocess.Popen(args)
         time.sleep(12)
 
         args = ["adb", "shell", "am", "instrument", "-w", "-e", "class", self.clazz,
                 '{package}/{runner}'.format(package=self.package_test, runner=self.test_runner)]
         logger.info("Starting: %s", args)
-        self.process_test = subprocess.Popen(args)
+        self.process_test = subprocess.Popen(
+            args,
+            stderr=self.process_stderr,
+            stdout=self.process_stderr,
+            close_fds=True
+        )
 
     def is_test_finished(self):
         retcode = self.process_test.poll()
@@ -141,35 +152,44 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             return -1
 
     def end_test(self, retcode):
-        if self.device:
-            logger.info("Terminate grabber...")
-            self.process_grabber.terminate()
+        if self.process_grabber:
+            logger.info("Kill grabber...")
+            os.kill(self.process_grabber.pid, SIGKILL)
 
         logger.info("Get logcat dump...")
         subprocess.check_call('adb logcat -d > {file}'.format(file=self.event_log), shell=True)
 
-        logger.info("Upload logs...")
-        args = {
-            'filename': self.grab_log,
-            'events': self.event_log,
-            'samplerate': 500,
-            'slope': 1,
-            'offset': 0,
-            'bynary': False,
-            'job_config': {
-                'task': self.core.job.task,
-                'jobname': self.core.job.name,
-                'dsc': self.core.job.description,
-                'component': self.core.get_option('meta', 'component')
+        if os.path.exists(self.grab_log):
+            logger.info("Upload logs...")
+            args = {
+                'filename': self.grab_log,
+                'events': self.event_log,
+                'samplerate': 500,
+                'slope': 1,
+                'offset': 0,
+                'bynary': False,
+                'job_config': {
+                    'task': self.core.job.task,
+                    'jobname': self.core.job.name,
+                    'dsc': self.core.job.description,
+                    'component': self.core.get_option('meta', 'component')
+                }
             }
-        }
-        process_uploader = Process(target=uploader.main, args=(args,))
-        process_uploader.start()
-        process_uploader.join()
+            process_uploader = Process(target=uploader.main, args=(args,))
+            process_uploader.start()
+            process_uploader.join()
 
         if self.process_test and self.process_test.poll() is None:
             logger.info("Terminating tests with PID %s", self.process_test.pid)
             self.process_test.terminate()
+            if self.process_stderr:
+                self.process_stderr.close()
+
+        logger.info("Uninstall the app...")
+        subprocess.check_output(["adb", "uninstall", self.package])
+
+        logger.info("Uninstall the test...")
+        subprocess.check_output(["adb", "uninstall", self.package_test])
 
         return retcode
 
