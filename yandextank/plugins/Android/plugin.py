@@ -4,7 +4,14 @@ import time
 import urllib
 import sys
 import glob
+from multiprocessing import Process
 
+try:
+    import volta
+except Exception:
+    print "Please install volta. https://github.com/yandex-load/volta"
+
+from volta.analysis import grab, uploader
 from pkg_resources import resource_filename
 from ...common.interfaces import AbstractPlugin, GeneratorPlugin
 from .reader import AndroidReader, AndroidStatsReader
@@ -21,8 +28,10 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.apk_path = None
         self.test_path = None
         self.package = None
+        self.package_test = None
         self.clazz = None
         self.device = None
+        self.test_runner = None
         self.process_test = None
         self.process_grabber = None
         self.apk = "./app.apk"
@@ -35,15 +44,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         return __file__
 
     def get_available_options(self):
-        opts = ["package", "apk", "test", "class"]
+        opts = ["package", "test_package", "apk", "test_apk", "class", "test_runner"]
         return opts
 
     def configure(self):
         # plugin part
         self.apk_path = self.get_option("apk")
-        self.test_path = self.get_option("test")
+        self.test_path = self.get_option("test_apk")
         self.clazz = self.get_option("class")
         self.package = self.get_option("package")
+        self.package_test = self.get_option("test_package")
+        self.test_runner = self.get_option("test_runner")
 
     def prepare_test(self):
         aggregator = self.core.job.aggregator_plugin
@@ -59,7 +70,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         elif sys.platform.startswith('darwin'):
             ports = glob.glob('/dev/cu.wchusbserial[0-9]*')
         else:
-            print 'Your OS is not supported yet'
+            logger.info('Your OS is not supported yet')
 
         logger.info("Ports = " + ''.join(ports))
         try:
@@ -81,7 +92,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         subprocess.check_output(["adb", "uninstall", self.package])
 
         logger.info("Uninstall the test...")
-        subprocess.check_output(["adb", "uninstall", '{}.test'.format(self.package)])
+        subprocess.check_output(["adb", "uninstall", self.package_test])
 
         lightning = resource_filename(__name__, 'binary/lightning.apk')
         logger.info("Get from resources " + lightning)
@@ -101,8 +112,15 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def start_test(self):
         if self.device:
             logger.info("Start grabber...")
-            self.process_grabber = subprocess.Popen(
-                ["/usr/local/bin/volta-grab", "--device", self.device, "--seconds", "10800", "--output", self.grab_log])
+            args = {
+                'device': self.device,
+                'seconds': 10800,
+                'output': self.grab_log,
+                'debug': False,
+                'binary': False
+            }
+            self.process_grabber = Process(target=grab.main, args=(args,))
+            self.process_grabber.start()
 
         logger.info("Start flashlight...")
         subprocess.Popen(["adb", "shell", "am", "start", "-n",
@@ -110,10 +128,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         time.sleep(12)
 
         args = ["adb", "shell", "am", "instrument", "-w", "-e", "class", self.clazz,
-                '{}.test/android.support.test.runner.AndroidJUnitRunner'.format(self.package)]
+                '{package}/{runner}'.format(package=self.package_test, runner=self.test_runner)]
         logger.info("Starting: %s", args)
-        self.process_test = subprocess.Popen(
-            args)
+        self.process_test = subprocess.Popen(args)
 
     def is_test_finished(self):
         retcode = self.process_test.poll()
@@ -129,15 +146,29 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             self.process_grabber.terminate()
 
         logger.info("Get logcat dump...")
-        subprocess.check_call('adb logcat -d > {}'.format(self.event_log), shell=True)
+        subprocess.check_call('adb logcat -d > {file}'.format(file=self.event_log), shell=True)
 
         logger.info("Upload logs...")
-        subprocess.check_call(
-            ["/usr/local/bin/volta-uploader", "-f", self.grab_log, "-e", self.event_log, "-t", self.core.job.task, "-s", "500"])
+        args = {
+            'filename': self.grab_log,
+            'events': self.event_log,
+            'samplerate': 500,
+            'slope': 1,
+            'offset': 0,
+            'bynary': False,
+            'job_config': {
+                'task': self.core.job.task,
+                'jobname': self.core.job.name,
+                'dsc': self.core.job.description,
+                'component': self.core.get_option('meta', 'component')
+            }
+        }
+        process_uploader = Process(target=uploader.main, args=(args,))
+        process_uploader.start()
+        process_uploader.join()
 
         if self.process_test and self.process_test.poll() is None:
-            logger.info(
-                "Terminating tests with PID %s", self.process_test.pid)
+            logger.info("Terminating tests with PID %s", self.process_test.pid)
             self.process_test.terminate()
 
         return retcode
