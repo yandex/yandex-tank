@@ -4,7 +4,7 @@ import time
 import pytest
 from mock import patch, call, MagicMock
 from requests import ConnectionError
-from yandextank.plugins.DataUploader.client import KSHMAPIClient
+from yandextank.plugins.DataUploader.client import APIClient
 
 from yandextank.plugins.DataUploader.plugin import online_uploader, LPJob
 
@@ -21,7 +21,7 @@ class TestOnlineUploader(object):
         queue = Queue()
         job = LPJob(job_number, token)
 
-        with patch.object(KSHMAPIClient, 'push_data') as push_data_mock:
+        with patch.object(APIClient, 'push_data') as push_data_mock:
 
             thread = threading.Thread(
                 target=online_uploader,
@@ -49,8 +49,8 @@ class TestOnlineUploader(object):
         queue = Queue()
         job = LPJob()
 
-        with patch.object(KSHMAPIClient, 'new_job', return_value=(job_number, token)) as new_job_mock:
-            with patch.object(KSHMAPIClient, 'push_data') as push_data_mock:
+        with patch.object(APIClient, 'new_job', return_value=(job_number, token)) as new_job_mock:
+            with patch.object(APIClient, 'push_data') as push_data_mock:
 
                 thread = threading.Thread(
                     target=online_uploader,
@@ -139,7 +139,7 @@ class TestClient(object):
     TEST_STATS = {'metrics': {'instances': 0, 'reqps': 0}, 'ts': 1476446024}
 
     def test_new_job(self, job_nr, upload_token):
-        client = KSHMAPIClient(
+        client = APIClient(
             base_url='https://lunapark.test.yandex-team.ru/')
         with patch('requests.Session.send') as send_mock:
             mock_response = MagicMock()
@@ -156,7 +156,7 @@ class TestClient(object):
                 upload_token)
 
     def test_new_job_retry_maintenance(self, job_nr, upload_token):
-        client = KSHMAPIClient(
+        client = APIClient(
             base_url='https://lunapark.test.yandex-team.ru/',
             maintenance_timeout=2)
         with patch('requests.Session.send') as send_mock:
@@ -177,7 +177,7 @@ class TestClient(object):
                 upload_token)
 
     def test_new_job_retry_network(self, job_nr, upload_token):
-        client = KSHMAPIClient(
+        client = APIClient(
             base_url='https://lunapark.test.yandex-team.ru/')
         with patch('requests.Session.send') as send_mock:
             expected_response = MagicMock()
@@ -198,7 +198,7 @@ class TestClient(object):
                 upload_token)
 
     def test_new_job_retry_api(self, job_nr, upload_token):
-        client = KSHMAPIClient(
+        client = APIClient(
             base_url='https://lunapark.test.yandex-team.ru/')
         with patch('requests.Session.send') as send_mock:
             bad_response = MagicMock()
@@ -218,7 +218,7 @@ class TestClient(object):
                 upload_token)
 
     def test_new_job_unavailable(self, job_nr, upload_token):
-        client = KSHMAPIClient(
+        client = APIClient(
             base_url='https://lunapark.test.yandex-team.ru/',
             api_attempts=3,
             api_timeout=1)
@@ -234,7 +234,7 @@ class TestClient(object):
                 bad_response,
                 good_response]
 
-            with pytest.raises(KSHMAPIClient.JobNotCreated):
+            with pytest.raises(APIClient.JobNotCreated):
                 client.new_job(
                     'LOAD-204',
                     'fomars',
@@ -243,7 +243,7 @@ class TestClient(object):
                     1234)
 
     def test_push_data(self, job_nr, upload_token):
-        client = KSHMAPIClient(
+        client = APIClient(
             base_url='https://lunapark.test.yandex-team.ru/')
         with patch('requests.Session.send') as send_mock:
             mock_response = MagicMock()
@@ -254,7 +254,7 @@ class TestClient(object):
                 job_nr, self.TEST_DATA, self.TEST_STATS) == 1
 
     def test_push_data_retry_network(self, job_nr, upload_token):
-        client = KSHMAPIClient(
+        client = APIClient(
             base_url='https://lunapark.test.yandex-team.ru/')
         with patch('requests.Session.send') as send_mock:
             expected_response = MagicMock()
@@ -270,7 +270,7 @@ class TestClient(object):
             assert result == 1
 
     def test_push_data_retry_api(self, job_nr, upload_token):
-        client = KSHMAPIClient(
+        client = APIClient(
             base_url='https://lunapark.test.yandex-team.ru/')
         with patch('requests.Session.send') as send_mock:
             bad_response = MagicMock()
@@ -285,7 +285,7 @@ class TestClient(object):
             assert result == 1
 
     def test_push_data_api_exception(self, job_nr, upload_token):
-        client = KSHMAPIClient(
+        client = APIClient(
             base_url='https://lunapark.test.yandex-team.ru/',
             api_timeout=1,
             api_attempts=3)

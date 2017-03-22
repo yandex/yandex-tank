@@ -15,7 +15,7 @@ from urlparse import urljoin
 from datetime import datetime
 import pkg_resources
 
-from .client import KSHMAPIClient
+from .client import APIClient
 from .plugin import LPJob
 
 CONFIG_FILE = 'saved_conf.ini'
@@ -130,11 +130,11 @@ def post_loader():
     config = read_config(shooting_dir)
     lp_config = get_lp_config(config)
 
-    api_client = KSHMAPIClient(base_url=lp_config['api_address'],
-                               user_agent='Lunapark/{}'.format(
+    api_client = APIClient(base_url=lp_config['api_address'],
+                           user_agent='Lunapark/{}'.format(
         pkg_resources.require('yatank-internal-lunapark')[0].version)
-        # todo: add timeouts
-    )
+                           # todo: add timeouts
+                           )
     lp_job = LPJob(
         client=api_client,
         target_host=lp_config.get('target_host'),

@@ -22,7 +22,7 @@ from ...common.interfaces import AbstractPlugin, \
 from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
-from .client import KSHMAPIClient, OverloadClient
+from .client import APIClient, OverloadClient
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
@@ -48,7 +48,6 @@ class BackendTypes(object):
 
 class Plugin(AbstractPlugin, AggregateResultListener,
              MonitoringDataListener):
-    """API Client class for Yandex KSHM web service"""
     SECTION = 'meta'
     RC_STOP_FROM_WEB = 8
     VERSION = '3.0'
@@ -211,7 +210,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 self.check_task_is_open()
                 self.lp_job.create()
                 self.make_symlink(self.lp_job.number)
-        except (KSHMAPIClient.JobNotCreated, KSHMAPIClient.NotAvailable, KSHMAPIClient.NetworkError) as e:
+        except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError) as e:
             logger.error(e.message)
             logger.error(
                 'Failed to connect to Lunapark, disabling DataUploader')
@@ -385,11 +384,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             try:
                 self.lp_job.send_status(self.core.status)
                 time.sleep(self.send_status_period)
-            except (KSHMAPIClient.NetworkError, KSHMAPIClient.NotAvailable) as e:
+            except (APIClient.NetworkError, APIClient.NotAvailable) as e:
                 logger.warn('Failed to send status')
                 logger.debug(e.message)
                 break
-            except KSHMAPIClient.StoppedFromOnline:
+            except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
                 lp_job.is_alive = False
                 self.retcode = 8
@@ -411,7 +410,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 lp_job.push_test_data(data, stats)
             except Empty:
                 continue
-            except KSHMAPIClient.StoppedFromOnline:
+            except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
                 lp_job.is_alive = False
                 self.retcode = 8
@@ -436,11 +435,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                     break
             except Empty:
                 continue
-            except (KSHMAPIClient.NetworkError, KSHMAPIClient.NotAvailable, KSHMAPIClient.UnderMaintenance) as e:
+            except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
                 logger.warn('Failed to push monitoring data')
                 logger.warn(e.message)
                 break
-            except KSHMAPIClient.StoppedFromOnline:
+            except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
                 lp_job.is_alive = False
                 self.retcode = 8
@@ -537,7 +536,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def __get_api_client(self):
         if self.backend_type == BackendTypes.LUNAPARK:
-            client = KSHMAPIClient
+            client = APIClient
             self._api_token = None
         elif self.backend_type == BackendTypes.OVERLOAD:
             client = OverloadClient
@@ -667,7 +666,7 @@ class LPJob(object):
             detailed_time=None,
             load_scheme=None):
         """
-        :param client: KSHMAPIClient
+        :param client: APIClient
         :param log_data_requests: bool
         :param log_other_request: bool
         :param log_status_requests: bool
@@ -701,7 +700,7 @@ class LPJob(object):
             try:
                 self.api_client.push_test_data(
                     self.number, self.token, data, stats, trace=self.log_data_requests)
-            except (KSHMAPIClient.NotAvailable, KSHMAPIClient.NetworkError, KSHMAPIClient.UnderMaintenance):
+            except (APIClient.NotAvailable, APIClient.NetworkError, APIClient.UnderMaintenance):
                 logger.warn('Failed to push test data')
                 self.is_alive = False
 
@@ -729,8 +728,8 @@ class LPJob(object):
                                               is_starred=is_starred,
                                               tank_type=tank_type,
                                               trace=self.log_other_requests)
-        except (KSHMAPIClient.NotAvailable, KSHMAPIClient.StoppedFromOnline, KSHMAPIClient.NetworkError,
-                KSHMAPIClient.UnderMaintenance) as e:
+        except (APIClient.NotAvailable, APIClient.StoppedFromOnline, APIClient.NetworkError,
+                APIClient.UnderMaintenance) as e:
             logger.warn('Failed to edit job metainfo on Lunapark')
             logger.warn(e.message)
 
@@ -799,7 +798,7 @@ class LPJob(object):
                     lock_target_duration,
                     trace=self.log_other_requests)
                 return True
-            except (KSHMAPIClient.NotAvailable, KSHMAPIClient.StoppedFromOnline) as e:
+            except (APIClient.NotAvailable, APIClient.StoppedFromOnline) as e:
                 logger.info('Target is not locked due to %s', e.message)
                 if ignore:
                     logger.info('ignore_target_locks = 1')
@@ -809,7 +808,7 @@ class LPJob(object):
                 else:
                     logger.info('strict_lock = 0')
                     return False
-            except KSHMAPIClient.UnderMaintenance:
+            except APIClient.UnderMaintenance:
                 logger.info('Target is locked')
                 logger.info("Manual unlock link: %s%s", self.api_client.base_url,
                             self.api_client.get_manual_unlock_link(lock_target))
@@ -827,10 +826,10 @@ class LPJob(object):
             try:
                 return self.api_client.is_target_locked(
                     host, trace=self.log_other_requests)
-            except KSHMAPIClient.UnderMaintenance:
+            except APIClient.UnderMaintenance:
                 logger.info('Target is locked, retrying...')
                 continue
-            except (KSHMAPIClient.StoppedFromOnline, KSHMAPIClient.NotAvailable, KSHMAPIClient.NetworkError) as e:
+            except (APIClient.StoppedFromOnline, APIClient.NotAvailable, APIClient.NetworkError) as e:
                 logger.warn('Can\'t check whether target is locked\n')
                 if strict:
                     logger.warn('Stopping test due to strict_lock')

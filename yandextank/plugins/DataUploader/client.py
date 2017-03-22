@@ -15,7 +15,7 @@ requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 
-class KSHMAPIClient(object):
+class APIClient(object):
 
     def __init__(
             self,
@@ -60,7 +60,7 @@ class KSHMAPIClient(object):
         self._base_url = url
 
     class UnderMaintenance(Exception):
-        message = "KSHM is under maintenance"
+        message = "API is under maintenance"
 
     class NotAvailable(Exception):
         desc = "API is not available"
@@ -174,8 +174,7 @@ class KSHMAPIClient(object):
                 try:
                     timeout = next(maintenance_timeouts)
                     logger.warn(
-                        "KSHM is under maintenance, will retry in %ss..." %
-                        timeout)
+                        "%s is under maintenance, will retry in %ss..." % (self._base_url, timeout))
                     time.sleep(timeout)
                     continue
                 except StopIteration:
@@ -586,7 +585,7 @@ class KSHMAPIClient(object):
         self.__post_raw(addr, {"configinfo": config}, trace=trace)
 
 
-class OverloadClient(KSHMAPIClient):
+class OverloadClient(APIClient):
 
     def send_status(self, jobno, upload_token, status, trace=False):
         return
