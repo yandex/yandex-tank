@@ -8,13 +8,13 @@ class TestBackendTypes(object):
 
     @pytest.mark.parametrize('section_name, expected_type', [
         ('meta', BackendTypes.LUNAPARK),
-        ('meta01', BackendTypes.LUNAPARK),
+        ('meta-01', BackendTypes.LUNAPARK),
         ('lp', BackendTypes.LUNAPARK),
-        ('lp01', BackendTypes.LUNAPARK),
+        ('lp-01', BackendTypes.LUNAPARK),
         ('lunapark', BackendTypes.LUNAPARK),
-        ('lunapark01', BackendTypes.LUNAPARK),
+        ('lunapark-1', BackendTypes.LUNAPARK),
         ('overload', BackendTypes.OVERLOAD),
-        ('overload01', BackendTypes.OVERLOAD)
+        ('overload-01', BackendTypes.OVERLOAD)
     ])
     def test_identify(self, section_name, expected_type):
         assert BackendTypes.identify_backend(section_name) == expected_type
@@ -23,7 +23,8 @@ class TestBackendTypes(object):
         'meta lunapark',
         'meta ',
         ' lunapark',
-        'lp '
+        'lp ',
+        'meta-'
     ])
     def test_exception(self, section_name):
         with pytest.raises(KeyError) as excinfo:

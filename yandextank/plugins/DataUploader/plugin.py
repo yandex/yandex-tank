@@ -34,8 +34,8 @@ class BackendTypes(object):
     @classmethod
     def identify_backend(cls, section_name):
         patterns = [
-            (r'^overload\d*$', cls.OVERLOAD),
-            (r'^(meta|lunapark|lp)\d*$', cls.LUNAPARK)
+            (r'^overload(-\d+)?$', cls.OVERLOAD),
+            (r'^(meta|lunapark|lp)(-\d+)?$', cls.LUNAPARK)
         ]
         for pattern, backend_type in patterns:
             if re.match(pattern, section_name):
