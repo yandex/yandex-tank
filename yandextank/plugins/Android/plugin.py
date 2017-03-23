@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class Plugin(AbstractPlugin, GeneratorPlugin):
     SECTION = "android"
+    SECTION_META = "meta"
 
     def __init__(self, core):
         super(Plugin, self).__init__(core)
@@ -169,9 +170,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 'offset': 0,
                 'bynary': False,
                 'job_config': {
-                    'task': self.core.job.task,
-                    'jobname': self.core.job.name,
-                    'dsc': self.core.job.description,
+                    'task': self.core.get_option(self.SECTION_META, 'task').decode('utf8'),
+                    'jobname': self.core.get_option(self.SECTION_META, 'job_name').decode('utf8'),
+                    'dsc': self.core.get_option(self.SECTION_META, 'job_dsc').decode('utf8'),
                     'component': self.core.get_option('meta', 'component')
                 }
             }
