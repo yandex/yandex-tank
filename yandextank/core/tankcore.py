@@ -424,10 +424,7 @@ class TankCore(object):
         Retrieve a plugin of desired class, KeyError raised otherwise
         """
         logger.debug("Searching for plugin: %s", plugin_class)
-        matches = [
-            plugin for plugin in self.plugins
-            if isinstance(plugin, plugin_class)
-            ]
+        matches = [plugin for plugin in self.plugins if isinstance(plugin, plugin_class)]
         if len(matches) > 0:
             if len(matches) > 1:
                 logger.debug(
@@ -602,9 +599,7 @@ class ConfigManager(object):
     def load_files(self, configs):
         """         Read configs set into storage        """
         logger.debug("Reading configs: %s", configs)
-        config_filenames = [
-            resource.resource_filename(config) for config in configs
-            ]
+        config_filenames = [resource.resource_filename(config) for config in configs]
         try:
             self.config.read(config_filenames)
         except Exception as ex:

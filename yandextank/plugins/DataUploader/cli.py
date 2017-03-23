@@ -23,7 +23,6 @@ DATA_LOG = 'test_data.log'
 MONITORING_LOG = 'monitoring.log'
 SECTION = 'meta'
 
-
 logger = logging.getLogger('')
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(stream=sys.stdout)
@@ -131,8 +130,7 @@ def post_loader():
     lp_config = get_lp_config(config)
 
     api_client = APIClient(base_url=lp_config['api_address'],
-                           user_agent='Lunapark/{}'.format(
-        pkg_resources.require('yatank-internal-lunapark')[0].version)
+                           user_agent='Lunapark/{}'.format(pkg_resources.require('yatank-internal-lunapark')[0].version)
                            # todo: add timeouts
                            )
     lp_job = LPJob(

@@ -373,8 +373,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             logger.debug("Attempt to import yandex_tank_api.worker failed")
         else:
             api_found = isinstance(self.core, yandex_tank_api.worker.TankCore)
-        logger.debug("We are%s running under API server", '' if api_found else
-        ' likely not')
+        logger.debug("We are%s running under API server", '' if api_found else ' likely not')
         return api_found
 
     def __send_status(self):
@@ -829,7 +828,7 @@ class LPJob(object):
             except APIClient.UnderMaintenance:
                 logger.info('Target is locked, retrying...')
                 continue
-            except (APIClient.StoppedFromOnline, APIClient.NotAvailable, APIClient.NetworkError) as e:
+            except (APIClient.StoppedFromOnline, APIClient.NotAvailable, APIClient.NetworkError):
                 logger.warn('Can\'t check whether target is locked\n')
                 if strict:
                     logger.warn('Stopping test due to strict_lock')

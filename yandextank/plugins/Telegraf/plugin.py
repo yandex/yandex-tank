@@ -35,7 +35,7 @@ class Plugin(AbstractPlugin):
 
     SECTION = 'telegraf'  # may be redefined to 'monitoring' sometimes.
 
-    def __init__(self, core, config_section):
+    def __init__(self, core, config_section=None):
         super(Plugin, self).__init__(core, config_section)
         self.jobno = None
         self.default_target = None
