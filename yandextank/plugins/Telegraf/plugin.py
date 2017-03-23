@@ -9,6 +9,9 @@ import json
 import logging
 import os
 import time
+
+from copy import deepcopy
+
 from ...common.resource import manager as resource
 from ...common.interfaces import MonitoringDataListener, \
     AbstractPlugin, AbstractInfoWidget
@@ -222,7 +225,7 @@ class Plugin(AbstractPlugin):
             for log in self.monitoring.artifact_files:
                 self.core.add_artifact_file(log)
 
-            while self.monitoring.send_data:
+            while self.monitoring.__collected_data:
                 logger.info("Sending monitoring data rests...")
                 self.monitoring.send_collected_data()
         if self.mon_saver:
@@ -365,10 +368,11 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
         self.last_second = None
         self.seconds_count = 0
 
-    def monitoring_data(self, block):
+    def monitoring_data(self, _block):
         if self.triggered:
             return
 
+        block = deepcopy(_block)
         for chunk in block:
             host = chunk['data'].keys()[0]
             data = chunk['data'][host]['metrics']

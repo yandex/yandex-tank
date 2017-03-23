@@ -60,5 +60,6 @@ analytic tools for the results they produce.
         'yandextank.plugins.Pandora': ['config/*'],
         'yandextank.plugins.Aggregator': ['config/*'],
         'yandextank.plugins.Telegraf': ['config/*'],
+        'yandextank.plugins.Android': ['binary/*'],
     },
     use_2to3=False, )
