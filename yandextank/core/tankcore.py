@@ -172,6 +172,12 @@ class TankCore(object):
                     raise ValueError(
                         "Couldn't convert plugin path to new format:\n    %s" %
                         plugin_path)
+            if plugin_path is "yandextank.plugins.Overload":
+                logger.warning(
+                    "Deprecated plugin name: 'yandextank.plugins.Overload'\n"
+                    "There is a new generic plugin now.\n"
+                    "Correcting to 'yandextank.plugins.DataUploader overload'")
+                plugin_path = "yandextank.plugins.DataUploader overload"
             try:
                 plugin = il.import_module(plugin_path)
             except ImportError:
