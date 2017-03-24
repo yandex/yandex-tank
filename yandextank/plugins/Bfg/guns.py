@@ -17,7 +17,7 @@ requests.packages.urllib3.disable_warnings()
 
 class AbstractGun(AbstractPlugin):
     def __init__(self, core):
-        super(AbstractGun, self).__init__(core)
+        super(AbstractGun, self).__init__(core, None)
         self.results = None
 
     @contextmanager

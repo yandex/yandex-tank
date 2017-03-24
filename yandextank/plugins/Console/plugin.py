@@ -16,8 +16,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
     ''' Console plugin '''
     SECTION = 'console'
 
-    def __init__(self, core):
-        AbstractPlugin.__init__(self, core)
+    def __init__(self, core, config_section):
+        AbstractPlugin.__init__(self, core, config_section)
         self.screen = None
         self.render_exception = None
         self.console_markup = None
