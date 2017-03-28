@@ -89,7 +89,7 @@ class TankCore(object):
     def __init__(self, artifacts_base_dir=None, artifacts_dir_name=None):
         self.config = ConfigManager()
         self.status = {}
-        self.plugins = []
+        self.plugins = {}
         self.artifacts_dir_name = artifacts_dir_name
         self._artifacts_dir = None
         self.artifact_files = {}
@@ -211,7 +211,7 @@ class TankCore(object):
                 instance = getattr(
                     plugin, plugin_path.split('.')[-1] + 'Plugin')(self)
 
-            self.plugins.append(instance)
+            self.register_plugin(plugin_name, instance)
 
         logger.debug("Plugin instances: %s", self.plugins)
 
@@ -257,7 +257,7 @@ class TankCore(object):
                        generator_plugin=gen,
                        tank=socket.getfqdn())
 
-        for plugin in self.plugins:
+        for plugin in self.plugins.values():
             logger.debug("Configuring %s", plugin)
             plugin.configure()
             self.config.flush()
@@ -268,7 +268,7 @@ class TankCore(object):
         """ Call prepare_test() on all plugins        """
         logger.info("Preparing test...")
         self.publish("core", "stage", "prepare")
-        for plugin in self.plugins:
+        for plugin in self.plugins.values():
             logger.debug("Preparing %s", plugin)
             plugin.prepare_test()
         if self.flush_config_to:
@@ -278,7 +278,7 @@ class TankCore(object):
         """        Call start_test() on all plugins        """
         logger.info("Starting test...")
         self.publish("core", "stage", "start")
-        for plugin in self.plugins:
+        for plugin in self.plugins.values():
             logger.debug("Starting %s", plugin)
             plugin.start_test()
         if self.flush_config_to:
@@ -297,7 +297,7 @@ class TankCore(object):
 
         while not self.interrupted:
             begin_time = time.time()
-            for plugin in self.plugins:
+            for plugin in self.plugins.values():
                 logger.debug("Polling %s", plugin)
                 retcode = plugin.is_test_finished()
                 if retcode >= 0:
@@ -316,7 +316,7 @@ class TankCore(object):
         logger.info("Finishing test...")
         self.publish("core", "stage", "end")
 
-        for plugin in self.plugins:
+        for plugin in self.plugins.values():
             logger.debug("Finalize %s", plugin)
             try:
                 logger.debug("RC before: %s", retcode)
@@ -340,7 +340,7 @@ class TankCore(object):
         logger.info("Post-processing test...")
         self.publish("core", "stage", "post_process")
 
-        for plugin in self.plugins:
+        for plugin in self.plugins.values():
             logger.debug("Post-process %s", plugin)
             try:
                 logger.debug("RC before: %s", retcode)
@@ -430,7 +430,7 @@ class TankCore(object):
         Retrieve a plugin of desired class, KeyError raised otherwise
         """
         logger.debug("Searching for plugin: %s", plugin_class)
-        matches = [plugin for plugin in self.plugins if isinstance(plugin, plugin_class)]
+        matches = [plugin for plugin in self.plugins.values() if isinstance(plugin, plugin_class)]
         if len(matches) > 0:
             if len(matches) > 1:
                 logger.debug(
@@ -439,6 +439,10 @@ class TankCore(object):
             return matches[-1]
         else:
             raise KeyError("Requested plugin type not found: %s" % plugin_class)
+
+    def get_jobno(self, plugin_name='plugin_lunapark'):
+        uploader_plugin = self.plugins[plugin_name]
+        return uploader_plugin.lp_job.number
 
     def __collect_file(self, filename, keep_original=False):
         """
@@ -561,7 +565,7 @@ class TankCore(object):
         """
         logger.info("Close allocated resources...")
 
-        for plugin in self.plugins:
+        for plugin in self.plugins.values():
             logger.debug("Close %s", plugin)
             try:
                 plugin.close()
@@ -593,6 +597,14 @@ class TankCore(object):
             py_info[0], py_info[1], py_info[2])
         os_agent = 'OS/{}'.format(platform.platform())
         return ' '.join((tank_agent, python_agent, os_agent))
+
+    def register_plugin(self, plugin_name, instance):
+        if self.plugins.get(plugin_name, None) is not None:
+            logger.warning('Plugins\' names should diverse')
+            logger.warning('Renaming {0} to {0}1 for {1}'.format(plugin_name, instance))
+            plugin_name += '1'
+        self.plugins[plugin_name] = instance
+
 
 
 class ConfigManager(object):
