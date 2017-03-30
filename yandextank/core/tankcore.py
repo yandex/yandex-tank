@@ -600,9 +600,7 @@ class TankCore(object):
 
     def register_plugin(self, plugin_name, instance):
         if self.plugins.get(plugin_name, None) is not None:
-            logger.warning('Plugins\' names should diverse')
-            logger.warning('Renaming {0} to {0}1 for {1}'.format(plugin_name, instance))
-            plugin_name += '1'
+            logger.exception('Plugins\' names should diverse')
         self.plugins[plugin_name] = instance
 
 

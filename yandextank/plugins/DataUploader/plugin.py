@@ -207,6 +207,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 self.check_task_is_open()
                 lp_job.create()
                 self.make_symlink(lp_job.number)
+            self.core.publish(self.SECTION, 'jobno', lp_job.number)
         except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError) as e:
             logger.error(e.message)
             logger.error(
