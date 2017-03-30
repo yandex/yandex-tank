@@ -144,7 +144,9 @@ class APIClient(object):
             response_callback=lambda x: x,
             writer=False,
             trace=False,
-            json=None):
+            json=None,
+            maintenance_timeouts=None,
+            maintenance_msg=None):
         url = urljoin(self.base_url, path)
         if json:
             request = requests.Request(
@@ -153,7 +155,8 @@ class APIClient(object):
             request = requests.Request(
                 http_method, url, data=data, headers={'User-Agent': self.user_agent}, params=self.params)
         network_timeouts = self.network_timeouts()
-        maintenance_timeouts = self.maintenance_timeouts()
+        maintenance_timeouts = maintenance_timeouts or self.maintenance_timeouts()
+        maintenance_msg = maintenance_msg or "%s is under maintenance" % (self._base_url)
         while True:
             try:
                 response = self.__send_single_request(request, trace=trace)
@@ -172,8 +175,8 @@ class APIClient(object):
             except self.UnderMaintenance as e:
                 try:
                     timeout = next(maintenance_timeouts)
-                    logger.warn(
-                        "%s is under maintenance, will retry in %ss..." % (self._base_url, timeout))
+                    logger.warn(maintenance_msg)
+                    logger.warn("Retrying in %ss..." % timeout)
                     time.sleep(timeout)
                     continue
                 except StopIteration:
@@ -223,13 +226,15 @@ class APIClient(object):
                 except StopIteration:
                     raise e
 
-    def __get(self, addr, trace=False):
+    def __get(self, addr, trace=False, maintenance_timeouts=None, maintenance_msg=None):
         return self.__make_api_request(
             'GET',
             addr,
             trace=trace,
-            response_callback=lambda r: json.loads(
-                r.content.decode('utf8')))
+            response_callback=lambda r: json.loads(r.content.decode('utf8')),
+            maintenance_timeouts=maintenance_timeouts,
+            maintenance_msg=maintenance_msg
+        )
 
     def __post_raw(self, addr, txt_data, trace=False):
         return self.__make_api_request(
@@ -554,11 +559,11 @@ class APIClient(object):
         res = self.__get(addr, trace=trace)
         return res[0]
 
-    def lock_target(self, target, duration, trace=False):
+    def lock_target(self, target, duration, trace=False, maintenance_timeouts=None, maintenance_msg=None):
         addr = "api/server/lock.json?action=lock&" + \
                "address=%s&duration=%s&jobno=None" % \
                (target, int(duration))
-        res = self.__get(addr, trace=trace)
+        res = self.__get(addr, trace=trace, maintenance_timeouts=maintenance_timeouts, maintenance_msg=maintenance_msg)
         return res[0]
 
     def unlock_target(self, target):
