@@ -211,7 +211,7 @@ class TankCore(object):
                 instance = getattr(
                     plugin, plugin_path.split('.')[-1] + 'Plugin')(self)
 
-            self.register_plugin(self.PLUGIN_PREFIX+plugin_name, instance)
+            self.register_plugin(self.PLUGIN_PREFIX + plugin_name, instance)
 
         logger.debug("Plugin instances: %s", self.plugins)
 
@@ -604,7 +604,6 @@ class TankCore(object):
             logger.warning('Renaming {0} to {0}1 for {1}'.format(plugin_name, instance))
             plugin_name += '1'
         self.plugins[plugin_name] = instance
-
 
 
 class ConfigManager(object):
