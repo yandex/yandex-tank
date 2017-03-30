@@ -62,7 +62,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.mon = None
         self.regression_component = None
         self.retcode = -1
-        self.target = None
+        self._target = None
         self.task_name = ''
         self.token_file = None
         self.version_tested = None
@@ -72,6 +72,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.backend_type = BackendTypes.identify_backend(self.SECTION)
         self._task = None
         self._api_token = ''
+        self._lp_job = None
 
     @staticmethod
     def get_key():
@@ -181,9 +182,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             os.getcwd())
 
     def prepare_test(self):
-        info = self.core.job.generator_plugin.get_info()
-        self.target = info.address
-        logger.info("Detected target: %s", self.target)
+        info = self.generator_info
         port = info.port
         instances = info.instances
         if info.ammo_file.startswith(
@@ -191,25 +190,23 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             ammo_path = info.ammo_file
         else:
             ammo_path = os.path.realpath(info.ammo_file)
-        loadscheme = [] if isinstance(info.rps_schedule,
-                                      str) else info.rps_schedule
         duration = int(info.duration)
         if duration:
             self.lock_target_duration = duration
         loop_count = info.loop_count
 
-        self.lp_job = self.__get_lp_job(self.target, port, loadscheme)
+        lp_job = self.lp_job
         self.locked_targets = self.check_and_lock_targets(strict=bool(
             int(self.get_option('strict_lock', '0'))), ignore=self.ignore_target_lock)
 
         try:
-            if self.lp_job._number:
-                self.make_symlink(self.lp_job._number)
+            if lp_job._number:
+                self.make_symlink(lp_job._number)
                 self.check_task_is_open()
             else:
                 self.check_task_is_open()
-                self.lp_job.create()
-                self.make_symlink(self.lp_job.number)
+                lp_job.create()
+                self.make_symlink(lp_job.number)
         except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError) as e:
             logger.error(e.message)
             logger.error(
@@ -221,7 +218,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             return
 
         cmdline = ' '.join(sys.argv)
-        self.lp_job.edit_metainfo(
+        lp_job.edit_metainfo(
             instances=instances,
             ammo_path=ammo_path,
             loop_count=loop_count,
@@ -555,10 +552,22 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                       user_agent=self._get_user_agent(),
                       api_token=self.api_token)
 
-    def __get_lp_job(self, target, port, loadscheme):
+    @property
+    def lp_job(self):
+        if self._lp_job is None:
+            self._lp_job = self.__get_lp_job()
+        return self._lp_job
+
+    def __get_lp_job(self):
         api_client = self.__get_api_client()
+
+        info = self.generator_info
+        port = info.port
+        loadscheme = [] if isinstance(info.rps_schedule,
+                                      str) else info.rps_schedule
+
         return LPJob(client=api_client,
-                     target_host=target,
+                     target_host=self.target,
                      target_port=port,
                      number=self.get_option('jobno', ''),
                      token=self.get_option('upload_token', ''),
@@ -618,6 +627,19 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 "Get your Overload API token from https://overload.yandex.net and provide it via 'overload.token_file' parameter"
             )
             raise RuntimeError("API token error")
+
+    @property
+    def generator_info(self):
+        if self._generator_info is None:
+            self._generator_info = self.core.job.generator_plugin.get_info()
+        return self._generator_info
+
+    @property
+    def target(self):
+        if self._target is None:
+            self._target = self.generator_info.address
+            logger.info("Detected target: %s", self.target)
+        return self._target
 
 
 class JobInfoWidget(AbstractInfoWidget):
