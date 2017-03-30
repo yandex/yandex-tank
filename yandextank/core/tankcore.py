@@ -211,7 +211,7 @@ class TankCore(object):
                 instance = getattr(
                     plugin, plugin_path.split('.')[-1] + 'Plugin')(self)
 
-            self.register_plugin(plugin_name, instance)
+            self.register_plugin(self.PLUGIN_PREFIX+plugin_name, instance)
 
         logger.debug("Plugin instances: %s", self.plugins)
 

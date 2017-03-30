@@ -790,12 +790,20 @@ class LPJob(object):
             self.number, text, trace=self.log_other_requests)
 
     def lock_target(self, lock_target, lock_target_duration, ignore, strict):
+        lock_wait_timeout = 10
+        maintenance_timeouts = iter([0]) if ignore else iter(lambda: lock_wait_timeout, 0)
         while True:
             try:
                 self.api_client.lock_target(
                     lock_target,
                     lock_target_duration,
-                    trace=self.log_other_requests)
+                    trace=self.log_other_requests,
+                    maintenance_timeouts=maintenance_timeouts,
+                    maintenance_msg="Target is locked.\nManual unlock link: %s%s" % (
+                        self.api_client.base_url,
+                        self.api_client.get_manual_unlock_link(lock_target)
+                    )
+                )
                 return True
             except (APIClient.NotAvailable, APIClient.StoppedFromOnline) as e:
                 logger.info('Target is not locked due to %s', e.message)
@@ -809,12 +817,11 @@ class LPJob(object):
                     return False
             except APIClient.UnderMaintenance:
                 logger.info('Target is locked')
-                logger.info("Manual unlock link: %s%s", self.api_client.base_url,
-                            self.api_client.get_manual_unlock_link(lock_target))
                 if ignore:
                     logger.info('ignore_target_locks = 1')
                     return False
-                time.sleep(10)
+                logger.info("Manual unlock link: %s%s", self.api_client.base_url,
+                            self.api_client.get_manual_unlock_link(lock_target))
                 continue
 
     def set_imbalance_and_dsc(self, rps, comment):
