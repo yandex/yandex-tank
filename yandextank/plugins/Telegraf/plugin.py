@@ -43,7 +43,7 @@ class Plugin(AbstractPlugin):
             path=os.path.dirname(__file__))
         self.config = None
         self.process = None
-        self.monitoring = MonitoringCollector()
+        self.monitoring = MonitoringCollector(disguise_hostnames=bool(int(self.get_option('disguise_hostnames', '0'))))
         self.die_on_fail = True
         self.data_file = None
         self.mon_saver = None
@@ -59,7 +59,12 @@ class Plugin(AbstractPlugin):
                 "load_start_time = %s", self.monitoring.load_start_time)
 
     def get_available_options(self):
-        return ["config", "default_target", "ssh_timeout"]
+        return [
+            "config",
+            "default_target",
+            "ssh_timeout",
+            "disguise_hostnames"
+        ]
 
     def __detect_configuration(self):
         """
@@ -328,13 +333,12 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
             return "Monitoring is " + screen.markup.RED + "offline" + screen.markup.RESET
         else:
             res = "Monitoring is " + screen.markup.GREEN + \
-                "online" + screen.markup.RESET + ":\n"
+                  "online" + screen.markup.RESET + ":\n"
             for hostname, metrics in self.data.items():
                 tm_stamp = datetime.datetime.fromtimestamp(
                     float(self.time[hostname])).strftime('%H:%M:%S')
-                res += (
-                    "   " + screen.markup.CYAN + "%s" + screen.markup.RESET +
-                    " at %s:\n") % (hostname, tm_stamp)
+                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET +
+                        " at %s:\n") % (hostname, tm_stamp)
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
