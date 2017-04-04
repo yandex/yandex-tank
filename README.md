@@ -1,11 +1,8 @@
-# Yandex Tank [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# Yandex Tank [![Build Status](https://travis-ci.org/yandex/yandex-tank.svg?branch=master)](https://travis-ci.org/yandex/yandex-tank) [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Build Status](https://secure.travis-ci.org/yandex/yandex-tank.png?branch=master)](http://travis-ci.org/yandex/yandex-tank)
+Yandex.Tank is an extensible open source load testing tool for advanced linux users which is especially good as a part of an automated load testing suite
 
 ![Quantiles chart example](/logos/screen.png)
-
-## Description
-Yandex.Tank is an extensible open source load testing tool for advanced linux users which is especially good as a part of an automated load testing suite.
 
 ## Main features
 * different load generators supported:
@@ -18,23 +15,18 @@ Yandex.Tank is an extensible open source load testing tool for advanced linux us
 * test autostop plugin: stop your test when the results have became obvious and save time
 * customizable and extendable monitoring that works over SSH
 
-## Installation and configuration
-Installation at [ReadTheDocs](http://yandextank.readthedocs.org/en/latest/install.html).
+## Documentation
+- [Installation](http://yandextank.readthedocs.org/en/latest/install.html)
 
-## Get help
-Chat with authors and other performance specialists: [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+- Rest of [documentation](https://yandextank.readthedocs.org/en/latest/)
 
-Documentation at [ReadTheDocs](https://yandextank.readthedocs.org/en/latest/).
-
-Ask your questions at [Stackoverflow](https://stackoverflow.com/), use "load-testing" + "yandex" tags.
+- [Stackoverflow](https://stackoverflow.com/) – use `load-testing` + `yandex` tags
 
 ## See also
-[Overload𝛃](https://overload.yandex.net/) - performance analytics server.
+- [Overload𝛃](https://overload.yandex.net/) – performance analytics server
 
-Evgeniy Mamchits' [phantom](https://github.com/yandex-load/phantom) – Phantom scalable IO Engine.
+- Evgeniy Mamchits' [phantom](https://github.com/yandex-load/phantom) – phantom scalable IO engine
 
-[Vagrant environment](https://github.com/c3037/yandex-tank) with Yandex.Tank by Dmitry Porozhnyakov
+- [Vagrant environment](https://github.com/c3037/yandex-tank) with Yandex.Tank by Dmitry Porozhnyakov
 
-[BlazeMeter Sense](https://sense.blazemeter.com) - Performance Testing Analytics by BlazeMeter. Currently only with [1.7](https://github.com/yandex/yandex-tank/tree/v1.7.32) branch
-
-![Yandex.Metrics counter](https://mc.yandex.ru/watch/17743264)
+- [BlazeMeter Sense](https://sense.blazemeter.com) – performance testing analytics by [BlazeMeter](https://www.blazemeter.com/). Currently only with [1.7](https://github.com/yandex/yandex-tank/tree/v1.7.32) branch
