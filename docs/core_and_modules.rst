@@ -786,7 +786,7 @@ Example:
 ::
   [tank]
   ; plugin is disabled by default, enable it:
-  plugin_overload=yandextank.plugins.Overload
+  plugin_uploader=yandextank.plugins.DataUploader overload
 
   [overload]
   token_file=token.txt
