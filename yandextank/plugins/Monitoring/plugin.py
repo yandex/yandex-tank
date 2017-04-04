@@ -30,7 +30,7 @@ class Plugin(AbstractPlugin):
         self.default_target = None
         self.config = None
         self.process = None
-        self.monitoring = MonitoringCollector()
+        self.monitoring = MonitoringCollector(disguise_hostnames=bool(int(self.get_option('disguise_hostnames', '0'))))
         self.die_on_fail = True
         self.data_file = None
         self.mon_saver = None
@@ -47,7 +47,12 @@ class Plugin(AbstractPlugin):
                 "load_start_time = %s" % self.monitoring.load_start_time)
 
     def get_available_options(self):
-        return ["config", "default_target", 'ssh_timeout']
+        return [
+            "config",
+            "default_target",
+            'ssh_timeout',
+            'disguise_hostnames'
+        ]
 
     def configure(self):
         self.config = self.get_option("config", 'auto').strip()
