@@ -152,6 +152,7 @@ class TankCore(object):
         self.taskset_affinity = self.get_option(self.SECTION, 'affinity', '')
 
         options = self.config.get_options(self.SECTION, self.PLUGIN_PREFIX)
+
         for (plugin_name, plugin) in options:
             plugin_path, config_section = parse_plugin(plugin)
             if not plugin_path:
