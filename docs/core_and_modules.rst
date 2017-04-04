@@ -579,6 +579,24 @@ How it works
 
 .. image:: ./pic/tank-bfg.png
 
+BFG Worker Type
+-----------
+By default, BFG will create lots of processes (number is defined by ``instances`` option).
+Every process will execute requests in a single thread. These processes will comsume a lot of memory.
+It's also possible to switch this behavior and use ``gevent`` to power up every worker process,
+allowing it to have multiple concurrent threads executing HTTP requests.
+
+With green worker, it's recommended to set ``instances`` to number of CPU cores,
+and adjust the number of real threads by ``green_threads_per_instance`` option.
+
+INI file section: **[bfg]**
+
+:worker_type:
+  Set it to ``green`` to let every process have multiple concurrent green threads.
+
+:green_threads_per_instance:
+  Number of green threads every worker process will execute. Only affects ``green`` worker type.
+
 BFG Options
 -----------
 
@@ -786,7 +804,7 @@ Example:
 ::
   [tank]
   ; plugin is disabled by default, enable it:
-  plugin_overload=yandextank.plugins.Overload
+  plugin_uploader=yandextank.plugins.DataUploader overload
 
   [overload]
   token_file=token.txt
