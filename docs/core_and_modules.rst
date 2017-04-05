@@ -691,40 +691,37 @@ Disable phantom first (unless you really want to keep it active alongside at you
     ; Pandora config section:
     [pandora]
 
-    ; ammo file name
-    ammo=ammo.jsonline
+    ; Pandora executable path
+    pandora_cmd=/usr/bin/pandora
 
-    ; loop limit
-    loop=1000
+    ; Pandora config contents (json)
+    config_content = {
+      "pools": [
+      {
+        "name": "dummy pool",
+        "gun": {"type": "log"},
+        "ammo": {
+          "type": "dummy/log",
+          "AmmoLimit": 10000000
+        },
+        "result": {
+          "type": "log/phout",
+          "destination": "./phout.log"
+        },
+        "shared-limits": false,
+        "user-limiter": {
+          "type": "unlimited"
+        },
+        "startup-limiter": {
+          "type": "periodic",
+          "batch": 1,
+          "max": 5,
+          "period": "0.5s"
+        }
+      }]}
 
-    ; each user will maintain this schedule
-    user_schedule = periodic(1, 1, 100)
-
-    ; users are started using this schedule
-    startup_schedule = periodic(1, 1, 100)
-
-    ; if shared_schedule is false, then each user is independent,
-    ; in other case they all hold to a common schedule
-    shared_schedule = 0
-
-    ; target host and port
-    target=localhost:3000
-
-
-Ammo format
------------
-
-Pandora currently supports only one ammo format: ``jsonline``, i.e. one json doc per line.
-
-Example:
-::
-
-    {"uri": "/00", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
-    {"uri": "/01", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
-    {"tag": "mytag", "uri": "/02", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
-    {"uri": "/03", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
-
-Each json doc describes an HTTP request. Some of them may have a tag field, it will be used as other tags in other ammo formats.
+    ; OR config file (yaml or json)
+    config_file = pandora_config.yml
 
 Schedules
 ---------
