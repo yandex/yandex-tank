@@ -3,9 +3,9 @@ import logging
 import subprocess
 import time
 
-from ...common.interfaces import AbstractPlugin, AbstractInfoWidget, GeneratorPlugin
+from ...common.interfaces import AbstractPlugin, \
+    AbstractInfoWidget, GeneratorPlugin
 
-#from .config import PoolConfig, PandoraConfig, parse_schedule
 from .reader import PandoraStatsReader
 from ..Aggregator import Plugin as AggregatorPlugin
 from ..Console import Plugin as ConsolePlugin
@@ -37,13 +37,11 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def get_available_options(self):
         opts = [
             "pandora_cmd", "buffered_seconds",
-            "config_file", "startup_schedule", "user_schedule", "gun_type",
-            "custom_config"
+            "config_content", "config_file",
         ]
         return opts
 
     def configure(self):
-        self.custom_config = self.get_option("custom_config", "0") == "1"
         self.pandora_cmd = self.get_option("pandora_cmd", "pandora")
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
