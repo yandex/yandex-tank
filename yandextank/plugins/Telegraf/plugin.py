@@ -225,9 +225,7 @@ class Plugin(AbstractPlugin):
             for log in self.monitoring.artifact_files:
                 self.core.add_artifact_file(log)
 
-            while self.monitoring.__collected_data:
-                logger.info("Sending monitoring data rests...")
-                self.monitoring.send_collected_data()
+            self.monitoring.send_rest_data()
         if self.mon_saver:
             self.mon_saver.close()
         return retcode
