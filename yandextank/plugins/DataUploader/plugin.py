@@ -817,16 +817,12 @@ class LPJob(object):
         maintenance_timeouts = iter([0]) if ignore else iter(lambda: lock_wait_timeout, 0)
         while True:
             try:
-                self.api_client.lock_target(
-                    lock_target,
-                    lock_target_duration,
-                    trace=self.log_other_requests,
-                    maintenance_timeouts=maintenance_timeouts,
-                    maintenance_msg="Target is locked.\nManual unlock link: %s%s" % (
-                        self.api_client.base_url,
-                        self.api_client.get_manual_unlock_link(lock_target)
-                    )
-                )
+                self.api_client.lock_target(lock_target, lock_target_duration, trace=self.log_other_requests,
+                                            maintenance_timeouts=maintenance_timeouts,
+                                            maintenance_msg="Target is locked.\nManual unlock link: %s%s" % (
+                                                self.api_client.base_url,
+                                                self.api_client.get_manual_unlock_link(lock_target)
+                                            ))
                 return True
             except (APIClient.NotAvailable, APIClient.StoppedFromOnline) as e:
                 logger.info('Target is not locked due to %s', e.message)
