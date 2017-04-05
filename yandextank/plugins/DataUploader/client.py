@@ -594,5 +594,5 @@ class OverloadClient(APIClient):
     def send_status(self, jobno, upload_token, status, trace=False):
         return
 
-    def lock_target(self, target, duration, trace=False):
+    def lock_target(self, target, duration, trace=False, **kwargs):
         return
