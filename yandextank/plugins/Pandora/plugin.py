@@ -29,6 +29,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.process_stderr = None
         self.process_start_time = None
         self.custom_config = False
+        self.sample_log = "./phout.log"
 
     @staticmethod
     def get_key():
@@ -45,11 +46,13 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.pandora_cmd = self.get_option("pandora_cmd", "pandora")
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
-        self.core.add_artifact_file("./phout.log")
+        with open(self.sample_log, 'w'):
+            pass
+        self.core.add_artifact_file(self.sample_log)
         config_content = self.get_option("config_content", "")
         if config_content:
             self.pandora_config_file = self.core.mkstemp(
-                ".yml", "pandora_config_")
+                ".json", "pandora_config_")
             with open(self.pandora_config_file, 'w') as config_file:
                 config_file.write(config_content)
         else:
