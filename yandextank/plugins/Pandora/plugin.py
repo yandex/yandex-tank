@@ -5,7 +5,7 @@ import time
 
 from ...common.interfaces import AbstractPlugin, AbstractInfoWidget, GeneratorPlugin
 
-from .config import PoolConfig, PandoraConfig, parse_schedule
+#from .config import PoolConfig, PandoraConfig, parse_schedule
 from .reader import PandoraStatsReader
 from ..Aggregator import Plugin as AggregatorPlugin
 from ..Console import Plugin as ConsolePlugin
@@ -36,7 +36,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def get_available_options(self):
         opts = [
-            "pandora_cmd", "buffered_seconds", "ammo", "loop", "sample_log",
+            "pandora_cmd", "buffered_seconds",
             "config_file", "startup_schedule", "user_schedule", "gun_type",
             "custom_config"
         ]
@@ -47,66 +47,20 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.pandora_cmd = self.get_option("pandora_cmd", "pandora")
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
-
-        pool_config = PoolConfig()
-
-        ammo = self.get_option("ammo", "")
-        if ammo:
-            pool_config.set_ammo(ammo)
-        loop_limit = int(self.get_option("loop", "0"))
-        pool_config.set_loop(loop_limit)
-
-        self.sample_log = self.get_option("sample_log", "")
-        if not self.sample_log:
-            self.sample_log = self.core.mkstemp(".samples", "results_")
-        self.core.add_artifact_file(self.sample_log)
-        pool_config.set_sample_log(self.sample_log)
-
-        startup_schedule = self.get_option("startup_schedule", "")
-        if startup_schedule:
-            pool_config.set_startup_schedule(parse_schedule(startup_schedule))
-        else:
-            raise RuntimeError("startup_schedule not specified")
-
-        user_schedule = self.get_option("user_schedule", "")
-        if user_schedule:
-            pool_config.set_user_schedule(parse_schedule(user_schedule))
-        else:
-            raise RuntimeError("user_schedule not specified")
-
-        shared_schedule = bool(int(self.get_option("shared_schedule", "1")))
-        pool_config.set_shared_schedule(shared_schedule)
-
-        target = self.get_option("target", "localhost:3000")
-        pool_config.set_target(target)
-
-        gun_type = self.get_option("gun_type", "http")
-        if gun_type == 'https':
-            pool_config.set_ssl(True)
-            logger.info("SSL is on")
-            gun_type = "http"
-        logger.info("Pandora gun type is: %s", gun_type)
-        pool_config.set_gun_type(gun_type)
-
-        ammo_type = self.get_option("ammo_type", "jsonline/http")
-        logger.info("Pandora ammo type is: %s", ammo_type)
-        pool_config.set_ammo_type(ammo_type)
-
-        self.pandora_config = PandoraConfig()
-        self.pandora_config.add_pool(pool_config)
-
-        self.pandora_config_file = self.get_option("config_file", "")
-        if not self.pandora_config_file:
-            if self.custom_config:
-                raise RuntimeError(
-                    "You said you would like to use custom config,"
-                    " but you didn't specify it")
+        self.core.add_artifact_file("./phout.log")
+        config_content = self.get_option("config_content", "")
+        if config_content:
             self.pandora_config_file = self.core.mkstemp(
-                ".json", "pandora_config_")
-        self.core.add_artifact_file(self.pandora_config_file)
-        if not self.custom_config:
+                ".yml", "pandora_config_")
             with open(self.pandora_config_file, 'w') as config_file:
-                config_file.write(self.pandora_config.json())
+                config_file.write(config_content)
+        else:
+            self.pandora_config_file = self.get_option("config_file", "")
+            if not self.pandora_config_file:
+                raise RuntimeError(
+                    "neither pandora config content"
+                    "nor pandora config file is specified")
+        self.core.add_artifact_file(self.pandora_config_file)
 
     def prepare_test(self):
         aggregator = None
