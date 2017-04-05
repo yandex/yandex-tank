@@ -30,6 +30,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.process_start_time = None
         self.custom_config = False
         self.sample_log = "./phout.log"
+        self.expvar = True
 
     @staticmethod
     def get_key():
@@ -39,10 +40,12 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         opts = [
             "pandora_cmd", "buffered_seconds",
             "config_content", "config_file",
+            "expvar"
         ]
         return opts
 
     def configure(self):
+        self.expvar = self.get_option("expvar", "1") == "1"
         self.pandora_cmd = self.get_option("pandora_cmd", "pandora")
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
@@ -82,7 +85,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 "Linking sample and stats readers to aggregator. Reading samples from %s",
                 self.sample_log)
             aggregator.reader = PhantomReader(self.sample_log)
-            aggregator.stats_reader = PandoraStatsReader()
+            aggregator.stats_reader = PandoraStatsReader(self.expvar)
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)

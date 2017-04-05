@@ -694,6 +694,9 @@ Disable phantom first (unless you really want to keep it active alongside at you
     ; Pandora executable path
     pandora_cmd=/usr/bin/pandora
 
+    ; Enable/disable expvar monitoring
+    expvar = 1 ; default
+
     ; Pandora config contents (json)
     config_content = {
       "pools": [
