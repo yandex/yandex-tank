@@ -49,19 +49,26 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         with open(self.sample_log, 'w'):
             pass
         self.core.add_artifact_file(self.sample_log)
+
+        self.pandora_config_file = self.core.mkstemp(
+            ".json", "pandora_config_")
+        self.core.add_artifact_file(self.pandora_config_file)
+
         config_content = self.get_option("config_content", "")
         if config_content:
-            self.pandora_config_file = self.core.mkstemp(
-                ".json", "pandora_config_")
             with open(self.pandora_config_file, 'w') as config_file:
                 config_file.write(config_content)
         else:
-            self.pandora_config_file = self.get_option("config_file", "")
-            if not self.pandora_config_file:
+            config_file = self.get_option("config_file", "")
+            if not config_file:
                 raise RuntimeError(
                     "neither pandora config content"
                     "nor pandora config file is specified")
-        self.core.add_artifact_file(self.pandora_config_file)
+            else:
+                with open(config_file, 'rb') as config:
+                    config_content = config.read()
+                with open(self.pandora_config_file, 'wb') as config_file:
+                    config_file.write(config_content)
 
     def prepare_test(self):
         aggregator = None
