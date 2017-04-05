@@ -242,7 +242,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
         if console:
             console.add_info_widget(JobInfoWidget(self))
-            console.remote_translator = self
 
         self.set_option('target_host', self.target)
         self.set_option('target_port', port)
