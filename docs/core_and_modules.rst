@@ -105,6 +105,41 @@ Example:
     except Exception, ex:
         logger.error('Error trying to perform a test: %s', ex)
 
+exit codes
+==========
+.. code-block:: json
+
+    {
+        "0": "completed",
+        "1": "interrupted_generic_interrupt",
+        "2": "interrupted",
+        "3": "interrupted_active_task_not_found ",
+        "4": "interrupted_no_ammo_file",
+        "5": "interrupted_address_not_specified",
+        "6": "interrupted_cpu_or_disk_overload",
+        "7": "interrupted_unknown_config_parameter",
+        "8": "interrupted_stop_via_web",
+        "9": "interrupted",
+        "11": "interrupted_job_number_error",
+        "12": "interrupted_phantom_error",
+        "13": "interrupted_job_metainfo_error",
+        "14": "interrupted_target_monitoring_error",
+        "15": "interrupted_target_info_error",
+        "21": "autostop_time",
+        "22": "autostop_http",
+        "23": "autostop_net",
+        "24": "autostop_instances",
+        "25": "autostop_total_time",
+        "26": "autostop_total_http",
+        "27": "autostop_total_net",
+        "28": "autostop_negative_http",
+        "29": "autostop_negative_net",
+        "30": "autostop_http_trend",
+        "31": "autostop_metric_higher",
+        "32": "autostop_metric_lower"
+    }
+
+
 ***************
 Load Generators
 ***************
