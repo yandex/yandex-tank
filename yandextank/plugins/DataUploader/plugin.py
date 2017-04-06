@@ -240,7 +240,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
         if console:
             console.add_info_widget(JobInfoWidget(self))
-            console.remote_translator = self
 
         self.set_option('target_host', self.target)
         self.set_option('target_port', port)
@@ -466,12 +465,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.lp_job.send_config_snapshot(output.getvalue())
         with open(os.path.join(self.core.artifacts_dir, 'saved_conf.ini'), 'w') as f:
             config.write(f)
-
-    def send_console(self, text):
-        try:
-            self.lp_job.send_console(text)
-        except Exception:  # pylint: disable=W0703
-            logger.debug("Can't send console snapshot: %s", exc_info=True)
 
     def parse_lock_targets(self):
         # prepare target lock list
@@ -807,10 +800,6 @@ class LPJob(object):
         if self.is_alive:
             self.api_client.push_monitoring_data(
                 self.number, self.token, data, trace=self.log_monitoring_requests)
-
-    def send_console(self, text):
-        return self.api_client.send_console(
-            self.number, text, trace=self.log_other_requests)
 
     def lock_target(self, lock_target, lock_target_duration, ignore, strict):
         lock_wait_timeout = 10

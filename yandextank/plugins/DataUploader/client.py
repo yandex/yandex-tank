@@ -547,13 +547,6 @@ class APIClient(object):
                 except StopIteration:
                     raise e
 
-    def send_console(self, jobno, console, trace=False):
-        if trace:
-            logger.debug("Sending console view [%s]: %s", len(console),
-                         console[:64])
-        addr = "api/job/%s/console.txt" % jobno
-        self.__post_raw(addr, console, trace=trace)
-
     def is_target_locked(self, target, trace=False):
         addr = "api/server/lock.json?action=check&address=%s" % target
         res = self.__get(addr, trace=trace)
