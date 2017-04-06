@@ -132,10 +132,10 @@ class MonitoringCollector(object):
 
     def send_collected_data(self):
         """sends pending data set to listeners"""
-        data = copy.deepcopy(self.__collected_data)
+        data = self.__collected_data
         self.__collected_data = []
         for listener in self.listeners:
-            # 2nd deep copy to ensure each listener gets it's own copy
+            # deep copy to ensure each listener gets it's own copy
             listener.monitoring_data(copy.deepcopy(data))
 
     def not_empty(self):
