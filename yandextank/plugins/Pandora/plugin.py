@@ -3,9 +3,9 @@ import logging
 import subprocess
 import time
 
-from ...common.interfaces import AbstractPlugin, AbstractInfoWidget, GeneratorPlugin
+from ...common.interfaces import AbstractPlugin, \
+    AbstractInfoWidget, GeneratorPlugin
 
-from .config import PoolConfig, PandoraConfig, parse_schedule
 from .reader import PandoraStatsReader
 from ..Aggregator import Plugin as AggregatorPlugin
 from ..Console import Plugin as ConsolePlugin
@@ -29,6 +29,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.process_stderr = None
         self.process_start_time = None
         self.custom_config = False
+        self.sample_log = "./phout.log"
+        self.expvar = True
 
     @staticmethod
     def get_key():
@@ -36,77 +38,43 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def get_available_options(self):
         opts = [
-            "pandora_cmd", "buffered_seconds", "ammo", "loop", "sample_log",
-            "config_file", "startup_schedule", "user_schedule", "gun_type",
-            "custom_config"
+            "pandora_cmd", "buffered_seconds",
+            "config_content", "config_file",
+            "expvar"
         ]
         return opts
 
     def configure(self):
-        self.custom_config = self.get_option("custom_config", "0") == "1"
+        self.expvar = self.get_option("expvar", "1") == "1"
         self.pandora_cmd = self.get_option("pandora_cmd", "pandora")
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
-
-        pool_config = PoolConfig()
-
-        ammo = self.get_option("ammo", "")
-        if ammo:
-            pool_config.set_ammo(ammo)
-        loop_limit = int(self.get_option("loop", "0"))
-        pool_config.set_loop(loop_limit)
-
-        self.sample_log = self.get_option("sample_log", "")
-        if not self.sample_log:
-            self.sample_log = self.core.mkstemp(".samples", "results_")
+        with open(self.sample_log, 'w'):
+            pass
         self.core.add_artifact_file(self.sample_log)
-        pool_config.set_sample_log(self.sample_log)
 
-        startup_schedule = self.get_option("startup_schedule", "")
-        if startup_schedule:
-            pool_config.set_startup_schedule(parse_schedule(startup_schedule))
-        else:
-            raise RuntimeError("startup_schedule not specified")
-
-        user_schedule = self.get_option("user_schedule", "")
-        if user_schedule:
-            pool_config.set_user_schedule(parse_schedule(user_schedule))
-        else:
-            raise RuntimeError("user_schedule not specified")
-
-        shared_schedule = bool(int(self.get_option("shared_schedule", "1")))
-        pool_config.set_shared_schedule(shared_schedule)
-
-        target = self.get_option("target", "localhost:3000")
-        pool_config.set_target(target)
-
-        gun_type = self.get_option("gun_type", "http")
-        if gun_type == 'https':
-            pool_config.set_ssl(True)
-            logger.info("SSL is on")
-            gun_type = "http"
-        logger.info("Pandora gun type is: %s", gun_type)
-        pool_config.set_gun_type(gun_type)
-
-        ammo_type = self.get_option("ammo_type", "jsonline/http")
-        logger.info("Pandora ammo type is: %s", ammo_type)
-        pool_config.set_ammo_type(ammo_type)
-
-        self.pandora_config = PandoraConfig()
-        self.pandora_config.add_pool(pool_config)
-
-        self.pandora_config_file = self.get_option("config_file", "")
-        if not self.pandora_config_file:
-            if self.custom_config:
-                raise RuntimeError(
-                    "You said you would like to use custom config,"
-                    " but you didn't specify it")
+        config_content = self.get_option("config_content", "")
+        if config_content:
             self.pandora_config_file = self.core.mkstemp(
                 ".json", "pandora_config_")
-        self.core.add_artifact_file(self.pandora_config_file)
-        if not self.custom_config:
+            self.core.add_artifact_file(self.pandora_config_file)
             with open(self.pandora_config_file, 'w') as config_file:
-                config_file.write(self.pandora_config.json())
+                config_file.write(config_content)
+        else:
+            config_file = self.get_option("config_file", "")
+            if not config_file:
+                raise RuntimeError(
+                    "neither pandora config content"
+                    "nor pandora config file is specified")
+            else:
+                extension = config_file.rsplit(".", 1)[1]
+                self.pandora_config_file = self.core.mkstemp(
+                    "." + extension, "pandora_config_")
+                self.core.add_artifact_file(self.pandora_config_file)
+                with open(config_file, 'rb') as config:
+                    config_content = config.read()
+                with open(self.pandora_config_file, 'wb') as config_file:
+                    config_file.write(config_content)
 
     def prepare_test(self):
         aggregator = None
@@ -120,7 +88,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 "Linking sample and stats readers to aggregator. Reading samples from %s",
                 self.sample_log)
             aggregator.reader = PhantomReader(self.sample_log)
-            aggregator.stats_reader = PandoraStatsReader()
+            aggregator.stats_reader = PandoraStatsReader(self.expvar)
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)

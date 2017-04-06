@@ -7,8 +7,21 @@ logger = logging.getLogger(__name__)
 
 class PandoraStatsReader(object):
     # TODO: maybe make stats collection asyncronous
+    def __init__(self, expvar):
+        self.closed = False
+        self.expvar = expvar
 
     def next(self):
+        if self.closed:
+            raise StopIteration()
+        if not self.expvar:
+            return [{
+                'ts': int(time.time() - 1),
+                'metrics': {
+                    'instances': 0,
+                    'reqps': 0
+                }
+            }]
         try:
             pandora_response = requests.get("http://localhost:1234/debug/vars")
             pandora_stat = pandora_response.json()
@@ -40,7 +53,7 @@ class PandoraStatsReader(object):
         }]
 
     def close(self):
-        pass
+        self.closed = True
 
     def __iter__(self):
         return self
