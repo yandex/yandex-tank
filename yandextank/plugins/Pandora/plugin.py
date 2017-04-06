@@ -53,12 +53,11 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             pass
         self.core.add_artifact_file(self.sample_log)
 
-        self.pandora_config_file = self.core.mkstemp(
-            ".json", "pandora_config_")
-        self.core.add_artifact_file(self.pandora_config_file)
-
         config_content = self.get_option("config_content", "")
         if config_content:
+            self.pandora_config_file = self.core.mkstemp(
+                ".json", "pandora_config_")
+            self.core.add_artifact_file(self.pandora_config_file)
             with open(self.pandora_config_file, 'w') as config_file:
                 config_file.write(config_content)
         else:
@@ -68,6 +67,10 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                     "neither pandora config content"
                     "nor pandora config file is specified")
             else:
+                extension = config_file.rsplit(".", 1)[1]
+                self.pandora_config_file = self.core.mkstemp(
+                    "." + extension, "pandora_config_")
+                self.core.add_artifact_file(self.pandora_config_file)
                 with open(config_file, 'rb') as config:
                     config_content = config.read()
                 with open(self.pandora_config_file, 'wb') as config_file:
