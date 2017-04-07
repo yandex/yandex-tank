@@ -53,7 +53,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                 if data
             ]
 
-    def end_test(self, retcode):
+    def post_process(self, retcode):
         self.data_and_stats_stream.close()
         self.monitoring_stream.close()
         return retcode
