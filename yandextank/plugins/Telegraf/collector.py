@@ -134,17 +134,11 @@ class MonitoringCollector(object):
 
     def send_collected_data(self):
         """sends pending data set to listeners"""
-        data = copy.deepcopy(self.__collected_data)
+        data = self.__collected_data
         self.__collected_data = []
         for listener in self.listeners:
-            # 2nd deep copy to ensure each listener gets it's own copy
+            # deep copy to ensure each listener gets it's own copy
             listener.monitoring_data(copy.deepcopy(data))
-
-    def hash_hostname(self, host):
-        if self.disguise_hostnames and host:
-            return hashlib.md5(host).hexdigest()
-        else:
-            return host
 
     def not_empty(self):
         return len(self.__collected_data) > 0
@@ -153,6 +147,12 @@ class MonitoringCollector(object):
         while self.not_empty():
             logger.info("Sending monitoring data rests...")
             self.send_collected_data()
+
+    def hash_hostname(self, host):
+        if self.disguise_hostnames and host:
+            return hashlib.md5(host).hexdigest()
+        else:
+            return host
 
 
 class StdOutPrintMon(MonitoringDataListener):
