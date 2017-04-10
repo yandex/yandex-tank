@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='1.8.33',
+    version='1.8.34',
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -60,5 +60,6 @@ analytic tools for the results they produce.
         'yandextank.plugins.Pandora': ['config/*'],
         'yandextank.plugins.Aggregator': ['config/*'],
         'yandextank.plugins.Telegraf': ['config/*'],
+        'yandextank.plugins.Android': ['binary/*'],
     },
     use_2to3=False, )

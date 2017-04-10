@@ -1,4 +1,4 @@
-# Yandex Tank [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# Yandex Tank [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 [![Build Status](https://secure.travis-ci.org/yandex/yandex-tank.png?branch=master)](http://travis-ci.org/yandex/yandex-tank)
 
@@ -22,7 +22,7 @@ Yandex.Tank is an extensible open source load testing tool for advanced linux us
 Installation at [ReadTheDocs](http://yandextank.readthedocs.org/en/latest/install.html).
 
 ## Get help
-Chat with authors and other performance specialists: [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+Chat with authors and other performance specialists: [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Documentation at [ReadTheDocs](https://yandextank.readthedocs.org/en/latest/).
 

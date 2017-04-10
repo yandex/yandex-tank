@@ -9,6 +9,9 @@ import json
 import logging
 import os
 import time
+
+from copy import deepcopy
+
 from ...common.resource import manager as resource
 from ...common.interfaces import MonitoringDataListener, \
     AbstractPlugin, AbstractInfoWidget
@@ -32,15 +35,15 @@ class Plugin(AbstractPlugin):
 
     SECTION = 'telegraf'  # may be redefined to 'monitoring' sometimes.
 
-    def __init__(self, core):
-        super(Plugin, self).__init__(core)
+    def __init__(self, core, config_section=None):
+        super(Plugin, self).__init__(core, config_section)
         self.jobno = None
         self.default_target = None
         self.default_config = "{path}/config/monitoring_default_config.xml".format(
             path=os.path.dirname(__file__))
         self.config = None
         self.process = None
-        self.monitoring = MonitoringCollector()
+        self.monitoring = MonitoringCollector(disguise_hostnames=bool(int(self.get_option('disguise_hostnames', '0'))))
         self.die_on_fail = True
         self.data_file = None
         self.mon_saver = None
@@ -56,7 +59,12 @@ class Plugin(AbstractPlugin):
                 "load_start_time = %s", self.monitoring.load_start_time)
 
     def get_available_options(self):
-        return ["config", "default_target", "ssh_timeout"]
+        return [
+            "config",
+            "default_target",
+            "ssh_timeout",
+            "disguise_hostnames"
+        ]
 
     def __detect_configuration(self):
         """
@@ -222,9 +230,7 @@ class Plugin(AbstractPlugin):
             for log in self.monitoring.artifact_files:
                 self.core.add_artifact_file(log)
 
-            while self.monitoring.send_data:
-                logger.info("Sending monitoring data rests...")
-                self.monitoring.send_collected_data()
+            self.monitoring.send_rest_data()
         if self.mon_saver:
             self.mon_saver.close()
         return retcode
@@ -325,13 +331,12 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
             return "Monitoring is " + screen.markup.RED + "offline" + screen.markup.RESET
         else:
             res = "Monitoring is " + screen.markup.GREEN + \
-                "online" + screen.markup.RESET + ":\n"
+                  "online" + screen.markup.RESET + ":\n"
             for hostname, metrics in self.data.items():
                 tm_stamp = datetime.datetime.fromtimestamp(
                     float(self.time[hostname])).strftime('%H:%M:%S')
-                res += (
-                    "   " + screen.markup.CYAN + "%s" + screen.markup.RESET +
-                    " at %s:\n") % (hostname, tm_stamp)
+                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET +
+                        " at %s:\n") % (hostname, tm_stamp)
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
@@ -365,10 +370,11 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
         self.last_second = None
         self.seconds_count = 0
 
-    def monitoring_data(self, block):
+    def monitoring_data(self, _block):
         if self.triggered:
             return
 
+        block = deepcopy(_block)
         for chunk in block:
             host = chunk['data'].keys()[0]
             data = chunk['data'][host]['metrics']

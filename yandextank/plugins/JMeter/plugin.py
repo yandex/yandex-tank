@@ -22,8 +22,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     """ JMeter tank plugin """
     SECTION = 'jmeter'
 
-    def __init__(self, core):
-        AbstractPlugin.__init__(self, core)
+    def __init__(self, core, config_section):
+        AbstractPlugin.__init__(self, core, config_section)
         self.jmeter_process = None
         self.args = None
         self.original_jmx = None

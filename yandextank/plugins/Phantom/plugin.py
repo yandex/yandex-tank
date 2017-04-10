@@ -26,8 +26,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     OPTION_CONFIG = "config"
     SECTION = PhantomConfig.SECTION
 
-    def __init__(self, core):
-        AbstractPlugin.__init__(self, core)
+    def __init__(self, core, config_section):
+        AbstractPlugin.__init__(self, core, config_section)
         self.config = None
         self.process = None
 

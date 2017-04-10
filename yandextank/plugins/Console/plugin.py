@@ -16,12 +16,11 @@ class Plugin(AbstractPlugin, AggregateResultListener):
     ''' Console plugin '''
     SECTION = 'console'
 
-    def __init__(self, core):
-        AbstractPlugin.__init__(self, core)
+    def __init__(self, core, config_section):
+        AbstractPlugin.__init__(self, core, config_section)
         self.screen = None
         self.render_exception = None
         self.console_markup = None
-        self.remote_translator = None
         self.info_panel_width = '33'
         self.short_only = 0
         # these three provide non-blocking console output
@@ -70,9 +69,6 @@ class Plugin(AbstractPlugin, AggregateResultListener):
                     sys.stdout.write(self.console_markup.clear)
                     sys.stdout.write(self.__console_view)
                     sys.stdout.write(self.console_markup.TOTAL_RESET)
-
-                if self.remote_translator:
-                    self.remote_translator.send_console(self.__console_view)
 
     def is_test_finished(self):
         if not self.__writer_thread:

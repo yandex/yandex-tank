@@ -17,8 +17,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     # pylint:disable=R0902
     SECTION = 'json_report'
 
-    def __init__(self, core):
-        super(Plugin, self).__init__(core)
+    def __init__(self, core, config_section):
+        super(Plugin, self).__init__(core, config_section)
         self._is_telegraf = None
 
     def get_available_options(self):
@@ -53,7 +53,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                 if data
             ]
 
-    def end_test(self, retcode):
+    def post_process(self, retcode):
         self.data_and_stats_stream.close()
         self.monitoring_stream.close()
         return retcode
