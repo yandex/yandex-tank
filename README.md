@@ -1,4 +1,4 @@
-# Yandex Tank [![Build Status](https://travis-ci.org/yandex/yandex-tank.svg?branch=master)](https://travis-ci.org/yandex/yandex-tank) [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# Yandex Tank [![Build Status](https://travis-ci.org/yandex/yandex-tank.svg?branch=master)](https://travis-ci.org/yandex/yandex-tank) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Yandex.Tank is an extensible open source load testing tool for advanced linux users which is especially good as a part of an automated load testing suite
 
@@ -21,6 +21,9 @@ Yandex.Tank is an extensible open source load testing tool for advanced linux us
 - Rest of [documentation](https://yandextank.readthedocs.org/en/latest/)
 
 - [Stackoverflow](https://stackoverflow.com/) – use `load-testing` + `yandex` tags
+
+## Get help
+Chat with authors and other performance specialists: [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ## See also
 - [Overload𝛃](https://overload.yandex.net/) – performance analytics server
