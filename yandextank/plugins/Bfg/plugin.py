@@ -7,7 +7,7 @@ from ...common.interfaces import AbstractPlugin, GeneratorPlugin
 from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun, UltimateGun
 from .reader import BfgReader, BfgStatsReader
 from .widgets import BfgInfoWidget
-from .worker import BFG
+from .worker import BFGMultiprocessing, BFGGreen
 from ..Aggregator import Plugin as AggregatorPlugin
 from ..Console import Plugin as ConsolePlugin
 from ...stepper import StepperWrapper
@@ -69,11 +69,19 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             cached_stpd = True
         else:
             cached_stpd = False
+
+        if self.get_option("worker_type", "") == "green":
+            BFG = BFGGreen
+        else:
+            BFG = BFGMultiprocessing
+
         self.bfg = BFG(
             gun=self.gun,
             instances=self.stepper_wrapper.instances,
             stpd_filename=self.stepper_wrapper.stpd,
-            cached_stpd=cached_stpd)
+            cached_stpd=cached_stpd,
+            green_threads_per_instance=int(self.get_option('green_threads_per_instance', 1000)),
+        )
         aggregator = None
         try:
             aggregator = self.core.get_plugin_of_type(AggregatorPlugin)

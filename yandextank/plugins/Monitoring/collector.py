@@ -1,6 +1,7 @@
 """Target monitoring via SSH"""
 import base64
 import getpass
+import hashlib
 import logging
 import os.path
 import re
@@ -206,7 +207,7 @@ class AgentClient(object):
 class MonitoringCollector(object):
     """Aggregate data from several collectors"""
 
-    def __init__(self):
+    def __init__(self, disguise_hostnames):
         self.config = None
         self.default_target = None
         self.agents = []
@@ -220,6 +221,7 @@ class MonitoringCollector(object):
         self.filter_mask = defaultdict(str)
         self.ssh_timeout = 5
         self.load_start_time = None
+        self.disguise_hostnames = disguise_hostnames
 
     def add_listener(self, obj):
         self.listeners.append(obj)
@@ -265,10 +267,12 @@ class MonitoringCollector(object):
             lines = block.split("\n")
 
             for data in lines:
+
                 logger.debug("Got data from agent: %s", data.strip())
                 self.send_data.append(
-                    self.filter_unused_data(
-                        self.filter_conf, self.filter_mask, data))
+                    self.hash_hostnames(
+                        self.filter_unused_data(
+                            self.filter_conf, self.filter_mask, data)))
                 logger.debug("Data after filtering: %s", self.send_data)
 
         if not self.first_data_received and self.send_data:
@@ -503,6 +507,21 @@ class MonitoringCollector(object):
             return depend[metric][param]
         else:
             return ''
+
+    def hash_hostnames(self, data):
+        """
+        'bus-receiver02g.load.maps.yandex.net;1491233043;659;83;480;21052.0820312;19541.8710938;476.0859375;87840.6210938;13228.0;8241.0;2.15557638238;1.15588878475;96.4698531709;0.0624804748516;39313;61537;0;8192;0.34;1.06;1.19;2;0;0;0;0;0'
+        'start;bus-receiver02g.load.maps.yandex.net;1491233263;Net_closewait;Net_estab;Net_timewait;'
+        """
+        if not self.disguise_hostnames or not data:
+            return data
+        else:
+            data_entries = data.split(';')
+            if data_entries[0] == 'start':
+                data_entries[1] = hashlib.md5(data_entries[1]).hexdigest()
+            else:
+                data_entries[0] = hashlib.md5(data_entries[0]).hexdigest()
+            return ';'.join(data_entries)
 
 
 class StdOutPrintMon(MonitoringDataListener):

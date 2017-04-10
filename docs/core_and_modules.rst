@@ -105,6 +105,41 @@ Example:
     except Exception, ex:
         logger.error('Error trying to perform a test: %s', ex)
 
+exit codes
+==========
+.. code-block:: json
+
+    {
+        "0": "completed",
+        "1": "interrupted_generic_interrupt",
+        "2": "interrupted",
+        "3": "interrupted_active_task_not_found ",
+        "4": "interrupted_no_ammo_file",
+        "5": "interrupted_address_not_specified",
+        "6": "interrupted_cpu_or_disk_overload",
+        "7": "interrupted_unknown_config_parameter",
+        "8": "interrupted_stop_via_web",
+        "9": "interrupted",
+        "11": "interrupted_job_number_error",
+        "12": "interrupted_phantom_error",
+        "13": "interrupted_job_metainfo_error",
+        "14": "interrupted_target_monitoring_error",
+        "15": "interrupted_target_info_error",
+        "21": "autostop_time",
+        "22": "autostop_http",
+        "23": "autostop_net",
+        "24": "autostop_instances",
+        "25": "autostop_total_time",
+        "26": "autostop_total_http",
+        "27": "autostop_total_net",
+        "28": "autostop_negative_http",
+        "29": "autostop_negative_net",
+        "30": "autostop_http_trend",
+        "31": "autostop_metric_higher",
+        "32": "autostop_metric_lower"
+    }
+
+
 ***************
 Load Generators
 ***************
@@ -579,6 +614,24 @@ How it works
 
 .. image:: ./pic/tank-bfg.png
 
+BFG Worker Type
+-----------
+By default, BFG will create lots of processes (number is defined by ``instances`` option).
+Every process will execute requests in a single thread. These processes will comsume a lot of memory.
+It's also possible to switch this behavior and use ``gevent`` to power up every worker process,
+allowing it to have multiple concurrent threads executing HTTP requests.
+
+With green worker, it's recommended to set ``instances`` to number of CPU cores,
+and adjust the number of real threads by ``green_threads_per_instance`` option.
+
+INI file section: **[bfg]**
+
+:worker_type:
+  Set it to ``green`` to let every process have multiple concurrent green threads.
+
+:green_threads_per_instance:
+  Number of green threads every worker process will execute. Only affects ``green`` worker type.
+
 BFG Options
 -----------
 
@@ -673,40 +726,40 @@ Disable phantom first (unless you really want to keep it active alongside at you
     ; Pandora config section:
     [pandora]
 
-    ; ammo file name
-    ammo=ammo.jsonline
+    ; Pandora executable path
+    pandora_cmd=/usr/bin/pandora
 
-    ; loop limit
-    loop=1000
+    ; Enable/disable expvar monitoring
+    expvar = 1 ; default
 
-    ; each user will maintain this schedule
-    user_schedule = periodic(1, 1, 100)
+    ; Pandora config contents (json)
+    config_content = {
+      "pools": [
+      {
+        "name": "dummy pool",
+        "gun": {"type": "log"},
+        "ammo": {
+          "type": "dummy/log",
+          "AmmoLimit": 10000000
+        },
+        "result": {
+          "type": "log/phout",
+          "destination": "./phout.log"
+        },
+        "shared-limits": false,
+        "user-limiter": {
+          "type": "unlimited"
+        },
+        "startup-limiter": {
+          "type": "periodic",
+          "batch": 1,
+          "max": 5,
+          "period": "0.5s"
+        }
+      }]}
 
-    ; users are started using this schedule
-    startup_schedule = periodic(1, 1, 100)
-
-    ; if shared_schedule is false, then each user is independent,
-    ; in other case they all hold to a common schedule
-    shared_schedule = 0
-
-    ; target host and port
-    target=localhost:3000
-
-
-Ammo format
------------
-
-Pandora currently supports only one ammo format: ``jsonline``, i.e. one json doc per line.
-
-Example:
-::
-
-    {"uri": "/00", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
-    {"uri": "/01", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
-    {"tag": "mytag", "uri": "/02", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
-    {"uri": "/03", "method": "GET", "headers": {"Host": "example.org", "User-Agent": "Pandora/0.0.1"}, "host": "example.org"}
-
-Each json doc describes an HTTP request. Some of them may have a tag field, it will be used as other tags in other ammo formats.
+    ; OR config file (yaml or json)
+    config_file = pandora_config.yml
 
 Schedules
 ---------

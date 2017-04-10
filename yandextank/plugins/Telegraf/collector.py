@@ -1,4 +1,5 @@
 """Monitoring collector """
+import hashlib
 import logging
 import sys
 import time
@@ -28,7 +29,8 @@ class MonitoringCollector(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, disguise_hostnames):
+        self.disguise_hostnames = disguise_hostnames
         self.config = None
         self.default_target = None
         self.agents = []
@@ -94,7 +96,7 @@ class MonitoringCollector(object):
                     ready_to_send = {
                         "timestamp": int(ts),
                         "data": {
-                            agent.host: {
+                            self.hash_hostname(agent.host): {
                                 "comment": agent.config.comment,
                                 "metrics": prepared_results
                             }
@@ -145,6 +147,12 @@ class MonitoringCollector(object):
         while self.not_empty():
             logger.info("Sending monitoring data rests...")
             self.send_collected_data()
+
+    def hash_hostname(self, host):
+        if self.disguise_hostnames and host:
+            return hashlib.md5(host).hexdigest()
+        else:
+            return host
 
 
 class StdOutPrintMon(MonitoringDataListener):
