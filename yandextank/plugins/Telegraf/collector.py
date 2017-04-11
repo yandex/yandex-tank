@@ -93,16 +93,17 @@ class MonitoringCollector(object):
                     return 0
                 for chunk in collect:
                     ts, prepared_results = chunk
-                    ready_to_send = {
-                        "timestamp": int(ts),
-                        "data": {
-                            self.hash_hostname(agent.host): {
-                                "comment": agent.config.comment,
-                                "metrics": prepared_results
+                    if self.load_start_time and int(ts) >= self.load_start_time:
+                        ready_to_send = {
+                            "timestamp": int(ts),
+                            "data": {
+                                self.hash_hostname(agent.host): {
+                                    "comment": agent.config.comment,
+                                    "metrics": prepared_results
+                                }
                             }
                         }
-                    }
-                    self.__collected_data.append(ready_to_send)
+                        self.__collected_data.append(ready_to_send)
 
         logger.debug(
             'Polling/decoding agents data took: %.2fms',
