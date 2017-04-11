@@ -593,5 +593,3 @@ class OverloadClient(APIClient):
     def unlock_target(self, *args, **kwargs):
         return
 
-    def unlock_target(self, *args, **kwargs):
-        return
