@@ -210,7 +210,6 @@ class Plugin(AbstractPlugin):
                 raise
             else:
                 self.monitoring = None
-        time.sleep(10)
 
     def is_test_finished(self):
         if self.monitoring:
