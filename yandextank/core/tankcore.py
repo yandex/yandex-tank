@@ -283,7 +283,7 @@ class TankCore(object):
             logger.debug("Starting %s", plugin)
             start_time = time.time()
             plugin.start_test()
-            logger.info("Plugin {0:s} required {1:d} seconds to start".format(plugin,
+            logger.info("Plugin {0:s} required {1:f} seconds to start".format(plugin,
                                                                               time.time()-start_time))
         if self.flush_config_to:
             self.config.flush(self.flush_config_to)
