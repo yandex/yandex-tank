@@ -93,7 +93,7 @@ class MonitoringCollector(object):
                     return 0
                 for chunk in collect:
                     ts, prepared_results = chunk
-                    if self.load_start_time and ts >= self.load_start_time:
+                    if self.load_start_time and int(ts) >= self.load_start_time:
                         ready_to_send = {
                             "timestamp": int(ts),
                             "data": {

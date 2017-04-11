@@ -186,12 +186,6 @@ class Plugin(AbstractPlugin):
         if self.default_target:
             self.monitoring.default_target = self.default_target
 
-        # FIXME json report already save this artifact, fix pls
-        self.data_file = self.core.mkstemp(".data", "monitoring_overall_")
-        self.mon_saver = SaveMonToFile(self.data_file)
-        self.monitoring.add_listener(self.mon_saver)
-        self.core.add_artifact_file(self.data_file)
-
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
         except Exception as ex:
@@ -216,6 +210,7 @@ class Plugin(AbstractPlugin):
                 raise
             else:
                 self.monitoring = None
+        time.sleep(10)
 
     def is_test_finished(self):
         if self.monitoring:
