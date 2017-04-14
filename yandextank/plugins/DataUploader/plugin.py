@@ -585,10 +585,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                      tank=self.core.job.tank,
                      notify_list=self.get_option("notify", '').split(' '),
                      load_scheme=loadscheme,
+                     version=self.get_option('ver', ''),
                      log_data_requests=bool(int(self.get_option('log_data_requests', '0'))),
                      log_monitoring_requests=bool(int(self.get_option('log_monitoring_requests', '0'))),
                      log_status_requests=bool(int(self.get_option('log_status_requests', '0'))),
-                     log_other_requests=bool(int(self.get_option('log_other_requests', '0'))), )
+                     log_other_requests=bool(int(self.get_option('log_other_requests', '0'))))
 
     @property
     def task(self):
