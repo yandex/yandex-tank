@@ -1,0 +1,29 @@
+{
+'phantom_path': {
+  'type': 'string',
+  'default': 'phantom'
+  },
+'buffered_seconds': {
+  'type': 'integer',
+  'default': 2
+  },
+'address': {
+  'type': 'string',
+  'required': True
+  },
+'header_http': {
+  'type': 'string'
+  },
+'uris': {
+  'type': 'string'
+  },
+'headers': {
+        'type': 'string'
+    },
+    'rps_schedule': {
+        'type': 'string'
+    },
+    'writelog': {
+        'type': 'string'
+    }
+}

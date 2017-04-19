@@ -1,0 +1,6 @@
+config:
+  type: string
+  required: true
+disguise_hostnames:
+  type: boolean
+  default: false
