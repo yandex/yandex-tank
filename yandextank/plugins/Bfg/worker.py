@@ -28,7 +28,7 @@ Gun: {gun.__class__.__name__}
                 gun=gun, ))
         self.instances = int(instances)
         self.instance_counter = mp.Value('i')
-        self.results = mp.Queue()
+        self.results = mp.Queue(16384)
         self.gun = gun
         self.gun.results = self.results
         self.quit = mp.Event()
