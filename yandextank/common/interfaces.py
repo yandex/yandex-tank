@@ -13,15 +13,14 @@ class AbstractPlugin(object):
         should point to __file__ magic constant """
         raise TypeError("Abstract method needs to be overridden")
 
-    def __init__(self, core, config_section):
+    def __init__(self, core, cfg):
         """
 
         @type core: TankCore
         """
         self.log = logging.getLogger(__name__)
         self.core = core
-        if config_section:
-            self.SECTION = config_section
+        self.cfg = cfg
 
     def configure(self):
         """ A stage to read config values and instantiate objects """
@@ -55,7 +54,7 @@ class AbstractPlugin(object):
 
     def get_option(self, option_name, default_value=None):
         """ Wrapper to get option from plugins' section """
-        return self.core.get_option(self.SECTION, option_name, default_value)
+        return self.cfg[option_name]
 
     def set_option(self, option_name, value):
         """ Wrapper to set option to plugins' section """

@@ -63,8 +63,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     RC_STOP_FROM_WEB = 8
     VERSION = '3.0'
 
-    def __init__(self, core, config_section):
-        AbstractPlugin.__init__(self, core, config_section)
+    def __init__(self, core, cfg):
+        AbstractPlugin.__init__(self, core, cfg)
         self.data_queue = Queue()
         self.monitoring_queue = Queue()
         self.ignore_target_lock = None
@@ -129,14 +129,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.mon = self.core.job.monitoring_plugin
         self.jobno_file = self.get_option("jobno_file", '')
         self.regression_component = str(self.get_option("component", ''))
-        ignore_all_locks = self.core.get_option(self.core.SECTION,
-                                                "ignore_locks", '0')
-        self.ignore_target_lock = int(self.get_option("ignore_target_lock",
-                                                      ignore_all_locks))
+        self.ignore_target_lock = int(self.get_option("ignore_target_lock"))
         self.lock_target_duration = expand_to_seconds(self.get_option(
             "target_lock_duration", "30m"))
-        self.send_status_period = expand_to_seconds(
-            self.get_option('send_status_period', '10'))
+        self.send_status_period = self.get_option('send_status_period', '10')
         self.chunk_size = int(self.get_option("chunk_size", '500000'))
 
     def check_task_is_open(self):

@@ -1,95 +1,20 @@
-import ConfigParser
+
 
 import pytest
 
-from validator import validate_core, load_multiple, validate_plugin, validate_all, ValidationError
-
-CFG_VER_G_0 = {
-    "version": "1.8.34",
-    "core": {
-        'operator': 'fomars'
-    },
-    "plugins": {
-        'telegraf': {
-            'package': 'yandextank.plugins.Telegraf',
-            'enabled': True,
-            'config': {
-                'config': 'monitoring.xml',
-                'disguise_hostnames': 1
-            }
-        },
-        'phantom': {
-            'package': 'yandextank.plugins.Phantom',
-            'enabled': True,
-            'config': {
-                'address': 'nodejs.load.yandex.net',
-                'header_http': '1.1',
-                'uris': '/',
-            }
-        },
-        'lunapark': {
-            'package': 'yandextank.plugins.DataUploader',
-            'enabled': True,
-            'config': {
-                'api_address': 'https://lunapark.test.yandex-team.ru/'
-            }
-        },
-        'overload': {
-            'package': 'yandextank.plugins.DataUploader',
-            'enabled': True,
-            'config': {
-                'api_address': 'https://overload.yandex.net/',
-                'token_file': 'token.txt'
-            }
-        }
-    }
-}
-
-CFG_VER_H_0 = {
-    "version": "1.8.34",
-    "core": {
-        'operator': 'fomars'
-    },
-    "plugins": {
-        'telegraf': {
-            'package': 'yandextank.plugins.Telegraf',
-            'enabled': True,
-            'config': 'monitoring.xml',
-            'disguise_hostnames': 1
-
-        },
-        'phantom': {
-            'package': 'yandextank.plugins.Phantom',
-            'enabled': True,
-            'address': 'nodejs.load.yandex.net',
-            'header_http': '1.1',
-            'uris': '/',
-        },
-        'lunapark': {
-            'package': 'yandextank.plugins.DataUploader',
-            'enabled': True,
-            'api_address': 'https://lunapark.test.yandex-team.ru/'
-
-        },
-        'overload': {
-            'package': 'yandextank.plugins.DataUploader',
-            'enabled': True,
-            'api_address': 'https://overload.yandex.net/',
-            'token_file': 'token.txt'
-        }
-    }
-}
+from validator import TankConfig, ValidationError
 
 CFG_VER_I_0 = {
     "version": "1.8.34",
     "core": {
-        'operator': 'fomars'
+        'operator': 'fomars',
+        'artifacts_base_dir': './'
     },
     'telegraf': {
         'package': 'yandextank.plugins.Telegraf',
         'enabled': True,
         'config': 'monitoring.xml',
-        'disguise_hostnames': 1
+        'disguise_hostnames': True
     },
     'phantom': {
         'package': 'yandextank.plugins.Phantom',
@@ -147,13 +72,14 @@ PHANTOM_SCHEMA_V_G = {
     ({
          "version": "1.8.34",
          "core": {
-             'operator': 'fomars'
+             'operator': 'fomars',
+             'artifacts_base_dir': './',
          },
          'telegraf': {
              'package': 'yandextank.plugins.Telegraf',
              'enabled': True,
              'config': 'monitoring.xml',
-             'disguise_hostnames': 1
+             'disguise_hostnames': True
          },
          'phantom': {
              'package': 'yandextank.plugins.Phantom',
@@ -166,13 +92,19 @@ PHANTOM_SCHEMA_V_G = {
      {
          "version": "1.8.34",
          "core": {
-             'operator': 'fomars'
+             'operator': 'fomars',
+             'artifacts_base_dir': './',
+             'lock_dir': '/var/lock/',
+             'taskset_path': 'taskset',
+             'affinity': '',
          },
          'telegraf': {
              'package': 'yandextank.plugins.Telegraf',
              'enabled': True,
              'config': 'monitoring.xml',
-             'disguise_hostnames': 1
+             'disguise_hostnames': True,
+             'default_target': 'localhost',
+             'ssh_timeout': '5s',
          },
          'phantom': {
              'package': 'yandextank.plugins.Phantom',
@@ -180,12 +112,14 @@ PHANTOM_SCHEMA_V_G = {
              'address': 'nodejs.load.yandex.net',
              'header_http': '1.1',
              'uris': '/',
+             'buffered_seconds': 2,
+             'phantom_path': 'phantom',
          }
      }
     )
 ])
 def test_validate_core(config, expected):
-    assert validate_core(config) == expected
+    assert TankConfig(config).validated == expected
 
 
 @pytest.mark.parametrize('config, expected', [
@@ -229,11 +163,11 @@ def test_validate_core(config, expected):
              'uris': '/',
          }
 
-     }, "{'package': ['empty values not allowed']}")
+     }, '{\'telegraf\': [{\'package\': [\'empty values not allowed\', "value does not match regex \'[^/]+\'"]}]}')
 ])
 def test_validate_core_error(config, expected):
     with pytest.raises(Exception) as e:
-        validate_core(config)
+        TankConfig(config).validated
     assert expected in str(e.value)
 
 
@@ -290,7 +224,7 @@ def test_validate_core_error(config, expected):
     )
 ])
 def test_load_multiple(configs, expected):
-    assert load_multiple(*configs) == expected
+    assert TankConfig(*configs)._TankConfig__raw_config_dict == expected
 
 
 @pytest.mark.parametrize('config, schema, expected', [
@@ -332,7 +266,7 @@ def test_load_multiple(configs, expected):
     )
 ])
 def test_validate_plugin(config, schema, expected):
-    assert validate_plugin(config, schema) == expected
+    assert TankConfig._TankConfig__validate_plugin(config, schema) == expected
 
 
 @pytest.mark.parametrize('config, schema, expected', [
@@ -362,7 +296,7 @@ def test_validate_plugin(config, schema, expected):
 ])
 def test_validate_plugin_error(config, schema, expected):
     with pytest.raises(ValidationError) as e:
-        validate_plugin(config, schema)
+        TankConfig._TankConfig__validate_plugin(config, schema)
     assert expected == e.value.message
 
 
@@ -370,7 +304,8 @@ def test_validate_plugin_error(config, schema, expected):
     ({
          "version": "1.8.34",
          "core": {
-             'operator': 'fomars'
+             'operator': 'fomars',
+             'artifacts_base_dir': './'
          },
          'telegraf': {
              'package': 'yandextank.plugins.Telegraf',
@@ -389,13 +324,19 @@ def test_validate_plugin_error(config, schema, expected):
      {
          "version": "1.8.34",
          "core": {
-             'operator': 'fomars'
+             'operator': 'fomars',
+             'artifacts_base_dir': './',
+             'lock_dir': '/var/lock/',
+             'taskset_path': 'taskset',
+             'affinity': '',
          },
          'telegraf': {
              'package': 'yandextank.plugins.Telegraf',
              'enabled': True,
              'config': 'monitoring.xml',
-             'disguise_hostnames': True
+             'disguise_hostnames': True,
+             'ssh_timeout': '5s',
+             'default_target': 'localhost'
          },
          'phantom': {
              'package': 'yandextank.plugins.Phantom',
@@ -410,16 +351,16 @@ def test_validate_plugin_error(config, schema, expected):
     ),
 ])
 def test_validate_all(config, expected):
-    assert validate_all(config) == expected
+    assert TankConfig(config).validated == expected
 
 
 @pytest.mark.parametrize('config, expected', [
     # core errors
     ({
          "version": 5,
-         "core": 'foo',
+         "core": {},
          'telegraf': {
-             'package': '',
+             'package': 'yandextank/plugins/Telegraf',
              'enabled': True,
              'config': 'monitoring.xml',
              'disguise_hostnames': True
@@ -432,14 +373,14 @@ def test_validate_all(config, expected):
              'uris': '/',
          }
      },
-     {'core': ['must be of dict type'],
-      'telegraf': [{'package': ['empty values not allowed']}],
+     {'telegraf': [{'package': ["value does not match regex '[^/]+'"]}],
       'version': ['must be of string type']}),
     # plugins errors
     ({
          "version": "1.8.34",
          "core": {
-             'operator': 'fomars'
+             'operator': 'fomars',
+             'artifacts_base_dir': './'
          },
          'telegraf': {
              'package': 'yandextank.plugins.Telegraf',
@@ -460,8 +401,36 @@ def test_validate_all(config, expected):
 ])
 def test_validate_all_error(config, expected):
     with pytest.raises(ValidationError) as e:
-        validate_all(config)
+        TankConfig(config).validated(config)
     assert e.value.message == expected
+
+
+@pytest.mark.parametrize('config, expected', [
+    (
+        CFG_VER_I_0,
+        {
+            (
+                'telegraf',
+                'yandextank.plugins.Telegraf',
+            ),
+            (
+                'phantom',
+                'yandextank.plugins.Phantom',
+            ),
+            (
+                'lunapark',
+                'yandextank.plugins.DataUploader',
+            ),
+            (
+                'overload',
+                'yandextank.plugins.DataUploader',
+            )
+        }
+    )
+])
+def test_get_plugins(config, expected):
+    assert {(name, pack) for name, pack, cfg in TankConfig(config).plugins} == expected
+
 
 
     # configparser = ConfigParser.ConfigParser()

@@ -35,8 +35,8 @@ class Plugin(AbstractPlugin):
 
     SECTION = 'telegraf'  # may be redefined to 'monitoring' sometimes.
 
-    def __init__(self, core, config_section=None):
-        super(Plugin, self).__init__(core, config_section)
+    def __init__(self, core, cfg):
+        super(Plugin, self).__init__(core, cfg)
         self.jobno = None
         self.default_target = None
         self.default_config = "{path}/config/monitoring_default_config.xml".format(
@@ -75,11 +75,11 @@ class Plugin(AbstractPlugin):
         """
         try:
             is_telegraf = self.core.get_option('telegraf', "config", None)
-        except NoOptionError:
+        except KeyError:
             is_telegraf = None
         try:
             is_monitoring = self.core.get_option('monitoring', "config", None)
-        except NoOptionError:
+        except KeyError:
             is_monitoring = None
 
         if is_telegraf and is_monitoring:

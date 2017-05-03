@@ -26,8 +26,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     OPTION_CONFIG = "config"
     SECTION = PhantomConfig.SECTION
 
-    def __init__(self, core, config_section):
-        AbstractPlugin.__init__(self, core, config_section)
+    def __init__(self, core, cfg):
+        AbstractPlugin.__init__(self, core, cfg)
         self.config = None
         self.process = None
 
@@ -71,9 +71,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.enum_ammo = self.get_option("enum_ammo", False)
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
-        self.exclude_markers = set(
-            filter((lambda marker: marker != ''),
-                   self.get_option('exclude_markers', []).split(' ')))
+        # self.exclude_markers = set(
+        #     filter((lambda marker: marker != ''),
+        #            self.get_option('exclude_markers', []).split(' ')))
         self.taskset_affinity = self.get_option('affinity', '')
 
         try:

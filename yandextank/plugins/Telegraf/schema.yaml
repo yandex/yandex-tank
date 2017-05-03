@@ -1,6 +1,12 @@
 config:
   type: string
-  required: true
+  default: auto
+default_target:
+  type: string
+  default: localhost
 disguise_hostnames:
   type: boolean
   default: false
+ssh_timeout:
+  type: string
+  default: 5s

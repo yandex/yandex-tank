@@ -217,7 +217,7 @@ class ConsoleTank:
                 for config_file in self.options.config:
                     configs.append(config_file)
 
-            self.core.load_configs(configs)
+            self.core.load_config(configs)
 
             if self.ammofile:
                 self.log.debug("Ammofile: %s", self.ammofile)
