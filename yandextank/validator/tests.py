@@ -1,5 +1,3 @@
-
-
 import pytest
 
 from validator import TankConfig, ValidationError
@@ -114,6 +112,27 @@ PHANTOM_SCHEMA_V_G = {
              'uris': '/',
              'buffered_seconds': 2,
              'phantom_path': 'phantom',
+             'affinity': '',
+             'enum_ammo': False,
+             'phout_file': '',
+             'phantom_modules_path': '/usr/lib/phantom',
+             'threads': None,
+             'writelog': 'none',
+             'timeout': '11s',
+             'additional_libs': '',
+             'config': '',
+             'gatling_ip': '',
+             'instances': 1000,
+             'method_options': '',
+             'method_prefix': 'method_stream',
+             'phantom_http_entity': '',
+             'phantom_http_field': '',
+             'phantom_http_field_num': '',
+             'phantom_http_line': '',
+             'source_log_prefix': '',
+             'ssl': False,
+             'tank_type': 'http',
+             'multi': [],
          }
      }
     )
@@ -140,6 +159,22 @@ def test_validate_core(config, expected):
              'address': 'nodejs.load.yandex.net',
              'header_http': '1.1',
              'uris': '/',
+             'affinity': '',
+             'enum_ammo': False,
+             'phout_file': '',
+             'config': '',
+             'gatling_ip': '',
+             'instances': 1000,
+             'method_options': '',
+             'method_prefix': 'method_stream',
+             'phantom_http_entity': '',
+             'phantom_http_field': '',
+             'phantom_http_field_num': '',
+             'phantom_http_line': '',
+             'source_log_prefix': '',
+             'ssl': False,
+             'tank_type': 'http',
+             'multi': [],
          }
 
      }, "{'package': ['required field']}"),
@@ -345,7 +380,28 @@ def test_validate_plugin_error(config, schema, expected):
              'header_http': '1.1',
              'uris': '/',
              'buffered_seconds': 2,
-             'phantom_path': 'phantom'
+             'phantom_path': 'phantom',
+             'affinity': '',
+             'enum_ammo': False,
+             'phout_file': '',
+             'phantom_modules_path': '/usr/lib/phantom',
+             'threads': None,
+             'writelog': 'none',
+             'timeout': '11s',
+             'additional_libs': '',
+             'config': '',
+             'gatling_ip': '',
+             'instances': 1000,
+             'method_options': '',
+             'method_prefix': 'method_stream',
+             'phantom_http_entity': '',
+             'phantom_http_field': '',
+             'phantom_http_field_num': '',
+             'phantom_http_line': '',
+             'source_log_prefix': '',
+             'ssl': False,
+             'tank_type': 'http',
+             'multi': [],
          }
      }
     ),
@@ -407,25 +463,25 @@ def test_validate_all_error(config, expected):
 
 @pytest.mark.parametrize('config, expected', [
     (
-        CFG_VER_I_0,
-        {
-            (
-                'telegraf',
-                'yandextank.plugins.Telegraf',
-            ),
-            (
-                'phantom',
-                'yandextank.plugins.Phantom',
-            ),
-            (
-                'lunapark',
-                'yandextank.plugins.DataUploader',
-            ),
-            (
-                'overload',
-                'yandextank.plugins.DataUploader',
-            )
-        }
+            CFG_VER_I_0,
+            {
+                (
+                        'telegraf',
+                        'yandextank.plugins.Telegraf',
+                ),
+                (
+                        'phantom',
+                        'yandextank.plugins.Phantom',
+                ),
+                (
+                        'lunapark',
+                        'yandextank.plugins.DataUploader',
+                ),
+                (
+                        'overload',
+                        'yandextank.plugins.DataUploader',
+                )
+            }
     )
 ])
 def test_get_plugins(config, expected):

@@ -1,4 +1,5 @@
 import collections
+import importlib
 import json
 import os
 import pkgutil
@@ -11,15 +12,39 @@ class ValidationError(Exception):
     pass
 
 
-def load_schema(filname):
-    with open(filname) as f:
+def load_yaml(directory, filename=None):
+    DEFAULT_FILENAME = 'schema.yaml'
+    name = filename if filename else DEFAULT_FILENAME
+    with open(os.path.join(directory, name), 'r') as f:
         return yaml.load(f)
 
 
+def this_pkg():
+    yandextank_pkg_dir = os.path.dirname(os.path.dirname(importlib.import_module('yandextank').__file__))
+    this_pkg_rel_path = os.path.relpath(__file__, yandextank_pkg_dir)
+    return this_pkg_rel_path.rstrip('.py').replace('/', '.')
+
+
+def load_py(directory, filename):
+    DEFAULT_PY_MODULE_NAME = 'schema'
+    path = os.path.join(directory, DEFAULT_PY_MODULE_NAME)
+    schema_module = importlib.import_module(os.path.relpath(path).replace('/', '.'), this_pkg())
+    return schema_module.SCHEMA
+
+
+def load_schema(directory, filename=None):
+    try:
+        return load_yaml(directory, filename)
+    except IOError:
+        try:
+            return load_py(directory, filename)
+        except ImportError:
+            raise IOError('Neither .yaml nor .py schema found in %s' % directory)
+
+
 class TankConfig(object):
-    DEFAULT_SCHEMA_PATH = 'schema.yaml'
-    BASE_SCHEMA = load_schema('../core/schema.yaml')
-    PLUGIN_SCHEMA = load_schema('../core/plugins_schema.yaml')
+    BASE_SCHEMA = load_schema(os.path.join(os.path.dirname(__file__), '../core/'))
+    PLUGIN_SCHEMA = load_schema(os.path.join(os.path.dirname(__file__), '../core/'), filename='plugins_schema.yaml')
 
     def __init__(self, *configs):
         self.__raw_config_dict = self.__load_multiple(*configs)
@@ -76,8 +101,7 @@ class TankConfig(object):
             try:
                 results[plugin_name] = \
                     self.__validate_plugin(config,
-                                           load_schema(os.path.join(pkgutil.get_loader(package).filename,
-                                                                    self.DEFAULT_SCHEMA_PATH)))
+                                           load_schema(pkgutil.get_loader(package).filename))
             except ValidationError as e:
                 errors[plugin_name] = e.message
         if len(errors) > 0:

@@ -1,0 +1,3 @@
+verbose_histogram:
+  type: boolean
+  default: false

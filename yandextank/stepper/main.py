@@ -82,10 +82,10 @@ class StepperWrapper(object):
     OPTION_LOADSCHEME = 'loadscheme'
     OPTION_INSTANCES_LIMIT = 'instances'
 
-    def __init__(self, core, section):
+    def __init__(self, core, cfg):
         self.log = logging.getLogger(__name__)
         self.core = core
-        self.section = section
+        self.cfg = cfg
 
         self.cache_dir = '.'
 
@@ -115,11 +115,11 @@ class StepperWrapper(object):
         self.loadscheme = ""
         self.file_cache = 8192
 
-    def get_option(self, option_ammofile, param2=None):
+    def get_option(self, option, param2=None):
         ''' get_option wrapper'''
-        result = self.core.get_option(self.section, option_ammofile, param2)
+        result = self.cfg[option]
         self.log.debug(
-            "Option %s.%s = %s", self.section, option_ammofile, result)
+            "Option %s = %s", option, result)
         return result
 
     @staticmethod
@@ -173,8 +173,7 @@ class StepperWrapper(object):
         self.use_caching = int(self.get_option("use_caching", '1'))
 
         self.file_cache = int(self.get_option('file_cache', '8192'))
-        cache_dir = self.core.get_option(
-            self.section, "cache_dir", self.core.artifacts_base_dir)
+        cache_dir = self.get_option("cache_dir", self.core.artifacts_base_dir)
         self.cache_dir = os.path.expanduser(cache_dir)
         self.force_stepping = int(self.get_option("force_stepping", '0'))
         self.stpd = self.get_option(self.OPTION_STPD, "")
@@ -202,7 +201,7 @@ class StepperWrapper(object):
 
         if not self.stpd:
             self.stpd = self.__get_stpd_filename()
-            self.core.set_option(self.section, self.OPTION_STPD, self.stpd)
+            # self.core.set_option(self.section, self.OPTION_STPD, self.stpd)
             if self.use_caching and not self.force_stepping and os.path.exists(
                     self.stpd) and os.path.exists(self.__si_filename()):
                 self.log.info("Using cached stpd-file: %s", self.stpd)

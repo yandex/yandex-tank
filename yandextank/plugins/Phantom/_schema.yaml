@@ -1,3 +1,6 @@
+additional_libs:
+  type: string
+  default: ""
 address:
   type: string
   required: true
@@ -7,9 +10,6 @@ affinity:
 buffered_seconds:
   type: integer
   default: 2
-config:
-  type: string
-  default: ""
 enum_ammo:
   type: boolean
   default: false
@@ -17,6 +17,9 @@ header_http:
   type: string
 headers:
   type: string
+phantom_modules_path:
+  type: string
+  default: /usr/lib/phantom
 phantom_path:
   type: string
   default: phantom
@@ -25,7 +28,17 @@ phout_file:
   default: ""
 rps_schedule:
   type: string
+threads:
+  type: integer
+  default: null
+  nullable: true
+timeout:
+  type: string
+  default: 11s
 uris:
   type: string
 writelog:
   type: string
+  default: none
+
+

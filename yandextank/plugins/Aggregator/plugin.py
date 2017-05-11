@@ -44,8 +44,8 @@ class Plugin(AbstractPlugin):
     def get_key():
         return __file__
 
-    def __init__(self, core, config_section):
-        AbstractPlugin.__init__(self, core, config_section)
+    def __init__(self, core, cfg):
+        AbstractPlugin.__init__(self, core, cfg)
         self.listeners = []  # [LoggingListener()]
         self.reader = None
         self.stats_reader = None
@@ -61,10 +61,7 @@ class Plugin(AbstractPlugin):
     def configure(self):
         self.aggregator_config = json.loads(
             resource_string(__name__, 'config/phout.json').decode('utf8'))
-        verbose_histogram_option = self.get_option("verbose_histogram", "0")
-        self.verbose_histogram = (
-            verbose_histogram_option.lower() == "true") or (
-                verbose_histogram_option.lower() == "1")
+        self.verbose_histogram = self.get_option("verbose_histogram", "0")
         if self.verbose_histogram:
             logger.info("using verbose histogram")
 

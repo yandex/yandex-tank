@@ -107,7 +107,7 @@ class TankCore(object):
         self.uuid = str(uuid.uuid4())
         self.set_option(self.SECTION, self.UUID_OPTION, self.uuid)
         self.set_option(self.SECTION, self.PID_OPTION, str(os.getpid()))
-        self.job = None
+        self._job = None
 
     def get_uuid(self):
         return self.uuid
@@ -213,6 +213,37 @@ class TankCore(object):
 
         logger.debug("Plugin instances: %s", self.plugins)
 
+    @property
+    def job(self):
+        if not self._job:
+            # monitoring plugin
+            try:
+                mon = self.get_plugin_of_type(TelegrafPlugin)
+            except KeyError:
+                logger.debug("Telegraf plugin not found:", exc_info=True)
+                try:
+                    mon = self.get_plugin_of_type(MonitoringPlugin)
+                except KeyError:
+                    logger.debug("Monitoring plugin not found:", exc_info=True)
+                    mon = None
+            # aggregator plugin
+            try:
+                aggregator = self.get_plugin_of_type(AggregatorPlugin)
+            except KeyError:
+                logger.warning("Aggregator plugin not found:", exc_info=True)
+                aggregator = None
+            # generator plugin
+            try:
+                gen = self.get_plugin_of_type(GeneratorPlugin)
+            except KeyError:
+                logger.warning("Load generator not found:", exc_info=True)
+                gen = None
+            self._job = Job(monitoring_plugin=mon,
+                            aggregator_plugin=aggregator,
+                            generator_plugin=gen,
+                            tank=socket.getfqdn())
+        return self._job
+
     def plugins_configure(self):
         """        Call configure() on all plugins        """
         self.publish("core", "stage", "configure")
@@ -220,36 +251,6 @@ class TankCore(object):
         logger.info("Configuring plugins...")
         if self.taskset_affinity != '':
             self.taskset(os.getpid(), self.taskset_path, self.taskset_affinity)
-
-        # monitoring plugin
-        try:
-            mon = self.get_plugin_of_type(TelegrafPlugin)
-        except KeyError:
-            logger.debug("Telegraf plugin not found:", exc_info=True)
-            try:
-                mon = self.get_plugin_of_type(MonitoringPlugin)
-            except KeyError:
-                logger.debug("Monitoring plugin not found:", exc_info=True)
-                mon = None
-
-        # aggregator plugin
-        try:
-            aggregator = self.get_plugin_of_type(AggregatorPlugin)
-        except KeyError:
-            logger.warning("Aggregator plugin not found:", exc_info=True)
-            aggregator = None
-
-        # generator plugin
-        try:
-            gen = self.get_plugin_of_type(GeneratorPlugin)
-        except KeyError:
-            logger.warning("Load generator not found:", exc_info=True)
-            gen = None
-
-        self.job = Job(monitoring_plugin=mon,
-                       aggregator_plugin=aggregator,
-                       generator_plugin=gen,
-                       tank=socket.getfqdn())
 
         for plugin in self.plugins.values():
             logger.debug("Configuring %s", plugin)

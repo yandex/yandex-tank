@@ -47,13 +47,18 @@ CFG1 = {
         'enabled': True,
         'api_address': 'https://overload.yandex.net/',
         'token_file': 'token.txt'
+    },
+    'aggregator': {
+        'package': 'yandextank.plugins.Aggregator',
+        'enabled': True,
+        'verbose_histogram': True
     }
 }
 
 
 @pytest.mark.parametrize('config, expected', [
     (CFG1,
-     {'plugin_telegraf', 'plugin_phantom', 'plugin_lunapark', 'plugin_overload'})
+     {'plugin_telegraf', 'plugin_phantom', 'plugin_lunapark', 'plugin_overload', 'plugin_aggregator'})
 ])
 def test_core_load_plugins(config, expected):
     core = TankCore(configs=[config])
@@ -67,6 +72,13 @@ def test_core_load_plugins(config, expected):
 def test_core_plugins_configure(config, expected):
     core = TankCore(configs=[config])
     core.plugins_configure()
+
+@pytest.mark.parametrize('config, expected', [
+    (CFG1, None)
+])
+def test_plugins_prepare_test(config, expected):
+    core = TankCore(configs=[config])
+    core.plugins_prepare_test()
 
 
 def teardown_module(module):

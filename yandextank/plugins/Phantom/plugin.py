@@ -24,7 +24,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     """     Plugin for running phantom tool    """
 
     OPTION_CONFIG = "config"
-    SECTION = PhantomConfig.SECTION
 
     def __init__(self, core, cfg):
         AbstractPlugin.__init__(self, core, cfg)
@@ -44,13 +43,14 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.taskset_affinity = None
         self.cpu_count = mp.cpu_count()
 
-        self.phantom = None
         self.cached_info = None
         self.phantom_stderr = None
 
         self.exclude_markers = []
 
         self.enum_ammo = False
+        self._stat_log = None
+        self._phantom = None
 
     @staticmethod
     def get_key():
@@ -88,9 +88,25 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 self.OPTION_CONFIG, '') and self.predefined_phout:
             self.phout_import_mode = True
 
-        if not self.config and not self.phout_import_mode:
-            self.phantom = PhantomConfig(self.core)
-            self.phantom.read_config()
+        # if not self.config and not self.phout_import_mode:
+        #     self.phantom = PhantomConfig(self.core)
+        #     self.phantom.read_config()
+
+    @property
+    def phantom(self):
+        """
+        :rtype: PhantomConfig
+        """
+        if not self._phantom and not self.config and not self.phout_import_mode:
+            self._phantom = PhantomConfig(self.core, self.cfg)
+            self._phantom.read_config()
+        return self._phantom
+
+    @property
+    def stat_log(self):
+        if not self._stat_log:
+            self._stat_log = self.core.mkstemp(".log", "phantom_stat_")
+        return self._stat_log
 
     def prepare_test(self):
         aggregator = self.core.job.aggregator_plugin
@@ -98,7 +114,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         if not self.config and not self.phout_import_mode:
 
             # generate config
-            self.config = self.phantom.compose_config()
+            # self.config = self.phantom.compose_config()
             args = [self.phantom_path, 'check', self.config]
 
             try:
@@ -131,7 +147,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             aggregator.reader = reader
             info = self.phantom.get_info()
             aggregator.stats_reader = PhantomStatsReader(
-                self.phantom.stat_log, info)
+                self.stat_log, info)
 
             aggregator.add_result_listener(self)
         try:
