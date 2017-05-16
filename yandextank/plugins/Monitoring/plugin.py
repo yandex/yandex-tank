@@ -24,8 +24,8 @@ class Plugin(AbstractPlugin):
 
     SECTION = 'monitoring'
 
-    def __init__(self, core, config_section):
-        AbstractPlugin.__init__(self, core, config_section)
+    def __init__(self, core, cfg, cfg_updater):
+        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.jobno = None
         self.default_target = None
         self.config = None

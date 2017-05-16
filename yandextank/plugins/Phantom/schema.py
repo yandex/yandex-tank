@@ -7,35 +7,94 @@ OPTIONS = {
         "type": "string",
         "required": True
     },
+    'autocases': {
+        'type': 'string',
+        'default': '0'
+    },
     "affinity": {
         "type": "string",
         "default": ""
+    },
+    'ammo_limit': {
+        'type': 'integer',
+        'default': -1
+    },
+    'ammo_type': {
+        'type': 'string',
+        'default': 'phantom'
+    },
+    'ammofile': {
+        'type': 'string',
+        'default': ''
     },
     "buffered_seconds": {
         "type": "integer",
         "default": 2
     },
+    'cache_dir': {
+        'type': 'string',
+        'nullable': True,
+        'default': None
+    },
+    'chosen_cases': {
+        'type': 'string',
+        'default': ''
+    },
+    'client_certificate': {
+        'type': 'string',
+        'default': ''
+    },
+    'client_cipher_suites': {
+        'type': 'string',
+        'default': ''
+    },
+    'client_key': {
+        'type': 'string',
+        'default': ''
+    },
     'config': {
         'type': 'string',
         'default': '',
     },
+    'connection_test': {
+        'type': 'integer',
+        'default': 1
+    },
     "enum_ammo": {
         "type": "boolean",
         "default": False
+    },
+    'file_cache': {
+        'type': 'integer',
+        'default': 8192
+    },
+    'force_stepping': {
+        'type': 'integer',
+        'default': 0
     },
     'gatling_ip': {
         'type': 'string',
         'default': ''
     },
     "header_http": {
-        "type": "string"
+        "type": "string",
+        'default': '1.0'
     },
     "headers": {
-        "type": "string"
+        "type": "string",
+        'default': ''
     },
     'instances': {
         'type': 'integer',
         'default': 1000
+    },
+    'instances_schedule': {
+        'type': 'string',
+        'default': ''
+    },
+    'loop': {
+        'type': 'integer',
+        'default': -1
     },
     'method_options': {
         'type': 'string',
@@ -73,8 +132,14 @@ OPTIONS = {
         "type": "string",
         "default": ""
     },
+    'port': {
+        'type': 'string',
+        'default': '',
+        'regex': '\d{0,5}'
+    },
     "rps_schedule": {
-        "type": "string"
+        "type": "string",
+        'default': ''
     },
     'source_log_prefix': {
         'type': 'string',
@@ -83,6 +148,10 @@ OPTIONS = {
     'ssl': {
         'type': 'boolean',
         'default': False
+    },
+    'stpd_file': {
+        'type': 'string',
+        'default': ''
     },
     "threads": {
         "type": "integer",
@@ -99,6 +168,10 @@ OPTIONS = {
     },
     "uris": {
         "type": "string"
+    },
+    'use_caching': {
+        'type': 'boolean',
+        'default': True
     },
     "writelog": {
         "type": "string",

@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from validator import TankConfig, ValidationError
@@ -132,13 +134,32 @@ PHANTOM_SCHEMA_V_G = {
              'source_log_prefix': '',
              'ssl': False,
              'tank_type': 'http',
+             'ammo_limit': -1,
+             'ammo_type': 'phantom',
+             'ammofile': '',
+             'autocases': '0',
+             'cache_dir': None,
+             'chosen_cases': '',
+             'client_certificate': '',
+             'client_cipher_suites': '',
+             'client_key': '',
+             'connection_test': 1,
+             'file_cache': 8192,
+             'force_stepping': 0,
+             'headers': '',
+             'instances_schedule': '',
+             'loop': -1,
+             'port': '',
+             'rps_schedule': '',
+             'stpd_file': '',
+             'use_caching': True,
              'multi': [],
          }
      }
     )
 ])
 def test_validate_core(config, expected):
-    assert TankConfig(config).validated == expected
+    assert TankConfig(config, False).validated == expected
 
 
 @pytest.mark.parametrize('config, expected', [
@@ -259,7 +280,7 @@ def test_validate_core_error(config, expected):
     )
 ])
 def test_load_multiple(configs, expected):
-    assert TankConfig(*configs)._TankConfig__raw_config_dict == expected
+    assert TankConfig(configs)._TankConfig__raw_config_dict == expected
 
 
 @pytest.mark.parametrize('config, schema, expected', [
@@ -327,7 +348,17 @@ def test_validate_plugin(config, schema, expected):
          'phantom_path': './phantom'
      },
      PHANTOM_SCHEMA_V_G,
-     {'address': ['required field'], 'buffered_seconds': ['must be of integer type']})
+     {'address': ['required field'], 'buffered_seconds': ['must be of integer type']}),
+#     jobno and token should come together
+    ({
+        'package': 'yandextank.plugins.DataUploader',
+        'enabled': True,
+        'api_address': 'https://overload.yandex.net/',
+        'jobno': '31415'
+    },
+    None,
+     {'jobno': ["field 'upload_token' is required"]}
+    )
 ])
 def test_validate_plugin_error(config, schema, expected):
     with pytest.raises(ValidationError) as e:
@@ -401,13 +432,32 @@ def test_validate_plugin_error(config, schema, expected):
              'source_log_prefix': '',
              'ssl': False,
              'tank_type': 'http',
+             'ammo_limit': -1,
+             'ammo_type': 'phantom',
+             'ammofile': '',
+             'autocases': '0',
+             'cache_dir': None,
+             'chosen_cases': '',
+             'client_certificate': '',
+             'client_cipher_suites': '',
+             'client_key': '',
+             'connection_test': 1,
+             'file_cache': 8192,
+             'force_stepping': 0,
+             'headers': '',
+             'instances_schedule': '',
+             'loop': -1,
+             'port': '',
+             'rps_schedule': '',
+             'stpd_file': '',
+             'use_caching': True,
              'multi': [],
          }
      }
     ),
 ])
 def test_validate_all(config, expected):
-    assert TankConfig(config).validated == expected
+    assert TankConfig(config, False).validated == expected
 
 
 @pytest.mark.parametrize('config, expected', [
@@ -485,9 +535,29 @@ def test_validate_all_error(config, expected):
     )
 ])
 def test_get_plugins(config, expected):
-    assert {(name, pack) for name, pack, cfg in TankConfig(config).plugins} == expected
+    assert {(name, pack) for name, pack, cfg, updater in TankConfig(config).plugins} == expected
 
 
+@pytest.mark.parametrize('config, plugin, key, value', [
+    ({
+        "version": "1.8.34",
+        "core": {
+            'operator': 'fomars',
+            'artifacts_base_dir': './',
+        },
+        'telegraf': {
+            'package': 'yandextank.plugins.Telegraf',
+            'enabled': True,
+            'config': 'monitoring.xml',
+            'disguise_hostnames': True
+        },
+    },
+    'telegraf', 'config', 'foobar.xml')
+])
+def test_setter(config, plugin, key, value):
+    tankconfig = TankConfig(config)
+    tankconfig._TankConfig__get_cfg_updater(plugin)(key, value)
+    assert tankconfig.get_option(plugin, key) == value
 
     # configparser = ConfigParser.ConfigParser()
     # configparser.read(config_file)

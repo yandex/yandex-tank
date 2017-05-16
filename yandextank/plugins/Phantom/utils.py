@@ -254,16 +254,15 @@ class StreamConfig:
         self.gatling = ' '.join(self.get_option('gatling_ip').split("\n"))
         self.method_prefix = self.get_option("method_prefix")
         self.method_options = self.get_option("method_options")
-        self.source_log_prefix = self.get_option("source_log_prefix", '')
+        self.source_log_prefix = self.get_option("source_log_prefix")
 
-        self.phantom_http_line = self.get_option("phantom_http_line", "")
-        self.phantom_http_field_num = self.get_option(
-            "phantom_http_field_num", "")
-        self.phantom_http_field = self.get_option("phantom_http_field", "")
-        self.phantom_http_entity = self.get_option("phantom_http_entity", "")
+        self.phantom_http_line = self.get_option("phantom_http_line")
+        self.phantom_http_field_num = self.get_option("phantom_http_field_num")
+        self.phantom_http_field = self.get_option("phantom_http_field")
+        self.phantom_http_entity = self.get_option("phantom_http_entity")
 
-        self.address = self.get_option('address', '127.0.0.1')
-        do_test_connect = int(self.get_option("connection_test", "1")) > 0
+        self.address = self.get_option('address')
+        do_test_connect = self.get_option("connection_test") > 0
         explicit_port = self.get_option('port', '')
         self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(
             self.address, do_test_connect, explicit_port)

@@ -25,8 +25,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     OPTION_CONFIG = "config"
 
-    def __init__(self, core, cfg):
-        AbstractPlugin.__init__(self, core, cfg)
+    def __init__(self, core, cfg, cfg_updater):
+        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.config = None
         self.process = None
 

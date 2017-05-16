@@ -103,7 +103,6 @@ class StepperWrapper(object):
         self.enum_ammo = False
         self.use_caching = True
         self.force_stepping = None
-        self.ammo_type = 'phantom'
         self.chosen_cases = []
 
         # out params
@@ -142,12 +141,12 @@ class StepperWrapper(object):
     def read_config(self):
         ''' stepper part of reading options '''
         self.log.info("Configuring StepperWrapper...")
-        self.ammo_file = self.get_option(self.OPTION_AMMOFILE, '')
-        self.ammo_type = self.get_option('ammo_type', '') or self.ammo_type
+        self.ammo_file = self.get_option(self.OPTION_AMMOFILE)
+        self.ammo_type = self.get_option('ammo_type')
         if self.ammo_file:
             self.ammo_file = os.path.expanduser(self.ammo_file)
-        self.loop_limit = int(self.get_option(self.OPTION_LOOP, "-1"))
-        self.ammo_limit = int(self.get_option("ammo_limit", "-1"))
+        self.loop_limit = self.get_option(self.OPTION_LOOP)
+        self.ammo_limit = self.get_option("ammo_limit", "-1")
 
         def make_steps(schedule):
             steps = []
@@ -157,7 +156,7 @@ class StepperWrapper(object):
             return steps
 
         self.rps_schedule = make_steps(
-            self.get_option(self.OPTION_SCHEDULE, ''))
+            self.get_option(self.OPTION_SCHEDULE))
         self.instances_schedule = make_steps(
             self.get_option("instances_schedule", ''))
         self.instances = int(
@@ -167,17 +166,17 @@ class StepperWrapper(object):
             self.uris.remove('')
         rx = re.compile('\[(.*?)\]')
         self.headers = rx.findall(self.get_option("headers", ''))
-        self.http_ver = self.get_option("header_http", self.http_ver)
-        self.autocases = self.get_option("autocases", '0')
+        self.http_ver = self.get_option("header_http")
+        self.autocases = self.get_option("autocases")
         self.enum_ammo = self.get_option("enum_ammo", False)
-        self.use_caching = int(self.get_option("use_caching", '1'))
+        self.use_caching = self.get_option("use_caching")
 
-        self.file_cache = int(self.get_option('file_cache', '8192'))
-        cache_dir = self.get_option("cache_dir", self.core.artifacts_base_dir)
+        self.file_cache = self.get_option('file_cache')
+        cache_dir = self.get_option("cache_dir") or self.core.artifacts_base_dir
         self.cache_dir = os.path.expanduser(cache_dir)
-        self.force_stepping = int(self.get_option("force_stepping", '0'))
-        self.stpd = self.get_option(self.OPTION_STPD, "")
-        self.chosen_cases = self.get_option("chosen_cases", "").split()
+        self.force_stepping = self.get_option("force_stepping")
+        self.stpd = self.get_option(self.OPTION_STPD)
+        self.chosen_cases = self.get_option("chosen_cases").split()
         if self.chosen_cases:
             self.log.info("chosen_cases LIMITS: %s", self.chosen_cases)
 

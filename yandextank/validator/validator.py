@@ -3,7 +3,9 @@ import importlib
 import json
 import os
 import pkgutil
+import uuid
 
+import sys
 import yaml
 from cerberus import Validator
 
@@ -46,8 +48,11 @@ class TankConfig(object):
     BASE_SCHEMA = load_schema(os.path.join(os.path.dirname(__file__), '../core/'))
     PLUGIN_SCHEMA = load_schema(os.path.join(os.path.dirname(__file__), '../core/'), filename='plugins_schema.yaml')
 
-    def __init__(self, *configs):
-        self.__raw_config_dict = self.__load_multiple(*configs)
+    def __init__(self, configs, with_dynamic_options=True):
+        if not isinstance(configs, list):
+            configs = [configs]
+        self.__raw_config_dict = self.__load_multiple(configs)
+        self.with_dynamic_options = with_dynamic_options
         self._validated = None
         self._plugins = None
 
@@ -61,9 +66,9 @@ class TankConfig(object):
             :rtype: list of tuple
         """
         if not self._plugins:
-            self._plugins = [(plugin_name, plugin['package'], plugin)
-                             for plugin_name, plugin in self.validated.items()
-                             if (plugin_name not in self.BASE_SCHEMA.keys()) and plugin['enabled']]
+            self._plugins = [(plugin_name, plugin_cfg['package'], plugin_cfg, self.__get_cfg_updater(plugin_name))
+                             for plugin_name, plugin_cfg in self.validated.items()
+                             if (plugin_name not in self.BASE_SCHEMA.keys()) and plugin_cfg['enabled']]
         return self._plugins
 
     @property
@@ -72,7 +77,11 @@ class TankConfig(object):
             self._validated = self.__validate()
         return self._validated
 
-    def __load_multiple(self, *configs):
+    def save(self, filename):
+        with open(filename, 'w') as f:
+            yaml.dump(self.validated, f)
+
+    def __load_multiple(self, configs):
         l = len(configs)
         if l == 0:
             return {}
@@ -81,7 +90,7 @@ class TankConfig(object):
         elif l == 2:
             return self.__recursive_update(configs[0], configs[1])
         else:
-            return self.__load_multiple(self.__recursive_update(configs[0], configs[1]), *configs[2:])
+            return self.__load_multiple([self.__recursive_update(configs[0], configs[1]), configs[2:]])
 
     def __parse_enabled_plugins(self):
         """
@@ -116,10 +125,13 @@ class TankConfig(object):
         result = v.validate(self.__raw_config_dict, self.BASE_SCHEMA)
         if not result:
             raise ValidationError(v.errors)
-        return v.normalized(self.__raw_config_dict)
+        normalized = v.normalized(self.__raw_config_dict)
+        return self.__set_core_dynamic_options(normalized) if self.with_dynamic_options else normalized
 
     @staticmethod
-    def __validate_plugin(config, schema):
+    def __validate_plugin(config, schema=None):
+        if not schema:
+            schema = load_schema(pkgutil.get_loader(config['package']).filename)
         v = Validator(schema, allow_unknown=True)
         # .validate() makes .errors as side effect if there's any
         if not v.validate(config):
@@ -135,3 +147,18 @@ class TankConfig(object):
             else:
                 d[k] = u[k]
         return d
+
+    def __set_core_dynamic_options(self, config):
+        META_LOCATION = 'core'
+        config[META_LOCATION]['uuid'] = str(uuid.uuid4())
+        config[META_LOCATION]['pid'] = os.getpid()
+        config[META_LOCATION]['cmdline'] = ' '.join(sys.argv)
+        return config
+
+    def __get_cfg_updater(self, plugin_name):
+        def cfg_updater(key, value):
+            self.validated[plugin_name][key] = value
+        return cfg_updater
+
+    def __str__(self):
+        return yaml.dump(self.validated)

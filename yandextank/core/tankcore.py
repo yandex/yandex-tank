@@ -104,13 +104,10 @@ class TankCore(object):
         self.lock_dir = None
         self.taskset_path = None
         self.taskset_affinity = None
-        self.uuid = str(uuid.uuid4())
-        self.set_option(self.SECTION, self.UUID_OPTION, self.uuid)
-        self.set_option(self.SECTION, self.PID_OPTION, str(os.getpid()))
         self._job = None
-
-    def get_uuid(self):
-        return self.uuid
+    #
+    # def get_uuid(self):
+    #     return self.uuid
 
     @staticmethod
     def get_available_options():
@@ -123,7 +120,7 @@ class TankCore(object):
     @property
     def config(self):
         if not self._config:
-            self._config = TankConfig(*self.raw_configs)
+            self._config = TankConfig(self.raw_configs)
         return self._config
 
     @property
@@ -136,6 +133,8 @@ class TankCore(object):
             self.load_plugins()
         return self._plugins
 
+    def save_config(self, filename):
+        self.config.save(filename)
 
     @property
     def artifacts_base_dir(self):
@@ -168,7 +167,7 @@ class TankCore(object):
             self.SECTION, 'taskset_path')
         self.taskset_affinity = self.get_option(self.SECTION, 'affinity')
 
-        for (plugin_name, plugin_path, plugin_cfg) in self.config.plugins:
+        for (plugin_name, plugin_path, plugin_cfg, cfg_updater) in self.config.plugins:
             logger.debug("Loading plugin %s from %s", plugin_name, plugin_path)
             if plugin_path is "yandextank.plugins.Overload":
                 logger.warning(
@@ -201,7 +200,7 @@ class TankCore(object):
                 logger.warning("Patched plugin path: %s", plugin_path)
                 plugin = il.import_module(plugin_path)
             try:
-                instance = getattr(plugin, 'Plugin')(self, cfg=plugin_cfg)
+                instance = getattr(plugin, 'Plugin')(self, cfg=plugin_cfg, cfg_updater=cfg_updater)
             except AttributeError:
                 logger.warning(
                     "Deprecated plugin classname: %s. Should be 'Plugin'",
@@ -409,7 +408,7 @@ class TankCore(object):
         #     self.config.config.add_section(section)
         # self.config.config.set(section, option, value)
         # self.config.flush()
-        pass
+        raise NotImplementedError
 
     def get_plugin_of_type(self, plugin_class):
         """
@@ -561,15 +560,15 @@ class TankCore(object):
     @property
     def artifacts_dir(self):
         if not self._artifacts_dir:
-            if not self.artifacts_dir_name:
+            dir_name = self.get_option(self.SECTION, 'artifacts_dir')
+            if not dir_name:
                 date_str = datetime.datetime.now().strftime(
                     "%Y-%m-%d_%H-%M-%S.")
-                self.artifacts_dir_name = tempfile.mkdtemp(
-                    "", date_str, self.artifacts_base_dir)
-            elif not os.path.isdir(self.artifacts_dir_name):
-                os.makedirs(self.artifacts_dir_name)
-            os.chmod(self.artifacts_dir_name, 0o755)
-            self._artifacts_dir = os.path.abspath(self.artifacts_dir_name)
+                dir_name = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)
+            elif not os.path.isdir(dir_name):
+                os.makedirs(dir_name)
+            os.chmod(dir_name, 0o755)
+            self._artifacts_dir = os.path.abspath(dir_name)
         return self._artifacts_dir
 
     @staticmethod

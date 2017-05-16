@@ -44,8 +44,8 @@ class Plugin(AbstractPlugin):
     def get_key():
         return __file__
 
-    def __init__(self, core, cfg):
-        AbstractPlugin.__init__(self, core, cfg)
+    def __init__(self, core, cfg, cfg_updater):
+        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.listeners = []  # [LoggingListener()]
         self.reader = None
         self.stats_reader = None

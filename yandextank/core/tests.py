@@ -33,20 +33,21 @@ CFG1 = {
     'phantom': {
         'package': 'yandextank.plugins.Phantom',
         'enabled': True,
-        'address': 'nodejs.load.yandex.net',
+        'address': 'lunapark.test.yandex-team.ru',
         'header_http': '1.1',
         'uris': '/',
     },
     'lunapark': {
         'package': 'yandextank.plugins.DataUploader',
         'enabled': True,
-        'api_address': 'https://lunapark.test.yandex-team.ru/'
+        'api_address': 'https://lunapark.test.yandex-team.ru/',
+        'copy_config_to': 'test_config_copy.yaml'
     },
     'overload': {
         'package': 'yandextank.plugins.DataUploader',
         'enabled': True,
         'api_address': 'https://overload.yandex.net/',
-        'token_file': 'token.txt'
+        'token_file': '/Users/fomars/dev/yandex-tank/tmp/token.txt'
     },
     'aggregator': {
         'package': 'yandextank.plugins.Aggregator',
@@ -72,6 +73,7 @@ def test_core_load_plugins(config, expected):
 def test_core_plugins_configure(config, expected):
     core = TankCore(configs=[config])
     core.plugins_configure()
+
 
 @pytest.mark.parametrize('config, expected', [
     (CFG1, None)
