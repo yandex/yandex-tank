@@ -24,7 +24,7 @@ def load_yaml(directory, filename=None):
 def this_pkg():
     yandextank_pkg_dir = os.path.dirname(os.path.dirname(importlib.import_module('yandextank').__file__))
     this_pkg_rel_path = os.path.relpath(__file__, yandextank_pkg_dir)
-    return this_pkg_rel_path.rstrip('.py').replace('/', '.')
+    return this_pkg_rel_path.rstrip('.py').rstrip('.pyc').replace('/', '.')
 
 
 def load_py(directory, filename):

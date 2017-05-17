@@ -84,8 +84,9 @@ def test_plugins_prepare_test(config, expected):
 
 
 def teardown_module(module):
-    for path in glob.glob('monitoring_*.xml'):
-        os.remove(path)
+    for pattern in ['monitoring_*.xml', 'agent_*', '*.log']:
+        for path in glob.glob(pattern):
+            os.remove(path)
 
 
 def sort_schema_alphabetically(filename):
