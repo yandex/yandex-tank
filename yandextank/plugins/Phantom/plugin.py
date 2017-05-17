@@ -27,14 +27,11 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def __init__(self, core, cfg, cfg_updater):
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
-        self.config = None
         self.process = None
 
         self.predefined_phout = None
-        self.phout_import_mode = False
         self.did_phout_import_try = False
 
-        self.phantom_path = None
         self.eta_file = None
         self.processed_ammo_count = 0
         self.phantom_start_time = time.time()
@@ -67,7 +64,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def configure(self):
         # plugin part
         self.config = self.get_option(self.OPTION_CONFIG, '')
-        self.phantom_path = self.get_option("phantom_path", 'phantom')
         self.enum_ammo = self.get_option("enum_ammo", False)
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
@@ -97,7 +93,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         """
         :rtype: PhantomConfig
         """
-        if not self._phantom and not self.config and not self.phout_import_mode:
+        if not self._phantom:
             self._phantom = PhantomConfig(self.core, self.cfg)
             self._phantom.read_config()
         return self._phantom
@@ -111,38 +107,30 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def prepare_test(self):
         aggregator = self.core.job.aggregator_plugin
 
-        if not self.config and not self.phout_import_mode:
+        args = [self.get_option("phantom_path"), 'check', self.phantom.config_file]
 
-            # generate config
-            # self.config = self.phantom.compose_config()
-            args = [self.phantom_path, 'check', self.config]
+        try:
+            result = execute(args, catch_out=True)
+        except OSError:
+            raise RuntimeError("Phantom I/O engine is not installed!")
 
-            try:
-                result = execute(args, catch_out=True)
-            except OSError:
-                raise RuntimeError("Phantom I/O engine is not installed!")
+        retcode = result[0]
+        if retcode:
+            raise RuntimeError(
+                "Config check failed. Subprocess returned code %s" %
+                retcode)
+        if result[2]:
+            raise RuntimeError(
+                "Subprocess returned message: %s" % result[2])
+        reader = PhantomReader(self.phantom.phout_file)
+        logger.debug(
+            "Linking sample reader to aggregator."
+            " Reading samples from %s", self.phantom.phout_file)
 
-            retcode = result[0]
-            if retcode:
-                raise RuntimeError(
-                    "Config check failed. Subprocess returned code %s" %
-                    retcode)
-            if result[2]:
-                raise RuntimeError(
-                    "Subprocess returned message: %s" % result[2])
-            reader = PhantomReader(self.phantom.phout_file)
-            logger.debug(
-                "Linking sample reader to aggregator."
-                " Reading samples from %s", self.phantom.phout_file)
+        logger.debug(
+            "Linking stats reader to aggregator."
+            " Reading stats from %s", self.phantom.stat_log)
 
-            logger.debug(
-                "Linking stats reader to aggregator."
-                " Reading stats from %s", self.phantom.stat_log)
-        else:
-            reader = PhantomReader(self.predefined_phout)
-            logger.debug(
-                "Linking sample reader to aggregator."
-                " Reading samples from %s", self.predefined_phout)
         if aggregator:
             aggregator.reader = reader
             info = self.phantom.get_info()
@@ -170,9 +158,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def start_test(self):
         if not self.phout_import_mode:
-            args = [self.phantom_path, 'run', self.config]
+            args = [self.get_option("phantom_path"), 'run', self.phantom.config_file]
             logger.debug(
-                "Starting %s with arguments: %s", self.phantom_path, args)
+                "Starting %s with arguments: %s", self.get_option("phantom_path"), args)
             if self.taskset_affinity != '':
                 args = [
                     self.core.taskset_path, '-c', self.taskset_affinity

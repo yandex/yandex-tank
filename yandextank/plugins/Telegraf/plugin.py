@@ -173,10 +173,6 @@ class Plugin(AbstractPlugin):
 
         if "Phantom" in self.core.job.generator_plugin.__module__:
             phantom = self.core.job.generator_plugin
-            if phantom.phout_import_mode:
-                logger.info("Phout import mode, disabling monitoring")
-                self.config = None
-                self.monitoring = None
 
             info = phantom.get_info()
             if info:

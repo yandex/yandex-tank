@@ -35,6 +35,7 @@ class PhantomConfig:
         self.threads = None
         self.additional_libs = None
         self.enum_ammo = False
+        self._config_file = None
 
     @staticmethod
     def get_available_options():
@@ -82,7 +83,7 @@ class PhantomConfig:
         main_stream = StreamConfig(
             self.core,
             len(self.streams), self.phout_file, self.answ_log,
-            self.answ_log_level, self.timeout, self.cfg)
+            self.answ_log_level, self.timeout, self.cfg, True)
         self.streams.append(main_stream)
 
         # for section in self.core.config.find_sections(self.SECTION + '-'):
@@ -99,13 +100,19 @@ class PhantomConfig:
         if any(stream.ssl for stream in self.streams):
             self.additional_libs += ' ssl io_benchmark_method_stream_transport_ssl'
 
+    @property
+    def config_file(self):
+        if self._config_file is None:
+            self._config_file = self.compose_config()
+        return self._config_file
+
     def compose_config(self):
         """        Generate phantom tool run config        """
         streams_config = ''
         stat_benchmarks = ''
         for stream in self.streams:
             streams_config += stream.compose_config()
-            if stream.section != self.SECTION:
+            if not stream.is_main:
                 stat_benchmarks += " " + "benchmark_io%s" % stream.sequence_no
 
         kwargs = {}
@@ -191,7 +198,7 @@ class StreamConfig:
 
     OPTION_INSTANCES_LIMIT = 'instances'
 
-    def __init__(self, core, sequence, phout, answ, answ_level, timeout, cfg):
+    def __init__(self, core, sequence, phout, answ, answ_level, timeout, cfg, is_main=False):
         self.core = core
         self.cfg = cfg
         self.address_wizard = AddressWizard()
@@ -202,6 +209,7 @@ class StreamConfig:
         self.answ_log = answ
         self.answ_log_level = answ_level
         self.timeout = timeout
+        self.is_main = is_main
 
         # per benchmark
         self.instances = None
@@ -344,7 +352,7 @@ class StreamConfig:
         else:
             kwargs['reply_limits'] = ''
 
-        if self.section == PhantomConfig.SECTION:
+        if self.is_main:
             fname = 'phantom_benchmark_main.tpl'
         else:
             fname = 'phantom_benchmark_additional.tpl'
