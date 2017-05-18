@@ -1,11 +1,10 @@
 import collections
 import importlib
-import json
 import os
 import pkgutil
+import sys
 import uuid
 
-import sys
 import yaml
 from cerberus import Validator
 

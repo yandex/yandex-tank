@@ -66,19 +66,32 @@ class Stepper(object):
                 break
 
 
+class LoadProfile(object):
+
+    def __init__(self, load_type, schedule):
+        self.load_type = load_type,
+        self.schedule = schedule
+        self.steps = self.__make_steps()
+
+    def __make_steps(self):
+        steps = []
+        for step in " ".join(self.schedule.split("\n")).split(')'):
+            if step.strip():
+                steps.append(step.strip() + ')')
+        return steps
+
+
 class StepperWrapper(object):
     # TODO: review and rewrite this class
     '''
     Wrapper for cached stepper functionality
     '''
-    OPTION_STPD = 'stpd_file'
     OPTION_STEPS = 'steps'
     OPTION_TEST_DURATION = 'test_duration'
     OPTION_AMMO_COUNT = 'ammo_count'
     OPTION_LOOP = 'loop'
     OPTION_LOOP_COUNT = 'loop_count'
     OPTION_AMMOFILE = "ammofile"
-    OPTION_SCHEDULE = 'rps_schedule'
     OPTION_LOADSCHEME = 'loadscheme'
     OPTION_INSTANCES_LIMIT = 'instances'
 
@@ -148,17 +161,8 @@ class StepperWrapper(object):
         self.loop_limit = self.get_option(self.OPTION_LOOP)
         self.ammo_limit = self.get_option("ammo_limit", "-1")
 
-        def make_steps(schedule):
-            steps = []
-            for step in " ".join(schedule.split("\n")).split(')'):
-                if step.strip():
-                    steps.append(step.strip() + ')')
-            return steps
+        self.load_profile = LoadProfile(**self.get_option('load_profile'))
 
-        self.rps_schedule = make_steps(
-            self.get_option(self.OPTION_SCHEDULE))
-        self.instances_schedule = make_steps(
-            self.get_option("instances_schedule", ''))
         self.instances = int(
             self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
         self.uris = self.get_option("uris", '').strip().split("\n")
@@ -175,7 +179,6 @@ class StepperWrapper(object):
         cache_dir = self.get_option("cache_dir") or self.core.artifacts_base_dir
         self.cache_dir = os.path.expanduser(cache_dir)
         self.force_stepping = self.get_option("force_stepping")
-        self.stpd = self.get_option(self.OPTION_STPD)
         self.chosen_cases = self.get_option("chosen_cases").split()
         if self.chosen_cases:
             self.log.info("chosen_cases LIMITS: %s", self.chosen_cases)

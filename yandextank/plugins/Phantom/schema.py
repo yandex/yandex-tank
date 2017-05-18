@@ -88,10 +88,10 @@ OPTIONS = {
         'type': 'integer',
         'default': 1000
     },
-    'instances_schedule': {
-        'type': 'string',
-        'default': ''
-    },
+    # 'instances_schedule': {
+    #     'type': 'string',
+    #     'default': ''
+    # },
     'loop': {
         'type': 'integer',
         'default': -1
@@ -137,9 +137,18 @@ OPTIONS = {
         'default': '',
         'regex': '\d{0,5}'
     },
-    "rps_schedule": {
-        "type": "string",
-        'default': ''
+    "load_profile": {
+        "type": "dict",
+        'schema': {
+            'load_type': {
+                'type': 'string',
+                'regex': '^rps|instances|stpd_file$'
+            },
+            'schedule': {
+                'type': 'string',
+            }
+        },
+        'required': True
     },
     'source_log_prefix': {
         'type': 'string',
@@ -148,10 +157,6 @@ OPTIONS = {
     'ssl': {
         'type': 'boolean',
         'default': False
-    },
-    'stpd_file': {
-        'type': 'string',
-        'default': ''
     },
     "threads": {
         "type": "integer",

@@ -41,6 +41,7 @@ CFG1 = {
         'address': 'lunapark.test.yandex-team.ru',
         'header_http': '1.1',
         'uris': '/',
+        'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'}
     },
     'lunapark': {
         'package': 'yandextank.plugins.DataUploader',
@@ -91,9 +92,12 @@ def test_plugins_prepare_test(config, expected):
     core.plugins_prepare_test()
 
 
+def test_stpd_file():
+    raise NotImplementedError
+
 @pytest.mark.parametrize('config', [
-    (CFG1,),
-    (CFG_MULTI,)
+    CFG1,
+    CFG_MULTI,
 ])
 def test_start_test(config):
     core = TankCore(configs=[config])

@@ -22,6 +22,7 @@ CFG_VER_I_0 = {
         'address': 'nodejs.load.yandex.net',
         'header_http': '1.1',
         'uris': '/',
+        'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'}
     },
     'lunapark': {
         'package': 'yandextank.plugins.DataUploader',
@@ -87,6 +88,7 @@ PHANTOM_SCHEMA_V_G = {
              'address': 'nodejs.load.yandex.net',
              'header_http': '1.1',
              'uris': '/',
+             'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'},
          }
      },
      {
@@ -147,13 +149,11 @@ PHANTOM_SCHEMA_V_G = {
              'file_cache': 8192,
              'force_stepping': 0,
              'headers': '',
-             'instances_schedule': '',
              'loop': -1,
              'port': '',
-             'rps_schedule': '',
-             'stpd_file': '',
              'use_caching': True,
              'multi': [],
+             'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'},
          }
      }
     )
@@ -385,6 +385,7 @@ def test_validate_plugin_error(config, schema, expected):
              'address': 'nodejs.load.yandex.net',
              'header_http': '1.1',
              'uris': '/',
+             'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'},
          }
      },
      {
@@ -445,13 +446,11 @@ def test_validate_plugin_error(config, schema, expected):
              'file_cache': 8192,
              'force_stepping': 0,
              'headers': '',
-             'instances_schedule': '',
              'loop': -1,
              'port': '',
-             'rps_schedule': '',
-             'stpd_file': '',
              'use_caching': True,
              'multi': [],
+             'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'}
          }
      }
     ),
@@ -502,7 +501,7 @@ def test_validate_all(config, expected):
          }
 
      },
-     {'phantom': {'address': ['required field']},
+     {'phantom': {'address': ['required field'], 'load_profile': ['required field']},
       'telegraf': {'config': ['must be of string type']}})
 ])
 def test_validate_all_error(config, expected):

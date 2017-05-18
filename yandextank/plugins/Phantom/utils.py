@@ -87,7 +87,7 @@ class PhantomConfig:
         self.streams.append(main_stream)
 
         # for section in self.core.config.find_sections(self.SECTION + '-'):
-        for section in self.cfg['multi']:
+        for section in self.multi():
             self.streams.append(
                 StreamConfig(
                     self.core,
@@ -99,6 +99,9 @@ class PhantomConfig:
 
         if any(stream.ssl for stream in self.streams):
             self.additional_libs += ' ssl io_benchmark_method_stream_transport_ssl'
+
+    def multi(self):
+        return (dict(self.cfg, **section) for section in self.cfg['multi'])
 
     @property
     def config_file(self):
@@ -270,7 +273,7 @@ class StreamConfig:
         self.phantom_http_entity = self.get_option("phantom_http_entity")
 
         self.address = self.get_option('address')
-        do_test_connect = self.get_option("connection_test") > 0
+        do_test_connect = self.get_option("connection_test")
         explicit_port = self.get_option('port', '')
         self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(
             self.address, do_test_connect, explicit_port)
