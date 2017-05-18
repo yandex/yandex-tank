@@ -14,7 +14,7 @@ class ValidationError(Exception):
     pass
 
 
-def load_yaml(directory, filename=None):
+def load_yaml_schema(directory, filename=None):
     DEFAULT_FILENAME = 'schema.yaml'
     name = filename if filename else DEFAULT_FILENAME
     with open(os.path.join(directory, name), 'r') as f:
@@ -27,16 +27,17 @@ def this_pkg():
     return this_pkg_rel_path.rstrip('.py').rstrip('.pyc').replace('/', '.')
 
 
-def load_py(directory, filename):
+def load_py(directory, filename=None):
     DEFAULT_PY_MODULE_NAME = 'schema'
-    path = os.path.join(directory, DEFAULT_PY_MODULE_NAME)
+    name = filename if filename else DEFAULT_PY_MODULE_NAME
+    path = os.path.join(directory, name)
     schema_module = importlib.import_module(os.path.relpath(path).replace('/', '.'), this_pkg())
     return schema_module.SCHEMA
 
 
 def load_schema(directory, filename=None):
     try:
-        return load_yaml(directory, filename)
+        return load_yaml_schema(directory, filename)
     except IOError:
         try:
             return load_py(directory, filename)

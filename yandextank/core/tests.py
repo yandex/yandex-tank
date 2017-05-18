@@ -17,6 +17,11 @@ console_handler.setFormatter(fmt)
 logger.addHandler(console_handler)
 
 
+def load_yaml(directory, filename):
+    with open(os.path.join(directory, filename), 'r') as f:
+        return yaml.load(f)
+
+
 CFG1 = {
     "version": "1.8.36",
     "core": {
@@ -56,6 +61,8 @@ CFG1 = {
     }
 }
 
+CFG_MULTI = load_yaml('./', 'test_multi_cfg.yaml')
+
 
 @pytest.mark.parametrize('config, expected', [
     (CFG1,
@@ -76,15 +83,26 @@ def test_core_plugins_configure(config, expected):
 
 
 @pytest.mark.parametrize('config, expected', [
-    (CFG1, None)
+    (CFG1, None),
+    (CFG_MULTI, None)
 ])
 def test_plugins_prepare_test(config, expected):
     core = TankCore(configs=[config])
     core.plugins_prepare_test()
 
 
+@pytest.mark.parametrize('config', [
+    (CFG1,),
+    (CFG_MULTI,)
+])
+def test_start_test(config):
+    core = TankCore(configs=[config])
+    core.plugins_prepare_test()
+    core.plugins_start_test()
+
+
 def teardown_module(module):
-    for pattern in ['monitoring_*.xml', 'agent_*', '*.log']:
+    for pattern in ['monitoring_*.xml', 'agent_*', '*.log', '*.stpd_si.json', '*.stpd', '*.conf']:
         for path in glob.glob(pattern):
             os.remove(path)
 
