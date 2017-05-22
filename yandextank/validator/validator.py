@@ -8,6 +8,7 @@ import uuid
 import yaml
 from cerberus import Validator
 
+TANK_DIR = os.path.dirname(os.path.dirname(importlib.import_module('yandextank').__file__))
 
 class ValidationError(Exception):
     pass
@@ -20,17 +21,11 @@ def load_yaml_schema(directory, filename=None):
         return yaml.load(f)
 
 
-def this_pkg():
-    yandextank_pkg_dir = os.path.dirname(os.path.dirname(importlib.import_module('yandextank').__file__))
-    this_pkg_rel_path = os.path.relpath(__file__, yandextank_pkg_dir)
-    return this_pkg_rel_path.rstrip('.py').rstrip('.pyc').replace('/', '.')
-
-
 def load_py(directory, filename=None):
     DEFAULT_PY_MODULE_NAME = 'schema'
     name = filename if filename else DEFAULT_PY_MODULE_NAME
     path = os.path.join(directory, name)
-    schema_module = importlib.import_module(os.path.relpath(path).replace('/', '.'), this_pkg())
+    schema_module = importlib.import_module(os.path.relpath(path, TANK_DIR).replace('/', '.'))
     return schema_module.SCHEMA
 
 

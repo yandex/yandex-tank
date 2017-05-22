@@ -36,16 +36,12 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.processed_ammo_count = 0
         self.phantom_start_time = time.time()
         self.buffered_seconds = "2"
-
-        self.taskset_affinity = None
         self.cpu_count = mp.cpu_count()
 
         self.cached_info = None
         self.phantom_stderr = None
 
         self.exclude_markers = []
-
-        self.enum_ammo = False
         self._stat_log = None
         self._phantom = None
 
@@ -70,7 +66,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         # self.exclude_markers = set(
         #     filter((lambda marker: marker != ''),
         #            self.get_option('exclude_markers', []).split(' ')))
-        self.taskset_affinity = self.get_option('affinity', '')
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -160,13 +155,14 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         args = [self.get_option("phantom_path"), 'run', self.phantom.config_file]
         logger.debug(
             "Starting %s with arguments: %s", self.get_option("phantom_path"), args)
-        if self.taskset_affinity != '':
+        affinity = self.get_option('affinity')
+        if affinity != '':
             args = [
-                self.core.taskset_path, '-c', self.taskset_affinity
+                self.core.taskset_path, '-c', affinity
             ] + args
             logger.debug(
                 "Enabling taskset for phantom with affinity: %s,"
-                " cores count: %d", self.taskset_affinity, self.cpu_count)
+                " cores count: %d", affinity, self.cpu_count)
         self.phantom_start_time = time.time()
         phantom_stderr_file = self.core.mkstemp(
             ".log", "phantom_stdout_stderr_")
@@ -187,24 +183,24 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         #         self.predefined_phout)
 
     def is_test_finished(self):
-        if not self.phout_import_mode:
-            retcode = self.process.poll()
-            if retcode is not None:
-                logger.info("Phantom done its work with exit code: %s", retcode)
-                return abs(retcode)
-            else:
-                info = self.get_info()
-                if info:
-                    eta = int(info.duration) - (
-                        int(time.time()) - int(self.phantom_start_time))
-                    self.publish('eta', eta)
-                return -1
+        # if not self.phout_import_mode:
+        retcode = self.process.poll()
+        if retcode is not None:
+            logger.info("Phantom done its work with exit code: %s", retcode)
+            return abs(retcode)
         else:
-            if not self.processed_ammo_count or self.did_phout_import_try != self.processed_ammo_count:
-                self.did_phout_import_try = self.processed_ammo_count
-                return -1
-            else:
-                return 0
+            info = self.get_info()
+            if info:
+                eta = int(info.duration) - (
+                    int(time.time()) - int(self.phantom_start_time))
+                self.publish('eta', eta)
+            return -1
+        # else:
+        #     if not self.processed_ammo_count or self.did_phout_import_try != self.processed_ammo_count:
+        #         self.did_phout_import_try = self.processed_ammo_count
+        #         return -1
+        #     else:
+        #         return 0
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:

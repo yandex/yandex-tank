@@ -3,6 +3,7 @@ core:
   operator: fomars
   artifacts_base_dir: "./"
   artifacts_dir: "./"
+  lock_dir: "./"
 telegraf:
   package: yandextank.plugins.Telegraf
   enabled: True

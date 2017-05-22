@@ -74,6 +74,10 @@ def parse_plugin(s):
     return plugin, config_section
 
 
+class LockError(Exception):
+    pass
+
+
 class TankCore(object):
     """
     JMeter + dstat inspired :)
@@ -483,14 +487,14 @@ class TankCore(object):
 
     def get_lock(self, force=False):
         if not force and self.__there_is_locks():
-            raise RuntimeError("There is lock files")
+            raise LockError("There is lock files")
 
         fh, self.lock_file = tempfile.mkstemp(
             '.lock', 'lunapark_', self.get_lock_dir())
         os.close(fh)
         os.chmod(self.lock_file, 0o644)
         self.config.file = self.lock_file
-        self.config.flush()
+        # self.config.flush()
 
     def release_lock(self):
         self.config.file = None

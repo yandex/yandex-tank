@@ -51,28 +51,25 @@ class Plugin(AbstractPlugin):
         self.stats_reader = None
         self.results = q.Queue()
         self.stats = q.Queue()
-        self.verbose_histogram = False
         self.data_cache = {}
         self.stat_cache = {}
 
     def get_available_options(self):
         return ["verbose_histogram"]
 
-    def configure(self):
-        self.aggregator_config = json.loads(
-            resource_string(__name__, 'config/phout.json').decode('utf8'))
-        self.verbose_histogram = self.get_option("verbose_histogram", "0")
-        if self.verbose_histogram:
-            logger.info("using verbose histogram")
-
     def start_test(self):
+        aggregator_config = json.loads(
+            resource_string(__name__, 'config/phout.json').decode('utf8'))
+        verbose_histogram = self.get_option("verbose_histogram")
+        if verbose_histogram:
+            logger.info("using verbose histogram")
         if self.reader and self.stats_reader:
             pipeline = Aggregator(
                 TimeChopper(
-                    DataPoller(
-                        source=self.reader, poll_period=1), cache_size=3),
-                self.aggregator_config,
-                self.verbose_histogram)
+                    DataPoller(source=self.reader, poll_period=1),
+                    cache_size=3),
+                aggregator_config,
+                verbose_histogram)
             self.drain = Drain(pipeline, self.results)
             self.drain.start()
             self.stats_drain = Drain(
