@@ -157,35 +157,34 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             aggregator.add_result_listener(widget)
 
     def start_test(self):
-        if not self.phout_import_mode:
-            args = [self.get_option("phantom_path"), 'run', self.phantom.config_file]
+        args = [self.get_option("phantom_path"), 'run', self.phantom.config_file]
+        logger.debug(
+            "Starting %s with arguments: %s", self.get_option("phantom_path"), args)
+        if self.taskset_affinity != '':
+            args = [
+                self.core.taskset_path, '-c', self.taskset_affinity
+            ] + args
             logger.debug(
-                "Starting %s with arguments: %s", self.get_option("phantom_path"), args)
-            if self.taskset_affinity != '':
-                args = [
-                    self.core.taskset_path, '-c', self.taskset_affinity
-                ] + args
-                logger.debug(
-                    "Enabling taskset for phantom with affinity: %s,"
-                    " cores count: %d", self.taskset_affinity, self.cpu_count)
-            self.phantom_start_time = time.time()
-            phantom_stderr_file = self.core.mkstemp(
-                ".log", "phantom_stdout_stderr_")
-            self.core.add_artifact_file(phantom_stderr_file)
-            self.phantom_stderr = open(phantom_stderr_file, 'w')
-            self.process = subprocess.Popen(
-                args,
-                stderr=self.phantom_stderr,
-                stdout=self.phantom_stderr,
-                close_fds=True)
-        else:
-            if not os.path.exists(self.predefined_phout):
-                raise RuntimeError(
-                    "Phout file not exists for import: %s" %
-                    self.predefined_phout)
-            logger.warn(
-                "Will import phout file instead of running phantom: %s",
-                self.predefined_phout)
+                "Enabling taskset for phantom with affinity: %s,"
+                " cores count: %d", self.taskset_affinity, self.cpu_count)
+        self.phantom_start_time = time.time()
+        phantom_stderr_file = self.core.mkstemp(
+            ".log", "phantom_stdout_stderr_")
+        self.core.add_artifact_file(phantom_stderr_file)
+        self.phantom_stderr = open(phantom_stderr_file, 'w')
+        self.process = subprocess.Popen(
+            args,
+            stderr=self.phantom_stderr,
+            stdout=self.phantom_stderr,
+            close_fds=True)
+        # else:
+        #     if not os.path.exists(self.predefined_phout):
+        #         raise RuntimeError(
+        #             "Phout file not exists for import: %s" %
+        #             self.predefined_phout)
+        #     logger.warn(
+        #         "Will import phout file instead of running phantom: %s",
+        #         self.predefined_phout)
 
     def is_test_finished(self):
         if not self.phout_import_mode:

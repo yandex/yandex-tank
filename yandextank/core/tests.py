@@ -41,13 +41,16 @@ CFG1 = {
         'address': 'lunapark.test.yandex-team.ru',
         'header_http': '1.1',
         'uris': '/',
-        'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'}
+        'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
+        'phantom_path': '/Users/fomars/dev/yandex-tank/phantom_mock.sh'
     },
     'lunapark': {
         'package': 'yandextank.plugins.DataUploader',
         'enabled': True,
         'api_address': 'https://lunapark.test.yandex-team.ru/',
-        'copy_config_to': 'test_config_copy.yaml'
+        'copy_config_to': 'test_config_copy.yaml',
+        'task': 'LOAD-204',
+        'ignore_target_lock': True,
     },
     'overload': {
         'package': 'yandextank.plugins.DataUploader',

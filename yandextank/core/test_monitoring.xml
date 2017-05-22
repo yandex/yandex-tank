@@ -1,16 +1,4 @@
 <Monitoring>
-    <Host address="bus-receiver01g.load.maps.yandex.net" telegraph="/usr/local/bin/telegraf">
-        <CPU measure="user,system,idle,iowait"/>
-        <System measure="la1,la5,la15,csw,int"/>
-        <Memory measure="free,used,cached,buff"/>
-        <Disk measure="read,write"/>
-        <Net measure="recv,send,retransmit,estab,closewait,timewait"/>
-        <Custom measure="call" label="accept_pool.load"> curl -s -H 'Host: bus-receiver.maps.yandex.ru' 'http://localhost:6100/stat' | python -c 'import sys, json; j = json.load(sys.stdin); print "\n".join(`c["values"]["now"]` for c in j["charts"] if c["name"] == "accept.load")'</Custom>
-        <Custom measure="call" label="group1_prognosis.size"> mongo --quiet localhost:27077/mtprognosis2 --eval "db['mtprognosis'].count()*1.0" </Custom>
-        <Custom measure="call" label="group1_trajectories.size"> mongo --quiet localhost:27077/mtprognosis2 --eval "db['links'].count()*1.0" </Custom>
-        <Custom measure="call" label="group1_signals.size"> mongo --quiet localhost:27077/mtprognosis2 --eval "db['signals'].count()*1.0" </Custom>
-        <Custom measure="call" label="localqueue-wait-time"> curl -s -H 'Host: bus-receiver.maps.yandex.ru' 'http://localhost:6100/stat'  | python -c 'import sys, json; j = json.load(sys.stdin); print "\n".join(`c["values"]["accept"]` for c in j["charts"] if c["name"] == "localqueue_wait_time")' </Custom>
-    </Host>
     <Host address="bus-receiver02g.load.maps.yandex.net" telegraph="/usr/local/bin/telegraf">
         <CPU measure="user,system,idle,iowait"/>
         <System measure="la1,la5,la15,csw,int"/>
@@ -23,28 +11,7 @@
         <Custom measure="call" label="group1_signals.size"> mongo --quiet localhost:27077/mtprognosis2 --eval "db['signals'].count()*1.0" </Custom>
         <Custom measure="call" label="localqueue-wait-time"> curl -s -H 'Host: bus-receiver.maps.yandex.ru' 'http://localhost:6100/stat'  | python -c 'import sys, json; j = json.load(sys.stdin); print "\n".join(`c["values"]["accept"]` for c in j["charts"] if c["name"] == "localqueue_wait_time")' </Custom>
     </Host>
-    <Host address="bus-mrs01g.load.maps.yandex.net" telegraph="/usr/local/bin/telegraf">
-        <CPU measure="user,system,idle,iowait"/>
-        <System measure="la1,la5,la15,csw,int"/>
-        <Memory measure="free,used,cached,buff"/>
-        <Disk measure="read,write"/>
-        <Net measure="recv,send,retransmit,estab,closewait,timewait"/>
-    </Host>
-    <Host address="bus-mrs02g.load.maps.yandex.net" telegraph="/usr/local/bin/telegraf">
-        <CPU measure="user,system,idle,iowait"/>
-        <System measure="la1,la5,la15,csw,int"/>
-        <Memory measure="free,used,cached,buff"/>
-        <Disk measure="read,write"/>
-        <Net measure="recv,send,retransmit,estab,closewait,timewait"/>
-    </Host>
     <Host address="bus-mrs03g.load.maps.yandex.net" telegraph="/usr/local/bin/telegraf">
-        <CPU measure="user,system,idle,iowait"/>
-        <System measure="la1,la5,la15,csw,int"/>
-        <Memory measure="free,used,cached,buff"/>
-        <Disk measure="read,write"/>
-        <Net measure="recv,send,retransmit,estab,closewait,timewait"/>
-    </Host>
-    <Host address="target115g.load.yandex.net" telegraph="/usr/local/bin/telegraf">i
         <CPU measure="user,system,idle,iowait"/>
         <System measure="la1,la5,la15,csw,int"/>
         <Memory measure="free,used,cached,buff"/>

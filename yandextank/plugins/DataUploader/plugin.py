@@ -66,17 +66,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.data_queue = Queue()
         self.monitoring_queue = Queue()
-        self.ignore_target_lock = None
-        self.jobno_file = None
-        # self.lock_target_duration = None
-        self.mon = None
-        self.regression_component = None
         self.retcode = -1
         self._target = None
         self.task_name = ''
         self.token_file = None
         self.version_tested = None
-        self.send_status_period = 10
         self._generator_info = None
         self._is_telegraf = None
         self.backend_type = BackendTypes.identify_backend(self.cfg['api_address'])
@@ -134,12 +128,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return opts
 
     def configure(self):
-        self.mon = self.core.job.monitoring_plugin
-        self.jobno_file = self.get_option("jobno_file", '')
-        self.regression_component = str(self.get_option("component", ''))
-        self.ignore_target_lock = int(self.get_option("ignore_target_lock"))
-        self.send_status_period = self.get_option('send_status_period', '10')
-        self.chunk_size = int(self.get_option("chunk_size", '500000'))
+        pass
 
     def check_task_is_open(self):
         if self.backend_type == BackendTypes.OVERLOAD:
@@ -209,7 +198,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
         lp_job = self.lp_job
         self.locked_targets = self.check_and_lock_targets(strict=bool(
-            int(self.get_option('strict_lock', '0'))), ignore=self.ignore_target_lock)
+            int(self.get_option('strict_lock', '0'))), ignore=self.get_option('ignore_target_lock'))
 
         try:
             if lp_job._number:
@@ -238,7 +227,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             is_regression=self.get_option(
                 'regress',
                 '0'),
-            regression_component=self.regression_component,
+            regression_component=self.get_option("component"),
             cmdline=cmdline,
         )  # todo: tanktype?
 
@@ -286,8 +275,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
         self.set_option("jobno", str(self.lp_job.number))
 
-        if self.jobno_file:
-            logger.debug("Saving jobno to: %s", self.jobno_file)
+        jobno_file = self.get_option("jobno_file", '')
+        if jobno_file:
+            logger.debug("Saving jobno to: %s", jobno_file)
             fdes = open(self.jobno_file, 'w')
             fdes.write(str(self.lp_job.number))
             fdes.close()
@@ -360,7 +350,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             if len(data_list) > 0:
                 if self.is_telegraf:
                     # telegraf
-                    [self.monitoring_queue.put(chunk) for chunk in chop(data_list, self.chunk_size)]
+                    [self.monitoring_queue.put(chunk) for chunk in chop(data_list, self.get_option("chunk_size"))]
                 else:
                     # monitoring
                     [self.monitoring_queue.put(data) for data in data_list]
@@ -391,7 +381,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         while lp_job.is_alive and self.on_air:
             try:
                 self.lp_job.send_status(self.core.status)
-                time.sleep(self.send_status_period)
+                time.sleep(self.get_option('send_status_period'))
             except (APIClient.NetworkError, APIClient.NotAvailable) as e:
                 logger.warn('Failed to send status')
                 logger.debug(e.message)
