@@ -6,9 +6,11 @@ core:
       default: ''
     artifacts_base_dir:
       type: string
-      default: ./
+      default: ./logs
     artifacts_dir:
       type: string
+      nullable: true
+      default: null
     lock_dir:
       type: string
       default: /var/lock/

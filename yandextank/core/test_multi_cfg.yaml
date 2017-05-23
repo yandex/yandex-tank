@@ -1,8 +1,6 @@
 version: 1.8.36
 core:
   operator: fomars
-  artifacts_base_dir: "./"
-  artifacts_dir: "./"
   lock_dir: "./"
 telegraf:
   package: yandextank.plugins.Telegraf
@@ -16,6 +14,7 @@ phantom:
   phantom_path: "/Users/fomars/dev/yandex-tank/phantom_mock.sh"
   header_http: "1.1"
   uris: "/"
+  loop: 100
   load_profile: {load_type: rps, schedule: "line(1, 10, 1m)"}
   multi:
   - address: localhost
