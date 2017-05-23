@@ -18,7 +18,7 @@ class PhantomConfig:
     """ config file generator """
     OPTION_PHOUT = "phout_file"
 
-    def __init__(self, core, cfg):
+    def __init__(self, core, cfg, stat_log):
         self.core = core
         self.cfg = cfg
         self.streams = []
@@ -28,7 +28,7 @@ class PhantomConfig:
         self.answ_log = None
         self.answ_log_level = None
         self._phout_file = None
-        self.stat_log = None
+        self.stat_log = stat_log
         self.phantom_log = None
         self.phantom_start_time = None
         self.phantom_modules_path = None
@@ -74,7 +74,6 @@ class PhantomConfig:
         self.answ_log = self.core.mkstemp(".log", "answ_")
         self.core.add_artifact_file(self.answ_log)
         self.core.add_artifact_file(self.phout_file)
-        self.stat_log = self.core.mkstemp(".log", "phantom_stat_")
         self.core.add_artifact_file(self.stat_log)
         self.phantom_log = self.core.mkstemp(".log", "phantom_")
         self.core.add_artifact_file(self.phantom_log)

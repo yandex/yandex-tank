@@ -278,7 +278,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         jobno_file = self.get_option("jobno_file", '')
         if jobno_file:
             logger.debug("Saving jobno to: %s", jobno_file)
-            fdes = open(self.jobno_file, 'w')
+            fdes = open(jobno_file, 'w')
             fdes.write(str(self.lp_job.number))
             fdes.close()
 

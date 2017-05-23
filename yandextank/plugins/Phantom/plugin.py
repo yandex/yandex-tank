@@ -89,7 +89,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         :rtype: PhantomConfig
         """
         if not self._phantom:
-            self._phantom = PhantomConfig(self.core, self.cfg)
+            self._phantom = PhantomConfig(self.core, self.cfg, self.stat_log)
             self._phantom.read_config()
         return self._phantom
 
