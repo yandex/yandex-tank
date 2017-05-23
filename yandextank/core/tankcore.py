@@ -493,11 +493,10 @@ class TankCore(object):
             '.lock', 'lunapark_', self.get_lock_dir())
         os.close(fh)
         os.chmod(self.lock_file, 0o644)
-        self.config.file = self.lock_file
-        # self.config.flush()
+        self.config.save(self.lock_file)
 
     def release_lock(self):
-        self.config.file = None
+        # self.config.file = None
         if self.lock_file and os.path.exists(self.lock_file):
             logger.debug("Releasing lock: %s", self.lock_file)
             os.remove(self.lock_file)
@@ -551,7 +550,7 @@ class TankCore(object):
         Call close() for all plugins
         """
         logger.info("Close allocated resources...")
-
+        self.release_lock()
         for plugin in self.plugins.values():
             logger.debug("Close %s", plugin)
             try:

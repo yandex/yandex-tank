@@ -56,7 +56,6 @@ class PhantomConfig:
             self._phout_file = self.cfg['phout_file'] or self.core.mkstemp(".log", "phout_")
         return self._phout_file
 
-
     def read_config(self):
         """        Read phantom tool specific options        """
         self.threads = self.cfg["threads"] or str(int(multiprocessing.cpu_count() / 2) + 1)

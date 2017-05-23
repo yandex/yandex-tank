@@ -225,8 +225,6 @@ class ConsoleTank:
                 for config_file in self.options.config:
                     configs.append(config_file)
 
-            # self.core.load_config(configs)
-
             if self.ammofile:
                 self.log.debug("Ammofile: %s", self.ammofile)
                 self.core.set_option("phantom", 'ammofile', self.ammofile[0])

@@ -69,13 +69,19 @@ class Stepper(object):
 class LoadProfile(object):
 
     def __init__(self, load_type, schedule):
-        self.load_type = load_type,
-        self.schedule = schedule
-        self.steps = self.__make_steps()
+        self.load_type = load_type
+        self.schedule = self.__make_steps(schedule)
 
-    def __make_steps(self):
+    def is_rps(self):
+        return self.load_type == 'rps'
+
+    def is_instances(self):
+        return self.load_type == 'instances'
+
+    @staticmethod
+    def __make_steps(schedule):
         steps = []
-        for step in " ".join(self.schedule.split("\n")).split(')'):
+        for step in " ".join(schedule.split("\n")).split(')'):
             if step.strip():
                 steps.append(step.strip() + ')')
         return steps
@@ -104,10 +110,8 @@ class StepperWrapper(object):
 
         # per-shoot params
         self.instances = 1000
-        self.rps_schedule = []
         self.http_ver = '1.0'
         self.ammo_file = None
-        self.instances_schedule = ''
         self.loop_limit = -1
         self.ammo_limit = -1
         self.uris = []
@@ -208,7 +212,7 @@ class StepperWrapper(object):
                     self.stpd) and os.path.exists(self.__si_filename()):
                 self.log.info("Using cached stpd-file: %s", self.stpd)
                 stepper_info = self.__read_cached_options()
-                if self.instances and self.rps_schedule:
+                if self.instances and self.load_profile.is_rps():
                     self.log.info(
                         "rps_schedule is set. Overriding cached instances param from config: %s",
                         self.instances)
@@ -244,14 +248,14 @@ class StepperWrapper(object):
             sep = "|"
             hasher = hashlib.md5()
             hashed_str = "cache version 6" + sep + \
-                ';'.join(self.instances_schedule) + sep + str(self.loop_limit)
+                ';'.join(self.load_profile.schedule) + sep + str(self.loop_limit)
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(
-                self.rps_schedule) + sep + str(self.autocases)
+                self.load_profile.schedule) + sep + str(self.autocases)
             hashed_str += sep + ";".join(self.uris) + sep + ";".join(
                 self.headers) + sep + self.http_ver + sep + ";".join(
                     self.chosen_cases)
             hashed_str += sep + str(self.enum_ammo) + sep + str(self.ammo_type)
-            if self.instances_schedule:
+            if self.load_profile.is_instances():
                 hashed_str += sep + str(self.instances)
             if self.ammo_file:
                 opener = resource.get_opener(self.ammo_file)
@@ -295,10 +299,10 @@ class StepperWrapper(object):
         self.log.info("Making stpd-file: %s", self.stpd)
         stepper = Stepper(
             self.core,
-            rps_schedule=self.rps_schedule,
+            rps_schedule=self.load_profile.schedule if self.load_profile.is_rps() else None,
             http_ver=self.http_ver,
             ammo_file=self.ammo_file,
-            instances_schedule=self.instances_schedule,
+            instances_schedule=self.load_profile.schedule if self.load_profile.is_instances() else None,
             instances=self.instances,
             loop_limit=self.loop_limit,
             ammo_limit=self.ammo_limit,
