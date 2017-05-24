@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from random import randint
 
 import requests
+from queue import Full
 from ...common.interfaces import AbstractPlugin
 
 logger = logging.getLogger(__name__)
@@ -50,8 +51,10 @@ class AbstractGun(AbstractPlugin):
             if data_item.get("interval_real") is None:
                 data_item["interval_real"] = int(
                     (time.time() - start_time) * 1e6)
-
-            self.results.put(data_item, timeout=1)
+            try:
+                self.results.put(data_item, block=False)
+            except Full:
+                logger.error("Results full. Data corrupted")
 
     def setup(self):
         pass
@@ -260,6 +263,8 @@ class UltimateGun(AbstractGun):
             try:
                 scenario(missile)
             except Exception as e:
-                logger.warning("Scenario %s failed with %s", marker, e)
+                logger.warning(
+                    "Scenario %s failed with %s",
+                    marker, e, exc_info=True)
         else:
             logger.warning("Scenario not found: %s", marker)
