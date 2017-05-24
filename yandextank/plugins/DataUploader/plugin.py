@@ -786,12 +786,12 @@ class LPJob(object):
             task, trace=self.log_other_requests)
 
     def send_config_snapshot(self, config):
-        try:
-            if self._number:
-                self.api_client.send_config_snapshot(
-                    self.number, config, trace=self.log_other_requests)
-        except Exception:
-            logger.debug("Can't send config snapshot: %s", exc_info=True)
+        # try:
+        if self._number:
+            self.api_client.send_config_snapshot(
+                self.number, unicode(config), trace=self.log_other_requests)
+        # except Exception:
+        #     logger.debug("Can't send config snapshot: %s", exc_info=True)
 
     def push_monitoring_data(self, data):
         if self.is_alive:
