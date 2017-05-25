@@ -78,6 +78,16 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.token_file = None
         self.version_tested = None
         self.send_status_period = 10
+
+        self.status_sender = threading.Thread(target=self.__send_status)
+        self.status_sender.daemon = True
+
+        self.upload = threading.Thread(target=self.__data_uploader)
+        self.upload.daemon = True
+
+        self.monitoring = threading.Thread(target=self.__monitoring_uploader)
+        self.monitoring.daemon = True
+
         self._generator_info = None
         self._is_telegraf = None
         self.backend_type = BackendTypes.identify_backend(self.SECTION)
@@ -264,20 +274,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def start_test(self):
         self.on_air = True
 
-        status_sender = threading.Thread(target=self.__send_status)
-        status_sender.daemon = True
-        status_sender.start()
-        self.status_sender = status_sender
-
-        upload = threading.Thread(target=self.__data_uploader)
-        upload.daemon = True
-        upload.start()
-        self.upload = upload
-
-        monitoring = threading.Thread(target=self.__monitoring_uploader)
-        monitoring.daemon = True
-        monitoring.start()
-        self.monitoring = monitoring
+        self.status_sender.start()
+        self.upload.start()
+        self.monitoring.start()
 
         web_link = urljoin(self.lp_job.api_client.base_url, str(self.lp_job.number))
         logger.info("Web link: %s", web_link)
@@ -303,15 +302,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.monitoring_queue.put(None)
         self.data_queue.put(None)
         self.__save_conf()
-        timeout = int(self.get_option('threads_timeout', '60'))
-        logger.info(
-            'Waiting for sender threads to join for {} seconds ("meta.threads_timeout" config option)'.format(timeout))
-        self.monitoring.join(timeout=timeout)
-        if self.monitoring.isAlive():
-            logger.error('Monitoring thread joining timed out. Terminating.')
-        self.upload.join(timeout=timeout)
-        if self.upload.isAlive():
-            logger.error('Upload thread joining timed out. Terminating.')
+        self._join_threads(timeout=int(self.get_option('threads_timeout', '60')))
         self.unlock_targets(self.locked_targets)
         return retcode
 
@@ -648,6 +639,22 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._target = self.generator_info.address
             logger.info("Detected target: %s", self.target)
         return self._target
+
+    def _join_threads(self, timeout):
+        logger.info(
+            'Waiting for sender threads to join for {} seconds ("meta.threads_timeout" config option)'.format(timeout))
+        try:
+            self.monitoring.join(timeout=timeout)
+            if self.monitoring.isAlive():
+                logger.error('Monitoring thread joining timed out. Terminating.')
+        except RuntimeError:
+            pass
+        try:
+            self.upload.join(timeout=timeout)
+            if self.upload.isAlive():
+                logger.error('Upload thread joining timed out. Terminating.')
+        except RuntimeError:
+            pass
 
 
 class JobInfoWidget(AbstractInfoWidget):
