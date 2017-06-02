@@ -155,6 +155,14 @@ class MonitoringCollector(object):
         else:
             return host
 
+    def not_empty(self):
+        return len(self.__collected_data) > 0
+
+    def send_rest_data(self):
+        while self.not_empty():
+            logger.info("Sending monitoring data rests...")
+            self.send_collected_data()
+
 
 class StdOutPrintMon(MonitoringDataListener):
     """Simple listener, writing data to stdout"""
