@@ -16,12 +16,14 @@ def test_parse_package(package_path, expected):
 
 
 @pytest.mark.parametrize('ini_file, yaml_file', [
-    ('test_config1.ini', 'test_config1.yaml')
+    ('test_config1.ini', 'test_config1.yaml'),
+    ('test_config2.ini', 'test_config2.yaml'),
+    ('test_config3.ini', 'test_config3.yaml')
 ])
 def test_convert_ini_phantom(ini_file, yaml_file):
     with open(yaml_file, 'r') as f:
         assert convert_ini(ini_file) == yaml.load(f)
 
 
-def test_disable_plugin():
-    raise NotImplementedError
+# def test_disable_plugin():
+#     raise NotImplementedError

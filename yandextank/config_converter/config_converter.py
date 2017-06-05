@@ -24,7 +24,8 @@ SECTIONS_PATTERNS = {
     'Aggregator': 'aggregator',
     'Autostop': 'autostop',
     'Monitoring': 'monitoring',
-    'DataUploader': 'meta|overload'
+    'DataUploader': 'meta|overload',
+    'Telegraf': 'monitoring|telegraf'
 }
 
 
@@ -60,6 +61,9 @@ OPTIONS_MAP = {
     },
     'Aggregator': {
         'precise_cumulative': lambda value: ('precise_cumulative', int(value))
+    },
+    'DataUploader': {
+        'ignore_target_lock': lambda value: ('ignore_target_lock', bool(int(value)))
     }
 }
 
@@ -73,18 +77,18 @@ class PluginInstance(object):
     def __init__(self, plugin, options):
         self.options = [options_converter(plugin, option) for option in options]
 
-    def get_cfg_dict(self, package_name):
+    def get_cfg_dict(self, package_name, include_meta=True):
         options_dict = dict(self.options)
-        options_dict.update({
-            'package': 'yandextank.plugins.%s' % package_name,
-            'enabled': True
-        })
+        if include_meta:
+            options_dict.update({
+                'package': 'yandextank.plugins.%s' % package_name,
+                'enabled': True
+            })
         return options_dict
 
 
 class Plugin(object):
-    def __init__(self, alias, package_and_section, cfg_ini):
-        self.alias = alias
+    def __init__(self, package_and_section, cfg_ini):
         try:
             package_path, section = package_and_section.split()
             self.package_name = parse_package_name(package_path)
@@ -97,28 +101,35 @@ class Plugin(object):
                               sections}
 
     def get_cfg_tuple(self):
-        return [(section_name, instance.get_cfg_dict(self.package_name)) for section_name, instance in
-                self.instances.items()]
+        if self.package_name == 'Phantom' and len(self.instances) > 1:
+            master_cfg = self.instances['phantom'].get_cfg_dict(self.package_name)
+            multi = [instance.get_cfg_dict(self.package_name, False) for section_name, instance in self.instances.items()
+                     if section_name != 'phantom']
+            master_cfg['multi'] = multi
+            return [('phantom', master_cfg)]
+        else:
+            return [(section_name, instance.get_cfg_dict(self.package_name)) for section_name, instance
+                    in self.instances.items()]
+
+
+PLUGIN_PREFIX = 'plugin_'
 
 
 def parse_plugins(core_options, cfg_ini):
     CORE_OPTIONS = ['artifacts_base_dir', 'ignore_locks', 'lock_dir']
-    return [Plugin(alias, package_and_section, cfg_ini) for alias, package_and_section in core_options
-            if alias not in CORE_OPTIONS]
+    return [Plugin(package_and_section, cfg_ini) for alias, package_and_section in core_options
+            if alias.startswith(PLUGIN_PREFIX) and package_and_section]
 
 
 def convert_ini(ini_file):
     CORE_SECTION = 'tank'
-    PLUGIN_PREFIX = 'plugin_'
     cfg_ini = ConfigParser.ConfigParser()
     cfg_ini.read(ini_file)
     core_options = cfg_ini.items(CORE_SECTION)
-    # configured_sections = {section_name: Section(section_name, dict(cfg_ini.items(section_name)))
-    #                        for section_name in cfg_ini.sections()}
     enabled_plugins = parse_plugins(core_options, cfg_ini)
     plugins_cfg_dict = dict(reduce(lambda a, b: a + b, [plugin.get_cfg_tuple() for plugin in enabled_plugins]))
     plugins_cfg_dict.update({
         'core': dict([options_converter('core', option) for option in core_options
-                      if not option[0].startswith('plugin_')])
+                      if not option[0].startswith(PLUGIN_PREFIX)])
     })
     return plugins_cfg_dict

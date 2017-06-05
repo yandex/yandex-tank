@@ -1,0 +1,57 @@
+core:
+  host: router01g.load.maps.yandex.net
+meta:
+  enabled: true
+  package: yandextank.plugins.DataUploader
+  task: MAPSNAVI-1540
+  component: '177'
+  job_name: light
+  ignore_target_lock: true
+  host: router01g.load.maps.yandex.net
+monitoring:
+  enabled: true
+  package: yandextank.plugins.Monitoring
+  config: monitoring.xml
+  host: router01g.load.maps.yandex.net
+#production log
+phantom:
+  enabled: true
+  package: yandextank.plugins.Phantom
+  instances: 10000
+  address: router01g.load.maps.yandex.net
+  ammofile: https://storage-int.mds.yandex.net/get-load-ammo/23322/6453bb49b117f7b844d754ddb5e6a334
+  load_profile:
+    load_type: rps
+    schedule: line(1,3000,10m)
+  autocases: '1'
+  header_http: '1.1'
+  force_stepping: 1
+  host: router01g.load.maps.yandex.net
+  multi:
+    - ammofile: https://storage-int.mds.yandex.net/get-load-ammo/15228/d94bcf4dbcfd672942398c3bc42078ba
+      instances: 2000
+      address: router01g.load.maps.yandex.net
+      load_profile:
+        load_type: rps
+        schedule: line(1,125,10m)
+      header_http: '1.1'
+      autocases: '1'
+      host: router01g.load.maps.yandex.net
+    - ammofile: https://storage-int.mds.yandex.net/get-load-ammo/24135/a2376581acf33f3789b62eea080a6d75
+      instances: 2000
+      address: router01g.load.maps.yandex.net
+      load_profile:
+        load_type: rps
+        schedule: line(1,100,10m)
+      header_http: '1.1'
+      autocases: '1'
+      host: router01g.load.maps.yandex.net
+autostop:
+  enabled: true
+  package: yandextank.plugins.Autostop
+  host: router01g.load.maps.yandex.net
+  autostop: |
+    quantile(50,300,7)
+    http(4xx,25%,10)
+    http(5xx,5%,2)
+    net(1xx,10,5)
