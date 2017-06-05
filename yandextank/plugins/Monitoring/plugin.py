@@ -120,7 +120,7 @@ class Plugin(AbstractPlugin):
             logger.info("Monitoring has been disabled")
         else:
             logger.info("Starting monitoring with config: %s", self.config)
-            self.core.add_artifact_file(self.config, True)
+            self.core.add_artifact_file(self.config)
             self.monitoring.config = self.config
             if self.default_target:
                 self.monitoring.default_target = self.default_target
