@@ -17,9 +17,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     ''' Big Fucking Gun plugin '''
     SECTION = 'bfg'
 
-    def __init__(self, core, config_section):
+    def __init__(self, core, cfg, cfg_updater):
         self.log = logging.getLogger(__name__)
-        AbstractPlugin.__init__(self, core, config_section)
+        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.gun_type = None
         self.start_time = time.time()
         self.stepper_wrapper = StepperWrapper(self.core, Plugin.SECTION)

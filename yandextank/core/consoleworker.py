@@ -8,9 +8,11 @@ import time
 import traceback
 import signal
 from optparse import OptionParser
+
+import yaml
 from pkg_resources import resource_filename
 
-from .tankcore import TankCore
+from .tankcore import TankCore, LockError
 
 
 class RealConsoleMarkup(object):
@@ -70,13 +72,19 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 
+def cfg_loader(cfg_filename, cmd_options):
+    with open(cfg_filename[0], 'r') as f:
+        cfg = yaml.load(f)
+    return cfg
+
+
 class ConsoleTank:
     """    Worker class that runs tank core accepting cmdline params    """
 
     IGNORE_LOCKS = "ignore_locks"
 
     def __init__(self, options, ammofile):
-        self.core = TankCore()
+        self.core = TankCore(cfg_loader(options.config, options.option))
 
         self.options = options
         self.ammofile = ammofile
@@ -177,15 +185,15 @@ class ConsoleTank:
             self.log.warn(
                 "Lock files ignored. This is highly unrecommended practice!")
 
-        if self.options.lock_dir:
-            self.core.set_option(
-                self.core.SECTION, "lock_dir", self.options.lock_dir)
+        # if self.options.lock_dir:
+        #     self.core.set_option(
+        #         self.core.SECTION, "lock_dir", self.options.lock_dir)
 
         while True:
             try:
                 self.core.get_lock(self.options.ignore_lock)
                 break
-            except Exception:
+            except LockError:
                 if self.options.lock_fail:
                     raise RuntimeError("Lock file present, cannot continue")
                 self.log.exception(
@@ -216,8 +224,6 @@ class ConsoleTank:
             else:
                 for config_file in self.options.config:
                     configs.append(config_file)
-
-            self.core.load_configs(configs)
 
             if self.ammofile:
                 self.log.debug("Ammofile: %s", self.ammofile)

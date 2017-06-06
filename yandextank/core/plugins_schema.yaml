@@ -1,0 +1,11 @@
+allow_unknown: true
+schema:
+  enabled:
+    type: boolean
+    required: true
+  package:
+    empty: false
+    regex: '[^/]+'
+    required: true
+    type: string
+type: dict

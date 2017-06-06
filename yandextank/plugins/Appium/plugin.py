@@ -12,8 +12,8 @@ class Plugin(AbstractPlugin):
 
     SECTION = "appium"
 
-    def __init__(self, core, config_section):
-        super(Plugin, self).__init__(core, config_section)
+    def __init__(self, core, cfg, cfg_updater):
+        super(Plugin, self).__init__(core, cfg, cfg_updater)
         self.appium_cmd = None
         self.appium_log = None
         self.appium_port = None

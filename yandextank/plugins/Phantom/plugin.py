@@ -24,33 +24,26 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     """     Plugin for running phantom tool    """
 
     OPTION_CONFIG = "config"
-    SECTION = PhantomConfig.SECTION
 
-    def __init__(self, core, config_section):
-        AbstractPlugin.__init__(self, core, config_section)
-        self.config = None
+    def __init__(self, core, cfg, cfg_updater):
+        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.process = None
 
         self.predefined_phout = None
-        self.phout_import_mode = False
         self.did_phout_import_try = False
 
-        self.phantom_path = None
         self.eta_file = None
         self.processed_ammo_count = 0
         self.phantom_start_time = time.time()
         self.buffered_seconds = "2"
-
-        self.taskset_affinity = None
         self.cpu_count = mp.cpu_count()
 
-        self.phantom = None
         self.cached_info = None
         self.phantom_stderr = None
 
         self.exclude_markers = []
-
-        self.enum_ammo = False
+        self._stat_log = None
+        self._phantom = None
 
     @staticmethod
     def get_key():
@@ -67,14 +60,12 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def configure(self):
         # plugin part
         self.config = self.get_option(self.OPTION_CONFIG, '')
-        self.phantom_path = self.get_option("phantom_path", 'phantom')
         self.enum_ammo = self.get_option("enum_ammo", False)
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
-        self.exclude_markers = set(
-            filter((lambda marker: marker != ''),
-                   self.get_option('exclude_markers', []).split(' ')))
-        self.taskset_affinity = self.get_option('affinity', '')
+        # self.exclude_markers = set(
+        #     filter((lambda marker: marker != ''),
+        #            self.get_option('exclude_markers', []).split(' ')))
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -88,50 +79,58 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 self.OPTION_CONFIG, '') and self.predefined_phout:
             self.phout_import_mode = True
 
-        if not self.config and not self.phout_import_mode:
-            self.phantom = PhantomConfig(self.core)
-            self.phantom.read_config()
+        # if not self.config and not self.phout_import_mode:
+        #     self.phantom = PhantomConfig(self.core)
+        #     self.phantom.read_config()
+
+    @property
+    def phantom(self):
+        """
+        :rtype: PhantomConfig
+        """
+        if not self._phantom:
+            self._phantom = PhantomConfig(self.core, self.cfg, self.stat_log)
+            self._phantom.read_config()
+        return self._phantom
+
+    @property
+    def stat_log(self):
+        if not self._stat_log:
+            self._stat_log = self.core.mkstemp(".log", "phantom_stat_")
+        return self._stat_log
 
     def prepare_test(self):
         aggregator = self.core.job.aggregator_plugin
 
-        if not self.config and not self.phout_import_mode:
+        args = [self.get_option("phantom_path"), 'check', self.phantom.config_file]
 
-            # generate config
-            self.config = self.phantom.compose_config()
-            args = [self.phantom_path, 'check', self.config]
+        try:
+            result = execute(args, catch_out=True)
+        except OSError:
+            raise RuntimeError("Phantom I/O engine is not installed!")
 
-            try:
-                result = execute(args, catch_out=True)
-            except OSError:
-                raise RuntimeError("Phantom I/O engine is not installed!")
+        retcode = result[0]
+        if retcode:
+            raise RuntimeError(
+                "Config check failed. Subprocess returned code %s" %
+                retcode)
+        if result[2]:
+            raise RuntimeError(
+                "Subprocess returned message: %s" % result[2])
+        reader = PhantomReader(self.phantom.phout_file)
+        logger.debug(
+            "Linking sample reader to aggregator."
+            " Reading samples from %s", self.phantom.phout_file)
 
-            retcode = result[0]
-            if retcode:
-                raise RuntimeError(
-                    "Config check failed. Subprocess returned code %s" %
-                    retcode)
-            if result[2]:
-                raise RuntimeError(
-                    "Subprocess returned message: %s" % result[2])
-            reader = PhantomReader(self.phantom.phout_file)
-            logger.debug(
-                "Linking sample reader to aggregator."
-                " Reading samples from %s", self.phantom.phout_file)
+        logger.debug(
+            "Linking stats reader to aggregator."
+            " Reading stats from %s", self.phantom.stat_log)
 
-            logger.debug(
-                "Linking stats reader to aggregator."
-                " Reading stats from %s", self.phantom.stat_log)
-        else:
-            reader = PhantomReader(self.predefined_phout)
-            logger.debug(
-                "Linking sample reader to aggregator."
-                " Reading samples from %s", self.predefined_phout)
         if aggregator:
             aggregator.reader = reader
             info = self.phantom.get_info()
             aggregator.stats_reader = PhantomStatsReader(
-                self.phantom.stat_log, info)
+                self.stat_log, info)
 
             aggregator.add_result_listener(self)
         try:
@@ -153,55 +152,55 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             aggregator.add_result_listener(widget)
 
     def start_test(self):
-        if not self.phout_import_mode:
-            args = [self.phantom_path, 'run', self.config]
+        args = [self.get_option("phantom_path"), 'run', self.phantom.config_file]
+        logger.debug(
+            "Starting %s with arguments: %s", self.get_option("phantom_path"), args)
+        affinity = self.get_option('affinity')
+        if affinity != '':
+            args = [
+                self.core.taskset_path, '-c', affinity
+            ] + args
             logger.debug(
-                "Starting %s with arguments: %s", self.phantom_path, args)
-            if self.taskset_affinity != '':
-                args = [
-                    self.core.taskset_path, '-c', self.taskset_affinity
-                ] + args
-                logger.debug(
-                    "Enabling taskset for phantom with affinity: %s,"
-                    " cores count: %d", self.taskset_affinity, self.cpu_count)
-            self.phantom_start_time = time.time()
-            phantom_stderr_file = self.core.mkstemp(
-                ".log", "phantom_stdout_stderr_")
-            self.core.add_artifact_file(phantom_stderr_file)
-            self.phantom_stderr = open(phantom_stderr_file, 'w')
-            self.process = subprocess.Popen(
-                args,
-                stderr=self.phantom_stderr,
-                stdout=self.phantom_stderr,
-                close_fds=True)
-        else:
-            if not os.path.exists(self.predefined_phout):
-                raise RuntimeError(
-                    "Phout file not exists for import: %s" %
-                    self.predefined_phout)
-            logger.warn(
-                "Will import phout file instead of running phantom: %s",
-                self.predefined_phout)
+                "Enabling taskset for phantom with affinity: %s,"
+                " cores count: %d", affinity, self.cpu_count)
+        self.phantom_start_time = time.time()
+        phantom_stderr_file = self.core.mkstemp(
+            ".log", "phantom_stdout_stderr_")
+        self.core.add_artifact_file(phantom_stderr_file)
+        self.phantom_stderr = open(phantom_stderr_file, 'w')
+        self.process = subprocess.Popen(
+            args,
+            stderr=self.phantom_stderr,
+            stdout=self.phantom_stderr,
+            close_fds=True)
+        # else:
+        #     if not os.path.exists(self.predefined_phout):
+        #         raise RuntimeError(
+        #             "Phout file not exists for import: %s" %
+        #             self.predefined_phout)
+        #     logger.warn(
+        #         "Will import phout file instead of running phantom: %s",
+        #         self.predefined_phout)
 
     def is_test_finished(self):
-        if not self.phout_import_mode:
-            retcode = self.process.poll()
-            if retcode is not None:
-                logger.info("Phantom done its work with exit code: %s", retcode)
-                return abs(retcode)
-            else:
-                info = self.get_info()
-                if info:
-                    eta = int(info.duration) - (
-                        int(time.time()) - int(self.phantom_start_time))
-                    self.publish('eta', eta)
-                return -1
+        # if not self.phout_import_mode:
+        retcode = self.process.poll()
+        if retcode is not None:
+            logger.info("Phantom done its work with exit code: %s", retcode)
+            return abs(retcode)
         else:
-            if not self.processed_ammo_count or self.did_phout_import_try != self.processed_ammo_count:
-                self.did_phout_import_try = self.processed_ammo_count
-                return -1
-            else:
-                return 0
+            info = self.get_info()
+            if info:
+                eta = int(info.duration) - (
+                    int(time.time()) - int(self.phantom_start_time))
+                self.publish('eta', eta)
+            return -1
+        # else:
+        #     if not self.processed_ammo_count or self.did_phout_import_try != self.processed_ammo_count:
+        #         self.did_phout_import_try = self.processed_ammo_count
+        #         return -1
+        #     else:
+        #         return 0
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:

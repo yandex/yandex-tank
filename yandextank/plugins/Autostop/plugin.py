@@ -17,8 +17,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
     """ Plugin that accepts criterion classes and triggers autostop """
     SECTION = 'autostop'
 
-    def __init__(self, core, config_section):
-        AbstractPlugin.__init__(self, core, config_section)
+    def __init__(self, core, cfg, cfg_updater):
+        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         AggregateResultListener.__init__(self)
 
         self.cause_criterion = None

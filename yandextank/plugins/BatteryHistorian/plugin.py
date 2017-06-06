@@ -16,8 +16,8 @@ class Plugin(AbstractPlugin):
     def get_key():
         return __file__
 
-    def __init__(self, core, config_section):
-        AbstractPlugin.__init__(self, core, config_section)
+    def __init__(self, core, cfg, cfg_updater):
+        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.logfile = None
         self.default_target = None
         self.device_id = None

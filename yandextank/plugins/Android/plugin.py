@@ -24,8 +24,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     SECTION = "android"
     SECTION_META = "meta"
 
-    def __init__(self, core):
-        super(Plugin, self).__init__(core)
+    def __init__(self, core, cfg, cfg_updater):
+        super(Plugin, self).__init__(core, cfg, cfg_updater)
         self.apk_path = None
         self.test_path = None
         self.package = None

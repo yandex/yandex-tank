@@ -31,8 +31,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
     SECTION = "svgreport"
 
-    def __init__(self, core, config_section):
-        super(Plugin, self).__init__(core, config_section)
+    def __init__(self, core, cfg, cfg_updater):
+        super(Plugin, self).__init__(core, cfg, cfg_updater)
 
     def get_available_options(self):
         return [_REPORT_FILE_OPTION]

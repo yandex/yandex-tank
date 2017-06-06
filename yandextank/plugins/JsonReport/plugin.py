@@ -17,8 +17,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     # pylint:disable=R0902
     SECTION = 'json_report'
 
-    def __init__(self, core, config_section):
-        super(Plugin, self).__init__(core, config_section)
+    def __init__(self, core, cfg, cfg_updater):
+        super(Plugin, self).__init__(core, cfg, cfg_updater)
         self._is_telegraf = None
 
     def get_available_options(self):
