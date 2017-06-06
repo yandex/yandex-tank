@@ -1,3 +1,6 @@
 autostop:
   required: true
   type: string
+report_file:
+  type: string
+  default: autostop_report.txt

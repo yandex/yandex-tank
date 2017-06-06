@@ -1,7 +1,6 @@
 core:
   lock_dir: /var/lock
   artifacts_base_dir: logs
-  ignore_locks: 0
 phantom:
   package: yandextank.plugins.Phantom
   enabled: true
@@ -21,6 +20,8 @@ phantom:
   loop: -1
   ammo_limit: -1
   enum_ammo: false
+  connection_test: false
+  uris: /
 aggregator:
   package: yandextank.plugins.Aggregator
   enabled: true
@@ -37,6 +38,6 @@ meta:
 monitoring:
   package: yandextank.plugins.Monitoring
   enabled: true
-  config: monitoring.conf
+  config: monitoring.xml
   default_target: localhost
   ssh_timeout: 5s

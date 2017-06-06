@@ -57,8 +57,8 @@ OPTIONS = {
         'default': '',
     },
     'connection_test': {
-        'type': 'integer',
-        'default': 1
+        'type': 'boolean',
+        'default': True
     },
     "enum_ammo": {
         "type": "boolean",
@@ -88,10 +88,6 @@ OPTIONS = {
         'type': 'integer',
         'default': 1000
     },
-    # 'instances_schedule': {
-    #     'type': 'string',
-    #     'default': ''
-    # },
     'loop': {
         'type': 'integer',
         'default': -1
@@ -172,7 +168,8 @@ OPTIONS = {
         "default": "11s"
     },
     "uris": {
-        "type": "string"
+        "type": "string",
+        'default': ''
     },
     'use_caching': {
         'type': 'boolean',

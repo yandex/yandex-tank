@@ -57,7 +57,8 @@ OPTIONS_MAP = {
         'threads': lambda value: ('threads', int(value)),
         'use_caching': lambda value: ('use_caching', bool(int(value))),
         'enum_ammo': lambda value: ('enum_ammo', bool(int(value))),
-        'loop': lambda value: ('loop', int(value))
+        'loop': lambda value: ('loop', int(value)),
+        'connection_test': lambda value: ('connection_test', bool(int(value)))
     },
     'Aggregator': {
         'precise_cumulative': lambda value: ('precise_cumulative', int(value))

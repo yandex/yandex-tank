@@ -99,6 +99,7 @@ PHANTOM_SCHEMA_V_G = {
              'lock_dir': '/var/lock/',
              'taskset_path': 'taskset',
              'affinity': '',
+             'artifacts_dir': None
          },
          'telegraf': {
              'package': 'yandextank.plugins.Telegraf',
@@ -145,7 +146,7 @@ PHANTOM_SCHEMA_V_G = {
              'client_certificate': '',
              'client_cipher_suites': '',
              'client_key': '',
-             'connection_test': 1,
+             'connection_test': True,
              'file_cache': 8192,
              'force_stepping': 0,
              'headers': '',
@@ -396,6 +397,7 @@ def test_validate_plugin_error(config, schema, expected):
              'lock_dir': '/var/lock/',
              'taskset_path': 'taskset',
              'affinity': '',
+             'artifacts_dir': None
          },
          'telegraf': {
              'package': 'yandextank.plugins.Telegraf',
@@ -442,7 +444,7 @@ def test_validate_plugin_error(config, schema, expected):
              'client_certificate': '',
              'client_cipher_suites': '',
              'client_key': '',
-             'connection_test': 1,
+             'connection_test': True,
              'file_cache': 8192,
              'force_stepping': 0,
              'headers': '',
