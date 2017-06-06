@@ -1,5 +1,4 @@
-core:
-  host: router01g.load.maps.yandex.net
+core: {}
 meta:
   enabled: true
   package: yandextank.plugins.DataUploader
@@ -7,12 +6,10 @@ meta:
   component: '177'
   job_name: light
   ignore_target_lock: true
-  host: router01g.load.maps.yandex.net
 monitoring:
   enabled: true
   package: yandextank.plugins.Monitoring
   config: monitoring.xml
-  host: router01g.load.maps.yandex.net
 #production log
 phantom:
   enabled: true
@@ -26,7 +23,6 @@ phantom:
   autocases: '1'
   header_http: '1.1'
   force_stepping: 1
-  host: router01g.load.maps.yandex.net
   multi:
     - ammofile: https://storage-int.mds.yandex.net/get-load-ammo/15228/d94bcf4dbcfd672942398c3bc42078ba
       instances: 2000
@@ -36,7 +32,6 @@ phantom:
         schedule: line(1,125,10m)
       header_http: '1.1'
       autocases: '1'
-      host: router01g.load.maps.yandex.net
     - ammofile: https://storage-int.mds.yandex.net/get-load-ammo/24135/a2376581acf33f3789b62eea080a6d75
       instances: 2000
       address: router01g.load.maps.yandex.net
@@ -45,11 +40,9 @@ phantom:
         schedule: line(1,100,10m)
       header_http: '1.1'
       autocases: '1'
-      host: router01g.load.maps.yandex.net
 autostop:
   enabled: true
   package: yandextank.plugins.Autostop
-  host: router01g.load.maps.yandex.net
   autostop: |
     quantile(50,300,7)
     http(4xx,25%,10)

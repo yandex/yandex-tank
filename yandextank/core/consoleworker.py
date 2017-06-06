@@ -11,7 +11,7 @@ from optparse import OptionParser
 
 import yaml
 from pkg_resources import resource_filename
-
+from ..config_converter.config_converter import convert_ini
 from .tankcore import TankCore, LockError
 
 
@@ -72,10 +72,28 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 
-def cfg_loader(cfg_filename, cmd_options):
-    with open(cfg_filename[0], 'r') as f:
-        cfg = yaml.load(f)
+def cfg_loader(cfg_filename):
+    """
+
+    :type cfg_filename: str
+    """
+    if cfg_filename.endswith('.yaml'):
+        with open(cfg_filename) as f:
+            cfg = yaml.load(f)
+    else:
+        cfg = convert_ini(cfg_filename)
     return cfg
+
+
+def parse_options(options):
+    if options is None:
+        return []
+    else:
+        return [
+            {key.split('.')[0]: {key.split('.')[1]: value}}
+            for key, value
+            in [option.split('=') for option in options]
+            ]
 
 
 class ConsoleTank:
@@ -84,7 +102,8 @@ class ConsoleTank:
     IGNORE_LOCKS = "ignore_locks"
 
     def __init__(self, options, ammofile):
-        self.core = TankCore(cfg_loader(options.config, options.option))
+        lock_cfg = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
+        self.core = TankCore([cfg_loader(cfg) for cfg in options.config] + [lock_cfg] + parse_options(options.option))
 
         self.options = options
         self.ammofile = ammofile
@@ -229,7 +248,7 @@ class ConsoleTank:
                 self.log.debug("Ammofile: %s", self.ammofile)
                 self.core.set_option("phantom", 'ammofile', self.ammofile[0])
 
-            self.__override_config_from_cmdline()
+            # self.__override_config_from_cmdline()
 
             self.core.load_plugins()
 

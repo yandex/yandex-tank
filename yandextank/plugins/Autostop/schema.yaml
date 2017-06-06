@@ -1,0 +1,3 @@
+autostop:
+  required: true
+  type: string

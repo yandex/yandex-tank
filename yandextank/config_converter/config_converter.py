@@ -87,17 +87,26 @@ class PluginInstance(object):
         return options_dict
 
 
+def without_defaults(cfg_ini, section):
+    """
+
+    :type cfg_ini: ConfigParser.ConfigParser
+    """
+    defaults = cfg_ini.defaults()
+    return [(key, value) for key, value in cfg_ini.items(section) if key not in defaults.keys()]
+
+
 class Plugin(object):
     def __init__(self, package_and_section, cfg_ini):
         try:
             package_path, section = package_and_section.split()
             self.package_name = parse_package_name(package_path)
-            self.instances = {section: PluginInstance(self.package_name, cfg_ini.options(section))}
+            self.instances = {section: PluginInstance(self.package_name, without_defaults(cfg_ini, section))}
         except ValueError:
             self.package_name = parse_package_name(package_and_section)
             sections = [section for section in cfg_ini.sections()
                         if re.match(SECTIONS_PATTERNS[self.package_name], section)]
-            self.instances = {section: PluginInstance(self.package_name, cfg_ini.items(section)) for section in
+            self.instances = {section: PluginInstance(self.package_name, without_defaults(cfg_ini, section)) for section in
                               sections}
 
     def get_cfg_tuple(self):
@@ -129,7 +138,7 @@ def convert_ini(ini_file):
     enabled_plugins = parse_plugins(core_options, cfg_ini)
     plugins_cfg_dict = dict(reduce(lambda a, b: a + b, [plugin.get_cfg_tuple() for plugin in enabled_plugins]))
     plugins_cfg_dict.update({
-        'core': dict([options_converter('core', option) for option in core_options
+        'core': dict([options_converter('core', option) for option in without_defaults(cfg_ini, CORE_SECTION)
                       if not option[0].startswith(PLUGIN_PREFIX)])
     })
     return plugins_cfg_dict

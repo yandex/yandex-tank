@@ -85,7 +85,7 @@ class TankConfig(object):
         elif l == 2:
             return self.__recursive_update(configs[0], configs[1])
         else:
-            return self.__load_multiple([self.__recursive_update(configs[0], configs[1]), configs[2:]])
+            return self.__load_multiple([self.__recursive_update(configs[0], configs[1])] + configs[2:])
 
     def __parse_enabled_plugins(self):
         """
