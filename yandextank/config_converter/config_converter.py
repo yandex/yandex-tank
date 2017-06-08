@@ -15,10 +15,6 @@ def parse_package_name(package_path):
     return old_plugin_mapper(package)
 
 
-def get_plugin_sections(package_name):
-    pass
-
-
 SECTIONS_PATTERNS = {
     'Phantom': 'phantom(-.*)?',
     'Aggregator': 'aggregator',
@@ -27,6 +23,18 @@ SECTIONS_PATTERNS = {
     'DataUploader': 'meta|overload',
     'Telegraf': 'monitoring|telegraf'
 }
+
+
+class UnrecognizedSection(Exception):
+    pass
+
+
+def guess_plugin(section):
+    for plugin, section_name_pattern in SECTIONS_PATTERNS.items():
+        if re.match(section_name_pattern, section):
+            return plugin
+    else:
+        raise UnrecognizedSection('Section {} did not match any plugin'.format(section))
 
 
 def convert_rps_schedule(value):
@@ -74,18 +82,46 @@ def options_converter(plugin, option):
     return OPTIONS_MAP.get(plugin, {}).get(key, lambda v: (key, v))(value)
 
 
-class PluginInstance(object):
-    def __init__(self, plugin, options):
+class Section(object):
+    def __init__(self, name, plugin, options):
+        self.name = name
+        self.plugin = plugin
         self.options = [options_converter(plugin, option) for option in options]
 
-    def get_cfg_dict(self, package_name, include_meta=True):
+    def get_cfg_dict(self):
         options_dict = dict(self.options)
-        if include_meta:
-            options_dict.update({
-                'package': 'yandextank.plugins.%s' % package_name,
-                'enabled': True
-            })
         return options_dict
+
+    @classmethod
+    def from_multiple(cls, sections, master_name=None):
+        """
+        :type master_name: str
+        :type sections: list of Section
+        """
+        if master_name:
+            master_section = filter(lambda section: section.name == master_name, sections)[0]
+            rest = filter(lambda section: section.name != master_name, sections)
+        else:
+            master_section = sections[0]
+            master_name = master_section.name
+            rest = sections[1:]
+        multi_option = ('multi', [section.get_cfg_dict() for section in rest])
+        options = master_section.options.append(multi_option)
+        return Section(master_name, master_section.plugin, options)
+
+
+def to_plugins(instances):
+    """
+
+    :type instances: list of Section
+    """
+    plugins_instances = {}
+    for instance in instances:
+        try:
+            plugins_instances[instance.plugin].append(instance)
+        except KeyError:
+            plugins_instances[instance.plugin] = [instance]
+    return {plugin: Plugin(instances) for plugin, instances in plugins_instances.items()}
 
 
 def without_defaults(cfg_ini, section):
@@ -98,17 +134,20 @@ def without_defaults(cfg_ini, section):
 
 
 class Plugin(object):
-    def __init__(self, package_and_section, cfg_ini):
-        try:
-            package_path, section = package_and_section.split()
-            self.package_name = parse_package_name(package_path)
-            self.instances = {section: PluginInstance(self.package_name, without_defaults(cfg_ini, section))}
-        except ValueError:
-            self.package_name = parse_package_name(package_and_section)
-            sections = [section for section in cfg_ini.sections()
-                        if re.match(SECTIONS_PATTERNS[self.package_name], section)]
-            self.instances = {section: PluginInstance(self.package_name, without_defaults(cfg_ini, section)) for section in
-                              sections}
+    def __init__(self, instances):
+        self.instances = instances
+        self.package_name = instances[0].plugin
+        self.enabled = False
+        # try:
+        #     package_path, section = package_and_section.split()
+        #     self.package_name = parse_package_name(package_path)
+        #     self.instances = {section: PluginInstance(self.package_name, without_defaults(cfg_ini, section))}
+        # except ValueError:
+        #     self.package_name = parse_package_name(package_and_section)
+        #     sections = [section for section in cfg_ini.sections()
+        #                 if re.match(SECTIONS_PATTERNS[self.package_name], section)]
+        #     self.instances = {section: PluginInstance(self.package_name, without_defaults(cfg_ini, section)) for section in
+        #                       sections}
 
     def get_cfg_tuple(self):
         if self.package_name == 'Phantom' and len(self.instances) > 1:
@@ -123,20 +162,54 @@ class Plugin(object):
 
 
 PLUGIN_PREFIX = 'plugin_'
+CORE_SECTION = 'tank'
 
 
-def parse_plugins(core_options, cfg_ini):
-    CORE_OPTIONS = ['artifacts_base_dir', 'ignore_locks', 'lock_dir']
-    return [Plugin(package_and_section, cfg_ini) for alias, package_and_section in core_options
-            if alias.startswith(PLUGIN_PREFIX) and package_and_section]
+def parse_sections(cfg_ini):
+    return [Section(section, guess_plugin(section), cfg_ini.items(section)) for section in cfg_ini.sections()
+            if section != CORE_SECTION]
+
+
+def enable_plugins(plugins, core_options):
+    pass
+
+
+def partition(l, predicate):
+    return reduce(lambda x, y: (x[0]+[y], x[1]) if predicate(y) else (x[0], x[1]+[y]), l,  ([], []))
+
+
+def combine_sections(sections):
+    """
+
+    :type sections: list of Section
+    """
+    PLUGINS_TO_COMBINE = {
+        'Phantom': 'phantom'
+    }
+    plugins = {}
+    for section in sections:
+        if section.plugin in PLUGINS_TO_COMBINE.keys():
+            try:
+                plugins[section.plugin].append(section)
+            except KeyError:
+                plugins[section.plugin] = [section]
+        else:
+            plugins[section.plugin] = section
+
+    for plugin_name, _sections in plugins.items():
+        if isinstance(_sections, list):
+            plugins[plugin_name] = Section.from_multiple(_sections, PLUGINS_TO_COMBINE[plugin_name])
+
+    return plugins.values()
+
 
 
 def convert_ini(ini_file):
-    CORE_SECTION = 'tank'
     cfg_ini = ConfigParser.ConfigParser()
     cfg_ini.read(ini_file)
     core_options = cfg_ini.items(CORE_SECTION)
-    enabled_plugins = parse_plugins(core_options, cfg_ini)
+    enabled_plugins = enable_plugins(combine_sections(parse_sections(cfg_ini)), core_options)
+
     plugins_cfg_dict = dict(reduce(lambda a, b: a + b, [plugin.get_cfg_tuple() for plugin in enabled_plugins]))
     plugins_cfg_dict.update({
         'core': dict([options_converter('core', option) for option in without_defaults(cfg_ini, CORE_SECTION)

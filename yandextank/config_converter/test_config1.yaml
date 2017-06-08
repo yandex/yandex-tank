@@ -41,3 +41,6 @@ monitoring:
   config: monitoring.xml
   default_target: localhost
   ssh_timeout: 5s
+autostop:
+  package: yandextank.plugins.Autostop
+  enabled: true
