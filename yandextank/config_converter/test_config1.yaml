@@ -36,7 +36,7 @@ meta:
   job_name: "[1495714217] [api_v2] portal-morda-conf=2017.05.25-0"
   lock_targets: auto
 monitoring:
-  package: yandextank.plugins.Monitoring
+  package: yandextank.plugins.Telegraf
   enabled: true
   config: monitoring.xml
   default_target: localhost

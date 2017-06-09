@@ -3,7 +3,7 @@ import ConfigParser
 import yaml
 import pytest
 
-from config_converter import convert_ini, parse_package_name, parse_sections
+from config_converter import convert_ini, parse_package_name, parse_sections, combine_sections
 
 
 @pytest.mark.parametrize('ini_file, expected', [
@@ -46,11 +46,103 @@ from config_converter import convert_ini, parse_package_name, parse_sections
          ]
      }
      ),
+    (
+            'test_config2.ini',
+            {
+                'meta': [
+                    ('task', 'MAPSJAMS-1946'),
+                    ('ignore_target_lock', True),
+                    ('api_address', 'https://lunapark.yandex-team.ru/'),
+                ],
+                'aggregator': [],
+                'phantom':
+                    [
+                        ('stpd_file', '/var/bmpt-data/goods/ligreen/projects/regress/ammo/ammo.stpd'),
+                        ('load_profile', {'load_type': 'rps', 'schedule': 'line(1,6000,20m)'}),
+                        ('instances', 10000),
+                        ('autocases', '0'),
+                        ('address', 'alz02g.load.maps.yandex.net'),
+                        ('port', '80'),
+                    ],
+                'phantom-1':
+                    [
+                        ('ammofile',
+                         '/var/bmpt-data/goods/ligreen/projects/regress/analyser-usershandler/get-segmentshandler.ammo'),
+                        ('load_profile', {'load_type': 'rps', 'schedule': 'const(0.2,20m)'}),
+                        ('instances', 10),
+                        ('address', 'alz02g.load.maps.yandex.net'),
+                        ('autocases', '1'),
+                    ],
+                'monitoring':
+                    [
+                        ('config', 'monitoring.xml'),
+                    ],
+                'autostop':
+                    [
+                        ('autostop', '''quantile(50,20,30s)
+http(4xx,50%,5)
+http(5xx,5%,4)
+net(1xx,10,5)
+net(43,10,5)
+metric_higher(alz02g.load.maps.yandex.net,group1_usershandler-average-task-age,3,70)''')
+                    ]
+            }
+    )
 ])
 def test_parse_sections(ini_file, expected):
     cfg_ini = ConfigParser.ConfigParser()
     cfg_ini.read(ini_file)
     assert {section.name: section.options for section in parse_sections(cfg_ini)} == expected
+
+
+@pytest.mark.parametrize('ini_file, expected', [
+    (
+        'test_config2.ini',
+        {
+            'meta': [
+                ('task', 'MAPSJAMS-1946'),
+                ('ignore_target_lock', True),
+                ('api_address', 'https://lunapark.yandex-team.ru/'),
+            ],
+            'aggregator': [],
+            'phantom':
+                [
+                    ('stpd_file', '/var/bmpt-data/goods/ligreen/projects/regress/ammo/ammo.stpd'),
+                    ('load_profile', {'load_type': 'rps', 'schedule': 'line(1,6000,20m)'}),
+                    ('instances', 10000),
+                    ('autocases', '0'),
+                    ('address', 'alz02g.load.maps.yandex.net'),
+                    ('port', '80'),
+                    ('multi', [
+                        {
+                            'ammofile': '/var/bmpt-data/goods/ligreen/projects/regress/analyser-usershandler/get-segmentshandler.ammo',
+                            'load_profile': {'load_type': 'rps', 'schedule': 'const(0.2,20m)'},
+                            'instances': 10,
+                            'address': 'alz02g.load.maps.yandex.net',
+                            'autocases': '1'
+                        },
+                    ])
+                ],
+            'monitoring':
+                [
+                    ('config', 'monitoring.xml'),
+                ],
+            'autostop':
+                [
+                    ('autostop', '''quantile(50,20,30s)
+http(4xx,50%,5)
+http(5xx,5%,4)
+net(1xx,10,5)
+net(43,10,5)
+metric_higher(alz02g.load.maps.yandex.net,group1_usershandler-average-task-age,3,70)''')
+                ]
+        }
+    )
+])
+def test_combine_sections(ini_file, expected):
+    cfg_ini = ConfigParser.ConfigParser()
+    cfg_ini.read(ini_file)
+    assert {section.name: section.options for section in combine_sections(parse_sections(cfg_ini))} == expected
 
 
 @pytest.mark.parametrize('package_path, expected', [

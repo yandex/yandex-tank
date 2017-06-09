@@ -9,7 +9,7 @@ meta:
   ignore_target_lock: true
 monitoring:
   enabled: true
-  package: yandextank.plugins.Monitoring
+  package: yandextank.plugins.Telegraf
   config: monitoring.xml
 #production log
 phantom:
