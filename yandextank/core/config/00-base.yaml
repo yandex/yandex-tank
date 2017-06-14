@@ -1,0 +1,30 @@
+rcheck:
+  enabled: true
+  package: yandextank.plugins.ResourceCheck
+shellexec:
+  enabled: true
+  package: yandextank.plugins.ShellExec
+phantom:
+  enabled: true
+  package: yandextank.plugins.Phantom
+aggregator:
+  enabled: true
+  package: yandextank.plugins.Aggregator
+autostop:
+  enabled: true
+  package: yandextank.plugins.Autostop
+telegraf:
+  enabled: true
+  package: yandextank.plugins.Telegraf
+console:
+  enabled: true
+  package: yandextank.plugins.Console
+tips:
+  enabled: true
+  package: yandextank.plugins.TipsAndTricks
+rcassert:
+  enabled: true
+  package: yandextank.plugins.RCAssert
+jsonreport:
+  enabled: true
+  package: yandextank.plugins.JsonReport

@@ -27,11 +27,6 @@ lunapark:
   copy_config_to: test_config_copy.yaml
   ignore_target_lock: true
   task: LOAD-204
-overload:
-  package: yandextank.plugins.DataUploader
-  enabled: True
-  api_address: "https://overload.yandex.net/"
-  token_file: "/Users/fomars/dev/yandex-tank/tmp/token.txt"
 aggregator:
   package: yandextank.plugins.Aggregator
   enabled: True

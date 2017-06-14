@@ -41,8 +41,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
     def configure(self):
         self.info_panel_width = self.get_option(
             "info_panel_width", self.info_panel_width)
-        self.short_only = int(self.get_option("short_only", '0'))
-        if not int(self.get_option("disable_all_colors", '0')):
+        self.short_only = self.get_option("short_only", '0')
+        if not self.get_option("disable_all_colors", '0'):
             self.console_markup = RealConsoleMarkup()
         else:
             self.console_markup = NoConsoleMarkup()

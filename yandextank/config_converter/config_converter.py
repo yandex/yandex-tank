@@ -3,8 +3,7 @@ import re
 
 
 def old_plugin_mapper(package):
-    MAP = {'Overload': 'DataUploader',
-           'Monitoring': 'Telegraf'}
+    MAP = {'Overload': 'DataUploader'}
     return MAP.get(package, package)
 
 
@@ -21,7 +20,8 @@ SECTIONS_PATTERNS = {
     'Aggregator': 'aggregator',
     'Autostop': 'autostop',
     'DataUploader': 'meta|overload',
-    'Telegraf': 'telegraf|monitoring'
+    'Telegraf': 'telegraf',
+    'Monitoring': 'monitoring'
 }
 
 
@@ -87,15 +87,14 @@ class Section(object):
         self.name = name
         self.plugin = plugin
         self.options = [options_converter(plugin, option) for option in options]
-        self.enabled = enabled
+        self.enabled = None
 
     def get_cfg_dict(self, with_meta=True):
         options_dict = dict(self.options)
         if with_meta:
-            options_dict.update({
-                'package': 'yandextank.plugins.{}'.format(self.plugin),
-                'enabled': self.enabled
-            })
+            options_dict.update({'package': 'yandextank.plugins.{}'.format(self.plugin)})
+            if self.enabled is not None:
+                options_dict.update({'enabled': self.enabled})
         return options_dict
 
     @classmethod
@@ -124,20 +123,21 @@ def without_defaults(cfg_ini, section):
     :type cfg_ini: ConfigParser.ConfigParser
     """
     defaults = cfg_ini.defaults()
-    return [(key, value) for key, value in cfg_ini.items(section) if key not in defaults.keys()]
+    options = cfg_ini.items(section) if cfg_ini.has_section(section) else []
+    return [(key, value) for key, value in options if key not in defaults.keys()]
 
 
 PLUGIN_PREFIX = 'plugin_'
 CORE_SECTION = 'tank'
 
 
-def parse_sections(cfg_ini):
+def parse_sections(cfg_ini, core_options):
     """
 
     :type cfg_ini: ConfigParser.ConfigParser
     """
     return [Section(section,
-                    guess_plugin(section, dict(cfg_ini.items(CORE_SECTION))),
+                    guess_plugin(section, dict(core_options)),
                     without_defaults(cfg_ini, section))
             for section in cfg_ini.sections()
             if section != CORE_SECTION]
@@ -150,10 +150,14 @@ def enable_sections(sections, core_options):
     """
     enabled_plugins = [parse_package_name(value) for key, value in core_options if
                        key.startswith(PLUGIN_PREFIX) and value]
+    disabled_plugins = [parse_package_name(value) for key, value in core_options if
+                        key.startswith(PLUGIN_PREFIX) and not value]
     for section in sections:
         if section.plugin in enabled_plugins:
             section.enabled = True
             enabled_plugins.remove(section.plugin)
+        if section.plugin in disabled_plugins:
+            section.enabled = False
     for plugin in enabled_plugins:
         sections.append(Section(plugin.lower(), plugin, [], True))
     return sections
@@ -191,10 +195,10 @@ def combine_sections(sections):
 def convert_ini(ini_file):
     cfg_ini = ConfigParser.ConfigParser()
     cfg_ini.read(ini_file)
-    core_options = cfg_ini.items(CORE_SECTION)
-    enabled_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options)
+    core_options = cfg_ini.items(CORE_SECTION) if cfg_ini.has_section(CORE_SECTION) else []
+    ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini, core_options)), core_options)
 
-    plugins_cfg_dict = {section.name: section.get_cfg_dict() for section in enabled_sections}
+    plugins_cfg_dict = {section.name: section.get_cfg_dict() for section in ready_sections}
 
     plugins_cfg_dict.update({
         'core': dict([options_converter('core', option) for option in without_defaults(cfg_ini, CORE_SECTION)

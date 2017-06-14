@@ -1,0 +1,6 @@
+pass:
+  type: string
+  default: ''
+fail_code:
+  type: integer
+  default: 10

@@ -52,11 +52,48 @@ CFG1 = {
         'task': 'LOAD-204',
         'ignore_target_lock': True,
     },
-    'overload': {
+    # 'overload': {
+    #     'package': 'yandextank.plugins.DataUploader',
+    #     'enabled': True,
+    #     'api_address': 'https://overload.yandex.net/',
+    #     'token_file': '/Users/fomars/dev/yandex-tank/tmp/token.txt'
+    # },
+    'aggregator': {
+        'package': 'yandextank.plugins.Aggregator',
+        'enabled': True,
+        'verbose_histogram': True
+    }
+}
+
+CFG2 = {
+    "version": "1.8.36",
+    "core": {
+        'operator': 'fomars',
+        'artifacts_base_dir': './',
+        'artifacts_dir': './'
+    },
+    'telegraf': {
+        'enabled': False,
+    },
+    'phantom': {
+        'package': 'yandextank.plugins.Phantom',
+        'enabled': True,
+        'address': 'lunapark.test.yandex-team.ru',
+        'header_http': '1.1',
+        'uris': '/',
+        'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
+        'phantom_path': '/Users/fomars/dev/yandex-tank/phantom_mock.sh'
+    },
+    'lunapark': {
         'package': 'yandextank.plugins.DataUploader',
         'enabled': True,
-        'api_address': 'https://overload.yandex.net/',
-        'token_file': '/Users/fomars/dev/yandex-tank/tmp/token.txt'
+        'api_address': 'https://lunapark.test.yandex-team.ru/',
+        'copy_config_to': 'test_config_copy.yaml',
+        'task': 'LOAD-204',
+        'ignore_target_lock': True,
+    },
+    'shellexec': {
+        'enabled': False
     },
     'aggregator': {
         'package': 'yandextank.plugins.Aggregator',
@@ -70,10 +107,19 @@ CFG_MULTI = load_yaml('./', 'test_multi_cfg.yaml')
 
 @pytest.mark.parametrize('config, expected', [
     (CFG1,
-     {'plugin_telegraf', 'plugin_phantom', 'plugin_lunapark', 'plugin_overload', 'plugin_aggregator'})
+     {'plugin_telegraf', 'plugin_phantom', 'plugin_lunapark', 'plugin_aggregator',
+      'plugin_rcheck', 'plugin_shellexec', 'plugin_aggregator', 'plugin_autostop',
+      'plugin_console', 'plugin_tips', 'plugin_rcassert', 'plugin_jsonreport',
+      }),
+    (CFG2,
+     {'plugin_phantom', 'plugin_lunapark', 'plugin_aggregator', 'plugin_rcheck',
+      'plugin_aggregator', 'plugin_autostop', 'plugin_console', 'plugin_tips',
+      'plugin_rcassert', 'plugin_jsonreport',
+      }
+     )
 ])
 def test_core_load_plugins(config, expected):
-    core = TankCore(configs=[config])
+    core = TankCore(configs=[load_yaml('./config', '00-base.yaml'), config])
     core.load_plugins()
     assert set(core.plugins.keys()) == expected
 
@@ -98,6 +144,7 @@ def test_plugins_prepare_test(config, expected):
 def test_stpd_file():
     raise NotImplementedError
 
+
 @pytest.mark.parametrize('config', [
     CFG1,
     CFG_MULTI,
@@ -106,6 +153,7 @@ def test_start_test(config):
     core = TankCore(configs=[config])
     core.plugins_prepare_test()
     core.plugins_start_test()
+    core.plugins_end_test(1)
 
 
 def teardown_module(module):

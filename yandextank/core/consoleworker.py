@@ -103,7 +103,7 @@ class ConsoleTank:
 
     def __init__(self, options, ammofile):
         lock_cfg = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
-        self.core = TankCore([cfg_loader(cfg) for cfg in options.config] + [lock_cfg] + parse_options(options.option))
+        self.core = TankCore([cfg_loader(resource_filename(__name__, 'config/00-base.yaml'))] + [cfg_loader(cfg) for cfg in options.config] + [lock_cfg] + parse_options(options.option))
 
         self.options = options
         self.ammofile = ammofile

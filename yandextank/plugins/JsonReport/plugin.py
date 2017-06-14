@@ -22,14 +22,14 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self._is_telegraf = None
 
     def get_available_options(self):
-        return ['monitoring_log', 'test_data_log', 'test_stats_log']
+        return ['monitoring_log', 'test_data_log']
 
     def configure(self):
         self.monitoring_stream = io.open(os.path.join(self.core.artifacts_dir,
-                                                      self.get_option('monitoring_log', 'monitoring.log')),
+                                                      self.get_option('monitoring_log')),
                                          mode='wb')
         self.data_and_stats_stream = io.open(os.path.join(self.core.artifacts_dir,
-                                                          self.get_option('test_data_log', 'test_data.log')),
+                                                          self.get_option('test_data_log')),
                                              mode='wb')
         self.core.job.subscribe_plugin(self)
 
