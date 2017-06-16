@@ -453,7 +453,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             logger.warning("Can't get monitoring config", exc_info=True)
 
         self.lp_job.send_config_snapshot(str(self.core.config))
-        self.core.config.save(os.path.join(self.core.artifacts_dir, 'saved_conf.ini'))
+        self.core.config.save(os.path.join(self.core.artifacts_dir, 'saved_conf.yaml'))
 
     def parse_lock_targets(self):
         # prepare target lock list

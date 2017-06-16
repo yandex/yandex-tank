@@ -1,19 +1,13 @@
 core: {}
 meta:
-  api_address: http://lunapark.yandex-team.ru/
-  enabled: true
+  api_address: https://lunapark.test.yandex-team.ru/
   package: yandextank.plugins.DataUploader
   task: MAPSNAVI-1540
   component: '177'
   job_name: light
   ignore_target_lock: true
-monitoring:
-  enabled: true
-  package: yandextank.plugins.Telegraf
-  config: monitoring.xml
 #production log
 phantom:
-  enabled: true
   package: yandextank.plugins.Phantom
   instances: 10000
   address: router01g.load.maps.yandex.net
@@ -41,11 +35,7 @@ phantom:
         schedule: line(1,100,10m)
       header_http: '1.1'
       autocases: '1'
-aggregator:
-  enabled: true
-  package: yandextank.plugins.Aggregator
 autostop:
-  enabled: true
   package: yandextank.plugins.Autostop
   autostop: |
     quantile(50,300,7)

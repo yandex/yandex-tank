@@ -10,11 +10,11 @@ from config_converter import convert_ini, parse_package_name, parse_sections, co
     ('test_config1.ini',
      {
          'phantom': [
+             ('phantom_path', '/Users/fomars/dev/yandex-tank/phantom_mock.sh'),
              ('address', 'load.wfront.yandex.net'),
              ('load_profile', {'load_type': 'rps', 'schedule': 'step(50,900,5,5)'}),
              ('instances', 1000),
              ('header_http', '1.1'),
-             ('ammofile', 'ammo'),
              ('threads', 17),
              ('tank_type', 'http'),
              ('ammo_type', 'phantom'),
@@ -29,8 +29,8 @@ from config_converter import convert_ini, parse_package_name, parse_sections, co
          ],
          'meta': [
              ('api_address', 'https://lunapark.yandex-team.ru/'),
-             ('task', 'HOME-37260'),
-             ('operator', 'cheetah'),
+             ('task', 'LOAD-204'),
+             ('operator', 'fomars'),
              ('job_name', '[1495714217] [api_v2] portal-morda-conf=2017.05.25-0'),
              ('lock_targets', 'auto'),
          ],
@@ -39,8 +39,8 @@ from config_converter import convert_ini, parse_package_name, parse_sections, co
              ('time_periods',
               '1ms 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 150 200 250 300 350 400 450 500 600 650 700 750 800 850 900 950 1s 1500 2s 2500 3s 3500 4s 4500 5s 5500 6s 6500 7s 7500 8s 8500 9s 9500 10s 11s'),
          ],
-         'monitoring': [
-             ('config', 'monitoring.xml'),
+         'telegraf': [
+             ('config', 'monitoring1.xml'),
              ('default_target', 'localhost'),
              ('ssh_timeout', '5s'),
          ]
@@ -73,7 +73,7 @@ from config_converter import convert_ini, parse_package_name, parse_sections, co
                         ('address', 'alz02g.load.maps.yandex.net'),
                         ('autocases', '1'),
                     ],
-                'monitoring':
+                'telegraf':
                     [
                         ('config', 'monitoring.xml'),
                     ],
@@ -87,7 +87,7 @@ net(43,10,5)
 metric_higher(alz02g.load.maps.yandex.net,group1_usershandler-average-task-age,3,70)''')
                     ]
             }
-    )
+    ),
 ])
 def test_parse_sections(ini_file, expected):
     cfg_ini = ConfigParser.ConfigParser()
@@ -123,7 +123,7 @@ def test_parse_sections(ini_file, expected):
                         },
                     ])
                 ],
-            'monitoring':
+            'telegraf':
                 [
                     ('config', 'monitoring.xml'),
                 ],

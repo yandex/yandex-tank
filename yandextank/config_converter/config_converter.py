@@ -20,8 +20,7 @@ SECTIONS_PATTERNS = {
     'Aggregator': 'aggregator',
     'Autostop': 'autostop',
     'DataUploader': 'meta|overload',
-    'Telegraf': 'telegraf',
-    'Monitoring': 'monitoring'
+    'Telegraf': 'telegraf|monitoring'
 }
 
 
@@ -83,11 +82,12 @@ def options_converter(plugin, option):
 
 
 class Section(object):
-    def __init__(self, name, plugin, options, enabled=False):
-        self.name = name
+    def __init__(self, name, plugin, options, enabled=None):
+        self.init_name = name
+        self.name = self.__section_name_mapper(name)
         self.plugin = plugin
         self.options = [options_converter(plugin, option) for option in options]
-        self.enabled = None
+        self.enabled = enabled
 
     def get_cfg_dict(self, with_meta=True):
         options_dict = dict(self.options)
@@ -116,6 +116,12 @@ class Section(object):
         master_section.options.append(multi_option)
         return Section(master_name, master_section.plugin, master_section.options)
 
+    def __section_name_mapper(self, name):
+        MAP = {
+            'monitoring': 'telegraf'
+        }
+        return MAP.get(name, name)
+
 
 def without_defaults(cfg_ini, section):
     """
@@ -131,13 +137,15 @@ PLUGIN_PREFIX = 'plugin_'
 CORE_SECTION = 'tank'
 
 
-def parse_sections(cfg_ini, core_options):
+
+
+def parse_sections(cfg_ini):
     """
 
     :type cfg_ini: ConfigParser.ConfigParser
     """
     return [Section(section,
-                    guess_plugin(section, dict(core_options)),
+                    guess_plugin(section, dict(core_options(cfg_ini))),
                     without_defaults(cfg_ini, section))
             for section in cfg_ini.sections()
             if section != CORE_SECTION]
@@ -192,11 +200,14 @@ def combine_sections(sections):
     return plugins.values()
 
 
+def core_options(cfg_ini):
+    return cfg_ini.items(CORE_SECTION) if cfg_ini.has_section(CORE_SECTION) else []
+
+
 def convert_ini(ini_file):
     cfg_ini = ConfigParser.ConfigParser()
     cfg_ini.read(ini_file)
-    core_options = cfg_ini.items(CORE_SECTION) if cfg_ini.has_section(CORE_SECTION) else []
-    ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini, core_options)), core_options)
+    ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
     plugins_cfg_dict = {section.name: section.get_cfg_dict() for section in ready_sections}
 

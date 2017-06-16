@@ -27,7 +27,7 @@ phantom:
       instances: 10
       address: alz02g.load.maps.yandex.net
       autocases: '1'
-monitoring:
+telegraf:
   enabled: true
   package: yandextank.plugins.Telegraf
   config: monitoring.xml
