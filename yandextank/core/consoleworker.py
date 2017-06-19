@@ -1,6 +1,7 @@
 """ Provides classes to run TankCore from console environment """
 import datetime
 import fnmatch
+import glob
 import logging
 import os
 import sys
@@ -72,7 +73,7 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 
-def cfg_loader(cfg_filename):
+def load_cfg(cfg_filename):
     """
 
     :type cfg_filename: str
@@ -83,6 +84,22 @@ def cfg_loader(cfg_filename):
     else:
         cfg = convert_ini(cfg_filename)
     return cfg
+
+
+def cfg_folder_loader(path):
+    """
+    :type path: str
+    """
+    CFG_WILDCARD = '*.yaml'
+    return [load_cfg(filename) for filename in sorted(glob.glob(os.path.join(path, CFG_WILDCARD)))]
+
+
+def load_core_base_cfg():
+    return load_cfg(resource_filename(__name__, 'config/00-base.yaml'))
+
+
+def load_local_base_cfg():
+    return cfg_folder_loader('/etc/yandex-tank')
 
 
 def parse_options(options):
@@ -103,7 +120,11 @@ class ConsoleTank:
 
     def __init__(self, options, ammofile):
         lock_cfg = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
-        self.core = TankCore([cfg_loader(resource_filename(__name__, 'config/00-base.yaml'))] + [cfg_loader(cfg) for cfg in options.config] + [lock_cfg] + parse_options(options.option))
+        self.core = TankCore([load_core_base_cfg()] +
+                             load_local_base_cfg() +
+                             [load_cfg(cfg) for cfg in options.config] +
+                             [lock_cfg] +
+                             parse_options(options.option))
 
         self.options = options
         self.ammofile = ammofile

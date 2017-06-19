@@ -163,7 +163,7 @@ class StepperWrapper(object):
         if self.ammo_file:
             self.ammo_file = os.path.expanduser(self.ammo_file)
         self.loop_limit = self.get_option(self.OPTION_LOOP)
-        self.ammo_limit = self.get_option("ammo_limit", "-1")
+        self.ammo_limit = self.get_option("ammo_limit")
 
         self.load_profile = LoadProfile(**self.get_option('load_profile'))
 

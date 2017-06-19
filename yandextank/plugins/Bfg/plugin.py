@@ -64,11 +64,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         else:
             raise NotImplementedError(
                 'No such gun type implemented: "%s"' % gun_type)
-        cached_stpd_option = self.get_option("cached_stpd", '0')
-        if cached_stpd_option == '1':
-            cached_stpd = True
-        else:
-            cached_stpd = False
+        cached_stpd = self.get_option("cached_stpd")
 
         if self.get_option("worker_type", "") == "green":
             BFG = BFGGreen

@@ -1,6 +1,7 @@
 config:
   type: string
-  default: auto
+  nullable: true
+  default: null
 default_target:
   type: string
   default: localhost

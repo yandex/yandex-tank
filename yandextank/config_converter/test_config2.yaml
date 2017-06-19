@@ -2,7 +2,7 @@ core: {}
 aggregator:
   enabled: true
   package: yandextank.plugins.Aggregator
-meta:
+uploader:
   api_address: https://lunapark.yandex-team.ru/
   package: yandextank.plugins.DataUploader
   enabled: true

@@ -1,5 +1,5 @@
 core: {}
-meta:
+uploader:
   api_address: https://lunapark.test.yandex-team.ru/
   package: yandextank.plugins.DataUploader
   task: MAPSNAVI-1540

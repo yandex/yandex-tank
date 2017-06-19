@@ -40,8 +40,6 @@ def load_schema(directory, filename=None):
 
 
 class TankConfig(object):
-    BASE_SCHEMA = load_schema(os.path.join(os.path.dirname(__file__), '../core/'))
-    PLUGIN_SCHEMA = load_schema(os.path.join(os.path.dirname(__file__), '../core/'), filename='plugins_schema.yaml')
 
     def __init__(self, configs, with_dynamic_options=True):
         if not isinstance(configs, list):
@@ -50,6 +48,8 @@ class TankConfig(object):
         self.with_dynamic_options = with_dynamic_options
         self._validated = None
         self._plugins = None
+        self.BASE_SCHEMA = load_schema(os.path.join(os.path.dirname(__file__), '../core/'))
+        self.PLUGIN_SCHEMA = load_schema(os.path.join(os.path.dirname(__file__), '../core/'), filename='plugins_schema.yaml')
 
     def get_option(self, section, option):
         return self.validated[section][option]

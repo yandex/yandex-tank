@@ -4,13 +4,14 @@ import yaml
 import pytest
 
 from config_converter import convert_ini, parse_package_name, parse_sections, combine_sections
+from yandextank.core.consoleworker import load_core_base_cfg, cfg_folder_loader, load_cfg
+from yandextank.validator.validator import TankConfig
 
 
 @pytest.mark.parametrize('ini_file, expected', [
     ('test_config1.ini',
      {
          'phantom': [
-             ('phantom_path', '/Users/fomars/dev/yandex-tank/phantom_mock.sh'),
              ('address', 'load.wfront.yandex.net'),
              ('load_profile', {'load_type': 'rps', 'schedule': 'step(50,900,5,5)'}),
              ('instances', 1000),
@@ -27,7 +28,7 @@ from config_converter import convert_ini, parse_package_name, parse_sections, co
              ('connection_test', False),
              ('uris', '/'),
          ],
-         'meta': [
+         'uploader': [
              ('api_address', 'https://lunapark.yandex-team.ru/'),
              ('task', 'LOAD-204'),
              ('operator', 'fomars'),
@@ -36,8 +37,6 @@ from config_converter import convert_ini, parse_package_name, parse_sections, co
          ],
          'aggregator': [
              ('precise_cumulative', 0),
-             ('time_periods',
-              '1ms 2 3 4 5 6 7 8 9 10 20 30 40 50 60 70 80 90 100 150 200 250 300 350 400 450 500 600 650 700 750 800 850 900 950 1s 1500 2s 2500 3s 3500 4s 4500 5s 5500 6s 6500 7s 7500 8s 8500 9s 9500 10s 11s'),
          ],
          'telegraf': [
              ('config', 'monitoring1.xml'),
@@ -49,7 +48,7 @@ from config_converter import convert_ini, parse_package_name, parse_sections, co
     (
             'test_config2.ini',
             {
-                'meta': [
+                'uploader': [
                     ('task', 'MAPSJAMS-1946'),
                     ('ignore_target_lock', True),
                     ('api_address', 'https://lunapark.yandex-team.ru/'),
@@ -99,7 +98,7 @@ def test_parse_sections(ini_file, expected):
     (
         'test_config2.ini',
         {
-            'meta': [
+            'uploader': [
                 ('task', 'MAPSJAMS-1946'),
                 ('ignore_target_lock', True),
                 ('api_address', 'https://lunapark.yandex-team.ru/'),
@@ -159,12 +158,20 @@ def test_parse_package(package_path, expected):
 @pytest.mark.parametrize('ini_file, yaml_file', [
     ('test_config1.ini', 'test_config1.yaml'),
     ('test_config2.ini', 'test_config2.yaml'),
-    ('test_config3.ini', 'test_config3.yaml')
+    ('test_config3.ini', 'test_config3.yaml'),
+    ('test_config4.ini', 'test_config4.yaml')
 ])
 def test_convert_ini_phantom(ini_file, yaml_file):
     with open(yaml_file, 'r') as f:
         assert convert_ini(ini_file) == yaml.load(f)
 
-
-        # def test_disable_plugin():
-        #     raise NotImplementedError
+@pytest.mark.parametrize('ini_file', [
+    'test_config1.ini',
+    'test_config2.ini',
+    'test_config3.ini',
+    'test_config4.ini',
+])
+def test_validate(ini_file):
+    v = TankConfig([load_core_base_cfg()] +
+               cfg_folder_loader('/Users/fomars/dev/yandex-tank-internal-pkg/etc/yandex-tank') +
+               [load_cfg(ini_file)]).validated

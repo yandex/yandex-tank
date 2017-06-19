@@ -1,5 +1,14 @@
 import ConfigParser
+import pkgutil
 import re
+
+import logging
+
+from cerberus import Validator
+
+from yandextank.validator.validator import load_schema
+
+logger = logging.getLogger(__name__)
 
 
 def old_plugin_mapper(package):
@@ -16,11 +25,17 @@ def parse_package_name(package_path):
 
 
 SECTIONS_PATTERNS = {
-    'Phantom': 'phantom(-.*)?',
     'Aggregator': 'aggregator',
+    'Android': 'android',
+    'Appium': 'appium',
     'Autostop': 'autostop',
+    'BatteryHistorian': 'battery_historian',
+    'Bfg': 'bfg',
+    'Phantom': 'phantom(-.*)?',
     'DataUploader': 'meta|overload',
-    'Telegraf': 'telegraf|monitoring'
+    'Telegraf': 'telegraf|monitoring',
+    'JMeter': 'jmeter',
+    'ResourceCheck': 'rcheck'
 }
 
 
@@ -50,6 +65,13 @@ def convert_instances_schedule(value):
     }
 
 
+def to_bool(value):
+    try:
+        return bool(int(value))
+    except ValueError:
+        return True if 'true' == value.lower() else False
+
+
 OPTIONS_MAP = {
     'core': {
         'ignore_locks': lambda value: ('ignore_locks', int(value)),
@@ -57,28 +79,53 @@ OPTIONS_MAP = {
     'Phantom': {
         'rps_schedule': convert_rps_schedule,
         'instances_schedule': convert_instances_schedule,
-        'force_stepping': lambda value: ('force_stepping', int(value)),
-        'file_cache': lambda value: ('file_cache', int(value)),
-        'ammo_limit': lambda value: ('ammo_limit', int(value)),
-        'instances': lambda value: ('instances', int(value)),
-        'threads': lambda value: ('threads', int(value)),
-        'use_caching': lambda value: ('use_caching', bool(int(value))),
-        'enum_ammo': lambda value: ('enum_ammo', bool(int(value))),
-        'loop': lambda value: ('loop', int(value)),
-        'connection_test': lambda value: ('connection_test', bool(int(value)))
     },
     'Aggregator': {
         'precise_cumulative': lambda value: ('precise_cumulative', int(value))
     },
     'DataUploader': {
-        'ignore_target_lock': lambda value: ('ignore_target_lock', bool(int(value)))
+        'ignore_target_lock': lambda value: ('ignore_target_lock', to_bool(value))
     }
 }
 
 
+def type_cast(plugin, option, value):
+    type_map = {
+        'boolean': to_bool,
+        'integer': int,
+    }
+    pkg_name = 'yandextank.core' if plugin == 'core' else 'yandextank.plugins.'+plugin
+    schema = load_schema(pkgutil.get_loader(pkg_name).filename)
+    try:
+        _type = schema[option].get('type', None)
+        if _type is None:
+            raise ValueError(
+                'Plugin {} option {}: no such option or no type specified in schema'.format(plugin, option))
+        return type_map.get(_type, lambda x: x)(value)
+    except KeyError:
+        logger.warning('Deprecated option {} in plugin {}'.format(option, plugin))
+        return value
+
+
 def options_converter(plugin, option):
     key, value = option
-    return OPTIONS_MAP.get(plugin, {}).get(key, lambda v: (key, v))(value)
+    return OPTIONS_MAP.get(plugin, {}).get(key, lambda v: (key, type_cast(plugin, key, value)))(value)
+
+
+def is_option_deprecated(plugin, option_name):
+    DEPRECATED = {
+        'Aggregator': [
+            'time_periods'
+        ]
+    }
+    return option_name in DEPRECATED.get(plugin, [])
+
+
+def without_deprecated(plugin, options):
+    """
+    :type options: list of tuple
+    """
+    return filter(lambda option: not is_option_deprecated(plugin, option[0]), options)
 
 
 class Section(object):
@@ -86,7 +133,7 @@ class Section(object):
         self.init_name = name
         self.name = self.__section_name_mapper(name)
         self.plugin = plugin
-        self.options = [options_converter(plugin, option) for option in options]
+        self.options = [options_converter(plugin, option) for option in without_deprecated(plugin, options)]
         self.enabled = enabled
 
     def get_cfg_dict(self, with_meta=True):
@@ -118,7 +165,8 @@ class Section(object):
 
     def __section_name_mapper(self, name):
         MAP = {
-            'monitoring': 'telegraf'
+            'monitoring': 'telegraf',
+            'meta': 'uploader'
         }
         return MAP.get(name, name)
 
