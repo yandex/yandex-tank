@@ -123,11 +123,11 @@ class TankConfig(object):
         normalized = v.normalized(self.__raw_config_dict)
         return self.__set_core_dynamic_options(normalized) if self.with_dynamic_options else normalized
 
-    @staticmethod
-    def __validate_plugin(config, schema=None):
+    def __validate_plugin(self, config, schema=None):
         if not schema:
             schema = load_schema(pkgutil.get_loader(config['package']).filename)
-        v = Validator(schema, allow_unknown=True)
+        schema.update(self.PLUGIN_SCHEMA['schema'])
+        v = Validator(schema, allow_unknown=False)
         # .validate() makes .errors as side effect if there's any
         if not v.validate(config):
             raise ValidationError(v.errors)

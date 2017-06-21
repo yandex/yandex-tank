@@ -11,7 +11,6 @@ uploader:
 phantom:
   enabled: true
   package: yandextank.plugins.Phantom
-  stpd_file: /var/bmpt-data/goods/ligreen/projects/regress/ammo/ammo.stpd
   load_profile:
       load_type: rps
       schedule: line(1,6000,20m)

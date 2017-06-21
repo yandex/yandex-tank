@@ -1,29 +1,27 @@
 aggregator: {package: yandextank.plugins.Aggregator}
-autostop: {autostop: 'time(4000,10s)
-
-    http(4xx,15%,20)
-
-    http(5xx,20%,20)
-
-    net(1xx,15%,15)', package: yandextank.plugins.Autostop}
 core: {}
 phantom:
   address: '[rasp-front01g.load.rasp.yandex.net]:443'
   ammofile: air-tickets-search-ammo.log
   header_http: '1.1'
-  headers: '[Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3]
-
-    [Connection: close]
-
-    [Host: avia.yandex.ru]'
+  headers: "[Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3]\n[Connection: close]\n[Host: avia.yandex.ru]"
   load_profile: {load_type: rps, schedule: 'line(1,200,10m)'}
   package: yandextank.plugins.Phantom
   ssl: true
   writelog: proto_warning
 telegraf: {config: monitoring.xml, package: yandextank.plugins.Telegraf}
-uploader: {(.env)fomars@yandex-tank-dev: ~/test_configs/2017-06-14_00-05-22.427313$,
-  component: 'air_tickets_search [imbalance]', jenkinsbuild: 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/933/',
-  jenkinsjob: 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/', job_name: '[regress]
-    air_tickets_search imbalance', lock_targets: rasp-wizard01g.load.rasp.yandex.net
-    rasp-front02g.load.rasp.yandex.net rasp-dbm01g.load.rasp.yandex.net, package: yandextank.plugins.DataUploader,
-  task: RASPTICKETS-2579}
+uploader:
+  component: 'air_tickets_search [imbalance]'
+  jenkinsbuild: 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/933/'
+  jenkinsjob: 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/'
+  job_name: '[regress] air_tickets_search imbalance'
+  lock_targets: rasp-wizard01g.load.rasp.yandex.net rasp-front02g.load.rasp.yandex.net rasp-dbm01g.load.rasp.yandex.net
+  package: yandextank.plugins.DataUploader
+  task: RASPTICKETS-2579
+autostop:
+  package: yandextank.plugins.Autostop
+  autostop: |
+               time(4000,10s)
+               http(4xx,15%,20)
+               http(5xx,20%,20)
+               net(1xx,15%,15)

@@ -23,6 +23,14 @@ copy_config_to:
 ignore_target_lock:
   default: false
   type: boolean
+jenkinsbuild:
+  type: string
+  default: null
+  nullable: true
+jenkinsjob:
+  type: string
+  default: null
+  nullable: true
 job_dsc:
   type: string
   default: ""

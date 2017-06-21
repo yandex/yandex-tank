@@ -24,7 +24,6 @@ phantom:
 aggregator:
   package: yandextank.plugins.Aggregator
   enabled: true
-  precise_cumulative: 0
 uploader:
   package: yandextank.plugins.DataUploader
   enabled: true

@@ -12,7 +12,7 @@ from optparse import OptionParser
 
 import yaml
 from pkg_resources import resource_filename
-from ..config_converter.config_converter import convert_ini
+from ..config_converter.converter import convert_ini
 from .tankcore import TankCore, LockError
 
 
@@ -120,19 +120,19 @@ class ConsoleTank:
 
     def __init__(self, options, ammofile):
         lock_cfg = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
+        self.options = options
+        self.init_logging()
         self.core = TankCore([load_core_base_cfg()] +
                              load_local_base_cfg() +
                              [load_cfg(cfg) for cfg in options.config] +
                              [lock_cfg] +
                              parse_options(options.option))
 
-        self.options = options
         self.ammofile = ammofile
 
         self.baseconfigs_location = '/etc/yandex-tank'
 
-        self.log_filename = self.options.log
-        self.core.add_artifact_file(self.log_filename)
+        self.core.add_artifact_file(options.log)
         self.log = logging.getLogger(__name__)
 
         self.signal_count = 0
@@ -146,10 +146,10 @@ class ConsoleTank:
         """ Set up logging, as it is very important for console tool """
         logger = logging.getLogger('')
         logger.setLevel(logging.DEBUG)
-
+        log_filename = self.options.log
         # create file handler which logs even debug messages
-        if self.log_filename:
-            file_handler = logging.FileHandler(self.log_filename)
+        if log_filename:
+            file_handler = logging.FileHandler(log_filename)
             file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(
                 logging.Formatter(

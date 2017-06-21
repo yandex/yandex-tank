@@ -3,7 +3,7 @@ import ConfigParser
 import yaml
 import pytest
 
-from config_converter import convert_ini, parse_package_name, parse_sections, combine_sections
+from converter import convert_ini, parse_package_name, parse_sections, combine_sections
 from yandextank.core.consoleworker import load_core_base_cfg, cfg_folder_loader, load_cfg
 from yandextank.validator.validator import TankConfig
 
@@ -35,9 +35,7 @@ from yandextank.validator.validator import TankConfig
              ('job_name', '[1495714217] [api_v2] portal-morda-conf=2017.05.25-0'),
              ('lock_targets', 'auto'),
          ],
-         'aggregator': [
-             ('precise_cumulative', 0),
-         ],
+         'aggregator': [],
          'telegraf': [
              ('config', 'monitoring1.xml'),
              ('default_target', 'localhost'),
@@ -56,7 +54,6 @@ from yandextank.validator.validator import TankConfig
                 'aggregator': [],
                 'phantom':
                     [
-                        ('stpd_file', '/var/bmpt-data/goods/ligreen/projects/regress/ammo/ammo.stpd'),
                         ('load_profile', {'load_type': 'rps', 'schedule': 'line(1,6000,20m)'}),
                         ('instances', 10000),
                         ('autocases', '0'),
@@ -106,7 +103,6 @@ def test_parse_sections(ini_file, expected):
             'aggregator': [],
             'phantom':
                 [
-                    ('stpd_file', '/var/bmpt-data/goods/ligreen/projects/regress/ammo/ammo.stpd'),
                     ('load_profile', {'load_type': 'rps', 'schedule': 'line(1,6000,20m)'}),
                     ('instances', 10000),
                     ('autocases', '0'),

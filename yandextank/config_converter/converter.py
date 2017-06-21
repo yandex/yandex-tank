@@ -4,8 +4,6 @@ import re
 
 import logging
 
-from cerberus import Validator
-
 from yandextank.validator.validator import load_schema
 
 logger = logging.getLogger(__name__)
@@ -89,37 +87,44 @@ OPTIONS_MAP = {
 }
 
 
-def type_cast(plugin, option, value):
+def type_cast(plugin, option, value, schema=None):
     type_map = {
         'boolean': to_bool,
         'integer': int,
     }
-    pkg_name = 'yandextank.core' if plugin == 'core' else 'yandextank.plugins.'+plugin
-    schema = load_schema(pkgutil.get_loader(pkg_name).filename)
-    try:
-        _type = schema[option].get('type', None)
-        if _type is None:
-            raise ValueError(
-                'Plugin {} option {}: no such option or no type specified in schema'.format(plugin, option))
-        return type_map.get(_type, lambda x: x)(value)
-    except KeyError:
-        logger.warning('Deprecated option {} in plugin {}'.format(option, plugin))
+    schema = schema if schema else load_schema(pkgutil.get_loader('yandextank.plugins.'+plugin).filename)
+
+    if schema.get(option) is None:
+        logger.warning('Unknown option {}:{}'.format(plugin, option))
         return value
 
+    _type = schema[option].get('type', None)
+    if _type is None:
+        logger.warning('Option {}:{}: no type specified in schema'.format(plugin, option))
+        return value
+    return type_map.get(_type, lambda x: x)(value)
 
-def options_converter(plugin, option):
+
+def options_converter(plugin, option, schema=None):
     key, value = option
-    return OPTIONS_MAP.get(plugin, {}).get(key, lambda v: (key, type_cast(plugin, key, value)))(value)
+    return OPTIONS_MAP.get(plugin, {}).get(key, lambda v: (key, type_cast(plugin, key, value, schema)))(value)
 
 
 def is_option_deprecated(plugin, option_name):
     DEPRECATED = {
         'Aggregator': [
-            'time_periods'
+            'time_periods',
+            'precise_cumulative'
+        ],
+        'Phantom': [
+            'stpd_file'
         ]
     }
-    return option_name in DEPRECATED.get(plugin, [])
-
+    if option_name in DEPRECATED.get(plugin, []):
+        logger.warning('Deprecated option {} in plugin {}, omitting'.format(option_name, plugin))
+        return True
+    else:
+        return False
 
 def without_deprecated(plugin, options):
     """
@@ -258,9 +263,10 @@ def convert_ini(ini_file):
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
     plugins_cfg_dict = {section.name: section.get_cfg_dict() for section in ready_sections}
+    core_opts_schema = load_schema(pkgutil.get_loader('yandextank.core').filename)['core']['schema']
 
     plugins_cfg_dict.update({
-        'core': dict([options_converter('core', option) for option in without_defaults(cfg_ini, CORE_SECTION)
+        'core': dict([options_converter('core', option, core_opts_schema) for option in without_defaults(cfg_ini, CORE_SECTION)
                       if not option[0].startswith(PLUGIN_PREFIX)])
     })
     return plugins_cfg_dict

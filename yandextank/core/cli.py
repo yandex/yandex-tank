@@ -82,7 +82,6 @@ def main():
     options, ammofile = parser.parse_args()
 
     worker = ConsoleTank(options, ammofile)
-    worker.init_logging()
     try:
         worker.configure()
         rc = worker.perform_test()

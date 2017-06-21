@@ -141,6 +141,7 @@ def test_plugins_prepare_test(config, expected):
     core.plugins_prepare_test()
 
 
+@pytest.mark.skip('Not implemented')
 def test_stpd_file():
     raise NotImplementedError
 
