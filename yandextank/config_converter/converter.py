@@ -33,7 +33,8 @@ SECTIONS_PATTERNS = {
     'DataUploader': 'meta|overload',
     'Telegraf': 'telegraf|monitoring',
     'JMeter': 'jmeter',
-    'ResourceCheck': 'rcheck'
+    'ResourceCheck': 'rcheck',
+    'ShellExec': 'shellexec'
 }
 
 
@@ -41,7 +42,7 @@ class UnrecognizedSection(Exception):
     pass
 
 
-def guess_plugin(section, core_options):
+def guess_plugin(section):
     for plugin, section_name_pattern in SECTIONS_PATTERNS.items():
         if re.match(section_name_pattern, section):
             return plugin
@@ -198,7 +199,7 @@ def parse_sections(cfg_ini):
     :type cfg_ini: ConfigParser.ConfigParser
     """
     return [Section(section,
-                    guess_plugin(section, dict(core_options(cfg_ini))),
+                    guess_plugin(section),
                     without_defaults(cfg_ini, section))
             for section in cfg_ini.sections()
             if section != CORE_SECTION]
@@ -211,7 +212,7 @@ def enable_sections(sections, core_options):
     """
     enabled_plugins = [parse_package_name(value) for key, value in core_options if
                        key.startswith(PLUGIN_PREFIX) and value]
-    disabled_plugins = [parse_package_name(value) for key, value in core_options if
+    disabled_plugins = [guess_plugin(key.lstrip(PLUGIN_PREFIX)) for key, value in core_options if
                         key.startswith(PLUGIN_PREFIX) and not value]
     for section in sections:
         if section.plugin in enabled_plugins:
@@ -219,8 +220,11 @@ def enable_sections(sections, core_options):
             enabled_plugins.remove(section.plugin)
         if section.plugin in disabled_plugins:
             section.enabled = False
+            disabled_plugins.remove(section.plugin)
     for plugin in enabled_plugins:
         sections.append(Section(plugin.lower(), plugin, [], True))
+    for plugin in disabled_plugins:
+        sections.append(Section(plugin.lower(), plugin, [], False))
     return sections
 
 

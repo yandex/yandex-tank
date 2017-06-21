@@ -449,10 +449,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 with open(config_filename) as config_file:
                     self.core.job.monitoring_plugin.set_option("config_contents",
                         config_file.read())
-        except Exception:  # pylint: disable=W0703
+        except AttributeError:  # pylint: disable=W0703
             logger.warning("Can't get monitoring config", exc_info=True)
 
-        self.lp_job.send_config_snapshot(str(self.core.config))
+        self.lp_job.send_config_snapshot(self.core.cfg_snapshot)
         self.core.config.save(os.path.join(self.core.artifacts_dir, 'saved_conf.yaml'))
 
     def parse_lock_targets(self):

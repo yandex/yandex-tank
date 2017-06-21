@@ -11,6 +11,8 @@ import tempfile
 import time
 import traceback
 import uuid
+from StringIO import StringIO
+
 import pkg_resources
 import sys
 import platform
@@ -89,7 +91,7 @@ class TankCore(object):
     UUID_OPTION = 'uuid'
     LOCK_DIR = '/var/lock'
 
-    def __init__(self, configs, artifacts_base_dir=None, artifacts_dir_name=None):
+    def __init__(self, configs, artifacts_base_dir=None, artifacts_dir_name=None, cfg_depr=None):
         """
 
         :param configs: list of dict
@@ -109,6 +111,12 @@ class TankCore(object):
         self.taskset_path = None
         self.taskset_affinity = None
         self._job = None
+        if cfg_depr:
+            output = StringIO()
+            cfg_depr.write(output)
+            self.cfg_snapshot = output.getvalue()
+        else:
+            self.cfg_snapshot = str(self.config)
     #
     # def get_uuid(self):
     #     return self.uuid
@@ -143,8 +151,12 @@ class TankCore(object):
     @property
     def artifacts_base_dir(self):
         if not self._artifacts_base_dir:
-            self._artifacts_base_dir = os.path.expanduser(
+            artifacts_base_dir = os.path.expanduser(
                 self.get_option(self.SECTION, "artifacts_base_dir"))
+            if not os.path.exists(artifacts_base_dir):
+                os.makedirs(artifacts_base_dir)
+                os.chmod(self.artifacts_base_dir, 0o755)
+            self._artifacts_base_dir = artifacts_base_dir
         return self._artifacts_base_dir
 
     # todo: take this to .ini-reader
