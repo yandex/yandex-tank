@@ -106,7 +106,8 @@ def type_cast(plugin, option, value, schema=None):
     return type_map.get(_type, lambda x: x)(value)
 
 
-def options_converter(plugin, option, schema=None):
+def option_converter(plugin, option, schema=None):
+    # type: (str, (str, str), dict) -> (str, str)
     key, value = option
     return OPTIONS_MAP.get(plugin, {}).get(key, lambda v: (key, type_cast(plugin, key, value, schema)))(value)
 
@@ -134,12 +135,20 @@ def without_deprecated(plugin, options):
     return filter(lambda option: not is_option_deprecated(plugin, option[0]), options)
 
 
+def old_section_name_mapper(name):
+    MAP = {
+        'monitoring': 'telegraf',
+        'meta': 'uploader'
+    }
+    return MAP.get(name, name)
+
+
 class Section(object):
     def __init__(self, name, plugin, options, enabled=None):
         self.init_name = name
-        self.name = self.__section_name_mapper(name)
+        self.name = old_section_name_mapper(name)
         self.plugin = plugin
-        self.options = [options_converter(plugin, option) for option in without_deprecated(plugin, options)]
+        self.options = [option_converter(plugin, option) for option in without_deprecated(plugin, options)]
         self.enabled = enabled
 
     def get_cfg_dict(self, with_meta=True):
@@ -168,13 +177,6 @@ class Section(object):
         multi_option = ('multi', [section.get_cfg_dict(with_meta=False) for section in rest])
         master_section.options.append(multi_option)
         return Section(master_name, master_section.plugin, master_section.options)
-
-    def __section_name_mapper(self, name):
-        MAP = {
-            'monitoring': 'telegraf',
-            'meta': 'uploader'
-        }
-        return MAP.get(name, name)
 
 
 def without_defaults(cfg_ini, section):
@@ -270,7 +272,7 @@ def convert_ini(ini_file):
     core_opts_schema = load_schema(pkgutil.get_loader('yandextank.core').filename)['core']['schema']
 
     plugins_cfg_dict.update({
-        'core': dict([options_converter('core', option, core_opts_schema) for option in without_defaults(cfg_ini, CORE_SECTION)
+        'core': dict([option_converter('core', option, core_opts_schema) for option in without_defaults(cfg_ini, CORE_SECTION)
                       if not option[0].startswith(PLUGIN_PREFIX)])
     })
     return plugins_cfg_dict

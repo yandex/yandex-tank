@@ -13,9 +13,10 @@ from optparse import OptionParser
 
 import yaml
 from pkg_resources import resource_filename
-from ..config_converter.converter import convert_ini
+from ..config_converter.converter import convert_ini, old_section_name_mapper, option_converter, guess_plugin
 from .tankcore import TankCore, LockError
 from ..common.resource import manager as resource_manager
+
 
 class RealConsoleMarkup(object):
     '''
@@ -42,9 +43,9 @@ class RealConsoleMarkup(object):
     def clean_markup(self, orig_str):
         ''' clean markup from string '''
         for val in [
-                self.YELLOW, self.RED, self.RESET, self.CYAN, self.BG_MAGENTA,
-                self.WHITE, self.BG_GREEN, self.GREEN, self.BG_BROWN,
-                self.RED_DARK, self.MAGENTA, self.BG_CYAN
+            self.YELLOW, self.RED, self.RESET, self.CYAN, self.BG_MAGENTA,
+            self.WHITE, self.BG_GREEN, self.GREEN, self.BG_BROWN,
+            self.RED_DARK, self.MAGENTA, self.BG_CYAN
         ]:
             orig_str = orig_str.replace(val, '')
         return orig_str
@@ -103,15 +104,27 @@ def load_local_base_cfg():
     return cfg_folder_loader('/etc/yandex-tank')
 
 
+def parse_option(key, value):
+    # type: (str, str) -> {str: dict}
+    section_name, option_name = key.strip().split('.')
+    return {old_section_name_mapper(section_name):
+                dict([option_converter(guess_plugin(section_name), (option_name, value))])
+            }
+
+
 def parse_options(options):
+    """
+    :type options: list of str
+    :rtype: list of dict
+    """
     if options is None:
         return []
     else:
         return [
-            {key.split('.')[0]: {key.split('.')[1]: value}}
+            parse_option(key, value.strip())
             for key, value
             in [option.split('=') for option in options]
-            ]
+        ]
 
 
 class ConsoleTank:
@@ -237,7 +250,6 @@ class ConsoleTank:
         cfg = self.__apply_shorthand_options(cfg, dotted_options)
         cfg.set('tank', 'pid', str(os.getpid()))
         return cfg
-
 
     def get_default_configs(self):
         """ returns default configs list, from /etc and home dir """

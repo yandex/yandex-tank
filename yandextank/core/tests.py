@@ -7,6 +7,7 @@ import sys
 import yaml
 
 from yandextank.core import TankCore
+from yandextank.core.consoleworker import parse_options
 
 logger = logging.getLogger('')
 logger.setLevel(logging.DEBUG)
@@ -52,12 +53,6 @@ CFG1 = {
         'task': 'LOAD-204',
         'ignore_target_lock': True,
     },
-    # 'overload': {
-    #     'package': 'yandextank.plugins.DataUploader',
-    #     'enabled': True,
-    #     'api_address': 'https://overload.yandex.net/',
-    #     'token_file': '/Users/fomars/dev/yandex-tank/tmp/token.txt'
-    # },
     'aggregator': {
         'package': 'yandextank.plugins.Aggregator',
         'enabled': True,
@@ -155,6 +150,31 @@ def test_start_test(config):
     core.plugins_prepare_test()
     core.plugins_start_test()
     core.plugins_end_test(1)
+
+
+@pytest.mark.parametrize('options, expected', [
+    (
+        ['meta.task=LOAD-204',
+         'phantom.ammofile = air-tickets-search-ammo.log',
+         'meta.component = air_tickets_search [imbalance]',
+         'meta.jenkinsjob = https://jenkins-load.yandex-team.ru/job/air_tickets_search/'],
+        [{'uploader': {'task': 'LOAD-204'}},
+         {'phantom': {'ammofile': 'air-tickets-search-ammo.log'}},
+         {'uploader': {'component': 'air_tickets_search [imbalance]'}},
+         {'uploader': {'jenkinsjob': 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/'}}]
+    ),
+    #     with converting/type-casting
+    (
+        ['phantom.rps_schedule = line(10,100,10m)',
+         'phantom.instances=200',
+         'phantom.connection_test=0'],
+        [{'phantom': {'load_profile': {'load_type': 'rps', 'schedule': 'line(10,100,10m)'}}},
+         {'phantom': {'instances': 200}},
+         {'phantom': {'connection_test': 0}}]
+    )
+])
+def test_parse_options(options, expected):
+    assert parse_options(options) == expected
 
 
 def teardown_module(module):
