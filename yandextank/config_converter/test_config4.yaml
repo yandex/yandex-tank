@@ -1,7 +1,7 @@
 aggregator: {package: yandextank.plugins.Aggregator}
 core: {}
 phantom:
-  address: '[rasp-front01g.load.rasp.yandex.net]:443'
+  address: '[bar.load.rasp.yandex.net]:443'
   ammofile: air-tickets-search-ammo.log
   header_http: '1.1'
   headers: "[Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3]\n[Connection: close]\n[Host: avia.yandex.ru]"
@@ -15,7 +15,7 @@ uploader:
   jenkinsbuild: 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/933/'
   jenkinsjob: 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/'
   job_name: '[regress] air_tickets_search imbalance'
-  lock_targets: rasp-wizard01g.load.rasp.yandex.net rasp-front02g.load.rasp.yandex.net rasp-dbm01g.load.rasp.yandex.net
+  lock_targets: foo.load.rasp.yandex.net bar.load.rasp.yandex.net foobar.load.rasp.yandex.net
   package: yandextank.plugins.DataUploader
   task: RASPTICKETS-2579
 autostop:

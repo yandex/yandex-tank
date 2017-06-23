@@ -72,18 +72,9 @@ def to_bool(value):
 
 
 OPTIONS_MAP = {
-    'core': {
-        'ignore_locks': lambda value: ('ignore_locks', int(value)),
-    },
     'Phantom': {
         'rps_schedule': convert_rps_schedule,
         'instances_schedule': convert_instances_schedule,
-    },
-    'Aggregator': {
-        'precise_cumulative': lambda value: ('precise_cumulative', int(value))
-    },
-    'DataUploader': {
-        'ignore_target_lock': lambda value: ('ignore_target_lock', to_bool(value))
     }
 }
 
@@ -93,7 +84,7 @@ def type_cast(plugin, option, value, schema=None):
         'boolean': to_bool,
         'integer': int,
     }
-    schema = schema if schema else load_schema(pkgutil.get_loader('yandextank.plugins.'+plugin).filename)
+    schema = schema if schema else load_schema(pkgutil.get_loader('yandextank.plugins.' + plugin).filename)
 
     if schema.get(option) is None:
         logger.warning('Unknown option {}:{}'.format(plugin, option))
@@ -127,6 +118,7 @@ def is_option_deprecated(plugin, option_name):
         return True
     else:
         return False
+
 
 def without_deprecated(plugin, options):
     """
@@ -193,11 +185,8 @@ PLUGIN_PREFIX = 'plugin_'
 CORE_SECTION = 'tank'
 
 
-
-
 def parse_sections(cfg_ini):
     """
-
     :type cfg_ini: ConfigParser.ConfigParser
     """
     return [Section(section,
@@ -272,7 +261,8 @@ def convert_ini(ini_file):
     core_opts_schema = load_schema(pkgutil.get_loader('yandextank.core').filename)['core']['schema']
 
     plugins_cfg_dict.update({
-        'core': dict([option_converter('core', option, core_opts_schema) for option in without_defaults(cfg_ini, CORE_SECTION)
-                      if not option[0].startswith(PLUGIN_PREFIX)])
+        'core': dict(
+            [option_converter('core', option, core_opts_schema) for option in without_defaults(cfg_ini, CORE_SECTION)
+             if not option[0].startswith(PLUGIN_PREFIX)])
     })
     return plugins_cfg_dict

@@ -108,7 +108,7 @@ def parse_option(key, value):
     # type: (str, str) -> {str: dict}
     section_name, option_name = key.strip().split('.')
     return {old_section_name_mapper(section_name):
-                dict([option_converter(guess_plugin(section_name), (option_name, value))])
+            dict([option_converter(guess_plugin(section_name), (option_name, value))])
             }
 
 

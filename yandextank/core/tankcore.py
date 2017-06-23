@@ -10,7 +10,6 @@ import socket
 import tempfile
 import time
 import traceback
-import uuid
 from StringIO import StringIO
 
 import pkg_resources

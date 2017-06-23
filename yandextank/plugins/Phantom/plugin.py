@@ -3,7 +3,6 @@
 # TODO: phout import
 import logging
 import multiprocessing as mp
-import os
 import subprocess
 import time
 

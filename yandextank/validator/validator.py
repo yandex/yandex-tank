@@ -10,6 +10,7 @@ from cerberus import Validator
 
 TANK_DIR = os.path.dirname(os.path.dirname(importlib.import_module('yandextank').__file__))
 
+
 class ValidationError(Exception):
     pass
 

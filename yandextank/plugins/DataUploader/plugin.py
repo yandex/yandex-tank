@@ -2,14 +2,12 @@
 # TODO: make the next two lines unnecessary
 # pylint: disable=line-too-long
 # pylint: disable=missing-docstring
-import copy
 import logging
 import os
 import pwd
 import re
 import sys
 import time
-from StringIO import StringIO
 from urlparse import urljoin
 
 from queue import Empty, Queue
@@ -35,7 +33,7 @@ class BackendTypes(object):
     def identify_backend(cls, api_address):
         clues = [
             ('overload', cls.OVERLOAD),
-            ('lunapark', cls.LUNAPARK)
+            ('lunapark', cls.LUNAPARK),
         ]
         for clue, backend_type in clues:
             if clue in api_address:
@@ -448,7 +446,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             if config_filename and config_filename not in ['none', 'auto']:
                 with open(config_filename) as config_file:
                     self.core.job.monitoring_plugin.set_option("config_contents",
-                        config_file.read())
+                                                               config_file.read())
         except AttributeError:  # pylint: disable=W0703
             logger.warning("Can't get monitoring config", exc_info=True)
 

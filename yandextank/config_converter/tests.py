@@ -44,45 +44,41 @@ from yandextank.validator.validator import TankConfig
      }
      ),
     (
-            'test_config2.ini',
-            {
-                'uploader': [
-                    ('task', 'MAPSJAMS-1946'),
-                    ('ignore_target_lock', True),
-                    ('api_address', 'https://lunapark.yandex-team.ru/'),
-                ],
-                'aggregator': [],
-                'phantom':
-                    [
-                        ('load_profile', {'load_type': 'rps', 'schedule': 'line(1,6000,20m)'}),
-                        ('instances', 10000),
-                        ('autocases', '0'),
-                        ('address', 'alz02g.load.maps.yandex.net'),
-                        ('port', '80'),
-                    ],
-                'phantom-1':
-                    [
-                        ('ammofile',
-                         '/var/bmpt-data/goods/ligreen/projects/regress/analyser-usershandler/get-segmentshandler.ammo'),
-                        ('load_profile', {'load_type': 'rps', 'schedule': 'const(0.2,20m)'}),
-                        ('instances', 10),
-                        ('address', 'alz02g.load.maps.yandex.net'),
-                        ('autocases', '1'),
-                    ],
-                'telegraf':
-                    [
-                        ('config', 'monitoring.xml'),
-                    ],
-                'autostop':
-                    [
-                        ('autostop', '''quantile(50,20,30s)
+        'test_config2.ini',
+        {
+            'uploader': [
+                ('task', 'MAPSJAMS-1946'),
+                ('ignore_target_lock', True),
+                ('api_address', 'https://lunapark.yandex-team.ru/'),
+            ],
+            'aggregator': [],
+            'phantom': [
+                ('load_profile', {'load_type': 'rps', 'schedule': 'line(1,6000,20m)'}),
+                ('instances', 10000),
+                ('autocases', '0'),
+                ('address', 'foo.load.maps.yandex.net'),
+                ('port', '80'),
+            ],
+            'phantom-1': [
+                ('ammofile',
+                 '/var/bmpt-data/goods/ligreen/projects/regress/analyser-usershandler/get-segmentshandler.ammo'),
+                ('load_profile', {'load_type': 'rps', 'schedule': 'const(0.2,20m)'}),
+                ('instances', 10),
+                ('address', 'foo.load.maps.yandex.net'),
+                ('autocases', '1'),
+            ],
+            'telegraf': [
+                ('config', 'monitoring.xml'),
+            ],
+            'autostop': [
+                ('autostop', '''quantile(50,20,30s)
 http(4xx,50%,5)
 http(5xx,5%,4)
 net(1xx,10,5)
 net(43,10,5)
-metric_higher(alz02g.load.maps.yandex.net,group1_usershandler-average-task-age,3,70)''')
-                    ]
-            }
+metric_higher(foo.load.maps.yandex.net,group1_usershandler-average-task-age,3,70)''')
+            ]
+        }
     ),
 ])
 def test_parse_sections(ini_file, expected):
@@ -101,36 +97,30 @@ def test_parse_sections(ini_file, expected):
                 ('api_address', 'https://lunapark.yandex-team.ru/'),
             ],
             'aggregator': [],
-            'phantom':
-                [
-                    ('load_profile', {'load_type': 'rps', 'schedule': 'line(1,6000,20m)'}),
-                    ('instances', 10000),
-                    ('autocases', '0'),
-                    ('address', 'alz02g.load.maps.yandex.net'),
-                    ('port', '80'),
-                    ('multi', [
-                        {
-                            'ammofile': '/var/bmpt-data/goods/ligreen/projects/regress/analyser-usershandler/get-segmentshandler.ammo',
-                            'load_profile': {'load_type': 'rps', 'schedule': 'const(0.2,20m)'},
-                            'instances': 10,
-                            'address': 'alz02g.load.maps.yandex.net',
-                            'autocases': '1'
-                        },
-                    ])
-                ],
-            'telegraf':
-                [
-                    ('config', 'monitoring.xml'),
-                ],
-            'autostop':
-                [
-                    ('autostop', '''quantile(50,20,30s)
+            'phantom': [
+                ('load_profile', {'load_type': 'rps', 'schedule': 'line(1,6000,20m)'}),
+                ('instances', 10000),
+                ('autocases', '0'),
+                ('address', 'foo.load.maps.yandex.net'),
+                ('port', '80'),
+                ('multi', [{
+                    'ammofile': '/var/bmpt-data/goods/ligreen/projects/regress/analyser-usershandler/get-segmentshandler.ammo',
+                    'load_profile': {'load_type': 'rps', 'schedule': 'const(0.2,20m)'},
+                    'instances': 10,
+                    'address': 'foo.load.maps.yandex.net',
+                    'autocases': '1'}])
+            ],
+            'telegraf': [
+                ('config', 'monitoring.xml'),
+            ],
+            'autostop': [
+                ('autostop', '''quantile(50,20,30s)
 http(4xx,50%,5)
 http(5xx,5%,4)
 net(1xx,10,5)
 net(43,10,5)
-metric_higher(alz02g.load.maps.yandex.net,group1_usershandler-average-task-age,3,70)''')
-                ]
+metric_higher(foo.load.maps.yandex.net,group1_usershandler-average-task-age,3,70)''')
+            ]
         }
     )
 ])
@@ -161,6 +151,7 @@ def test_convert_ini_phantom(ini_file, yaml_file):
     with open(yaml_file, 'r') as f:
         assert convert_ini(ini_file) == yaml.load(f)
 
+
 @pytest.mark.parametrize('ini_file', [
     'test_config1.ini',
     'test_config2.ini',
@@ -168,6 +159,6 @@ def test_convert_ini_phantom(ini_file, yaml_file):
     'test_config4.ini',
 ])
 def test_validate(ini_file):
-    v = TankConfig([load_core_base_cfg()] +
+    TankConfig([load_core_base_cfg()] +
                cfg_folder_loader('/Users/fomars/dev/yandex-tank-internal-pkg/etc/yandex-tank') +
                [load_cfg(ini_file)]).validated

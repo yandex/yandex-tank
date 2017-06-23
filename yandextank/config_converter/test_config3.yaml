@@ -11,8 +11,8 @@ uploader:
 phantom:
   package: yandextank.plugins.Phantom
   instances: 10000
-  address: router01g.load.maps.yandex.net
-  ammofile: https://storage-int.mds.yandex.net/get-load-ammo/23322/6453bb49b117f7b844d754ddb5e6a334
+  address: foobar.load.maps.yandex.net
+  ammofile: ammo.txt
   load_profile:
     load_type: rps
     schedule: line(1,3000,10m)
@@ -20,17 +20,17 @@ phantom:
   header_http: '1.1'
   force_stepping: 1
   multi:
-    - ammofile: https://storage-int.mds.yandex.net/get-load-ammo/15228/d94bcf4dbcfd672942398c3bc42078ba
+    - ammofile: ammo.txt
       instances: 2000
-      address: router01g.load.maps.yandex.net
+      address: foobar.load.maps.yandex.net
       load_profile:
         load_type: rps
         schedule: line(1,125,10m)
       header_http: '1.1'
       autocases: '1'
-    - ammofile: https://storage-int.mds.yandex.net/get-load-ammo/24135/a2376581acf33f3789b62eea080a6d75
+    - ammofile: ammo.txt
       instances: 2000
-      address: router01g.load.maps.yandex.net
+      address: foobar.load.maps.yandex.net
       load_profile:
         load_type: rps
         schedule: line(1,100,10m)
