@@ -1,12 +1,9 @@
 import collections
 import importlib
 import os
-import pkgutil
 import sys
 import uuid
-
 import imp
-
 import pkg_resources
 import yaml
 from cerberus import Validator
