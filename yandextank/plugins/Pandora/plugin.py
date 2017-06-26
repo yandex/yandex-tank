@@ -21,8 +21,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     OPTION_CONFIG = "config"
     SECTION = "pandora"
 
-    def __init__(self, core, config_section):
-        super(Plugin, self).__init__(core, config_section)
+    def __init__(self, core, cfg, cfg_updater):
+        super(Plugin, self).__init__(core, cfg, cfg_updater)
         self.buffered_seconds = 2
         self.enum_ammo = False
         self.process = None

@@ -1,0 +1,6 @@
+autostop:
+  type: string
+  default: ''
+report_file:
+  type: string
+  default: autostop_report.txt

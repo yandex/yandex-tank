@@ -17,28 +17,25 @@ logger = logging.getLogger(__name__)
 class PhantomConfig:
     """ config file generator """
     OPTION_PHOUT = "phout_file"
-    SECTION = 'phantom'
 
-    def __init__(self, core):
+    def __init__(self, core, cfg, stat_log):
         self.core = core
+        self.cfg = cfg
         self.streams = []
 
         # common
         self.timeout = 11000
         self.answ_log = None
         self.answ_log_level = None
-        self.phout_file = None
-        self.stat_log = None
+        self._phout_file = None
+        self.stat_log = stat_log
         self.phantom_log = None
         self.phantom_start_time = None
         self.phantom_modules_path = None
         self.threads = None
         self.additional_libs = None
         self.enum_ammo = False
-
-    def get_option(self, opt_name, default=None):
-        """ get option wrapper """
-        return self.core.get_option(self.SECTION, opt_name, default)
+        self._config_file = None
 
     @staticmethod
     def get_available_options():
@@ -53,33 +50,30 @@ class PhantomConfig:
         opts += StreamConfig.get_available_options()
         return opts
 
+    @property
+    def phout_file(self):
+        if not self._phout_file:
+            self._phout_file = self.cfg['phout_file'] or self.core.mkstemp(".log", "phout_")
+        return self._phout_file
+
     def read_config(self):
         """        Read phantom tool specific options        """
-        self.threads = self.get_option(
-            "threads", str(int(multiprocessing.cpu_count() / 2) + 1))
-        self.phantom_modules_path = self.get_option(
-            "phantom_modules_path", "/usr/lib/phantom")
-        self.additional_libs = self.get_option("additional_libs", "")
-        self.answ_log_level = self.get_option("writelog", "none")
+        self.threads = self.cfg["threads"] or str(int(multiprocessing.cpu_count() / 2) + 1)
+        self.phantom_modules_path = self.cfg["phantom_modules_path"]
+        self.additional_libs = self.cfg["additional_libs"]
+        self.answ_log_level = self.cfg["writelog"]
         if self.answ_log_level == '0':
             self.answ_log_level = 'none'
         elif self.answ_log_level == '1':
             self.answ_log_level = 'all'
-        self.timeout = parse_duration(self.get_option("timeout", "11s"))
+        self.timeout = parse_duration(self.cfg["timeout"])
         if self.timeout > 120000:
             logger.warning(
                 "You've set timeout over 2 minutes."
                 " Are you a functional tester?")
         self.answ_log = self.core.mkstemp(".log", "answ_")
         self.core.add_artifact_file(self.answ_log)
-        self.phout_file = self.core.get_option(
-            self.SECTION, self.OPTION_PHOUT, '')
-        if not self.phout_file:
-            self.phout_file = self.core.mkstemp(".log", "phout_")
-            self.core.set_option(
-                self.SECTION, self.OPTION_PHOUT, self.phout_file)
         self.core.add_artifact_file(self.phout_file)
-        self.stat_log = self.core.mkstemp(".log", "phantom_stat_")
         self.core.add_artifact_file(self.stat_log)
         self.phantom_log = self.core.mkstemp(".log", "phantom_")
         self.core.add_artifact_file(self.phantom_log)
@@ -87,10 +81,10 @@ class PhantomConfig:
         main_stream = StreamConfig(
             self.core,
             len(self.streams), self.phout_file, self.answ_log,
-            self.answ_log_level, self.timeout, self.SECTION)
+            self.answ_log_level, self.timeout, self.cfg, True)
         self.streams.append(main_stream)
 
-        for section in self.core.config.find_sections(self.SECTION + '-'):
+        for section in self.multi():
             self.streams.append(
                 StreamConfig(
                     self.core,
@@ -103,13 +97,22 @@ class PhantomConfig:
         if any(stream.ssl for stream in self.streams):
             self.additional_libs += ' ssl io_benchmark_method_stream_transport_ssl'
 
+    def multi(self):
+        return (dict(self.cfg, **section) for section in self.cfg['multi'])
+
+    @property
+    def config_file(self):
+        if self._config_file is None:
+            self._config_file = self.compose_config()
+        return self._config_file
+
     def compose_config(self):
         """        Generate phantom tool run config        """
         streams_config = ''
         stat_benchmarks = ''
         for stream in self.streams:
             streams_config += stream.compose_config()
-            if stream.section != self.SECTION:
+            if not stream.is_main:
                 stat_benchmarks += " " + "benchmark_io%s" % stream.sequence_no
 
         kwargs = {}
@@ -195,18 +198,18 @@ class StreamConfig:
 
     OPTION_INSTANCES_LIMIT = 'instances'
 
-    def __init__(
-            self, core, sequence, phout, answ, answ_level, timeout, section):
+    def __init__(self, core, sequence, phout, answ, answ_level, timeout, cfg, is_main=False):
         self.core = core
+        self.cfg = cfg
         self.address_wizard = AddressWizard()
 
         self.sequence_no = sequence
-        self.section = section
-        self.stepper_wrapper = StepperWrapper(self.core, self.section)
+        self.stepper_wrapper = StepperWrapper(core, cfg)
         self.phout_file = phout
         self.answ_log = answ
         self.answ_log_level = answ_level
         self.timeout = timeout
+        self.is_main = is_main
 
         # per benchmark
         self.instances = None
@@ -229,9 +232,9 @@ class StreamConfig:
         self.client_certificate = None
         self.client_key = None
 
-    def get_option(self, option_ammofile, default=None):
+    def get_option(self, option, default=None):
         """ get option wrapper """
-        return self.core.get_option(self.section, option_ammofile, default)
+        return self.cfg[option]
 
     @staticmethod
     def get_available_options():
@@ -251,25 +254,23 @@ class StreamConfig:
     def read_config(self):
         """ reads config """
         # multi-options
-        self.ssl = int(self.get_option("ssl", '0'))
-        self.tank_type = self.get_option("tank_type", 'http')
+        self.ssl = self.get_option("ssl")
+        self.tank_type = self.get_option("tank_type")
         # TODO: refactor. Maybe we should decide how to interact with
         # StepperWrapper here.
-        self.instances = int(
-            self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
-        self.gatling = ' '.join(self.get_option('gatling_ip', '').split("\n"))
-        self.method_prefix = self.get_option("method_prefix", 'method_stream')
-        self.method_options = self.get_option("method_options", '')
-        self.source_log_prefix = self.get_option("source_log_prefix", '')
+        self.instances = self.get_option('instances')
+        self.gatling = ' '.join(self.get_option('gatling_ip').split("\n"))
+        self.method_prefix = self.get_option("method_prefix")
+        self.method_options = self.get_option("method_options")
+        self.source_log_prefix = self.get_option("source_log_prefix")
 
-        self.phantom_http_line = self.get_option("phantom_http_line", "")
-        self.phantom_http_field_num = self.get_option(
-            "phantom_http_field_num", "")
-        self.phantom_http_field = self.get_option("phantom_http_field", "")
-        self.phantom_http_entity = self.get_option("phantom_http_entity", "")
+        self.phantom_http_line = self.get_option("phantom_http_line")
+        self.phantom_http_field_num = self.get_option("phantom_http_field_num")
+        self.phantom_http_field = self.get_option("phantom_http_field")
+        self.phantom_http_entity = self.get_option("phantom_http_entity")
 
-        self.address = self.get_option('address', '127.0.0.1')
-        do_test_connect = int(self.get_option("connection_test", "1")) > 0
+        self.address = self.get_option('address')
+        do_test_connect = self.get_option("connection_test")
         explicit_port = self.get_option('port', '')
         self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(
             self.address, do_test_connect, explicit_port)
@@ -351,7 +352,7 @@ class StreamConfig:
         else:
             kwargs['reply_limits'] = ''
 
-        if self.section == PhantomConfig.SECTION:
+        if self.is_main:
             fname = 'phantom_benchmark_main.tpl'
         else:
             fname = 'phantom_benchmark_additional.tpl'

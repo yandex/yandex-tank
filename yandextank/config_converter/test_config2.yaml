@@ -1,0 +1,45 @@
+core: {}
+aggregator:
+  enabled: true
+  package: yandextank.plugins.Aggregator
+uploader:
+  api_address: https://lunapark.yandex-team.ru/
+  package: yandextank.plugins.DataUploader
+  enabled: true
+  task: MAPSJAMS-1946
+  ignore_target_lock: true
+phantom:
+  enabled: true
+  package: yandextank.plugins.Phantom
+  load_profile:
+      load_type: rps
+      schedule: line(1,6000,20m)
+  instances: 10000
+  autocases: '0'
+  address: foo.example.net
+  port: '80'
+  multi:
+    - ammofile: /var/bmpt-data/goods/ligreen/projects/regress/analyser-usershandler/get-segmentshandler.ammo
+      load_profile:
+        load_type: rps
+        schedule: const(0.2,20m)
+      instances: 10
+      address: foo.example.org
+      autocases: '1'
+telegraf:
+  enabled: true
+  package: yandextank.plugins.Telegraf
+  config: monitoring.xml
+shellexec:
+  enabled: false
+  package: yandextank.plugins.ShellExec
+autostop:
+  enabled: true
+  package: yandextank.plugins.Autostop
+  autostop: |
+      quantile(50,20,30s)
+      http(4xx,50%,5)
+      http(5xx,5%,4)
+      net(1xx,10,5)
+      net(43,10,5)
+      metric_higher(foo.example.net,group1_usershandler-average-task-age,3,70)

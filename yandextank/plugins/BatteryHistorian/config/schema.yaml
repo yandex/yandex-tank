@@ -1,0 +1,4 @@
+device_id:
+  type: string
+  nullable: true
+  default: null

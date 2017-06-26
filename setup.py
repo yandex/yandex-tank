@@ -20,6 +20,7 @@ analytic tools for the results they produce.
         'pandas>=0.18.0', 'numpy>=1.11.0', 'future>=0.16.0',
         'pip>=8.1.2',
         'matplotlib>=1.5.3', 'seaborn>=0.7.1',
+        'pyyaml>=3.12', 'cerberus>=1.1'
     ],
     setup_requires=[
         'pytest-runner', 'flake8',

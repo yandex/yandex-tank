@@ -571,7 +571,7 @@ class AddressWizard:
 
             return is_v6, parsed_ip, int(port), address_str
 
-        msg = "All connection attempts failed for %s, use phantom.connection_test=0 to disable it"
+        msg = "All connection attempts failed for %s, use {phantom.connection_test: false} to disable it"
         raise RuntimeError(msg % address_str)
 
     def __test(self, af, sa):

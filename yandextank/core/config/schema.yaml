@@ -1,0 +1,23 @@
+core:
+  type: dict
+  schema:
+    affinity:
+      type: string
+      default: ''
+    artifacts_base_dir:
+      type: string
+      default: ./logs
+    artifacts_dir:
+      type: string
+      nullable: true
+      default: null
+    lock_dir:
+      type: string
+      default: /var/lock/
+    operator:
+      type: string
+    taskset_path:
+      type: string
+      default: taskset
+version:
+  type: string

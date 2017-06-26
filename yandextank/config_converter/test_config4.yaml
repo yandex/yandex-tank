@@ -1,0 +1,27 @@
+aggregator: {package: yandextank.plugins.Aggregator}
+core: {}
+phantom:
+  address: '[bar.example.net]:443'
+  ammofile: air-tickets-search-ammo.log
+  header_http: '1.1'
+  headers: "[Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3]\n[Connection: close]\n[Host: avia.yandex.ru]"
+  load_profile: {load_type: rps, schedule: 'line(1,200,10m)'}
+  package: yandextank.plugins.Phantom
+  ssl: true
+  writelog: proto_warning
+telegraf: {config: monitoring.xml, package: yandextank.plugins.Telegraf}
+uploader:
+  component: 'air_tickets_search [imbalance]'
+  jenkinsbuild: 'https://jenkins.example.ru/job/314/'
+  jenkinsjob: 'https://jenkins.example.ru/job/272/'
+  job_name: '[regress] air_tickets_search imbalance'
+  lock_targets: foo.example.net bar.example.net foobar.example.net
+  package: yandextank.plugins.DataUploader
+  task: RASPTICKETS-2579
+autostop:
+  package: yandextank.plugins.Autostop
+  autostop: |
+               time(4000,10s)
+               http(4xx,15%,20)
+               http(5xx,20%,20)
+               net(1xx,15%,15)

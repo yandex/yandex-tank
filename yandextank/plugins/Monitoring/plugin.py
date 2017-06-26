@@ -24,8 +24,8 @@ class Plugin(AbstractPlugin):
 
     SECTION = 'monitoring'
 
-    def __init__(self, core, config_section):
-        AbstractPlugin.__init__(self, core, config_section)
+    def __init__(self, core, cfg, cfg_updater):
+        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.jobno = None
         self.default_target = None
         self.config = None
@@ -96,10 +96,6 @@ class Plugin(AbstractPlugin):
     def prepare_test(self):
         try:
             phantom = self.core.get_plugin_of_type(PhantomPlugin)
-            if phantom.phout_import_mode:
-                logger.info("Phout import mode, disabling monitoring")
-                self.config = None
-                self.monitoring = None
 
             info = phantom.get_info()
             if info:

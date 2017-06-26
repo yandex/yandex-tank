@@ -16,8 +16,8 @@ class Plugin(AbstractPlugin, AbstractInfoWidget):
     '''
     SECTION = 'tips'
 
-    def __init__(self, core, config_section):
-        AbstractPlugin.__init__(self, core, config_section)
+    def __init__(self, core, cfg, cfg_updater):
+        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         AbstractInfoWidget.__init__(self)
         self.lines = [
             l.decode('utf-8')
@@ -37,7 +37,7 @@ class Plugin(AbstractPlugin, AbstractInfoWidget):
         return ["disable"]
 
     def configure(self):
-        self.disable = int(self.get_option('disable', '0'))
+        self.disable = self.get_option('disable')
 
     def prepare_test(self):
         if not self.disable:

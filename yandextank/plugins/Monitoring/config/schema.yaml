@@ -1,0 +1,13 @@
+config:
+  type: string
+  default: null
+  nullale: true
+default_target:
+  type: string
+  default: localhost
+disguise_hostnames:
+  type: boolean
+  default: false
+ssh_timeout:
+  type: string
+  default: 5s
