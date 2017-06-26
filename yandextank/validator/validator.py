@@ -8,8 +8,6 @@ import pkg_resources
 import yaml
 from cerberus import Validator
 
-TANK_DIR = os.path.dirname(os.path.dirname(importlib.import_module('yandextank').__file__))
-
 
 class ValidationError(Exception):
     pass
@@ -17,7 +15,7 @@ class ValidationError(Exception):
 
 def load_yaml_schema(path):
     # DEFAULT_FILENAME = 'schema.yaml'
-    with open(os.path.join(path), 'r') as f:
+    with open(path, 'r') as f:
         return yaml.load(f)
 
 
