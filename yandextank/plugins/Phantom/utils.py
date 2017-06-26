@@ -84,7 +84,6 @@ class PhantomConfig:
             self.answ_log_level, self.timeout, self.cfg, True)
         self.streams.append(main_stream)
 
-        # for section in self.core.config.find_sections(self.SECTION + '-'):
         for section in self.multi():
             self.streams.append(
                 StreamConfig(

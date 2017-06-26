@@ -173,10 +173,10 @@ class StepperWrapper(object):
         while '' in self.uris:
             self.uris.remove('')
         rx = re.compile('\[(.*?)\]')
-        self.headers = rx.findall(self.get_option("headers", ''))
+        self.headers = rx.findall(self.get_option("headers"))
         self.http_ver = self.get_option("header_http")
         self.autocases = self.get_option("autocases")
-        self.enum_ammo = self.get_option("enum_ammo", False)
+        self.enum_ammo = self.get_option("enum_ammo")
         self.use_caching = self.get_option("use_caching")
 
         self.file_cache = self.get_option('file_cache')
@@ -207,7 +207,6 @@ class StepperWrapper(object):
 
         if not self.stpd:
             self.stpd = self.__get_stpd_filename()
-            # self.core.set_option(self.section, self.OPTION_STPD, self.stpd)
             if self.use_caching and not self.force_stepping and os.path.exists(
                     self.stpd) and os.path.exists(self.__si_filename()):
                 self.log.info("Using cached stpd-file: %s", self.stpd)

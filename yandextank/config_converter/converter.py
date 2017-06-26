@@ -4,7 +4,9 @@ import re
 
 import logging
 
-from yandextank.validator.validator import load_schema
+import pkg_resources
+
+from yandextank.validator.validator import load_schema, load_plugin_schema, load_yaml_schema
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +86,7 @@ def type_cast(plugin, option, value, schema=None):
         'boolean': to_bool,
         'integer': int,
     }
-    schema = schema if schema else load_schema(pkgutil.get_loader('yandextank.plugins.' + plugin).filename)
+    schema = schema if schema else load_plugin_schema('yandextank.plugins.' + plugin)
 
     if schema.get(option) is None:
         logger.warning('Unknown option {}:{}'.format(plugin, option))
@@ -258,7 +260,7 @@ def convert_ini(ini_file):
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
     plugins_cfg_dict = {section.name: section.get_cfg_dict() for section in ready_sections}
-    core_opts_schema = load_schema(pkgutil.get_loader('yandextank.core').filename)['core']['schema']
+    core_opts_schema = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
 
     plugins_cfg_dict.update({
         'core': dict(

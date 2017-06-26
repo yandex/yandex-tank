@@ -383,46 +383,11 @@ class TankCore(object):
 
     def get_option(self, section, option, default=None):
         return self.config.get_option(section, option)
-        # """
-        # `Get` an option from option storage
-        # and `set` if default specified.
-        # """
-        # if not self.config.config.has_section(section):
-        #     logger.debug("No section '%s', adding", section)
-        #     self.config.config.add_section(section)
-        #
-        # try:
-        #     value = self.config.config.get(section, option).strip()
-        # except ConfigParser.NoOptionError as ex:
-        #     if default is not None:
-        #         default = str(default)
-        #         self.config.config.set(section, option, default)
-        #         self.config.flush()
-        #         value = default.strip()
-        #     else:
-        #         logger.warn(
-        #             "Mandatory option %s was not found in section %s", option,
-        #             section)
-        #         raise ex
-        #
-        # if len(value) > 1 and value[0] == '`' and value[-1] == '`':
-        #     logger.debug("Expanding shell option %s", value)
-        #     retcode, stdout, stderr = execute(value[1:-1], True, 0.1, True)
-        #     if retcode or stderr:
-        #         raise ValueError(
-        #             "Error expanding option %s, RC: %s" % (value, retcode))
-        #     value = stdout.strip()
-        #
-        # return value
 
     def set_option(self, section, option, value):
         """
         Set an option in storage
         """
-        # if not self.config.config.has_section(section):
-        #     self.config.config.add_section(section)
-        # self.config.config.set(section, option, value)
-        # self.config.flush()
         raise NotImplementedError
 
     def get_plugin_of_type(self, plugin_class):
@@ -498,7 +463,7 @@ class TankCore(object):
 
     def get_lock(self, force=False):
         if not force and self.__there_is_locks():
-            raise LockError("There is lock files")
+            raise LockError("Lock file(s) found")
 
         fh, self.lock_file = tempfile.mkstemp(
             '.lock', 'lunapark_', self.get_lock_dir())
@@ -507,7 +472,6 @@ class TankCore(object):
         self.config.save(self.lock_file)
 
     def release_lock(self):
-        # self.config.file = None
         if self.lock_file and os.path.exists(self.lock_file):
             logger.debug("Releasing lock: %s", self.lock_file)
             os.remove(self.lock_file)

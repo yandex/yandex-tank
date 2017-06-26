@@ -206,9 +206,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         loop_count = info.loop_count
 
         lp_job = self.lp_job
-        self.locked_targets = self.check_and_lock_targets(strict=bool(
-            int(self.get_option('strict_lock', '0'))), ignore=self.get_option('ignore_target_lock'))
-
+        self.locked_targets = self.check_and_lock_targets(strict=self.get_option('strict_lock'),
+                                                          ignore=self.get_option('ignore_target_lock'))
         try:
             if lp_job._number:
                 self.make_symlink(lp_job._number)
@@ -276,10 +275,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         jobno_file = self.get_option("jobno_file", '')
         if jobno_file:
             logger.debug("Saving jobno to: %s", jobno_file)
-            fdes = open(jobno_file, 'w')
-            fdes.write(str(self.lp_job.number))
-            fdes.close()
-
+            with open(jobno_file, 'w') as fdes:
+                fdes.write(str(self.lp_job.number))
         self.__save_conf()
 
     def is_test_finished(self):
@@ -558,11 +555,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                      tank=self.core.job.tank,
                      notify_list=self.get_option("notify", '').split(' '),
                      load_scheme=loadscheme,
-                     version=self.get_option('ver', ''),
-                     log_data_requests=bool(int(self.get_option('log_data_requests', '0'))),
-                     log_monitoring_requests=bool(int(self.get_option('log_monitoring_requests', '0'))),
-                     log_status_requests=bool(int(self.get_option('log_status_requests', '0'))),
-                     log_other_requests=bool(int(self.get_option('log_other_requests', '0'))))
+                     version=self.get_option('ver'),
+                     log_data_requests=self.get_option('log_data_requests'),
+                     log_monitoring_requests=self.get_option('log_monitoring_requests'),
+                     log_status_requests=self.get_option('log_status_requests'),
+                     log_other_requests=self.get_option('log_other_requests'))
 
     @property
     def task(self):
@@ -792,12 +789,9 @@ class LPJob(object):
             task, trace=self.log_other_requests)
 
     def send_config_snapshot(self, config):
-        # try:
         if self._number:
             self.api_client.send_config_snapshot(
                 self.number, unicode(config), trace=self.log_other_requests)
-        # except Exception:
-        #     logger.debug("Can't send config snapshot: %s", exc_info=True)
 
     def push_monitoring_data(self, data):
         if self.is_alive:

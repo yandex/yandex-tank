@@ -62,9 +62,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.enum_ammo = self.get_option("enum_ammo", False)
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
-        # self.exclude_markers = set(
-        #     filter((lambda marker: marker != ''),
-        #            self.get_option('exclude_markers', []).split(' ')))
 
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -77,10 +74,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         if not self.get_option(
                 self.OPTION_CONFIG, '') and self.predefined_phout:
             self.phout_import_mode = True
-
-        # if not self.config and not self.phout_import_mode:
-        #     self.phantom = PhantomConfig(self.core)
-        #     self.phantom.read_config()
 
     @property
     def phantom(self):
@@ -172,17 +165,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             stderr=self.phantom_stderr,
             stdout=self.phantom_stderr,
             close_fds=True)
-        # else:
-        #     if not os.path.exists(self.predefined_phout):
-        #         raise RuntimeError(
-        #             "Phout file not exists for import: %s" %
-        #             self.predefined_phout)
-        #     logger.warn(
-        #         "Will import phout file instead of running phantom: %s",
-        #         self.predefined_phout)
 
     def is_test_finished(self):
-        # if not self.phout_import_mode:
         retcode = self.process.poll()
         if retcode is not None:
             logger.info("Phantom done its work with exit code: %s", retcode)
@@ -194,12 +178,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                     int(time.time()) - int(self.phantom_start_time))
                 self.publish('eta', eta)
             return -1
-        # else:
-        #     if not self.processed_ammo_count or self.did_phout_import_try != self.processed_ammo_count:
-        #         self.did_phout_import_try = self.processed_ammo_count
-        #         return -1
-        #     else:
-        #         return 0
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:

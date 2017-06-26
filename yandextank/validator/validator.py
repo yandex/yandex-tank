@@ -5,6 +5,9 @@ import pkgutil
 import sys
 import uuid
 
+import imp
+
+import pkg_resources
 import yaml
 from cerberus import Validator
 
@@ -15,27 +18,34 @@ class ValidationError(Exception):
     pass
 
 
-def load_yaml_schema(directory, filename=None):
-    DEFAULT_FILENAME = 'schema.yaml'
-    name = filename if filename else DEFAULT_FILENAME
-    with open(os.path.join(directory, name), 'r') as f:
+def load_yaml_schema(path):
+    # DEFAULT_FILENAME = 'schema.yaml'
+    with open(os.path.join(path), 'r') as f:
         return yaml.load(f)
 
 
-def load_py(directory, filename=None):
-    DEFAULT_PY_MODULE_NAME = 'schema'
-    name = filename if filename else DEFAULT_PY_MODULE_NAME
-    path = os.path.join(directory, name)
-    schema_module = importlib.import_module(os.path.relpath(path, TANK_DIR).replace('/', '.'))
+def load_py_schema(path):
+    schema_module = imp.load_source('schema', path)
     return schema_module.SCHEMA
+
+
+def load_plugin_schema(package):
+    try:
+        return load_yaml_schema(pkg_resources.resource_filename(package, 'config/schema.yaml'))
+    except IOError:
+        try:
+            return load_py_schema(pkg_resources.resource_filename(package, 'config/schema.py'))
+        except ImportError:
+            raise IOError('No schema found for plugin %s '
+                          '(should be located in config/ directory of a plugin)\n' % package)
 
 
 def load_schema(directory, filename=None):
     try:
-        return load_yaml_schema(directory, filename)
+        return load_yaml_schema(directory)
     except IOError:
         try:
-            return load_py(directory, filename)
+            return load_py_schema(directory)
         except ImportError:
             raise IOError('Neither .yaml nor .py schema found in %s' % directory)
 
@@ -49,8 +59,8 @@ class TankConfig(object):
         self.with_dynamic_options = with_dynamic_options
         self._validated = None
         self._plugins = None
-        self.BASE_SCHEMA = load_schema(os.path.join(os.path.dirname(__file__), '../core/'))
-        self.PLUGIN_SCHEMA = load_schema(os.path.join(os.path.dirname(__file__), '../core/'), filename='plugins_schema.yaml')
+        self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
+        self.PLUGINS_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml'))
 
     def get_option(self, section, option):
         return self.validated[section][option]
@@ -106,7 +116,7 @@ class TankConfig(object):
             try:
                 results[plugin_name] = \
                     self.__validate_plugin(config,
-                                           load_schema(pkgutil.get_loader(package).filename))
+                                           load_plugin_schema(package))
             except ValidationError as e:
                 errors[plugin_name] = e.message
         if len(errors) > 0:
@@ -117,17 +127,15 @@ class TankConfig(object):
         return core_validated
 
     def __validate_core(self):
-        v = Validator(self.BASE_SCHEMA, allow_unknown=self.PLUGIN_SCHEMA)
+        v = Validator(self.BASE_SCHEMA, allow_unknown=self.PLUGINS_SCHEMA)
         result = v.validate(self.__raw_config_dict, self.BASE_SCHEMA)
         if not result:
             raise ValidationError(v.errors)
         normalized = v.normalized(self.__raw_config_dict)
         return self.__set_core_dynamic_options(normalized) if self.with_dynamic_options else normalized
 
-    def __validate_plugin(self, config, schema=None):
-        if not schema:
-            schema = load_schema(pkgutil.get_loader(config['package']).filename)
-        schema.update(self.PLUGIN_SCHEMA['schema'])
+    def __validate_plugin(self, config, schema):
+        schema.update(self.PLUGINS_SCHEMA['schema'])
         v = Validator(schema, allow_unknown=False)
         # .validate() makes .errors as side effect if there's any
         if not v.validate(config):

@@ -74,11 +74,11 @@ class Plugin(AbstractPlugin):
         :return: SECTION name or None for defaults
         """
         try:
-            is_telegraf = self.core.get_option('telegraf', "config", None)
+            is_telegraf = self.core.get_option('telegraf', "config")
         except KeyError:
             is_telegraf = None
         try:
-            is_monitoring = self.core.get_option('monitoring', "config", None)
+            is_monitoring = self.core.get_option('monitoring', "config")
         except KeyError:
             is_monitoring = None
 
