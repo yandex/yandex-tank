@@ -1,0 +1,18 @@
+catch_out:
+  type: boolean
+  default: False
+prepare:
+  type: string
+  default: ''
+start:
+  type: string
+  default: ''
+end:
+  type: string
+  default: ''
+poll:
+  type: string
+  default: ''
+post_process:
+  type: string
+  default: ''

@@ -11,7 +11,7 @@ uploader:
 phantom:
   package: yandextank.plugins.Phantom
   instances: 10000
-  address: foobar.load.maps.yandex.net
+  address: foobar.example.net
   ammofile: ammo.txt
   load_profile:
     load_type: rps
@@ -22,7 +22,7 @@ phantom:
   multi:
     - ammofile: ammo.txt
       instances: 2000
-      address: foobar.load.maps.yandex.net
+      address: foobar.example.net
       load_profile:
         load_type: rps
         schedule: line(1,125,10m)
@@ -30,7 +30,7 @@ phantom:
       autocases: '1'
     - ammofile: ammo.txt
       instances: 2000
-      address: foobar.load.maps.yandex.net
+      address: foobar.example.net
       load_profile:
         load_type: rps
         schedule: line(1,100,10m)

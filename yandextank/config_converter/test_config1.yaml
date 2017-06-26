@@ -4,7 +4,7 @@ core:
 phantom:
   package: yandextank.plugins.Phantom
   enabled: true
-  address: load.wfront.yandex.net
+  address: load.example.net
   load_profile:
     load_type: rps
     schedule: step(50,900,5,5)

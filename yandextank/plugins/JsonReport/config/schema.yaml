@@ -1,0 +1,6 @@
+monitoring_log:
+  type: string
+  default: monitoring.log
+test_data_log:
+  type: string
+  default: test_data.log

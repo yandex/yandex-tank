@@ -12,7 +12,7 @@ from yandextank.validator.validator import TankConfig
     ('test_config1.ini',
      {
          'phantom': [
-             ('address', 'load.wfront.yandex.net'),
+             ('address', 'load.example.net'),
              ('load_profile', {'load_type': 'rps', 'schedule': 'step(50,900,5,5)'}),
              ('instances', 1000),
              ('header_http', '1.1'),
@@ -56,7 +56,7 @@ from yandextank.validator.validator import TankConfig
                 ('load_profile', {'load_type': 'rps', 'schedule': 'line(1,6000,20m)'}),
                 ('instances', 10000),
                 ('autocases', '0'),
-                ('address', 'foo.load.maps.yandex.net'),
+                ('address', 'foo.example.net'),
                 ('port', '80'),
             ],
             'phantom-1': [
@@ -64,7 +64,7 @@ from yandextank.validator.validator import TankConfig
                  '/var/bmpt-data/goods/ligreen/projects/regress/analyser-usershandler/get-segmentshandler.ammo'),
                 ('load_profile', {'load_type': 'rps', 'schedule': 'const(0.2,20m)'}),
                 ('instances', 10),
-                ('address', 'foo.load.maps.yandex.net'),
+                ('address', 'foo.example.org'),
                 ('autocases', '1'),
             ],
             'telegraf': [
@@ -76,7 +76,7 @@ http(4xx,50%,5)
 http(5xx,5%,4)
 net(1xx,10,5)
 net(43,10,5)
-metric_higher(foo.load.maps.yandex.net,group1_usershandler-average-task-age,3,70)''')
+metric_higher(foo.example.net,group1_usershandler-average-task-age,3,70)''')
             ]
         }
     ),
@@ -101,13 +101,13 @@ def test_parse_sections(ini_file, expected):
                 ('load_profile', {'load_type': 'rps', 'schedule': 'line(1,6000,20m)'}),
                 ('instances', 10000),
                 ('autocases', '0'),
-                ('address', 'foo.load.maps.yandex.net'),
+                ('address', 'foo.example.net'),
                 ('port', '80'),
                 ('multi', [{
                     'ammofile': '/var/bmpt-data/goods/ligreen/projects/regress/analyser-usershandler/get-segmentshandler.ammo',
                     'load_profile': {'load_type': 'rps', 'schedule': 'const(0.2,20m)'},
                     'instances': 10,
-                    'address': 'foo.load.maps.yandex.net',
+                    'address': 'foo.example.org',
                     'autocases': '1'}])
             ],
             'telegraf': [
@@ -119,7 +119,7 @@ http(4xx,50%,5)
 http(5xx,5%,4)
 net(1xx,10,5)
 net(43,10,5)
-metric_higher(foo.load.maps.yandex.net,group1_usershandler-average-task-age,3,70)''')
+metric_higher(foo.example.net,group1_usershandler-average-task-age,3,70)''')
             ]
         }
     )
