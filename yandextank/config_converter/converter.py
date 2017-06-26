@@ -1,12 +1,8 @@
 import ConfigParser
-import pkgutil
 import re
-
 import logging
-
 import pkg_resources
-
-from yandextank.validator.validator import load_schema, load_plugin_schema, load_yaml_schema
+from yandextank.validator.validator import load_plugin_schema, load_yaml_schema
 
 logger = logging.getLogger(__name__)
 
