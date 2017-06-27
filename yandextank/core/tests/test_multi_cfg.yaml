@@ -16,6 +16,7 @@ phantom:
   uris: "/"
   loop: 100
   load_profile: {load_type: rps, schedule: "line(1, 10, 1m)"}
+  connection_test: false
   multi:
   - address: localhost
     load_profile: {load_type: instances, schedule: "const(10, 1m)"}

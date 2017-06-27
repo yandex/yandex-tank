@@ -45,7 +45,8 @@ CFG1 = {
         'header_http': '1.1',
         'uris': '/',
         'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
-        'phantom_path': '/Users/fomars/dev/yandex-tank/phantom_mock.sh'
+        'phantom_path': '/Users/fomars/dev/yandex-tank/phantom_mock.sh',
+        'connection_test': False
     },
     'lunapark': {
         'package': 'yandextank.plugins.DataUploader',
@@ -79,6 +80,7 @@ CFG2 = {
         'header_http': '1.1',
         'uris': '/',
         'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
+        'connection_test': False
     },
     'lunapark': {
         'package': 'yandextank.plugins.DataUploader',
