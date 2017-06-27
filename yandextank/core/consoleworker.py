@@ -450,7 +450,7 @@ class CompletionHelperOptionParser(OptionParser):
 
         if options.list_options_cur or options.list_options_prev:
             cmdtank = ConsoleTank(DevNullOpts(), None)
-            cmdtank.core.load_configs(get_default_configs(cmdtank.baseconfigs_location, cmdtank.log))
+            cmdtank.core.load_configs(get_default_configs())
             cmdtank.core.load_plugins()
 
             opts = []
