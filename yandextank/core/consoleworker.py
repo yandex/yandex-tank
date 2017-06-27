@@ -127,6 +127,99 @@ def parse_options(options):
         ]
 
 
+def apply_shorthand_options(config, options, default_section='DEFAULT'):
+    """
+
+    :type config: ConfigParser.ConfigParser
+    """
+    for option_str in options:
+        key, value = option_str.split('=')
+        try:
+            section, option = key.split('.')
+        except ValueError:
+            section = default_section
+            option = key
+        if not config.has_section(section):
+            config.add_section(section)
+        config.set(section, option, value)
+    return config
+
+
+def load_ini_cfgs(config_files):
+    config_filenames = [resource_manager.resource_filename(config) for config in config_files]
+    cfg = ConfigParser.ConfigParser()
+    cfg.read(config_filenames)
+
+    dotted_options = []
+    for option, value in cfg.items('tank'):
+        if '.' in option:
+            dotted_options += [option + '=' + value]
+
+    cfg = apply_shorthand_options(cfg, dotted_options)
+    cfg.set('tank', 'pid', str(os.getpid()))
+    return cfg
+
+
+def get_default_configs():
+    """ returns default configs list, from /etc and home dir """
+    # initialize basic defaults
+    configs = [resource_filename(__name__, 'config/00-base.ini')]
+    baseconfigs_location = '/etc/yandex-tank'
+    try:
+        conf_files = sorted(os.listdir(baseconfigs_location))
+        for filename in conf_files:
+            if fnmatch.fnmatch(filename, '*.ini'):
+                configs += [
+                    os.path.realpath(
+                        baseconfigs_location + os.sep + filename)
+                ]
+    except OSError:
+        logging.warn(
+            baseconfigs_location +
+            ' is not accessible to get configs list')
+
+    configs += [os.path.expanduser('~/.yandex-tank')]
+    return configs
+
+
+def get_depr_cfg(config_files, no_rc, cmd_options):
+    try:
+        all_config_files = []
+
+        if not no_rc:
+            all_config_files = get_default_configs()
+
+        if not config_files:
+            if os.path.exists(os.path.realpath('load.ini')):
+                all_config_files += [os.path.realpath('load.ini')]
+            elif os.path.exists(os.path.realpath('load.conf')):
+                # just for old 'lunapark' compatibility
+                conf_file = os.path.realpath('load.conf')
+                all_config_files += [conf_file]
+        else:
+            for config_file in config_files:
+                all_config_files.append(config_file)
+
+        cfg_ini = load_ini_cfgs([cfg_file for cfg_file in all_config_files if cfg_file.endswith('.ini')])
+        return apply_shorthand_options(cfg_ini, cmd_options)
+    except Exception as ex:
+        sys.stderr.write(RealConsoleMarkup.RED)
+        sys.stderr.write(RealConsoleMarkup.RESET)
+        sys.stderr.write(RealConsoleMarkup.TOTAL_RESET)
+        raise ex
+
+
+def load_tank_core(config_files, cmd_options, no_rc, *other_opts):
+    other_opts = list(other_opts) if other_opts else []
+    cmd_options = cmd_options if cmd_options else []
+    return TankCore([load_core_base_cfg()] +
+                    load_local_base_cfg() +
+                    [load_cfg(cfg) for cfg in config_files] +
+                    list(other_opts) +
+                    parse_options(cmd_options),
+                    cfg_depr=get_depr_cfg(config_files, no_rc, cmd_options))
+
+
 class ConsoleTank:
     """    Worker class that runs tank core accepting cmdline params    """
 
@@ -141,12 +234,7 @@ class ConsoleTank:
         self.init_logging()
         self.log = logging.getLogger(__name__)
 
-        self.core = TankCore([load_core_base_cfg()] +
-                             load_local_base_cfg() +
-                             [load_cfg(cfg) for cfg in options.config] +
-                             [lock_cfg] +
-                             parse_options(options.option),
-                             cfg_depr=self.get_depr_cfg())
+        self.core = load_tank_core(options.config, options.option, options.no_rc, lock_cfg)
 
         self.ammofile = ammofile
 
@@ -211,66 +299,6 @@ class ConsoleTank:
         stderr_hdl.addFilter(f_debug)
         logger.addHandler(stderr_hdl)
 
-    def __apply_shorthand_options(self, config, options, default_section='DEFAULT'):
-        """
-
-        :type config: ConfigParser.ConfigParser
-
-        """
-        for option_str in options:
-            key, value = option_str.split('=')
-            try:
-                section, option = key.split('.')
-            except ValueError:
-                section = default_section
-                option = key
-            if not config.has_section(section):
-                config.add_section(section)
-            config.set(section, option, value)
-        return config
-
-    def __override_config_from_cmdline(self, config):
-        """ override config options from command line"""
-        if self.options.option:
-            return self.__apply_shorthand_options(config, self.options.option)
-        else:
-            return config
-
-    def load_ini_cfgs(self, configs):
-        """ Tells core to load configs set into options storage """
-        config_filenames = [resource_manager.resource_filename(config) for config in configs]
-        cfg = ConfigParser.ConfigParser()
-        cfg.read(config_filenames)
-
-        dotted_options = []
-        for option, value in cfg.items('tank'):
-            if '.' in option:
-                dotted_options += [option + '=' + value]
-
-        cfg = self.__apply_shorthand_options(cfg, dotted_options)
-        cfg.set('tank', 'pid', str(os.getpid()))
-        return cfg
-
-    def get_default_configs(self):
-        """ returns default configs list, from /etc and home dir """
-        # initialize basic defaults
-        configs = [resource_filename(__name__, 'config/00-base.ini')]
-        try:
-            conf_files = sorted(os.listdir(self.baseconfigs_location))
-            for filename in conf_files:
-                if fnmatch.fnmatch(filename, '*.ini'):
-                    configs += [
-                        os.path.realpath(
-                            self.baseconfigs_location + os.sep + filename)
-                    ]
-        except OSError:
-            self.log.warn(
-                self.baseconfigs_location +
-                ' is not accessible to get configs list')
-
-        configs += [os.path.expanduser('~/.yandex-tank')]
-        return configs
-
     def configure(self):
         while True:
             try:
@@ -306,44 +334,6 @@ class ConsoleTank:
             sys.stderr.write(RealConsoleMarkup.RESET)
             sys.stderr.write(RealConsoleMarkup.TOTAL_RESET)
             self.core.release_lock()
-            raise ex
-
-    def get_depr_cfg(self):
-        """ Make all console-specific preparations before running Tank """
-        if self.options.ignore_lock:
-            self.log.warn(
-                "Lock files ignored. This is highly unrecommended practice!")
-        try:
-            configs = []
-
-            if not self.options.no_rc:
-                configs = self.get_default_configs()
-
-            if not self.options.config:
-                if os.path.exists(os.path.realpath('load.ini')):
-                    self.log.info(
-                        "No config passed via cmdline, using ./load.ini")
-                    configs += [os.path.realpath('load.ini')]
-                elif os.path.exists(os.path.realpath('load.conf')):
-                    # just for old 'lunapark' compatibility
-                    self.log.warn(
-                        "Using 'load.conf' is unrecommended, please use 'load.ini' instead"
-                    )
-                    conf_file = os.path.realpath('load.conf')
-                    configs += [conf_file]
-            else:
-                for config_file in self.options.config:
-                    configs.append(config_file)
-
-            cfg_ini = self.load_ini_cfgs([cfg for cfg in configs if cfg.endswith('.ini')])
-            ready_cfg = self.__override_config_from_cmdline(cfg_ini)
-            return ready_cfg
-        except Exception as ex:
-            self.log.info("Exception: %s", traceback.format_exc(ex))
-            sys.stderr.write(RealConsoleMarkup.RED)
-            self.log.error("%s", ex)
-            sys.stderr.write(RealConsoleMarkup.RESET)
-            sys.stderr.write(RealConsoleMarkup.TOTAL_RESET)
             raise ex
 
     def __graceful_shutdown(self):
@@ -460,7 +450,7 @@ class CompletionHelperOptionParser(OptionParser):
 
         if options.list_options_cur or options.list_options_prev:
             cmdtank = ConsoleTank(DevNullOpts(), None)
-            cmdtank.core.load_configs(cmdtank.get_default_configs())
+            cmdtank.core.load_configs(get_default_configs())
             cmdtank.core.load_plugins()
 
             opts = []
