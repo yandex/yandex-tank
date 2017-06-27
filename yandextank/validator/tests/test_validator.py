@@ -1,6 +1,6 @@
 
 import pytest
-from validator import TankConfig, ValidationError
+from yandextank.validator.validator import TankConfig, ValidationError
 
 CFG_VER_I_0 = {
     "version": "1.8.34",

@@ -1,0 +1,10 @@
+<Monitoring>
+    <Host address="84.201.161.241" comment="usershandler">
+        <CPU measure="idle,user,system,iowait" />
+        <System measure="la1,csw,int,numproc,numthreads" />
+        <Memory measure="free,used,cached,buff" />
+        <Custom measure="call" label="yacare-segmentshandler-rss.size"> for c in `pgrep -f analyzer-segmentshandler`; do awk '{print $2*4096}' /proc/$c/statm; done | awk '{a=a+$1} END {print a}' </Custom>
+        <Net measure="recv,send,retransmit,estab,closewait,timewait"/>
+        <Disk />
+    </Host>
+</Monitoring>

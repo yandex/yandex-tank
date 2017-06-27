@@ -1,9 +1,10 @@
 import ConfigParser
+import os
 
 import yaml
 import pytest
 
-from converter import convert_ini, parse_package_name, parse_sections, combine_sections
+from yandextank.config_converter.converter import convert_ini, parse_package_name, parse_sections, combine_sections
 from yandextank.core.consoleworker import load_core_base_cfg, cfg_folder_loader, load_cfg
 from yandextank.validator.validator import TankConfig
 
@@ -83,7 +84,7 @@ metric_higher(foo.example.net,group1_usershandler-average-task-age,3,70)''')
 ])
 def test_parse_sections(ini_file, expected):
     cfg_ini = ConfigParser.ConfigParser()
-    cfg_ini.read(ini_file)
+    cfg_ini.read(os.path.join(os.path.dirname(__file__), ini_file))
     assert {section.name: section.options for section in parse_sections(cfg_ini)} == expected
 
 
@@ -126,7 +127,7 @@ metric_higher(foo.example.net,group1_usershandler-average-task-age,3,70)''')
 ])
 def test_combine_sections(ini_file, expected):
     cfg_ini = ConfigParser.ConfigParser()
-    cfg_ini.read(ini_file)
+    cfg_ini.read(os.path.join(os.path.dirname(__file__), ini_file))
     assert {section.name: section.options for section in combine_sections(parse_sections(cfg_ini))} == expected
 
 
@@ -148,8 +149,8 @@ def test_parse_package(package_path, expected):
     ('test_config4.ini', 'test_config4.yaml')
 ])
 def test_convert_ini_phantom(ini_file, yaml_file):
-    with open(yaml_file, 'r') as f:
-        assert convert_ini(ini_file) == yaml.load(f)
+    with open(os.path.join(os.path.dirname(__file__), yaml_file), 'r') as f:
+        assert convert_ini(os.path.join(os.path.dirname(__file__), ini_file)) == yaml.load(f)
 
 
 @pytest.mark.parametrize('ini_file', [
@@ -159,6 +160,7 @@ def test_convert_ini_phantom(ini_file, yaml_file):
     'test_config4.ini',
 ])
 def test_validate(ini_file):
+    # noinspection PyStatementEffect
     TankConfig([load_core_base_cfg()] +
-               cfg_folder_loader('/Users/fomars/dev/yandex-tank-internal-pkg/etc/yandex-tank') +
-               [load_cfg(ini_file)]).validated
+               cfg_folder_loader(os.path.join(os.path.dirname(__file__), 'etc_cfg')) +
+               [load_cfg(os.path.join(os.path.dirname(__file__), ini_file))]).validated
