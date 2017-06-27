@@ -11,7 +11,7 @@ phantom:
   package: yandextank.plugins.Phantom
   enabled: True
   address: lunapark.test.yandex-team.ru
-  phantom_path: "/Users/fomars/dev/yandex-tank/phantom_mock.sh"
+  phantom_path: "./phantom_mock.sh"
   header_http: "1.1"
   uris: "/"
   loop: 100
