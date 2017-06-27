@@ -131,7 +131,6 @@ def apply_shorthand_options(config, options, default_section='DEFAULT'):
     """
 
     :type config: ConfigParser.ConfigParser
-
     """
     for option_str in options:
         key, value = option_str.split('=')
@@ -144,14 +143,6 @@ def apply_shorthand_options(config, options, default_section='DEFAULT'):
             config.add_section(section)
         config.set(section, option, value)
     return config
-#
-#
-# def override_config_from_cmdline(options, config):
-#     """ override config options from command line"""
-#     if options:
-#         return apply_shorthand_options(config, options.option)
-#     else:
-#         return config
 
 
 def load_ini_cfgs(config_files):
