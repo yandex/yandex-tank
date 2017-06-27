@@ -1,6 +1,6 @@
 
 import pytest
-from validator import TankConfig, ValidationError
+from yandextank.validator.validator import TankConfig, ValidationError
 
 CFG_VER_I_0 = {
     "version": "1.8.34",
@@ -277,90 +277,6 @@ def test_validate_core_error(config, expected):
 ])
 def test_load_multiple(configs, expected):
     assert TankConfig(configs)._TankConfig__raw_config_dict == expected
-
-
-@pytest.mark.skip('obsolete')
-@pytest.mark.parametrize('config, schema, expected', [
-    # simple
-    (
-        {'address': 'nodejs.load.yandex.net',
-         'header_http': '1.1',
-         'uris': '/',
-         'headers': '[Host: nodejs.load.yandex.net]\n[Connection: close]',
-         'rps_schedule': 'line(1, 10, 30s)',
-         'writelog': 'all',
-         'buffered_seconds': 5,
-         'phantom_path': './phantom'},
-        PHANTOM_SCHEMA_V_G,
-        {'address': 'nodejs.load.yandex.net',
-         'header_http': '1.1',
-         'uris': '/',
-         'headers': '[Host: nodejs.load.yandex.net]\n[Connection: close]',
-         'rps_schedule': 'line(1, 10, 30s)',
-         'writelog': 'all',
-         'buffered_seconds': 5,
-         'phantom_path': './phantom'}
-    ),
-    # defaults
-    ({
-        'address': 'nodejs.load.yandex.net',
-        'header_http': '1.1',
-    },
-        PHANTOM_SCHEMA_V_G,
-        {
-        'address': 'nodejs.load.yandex.net',
-        'header_http': '1.1',
-        'buffered_seconds': 2,
-        'phantom_path': 'phantom'
-    })
-])
-def test_validate_plugin(config, schema, expected):
-    assert TankConfig._TankConfig__validate_plugin(config, schema) == expected
-
-
-@pytest.mark.skip('obsolete')
-@pytest.mark.parametrize('config, schema, expected', [
-    # no address
-    (
-        {
-            'header_http': '1.1',
-            'uris': '/',
-            'headers': '[Host: nodejs.load.yandex.net]\n[Connection: close]',
-            'rps_schedule': 'line(1, 10, 30s)',
-            'writelog': 'all',
-            'buffered_seconds': 5,
-            'phantom_path': './phantom'
-        },
-        PHANTOM_SCHEMA_V_G,
-        {'address': ['required field']}),
-    (
-        {
-            'header_http': '1.1',
-            'uris': '/',
-            'headers': '[Host: nodejs.load.yandex.net]\n[Connection: close]',
-            'rps_schedule': 'line(1, 10, 30s)',
-            'writelog': 'all',
-            'buffered_seconds': 'foo',
-            'phantom_path': './phantom'
-        },
-        PHANTOM_SCHEMA_V_G,
-        {'address': ['required field'], 'buffered_seconds': ['must be of integer type']}),
-    #     jobno and token should come together
-    (
-        {
-            'package': 'yandextank.plugins.DataUploader',
-            'enabled': True,
-            'api_address': 'https://overload.yandex.net/',
-            'jobno': '31415'
-        },
-        None,
-        {'jobno': ["field 'upload_token' is required"]}
-    )
-])
-def test_validate_plugin_error(config, schema, expected):
-    with pytest.raises(ValidationError) as e:
-        TankConfig._TankConfig__validate_plugin(config, schema)
-    assert expected == e.value.message
 
 
 @pytest.mark.parametrize('config, expected', [
