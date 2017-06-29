@@ -88,7 +88,7 @@ class TankCore(object):
     PLUGIN_PREFIX = 'plugin_'
     PID_OPTION = 'pid'
     UUID_OPTION = 'uuid'
-    LOCK_DIR = '/var/lock'
+    LOCK_DIR = os.getenv('LOCK_DIR', '/var/lock')
 
     def __init__(self, configs, artifacts_base_dir=None, artifacts_dir_name=None, cfg_depr=None):
         """
@@ -389,6 +389,9 @@ class TankCore(object):
         Set an option in storage
         """
         raise NotImplementedError
+
+    def set_exitcode(self, code):
+        self.config.validated['core']['exitcode'] = code
 
     def get_plugin_of_type(self, plugin_class):
         """
