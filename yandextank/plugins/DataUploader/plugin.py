@@ -88,6 +88,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self._lp_job = None
         self._lock_duration = None
         self._info = None
+        self.locked_targets = []
 
     @staticmethod
     def get_key():
@@ -761,8 +762,10 @@ class LPJob(object):
         return self._token
 
     def close(self, rc):
-        return self.api_client.close_job(
-            self.number, rc, trace=self.log_other_requests)
+        if self._number:
+            return self.api_client.close_job(self.number, rc, trace=self.log_other_requests)
+        else:
+            return True
 
     def create(self):
         self._number, self._token = self.api_client.new_job(task=self.task,
