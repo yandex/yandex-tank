@@ -151,9 +151,10 @@ def load_ini_cfgs(config_files):
     cfg.read(config_filenames)
 
     dotted_options = []
-    for option, value in cfg.items('tank'):
-        if '.' in option:
-            dotted_options += [option + '=' + value]
+    if cfg.has_section('tank'):
+        for option, value in cfg.items('tank'):
+            if '.' in option:
+                dotted_options += [option + '=' + value]
 
     cfg = apply_shorthand_options(cfg, dotted_options)
     cfg.set('tank', 'pid', str(os.getpid()))
