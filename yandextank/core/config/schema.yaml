@@ -4,6 +4,8 @@ core:
     affinity:
       type: string
       default: ''
+    api_jobno:
+      type: string
     artifacts_base_dir:
       type: string
       default: ./logs
