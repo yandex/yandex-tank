@@ -88,7 +88,6 @@ class TankCore(object):
     PLUGIN_PREFIX = 'plugin_'
     PID_OPTION = 'pid'
     UUID_OPTION = 'uuid'
-    LOCK_DIR = os.getenv('LOCK_DIR', '/var/lock')
 
     def __init__(self, configs, artifacts_base_dir=None, artifacts_dir_name=None, cfg_depr=None):
         """
@@ -460,7 +459,7 @@ class TankCore(object):
     def get_lock_dir(self):
         if not self.lock_dir:
             self.lock_dir = self.get_option(
-                self.SECTION, "lock_dir", self.LOCK_DIR)
+                self.SECTION, "lock_dir")
 
         return os.path.expanduser(self.lock_dir)
 
