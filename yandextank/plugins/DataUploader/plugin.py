@@ -59,6 +59,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
              MonitoringDataListener):
     RC_STOP_FROM_WEB = 8
     VERSION = '3.0'
+    SECTION = 'uploader'
 
     def __init__(self, core, cfg, cfg_updater):
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
