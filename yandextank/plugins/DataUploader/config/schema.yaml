@@ -1,3 +1,5 @@
+meta:
+  type: dict
 api_address:
   required: true
   type: string

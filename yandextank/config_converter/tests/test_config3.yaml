@@ -7,6 +7,10 @@ uploader:
   component: '177'
   job_name: light
   ignore_target_lock: true
+  regress: true
+  notify: fomars
+  meta:
+    launched_from: centurion
 #production log
 phantom:
   package: yandextank.plugins.Phantom
