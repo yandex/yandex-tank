@@ -2,6 +2,8 @@ import ConfigParser
 import re
 import logging
 import pkg_resources
+
+from yandextank.common.util import recursive_dict_update
 from yandextank.validator.validator import load_plugin_schema, load_yaml_schema
 
 logger = logging.getLogger(__name__)
@@ -48,18 +50,18 @@ def guess_plugin(section):
         raise UnrecognizedSection('Section {} did not match any plugin'.format(section))
 
 
-def convert_rps_schedule(value):
-    return 'load_profile', {
+def convert_rps_schedule(key, value):
+    return {'load_profile': {
         'load_type': 'rps',
         'schedule': value
-    }
+    }}
 
 
-def convert_instances_schedule(value):
-    return 'load_profile', {
+def convert_instances_schedule(key, value):
+    return {'load_profile': {
         'load_type': 'instances',
         'schedule': value
-    }
+    }}
 
 
 def to_bool(value):
@@ -73,7 +75,8 @@ OPTIONS_MAP = {
     'Phantom': {
         'rps_schedule': convert_rps_schedule,
         'instances_schedule': convert_instances_schedule,
-    }
+    },
+    'DataUploader': {}
 }
 
 
@@ -98,7 +101,7 @@ def type_cast(plugin, option, value, schema=None):
 def option_converter(plugin, option, schema=None):
     # type: (str, (str, str), dict) -> (str, str)
     key, value = option
-    return OPTIONS_MAP.get(plugin, {}).get(key, lambda v: (key, type_cast(plugin, key, value, schema)))(value)
+    return OPTIONS_MAP.get(plugin, {}).get(key, lambda k, v: (key, type_cast(plugin, key, value, schema)))(key, value)
 
 
 def is_option_deprecated(plugin, option_name):
@@ -133,21 +136,91 @@ def old_section_name_mapper(name):
     return MAP.get(name, name)
 
 
+class UnknownOption(Exception):
+    pass
+
+
+class Option(object):
+    SPECIAL_CONVERTERS = {
+        'Phantom': {
+            'rps_schedule': convert_rps_schedule,
+            'instances_schedule': convert_instances_schedule,
+        },
+    }
+    CONVERTERS_FOR_UNKNOWN = {
+        'DataUploader': lambda k, v: {'meta': {k: v}}
+    }
+
+    def __init__(self, plugin, key, value, schema=None):
+        self.plugin = plugin
+        self.name = key
+        self.value = value
+        self.schema = schema
+        self.dummy_converter = lambda k, v: {k: v}
+        self._converted = None
+        self._converter = None
+
+    @property
+    def converted(self):
+        if self._converted is None:
+            self._converted = self.converter(self.name, self.value)
+        return self._converted
+
+    @property
+    def converter(self):
+        if self._converter is None:
+            try:
+                return self.SPECIAL_CONVERTERS[self.plugin][self.name]
+            except KeyError:
+                try:
+                    return self._get_scheme_converter()
+                except UnknownOption:
+                    return self.CONVERTERS_FOR_UNKNOWN.get(self.plugin, self.dummy_converter)
+
+    def _get_scheme_converter(self):
+        type_map = {
+            'boolean': lambda k, v: {k: to_bool(v)},
+            'integer': lambda k, v: {k: int(v)},
+        }
+        schema = self.schema if self.schema else load_plugin_schema('yandextank.plugins.' + self.plugin)
+
+        if schema.get(self.name) is None:
+            logger.warning('Unknown option {}:{}'.format(self.plugin, self.name))
+            raise UnknownOption
+
+        _type = schema[self.name].get('type', None)
+        if _type is None:
+            logger.warning('Option {}:{}: no type specified in schema'.format(self.plugin, self.name))
+            return self.dummy_converter
+
+        return type_map.get(_type, self.dummy_converter)
+
+
 class Section(object):
     def __init__(self, name, plugin, options, enabled=None):
         self.init_name = name
         self.name = old_section_name_mapper(name)
         self.plugin = plugin
-        self.options = [option_converter(plugin, option) for option in without_deprecated(plugin, options)]
+        self.schema = load_plugin_schema('yandextank.plugins.' + plugin)
+        self.options = [Option(plugin, *option, schema=self.schema) for option in without_deprecated(plugin, options)]
         self.enabled = enabled
+        self._merged_options = None
 
     def get_cfg_dict(self, with_meta=True):
-        options_dict = dict(self.options)
+        options_dict = self.merged_options
         if with_meta:
             options_dict.update({'package': 'yandextank.plugins.{}'.format(self.plugin)})
             if self.enabled is not None:
                 options_dict.update({'enabled': self.enabled})
         return options_dict
+
+    @property
+    def merged_options(self):
+        if self._merged_options is None:
+            self._merged_options = reduce(lambda acc, upd: recursive_dict_update(acc, upd),
+                                          [opt.converted for opt in self.options],
+                                          {})
+        return self._merged_options
 
     @classmethod
     def from_multiple(cls, sections, master_name=None):
@@ -164,9 +237,8 @@ class Section(object):
             master_section = sections[0]
             master_name = master_section.name
             rest = sections[1:]
-        multi_option = ('multi', [section.get_cfg_dict(with_meta=False) for section in rest])
-        master_section.options.append(multi_option)
-        return Section(master_name, master_section.plugin, master_section.options)
+        master_section.merged_options.update({'multi': [section.get_cfg_dict(with_meta=False) for section in rest]})
+        return master_section
 
 
 def without_defaults(cfg_ini, section):
@@ -223,8 +295,8 @@ def partition(l, predicate):
 
 def combine_sections(sections):
     """
-
     :type sections: list of Section
+    :rtype: list of Section
     """
     PLUGINS_TO_COMBINE = {
         'Phantom': 'phantom'

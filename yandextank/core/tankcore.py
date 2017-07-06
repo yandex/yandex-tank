@@ -115,6 +115,7 @@ class TankCore(object):
             self.cfg_snapshot = output.getvalue()
         else:
             self.cfg_snapshot = str(self.config)
+        self.interrupted = False
     #
     # def get_uuid(self):
     #     return self.uuid

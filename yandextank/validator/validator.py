@@ -1,11 +1,11 @@
-import collections
+import imp
 import os
 import sys
 import uuid
-import imp
 import pkg_resources
 import yaml
 from cerberus import Validator
+from yandextank.common.util import recursive_dict_update
 
 
 class ValidationError(Exception):
@@ -88,9 +88,9 @@ class TankConfig(object):
         elif l == 1:
             return configs[0]
         elif l == 2:
-            return self.__recursive_update(configs[0], configs[1])
+            return recursive_dict_update(configs[0], configs[1])
         else:
-            return self.__load_multiple([self.__recursive_update(configs[0], configs[1])] + configs[2:])
+            return self.__load_multiple([recursive_dict_update(configs[0], configs[1])] + configs[2:])
 
     def __parse_enabled_plugins(self):
         """
@@ -136,15 +136,6 @@ class TankConfig(object):
             raise ValidationError(v.errors)
         # .normalized() returns config with defaults
         return v.normalized(config)
-
-    def __recursive_update(self, d, u):
-        for k, v in u.items():
-            if isinstance(v, collections.Mapping):
-                r = self.__recursive_update(d.get(k, {}), v)
-                d[k] = r
-            else:
-                d[k] = u[k]
-        return d
 
     def __set_core_dynamic_options(self, config):
         META_LOCATION = 'core'

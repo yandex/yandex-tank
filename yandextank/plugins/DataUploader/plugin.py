@@ -795,7 +795,7 @@ class LPJob(object):
     def send_config_snapshot(self, config):
         if self._number:
             self.api_client.send_config_snapshot(
-                self.number, unicode(config), trace=self.log_other_requests)
+                self.number, config, trace=self.log_other_requests)
 
     def push_monitoring_data(self, data):
         if self.is_alive:

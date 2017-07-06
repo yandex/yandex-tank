@@ -13,7 +13,7 @@ from optparse import OptionParser
 
 import yaml
 from pkg_resources import resource_filename
-from ..config_converter.converter import convert_ini, old_section_name_mapper, option_converter, guess_plugin
+from ..config_converter.converter import convert_ini, old_section_name_mapper, guess_plugin, Option
 from .tankcore import TankCore, LockError
 from ..common.resource import manager as resource_manager
 
@@ -108,7 +108,7 @@ def parse_option(key, value):
     # type: (str, str) -> {str: dict}
     section_name, option_name = key.strip().split('.')
     return {old_section_name_mapper(section_name):
-            dict([option_converter(guess_plugin(section_name), (option_name, value))])
+            Option(guess_plugin(section_name), option_name, value).converted
             }
 
 
