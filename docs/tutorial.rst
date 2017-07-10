@@ -16,8 +16,8 @@ Create a file on a server with Yandex.Tank: **load.yaml**
   phantom:
   address: 203.0.113.1:80 # [Target's address]:[target's port]
   load_profile:
-    load_type: rps # you define requests per second
-    schedule: line(1, 100, 10m) # starting from 1rps growing linearly to 100rps during 10 minutes
+    load_type: rps # schedule load by defining requests per second
+    schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
   telegraf:
     enabled: false # let's disable telegraf monitoring for this time
 
@@ -39,8 +39,8 @@ Example:
 - the time for linear load increase from a to b. 
 
 Example:
-  ``line(100, 1, 10m)`` - linear load from 100 to 1 rps, duration - 10
-  minutes ``line(1, 100, 10m)`` - linear load from 1 to 100 rps, duration
+  ``line(10, 1, 10m)`` - linear load from 10 to 1 rps, duration - 10
+  minutes ``line(1, 10, 10m)`` - linear load from 1 to 10 rps, duration
   - 10 minutes
 
 ------------
@@ -53,7 +53,7 @@ Example:
   in fact 10s pause in a test.
 
 Example:
-  ``const(100,10m)`` - constant load for 100 rps for 10 minutes.
+  ``const(10,10m)`` - constant load for 10 rps for 10 minutes.
 
 ------------
 
@@ -71,9 +71,9 @@ Example:
 You can specify complex load schemes using those primitives.
 
 Example:
-  ``schedule: line(1, 100, 10m) const(10,10m)``
+  ``schedule: line(1, 10, 10m) const(10,10m)``
   
-  linear load from 1 to 100rps during 10 minutes, then 10 minutes of 10rps constant load.
+  linear load from 1 to 10rps during 10 minutes, then 10 minutes of 10rps constant load.
 
 Time duration could be defined in seconds, minutes (m) and hours (h).
 For example: ``27h103m645``
@@ -141,7 +141,7 @@ where /tmp/access.log is a path to access.log file.
     address: 203.0.113.1:80
     load_profile:
       load_type: rps
-      schedule: line(1, 100, 10m)
+      schedule: line(1, 10, 10m)
     header_http: '1.1'
     headers: |
         [Host: www.target.example.com]
@@ -167,7 +167,7 @@ Update configuration file with HTTP headers and URIs:
     address: 203.0.113.1:80
     load_profile:
       load_type: rps
-      schedule: line(1, 100, 10m)
+      schedule: line(1, 10, 10m)
     header_http: '1.1'
     headers: |
       [Host: www.target.example.com]
@@ -349,7 +349,7 @@ Run Test!
 =========
 
 1. Request specs in load.yaml -- run as ``yandex-tank -c load.yaml``
-2. Request specs in ammo.txt -- run as ``yandex-tank ammo.txt``
+2. Request specs in ammo.txt -- run as ``yandex-tank -c load.yaml ammo.txt``
 
 Yandex.Tank detects requests format and generates ultimate requests
 versions.
@@ -412,7 +412,7 @@ number to appropriate value. Now, our basic config looks like that:
     address: 203.0.113.1:443
     load_profile:
       load_type: rps
-      schedule: line(1, 100, 10m)
+      schedule: line(1, 10, 10m)
     ssl: true
 
 Autostop 
@@ -451,7 +451,7 @@ So, if we want to stop test when all answers in 1 second period are 5xx plus som
     address: 203.0.113.1:80
     load_profile:
       load_type: rps
-      schedule: line(1, 100, 10m)
+      schedule: line(1, 10, 10m)
   autostop:
     autostop: |
       time(1s,10s)
@@ -506,7 +506,7 @@ For ``load.yaml`` like this:
     address: 203.0.113.1:80
     load_profile:
       load_type: rps
-      schedule: line(1, 100, 10m)
+      schedule: line(1, 10, 10m)
       writelog: true
   autostop:
     autostop: |
@@ -561,7 +561,7 @@ parameter like this:
     address: 203.0.113.1:80
     load_profile:
       load_type: rps
-      schedule: line(1, 100, 10m)
+      schedule: line(1, 10, 10m)
   aggregator:
     verbose_histogram: true
 
@@ -584,7 +584,7 @@ Example with 10 threads limit:
     address: 203.0.113.1:80
     load_profile:
       load_type: rps
-      schedule: line(1, 100, 10m)
+      schedule: line(1, 10, 10m)
     instances: 10
 
 Dynamic thread limit
@@ -632,7 +632,7 @@ any data, receiving any answer in return. To do that add
     address: 203.0.113.1:80
     load_profile:
       load_type: rps
-      schedule: line(1, 100, 10m)
+      schedule: line(1, 10, 10m)
     instances=: 10
     tank_type: 2
 
@@ -649,6 +649,6 @@ that. load.yaml:
     address: 203.0.113.1:80
     load_profile:
       load_type: rps
-      schedule: line(1, 100, 10m)
+      schedule: line(1, 10, 10m)
     instances: 10
     gatling_ip: IP1 IP2
