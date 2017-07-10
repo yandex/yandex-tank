@@ -176,8 +176,8 @@ OPTIONS = {
         'default': True
     },
     "writelog": {
-        "type": "string",
-        "default": "none"
+        "type": 'boolean',
+        "default": False
     }
 }
 

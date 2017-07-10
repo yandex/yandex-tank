@@ -9,14 +9,17 @@ access is permitted and server is tuned. How to make a test?
 
   This guide is for ``phantom`` load generator.
 
-Create a file on a server with Yandex.Tank: **load.ini**
+Create a file on a server with Yandex.Tank: **load.yaml**
 
-::
+.. code-block:: yaml
 
-  [phantom]
-  address=203.0.113.1 ;Target's address
-  port=80 ;target's port
-  rps_schedule=line(1, 100, 10m) ;load scheme
+  phantom:
+  address: 203.0.113.1:80 # [Target's address]:[target's port]
+  load_profile:
+    load_type: rps # you define requests per second
+    schedule: line(1, 100, 10m) # starting from 1rps growing linearly to 100rps during 10 minutes
+  telegraf:
+    enabled: false # let's disable telegraf monitoring for this time
 
 ``phantom`` have 3 primitives for describing load scheme: 
 
@@ -50,7 +53,7 @@ Example:
   in fact 10s pause in a test.
 
 Example:
-  ``const(100,10m)`` - constant load for 100 rps for 10 mins.
+  ``const(100,10m)`` - constant load for 100 rps for 10 minutes.
 
 ------------
 
@@ -68,26 +71,29 @@ Example:
 You can specify complex load schemes using those primitives.
 
 Example:
-  ``rps_schedule=line(1,10,10m) const(10,10m)`` 
+  ``schedule: line(1, 100, 10m) const(10,10m)``
   
-  linear load from 1 to 10, duration 10 mins and then 10 mins of 10 RPS constant load.
+  linear load from 1 to 100rps during 10 minutes, then 10 minutes of 10rps constant load.
 
 Time duration could be defined in seconds, minutes (m) and hours (h).
 For example: ``27h103m645``
 
-For a test with constant load at 10rps for 10 minutes, ``load.ini`` should
-have next lines:
+For a test with constant load at 10rps for 10 minutes, ``load.yaml`` should
+have following lines:
 
-:: 
+.. code-block:: yaml
 
-  [phantom] 
-  address=203.0.113.1 ;Target's address
-  port=80 ;target's port. 
-  rps_schedule=const(10, 10m) ;load scheme
+  phantom:
+  address: 203.0.113.1:80
+  load_profile:
+    load_type: rps
+    schedule: const(10, 10m)
+  telegraf:
+    enabled: false # let's disable telegraf monitoring for this time
 
 
 Preparing requests
-===================
+==================
 
 There are several ways to set up requests: 
  * Access mode 
@@ -115,56 +121,64 @@ To specify external ammo file use ``ammofile`` option.
   Example:
   ::
       
-    [phantom]
-    address=203.0.113.1 ; Target's address
-    ammofile=https://yourhost.tld/path/to/ammofile.txt
+    phantom:
+      address: 203.0.113.1:80
+      ammofile: https://yourhost.tld/path/to/ammofile.txt
 
 
 Access mode
 -----------
 
-INI-file configuration: ``ammo_type=access``
+YAML-file configuration: ``ammo_type: access``
 
 You can use ``access.log`` file from your webserver as a source of requests.
-Just add to load.ini options ``ammo_type=access`` and ``ammofile=/tmp/access.log`` 
+Just add to load.yaml options ``ammo_type: access`` and ``ammofile: /tmp/access.log``
 where /tmp/access.log is a path to access.log file.
 
-:: 
+.. code-block:: yaml
 
-  [phantom] 
-  address=203.0.113.1 ;Target's address
-  port=80 ;target's port 
-  rps_schedule=const(10, 10m) ;load scheme
-  header_http = 1.1 
-  headers = [Host: www.target.example.com] 
-    [Connection: close] 
-  ammofile=/tmp/access.log
-  ammo_type=access
+  phantom:
+    address: 203.0.113.1:80
+    load_profile:
+      load_type: rps
+      schedule: line(1, 100, 10m)
+    header_http: '1.1'
+    headers: |
+        [Host: www.target.example.com]
+        [Connection: close]
+    ammofile: /tmp/access.log
+    ammo_type: access
+  telegraf:
+    enabled: false # let's disable telegraf monitoring for this time
 
-Parameter ``headers`` defines headers values (if it nessessary).
+Parameter ``headers`` defines headers values (if it necessary).
 
 
-URI-style, URIs in load.ini
----------------------------
+URI-style, URIs in load.yaml
+----------------------------
 
-INI-file configuration: Don't specify ``ammo_type`` explicitly for this type of ammo.
+YAML-file configuration: Don't specify ``ammo_type`` explicitly for this type of ammo.
 
 Update configuration file with HTTP headers and URIs:
 
-:: 
+.. code-block:: yaml
 
-  [phantom] 
-  address=203.0.113.1 ;Target's address
-  port=80 ;target's port 
-  rps_schedule=const(10, 10m) ;load scheme
-  ; Headers and URIs for GET requests 
-  header_http = 1.1 
-  headers = [Host: www.target.example.com] 
-    [Connection: close] 
-  uris = /   
-    /buy   
-    /sdfg?sdf=rwerf   
-    /sdfbv/swdfvs/ssfsf
+  phantom:
+    address: 203.0.113.1:80
+    load_profile:
+      load_type: rps
+      schedule: line(1, 100, 10m)
+    header_http: '1.1'
+    headers: |
+      [Host: www.target.example.com]
+      [Connection: close]
+    uris: |
+      /
+      /buy
+      /sdfg?sdf=rwerf
+      /sdfbv/swdfvs/ssfsf
+  telegraf:
+    enabled: false # let's disable telegraf monitoring for this time
 
 Parameter ``uris`` contains uri, which should be used for requests generation.
 
@@ -175,7 +189,7 @@ Parameter ``uris`` contains uri, which should be used for requests generation.
 URI-style, URIs in file
 -----------------------
 
-INI-file configuration: ``ammo_type=uri``
+YAML-file configuration: ``ammo_type: uri``
 
 Create a file with declared requests: ``ammo.txt``
 
@@ -203,7 +217,7 @@ Request may be marked by tag, you can specify it with whitespace following URI.
 URI+POST-style
 --------------
 
-INI-file configuration: ``ammo_type=uripost``
+YAML-file configuration: ``ammo_type: uripost``
 
 Create a file with declared requests: ``ammo.txt``
 
@@ -227,7 +241,7 @@ Each URI line begins with a number which is the size of the following POST body.
 Request-style
 -------------
 
-INI-file configuration: ``ammo_type=phantom``
+YAML-file configuration: ``ammo_type: phantom``
 
 Full requests listed in a separate file. For more complex
 requests, like POST, you'll have to create a special file. File format
@@ -334,7 +348,7 @@ sample ammo generators you may find on the :doc:`ammo_generators` page.
 Run Test!
 =========
 
-1. Request specs in load.ini -- just run as ``yandex-tank``
+1. Request specs in load.yaml -- run as ``yandex-tank -c load.yaml``
 2. Request specs in ammo.txt -- run as ``yandex-tank ammo.txt``
 
 Yandex.Tank detects requests format and generates ultimate requests
@@ -389,16 +403,17 @@ Example:
 SSL
 ===
 
-To activate SSL add ``ssl = 1`` to ``load.ini``. Don't forget to change port
+To activate SSL add ``phantom: {ssl: true}`` to ``load.yaml``. Don't forget to change port
 number to appropriate value. Now, our basic config looks like that:
 
-::
+.. code-block:: yaml
 
-  [phantom]
-  address=203.0.113.1 ;Target's address
-  port=80; target's port
-  rps_schedule=const (10,10m) ;Load scheme
-  ssl=1
+  phantom:
+    address: 203.0.113.1:443
+    load_profile:
+      load_type: rps
+      schedule: line(1, 100, 10m)
+    ssl: true
 
 Autostop 
 ========
@@ -416,36 +431,38 @@ answers with specified code per second).
 
 Examples:
 
-  ``autostop = http(4xx,25%,10)`` – stop test, if amount of 4xx http codes in every second of last 10s period exceeds 25% of answers (relative threshold).
+  ``autostop: http(4xx,25%,10)`` – stop test, if amount of 4xx http codes in every second of last 10s period exceeds 25% of answers (relative threshold).
 
-  ``autostop = net(101,25,10)`` – stop test, if amount of 101 net-codes in every second of last 10s period is more than 25 (absolute threshold).
+  ``autostop: net(101,25,10)`` – stop test, if amount of 101 net-codes in every second of last 10s period is more than 25 (absolute threshold).
 
-  ``autostop = net(xx,25,10)`` – stop test, if amount of non-zero net-codes in every second of last 10s period is more than 25 (absolute threshold).
+  ``autostop: net(xx,25,10)`` – stop test, if amount of non-zero net-codes in every second of last 10s period is more than 25 (absolute threshold).
 
 Average time conditions
 -----------------------
 
 Example: 
-  ``autostop = time(1500,15)`` – stops test, if average answer time exceeds 1500ms.
+  ``autostop: time(1500,15)`` – stops test, if average answer time exceeds 1500ms.
 
-So, if we want to stop test when all answers in 1 second period are 5xx plus some network and timing factors - add autostop line to load.ini:
+So, if we want to stop test when all answers in 1 second period are 5xx plus some network and timing factors - add autostop line to load.yaml:
 
-::
+.. code-block:: yaml
 
-  [phantom]
-  address=203.0.113.1 ;Target's address
-  port=80 ;target's port
-  rps_schedule=const(10, 10m) ;load scheme
-  [autostop]
-  autostop=time(1s,10s)
-    http(5xx,100%,1s)
-    net(xx,1,30)
+  phantom:
+    address: 203.0.113.1:80
+    load_profile:
+      load_type: rps
+      schedule: line(1, 100, 10m)
+  autostop:
+    autostop: |
+      time(1s,10s)
+      http(5xx,100%,1s)
+      net(xx,1,30)
 
 Logging
 =======
 
 Looking into target's answers is quite useful in debugging. For doing
-that add ``writelog = 1`` to ``load.ini``. 
+that add ``phantom: {writelog: true}`` to ``load.yaml``.
 
 .. note::
   Writing answers on high load leads to intensive disk i/o 
@@ -481,19 +498,21 @@ Example:
   HTTP/1.1 200 OK
   Content-Type: application/javascript;charset=UTF-8
 
-For ``load.ini`` like this:
+For ``load.yaml`` like this:
   
-::
+.. code-block:: yaml
 
-  [phantom]
-  address=203.0.113.1 ;Target's address
-  port=80 ;target's port
-  rps_schedule=const(10, 10m) ;load scheme
-  writelog=1
-  [autostop]
-  autostop=time(1,10)
-    http(5xx,100%,1s)
-    net(xx,1,30)
+  phantom:
+    address: 203.0.113.1:80
+    load_profile:
+      load_type: rps
+      schedule: line(1, 100, 10m)
+      writelog: true
+  autostop:
+    autostop: |
+      time(1,10)
+      http(5xx,100%,1s)
+      net(xx,1,30)
 
 Results in phout
 ================
@@ -531,19 +550,20 @@ OR
 use your favorite stats packet, R, for example.
 
 Precise timings
-==============
+===============
 
-You can set precise timings in ``load.ini`` with ``verbose_histogram``
+You can set precise timings in ``load.yaml`` with ``verbose_histogram``
 parameter like this:
 
-::
+.. code-block:: yaml
   
-  [phantom]
-  address=203.0.113.1 ;Target's address
-  port=80 ;target's port
-  rps_schedule=const(10, 10m) ;load scheme
-  [aggregator]
-  verbose_histogram = 1
+  phantom:
+    address: 203.0.113.1:80
+    load_profile:
+      load_type: rps
+      schedule: line(1, 100, 10m)
+  aggregator:
+    verbose_histogram: true
 
 .. note::
   Please keep an eye, last value of `time_periods` is no longer used as response timeout
@@ -553,42 +573,44 @@ parameter like this:
 Thread limit
 ============
 
-``instances=N`` in ``load.ini`` limits number of simultanious
+``instances: N`` in ``load.yaml`` limits number of simultanious
 connections (threads). 
 
 Example with 10 threads limit:
 
-::
+.. code-block:: yaml
 
-  [phantom]
-  address=203.0.113.1 ;Target's address
-  port=80 ;target's port
-  rps_schedule=const(10, 10m) ;load scheme
-  instances=10
+  phantom:
+    address: 203.0.113.1:80
+    load_profile:
+      load_type: rps
+      schedule: line(1, 100, 10m)
+    instances: 10
 
 Dynamic thread limit
 ====================
 
-``instances_schedule = <instances increasing scheme>`` -- test with
-active instances schedule will be performed if load scheme is not
-defined. Bear in mind that active instances number cannot be decreased
+You can specify ``load_type: instances`` instead of 'rps' to schedule a number of active instances
+which generate as much rps as they manage to.
+Bear in mind that active instances number cannot be decreased
 and final number of them must be equal to ``instances`` parameter value.
 
 Example:
 
-::
+.. code-block:: yaml
 
-  [phantom]
-  address=203.0.113.1 ;Target's address
-  port=80 ; target's port
-  instances_schedule = line(1,10,10m)
-  loop=10000 ; ammo loops count
-
-.. note::
-  Load scheme is excluded from this load.ini as we used ``instances_schedule`` parameter.
+  phantom:
+    address: 203.0.113.1:80
+    load_profile:
+      load_type: instances
+      schedule: line(1,10,10m)
+    loop=10000 # don't stop when the end of ammo is reached but loop it 10000 times
 
 .. note::
-  When using ``instances_schedule`` you should specify how many loops of
+  Load scheme is excluded from this load.yaml as we used ``instances_schedule`` parameter.
+
+.. note::
+  When using ``load_type: instances`` you should specify how many loops of
   ammo you want to generate because tank can't find out from the schedule
   how many ammo do you need
 
@@ -598,33 +620,35 @@ Custom stateless protocol
 In necessity of testing stateless HTTP-like protocol, Yandex.Tank's HTTP
 parser could be switched off, providing ability to generate load with
 any data, receiving any answer in return. To do that add
-``tank_type = 2`` to ``load.ini``. 
+``tank_type: '2'`` to ``load.yaml``.
 
 .. note::
 
   **Indispensable condition: Connection close must be initiated by remote side**
 
-::
+.. code-block:: yaml
 
-  [phantom]
-  address=203.0.113.1 ;Target's address
-  port=80 ;target's port
-  rps_schedule=const(10, 10m) ;load scheme
-  instances=10
-  tank_type=2
+  phantom:
+    address: 203.0.113.1:80
+    load_profile:
+      load_type: rps
+      schedule: line(1, 100, 10m)
+    instances=: 10
+    tank_type: 2
 
 Gatling 
 =======
 
 If server with Yandex.Tank have several IPs, they may be
 used to avoid outcome port shortage. Use ``gatling_ip`` parameter for
-that. Load.ini:
+that. load.yaml:
 
 ::
 
-  [phantom]
-  address=203.0.113.1 ;Target's address
-  port=80 ;target's port
-  rps_schedule=const(10, 10m) ;load scheme
-  instances=10
-  gatling_ip = IP1 IP2
+ phantom:
+    address: 203.0.113.1:80
+    load_profile:
+      load_type: rps
+      schedule: line(1, 100, 10m)
+    instances: 10
+    gatling_ip: IP1 IP2

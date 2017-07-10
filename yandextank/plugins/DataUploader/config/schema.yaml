@@ -95,7 +95,7 @@ target_lock_duration:
   type: string
 task:
   type: string
-  default: ""
+  required: true
 threads_timeout:
   default: 60
   type: integer
