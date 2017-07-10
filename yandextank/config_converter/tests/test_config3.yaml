@@ -45,8 +45,8 @@ telegraf:
   package: yandextank.plugins.Telegraf
 autostop:
   package: yandextank.plugins.Autostop
-  autostop: |
-    quantile(50,300,7)
-    http(4xx,25%,10)
-    http(5xx,5%,2)
-    net(1xx,10,5)
+  autostop:
+    - quantile(50,300,7)
+    - http(4xx,25%,10)
+    - http(5xx,5%,2)
+    - net(1xx,10,5)
