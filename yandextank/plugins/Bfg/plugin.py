@@ -22,7 +22,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.gun_type = None
         self.start_time = time.time()
-        self.stepper_wrapper = StepperWrapper(self.core, Plugin.SECTION)
+        self.stepper_wrapper = StepperWrapper(core, cfg)
         self.log.info("Initialized BFG")
 
         self.gun_classes = {
@@ -60,7 +60,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.stepper_wrapper.prepare_stepper()
         gun_type = self.get_option("gun_type")
         if gun_type in self.gun_classes:
-            self.gun = self.gun_classes[gun_type](self.core)
+            self.gun = self.gun_classes[gun_type](self.core, self.get_option('gun_config'))
         else:
             raise NotImplementedError(
                 'No such gun type implemented: "%s"' % gun_type)

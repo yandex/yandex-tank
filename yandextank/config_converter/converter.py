@@ -28,13 +28,16 @@ SECTIONS_PATTERNS = {
     'Appium': 'appium',
     'Autostop': 'autostop',
     'BatteryHistorian': 'battery_historian',
-    'Bfg': 'bfg',
+    'Bfg': 'bfg|ultimate_gun|http_gun|custom_gun|scenario_gun',
     'Phantom': 'phantom(-.*)?',
     'DataUploader': 'meta|overload',
     'Telegraf': 'telegraf|monitoring',
     'JMeter': 'jmeter',
     'ResourceCheck': 'rcheck',
-    'ShellExec': 'shellexec'
+    'ShellExec': 'shellexec',
+    'Console': 'console',
+    'TipsAndTricks': 'tips',
+    'RCAssert': 'rcassert'
 }
 
 
@@ -146,6 +149,10 @@ class Option(object):
             'rps_schedule': convert_rps_schedule,
             'instances_schedule': convert_instances_schedule,
         },
+        'Bfg': {
+            'rps_schedule': convert_rps_schedule,
+            'instances_schedule': convert_instances_schedule,
+        },
     }
     CONVERTERS_FOR_UNKNOWN = {
         'DataUploader': lambda k, v: {'meta': {k: v}}
@@ -223,21 +230,23 @@ class Section(object):
         return self._merged_options
 
     @classmethod
-    def from_multiple(cls, sections, master_name=None):
+    def from_multiple(cls, sections, parent_name=None, child_name=None, is_list=True):
         """
-        :type master_name: str
+        :type parent_name: str
         :type sections: list of Section
         """
         if len(sections) == 1:
             return sections[0]
-        if master_name:
-            master_section = filter(lambda section: section.name == master_name, sections)[0]
-            rest = filter(lambda section: section.name != master_name, sections)
+        if parent_name:
+            master_section = filter(lambda section: section.name == parent_name, sections)[0]
+            rest = filter(lambda section: section.name != parent_name, sections)
         else:
             master_section = sections[0]
-            master_name = master_section.name
+            parent_name = master_section.name
             rest = sections[1:]
-        master_section.merged_options.update({'multi': [section.get_cfg_dict(with_meta=False) for section in rest]})
+        child = {'multi': [section.get_cfg_dict(with_meta=False) for section in rest]} if is_list \
+            else {child_name: rest[0].get_cfg_dict(with_meta=False)}
+        master_section.merged_options.update(child)
         return master_section
 
 
@@ -273,7 +282,7 @@ def enable_sections(sections, core_options):
     """
     enabled_plugins = [parse_package_name(value) for key, value in core_options if
                        key.startswith(PLUGIN_PREFIX) and value]
-    disabled_plugins = [guess_plugin(key.lstrip(PLUGIN_PREFIX)) for key, value in core_options if
+    disabled_plugins = [guess_plugin(key.split('_')[1]) for key, value in core_options if
                         key.startswith(PLUGIN_PREFIX) and not value]
     for section in sections:
         if section.plugin in enabled_plugins:
@@ -299,7 +308,8 @@ def combine_sections(sections):
     :rtype: list of Section
     """
     PLUGINS_TO_COMBINE = {
-        'Phantom': 'phantom'
+        'Phantom': ('phantom', 'multi', True),
+        'Bfg': ('bfg', 'gun_config', False)
     }
     plugins = {}
     for section in sections:
@@ -313,8 +323,8 @@ def combine_sections(sections):
 
     for plugin_name, _sections in plugins.items():
         if isinstance(_sections, list):
-            plugins[plugin_name] = Section.from_multiple(_sections, PLUGINS_TO_COMBINE[plugin_name])
-
+            parent_name, child_name, is_list = PLUGINS_TO_COMBINE[plugin_name]
+            plugins[plugin_name] = Section.from_multiple(_sections, parent_name, child_name, is_list)
     return plugins.values()
 
 
@@ -328,7 +338,8 @@ def convert_ini(ini_file):
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
     plugins_cfg_dict = {section.name: section.get_cfg_dict() for section in ready_sections}
-    core_opts_schema = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
+    core_opts_schema = \
+    load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
 
     plugins_cfg_dict.update({
         'core': dict(
