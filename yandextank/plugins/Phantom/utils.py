@@ -61,7 +61,11 @@ class PhantomConfig:
         self.threads = self.cfg["threads"] or str(int(multiprocessing.cpu_count() / 2) + 1)
         self.phantom_modules_path = self.cfg["phantom_modules_path"]
         self.additional_libs = self.cfg["additional_libs"]
-        self.answ_log_level = 'all' if self.cfg["writelog"] else 'none'
+        self.answ_log_level = self.cfg["writelog"]
+        if self.answ_log_level.lower() in ['0', 'false']:
+            self.answ_log_level = 'none'
+        elif self.answ_log_level.lower() in ['1', 'true']:
+            self.answ_log_level = 'all'
         self.timeout = parse_duration(self.cfg["timeout"])
         if self.timeout > 120000:
             logger.warning(
