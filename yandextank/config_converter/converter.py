@@ -339,7 +339,7 @@ def convert_ini(ini_file):
 
     plugins_cfg_dict = {section.name: section.get_cfg_dict() for section in ready_sections}
     core_opts_schema = \
-    load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
+        load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
 
     plugins_cfg_dict.update({
         'core': dict(
