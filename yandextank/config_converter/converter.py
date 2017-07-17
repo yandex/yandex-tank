@@ -153,9 +153,13 @@ class Option(object):
             'rps_schedule': convert_rps_schedule,
             'instances_schedule': convert_instances_schedule,
         },
+        'JMeter': {
+            'exclude_markers': lambda key, value: {key: value.strip().split(' ')}
+        }
     }
     CONVERTERS_FOR_UNKNOWN = {
-        'DataUploader': lambda k, v: {'meta': {k: v}}
+        'DataUploader': lambda k, v: {'meta': {k: v}},
+        'JMeter': lambda k, v: {'variables': {k: v}}
     }
 
     def __init__(self, plugin, key, value, schema=None):
