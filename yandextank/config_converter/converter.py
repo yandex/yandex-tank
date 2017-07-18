@@ -18,7 +18,7 @@ def parse_package_name(package_path):
     if package_path.startswith("Tank/Plugins/"):
         package = package_path.split('/')[-1].split('.')[0]
     else:
-        package = package_path.split('.')[-1]
+        package = package_path.split('.')[-1].split()[0]
     return old_plugin_mapper(package)
 
 
@@ -139,6 +139,15 @@ def old_section_name_mapper(name):
     return MAP.get(name, name)
 
 
+class Package(object):
+    def __init__(self, package_path):
+        if package_path.startswith("Tank/Plugins/"):
+            self.package = package_path.split('.')[0].replace('Tank/Plugins/', 'yandextank.plugins.')
+        else:
+            self.package = package_path
+        self.plugin_name = old_plugin_mapper(self.package.split('.')[-1])
+
+
 class UnknownOption(Exception):
     pass
 
@@ -153,9 +162,13 @@ class Option(object):
             'rps_schedule': convert_rps_schedule,
             'instances_schedule': convert_instances_schedule,
         },
+        'JMeter': {
+            'exclude_markers': lambda key, value: {key: value.strip().split(' ')}
+        }
     }
     CONVERTERS_FOR_UNKNOWN = {
-        'DataUploader': lambda k, v: {'meta': {k: v}}
+        'DataUploader': lambda k, v: {'meta': {k: v}},
+        'JMeter': lambda k, v: {'variables': {k: v}}
     }
 
     def __init__(self, plugin, key, value, schema=None):
@@ -208,15 +221,22 @@ class Section(object):
         self.init_name = name
         self.name = old_section_name_mapper(name)
         self.plugin = plugin
-        self.schema = load_plugin_schema('yandextank.plugins.' + plugin)
+        self._schema = None
         self.options = [Option(plugin, *option, schema=self.schema) for option in without_deprecated(plugin, options)]
         self.enabled = enabled
         self._merged_options = None
 
+    @property
+    def schema(self):
+        if self._schema is None:
+            self._schema = load_plugin_schema('yandextank.plugins.' + self.plugin)
+        return self._schema
+
     def get_cfg_dict(self, with_meta=True):
         options_dict = self.merged_options
         if with_meta:
-            options_dict.update({'package': 'yandextank.plugins.{}'.format(self.plugin)})
+            if self.plugin:
+                options_dict.update({'package': 'yandextank.plugins.{}'.format(self.plugin)})
             if self.enabled is not None:
                 options_dict.update({'enabled': self.enabled})
         return options_dict
@@ -275,26 +295,70 @@ def parse_sections(cfg_ini):
             if section != CORE_SECTION]
 
 
+class PluginInstance(object):
+    def __init__(self, name, package_and_section):
+        self.name = name
+        self.enabled = len(package_and_section) > 0
+        try:
+            package_path, self.section_name = package_and_section.split()
+            self.package = Package(package_path)
+        except ValueError:
+            self.package = Package(package_and_section)
+            self.section_name = self._guess_section_name()
+        self.plugin_name = self.package.plugin_name
+
+    def _guess_section_name(self):
+        package_map = {
+            'Aggregator': 'aggregator',
+            'Autostop': 'autostop',
+            'BatteryHistorian': 'battery_historian',
+            'Bfg': 'bfg',
+            'Console': 'console',
+            'DataUploader': 'meta',
+            'JMeter': 'jmeter',
+            'JsonReport': 'json_report',
+            'Maven': 'maven',
+            'Monitoring': 'monitoring',
+            'Pandora': 'pandora',
+            'Phantom': 'phantom',
+            'RCAssert': 'rcassert',
+            'ResourceCheck': 'rcheck',
+            'ShellExec': 'shellexec',
+            'SvgReport': 'svgreport',
+            'Telegraf': 'telegraf',
+            'TipsAndTricks': 'tips'
+        }
+        name_map = {
+            'aggregate': 'aggregator',
+            'datauploader': 'uploader',
+            'lunapark': 'uploader',
+            'overload': 'overload',
+            'uploader': 'uploader',
+            'jsonreport': 'json_report'
+        }
+        return name_map.get(self.name, package_map.get(self.package.plugin_name, self.name))
+
+
 def enable_sections(sections, core_options):
     """
 
     :type sections: list of Section
     """
-    enabled_plugins = [parse_package_name(value) for key, value in core_options if
-                       key.startswith(PLUGIN_PREFIX) and value]
-    disabled_plugins = [guess_plugin(key.split('_')[1]) for key, value in core_options if
-                        key.startswith(PLUGIN_PREFIX) and not value]
+    plugin_instances = [PluginInstance(key.split('_')[1], value) for key, value in core_options if key.startswith(PLUGIN_PREFIX)]
+    enabled_instances = {instance.section_name: instance for instance in plugin_instances if instance.enabled}
+    disabled_instances = {instance.section_name: instance for instance in plugin_instances if not instance.enabled}
+
     for section in sections:
-        if section.plugin in enabled_plugins:
+        if section.name in enabled_instances.keys():
             section.enabled = True
-            enabled_plugins.remove(section.plugin)
-        if section.plugin in disabled_plugins:
+            enabled_instances.pop(section.name)
+        elif section.name in disabled_instances.keys():
             section.enabled = False
-            disabled_plugins.remove(section.plugin)
-    for plugin in enabled_plugins:
-        sections.append(Section(plugin.lower(), plugin, [], True))
-    for plugin in disabled_plugins:
-        sections.append(Section(plugin.lower(), plugin, [], False))
+            disabled_instances.pop(section.name)
+    # add leftovers
+    for plugin_instance in [i for i in plugin_instances if
+                            i.section_name in enabled_instances.keys() + disabled_instances.keys()]:
+        sections.append(Section(plugin_instance.section_name, plugin_instance.plugin_name, [], plugin_instance.enabled))
     return sections
 
 
@@ -312,6 +376,7 @@ def combine_sections(sections):
         'Bfg': ('bfg', 'gun_config', False)
     }
     plugins = {}
+    ready_sections = []
     for section in sections:
         if section.plugin in PLUGINS_TO_COMBINE.keys():
             try:
@@ -319,13 +384,13 @@ def combine_sections(sections):
             except KeyError:
                 plugins[section.plugin] = [section]
         else:
-            plugins[section.plugin] = section
+            ready_sections.append(section)
 
     for plugin_name, _sections in plugins.items():
         if isinstance(_sections, list):
             parent_name, child_name, is_list = PLUGINS_TO_COMBINE[plugin_name]
-            plugins[plugin_name] = Section.from_multiple(_sections, parent_name, child_name, is_list)
-    return plugins.values()
+            ready_sections.append(Section.from_multiple(_sections, parent_name, child_name, is_list))
+    return ready_sections
 
 
 def core_options(cfg_ini):

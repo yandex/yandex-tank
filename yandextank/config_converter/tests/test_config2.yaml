@@ -32,7 +32,6 @@ telegraf:
   config: monitoring.xml
 shellexec:
   enabled: false
-  package: yandextank.plugins.ShellExec
 autostop:
   enabled: true
   package: yandextank.plugins.Autostop

@@ -2,33 +2,33 @@ core:
   artifacts_base_dir: logs
 phantom:
   enabled: false
-bfg:
-  package: yandextank.plugins.Bfg
+jmeter:
+  package: yandextank.plugins.JMeter
   enabled: true
-  address: nodejs.load.yandex.net
-  load_profile:
-      load_type: rps
-      schedule: const(10, 60s)
-  instances: 1
-  header_http: '1.1'
-  uris: /
-  loop: 1000
-  headers: "[Host: nodejs.load.yandex.net]\n[Connection: close]"
-  gun_type: ultimate
-  gun_config:
-    module_path: '.'
-    module_name: ult
-    init_param: hello world
-    class_name: MyTest
+  jmx: smtp-no-sessions.jmx
+  jmeter_path: /home/f2nd/jmeter-3.0/bin/jmeter-large
+  args: -Djavax.net.ssl.trustStore=YandexInternalCA.keystore -Djava.net.preferIPv6Addresses=true
+  buffer_size: 2
+  variables:
+    cto: '3000'
+    rto: '20000'
+    host: smtp-loadtest2h.mail.yandex.net
+    port: '25'
+    duration: '630'
+    time: '600'
+    threads: '512'
+    rampup: '30'
+    start: '120'
+    end: '120'
+    ssl: 'false'
+    protocol: ''
+    auth: 'false'
+    ammo: /home/f2nd/smtp/mulca4fix128kb.ammo
+    users: users.devnull.csv
 aggregator:
   package: yandextank.plugins.Aggregator
   enabled: true
   verbose_histogram: true
-overload:
-  package: yandextank.plugins.DataUploader
-  enabled: true
-  api_address: https://overload.yandex.net/
-  token_file: token.txt
 uploader:
   package: yandextank.plugins.DataUploader
   enabled: true
@@ -51,10 +51,6 @@ telegraf:
   enabled: true
   config: monitoring.xml
   disguise_hostnames: true
-console:
-  enabled: True
-  short_only: true
-  package: yandextank.plugins.Console
 autostop:
   package: yandextank.plugins.Autostop
   enabled: true
