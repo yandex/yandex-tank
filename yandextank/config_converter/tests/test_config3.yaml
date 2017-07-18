@@ -42,7 +42,6 @@ phantom:
       autocases: '1'
 telegraf:
   enabled: False
-  package: yandextank.plugins.Telegraf
 autostop:
   package: yandextank.plugins.Autostop
   autostop: |
