@@ -44,12 +44,15 @@ def test_parse_sections(ini_file, expected):
                 'address': 'foo.example.net',
                 'port': '80'},
             'telegraf': {'config': 'monitoring.xml'},
-            'autostop': {'autostop': '''quantile(50,20,30s)
-http(4xx,50%,5)
-http(5xx,5%,4)
-net(1xx,10,5)
-net(43,10,5)
-metric_higher(foo.example.net,group1_usershandler-average-task-age,3,70)'''}
+            'autostop': {'autostop': [
+                'quantile(50,20,30s)',
+                'http(4xx,50%,5)',
+                'http(5xx,5%,4)',
+                'net(1xx,10,5)',
+                'net(43,10,5)',
+                'metric_higher(foo.example.net,group1_usershandler-average-task-age,3,70)'
+                ]
+            }
         })])
 def test_combine_sections(ini_file, expected):
     cfg_ini = ConfigParser.ConfigParser()
@@ -72,7 +75,12 @@ def test_parse_package(package_path, expected):
     ('test_config1.ini', 'test_config1.yaml'),
     ('test_config2.ini', 'test_config2.yaml'),
     ('test_config3.ini', 'test_config3.yaml'),
-    ('test_config4.ini', 'test_config4.yaml')
+    ('test_config4.ini', 'test_config4.yaml'),
+    ('test_config5.ini', 'test_config5.yaml'),
+    ('test_config6.ini', 'test_config6.yaml'),
+    ('test_config7.ini', 'test_config7.yaml'),
+    ('test_config8.ini', 'test_config8.yaml'),
+    ('test_config9.ini', 'test_config9.yaml')
 ])
 def test_convert_ini_phantom(ini_file, yaml_file):
     with open(os.path.join(os.path.dirname(__file__), yaml_file), 'r') as f:
@@ -84,6 +92,9 @@ def test_convert_ini_phantom(ini_file, yaml_file):
     'test_config2.ini',
     'test_config3.ini',
     'test_config4.ini',
+    'test_config5.ini',
+    'test_config6.ini',
+    'test_config7.ini'
 ])
 def test_validate(ini_file):
     # noinspection PyStatementEffect

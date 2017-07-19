@@ -138,10 +138,12 @@ OPTIONS = {
         'schema': {
             'load_type': {
                 'type': 'string',
-                'regex': '^rps|instances|stpd_file$'
+                'regex': '^rps|instances|stpd_file$',
+                'required': True
             },
             'schedule': {
                 'type': 'string',
+                'required': True
             }
         },
         'required': True

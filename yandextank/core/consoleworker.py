@@ -229,9 +229,8 @@ class ConsoleTank:
     def __init__(self, options, ammofile):
         lock_cfg = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
         self.options = options
-
+        self.lock_dir = options.lock_dir if options.lock_dir else '/var/lock'
         self.baseconfigs_location = '/etc/yandex-tank'
-
         self.init_logging()
         self.log = logging.getLogger(__name__)
 
@@ -303,7 +302,7 @@ class ConsoleTank:
     def configure(self):
         while True:
             try:
-                self.core.get_lock(self.options.ignore_lock)
+                self.core.get_lock(self.options.ignore_lock, self.lock_dir)
                 break
             except LockError:
                 if self.options.lock_fail:

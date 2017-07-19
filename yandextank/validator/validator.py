@@ -45,12 +45,18 @@ def load_schema(directory, filename=None):
 
 
 class TankConfig(object):
+    DYNAMIC_OPTIONS = {
+        'uuid': lambda: uuid.uuid4(),
+        'pid': lambda: os.getpid(),
+        'cmdline': lambda: ' '.join(sys.argv)
+    }
 
-    def __init__(self, configs, with_dynamic_options=True):
+    def __init__(self, configs, with_dynamic_options=True, core_section='core'):
         if not isinstance(configs, list):
             configs = [configs]
         self.__raw_config_dict = self.__load_multiple(configs)
         self.with_dynamic_options = with_dynamic_options
+        self.META_LOCATION = core_section
         self._validated = None
         self._plugins = None
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
@@ -58,6 +64,9 @@ class TankConfig(object):
 
     def get_option(self, section, option):
         return self.validated[section][option]
+
+    def has_option(self, section, option):
+        return self.validated
 
     @property
     def plugins(self):
@@ -138,10 +147,8 @@ class TankConfig(object):
         return v.normalized(config)
 
     def __set_core_dynamic_options(self, config):
-        META_LOCATION = 'core'
-        config[META_LOCATION]['uuid'] = str(uuid.uuid4())
-        config[META_LOCATION]['pid'] = os.getpid()
-        config[META_LOCATION]['cmdline'] = ' '.join(sys.argv)
+        for option, setter in self.DYNAMIC_OPTIONS.items():
+            config[self.META_LOCATION][option] = setter()
         return config
 
     def __get_cfg_updater(self, plugin_name):
