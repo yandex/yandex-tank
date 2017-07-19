@@ -58,6 +58,6 @@ console:
 autostop:
   package: yandextank.plugins.Autostop
   enabled: true
-  autostop: |
-    total_time(70ms, 3%, 10s)
-    http(4xx,25%,10)
+  autostop:
+    - total_time(70ms, 3%, 10s)
+    - http(4xx,25%,10)

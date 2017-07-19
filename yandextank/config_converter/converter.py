@@ -184,7 +184,8 @@ class Option(object):
         type_casters = {
             'boolean': lambda k, v: {k: to_bool(v)},
             'integer': lambda k, v: {k: int(v)},
-            'list': lambda k, v: {k: [_.strip() for _ in v.strip().split('\n')]}
+            'list': lambda k, v: {k: [_.strip() for _ in v.strip().split('\n')]},
+            'float': lambda k, v: {k: float(v)}
         }
         schema = self.schema if self.schema else load_plugin_schema('yandextank.plugins.' + self.plugin)
 
