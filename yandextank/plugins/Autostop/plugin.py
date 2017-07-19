@@ -25,7 +25,6 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         self._criterions = {}
         self.custom_criterions = []
         self.counting = []
-        self.criterion_str = ''
         self._stop_report_path = ''
 
     @staticmethod
@@ -51,8 +50,6 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
         aggregator.add_result_listener(self)
 
-        self.criterion_str = " ".join(
-            self.get_option("autostop", '').split("\n"))
         self._stop_report_path = os.path.join(
             self.core.artifacts_dir,
             self.get_option("report_file", 'autostop_report.txt'))
@@ -72,7 +69,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         self.add_criterion_class(cum_cr.QuantileOfSaturationCriterion)
 
     def prepare_test(self):
-        for criterion_str in self.criterion_str.strip().split(")"):
+        criterions = self.get_option("autostop")
+        for criterion_str in criterions:
             if not criterion_str:
                 continue
             self.log.debug("Criterion string: %s", criterion_str)
