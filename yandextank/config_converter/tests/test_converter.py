@@ -51,7 +51,7 @@ def test_parse_sections(ini_file, expected):
                 'net(1xx,10,5)',
                 'net(43,10,5)',
                 'metric_higher(foo.example.net,group1_usershandler-average-task-age,3,70)'
-                ]
+            ]
             }
         })])
 def test_combine_sections(ini_file, expected):
