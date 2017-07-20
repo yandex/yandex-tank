@@ -37,7 +37,8 @@ SECTIONS_PATTERNS = {
     'ShellExec': 'shellexec',
     'Console': 'console',
     'TipsAndTricks': 'tips',
-    'RCAssert': 'rcassert'
+    'RCAssert': 'rcassert',
+    'JsonReport': 'json_report|jsonreport'
 }
 
 
