@@ -74,39 +74,6 @@ def to_bool(value):
         return True if 'true' == value.lower() else False
 
 
-OPTIONS_MAP = {
-    'Phantom': {
-        'rps_schedule': convert_rps_schedule,
-        'instances_schedule': convert_instances_schedule,
-    },
-    'DataUploader': {}
-}
-
-
-def type_cast(plugin, option, value, schema=None):
-    type_map = {
-        'boolean': to_bool,
-        'integer': int,
-    }
-    schema = schema if schema else load_plugin_schema('yandextank.plugins.' + plugin)
-
-    if schema.get(option) is None:
-        logger.warning('Unknown option {}:{}'.format(plugin, option))
-        return value
-
-    _type = schema[option].get('type', None)
-    if _type is None:
-        logger.warning('Option {}:{}: no type specified in schema'.format(plugin, option))
-        return value
-    return type_map.get(_type, lambda x: x)(value)
-
-
-def option_converter(plugin, option, schema=None):
-    # type: (str, (str, str), dict) -> (str, str)
-    key, value = option
-    return OPTIONS_MAP.get(plugin, {}).get(key, lambda k, v: (key, type_cast(plugin, key, value, schema)))(key, value)
-
-
 def is_option_deprecated(plugin, option_name):
     DEPRECATED = {
         'Aggregator': [
@@ -171,23 +138,39 @@ class Option(object):
         'JMeter': lambda k, v: {'variables': {k: v}}
     }
 
-    def __init__(self, plugin, key, value, schema=None):
-        self.plugin = plugin
+    def __init__(self, plugin_name, key, value, schema=None):
+        self.plugin = plugin_name
         self.name = key
         self.value = value
         self.schema = schema
         self.dummy_converter = lambda k, v: {k: v}
         self._converted = None
         self._converter = None
+        self._as_tuple = None
 
     @property
     def converted(self):
+        """
+        :rtype: {str: object}
+        """
         if self._converted is None:
             self._converted = self.converter(self.name, self.value)
         return self._converted
 
     @property
+    def as_tuple(self):
+        """
+        :rtype: (str, object)
+        """
+        if self._as_tuple is None:
+            self._as_tuple = self.converted.items()[0]
+        return self._as_tuple
+
+    @property
     def converter(self):
+        """
+        :rtype: callable
+        """
         if self._converter is None:
             try:
                 return self.SPECIAL_CONVERTERS[self.plugin][self.name]
@@ -198,9 +181,11 @@ class Option(object):
                     return self.CONVERTERS_FOR_UNKNOWN.get(self.plugin, self.dummy_converter)
 
     def _get_scheme_converter(self):
-        type_map = {
+        type_casters = {
             'boolean': lambda k, v: {k: to_bool(v)},
             'integer': lambda k, v: {k: int(v)},
+            'list': lambda k, v: {k: [_.strip() for _ in v.strip().split('\n')]},
+            'float': lambda k, v: {k: float(v)}
         }
         schema = self.schema if self.schema else load_plugin_schema('yandextank.plugins.' + self.plugin)
 
@@ -213,7 +198,7 @@ class Option(object):
             logger.warning('Option {}:{}: no type specified in schema'.format(self.plugin, self.name))
             return self.dummy_converter
 
-        return type_map.get(_type, self.dummy_converter)
+        return type_casters.get(_type, self.dummy_converter)
 
 
 class Section(object):
@@ -273,6 +258,7 @@ class Section(object):
 def without_defaults(cfg_ini, section):
     """
 
+    :rtype: (str, str)
     :type cfg_ini: ConfigParser.ConfigParser
     """
     defaults = cfg_ini.defaults()
@@ -344,7 +330,8 @@ def enable_sections(sections, core_options):
 
     :type sections: list of Section
     """
-    plugin_instances = [PluginInstance(key.split('_')[1], value) for key, value in core_options if key.startswith(PLUGIN_PREFIX)]
+    plugin_instances = [PluginInstance(key.split('_')[1], value) for key, value in core_options if
+                        key.startswith(PLUGIN_PREFIX)]
     enabled_instances = {instance.section_name: instance for instance in plugin_instances if instance.enabled}
     disabled_instances = {instance.section_name: instance for instance in plugin_instances if not instance.enabled}
 
@@ -407,8 +394,8 @@ def convert_ini(ini_file):
         load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
 
     plugins_cfg_dict.update({
-        'core': dict(
-            [option_converter('core', option, core_opts_schema) for option in without_defaults(cfg_ini, CORE_SECTION)
-             if not option[0].startswith(PLUGIN_PREFIX)])
+        'core': dict([Option('core', key, value, core_opts_schema).as_tuple
+                      for key, value in without_defaults(cfg_ini, CORE_SECTION)
+                      if not key.startswith(PLUGIN_PREFIX)])
     })
     return plugins_cfg_dict

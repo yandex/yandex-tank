@@ -44,12 +44,15 @@ def test_parse_sections(ini_file, expected):
                 'address': 'foo.example.net',
                 'port': '80'},
             'telegraf': {'config': 'monitoring.xml'},
-            'autostop': {'autostop': '''quantile(50,20,30s)
-http(4xx,50%,5)
-http(5xx,5%,4)
-net(1xx,10,5)
-net(43,10,5)
-metric_higher(foo.example.net,group1_usershandler-average-task-age,3,70)'''}
+            'autostop': {'autostop': [
+                'quantile(50,20,30s)',
+                'http(4xx,50%,5)',
+                'http(5xx,5%,4)',
+                'net(1xx,10,5)',
+                'net(43,10,5)',
+                'metric_higher(foo.example.net,group1_usershandler-average-task-age,3,70)'
+            ]
+            }
         })])
 def test_combine_sections(ini_file, expected):
     cfg_ini = ConfigParser.ConfigParser()

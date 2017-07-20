@@ -13,6 +13,7 @@ exclude_markers:
   schema:
     type: string
     empty: false
+  default: []
 ext_log:
   type: string
   allowed:

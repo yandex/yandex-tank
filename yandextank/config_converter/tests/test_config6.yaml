@@ -9,6 +9,7 @@ jmeter:
   jmeter_path: /home/f2nd/jmeter-3.0/bin/jmeter-large
   args: -Djavax.net.ssl.trustStore=YandexInternalCA.keystore -Djava.net.preferIPv6Addresses=true
   buffer_size: 2
+  jmeter_ver: 3.0
   variables:
     cto: '3000'
     rto: '20000'
@@ -54,6 +55,6 @@ telegraf:
 autostop:
   package: yandextank.plugins.Autostop
   enabled: true
-  autostop: |
-    total_time(70ms, 3%, 10s)
-    http(4xx,25%,10)
+  autostop:
+    - total_time(70ms, 3%, 10s)
+    - http(4xx,25%,10)

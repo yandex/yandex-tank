@@ -20,8 +20,8 @@ uploader:
   task: RASPTICKETS-2579
 autostop:
   package: yandextank.plugins.Autostop
-  autostop: |
-               time(4000,10s)
-               http(4xx,15%,20)
-               http(5xx,20%,20)
-               net(1xx,15%,15)
+  autostop:
+    - time(4000,10s)
+    - http(4xx,15%,20)
+    - http(5xx,20%,20)
+    - net(1xx,15%,15)
