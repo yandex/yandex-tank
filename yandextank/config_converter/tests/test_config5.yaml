@@ -46,6 +46,8 @@ uploader:
 json_report:
   package: yandextank.plugins.JsonReport
   enabled: true
+  monitoring_log: monitoring.log
+  test_data_log: test_data.log
 telegraf:
   package: yandextank.plugins.Telegraf
   enabled: true
