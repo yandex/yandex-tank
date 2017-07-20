@@ -68,6 +68,13 @@ def convert_instances_schedule(key, value):
     }}
 
 
+def convert_stpd_schedule(key, value):
+    return {'load_profile': {
+        'load_type': 'stpd_file',
+        'schedule': value
+    }}
+
+
 def to_bool(value):
     try:
         return bool(int(value))
@@ -80,9 +87,6 @@ def is_option_deprecated(plugin, option_name):
         'Aggregator': [
             'time_periods',
             'precise_cumulative'
-        ],
-        'Phantom': [
-            'stpd_file'
         ]
     }
     if option_name in DEPRECATED.get(plugin, []):
@@ -125,6 +129,7 @@ class Option(object):
         'Phantom': {
             'rps_schedule': convert_rps_schedule,
             'instances_schedule': convert_instances_schedule,
+            'stpd_file': convert_stpd_schedule,
         },
         'Bfg': {
             'rps_schedule': convert_rps_schedule,
