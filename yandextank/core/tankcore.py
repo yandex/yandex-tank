@@ -27,7 +27,6 @@ from ..common.util import update_status, execute, pid_exists
 
 from ..common.resource import manager as resource
 from ..plugins.Aggregator import Plugin as AggregatorPlugin
-from ..plugins.Monitoring import Plugin as MonitoringPlugin
 from ..plugins.Telegraf import Plugin as TelegrafPlugin
 
 if sys.version_info[0] < 3:
@@ -242,11 +241,7 @@ class TankCore(object):
                 mon = self.get_plugin_of_type(TelegrafPlugin)
             except KeyError:
                 logger.debug("Telegraf plugin not found:", exc_info=True)
-                try:
-                    mon = self.get_plugin_of_type(MonitoringPlugin)
-                except KeyError:
-                    logger.debug("Monitoring plugin not found:", exc_info=True)
-                    mon = None
+                mon = None
             # aggregator plugin
             try:
                 aggregator = self.get_plugin_of_type(AggregatorPlugin)
