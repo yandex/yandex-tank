@@ -7,6 +7,7 @@ from yandextank.common.util import recursive_dict_update
 from yandextank.validator.validator import load_plugin_schema, load_yaml_schema
 
 logger = logging.getLogger(__name__)
+CORE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
 
 
 def old_plugin_mapper(package):
@@ -23,6 +24,7 @@ def parse_package_name(package_path):
 
 
 SECTIONS_PATTERNS = {
+    'tank': 'core|tank',
     'Aggregator': 'aggregator',
     'Android': 'android',
     'Appium': 'appium',
@@ -193,7 +195,15 @@ class Option(object):
             'list': lambda k, v: {k: [_.strip() for _ in v.strip().split('\n')]},
             'float': lambda k, v: {k: float(v)}
         }
-        schema = self.schema if self.schema else load_plugin_schema('yandextank.plugins.' + self.plugin)
+        modulepath_path = {
+            'tank': 'yandextank.core'
+        }
+
+        def default_path(plugin):
+            'yandextank.plugins.{}'.format(plugin)
+
+        schema = self.schema if self.schema else \
+            load_plugin_schema(modulepath_path.get(self.plugin, default_path(self.plugin)))
 
         if schema.get(self.name) is None:
             logger.warning('Unknown option {}:{}'.format(self.plugin, self.name))
@@ -331,12 +341,12 @@ class PluginInstance(object):
         return name_map.get(self.name, package_map.get(self.package.plugin_name, self.name))
 
 
-def enable_sections(sections, core_options):
+def enable_sections(sections, core_opts):
     """
 
     :type sections: list of Section
     """
-    plugin_instances = [PluginInstance(key.split('_')[1], value) for key, value in core_options if
+    plugin_instances = [PluginInstance(key.split('_')[1], value) for key, value in core_opts if
                         key.startswith(PLUGIN_PREFIX)]
     enabled_instances = {instance.section_name: instance for instance in plugin_instances if instance.enabled}
     disabled_instances = {instance.section_name: instance for instance in plugin_instances if not instance.enabled}
@@ -396,12 +406,30 @@ def convert_ini(ini_file):
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
     plugins_cfg_dict = {section.name: section.get_cfg_dict() for section in ready_sections}
-    core_opts_schema = \
-        load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
 
     plugins_cfg_dict.update({
-        'core': dict([Option('core', key, value, core_opts_schema).as_tuple
+        'core': dict([Option('core', key, value, CORE_SCHEMA).as_tuple
                       for key, value in without_defaults(cfg_ini, CORE_SECTION)
                       if not key.startswith(PLUGIN_PREFIX)])
     })
     return plugins_cfg_dict
+
+
+def convert_single_option(key, value):
+    """
+
+    :type value: str
+    :type key: str
+    :rtype: {str: obj}
+    """
+    section_name, option_name = key.strip().split('.')
+    if section_name != CORE_SECTION:
+        section = Section(section_name,
+                          guess_plugin(section_name),
+                          [(option_name, value)])
+        return {section.name: section.get_cfg_dict()}
+    else:
+        if option_name.startswith(PLUGIN_PREFIX):
+            return {section.name: section.get_cfg_dict() for section in enable_sections([], [(option_name, value)])}
+        else:
+            return {'core': Option('core', option_name, value, CORE_SCHEMA).converted}
