@@ -4,7 +4,8 @@ import os
 import yaml
 import pytest
 
-from yandextank.config_converter.converter import convert_ini, parse_package_name, parse_sections, combine_sections
+from yandextank.config_converter.converter import convert_ini, parse_package_name, parse_sections, combine_sections, \
+    convert_single_option
 from yandextank.core.consoleworker import load_core_base_cfg, cfg_folder_loader, load_cfg
 from yandextank.validator.validator import TankConfig
 
@@ -101,3 +102,17 @@ def test_validate(ini_file):
     TankConfig([load_core_base_cfg()] +
                cfg_folder_loader(os.path.join(os.path.dirname(__file__), 'etc_cfg')) +
                [load_cfg(os.path.join(os.path.dirname(__file__), ini_file))]).validated
+
+
+@pytest.mark.parametrize('key, value, expected', [
+    ('phantom.uris', '/',
+     {'phantom': {'package': 'yandextank.plugins.Phantom', 'uris': '/'}}),
+    ('tank.plugin_uploader', 'yandextank.plugins.DataUploader',
+     {'uploader': {'enabled': True, 'package': 'yandextank.plugins.DataUploader'}}),
+    ('phantom.rps_schedule', 'line(1,10)',
+     {'phantom': {
+         'load_profile': {'load_type': 'rps', 'schedule': 'line(1,10)'},
+         'package': 'yandextank.plugins.Phantom'}})
+])
+def test_convert_single_option(key, value, expected):
+    assert convert_single_option(key, value) == expected

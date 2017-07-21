@@ -13,7 +13,7 @@ from optparse import OptionParser
 
 import yaml
 from pkg_resources import resource_filename
-from ..config_converter.converter import convert_ini, old_section_name_mapper, guess_plugin, Option
+from ..config_converter.converter import convert_ini, convert_single_option
 from .tankcore import TankCore, LockError
 from ..common.resource import manager as resource_manager
 
@@ -104,14 +104,6 @@ def load_local_base_cfg():
     return cfg_folder_loader('/etc/yandex-tank')
 
 
-def parse_option(key, value):
-    # type: (str, str) -> {str: dict}
-    section_name, option_name = key.strip().split('.')
-    return {old_section_name_mapper(section_name):
-            Option(guess_plugin(section_name), option_name, value).converted
-            }
-
-
 def parse_options(options):
     """
     :type options: list of str
@@ -121,7 +113,7 @@ def parse_options(options):
         return []
     else:
         return [
-            parse_option(key, value.strip())
+            convert_single_option(key.strip(), value.strip())
             for key, value
             in [option.split('=') for option in options]
         ]

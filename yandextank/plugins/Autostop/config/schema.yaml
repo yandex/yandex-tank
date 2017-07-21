@@ -2,6 +2,7 @@ autostop:
   type: list
   schema:
     type: string
+  default: []
 report_file:
   type: string
   default: autostop_report.txt
