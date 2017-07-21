@@ -15,6 +15,8 @@ from StringIO import StringIO
 import pkg_resources
 import sys
 import platform
+
+import yaml
 from builtins import str
 
 from yandextank.common.exceptions import PluginNotPrepared
@@ -25,7 +27,6 @@ from ..common.util import update_status, execute, pid_exists
 
 from ..common.resource import manager as resource
 from ..plugins.Aggregator import Plugin as AggregatorPlugin
-from ..plugins.Monitoring import Plugin as MonitoringPlugin
 from ..plugins.Telegraf import Plugin as TelegrafPlugin
 
 if sys.version_info[0] < 3:
@@ -34,6 +35,9 @@ else:
     import configparser as ConfigParser
 
 logger = logging.getLogger(__name__)
+
+
+LOCK_FILE_WILDCARD = 'lunapark_*.lock'
 
 
 class Job(object):
@@ -88,7 +92,6 @@ class TankCore(object):
     PLUGIN_PREFIX = 'plugin_'
     PID_OPTION = 'pid'
     UUID_OPTION = 'uuid'
-    LOCK_DIR = '/var/lock'
 
     def __init__(self, configs, artifacts_base_dir=None, artifacts_dir_name=None, cfg_depr=None):
         """
@@ -116,6 +119,7 @@ class TankCore(object):
             self.cfg_snapshot = output.getvalue()
         else:
             self.cfg_snapshot = str(self.config)
+        self.interrupted = False
     #
     # def get_uuid(self):
     #     return self.uuid
@@ -131,7 +135,9 @@ class TankCore(object):
     @property
     def config(self):
         if not self._config:
-            self._config = TankConfig(self.raw_configs)
+            self._config = TankConfig(self.raw_configs,
+                                      with_dynamic_options=True,
+                                      core_section=self.SECTION)
         return self._config
 
     @property
@@ -235,11 +241,7 @@ class TankCore(object):
                 mon = self.get_plugin_of_type(TelegrafPlugin)
             except KeyError:
                 logger.debug("Telegraf plugin not found:", exc_info=True)
-                try:
-                    mon = self.get_plugin_of_type(MonitoringPlugin)
-                except KeyError:
-                    logger.debug("Monitoring plugin not found:", exc_info=True)
-                    mon = None
+                mon = None
             # aggregator plugin
             try:
                 aggregator = self.get_plugin_of_type(AggregatorPlugin)
@@ -390,6 +392,9 @@ class TankCore(object):
         """
         raise NotImplementedError
 
+    def set_exitcode(self, code):
+        self.config.validated['core']['exitcode'] = code
+
     def get_plugin_of_type(self, plugin_class):
         """
         Retrieve a plugin of desired class, KeyError raised otherwise
@@ -454,15 +459,16 @@ class TankCore(object):
                 option, value)
             self.set_option(section, option, value)
 
+    # todo: remove lock_dir from config
     def get_lock_dir(self):
         if not self.lock_dir:
             self.lock_dir = self.get_option(
-                self.SECTION, "lock_dir", self.LOCK_DIR)
-
+                self.SECTION, "lock_dir")
         return os.path.expanduser(self.lock_dir)
 
-    def get_lock(self, force=False):
-        if not force and self.__there_is_locks():
+    def get_lock(self, force=False, lock_dir=None):
+        lock_dir = lock_dir if lock_dir else self.get_lock_dir()
+        if not force and self.is_locked(lock_dir):
             raise LockError("Lock file(s) found")
 
         fh, self.lock_file = tempfile.mkstemp(
@@ -476,29 +482,31 @@ class TankCore(object):
             logger.debug("Releasing lock: %s", self.lock_file)
             os.remove(self.lock_file)
 
-    def __there_is_locks(self):
+    @classmethod
+    def is_locked(cls, lock_dir='/var/lock'):
         retcode = False
-        lock_dir = self.get_lock_dir()
         for filename in os.listdir(lock_dir):
-            if fnmatch.fnmatch(filename, 'lunapark_*.lock'):
+            if fnmatch.fnmatch(filename, LOCK_FILE_WILDCARD):
                 full_name = os.path.join(lock_dir, filename)
-                logger.warn("Lock file present: %s", full_name)
-
+                logger.info("Lock file is found: %s", full_name)
                 try:
-                    info = ConfigParser.ConfigParser()
-                    info.read(full_name)
-                    pid = info.get(TankCore.SECTION, self.PID_OPTION)
-                    if not pid_exists(int(pid)):
-                        logger.debug(
-                            "Lock PID %s not exists, ignoring and "
-                            "trying to remove", pid)
-                        try:
-                            os.remove(full_name)
-                        except Exception as exc:
-                            logger.debug(
-                                "Failed to delete lock %s: %s", full_name, exc)
+                    with open(full_name) as f:
+                        running_cfg = yaml.load(f)
+                    pid = running_cfg.get(TankCore.SECTION).get(cls.PID_OPTION)
+                    if not pid:
+                        logger.warning('Failed to get {}.{} from lock file {}'.format(TankCore.SECTION))
                     else:
-                        retcode = True
+                        if not pid_exists(int(pid)):
+                            logger.debug(
+                                "Lock PID %s not exists, ignoring and "
+                                "trying to remove", pid)
+                            try:
+                                os.remove(full_name)
+                            except Exception as exc:
+                                logger.debug(
+                                    "Failed to delete lock %s: %s", full_name, exc)
+                        else:
+                            retcode = True
                 except Exception as exc:
                     logger.warn(
                         "Failed to load info from lock %s: %s", full_name, exc)

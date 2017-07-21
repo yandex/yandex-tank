@@ -4,6 +4,8 @@ core:
     affinity:
       type: string
       default: ''
+    api_jobno:
+      type: string
     artifacts_base_dir:
       type: string
       default: ./logs
@@ -11,6 +13,18 @@ core:
       type: string
       nullable: true
       default: null
+    exitcode:
+      type: integer
+    flush_config_to:
+      type: string
+    ignore_locks:
+      type: boolean
+    uuid:
+      type: string
+    pid:
+      type: integer
+    message:
+      type: string
     lock_dir:
       type: string
       default: /var/lock/

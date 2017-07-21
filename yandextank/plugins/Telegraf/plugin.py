@@ -93,13 +93,11 @@ class Plugin(AbstractPlugin):
         if not is_telegraf and not is_monitoring:
             # defaults target logic
             try:
-                is_telegraf_dt = self.core.get_option(
-                    'telegraf', "default_target", None)
+                is_telegraf_dt = self.core.get_option('telegraf')
             except NoOptionError:
                 is_telegraf_dt = None
             try:
-                is_monitoring_dt = self.core.get_option(
-                    'monitoring', "default_target", None)
+                is_monitoring_dt = self.core.get_option('monitoring')
             except:
                 is_monitoring_dt = None
             if is_telegraf_dt and is_monitoring_dt:

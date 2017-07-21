@@ -16,9 +16,13 @@ requests_logger.setLevel(logging.WARNING)
 requests.packages.urllib3.disable_warnings()
 
 
+class GunConfigError(Exception):
+    pass
+
+
 class AbstractGun(AbstractPlugin):
-    def __init__(self, core):
-        super(AbstractGun, self).__init__(core, None)
+    def __init__(self, core, cfg):
+        super(AbstractGun, self).__init__(core, cfg, None)
         self.results = None
 
     @contextmanager
@@ -66,13 +70,19 @@ class AbstractGun(AbstractPlugin):
     def teardown(self):
         pass
 
+    def get_option(self, key, **kwargs):
+        try:
+            return super(AbstractGun, self).get_option(key, **kwargs)
+        except KeyError:
+            raise GunConfigError('Missing key: %s' % key)
+
 
 class LogGun(AbstractGun):
     SECTION = 'log_gun'
 
     def __init__(self, core):
         super(LogGun, self).__init__(core)
-        param = self.get_option("param", '15')
+        param = self.get_option("param")
         logger.info('Initialized log gun for BFG with param = %s' % param)
 
     def shoot(self, missile, marker):
@@ -85,9 +95,9 @@ class LogGun(AbstractGun):
 class HttpGun(AbstractGun):
     SECTION = 'http_gun'
 
-    def __init__(self, core):
-        super(HttpGun, self).__init__(core)
-        self.base_address = self.get_option("base_address")
+    def __init__(self, core, cfg):
+        super(HttpGun, self).__init__(core, cfg)
+        self.base_address = cfg["base_address"]
 
     def shoot(self, missile, marker):
         logger.debug("Missile: %s\n%s", marker, missile)
@@ -147,11 +157,11 @@ class CustomGun(AbstractGun):
     """
     SECTION = 'custom_gun'
 
-    def __init__(self, core):
-        super(CustomGun, self).__init__(core)
+    def __init__(self, core, cfg):
+        super(CustomGun, self).__init__(core, cfg)
         logger.warning("Custom gun is deprecated. Use Ultimate gun instead")
-        module_path = self.get_option("module_path", "").split()
-        module_name = self.get_option("module_name")
+        module_path = cfg["module_path"].split()
+        module_name = cfg["module_name"]
         fp, pathname, description = imp.find_module(module_name, module_path)
         try:
             self.module = imp.load_module(
@@ -177,15 +187,15 @@ class ScenarioGun(AbstractGun):
     """
     SECTION = 'scenario_gun'
 
-    def __init__(self, core):
-        super(ScenarioGun, self).__init__(core)
+    def __init__(self, core, cfg):
+        super(ScenarioGun, self).__init__(core, cfg)
         logger.warning("Scenario gun is deprecated. Use Ultimate gun instead")
-        module_path = self.get_option("module_path", "")
+        module_path = cfg["module_path"]
         if module_path:
             module_path = module_path.split()
         else:
             module_path = None
-        module_name = self.get_option("module_name")
+        module_name = cfg["module_name"]
         fp, pathname, description = imp.find_module(module_name, module_path)
         try:
             self.module = imp.load_module(
@@ -216,16 +226,16 @@ class ScenarioGun(AbstractGun):
 class UltimateGun(AbstractGun):
     SECTION = "ultimate_gun"
 
-    def __init__(self, core):
-        super(UltimateGun, self).__init__(core)
-        class_name = self.get_option("class_name", "LoadTest")
-        module_path = self.get_option("module_path", "")
+    def __init__(self, core, cfg):
+        super(UltimateGun, self).__init__(core, cfg)
+        class_name = self.get_option("class_name")
+        module_path = self.get_option("module_path")
         if module_path:
             module_path = module_path.split()
         else:
             module_path = None
         module_name = self.get_option("module_name")
-        self.init_param = self.get_option("init_param", "")
+        self.init_param = self.get_option("init_param")
         fp, pathname, description = imp.find_module(module_name, module_path)
         #
         # Dirty Hack

@@ -1,0 +1,18 @@
+core: {}
+phantom:
+  load_profile:
+    load_type: stpd_file
+    schedule: foo.stpd
+  ssl: true
+  address: lunapark.test.yandex-team.ru:443
+  package: yandextank.plugins.Phantom
+uploader:
+  enabled: false
+overload:
+  package: yandextank.plugins.DataUploader
+  enabled: true
+  job_name: ojojo
+  token_file: overloadapi.token
+  api_address: https://overload.yandex.net
+telegraf:
+  enabled: false

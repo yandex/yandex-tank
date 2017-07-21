@@ -170,10 +170,10 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 'offset': 0,
                 'bynary': False,
                 'job_config': {
-                    'task': self.core.get_option(self.SECTION_META, 'task').decode('utf8'),
-                    'jobname': self.core.get_option(self.SECTION_META, 'job_name').decode('utf8'),
-                    'dsc': self.core.get_option(self.SECTION_META, 'job_dsc').decode('utf8'),
-                    'component': self.core.get_option('meta', 'component')
+                    'task': self.core.get_option(self.SECTION_META).decode('utf8'),
+                    'jobname': self.core.get_option(self.SECTION_META).decode('utf8'),
+                    'dsc': self.core.get_option(self.SECTION_META).decode('utf8'),
+                    'component': self.core.get_option('meta')
                 }
             }
             process_uploader = Process(target=uploader.main, args=(args,))

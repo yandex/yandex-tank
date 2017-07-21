@@ -6,4 +6,4 @@ install:
   - "pip install ."
 script:
   - "python setup.py flake8"
-  - "python setup.py test"
+  - "pytest -s"

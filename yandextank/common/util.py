@@ -1,6 +1,7 @@
 '''
 Common utilities
 '''
+import collections
 import os
 import pwd
 import socket
@@ -597,3 +598,13 @@ class Chopper(object):
         for chunk in self.source:
             for item in chunk:
                 yield item
+
+
+def recursive_dict_update(d1, d2):
+    for k, v in d2.items():
+        if isinstance(v, collections.Mapping):
+            r = recursive_dict_update(d1.get(k, {}), v)
+            d1[k] = r
+        else:
+            d1[k] = d2[k]
+    return d1

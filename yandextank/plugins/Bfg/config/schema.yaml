@@ -1,6 +1,8 @@
+address:
+  type: string
 ammofile:
   type: string
-  required: true
+  default: ''
 ammo_limit:
   default: -1
   type: integer
@@ -30,12 +32,15 @@ file_cache:
 force_stepping:
   type: integer
   default: 0
-gun_type:
-  type: string
-  required: true
 green_threads_per_instance:
   type: integer
   default: 1000
+gun_config:
+  type: dict
+gun_type:
+  type: string
+  allowed: ['custom', 'http', 'scenario', 'ultimate']
+  required: true
 headers:
   type: string
   default: ''
@@ -44,20 +49,21 @@ header_http:
   default: '1.0'
 instances:
   type: integer
-  default': 1000
+  default: 1000
 load_profile:
   type: dict
+  required: true
   schema:
     load_type:
-      type: string,
+      type: string
       regex: '^rps|instances|stpd_file$'
+      required: true
     schedule:
-      type: string,
-  required: True
+      type: string
+      required: true
 loop:
-  type: string
-  nullable: true
-  default: null
+  type: integer
+  default: 1
 pip:
   type: string
   default: ''

@@ -1,6 +1,8 @@
 config:
   type: string
   required: true
+config_contents:
+  type: string
 default_target:
   type: string
   default: localhost

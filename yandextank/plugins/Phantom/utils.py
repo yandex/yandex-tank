@@ -62,9 +62,9 @@ class PhantomConfig:
         self.phantom_modules_path = self.cfg["phantom_modules_path"]
         self.additional_libs = self.cfg["additional_libs"]
         self.answ_log_level = self.cfg["writelog"]
-        if self.answ_log_level == '0':
+        if self.answ_log_level.lower() in ['0', 'false']:
             self.answ_log_level = 'none'
-        elif self.answ_log_level == '1':
+        elif self.answ_log_level.lower() in ['1', 'true']:
             self.answ_log_level = 'all'
         self.timeout = parse_duration(self.cfg["timeout"])
         if self.timeout > 120000:

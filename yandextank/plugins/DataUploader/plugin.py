@@ -59,6 +59,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
              MonitoringDataListener):
     RC_STOP_FROM_WEB = 8
     VERSION = '3.0'
+    SECTION = 'uploader'
 
     def __init__(self, core, cfg, cfg_updater):
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
@@ -88,6 +89,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self._lp_job = None
         self._lock_duration = None
         self._info = None
+        self.locked_targets = []
 
     @staticmethod
     def get_key():
@@ -761,8 +763,10 @@ class LPJob(object):
         return self._token
 
     def close(self, rc):
-        return self.api_client.close_job(
-            self.number, rc, trace=self.log_other_requests)
+        if self._number:
+            return self.api_client.close_job(self.number, rc, trace=self.log_other_requests)
+        else:
+            return True
 
     def create(self):
         self._number, self._token = self.api_client.new_job(task=self.task,
@@ -791,7 +795,7 @@ class LPJob(object):
     def send_config_snapshot(self, config):
         if self._number:
             self.api_client.send_config_snapshot(
-                self.number, unicode(config), trace=self.log_other_requests)
+                self.number, config, trace=self.log_other_requests)
 
     def push_monitoring_data(self, data):
         if self.is_alive:

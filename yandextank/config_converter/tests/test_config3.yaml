@@ -7,6 +7,10 @@ uploader:
   component: '177'
   job_name: light
   ignore_target_lock: true
+  regress: true
+  notify: fomars
+  meta:
+    launched_from: centurion
 #production log
 phantom:
   package: yandextank.plugins.Phantom
@@ -38,11 +42,10 @@ phantom:
       autocases: '1'
 telegraf:
   enabled: False
-  package: yandextank.plugins.Telegraf
 autostop:
   package: yandextank.plugins.Autostop
-  autostop: |
-    quantile(50,300,7)
-    http(4xx,25%,10)
-    http(5xx,5%,2)
-    net(1xx,10,5)
+  autostop:
+    - quantile(50,300,7)
+    - http(4xx,25%,10)
+    - http(5xx,5%,2)
+    - net(1xx,10,5)

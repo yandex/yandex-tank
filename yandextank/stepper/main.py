@@ -92,6 +92,9 @@ class StepperWrapper(object):
     '''
     Wrapper for cached stepper functionality
     '''
+    OPTION_LOAD = 'load_profile'
+    OPTION_LOAD_TYPE = 'load_type'
+    OPTION_SCHEDULE = 'schedule'
     OPTION_STEPS = 'steps'
     OPTION_TEST_DURATION = 'test_duration'
     OPTION_AMMO_COUNT = 'ammo_count'
@@ -142,8 +145,7 @@ class StepperWrapper(object):
     def get_available_options():
         opts = [
             StepperWrapper.OPTION_AMMOFILE, StepperWrapper.OPTION_LOOP,
-            StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_STPD,
-            StepperWrapper.OPTION_INSTANCES_LIMIT
+            StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_INSTANCES_LIMIT
         ]
         opts += [
             "instances_schedule", "uris", "headers", "header_http", "autocases",
@@ -183,6 +185,9 @@ class StepperWrapper(object):
         cache_dir = self.get_option("cache_dir") or self.core.artifacts_base_dir
         self.cache_dir = os.path.expanduser(cache_dir)
         self.force_stepping = self.get_option("force_stepping")
+        if self.get_option(self.OPTION_LOAD)[self.OPTION_LOAD_TYPE] == 'stpd_file':
+            self.stpd = self.get_option(self.OPTION_LOAD)[self.OPTION_SCHEDULE]
+
         self.chosen_cases = self.get_option("chosen_cases").split()
         if self.chosen_cases:
             self.log.info("chosen_cases LIMITS: %s", self.chosen_cases)
