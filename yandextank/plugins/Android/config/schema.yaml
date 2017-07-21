@@ -1,12 +1,2 @@
-package:
-  type: string
-test_package:
-  type: string
-apk:
-  type: string
-test_apk:
-  type: string
-class:
-  type: string
-test_runner:
-  type: string
+volta_options:
+  type: dict
