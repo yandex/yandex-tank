@@ -1,6 +1,6 @@
 config:
   type: string
-  required: true
+  default: auto
 config_contents:
   type: string
 default_target:

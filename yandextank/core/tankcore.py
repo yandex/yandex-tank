@@ -164,20 +164,6 @@ class TankCore(object):
             self._artifacts_base_dir = artifacts_base_dir
         return self._artifacts_base_dir
 
-    # todo: take this to .ini-reader
-    def load_configs_deprecated(self, configs):
-        """ Tells core to load configs set into options storage """
-        logger.info("Loading configs...")
-        self.config.load_files(configs)
-        dotted_options = []
-        for option, value in self.config.get_options(self.SECTION):
-            if '.' in option:
-                dotted_options += [option + '=' + value]
-        self.apply_shorthand_options(dotted_options, self.SECTION)
-        self.config.flush()
-        self.add_artifact_file(self.config.file)
-        self.set_option(self.SECTION, self.PID_OPTION, str(os.getpid()))
-
     def load_plugins(self):
         """
         Tells core to take plugin options and instantiate plugin classes
