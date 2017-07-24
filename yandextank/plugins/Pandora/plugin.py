@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import subprocess
 import time
@@ -45,23 +46,22 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         return opts
 
     def configure(self):
-        self.expvar = self.get_option("expvar", "1") == "1"
-        self.pandora_cmd = self.get_option("pandora_cmd", "pandora")
-        self.buffered_seconds = int(
-            self.get_option("buffered_seconds", self.buffered_seconds))
+        self.expvar = self.get_option("expvar")
+        self.pandora_cmd = self.get_option("pandora_cmd")
+        self.buffered_seconds = self.get_option("buffered_seconds")
         with open(self.sample_log, 'w'):
             pass
         self.core.add_artifact_file(self.sample_log)
 
-        config_content = self.get_option("config_content", "")
-        if config_content:
+        config_content = self.get_option("config_content")
+        if len(config_content) > 0:
             self.pandora_config_file = self.core.mkstemp(
                 ".json", "pandora_config_")
             self.core.add_artifact_file(self.pandora_config_file)
             with open(self.pandora_config_file, 'w') as config_file:
-                config_file.write(config_content)
+                json.dump(config_content, config_file)
         else:
-            config_file = self.get_option("config_file", "")
+            config_file = self.get_option("config_file")
             if not config_file:
                 raise RuntimeError(
                     "neither pandora config content"

@@ -1,7 +1,9 @@
 import ConfigParser
+import json
 import re
 import logging
 import pkg_resources
+import yaml
 
 from yandextank.common.util import recursive_dict_update
 from yandextank.validator.validator import load_plugin_schema, load_yaml_schema
@@ -40,7 +42,8 @@ SECTIONS_PATTERNS = {
     'Console': 'console',
     'TipsAndTricks': 'tips',
     'RCAssert': 'rcassert',
-    'JsonReport': 'json_report|jsonreport'
+    'JsonReport': 'json_report|jsonreport',
+    'Pandora': 'pandora'
 }
 
 
@@ -139,6 +142,10 @@ class Option(object):
         },
         'JMeter': {
             'exclude_markers': lambda key, value: {key: value.strip().split(' ')}
+        },
+        'Pandora': {
+            'expvar': lambda key, value: {key: value == '1'},
+            'config_content': lambda key, value: {key: yaml.load(value)}
         }
     }
     CONVERTERS_FOR_UNKNOWN = {
