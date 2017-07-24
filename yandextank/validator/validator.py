@@ -46,7 +46,7 @@ def load_schema(directory, filename=None):
 
 class TankConfig(object):
     DYNAMIC_OPTIONS = {
-        'uuid': lambda: uuid.uuid4(),
+        'uuid': lambda: str(uuid.uuid4()),
         'pid': lambda: os.getpid(),
         'cmdline': lambda: ' '.join(sys.argv)
     }

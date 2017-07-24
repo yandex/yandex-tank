@@ -1,0 +1,15 @@
+pandora_cmd:
+  type: string
+  default: pandora
+buffered_seconds:
+  type: integer
+  default: 2
+config_content:
+  type: dict
+  default: {}
+config_file:
+  type: string
+  default: ''
+expvar:
+  type: boolean
+  default: true

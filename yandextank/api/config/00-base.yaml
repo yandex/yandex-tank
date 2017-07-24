@@ -11,6 +11,7 @@ bfg:
 console:
   enabled: true
   package: yandextank.plugins.Console
+  short_only: true
 jmeter:
   enabled: false
   package: JMeter
