@@ -10,7 +10,6 @@ autostop:
 bfg:
   enabled: false
   package: yandextank.plugins.Bfg
-  ammo_type: caseline
 console:
   enabled: true
   package: yandextank.plugins.Console
@@ -32,7 +31,6 @@ shellexec:
 telegraf:
   enabled: true
   package: yandextank.plugins.Telegraf
-  disguise_hostnames: true
 tips:
   enabled: true
   package: yandextank.plugins.TipsAndTricks
@@ -42,4 +40,3 @@ rcassert:
 overload:
   enabled: false
   package: yandextank.plugins.DataUploader
-  api_address: https://overload.yandex.net/
