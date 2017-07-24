@@ -144,7 +144,7 @@ class Option(object):
         },
         'Pandora': {
             'expvar': lambda key, value: {key: value == '1'},
-            'config_content': lambda key, value: {key: yaml.load(value)}
+            'config_content': lambda key, value: {key: yaml.load(value)} # works for json as well
         }
     }
     CONVERTERS_FOR_UNKNOWN = {

@@ -8,8 +8,7 @@ ammo_limit:
   type: integer
 ammo_type:
   type: string
-  nullable: true
-  default: null
+  default: caseline
 autocases:
   type: string
   default: '0'

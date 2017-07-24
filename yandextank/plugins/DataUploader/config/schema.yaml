@@ -1,7 +1,7 @@
 meta:
   type: dict
 api_address:
-  required: true
+  default: https://overload.yandex.net/
   type: string
 api_attempts:
   default: 60
