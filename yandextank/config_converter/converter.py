@@ -1,5 +1,4 @@
 import ConfigParser
-import json
 import re
 import logging
 import pkg_resources
