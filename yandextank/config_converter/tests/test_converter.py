@@ -72,6 +72,7 @@ def test_parse_package(package_path, expected):
     assert parse_package_name(package_path) == expected
 
 
+# TODO: get test configs list automatically
 @pytest.mark.parametrize('ini_file, yaml_file', [
     ('test_config1.ini', 'test_config1.yaml'),
     ('test_config2.ini', 'test_config2.yaml'),
@@ -84,10 +85,11 @@ def test_parse_package(package_path, expected):
     ('test_config9.ini', 'test_config9.yaml'),
     ('test_config10.ini', 'test_config10.yaml'),
     ('test_config11.ini', 'test_config11.yaml'),
+    ('test_config12.ini', 'test_config12.yaml'),
 ])
 def test_convert_ini_phantom(ini_file, yaml_file):
     with open(os.path.join(os.path.dirname(__file__), yaml_file), 'r') as f:
-        assert convert_ini(os.path.join(os.path.dirname(__file__), ini_file)) == yaml.load(f)
+        assert yaml.dump(convert_ini(os.path.join(os.path.dirname(__file__), ini_file))) == yaml.dump(yaml.load(f))
 
 
 @pytest.mark.parametrize('ini_file', [
@@ -99,7 +101,8 @@ def test_convert_ini_phantom(ini_file, yaml_file):
     'test_config6.ini',
     'test_config7.ini',
     'test_config10.yaml',
-    'test_config11.yaml'
+    'test_config11.yaml',
+    'test_config12.ini',
 ])
 def test_validate(ini_file):
     # noinspection PyStatementEffect

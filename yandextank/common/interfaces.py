@@ -13,6 +13,7 @@ class AbstractPlugin(object):
         should point to __file__ magic constant """
         raise TypeError("Abstract method needs to be overridden")
 
+    #TODO: do we realy need cfg_updater here?
     def __init__(self, core, cfg, cfg_updater):
         """
 
@@ -21,7 +22,9 @@ class AbstractPlugin(object):
         self.log = logging.getLogger(__name__)
         self.core = core
         self.cfg = cfg
-        self.set_option = cfg_updater
+
+    def set_option(self, option, value):
+        self.cfg.setdefault('meta', {})[option] = value
 
     def configure(self):
         """ A stage to read config values and instantiate objects """

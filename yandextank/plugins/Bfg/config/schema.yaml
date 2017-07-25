@@ -62,7 +62,7 @@ load_profile:
       required: true
 loop:
   type: integer
-  default: 1
+  default: -1
 pip:
   type: string
   default: ''
