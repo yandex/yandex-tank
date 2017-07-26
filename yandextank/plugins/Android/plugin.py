@@ -24,10 +24,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                     raise RuntimeError('Malformed VoltaConfig passed, key: %s. Should by dict' % key)
         except AttributeError:
             logger.error('Failed to read Volta config', exc_info=True)
-        try:
-            self.volta_core = VoltaCore(self.cfg)
-        except Exception as exc:
-            raise RuntimeError('Volta Config validation error', exc)
+        self.volta_core = VoltaCore(self.cfg)
 
     @staticmethod
     def get_key():
