@@ -2,6 +2,8 @@ import imp
 import os
 import sys
 import uuid
+
+import logging
 import pkg_resources
 import yaml
 from cerberus import Validator
