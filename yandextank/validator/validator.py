@@ -6,6 +6,7 @@ import pkg_resources
 import yaml
 from cerberus import Validator
 from yandextank.common.util import recursive_dict_update
+logger = logging.getLogger(__name__)
 
 
 class ValidationError(Exception):
@@ -30,8 +31,8 @@ def load_plugin_schema(package):
         try:
             return load_py_schema(pkg_resources.resource_filename(package, 'config/schema.py'))
         except ImportError:
-            raise IOError('No schema found for plugin %s '
-                          '(should be located in config/ directory of a plugin)\n' % package)
+            logger.error("Could not find schema for %s (should be located in config/ directory of a plugin)", package)
+            raise IOError('No schema found for plugin %s' % package)
 
 
 def load_schema(directory, filename=None):

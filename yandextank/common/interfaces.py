@@ -13,7 +13,7 @@ class AbstractPlugin(object):
         should point to __file__ magic constant """
         raise TypeError("Abstract method needs to be overridden")
 
-    #TODO: do we realy need cfg_updater here?
+    # TODO: do we realy need cfg_updater here?
     def __init__(self, core, cfg, cfg_updater):
         """
 
