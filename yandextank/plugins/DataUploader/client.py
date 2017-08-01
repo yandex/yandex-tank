@@ -39,12 +39,6 @@ class APIClient(object):
         self.session.verify = False
         self.session.headers.update({"User-Agent": "tank"})
 
-        if "https" in requests.utils.getproxies():
-            logger.info("Connecting via proxy %s" % requests.utils.getproxies()['https'])
-            self.session.proxies = requests.utils.getproxies()
-        else:
-            logger.info("Proxy not set")
-
         self.network_attempts = network_attempts
         self.network_timeout = network_timeout
         self.api_attempts = api_attempts
