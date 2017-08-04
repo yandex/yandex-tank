@@ -10,6 +10,8 @@ from yandextank.validator.validator import load_plugin_schema, load_yaml_schema
 logger = logging.getLogger(__name__)
 CORE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
 
+DEPRECATED_SECTIONS = ['lunaport']
+
 
 def old_plugin_mapper(package):
     MAP = {'Overload': 'DataUploader'}
@@ -322,7 +324,7 @@ def parse_sections(cfg_ini):
                     guess_plugin(section),
                     without_defaults(cfg_ini, section))
             for section in cfg_ini.sections()
-            if section != CORE_SECTION]
+            if section != CORE_SECTION and section not in DEPRECATED_SECTIONS]
 
 
 class PluginInstance(object):

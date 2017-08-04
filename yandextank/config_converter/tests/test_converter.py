@@ -87,6 +87,7 @@ def test_parse_package(package_path, expected):
     ('test_config10.ini', 'test_config10.yaml'),
     ('test_config11.ini', 'test_config11.yaml'),
     ('test_config12.ini', 'test_config12.yaml'),
+    ('test_config13.ini', 'test_config13.yaml'),
 ])
 def test_convert_ini_phantom(ini_file, yaml_file):
     with open(os.path.join(os.path.dirname(__file__), yaml_file), 'r') as f:
