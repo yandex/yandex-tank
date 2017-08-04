@@ -289,7 +289,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.monitoring_queue.put(None)
         self.data_queue.put(None)
         self.__save_conf()
-        self._join_threads(timeout=int(self.get_option('threads_timeout', '60')))
+        self._join_threads(timeout=int(self.get_option('threads_timeout')))
         self.unlock_targets(self.locked_targets)
         return retcode
 

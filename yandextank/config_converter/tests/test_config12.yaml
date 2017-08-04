@@ -1,0 +1,12 @@
+bfg:
+  address: aggr-n.haze.yandex-team.ru
+  ammo_type: line
+  ammofile: ammo.uri
+  enabled: true
+  gun_config: {base_address: 'https://aggr-n.haze.yandex.net'}
+  gun_type: http
+  instances: 50
+  load_profile: {load_type: rps, schedule: 'line(1, 1000, 3m)'}
+  package: yandextank.plugins.Bfg
+core: {}
+phantom: {enabled: false}
