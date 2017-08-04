@@ -117,7 +117,9 @@ def test_validate(ini_file):
     ('phantom.rps_schedule', 'line(1,10)',
      {'phantom': {
          'load_profile': {'load_type': 'rps', 'schedule': 'line(1,10)'},
-         'package': 'yandextank.plugins.Phantom'}})
+         'package': 'yandextank.plugins.Phantom'}}),
+    ('bfg.gun_config.module_name', 'bayan_load',
+     {'bfg': {'package': 'yandextank.plugins.Bfg', 'gun_config': {'module_name': 'bayan_load'}}})
 ])
 def test_convert_single_option(key, value, expected):
     assert convert_single_option(key, value) == expected

@@ -153,14 +153,31 @@ class Option(object):
     }
 
     def __init__(self, plugin_name, key, value, schema=None):
-        self.plugin = plugin_name
-        self.name = key
-        self.value = value
-        self.schema = schema
         self.dummy_converter = lambda k, v: {k: v}
+        self.plugin = plugin_name
+        self._schema = schema
+
+        if '.' in key:
+            self.name, rest = key.split('.', 1)
+            self.value = Option(plugin_name, rest, value, schema=self.schema[self.name]).converted
+            self._converter = self.dummy_converter
+        else:
+            self.name = key
+            self.value = value
+            self._converter = None
         self._converted = None
-        self._converter = None
         self._as_tuple = None
+
+    @property
+    def schema(self):
+        if self._schema is None:
+            module_paths = {
+                'tank': 'yandextank.core'
+            }
+            def default_path(plugin):
+                'yandextank.plugins.{}'.format(plugin)
+            self._schema = load_plugin_schema(module_paths.get(self.plugin, default_path(self.plugin)))
+        return self._schema
 
     @property
     def converted(self):
@@ -187,12 +204,13 @@ class Option(object):
         """
         if self._converter is None:
             try:
-                return self.SPECIAL_CONVERTERS[self.plugin][self.name]
+                self._converter = self.SPECIAL_CONVERTERS[self.plugin][self.name]
             except KeyError:
                 try:
-                    return self._get_scheme_converter()
+                    self._converter = self._get_scheme_converter()
                 except UnknownOption:
-                    return self.CONVERTERS_FOR_UNKNOWN.get(self.plugin, self.dummy_converter)
+                    self._converter = self.CONVERTERS_FOR_UNKNOWN.get(self.plugin, self.dummy_converter)
+        return self._converter
 
     def _get_scheme_converter(self):
         type_casters = {
@@ -201,21 +219,12 @@ class Option(object):
             'list': lambda k, v: {k: [_.strip() for _ in v.strip().split('\n')]},
             'float': lambda k, v: {k: float(v)}
         }
-        modulepath_path = {
-            'tank': 'yandextank.core'
-        }
 
-        def default_path(plugin):
-            'yandextank.plugins.{}'.format(plugin)
-
-        schema = self.schema if self.schema else \
-            load_plugin_schema(modulepath_path.get(self.plugin, default_path(self.plugin)))
-
-        if schema.get(self.name) is None:
+        if self.schema.get(self.name) is None:
             logger.warning('Unknown option {}:{}'.format(self.plugin, self.name))
             raise UnknownOption
 
-        _type = schema[self.name].get('type', None)
+        _type = self.schema[self.name].get('type', None)
         if _type is None:
             logger.warning('Option {}:{}: no type specified in schema'.format(self.plugin, self.name))
             return self.dummy_converter
@@ -439,7 +448,7 @@ def convert_single_option(key, value):
     :type key: str
     :rtype: {str: obj}
     """
-    section_name, option_name = key.strip().split('.')
+    section_name, option_name = key.strip().split('.', 1)
     if section_name != CORE_SECTION:
         section = Section(section_name,
                           guess_plugin(section_name),
