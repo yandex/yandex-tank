@@ -174,8 +174,10 @@ class Option(object):
             module_paths = {
                 'tank': 'yandextank.core'
             }
+
             def default_path(plugin):
                 'yandextank.plugins.{}'.format(plugin)
+
             self._schema = load_plugin_schema(module_paths.get(self.plugin, default_path(self.plugin)))
         return self._schema
 
