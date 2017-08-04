@@ -78,6 +78,7 @@ def test_parse_package(package_path, expected):
     ('test_config3.ini', 'test_config3.yaml'),
     ('test_config4.ini', 'test_config4.yaml'),
     ('test_config5.ini', 'test_config5.yaml'),
+    ('test_config5.1.ini', 'test_config5.1.yaml'),
     ('test_config6.ini', 'test_config6.yaml'),
     ('test_config7.ini', 'test_config7.yaml'),
     ('test_config8.ini', 'test_config8.yaml'),

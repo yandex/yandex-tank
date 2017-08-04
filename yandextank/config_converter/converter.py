@@ -272,9 +272,20 @@ class Section(object):
             parent_name = master_section.name
             rest = sections[1:]
         child = {'multi': [section.get_cfg_dict(with_meta=False) for section in rest]} if is_list \
-            else {child_name: rest[0].get_cfg_dict(with_meta=False)}
+            else {child_name: cls._select_one(master_section, rest).get_cfg_dict(with_meta=False)}
         master_section.merged_options.update(child)
         return master_section
+
+    def __repr__(self):
+        return '{}/{}'.format(self.name, self.plugin)
+
+    @classmethod
+    def _select_one(cls, master_section, rest):
+        MAP = {
+            'bfg': lambda section: section.name == '{}_gun'.format(master_section.get_cfg_dict()['gun_type'])
+        }
+        return filter(MAP.get(master_section.name, lambda x: True), rest)[0]
+        # return filter(lambda section: section.name == MAP.get(master_section.name, ), rest)[0]
 
 
 def without_defaults(cfg_ini, section):
