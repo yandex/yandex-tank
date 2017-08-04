@@ -79,6 +79,7 @@ def test_parse_package(package_path, expected):
     ('test_config3.ini', 'test_config3.yaml'),
     ('test_config4.ini', 'test_config4.yaml'),
     ('test_config5.ini', 'test_config5.yaml'),
+    ('test_config5.1.ini', 'test_config5.1.yaml'),
     ('test_config6.ini', 'test_config6.yaml'),
     ('test_config7.ini', 'test_config7.yaml'),
     ('test_config8.ini', 'test_config8.yaml'),
@@ -86,6 +87,7 @@ def test_parse_package(package_path, expected):
     ('test_config10.ini', 'test_config10.yaml'),
     ('test_config11.ini', 'test_config11.yaml'),
     ('test_config12.ini', 'test_config12.yaml'),
+    ('test_config13.ini', 'test_config13.yaml'),
 ])
 def test_convert_ini_phantom(ini_file, yaml_file):
     with open(os.path.join(os.path.dirname(__file__), yaml_file), 'r') as f:
@@ -119,7 +121,9 @@ def test_validate(ini_file):
     ('phantom.rps_schedule', 'line(1,10)',
      {'phantom': {
          'load_profile': {'load_type': 'rps', 'schedule': 'line(1,10)'},
-         'package': 'yandextank.plugins.Phantom'}})
+         'package': 'yandextank.plugins.Phantom'}}),
+    ('bfg.gun_config.module_name', 'bayan_load',
+     {'bfg': {'package': 'yandextank.plugins.Bfg', 'gun_config': {'module_name': 'bayan_load'}}})
 ])
 def test_convert_single_option(key, value, expected):
     assert convert_single_option(key, value) == expected
