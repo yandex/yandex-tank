@@ -320,11 +320,11 @@ def parse_sections(cfg_ini):
     """
     :type cfg_ini: ConfigParser.ConfigParser
     """
-    return [Section(section,
-                    guess_plugin(section),
+    return [Section(section.lower(),
+                    guess_plugin(section.lower()),
                     without_defaults(cfg_ini, section))
             for section in cfg_ini.sections()
-            if section != CORE_SECTION and section not in DEPRECATED_SECTIONS]
+            if section.lower() != CORE_SECTION and section.lower() not in DEPRECATED_SECTIONS]
 
 
 class PluginInstance(object):
