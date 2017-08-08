@@ -13,6 +13,8 @@ core:
       type: string
       nullable: true
       default: null
+    cmdline:
+      type: string
     exitcode:
       type: integer
     flush_config_to:

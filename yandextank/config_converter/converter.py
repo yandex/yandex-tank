@@ -102,6 +102,17 @@ def is_option_deprecated(plugin, option_name):
         return False
 
 
+def check_options(plugin, options):
+    CONFLICT_OPTS = {
+        'Phantom': [{'rps_schedule', 'instances_schedule', 'stpd_file'}]
+    }
+    for conflict_options in CONFLICT_OPTS.get(plugin, []):
+        intersect = {option[0] for option in options} & conflict_options
+        if len(intersect) > 1:
+            raise ValueError('Conflict options: {}: {}'.format(plugin, intersect))
+    return plugin, options
+
+
 def without_deprecated(plugin, options):
     """
     :type options: list of tuple
@@ -242,7 +253,7 @@ class Section(object):
         self.name = old_section_name_mapper(name)
         self.plugin = plugin
         self._schema = None
-        self.options = [Option(plugin, *option, schema=self.schema) for option in without_deprecated(plugin, options)]
+        self.options = [Option(plugin, *option, schema=self.schema) for option in without_deprecated(*check_options(plugin, options))]
         self.enabled = enabled
         self._merged_options = None
 
@@ -313,18 +324,20 @@ def without_defaults(cfg_ini, section):
 
 
 PLUGIN_PREFIX = 'plugin_'
-CORE_SECTION = 'tank'
+CORE_SECTION_PATTERN = 'tank|core'
+CORE_SECTION_OLD = 'tank'
+CORE_SECTION_NEW = 'core'
 
 
 def parse_sections(cfg_ini):
     """
     :type cfg_ini: ConfigParser.ConfigParser
     """
-    return [Section(section,
-                    guess_plugin(section),
+    return [Section(section.lower(),
+                    guess_plugin(section.lower()),
                     without_defaults(cfg_ini, section))
             for section in cfg_ini.sections()
-            if section != CORE_SECTION and section not in DEPRECATED_SECTIONS]
+            if not re.match(CORE_SECTION_PATTERN, section.lower()) and section.lower() not in DEPRECATED_SECTIONS]
 
 
 class PluginInstance(object):
@@ -427,7 +440,7 @@ def combine_sections(sections):
 
 
 def core_options(cfg_ini):
-    return cfg_ini.items(CORE_SECTION) if cfg_ini.has_section(CORE_SECTION) else []
+    return cfg_ini.items(CORE_SECTION_OLD) if cfg_ini.has_section(CORE_SECTION_OLD) else []
 
 
 def convert_ini(ini_file):
@@ -439,7 +452,7 @@ def convert_ini(ini_file):
 
     plugins_cfg_dict.update({
         'core': dict([Option('core', key, value, CORE_SCHEMA).as_tuple
-                      for key, value in without_defaults(cfg_ini, CORE_SECTION)
+                      for key, value in without_defaults(cfg_ini, CORE_SECTION_OLD)
                       if not key.startswith(PLUGIN_PREFIX)])
     })
     return plugins_cfg_dict
@@ -453,7 +466,7 @@ def convert_single_option(key, value):
     :rtype: {str: obj}
     """
     section_name, option_name = key.strip().split('.', 1)
-    if section_name != CORE_SECTION:
+    if not re.match(CORE_SECTION_PATTERN, section_name):
         section = Section(section_name,
                           guess_plugin(section_name),
                           [(option_name, value)])

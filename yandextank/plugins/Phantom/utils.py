@@ -182,7 +182,7 @@ class PhantomConfig:
             else:
                 result.loop_count = stream.stepper_wrapper.loop_count
 
-            result.ammo_file += stream.stepper_wrapper.ammo_file + ' '
+            result.ammo_file += '{} '.format(stream.stepper_wrapper.ammo_file)
             result.ammo_count += stream.stepper_wrapper.ammo_count
             result.duration = max(
                 result.duration, stream.stepper_wrapper.duration)
