@@ -94,6 +94,15 @@ def test_convert_ini_phantom(ini_file, yaml_file):
         assert yaml.dump(convert_ini(os.path.join(os.path.dirname(__file__), ini_file))) == yaml.dump(yaml.load(f))
 
 
+@pytest.mark.parametrize('ini_file, msgs', [
+    ('test_config2.1.ini', ['stpd_file', 'rps_schedule'])
+])
+def test_conflict_opts(ini_file, msgs):
+    with pytest.raises(ValueError) as e:
+        convert_ini(os.path.join(os.path.dirname(__file__), ini_file))
+    assert all([msg in e.value.message for msg in msgs])
+
+
 @pytest.mark.parametrize('ini_file', [
     'test_config1.ini',
     'test_config2.ini',
