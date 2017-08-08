@@ -458,7 +458,7 @@ class TankCore(object):
             raise LockError("Lock file(s) found")
 
         fh, self.lock_file = tempfile.mkstemp(
-            '.lock', 'lunapark_', self.get_lock_dir())
+            '.lock', 'lunapark_', lock_dir)
         os.close(fh)
         os.chmod(self.lock_file, 0o644)
         self.config.save(self.lock_file)

@@ -313,7 +313,7 @@ def without_defaults(cfg_ini, section):
 
 
 PLUGIN_PREFIX = 'plugin_'
-CORE_SECTION = 'tank'
+CORE_SECTION = 'tank|core'
 
 
 def parse_sections(cfg_ini):
@@ -453,7 +453,7 @@ def convert_single_option(key, value):
     :rtype: {str: obj}
     """
     section_name, option_name = key.strip().split('.', 1)
-    if section_name != CORE_SECTION:
+    if not re.match(CORE_SECTION, section_name):
         section = Section(section_name,
                           guess_plugin(section_name),
                           [(option_name, value)])

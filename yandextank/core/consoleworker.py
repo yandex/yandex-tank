@@ -175,7 +175,7 @@ def get_default_configs():
     return configs
 
 
-def get_depr_cfg(config_files, no_rc, cmd_options):
+def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
     try:
         all_config_files = []
 
@@ -194,6 +194,10 @@ def get_depr_cfg(config_files, no_rc, cmd_options):
                 all_config_files.append(config_file)
 
         cfg_ini = load_ini_cfgs([cfg_file for cfg_file in all_config_files if cfg_file.endswith('.ini')])
+        for section, key, value in depr_options:
+            if not cfg_ini.has_section(section):
+                cfg_ini.add_section(section)
+            cfg_ini.set(section, key, value)
         return apply_shorthand_options(cfg_ini, cmd_options)
     except Exception as ex:
         sys.stderr.write(RealConsoleMarkup.RED)
@@ -202,15 +206,14 @@ def get_depr_cfg(config_files, no_rc, cmd_options):
         raise ex
 
 
-def load_tank_core(config_files, cmd_options, no_rc, *other_opts):
+def load_tank_core(config_files, cmd_options, no_rc, depr_options, *other_opts):
     other_opts = list(other_opts) if other_opts else []
-    cmd_options = cmd_options if cmd_options else []
     return TankCore([load_core_base_cfg()] +
                     load_local_base_cfg() +
                     [load_cfg(cfg) for cfg in config_files] +
-                    list(other_opts) +
+                    other_opts +
                     parse_options(cmd_options),
-                    cfg_depr=get_depr_cfg(config_files, no_rc, cmd_options))
+                    cfg_depr=get_depr_cfg(config_files, no_rc, cmd_options, depr_options))
 
 
 class ConsoleTank:
@@ -226,7 +229,7 @@ class ConsoleTank:
         self.init_logging()
         self.log = logging.getLogger(__name__)
 
-        self.core = load_tank_core(options.config, options.option, options.no_rc, lock_cfg)
+        self.core = load_tank_core(options.config, options.option, options.no_rc, [], lock_cfg)
 
         self.ammofile = ammofile
 
