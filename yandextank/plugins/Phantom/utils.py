@@ -212,7 +212,7 @@ class StreamConfig:
         self.is_main = is_main
 
         # per benchmark
-        self.instances = None
+        self.instances = self.get_option('instances')
         self.ipv6 = None
         self.ssl = None
         self.address = None
@@ -258,7 +258,7 @@ class StreamConfig:
         self.tank_type = self.get_option("tank_type")
         # TODO: refactor. Maybe we should decide how to interact with
         # StepperWrapper here.
-        self.instances = self.get_option('instances')
+        # self.instances = self.get_option('instances')
         self.gatling = ' '.join(self.get_option('gatling_ip').split("\n"))
         self.method_prefix = self.get_option("method_prefix")
         self.method_options = self.get_option("method_options")

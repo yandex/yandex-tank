@@ -158,6 +158,9 @@ class Option(object):
         'Pandora': {
             'expvar': lambda key, value: {key: value == '1'},
             'config_content': lambda key, value: {key: yaml.load(value)}  # works for json as well
+        },
+        'Autostop': {
+            'autostop': lambda k, v: {k: re.findall('\w+\(.+?\)', v)}
         }
     }
     CONVERTERS_FOR_UNKNOWN = {

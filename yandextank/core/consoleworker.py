@@ -124,6 +124,8 @@ def apply_shorthand_options(config, options, default_section='DEFAULT'):
 
     :type config: ConfigParser.ConfigParser
     """
+    if not options:
+        return config
     for option_str in options:
         key, value = option_str.split('=')
         try:
