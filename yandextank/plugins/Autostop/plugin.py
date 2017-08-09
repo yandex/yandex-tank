@@ -74,7 +74,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             if not criterion_str:
                 continue
             self.log.debug("Criterion string: %s", criterion_str)
-            self._criterions[criterion_str + ')'] = self.__create_criterion(
+            self._criterions[criterion_str] = self.__create_criterion(
                 criterion_str)
 
         self.log.debug("Criterion objects: %s", self._criterions)
