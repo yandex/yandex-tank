@@ -93,6 +93,9 @@ def is_option_deprecated(plugin, option_name):
         'Aggregator': [
             'time_periods',
             'precise_cumulative'
+        ],
+        'DataUploader': [
+            'copy_config_to'
         ]
     }
     if option_name in DEPRECATED.get(plugin, []):

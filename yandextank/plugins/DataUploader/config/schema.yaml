@@ -18,21 +18,9 @@ component:
 connection_timeout:
   default: 30
   type: integer
-copy_config_to:
-  type: string
-  nullable: true
-  default: null
 ignore_target_lock:
   default: false
   type: boolean
-jenkinsbuild:
-  type: string
-  default: null
-  nullable: true
-jenkinsjob:
-  type: string
-  default: null
-  nullable: true
 job_dsc:
   type: string
   default: ""
