@@ -321,6 +321,9 @@ class ConsoleTank:
                 self.log.exception(
                     "Couldn't get lock. Will retry in 5 seconds...")
                 time.sleep(5)
+            except:
+                self.core.release_lock()
+                raise
 
         if self.ammofile:
             self.log.debug("Ammofile: %s", self.ammofile)
