@@ -113,7 +113,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             "ver", "component",
             "regress",
             "operator",
-            "copy_config_to",
             "jobno_file",
             "ignore_target_lock",
             "target_lock_duration",
@@ -272,7 +271,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.publish("jobno", self.lp_job.number)
         self.publish("web_link", web_link)
 
-        self.set_option("jobno", str(self.lp_job.number))
+        self.set_option("jobno", self.lp_job.number)
 
         jobno_file = self.get_option("jobno_file", '')
         if jobno_file:
@@ -435,10 +434,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     # TODO: why we do it here? should be in core
     def __save_conf(self):
-        config_copy = self.get_option('copy_config_to')
-        if config_copy:
-            self.core.config.save(config_copy)
-
         # config = copy.deepcopy(self.core.config)
         try:
             config_filename = self.core.job.monitoring_plugin.config

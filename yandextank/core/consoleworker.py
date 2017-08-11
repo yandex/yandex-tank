@@ -6,6 +6,7 @@ import glob
 import logging
 import os
 import sys
+import tempfile
 import time
 import traceback
 import signal
@@ -177,6 +178,14 @@ def get_default_configs():
     return configs
 
 
+def is_ini(cfg_file):
+    try:
+        ConfigParser.ConfigParser().read(cfg_file)
+        return True
+    except ConfigParser.MissingSectionHeaderError:
+        return False
+
+
 def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
     try:
         all_config_files = []
@@ -195,7 +204,7 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
             for config_file in config_files:
                 all_config_files.append(config_file)
 
-        cfg_ini = load_ini_cfgs([cfg_file for cfg_file in all_config_files if cfg_file.endswith('.ini')])
+        cfg_ini = load_ini_cfgs([cfg_file for cfg_file in all_config_files if is_ini(cfg_file)])
         for section, key, value in depr_options:
             if not cfg_ini.has_section(section):
                 cfg_ini.add_section(section)
@@ -232,6 +241,11 @@ class ConsoleTank:
         self.log = logging.getLogger(__name__)
 
         self.core = load_tank_core(options.config, options.option, options.no_rc, [], lock_cfg)
+
+        raw_cfg_file, raw_cfg_path = tempfile.mkstemp(suffix='_pre-validation-config.yaml')
+        os.close(raw_cfg_file)
+        self.core.config.save_raw(raw_cfg_path)
+        self.core.add_artifact_file(raw_cfg_path)
 
         self.ammofile = ammofile
 
