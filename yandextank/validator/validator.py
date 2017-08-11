@@ -57,7 +57,7 @@ class TankConfig(object):
     def __init__(self, configs, with_dynamic_options=True, core_section='core'):
         if not isinstance(configs, list):
             configs = [configs]
-        self.__raw_config_dict = self.__load_multiple(configs)
+        self.raw_config_dict = self.__load_multiple(configs)
         self.with_dynamic_options = with_dynamic_options
         self.META_LOCATION = core_section
         self._validated = None
@@ -93,6 +93,10 @@ class TankConfig(object):
         with open(filename, 'w') as f:
             yaml.dump(self.validated, f)
 
+    def save_raw(self, filename):
+        with open(filename, 'w') as f:
+            yaml.dump(self.raw_config_dict, f)
+
     def __load_multiple(self, configs):
         l = len(configs)
         if l == 0:
@@ -110,7 +114,7 @@ class TankConfig(object):
         :rtype: list of tuple
         """
         return [(plugin_name, plugin['package'], plugin)
-                for plugin_name, plugin in self.__raw_config_dict.items()
+                for plugin_name, plugin in self.raw_config_dict.items()
                 if (plugin_name not in self.BASE_SCHEMA.keys()) and plugin['enabled']]
 
     def __validate(self):
@@ -134,10 +138,10 @@ class TankConfig(object):
 
     def __validate_core(self):
         v = Validator(self.BASE_SCHEMA, allow_unknown=self.PLUGINS_SCHEMA)
-        result = v.validate(self.__raw_config_dict, self.BASE_SCHEMA)
+        result = v.validate(self.raw_config_dict, self.BASE_SCHEMA)
         if not result:
             raise ValidationError(v.errors)
-        normalized = v.normalized(self.__raw_config_dict)
+        normalized = v.normalized(self.raw_config_dict)
         return self.__set_core_dynamic_options(normalized) if self.with_dynamic_options else normalized
 
     def __validate_plugin(self, config, schema):

@@ -276,7 +276,7 @@ def test_validate_core_error(config, expected):
     )
 ])
 def test_load_multiple(configs, expected):
-    assert TankConfig(configs)._TankConfig__raw_config_dict == expected
+    assert TankConfig(configs).raw_config_dict == expected
 
 
 @pytest.mark.parametrize('config, expected', [

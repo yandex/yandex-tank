@@ -99,7 +99,9 @@ class TankCore(object):
         :param configs: list of dict
         """
         self.raw_configs = configs
-        self._config = None
+        self.config = TankConfig(self.raw_configs,
+                                 with_dynamic_options=True,
+                                 core_section=self.SECTION)
         self.status = {}
         self._plugins = {}
         self._artifacts_dir = None
@@ -113,16 +115,23 @@ class TankCore(object):
         self.taskset_path = None
         self.taskset_affinity = None
         self._job = None
-        if cfg_depr:
-            output = StringIO()
-            cfg_depr.write(output)
-            self.cfg_snapshot = output.getvalue()
-        else:
-            self.cfg_snapshot = str(self.config)
+        self.cfg_depr = cfg_depr
+        self._cfg_snapshot = None
         self.interrupted = False
     #
     # def get_uuid(self):
     #     return self.uuid
+
+    @property
+    def cfg_snapshot(self):
+        if not self._cfg_snapshot:
+            if self.cfg_depr:
+                output = StringIO()
+                self.cfg_depr.write(output)
+                self._cfg_snapshot = output.getvalue()
+            else:
+                self._cfg_snapshot = str(self.config)
+        return self._cfg_snapshot
 
     @staticmethod
     def get_available_options():
@@ -131,14 +140,6 @@ class TankCore(object):
             "artifacts_base_dir", "artifacts_dir",
             "taskset_path", "affinity"
         ]
-
-    @property
-    def config(self):
-        if not self._config:
-            self._config = TankConfig(self.raw_configs,
-                                      with_dynamic_options=True,
-                                      core_section=self.SECTION)
-        return self._config
 
     @property
     def plugins(self):
