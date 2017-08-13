@@ -1,4 +1,4 @@
-import ConfigParser
+from configparser import ConfigParser
 import re
 import logging
 import pkg_resources
@@ -322,7 +322,7 @@ def without_defaults(cfg_ini, section):
     """
 
     :rtype: (str, str)
-    :type cfg_ini: ConfigParser.ConfigParser
+    :type cfg_ini: ConfigParser
     """
     defaults = cfg_ini.defaults()
     options = cfg_ini.items(section) if cfg_ini.has_section(section) else []
@@ -337,7 +337,7 @@ CORE_SECTION_NEW = 'core'
 
 def parse_sections(cfg_ini):
     """
-    :type cfg_ini: ConfigParser.ConfigParser
+    :type cfg_ini: ConfigParser
     """
     return [Section(section.lower(),
                     guess_plugin(section.lower()),
@@ -450,7 +450,7 @@ def core_options(cfg_ini):
 
 
 def convert_ini(ini_file):
-    cfg_ini = ConfigParser.ConfigParser()
+    cfg_ini = ConfigParser()
     cfg_ini.read(ini_file)
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 

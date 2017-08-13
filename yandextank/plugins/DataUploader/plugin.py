@@ -8,7 +8,7 @@ import pwd
 import re
 import sys
 import time
-from urlparse import urljoin
+from future.moves.urllib.parse import urljoin
 
 from queue import Empty, Queue
 from builtins import str

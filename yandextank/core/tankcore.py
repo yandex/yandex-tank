@@ -10,7 +10,10 @@ import socket
 import tempfile
 import time
 import traceback
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import pkg_resources
 import sys
@@ -117,6 +120,7 @@ class TankCore(object):
         self._job = None
         self.cfg_depr = cfg_depr
         self._cfg_snapshot = None
+
         self.interrupted = False
     #
     # def get_uuid(self):
@@ -140,6 +144,7 @@ class TankCore(object):
             "artifacts_base_dir", "artifacts_dir",
             "taskset_path", "affinity"
         ]
+
 
     @property
     def plugins(self):
