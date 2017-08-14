@@ -1,5 +1,7 @@
 
 import pytest
+import yaml
+
 from yandextank.validator.validator import TankConfig, ValidationError
 
 CFG_VER_I_0 = {
@@ -424,7 +426,7 @@ def test_validate_all(config, expected):
 def test_validate_all_error(config, expected):
     with pytest.raises(ValidationError) as e:
         TankConfig(config).validated(config)
-    assert e.value.message == expected
+    assert yaml.load(e.value.message.split('\n')[-1]) == expected
 
 
 @pytest.mark.parametrize('config, expected', [

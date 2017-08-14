@@ -12,7 +12,20 @@ logger = logging.getLogger(__name__)
 
 
 class ValidationError(Exception):
-    pass
+    MSG_TEMPLATE = """
+ ___________________________________________________________________________
+|                                                                           |
+| Operation failed: System error. Please contact your system administrator. |
+|___________________________________________________________________________|
+.\n.\n.\n.\n.\n.
+OK, no worries, it\'s just a validation error, see:\n{}"""
+
+    def __init__(self, errors):
+        self.errors = errors
+        self.message = self.MSG_TEMPLATE.format(self.errors)
+
+    def __str__(self):
+        return self.message
 
 
 def load_yaml_schema(path):
@@ -59,7 +72,7 @@ class TankConfig(object):
             configs = [configs]
         self.raw_config_dict = self.__load_multiple(configs)
         self.with_dynamic_options = with_dynamic_options
-        self.META_LOCATION = core_section
+        self.CORE_SECTION = core_section
         self._validated = None
         self._plugins = None
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
@@ -115,7 +128,7 @@ class TankConfig(object):
         """
         return [(plugin_name, plugin['package'], plugin)
                 for plugin_name, plugin in self.raw_config_dict.items()
-                if (plugin_name not in self.BASE_SCHEMA.keys()) and plugin['enabled']]
+                if (plugin_name not in self.BASE_SCHEMA.keys()) and isinstance(plugin, dict) and plugin.get('enabled')]
 
     def __validate(self):
         core_validated = self.__validate_core()
@@ -128,9 +141,9 @@ class TankConfig(object):
                     self.__validate_plugin(config,
                                            load_plugin_schema(package))
             except ValidationError as e:
-                errors[plugin_name] = e.message
+                errors[plugin_name] = e.errors
         if len(errors) > 0:
-            raise ValidationError(dict(errors))
+            raise ValidationError((dict(errors)))
 
         for plugin_name, plugin_conf in results.items():
             core_validated[plugin_name] = plugin_conf
@@ -140,7 +153,11 @@ class TankConfig(object):
         v = Validator(self.BASE_SCHEMA, allow_unknown=self.PLUGINS_SCHEMA)
         result = v.validate(self.raw_config_dict, self.BASE_SCHEMA)
         if not result:
-            raise ValidationError(v.errors)
+            errors = v.errors
+            for key, value in v.errors.items():
+                if 'must be of dict type' in value:
+                    errors[key] = ['unknown field']
+            raise ValidationError(errors)
         normalized = v.normalized(self.raw_config_dict)
         return self.__set_core_dynamic_options(normalized) if self.with_dynamic_options else normalized
 
@@ -155,7 +172,7 @@ class TankConfig(object):
 
     def __set_core_dynamic_options(self, config):
         for option, setter in self.DYNAMIC_OPTIONS.items():
-            config[self.META_LOCATION][option] = setter()
+            config[self.CORE_SECTION][option] = setter()
         return config
 
     def __get_cfg_updater(self, plugin_name):
