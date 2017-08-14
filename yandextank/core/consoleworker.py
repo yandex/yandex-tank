@@ -224,8 +224,8 @@ def load_tank_core(config_files, cmd_options, no_rc, depr_options, *other_opts):
         configs = [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
     else:
         configs = [load_core_base_cfg()] +\
-                  load_local_base_cfg() +\
-                  [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
+            load_local_base_cfg() +\
+            [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
     return TankCore(configs,
                     cfg_depr=get_depr_cfg(config_files, no_rc, cmd_options, depr_options))
 
