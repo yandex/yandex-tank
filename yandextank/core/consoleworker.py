@@ -150,7 +150,8 @@ def load_ini_cfgs(config_files):
         for option, value in cfg.items('tank'):
             if '.' in option:
                 dotted_options += [option + '=' + value]
-
+    else:
+        cfg.add_section('tank')
     cfg = apply_shorthand_options(cfg, dotted_options)
     cfg.set('tank', 'pid', str(os.getpid()))
     return cfg
@@ -219,11 +220,13 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
 
 def load_tank_core(config_files, cmd_options, no_rc, depr_options, *other_opts):
     other_opts = list(other_opts) if other_opts else []
-    return TankCore([load_core_base_cfg()] +
-                    load_local_base_cfg() +
-                    [load_cfg(cfg) for cfg in config_files] +
-                    other_opts +
-                    parse_options(cmd_options),
+    if no_rc:
+        configs = [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
+    else:
+        configs = [load_core_base_cfg()] +\
+                  load_local_base_cfg() +\
+                  [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
+    return TankCore(configs,
                     cfg_depr=get_depr_cfg(config_files, no_rc, cmd_options, depr_options))
 
 
