@@ -530,9 +530,14 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def lp_job(self):
         if self._lp_job is None:
             self._lp_job = self.__get_lp_job()
+            self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
         return self._lp_job
 
     def __get_lp_job(self):
+        """
+
+        :rtype: LPJob
+        """
         api_client = self.__get_api_client()
 
         info = self.generator_info
