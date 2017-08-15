@@ -466,6 +466,10 @@ class TankCore(object):
         os.chmod(self.lock_file, 0o644)
         self.config.save(self.lock_file)
 
+    def write_cfg_to_lock(self):
+        if self.lock_file:
+            self.config.save(self.lock_file)
+
     def release_lock(self):
         if self.lock_file and os.path.exists(self.lock_file):
             logger.debug("Releasing lock: %s", self.lock_file)

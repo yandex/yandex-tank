@@ -12,13 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class ValidationError(Exception):
-    MSG_TEMPLATE = """
- ___________________________________________________________________________
-|                                                                           |
-| Operation failed: System error. Please contact your system administrator. |
-|___________________________________________________________________________|
-.\n.\n.\n.\n.\n.
-OK, no worries, it\'s just a validation error, see:\n{}"""
+    MSG_TEMPLATE = """Validation error:\n{}"""
 
     def __init__(self, errors):
         self.errors = errors

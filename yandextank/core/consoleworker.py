@@ -236,21 +236,26 @@ class ConsoleTank:
     IGNORE_LOCKS = "ignore_locks"
 
     def __init__(self, options, ammofile):
-        lock_cfg = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
+        overwrite_options = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
         self.options = options
         self.lock_dir = options.lock_dir if options.lock_dir else '/var/lock'
         self.baseconfigs_location = '/etc/yandex-tank'
         self.init_logging()
         self.log = logging.getLogger(__name__)
 
-        self.core = load_tank_core(options.config, options.option, options.no_rc, [], lock_cfg)
+        if ammofile:
+            self.log.debug("Ammofile: %s", ammofile)
+            overwrite_options['phantom'] = {
+                'use_caching': False,
+                'ammofile': ammofile
+            }
+
+        self.core = load_tank_core(options.config, options.option, options.no_rc, [], overwrite_options)
 
         raw_cfg_file, raw_cfg_path = tempfile.mkstemp(suffix='_pre-validation-config.yaml')
         os.close(raw_cfg_file)
         self.core.config.save_raw(raw_cfg_path)
         self.core.add_artifact_file(raw_cfg_path)
-
-        self.ammofile = ammofile
 
         self.core.add_artifact_file(options.log)
 
@@ -327,10 +332,6 @@ class ConsoleTank:
             except:
                 self.core.release_lock()
                 raise
-
-        if self.ammofile:
-            self.log.debug("Ammofile: %s", self.ammofile)
-            self.core.set_option("phantom", 'ammofile', self.ammofile[0])
 
         try:
             self.core.load_plugins()

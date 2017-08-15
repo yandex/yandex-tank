@@ -12,10 +12,10 @@ from yandextank.validator.validator import TankConfig
 
 @pytest.mark.parametrize('ini_file, expected', [
     ('test_config1.ini',
-     {'phantom': 'Phantom', 'aggregator': 'Aggregator', 'telegraf': 'Telegraf', 'uploader': 'DataUploader'}),
+     {'phantom': 'Phantom', 'aggregator': 'Aggregator', 'telegraf': 'Telegraf', 'meta': 'DataUploader'}),
     ('test_config2.ini',
      {'phantom': 'Phantom', 'telegraf': 'Telegraf', 'aggregator': 'Aggregator', 'phantom-1': 'Phantom',
-      'uploader': 'DataUploader', 'autostop': 'Autostop'}),
+      'meta': 'DataUploader', 'autostop': 'Autostop'}),
 ])
 def test_parse_sections(ini_file, expected):
     cfg_ini = ConfigParser.ConfigParser()
@@ -27,7 +27,7 @@ def test_parse_sections(ini_file, expected):
     (
         'test_config2.ini',
         {
-            'uploader': {
+            'meta': {
                 'ignore_target_lock': True,
                 'task': 'MAPSJAMS-1946',
                 'api_address': 'https://lunapark.yandex-team.ru/'},
