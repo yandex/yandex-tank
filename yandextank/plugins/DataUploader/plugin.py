@@ -217,7 +217,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 self.check_task_is_open()
                 lp_job.create()
                 self.make_symlink(lp_job.number)
-            self.core.publish(self.SECTION, 'jobno', lp_job.number)
+            self.publish('job_no', lp_job.number)
         except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError) as e:
             logger.error(e.message)
             logger.error(
@@ -270,8 +270,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
         self.publish("jobno", self.lp_job.number)
         self.publish("web_link", web_link)
-
-        self.set_option("jobno", self.lp_job.number)
 
         jobno_file = self.get_option("jobno_file", '')
         if jobno_file:
@@ -531,6 +529,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         if self._lp_job is None:
             self._lp_job = self.__get_lp_job()
             self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
+            self.set_option("jobno", self.lp_job.number)
+            self.core.write_cfg_to_lock()
         return self._lp_job
 
     def __get_lp_job(self):
@@ -548,7 +548,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return LPJob(client=api_client,
                      target_host=self.target,
                      target_port=port,
-                     number=self.get_option('jobno'),
+                     number=self.cfg.get('jobno', None),
                      token=self.get_option('upload_token'),
                      person=self.__get_operator(),
                      task=self.task,
