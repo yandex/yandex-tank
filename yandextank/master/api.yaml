@@ -20,9 +20,25 @@ paths:
         - name: config
           in: formData
           type: file
+          required: true
+        - name: fmt
+          in: query
+          required: true
+          type: string
+          enum:
+            - ini
+            - yaml
       consumes: ["text/*", "multipart-form/file"]
       responses:
         '200':
           description: validation info
           schema:
             type: object
+            properties:
+              config:
+                type: object
+                description: resulting config (accounting local tank configuration)
+              errors:
+                type: array
+                items:
+                  type: object

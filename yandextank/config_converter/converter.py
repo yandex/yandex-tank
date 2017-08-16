@@ -4,6 +4,7 @@ import logging
 import pkg_resources
 import yaml
 
+from functools import reduce
 from yandextank.common.util import recursive_dict_update
 from yandextank.validator.validator import load_plugin_schema, load_yaml_schema
 
@@ -451,7 +452,10 @@ def core_options(cfg_ini):
 
 def convert_ini(ini_file):
     cfg_ini = ConfigParser()
-    cfg_ini.read(ini_file)
+    if isinstance(ini_file, str):
+        cfg_ini.read(ini_file)
+    else:
+        cfg_ini.read_file(ini_file)
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
     plugins_cfg_dict = {section.name: section.get_cfg_dict() for section in ready_sections}

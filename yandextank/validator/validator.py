@@ -71,7 +71,7 @@ class TankConfig(object):
         self._errors = None
         if not isinstance(configs, list):
             configs = [configs]
-        self.raw_config_dict = self.__load_multiple(configs)
+        self.raw_config_dict = self.__load_multiple([config for config in configs if config is not None])
         self.with_dynamic_options = with_dynamic_options
         self.CORE_SECTION = core_section
         self._validated = None
