@@ -36,6 +36,21 @@ green_threads_per_instance:
   default: 1000
 gun_config:
   type: dict
+  schema:
+    base_address:
+      type: string
+    class_name:
+      type: string
+      default: LoadTest
+    module_path:
+      type: string
+      default: ''
+    module_name:
+      type: string
+    init_param:
+      type: string
+      default: ''
+  allow_unknown: true
 gun_type:
   type: string
   allowed: ['custom', 'http', 'scenario', 'ultimate']
