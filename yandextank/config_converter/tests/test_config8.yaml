@@ -7,7 +7,7 @@ phantom:
   ssl: true
   address: lunapark.test.yandex-team.ru:443
   package: yandextank.plugins.Phantom
-uploader:
+lunapark:
   enabled: false
 overload:
   package: yandextank.plugins.DataUploader

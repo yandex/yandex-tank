@@ -106,7 +106,7 @@ class TankCore(object):
                                  with_dynamic_options=True,
                                  core_section=self.SECTION)
         self.status = {}
-        self._plugins = {}
+        self._plugins = None
         self._artifacts_dir = None
         self.artifact_files = {}
         self._artifacts_base_dir = None
@@ -152,8 +152,10 @@ class TankCore(object):
         :returns: {plugin_name: plugin_class, ...}
         :rtype: dict
         """
-        if not self._plugins:
+        if self._plugins is None:
             self.load_plugins()
+            if self._plugins is None:
+                self._plugins = {}
         return self._plugins
 
     def save_config(self, filename):
@@ -223,7 +225,7 @@ class TankCore(object):
 
             self.register_plugin(self.PLUGIN_PREFIX + plugin_name, instance)
 
-        logger.debug("Plugin instances: %s", self.plugins)
+        logger.debug("Plugin instances: %s", self._plugins)
 
     @property
     def job(self):
@@ -469,6 +471,10 @@ class TankCore(object):
         os.chmod(self.lock_file, 0o644)
         self.config.save(self.lock_file)
 
+    def write_cfg_to_lock(self):
+        if self.lock_file:
+            self.config.save(self.lock_file)
+
     def release_lock(self):
         if self.lock_file and os.path.exists(self.lock_file):
             logger.debug("Releasing lock: %s", self.lock_file)
@@ -560,6 +566,8 @@ class TankCore(object):
         return ' '.join((tank_agent, python_agent, os_agent))
 
     def register_plugin(self, plugin_name, instance):
+        if self._plugins is None:
+            self._plugins = {}
         if self._plugins.get(plugin_name, None) is not None:
             logger.exception('Plugins\' names should diverse')
         self._plugins[plugin_name] = instance

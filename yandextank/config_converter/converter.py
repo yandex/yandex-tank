@@ -127,6 +127,12 @@ def without_deprecated(plugin, options):
 def old_section_name_mapper(name):
     MAP = {
         'monitoring': 'telegraf',
+    }
+    return MAP.get(name, name)
+
+
+def rename(name):
+    MAP = {
         'meta': 'uploader'
     }
     return MAP.get(name, name)
@@ -256,8 +262,8 @@ class Option(object):
 
 class Section(object):
     def __init__(self, name, plugin, options, enabled=None):
-        self.init_name = name
         self.name = old_section_name_mapper(name)
+        self.new_name = rename(self.name)
         self.plugin = plugin
         self._schema = None
         self.options = [Option(plugin, *option, schema=self.schema) for option in without_deprecated(*check_options(plugin, options))]
@@ -359,6 +365,9 @@ class PluginInstance(object):
             self.section_name = self._guess_section_name()
         self.plugin_name = self.package.plugin_name
 
+    def __repr__(self):
+        return self.name
+
     def _guess_section_name(self):
         package_map = {
             'Aggregator': 'aggregator',
@@ -382,10 +391,7 @@ class PluginInstance(object):
         }
         name_map = {
             'aggregate': 'aggregator',
-            'datauploader': 'uploader',
-            'lunapark': 'uploader',
             'overload': 'overload',
-            'uploader': 'uploader',
             'jsonreport': 'json_report'
         }
         return name_map.get(self.name, package_map.get(self.package.plugin_name, self.name))
@@ -458,7 +464,7 @@ def convert_ini(ini_file):
         cfg_ini.read_file(ini_file)
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
-    plugins_cfg_dict = {section.name: section.get_cfg_dict() for section in ready_sections}
+    plugins_cfg_dict = {section.new_name: section.get_cfg_dict() for section in ready_sections}
 
     plugins_cfg_dict.update({
         'core': dict([Option('core', key, value, CORE_SCHEMA).as_tuple
@@ -480,9 +486,9 @@ def convert_single_option(key, value):
         section = Section(section_name,
                           guess_plugin(section_name),
                           [(option_name, value)])
-        return {section.name: section.get_cfg_dict()}
+        return {section.new_name: section.get_cfg_dict()}
     else:
         if option_name.startswith(PLUGIN_PREFIX):
-            return {section.name: section.get_cfg_dict() for section in enable_sections([], [(option_name, value)])}
+            return {section.new_name: section.get_cfg_dict() for section in enable_sections([], [(option_name, value)])}
         else:
             return {'core': Option('core', option_name, value, CORE_SCHEMA).converted}

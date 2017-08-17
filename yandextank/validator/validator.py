@@ -12,13 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class ValidationError(Exception):
-    MSG_TEMPLATE = """
- ___________________________________________________________________________
-|                                                                           |
-| Operation failed: System error. Please contact your system administrator. |
-|___________________________________________________________________________|
-.\n.\n.\n.\n.\n.
-OK, no worries, it\'s just a validation error, see:\n{}"""
+    MSG_TEMPLATE = """Validation error:\n{}"""
 
     def __init__(self, errors):
         self.errors = errors
@@ -103,9 +97,13 @@ class TankConfig(object):
             self._validated = self.__validate()
         return self._validated
 
-    def save(self, filename):
+    def save(self, filename, error_message=''):
         with open(filename, 'w') as f:
-            yaml.dump(self.validated, f)
+            yaml.dump(
+                self.__load_multiple(
+                    [self.validated,
+                     {self.CORE_SECTION: {'message': error_message}}]
+                ), f)
 
     def save_raw(self, filename):
         with open(filename, 'w') as f:
