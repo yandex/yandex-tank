@@ -101,7 +101,7 @@ class TankConfig(object):
             yaml.dump(
                 self.__load_multiple(
                     [self.validated,
-                    {self.CORE_SECTION: {'message': error_message}}]
+                     {self.CORE_SECTION: {'message': error_message}}]
                 ), f)
 
     def save_raw(self, filename):
