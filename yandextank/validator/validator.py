@@ -96,9 +96,13 @@ class TankConfig(object):
             self._validated = self.__validate()
         return self._validated
 
-    def save(self, filename):
+    def save(self, filename, error_message=''):
         with open(filename, 'w') as f:
-            yaml.dump(self.validated, f)
+            yaml.dump(
+                self.__load_multiple(
+                    [self.validated,
+                    {self.CORE_SECTION: {'message': error_message}}]
+                ), f)
 
     def save_raw(self, filename):
         with open(filename, 'w') as f:
