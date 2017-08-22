@@ -34,4 +34,3 @@ swagger-spec-validator==2.1.0
 typing==3.6.2
 urllib3==1.22
 Werkzeug==0.12.2
-git+https://github.com/fomars/yandex-tank.git@master-tank#egg=yandextank
