@@ -1,5 +1,5 @@
 """ Provides classes to run TankCore from console environment """
-from configparser import ConfigParser, MissingSectionHeaderError
+from ConfigParser import ConfigParser, MissingSectionHeaderError
 import datetime
 import fnmatch
 import glob
