@@ -1,4 +1,4 @@
-from configparser import ConfigParser
+from ConfigParser import ConfigParser
 import re
 import logging
 import pkg_resources
@@ -40,16 +40,20 @@ SECTIONS_PATTERNS = {
     'Telegraf': 'telegraf|monitoring',
     'JMeter': 'jmeter',
     'ResourceCheck': 'rcheck',
-    'ShellExec': 'shellexec',
+    'ShellExec': 'shell_?exec',
     'Console': 'console',
     'TipsAndTricks': 'tips',
     'RCAssert': 'rcassert',
     'JsonReport': 'json_report|jsonreport',
-    'Pandora': 'pandora'
+    'Pandora': 'pandora',
 }
 
 
-class UnrecognizedSection(Exception):
+class ConversionError(Exception):
+    pass
+
+
+class UnrecognizedSection(ConversionError):
     pass
 
 
@@ -147,7 +151,7 @@ class Package(object):
         self.plugin_name = old_plugin_mapper(self.package.split('.')[-1])
 
 
-class UnknownOption(Exception):
+class UnknownOption(ConversionError):
     pass
 
 
@@ -461,7 +465,7 @@ def convert_ini(ini_file):
     if isinstance(ini_file, str):
         cfg_ini.read(ini_file)
     else:
-        cfg_ini.read_file(ini_file)
+        cfg_ini.readfp(ini_file)
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
     plugins_cfg_dict = {section.new_name: section.get_cfg_dict() for section in ready_sections}

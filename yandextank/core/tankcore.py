@@ -145,7 +145,6 @@ class TankCore(object):
             "taskset_path", "affinity"
         ]
 
-
     @property
     def plugins(self):
         """

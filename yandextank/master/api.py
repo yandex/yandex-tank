@@ -1,21 +1,25 @@
-import io
 import yaml
+from StringIO import StringIO
 
-from yandextank.core.consoleworker import load_core_base_cfg, load_local_base_cfgs, load_cfg, convert_ini
+from yandextank.config_converter.converter import ConversionError
+from yandextank.core.consoleworker import load_core_base_cfg, load_local_base_cfgs, convert_ini
 from yandextank.validator.validator import TankConfig
 
 
 def validate_config(config, fmt):
+    def response(cfg, errors):
+        return {'config': cfg, 'errors': errors}
+
     if fmt == 'ini':
-        stream = io.StringIO(str(config.read(), 'utf-8'))
-        cfg = convert_ini(stream)
+        stream = StringIO(str(config.read()))
+        try:
+            cfg = convert_ini(stream)
+        except ConversionError as e:
+            return response({}, [e.message])
     else:
         cfg = yaml.load(config)
     config.close()
     tank_config = TankConfig([load_core_base_cfg()] +
-                      load_local_base_cfgs() +
-                      [cfg])
-    return {
-        'config': tank_config.raw_config_dict,
-        'errors': tank_config.errors()
-    }
+                             load_local_base_cfgs() +
+                             [cfg])
+    return response(tank_config.raw_config_dict, tank_config.errors())

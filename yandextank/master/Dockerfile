@@ -1,4 +1,4 @@
-FROM python:3.5
+FROM python:2.7
 RUN mkdir -p /master-tank
 WORKDIR /master-tank
 ENV HOME /master-tank

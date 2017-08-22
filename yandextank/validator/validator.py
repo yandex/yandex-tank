@@ -185,7 +185,7 @@ class TankConfig(object):
     def errors(self):
         if not self._errors:
             try:
-                v = self.validated
+                self.validated
             except ValidationError as e:
                 self._errors = e.errors
             else:
