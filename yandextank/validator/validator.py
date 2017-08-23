@@ -16,7 +16,7 @@ class ValidationError(Exception):
 
     def __init__(self, errors):
         self.errors = errors
-        self.message = self.MSG_TEMPLATE.format(self.errors)
+        self.message = self.MSG_TEMPLATE.format(yaml.dump(self.errors))
 
     def __str__(self):
         return self.message

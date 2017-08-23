@@ -1,5 +1,6 @@
 core:
   type: dict
+  allow_unknown: false
   schema:
     affinity:
       type: string
