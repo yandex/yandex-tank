@@ -12,7 +12,8 @@ def main():
         '-c',
         '--config',
         action='append',
-        help="Path to INI file containing run options, multiple options accepted"
+        help="Path to INI file containing run options, multiple options accepted",
+        default=['load.yaml']
     )
     parser.add_option(
         '-f',
