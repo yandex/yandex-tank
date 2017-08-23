@@ -61,7 +61,7 @@ class TankConfig(object):
         'cmdline': lambda: ' '.join(sys.argv)
     }
 
-    def __init__(self, configs, with_dynamic_options=True, core_section='core'):
+    def __init__(self, configs, with_dynamic_options=True, core_section='core', error_output='validation_error.yaml'):
         if not isinstance(configs, list):
             configs = [configs]
         self.raw_config_dict = self.__load_multiple(configs)
@@ -69,6 +69,7 @@ class TankConfig(object):
         self.CORE_SECTION = core_section
         self._validated = None
         self._plugins = None
+        self.ERROR_OUTPUT = error_output
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
         self.PLUGINS_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml'))
 
@@ -93,7 +94,12 @@ class TankConfig(object):
     @property
     def validated(self):
         if not self._validated:
-            self._validated = self.__validate()
+            try:
+                self._validated = self.__validate()
+            except ValidationError as e:
+                with open(self.ERROR_OUTPUT, 'w') as f:
+                    yaml.dump(e.errors, f)
+                raise
         return self._validated
 
     def save(self, filename, error_message=''):
