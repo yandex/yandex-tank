@@ -48,7 +48,15 @@ SECTIONS_PATTERNS = {
 }
 
 
-class UnrecognizedSection(Exception):
+class ConversionError(Exception):
+    pass
+
+
+class OptionsConflict(ConversionError):
+    pass
+
+
+class UnrecognizedSection(ConversionError):
     pass
 
 
@@ -112,7 +120,7 @@ def check_options(plugin, options):
     for conflict_options in CONFLICT_OPTS.get(plugin, []):
         intersect = {option[0] for option in options} & conflict_options
         if len(intersect) > 1:
-            raise ValueError('Conflict options: {}: {}'.format(plugin, intersect))
+            raise OptionsConflict('Conflicting options: {}: {}'.format(plugin, list(intersect)))
     return plugin, options
 
 
