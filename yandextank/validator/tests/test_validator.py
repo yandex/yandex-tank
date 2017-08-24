@@ -197,7 +197,7 @@ def test_validate_core(config, expected):
          'tank_type': 'http',
          'multi': [],
      }
-     }, "{'package': ['required field']}"),
+     }, "package: [required field]"),
     # plugins: empty package
     ({
      "version": "1.8.34",
@@ -216,7 +216,7 @@ def test_validate_core(config, expected):
          'address': 'nodejs.load.yandex.net',
          'header_http': '1.1',
          'uris': '/'}
-     }, '{\'telegraf\': [{\'package\': [\'empty values not allowed\', "value does not match regex \'[^/]+\'"]}]}')
+     }, 'telegraf:\n- package: [empty values not allowed, \'value does not match regex')
 ])
 def test_validate_core_error(config, expected):
     with pytest.raises(Exception) as e:
@@ -426,7 +426,7 @@ def test_validate_all(config, expected):
 def test_validate_all_error(config, expected):
     with pytest.raises(ValidationError) as e:
         TankConfig(config).validated(config)
-    assert yaml.load(e.value.message.split('\n')[-1]) == expected
+    assert e.value.errors == expected
 
 
 @pytest.mark.parametrize('config, expected', [
