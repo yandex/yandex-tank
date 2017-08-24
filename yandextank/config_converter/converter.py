@@ -1,9 +1,10 @@
-import ConfigParser
+from ConfigParser import ConfigParser
 import re
 import logging
 import pkg_resources
 import yaml
 
+from functools import reduce
 from yandextank.common.util import recursive_dict_update
 from yandextank.validator.validator import load_plugin_schema, load_yaml_schema
 
@@ -39,17 +40,18 @@ SECTIONS_PATTERNS = {
     'Telegraf': 'telegraf|monitoring',
     'JMeter': 'jmeter',
     'ResourceCheck': 'rcheck',
-    'ShellExec': 'shellexec',
+    'ShellExec': 'shell_?exec',
     'Console': 'console',
     'TipsAndTricks': 'tips',
     'RCAssert': 'rcassert',
     'JsonReport': 'json_report|jsonreport',
-    'Pandora': 'pandora'
+    'Pandora': 'pandora',
 }
 
 
 class ConversionError(Exception):
     pass
+
 
 
 class OptionsConflict(ConversionError):
@@ -154,7 +156,7 @@ class Package(object):
         self.plugin_name = old_plugin_mapper(self.package.split('.')[-1])
 
 
-class UnknownOption(Exception):
+class UnknownOption(ConversionError):
     pass
 
 
@@ -336,7 +338,7 @@ def without_defaults(cfg_ini, section):
     """
 
     :rtype: (str, str)
-    :type cfg_ini: ConfigParser.ConfigParser
+    :type cfg_ini: ConfigParser
     """
     defaults = cfg_ini.defaults()
     options = cfg_ini.items(section) if cfg_ini.has_section(section) else []
@@ -351,7 +353,7 @@ CORE_SECTION_NEW = 'core'
 
 def parse_sections(cfg_ini):
     """
-    :type cfg_ini: ConfigParser.ConfigParser
+    :type cfg_ini: ConfigParser
     """
     return [Section(section.lower(),
                     guess_plugin(section.lower()),
@@ -464,8 +466,11 @@ def core_options(cfg_ini):
 
 
 def convert_ini(ini_file):
-    cfg_ini = ConfigParser.ConfigParser()
-    cfg_ini.read(ini_file)
+    cfg_ini = ConfigParser()
+    if isinstance(ini_file, str):
+        cfg_ini.read(ini_file)
+    else:
+        cfg_ini.readfp(ini_file)
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
     plugins_cfg_dict = {section.new_name: section.get_cfg_dict() for section in ready_sections}

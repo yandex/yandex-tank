@@ -62,9 +62,10 @@ class TankConfig(object):
     }
 
     def __init__(self, configs, with_dynamic_options=True, core_section='core', error_output='validation_error.yaml'):
+        self._errors = None
         if not isinstance(configs, list):
             configs = [configs]
-        self.raw_config_dict = self.__load_multiple(configs)
+        self.raw_config_dict = self.__load_multiple([config for config in configs if config is not None])
         self.with_dynamic_options = with_dynamic_options
         self.CORE_SECTION = core_section
         self._validated = None
@@ -186,3 +187,13 @@ class TankConfig(object):
 
     def __str__(self):
         return yaml.dump(self.validated)
+
+    def errors(self):
+        if not self._errors:
+            try:
+                self.validated
+            except ValidationError as e:
+                self._errors = e.errors
+            else:
+                self._errors = []
+        return self._errors

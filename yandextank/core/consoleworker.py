@@ -1,5 +1,5 @@
 """ Provides classes to run TankCore from console environment """
-import ConfigParser
+from ConfigParser import ConfigParser, MissingSectionHeaderError
 import datetime
 import fnmatch
 import glob
@@ -101,7 +101,7 @@ def load_core_base_cfg():
     return load_cfg(resource_filename(__name__, 'config/00-base.yaml'))
 
 
-def load_local_base_cfg():
+def load_local_base_cfgs():
     return cfg_folder_loader('/etc/yandex-tank')
 
 
@@ -123,7 +123,7 @@ def parse_options(options):
 def apply_shorthand_options(config, options, default_section='DEFAULT'):
     """
 
-    :type config: ConfigParser.ConfigParser
+    :type config: ConfigParser
     """
     if not options:
         return config
@@ -142,7 +142,7 @@ def apply_shorthand_options(config, options, default_section='DEFAULT'):
 
 def load_ini_cfgs(config_files):
     config_filenames = [resource_manager.resource_filename(config) for config in config_files]
-    cfg = ConfigParser.ConfigParser()
+    cfg = ConfigParser()
     cfg.read(config_filenames)
 
     dotted_options = []
@@ -181,9 +181,9 @@ def get_default_configs():
 
 def is_ini(cfg_file):
     try:
-        ConfigParser.ConfigParser().read(cfg_file)
+        ConfigParser().read(cfg_file)
         return True
-    except ConfigParser.MissingSectionHeaderError:
+    except MissingSectionHeaderError:
         return False
 
 
@@ -224,7 +224,7 @@ def load_tank_core(config_files, cmd_options, no_rc, depr_options, *other_opts):
         configs = [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
     else:
         configs = [load_core_base_cfg()] +\
-            load_local_base_cfg() +\
+            load_local_base_cfgs() +\
             [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
     return TankCore(configs,
                     cfg_depr=get_depr_cfg(config_files, no_rc, cmd_options, depr_options))
@@ -463,7 +463,7 @@ class CompletionHelperOptionParser(OptionParser):
             for option in parser.option_list:
                 if "--bash" not in option.get_opt_string():
                     opts.append(option.get_opt_string())
-            print ' '.join(opts)
+            print(' '.join(opts))
             exit(0)
 
         if options.list_options_cur or options.list_options_prev:
@@ -485,5 +485,5 @@ class CompletionHelperOptionParser(OptionParser):
             for plugin in cmdtank.core.plugins:
                 for option in plugin.get_available_options():
                     opts.append(plugin.SECTION + '.' + option + '=')
-            print ' '.join(sorted(opts))
+            print(' '.join(sorted(opts)))
             exit(0)
