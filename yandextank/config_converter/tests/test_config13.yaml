@@ -7,11 +7,7 @@ phantom:
   ssl: true
   address: lunapark.test.yandex-team.ru:443
   package: yandextank.plugins.Phantom
-lunapark:
-  enabled: false
-overload:
-  package: yandextank.plugins.DataUploader
+uploader:
   enabled: true
-  job_name: ojojo
-  token_file: overloadapi.token
-  api_address: https://overload.yandex.net
+  api_address: https://lunapark.yandex-team.ru
+  package: yandextank.plugins.DataUploader

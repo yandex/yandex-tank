@@ -52,7 +52,6 @@ CFG1 = {
         'package': 'yandextank.plugins.DataUploader',
         'enabled': True,
         'api_address': 'https://lunapark.test.yandex-team.ru/',
-        'copy_config_to': 'test_config_copy.yaml',
         'task': 'LOAD-204',
         'ignore_target_lock': True,
     },
@@ -86,7 +85,6 @@ CFG2 = {
         'package': 'yandextank.plugins.DataUploader',
         'enabled': True,
         'api_address': 'https://lunapark.test.yandex-team.ru/',
-        'copy_config_to': 'test_config_copy.yaml',
         'task': 'LOAD-204',
         'ignore_target_lock': True,
     },
@@ -170,7 +168,8 @@ def test_start_test(config):
         [{'uploader': {'package': 'yandextank.plugins.DataUploader', 'task': 'LOAD-204'}},
          {'phantom': {'package': 'yandextank.plugins.Phantom', 'ammofile': 'air-tickets-search-ammo.log'}},
          {'uploader': {'package': 'yandextank.plugins.DataUploader', 'component': 'air_tickets_search [imbalance]'}},
-         {'uploader': {'package': 'yandextank.plugins.DataUploader', 'jenkinsjob': 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/'}}]
+         {'uploader': {'package': 'yandextank.plugins.DataUploader',
+                       'meta': {'jenkinsjob': 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/'}}}]
     ),
     #     with converting/type-casting
     (

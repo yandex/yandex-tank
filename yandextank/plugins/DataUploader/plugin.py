@@ -113,7 +113,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             "ver", "component",
             "regress",
             "operator",
-            "copy_config_to",
             "jobno_file",
             "ignore_target_lock",
             "target_lock_duration",
@@ -218,7 +217,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 self.check_task_is_open()
                 lp_job.create()
                 self.make_symlink(lp_job.number)
-            self.core.publish(self.SECTION, 'jobno', lp_job.number)
+            self.publish('job_no', lp_job.number)
         except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError) as e:
             logger.error(e.message)
             logger.error(
@@ -272,8 +271,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.publish("jobno", self.lp_job.number)
         self.publish("web_link", web_link)
 
-        self.set_option("jobno", str(self.lp_job.number))
-
         jobno_file = self.get_option("jobno_file", '')
         if jobno_file:
             logger.debug("Saving jobno to: %s", jobno_file)
@@ -289,7 +286,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.monitoring_queue.put(None)
         self.data_queue.put(None)
         self.__save_conf()
-        self._join_threads(timeout=int(self.get_option('threads_timeout', '60')))
+        self._join_threads(timeout=int(self.get_option('threads_timeout')))
         self.unlock_targets(self.locked_targets)
         return retcode
 
@@ -435,10 +432,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     # TODO: why we do it here? should be in core
     def __save_conf(self):
-        config_copy = self.get_option('copy_config_to')
-        if config_copy:
-            self.core.config.save(config_copy)
-
         # config = copy.deepcopy(self.core.config)
         try:
             config_filename = self.core.job.monitoring_plugin.config
@@ -535,9 +528,16 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def lp_job(self):
         if self._lp_job is None:
             self._lp_job = self.__get_lp_job()
+            self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
+            self.set_option("jobno", self.lp_job.number)
+            self.core.write_cfg_to_lock()
         return self._lp_job
 
     def __get_lp_job(self):
+        """
+
+        :rtype: LPJob
+        """
         api_client = self.__get_api_client()
 
         info = self.generator_info
@@ -548,7 +548,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return LPJob(client=api_client,
                      target_host=self.target,
                      target_port=port,
-                     number=self.get_option('jobno'),
+                     number=self.cfg.get('jobno', None),
                      token=self.get_option('upload_token'),
                      person=self.__get_operator(),
                      task=self.task,

@@ -12,10 +12,10 @@ from yandextank.validator.validator import TankConfig
 
 @pytest.mark.parametrize('ini_file, expected', [
     ('test_config1.ini',
-     {'phantom': 'Phantom', 'aggregator': 'Aggregator', 'telegraf': 'Telegraf', 'uploader': 'DataUploader'}),
+     {'phantom': 'Phantom', 'aggregator': 'Aggregator', 'telegraf': 'Telegraf', 'meta': 'DataUploader'}),
     ('test_config2.ini',
      {'phantom': 'Phantom', 'telegraf': 'Telegraf', 'aggregator': 'Aggregator', 'phantom-1': 'Phantom',
-      'uploader': 'DataUploader', 'autostop': 'Autostop'}),
+      'meta': 'DataUploader', 'autostop': 'Autostop'}),
 ])
 def test_parse_sections(ini_file, expected):
     cfg_ini = ConfigParser.ConfigParser()
@@ -27,7 +27,7 @@ def test_parse_sections(ini_file, expected):
     (
         'test_config2.ini',
         {
-            'uploader': {
+            'meta': {
                 'ignore_target_lock': True,
                 'task': 'MAPSJAMS-1946',
                 'api_address': 'https://lunapark.yandex-team.ru/'},
@@ -72,20 +72,35 @@ def test_parse_package(package_path, expected):
     assert parse_package_name(package_path) == expected
 
 
+# TODO: get test configs list automatically
 @pytest.mark.parametrize('ini_file, yaml_file', [
     ('test_config1.ini', 'test_config1.yaml'),
     ('test_config2.ini', 'test_config2.yaml'),
     ('test_config3.ini', 'test_config3.yaml'),
     ('test_config4.ini', 'test_config4.yaml'),
     ('test_config5.ini', 'test_config5.yaml'),
+    ('test_config5.1.ini', 'test_config5.1.yaml'),
     ('test_config6.ini', 'test_config6.yaml'),
     ('test_config7.ini', 'test_config7.yaml'),
     ('test_config8.ini', 'test_config8.yaml'),
-    ('test_config9.ini', 'test_config9.yaml')
+    ('test_config9.ini', 'test_config9.yaml'),
+    ('test_config10.ini', 'test_config10.yaml'),
+    ('test_config11.ini', 'test_config11.yaml'),
+    ('test_config12.ini', 'test_config12.yaml'),
+    ('test_config13.ini', 'test_config13.yaml'),
 ])
 def test_convert_ini_phantom(ini_file, yaml_file):
     with open(os.path.join(os.path.dirname(__file__), yaml_file), 'r') as f:
-        assert convert_ini(os.path.join(os.path.dirname(__file__), ini_file)) == yaml.load(f)
+        assert yaml.dump(convert_ini(os.path.join(os.path.dirname(__file__), ini_file))) == yaml.dump(yaml.load(f))
+
+
+@pytest.mark.parametrize('ini_file, msgs', [
+    ('test_config2.1.ini', ['stpd_file', 'rps_schedule'])
+])
+def test_conflict_opts(ini_file, msgs):
+    with pytest.raises(ValueError) as e:
+        convert_ini(os.path.join(os.path.dirname(__file__), ini_file))
+    assert all([msg in e.value.message for msg in msgs])
 
 
 @pytest.mark.parametrize('ini_file', [
@@ -95,7 +110,10 @@ def test_convert_ini_phantom(ini_file, yaml_file):
     'test_config4.ini',
     'test_config5.ini',
     'test_config6.ini',
-    'test_config7.ini'
+    'test_config7.ini',
+    'test_config10.yaml',
+    'test_config11.yaml',
+    'test_config12.ini',
 ])
 def test_validate(ini_file):
     # noinspection PyStatementEffect
@@ -112,7 +130,9 @@ def test_validate(ini_file):
     ('phantom.rps_schedule', 'line(1,10)',
      {'phantom': {
          'load_profile': {'load_type': 'rps', 'schedule': 'line(1,10)'},
-         'package': 'yandextank.plugins.Phantom'}})
+         'package': 'yandextank.plugins.Phantom'}}),
+    ('bfg.gun_config.module_name', 'bayan_load',
+     {'bfg': {'package': 'yandextank.plugins.Bfg', 'gun_config': {'module_name': 'bayan_load'}}})
 ])
 def test_convert_single_option(key, value, expected):
     assert convert_single_option(key, value) == expected

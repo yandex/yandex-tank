@@ -70,18 +70,21 @@ class AbstractGun(AbstractPlugin):
     def teardown(self):
         pass
 
-    def get_option(self, key, **kwargs):
+    def get_option(self, key, default_value=None):
         try:
-            return super(AbstractGun, self).get_option(key, **kwargs)
+            return super(AbstractGun, self).get_option(key, default_value)
         except KeyError:
-            raise GunConfigError('Missing key: %s' % key)
+            if default_value is not None:
+                return default_value
+            else:
+                raise GunConfigError('Missing key: %s' % key)
 
 
 class LogGun(AbstractGun):
     SECTION = 'log_gun'
 
-    def __init__(self, core):
-        super(LogGun, self).__init__(core)
+    def __init__(self, core, cfg):
+        super(LogGun, self).__init__(core, cfg)
         param = self.get_option("param")
         logger.info('Initialized log gun for BFG with param = %s' % param)
 
