@@ -529,6 +529,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         if self._lp_job is None:
             self._lp_job = self.__get_lp_job()
             self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
+            self.core.publish(self.SECTION, 'web_link', self._lp_job.web_link)
             self.set_option("jobno", self.lp_job.number)
             self.core.write_cfg_to_lock()
         return self._lp_job
@@ -711,6 +712,7 @@ class LPJob(object):
         self.detailed_time = detailed_time
         self.load_scheme = load_scheme
         self.is_finished = False
+        self.web_link = ''
 
     def push_test_data(self, data, stats):
         if self.is_alive:
@@ -779,6 +781,7 @@ class LPJob(object):
                                                             notify_list=self.notify_list,
                                                             trace=self.log_other_requests)
         logger.info('Job created: {}'.format(self._number))
+        self.web_link = urljoin(self.api_client.base_url, str(self._number))
 
     def send_status(self, status):
         if self._number and self.is_alive:
