@@ -5,7 +5,7 @@ import yaml
 import pytest
 
 from yandextank.config_converter.converter import convert_ini, parse_package_name, parse_sections, combine_sections, \
-    convert_single_option
+    convert_single_option, OptionsConflict
 from yandextank.core.consoleworker import load_core_base_cfg, cfg_folder_loader, load_cfg
 from yandextank.validator.validator import TankConfig
 
@@ -98,7 +98,7 @@ def test_convert_ini_phantom(ini_file, yaml_file):
     ('test_config2.1.ini', ['stpd_file', 'rps_schedule'])
 ])
 def test_conflict_opts(ini_file, msgs):
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(OptionsConflict) as e:
         convert_ini(os.path.join(os.path.dirname(__file__), ini_file))
     assert all([msg in e.value.message for msg in msgs])
 

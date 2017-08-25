@@ -1,6 +1,5 @@
 
 import pytest
-import yaml
 
 from yandextank.validator.validator import TankConfig, ValidationError
 

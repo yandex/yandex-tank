@@ -13,7 +13,7 @@ def main():
         '--config',
         action='append',
         help="Path to INI file containing run options, multiple options accepted",
-        default=['load.yaml']
+        default=[]
     )
     parser.add_option(
         '-f',

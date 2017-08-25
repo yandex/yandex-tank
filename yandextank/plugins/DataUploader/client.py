@@ -312,6 +312,8 @@ class APIClient(object):
                 except StopIteration:
                     logger.warn('Failed to create job on lunapark')
                     raise self.JobNotCreated(e.message)
+            except requests.HTTPError as e:
+                raise self.JobNotCreated('Failed to create job on lunapark\n{}'.format(e.response.content))
             except Exception as e:
                 logger.warn('Failed to create job on lunapark')
                 logger.warn(e.message)

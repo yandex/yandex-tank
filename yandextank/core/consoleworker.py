@@ -19,6 +19,9 @@ from .tankcore import TankCore, LockError
 from ..common.resource import manager as resource_manager
 
 
+DEFAULT_CONFIG = 'load.yaml'
+
+
 class RealConsoleMarkup(object):
     '''
     Took colors from here: https://www.siafoo.net/snippet/88
@@ -220,6 +223,7 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
 
 def load_tank_core(config_files, cmd_options, no_rc, depr_options, *other_opts):
     other_opts = list(other_opts) if other_opts else []
+    config_files = config_files if len(config_files) > 0 else [DEFAULT_CONFIG]
     if no_rc:
         configs = [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
     else:

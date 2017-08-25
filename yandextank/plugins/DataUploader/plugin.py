@@ -206,10 +206,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             ammo_path = os.path.realpath(info.ammo_file)
         loop_count = info.loop_count
 
-        lp_job = self.lp_job
-        self.locked_targets = self.check_and_lock_targets(strict=self.get_option('strict_lock'),
-                                                          ignore=self.get_option('ignore_target_lock'))
         try:
+            lp_job = self.lp_job
+            self.locked_targets = self.check_and_lock_targets(strict=self.get_option('strict_lock'),
+                                                              ignore=self.get_option('ignore_target_lock'))
             if lp_job._number:
                 self.make_symlink(lp_job._number)
                 self.check_task_is_open()

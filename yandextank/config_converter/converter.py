@@ -53,7 +53,6 @@ class ConversionError(Exception):
     pass
 
 
-
 class OptionsConflict(ConversionError):
     pass
 
