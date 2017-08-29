@@ -1151,7 +1151,12 @@ List of metrics group names and particular metrics in them:
     * measure - default: call - metric value is a command or script execution output. Example: `<Custom measure="call" diff="1" label="Base size">du -s /var/lib/mysql/ | awk '{print $1}'</Custom>`
 * TelegrafRaw
     * raw telegraf TOML format, transparently added to final collector config 
-* Source additional source file in telegraf json format, can be used to add custom metrics that needs complex processing and do not fit into standart custom metrics (like log parsing with aggregation)
+* Source
+    additional source file in telegraf json format,     can be used to add custom metrics that needs complex processing and do not fit into standart custom metrics (like log parsing with aggregation)
+
+    Example:
+    ``{"fields":{"metric_name_1":0,"metric_name_2":98.27694231863998,},"name":"custom_group-name","tags":{"custom":"custom_tag","host":"hostname.tld"},"timestamp":1503990965}``
+
 
 
 Console on-line screen
