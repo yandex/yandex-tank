@@ -16,7 +16,7 @@ console:
 jmeter:
   enabled: false
   package: JMeter
-jsonreport:
+json_report:
   enabled: true
   package: yandextank.plugins.JsonReport
 phantom:
