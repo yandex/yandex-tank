@@ -1154,7 +1154,10 @@ List of metrics group names and particular metrics in them:
 * Source
     additional source file in telegraf json format,     can be used to add custom metrics that needs complex processing and do not fit into standart custom metrics (like log parsing with aggregation)
 
-    Example:
+    Config Host section example:
+    ``<Source>/path/to/file</Source>``
+
+    File format example:
     ``{"fields":{"metric_name_1":0,"metric_name_2":98.27694231863998,},"name":"custom_group-name","tags":{"custom":"custom_tag","host":"hostname.tld"},"timestamp":1503990965}``
 
 
