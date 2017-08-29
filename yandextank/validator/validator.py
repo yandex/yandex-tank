@@ -6,7 +6,8 @@ import uuid
 import logging
 import pkg_resources
 import yaml
-from cerberus import Validator
+from cerberus.validator import Validator, InspectedValidator
+
 from yandextank.common.util import recursive_dict_update
 logger = logging.getLogger(__name__)
 
@@ -155,7 +156,15 @@ class TankConfig(object):
         return core_validated
 
     def __validate_core(self):
-        v = Validator(self.BASE_SCHEMA, allow_unknown=self.PLUGINS_SCHEMA)
+        # monkey-patch to allow description field
+        def _validate_description(self, description, field, value):
+            """ {'type': 'string'} """
+            pass
+
+        Validator._validate_description = _validate_description
+        MyValidator = InspectedValidator('Validator', (Validator,), {})
+
+        v = MyValidator(allow_unknown=self.PLUGINS_SCHEMA)
         result = v.validate(self.raw_config_dict, self.BASE_SCHEMA)
         if not result:
             errors = v.errors
