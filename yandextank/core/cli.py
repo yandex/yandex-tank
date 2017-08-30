@@ -81,8 +81,8 @@ def main():
     completion_helper.handle_request(parser)
 
     options, ammofiles = parser.parse_args()
-
-    worker = ConsoleTank(options, ammofiles[0])
+    ammofile = ammofiles[0] if len(ammofiles) > 0 else None
+    worker = ConsoleTank(options, ammofile)
     try:
         worker.configure()
         rc = worker.perform_test()
