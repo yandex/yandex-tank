@@ -80,9 +80,9 @@ def main():
     completion_helper = CompletionHelperOptionParser()
     completion_helper.handle_request(parser)
 
-    options, ammofile = parser.parse_args()
+    options, ammofiles = parser.parse_args()
 
-    worker = ConsoleTank(options, ammofile)
+    worker = ConsoleTank(options, ammofiles[0])
     try:
         worker.configure()
         rc = worker.perform_test()
