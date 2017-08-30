@@ -3,6 +3,7 @@ core:
   allow_unknown: false
   schema:
     affinity:
+      description: bind tank process to a specific cpu core(s)
       type: string
       default: ''
     api_jobno:
