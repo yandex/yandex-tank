@@ -479,6 +479,7 @@ def convert_ini(ini_file):
                       for key, value in without_defaults(cfg_ini, CORE_SECTION_OLD)
                       if not key.startswith(PLUGIN_PREFIX)])
     })
+    logger.info('Converted config:\n{}'.format(yaml.dump(plugins_cfg_dict)))
     return plugins_cfg_dict
 
 
