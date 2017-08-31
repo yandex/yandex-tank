@@ -209,6 +209,20 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
                 all_config_files.append(config_file)
 
         cfg_ini = load_ini_cfgs([cfg_file for cfg_file in all_config_files if is_ini(cfg_file)])
+        # substitute telegraf config
+        if cfg_ini.has_section('telegraf'):
+            telegraf_cfg = cfg_ini.get('telegraf', 'config')
+            if not telegraf_cfg.startswith('<') and not telegraf_cfg.lower() == 'auto':
+                with open(resource_manager.resource_filename(telegraf_cfg), 'rb') as telegraf_cfg_file:
+                    config_contents = telegraf_cfg_file.read()
+                cfg_ini.set('telegraf', 'config', config_contents)
+        elif cfg_ini.has_section('monitoring'):
+            telegraf_cfg = cfg_ini.get('monitoring', 'config')
+            if not telegraf_cfg.startswith('<') and not telegraf_cfg.lower() == 'auto':
+                with open(resource_manager.resource_filename(telegraf_cfg), 'rb') as telegraf_cfg_file:
+                    config_contents = telegraf_cfg_file.read()
+                cfg_ini.set('monitoring', 'config', config_contents)
+
         for section, key, value in depr_options:
             if not cfg_ini.has_section(section):
                 cfg_ini.add_section(section)
