@@ -1,5 +1,5 @@
 """ Provides classes to run TankCore from console environment """
-from ConfigParser import ConfigParser, MissingSectionHeaderError
+from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError
 import datetime
 import fnmatch
 import glob
@@ -209,19 +209,29 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
                 all_config_files.append(config_file)
 
         cfg_ini = load_ini_cfgs([cfg_file for cfg_file in all_config_files if is_ini(cfg_file)])
+
         # substitute telegraf config
-        if cfg_ini.has_section('telegraf'):
-            telegraf_cfg = cfg_ini.get('telegraf', 'config')
+        def patch_ini_config_with_monitoring(ini_config, mon_section_name):
+            """
+            :type ini_config: ConfigParser
+            """
+            CONFIG = 'config'
+            if not ini_config.has_section(mon_section_name):
+                raise NoOptionError
+            telegraf_cfg = ini_config.get(mon_section_name, CONFIG)
             if not telegraf_cfg.startswith('<') and not telegraf_cfg.lower() == 'auto':
                 with open(resource_manager.resource_filename(telegraf_cfg), 'rb') as telegraf_cfg_file:
                     config_contents = telegraf_cfg_file.read()
-                cfg_ini.set('telegraf', 'config', config_contents)
-        elif cfg_ini.has_section('monitoring'):
-            telegraf_cfg = cfg_ini.get('monitoring', 'config')
-            if not telegraf_cfg.startswith('<') and not telegraf_cfg.lower() == 'auto':
-                with open(resource_manager.resource_filename(telegraf_cfg), 'rb') as telegraf_cfg_file:
-                    config_contents = telegraf_cfg_file.read()
-                cfg_ini.set('monitoring', 'config', config_contents)
+                ini_config.set(mon_section_name, CONFIG, config_contents)
+            return ini_config
+
+        try:
+            cfg_ini = patch_ini_config_with_monitoring(cfg_ini, 'monitoring')
+        except NoOptionError:
+            try:
+                patch_ini_config_with_monitoring(cfg_ini, 'telegraf')
+            except NoOptionError:
+                pass
 
         for section, key, value in depr_options:
             if not cfg_ini.has_section(section):
