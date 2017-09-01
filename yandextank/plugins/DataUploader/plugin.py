@@ -526,6 +526,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     @property
     def lp_job(self):
+        """
+
+        :rtype: LPJob
+        """
         if self._lp_job is None:
             self._lp_job = self.__get_lp_job()
             self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
