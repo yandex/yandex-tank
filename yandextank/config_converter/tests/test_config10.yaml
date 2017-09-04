@@ -1,0 +1,10 @@
+core: {}
+pandora:
+  config_content: {foo: [1,2], bar: baz}
+  expvar: true
+  package: yandextank.plugins.Pandora
+  enabled: true
+uploader:
+  enabled: false
+phantom:
+  enabled: false

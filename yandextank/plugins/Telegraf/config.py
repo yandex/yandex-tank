@@ -163,7 +163,7 @@ class ConfigManager(object):
             'source': sources,
             'telegrafraw': telegrafraw
         }
-        logger.info("Result config %s", result)
+        logger.info("Telegraf Result config %s", result)
         return result
 
 

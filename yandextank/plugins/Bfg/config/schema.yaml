@@ -1,0 +1,92 @@
+address:
+  type: string
+ammofile:
+  type: string
+  default: ''
+ammo_limit:
+  default: -1
+  type: integer
+ammo_type:
+  type: string
+  default: caseline
+autocases:
+  type: string
+  default: '0'
+cached_stpd:
+  type: boolean
+  default: false
+cache_dir:
+  type: string
+  nullable: true
+  default: null
+chosen_cases:
+  type: string
+  default: ''
+enum_ammo:
+  type: boolean
+  default: false
+file_cache:
+  type: integer
+  default: 8192
+force_stepping:
+  type: integer
+  default: 0
+green_threads_per_instance:
+  type: integer
+  default: 1000
+gun_config:
+  type: dict
+  schema:
+    base_address:
+      type: string
+    class_name:
+      type: string
+      default: LoadTest
+    module_path:
+      type: string
+      default: ''
+    module_name:
+      type: string
+    init_param:
+      type: string
+      default: ''
+  allow_unknown: true
+gun_type:
+  type: string
+  allowed: ['custom', 'http', 'scenario', 'ultimate']
+  required: true
+headers:
+  type: string
+  default: ''
+header_http:
+  type: string
+  default: '1.0'
+instances:
+  type: integer
+  default: 1000
+load_profile:
+  type: dict
+  required: true
+  schema:
+    load_type:
+      type: string
+      regex: '^rps|instances|stpd_file$'
+      required: true
+    schedule:
+      type: string
+      required: true
+loop:
+  type: integer
+  default: -1
+pip:
+  type: string
+  default: ''
+uris:
+  type: string
+  default: ''
+use_caching:
+  type: boolean
+  default: true
+worker_type:
+  type: string
+  default: ''

@@ -8,7 +8,10 @@ import json
 import time
 import datetime
 import itertools as itt
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 logger = logging.getLogger(__name__)
 

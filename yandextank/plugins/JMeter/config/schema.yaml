@@ -1,0 +1,41 @@
+args:
+  type: string
+  default: ''
+buffer_size:
+  type: integer
+  nullable: true
+  default: null
+buffered_seconds:
+  type: integer
+  default: 3
+exclude_markers:
+  type: list
+  schema:
+    type: string
+    empty: false
+  default: []
+ext_log:
+  type: string
+  allowed:
+    - none
+    - errors
+    - all
+  default: none
+extended_log:
+  type: string
+  allowed:
+    - none
+    - errors
+    - all
+  default: none
+jmeter_path:
+  type: string
+  default: jmeter
+jmeter_ver:
+  type: float
+  default: 3.0
+jmx:
+  type: string
+variables:
+  type: dict
+  default: {}

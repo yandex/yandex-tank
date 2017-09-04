@@ -22,8 +22,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     """ JMeter tank plugin """
     SECTION = 'jmeter'
 
-    def __init__(self, core, config_section):
-        AbstractPlugin.__init__(self, core, config_section)
+    def __init__(self, core, cfg, cfg_updater):
+        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.jmeter_process = None
         self.args = None
         self.original_jmx = None
@@ -55,25 +55,20 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.jtl_file = self.core.mkstemp('.jtl', 'jmeter_')
         self.core.add_artifact_file(self.jtl_file)
         self.user_args = self.get_option("args", '')
-        self.jmeter_path = self.get_option('jmeter_path', 'jmeter')
+        self.jmeter_path = self.get_option('jmeter_path')
         self.jmeter_log = self.core.mkstemp('.log', 'jmeter_')
-        self.jmeter_ver = float(self.get_option('jmeter_ver', '3.0'))
-        self.ext_log = self.get_option(
-            'extended_log', self.get_option('ext_log', 'none'))
-        if self.ext_log not in self.ext_levels:
-            self.ext_log = 'none'
+        self.jmeter_ver = self.get_option('jmeter_ver')
+        self.ext_log = self.get_option('extended_log', self.get_option('ext_log'))
+
         if self.ext_log != 'none':
             self.ext_log_file = self.core.mkstemp('.jtl', 'jmeter_ext_')
             self.core.add_artifact_file(self.ext_log_file)
-        self.jmeter_buffer_size = int(
-            self.get_option(
-                'buffer_size', self.get_option('buffered_seconds', '3')))
+
+        self.jmeter_buffer_size = self.get_option('buffer_size', self.get_option('buffered_seconds', '3'))
         self.core.add_artifact_file(self.jmeter_log, True)
-        self.exclude_markers = set(
-            filter((lambda marker: marker != ''),
-                   self.get_option('exclude_markers', []).split(' ')))
+        self.exclude_markers = set(self.get_option('exclude_markers', []))
         self.jmx = self.__add_jmeter_components(
-            self.original_jmx, self.jtl_file, self._get_variables())
+            self.original_jmx, self.jtl_file, self.get_option('variables'))
         self.core.add_artifact_file(self.jmx)
 
         jmeter_stderr_file = self.core.mkstemp(".log", "jmeter_stdout_stderr_")
@@ -223,14 +218,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             fh.write(tpl % tpl_args)
             fh.write(closing)
         return new_jmx
-
-    def _get_variables(self):
-        res = {}
-        for option in self.core.config.get_options(self.SECTION):
-            if option[0] not in self.get_available_options():
-                res[option[0]] = option[1]
-        logging.debug("Variables: %s", res)
-        return res
 
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):

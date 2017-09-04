@@ -17,12 +17,12 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     ''' Big Fucking Gun plugin '''
     SECTION = 'bfg'
 
-    def __init__(self, core, config_section):
+    def __init__(self, core, cfg, cfg_updater):
         self.log = logging.getLogger(__name__)
-        AbstractPlugin.__init__(self, core, config_section)
+        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.gun_type = None
         self.start_time = time.time()
-        self.stepper_wrapper = StepperWrapper(self.core, Plugin.SECTION)
+        self.stepper_wrapper = StepperWrapper(core, cfg)
         self.log.info("Initialized BFG")
 
         self.gun_classes = {
@@ -60,15 +60,11 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.stepper_wrapper.prepare_stepper()
         gun_type = self.get_option("gun_type")
         if gun_type in self.gun_classes:
-            self.gun = self.gun_classes[gun_type](self.core)
+            self.gun = self.gun_classes[gun_type](self.core, self.get_option('gun_config'))
         else:
             raise NotImplementedError(
                 'No such gun type implemented: "%s"' % gun_type)
-        cached_stpd_option = self.get_option("cached_stpd", '0')
-        if cached_stpd_option == '1':
-            cached_stpd = True
-        else:
-            cached_stpd = False
+        cached_stpd = self.get_option("cached_stpd")
 
         if self.get_option("worker_type", "") == "green":
             BFG = BFGGreen

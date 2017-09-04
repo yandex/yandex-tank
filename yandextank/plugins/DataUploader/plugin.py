@@ -2,15 +2,13 @@
 # TODO: make the next two lines unnecessary
 # pylint: disable=line-too-long
 # pylint: disable=missing-docstring
-import copy
 import logging
 import os
 import pwd
 import re
 import sys
 import time
-from StringIO import StringIO
-from urlparse import urljoin
+from future.moves.urllib.parse import urljoin
 
 from queue import Empty, Queue
 from builtins import str
@@ -32,51 +30,77 @@ class BackendTypes(object):
     LUNAPARK = 'LUNAPARK'
 
     @classmethod
-    def identify_backend(cls, section_name):
-        patterns = [
-            (r'^overload(-\d+)?$', cls.OVERLOAD),
-            (r'^(meta|lunapark|lp)(-\d+)?$', cls.LUNAPARK)
+    def identify_backend(cls, api_address):
+        clues = [
+            ('overload', cls.OVERLOAD),
+            ('lunapark', cls.LUNAPARK),
         ]
-        for pattern, backend_type in patterns:
-            if re.match(pattern, section_name):
+        for clue, backend_type in clues:
+            if clue in api_address:
                 return backend_type
         else:
             raise KeyError('Config section name doesn\'t match any of the patterns:\n%s' %
-                           '\n'.join([ptrn[0] for ptrn in patterns]))
+                           '\n'.join(['*%s*' % ptrn[0] for ptrn in clues]))
         pass
+
+
+def chop(data_list, chunk_size):
+    if sys.getsizeof(str(data_list)) <= chunk_size:
+        return [data_list]
+    elif len(data_list) == 1:
+        logger.warning("Too large piece of Telegraf data. Might experience upload problems.")
+        return [data_list]
+    else:
+        mid = len(data_list) / 2
+        return chop(data_list[:mid], chunk_size) + chop(data_list[mid:], chunk_size)
 
 
 class Plugin(AbstractPlugin, AggregateResultListener,
              MonitoringDataListener):
-    SECTION = 'meta'
     RC_STOP_FROM_WEB = 8
     VERSION = '3.0'
+    SECTION = 'uploader'
 
-    def __init__(self, core, config_section):
-        AbstractPlugin.__init__(self, core, config_section)
+    def __init__(self, core, cfg, cfg_updater):
+        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.data_queue = Queue()
         self.monitoring_queue = Queue()
-        self.ignore_target_lock = None
-        self.jobno_file = None
-        self.lock_target_duration = None
-        self.mon = None
-        self.regression_component = None
         self.retcode = -1
         self._target = None
         self.task_name = ''
         self.token_file = None
         self.version_tested = None
         self.send_status_period = 10
+
+        self.status_sender = threading.Thread(target=self.__send_status)
+        self.status_sender.daemon = True
+
+        self.upload = threading.Thread(target=self.__data_uploader)
+        self.upload.daemon = True
+
+        self.monitoring = threading.Thread(target=self.__monitoring_uploader)
+        self.monitoring.daemon = True
+
         self._generator_info = None
         self._is_telegraf = None
-        self.backend_type = BackendTypes.identify_backend(self.SECTION)
+        self.backend_type = BackendTypes.identify_backend(self.cfg['api_address'])
         self._task = None
         self._api_token = ''
         self._lp_job = None
+        self._lock_duration = None
+        self._info = None
+        self.locked_targets = []
 
     @staticmethod
     def get_key():
         return __file__
+
+    @property
+    def lock_duration(self):
+        if self._lock_duration is None:
+            self._lock_duration = self.generator_info.duration if self.generator_info.duration else \
+                expand_to_seconds(self.get_option("target_lock_duration"))
+        return self._lock_duration
 
     def get_available_options(self):
         opts = [
@@ -89,7 +113,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             "ver", "component",
             "regress",
             "operator",
-            "copy_config_to",
             "jobno_file",
             "ignore_target_lock",
             "target_lock_duration",
@@ -109,22 +132,13 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             'log_monitoring_requests',
             'log_status_requests',
             'log_other_requests',
-            'threads_timeout'
+            'threads_timeout',
+            'chunk_size'
         ]
         return opts
 
     def configure(self):
-        self.mon = self.core.job.monitoring_plugin
-        self.jobno_file = self.get_option("jobno_file", '')
-        self.regression_component = str(self.get_option("component", ''))
-        ignore_all_locks = self.core.get_option(self.core.SECTION,
-                                                "ignore_locks", '0')
-        self.ignore_target_lock = int(self.get_option("ignore_target_lock",
-                                                      ignore_all_locks))
-        self.lock_target_duration = expand_to_seconds(self.get_option(
-            "target_lock_duration", "30m"))
-        self.send_status_period = expand_to_seconds(
-            self.get_option('send_status_period', '10'))
+        pass
 
     def check_task_is_open(self):
         if self.backend_type == BackendTypes.OVERLOAD:
@@ -190,16 +204,12 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             ammo_path = info.ammo_file
         else:
             ammo_path = os.path.realpath(info.ammo_file)
-        duration = int(info.duration)
-        if duration:
-            self.lock_target_duration = duration
         loop_count = info.loop_count
 
-        lp_job = self.lp_job
-        self.locked_targets = self.check_and_lock_targets(strict=bool(
-            int(self.get_option('strict_lock', '0'))), ignore=self.ignore_target_lock)
-
         try:
+            lp_job = self.lp_job
+            self.locked_targets = self.check_and_lock_targets(strict=self.get_option('strict_lock'),
+                                                              ignore=self.get_option('ignore_target_lock'))
             if lp_job._number:
                 self.make_symlink(lp_job._number)
                 self.check_task_is_open()
@@ -207,7 +217,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 self.check_task_is_open()
                 lp_job.create()
                 self.make_symlink(lp_job.number)
-            self.core.publish(self.SECTION, 'jobno', lp_job.number)
+            self.publish('job_no', lp_job.number)
         except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError) as e:
             logger.error(e.message)
             logger.error(
@@ -226,7 +236,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             is_regression=self.get_option(
                 'regress',
                 '0'),
-            regression_component=self.regression_component,
+            regression_component=self.get_option("component"),
             cmdline=cmdline,
         )  # todo: tanktype?
 
@@ -251,20 +261,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def start_test(self):
         self.on_air = True
 
-        status_sender = threading.Thread(target=self.__send_status)
-        status_sender.daemon = True
-        status_sender.start()
-        self.status_sender = status_sender
-
-        upload = threading.Thread(target=self.__data_uploader)
-        upload.daemon = True
-        upload.start()
-        self.upload = upload
-
-        monitoring = threading.Thread(target=self.__monitoring_uploader)
-        monitoring.daemon = True
-        monitoring.start()
-        self.monitoring = monitoring
+        self.status_sender.start()
+        self.upload.start()
+        self.monitoring.start()
 
         web_link = urljoin(self.lp_job.api_client.base_url, str(self.lp_job.number))
         logger.info("Web link: %s", web_link)
@@ -272,14 +271,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.publish("jobno", self.lp_job.number)
         self.publish("web_link", web_link)
 
-        self.set_option("jobno", str(self.lp_job.number))
-
-        if self.jobno_file:
-            logger.debug("Saving jobno to: %s", self.jobno_file)
-            fdes = open(self.jobno_file, 'w')
-            fdes.write(str(self.lp_job.number))
-            fdes.close()
-
+        jobno_file = self.get_option("jobno_file", '')
+        if jobno_file:
+            logger.debug("Saving jobno to: %s", jobno_file)
+            with open(jobno_file, 'w') as fdes:
+                fdes.write(str(self.lp_job.number))
         self.__save_conf()
 
     def is_test_finished(self):
@@ -290,15 +286,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.monitoring_queue.put(None)
         self.data_queue.put(None)
         self.__save_conf()
-        timeout = int(self.get_option('threads_timeout', '60'))
-        logger.info(
-            'Waiting for sender threads to join for {} seconds ("meta.threads_timeout" config option)'.format(timeout))
-        self.monitoring.join(timeout=timeout)
-        if self.monitoring.isAlive():
-            logger.error('Monitoring thread joining timed out. Terminating.')
-        self.upload.join(timeout=timeout)
-        if self.upload.isAlive():
-            logger.error('Upload thread joining timed out. Terminating.')
+        self._join_threads(timeout=int(self.get_option('threads_timeout')))
         self.unlock_targets(self.locked_targets)
         return retcode
 
@@ -348,7 +336,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             if len(data_list) > 0:
                 if self.is_telegraf:
                     # telegraf
-                    self.monitoring_queue.put(data_list)
+                    [self.monitoring_queue.put(chunk) for chunk in chop(data_list, self.get_option("chunk_size"))]
                 else:
                     # monitoring
                     [self.monitoring_queue.put(data) for data in data_list]
@@ -379,7 +367,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         while lp_job.is_alive and self.on_air:
             try:
                 self.lp_job.send_status(self.core.status)
-                time.sleep(self.send_status_period)
+                time.sleep(self.get_option('send_status_period'))
             except (APIClient.NetworkError, APIClient.NotAvailable) as e:
                 logger.warn('Failed to send status')
                 logger.debug(e.message)
@@ -442,29 +430,20 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 break
         logger.info('Closing Monitoring uploader thread')
 
+    # TODO: why we do it here? should be in core
     def __save_conf(self):
-        config_copy = self.get_option('copy_config_to', '')
-        if config_copy:
-            self.core.config.flush(config_copy)
-
-        config = copy.copy(self.core.config.config)
-
+        # config = copy.deepcopy(self.core.config)
         try:
             config_filename = self.core.job.monitoring_plugin.config
             if config_filename and config_filename not in ['none', 'auto']:
                 with open(config_filename) as config_file:
-                    config.set(
-                        self.core.job.monitoring_plugin.SECTION,
-                        "config_contents",
-                        config_file.read())
-        except Exception:  # pylint: disable=W0703
+                    self.core.job.monitoring_plugin.set_option("config_contents",
+                                                               config_file.read())
+        except AttributeError:  # pylint: disable=W0703
             logger.warning("Can't get monitoring config", exc_info=True)
 
-        output = StringIO()
-        config.write(output)
-        self.lp_job.send_config_snapshot(output.getvalue())
-        with open(os.path.join(self.core.artifacts_dir, 'saved_conf.ini'), 'w') as f:
-            config.write(f)
+        self.lp_job.send_config_snapshot(self.core.cfg_snapshot)
+        self.core.config.save(os.path.join(self.core.artifacts_dir, 'saved_conf.yaml'))
 
     def parse_lock_targets(self):
         # prepare target lock list
@@ -480,7 +459,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def lock_targets(self, targets_to_lock, ignore, strict):
         locked_targets = [target for target in targets_to_lock
-                          if self.lp_job.lock_target(target, self.lock_target_duration, ignore, strict)]
+                          if self.lp_job.lock_target(target, self.lock_duration, ignore, strict)]
         return locked_targets
 
     def unlock_targets(self, locked_targets):
@@ -516,8 +495,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def __get_operator(self):
         try:
             return self.get_option(
-                'operator',
-                '') or pwd.getpwuid(
+                'operator') or pwd.getpwuid(
                 os.geteuid())[0]
         except:
             logger.error(
@@ -530,29 +508,41 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._api_token = None
         elif self.backend_type == BackendTypes.OVERLOAD:
             client = OverloadClient
-            self._api_token = self.read_token(self.get_option("token_file", ""))
+            self._api_token = self.read_token(self.get_option("token_file"))
         else:
             raise RuntimeError("Backend type doesn't match any of the expected")
 
         return client(base_url=self.get_option('api_address'),
-                      writer_url=self.get_option('writer_endpoint', ""),
-                      network_attempts=int(self.get_option('network_attempts', 60)),
-                      api_attempts=int(self.get_option('api_attempts', 60)),
-                      maintenance_attempts=int(self.get_option('maintenance_attempts', 10)),
-                      network_timeout=int(self.get_option('network_timeout', 10)),
-                      api_timeout=int(self.get_option('api_timeout', 10)),
-                      maintenance_timeout=int(self.get_option('maintenance_timeout', 60)),
-                      connection_timeout=int(self.get_option('connection_timeout', 30)),
+                      writer_url=self.get_option('writer_endpoint'),
+                      network_attempts=self.get_option('network_attempts'),
+                      api_attempts=self.get_option('api_attempts'),
+                      maintenance_attempts=self.get_option('maintenance_attempts'),
+                      network_timeout=self.get_option('network_timeout'),
+                      api_timeout=self.get_option('api_timeout'),
+                      maintenance_timeout=self.get_option('maintenance_timeout'),
+                      connection_timeout=self.get_option('connection_timeout'),
                       user_agent=self._get_user_agent(),
                       api_token=self.api_token)
 
     @property
     def lp_job(self):
+        """
+
+        :rtype: LPJob
+        """
         if self._lp_job is None:
             self._lp_job = self.__get_lp_job()
+            self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
+            self.core.publish(self.SECTION, 'web_link', self._lp_job.web_link)
+            self.set_option("jobno", self.lp_job.number)
+            self.core.write_cfg_to_lock()
         return self._lp_job
 
     def __get_lp_job(self):
+        """
+
+        :rtype: LPJob
+        """
         api_client = self.__get_api_client()
 
         info = self.generator_info
@@ -563,25 +553,25 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return LPJob(client=api_client,
                      target_host=self.target,
                      target_port=port,
-                     number=self.get_option('jobno', ''),
-                     token=self.get_option('upload_token', ''),
+                     number=self.cfg.get('jobno', None),
+                     token=self.get_option('upload_token'),
                      person=self.__get_operator(),
                      task=self.task,
                      name=self.get_option('job_name', 'none').decode('utf8'),
-                     description=self.get_option('job_dsc', '').decode('utf8'),
+                     description=self.get_option('job_dsc').decode('utf8'),
                      tank=self.core.job.tank,
                      notify_list=self.get_option("notify", '').split(' '),
                      load_scheme=loadscheme,
-                     version=self.get_option('ver', ''),
-                     log_data_requests=bool(int(self.get_option('log_data_requests', '0'))),
-                     log_monitoring_requests=bool(int(self.get_option('log_monitoring_requests', '0'))),
-                     log_status_requests=bool(int(self.get_option('log_status_requests', '0'))),
-                     log_other_requests=bool(int(self.get_option('log_other_requests', '0'))))
+                     version=self.get_option('ver'),
+                     log_data_requests=self.get_option('log_data_requests'),
+                     log_monitoring_requests=self.get_option('log_monitoring_requests'),
+                     log_status_requests=self.get_option('log_status_requests'),
+                     log_other_requests=self.get_option('log_other_requests'))
 
     @property
     def task(self):
         if self._task is None:
-            task = self.get_option('task', '')
+            task = self.get_option('task')
             if task == 'dir':
                 task = self.search_task_from_cwd(os.getcwd())
             self._task = task
@@ -635,6 +625,22 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._target = self.generator_info.address
             logger.info("Detected target: %s", self.target)
         return self._target
+
+    def _join_threads(self, timeout):
+        logger.info(
+            'Waiting for sender threads to join for {} seconds ("meta.threads_timeout" config option)'.format(timeout))
+        try:
+            self.monitoring.join(timeout=timeout)
+            if self.monitoring.isAlive():
+                logger.error('Monitoring thread joining timed out. Terminating.')
+        except RuntimeError:
+            pass
+        try:
+            self.upload.join(timeout=timeout)
+            if self.upload.isAlive():
+                logger.error('Upload thread joining timed out. Terminating.')
+        except RuntimeError:
+            pass
 
 
 class JobInfoWidget(AbstractInfoWidget):
@@ -710,6 +716,7 @@ class LPJob(object):
         self.detailed_time = detailed_time
         self.load_scheme = load_scheme
         self.is_finished = False
+        self.web_link = ''
 
     def push_test_data(self, data, stats):
         if self.is_alive:
@@ -762,8 +769,10 @@ class LPJob(object):
         return self._token
 
     def close(self, rc):
-        return self.api_client.close_job(
-            self.number, rc, trace=self.log_other_requests)
+        if self._number:
+            return self.api_client.close_job(self.number, rc, trace=self.log_other_requests)
+        else:
+            return True
 
     def create(self):
         self._number, self._token = self.api_client.new_job(task=self.task,
@@ -776,6 +785,7 @@ class LPJob(object):
                                                             notify_list=self.notify_list,
                                                             trace=self.log_other_requests)
         logger.info('Job created: {}'.format(self._number))
+        self.web_link = urljoin(self.api_client.base_url, str(self._number))
 
     def send_status(self, status):
         if self._number and self.is_alive:
@@ -790,12 +800,9 @@ class LPJob(object):
             task, trace=self.log_other_requests)
 
     def send_config_snapshot(self, config):
-        try:
-            if self._number:
-                self.api_client.send_config_snapshot(
-                    self.number, config, trace=self.log_other_requests)
-        except Exception:
-            logger.debug("Can't send config snapshot: %s", exc_info=True)
+        if self._number:
+            self.api_client.send_config_snapshot(
+                self.number, config, trace=self.log_other_requests)
 
     def push_monitoring_data(self, data):
         if self.is_alive:

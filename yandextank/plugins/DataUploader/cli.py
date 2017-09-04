@@ -18,7 +18,7 @@ import pkg_resources
 from .client import APIClient
 from .plugin import LPJob
 
-CONFIG_FILE = 'saved_conf.ini'
+CONFIG_FILE = 'saved_conf.yaml'
 DATA_LOG = 'test_data.log'
 MONITORING_LOG = 'monitoring.log'
 SECTION = 'meta'

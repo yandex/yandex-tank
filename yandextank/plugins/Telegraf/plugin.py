@@ -35,18 +35,18 @@ class Plugin(AbstractPlugin):
 
     SECTION = 'telegraf'  # may be redefined to 'monitoring' sometimes.
 
-    def __init__(self, core, config_section=None):
-        super(Plugin, self).__init__(core, config_section)
+    def __init__(self, core, cfg, cfg_updater):
+        super(Plugin, self).__init__(core, cfg, cfg_updater)
         self.jobno = None
         self.default_target = None
         self.default_config = "{path}/config/monitoring_default_config.xml".format(
             path=os.path.dirname(__file__))
-        self.config = None
         self.process = None
-        self.monitoring = MonitoringCollector(disguise_hostnames=bool(int(self.get_option('disguise_hostnames', '0'))))
+        self.monitoring = MonitoringCollector(disguise_hostnames=self.get_option('disguise_hostnames'))
         self.die_on_fail = True
         self.data_file = None
         self.mon_saver = None
+        self._config = None
 
     @staticmethod
     def get_key():
@@ -74,12 +74,12 @@ class Plugin(AbstractPlugin):
         :return: SECTION name or None for defaults
         """
         try:
-            is_telegraf = self.core.get_option('telegraf', "config", None)
-        except NoOptionError:
+            is_telegraf = self.core.get_option('telegraf', "config")
+        except KeyError:
             is_telegraf = None
         try:
-            is_monitoring = self.core.get_option('monitoring', "config", None)
-        except NoOptionError:
+            is_monitoring = self.core.get_option('monitoring', "config")
+        except KeyError:
             is_monitoring = None
 
         if is_telegraf and is_monitoring:
@@ -93,13 +93,11 @@ class Plugin(AbstractPlugin):
         if not is_telegraf and not is_monitoring:
             # defaults target logic
             try:
-                is_telegraf_dt = self.core.get_option(
-                    'telegraf', "default_target", None)
+                is_telegraf_dt = self.core.get_option('telegraf')
             except NoOptionError:
                 is_telegraf_dt = None
             try:
-                is_monitoring_dt = self.core.get_option(
-                    'monitoring', "default_target", None)
+                is_monitoring_dt = self.core.get_option('monitoring')
             except:
                 is_monitoring_dt = None
             if is_telegraf_dt and is_monitoring_dt:
@@ -114,13 +112,42 @@ class Plugin(AbstractPlugin):
             if not is_telegraf_dt and not is_monitoring_dt:
                 return
 
+    @property
+    def config(self):
+        if self._config is None:
+            value = self.get_option('config')
+
+            if value.lower() == "none":
+                self.monitoring = None
+                self.die_on_fail = False
+                self._config = value
+            # handle http/https url or file path
+            else:
+                if value.startswith("<"):
+                    config_contents = value
+                elif value.lower() == "auto":
+                    self.die_on_fail = False
+                    with open(resource.resource_filename(self.default_config), 'rb') as def_config:
+                        config_contents = def_config.read()
+                else:
+                    with open(resource.resource_filename(value), 'rb') as config:
+                        config_contents = config.read()
+                self._config = self._save_config_contents(config_contents)
+        return self._config
+
+    def _save_config_contents(self, contents):
+        xmlfile = self.core.mkstemp(".xml", "monitoring_")
+        self.core.add_artifact_file(xmlfile)
+        with open(xmlfile, "wb") as f:  # output file should be in binary mode to support py3
+            f.write(contents)
+        return xmlfile
+
     def configure(self):
         self.detected_conf = self.__detect_configuration()
         if self.detected_conf:
             logging.info(
                 'Detected monitoring configuration: %s', self.detected_conf)
             self.SECTION = self.detected_conf
-        self.config = self.get_option("config", "auto").strip()
         self.default_target = self.get_option("default_target", "localhost")
         if self.config.lower() == "none":
             self.monitoring = None
@@ -131,32 +158,6 @@ class Plugin(AbstractPlugin):
         # configuration below.
         self.monitoring.ssh_timeout = expand_to_seconds(
             self.get_option("ssh_timeout", "5s"))
-
-        # FIXME [legacy] handle raw XML config in .ini file
-        if self.config[0] == "<":
-            config_contents = self.config
-        # handle http/https url or file path
-        else:
-            if self.config.lower() == "auto":
-                self.die_on_fail = False
-                with open(
-                        resource.resource_filename(self.default_config),
-                        'rb') as def_config:
-                    config_contents = def_config.read()
-            else:
-                with open(resource.resource_filename(self.config),
-                          'rb') as config:
-                    config_contents = config.read()
-
-        # dump config contents into a file
-        xmlfile = self.core.mkstemp(".xml", "monitoring_")
-        self.core.add_artifact_file(xmlfile)
-        with open(
-                xmlfile, "wb"
-        ) as f:  # output file should be in binary mode to support py3
-            f.write(config_contents)
-        self.config = xmlfile
-
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
             autostop.add_criterion_class(MetricHigherCriterion)
@@ -171,10 +172,6 @@ class Plugin(AbstractPlugin):
 
         if "Phantom" in self.core.job.generator_plugin.__module__:
             phantom = self.core.job.generator_plugin
-            if phantom.phout_import_mode:
-                logger.info("Phout import mode, disabling monitoring")
-                self.config = None
-                self.monitoring = None
 
             info = phantom.get_info()
             if info:
@@ -185,12 +182,6 @@ class Plugin(AbstractPlugin):
         self.monitoring.config = self.config
         if self.default_target:
             self.monitoring.default_target = self.default_target
-
-        # FIXME json report already save this artifact, fix pls
-        self.data_file = self.core.mkstemp(".data", "monitoring_overall_")
-        self.mon_saver = SaveMonToFile(self.data_file)
-        self.monitoring.add_listener(self.mon_saver)
-        self.core.add_artifact_file(self.data_file)
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)

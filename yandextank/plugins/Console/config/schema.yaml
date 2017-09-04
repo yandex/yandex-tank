@@ -1,0 +1,12 @@
+info_panel_width:
+  type: integer
+  default: 33
+short_only:
+  type: boolean
+  default: false
+disable_all_colors:
+  type: boolean
+  default: false
+disable_colors:
+  type: string
+  default: ''

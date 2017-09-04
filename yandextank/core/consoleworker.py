@@ -1,16 +1,25 @@
 """ Provides classes to run TankCore from console environment """
+from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError
 import datetime
 import fnmatch
+import glob
 import logging
 import os
 import sys
+import tempfile
 import time
 import traceback
 import signal
 from optparse import OptionParser
-from pkg_resources import resource_filename
 
-from .tankcore import TankCore
+import yaml
+from pkg_resources import resource_filename
+from ..config_converter.converter import convert_ini, convert_single_option
+from .tankcore import TankCore, LockError
+from ..common.resource import manager as resource_manager
+
+
+DEFAULT_CONFIG = 'load.yaml'
 
 
 class RealConsoleMarkup(object):
@@ -38,9 +47,9 @@ class RealConsoleMarkup(object):
     def clean_markup(self, orig_str):
         ''' clean markup from string '''
         for val in [
-                self.YELLOW, self.RED, self.RESET, self.CYAN, self.BG_MAGENTA,
-                self.WHITE, self.BG_GREEN, self.GREEN, self.BG_BROWN,
-                self.RED_DARK, self.MAGENTA, self.BG_CYAN
+            self.YELLOW, self.RED, self.RESET, self.CYAN, self.BG_MAGENTA,
+            self.WHITE, self.BG_GREEN, self.GREEN, self.BG_BROWN,
+            self.RED_DARK, self.MAGENTA, self.BG_CYAN
         ]:
             orig_str = orig_str.replace(val, '')
         return orig_str
@@ -70,22 +79,213 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 
+def load_cfg(cfg_filename):
+    """
+
+    :type cfg_filename: str
+    """
+    if cfg_filename.endswith('.yaml'):
+        with open(cfg_filename) as f:
+            cfg = yaml.load(f)
+    else:
+        cfg = convert_ini(cfg_filename)
+    return cfg
+
+
+def cfg_folder_loader(path):
+    """
+    :type path: str
+    """
+    CFG_WILDCARD = '*.yaml'
+    return [load_cfg(filename) for filename in sorted(glob.glob(os.path.join(path, CFG_WILDCARD)))]
+
+
+def load_core_base_cfg():
+    return load_cfg(resource_filename(__name__, 'config/00-base.yaml'))
+
+
+def load_local_base_cfgs():
+    return cfg_folder_loader('/etc/yandex-tank')
+
+
+def parse_options(options):
+    """
+    :type options: list of str
+    :rtype: list of dict
+    """
+    if options is None:
+        return []
+    else:
+        return [
+            convert_single_option(key.strip(), value.strip())
+            for key, value
+            in [option.split('=') for option in options]
+        ]
+
+
+def apply_shorthand_options(config, options, default_section='DEFAULT'):
+    """
+
+    :type config: ConfigParser
+    """
+    if not options:
+        return config
+    for option_str in options:
+        key, value = option_str.split('=')
+        try:
+            section, option = key.split('.')
+        except ValueError:
+            section = default_section
+            option = key
+        if not config.has_section(section):
+            config.add_section(section)
+        config.set(section, option, value)
+    return config
+
+
+def load_ini_cfgs(config_files):
+    config_filenames = [resource_manager.resource_filename(config) for config in config_files]
+    cfg = ConfigParser()
+    cfg.read(config_filenames)
+
+    dotted_options = []
+    if cfg.has_section('tank'):
+        for option, value in cfg.items('tank'):
+            if '.' in option:
+                dotted_options += [option + '=' + value]
+    else:
+        cfg.add_section('tank')
+    cfg = apply_shorthand_options(cfg, dotted_options)
+    cfg.set('tank', 'pid', str(os.getpid()))
+    return cfg
+
+
+def get_default_configs():
+    """ returns default configs list, from /etc and home dir """
+    # initialize basic defaults
+    configs = [resource_filename(__name__, 'config/00-base.ini')]
+    baseconfigs_location = '/etc/yandex-tank'
+    try:
+        conf_files = sorted(os.listdir(baseconfigs_location))
+        for filename in conf_files:
+            if fnmatch.fnmatch(filename, '*.ini'):
+                configs += [
+                    os.path.realpath(
+                        baseconfigs_location + os.sep + filename)
+                ]
+    except OSError:
+        logging.warn(
+            baseconfigs_location +
+            ' is not accessible to get configs list')
+
+    configs += [os.path.expanduser('~/.yandex-tank')]
+    return configs
+
+
+def is_ini(cfg_file):
+    try:
+        ConfigParser().read(cfg_file)
+        return True
+    except MissingSectionHeaderError:
+        return False
+
+
+def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
+    try:
+        all_config_files = []
+
+        if not no_rc:
+            all_config_files = get_default_configs()
+
+        if not config_files:
+            if os.path.exists(os.path.realpath('load.ini')):
+                all_config_files += [os.path.realpath('load.ini')]
+            elif os.path.exists(os.path.realpath('load.conf')):
+                # just for old 'lunapark' compatibility
+                conf_file = os.path.realpath('load.conf')
+                all_config_files += [conf_file]
+        else:
+            for config_file in config_files:
+                all_config_files.append(config_file)
+
+        cfg_ini = load_ini_cfgs([cfg_file for cfg_file in all_config_files if is_ini(cfg_file)])
+
+        # substitute telegraf config
+        def patch_ini_config_with_monitoring(ini_config, mon_section_name):
+            """
+            :type ini_config: ConfigParser
+            """
+            CONFIG = 'config'
+            if not ini_config.has_section(mon_section_name):
+                raise NoOptionError
+            telegraf_cfg = ini_config.get(mon_section_name, CONFIG)
+            if not telegraf_cfg.startswith('<') and not telegraf_cfg.lower() == 'auto':
+                with open(resource_manager.resource_filename(telegraf_cfg), 'rb') as telegraf_cfg_file:
+                    config_contents = telegraf_cfg_file.read()
+                ini_config.set(mon_section_name, CONFIG, config_contents)
+            return ini_config
+
+        try:
+            cfg_ini = patch_ini_config_with_monitoring(cfg_ini, 'monitoring')
+        except NoOptionError:
+            try:
+                patch_ini_config_with_monitoring(cfg_ini, 'telegraf')
+            except NoOptionError:
+                pass
+
+        for section, key, value in depr_options:
+            if not cfg_ini.has_section(section):
+                cfg_ini.add_section(section)
+            cfg_ini.set(section, key, value)
+        return apply_shorthand_options(cfg_ini, cmd_options)
+    except Exception as ex:
+        sys.stderr.write(RealConsoleMarkup.RED)
+        sys.stderr.write(RealConsoleMarkup.RESET)
+        sys.stderr.write(RealConsoleMarkup.TOTAL_RESET)
+        raise ex
+
+
+def load_tank_core(config_files, cmd_options, no_rc, depr_options, *other_opts):
+    other_opts = list(other_opts) if other_opts else []
+    config_files = config_files if len(config_files) > 0 else [DEFAULT_CONFIG]
+    if no_rc:
+        configs = [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
+    else:
+        configs = [load_core_base_cfg()] +\
+            load_local_base_cfgs() +\
+            [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
+    return TankCore(configs,
+                    cfg_depr=get_depr_cfg(config_files, no_rc, cmd_options, depr_options))
+
+
 class ConsoleTank:
     """    Worker class that runs tank core accepting cmdline params    """
 
     IGNORE_LOCKS = "ignore_locks"
 
     def __init__(self, options, ammofile):
-        self.core = TankCore()
-
+        overwrite_options = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
         self.options = options
-        self.ammofile = ammofile
-
+        self.lock_dir = options.lock_dir if options.lock_dir else '/var/lock'
         self.baseconfigs_location = '/etc/yandex-tank'
-
-        self.log_filename = self.options.log
-        self.core.add_artifact_file(self.log_filename)
+        self.init_logging()
         self.log = logging.getLogger(__name__)
+
+        if ammofile:
+            self.log.debug("Ammofile: %s", ammofile)
+            overwrite_options['phantom'] = {
+                'use_caching': False,
+                'ammofile': ammofile
+            }
+
+        self.core = load_tank_core(options.config, options.option, options.no_rc, [], overwrite_options)
+
+        raw_cfg_file, raw_cfg_path = tempfile.mkstemp(suffix='_pre-validation-config.yaml')
+        os.close(raw_cfg_file)
+        self.core.config.save_raw(raw_cfg_path)
+        self.core.add_artifact_file(raw_cfg_path)
+
+        self.core.add_artifact_file(options.log)
 
         self.signal_count = 0
         self.scheduled_start = None
@@ -98,10 +298,10 @@ class ConsoleTank:
         """ Set up logging, as it is very important for console tool """
         logger = logging.getLogger('')
         logger.setLevel(logging.DEBUG)
-
+        log_filename = self.options.log
         # create file handler which logs even debug messages
-        if self.log_filename:
-            file_handler = logging.FileHandler(self.log_filename)
+        if log_filename:
+            file_handler = logging.FileHandler(log_filename)
             file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(
                 logging.Formatter(
@@ -146,85 +346,22 @@ class ConsoleTank:
         stderr_hdl.addFilter(f_debug)
         logger.addHandler(stderr_hdl)
 
-    def __override_config_from_cmdline(self):
-        """ override config options from command line"""
-        if self.options.option:
-            self.core.apply_shorthand_options(self.options.option)
-
-    def get_default_configs(self):
-        """ returns default configs list, from /etc and home dir """
-        # initialize basic defaults
-        configs = [resource_filename(__name__, 'config/00-base.ini')]
-        try:
-            conf_files = sorted(os.listdir(self.baseconfigs_location))
-            for filename in conf_files:
-                if fnmatch.fnmatch(filename, '*.ini'):
-                    configs += [
-                        os.path.realpath(
-                            self.baseconfigs_location + os.sep + filename)
-                    ]
-        except OSError:
-            self.log.warn(
-                self.baseconfigs_location +
-                ' is not accessible to get configs list')
-
-        configs += [os.path.expanduser('~/.yandex-tank')]
-        return configs
-
     def configure(self):
-        """ Make all console-specific preparations before running Tank """
-        if self.options.ignore_lock:
-            self.log.warn(
-                "Lock files ignored. This is highly unrecommended practice!")
-
-        if self.options.lock_dir:
-            self.core.set_option(
-                self.core.SECTION, "lock_dir", self.options.lock_dir)
-
         while True:
             try:
-                self.core.get_lock(self.options.ignore_lock)
+                self.core.get_lock(self.options.ignore_lock, self.lock_dir)
                 break
-            except Exception:
+            except LockError:
                 if self.options.lock_fail:
                     raise RuntimeError("Lock file present, cannot continue")
                 self.log.exception(
                     "Couldn't get lock. Will retry in 5 seconds...")
                 time.sleep(5)
+            except:
+                self.core.release_lock()
+                raise
 
         try:
-            configs = []
-
-            if not self.options.no_rc:
-                configs = self.get_default_configs()
-
-            if not self.options.config:
-                if os.path.exists(os.path.realpath('load.ini')):
-                    self.log.info(
-                        "No config passed via cmdline, using ./load.ini")
-                    configs += [os.path.realpath('load.ini')]
-                    self.core.add_artifact_file(
-                        os.path.realpath('load.ini'), True)
-                elif os.path.exists(os.path.realpath('load.conf')):
-                    # just for old 'lunapark' compatibility
-                    self.log.warn(
-                        "Using 'load.conf' is unrecommended, please use 'load.ini' instead"
-                    )
-                    conf_file = os.path.realpath('load.conf')
-                    configs += [conf_file]
-                    self.core.add_artifact_file(conf_file, True)
-            else:
-                for config_file in self.options.config:
-                    configs.append(config_file)
-
-            self.core.load_configs(configs)
-
-            if self.ammofile:
-                self.log.debug("Ammofile: %s", self.ammofile)
-                self.core.set_option("phantom", 'ammofile', self.ammofile[0])
-
-            self.__override_config_from_cmdline()
-
             self.core.load_plugins()
 
             if self.options.scheduled_start:
@@ -235,9 +372,6 @@ class ConsoleTank:
                     self.scheduled_start = datetime.datetime.strptime(
                         datetime.datetime.now().strftime('%Y-%m-%d ') +
                         self.options.scheduled_start, '%Y-%m-%d %H:%M:%S')
-
-            if self.options.ignore_lock:
-                self.core.set_option(self.core.SECTION, self.IGNORE_LOCKS, "1")
 
         except Exception as ex:
             self.log.info("Exception: %s", traceback.format_exc(ex))
@@ -357,12 +491,12 @@ class CompletionHelperOptionParser(OptionParser):
             for option in parser.option_list:
                 if "--bash" not in option.get_opt_string():
                     opts.append(option.get_opt_string())
-            print ' '.join(opts)
+            print(' '.join(opts))
             exit(0)
 
         if options.list_options_cur or options.list_options_prev:
             cmdtank = ConsoleTank(DevNullOpts(), None)
-            cmdtank.core.load_configs(cmdtank.get_default_configs())
+            cmdtank.core.load_configs(get_default_configs())
             cmdtank.core.load_plugins()
 
             opts = []
@@ -379,5 +513,5 @@ class CompletionHelperOptionParser(OptionParser):
             for plugin in cmdtank.core.plugins:
                 for option in plugin.get_available_options():
                     opts.append(plugin.SECTION + '.' + option + '=')
-            print ' '.join(sorted(opts))
+            print(' '.join(sorted(opts)))
             exit(0)

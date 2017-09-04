@@ -1,0 +1,100 @@
+meta:
+  type: dict
+api_address:
+  default: https://overload.yandex.net/
+  type: string
+api_attempts:
+  default: 60
+  type: integer
+api_timeout:
+  default: 10
+  type: integer
+chunk_size:
+  default: 500000
+  type: integer
+component:
+  type: string
+  default: ""
+connection_timeout:
+  default: 30
+  type: integer
+ignore_target_lock:
+  default: false
+  type: boolean
+job_dsc:
+  type: string
+  default: ""
+job_name:
+  default: none
+  type: string
+jobno:
+  type: string
+  dependencies: upload_token
+jobno_file:
+  type: string
+  default: jobno_file.txt
+lock_targets:
+  default: auto
+  type: string
+log_data_requests:
+  default: false
+  type: boolean
+log_monitoring_requests:
+  default: false
+  type: boolean
+log_other_requests:
+  default: false
+  type: boolean
+log_status_requests:
+  default: false
+  type: boolean
+maintenance_attempts:
+  default: 10
+  type: integer
+maintenance_timeout:
+  default: 60
+  type: integer
+network_attempts:
+  default: 60
+  type: integer
+network_timeout:
+  default: 10
+  type: integer
+notify:
+  type: string
+  default: ""
+operator:
+  type: string
+  nullable: true
+  default: null
+regress:
+  default: false
+  type: boolean
+send_status_period:
+  default: 10
+  type: integer
+strict_lock:
+  default: false
+  type: boolean
+target_lock_duration:
+  default: 30m
+  type: string
+task:
+  type: string
+  default: ""
+threads_timeout:
+  default: 60
+  type: integer
+token_file:
+  type: string
+upload_token:
+  type: string
+  nullable: true
+  default: null
+  dependencies: jobno
+ver:
+  type: string
+  default: ""
+writer_endpoint:
+  type: string
+  default: ""

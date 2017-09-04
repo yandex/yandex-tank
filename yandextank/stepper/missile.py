@@ -338,17 +338,12 @@ class UriPostReader(object):
                     try:
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])
-                        if chunk_size == 0:
-                            self.log.debug(
-                                'Zero-sized chunk in ammo file at %s. Starting over.'
-                                % ammo_file.tell())
-                            ammo_file.seek(0)
-                            info.status.inc_loop_count()
-                            chunk_header = read_chunk_header(ammo_file)
-                            continue
                         uri = fields[1]
                         marker = fields[2] if len(fields) > 2 else None
-                        missile = ammo_file.read(chunk_size)
+                        if chunk_size == 0:
+                            missile = ""
+                        else:
+                            missile = ammo_file.read(chunk_size)
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
                                 "Unexpected end of file: read %s bytes instead of %s"

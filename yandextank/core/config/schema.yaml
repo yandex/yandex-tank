@@ -1,0 +1,44 @@
+core:
+  type: dict
+  allow_unknown: false
+  schema:
+    affinity:
+      description: bind tank process to a specific cpu core(s)
+      type: string
+      default: ''
+    api_jobno:
+      description: tankapi job id, also used as test\'s directory name
+      type: string
+    artifacts_base_dir:
+#      description: base directory to store tests\' artifacts directories
+      type: string
+      default: ./logs
+    artifacts_dir:
+#      description: directory inside base directory to store test\'s artifacts
+      type: string
+      nullable: true
+      default: null
+    cmdline:
+      type: string
+    exitcode:
+      type: integer
+    flush_config_to:
+      type: string
+    ignore_locks:
+      type: boolean
+    uuid:
+      type: string
+    pid:
+      type: integer
+    message:
+      type: string
+    lock_dir:
+      type: string
+      default: /var/lock/
+    operator:
+      type: string
+    taskset_path:
+      type: string
+      default: taskset
+version:
+  type: string

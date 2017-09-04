@@ -22,10 +22,10 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     SECTION = "maven"
 
-    def __init__(self, core, config_section):
+    def __init__(self, core, cfg, cfg_updater):
         # FIXME python version 2.7 does not support this syntax. super() should
         # have arguments in Python 2
-        super(Plugin, self).__init__(core, config_section)
+        super(Plugin, self).__init__(core, cfg, cfg_updater)
         self.maven_cmd = "mvn"
         self.process = None
         self.process_stderr = None

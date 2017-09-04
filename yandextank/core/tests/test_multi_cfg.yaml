@@ -1,0 +1,34 @@
+version: 1.8.36
+core:
+  operator: fomars
+  lock_dir: "./"
+telegraf:
+  package: yandextank.plugins.Telegraf
+  enabled: True
+  config: test_monitoring.xml
+  disguise_hostnames: True
+phantom:
+  package: yandextank.plugins.Phantom
+  enabled: True
+  address: lunapark.test.yandex-team.ru
+  phantom_path: "./phantom_mock.sh"
+  header_http: "1.1"
+  uris: "/"
+  loop: 100
+  load_profile: {load_type: rps, schedule: "line(1, 10, 1m)"}
+  connection_test: false
+  multi:
+  - address: localhost
+    load_profile: {load_type: instances, schedule: "const(10, 1m)"}
+    connection_test: false
+lunapark:
+  package: yandextank.plugins.DataUploader
+  enabled: True
+  api_address: "https://lunapark.test.yandex-team.ru/"
+  copy_config_to: test_config_copy.yaml
+  ignore_target_lock: true
+  task: LOAD-204
+aggregator:
+  package: yandextank.plugins.Aggregator
+  enabled: True
+  verbose_histogram: True

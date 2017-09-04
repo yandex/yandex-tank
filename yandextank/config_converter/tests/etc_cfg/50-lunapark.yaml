@@ -1,0 +1,16 @@
+uploader:
+  package: yandextank.plugins.DataUploader
+  enabled: true
+  api_address: https://lunapark.yandex-team.ru/
+  log_data_requests: true
+  log_monitoring_requests: true
+  log_status_requests: true
+  log_other_requests: true
+rcheck:
+  mem_limit: 1024
+aggregator:
+  verbose_histogram: true
+phantom:
+  address: ''
+telegraf:
+  disguise_hostnames: false

@@ -1,0 +1,9 @@
+interval:
+  type: string
+  default: 10s
+disk_limit:
+  type: integer
+  default: 2048
+mem_limit:
+  type: integer
+  default: 512

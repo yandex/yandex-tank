@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='1.8.35',
+    version='1.9.0',
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -20,6 +20,7 @@ analytic tools for the results they produce.
         'pandas>=0.18.0', 'numpy>=1.11.0', 'future>=0.16.0',
         'pip>=8.1.2',
         'matplotlib>=1.5.3', 'seaborn>=0.7.1',
+        'pyyaml>=3.12', 'cerberus>=1.1'
     ],
     setup_requires=[
         'pytest-runner', 'flake8',
@@ -51,16 +52,26 @@ analytic tools for the results they produce.
         ],
     },
     package_data={
-        'yandextank.core': ['config/*'],
         'yandextank.api': ['config/*'],
+        'yandextank.core': ['config/*'],
+        'yandextank.plugins.Aggregator': ['config/*'],
+        'yandextank.plugins.Android': ['binary/*', 'config/*'],
+        'yandextank.plugins.Appium': ['config/*'],
+        'yandextank.plugins.Autostop': ['config/*'],
+        'yandextank.plugins.BatteryHistorian': ['config/*'],
+        'yandextank.plugins.Bfg': ['config/*'],
+        'yandextank.plugins.Console': ['config/*'],
+        'yandextank.plugins.DataUploader': ['config/*'],
         'yandextank.plugins.GraphiteUploader': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],
+        'yandextank.plugins.JsonReport': ['config/*'],
         'yandextank.plugins.Monitoring': ['config/*'],
-        'yandextank.plugins.Phantom': ['config/*'],
-        'yandextank.plugins.TipsAndTricks': ['config/*'],
         'yandextank.plugins.Pandora': ['config/*'],
-        'yandextank.plugins.Aggregator': ['config/*'],
+        'yandextank.plugins.Phantom': ['config/*'],
+        'yandextank.plugins.RCAssert': ['config/*'],
+        'yandextank.plugins.ResourceCheck': ['config/*'],
+        'yandextank.plugins.ShellExec': ['config/*'],
         'yandextank.plugins.Telegraf': ['config/*'],
-        'yandextank.plugins.Android': ['binary/*'],
+        'yandextank.plugins.TipsAndTricks': ['config/*'],
     },
     use_2to3=False, )

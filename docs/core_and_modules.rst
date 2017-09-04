@@ -561,6 +561,9 @@ But the main purpose of BFG is to support user-defined scenarios in python. Here
       def teardown(self):
           ''' this will be executed in each worker after the end of the test '''
           log.info("Tearing down LoadTest")
+          #It's mandatory to explicitly stop worker process in teardown
+          os._exit(0)
+          return 0
 
 2. Define your options in a config file:
 
@@ -646,7 +649,13 @@ INI file section: **[bfg]**
   Default: ``caseline``.
 
 :pip:
-  Install python modules with ``pip install --user`` before the test.
+  Install python modules with ``pip install --user`` before the test. If you need multiple modules use multiline options, i.e.:
+
+::
+
+    pip=grequests
+      msgpack
+
 
 :init_param:
   An initialization parameter that will be passed to your ``setup`` method.
@@ -981,7 +990,7 @@ For using this plugin, replace old plugin ``plugin_monitoring=yandextank.plugins
 ::
 
     [tank]
-    plugin_monitoring=yandextank.plugins.Telegraf
+    plugin_telegraf=yandextank.plugins.Telegraf
     
 In https://github.com/yandex/yandex-tank/blob/master/yandextank/core/config/00-base.ini it is already done. Please, don't use both ``plugin_monitoring=yandextank.plugins.Telegraf`` and ``plugin_monitoring=yandextank.plugins.Monitoring`` simultaneously.
 
@@ -1014,7 +1023,10 @@ Options
 
   Default: 5s
 
+:disguise_hostnames:
+  Disguise real host names.
 
+  Default: 0
 
 
 Configuration
