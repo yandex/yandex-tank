@@ -2,14 +2,25 @@ import imp
 import os
 import sys
 import uuid
+
+import logging
 import pkg_resources
 import yaml
-from cerberus import Validator
+from cerberus.validator import Validator, InspectedValidator
+
 from yandextank.common.util import recursive_dict_update
+logger = logging.getLogger(__name__)
 
 
 class ValidationError(Exception):
-    pass
+    MSG_TEMPLATE = """Validation error:\n{}"""
+
+    def __init__(self, errors):
+        self.errors = errors
+        self.message = self.MSG_TEMPLATE.format(yaml.dump(self.errors))
+
+    def __str__(self):
+        return self.message
 
 
 def load_yaml_schema(path):
@@ -30,8 +41,8 @@ def load_plugin_schema(package):
         try:
             return load_py_schema(pkg_resources.resource_filename(package, 'config/schema.py'))
         except ImportError:
-            raise IOError('No schema found for plugin %s '
-                          '(should be located in config/ directory of a plugin)\n' % package)
+            logger.error("Could not find schema for %s (should be located in config/ directory of a plugin)", package)
+            raise IOError('No schema found for plugin %s' % package)
 
 
 def load_schema(directory, filename=None):
@@ -46,19 +57,21 @@ def load_schema(directory, filename=None):
 
 class TankConfig(object):
     DYNAMIC_OPTIONS = {
-        'uuid': lambda: uuid.uuid4(),
+        'uuid': lambda: str(uuid.uuid4()),
         'pid': lambda: os.getpid(),
         'cmdline': lambda: ' '.join(sys.argv)
     }
 
-    def __init__(self, configs, with_dynamic_options=True, core_section='core'):
+    def __init__(self, configs, with_dynamic_options=True, core_section='core', error_output='validation_error.yaml'):
+        self._errors = None
         if not isinstance(configs, list):
             configs = [configs]
-        self.__raw_config_dict = self.__load_multiple(configs)
+        self.raw_config_dict = self.__load_multiple([config for config in configs if config is not None])
         self.with_dynamic_options = with_dynamic_options
-        self.META_LOCATION = core_section
+        self.CORE_SECTION = core_section
         self._validated = None
         self._plugins = None
+        self.ERROR_OUTPUT = error_output
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
         self.PLUGINS_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml'))
 
@@ -83,12 +96,25 @@ class TankConfig(object):
     @property
     def validated(self):
         if not self._validated:
-            self._validated = self.__validate()
+            try:
+                self._validated = self.__validate()
+            except ValidationError as e:
+                with open(self.ERROR_OUTPUT, 'w') as f:
+                    yaml.dump(e.errors, f)
+                raise
         return self._validated
 
-    def save(self, filename):
+    def save(self, filename, error_message=''):
         with open(filename, 'w') as f:
-            yaml.dump(self.validated, f)
+            yaml.dump(
+                self.__load_multiple(
+                    [self.validated,
+                     {self.CORE_SECTION: {'message': error_message}}]
+                ), f)
+
+    def save_raw(self, filename):
+        with open(filename, 'w') as f:
+            yaml.dump(self.raw_config_dict, f)
 
     def __load_multiple(self, configs):
         l = len(configs)
@@ -107,8 +133,8 @@ class TankConfig(object):
         :rtype: list of tuple
         """
         return [(plugin_name, plugin['package'], plugin)
-                for plugin_name, plugin in self.__raw_config_dict.items()
-                if (plugin_name not in self.BASE_SCHEMA.keys()) and plugin['enabled']]
+                for plugin_name, plugin in self.raw_config_dict.items()
+                if (plugin_name not in self.BASE_SCHEMA.keys()) and isinstance(plugin, dict) and plugin.get('enabled')]
 
     def __validate(self):
         core_validated = self.__validate_core()
@@ -121,20 +147,32 @@ class TankConfig(object):
                     self.__validate_plugin(config,
                                            load_plugin_schema(package))
             except ValidationError as e:
-                errors[plugin_name] = e.message
+                errors[plugin_name] = e.errors
         if len(errors) > 0:
-            raise ValidationError(dict(errors))
+            raise ValidationError((dict(errors)))
 
         for plugin_name, plugin_conf in results.items():
             core_validated[plugin_name] = plugin_conf
         return core_validated
 
     def __validate_core(self):
-        v = Validator(self.BASE_SCHEMA, allow_unknown=self.PLUGINS_SCHEMA)
-        result = v.validate(self.__raw_config_dict, self.BASE_SCHEMA)
+        # monkey-patch to allow description field
+        def _validate_description(self, description, field, value):
+            """ {'type': 'string'} """
+            pass
+
+        Validator._validate_description = _validate_description
+        MyValidator = InspectedValidator('Validator', (Validator,), {})
+
+        v = MyValidator(allow_unknown=self.PLUGINS_SCHEMA)
+        result = v.validate(self.raw_config_dict, self.BASE_SCHEMA)
         if not result:
-            raise ValidationError(v.errors)
-        normalized = v.normalized(self.__raw_config_dict)
+            errors = v.errors
+            for key, value in v.errors.items():
+                if 'must be of dict type' in value:
+                    errors[key] = ['unknown field']
+            raise ValidationError(errors)
+        normalized = v.normalized(self.raw_config_dict)
         return self.__set_core_dynamic_options(normalized) if self.with_dynamic_options else normalized
 
     def __validate_plugin(self, config, schema):
@@ -148,7 +186,7 @@ class TankConfig(object):
 
     def __set_core_dynamic_options(self, config):
         for option, setter in self.DYNAMIC_OPTIONS.items():
-            config[self.META_LOCATION][option] = setter()
+            config[self.CORE_SECTION][option] = setter()
         return config
 
     def __get_cfg_updater(self, plugin_name):
@@ -158,3 +196,13 @@ class TankConfig(object):
 
     def __str__(self):
         return yaml.dump(self.validated)
+
+    def errors(self):
+        if not self._errors:
+            try:
+                self.validated
+            except ValidationError as e:
+                self._errors = e.errors
+            else:
+                self._errors = []
+        return self._errors

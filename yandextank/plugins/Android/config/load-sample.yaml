@@ -1,0 +1,35 @@
+core: {}
+phantom:
+  enabled: false
+  package: yandextank.plugins.Phantom
+android:
+  enabled: true
+  package: yandextank.plugins.Android
+  volta_options:
+    volta:
+      enabled: true
+      type: 'binary'
+      source: '/dev/cu.wchusbserial1420'
+    phone:
+      enabled: true
+      source: '01e345da733a4764'
+      type: 'android'
+      test_apps: 
+        - http://hostname:80/path/to.apk
+        - http://hostname:80/path/to2.apk
+      test_class: ru.class.LittleTests
+      test_package: test.package
+      test_runner: android.support.test.runner.AndroidJUnitRunner
+    sync:
+      enabled: true
+      search_interval: 15
+    uploader:
+      enabled: true
+      task: LOAD-272
+telegraf:
+  enabled: false
+  config: none
+  package: yandextank.plugins.Telegraf
+console:
+  enabled: false
+  short_only: true

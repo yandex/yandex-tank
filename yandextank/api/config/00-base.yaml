@@ -1,9 +1,6 @@
 aggregator:
   enabled: true
   package: yandextank.plugins.Aggregator
-android:
-  enabled: false
-  package: yandextank.plugins.Android
 autostop:
   enabled: true
   package: yandextank.plugins.Autostop
@@ -13,10 +10,11 @@ bfg:
 console:
   enabled: true
   package: yandextank.plugins.Console
+  short_only: true
 jmeter:
   enabled: false
   package: JMeter
-json_report:
+jsonreport:
   enabled: true
   package: yandextank.plugins.JsonReport
 phantom:

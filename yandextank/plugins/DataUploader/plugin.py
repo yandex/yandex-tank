@@ -8,7 +8,7 @@ import pwd
 import re
 import sys
 import time
-from urlparse import urljoin
+from future.moves.urllib.parse import urljoin
 
 from queue import Empty, Queue
 from builtins import str
@@ -113,7 +113,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             "ver", "component",
             "regress",
             "operator",
-            "copy_config_to",
             "jobno_file",
             "ignore_target_lock",
             "target_lock_duration",
@@ -207,10 +206,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             ammo_path = os.path.realpath(info.ammo_file)
         loop_count = info.loop_count
 
-        lp_job = self.lp_job
-        self.locked_targets = self.check_and_lock_targets(strict=self.get_option('strict_lock'),
-                                                          ignore=self.get_option('ignore_target_lock'))
         try:
+            lp_job = self.lp_job
+            self.locked_targets = self.check_and_lock_targets(strict=self.get_option('strict_lock'),
+                                                              ignore=self.get_option('ignore_target_lock'))
             if lp_job._number:
                 self.make_symlink(lp_job._number)
                 self.check_task_is_open()
@@ -218,7 +217,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 self.check_task_is_open()
                 lp_job.create()
                 self.make_symlink(lp_job.number)
-            self.core.publish(self.SECTION, 'jobno', lp_job.number)
+            self.publish('job_no', lp_job.number)
         except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError) as e:
             logger.error(e.message)
             logger.error(
@@ -272,8 +271,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.publish("jobno", self.lp_job.number)
         self.publish("web_link", web_link)
 
-        self.set_option("jobno", str(self.lp_job.number))
-
         jobno_file = self.get_option("jobno_file", '')
         if jobno_file:
             logger.debug("Saving jobno to: %s", jobno_file)
@@ -289,7 +286,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.monitoring_queue.put(None)
         self.data_queue.put(None)
         self.__save_conf()
-        self._join_threads(timeout=int(self.get_option('threads_timeout', '60')))
+        self._join_threads(timeout=int(self.get_option('threads_timeout')))
         self.unlock_targets(self.locked_targets)
         return retcode
 
@@ -435,10 +432,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     # TODO: why we do it here? should be in core
     def __save_conf(self):
-        config_copy = self.get_option('copy_config_to')
-        if config_copy:
-            self.core.config.save(config_copy)
-
         # config = copy.deepcopy(self.core.config)
         try:
             config_filename = self.core.job.monitoring_plugin.config
@@ -533,11 +526,23 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     @property
     def lp_job(self):
+        """
+
+        :rtype: LPJob
+        """
         if self._lp_job is None:
             self._lp_job = self.__get_lp_job()
+            self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
+            self.core.publish(self.SECTION, 'web_link', self._lp_job.web_link)
+            self.set_option("jobno", self.lp_job.number)
+            self.core.write_cfg_to_lock()
         return self._lp_job
 
     def __get_lp_job(self):
+        """
+
+        :rtype: LPJob
+        """
         api_client = self.__get_api_client()
 
         info = self.generator_info
@@ -548,7 +553,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return LPJob(client=api_client,
                      target_host=self.target,
                      target_port=port,
-                     number=self.get_option('jobno'),
+                     number=self.cfg.get('jobno', None),
                      token=self.get_option('upload_token'),
                      person=self.__get_operator(),
                      task=self.task,
@@ -711,6 +716,7 @@ class LPJob(object):
         self.detailed_time = detailed_time
         self.load_scheme = load_scheme
         self.is_finished = False
+        self.web_link = ''
 
     def push_test_data(self, data, stats):
         if self.is_alive:
@@ -779,6 +785,7 @@ class LPJob(object):
                                                             notify_list=self.notify_list,
                                                             trace=self.log_other_requests)
         logger.info('Job created: {}'.format(self._number))
+        self.web_link = urljoin(self.api_client.base_url, str(self._number))
 
     def send_status(self, status):
         if self._number and self.is_alive:

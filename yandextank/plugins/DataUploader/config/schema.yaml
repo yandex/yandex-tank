@@ -1,7 +1,7 @@
 meta:
   type: dict
 api_address:
-  required: true
+  default: https://overload.yandex.net/
   type: string
 api_attempts:
   default: 60
@@ -18,21 +18,9 @@ component:
 connection_timeout:
   default: 30
   type: integer
-copy_config_to:
-  type: string
-  nullable: true
-  default: null
 ignore_target_lock:
   default: false
   type: boolean
-jenkinsbuild:
-  type: string
-  default: null
-  nullable: true
-jenkinsjob:
-  type: string
-  default: null
-  nullable: true
 job_dsc:
   type: string
   default: ""
@@ -41,12 +29,10 @@ job_name:
   type: string
 jobno:
   type: string
-  nullable: true
-  default: null
   dependencies: upload_token
 jobno_file:
   type: string
-  default: ""
+  default: jobno_file.txt
 lock_targets:
   default: auto
   type: string

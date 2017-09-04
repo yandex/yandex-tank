@@ -52,7 +52,6 @@ CFG1 = {
         'package': 'yandextank.plugins.DataUploader',
         'enabled': True,
         'api_address': 'https://lunapark.test.yandex-team.ru/',
-        'copy_config_to': 'test_config_copy.yaml',
         'task': 'LOAD-204',
         'ignore_target_lock': True,
     },
@@ -86,7 +85,6 @@ CFG2 = {
         'package': 'yandextank.plugins.DataUploader',
         'enabled': True,
         'api_address': 'https://lunapark.test.yandex-team.ru/',
-        'copy_config_to': 'test_config_copy.yaml',
         'task': 'LOAD-204',
         'ignore_target_lock': True,
     },
@@ -112,12 +110,12 @@ def setup_module(module):
     (CFG1,
      {'plugin_telegraf', 'plugin_phantom', 'plugin_lunapark', 'plugin_aggregator',
       'plugin_rcheck', 'plugin_shellexec', 'plugin_aggregator', 'plugin_autostop',
-      'plugin_console', 'plugin_tips', 'plugin_rcassert', 'plugin_jsonreport',
+      'plugin_console', 'plugin_tips', 'plugin_rcassert', 'plugin_json_report',
       }),
     (CFG2,
      {'plugin_phantom', 'plugin_lunapark', 'plugin_aggregator', 'plugin_rcheck',
       'plugin_aggregator', 'plugin_autostop', 'plugin_console', 'plugin_tips',
-      'plugin_rcassert', 'plugin_jsonreport',
+      'plugin_rcassert', 'plugin_json_report',
       }
      )
 ])
@@ -167,19 +165,20 @@ def test_start_test(config):
          'phantom.ammofile = air-tickets-search-ammo.log',
          'meta.component = air_tickets_search [imbalance]',
          'meta.jenkinsjob = https://jenkins-load.yandex-team.ru/job/air_tickets_search/'],
-        [{'uploader': {'task': 'LOAD-204'}},
-         {'phantom': {'ammofile': 'air-tickets-search-ammo.log'}},
-         {'uploader': {'component': 'air_tickets_search [imbalance]'}},
-         {'uploader': {'jenkinsjob': 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/'}}]
+        [{'uploader': {'package': 'yandextank.plugins.DataUploader', 'task': 'LOAD-204'}},
+         {'phantom': {'package': 'yandextank.plugins.Phantom', 'ammofile': 'air-tickets-search-ammo.log'}},
+         {'uploader': {'package': 'yandextank.plugins.DataUploader', 'component': 'air_tickets_search [imbalance]'}},
+         {'uploader': {'package': 'yandextank.plugins.DataUploader',
+                       'meta': {'jenkinsjob': 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/'}}}]
     ),
     #     with converting/type-casting
     (
         ['phantom.rps_schedule = line(10,100,10m)',
          'phantom.instances=200',
          'phantom.connection_test=0'],
-        [{'phantom': {'load_profile': {'load_type': 'rps', 'schedule': 'line(10,100,10m)'}}},
-         {'phantom': {'instances': 200}},
-         {'phantom': {'connection_test': 0}}]
+        [{'phantom': {'package': 'yandextank.plugins.Phantom', 'load_profile': {'load_type': 'rps', 'schedule': 'line(10,100,10m)'}}},
+         {'phantom': {'package': 'yandextank.plugins.Phantom', 'instances': 200}},
+         {'phantom': {'package': 'yandextank.plugins.Phantom', 'connection_test': 0}}]
     )
 ])
 def test_parse_options(options, expected):

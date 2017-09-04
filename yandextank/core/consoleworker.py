@@ -1,11 +1,12 @@
 """ Provides classes to run TankCore from console environment """
-import ConfigParser
+from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError
 import datetime
 import fnmatch
 import glob
 import logging
 import os
 import sys
+import tempfile
 import time
 import traceback
 import signal
@@ -13,9 +14,12 @@ from optparse import OptionParser
 
 import yaml
 from pkg_resources import resource_filename
-from ..config_converter.converter import convert_ini, old_section_name_mapper, guess_plugin, Option
+from ..config_converter.converter import convert_ini, convert_single_option
 from .tankcore import TankCore, LockError
 from ..common.resource import manager as resource_manager
+
+
+DEFAULT_CONFIG = 'load.yaml'
 
 
 class RealConsoleMarkup(object):
@@ -100,16 +104,8 @@ def load_core_base_cfg():
     return load_cfg(resource_filename(__name__, 'config/00-base.yaml'))
 
 
-def load_local_base_cfg():
+def load_local_base_cfgs():
     return cfg_folder_loader('/etc/yandex-tank')
-
-
-def parse_option(key, value):
-    # type: (str, str) -> {str: dict}
-    section_name, option_name = key.strip().split('.')
-    return {old_section_name_mapper(section_name):
-            Option(guess_plugin(section_name), option_name, value).converted
-            }
 
 
 def parse_options(options):
@@ -121,7 +117,7 @@ def parse_options(options):
         return []
     else:
         return [
-            parse_option(key, value.strip())
+            convert_single_option(key.strip(), value.strip())
             for key, value
             in [option.split('=') for option in options]
         ]
@@ -130,8 +126,10 @@ def parse_options(options):
 def apply_shorthand_options(config, options, default_section='DEFAULT'):
     """
 
-    :type config: ConfigParser.ConfigParser
+    :type config: ConfigParser
     """
+    if not options:
+        return config
     for option_str in options:
         key, value = option_str.split('=')
         try:
@@ -147,7 +145,7 @@ def apply_shorthand_options(config, options, default_section='DEFAULT'):
 
 def load_ini_cfgs(config_files):
     config_filenames = [resource_manager.resource_filename(config) for config in config_files]
-    cfg = ConfigParser.ConfigParser()
+    cfg = ConfigParser()
     cfg.read(config_filenames)
 
     dotted_options = []
@@ -155,7 +153,8 @@ def load_ini_cfgs(config_files):
         for option, value in cfg.items('tank'):
             if '.' in option:
                 dotted_options += [option + '=' + value]
-
+    else:
+        cfg.add_section('tank')
     cfg = apply_shorthand_options(cfg, dotted_options)
     cfg.set('tank', 'pid', str(os.getpid()))
     return cfg
@@ -183,7 +182,15 @@ def get_default_configs():
     return configs
 
 
-def get_depr_cfg(config_files, no_rc, cmd_options):
+def is_ini(cfg_file):
+    try:
+        ConfigParser().read(cfg_file)
+        return True
+    except MissingSectionHeaderError:
+        return False
+
+
+def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
     try:
         all_config_files = []
 
@@ -201,7 +208,35 @@ def get_depr_cfg(config_files, no_rc, cmd_options):
             for config_file in config_files:
                 all_config_files.append(config_file)
 
-        cfg_ini = load_ini_cfgs([cfg_file for cfg_file in all_config_files if cfg_file.endswith('.ini')])
+        cfg_ini = load_ini_cfgs([cfg_file for cfg_file in all_config_files if is_ini(cfg_file)])
+
+        # substitute telegraf config
+        def patch_ini_config_with_monitoring(ini_config, mon_section_name):
+            """
+            :type ini_config: ConfigParser
+            """
+            CONFIG = 'config'
+            if not ini_config.has_section(mon_section_name):
+                raise NoOptionError
+            telegraf_cfg = ini_config.get(mon_section_name, CONFIG)
+            if not telegraf_cfg.startswith('<') and not telegraf_cfg.lower() == 'auto':
+                with open(resource_manager.resource_filename(telegraf_cfg), 'rb') as telegraf_cfg_file:
+                    config_contents = telegraf_cfg_file.read()
+                ini_config.set(mon_section_name, CONFIG, config_contents)
+            return ini_config
+
+        try:
+            cfg_ini = patch_ini_config_with_monitoring(cfg_ini, 'monitoring')
+        except NoOptionError:
+            try:
+                patch_ini_config_with_monitoring(cfg_ini, 'telegraf')
+            except NoOptionError:
+                pass
+
+        for section, key, value in depr_options:
+            if not cfg_ini.has_section(section):
+                cfg_ini.add_section(section)
+            cfg_ini.set(section, key, value)
         return apply_shorthand_options(cfg_ini, cmd_options)
     except Exception as ex:
         sys.stderr.write(RealConsoleMarkup.RED)
@@ -210,15 +245,17 @@ def get_depr_cfg(config_files, no_rc, cmd_options):
         raise ex
 
 
-def load_tank_core(config_files, cmd_options, no_rc, *other_opts):
+def load_tank_core(config_files, cmd_options, no_rc, depr_options, *other_opts):
     other_opts = list(other_opts) if other_opts else []
-    cmd_options = cmd_options if cmd_options else []
-    return TankCore([load_core_base_cfg()] +
-                    load_local_base_cfg() +
-                    [load_cfg(cfg) for cfg in config_files] +
-                    list(other_opts) +
-                    parse_options(cmd_options),
-                    cfg_depr=get_depr_cfg(config_files, no_rc, cmd_options))
+    config_files = config_files if len(config_files) > 0 else [DEFAULT_CONFIG]
+    if no_rc:
+        configs = [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
+    else:
+        configs = [load_core_base_cfg()] +\
+            load_local_base_cfgs() +\
+            [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
+    return TankCore(configs,
+                    cfg_depr=get_depr_cfg(config_files, no_rc, cmd_options, depr_options))
 
 
 class ConsoleTank:
@@ -227,16 +264,26 @@ class ConsoleTank:
     IGNORE_LOCKS = "ignore_locks"
 
     def __init__(self, options, ammofile):
-        lock_cfg = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
+        overwrite_options = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
         self.options = options
         self.lock_dir = options.lock_dir if options.lock_dir else '/var/lock'
         self.baseconfigs_location = '/etc/yandex-tank'
         self.init_logging()
         self.log = logging.getLogger(__name__)
 
-        self.core = load_tank_core(options.config, options.option, options.no_rc, lock_cfg)
+        if ammofile:
+            self.log.debug("Ammofile: %s", ammofile)
+            overwrite_options['phantom'] = {
+                'use_caching': False,
+                'ammofile': ammofile
+            }
 
-        self.ammofile = ammofile
+        self.core = load_tank_core(options.config, options.option, options.no_rc, [], overwrite_options)
+
+        raw_cfg_file, raw_cfg_path = tempfile.mkstemp(suffix='_pre-validation-config.yaml')
+        os.close(raw_cfg_file)
+        self.core.config.save_raw(raw_cfg_path)
+        self.core.add_artifact_file(raw_cfg_path)
 
         self.core.add_artifact_file(options.log)
 
@@ -310,10 +357,9 @@ class ConsoleTank:
                 self.log.exception(
                     "Couldn't get lock. Will retry in 5 seconds...")
                 time.sleep(5)
-
-        if self.ammofile:
-            self.log.debug("Ammofile: %s", self.ammofile)
-            self.core.set_option("phantom", 'ammofile', self.ammofile[0])
+            except:
+                self.core.release_lock()
+                raise
 
         try:
             self.core.load_plugins()
@@ -445,7 +491,7 @@ class CompletionHelperOptionParser(OptionParser):
             for option in parser.option_list:
                 if "--bash" not in option.get_opt_string():
                     opts.append(option.get_opt_string())
-            print ' '.join(opts)
+            print(' '.join(opts))
             exit(0)
 
         if options.list_options_cur or options.list_options_prev:
@@ -467,5 +513,5 @@ class CompletionHelperOptionParser(OptionParser):
             for plugin in cmdtank.core.plugins:
                 for option in plugin.get_available_options():
                     opts.append(plugin.SECTION + '.' + option + '=')
-            print ' '.join(sorted(opts))
+            print(' '.join(sorted(opts)))
             exit(0)

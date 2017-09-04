@@ -10,7 +10,10 @@ import socket
 import tempfile
 import time
 import traceback
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import pkg_resources
 import sys
@@ -27,7 +30,6 @@ from ..common.util import update_status, execute, pid_exists
 
 from ..common.resource import manager as resource
 from ..plugins.Aggregator import Plugin as AggregatorPlugin
-from ..plugins.Monitoring import Plugin as MonitoringPlugin
 from ..plugins.Telegraf import Plugin as TelegrafPlugin
 
 if sys.version_info[0] < 3:
@@ -100,9 +102,11 @@ class TankCore(object):
         :param configs: list of dict
         """
         self.raw_configs = configs
-        self._config = None
+        self.config = TankConfig(self.raw_configs,
+                                 with_dynamic_options=True,
+                                 core_section=self.SECTION)
         self.status = {}
-        self._plugins = {}
+        self._plugins = None
         self._artifacts_dir = None
         self.artifact_files = {}
         self._artifacts_base_dir = None
@@ -114,16 +118,24 @@ class TankCore(object):
         self.taskset_path = None
         self.taskset_affinity = None
         self._job = None
-        if cfg_depr:
-            output = StringIO()
-            cfg_depr.write(output)
-            self.cfg_snapshot = output.getvalue()
-        else:
-            self.cfg_snapshot = str(self.config)
+        self.cfg_depr = cfg_depr
+        self._cfg_snapshot = None
+
         self.interrupted = False
     #
     # def get_uuid(self):
     #     return self.uuid
+
+    @property
+    def cfg_snapshot(self):
+        if not self._cfg_snapshot:
+            if self.cfg_depr:
+                output = StringIO()
+                self.cfg_depr.write(output)
+                self._cfg_snapshot = output.getvalue()
+            else:
+                self._cfg_snapshot = str(self.config)
+        return self._cfg_snapshot
 
     @staticmethod
     def get_available_options():
@@ -134,21 +146,15 @@ class TankCore(object):
         ]
 
     @property
-    def config(self):
-        if not self._config:
-            self._config = TankConfig(self.raw_configs,
-                                      with_dynamic_options=True,
-                                      core_section=self.SECTION)
-        return self._config
-
-    @property
     def plugins(self):
         """
         :returns: {plugin_name: plugin_class, ...}
         :rtype: dict
         """
-        if not self._plugins:
+        if self._plugins is None:
             self.load_plugins()
+            if self._plugins is None:
+                self._plugins = {}
         return self._plugins
 
     def save_config(self, filename):
@@ -164,20 +170,6 @@ class TankCore(object):
                 os.chmod(self.artifacts_base_dir, 0o755)
             self._artifacts_base_dir = artifacts_base_dir
         return self._artifacts_base_dir
-
-    # todo: take this to .ini-reader
-    def load_configs_deprecated(self, configs):
-        """ Tells core to load configs set into options storage """
-        logger.info("Loading configs...")
-        self.config.load_files(configs)
-        dotted_options = []
-        for option, value in self.config.get_options(self.SECTION):
-            if '.' in option:
-                dotted_options += [option + '=' + value]
-        self.apply_shorthand_options(dotted_options, self.SECTION)
-        self.config.flush()
-        self.add_artifact_file(self.config.file)
-        self.set_option(self.SECTION, self.PID_OPTION, str(os.getpid()))
 
     def load_plugins(self):
         """
@@ -232,7 +224,7 @@ class TankCore(object):
 
             self.register_plugin(self.PLUGIN_PREFIX + plugin_name, instance)
 
-        logger.debug("Plugin instances: %s", self.plugins)
+        logger.debug("Plugin instances: %s", self._plugins)
 
     @property
     def job(self):
@@ -242,11 +234,7 @@ class TankCore(object):
                 mon = self.get_plugin_of_type(TelegrafPlugin)
             except KeyError:
                 logger.debug("Telegraf plugin not found:", exc_info=True)
-                try:
-                    mon = self.get_plugin_of_type(MonitoringPlugin)
-                except KeyError:
-                    logger.debug("Monitoring plugin not found:", exc_info=True)
-                    mon = None
+                mon = None
             # aggregator plugin
             try:
                 aggregator = self.get_plugin_of_type(AggregatorPlugin)
@@ -477,10 +465,14 @@ class TankCore(object):
             raise LockError("Lock file(s) found")
 
         fh, self.lock_file = tempfile.mkstemp(
-            '.lock', 'lunapark_', self.get_lock_dir())
+            '.lock', 'lunapark_', lock_dir)
         os.close(fh)
         os.chmod(self.lock_file, 0o644)
         self.config.save(self.lock_file)
+
+    def write_cfg_to_lock(self):
+        if self.lock_file:
+            self.config.save(self.lock_file)
 
     def release_lock(self):
         if self.lock_file and os.path.exists(self.lock_file):
@@ -573,6 +565,8 @@ class TankCore(object):
         return ' '.join((tank_agent, python_agent, os_agent))
 
     def register_plugin(self, plugin_name, instance):
+        if self._plugins is None:
+            self._plugins = {}
         if self._plugins.get(plugin_name, None) is not None:
             logger.exception('Plugins\' names should diverse')
         self._plugins[plugin_name] = instance

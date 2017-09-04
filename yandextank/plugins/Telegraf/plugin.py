@@ -115,8 +115,32 @@ class Plugin(AbstractPlugin):
     @property
     def config(self):
         if self._config is None:
-            self._config = self.get_option('config')
+            value = self.get_option('config')
+
+            if value.lower() == "none":
+                self.monitoring = None
+                self.die_on_fail = False
+                self._config = value
+            # handle http/https url or file path
+            else:
+                if value.startswith("<"):
+                    config_contents = value
+                elif value.lower() == "auto":
+                    self.die_on_fail = False
+                    with open(resource.resource_filename(self.default_config), 'rb') as def_config:
+                        config_contents = def_config.read()
+                else:
+                    with open(resource.resource_filename(value), 'rb') as config:
+                        config_contents = config.read()
+                self._config = self._save_config_contents(config_contents)
         return self._config
+
+    def _save_config_contents(self, contents):
+        xmlfile = self.core.mkstemp(".xml", "monitoring_")
+        self.core.add_artifact_file(xmlfile)
+        with open(xmlfile, "wb") as f:  # output file should be in binary mode to support py3
+            f.write(contents)
+        return xmlfile
 
     def configure(self):
         self.detected_conf = self.__detect_configuration()
@@ -134,29 +158,6 @@ class Plugin(AbstractPlugin):
         # configuration below.
         self.monitoring.ssh_timeout = expand_to_seconds(
             self.get_option("ssh_timeout", "5s"))
-
-        # FIXME [legacy] handle raw XML config in .ini file
-        if self.config[0] == "<":
-            config_contents = self.config
-        # handle http/https url or file path
-        else:
-            if self.config.lower() == "auto":
-                self.die_on_fail = False
-                with open(
-                        resource.resource_filename(self.default_config),
-                        'rb') as def_config:
-                    config_contents = def_config.read()
-            else:
-                with open(resource.resource_filename(self.config),
-                          'rb') as config:
-                    config_contents = config.read()
-
-        # dump config contents into a file
-        xmlfile = self.core.mkstemp(".xml", "monitoring_")
-        self.core.add_artifact_file(xmlfile)
-        with open(xmlfile, "wb") as f:  # output file should be in binary mode to support py3
-            f.write(config_contents)
-
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
             autostop.add_criterion_class(MetricHigherCriterion)

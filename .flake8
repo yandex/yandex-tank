@@ -1,6 +1,7 @@
 [flake8]
 exclude =
     .env,
+    .env3,
     .git,
     .cache,
     .eggs,
