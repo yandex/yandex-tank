@@ -110,12 +110,12 @@ def setup_module(module):
     (CFG1,
      {'plugin_telegraf', 'plugin_phantom', 'plugin_lunapark', 'plugin_aggregator',
       'plugin_rcheck', 'plugin_shellexec', 'plugin_aggregator', 'plugin_autostop',
-      'plugin_console', 'plugin_tips', 'plugin_rcassert', 'plugin_jsonreport',
+      'plugin_console', 'plugin_tips', 'plugin_rcassert', 'plugin_json_report',
       }),
     (CFG2,
      {'plugin_phantom', 'plugin_lunapark', 'plugin_aggregator', 'plugin_rcheck',
       'plugin_aggregator', 'plugin_autostop', 'plugin_console', 'plugin_tips',
-      'plugin_rcassert', 'plugin_jsonreport',
+      'plugin_rcassert', 'plugin_json_report',
       }
      )
 ])

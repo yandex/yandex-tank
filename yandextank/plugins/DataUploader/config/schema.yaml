@@ -32,7 +32,7 @@ jobno:
   dependencies: upload_token
 jobno_file:
   type: string
-  default: ""
+  default: jobno_file.txt
 lock_targets:
   default: auto
   type: string

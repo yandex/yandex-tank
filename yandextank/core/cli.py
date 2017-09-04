@@ -12,7 +12,8 @@ def main():
         '-c',
         '--config',
         action='append',
-        help="Path to INI file containing run options, multiple options accepted"
+        help="Path to INI file containing run options, multiple options accepted",
+        default=[]
     )
     parser.add_option(
         '-f',
@@ -79,8 +80,8 @@ def main():
     completion_helper = CompletionHelperOptionParser()
     completion_helper.handle_request(parser)
 
-    options, ammofile = parser.parse_args()
-
+    options, ammofiles = parser.parse_args()
+    ammofile = ammofiles[0] if len(ammofiles) > 0 else None
     worker = ConsoleTank(options, ammofile)
     try:
         worker.configure()

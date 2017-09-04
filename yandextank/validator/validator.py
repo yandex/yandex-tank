@@ -6,7 +6,8 @@ import uuid
 import logging
 import pkg_resources
 import yaml
-from cerberus import Validator
+from cerberus.validator import Validator, InspectedValidator
+
 from yandextank.common.util import recursive_dict_update
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ class ValidationError(Exception):
 
     def __init__(self, errors):
         self.errors = errors
-        self.message = self.MSG_TEMPLATE.format(self.errors)
+        self.message = self.MSG_TEMPLATE.format(yaml.dump(self.errors))
 
     def __str__(self):
         return self.message
@@ -61,14 +62,16 @@ class TankConfig(object):
         'cmdline': lambda: ' '.join(sys.argv)
     }
 
-    def __init__(self, configs, with_dynamic_options=True, core_section='core'):
+    def __init__(self, configs, with_dynamic_options=True, core_section='core', error_output='validation_error.yaml'):
+        self._errors = None
         if not isinstance(configs, list):
             configs = [configs]
-        self.raw_config_dict = self.__load_multiple(configs)
+        self.raw_config_dict = self.__load_multiple([config for config in configs if config is not None])
         self.with_dynamic_options = with_dynamic_options
         self.CORE_SECTION = core_section
         self._validated = None
         self._plugins = None
+        self.ERROR_OUTPUT = error_output
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
         self.PLUGINS_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml'))
 
@@ -93,7 +96,12 @@ class TankConfig(object):
     @property
     def validated(self):
         if not self._validated:
-            self._validated = self.__validate()
+            try:
+                self._validated = self.__validate()
+            except ValidationError as e:
+                with open(self.ERROR_OUTPUT, 'w') as f:
+                    yaml.dump(e.errors, f)
+                raise
         return self._validated
 
     def save(self, filename, error_message=''):
@@ -148,7 +156,15 @@ class TankConfig(object):
         return core_validated
 
     def __validate_core(self):
-        v = Validator(self.BASE_SCHEMA, allow_unknown=self.PLUGINS_SCHEMA)
+        # monkey-patch to allow description field
+        def _validate_description(self, description, field, value):
+            """ {'type': 'string'} """
+            pass
+
+        Validator._validate_description = _validate_description
+        MyValidator = InspectedValidator('Validator', (Validator,), {})
+
+        v = MyValidator(allow_unknown=self.PLUGINS_SCHEMA)
         result = v.validate(self.raw_config_dict, self.BASE_SCHEMA)
         if not result:
             errors = v.errors
@@ -180,3 +196,13 @@ class TankConfig(object):
 
     def __str__(self):
         return yaml.dump(self.validated)
+
+    def errors(self):
+        if not self._errors:
+            try:
+                self.validated
+            except ValidationError as e:
+                self._errors = e.errors
+            else:
+                self._errors = []
+        return self._errors

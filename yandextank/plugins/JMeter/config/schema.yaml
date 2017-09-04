@@ -38,3 +38,4 @@ jmx:
   type: string
 variables:
   type: dict
+  default: {}
