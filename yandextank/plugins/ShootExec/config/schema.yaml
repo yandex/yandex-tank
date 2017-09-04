@@ -1,0 +1,6 @@
+cmd:
+  type: string
+  required: true
+output_path:
+  type: string
+  required: true
