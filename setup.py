@@ -71,6 +71,7 @@ analytic tools for the results they produce.
         'yandextank.plugins.RCAssert': ['config/*'],
         'yandextank.plugins.ResourceCheck': ['config/*'],
         'yandextank.plugins.ShellExec': ['config/*'],
+        'yandextank.plugins.ShootExec': ['config/*'],
         'yandextank.plugins.Telegraf': ['config/*'],
         'yandextank.plugins.TipsAndTricks': ['config/*'],
     },

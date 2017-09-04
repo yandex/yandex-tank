@@ -23,8 +23,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     SECTION = 'shootexec'
 
-    def __init__(self, core, config_section):
-        AbstractPlugin.__init__(self, core, config_section)
+    def __init__(self, core, config, cfg_updater):
+        AbstractPlugin.__init__(self, core, config, cfg_updater)
         self.__process = None
         self.__stderr_file = None
         self.__processed_ammo_count = 0
