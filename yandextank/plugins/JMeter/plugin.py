@@ -168,9 +168,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             source_lines = src_jmx.readlines()
 
         try:
+            # In new Jmeter version (3.2 as example) WorkBench's plugin checkbox enabled by default
+            # It totally crashes Yandex tank injection and raises XML Parse Exception
             closing = source_lines.pop(-1)
-            closing = source_lines.pop(-1) + closing
-            closing = source_lines.pop(-1) + closing
+            if "WorkBenchGui" in source_lines[-5]:
+                logger.info("WorkBench checkbox enabled...bypassing")
+                last_string_count = 6
+            else:
+                last_string_count = 2
+            while last_string_count > 0:
+                closing = source_lines.pop(-1) + closing
+                last_string_count -= 1
             logger.debug("Closing statement: %s", closing)
         except Exception as exc:
             raise RuntimeError("Failed to find the end of JMX XML: %s" % exc)
