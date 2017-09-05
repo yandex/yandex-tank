@@ -354,6 +354,16 @@ class AgentWorker(threading.Thread):
         sys.stderr.write('stopped\n')
 
 
+def kill_old_agents(telegraf_path):
+    my_pid = os.getpid()
+    ps_output = subprocess.check_output(['ps', 'aux'])
+    for line in ps_output.splitlines():
+        if telegraf_path in line:
+            pid = int(line.split()[1])
+            if pid != my_pid:
+                os.kill(pid, signal.SIGKILL)
+
+
 def main():
     fname = os.path.dirname(__file__) + "/_agent.log"
     logging.basicConfig(
@@ -378,6 +388,9 @@ def main():
 
     logger.info('Init')
     customs_script = os.path.dirname(__file__) + '/agent_customs.sh'
+
+    kill_old_agents(options.telegraf_path)
+
     try:
         logger.info(
             'Trying to make telegraf executable: %s', options.telegraf_path)

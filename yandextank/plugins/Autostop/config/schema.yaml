@@ -1,8 +1,10 @@
 autostop:
+  description: list of autostop constraints
   type: list
   schema:
     type: string
   default: []
 report_file:
+  description: path to file to store autostop report
   type: string
   default: autostop_report.txt
