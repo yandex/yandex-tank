@@ -79,7 +79,8 @@ PHANTOM_SCHEMA_V_G = {
          'package': 'yandextank.plugins.Telegraf',
          'enabled': True,
          'config': 'monitoring.xml',
-         'disguise_hostnames': True
+         'disguise_hostnames': True,
+         'kill_old': True
      },
      'phantom': {
          'package': 'yandextank.plugins.Phantom',
@@ -106,6 +107,7 @@ PHANTOM_SCHEMA_V_G = {
          'disguise_hostnames': True,
          'default_target': 'localhost',
          'ssh_timeout': '5s',
+         'kill_old': True
      },
      'phantom': {
          'package': 'yandextank.plugins.Phantom',
@@ -319,7 +321,8 @@ def test_load_multiple(configs, expected):
                 'config': 'monitoring.xml',
                 'disguise_hostnames': True,
                 'ssh_timeout': '5s',
-                'default_target': 'localhost'
+                'default_target': 'localhost',
+                'kill_old': True
             },
             'phantom': {
                 'package': 'yandextank.plugins.Phantom',

@@ -84,12 +84,11 @@ def load_cfg(cfg_filename):
 
     :type cfg_filename: str
     """
-    if cfg_filename.endswith('.yaml'):
-        with open(cfg_filename) as f:
-            cfg = yaml.load(f)
+    if is_ini(cfg_filename):
+        return convert_ini(cfg_filename)
     else:
-        cfg = convert_ini(cfg_filename)
-    return cfg
+        with open(cfg_filename) as f:
+            return yaml.load(f)
 
 
 def cfg_folder_loader(path):
