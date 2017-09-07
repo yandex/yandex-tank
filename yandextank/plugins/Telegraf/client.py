@@ -31,8 +31,9 @@ def generate_file_md5(filename, blocksize=2**20):
 class LocalhostClient(object):
     """ localhost client setup """
 
-    def __init__(self, config, old_style_configs):
+    def __init__(self, config, old_style_configs, kill_old):
         # config
+        self.kill_old = '--kill-old' if kill_old else ''
         self.python = config['python']
         self.host = "localhost"
         self.telegraf = config['telegraf']
@@ -93,11 +94,12 @@ class LocalhostClient(object):
     def start(self):
         """Start local agent"""
         logger.info('Starting agent on localhost')
-        command = "{python} {work_dir}/agent.py --telegraf {telegraf_path} --host {host}".format(
+        command = "{python} {work_dir}/agent.py --telegraf {telegraf_path} --host {host} {kill_old}".format(
             python=self.python,
             work_dir=self.workdir,
             telegraf_path=self.path['TELEGRAF_LOCAL_PATH'],
-            host=self.host)
+            host=self.host,
+            kill_old=self.kill_old)
         self.session = self.popen(command)
         self.reader_thread = threading.Thread(target=self.read_buffer)
         self.reader_thread.setDaemon(True)
@@ -148,8 +150,9 @@ class LocalhostClient(object):
 class SSHClient(object):
     """remote agent client setup """
 
-    def __init__(self, config, old_style_configs, timeout):
+    def __init__(self, config, old_style_configs, timeout, kill_old):
         # config
+        self.kill_old = '--kill-old' if kill_old else ''
         self.host = config['host']
         self.username = config['username']
         self.python = config['python']
@@ -277,11 +280,12 @@ class SSHClient(object):
     def start(self):
         """Start remote agent"""
         logger.info('Starting agent: %s', self.host)
-        command = "{python} {agent_path}/agent.py --telegraf {telegraf_path} --host {host}".format(
+        command = "{python} {agent_path}/agent.py --telegraf {telegraf_path} --host {host} {kill_old}".format(
             python=self.python,
             agent_path=self.path['AGENT_REMOTE_FOLDER'],
             telegraf_path=self.path['TELEGRAF_REMOTE_PATH'],
-            host=self.host)
+            host=self.host,
+            kill_old=self.kill_old)
         logging.debug('Command to start agent: %s', command)
         self.session = self.ssh.async_session(command)
         self.reader_thread = threading.Thread(target=self.read_buffer)

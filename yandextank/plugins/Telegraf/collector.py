@@ -29,7 +29,8 @@ class MonitoringCollector(object):
 
     """
 
-    def __init__(self, disguise_hostnames):
+    def __init__(self, disguise_hostnames, kill_old):
+        self.kill_old = kill_old
         self.disguise_hostnames = disguise_hostnames
         self.config = None
         self.default_target = None
@@ -60,10 +61,10 @@ class MonitoringCollector(object):
         for config in agent_configs:
             if config['host'] in ['localhost', '127.0.0.1', '::1']:
                 client = self.clients['localhost'](
-                    config, self.old_style_configs)
+                    config, self.old_style_configs, kill_old=self.kill_old)
             else:
                 client = self.clients['ssh'](
-                    config, self.old_style_configs, timeout=5)
+                    config, self.old_style_configs, timeout=5, kill_old=self.kill_old)
             logger.debug('Installing monitoring agent. Host: %s', client.host)
             agent_config, startup_config, customs_script = client.install()
             if agent_config:

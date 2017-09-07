@@ -10,7 +10,7 @@ import json
 import threading
 import time
 
-from optparse import OptionParser
+from argparse import ArgumentParser
 import Queue as q
 
 logger = logging.getLogger("agent")
@@ -361,6 +361,7 @@ def kill_old_agents(telegraf_path):
         if telegraf_path in line:
             pid = int(line.split()[1])
             if pid != my_pid:
+                logger.info('Killing process {}:\n{}'.format(pid, line))
                 os.kill(pid, signal.SIGKILL)
 
 
@@ -371,25 +372,29 @@ def main():
         filename=fname,
         format='%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(message)s')
 
-    parser = OptionParser()
-    parser.add_option(
-        "",
+    parser = ArgumentParser()
+    parser.add_argument(
         "--telegraf",
         dest="telegraf_path",
         help="telegraf_path",
         default="/tmp/telegraf")
-    parser.add_option(
-        "",
+    parser.add_argument(
         "--host",
         dest="hostname_path",
         help="telegraf_path",
         default="/usr/bin/telegraf")
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        "-k", "--kill-old",
+        action="store_true",
+        dest="kill_old"
+    )
+    options = parser.parse_args()
 
     logger.info('Init')
     customs_script = os.path.dirname(__file__) + '/agent_customs.sh'
 
-    kill_old_agents(options.telegraf_path)
+    if options.kill_old:
+        kill_old_agents(options.telegraf_path)
 
     try:
         logger.info(
