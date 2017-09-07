@@ -186,7 +186,10 @@ class TankConfig(object):
 
     def __set_core_dynamic_options(self, config):
         for option, setter in self.DYNAMIC_OPTIONS.items():
-            config[self.CORE_SECTION][option] = setter()
+            try:
+                config[self.CORE_SECTION][option] = setter()
+            except KeyError:
+                config[self.CORE_SECTION] = {option: setter()}
         return config
 
     def __get_cfg_updater(self, plugin_name):

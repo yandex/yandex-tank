@@ -80,13 +80,13 @@ class LocalhostClient(object):
         return agent_config, startup_config, customs_script
 
     @staticmethod
-    def popen(cmnd):
+    def popen(args):
         return subprocess.Popen(
-            cmnd,
+            args,
             bufsize=0,
             preexec_fn=os.setsid,
             close_fds=True,
-            shell=True,
+            shell=False,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE, )
@@ -94,6 +94,12 @@ class LocalhostClient(object):
     def start(self):
         """Start local agent"""
         logger.info('Starting agent on localhost')
+        args = [self.python,
+                '{}/agent.py'.format(self.workdir),
+                '--telegraf', self.path['TELEGRAF_LOCAL_PATH'],
+                '--host', self.host]
+        if self.kill_old:
+            args.append(self.kill_old)
         command = "{python} {work_dir}/agent.py --telegraf {telegraf_path} --host {host} {kill_old}".format(
             python=self.python,
             work_dir=self.workdir,
