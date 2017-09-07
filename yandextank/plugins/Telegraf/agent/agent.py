@@ -196,13 +196,13 @@ class AgentWorker(threading.Thread):
         self.results_err = q.Queue()
 
     @staticmethod
-    def popen(cmnd):
+    def __popen(cmnd, shell=False):
         return subprocess.Popen(
             cmnd,
             bufsize=0,
             preexec_fn=os.setsid,
             close_fds=True,
-            shell=True,
+            shell=shell,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE, )
@@ -239,14 +239,14 @@ class AgentWorker(threading.Thread):
         logger.info("Running startup commands")
         for cmnd in self.startups:
             logger.debug("Run: %s", cmnd)
-            proc = self.popen(cmnd)
+            # fixme: shell=True is insecure, should save startup script and launch directly
+            proc = self.__popen(cmnd, shell=True)
             logger.info('Started with pid %d', proc.pid)
             self.startup_processes.append(proc)
 
         logger.info('Starting metrics collector..')
-        cmnd = "{telegraf} -config {working_dir}/agent.cfg".format(
-            telegraf=self.telegraf_path, working_dir=self.working_dir)
-        self.collector = self.popen(cmnd)
+        args = [self.telegraf_path, '-config', '{}/agent.cfg'.format(self.working_dir)]
+        self.collector = self.__popen(cmnd=args)
         logger.info('Started with pid %d', self.collector.pid)
 
         telegraf_output = self.working_dir + '/monitoring.rawdata'
