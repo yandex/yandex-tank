@@ -86,7 +86,7 @@ class LocalhostClient(object):
             bufsize=0,
             preexec_fn=os.setsid,
             close_fds=True,
-            shell=True,
+            shell=False,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE, )
@@ -99,13 +99,7 @@ class LocalhostClient(object):
                                       '--host', self.host]
         if self.kill_old:
             args.append(self.kill_old)
-        command = "{python} {work_dir}/agent.py --telegraf {telegraf_path} --host {host} {kill_old}".format(
-            python=self.python,
-            work_dir=self.workdir,
-            telegraf_path=self.path['TELEGRAF_LOCAL_PATH'],
-            host=self.host,
-            kill_old=self.kill_old)
-        self.session = self.popen(command)
+        self.session = self.popen(args)
         self.reader_thread = threading.Thread(target=self.read_buffer)
         self.reader_thread.setDaemon(True)
         return self.session
