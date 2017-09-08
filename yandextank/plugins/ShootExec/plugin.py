@@ -5,6 +5,7 @@ import subprocess
 import time
 
 from ...common.interfaces import AbstractPlugin, GeneratorPlugin, AggregateResultListener, AbstractInfoWidget
+from ...common.util import FileScanner
 from ..Console import Plugin as ConsolePlugin
 from ..Phantom import PhantomReader
 
@@ -35,12 +36,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         return __file__
 
     def get_available_options(self):
-        return ["cmd", "output_path"]
+        return ["cmd", "output_path", "stats_path"]
 
     def configure(self):
         self.__cmd = self.get_option("cmd")
+
         self.__output_path = self.get_option("output_path")
         self.core.add_artifact_file(self.__output_path)
+
+        self.__stats_path = self.get_option("stats_path")
+        if self.__stats_path:
+            self.core.add_artifact_file(self.__stats_path)
 
     def prepare_test(self):
         stderr_path = self.core.mkstemp(".log", "shootexec_stdout_stderr_")
@@ -58,7 +64,10 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         aggregator = self.core.job.aggregator_plugin
         if aggregator:
             aggregator.reader = reader
-            aggregator.stats_reader = _StatsReader()
+            if self.__stats_path:
+                aggregator.stats_reader = _FileStatsReader(self.__stats_path)
+            else:
+                aggregator.stats_reader = _DummyStatsReader()
             aggregator.add_result_listener(self)
 
         try:
@@ -166,7 +175,64 @@ class _InfoWidget(AbstractInfoWidget, AggregateResultListener):
         pass
 
 
-class _StatsReader(object):
+class _FileStatsReader(FileScanner):
+    """
+    Read shooting stats line by line
+
+    Line format is 'timestamp\trps\tinstances'
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(_FileStatsReader, self).__init__(*args, **kwargs)
+        self.__last_ts = int(time.time())
+        self.__last_rps = 0
+        self.__last_instances = 1
+
+    def _read_data(self, lines):
+        """
+        Parse lines and return stats
+
+        We must return something for each query, therefore we
+        return previous results if nothing new wasn't found
+        """
+
+        aggregated_rps = 0.0
+        aggregated_instances = 0.0
+        aggregated_timestamp = 0
+
+        # Yandex tank doesn't work with multiple stat entries, so we aggregate them
+        for n, line in enumerate(lines):
+            timestamp, rps, instances = line.split("\t")
+            aggregated_rps += float(rps)
+            aggregated_instances += float(instances)
+            aggregated_timestamp = int(float(timestamp))  # We accept floats, but tank expects integer here
+
+        if aggregated_rps:
+            self.__last_rps = aggregated_rps / (n + 1)
+
+        if aggregated_instances:
+            self.__last_instances = aggregated_instances / (n + 1)
+
+        # Our resulting sequence shoud have monotonically increasing timestamp.
+        # We are trying to use actual timestamps where possible, otherwise, fallback to syntetic values
+        if aggregated_timestamp and aggregated_timestamp > self.__last_ts:
+            self.__last_ts = aggregated_timestamp
+        else:
+            self.__last_ts += 1
+
+        return [{
+            'ts': self.__last_ts,
+            'metrics': {
+                'reqps': self.__last_rps,
+                'instances': self.__last_instances
+            },
+        }]
+
+
+class _DummyStatsReader(object):
+    """
+    Dummy stats reader for shooters without stats file
+    """
 
     def __init__(self):
         self.__closed = False
