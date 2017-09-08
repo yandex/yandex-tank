@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
 
 
-def generate_file_md5(filename, blocksize=2**20):
+def generate_file_md5(filename, blocksize=2 ** 20):
     m = hashlib.md5()
     with open(filename, "rb") as f:
         while True:
@@ -94,10 +94,9 @@ class LocalhostClient(object):
     def start(self):
         """Start local agent"""
         logger.info('Starting agent on localhost')
-        args = [self.python,
-                '{}/agent.py'.format(self.workdir),
-                '--telegraf', self.path['TELEGRAF_LOCAL_PATH'],
-                '--host', self.host]
+        args = self.python.split() + ['{}/agent.py'.format(self.workdir),
+                                    '--telegraf', self.path['TELEGRAF_LOCAL_PATH'],
+                                    '--host', self.host]
         if self.kill_old:
             args.append(self.kill_old)
         command = "{python} {work_dir}/agent.py --telegraf {telegraf_path} --host {host} {kill_old}".format(
