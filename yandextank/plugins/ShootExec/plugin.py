@@ -18,7 +18,7 @@ _INFO = collections.namedtuple(
 _LOGGER = logging.getLogger(__name__)
 
 _PROCESS_KILL_TIMEOUT = 10  # Kill running process after specified number of seconds
-_OUTPUT_WAIT_TIMEOUT = 10 # Output files should be found after specified number of seconds
+_OUTPUT_WAIT_TIMEOUT = 10  # Output files should be found after specified number of seconds
 
 
 class Plugin(AbstractPlugin, GeneratorPlugin):
