@@ -95,8 +95,8 @@ class LocalhostClient(object):
         """Start local agent"""
         logger.info('Starting agent on localhost')
         args = self.python.split() + ['{}/agent.py'.format(self.workdir),
-                                    '--telegraf', self.path['TELEGRAF_LOCAL_PATH'],
-                                    '--host', self.host]
+                                      '--telegraf', self.path['TELEGRAF_LOCAL_PATH'],
+                                      '--host', self.host]
         if self.kill_old:
             args.append(self.kill_old)
         command = "{python} {work_dir}/agent.py --telegraf {telegraf_path} --host {host} {kill_old}".format(

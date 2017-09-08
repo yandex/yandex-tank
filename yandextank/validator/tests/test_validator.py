@@ -215,14 +215,13 @@ PHANTOM_SCHEMA_V_G = {
          'port': '',
          'use_caching': True,
          'header_http': '1.0',
-         'multi': [],},
+         'multi': []},
       'core': {
           'artifacts_base_dir': './logs',
           'lock_dir': '/var/lock/',
           'taskset_path': 'taskset',
           'affinity': '',
-          'artifacts_dir': None
-      }}
+          'artifacts_dir': None}}
      )
 ])
 def test_validate_core(config, expected):
