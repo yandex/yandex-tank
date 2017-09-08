@@ -1,6 +1,7 @@
 import errno
 import collections
 import logging
+import os.path
 import subprocess
 import time
 
@@ -17,6 +18,7 @@ _INFO = collections.namedtuple(
 _LOGGER = logging.getLogger(__name__)
 
 _PROCESS_KILL_TIMEOUT = 10  # Kill running process after specified number of seconds
+_OUTPUT_WAIT_TIMEOUT = 10 # Output files should be found after specified number of seconds
 
 
 class Plugin(AbstractPlugin, GeneratorPlugin):
@@ -90,6 +92,22 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             stdout=self.__stderr_file,
             close_fds=True
         )
+
+        # Ensure that all expected output files are ready to use
+        _LOGGER.info("Waiting until output files are ready")
+        waitfor = time.time() + _OUTPUT_WAIT_TIMEOUT
+        while time.time() < waitfor:
+            output_path_is_ready = os.path.isfile(self.__output_path)
+            stats_path_is_ready = (not self.__stats_path or os.path.isfile(self.__stats_path))
+            if output_path_is_ready and stats_path_is_ready:
+                break
+            time.sleep(0.1)
+        else:
+            raise Exception("Failed to wait until output resources are ready: output={}, stats={}".format(
+                output_path_is_ready,
+                stats_path_is_ready
+            ))
+        _LOGGER.info("Shooting proces is ready to use")
 
     def is_test_finished(self):
         retcode = self.__process.poll()
