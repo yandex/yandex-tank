@@ -86,7 +86,7 @@ class LocalhostClient(object):
             bufsize=0,
             preexec_fn=os.setsid,
             close_fds=True,
-            shell=False,
+            shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE, )
