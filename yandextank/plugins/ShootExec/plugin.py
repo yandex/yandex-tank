@@ -5,6 +5,7 @@ import subprocess
 import time
 
 from ...common.interfaces import AbstractPlugin, GeneratorPlugin, AggregateResultListener, AbstractInfoWidget
+from ...common.util import FileScanner
 from ..Console import Plugin as ConsolePlugin
 from ..Phantom import PhantomReader
 
@@ -35,12 +36,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         return __file__
 
     def get_available_options(self):
-        return ["cmd", "output_path"]
+        return ["cmd", "output_path", "stats_path"]
 
     def configure(self):
         self.__cmd = self.get_option("cmd")
+
         self.__output_path = self.get_option("output_path")
         self.core.add_artifact_file(self.__output_path)
+
+        self.__stats_path = self.get_option("stats_path")
+        if self.__stats_path:
+            self.core.add_artifact_file(self.__stats_path)
 
     def prepare_test(self):
         stderr_path = self.core.mkstemp(".log", "shootexec_stdout_stderr_")
@@ -58,7 +64,10 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         aggregator = self.core.job.aggregator_plugin
         if aggregator:
             aggregator.reader = reader
-            aggregator.stats_reader = _StatsReader()
+            if self.__stats_path:
+                aggregator.stats_reader = _FileStatsReader(self.__stats_path)
+            else:
+                aggregator.stats_reader = _DummyStatsReader()
             aggregator.add_result_listener(self)
 
         try:
@@ -166,7 +175,42 @@ class _InfoWidget(AbstractInfoWidget, AggregateResultListener):
         pass
 
 
-class _StatsReader(object):
+class _FileStatsReader(FileScanner):
+    """
+    Read shooting stats line by line
+
+    Line format is 'timestamp\trps\tinstances'
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(_FileStatsReader, self).__init__(*args, **kwargs)
+        self.__last_ts = 0
+
+    def _read_data(self, lines):
+        """
+        Parse lines and return stats
+        """
+
+        results = []
+        for line in lines:
+            timestamp, rps, instances = line.split("\t")
+            curr_ts = int(float(timestamp))  # We allow floats here, but tank expects only seconds
+            if self.__last_ts < curr_ts:
+                self.__last_ts = curr_ts
+                results.append({
+                    'ts': self.__last_ts,
+                    'metrics': {
+                        'reqps': float(rps),
+                        'instances': float(instances),
+                    },
+                })
+        return results
+
+
+class _DummyStatsReader(object):
+    """
+    Dummy stats reader for shooters without stats file
+    """
 
     def __init__(self):
         self.__closed = False
