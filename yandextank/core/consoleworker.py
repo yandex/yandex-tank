@@ -1,5 +1,5 @@
 """ Provides classes to run TankCore from console environment """
-from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError
+from ConfigParser import ConfigParser, MissingSectionHeaderError, NoSectionError
 import datetime
 import fnmatch
 import glob
@@ -215,8 +215,6 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
             :type ini_config: ConfigParser
             """
             CONFIG = 'config'
-            if not ini_config.has_section(mon_section_name):
-                raise NoOptionError
             telegraf_cfg = ini_config.get(mon_section_name, CONFIG)
             if not telegraf_cfg.startswith('<') and not telegraf_cfg.lower() == 'auto':
                 with open(resource_manager.resource_filename(telegraf_cfg), 'rb') as telegraf_cfg_file:
@@ -226,10 +224,10 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
 
         try:
             cfg_ini = patch_ini_config_with_monitoring(cfg_ini, 'monitoring')
-        except NoOptionError:
+        except NoSectionError:
             try:
                 patch_ini_config_with_monitoring(cfg_ini, 'telegraf')
-            except NoOptionError:
+            except NoSectionError:
                 pass
 
         for section, key, value in depr_options:
