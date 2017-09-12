@@ -4,3 +4,6 @@ cmd:
 output_path:
   type: string
   required: true
+stats_path:
+  type: string
+  default: ''
