@@ -1,4 +1,3 @@
-import ConfigParser
 import argparse
 import glob
 import json
@@ -9,7 +8,6 @@ import socket
 import sys
 
 import pwd
-from StringIO import StringIO
 from urlparse import urljoin
 
 from datetime import datetime
