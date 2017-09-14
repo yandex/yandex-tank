@@ -456,7 +456,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             logging.warn("Target lock set to 'auto', but no target info available")
             return ''
 
-        locks_list = (self.target or no_target() if locks_list_cfg.lower() == 'auto' else locks_list_cfg).split('\n')
+        locks_list = (self.target or no_target() if locks_list_cfg.lower() == 'auto' else locks_list_cfg).split()
         targets_to_lock = [host for host in locks_list if host]
         return targets_to_lock
 
