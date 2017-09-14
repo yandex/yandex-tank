@@ -1,0 +1,34 @@
+core:
+  lock_dir: .
+phantom:
+  enabled: false
+bfg:
+  package: yandextank.plugins.Bfg
+  enabled: true
+  address: http://lunapark.test.yandex-team.ru
+  load_profile:
+    load_type: rps
+    schedule: const(2, 30s)
+  instances: 1
+  header_http: '1.1'
+  ammofile: simple_ammo.txt
+  ammo_type: line
+  loop: 1000
+  headers: |
+    [Host: lunapark.test.yandex-team.ru]
+    [Connection: close]
+  gun_type: http
+  gun_config:
+    base_address: http://lunapark.test.yandex-team.ru
+telegraf:
+  enabled: true
+  config: monitoring.xml
+  disguise_hostnames: false
+autostop:
+  package: yandextank.plugins.Autostop
+  enabled: false
+  autostop:
+    - total_time(70ms, 3%, 10s)
+    - http(4xx,25%,10)
+console:
+  short_only: true
