@@ -402,7 +402,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 break
             except Exception as e:
                 logger.info("Mysterious exception: %s", e)
-                self.retcode = 8
                 break
         logger.info("Closing Data uploader thread")
 
@@ -428,6 +427,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 logger.info("Test stopped from Lunapark")
                 lp_job.is_alive = False
                 self.retcode = 8
+                break
+            except Exception as e:
+                logger.info("Mysterious exception: %s", e)
                 break
         logger.info('Closing Monitoring uploader thread')
 
