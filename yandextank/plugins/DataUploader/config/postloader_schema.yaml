@@ -1,0 +1,23 @@
+api_address:
+  type: string
+  required: true
+target_host:
+  type: string
+  required: true
+target_port:
+  anyof:
+    - type: string
+    - type: integer
+  default: 80
+operator:
+  type: string
+task:
+  type: string
+job_name:
+  type: string
+  default: ''
+job_dsc:
+  type: string
+  default: ''
+token_file:
+  type: string

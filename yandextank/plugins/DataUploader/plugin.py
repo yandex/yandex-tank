@@ -276,6 +276,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             logger.debug("Saving jobno to: %s", jobno_file)
             with open(jobno_file, 'w') as fdes:
                 fdes.write(str(self.lp_job.number))
+            self.core.add_artifact_file(jobno_file)
         self.__save_conf()
 
     def is_test_finished(self):
@@ -401,7 +402,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 break
             except Exception as e:
                 logger.info("Mysterious exception: %s", e)
-                self.retcode = 8
                 break
         logger.info("Closing Data uploader thread")
 
@@ -427,6 +427,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 logger.info("Test stopped from Lunapark")
                 lp_job.is_alive = False
                 self.retcode = 8
+                break
+            except Exception as e:
+                logger.info("Mysterious exception: %s", e)
                 break
         logger.info('Closing Monitoring uploader thread')
 
