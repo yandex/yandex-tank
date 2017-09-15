@@ -2,6 +2,7 @@ import json
 import time
 import traceback
 import urllib
+import uuid
 from future.moves.urllib.parse import urljoin
 from builtins import range
 
@@ -109,31 +110,34 @@ class APIClient(object):
                 del (headers[h])
         return headers
 
-    def __send_single_request(self, req, trace=False):
+    def __send_single_request(self, req, request_id, trace=False):
+        req.headers['X-Request-ID'] = request_id
         p = self.session.prepare_request(req)
         if trace:
-            logger.debug("Making request: %s %s Headers: %s Body: %s",
-                         p.method, p.url, p.headers, p.body)
+            logger.debug("Making request %s: %s %s Headers: %s Body: %s",
+                         request_id, p.method, p.url, p.headers, p.body.replace('\n', '\\n'))
         resp = self.session.send(p, timeout=self.connection_timeout)
         if trace:
-            logger.debug("Got response in %ss: %s %s Headers: %s Body: %s",
-                         resp.elapsed.total_seconds(), resp.reason,
+            logger.debug("Got response for %s in %ss: %s %s Headers: %s Body: %s",
+                         request_id, resp.elapsed.total_seconds(), resp.reason,
                          resp.status_code, self.filter_headers(resp.headers),
-                         resp.content)
+                         resp.content.replace('\n', '\\n'))
         if resp.status_code in [500, 502, 503, 504]:
             raise self.NotAvailable(
-                request="request: %s %s\n\tHeaders: %s\n\tBody: %s" %
-                (p.method,
+                request="Request %s: %s %s\n\tHeaders: %s\n\tBody: %s" %
+                (request_id,
+                 p.method,
                  p.url,
                  p.headers,
-                 p.body),
-                response="Got response in %ss: %s %s\n\tHeaders: %s\n\tBody: %s" %
-                (resp.elapsed.total_seconds(),
+                 p.body.replace('\n', '\\n')),
+                response="Got response %s in %ss: %s %s\n\tHeaders: %s\n\tBody: %s" %
+                (request_id,
+                 resp.elapsed.total_seconds(),
                  resp.reason,
                  resp.status_code,
                  self.filter_headers(
                     resp.headers),
-                    resp.content))
+                    resp.content.replace('\n', '\\n'))
         elif resp.status_code == 410:
             raise self.StoppedFromOnline
         elif resp.status_code == 423:
@@ -154,6 +158,8 @@ class APIClient(object):
             maintenance_timeouts=None,
             maintenance_msg=None):
         url = urljoin(self.base_url, path)
+        base_id = str(uuid.uuid4())
+        n_try = 0
         if json:
             request = requests.Request(
                 http_method, url, json=json, headers={'User-Agent': self.user_agent}, params=self.params)
@@ -165,7 +171,9 @@ class APIClient(object):
         maintenance_msg = maintenance_msg or "%s is under maintenance" % (self._base_url)
         while True:
             try:
-                response = self.__send_single_request(request, trace=trace)
+                n_try += 1
+                request_id = '%s-%d' % (base_id, n_try)
+                response = self.__send_single_request(request, request_id, trace=trace)
                 return response_callback(response)
             except (Timeout, ConnectionError):
                 logger.warn(traceback.format_exc())
@@ -204,11 +212,15 @@ class APIClient(object):
             json=json,
             headers={
                 'User-Agent': self.user_agent})
+        base_id = str(uuid.uuid(4))
+        n_try = 0
         network_timeouts = self.network_timeouts()
         maintenance_timeouts = self.maintenance_timeouts()
         while True:
             try:
-                response = self.__send_single_request(request, trace=trace)
+                n_try += 1
+                request_id = '%s-%d' % (base_id, n_try)
+                response = self.__send_single_request(request, request_id, trace=trace)
                 return response
             except (Timeout, ConnectionError):
                 logger.warn(traceback.format_exc())
