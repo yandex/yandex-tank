@@ -2,6 +2,8 @@ import json
 import time
 import traceback
 import urllib
+
+import yaml
 from future.moves.urllib.parse import urljoin
 from builtins import range
 
@@ -12,6 +14,13 @@ from requests.exceptions import ConnectionError, Timeout
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
+
+
+def id_gen(start):
+    i = start
+    while True:
+        yield i
+        i += 1
 
 
 class APIClient(object):
@@ -52,6 +61,7 @@ class APIClient(object):
         self.maintenance_attempts = maintenance_attempts
         self.maintenance_timeout = maintenance_timeout
         self.params = {'api_token': api_token} if api_token else {}
+        self.ids = id_gen(0)
 
     @property
     def base_url(self):
@@ -111,15 +121,25 @@ class APIClient(object):
 
     def __send_single_request(self, req, trace=False):
         p = self.session.prepare_request(req)
+        request_id = self.ids.next()
         if trace:
-            logger.debug("Making request: %s %s Headers: %s Body: %s",
-                         p.method, p.url, p.headers, p.body)
+            logger.debug("Making request:\n{}".format(yaml.dump({
+                'id': request_id,
+                'method': p.method,
+                'url': p.url,
+                'headers': p.headers,
+                'body': p.body
+            })))
         resp = self.session.send(p, timeout=self.connection_timeout)
         if trace:
-            logger.debug("Got response in %ss: %s %s Headers: %s Body: %s",
-                         resp.elapsed.total_seconds(), resp.reason,
-                         resp.status_code, self.filter_headers(resp.headers),
-                         resp.content)
+            logger.debug("Got response in {}s:\n{}".format(resp.elapsed.total_seconds(),
+                                                           yaml.dump({
+                                                               'id': request_id,
+                                                               'reason': resp.reason,
+                                                               'status code': resp.status_code,
+                                                               'headers': self.filter_headers(resp.headers),
+                                                               'content': resp.content
+                                                           })))
         if resp.status_code in [500, 502, 503, 504]:
             raise self.NotAvailable(
                 request="request: %s %s\n\tHeaders: %s\n\tBody: %s" %
