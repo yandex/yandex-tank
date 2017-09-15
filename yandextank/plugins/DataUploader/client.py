@@ -115,13 +115,13 @@ class APIClient(object):
         p = self.session.prepare_request(req)
         if trace:
             logger.debug("Making request %s: %s %s Headers: %s Body: %s",
-                         request_id, p.method, p.url, p.headers, p.body.replace('\n', '\\n')
+                         request_id, p.method, p.url, p.headers, p.body.replace('\n', '\\n'))
         resp = self.session.send(p, timeout=self.connection_timeout)
         if trace:
             logger.debug("Got response for %s in %ss: %s %s Headers: %s Body: %s",
                          request_id, resp.elapsed.total_seconds(), resp.reason,
                          resp.status_code, self.filter_headers(resp.headers),
-                         resp.content.replace('\n', '\\n')
+                         resp.content.replace('\n', '\\n'))
         if resp.status_code in [500, 502, 503, 504]:
             raise self.NotAvailable(
                 request="Request %s: %s %s\n\tHeaders: %s\n\tBody: %s" %
@@ -129,7 +129,7 @@ class APIClient(object):
                  p.method,
                  p.url,
                  p.headers,
-                 p.body.replace('\n', '\\n'),
+                 p.body.replace('\n', '\\n')),
                 response="Got response %s in %ss: %s %s\n\tHeaders: %s\n\tBody: %s" %
                 (request_id,
                  resp.elapsed.total_seconds(),
