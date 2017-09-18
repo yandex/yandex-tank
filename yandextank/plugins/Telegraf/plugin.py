@@ -42,7 +42,8 @@ class Plugin(AbstractPlugin):
         self.default_config = "{path}/config/monitoring_default_config.xml".format(
             path=os.path.dirname(__file__))
         self.process = None
-        self.monitoring = MonitoringCollector(disguise_hostnames=self.get_option('disguise_hostnames'))
+        self.monitoring = MonitoringCollector(disguise_hostnames=self.get_option('disguise_hostnames'),
+                                              kill_old=self.get_option('kill_old'))
         self.die_on_fail = True
         self.data_file = None
         self.mon_saver = None

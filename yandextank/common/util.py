@@ -608,3 +608,39 @@ def recursive_dict_update(d1, d2):
         else:
             d1[k] = d2[k]
     return d1
+
+
+class FileScanner(object):
+    """
+    Basic class for stats reader for continiuos reading file line by line
+
+    Default line separator is a newline symbol. You can specify other separator
+    via constructor argument
+    """
+
+    _BUFSIZE = 4096
+
+    def __init__(self, path, sep="\n"):
+        self.__path = path
+        self.__sep = sep
+        self.__closed = False
+        self.__buffer = ""
+
+    def _read_lines(self, chunk):
+        self.__buffer += chunk
+        portions = self.__buffer.split(self.__sep)
+        for portion in portions[:-1]:
+            yield portion
+        self.__buffer = portions[-1]
+
+    def _read_data(self, lines):
+        raise NotImplementedError()
+
+    def __iter__(self):
+        with open(self.__path) as stats_file:
+            while not self.__closed:
+                chunk = stats_file.read(self._BUFSIZE)
+                yield self._read_data(self._read_lines(chunk))
+
+    def close(self):
+        self.__closed = True

@@ -1,5 +1,5 @@
 """ Provides classes to run TankCore from console environment """
-from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError
+from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
 import datetime
 import fnmatch
 import glob
@@ -84,12 +84,11 @@ def load_cfg(cfg_filename):
 
     :type cfg_filename: str
     """
-    if cfg_filename.endswith('.yaml'):
-        with open(cfg_filename) as f:
-            cfg = yaml.load(f)
+    if is_ini(cfg_filename):
+        return convert_ini(cfg_filename)
     else:
-        cfg = convert_ini(cfg_filename)
-    return cfg
+        with open(cfg_filename) as f:
+            return yaml.load(f)
 
 
 def cfg_folder_loader(path):
@@ -216,8 +215,6 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
             :type ini_config: ConfigParser
             """
             CONFIG = 'config'
-            if not ini_config.has_section(mon_section_name):
-                raise NoOptionError
             telegraf_cfg = ini_config.get(mon_section_name, CONFIG)
             if not telegraf_cfg.startswith('<') and not telegraf_cfg.lower() == 'auto':
                 with open(resource_manager.resource_filename(telegraf_cfg), 'rb') as telegraf_cfg_file:
@@ -227,10 +224,10 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
 
         try:
             cfg_ini = patch_ini_config_with_monitoring(cfg_ini, 'monitoring')
-        except NoOptionError:
+        except (NoSectionError, NoOptionError):
             try:
                 patch_ini_config_with_monitoring(cfg_ini, 'telegraf')
-            except NoOptionError:
+            except (NoOptionError, NoSectionError):
                 pass
 
         for section, key, value in depr_options:
@@ -278,7 +275,11 @@ class ConsoleTank:
                 'ammofile': ammofile
             }
 
-        self.core = load_tank_core(options.config, options.option, options.no_rc, [], overwrite_options)
+        self.core = load_tank_core([resource_manager.resource_filename(cfg) for cfg in options.config],
+                                   options.option,
+                                   options.no_rc,
+                                   [],
+                                   overwrite_options)
 
         raw_cfg_file, raw_cfg_path = tempfile.mkstemp(suffix='_pre-validation-config.yaml')
         os.close(raw_cfg_file)

@@ -12,3 +12,6 @@ disguise_hostnames:
 ssh_timeout:
   type: string
   default: 5s
+kill_old:
+  type: boolean
+  default: true

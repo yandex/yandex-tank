@@ -752,7 +752,7 @@ Disable phantom first (unless you really want to keep it active alongside at you
           "AmmoLimit": 10000000
         },
         "result": {
-          "type": "log/phout",
+          "type": "phout",
           "destination": "./phout.log"
         },
         "shared-limits": false,
