@@ -2,6 +2,7 @@ import json
 import time
 import traceback
 import urllib
+import uuid
 
 from future.moves.urllib.parse import urljoin
 from builtins import range
@@ -15,14 +16,15 @@ requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 
-def id_gen(start):
+def id_gen(base, start=0):
     i = start
     while True:
-        yield i
+        yield '%s-%d' % (base, i)
         i += 1
 
 
 class APIClient(object):
+    REQUEST_ID_HEADER = 'X-Request-ID'
 
     def __init__(
             self,
@@ -60,7 +62,6 @@ class APIClient(object):
         self.maintenance_attempts = maintenance_attempts
         self.maintenance_timeout = maintenance_timeout
         self.params = {'api_token': api_token} if api_token else {}
-        self.ids = id_gen(0)
 
     @property
     def base_url(self):
@@ -118,42 +119,18 @@ class APIClient(object):
                 del (headers[h])
         return headers
 
-    def __send_single_request(self, req, trace=False):
-        p = self.session.prepare_request(req)
-        request_id = self.ids.next()
+    def __send_single_request(self, request, request_id, trace=False):
+        request.headers[self.REQUEST_ID_HEADER] = request_id
+        p = self.session.prepare_request(request)
         if trace:
-            logger.debug("""
-        Request:
-            id: {}
-            method: {}
-            url: {}
-            headers: {}
-            body: {}""".format(request_id, p.method, p.url, p.headers, p.body))
+            logger.debug(self.format_request_info(p, request_id))
         resp = self.session.send(p, timeout=self.connection_timeout)
         if trace:
-            logger.debug("""
-        Response:
-            id: {}
-            elapsed time: {}
-            reason: {}
-            status code: {}
-            headers: {}
-            content: {}""".format(request_id, resp.elapsed.total_seconds(),
-                                  resp.reason, resp.status_code, self.filter_headers(resp.headers), resp.content))
+            logger.debug(self.format_response_info(resp, request_id))
         if resp.status_code in [500, 502, 503, 504]:
             raise self.NotAvailable(
-                request="request: %s %s\n\tHeaders: %s\n\tBody: %s" %
-                (p.method,
-                 p.url,
-                 p.headers,
-                 p.body),
-                response="Got response in %ss: %s %s\n\tHeaders: %s\n\tBody: %s" %
-                (resp.elapsed.total_seconds(),
-                 resp.reason,
-                 resp.status_code,
-                 self.filter_headers(
-                    resp.headers),
-                    resp.content))
+                request=self.format_request_info(p, request_id),
+                response=self.format_response_info(resp, request_id))
         elif resp.status_code == 410:
             raise self.StoppedFromOnline
         elif resp.status_code == 423:
@@ -161,6 +138,29 @@ class APIClient(object):
         else:
             resp.raise_for_status()
             return resp
+
+    @staticmethod
+    def format_request_info(request, request_id):
+        return """
+        Request:
+            id: {}
+            method: {}
+            url: {}
+            headers: {}
+            body: {}""".format(request_id, request.method, request.url, request.headers,
+                               request.body.replace('\n', '\\n'))
+
+    def format_response_info(self, resp, request_id):
+        return """
+        Response:
+            id: {}
+            elapsed time: {}
+            reason: {}
+            status code: {}
+            headers: {}
+            content: {}""".format(request_id, resp.elapsed.total_seconds(),
+                                  resp.reason, resp.status_code, self.filter_headers(resp.headers),
+                                  resp.content.replace('\n', '\\n'))
 
     def __make_api_request(
             self,
@@ -174,6 +174,7 @@ class APIClient(object):
             maintenance_timeouts=None,
             maintenance_msg=None):
         url = urljoin(self.base_url, path)
+        ids = id_gen(str(uuid.uuid4()))
         if json:
             request = requests.Request(
                 http_method, url, json=json, headers={'User-Agent': self.user_agent}, params=self.params)
@@ -185,7 +186,7 @@ class APIClient(object):
         maintenance_msg = maintenance_msg or "%s is under maintenance" % (self._base_url)
         while True:
             try:
-                response = self.__send_single_request(request, trace=trace)
+                response = self.__send_single_request(request, ids.next(), trace=trace)
                 return response_callback(response)
             except (Timeout, ConnectionError):
                 logger.warn(traceback.format_exc())
@@ -224,11 +225,12 @@ class APIClient(object):
             json=json,
             headers={
                 'User-Agent': self.user_agent})
+        ids = id_gen(str(uuid.uuid4()))
         network_timeouts = self.network_timeouts()
         maintenance_timeouts = self.maintenance_timeouts()
         while True:
             try:
-                response = self.__send_single_request(request, trace=trace)
+                response = self.__send_single_request(request, ids.next(), trace=trace)
                 return response
             except (Timeout, ConnectionError):
                 logger.warn(traceback.format_exc())
