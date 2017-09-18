@@ -139,28 +139,28 @@ class APIClient(object):
             resp.raise_for_status()
             return resp
 
-    @staticmethod
-    def format_request_info(request, request_id):
+    def format_request_info(self, request, request_id):
+        request_info = {
+            'id': request_id,
+            'method': request.method,
+            'url': request.url,
+            'headers': str(self.filter_headers(request.headers)),
+            'body': request.body.replace('\n', '\\n') if isinstance(request.body, str) else request.body
+        }
         return """
-        Request:
-            id: {}
-            method: {}
-            url: {}
-            headers: {}
-            body: {}""".format(request_id, request.method, request.url, request.headers,
-                               request.body.replace('\n', '\\n'))
+        Request: {}""".format(json.dumps(request_info))
 
     def format_response_info(self, resp, request_id):
+        response_info = {
+            'id': request_id,
+            'elapsed_time': resp.elapsed.total_seconds(),
+            'reason': resp.reason,
+            'status code': resp.status_code,
+            'headers': str(self.filter_headers(resp.headers)),
+            'content': resp.content.replace('\n', '\\n') if isinstance(resp.content, str) else resp.content
+        }
         return """
-        Response:
-            id: {}
-            elapsed time: {}
-            reason: {}
-            status code: {}
-            headers: {}
-            content: {}""".format(request_id, resp.elapsed.total_seconds(),
-                                  resp.reason, resp.status_code, self.filter_headers(resp.headers),
-                                  resp.content.replace('\n', '\\n'))
+        Response: {}""".format(json.dumps(response_info))
 
     def __make_api_request(
             self,
