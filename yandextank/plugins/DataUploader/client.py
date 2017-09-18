@@ -123,23 +123,16 @@ class APIClient(object):
         request_id = self.ids.next()
         if trace:
             logger.debug("""
-            Request:
+        Request:
             id: {}
             method: {}
             url: {}
             headers: {}
             body: {}""".format(request_id, p.method, p.url, p.headers, p.body))
-            # logger.debug("Making request:\n{}".format(yaml.dump({
-            #     'id': request_id,
-            #     'method': p.method,
-            #     'url': p.url,
-            #     'headers': p.headers,
-            #     'body': p.body
-            # })))
         resp = self.session.send(p, timeout=self.connection_timeout)
         if trace:
             logger.debug("""
-            Response:
+        Response:
             id: {}
             elapsed time: {}
             reason: {}
@@ -147,14 +140,6 @@ class APIClient(object):
             headers: {}
             content: {}""".format(request_id, resp.elapsed.total_seconds(),
                                   resp.reason, resp.status_code, self.filter_headers(resp.headers), resp.content))
-            # logger.debug("Got response in {}s:\n{}".format(resp.elapsed.total_seconds(),
-            #                                                yaml.dump({
-            #                                                    'id': request_id,
-            #                                                    'reason': resp.reason,
-            #                                                    'status code': resp.status_code,
-            #                                                    'headers': self.filter_headers(resp.headers),
-            #                                                    'content': resp.content
-            #                                                })))
         if resp.status_code in [500, 502, 503, 504]:
             raise self.NotAvailable(
                 request="request: %s %s\n\tHeaders: %s\n\tBody: %s" %
