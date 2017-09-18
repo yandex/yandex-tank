@@ -450,13 +450,13 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def parse_lock_targets(self):
         # prepare target lock list
-        locks_list_cfg = self.get_option('lock_targets', 'auto').strip()
+        locks_list_cfg = self.get_option('lock_targets', 'auto')
 
         def no_target():
             logging.warn("Target lock set to 'auto', but no target info available")
-            return ''
+            return []
 
-        locks_list = (self.target or no_target() if locks_list_cfg.lower() == 'auto' else locks_list_cfg).split('\n')
+        locks_list = [self.target] or no_target() if locks_list_cfg == 'auto' else locks_list_cfg
         targets_to_lock = [host for host in locks_list if host]
         return targets_to_lock
 

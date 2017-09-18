@@ -35,7 +35,10 @@ jobno_file:
   default: jobno_file.txt
 lock_targets:
   default: auto
-  type: string
+  anyof:
+    - type: list
+    - type: string
+      allowed: [auto]
 log_data_requests:
   default: false
   type: boolean
