@@ -356,11 +356,14 @@ class AgentWorker(threading.Thread):
 
 def kill_old_agents(telegraf_path):
     my_pid = os.getpid()
+    parent = os.getppid()
+    logger.info('My pid: {} Parent pid: {}'.format(my_pid, parent))
     ps_output = subprocess.check_output(['ps', 'aux'])
     for line in ps_output.splitlines():
         if telegraf_path in line:
             pid = int(line.split()[1])
-            if pid != my_pid:
+            logger.info('Found pid: {}'.format(pid))
+            if pid not in [my_pid, parent]:
                 logger.info('Killing process {}:\n{}'.format(pid, line))
                 os.kill(pid, signal.SIGKILL)
 
