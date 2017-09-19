@@ -1152,7 +1152,7 @@ List of metrics group names and particular metrics in them:
 * TelegrafRaw
     * raw telegraf TOML format, transparently added to final collector config 
 * Source
-    additional source file in telegraf json format,     can be used to add custom metrics that needs complex processing and do not fit into standart custom metrics (like log parsing with aggregation)
+    * additional source file in telegraf json format, can be used to add custom metrics that needs complex processing and do not fit into standart custom metrics (like log parsing with aggregation). Custom metrics do not include timestamps but source does. You can import async data with Source.
 
     Config Host section example:
     ``<Source>/path/to/file</Source>``
