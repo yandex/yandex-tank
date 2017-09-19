@@ -41,6 +41,7 @@ SECTIONS_PATTERNS = {
     'JMeter': 'jmeter',
     'ResourceCheck': 'rcheck',
     'ShellExec': 'shell_?exec',
+    'ShootExec': 'shoot_?exec',
     'Console': 'console',
     'TipsAndTricks': 'tips',
     'RCAssert': 'rcassert',
@@ -393,6 +394,7 @@ class PluginInstance(object):
             'RCAssert': 'rcassert',
             'ResourceCheck': 'rcheck',
             'ShellExec': 'shellexec',
+            'ShootExec': 'shootexec',
             'SvgReport': 'svgreport',
             'Telegraf': 'telegraf',
             'TipsAndTricks': 'tips'

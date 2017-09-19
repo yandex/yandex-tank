@@ -276,6 +276,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             logger.debug("Saving jobno to: %s", jobno_file)
             with open(jobno_file, 'w') as fdes:
                 fdes.write(str(self.lp_job.number))
+            self.core.add_artifact_file(jobno_file)
         self.__save_conf()
 
     def is_test_finished(self):

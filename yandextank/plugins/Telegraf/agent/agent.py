@@ -10,7 +10,7 @@ import json
 import threading
 import time
 
-from optparse import OptionParser
+from argparse import ArgumentParser
 import Queue as q
 
 logger = logging.getLogger("agent")
@@ -196,13 +196,13 @@ class AgentWorker(threading.Thread):
         self.results_err = q.Queue()
 
     @staticmethod
-    def popen(cmnd):
+    def __popen(cmnd, shell=False):
         return subprocess.Popen(
             cmnd,
             bufsize=0,
             preexec_fn=os.setsid,
             close_fds=True,
-            shell=True,
+            shell=shell,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE, )
@@ -239,14 +239,14 @@ class AgentWorker(threading.Thread):
         logger.info("Running startup commands")
         for cmnd in self.startups:
             logger.debug("Run: %s", cmnd)
-            proc = self.popen(cmnd)
+            # fixme: shell=True is insecure, should save startup script and launch directly
+            proc = self.__popen(cmnd, shell=True)
             logger.info('Started with pid %d', proc.pid)
             self.startup_processes.append(proc)
 
         logger.info('Starting metrics collector..')
-        cmnd = "{telegraf} -config {working_dir}/agent.cfg".format(
-            telegraf=self.telegraf_path, working_dir=self.working_dir)
-        self.collector = self.popen(cmnd)
+        args = [self.telegraf_path, '-config', '{}/agent.cfg'.format(self.working_dir)]
+        self.collector = self.__popen(cmnd=args)
         logger.info('Started with pid %d', self.collector.pid)
 
         telegraf_output = self.working_dir + '/monitoring.rawdata'
@@ -354,6 +354,20 @@ class AgentWorker(threading.Thread):
         sys.stderr.write('stopped\n')
 
 
+def kill_old_agents(telegraf_path):
+    my_pid = os.getpid()
+    parent = os.getppid()
+    logger.info('My pid: {} Parent pid: {}'.format(my_pid, parent))
+    ps_output = subprocess.check_output(['ps', 'aux'])
+    for line in ps_output.splitlines():
+        if telegraf_path in line:
+            pid = int(line.split()[1])
+            logger.info('Found pid: {}'.format(pid))
+            if pid not in [my_pid, parent]:
+                logger.info('Killing process {}:\n{}'.format(pid, line))
+                os.kill(pid, signal.SIGKILL)
+
+
 def main():
     fname = os.path.dirname(__file__) + "/_agent.log"
     logging.basicConfig(
@@ -361,23 +375,30 @@ def main():
         filename=fname,
         format='%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(message)s')
 
-    parser = OptionParser()
-    parser.add_option(
-        "",
+    parser = ArgumentParser()
+    parser.add_argument(
         "--telegraf",
         dest="telegraf_path",
         help="telegraf_path",
         default="/tmp/telegraf")
-    parser.add_option(
-        "",
+    parser.add_argument(
         "--host",
         dest="hostname_path",
         help="telegraf_path",
         default="/usr/bin/telegraf")
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        "-k", "--kill-old",
+        action="store_true",
+        dest="kill_old"
+    )
+    options = parser.parse_args()
 
     logger.info('Init')
     customs_script = os.path.dirname(__file__) + '/agent_customs.sh'
+
+    if options.kill_old:
+        kill_old_agents(options.telegraf_path)
+
     try:
         logger.info(
             'Trying to make telegraf executable: %s', options.telegraf_path)
