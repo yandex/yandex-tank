@@ -1157,8 +1157,10 @@ List of metrics group names and particular metrics in them:
     Config Host section example:
     ``<Source>/path/to/file</Source>``
 
-    File format example:
-    ``{"fields":{"metric_name_1":0,"metric_name_2":98.27694231863998,},"name":"custom_group-name","tags":{"custom":"custom_tag","host":"hostname.tld"},"timestamp":1503990965}``
+    File format: `jsonline`. Each line is a json document.
+
+    Example:
+    ``{"fields":{"metric_name_1":0,"metric_name_2":98.27694231863998,},"name":"custom_group-name","timestamp":1503990965}``
 
 
 
