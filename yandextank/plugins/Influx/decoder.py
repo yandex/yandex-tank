@@ -1,4 +1,5 @@
 import time
+import yaml
 
 
 def uts(dt):
@@ -24,8 +25,25 @@ class Decoder(object):
         }
 
     def decode_monitoring(self, data):
-        print data
-        return []
+        points = []
+        for second_data in data:
+            timestamp = second_data["timestamp"]
+            for host, host_data in second_data["data"].iteritems():
+                points += [{
+                    "measurement": "monitoring",
+                    "tags": {
+                        "tank": self.tank_tag,
+                        "uuid": self.uuid,
+                        "host": host,
+                        "comment": host_data["comment"],
+                    },
+                    "time": timestamp,
+                    "fields": {  # quantiles
+                        metric: value
+                        for metric, value in host_data["metrics"].iteritems()
+                    },
+                }]
+        return points
 
     def decode_aggregate(self, data, stat):
         timestamp = int(data["ts"])
