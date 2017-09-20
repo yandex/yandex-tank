@@ -24,14 +24,11 @@ class Decoder(object):
         }
 
     def decode_monitoring(self, data):
+        print data
         return []
 
     def decode_aggregate(self, data, stat):
-        timestamp = uts(data.time)
-        {
-            str(code): int(cnt)
-            for code, cnt in data["net_code"]["count"].items()
-        }
+        timestamp = int(data["ts"])
         points = [
             {
                 "measurement": "overall_quantiles",
@@ -42,8 +39,8 @@ class Decoder(object):
                 "time": timestamp,
                 "fields": {  # quantiles
                     'q' + str(q): value / 1000.0
-                    for q, value in zip(data["interval_real"]["q"]["q"],
-                                        data["interval_real"]["q"]["value"])
+                    for q, value in zip(data["overall"]["interval_real"]["q"]["q"],
+                                        data["overall"]["interval_real"]["q"]["value"])
                 },
             }, {
                 "measurement": "overall_meta",
@@ -54,7 +51,7 @@ class Decoder(object):
                 "time": timestamp,
                 "fields": {
                     "active_threads": stat["metrics"]["instances"],
-                    "RPS": data["interval_real"]["len"],
+                    "RPS": data["overall"]["interval_real"]["len"],
                     "planned_requests": stat["metrics"]["reqps"],
                 },
             }, {
@@ -66,7 +63,7 @@ class Decoder(object):
                 "time": timestamp,
                 "fields": {
                     str(code): int(cnt)
-                    for code, cnt in data["net_code"]["count"].items()
+                    for code, cnt in data["overall"]["net_code"]["count"].items()
                 },
             }, {
                 "measurement": "proto_codes",
@@ -77,7 +74,7 @@ class Decoder(object):
                 "time": timestamp,
                 "fields": {
                     str(code): int(cnt)
-                    for code, cnt in data["proto_code"]["count"].items()
+                    for code, cnt in data["overall"]["proto_code"]["count"].items()
                 },
             },
         ]

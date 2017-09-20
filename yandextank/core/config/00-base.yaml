@@ -40,3 +40,6 @@ rcassert:
 overload:
   enabled: false
   package: yandextank.plugins.DataUploader
+influx:
+  enabled: false
+  package: yandextank.plugins.Influx

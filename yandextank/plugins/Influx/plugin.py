@@ -5,6 +5,7 @@
 import logging
 import sys
 import datetime
+from uuid import uuid4
 
 from builtins import str
 
@@ -55,7 +56,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             address, port, 'root', 'root', 'mydb')
         grafana_root = self.get_option("grafana_root")
         grafana_dashboard = self.get_option("grafana_dashboard")
-        uuid = self.core.get_uuid()
+        uuid = uuid4()
         logger.info(
             "Grafana link: {grafana_root}"
             "dashboard/db/{grafana_dashboard}?var-uuid={uuid}&from=-5m&to=now".format(
