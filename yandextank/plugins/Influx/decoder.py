@@ -1,7 +1,4 @@
 import time
-from yandextank.plugins.Monitoring.collector import MonitoringDataDecoder
-
-mon_decoder = MonitoringDataDecoder()
 
 
 def uts(dt):
@@ -27,12 +24,7 @@ class Decoder(object):
         }
 
     def decode_monitoring(self, data):
-        data_items = (
-            mon_decoder.decode_line(line)
-            for line in data.splitlines()
-            if line.strip()
-        )
-        return [self.decode_monitoring_item(item) for item in data_items]
+        return []
 
     def decode_aggregate(self, data, stat):
         timestamp = uts(data.time)
