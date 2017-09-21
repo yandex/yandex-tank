@@ -67,6 +67,7 @@ class RSTFormatter(object):
 
 
 def make_doc(schema, formatter):
+    paragraphs = [formatter.paragraph(key, value) for key,value in schema.items()]
 
     pass
 
