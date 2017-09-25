@@ -3,6 +3,7 @@ import pytest
 
 from yandextank.validator.docs_gen import RSTFormatter, TextBlock, format_schema
 
+
 class TestRSTFormatter(object):
 
     @pytest.mark.parametrize('s1, s2, expected', [
@@ -72,8 +73,31 @@ class TestRSTFormatter(object):
 - :type: string
   :allowed: auto""")
     ])
-    def test_any_of_list(self, texts, expected):
+    def test_bullet_list(self, texts, expected):
         assert RSTFormatter.bullet_list([TextBlock(text) for text in texts]) == expected
+
+    @pytest.mark.parametrize('items, expected', [
+        ({'default': 'True', 'type': 'list'},
+         """:default:\n True\n:type:\n list"""),
+        ({'defa\nult': 'True', 'type': 'list'},
+         """:defa ult:\n True\n:type:\n list"""),
+        ({'type': 'list', 'elements': ':type: string\n:allowed: foo'},
+         """:elements:
+ :type: string
+ :allowed: foo
+:type:
+ list"""),
+        ({'type': 'list', 'elements': {'type': 'string', 'allowed': 'foo'}},
+         """:elements:
+ :allowed:
+  foo
+ :type:
+  string
+:type:
+ list""")
+    ])
+    def test_field_list(self, items, expected):
+        assert RSTFormatter.field_list(items, sort=True) == expected
 
 
 @pytest.mark.skip

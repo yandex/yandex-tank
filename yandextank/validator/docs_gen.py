@@ -1,5 +1,4 @@
 import argparse
-
 import yaml
 
 
@@ -67,6 +66,13 @@ class RSTFormatter(object):
 
     @staticmethod
     def title(content, new_line_replacement=' ', tab_replacement='  '):
+        """
+        Underlines content with '='. New lines and tabs will be replaced
+        :param str content:
+        :param str new_line_replacement:
+        :param str tab_replacement:
+        :return:
+        """
         prepared_content = content.strip().replace('\n', new_line_replacement).replace('\t', tab_replacement)
         return u'{}\n{}'.format(prepared_content, '=' * len(prepared_content))
 
@@ -95,11 +101,38 @@ class RSTFormatter(object):
         """
         return '- ' + '\n  '.join(block.lines)
 
+    @staticmethod
+    def field_list(items, sort=False):
+        """
+
+        :param bool sort:
+        :type items: dict
+        """
+        def format_value(value):
+            if isinstance(value, str):
+                return '\n '.join(value.splitlines())
+            elif isinstance(value, dict):
+                return '\n '.join(RSTFormatter.field_list(value, sort).splitlines())
+            else:
+                raise ValueError('Unsupported value type: {}\n{}'.format(type(value), value))
+        sort = sorted if sort else lambda x: x
+        return '\n'.join([':{}:\n {}'.format(key.replace('\n', ' '),
+                                             format_value(value))
+                          for key, value in sort(items.items())])
+
+    @staticmethod
+    def dict_list_structure(items):
+        if isinstance(items, str):
+
+        elif isinstance(items, list):
+
+        elif isinstance(items, dict):
+
 
 def format_schema(schema, formatter):
     """
 
-    :param schema: Mapping
+    :type schema: Mapping
     :type formatter: RSTFormatter
     """
     REQUIRED = 'required'
