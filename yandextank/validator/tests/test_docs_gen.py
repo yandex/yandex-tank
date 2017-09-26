@@ -74,19 +74,19 @@ class TestRSTFormatter(object):
   :allowed: auto""")
     ])
     def test_bullet_list(self, texts, expected):
-        assert RSTFormatter.bullet_list([TextBlock(text) for text in texts]) == expected
+        assert str(RSTFormatter.bullet_list([TextBlock(text) for text in texts])) == expected
 
     @pytest.mark.parametrize('items, expected', [
         ({'default': 'True', 'type': 'list'},
-         """:default:\n True\n:type:\n list"""),
+         """:default:\n True\n:type:\n list\n"""),
         ({'defa\nult': 'True', 'type': 'list'},
-         """:defa ult:\n True\n:type:\n list"""),
+         """:defa ult:\n True\n:type:\n list\n"""),
         ({'type': 'list', 'elements': ':type: string\n:allowed: foo'},
          """:elements:
  :type: string
  :allowed: foo
 :type:
- list"""),
+ list\n"""),
         ({'type': 'list', 'elements': {'type': 'string', 'allowed': 'foo'}},
          """:elements:
  :allowed:
@@ -94,11 +94,18 @@ class TestRSTFormatter(object):
  :type:
   string
 :type:
- list""")
+ list\n""")
     ])
     def test_field_list(self, items, expected):
-        assert RSTFormatter.field_list(items, sort=True) == expected
+        assert str(RSTFormatter.field_list(items, sort=True)) == expected
 
+    @pytest.mark.parametrize('structure, expected', [
+        ('simple\nstring', 'simple\nstring'),
+        (['simple', 'list'], '- simple\n- list'),
+        (['nested', ['list', 'here'], 'yes'], '- nested\n- - list\n  - here\n- yes')
+    ])
+    def test_dict_list_structure(self, structure, expected):
+        assert str(RSTFormatter.dict_list_structure(structure)) == expected
 
 @pytest.mark.skip
 @pytest.mark.parametrize('schema_filename, expected', [

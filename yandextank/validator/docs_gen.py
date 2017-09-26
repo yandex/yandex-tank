@@ -3,7 +3,7 @@ import yaml
 
 
 class TextBlock(object):
-    def __init__(self, text, tab_replacement='  '):
+    def __init__(self, text, tab_replacement='  ', ending=''):
         """
 
         :type text: str
@@ -25,6 +25,9 @@ class TextBlock(object):
 
     def get_line_justified(self, item, fillchar=' ', raise_index_error=False, default=''):
         return self.get_line(item, raise_index_error, default).ljust(self.width, fillchar)
+
+    def __str__(self):
+        return self.text
 
 
 class RSTFormatter(object):
@@ -91,7 +94,12 @@ class RSTFormatter(object):
 
     @classmethod
     def bullet_list(cls, blocks):
-        return '\n'.join([cls._list_item(block) for block in blocks])
+        """
+
+        :type blocks: list of TextBlock
+        :rtype: TextBlock
+        """
+        return TextBlock('\n'.join([cls._list_item(block) for block in blocks]))
 
     @staticmethod
     def _list_item(block):
@@ -105,28 +113,34 @@ class RSTFormatter(object):
     def field_list(items, sort=False):
         """
 
+        :rtype: TextBlock
         :param bool sort:
         :type items: dict
         """
+
         def format_value(value):
             if isinstance(value, str):
                 return '\n '.join(value.splitlines())
             elif isinstance(value, dict):
-                return '\n '.join(RSTFormatter.field_list(value, sort).splitlines())
+                return '\n '.join(RSTFormatter.field_list(value, sort).lines)
             else:
                 raise ValueError('Unsupported value type: {}\n{}'.format(type(value), value))
+
         sort = sorted if sort else lambda x: x
-        return '\n'.join([':{}:\n {}'.format(key.replace('\n', ' '),
-                                             format_value(value))
-                          for key, value in sort(items.items())])
+        return TextBlock('\n'.join([':{}:\n {}'.format(k.replace('\n', ' '),
+                                                       format_value(v))
+                                    for k, v in sort(items.items())]) + '\n')
 
     @staticmethod
     def dict_list_structure(items):
         if isinstance(items, str):
-
+            return TextBlock(items)
+        elif isinstance(items, int):
+            return TextBlock(str(int))
         elif isinstance(items, list):
-
+            return RSTFormatter.bullet_list([RSTFormatter.dict_list_structure(item) for item in items])
         elif isinstance(items, dict):
+            return RSTFormatter.field_list({k: RSTFormatter.dict_list_structure(v) for k, v in items})
 
 
 def format_schema(schema, formatter):
