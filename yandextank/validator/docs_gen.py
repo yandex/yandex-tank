@@ -1,4 +1,6 @@
 import argparse
+from types import NoneType
+
 import yaml
 
 
@@ -110,7 +112,7 @@ class RSTFormatter(object):
         return '- ' + '\n  '.join(block.lines)
 
     @staticmethod
-    def field_list(items, sort=False):
+    def field_list(items, sort=True):
         """
 
         :rtype: TextBlock
@@ -119,10 +121,16 @@ class RSTFormatter(object):
         """
 
         def format_value(value):
+            if isinstance(value, (int, bool, NoneType)):
+                return format_value(str(value))
             if isinstance(value, str):
                 return '\n '.join(value.splitlines())
+            elif isinstance(value, TextBlock):
+                return '\n '.join(value.lines)
             elif isinstance(value, dict):
                 return '\n '.join(RSTFormatter.field_list(value, sort).lines)
+            elif isinstance(value, list):
+                return '\n '.join(RSTFormatter.bullet_list([TextBlock(item) for item in value]).lines)
             else:
                 raise ValueError('Unsupported value type: {}\n{}'.format(type(value), value))
 
@@ -132,62 +140,57 @@ class RSTFormatter(object):
                                     for k, v in sort(items.items())]) + '\n')
 
     @staticmethod
-    def dict_list_structure(items):
+    def dict_list_structure(items, sort_dict=True):
         if isinstance(items, str):
             return TextBlock(items)
         elif isinstance(items, int):
-            return TextBlock(str(int))
+            return TextBlock(str(items))
         elif isinstance(items, list):
             return RSTFormatter.bullet_list([RSTFormatter.dict_list_structure(item) for item in items])
         elif isinstance(items, dict):
-            return RSTFormatter.field_list({k: RSTFormatter.dict_list_structure(v) for k, v in items})
+            return RSTFormatter.field_list({k: RSTFormatter.dict_list_structure(v) for k, v in items.items()}, sort_dict)
 
 
 def format_schema(schema, formatter):
     """
 
-    :type schema: Mapping
+    :param dict schema: Cerberus config schema
     :type formatter: RSTFormatter
     """
     REQUIRED = 'required'
     DEFAULT = 'default'
 
-    def default(_dict):
-        return '{}: {}'.format(DEFAULT, _dict.get(DEFAULT))
+    def get_default(_schema):
+        """
 
-    def is_required(_dict):
-        return _dict.get(REQUIRED, False)
+        :type _schema: dict
+        """
+        if DEFAULT in _schema:
+            return {DEFAULT: _schema[DEFAULT]}
+        else:
+            return {REQUIRED: _schema.get(REQUIRED, False)}
 
-    STANDARD_CONVERTER = lambda _key, content: formatter.preserve_indents(
-        TextBlock(yaml.dump({_key: content}, default_flow_style=False)))
-
-    rules_converters = {
-        'anyof': lambda _key, content: formatter.any_of_table([TextBlock(yaml.dump(block, default_flow_style=False))
-                                                               for block in content])
-    }
-    options = {}
-
-    for key, value in schema.items():
-        # title = formatter.title(key)
-        subtitle = formatter.emphasis(TextBlock(REQUIRED)) if is_required(value) \
-            else formatter.emphasis(TextBlock(default(value)))
-        body = TextBlock(subtitle + '\n' +
-                         yaml.dump({k: v for k, v in value.items() if k not in (DEFAULT, REQUIRED)},
-                                   default_flow_style=False
-                                   ))
-        body = '\n'.join([rules_converters.get(k, STANDARD_CONVERTER)(v) for k, v in value])
-        options[key] = body
-
-    return '\n'.join(paragraphs)
+    return '\n'.join(['%s\n%s\n%s' % (formatter.title(key),
+                                      formatter.field_list(get_default(value)),
+                                      formatter.dict_list_structure({k: v for k, v in value.items()
+                                                                     if k not in {REQUIRED, DEFAULT}}))
+                      for key, value in schema.items()])
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('schema', help='Path to schema file')
-    schema_path = parser.parse_args().schema
+    parser.add_argument('output_filename', default='output.rst', help='Name for the output rst document')
+    args = parser.parse_args()
+    schema_path = args.schema
+    output_filename = args.output_filename
+
     with open(schema_path) as f:
         schema = yaml.load(f)
     document = format_schema(schema, RSTFormatter())
+
+    with open(output_filename, 'w') as f:
+        f.write(document)
 
 
 if __name__ == '__main__':

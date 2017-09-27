@@ -48,7 +48,8 @@ analytic tools for the results they produce.
         'console_scripts': [
             'yandex-tank = yandextank.core.cli:main',
             'yandex-tank-check-ssh = yandextank.common.util:check_ssh_connection',
-            'tank-postloader = yandextank.plugins.DataUploader.cli:post_loader'
+            'tank-postloader = yandextank.plugins.DataUploader.cli:post_loader',
+            'tank-docs-gen = yandextank.validator.docs_gen:main'
         ],
     },
     package_data={

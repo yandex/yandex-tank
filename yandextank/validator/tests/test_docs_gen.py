@@ -1,5 +1,6 @@
 # coding=utf-8
 import pytest
+import yaml
 
 from yandextank.validator.docs_gen import RSTFormatter, TextBlock, format_schema
 
@@ -102,31 +103,65 @@ class TestRSTFormatter(object):
     @pytest.mark.parametrize('structure, expected', [
         ('simple\nstring', 'simple\nstring'),
         (['simple', 'list'], '- simple\n- list'),
-        (['nested', ['list', 'here'], 'yes'], '- nested\n- - list\n  - here\n- yes')
+        (['nested', ['list', 'here'], 'yes'], '- nested\n- - list\n  - here\n- yes'),
+        ({'simple': 'dict', 'single': 'level'}, ':simple:\n dict\n:single:\n level\n'),
+        ({'nested': {'dict': 'nested'}, 'other': 'staff'}, ':nested:\n :dict:\n  nested\n:other:\n staff\n'),
+        ({'nested': ['list', 0, 1], 'other': 'staff'}, ':nested:\n - list\n - 0\n - 1\n:other:\n staff\n'),
+        ({'default': 'localhost', 'any of': [{'type': 'list', 'elements': {'type': 'string'}},
+                                             {'type': 'string', 'allowed': 'auto'}]},
+         """:any of:
+ - :elements:
+    :type:
+     string
+   :type:
+    list
+ - :allowed:
+    auto
+   :type:
+    string
+:default:
+ localhost
+""")
     ])
     def test_dict_list_structure(self, structure, expected):
         assert str(RSTFormatter.dict_list_structure(structure)) == expected
 
-@pytest.mark.skip
+
 @pytest.mark.parametrize('schema_filename, expected', [
-    ('yandextank/plugins/Telegraf/config/schema.yaml',
+    ('yandextank/validator/tests/test_schema.yaml',
      """kill_old
 ========
-:default: True
-:type: list
+:default:
+ - foo
+ - bar
+
 :elements:
- :type: string
- :allowed: foo
+ :allowed:
+  - foo
+  - bar
+ :type:
+  string
+:type:
+ list
 
 default_target
 ==============
-:default: localhost
+:default:
+ localhost
+
 :any of:
- - :type: list
-   :elements:
-    :type: string
- - :type: string  
-   :allowed: auto  """)
+ - :elements:
+    :type:
+     string
+   :type:
+    list
+ - :allowed:
+    auto
+   :type:
+    string
+""")
 ])
 def test_format_schema(schema_filename, expected):
-    raise NotImplemented
+    with open(schema_filename) as f:
+        schema = yaml.load(f)
+    assert format_schema(schema, RSTFormatter()) == expected
