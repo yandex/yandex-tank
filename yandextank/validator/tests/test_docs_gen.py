@@ -22,14 +22,14 @@ class TestRSTFormatter(object):
     def test_any_of_table(self, s1, s2, expected):
         assert RSTFormatter.any_of_table([TextBlock(s1), TextBlock(s2)]) == expected
 
-    @pytest.mark.parametrize('s, expected',[
+    @pytest.mark.parametrize('s, expected', [
         ('type: list\nelements:\n\ttype: string', '| type: list\n| elements:\n|   type: string'),
         ('type: string\nallowed: auto\ndescription:', '| type: string\n| allowed: auto\n| description:')
     ])
     def test_preserve_indents(self, s, expected):
         assert RSTFormatter.preserve_indents(TextBlock(s)) == expected
 
-    @pytest.mark.parametrize('s, expected',[
+    @pytest.mark.parametrize('s, expected', [
         ('A nice title',
          'A nice title\n============'),
         ('A nice\ntitle',
@@ -55,19 +55,15 @@ class TestRSTFormatter(object):
         assert RSTFormatter._list_item(TextBlock(block)) == expected
 
     @pytest.mark.parametrize('texts, expected', [
-        ([
-            ':type: list\n:elements:\n\t:type: string',
-            ':type: string\n:allowed: auto'
-        ],
-        """- :type: list
+        ([':type: list\n:elements:\n\t:type: string',
+          ':type: string\n:allowed: auto'],
+         """- :type: list
   :elements:
     :type: string
 - :type: string
   :allowed: auto"""),
-        ([
-             ':type: list\n:elements:\n :type: string',
-             ':type: string\n:allowed: auto'
-         ],
+        ([':type: list\n:elements:\n :type: string',
+          ':type: string\n:allowed: auto'],
          """- :type: list
   :elements:
    :type: string
