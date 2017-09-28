@@ -12,12 +12,13 @@ from ..Aggregator import Plugin as AggregatorPlugin
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ..Phantom import PhantomReader
+from yandextank.common.resource import manager as resource_manager
 
 logger = logging.getLogger(__name__)
 
 
 class Plugin(AbstractPlugin, GeneratorPlugin):
-    '''    Pandora load generator plugin    '''
+    """    Pandora load generator plugin    """
 
     OPTION_CONFIG = "config"
     SECTION = "pandora"
@@ -53,7 +54,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             pass
         self.core.add_artifact_file(self.sample_log)
 
-        config_content = self.get_option("config_content")
+        config_content = self.patch_config(self.get_option("config_content"))
         if len(config_content) > 0:
             self.pandora_config_file = self.core.mkstemp(
                 ".json", "pandora_config_")
@@ -133,6 +134,16 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         else:
             logger.debug("Seems subprocess finished OK")
         return retcode
+
+    @staticmethod
+    def patch_config(config):
+        """
+        download remote resources, replace links with local filenames
+        :param dict config: pandora config
+        """
+        ammo_location = config['pools']['ammo']['file']
+        config['pools']['ammo']['file'] = resource_manager.resource_filename(ammo_location)
+        return config
 
 
 class PandoraInfoWidget(AbstractInfoWidget):
