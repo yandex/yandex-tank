@@ -37,18 +37,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def __init__(self, core, cfg, cfg_updater):
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
-        self.client = None
-        self.decoder = None
-
-    def start_test(self):
-        self.start_time = datetime.datetime.now()
-
-    def end_test(self, retcode):
-        self.end_time = datetime.datetime.now() + datetime.timedelta(minutes=1)
-        return retcode
-
-    def configure(self):
-        '''Read configuration'''
         self.tank_tag = self.get_option("tank_tag")
         address = self.get_option("address")
         port = self.get_option("port")
@@ -66,6 +54,13 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             )
         )
         self.decoder = Decoder(self.tank_tag, uuid)
+
+    def start_test(self):
+        self.start_time = datetime.datetime.now()
+
+    def end_test(self, retcode):
+        self.end_time = datetime.datetime.now() + datetime.timedelta(minutes=1)
+        return retcode
 
     def prepare_test(self):
         self.core.job.subscribe_plugin(self)
