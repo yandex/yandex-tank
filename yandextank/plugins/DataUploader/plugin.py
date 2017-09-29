@@ -284,19 +284,20 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def end_test(self, retcode):
         self.on_air = False
-        self.monitoring_queue.put(None)
-        self.data_queue.put(None)
         self.__save_conf()
-        self._join_threads(timeout=int(self.get_option('threads_timeout')))
         self.unlock_targets(self.locked_targets)
         return retcode
 
     def post_process(self, rc):
+        self.monitoring_queue.put(None)
+        self.data_queue.put(None)
+        logger.info("Waiting for sender threads to join.")
+        self.monitoring.join()
+        self.upload.join()
         try:
             self.lp_job.close(rc)
         except Exception:  # pylint: disable=W0703
             logger.warning("Failed to close job", exc_info=True)
-
         logger.info(
             "Web link: %s%s",
             self.lp_job.api_client.base_url,
@@ -628,22 +629,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._target = self.generator_info.address
             logger.info("Detected target: %s", self.target)
         return self._target
-
-    def _join_threads(self, timeout):
-        logger.info(
-            'Waiting for sender threads to join for {} seconds ("meta.threads_timeout" config option)'.format(timeout))
-        try:
-            self.monitoring.join(timeout=timeout)
-            if self.monitoring.isAlive():
-                logger.error('Monitoring thread joining timed out. Terminating.')
-        except RuntimeError:
-            pass
-        try:
-            self.upload.join(timeout=timeout)
-            if self.upload.isAlive():
-                logger.error('Upload thread joining timed out. Terminating.')
-        except RuntimeError:
-            pass
 
 
 class JobInfoWidget(AbstractInfoWidget):
