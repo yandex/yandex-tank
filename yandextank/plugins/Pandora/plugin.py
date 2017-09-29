@@ -141,8 +141,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         download remote resources, replace links with local filenames
         :param dict config: pandora config
         """
-        ammo_location = config['pools']['ammo']['file']
-        config['pools']['ammo']['file'] = resource_manager.resource_filename(ammo_location)
+        for pool in config['pools']:
+            if 'file' in pool.get('ammo', {}):
+                pool['ammo']['file'] = resource_manager.resource_filename(pool['ammo']['file'])
         return config
 
 
