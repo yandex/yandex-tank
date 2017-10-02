@@ -395,7 +395,7 @@ def main():
 
     logger.info('Init')
     customs_script = os.path.dirname(__file__) + '/agent_customs.sh'
-
+    # todo: deprecate
     if options.kill_old:
         kill_old_agents(options.telegraf_path)
 

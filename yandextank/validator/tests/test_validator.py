@@ -387,7 +387,7 @@ def test_load_multiple(configs, expected):
                 'disguise_hostnames': True,
                 'ssh_timeout': '5s',
                 'default_target': 'localhost',
-                'kill_old': True
+                'kill_old': False
             },
             'phantom': {
                 'package': 'yandextank.plugins.Phantom',

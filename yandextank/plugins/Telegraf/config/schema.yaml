@@ -14,4 +14,4 @@ ssh_timeout:
   default: 5s
 kill_old:
   type: boolean
-  default: true
+  default: false
