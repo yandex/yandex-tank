@@ -342,4 +342,4 @@ class SSHClient(object):
             cmd = 'pgrep -f {} | xargs kill -9'.format(self.agent_remote_folder)
             out, errors, err_code = self.ssh.execute(cmd)
             if errors:
-                logging.error("[%s] error: '%s'", self.host, errors)
+                logging.error("[%s] error while killing agent: '%s'", self.host, errors)
