@@ -227,6 +227,9 @@ class Plugin(AbstractPlugin):
             self.mon_saver.close()
         return retcode
 
+    def post_process(self, retcode):
+        logger.info('')
+
 
 class SaveMonToFile(MonitoringDataListener):
     """
