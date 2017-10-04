@@ -245,7 +245,8 @@ class AgentWorker(threading.Thread):
             self.startup_processes.append(proc)
 
         logger.info('Starting metrics collector..')
-        args = [self.telegraf_path, '-config', '{}/agent.cfg'.format(self.working_dir)]
+        # todo: add identificators into {} for python 2.6
+        args = [self.telegraf_path, '-config', '{0}/agent.cfg'.format(self.working_dir)]
         self.collector = self.__popen(cmnd=args)
         logger.info('Started with pid %d', self.collector.pid)
 
@@ -357,14 +358,14 @@ class AgentWorker(threading.Thread):
 def kill_old_agents(telegraf_path):
     my_pid = os.getpid()
     parent = os.getppid()
-    logger.info('My pid: {} Parent pid: {}'.format(my_pid, parent))
+    logger.info('My pid: {0} Parent pid: {1}'.format(my_pid, parent))
     ps_output = subprocess.check_output(['ps', 'aux'])
     for line in ps_output.splitlines():
         if telegraf_path in line:
             pid = int(line.split()[1])
-            logger.info('Found pid: {}'.format(pid))
+            logger.info('Found pid: {0}'.format(pid))
             if pid not in [my_pid, parent]:
-                logger.info('Killing process {}:\n{}'.format(pid, line))
+                logger.info('Killing process {0}:\n{1}'.format(pid, line))
                 os.kill(pid, signal.SIGKILL)
 
 
