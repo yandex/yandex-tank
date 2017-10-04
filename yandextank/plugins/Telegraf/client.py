@@ -178,6 +178,7 @@ class SSHClient(object):
             'TELEGRAF_REMOTE_PATH': '/tmp/telegraf',
             'TELEGRAF_LOCAL_PATH': self.telegraf,
         }
+        self.agent_remote_folder = None
 
     def install(self):
         """Create folder and copy agent and metrics scripts to remote host"""
@@ -208,6 +209,7 @@ class SSHClient(object):
         remote_dir = out.strip()
         if remote_dir:
             self.path['AGENT_REMOTE_FOLDER'] = remote_dir
+            self.agent_remote_folder = remote_dir
         logger.debug(
             "Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
 
@@ -325,14 +327,19 @@ class SSHClient(object):
                 log_filename,
                 exc_info=True)
         try:
-            self.ssh.get_file(
-                self.path['AGENT_REMOTE_FOLDER'] + "/_agent.log", log_filename)
-            self.ssh.get_file(
-                self.path['AGENT_REMOTE_FOLDER'] + "/monitoring.rawdata",
-                data_filename)
+            self.ssh.get_file(os.path.join(self.path['AGENT_REMOTE_FOLDER'], "_agent.log"), log_filename)
+            self.ssh.get_file(os.path.join(self.path['AGENT_REMOTE_FOLDER'], "/monitoring.rawdata"), data_filename)
             self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
         except Exception:
             logger.error("Unable to get agent artefacts", exc_info=True)
 
-        logger.info("Removing agent from: %s@%s...", self.username, self.host)
+        self._kill_agent()
+
         return log_filename, data_filename
+
+    def _kill_agent(self):
+        if self.agent_remote_folder:
+            cmd = 'pgrep -f {} | xargs kill -9'.format(self.agent_remote_folder)
+            out, errors, err_code = self.ssh.execute(cmd)
+            if errors:
+                logging.error("[%s] error while killing agent: '%s'", self.host, errors)
