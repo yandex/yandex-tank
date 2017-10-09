@@ -180,6 +180,9 @@ class Option(object):
         },
         'Autostop': {
             'autostop': lambda k, v: {k: re.findall('\w+\(.+?\)', v)}
+        },
+        'DataUploader': {
+            'lock_targets': lambda k, v: {k: v.strip().split() if v != 'auto' else v}
         }
     }
     CONVERTERS_FOR_UNKNOWN = {
