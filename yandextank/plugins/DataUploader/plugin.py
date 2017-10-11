@@ -284,19 +284,20 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def end_test(self, retcode):
         self.on_air = False
-        self.monitoring_queue.put(None)
-        self.data_queue.put(None)
         self.__save_conf()
-        self._join_threads(timeout=int(self.get_option('threads_timeout')))
         self.unlock_targets(self.locked_targets)
         return retcode
 
     def post_process(self, rc):
+        self.monitoring_queue.put(None)
+        self.data_queue.put(None)
+        logger.info("Waiting for sender threads to join.")
+        self.monitoring.join()
+        self.upload.join()
         try:
             self.lp_job.close(rc)
         except Exception:  # pylint: disable=W0703
             logger.warning("Failed to close job", exc_info=True)
-
         logger.info(
             "Web link: %s%s",
             self.lp_job.api_client.base_url,
@@ -443,7 +444,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                     self.core.job.monitoring_plugin.set_option("config_contents",
                                                                config_file.read())
         except AttributeError:  # pylint: disable=W0703
-            logger.warning("Can't get monitoring config", exc_info=True)
+            logger.warning("Can't get monitoring config")
 
         self.lp_job.send_config_snapshot(self.core.cfg_snapshot)
         self.core.config.save(os.path.join(self.core.artifacts_dir, 'saved_conf.yaml'))
@@ -454,10 +455,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
         def no_target():
             logging.warn("Target lock set to 'auto', but no target info available")
-            return []
+            return {}
 
-        locks_list = [self.target] or no_target() if locks_list_cfg == 'auto' else locks_list_cfg
-        targets_to_lock = [host for host in locks_list if host]
+        locks_set = {self.target} or no_target() if locks_list_cfg == 'auto' else set(locks_list_cfg)
+        targets_to_lock = [host for host in locks_set if host]
         return targets_to_lock
 
     def lock_targets(self, targets_to_lock, ignore, strict):
@@ -628,22 +629,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._target = self.generator_info.address
             logger.info("Detected target: %s", self.target)
         return self._target
-
-    def _join_threads(self, timeout):
-        logger.info(
-            'Waiting for sender threads to join for {} seconds ("meta.threads_timeout" config option)'.format(timeout))
-        try:
-            self.monitoring.join(timeout=timeout)
-            if self.monitoring.isAlive():
-                logger.error('Monitoring thread joining timed out. Terminating.')
-        except RuntimeError:
-            pass
-        try:
-            self.upload.join(timeout=timeout)
-            if self.upload.isAlive():
-                logger.error('Upload thread joining timed out. Terminating.')
-        except RuntimeError:
-            pass
 
 
 class JobInfoWidget(AbstractInfoWidget):
