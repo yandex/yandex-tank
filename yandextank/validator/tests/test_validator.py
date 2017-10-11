@@ -4,7 +4,7 @@ import pytest
 from yandextank.validator.validator import TankConfig, ValidationError
 
 CFG_VER_I_0 = {
-    "version": "1.8.34",
+    "version": "1.9.3",
     "core": {
         'operator': 'fomars',
         'artifacts_base_dir': './'
@@ -70,7 +70,7 @@ PHANTOM_SCHEMA_V_G = {
 
 @pytest.mark.parametrize('config, expected', [
     ({
-     "version": "1.8.34",
+     "version": "1.9.3",
      "core": {
          'operator': 'fomars',
          'artifacts_base_dir': './',
@@ -91,7 +91,7 @@ PHANTOM_SCHEMA_V_G = {
          'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'}}
      },
      {
-     "version": "1.8.34",
+     "version": "1.9.3",
      "core": {
          'operator': 'fomars',
          'artifacts_base_dir': './',
@@ -231,7 +231,7 @@ def test_validate_core(config, expected):
 @pytest.mark.parametrize('config, expected', [
     # plugins: no package
     ({
-     "version": "1.8.34",
+     "version": "1.9.3",
      "core": {
          'operator': 'fomars'
      },
@@ -266,7 +266,7 @@ def test_validate_core(config, expected):
      }, "package: [required field]"),
     # plugins: empty package
     ({
-     "version": "1.8.34",
+     "version": "1.9.3",
      "core": {
          'operator': 'fomars'
      },
@@ -293,7 +293,7 @@ def test_validate_core_error(config, expected):
 @pytest.mark.parametrize('configs, expected', [
     # test disable plugin
     ([{
-        "version": "1.8.34",
+        "version": "1.9.3",
         "core": {
             'operator': 'fomars'
         },
@@ -311,7 +311,7 @@ def test_validate_core_error(config, expected):
         }
     },
         {
-        "version": "1.8.34",
+        "version": "1.9.3",
         "core": {
             'operator': 'fomars'
         },
@@ -324,7 +324,7 @@ def test_validate_core_error(config, expected):
         }
     }
     ],
-        {"version": "1.8.34",
+        {"version": "1.9.3",
          "core": {
              'operator': 'fomars'
          },
@@ -350,7 +350,7 @@ def test_load_multiple(configs, expected):
 @pytest.mark.parametrize('config, expected', [
     (
         {
-            "version": "1.8.34",
+            "version": "1.9.3",
             "core": {
                 'operator': 'fomars',
                 'artifacts_base_dir': './'
@@ -371,7 +371,7 @@ def test_load_multiple(configs, expected):
             }
         },
         {
-            "version": "1.8.34",
+            "version": "1.9.3",
             "core": {
                 'operator': 'fomars',
                 'artifacts_base_dir': './',
@@ -468,7 +468,7 @@ def test_validate_all(config, expected):
     # plugins errors
     (
         {
-            "version": "1.8.34",
+            "version": "1.9.3",
             "core": {
                 'operator': 'fomars',
                 'artifacts_base_dir': './'
@@ -525,7 +525,7 @@ def test_get_plugins(config, expected):
 
 @pytest.mark.parametrize('config, plugin, key, value', [
     ({
-        "version": "1.8.34",
+        "version": "1.9.3",
         "core": {
             'operator': 'fomars',
             'artifacts_base_dir': './',
@@ -547,7 +547,7 @@ def test_setter(config, plugin, key, value):
     # configparser.read(config_file)
     # plugins_conf = {section: dict(configparser.items(section)) for section in configparser.sections()}
     # config = {
-    #     "version": "1.8.34",
+    #     "version": "1.9.3",
     #     "core": {
     #           'operator': 'fomars'
     #       },
