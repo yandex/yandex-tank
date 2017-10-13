@@ -1,0 +1,18 @@
+tank_tag:
+  default: unknown
+  type: string
+address:
+  default: localhost
+  type: string
+port:
+  default: 8086
+  type: integer
+grafana_root:
+  default: "http://localhost/"
+  type: string
+grafana_dashboard:
+  default: tank-dashboard
+  type: string
+chunk_size:
+  default: 500000
+  type: integer

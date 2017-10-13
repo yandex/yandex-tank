@@ -38,7 +38,8 @@ uploader:
   api_timeout: 1
   job_name: Hello kitty
   job_dsc: hell of a kitty
-  lock_targets: foo.bar
+  lock_targets:
+    - foo.bar
   log_other_requests: true
   maintenance_timeout: 5
   network_attempts: 2

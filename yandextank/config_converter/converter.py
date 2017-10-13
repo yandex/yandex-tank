@@ -47,6 +47,8 @@ SECTIONS_PATTERNS = {
     'RCAssert': 'rcassert',
     'JsonReport': 'json_report|jsonreport',
     'Pandora': 'pandora',
+    'Influx': 'influx',
+
 }
 
 
@@ -180,6 +182,9 @@ class Option(object):
         },
         'Autostop': {
             'autostop': lambda k, v: {k: re.findall('\w+\(.+?\)', v)}
+        },
+        'DataUploader': {
+            'lock_targets': lambda k, v: {k: v.strip().split() if v != 'auto' else v}
         }
     }
     CONVERTERS_FOR_UNKNOWN = {
