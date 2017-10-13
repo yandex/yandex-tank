@@ -76,14 +76,7 @@ class TankConfig(object):
         self.ERROR_OUTPUT = error_output
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
         self.PLUGINS_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml'))
-
-        # monkey-patch cerberus validator to allow description field
-        def _validate_description(self, description, field, value):
-            """ {'type': 'string'} """
-            pass
-
-        Validator._validate_description = _validate_description
-        self.PatchedValidator = InspectedValidator('Validator', (Validator,), {})
+        self.PatchedValidator = self.__get_patched_validator()
 
     def get_option(self, section, option):
         return self.validated[section][option]
@@ -125,6 +118,29 @@ class TankConfig(object):
     def save_raw(self, filename):
         with open(filename, 'w') as f:
             yaml.dump(self.raw_config_dict, f)
+
+    @staticmethod
+    def __get_patched_validator():
+        # monkey-patch cerberus validator to allow description field
+        def _validate_description(self, description, field, value):
+            """ {'type': 'string'} """
+            pass
+
+        # monkey-patch cerberus validator to allow values descriptions field
+        def _validate_values_description(self, values_description, field, value):
+            """ {'type': 'dict'} """
+            pass
+
+        # monkey-patch cerberus validator to allow tutorial_link field
+        def _validate_tutorial_link(self, tutorial_link, field, value):
+            """ {'type': 'string'} """
+            pass
+
+        Validator._validate_description = _validate_description
+        Validator._validate_values_description = _validate_values_description
+        Validator._validate_tutorial_link = _validate_tutorial_link
+
+        return InspectedValidator('Validator', (Validator,), {})
 
     def __load_multiple(self, configs):
         l = len(configs)
