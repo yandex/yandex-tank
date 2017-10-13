@@ -328,7 +328,7 @@ class SSHClient(object):
                 exc_info=True)
         try:
             self.ssh.get_file(os.path.join(self.path['AGENT_REMOTE_FOLDER'], "_agent.log"), log_filename)
-            self.ssh.get_file(os.path.join(self.path['AGENT_REMOTE_FOLDER'], "/monitoring.rawdata"), data_filename)
+            self.ssh.get_file(os.path.join(self.path['AGENT_REMOTE_FOLDER'], "monitoring.rawdata"), data_filename)
             self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
         except Exception:
             logger.error("Unable to get agent artefacts", exc_info=True)
