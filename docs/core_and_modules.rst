@@ -181,14 +181,13 @@ Basic options
   Limit request number.
 
 :autocases:
-  Enable marking requests automatically.
+  Enable marking requests automatically. ``autocases = 2`` means 2 uri path elements will be used. I.e ``/hello/world/please/help`` will produce case ``_hello_world``
 
-  Available options: 1 -- enable, 0 -- disable).
 
 :chosen_cases:
   Use only selected cases.
 
-There are 3 ways to constrain requests number: by schedule with ``rps_schedule``, by requests number with ``ammo_limit`` or by loop number with ``loop`` option. Tank stops if any constrain is reached. If stop reason is reached ``ammo_limit`` or ``loop`` it will be mentioned in log file. In test without ``rps_schedule`` file with requests is used one time by default.
+There are 3 ways to constrain requests number: by schedule with ``rps_schedule``, by requests number with ``ammo_limit`` or by loop number with ``loop`` option. Tank stops if any constraint is reached. If stop reason is reached ``ammo_limit`` or ``loop`` it will be mentioned in log file. In test without ``rps_schedule`` file with requests is used one time by default.
 
 Additional options
 ^^^^^^^^^^^^^^^^^^
@@ -1151,7 +1150,17 @@ List of metrics group names and particular metrics in them:
     * measure - default: call - metric value is a command or script execution output. Example: `<Custom measure="call" diff="1" label="Base size">du -s /var/lib/mysql/ | awk '{print $1}'</Custom>`
 * TelegrafRaw
     * raw telegraf TOML format, transparently added to final collector config 
-* Source additional source file in telegraf json format, can be used to add custom metrics that needs complex processing and do not fit into standart custom metrics (like log parsing with aggregation)
+* Source
+    * additional source file in telegraf json format, can be used to add custom metrics that needs complex processing and do not fit into standart custom metrics (like log parsing with aggregation). Custom metrics do not include timestamps but source does. You can import async data with Source.
+
+    Config Host section example:
+    ``<Source>/path/to/file</Source>``
+
+    File format: `jsonline`. Each line is a json document.
+
+    Example:
+    ``{"fields":{"metric_name_1":0,"metric_name_2":98.27694231863998,},"name":"custom_group-name","timestamp":1503990965}``
+
 
 
 Console on-line screen
