@@ -4,6 +4,12 @@ from types import NoneType
 import yaml
 
 
+TYPE = 'type'
+DESCRIPTION = 'description'
+REQUIRED = 'required'
+DEFAULT = 'default'
+
+
 class TextBlock(object):
     def __init__(self, text, tab_replacement='  ', ending=''):
         """
@@ -12,7 +18,7 @@ class TextBlock(object):
         """
         self.text = text.replace('\t', tab_replacement)
         self.lines = self.text.splitlines()
-        self.width = max([len(line) for line in self.lines])
+        self.width = max([len(line) for line in self.lines] + [0])
         self.padded_width = self.width + 2
         self.height = len(self.lines)
 
@@ -32,7 +38,22 @@ class TextBlock(object):
         return self.text
 
 
-class RSTFormatter(object):
+def to_text_block(method):
+    def decorated(content):
+        if not isinstance(content, TextBlock):
+            return method(TextBlock(content))
+        else:
+            return method(TextBlock)
+    return decorated
+
+
+class RSTRenderer(object):
+
+    def with_escape(method):
+        def escaped(content):
+            return method(RSTRenderer.escape(content))
+        return escaped
+
     @staticmethod
     def any_of_table(blocks):
         """
@@ -70,13 +91,22 @@ class RSTFormatter(object):
         return '\n'.join(['| {}'.format(line) for line in block.lines])
 
     @staticmethod
+    def bold(content):
+        """
+        :type content: str
+        :return: str
+        """
+        return '\n'.join(['**{}**'.format(line) for line in content.splitlines()])
+
+
+    @staticmethod
     def title(content, new_line_replacement=' ', tab_replacement='  '):
         """
         Underlines content with '='. New lines and tabs will be replaced
         :param str content:
         :param str new_line_replacement:
         :param str tab_replacement:
-        :return:
+        :return: unicode
         """
         prepared_content = content.strip().replace('\n', new_line_replacement).replace('\t', tab_replacement)
         return u'{}\n{}'.format(prepared_content, '=' * len(prepared_content))
@@ -87,12 +117,24 @@ class RSTFormatter(object):
         return u'{}\n{}'.format(prepared_content, '-' * len(prepared_content))
 
     @staticmethod
-    def emphasis(block):
+    @with_escape
+    @to_text_block
+    def italic(block):
         """
 
         :type block: TextBlock
         """
         return '\n'.join(['*{}*'.format(line) for line in block.lines])
+
+    @staticmethod
+    @to_text_block
+    def mono(block):
+        """
+
+        :type block: TextBlock
+        """
+        return '\n'.join(['``{}``'.format(line) for line in block.lines])
+
 
     @classmethod
     def bullet_list(cls, blocks):
@@ -112,12 +154,12 @@ class RSTFormatter(object):
         return '- ' + '\n  '.join(block.lines)
 
     @staticmethod
-    def field_list(items, sort=True):
+    def field_list(items, sort=True, newlines=True):
         """
 
-        :rtype: TextBlock
         :param bool sort:
         :type items: dict
+        :rtype: TextBlock
         """
 
         def format_value(value):
@@ -128,16 +170,17 @@ class RSTFormatter(object):
             elif isinstance(value, TextBlock):
                 return '\n '.join(value.lines)
             elif isinstance(value, dict):
-                return '\n '.join(RSTFormatter.field_list(value, sort).lines)
+                return '\n '.join(RSTRenderer.field_list(value, sort).lines)
             elif isinstance(value, list):
-                return '\n '.join(RSTFormatter.bullet_list([TextBlock(item) for item in value]).lines)
+                return '\n '.join(RSTRenderer.bullet_list([TextBlock(item) for item in value]).lines)
             else:
                 raise ValueError('Unsupported value type: {}\n{}'.format(type(value), value))
 
         sort = sorted if sort else lambda x: x
-        return TextBlock('\n'.join([':{}:\n {}'.format(k.replace('\n', ' '),
-                                                       format_value(v))
-                                    for k, v in sort(items.items())]) + '\n')
+        template = ':{}:\n {}' if newlines else ':{}: {}'
+        return '\n' + '\n'.join([template.format(k.replace('\n', ' '),
+                                                 format_value(v))
+                                 for k, v in sort(items.items())]) if items else ''
 
     @staticmethod
     def dict_list_structure(items, sort_dict=True):
@@ -146,16 +189,81 @@ class RSTFormatter(object):
         elif isinstance(items, int):
             return TextBlock(str(items))
         elif isinstance(items, list):
-            return RSTFormatter.bullet_list([RSTFormatter.dict_list_structure(item) for item in items])
+            return RSTRenderer.bullet_list([RSTRenderer.dict_list_structure(item) for item in items])
         elif isinstance(items, dict):
-            return RSTFormatter.field_list({k: RSTFormatter.dict_list_structure(v) for k, v in items.items()}, sort_dict)
+            return RSTRenderer.field_list({k: RSTRenderer.dict_list_structure(v) for k, v in items.items()}, sort_dict)
+
+    @staticmethod
+    def escape(content):
+        """
+        :type content: str
+        """
+        return content.replace('-', '\-')
+
+    del with_escape
+
+
+def render_dsc(renderer, option_kwargs):
+    """
+
+    :type option_kwargs: dict
+    """
+    if DEFAULT in option_kwargs:
+        return renderer.italic('- {}. Default: '.format(option_kwargs.get(DESCRIPTION))) + \
+               renderer.mono(option_kwargs.get(DEFAULT))
+    elif REQUIRED in option_kwargs:
+        return renderer.italic('- {}.'.format(option_kwargs.get(DESCRIPTION))) + ' ' +\
+               renderer.bold('Required.')
+    else:
+        return renderer.italic('- {}.'.format(option_kwargs.get(DESCRIPTION)))
+
+
+def render_body(renderer, option_kwargs, exclude_keys, special_keys=None):
+    """
+
+    :type option_kwargs: dict
+    :type exclude_keys: list
+    :type special_keys: dict
+    """
+    special_keys = special_keys or {}
+    special_part = '\n'.join([special_handler(renderer, option_kwargs[special_key])
+                              for special_key, special_handler in special_keys.items()
+                              if special_key in option_kwargs])
+    common_part = renderer.field_list({k: v for k, v in option_kwargs.items()
+                                       if k not in exclude_keys + special_keys.keys()})
+
+    return '\n'.join([_ for _ in [common_part, special_part] if _])
+
+
+def allowed(renderer, values):
+    return renderer.field_list({'one of': '[{}]'.format(', '.join([renderer.mono(value) for value in values]))},
+                               newlines=False)
+
+
+def get_formatter(option_schema):
+    """
+
+    :type option_schema: dict
+    """
+
+    def scalar_formatter(renderer):
+        option_name, option_kwargs = option_schema.items()[0]
+        header = renderer.subtitle(renderer.bold(option_name) + ' ' + '({})'.format(option_kwargs.get(TYPE)))
+        dsc = render_dsc(renderer, option_kwargs)
+        body = render_body(renderer, option_kwargs, [TYPE, DESCRIPTION, DEFAULT, REQUIRED], {'allowed': allowed})
+        return '\n'.join([_ for _ in [header, dsc, body] if _])
+    return scalar_formatter
+
+
+def format_option(option_schema, renderer):
+    return get_formatter(option_schema)(renderer)
 
 
 def format_schema(schema, formatter):
     """
 
     :param dict schema: Cerberus config schema
-    :type formatter: RSTFormatter
+    :type formatter: RSTRenderer
     """
     REQUIRED = 'required'
     DEFAULT = 'default'
@@ -187,7 +295,7 @@ def main():
 
     with open(schema_path) as f:
         schema = yaml.load(f)
-    document = format_schema(schema, RSTFormatter())
+    document = format_schema(schema, RSTRenderer())
 
     with open(output_filename, 'w') as f:
         f.write(document)
