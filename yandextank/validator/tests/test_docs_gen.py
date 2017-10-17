@@ -180,11 +180,28 @@ def test_format_schema(schema_filename, expected):
         #     'custom': 'custom gun', 'http': 'http gun', 'scenario': 'scenario gun', 'ultimate': 'ultimate gun'
         # },
         'required': 'true'}
-     }, u"""**gun_type** (string)
+      }, u"""**gun_type** (string)
 ---------------------
 *\- gun type.* **Required.**
 
-:one of: [``custom``, ``http``, ``scenario``, ``ultimate``]""")
+:one of: [``custom``, ``http``, ``scenario``, ``ultimate``]"""),
+    ({'gun_type': {
+        'type': 'string',
+        'description': 'gun type',
+        'allowed': ['custom', 'http', 'scenario', 'ultimate'],
+        'values_description': {
+            'custom': 'custom gun', 'http': 'http gun', 'scenario': 'scenario gun', 'ultimate': 'ultimate gun'
+        },
+        'required': 'true'}
+      }, u"""**gun_type** (string)
+---------------------
+*\- gun type.* **Required.**
+
+:one of:
+ :``custom``: custom gun
+ :``http``: http gun
+ :``scenario``: scenario gun
+ :``ultimate``: ultimate gun""")
 ])
 def test_format_option(option_schema, expected):
     assert format_option(option_schema, RSTRenderer) == expected

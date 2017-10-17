@@ -8,6 +8,9 @@ TYPE = 'type'
 DESCRIPTION = 'description'
 REQUIRED = 'required'
 DEFAULT = 'default'
+ALLOWED = 'allowed'
+VALUES_DSC = 'values_description'
+ONE_OF = 'one of'
 
 
 class TextBlock(object):
@@ -157,7 +160,8 @@ class RSTRenderer(object):
     def field_list(items, sort=True, newlines=True):
         """
 
-        :param bool sort:
+        :param bool newlines: add newlines between names and values
+        :param bool sort: sort items alphabetically by key
         :type items: dict
         :rtype: TextBlock
         """
@@ -179,7 +183,7 @@ class RSTRenderer(object):
         sort = sorted if sort else lambda x: x
         template = ':{}:\n {}' if newlines else ':{}: {}'
         return '\n' + '\n'.join([template.format(k.replace('\n', ' '),
-                                                 format_value(v))
+                                                 format_value(v).strip())
                                  for k, v in sort(items.items())]) if items else ''
 
     @staticmethod
@@ -236,7 +240,7 @@ def render_body(renderer, option_kwargs, exclude_keys, special_keys=None):
 
 
 def allowed(renderer, values):
-    return renderer.field_list({'one of': '[{}]'.format(', '.join([renderer.mono(value) for value in values]))},
+    return renderer.field_list({ONE_OF: '[{}]'.format(', '.join([renderer.mono(value) for value in values]))},
                                newlines=False)
 
 
@@ -245,14 +249,35 @@ def get_formatter(option_schema):
 
     :type option_schema: dict
     """
+    option_name, option_kwargs = option_schema.items()[0]
 
     def scalar_formatter(renderer):
-        option_name, option_kwargs = option_schema.items()[0]
         header = renderer.subtitle(renderer.bold(option_name) + ' ' + '({})'.format(option_kwargs.get(TYPE)))
         dsc = render_dsc(renderer, option_kwargs)
         body = render_body(renderer, option_kwargs, [TYPE, DESCRIPTION, DEFAULT, REQUIRED], {'allowed': allowed})
         return '\n'.join([_ for _ in [header, dsc, body] if _])
-    return scalar_formatter
+
+    def scalar_with_values_description(renderer):
+        header = renderer.subtitle(renderer.bold(option_name) + ' ' + '({})'.format(option_kwargs.get(TYPE)))
+        dsc = render_dsc(renderer, option_kwargs)
+        body = render_body(renderer, option_kwargs, [TYPE, DESCRIPTION, DEFAULT, REQUIRED, ALLOWED, VALUES_DSC])
+        values_description_dict = {
+            value: option_kwargs[VALUES_DSC].get(value, '') for value in option_kwargs[ALLOWED]
+        } \
+            if ALLOWED in option_kwargs \
+            else \
+            option_kwargs[VALUES_DSC]
+        values_description = renderer.field_list(
+            {renderer.mono(value): dsc for value, dsc in values_description_dict.items()},
+            newlines=False
+        )
+        values_description_block = renderer.field_list({ONE_OF: values_description})
+        return '\n'.join([_ for _ in [header, dsc, body, values_description_block] if _])
+
+    if VALUES_DSC in option_kwargs:
+        return scalar_with_values_description
+    else:
+        return scalar_formatter
 
 
 def format_option(option_schema, renderer):
