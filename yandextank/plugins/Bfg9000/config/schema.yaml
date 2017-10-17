@@ -1,0 +1,9 @@
+pip:
+  type: string
+  default: 'pip3'
+python:
+  type: string
+  default: 'python3'
+config:
+  type: dict
+  required: true
