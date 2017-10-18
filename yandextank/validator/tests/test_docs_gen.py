@@ -201,7 +201,53 @@ def test_format_schema(schema_filename, expected):
  :``custom``: custom gun
  :``http``: http gun
  :``scenario``: scenario gun
- :``ultimate``: ultimate gun""")
+ :``ultimate``: ultimate gun"""),
+    ({"load_profile": {
+        "type": "dict",
+        'description': 'specify parameters of your load',
+        'schema': {
+            'load_type': {
+                'type': 'string',
+                'required': 'true',
+                'description': 'choose your load type',
+                'allowed': ['rps', 'instances', 'stpd_file'],
+                'values_description': {
+                    'instances': 'fix number of instances',
+                    'rps': 'fix rps rate',
+                    'stpd_file': 'use ready schedule file'}
+            },
+            'schedule': {
+                'type': 'string',
+                'required': True,
+                'description': 'load schedule or path to stpd file',
+                'examples': {
+                    'line(100,200,10m)': 'linear growth from 100 to 200 instances/rps during 10 minutes',
+                    'const(200,90s)': 'constant load of 200 instances/rps during 90s',
+                    'test_dir/test_backend.stpd': 'path to ready schedule file'}
+            }
+        },
+        'required': True}
+    }, u"""**load_profile** (dict)
+-----------------------
+*\- specify parameters of your load.* **Required.**
+
+:load_type (string):
+ *\- choose your load type.* **Required.**
+ 
+ :one of:
+  :``instances``: fix number of instances
+  :``rps``: fix rps rate
+  :``stpd_file``: use ready schedule file
+:schedule (string):
+ *\- load schedule or path to stpd file.* **Required.**
+ 
+ :examples:
+  :``const(200,90s)``:
+   constant load of 200 instances/rps during 90s
+  :``line(100,200,10m)``:
+   linear growth from 100 to 200 instances/rps during 10 minutes
+  :``test_dir/test_backend.stpd``:
+   path to ready schedule file""")
 ])
 def test_format_option(option_schema, expected):
     assert format_option(option_schema, RSTRenderer) == expected
