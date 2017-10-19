@@ -326,33 +326,34 @@ def format_option(option_schema, renderer):
     return get_formatter(option_schema)(renderer)
 
 
-def format_schema(schema, renderer):
+def format_schema(schema, renderer, title=None):
     """
 
     :param dict schema: Cerberus config schema
     :type renderer: RSTRenderer
     """
+    body = '\n\n'.join([format_option({option_name: option_schema}, renderer) for option_name, option_schema in schema.items()])
 
-    # return '\n'.join(['%s\n%s\n%s' % (formatter.title(key),
-    #                                   formatter.field_list(get_default(value)),
-    #                                   formatter.dict_list_structure({k: v for k, v in value.items()
-    #                                                                  if k not in {REQUIRED, DEFAULT}}))
-    #                   for key, value in schema.items()])
+    if title:
+        title = renderer.title(title)
+        return title + '\n\n' + body
     return '\n\n'.join([format_option({option_name: option_schema}, renderer) for option_name, option_schema in schema.items()])
-
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('schema', help='Path to schema file')
-    parser.add_argument('output_filename', default='output.rst', help='Name for the output rst document')
+    parser.add_argument('-o', '--output_filename', default='output.rst', help='Name for the output rst document')
+    parser.add_argument('--title', default=None)
     args = parser.parse_args()
+
     schema_path = args.schema
     output_filename = args.output_filename
+    title = args.title
 
     with open(schema_path) as f:
         schema = yaml.load(f)
-    document = format_schema(schema, RSTRenderer())
+    document = format_schema(schema, RSTRenderer(), title)
 
     with open(output_filename, 'w') as f:
         f.write(document)
