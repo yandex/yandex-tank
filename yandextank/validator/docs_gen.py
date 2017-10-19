@@ -14,6 +14,7 @@ ONE_OF = 'one of'
 SCHEMA = 'schema'
 EXAMPLES = 'examples'
 ANYOF = 'anyof'
+NO_DSC = '(no description)'
 
 
 class TextBlock(object):
@@ -22,7 +23,7 @@ class TextBlock(object):
 
         :type text: str
         """
-        self.text = text.replace('\t', tab_replacement)
+        self.text = str(text).replace('\t', tab_replacement)
         self.lines = self.text.splitlines()
         self.width = max([len(line) for line in self.lines] + [0])
         self.padded_width = self.width + 2
@@ -216,13 +217,13 @@ def render_dsc(renderer, option_kwargs):
     :type option_kwargs: dict
     """
     if DEFAULT in option_kwargs:
-        return ' '.join([renderer.italic('- {}. Default:'.format(option_kwargs.get(DESCRIPTION))),
+        return ' '.join([renderer.italic('- {}. Default:'.format(option_kwargs.get(DESCRIPTION, NO_DSC))),
                renderer.mono(option_kwargs.get(DEFAULT))])
     elif REQUIRED in option_kwargs:
-        return renderer.italic('- {}.'.format(option_kwargs.get(DESCRIPTION))) + ' ' +\
+        return renderer.italic('- {}.'.format(option_kwargs.get(DESCRIPTION, NO_DSC))) + ' ' +\
                renderer.bold('Required.')
     else:
-        return renderer.italic('- {}.'.format(option_kwargs.get(DESCRIPTION)))
+        return renderer.italic('- {}.'.format(option_kwargs.get(DESCRIPTION, NO_DSC)))
 
 
 def render_body(renderer, option_kwargs, exclude_keys, special_keys=None):
@@ -271,6 +272,7 @@ def get_formatter(option_schema):
     :type option_schema: dict
     """
     option_name, option_kwargs = option_schema.items()[0]
+    # print(option_name, option_kwargs)
 
     def scalar_formatter(renderer, header=True):
         hdr = renderer.subtitle(renderer.bold(option_name) + ' ' + '({})'.format(option_kwargs.get(TYPE))) \
@@ -324,30 +326,20 @@ def format_option(option_schema, renderer):
     return get_formatter(option_schema)(renderer)
 
 
-def format_schema(schema, formatter):
+def format_schema(schema, renderer):
     """
 
     :param dict schema: Cerberus config schema
-    :type formatter: RSTRenderer
+    :type renderer: RSTRenderer
     """
-    REQUIRED = 'required'
-    DEFAULT = 'default'
 
-    def get_default(_schema):
-        """
+    # return '\n'.join(['%s\n%s\n%s' % (formatter.title(key),
+    #                                   formatter.field_list(get_default(value)),
+    #                                   formatter.dict_list_structure({k: v for k, v in value.items()
+    #                                                                  if k not in {REQUIRED, DEFAULT}}))
+    #                   for key, value in schema.items()])
+    return '\n\n'.join([format_option({option_name: option_schema}, renderer) for option_name, option_schema in schema.items()])
 
-        :type _schema: dict
-        """
-        if DEFAULT in _schema:
-            return {DEFAULT: _schema[DEFAULT]}
-        else:
-            return {REQUIRED: _schema.get(REQUIRED, False)}
-
-    return '\n'.join(['%s\n%s\n%s' % (formatter.title(key),
-                                      formatter.field_list(get_default(value)),
-                                      formatter.dict_list_structure({k: v for k, v in value.items()
-                                                                     if k not in {REQUIRED, DEFAULT}}))
-                      for key, value in schema.items()])
 
 
 def main():
