@@ -47,17 +47,21 @@ class Job(object):
     def __init__(
             self,
             monitoring_plugin,
-            aggregator_plugin,
+            aggregator,
             tank,
             generator_plugin=None):
+        """
+
+        :type aggregator: AggregatorPlugin
+        """
         self.monitoring_plugin = monitoring_plugin
-        self.aggregator_plugin = aggregator_plugin
+        self.aggregator = aggregator
         self.tank = tank
         self._phantom_info = None
         self.generator_plugin = generator_plugin
 
     def subscribe_plugin(self, plugin):
-        self.aggregator_plugin.add_result_listener(plugin)
+        self.aggregator.add_result_listener(plugin)
         try:
             self.monitoring_plugin.monitoring.add_listener(plugin)
         except AttributeError:
@@ -235,12 +239,8 @@ class TankCore(object):
             except KeyError:
                 logger.debug("Telegraf plugin not found:", exc_info=True)
                 mon = None
-            # aggregator plugin
-            try:
-                aggregator = self.get_plugin_of_type(AggregatorPlugin)
-            except KeyError:
-                logger.warning("Aggregator plugin not found:", exc_info=True)
-                aggregator = None
+            # aggregator
+            aggregator = AggregatorPlugin()
             # generator plugin
             try:
                 gen = self.get_plugin_of_type(GeneratorPlugin)
@@ -248,8 +248,8 @@ class TankCore(object):
                 logger.warning("Load generator not found:", exc_info=True)
                 gen = None
             self._job = Job(monitoring_plugin=mon,
-                            aggregator_plugin=aggregator,
                             generator_plugin=gen,
+                            aggregator=aggregator,
                             tank=socket.getfqdn())
         return self._job
 
@@ -297,6 +297,9 @@ class TankCore(object):
 
         while not self.interrupted:
             begin_time = time.time()
+            aggr_retcode = self.job.aggregator.is_test_finished()
+            if aggr_retcode >= 0:
+                return aggr_retcode
             for plugin in self.plugins.values():
                 logger.debug("Polling %s", plugin)
                 retcode = plugin.is_test_finished()
@@ -316,6 +319,7 @@ class TankCore(object):
         logger.info("Finishing test...")
         self.publish("core", "stage", "end")
 
+        self.job.aggregator.end_test(retcode)
         for plugin in self.plugins.values():
             logger.debug("Finalize %s", plugin)
             try:

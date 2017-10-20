@@ -56,8 +56,6 @@ CFG1 = {
         'ignore_target_lock': True,
     },
     'aggregator': {
-        'package': 'yandextank.plugins.Aggregator',
-        'enabled': True,
         'verbose_histogram': True
     }
 }
@@ -92,8 +90,6 @@ CFG2 = {
         'enabled': False
     },
     'aggregator': {
-        'package': 'yandextank.plugins.Aggregator',
-        'enabled': True,
         'verbose_histogram': True
     }
 }
@@ -108,13 +104,13 @@ def setup_module(module):
 
 @pytest.mark.parametrize('config, expected', [
     (CFG1,
-     {'plugin_telegraf', 'plugin_phantom', 'plugin_lunapark', 'plugin_aggregator',
-      'plugin_rcheck', 'plugin_shellexec', 'plugin_aggregator', 'plugin_autostop',
+     {'plugin_telegraf', 'plugin_phantom', 'plugin_lunapark',
+      'plugin_rcheck', 'plugin_shellexec', 'plugin_autostop',
       'plugin_console', 'plugin_tips', 'plugin_rcassert', 'plugin_json_report',
       }),
     (CFG2,
-     {'plugin_phantom', 'plugin_lunapark', 'plugin_aggregator', 'plugin_rcheck',
-      'plugin_aggregator', 'plugin_autostop', 'plugin_console', 'plugin_tips',
+     {'plugin_phantom', 'plugin_lunapark', 'plugin_rcheck',
+      'plugin_autostop', 'plugin_console', 'plugin_tips',
       'plugin_rcassert', 'plugin_json_report',
       }
      )

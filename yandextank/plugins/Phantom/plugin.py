@@ -92,7 +92,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         return self._stat_log
 
     def prepare_test(self):
-        aggregator = self.core.job.aggregator_plugin
+        aggregator = self.core.job.aggregator
 
         args = [self.get_option("phantom_path"), 'check', self.phantom.config_file]
 

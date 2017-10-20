@@ -33,7 +33,7 @@ def get_from_queue(queue):
     return data
 
 
-class Plugin(AbstractPlugin):
+class Plugin(object):
     """
     Plugin that manages aggregation and stats collection
     """
@@ -44,8 +44,8 @@ class Plugin(AbstractPlugin):
     def get_key():
         return __file__
 
-    def __init__(self, core, cfg, cfg_updater):
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+    def __init__(self):
+        # AbstractPlugin.__init__(self, core, cfg)
         self.listeners = []  # [LoggingListener()]
         self.reader = None
         self.stats_reader = None
@@ -54,13 +54,12 @@ class Plugin(AbstractPlugin):
         self.data_cache = {}
         self.stat_cache = {}
 
-    def get_available_options(self):
-        return ["verbose_histogram"]
-
-    def start_test(self):
+    def start_test(self, reader, stats_reader):
+        self.reader = reader
+        self.stats_reader = stats_reader
         aggregator_config = json.loads(
             resource_string(__name__, 'config/phout.json').decode('utf8'))
-        verbose_histogram = self.get_option("verbose_histogram")
+        verbose_histogram = True
         if verbose_histogram:
             logger.info("using verbose histogram")
         if self.reader and self.stats_reader:

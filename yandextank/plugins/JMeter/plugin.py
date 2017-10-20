@@ -83,11 +83,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         ]
         self.args += splitstring(self.user_args)
 
-        aggregator = None
-        try:
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except Exception as ex:
-            logger.warning("No aggregator found: %s", ex)
+        aggregator = self.core.job.aggregator
 
         if aggregator:
             aggregator.reader = JMeterReader(self.jtl_file)

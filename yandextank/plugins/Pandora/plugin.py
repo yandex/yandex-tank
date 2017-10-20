@@ -78,11 +78,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                     config_file.write(config_content)
 
     def prepare_test(self):
-        aggregator = None
-        try:
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except KeyError as ex:
-            logger.warning("No aggregator found: %s", ex)
+        aggregator = self.core.job.aggregator
 
         if aggregator:
             logger.info(
