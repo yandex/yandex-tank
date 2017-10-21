@@ -53,7 +53,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def get_available_options(self):
         return [
             "jmx", "args", "jmeter_path", "buffer_size", "buffered_seconds",
-            "exclude_markers"
+            "exclude_markers","shutdown_timeout"
         ]
 
     def configure(self):
@@ -76,6 +76,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.exclude_markers = set(self.get_option('exclude_markers', []))
         self.jmx = self.__add_jmeter_components(
             self.original_jmx, self.jtl_file, self.get_option('variables'))
+        self.shutdown_timeout=self.get_option('shutdown_timeout',3)
         self.core.add_artifact_file(self.jmx)
 
         jmeter_stderr_file = self.core.mkstemp(".log", "jmeter_stdout_stderr_")
