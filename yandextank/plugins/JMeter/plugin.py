@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 class Plugin(AbstractPlugin, GeneratorPlugin):
     """ JMeter tank plugin """
     SECTION = 'jmeter'
-    SHUTDOWN_TEST ='Shutdown'
-    STOP_TEST_NOW='Stop Test'
+    SHUTDOWN_TEST = 'Shutdown'
+    STOP_TEST_NOW = 'Stop Test'
 
     def __init__(self, core, cfg, cfg_updater):
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
@@ -42,9 +42,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.jmeter_log = None
         self.start_time = time.time()
         self.jmeter_buffer_size = None
-        self.jmeter_udp_addr =None
-        self.shutdown_timeout=10
-
+        self.jmeter_udp_addr = None
+        self.shutdown_timeout = 10
 
     @staticmethod
     def get_key():
@@ -53,7 +52,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def get_available_options(self):
         return [
             "jmx", "args", "jmeter_path", "buffer_size", "buffered_seconds",
-            "exclude_markers","shutdown_timeout"
+            "exclude_markers", "shutdown_timeout"
         ]
 
     def configure(self):
@@ -76,7 +75,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.exclude_markers = set(self.get_option('exclude_markers', []))
         self.jmx = self.__add_jmeter_components(
             self.original_jmx, self.jtl_file, self.get_option('variables'))
-        self.shutdown_timeout=self.get_option('shutdown_timeout',3)
+        self.shutdown_timeout = self.get_option('shutdown_timeout', 3)
         self.core.add_artifact_file(self.jmx)
 
         jmeter_stderr_file = self.core.mkstemp(".log", "jmeter_stdout_stderr_")
@@ -134,7 +133,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 "Unable to access to JMeter executable file or it does not exist: %s"
                 % self.jmeter_path)
         self.start_time = time.time()
-        self.jmeter_udp_port=self.discover_jmeter_udp_port()
+        self.jmeter_udp_port = self.__discover_jmeter_udp_port()
 
     def __discover_jmeter_udp_port(self):
         udp_connections = psutil.net_connections('udp')
@@ -163,7 +162,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.jmeter_process:
-            gracefully_shutdown=self.__gracefull_shutdown()
+            gracefully_shutdown = self.__gracefull_shutdown()
             if not gracefully_shutdown:
                 self.__kill_jmeter()
         if self.jmeter_stderr:
@@ -248,19 +247,19 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         return new_jmx
 
     def __gracefull_shutdown(self):
-        if self.jmeter_udp_port == None:
+        if self.jmeter_udp_port is None:
             return False
-        shutdown_test_started=time.time()
+        shutdown_test_started = time.time()
         while time.time() - shutdown_test_started < self.shutdown_timeout:
             self.__send_udp_message(self.SHUTDOWN_TEST)
             if not psutil.pid_exists(self.jmeter_process.pid):
                 return True
             else:
                 time.sleep(1)
-        self.log.info('Gracefull shutdown failed after %s' % time.time()-shutdown_test_started)
+        self.log.info('Gracefull shutdown failed after %s' % time.time() - shutdown_test_started)
 
-        stop_test_started=time.time()
-        while time.time()-stop_test_started < self.shutdown_timeout:
+        stop_test_started = time.time()
+        while time.time() - stop_test_started < self.shutdown_timeout:
             self.__send_udp_message(self.STOP_TEST_NOW)
             if not psutil.pid_exists(self.jmeter_process.pid):
                 return True
@@ -269,14 +268,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.log.info('Gracefull stop failed after %s' % time.time() - stop_test_started)
         return False
 
-
-
-    def __send_udp_message(self,message):
+    def __send_udp_message(self, message):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.sendto(message, self.jmeter_udp_addr)
-
-
-
 
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
