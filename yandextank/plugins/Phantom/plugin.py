@@ -6,15 +6,14 @@ import multiprocessing as mp
 import subprocess
 import time
 
-from ...common.util import execute, expand_to_seconds
-from ...common.interfaces import AbstractPlugin, AbstractCriterion, GeneratorPlugin
-
+from yandextank.aggregator import TankAggregator as AggregatorPlugin
 from .reader import PhantomReader, PhantomStatsReader
 from .utils import PhantomConfig
 from .widget import PhantomInfoWidget, PhantomProgressBarWidget
-from ..Aggregator import Plugin as AggregatorPlugin
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
+from ...common.interfaces import AbstractPlugin, AbstractCriterion, GeneratorPlugin
+from ...common.util import execute, expand_to_seconds
 
 logger = logging.getLogger(__name__)
 
@@ -118,20 +117,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             "Linking stats reader to aggregator."
             " Reading stats from %s", self.phantom.stat_log)
 
-        if aggregator:
-            aggregator.reader = reader
-            info = self.phantom.get_info()
-            aggregator.stats_reader = PhantomStatsReader(
-                self.stat_log, info)
+        info = self.phantom.get_info()
+        aggregator.add_result_listener(self)
+        aggregator.start_test(reader, PhantomStatsReader(self.stat_log, info))
 
-            aggregator.add_result_listener(self)
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
         except Exception as ex:
             logger.debug("Console not found: %s", ex)
             console = None
 
-        self.core.job.phantom_info = self.phantom.get_info()
+        self.core.job.phantom_info = info
 
         if console and aggregator:
             widget = PhantomProgressBarWidget(self)
@@ -140,7 +136,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
             widget = PhantomInfoWidget(self)
             console.add_info_widget(widget)
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+            aggregator = self.core.job.aggregator
             aggregator.add_result_listener(widget)
 
     def start_test(self):

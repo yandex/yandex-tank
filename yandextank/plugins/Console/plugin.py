@@ -4,10 +4,8 @@ import sys
 import threading
 import traceback
 
-from ...common.interfaces import AbstractPlugin, AggregateResultListener
-
 from .screen import Screen
-from ..Aggregator import Plugin as AggregatorPlugin
+from ...common.interfaces import AbstractPlugin, AggregateResultListener
 
 LOG = logging.getLogger(__name__)
 

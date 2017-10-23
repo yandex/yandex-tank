@@ -29,7 +29,7 @@ from yandextank.validator.validator import TankConfig
 from ..common.util import update_status, execute, pid_exists
 
 from ..common.resource import manager as resource
-from ..plugins.Aggregator import Plugin as AggregatorPlugin
+from yandextank.aggregator import TankAggregator
 from ..plugins.Telegraf import Plugin as TelegrafPlugin
 
 if sys.version_info[0] < 3:
@@ -52,7 +52,7 @@ class Job(object):
             generator_plugin=None):
         """
 
-        :type aggregator: AggregatorPlugin
+        :type aggregator: TankAggregator
         """
         self.monitoring_plugin = monitoring_plugin
         self.aggregator = aggregator
@@ -240,7 +240,7 @@ class TankCore(object):
                 logger.debug("Telegraf plugin not found:", exc_info=True)
                 mon = None
             # aggregator
-            aggregator = AggregatorPlugin()
+            aggregator = TankAggregator()
             # generator plugin
             try:
                 gen = self.get_plugin_of_type(GeneratorPlugin)
