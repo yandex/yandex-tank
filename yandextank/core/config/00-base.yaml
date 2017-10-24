@@ -1,6 +1,9 @@
 android:
   enabled: false
   package: yandextank.plugins.Android
+aggregator:
+  enabled: true
+  package: yandextank.aggregator
 autostop:
   enabled: true
   package: yandextank.plugins.Autostop

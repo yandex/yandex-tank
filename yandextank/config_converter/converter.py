@@ -11,7 +11,7 @@ from yandextank.validator.validator import load_plugin_schema, load_yaml_schema
 logger = logging.getLogger(__name__)
 CORE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
 
-DEPRECATED_SECTIONS = ['lunaport']
+DEPRECATED_SECTIONS = ['lunaport', 'aggregator']
 
 
 def old_plugin_mapper(package):
@@ -417,8 +417,10 @@ def enable_sections(sections, core_opts):
 
     :type sections: list of Section
     """
+    DEPRECATED_PLUGINS = ['yandextank.plugins.Aggregator']
+
     plugin_instances = [PluginInstance(key.split('_')[1], value) for key, value in core_opts if
-                        key.startswith(PLUGIN_PREFIX)]
+                        key.startswith(PLUGIN_PREFIX) and value not in DEPRECATED_PLUGINS]
     enabled_instances = {instance.section_name: instance for instance in plugin_instances if instance.enabled}
     disabled_instances = {instance.section_name: instance for instance in plugin_instances if not instance.enabled}
 
