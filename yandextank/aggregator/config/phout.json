@@ -1,0 +1,12 @@
+{
+    "interval_real": ["total", "max", "min", "hist", "q", "len"],
+    "connect_time": ["total", "max", "min", "len"],
+    "send_time": ["total", "max", "min", "len"],
+    "latency": ["total", "max", "min", "len"],
+    "receive_time": ["total", "max", "min", "len"],
+    "interval_event": ["total", "max", "min", "len"],
+    "size_out": ["total", "max", "min", "len"],
+    "size_in": ["total", "max", "min", "len"],
+    "net_code": ["count"],
+    "proto_code": ["count"]
+}
