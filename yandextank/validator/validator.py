@@ -148,12 +148,12 @@ class TankConfig(object):
         return InspectedValidator('Validator', (Validator,), {})
 
     def __load_multiple(self, configs):
-        l = len(configs)
-        if l == 0:
+        length = len(configs)
+        if length == 0:
             return {}
-        elif l == 1:
+        elif length == 1:
             return configs[0]
-        elif l == 2:
+        elif length == 2:
             return recursive_dict_update(configs[0], configs[1])
         else:
             return self.__load_multiple([recursive_dict_update(configs[0], configs[1])] + configs[2:])

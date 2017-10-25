@@ -99,7 +99,7 @@ class Plugin(AbstractPlugin):
                 is_telegraf_dt = None
             try:
                 is_monitoring_dt = self.core.get_option('monitoring')
-            except:
+            except:  # noqa: E722
                 is_monitoring_dt = None
             if is_telegraf_dt and is_monitoring_dt:
                 raise ValueError(
@@ -202,7 +202,7 @@ class Plugin(AbstractPlugin):
                 time.sleep(0.2)
                 self.monitoring.poll()
                 count += 1
-        except:
+        except:  # noqa: E722
             logger.error("Could not start monitoring", exc_info=True)
             if self.die_on_fail:
                 raise
