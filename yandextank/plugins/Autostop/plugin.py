@@ -3,7 +3,6 @@
 import logging
 import os.path
 
-from yandextank.aggregator import TankAggregator as Aggregator
 from . import criterions as cr
 from . import cumulative_criterions as cum_cr
 from ..Console import Plugin as ConsolePlugin

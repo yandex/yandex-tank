@@ -5,7 +5,6 @@ import subprocess
 import time
 
 from yandextank.common.resource import manager as resource_manager
-from yandextank.aggregator import TankAggregator as AggregatorPlugin
 from .reader import PandoraStatsReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen

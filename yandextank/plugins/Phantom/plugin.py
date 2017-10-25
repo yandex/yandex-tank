@@ -6,7 +6,6 @@ import multiprocessing as mp
 import subprocess
 import time
 
-from yandextank.aggregator import TankAggregator as AggregatorPlugin
 from .reader import PhantomReader, PhantomStatsReader
 from .utils import PhantomConfig
 from .widget import PhantomInfoWidget, PhantomProgressBarWidget
