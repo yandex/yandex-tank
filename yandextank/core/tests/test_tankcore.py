@@ -54,9 +54,6 @@ CFG1 = {
         'api_address': 'https://lunapark.test.yandex-team.ru/',
         'task': 'LOAD-204',
         'ignore_target_lock': True,
-    },
-    'aggregator': {
-        'verbose_histogram': True
     }
 }
 
@@ -88,9 +85,6 @@ CFG2 = {
     },
     'shellexec': {
         'enabled': False
-    },
-    'aggregator': {
-        'verbose_histogram': True
     }
 }
 

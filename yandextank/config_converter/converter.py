@@ -417,7 +417,7 @@ def enable_sections(sections, core_opts):
 
     :type sections: list of Section
     """
-    DEPRECATED_PLUGINS = ['yandextank.plugins.Aggregator']
+    DEPRECATED_PLUGINS = ['yandextank.plugins.Aggregator', 'Tank/Plugins/Aggregator.py']
 
     plugin_instances = [PluginInstance(key.split('_')[1], value) for key, value in core_opts if
                         key.startswith(PLUGIN_PREFIX) and value not in DEPRECATED_PLUGINS]
