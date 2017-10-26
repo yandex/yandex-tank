@@ -114,10 +114,10 @@ class TankAggregator(object):
     def end_test(self, retcode):
         if self.reader:
             self.reader.close()
-        if self.drain:
-            self.drain.join()
         if self.stats_reader:
             self.stats_reader.close()
+        if self.drain:
+            self.drain.join()
         if self.stats_drain:
             self.stats_drain.join()
         self._collect_data()
