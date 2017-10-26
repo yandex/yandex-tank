@@ -80,7 +80,7 @@ class PhantomReader(object):
             chunk = self.buffer + parts[0]
             self.buffer = parts[1] if len(parts) > 1 else ''
             if chunk:
-                yield chunk + '\n'
+                yield string_to_df(chunk + '\n')
             else:
                 break
 
