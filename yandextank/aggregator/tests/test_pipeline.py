@@ -1,7 +1,7 @@
 import json
 
 import numpy as np
-from pkg_resources import resource_string
+from pkg_resources import resource_filename
 from queue import Queue
 from yandextank.aggregator.aggregator import Aggregator, DataPoller
 from yandextank.aggregator.chopper import TimeChopper
@@ -9,9 +9,8 @@ from yandextank.aggregator.chopper import TimeChopper
 from conftest import MAX_TS, random_split
 from yandextank.common.util import Drain
 
-AGGR_CONFIG = json.loads(
-    resource_string("yandextank.aggregator", 'config/phout.json')
-    .decode('utf-8'))
+with open(resource_filename("yandextank.aggregator", 'config/phout.json')) as f:
+    AGGR_CONFIG = json.load(f)
 
 
 class TestPipeline(object):
