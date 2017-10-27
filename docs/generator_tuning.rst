@@ -90,8 +90,9 @@ system limits:
     net.netfilter.nf_conntrack_max = 1048576
 
 .. note::
-  ``tcp_tw_recycle`` has been removed as of Linux 4.12. 
-  This is because Linux now randomizes timestamps per connection and they do not monotonically increase. If you're using Linux 4.12 with machines using tcp_tw_recycle and TCP timestamps are turned on you will see dropped connections. You can of course disable it like so echo 0 > /proc/sys/net/ipv4/tcp_timestamps (temporarily, use sysctl.conf for permanent changes). 
+  ``tcp_tw_recycle`` has been removed as of Linux 4.12.
+   
+  This is because Linux now randomizes timestamps per connection and they do not monotonically increase. If you're using Linux 4.12 with machines using tcp_tw_recycle and TCP timestamps are turned on you will see dropped connections. You can of course disable it like so `echo 0 > /proc/sys/net/ipv4/tcp_timestamps` (temporarily, use sysctl.conf for permanent changes). 
 
   Details on 4.12 removing tcp_tw_recycle: 
   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=4396e46187ca5070219b81773c4e65088dac50cc
