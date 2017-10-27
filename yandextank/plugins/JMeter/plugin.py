@@ -8,7 +8,6 @@ import time
 
 from pkg_resources import resource_string
 
-from yandextank.aggregator import TankAggregator as AggregatorPlugin
 from .reader import JMeterReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
@@ -82,10 +81,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             '-Jjmeter.save.saveservice.connect_time=true'
         ]
         self.args += splitstring(self.user_args)
-
-        aggregator = self.core.job.aggregator
         reader = JMeterReader(self.jtl_file)
-        aggregator.start_test(reader, reader.stats_reader)
+        self.core.job.aggregator.start_test(reader, reader.stats_reader)
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
@@ -96,8 +93,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         if console:
             widget = JMeterInfoWidget(self)
             console.add_info_widget(widget)
-            if aggregator:
-                aggregator.add_result_listener(widget)
+            self.core.job.aggregator.add_result_listener(widget)
 
     def start_test(self):
         logger.info(
@@ -123,7 +119,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def is_test_finished(self):
         retcode = self.jmeter_process.poll()
-        aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+        aggregator = self.core.job.aggregator
         if not aggregator.reader.jmeter_finished and retcode is not None:
             logger.info(
                 "JMeter process finished with exit code: %s, waiting for aggregator",
