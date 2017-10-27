@@ -1,6 +1,3 @@
-aggregator:
-  enabled: true
-  package: yandextank.plugins.Aggregator
 android:
   enabled: false
   package: yandextank.plugins.Android

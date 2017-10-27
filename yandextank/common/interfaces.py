@@ -14,7 +14,7 @@ class AbstractPlugin(object):
         raise TypeError("Abstract method needs to be overridden")
 
     # TODO: do we realy need cfg_updater here?
-    def __init__(self, core, cfg, cfg_updater):
+    def __init__(self, core, cfg, cfg_updater=None):
         """
 
         @type core: TankCore

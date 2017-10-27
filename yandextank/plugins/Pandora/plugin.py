@@ -4,15 +4,13 @@ import logging
 import subprocess
 import time
 
-from ...common.interfaces import AbstractPlugin, \
-    AbstractInfoWidget, GeneratorPlugin
-
+from yandextank.common.resource import manager as resource_manager
 from .reader import PandoraStatsReader
-from ..Aggregator import Plugin as AggregatorPlugin
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ..Phantom import PhantomReader
-from yandextank.common.resource import manager as resource_manager
+from ...common.interfaces import AbstractPlugin, \
+    AbstractInfoWidget, GeneratorPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -78,18 +76,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                     config_file.write(config_content)
 
     def prepare_test(self):
-        aggregator = None
-        try:
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except KeyError as ex:
-            logger.warning("No aggregator found: %s", ex)
-
-        if aggregator:
-            logger.info(
-                "Linking sample and stats readers to aggregator. Reading samples from %s",
-                self.sample_log)
-            aggregator.reader = PhantomReader(self.sample_log)
-            aggregator.stats_reader = PandoraStatsReader(self.expvar)
+        aggregator = self.core.job.aggregator
+        aggregator.start_test(PhantomReader(self.sample_log), PandoraStatsReader(self.expvar))
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
@@ -100,7 +88,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         if console:
             widget = PandoraInfoWidget(self)
             console.add_info_widget(widget)
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+            aggregator = self.core.job.aggregator
             aggregator.add_result_listener(widget)
 
     def start_test(self):

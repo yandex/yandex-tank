@@ -8,8 +8,6 @@ uploader:
   log_other_requests: true
 rcheck:
   mem_limit: 1024
-aggregator:
-  verbose_histogram: true
 phantom:
   address: ''
 telegraf:

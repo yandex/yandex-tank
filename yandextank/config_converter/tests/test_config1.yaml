@@ -21,9 +21,6 @@ phantom:
   enum_ammo: false
   connection_test: false
   uris: /
-aggregator:
-  package: yandextank.plugins.Aggregator
-  enabled: true
 uploader:
   package: yandextank.plugins.DataUploader
   enabled: true

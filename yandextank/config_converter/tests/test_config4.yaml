@@ -1,4 +1,3 @@
-aggregator: {package: yandextank.plugins.Aggregator}
 core: {}
 phantom:
   address: '[bar.example.net]:443'

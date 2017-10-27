@@ -2,14 +2,13 @@ import logging
 import time
 
 import pip
-from ...common.interfaces import AbstractPlugin, GeneratorPlugin
 
 from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun, UltimateGun
 from .reader import BfgReader, BfgStatsReader
 from .widgets import BfgInfoWidget
 from .worker import BFGMultiprocessing, BFGGreen
-from ..Aggregator import Plugin as AggregatorPlugin
 from ..Console import Plugin as ConsolePlugin
+from ...common.interfaces import AbstractPlugin, GeneratorPlugin
 from ...stepper import StepperWrapper
 
 
@@ -78,16 +77,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             cached_stpd=cached_stpd,
             green_threads_per_instance=int(self.get_option('green_threads_per_instance', 1000)),
         )
-        aggregator = None
-        try:
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except Exception as ex:
-            self.log.warning("No aggregator found: %s", ex)
-
-        if aggregator:
-            aggregator.reader = BfgReader(self.bfg.results)
-            aggregator.stats_reader = BfgStatsReader(
-                self.bfg.instance_counter, self.stepper_wrapper.steps)
+        aggregator = self.core.job.aggregator
+        aggregator.start_test(BfgReader(self.bfg.results),
+                              BfgStatsReader(self.bfg.instance_counter, self.stepper_wrapper.steps))
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)

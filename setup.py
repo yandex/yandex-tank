@@ -53,7 +53,7 @@ analytic tools for the results they produce.
     package_data={
         'yandextank.api': ['config/*'],
         'yandextank.core': ['config/*'],
-        'yandextank.plugins.Aggregator': ['config/*'],
+        'yandextank.aggregator': ['config/*'],
         'yandextank.plugins.Android': ['binary/*', 'config/*'],
         'yandextank.plugins.Appium': ['config/*'],
         'yandextank.plugins.Autostop': ['config/*'],

@@ -7,13 +7,13 @@ import subprocess
 import time
 
 from pkg_resources import resource_string
-from ...common.util import splitstring
-from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget, GeneratorPlugin
 
+from yandextank.aggregator import TankAggregator as AggregatorPlugin
 from .reader import JMeterReader
-from ..Aggregator import Plugin as AggregatorPlugin
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
+from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget, GeneratorPlugin
+from ...common.util import splitstring
 
 logger = logging.getLogger(__name__)
 
@@ -83,15 +83,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         ]
         self.args += splitstring(self.user_args)
 
-        aggregator = None
-        try:
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except Exception as ex:
-            logger.warning("No aggregator found: %s", ex)
-
-        if aggregator:
-            aggregator.reader = JMeterReader(self.jtl_file)
-            aggregator.stats_reader = aggregator.reader.stats_reader
+        aggregator = self.core.job.aggregator
+        reader = JMeterReader(self.jtl_file)
+        aggregator.start_test(reader, reader.stats_reader)
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)

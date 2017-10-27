@@ -321,7 +321,7 @@ class SSHClient(object):
                 self.session.send("stop\n")
                 self.session.close()
                 self.session = None
-        except:
+        except:  # noqa: E722
             logger.warning(
                 'Unable to correctly stop monitoring agent - session is broken. Pay attention to agent log (%s).',
                 log_filename,
