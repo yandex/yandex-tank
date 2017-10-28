@@ -14,10 +14,10 @@ Create a file on a server with Yandex.Tank: **load.yaml**
 .. code-block:: yaml
 
   phantom:
-  address: 203.0.113.1:80 # [Target's address]:[target's port]
-  load_profile:
-    load_type: rps # schedule load by defining requests per second
-    schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
+    address: 203.0.113.1:80 # [Target's address]:[target's port]
+    load_profile:
+      load_type: rps # schedule load by defining requests per second
+      schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
   telegraf:
     enabled: false # let's disable telegraf monitoring for this time
 
