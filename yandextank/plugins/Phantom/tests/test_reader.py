@@ -37,7 +37,7 @@ class TestStatsReader(object):
                  [3.0, 1], [3.0, 1], [3.0, 1], [4.0, 1], [4.0, 1], [4.0, 1], [4.0, 1], [4.0, 1], [5.0, 1], [5.0, 1],
                  [5.0, 1]]
         reader = PhantomStatsReader('yandextank/plugins/Phantom/tests/phantom_stat.dat',
-                                    MockInfo(STEPS), cache_size=1024*10)
+                                    MockInfo(STEPS), cache_size=1024 * 10)
         reader.close()
         stats = reduce(lambda l1, l2: l1 + l2, [i for i in reader])
 
