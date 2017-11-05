@@ -265,6 +265,7 @@ because '\r' symbols are strictly required.
 .. note:: 
 
   Parameter ``ammo_type`` is unnecessary, request-style is default ammo type.
+
 =======
 
 **sample GET requests (null body)**

@@ -2,26 +2,53 @@
 Installation
 ============
 
-.. note::
-
-  Phantom load generator works fine with ``gcc<4.9``.
-
 ****************
 Docker container
 ****************
 
-`Install <https://www.docker.com/products/overview>`_ docker and use this command to run Yandex.Tank:
+`Install <https://www.docker.com/products/overview>`_ docker and use ``direvius/yandex-tank`` (or, if you need jmeter, try ``direvius/yandex-tank-jmeter``) container.
+Default entrypoint is ``/usr/local/bin/yandex-tank`` so you may just run it to start test:
 
 .. code-block:: bash
 
-    docker run -v $(pwd):/var/loadtest -v $HOME/.ssh:/root/.ssh --net host -it direvius/yandex-tank
+    docker run \
+        -v $(pwd):/var/loadtest \
+        -v $SSH_AUTH_SOCK:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent \
+        --net host \
+        -it direvius/yandex-tank
 
-.. note::
 
-  ``$HOME/.ssh`` is mounted in order for monitoring plugin to work. It uses your ssh keys to remotely login to monitored hosts
+* ``$(pwd):/var/loadtest`` - current directory mounted to /var/loadtest in container to pass data for test
+  (config file, monitoring config, ammo, etc)
+
+* tank will use load.yaml from current directory as default config,
+  append ``-c custom-config-name.yaml`` to run with other config
+
+* you may pass other additional parameters for tank in run command, just append it after image name
+
+* ``$SSH_AUTH_SOCK:/ssh-agent`` - ssh agent socket mounted in order to provide use telegraf plugin (monitoring). It uses your ssh keys to remotely login to monitored hosts
+
+If you want to do something in the container befor running tank, you will need to change entrypoint:
+
+.. code-block:: bash
+
+    docker run \
+        -v $(pwd):/var/loadtest \
+        -v $SSH_AUTH_SOCK:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent \
+        --net host \
+        -it \
+        --entrypoint /bin/bash \
+        direvius/yandex-tank
+
+Start test Within container with yandex-tank command:
+
+.. code-block:: bash
+
+    yandex-tank -c config-name.yaml # default config is load.yaml
+
 
 ************************
-Installation, from PyPi
+Installation from PyPi
 ************************
 
 These are the packages that are required to build different python libraries. Install them with `apt`:
@@ -56,7 +83,7 @@ You'll probably need Phantom load generator, so install it from our ppa:
     sudo apt-get install phantom phantom-ssl
 
 ****************************
-Installation, .deb packages
+Installation .deb packages
 ****************************
 
 .. note::
