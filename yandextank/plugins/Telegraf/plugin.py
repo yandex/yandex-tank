@@ -228,7 +228,7 @@ class Plugin(AbstractPlugin):
         return retcode
 
     def post_process(self, retcode):
-        logger.info('')
+        return retcode
 
 
 class SaveMonToFile(MonitoringDataListener):
