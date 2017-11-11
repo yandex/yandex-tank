@@ -58,7 +58,7 @@ class Plugin(AbstractPlugin):
             self.port = int(self.get_option("port", 22))
             self.username = self.get_option("username", getpass.getuser())
             self.timeout = int(self.get_option("timeout", 3))
-        except:
+        except BaseException:
             logger.error(
                 'Exception trying to configure Platform plugin', exc_info=True)
 
