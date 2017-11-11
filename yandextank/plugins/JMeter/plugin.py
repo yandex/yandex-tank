@@ -5,8 +5,8 @@ import os
 import signal
 import subprocess
 import time
-import psutil
 import socket
+import re
 
 from pkg_resources import resource_string
 from ...common.util import splitstring
@@ -25,6 +25,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     SECTION = 'jmeter'
     SHUTDOWN_TEST = 'Shutdown'
     STOP_TEST_NOW = 'Stop Test'
+    DISCOVER_PORT_PATTERN = 'Waiting for possible shutdown message on port (?P<port>\d+)'
 
     def __init__(self, core, cfg, cfg_updater):
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
@@ -42,7 +43,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.jmeter_log = None
         self.start_time = time.time()
         self.jmeter_buffer_size = None
-        self.jmeter_udp_addr = None
+        self.jmeter_udp_port = None
         self.shutdown_timeout = 10
 
     @staticmethod
@@ -135,12 +136,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.start_time = time.time()
         self.jmeter_udp_port = self.__discover_jmeter_udp_port()
 
-    def __discover_jmeter_udp_port(self):
-        udp_connections = psutil.net_connections('udp')
-        jmeter_connection = [c for c in udp_connections if c.pid == self.jmeter_process.pid][0]
-        addr = jmeter_connection.laddr
-        return addr
-
     def is_test_finished(self):
         retcode = self.jmeter_process.poll()
         aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
@@ -162,13 +157,28 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.jmeter_process:
-            gracefully_shutdown = self.__gracefull_shutdown()
+            gracefully_shutdown = self.__graceful_shutdown()
             if not gracefully_shutdown:
                 self.__kill_jmeter()
         if self.jmeter_stderr:
             self.jmeter_stderr.close()
         self.core.add_artifact_file(self.jmeter_log)
         return retcode
+
+    def __discover_jmeter_udp_port(self):
+        """Searching for line in jmeter.log such as
+        Waiting for possible shutdown message on port 4445
+        """
+        r = re.compile(self.DISCOVER_PORT_PATTERN)
+        with open(self.jmeter_log) as f:
+            while self.jmeter_process.pid:
+                line = f.readline()
+                m = r.match(line)
+                if m is None:
+                    time.sleep(1)
+                else:
+                    port = int(m.group('port'))
+                    return port
 
     def __kill_jmeter(self):
         logger.info(
@@ -246,31 +256,31 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             fh.write(closing)
         return new_jmx
 
-    def __gracefull_shutdown(self):
+    def __graceful_shutdown(self):
         if self.jmeter_udp_port is None:
             return False
         shutdown_test_started = time.time()
         while time.time() - shutdown_test_started < self.shutdown_timeout:
             self.__send_udp_message(self.SHUTDOWN_TEST)
-            if not psutil.pid_exists(self.jmeter_process.pid):
+            if self.jmeter_process.poll():
                 return True
             else:
                 time.sleep(1)
-        self.log.info('Gracefull shutdown failed after %s' % time.time() - shutdown_test_started)
+        self.log.info('Graceful shutdown failed after %s' % time.time() - shutdown_test_started)
 
         stop_test_started = time.time()
         while time.time() - stop_test_started < self.shutdown_timeout:
             self.__send_udp_message(self.STOP_TEST_NOW)
-            if not psutil.pid_exists(self.jmeter_process.pid):
+            if self.jmeter_process.poll():
                 return True
             else:
                 time.sleep(1)
-        self.log.info('Gracefull stop failed after %s' % time.time() - stop_test_started)
+        self.log.info('Graceful stop failed after %s' % time.time() - stop_test_started)
         return False
 
     def __send_udp_message(self, message):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.sendto(message, self.jmeter_udp_addr)
+        sock.sendto(message, ('localhost', self.jmeter_udp_port))
 
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
