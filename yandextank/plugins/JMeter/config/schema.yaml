@@ -37,7 +37,7 @@ jmeter_ver:
 jmx:
   type: string
 shutdown_timeout:
-  type: inreger
+  type: integer
   default: 10
 variables:
   type: dict
