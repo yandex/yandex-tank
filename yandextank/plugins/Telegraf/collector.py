@@ -131,7 +131,7 @@ class MonitoringCollector(object):
                 logger.debug(
                     'Waiting for agent %s reader thread to finish.', agent)
                 agent.reader_thread.join(10)
-            except:
+            except:  # noqa: E722
                 logger.error('Monitoring reader thread stuck!', exc_info=True)
 
     def send_collected_data(self):

@@ -20,10 +20,6 @@ bfg:
     module_name: ult
     init_param: hello world
     class_name: MyTest
-aggregator:
-  package: yandextank.plugins.Aggregator
-  enabled: true
-  verbose_histogram: true
 overload:
   package: yandextank.plugins.DataUploader
   enabled: true

@@ -60,17 +60,16 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
         reader = PhantomReader(self.__output_path)
         _LOGGER.debug("Linking sample reader to aggregator. Reading samples from %s", self.__output_path)
+        if self.__stats_path:
+            stats_reader = _FileStatsReader(self.__stats_path)
+        else:
+            stats_reader = _DummyStatsReader()
 
         self.__start_time = time.time()
 
         aggregator = self.core.job.aggregator_plugin
-        if aggregator:
-            aggregator.reader = reader
-            if self.__stats_path:
-                aggregator.stats_reader = _FileStatsReader(self.__stats_path)
-            else:
-                aggregator.stats_reader = _DummyStatsReader()
-            aggregator.add_result_listener(self)
+        aggregator.add_result_listener(self)
+        aggregator.start_test(reader, stats_reader)
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)

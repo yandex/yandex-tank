@@ -26,10 +26,6 @@ jmeter:
     auth: 'false'
     ammo: /home/f2nd/smtp/mulca4fix128kb.ammo
     users: users.devnull.csv
-aggregator:
-  package: yandextank.plugins.Aggregator
-  enabled: true
-  verbose_histogram: true
 uploader:
   package: yandextank.plugins.DataUploader
   enabled: true

@@ -18,8 +18,7 @@ analytic tools for the results they produce.
     install_requires=[
         'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
         'pandas>=0.18.0', 'numpy>=1.11.0', 'future>=0.16.0',
-        'pip>=8.1.2',
-        'matplotlib>=1.5.3', 'seaborn>=0.7.1',
+        'pip>=8.1.2', 'matplotlib>=1.5.3',
         'pyyaml>=3.12', 'cerberus>=1.1'
     ],
     setup_requires=[
@@ -55,7 +54,7 @@ analytic tools for the results they produce.
     package_data={
         'yandextank.api': ['config/*'],
         'yandextank.core': ['config/*'],
-        'yandextank.plugins.Aggregator': ['config/*'],
+        'yandextank.aggregator': ['config/*'],
         'yandextank.plugins.Android': ['binary/*', 'config/*'],
         'yandextank.plugins.Appium': ['config/*'],
         'yandextank.plugins.Autostop': ['config/*'],

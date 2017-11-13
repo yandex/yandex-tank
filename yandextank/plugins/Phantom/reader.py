@@ -76,7 +76,15 @@ class PhantomReader(object):
     def __iter__(self):
         while not self.closed:
             yield self._read_phout_chunk()
-        yield self._read_phout_chunk()
+        # read end
+        chunk = self._read_phout_chunk()
+        while chunk is not None:
+            yield chunk
+            chunk = self._read_phout_chunk()
+        # don't forget the buffer
+        if self.buffer:
+            yield string_to_df(self.buffer)
+
         self.phout.close()
 
     def close(self):
@@ -84,13 +92,13 @@ class PhantomReader(object):
 
 
 class PhantomStatsReader(object):
-    def __init__(self, filename, phantom_info):
+    def __init__(self, filename, phantom_info, cache_size=1024 * 1024 * 50):
         self.phantom_info = phantom_info
-        self.buffer = ""
         self.stat_buffer = ""
         self.stat_filename = filename
         self.closed = False
         self.start_time = 0
+        self.cache_size = cache_size
 
     def _decode_stat_data(self, chunk):
         """
@@ -121,21 +129,23 @@ class PhantomStatsReader(object):
             }
 
     def _read_stat_data(self, stat_file):
-        chunk = stat_file.read(1024 * 1024 * 50)
+        chunk = stat_file.read(self.cache_size)
         if chunk:
             self.stat_buffer += chunk
             parts = self.stat_buffer.rsplit('\n},', 1)
             if len(parts) > 1:
                 ready_chunk = parts[0]
                 self.stat_buffer = parts[1]
-                chunks = [
-                    json.loads('{%s}}' % s) for s in ready_chunk.split('\n},')
-                ]
-                return list(
-                    itt.chain(
-                        *(self._decode_stat_data(chunk) for chunk in chunks)))
+                return self._format_chunk(ready_chunk)
+            else:
+                self.stat_buffer += parts[0]
         else:
             self.stat_buffer += stat_file.readline()
+        return None
+
+    def _format_chunk(self, chunk):
+        chunks = [json.loads('{%s}}' % s) for s in chunk.split('\n},')]
+        return list(itt.chain(*(self._decode_stat_data(chunk) for chunk in chunks)))
 
     def __iter__(self):
         """
@@ -146,7 +156,14 @@ class PhantomStatsReader(object):
         with open(self.stat_filename, 'r') as stat_file:
             while not self.closed:
                 yield self._read_stat_data(stat_file)
-            yield self._read_stat_data(stat_file)
+            # read end:
+            data = self._read_stat_data(stat_file)
+            while data:
+                yield data
+                data = self._read_stat_data(stat_file)
+            # don't forget the buffer
+            if self.stat_buffer:
+                yield self._format_chunk(self.stat_buffer)
 
     def close(self):
         self.closed = True

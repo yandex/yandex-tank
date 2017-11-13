@@ -125,7 +125,7 @@ class Consolidator(object):
                     source,
                     chunk,
                     exc_info=True)
-            except:
+            except:  # noqa: E722
                 logger.error(
                     'Something nasty happend in consolidator work',
                     exc_info=True)
@@ -231,7 +231,7 @@ class AgentWorker(threading.Thread):
                 'Successfully loaded startup config.\n'
                 'Startups: %s\n'
                 'Shutdowns: %s\n', self.startups, self.shutdowns)
-        except:
+        except:  # noqa: E722
             logger.error(
                 'Error trying to read agent startup config', exc_info=True)
 
@@ -289,7 +289,7 @@ class AgentWorker(threading.Thread):
                     sys.stdout.flush()
                 except q.Empty:
                     break
-                except:
+                except:  # noqa: E722
                     logger.error(
                         'Something nasty happend trying to send data',
                         exc_info=True)
@@ -434,7 +434,7 @@ def main():
             logger.info("Stdin cmd received: %s", cmd)
     except KeyboardInterrupt:
         logger.debug("Interrupted")
-    except:
+    except:  # noqa: E722
         logger.error(
             "Something nasty happened while waiting for stop", exc_info=True)
     worker.finished = True
@@ -452,7 +452,7 @@ def main():
                 agent_finished = True
             else:
                 agent_finished = True
-        except:
+        except:  # noqa: E722
             logger.info(
                 "Something nasty happened while waiting for worker shutdown",
                 exc_info=True)

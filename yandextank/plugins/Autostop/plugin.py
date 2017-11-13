@@ -3,12 +3,10 @@
 import logging
 import os.path
 
-from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
-
 from . import criterions as cr
 from . import cumulative_criterions as cum_cr
-from ..Aggregator import Plugin as AggregatorPlugin
 from ..Console import Plugin as ConsolePlugin
+from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +45,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         return ["autostop", "report_file"]
 
     def configure(self):
-        aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+        aggregator = self.core.job.aggregator
         aggregator.add_result_listener(self)
 
         self._stop_report_path = os.path.join(
