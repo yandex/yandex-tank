@@ -152,7 +152,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 "Terminating jmeter process group with PID %s",
                 self.jmeter_process.pid)
             try:
-                os.killpg(self.jmeter_process.pid, signal.SIGTERM)
+                os.killpg(self.jmeter_process.pid, signal.SIGKILL)
             except OSError as exc:
                 logger.debug("Seems JMeter exited itself: %s", exc)
                 # Utils.log_stdout_stderr(logger, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
