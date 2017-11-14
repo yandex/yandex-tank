@@ -404,8 +404,8 @@ Example:
 SSL
 ===
 
-To activate SSL add ``phantom: {ssl: true}`` to ``load.yaml``. Don't forget to change port
-number to appropriate value. Now, our basic config looks like that:
+To activate SSL add ``phantom: {ssl: true}`` to ``load.yaml``. 
+Now, our basic config looks like that:
 
 .. code-block:: yaml
 
