@@ -416,6 +416,10 @@ number to appropriate value. Now, our basic config looks like that:
       schedule: line(1, 10, 10m)
     ssl: true
 
+.. note::
+
+  Do not forget to specify ssl port to `address`. Otherwise, you might get net 'protocol errors'.
+
 Autostop 
 ========
 
