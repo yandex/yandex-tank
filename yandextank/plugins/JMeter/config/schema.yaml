@@ -36,6 +36,9 @@ jmeter_ver:
   default: 3.0
 jmx:
   type: string
+shutdown_timeout:
+  type: integer
+  default: 10
 variables:
   type: dict
   default: {}

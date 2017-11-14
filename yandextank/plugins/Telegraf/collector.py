@@ -94,7 +94,8 @@ class MonitoringCollector(object):
                     return 0
                 for chunk in collect:
                     ts, prepared_results = chunk
-                    if self.load_start_time and int(ts) >= self.load_start_time:
+                    if self.load_start_time and int(
+                            ts) >= self.load_start_time:
                         ready_to_send = {
                             "timestamp": int(ts),
                             "data": {
@@ -131,7 +132,7 @@ class MonitoringCollector(object):
                 logger.debug(
                     'Waiting for agent %s reader thread to finish.', agent)
                 agent.reader_thread.join(10)
-            except:
+            except BaseException:
                 logger.error('Monitoring reader thread stuck!', exc_info=True)
 
     def send_collected_data(self):
