@@ -44,7 +44,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.start_time = time.time()
         self.jmeter_buffer_size = None
         self.jmeter_udp_port = None
-        self.shutdown_timeout = 10
+        self.shutdown_timeout = None
 
     @staticmethod
     def get_key():
@@ -76,12 +76,12 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.exclude_markers = set(self.get_option('exclude_markers', []))
         self.jmx = self.__add_jmeter_components(
             self.original_jmx, self.jtl_file, self.get_option('variables'))
-        self.shutdown_timeout = self.get_option('shutdown_timeout', 3)
         self.core.add_artifact_file(self.jmx)
 
         jmeter_stderr_file = self.core.mkstemp(".log", "jmeter_stdout_stderr_")
         self.core.add_artifact_file(jmeter_stderr_file)
         self.jmeter_stderr = open(jmeter_stderr_file, 'w')
+        self.shutdown_timeout = self.get_option('shutdown_timeout', 3)
 
     def prepare_test(self):
         self.args = [
@@ -262,7 +262,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         shutdown_test_started = time.time()
         while time.time() - shutdown_test_started < self.shutdown_timeout:
             self.__send_udp_message(self.SHUTDOWN_TEST)
-            if self.jmeter_process.poll():
+            if self.jmeter_process.poll() is not None:
                 return True
             else:
                 time.sleep(1)
@@ -271,7 +271,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         stop_test_started = time.time()
         while time.time() - stop_test_started < self.shutdown_timeout:
             self.__send_udp_message(self.STOP_TEST_NOW)
-            if self.jmeter_process.poll():
+            if self.jmeter_process.poll() is not None:
                 return True
             else:
                 time.sleep(1)
