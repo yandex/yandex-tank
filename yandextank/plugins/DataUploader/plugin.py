@@ -169,9 +169,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                         'Unknown task data format:\n{}'.format(task_data))
         except requests.exceptions.HTTPError as ex:
             logger.error(
-                "Failed to check task status for '%s': %s",self.task,ex)
+                "Failed to check task status for '%s': %s", self.task, ex)
             if ex.response.status_code == 404:
-                raise RuntimeError("Task not found: %s\n%s" %(self.task, TASK_TIP))
+                raise RuntimeError("Task not found: %s\n%s" % (self.task, TASK_TIP))
             elif ex.response.status_code == 500 or ex.response.status_code == 400:
                 raise RuntimeError(
                     "Unable to check task staus, id: %s, error code: %s" %
@@ -451,7 +451,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.lp_job.send_config_snapshot(self.core.cfg_snapshot)
         self.core.config.save(
             os.path.join(
-                self.core.artifacts_dir,'saved_conf.yaml'))
+                self.core.artifacts_dir, 'saved_conf.yaml'))
 
     def parse_lock_targets(self):
         # prepare target lock list
@@ -560,14 +560,14 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return LPJob(client=api_client,
                      target_host=self.target,
                      target_port=port,
-                     number=self.cfg.get('jobno',None),
+                     number=self.cfg.get('jobno', None),
                      token=self.get_option('upload_token'),
                      person=self.__get_operator(),
                      task=self.task,
-                     name=self.get_option('job_name','none').decode('utf8'),
+                     name=self.get_option('job_name', 'none').decode('utf8'),
                      description=self.get_option('job_dsc').decode('utf8'),
                      tank=self.core.job.tank,
-                     notify_list=self.get_option("notify",'').split(' '),
+                     notify_list=self.get_option("notify", '').split(' '),
                      load_scheme=loadscheme,
                      version=self.get_option('ver'),
                      log_data_requests=self.get_option('log_data_requests'),
@@ -809,9 +809,9 @@ class LPJob(object):
                                             lock_target_duration,
                                             trace=self.log_other_requests,
                                             maintenance_timeouts=maintenance_timeouts,
-                                            maintenance_msg="Target is locked.\nManual unlock link: %s%s" %(
-                                                self.api_client.base_url
-                                                ,self.api_client.get_manual_unlock_link(lock_target)
+                                            maintenance_msg="Target is locked.\nManual unlock link: %s%s" % (
+                                                self.api_client.base_url,
+                                                self.api_client.get_manual_unlock_link(lock_target)
                                             ))
                 return True
             except (APIClient.NotAvailable, APIClient.StoppedFromOnline) as e:
