@@ -239,14 +239,14 @@ class TankCore(object):
             except KeyError:
                 logger.debug("Telegraf plugin not found:", exc_info=True)
                 mon = None
-            # aggregator
-            aggregator = TankAggregator()
             # generator plugin
             try:
                 gen = self.get_plugin_of_type(GeneratorPlugin)
+                # aggregator
             except KeyError:
                 logger.warning("Load generator not found:", exc_info=True)
-                gen = None
+                gen = GeneratorPlugin()
+            aggregator = TankAggregator(gen)
             self._job = Job(monitoring_plugin=mon,
                             generator_plugin=gen,
                             aggregator=aggregator,
@@ -277,6 +277,7 @@ class TankCore(object):
         """        Call start_test() on all plugins        """
         logger.info("Starting test...")
         self.publish("core", "stage", "start")
+        self.job.aggregator.start_test()
         for plugin in self.plugins.values():
             logger.debug("Starting %s", plugin)
             start_time = time.time()
@@ -318,13 +319,14 @@ class TankCore(object):
         """        Call end_test() on all plugins        """
         logger.info("Finishing test...")
         self.publish("core", "stage", "end")
-
-        self.job.aggregator.end_test(retcode)
-        for plugin in self.plugins.values():
+        logger.info("Stopping load generator and aggregator")
+        retcode = self.job.aggregator.end_test(retcode)
+        logger.debug("RC after: %s", retcode)
+        for plugin in [p for p in self.plugins.values() if p is not self.job.generator_plugin]:
             logger.debug("Finalize %s", plugin)
             try:
                 logger.debug("RC before: %s", retcode)
-                plugin.end_test(retcode)
+                retcode = plugin.end_test(retcode)
                 logger.debug("RC after: %s", retcode)
             except Exception as ex:
                 logger.error("Failed finishing plugin %s: %s", plugin, ex)

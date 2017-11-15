@@ -14,6 +14,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     SECTION_META = "meta"
 
     def __init__(self, core, cfg, cfg_updater):
+        self.stats_reader = None
+        self.reader = None
         try:
             super(Plugin, self).__init__(core, cfg, cfg_updater)
             self.device = None
@@ -37,11 +39,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def configure(self):
         self.volta_core.configure()
 
+    def get_reader(self):
+        if self.reader is None:
+            self.reader = AndroidReader()
+        return self.reader
+
+    def get_stats_reader(self):
+        if self.stats_reader is None:
+            self.stats_reader = AndroidStatsReader()
+        return self.stats_reader
+
     def prepare_test(self):
-        aggregator = self.core.job.aggregator_plugin
-        if aggregator:
-            aggregator.reader = AndroidReader()
-            aggregator.stats_reader = AndroidStatsReader()
         self.core.add_artifact_file(self.volta_core.currents_fname)
         [self.core.add_artifact_file(fname) for fname in self.volta_core.event_fnames.values()]
 

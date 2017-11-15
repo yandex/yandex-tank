@@ -23,6 +23,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def __init__(self, core, cfg, cfg_updater):
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+        self.stats_reader = None
+        self.reader = None
         self.jmeter_process = None
         self.args = None
         self.original_jmx = None
@@ -74,6 +76,16 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.core.add_artifact_file(jmeter_stderr_file)
         self.jmeter_stderr = open(jmeter_stderr_file, 'w')
 
+    def get_reader(self):
+        if self.reader is None:
+            self.reader = JMeterReader(self.jtl_file)
+        return self.reader
+
+    def get_stats_reader(self):
+        if self.stats_reader is None:
+            self.stats_reader = self.reader.stats_reader
+        return self.stats_reader
+
     def prepare_test(self):
         self.args = [
             self.jmeter_path, "-n", "-t", self.jmx, '-j', self.jmeter_log,
@@ -81,8 +93,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             '-Jjmeter.save.saveservice.connect_time=true'
         ]
         self.args += splitstring(self.user_args)
-        reader = JMeterReader(self.jtl_file)
-        self.core.job.aggregator.start_test(reader, reader.stats_reader)
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
