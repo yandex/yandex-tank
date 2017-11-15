@@ -28,6 +28,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def __init__(self, core, cfg, cfg_updater):
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+        self.stats_reader = None
+        self.reader = None
         self.__process = None
         self.__stderr_file = None
         self.__processed_ammo_count = 0
@@ -50,26 +52,27 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         if self.__stats_path:
             self.core.add_artifact_file(self.__stats_path)
 
+    def get_reader(self):
+        if self.reader is None:
+            # Touch output_path because PhantomReader wants to open it
+            with open(self.__output_path, "w"):
+                pass
+            self.reader = PhantomReader(self.__output_path)
+        return self.reader
+
+    def get_stats_reader(self):
+        if self.stats_reader is None:
+            self.stats_reader = _FileStatsReader(self.__stats_path) if self.__stats_path else _DummyStatsReader()
+        return self.stats_reader
+
     def prepare_test(self):
         stderr_path = self.core.mkstemp(".log", "shootexec_stdout_stderr_")
         self.__stderr_file = open(stderr_path, 'w')
 
-        # Touch output_path because PhantomReader wants to open it
-        with open(self.__output_path, "w"):
-            pass
-
-        reader = PhantomReader(self.__output_path)
         _LOGGER.debug("Linking sample reader to aggregator. Reading samples from %s", self.__output_path)
-        if self.__stats_path:
-            stats_reader = _FileStatsReader(self.__stats_path)
-        else:
-            stats_reader = _DummyStatsReader()
 
         self.__start_time = time.time()
-
-        aggregator = self.core.job.aggregator_plugin
-        aggregator.add_result_listener(self)
-        aggregator.start_test(reader, stats_reader)
+        self.core.job.aggregator.add_result_listener(self)
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
@@ -77,10 +80,10 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             _LOGGER.debug("Console not found: %s", ex)
             console = None
 
-        if console and aggregator:
+        if console:
             widget = _InfoWidget(self)
             console.add_info_widget(widget)
-            aggregator.add_result_listener(widget)
+            self.core.job.aggregator.add_result_listener(widget)
 
     def start_test(self):
         _LOGGER.info("Starting shooting process: '%s'", self.__cmd)

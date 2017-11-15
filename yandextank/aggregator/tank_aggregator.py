@@ -43,19 +43,22 @@ class TankAggregator(object):
     def get_key():
         return __file__
 
-    def __init__(self):
+    def __init__(self, generator):
         # AbstractPlugin.__init__(self, core, cfg)
+        """
+
+        :type generator: GeneratorPlugin
+        """
+        self.generator = generator
         self.listeners = []  # [LoggingListener()]
-        self.reader = None
-        self.stats_reader = None
         self.results = q.Queue()
         self.stats = q.Queue()
         self.data_cache = {}
         self.stat_cache = {}
 
-    def start_test(self, reader, stats_reader):
-        self.reader = reader
-        self.stats_reader = stats_reader
+    def start_test(self):
+        self.reader = self.generator.get_reader()
+        self.stats_reader = self.generator.get_stats_reader()
         aggregator_config = json.loads(
             resource_string(__name__, 'config/phout.json').decode('utf8'))
         verbose_histogram = True
@@ -112,6 +115,7 @@ class TankAggregator(object):
         return -1
 
     def end_test(self, retcode):
+        retcode = self.generator.end_test(retcode)
         if self.reader:
             self.reader.close()
         if self.stats_reader:
