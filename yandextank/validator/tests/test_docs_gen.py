@@ -1,8 +1,7 @@
 # coding=utf-8
 import pytest
-import yaml
+from yandextank.validator.docs_gen import RSTRenderer, format_option
 
-from yandextank.validator.docs_gen import RSTRenderer, TextBlock, format_schema, format_option
 
 @pytest.mark.parametrize('option_schema, expected', [
     ({'report_file': {
@@ -20,7 +19,7 @@ from yandextank.validator.docs_gen import RSTRenderer, TextBlock, format_schema,
         #     'custom': 'custom gun', 'http': 'http gun', 'scenario': 'scenario gun', 'ultimate': 'ultimate gun'
         # },
         'required': 'true'}
-      }, u"""**gun_type** (string)
+     }, u"""**gun_type** (string)
 ---------------------
 *\- gun type.* **Required.**
 
@@ -33,7 +32,7 @@ from yandextank.validator.docs_gen import RSTRenderer, TextBlock, format_schema,
             'custom': 'custom gun', 'http': 'http gun', 'scenario': 'scenario gun', 'ultimate': 'ultimate gun'
         },
         'required': 'true'}
-      }, u"""**gun_type** (string)
+     }, u"""**gun_type** (string)
 ---------------------
 *\- gun type.* **Required.**
 
@@ -67,7 +66,7 @@ from yandextank.validator.docs_gen import RSTRenderer, TextBlock, format_schema,
             }
         },
         'required': True}
-    }, u"""**load_profile** (dict)
+     }, u"""**load_profile** (dict)
 -----------------------
 *\- specify parameters of your load.* **Required.**
 
@@ -87,7 +86,7 @@ from yandextank.validator.docs_gen import RSTRenderer, TextBlock, format_schema,
   :``line(100,200,10m)``:
    linear growth from 100 to 200 instances/rps during 10 minutes
   :``test_dir/test_backend.stpd``:
-   path to ready schedule file"""),
+   path to ready schedule file"""),  # noqa: W293
     ({'lock_targets': {
         'default': 'auto',
         'description': 'targets to lock',
@@ -109,7 +108,26 @@ from yandextank.validator.docs_gen import RSTRenderer, TextBlock, format_schema,
  :``auto``: automatically identify target host
 
 :tutorial_link:
- http://yandextank.readthedocs.io""")
+ http://yandextank.readthedocs.io"""),
+    ({'autostop': {
+        'description': 'list of autostop constraints',
+        'type': 'list',
+        'schema': {
+            'type': 'string',
+            'description': 'autostop constraint',
+            'examples': {'http(4xx,50%,5)': 'stop when rate of 4xx http codes is 50% or more during 5 seconds'}
+        },
+        'default': []}
+     }, u"""**autostop** (list of string)
+-----------------------------
+*\- list of autostop constraints. Default:* ``[]``
+
+:[list_element] (string):
+ *\- autostop constraint.*
+ 
+ :examples:
+  :``http(4xx,50%,5)``:
+   stop when rate of 4xx http codes is 50% or more during 5 seconds""")  # noqa: W293
 ])
 def test_format_option(option_schema, expected):
     assert format_option(option_schema, RSTRenderer) == expected
