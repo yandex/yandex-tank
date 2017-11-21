@@ -125,7 +125,7 @@ class Consolidator(object):
                     source,
                     chunk,
                     exc_info=True)
-            except:  # noqa: E722
+            except BaseException:
                 logger.error(
                     'Something nasty happend in consolidator work',
                     exc_info=True)
@@ -142,7 +142,8 @@ class Consolidator(object):
                 if len(self.results) > 2:
                     logger.debug(
                         'Now in buffer: %s', [i for i in self.results.keys()])
-                    dump_seconds = sorted([i for i in self.results.keys()])[:-2]
+                    dump_seconds = sorted(
+                        [i for i in self.results.keys()])[:-2]
                     for ready_second in dump_seconds:
                         yield json.dumps({
                             ready_second: self.results.pop(ready_second, None)
@@ -226,12 +227,13 @@ class AgentWorker(threading.Thread):
             if config.has_section('source'):
                 for option in config.options('source'):
                     if option.startswith('file'):
-                        self.custom_sources.append(config.get('source', option))
+                        self.custom_sources.append(
+                            config.get('source', option))
             logger.info(
                 'Successfully loaded startup config.\n'
                 'Startups: %s\n'
                 'Shutdowns: %s\n', self.startups, self.shutdowns)
-        except:  # noqa: E722
+        except BaseException:
             logger.error(
                 'Error trying to read agent startup config', exc_info=True)
 
@@ -239,14 +241,16 @@ class AgentWorker(threading.Thread):
         logger.info("Running startup commands")
         for cmnd in self.startups:
             logger.debug("Run: %s", cmnd)
-            # fixme: shell=True is insecure, should save startup script and launch directly
+            # fixme: shell=True is insecure, should save startup script and
+            # launch directly
             proc = self.__popen(cmnd, shell=True)
             logger.info('Started with pid %d', proc.pid)
             self.startup_processes.append(proc)
 
         logger.info('Starting metrics collector..')
         # todo: add identificators into {} for python 2.6
-        args = [self.telegraf_path, '-config', '{0}/agent.cfg'.format(self.working_dir)]
+        args = [self.telegraf_path, '-config',
+                '{0}/agent.cfg'.format(self.working_dir)]
         self.collector = self.__popen(cmnd=args)
         logger.info('Started with pid %d', self.collector.pid)
 
@@ -289,7 +293,7 @@ class AgentWorker(threading.Thread):
                     sys.stdout.flush()
                 except q.Empty:
                     break
-                except:  # noqa: E722
+                except BaseException:
                     logger.error(
                         'Something nasty happend trying to send data',
                         exc_info=True)
@@ -434,7 +438,7 @@ def main():
             logger.info("Stdin cmd received: %s", cmd)
     except KeyboardInterrupt:
         logger.debug("Interrupted")
-    except:  # noqa: E722
+    except BaseException:
         logger.error(
             "Something nasty happened while waiting for stop", exc_info=True)
     worker.finished = True
@@ -452,7 +456,7 @@ def main():
                 agent_finished = True
             else:
                 agent_finished = True
-        except:  # noqa: E722
+        except BaseException:
             logger.info(
                 "Something nasty happened while waiting for worker shutdown",
                 exc_info=True)
