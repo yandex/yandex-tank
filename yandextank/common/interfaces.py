@@ -204,3 +204,17 @@ class GeneratorPlugin(object):
     def get_info(self):
         # type: () -> Info
         return self.Info(**self.DEFAULT_INFO)
+
+    def get_reader(self):
+        """
+
+        :rtype: collections.Iterable
+        """
+        pass
+
+    def get_stats_reader(self):
+        """
+
+        :rtype: collections.Iterable
+        """
+        pass

@@ -137,8 +137,6 @@ class PhantomStatsReader(object):
                 ready_chunk = parts[0]
                 self.stat_buffer = parts[1]
                 return self._format_chunk(ready_chunk)
-            else:
-                self.stat_buffer += parts[0]
         else:
             self.stat_buffer += stat_file.readline()
         return None
@@ -161,9 +159,7 @@ class PhantomStatsReader(object):
             while data:
                 yield data
                 data = self._read_stat_data(stat_file)
-            # don't forget the buffer
-            if self.stat_buffer:
-                yield self._format_chunk(self.stat_buffer)
+            # buffer is always included
 
     def close(self):
         self.closed = True

@@ -404,8 +404,8 @@ Example:
 SSL
 ===
 
-To activate SSL add ``phantom: {ssl: true}`` to ``load.yaml``. Don't forget to change port
-number to appropriate value. Now, our basic config looks like that:
+To activate SSL add ``phantom: {ssl: true}`` to ``load.yaml``. 
+Now, our basic config looks like that:
 
 .. code-block:: yaml
 
@@ -415,6 +415,10 @@ number to appropriate value. Now, our basic config looks like that:
       load_type: rps
       schedule: line(1, 10, 10m)
     ssl: true
+
+.. note::
+
+  Do not forget to specify ssl port to `address`. Otherwise, you might get 'protocol errors'.
 
 Autostop 
 ========

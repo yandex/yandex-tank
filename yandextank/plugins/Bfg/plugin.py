@@ -17,6 +17,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     SECTION = 'bfg'
 
     def __init__(self, core, cfg, cfg_updater):
+        self._bfg = None
+        self.reader = None
+        self.stats_reader = None
         self.log = logging.getLogger(__name__)
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.gun_type = None
@@ -46,6 +49,30 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.log.info("Configuring BFG...")
         self.stepper_wrapper.read_config()
 
+    def get_reader(self):
+        if self.reader is None:
+            self.reader = BfgReader(self.bfg.results)
+        return self.reader
+
+    def get_stats_reader(self):
+        if self.stats_reader is None:
+            self.stats_reader = BfgStatsReader(self.bfg.instance_counter, self.stepper_wrapper.steps)
+        return self.stats_reader
+
+    @property
+    def bfg(self):
+        if self._bfg is None:
+            BFG = BFGGreen if self.get_option("worker_type", "") == "green" else BFGMultiprocessing
+            self.stepper_wrapper.prepare_stepper()
+            self._bfg = BFG(
+                gun=self.gun,
+                instances=self.stepper_wrapper.instances,
+                stpd_filename=self.stepper_wrapper.stpd,
+                cached_stpd=self.get_option("cached_stpd"),
+                green_threads_per_instance=int(self.get_option('green_threads_per_instance', 1000)),
+            )
+        return self._bfg
+
     def prepare_test(self):
         pip_deps = self.get_option("pip", "").splitlines()
         self.log.info("Installing with PIP: %s", pip_deps)
@@ -56,30 +83,12 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             import site
             reload(site)
         self.log.info("BFG using ammo type %s", self.get_option("ammo_type"))
-        self.stepper_wrapper.prepare_stepper()
         gun_type = self.get_option("gun_type")
         if gun_type in self.gun_classes:
             self.gun = self.gun_classes[gun_type](self.core, self.get_option('gun_config'))
         else:
             raise NotImplementedError(
                 'No such gun type implemented: "%s"' % gun_type)
-        cached_stpd = self.get_option("cached_stpd")
-
-        if self.get_option("worker_type", "") == "green":
-            BFG = BFGGreen
-        else:
-            BFG = BFGMultiprocessing
-
-        self.bfg = BFG(
-            gun=self.gun,
-            instances=self.stepper_wrapper.instances,
-            stpd_filename=self.stepper_wrapper.stpd,
-            cached_stpd=cached_stpd,
-            green_threads_per_instance=int(self.get_option('green_threads_per_instance', 1000)),
-        )
-        aggregator = self.core.job.aggregator
-        aggregator.start_test(BfgReader(self.bfg.results),
-                              BfgStatsReader(self.bfg.instance_counter, self.stepper_wrapper.steps))
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
@@ -90,8 +99,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         if console:
             widget = BfgInfoWidget()
             console.add_info_widget(widget)
-            if aggregator:
-                aggregator.add_result_listener(widget)
+            self.core.job.aggregator.add_result_listener(widget)
         self.log.info("Prepared BFG")
 
     def start_test(self):

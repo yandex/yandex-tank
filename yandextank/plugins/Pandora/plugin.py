@@ -23,6 +23,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def __init__(self, core, cfg, cfg_updater):
         super(Plugin, self).__init__(core, cfg, cfg_updater)
+        self.stats_reader = None
+        self.reader = None
         self.buffered_seconds = 2
         self.enum_ammo = False
         self.process = None
@@ -75,10 +77,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 with open(self.pandora_config_file, 'wb') as config_file:
                     config_file.write(config_content)
 
-    def prepare_test(self):
-        aggregator = self.core.job.aggregator
-        aggregator.start_test(PhantomReader(self.sample_log), PandoraStatsReader(self.expvar))
+    def get_reader(self):
+        if self.reader is None:
+            self.reader = PhantomReader(self.sample_log)
+        return self.reader
 
+    def get_stats_reader(self):
+        if self.stats_reader is None:
+            self.stats_reader = PandoraStatsReader(self.expvar)
+        return self.stats_reader
+
+    def prepare_test(self):
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
         except KeyError as ex:
@@ -88,8 +97,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         if console:
             widget = PandoraInfoWidget(self)
             console.add_info_widget(widget)
-            aggregator = self.core.job.aggregator
-            aggregator.add_result_listener(widget)
+            self.core.job.aggregator.add_result_listener(widget)
 
     def start_test(self):
         args = [self.pandora_cmd, "-expvar", self.pandora_config_file]
