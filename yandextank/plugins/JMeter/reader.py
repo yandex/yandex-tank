@@ -58,7 +58,7 @@ def _exc_to_http(param1):
     if len(param1) <= 3:
         try:
             int(param1)
-        except:  # noqa: E722
+        except BaseException:
             logger.error(
                 "JMeter wrote some strange data into codes column: %s", param1)
         else:
@@ -118,16 +118,16 @@ def string_to_df(data):
     chunk['receive_sec'] = chunk["receive_ts"].astype(np.int64)
     chunk['interval_real'] = chunk["interval_real"] * 1000  # convert to µs
     chunk.set_index(['receive_sec'], inplace=True)
-    length = len(chunk)
+    chunk_length = len(chunk)
     chunk['connect_time'] = (chunk['connect_time'].fillna(0) *
                              1000).astype(np.int64)
     chunk['latency'] = chunk['latency'] * 1000
     chunk['latency'] = chunk.apply(fix_latency, axis=1)
-    chunk['send_time'] = np.zeros(length)
+    chunk['send_time'] = np.zeros(chunk_length)
     chunk['receive_time'] = chunk['interval_real'] - \
         chunk['latency'] - chunk['connect_time']
-    chunk['interval_event'] = np.zeros(length)
-    chunk['size_out'] = np.zeros(length).astype(int)
+    chunk['interval_event'] = np.zeros(chunk_length)
+    chunk['size_out'] = np.zeros(chunk_length).astype(int)
     chunk['net_code'] = exc_to_net(chunk['retcode'], chunk['success'])
     chunk['proto_code'] = exc_to_http(chunk['retcode'])
     return chunk

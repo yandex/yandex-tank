@@ -5,6 +5,8 @@ import os
 import signal
 import subprocess
 import time
+import socket
+import re
 
 from pkg_resources import resource_string
 
@@ -20,6 +22,9 @@ logger = logging.getLogger(__name__)
 class Plugin(AbstractPlugin, GeneratorPlugin):
     """ JMeter tank plugin """
     SECTION = 'jmeter'
+    SHUTDOWN_TEST = 'Shutdown'
+    STOP_TEST_NOW = 'Stop Test'
+    DISCOVER_PORT_PATTERN = 'Waiting for possible shutdown message on port (?P<port>\d+)'
 
     def __init__(self, core, cfg, cfg_updater):
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
@@ -39,6 +44,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.jmeter_log = None
         self.start_time = time.time()
         self.jmeter_buffer_size = None
+        self.jmeter_udp_port = None
+        self.shutdown_timeout = None
 
     @staticmethod
     def get_key():
@@ -47,7 +54,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def get_available_options(self):
         return [
             "jmx", "args", "jmeter_path", "buffer_size", "buffered_seconds",
-            "exclude_markers"
+            "exclude_markers", "shutdown_timeout"
         ]
 
     def configure(self):
@@ -75,6 +82,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         jmeter_stderr_file = self.core.mkstemp(".log", "jmeter_stdout_stderr_")
         self.core.add_artifact_file(jmeter_stderr_file)
         self.jmeter_stderr = open(jmeter_stderr_file, 'w')
+        self.shutdown_timeout = self.get_option('shutdown_timeout', 3)
 
     def get_reader(self):
         if self.reader is None:
@@ -126,6 +134,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 "Unable to access to JMeter executable file or it does not exist: %s"
                 % self.jmeter_path)
         self.start_time = time.time()
+        self.jmeter_udp_port = self.__discover_jmeter_udp_port()
 
     def is_test_finished(self):
         retcode = self.jmeter_process.poll()
@@ -148,18 +157,38 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.jmeter_process:
-            logger.info(
-                "Terminating jmeter process group with PID %s",
-                self.jmeter_process.pid)
-            try:
-                os.killpg(self.jmeter_process.pid, signal.SIGTERM)
-            except OSError as exc:
-                logger.debug("Seems JMeter exited itself: %s", exc)
-                # Utils.log_stdout_stderr(logger, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
+            gracefully_shutdown = self.__graceful_shutdown()
+            if not gracefully_shutdown:
+                self.__kill_jmeter()
         if self.jmeter_stderr:
             self.jmeter_stderr.close()
         self.core.add_artifact_file(self.jmeter_log)
         return retcode
+
+    def __discover_jmeter_udp_port(self):
+        """Searching for line in jmeter.log such as
+        Waiting for possible shutdown message on port 4445
+        """
+        r = re.compile(self.DISCOVER_PORT_PATTERN)
+        with open(self.jmeter_log) as f:
+            while self.jmeter_process.pid:
+                line = f.readline()
+                m = r.match(line)
+                if m is None:
+                    time.sleep(1)
+                else:
+                    port = int(m.group('port'))
+                    return port
+
+    def __kill_jmeter(self):
+        logger.info(
+            "Terminating jmeter process group with PID %s",
+            self.jmeter_process.pid)
+        try:
+            os.killpg(self.jmeter_process.pid, signal.SIGTERM)
+        except OSError as exc:
+            logger.debug("Seems JMeter exited itself: %s", exc)
+            # Utils.log_stdout_stderr(logger, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
 
     def __add_jmeter_components(self, jmx, jtl, variables):
         """ Genius idea by Alexey Lavrenyuk """
@@ -226,6 +255,32 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             fh.write(tpl % tpl_args)
             fh.write(closing)
         return new_jmx
+
+    def __graceful_shutdown(self):
+        if self.jmeter_udp_port is None:
+            return False
+        shutdown_test_started = time.time()
+        while time.time() - shutdown_test_started < self.shutdown_timeout:
+            self.__send_udp_message(self.SHUTDOWN_TEST)
+            if self.jmeter_process.poll() is not None:
+                return True
+            else:
+                time.sleep(1)
+        self.log.info('Graceful shutdown failed after %s' % time.time() - shutdown_test_started)
+
+        stop_test_started = time.time()
+        while time.time() - stop_test_started < self.shutdown_timeout:
+            self.__send_udp_message(self.STOP_TEST_NOW)
+            if self.jmeter_process.poll() is not None:
+                return True
+            else:
+                time.sleep(1)
+        self.log.info('Graceful stop failed after %s' % time.time() - stop_test_started)
+        return False
+
+    def __send_udp_message(self, message):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.sendto(message, ('localhost', self.jmeter_udp_port))
 
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
