@@ -141,9 +141,15 @@ class TankConfig(object):
             """ {'type': 'string'} """
             pass
 
+        # monkey-patch cerberus validator to allow examples field
+        def _validate_examples(self, examples, field, value):
+            """ {'type': 'dict'} """
+            pass
+
         Validator._validate_description = _validate_description
         Validator._validate_values_description = _validate_values_description
         Validator._validate_tutorial_link = _validate_tutorial_link
+        Validator._validate_examples = _validate_examples
 
         return InspectedValidator('Validator', (Validator,), {})
 
