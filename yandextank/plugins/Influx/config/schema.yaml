@@ -7,6 +7,15 @@ address:
 port:
   default: 8086
   type: integer
+database:
+  default: mydb
+  type: string
+username:
+  default: root
+  type: string
+password:
+  default: root
+  type: string
 grafana_root:
   default: "http://localhost/"
   type: string

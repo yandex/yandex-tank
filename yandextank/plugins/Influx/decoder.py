@@ -69,7 +69,7 @@ class Decoder(object):
                 "fields": {
                     "active_threads": stat["metrics"]["instances"],
                     "RPS": data["overall"]["interval_real"]["len"],
-                    "planned_requests": stat["metrics"]["reqps"],
+                    "planned_requests": float(stat["metrics"]["reqps"]),
                 },
             }, {
                 "measurement": "net_codes",

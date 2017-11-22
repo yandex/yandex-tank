@@ -41,7 +41,12 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         address = self.get_option("address")
         port = self.get_option("port")
         self.client = InfluxDBClient(
-            address, port, 'root', 'root', 'mydb')
+            address,
+            port,
+            username=self.get_option("username"),
+            password=self.get_option("password"),
+            database=self.get_option("database"),
+        )
         grafana_root = self.get_option("grafana_root")
         grafana_dashboard = self.get_option("grafana_dashboard")
         uuid = str(uuid4())
