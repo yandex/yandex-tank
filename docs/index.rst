@@ -22,6 +22,7 @@ Contents:
    configuration
    core_and_modules
    ammo_generators
+   config_reference
 
 
 Indices and tables

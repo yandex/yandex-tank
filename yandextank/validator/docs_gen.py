@@ -265,8 +265,11 @@ class OptionFormatter(object):
 
     def format_dsc(self, renderer):
         if DEFAULT in self.option_kwargs:
+            default_value = self.option_kwargs.get(DEFAULT)
+            if default_value == '':
+                default_value = '""'
             return ' '.join([renderer.italic('- {}. Default:'.format(self.option_kwargs.get(DESCRIPTION, NO_DSC))),
-                             renderer.mono(self.option_kwargs.get(DEFAULT))])
+                             renderer.mono(default_value)])
         elif REQUIRED in self.option_kwargs:
             return renderer.italic('- {}.'.format(self.option_kwargs.get(DESCRIPTION, NO_DSC))) +\
                 ' ' +\
@@ -275,14 +278,14 @@ class OptionFormatter(object):
             return renderer.italic('- {}.'.format(self.option_kwargs.get(DESCRIPTION, NO_DSC)))
 
     def scalar_formatter(self, renderer, header=True):
-        hdr = renderer.subtitle(renderer.bold(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \
+        hdr = renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \
             if header else ''
         dsc = self.format_dsc(renderer)
         body = render_body(renderer, self.option_kwargs, [TYPE, DESCRIPTION, DEFAULT, REQUIRED], {'allowed': allowed})
         return '\n'.join([_ for _ in [hdr, dsc, body] if _])
 
     def scalar_with_values_description(self, renderer, header=True):
-        hdr = renderer.subtitle(renderer.bold(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \
+        hdr = renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \
             if header else ''
         dsc = self.format_dsc(renderer)
         body = render_body(renderer, self.option_kwargs, [TYPE, DESCRIPTION, DEFAULT, REQUIRED, ALLOWED, VALUES_DSC])
@@ -290,20 +293,21 @@ class OptionFormatter(object):
         return '\n'.join([_ for _ in [hdr, dsc, body, values_description_block] if _])
 
     def dict_formatter(self, renderer, header=True):
-        hdr = renderer.subtitle(renderer.bold(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \
+        hdr = renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \
             if header else ''
         dsc = self.format_dsc(renderer)
 
         dict_schema = self.option_kwargs[SCHEMA]
+
         schema_block = renderer.field_list({
-            '{} ({})'.format(key, dict_schema[key][TYPE]): get_formatter({key: value})(renderer, header=False)
+            '{} ({})'.format(renderer.mono(key), dict_schema[key][TYPE]): get_formatter({key: value})(renderer, header=False)
             for key, value in dict_schema.items()})
         body = render_body(renderer, self.option_kwargs, [TYPE, DESCRIPTION, DEFAULT, REQUIRED, SCHEMA])
         return '\n'.join([_ for _ in [hdr, dsc, schema_block, body] if _])
 
     def anyof_formatter(self, renderer, header=True):
         types = [case[TYPE] for case in self.option_kwargs[ANYOF] if TYPE in case]
-        hdr = renderer.subtitle(renderer.bold(self.option_name) + ' ' + '({})'.format(' or '.join(types))) \
+        hdr = renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(' or '.join(types))) \
             if header else ''
         dsc = self.format_dsc(renderer)
         values_description_block = render_values_description(renderer, self.option_kwargs) \
@@ -314,7 +318,7 @@ class OptionFormatter(object):
 
     def list_formatter(self, renderer, header=True):
         schema = self.option_kwargs[SCHEMA]
-        hdr = renderer.subtitle(renderer.bold(self.option_name) +
+        hdr = renderer.subtitle(renderer.mono(self.option_name) +
                                 ' ' +
                                 '({} of {})'.format(self.option_kwargs.get(TYPE, LIST), schema.get(TYPE, '')))
         dsc = self.format_dsc(renderer)
@@ -367,18 +371,25 @@ def main():
     parser.add_argument('schema', help='Path to schema file')
     parser.add_argument('-o', '--output_filename', default='output.rst', help='Name for the output rst document')
     parser.add_argument('--title', default=None, help='Document title')
+    parser.add_argument('-a', '--append', action='store_true', help='Don\'t overwrite output file')
     args = parser.parse_args()
 
     schema_path = args.schema
     output_filename = args.output_filename
     title = args.title
+    append = args.append
 
     with open(schema_path) as f:
         schema = yaml.load(f)
     document = format_schema(schema, RSTRenderer(), title)
 
-    with open(output_filename, 'w') as f:
-        f.write(document)
+    if append:
+        with open(output_filename, 'a') as f:
+            f.write('\n\n')
+            f.write(document)
+    else:
+        with open(output_filename, 'w') as f:
+            f.write(document)
 
 
 if __name__ == '__main__':
