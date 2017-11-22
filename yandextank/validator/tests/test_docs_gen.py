@@ -70,14 +70,14 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
 -----------------------
 *\- specify parameters of your load.* **Required.**
 
-:load_type (string):
+:``load_type`` (string):
  *\- choose your load type.* **Required.**
  
  :one of:
   :``instances``: fix number of instances
   :``rps``: fix rps rate
   :``stpd_file``: use ready schedule file
-:schedule (string):
+:``schedule`` (string):
  *\- load schedule or path to stpd file.* **Required.**
  
  :examples:
