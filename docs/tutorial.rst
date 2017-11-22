@@ -84,10 +84,10 @@ have following lines:
 .. code-block:: yaml
 
   phantom:
-  address: 203.0.113.1:80
-  load_profile:
-    load_type: rps
-    schedule: const(10, 10m)
+    address: 203.0.113.1:80
+    load_profile:
+      load_type: rps
+      schedule: const(10, 10m)
   telegraf:
     enabled: false # let's disable telegraf monitoring for this time
 
