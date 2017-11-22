@@ -138,12 +138,20 @@ OPTIONS = {
         'schema': {
             'load_type': {
                 'type': 'string',
-                'regex': '^rps|instances|stpd_file$',
-                'required': True
+                'allowed': ['rps', 'instances', 'stpd_file'],
+                'values_description': {
+                    'rps': 'fix rps rate',
+                    'instances': 'fix number of instances',
+                    'stpd_file': 'use ready schedule file'}
             },
             'schedule': {
                 'type': 'string',
-                'required': True
+                'required': True,
+                'description': 'load schedule or path to stpd file',
+                'examples': {
+                    'line(100,200,10m)': 'linear growth from 100 to 200 instances/rps during 10 minutes',
+                    'const(200,90s)': 'constant load of 200 instances/rps during 90s',
+                    'test_dir/test_backend.stpd': 'path to ready schedule file'}
             }
         },
         'required': True

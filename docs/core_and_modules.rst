@@ -487,7 +487,7 @@ Options
   They will be passed as User Defined Variables to JMeter.
 
 Timing calculation issues
------------------------
+-------------------------
 
 Since version 2.13 jmeter could measure connection time, latency and full request time (aka <interval_real> in phantom), but do it in it's own uniq way: latency include connection time but not recieve time. For the sake of consistency we recalculate <latency> as <latency - connect_time> and calculate <recieve_time> as <interval_real - latency - connect_time>>, but it does not guranteed to work perfectly in all cases (i.e. some samplers may not support latency and connect_time and you may get something strange in case of timeouts).
 
@@ -617,7 +617,7 @@ How it works
 .. image:: ./pic/tank-bfg.png
 
 BFG Worker Type
------------
+---------------
 By default, BFG will create lots of processes (number is defined by ``instances`` option).
 Every process will execute requests in a single thread. These processes will comsume a lot of memory.
 It's also possible to switch this behavior and use ``gevent`` to power up every worker process,
@@ -663,7 +663,7 @@ INI file section: **[bfg]**
   
 
 Ultimate Gun Options
-------------------
+--------------------
 
 gun_type = **ultimate**
 
@@ -843,8 +843,8 @@ Options
 :job_dsc:
   (Optional) Description of a job to be displayed in Yandex.Overload
 
-Example:
-::
+Example::
+
   [tank]
   ; plugin is disabled by default, enable it:
   plugin_uploader=yandextank.plugins.DataUploader overload

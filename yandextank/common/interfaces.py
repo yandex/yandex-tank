@@ -14,7 +14,7 @@ class AbstractPlugin(object):
         raise TypeError("Abstract method needs to be overridden")
 
     # TODO: do we realy need cfg_updater here?
-    def __init__(self, core, cfg, cfg_updater):
+    def __init__(self, core, cfg, cfg_updater=None):
         """
 
         @type core: TankCore
@@ -204,3 +204,17 @@ class GeneratorPlugin(object):
     def get_info(self):
         # type: () -> Info
         return self.Info(**self.DEFAULT_INFO)
+
+    def get_reader(self):
+        """
+
+        :rtype: collections.Iterable
+        """
+        pass
+
+    def get_stats_reader(self):
+        """
+
+        :rtype: collections.Iterable
+        """
+        pass

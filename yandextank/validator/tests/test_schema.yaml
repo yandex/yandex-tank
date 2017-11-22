@@ -1,0 +1,15 @@
+kill_old:
+  type: list
+  default: [foo, bar]
+  elements:
+    type: string
+    allowed: [foo, bar]
+
+default_target:
+  default: localhost
+  any of:
+   - type: list
+     elements:
+       type: string
+   - allowed: auto
+     type: string

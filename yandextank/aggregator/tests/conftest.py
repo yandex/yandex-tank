@@ -1,8 +1,8 @@
-import pytest
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
 
-from yandextank.plugins.Aggregator.aggregator import phout_columns
+from yandextank.aggregator.aggregator import phout_columns
 
 np.random.seed(42)
 MAX_TS = 1000

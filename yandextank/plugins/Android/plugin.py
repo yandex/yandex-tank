@@ -1,6 +1,12 @@
 import logging
-from ...common.interfaces import AbstractPlugin, GeneratorPlugin
+import time
+
+import requests
+from yandextank.plugins.Overload.client import OverloadClient
+
 from .reader import AndroidReader, AndroidStatsReader
+from ...common.interfaces import AbstractPlugin, GeneratorPlugin
+
 try:
     from volta.core.core import Core as VoltaCore
 except Exception:
@@ -14,6 +20,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     SECTION_META = "meta"
 
     def __init__(self, core, cfg, cfg_updater):
+        self.stats_reader = None
+        self.reader = None
         try:
             super(Plugin, self).__init__(core, cfg, cfg_updater)
             self.device = None
@@ -37,11 +45,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def configure(self):
         self.volta_core.configure()
 
+    def get_reader(self):
+        if self.reader is None:
+            self.reader = AndroidReader()
+        return self.reader
+
+    def get_stats_reader(self):
+        if self.stats_reader is None:
+            self.stats_reader = AndroidStatsReader()
+        return self.stats_reader
+
     def prepare_test(self):
-        aggregator = self.core.job.aggregator_plugin
-        if aggregator:
-            aggregator.reader = AndroidReader()
-            aggregator.stats_reader = AndroidStatsReader()
         self.core.add_artifact_file(self.volta_core.currents_fname)
         [self.core.add_artifact_file(fname) for fname in self.volta_core.event_fnames.values()]
 
@@ -59,7 +73,43 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def end_test(self, retcode):
         self.volta_core.end_test()
+
+        mobile_key = self.volta_core.uploader.jobno
+        logger.info("Mobile jobno: %s", mobile_key)
+
+        jobno = self.core.status['uploader']['job_no']
+        logger.info("Simple jobno: %s", jobno)
+
+        web_link = self.core.status['uploader']['web_link']
+        url = web_link.replace(str(jobno), '')
+        logger.info("Url: %s", url)
+
+        self.link_jobs(url, jobno, mobile_key)
         return retcode
+
+    def link_jobs(self, url, jobno, mobile_key):
+        api_client = OverloadClient()
+        api_client.set_api_address(url)
+        api_client.session.verify = False
+
+        addr = "/api/job/{jobno}/edit.json".format(jobno=jobno)
+        data = {
+            'mobile_key': mobile_key
+        }
+
+        logger.info("Jobs link request: url = %s, data = %s", url + addr, data)
+        while True:
+            try:
+                response = api_client.post(addr, data)
+                return response
+            except requests.exceptions.HTTPError as ex:
+                logger.debug("Got error for jobs link request: %s", ex)
+                if ex.response.status_code == 423:
+                    logger.warn(
+                        "Overload is under maintenance, will retry in 5s...")
+                    time.sleep(5)
+                else:
+                    raise ex
 
     def get_info(self):
         return AndroidInfo()

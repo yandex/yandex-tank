@@ -505,8 +505,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             return self.get_option(
                 'operator') or pwd.getpwuid(
                 os.geteuid())[0]
-        except BaseException:
-            logger.error("Couldn't get username from the OS. Please, set the 'meta.operator' option explicitly in your config file.")
+        except:  # noqa: E722
+            logger.error(
+                "Couldn't get username from the OS. Please, set the 'meta.operator' option explicitly in your config "
+                "file.")
             raise
 
     def __get_api_client(self):

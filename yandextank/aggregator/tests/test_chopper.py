@@ -1,9 +1,8 @@
-import pandas as pd
 import numpy as np
-
-from yandextank.plugins.Aggregator.chopper import TimeChopper
+import pandas as pd
 
 from conftest import MAX_TS, random_split
+from yandextank.aggregator.chopper import TimeChopper
 
 
 class TestChopper(object):

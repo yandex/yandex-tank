@@ -3,9 +3,8 @@
 import getpass
 import logging
 
+from yandextank.common.util import SecuredShell
 from ...common.interfaces import AbstractPlugin
-
-from ..Monitoring.collector import SecuredShell
 from ..Phantom import Plugin as PhantomPlugin
 
 logger = logging.getLogger(__name__)

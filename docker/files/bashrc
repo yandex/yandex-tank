@@ -1,0 +1,24 @@
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+HISTCONTROL=ignoredups
+
+# append to the history file, don't overwrite it
+shopt -s histappend
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=8000
+HISTFILESIZE=8000
+
+export EDITOR=vi
+export PAGER=less
+export MANPAGER='less -X'
+
+PS1='\[\e[1;31m\]$(echo "["${?/0/}"]" | sed "s/\\[\\]//")$(echo "\[\e[32m\][tank]\[\e[37m\]")\u@\h: \[\e[00m\]\w \$ '
+
+echo "Yandex.Tank Docker image"
