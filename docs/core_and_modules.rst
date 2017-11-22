@@ -843,8 +843,8 @@ Options
 :job_dsc:
   (Optional) Description of a job to be displayed in Yandex.Overload
 
-Example:
-::
+Example::
+
   [tank]
   ; plugin is disabled by default, enable it:
   plugin_uploader=yandextank.plugins.DataUploader overload
