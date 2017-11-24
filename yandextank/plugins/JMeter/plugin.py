@@ -171,14 +171,19 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         """
         r = re.compile(self.DISCOVER_PORT_PATTERN)
         with open(self.jmeter_log) as f:
-            while self.jmeter_process.pid:
+            cnt = 0
+            while self.jmeter_process.pid and cnt < 10:
                 line = f.readline()
                 m = r.match(line)
                 if m is None:
+                    cnt += 1
                     time.sleep(1)
                 else:
                     port = int(m.group('port'))
                     return port
+            else:
+                logger.warning('JMeter UDP port wasn\'t discovered')
+                return None
 
     def __kill_jmeter(self):
         logger.info(
@@ -266,7 +271,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 return True
             else:
                 time.sleep(1)
-        self.log.info('Graceful shutdown failed after %s' % time.time() - shutdown_test_started)
+        self.log.info('Graceful shutdown failed after %s' % str(time.time() - shutdown_test_started))
 
         stop_test_started = time.time()
         while time.time() - stop_test_started < self.shutdown_timeout:
