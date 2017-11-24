@@ -505,7 +505,7 @@ class AnswSizesBlock(AbstractBlock):
 
     def add_second(self, data):
 
-        self.cur_in = data["overall"]["size_out"]["total"]
+        self.cur_in = data["overall"]["size_in"]["total"]
         self.cur_out = data["overall"]["size_out"]["total"]
         self.cur_count = data["overall"]["interval_real"]["len"]
 
