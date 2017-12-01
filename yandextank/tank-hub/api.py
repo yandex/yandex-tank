@@ -41,8 +41,8 @@ def validate_config(config, fmt):
             cfg = yaml.load(config)
             config.close()
             tank_config = TankConfig([load_core_base_cfg()] +
-                                 load_local_base_cfgs() +
-                                 [cfg])
+                                     load_local_base_cfgs() +
+                                     [cfg])
             return response(tank_config.raw_config_dict, tank_config.errors())
         except Exception as e:
             log_exception(e)
