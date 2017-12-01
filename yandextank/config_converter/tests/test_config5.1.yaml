@@ -20,10 +20,6 @@ bfg:
     module_name: ult
     init_param: hello world
     class_name: MyTest
-aggregator:
-  package: yandextank.plugins.Aggregator
-  enabled: true
-  verbose_histogram: true
 overload:
   package: yandextank.plugins.DataUploader
   enabled: true
@@ -37,7 +33,8 @@ uploader:
   api_timeout: 1
   job_name: Hello kitty
   job_dsc: hell of a kitty
-  lock_targets: foo.bar
+  lock_targets:
+    - foo.bar
   log_other_requests: true
   maintenance_timeout: 5
   network_attempts: 2

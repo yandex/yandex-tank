@@ -3,14 +3,18 @@ core:
   allow_unknown: false
   schema:
     affinity:
+      description: specify cpu core(s) to bind tank process to
       type: string
       default: ''
     api_jobno:
+      description: tankapi job id, also used as test\'s directory name - determined by tank
       type: string
     artifacts_base_dir:
+      description: base directory to store tests\' artifacts directories
       type: string
       default: ./logs
     artifacts_dir:
+      description: directory inside base directory to store test\'s artifacts, defaults to api_jobno if null
       type: string
       nullable: true
       default: null
@@ -19,8 +23,10 @@ core:
     exitcode:
       type: integer
     flush_config_to:
+      description: path to store config
       type: string
     ignore_locks:
+      description: if tank is locked (*.lock file(s) presented in lock_dir), shoot nevertheless
       type: boolean
     uuid:
       type: string
@@ -29,9 +35,11 @@ core:
     message:
       type: string
     lock_dir:
+      description: directory to store *.lock files
       type: string
       default: /var/lock/
     operator:
+      description: your username
       type: string
     taskset_path:
       type: string

@@ -14,10 +14,10 @@ Create a file on a server with Yandex.Tank: **load.yaml**
 .. code-block:: yaml
 
   phantom:
-  address: 203.0.113.1:80 # [Target's address]:[target's port]
-  load_profile:
-    load_type: rps # schedule load by defining requests per second
-    schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
+    address: 203.0.113.1:80 # [Target's address]:[target's port]
+    load_profile:
+      load_type: rps # schedule load by defining requests per second
+      schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
   telegraf:
     enabled: false # let's disable telegraf monitoring for this time
 
@@ -84,10 +84,10 @@ have following lines:
 .. code-block:: yaml
 
   phantom:
-  address: 203.0.113.1:80
-  load_profile:
-    load_type: rps
-    schedule: const(10, 10m)
+    address: 203.0.113.1:80
+    load_profile:
+      load_type: rps
+      schedule: const(10, 10m)
   telegraf:
     enabled: false # let's disable telegraf monitoring for this time
 
@@ -265,6 +265,7 @@ because '\r' symbols are strictly required.
 .. note:: 
 
   Parameter ``ammo_type`` is unnecessary, request-style is default ammo type.
+
 =======
 
 **sample GET requests (null body)**
@@ -403,8 +404,8 @@ Example:
 SSL
 ===
 
-To activate SSL add ``phantom: {ssl: true}`` to ``load.yaml``. Don't forget to change port
-number to appropriate value. Now, our basic config looks like that:
+To activate SSL add ``phantom: {ssl: true}`` to ``load.yaml``. 
+Now, our basic config looks like that:
 
 .. code-block:: yaml
 
@@ -414,6 +415,10 @@ number to appropriate value. Now, our basic config looks like that:
       load_type: rps
       schedule: line(1, 10, 10m)
     ssl: true
+
+.. note::
+
+  Do not forget to specify ssl port to `address`. Otherwise, you might get 'protocol errors'.
 
 Autostop 
 ========

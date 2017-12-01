@@ -6,15 +6,13 @@ import multiprocessing as mp
 import subprocess
 import time
 
-from ...common.util import execute, expand_to_seconds
-from ...common.interfaces import AbstractPlugin, AbstractCriterion, GeneratorPlugin
-
 from .reader import PhantomReader, PhantomStatsReader
 from .utils import PhantomConfig
 from .widget import PhantomInfoWidget, PhantomProgressBarWidget
-from ..Aggregator import Plugin as AggregatorPlugin
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
+from ...common.interfaces import AbstractPlugin, AbstractCriterion, GeneratorPlugin
+from ...common.util import execute, expand_to_seconds
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +24,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def __init__(self, core, cfg, cfg_updater):
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+        self.stats_reader = None
+        self.reader = None
         self.process = None
 
         self.predefined_phout = None
@@ -91,9 +91,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             self._stat_log = self.core.mkstemp(".log", "phantom_stat_")
         return self._stat_log
 
-    def prepare_test(self):
-        aggregator = self.core.job.aggregator_plugin
+    def get_reader(self):
+        if self.reader is None:
+            self.reader = PhantomReader(self.phantom.phout_file)
+        return self.reader
 
+    def get_stats_reader(self):
+        if self.stats_reader is None:
+            self.stats_reader = PhantomStatsReader(self.stat_log, self.phantom.get_info())
+        return self.stats_reader
+
+    def prepare_test(self):
         args = [self.get_option("phantom_path"), 'check', self.phantom.config_file]
 
         try:
@@ -109,7 +117,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         if result[2]:
             raise RuntimeError(
                 "Subprocess returned message: %s" % result[2])
-        reader = PhantomReader(self.phantom.phout_file)
         logger.debug(
             "Linking sample reader to aggregator."
             " Reading samples from %s", self.phantom.phout_file)
@@ -118,13 +125,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             "Linking stats reader to aggregator."
             " Reading stats from %s", self.phantom.stat_log)
 
-        if aggregator:
-            aggregator.reader = reader
-            info = self.phantom.get_info()
-            aggregator.stats_reader = PhantomStatsReader(
-                self.stat_log, info)
+        self.core.job.aggregator.add_result_listener(self)
 
-            aggregator.add_result_listener(self)
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
         except Exception as ex:
@@ -133,15 +135,14 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
         self.core.job.phantom_info = self.phantom.get_info()
 
-        if console and aggregator:
-            widget = PhantomProgressBarWidget(self)
-            console.add_info_widget(widget)
-            aggregator.add_result_listener(widget)
+        if console:
+            widget1 = PhantomProgressBarWidget(self)
+            console.add_info_widget(widget1)
+            self.core.job.aggregator.add_result_listener(widget1)
 
-            widget = PhantomInfoWidget(self)
-            console.add_info_widget(widget)
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-            aggregator.add_result_listener(widget)
+            widget2 = PhantomInfoWidget(self)
+            console.add_info_widget(widget2)
+            self.core.job.aggregator.add_result_listener(widget2)
 
     def start_test(self):
         args = [self.get_option("phantom_path"), 'run', self.phantom.config_file]

@@ -39,8 +39,9 @@ class BackendTypes(object):
             if clue in api_address:
                 return backend_type
         else:
-            raise KeyError('Config section name doesn\'t match any of the patterns:\n%s' %
-                           '\n'.join(['*%s*' % ptrn[0] for ptrn in clues]))
+            raise KeyError(
+                'Config section name doesn\'t match any of the patterns:\n%s' %
+                '\n'.join(['*%s*' % ptrn[0] for ptrn in clues]))
         pass
 
 
@@ -167,7 +168,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                     raise RuntimeError(
                         'Unknown task data format:\n{}'.format(task_data))
         except requests.exceptions.HTTPError as ex:
-            logger.error("Failed to check task status for '%s': %s", self.task, ex)
+            logger.error(
+                "Failed to check task status for '%s': %s", self.task, ex)
             if ex.response.status_code == 404:
                 raise RuntimeError("Task not found: %s\n%s" % (self.task, TASK_TIP))
             elif ex.response.status_code == 500 or ex.response.status_code == 400:
@@ -276,6 +278,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             logger.debug("Saving jobno to: %s", jobno_file)
             with open(jobno_file, 'w') as fdes:
                 fdes.write(str(self.lp_job.number))
+            self.core.add_artifact_file(jobno_file)
         self.__save_conf()
 
     def is_test_finished(self):
@@ -283,19 +286,20 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def end_test(self, retcode):
         self.on_air = False
-        self.monitoring_queue.put(None)
-        self.data_queue.put(None)
         self.__save_conf()
-        self._join_threads(timeout=int(self.get_option('threads_timeout')))
         self.unlock_targets(self.locked_targets)
         return retcode
 
     def post_process(self, rc):
+        self.monitoring_queue.put(None)
+        self.data_queue.put(None)
+        logger.info("Waiting for sender threads to join.")
+        self.monitoring.join()
+        self.upload.join()
         try:
             self.lp_job.close(rc)
         except Exception:  # pylint: disable=W0703
             logger.warning("Failed to close job", exc_info=True)
-
         logger.info(
             "Web link: %s%s",
             self.lp_job.api_client.base_url,
@@ -358,7 +362,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             logger.debug("Attempt to import yandex_tank_api.worker failed")
         else:
             api_found = isinstance(self.core, yandex_tank_api.worker.TankCore)
-        logger.debug("We are%s running under API server", '' if api_found else ' likely not')
+        logger.debug(
+            "We are%s running under API server", '' if api_found else ' likely not')
         return api_found
 
     def __send_status(self):
@@ -401,7 +406,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 break
             except Exception as e:
                 logger.info("Mysterious exception: %s", e)
-                self.retcode = 8
                 break
         logger.info("Closing Data uploader thread")
 
@@ -428,6 +432,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 lp_job.is_alive = False
                 self.retcode = 8
                 break
+            except Exception as e:
+                logger.info("Mysterious exception: %s", e)
+                break
         logger.info('Closing Monitoring uploader thread')
 
     # TODO: why we do it here? should be in core
@@ -437,24 +444,25 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             config_filename = self.core.job.monitoring_plugin.config
             if config_filename and config_filename not in ['none', 'auto']:
                 with open(config_filename) as config_file:
-                    self.core.job.monitoring_plugin.set_option("config_contents",
-                                                               config_file.read())
+                    self.core.job.monitoring_plugin.set_option("config_contents", config_file.read())
         except AttributeError:  # pylint: disable=W0703
-            logger.warning("Can't get monitoring config", exc_info=True)
+            logger.warning("Can't get monitoring config")
 
         self.lp_job.send_config_snapshot(self.core.cfg_snapshot)
-        self.core.config.save(os.path.join(self.core.artifacts_dir, 'saved_conf.yaml'))
+        self.core.config.save(
+            os.path.join(
+                self.core.artifacts_dir, 'saved_conf.yaml'))
 
     def parse_lock_targets(self):
         # prepare target lock list
-        locks_list_cfg = self.get_option('lock_targets', 'auto').strip()
+        locks_list_cfg = self.get_option('lock_targets', 'auto')
 
         def no_target():
             logging.warn("Target lock set to 'auto', but no target info available")
-            return ''
+            return {}
 
-        locks_list = (self.target or no_target() if locks_list_cfg.lower() == 'auto' else locks_list_cfg).split('\n')
-        targets_to_lock = [host for host in locks_list if host]
+        locks_set = {self.target} or no_target() if locks_list_cfg == 'auto' else set(locks_list_cfg)
+        targets_to_lock = [host for host in locks_set if host]
         return targets_to_lock
 
     def lock_targets(self, targets_to_lock, ignore, strict):
@@ -497,9 +505,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             return self.get_option(
                 'operator') or pwd.getpwuid(
                 os.geteuid())[0]
-        except:
+        except:  # noqa: E722
             logger.error(
-                "Couldn't get username from the OS. Please, set the 'meta.operator' option explicitly in your config file.")
+                "Couldn't get username from the OS. Please, set the 'meta.operator' option explicitly in your config "
+                "file.")
             raise
 
     def __get_api_client(self):
@@ -526,6 +535,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     @property
     def lp_job(self):
+        """
+
+        :rtype: LPJob
+        """
         if self._lp_job is None:
             self._lp_job = self.__get_lp_job()
             self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
@@ -621,22 +634,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._target = self.generator_info.address
             logger.info("Detected target: %s", self.target)
         return self._target
-
-    def _join_threads(self, timeout):
-        logger.info(
-            'Waiting for sender threads to join for {} seconds ("meta.threads_timeout" config option)'.format(timeout))
-        try:
-            self.monitoring.join(timeout=timeout)
-            if self.monitoring.isAlive():
-                logger.error('Monitoring thread joining timed out. Terminating.')
-        except RuntimeError:
-            pass
-        try:
-            self.upload.join(timeout=timeout)
-            if self.upload.isAlive():
-                logger.error('Upload thread joining timed out. Terminating.')
-        except RuntimeError:
-            pass
 
 
 class JobInfoWidget(AbstractInfoWidget):
@@ -810,7 +807,9 @@ class LPJob(object):
         maintenance_timeouts = iter([0]) if ignore else iter(lambda: lock_wait_timeout, 0)
         while True:
             try:
-                self.api_client.lock_target(lock_target, lock_target_duration, trace=self.log_other_requests,
+                self.api_client.lock_target(lock_target,
+                                            lock_target_duration,
+                                            trace=self.log_other_requests,
                                             maintenance_timeouts=maintenance_timeouts,
                                             maintenance_msg="Target is locked.\nManual unlock link: %s%s" % (
                                                 self.api_client.base_url,
@@ -832,7 +831,8 @@ class LPJob(object):
                 if ignore:
                     logger.info('ignore_target_locks = 1')
                     return False
-                logger.info("Manual unlock link: %s%s", self.api_client.base_url,
+                logger.info("Manual unlock link: %s%s",
+                            self.api_client.base_url,
                             self.api_client.get_manual_unlock_link(lock_target))
                 continue
 

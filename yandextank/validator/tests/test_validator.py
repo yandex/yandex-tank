@@ -4,7 +4,7 @@ import pytest
 from yandextank.validator.validator import TankConfig, ValidationError
 
 CFG_VER_I_0 = {
-    "version": "1.8.34",
+    "version": "1.9.3",
     "core": {
         'operator': 'fomars',
         'artifacts_base_dir': './'
@@ -70,7 +70,7 @@ PHANTOM_SCHEMA_V_G = {
 
 @pytest.mark.parametrize('config, expected', [
     ({
-     "version": "1.8.34",
+     "version": "1.9.3",
      "core": {
          'operator': 'fomars',
          'artifacts_base_dir': './',
@@ -79,7 +79,8 @@ PHANTOM_SCHEMA_V_G = {
          'package': 'yandextank.plugins.Telegraf',
          'enabled': True,
          'config': 'monitoring.xml',
-         'disguise_hostnames': True
+         'disguise_hostnames': True,
+         'kill_old': True
      },
      'phantom': {
          'package': 'yandextank.plugins.Phantom',
@@ -90,7 +91,7 @@ PHANTOM_SCHEMA_V_G = {
          'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'}}
      },
      {
-     "version": "1.8.34",
+     "version": "1.9.3",
      "core": {
          'operator': 'fomars',
          'artifacts_base_dir': './',
@@ -106,6 +107,7 @@ PHANTOM_SCHEMA_V_G = {
          'disguise_hostnames': True,
          'default_target': 'localhost',
          'ssh_timeout': '5s',
+         'kill_old': True
      },
      'phantom': {
          'package': 'yandextank.plugins.Phantom',
@@ -155,6 +157,71 @@ PHANTOM_SCHEMA_V_G = {
          'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'},
      }
      }
+     ),
+    ({'phantom': {
+        'package': 'yandextank.plugins.Phantom',
+        'enabled': True,
+        'load_profile': {
+            'load_type': 'rps',
+            'schedule': 'const(2,1m)'},
+        'timeout': '5s',
+        'uris': '/',
+        'loop': 1000,
+        'address': 'centurion.tanks.yandex.net'}},
+     {'phantom': {
+         'package': 'yandextank.plugins.Phantom',
+         'enabled': True,
+         'load_profile': {
+             'load_type': 'rps',
+             'schedule': 'const(2,1m)'},
+         'timeout': '5s',
+         'uris': '/',
+         'loop': 1000,
+         'address': 'centurion.tanks.yandex.net',
+         'buffered_seconds': 2,
+         'phantom_path': 'phantom',
+         'affinity': '',
+         'enum_ammo': False,
+         'phout_file': '',
+         'phantom_modules_path': '/usr/lib/phantom',
+         'threads': None,
+         'writelog': 'none',
+         'additional_libs': '',
+         'config': '',
+         'gatling_ip': '',
+         'instances': 1000,
+         'method_options': '',
+         'method_prefix': 'method_stream',
+         'phantom_http_entity': '',
+         'phantom_http_field': '',
+         'phantom_http_field_num': '',
+         'phantom_http_line': '',
+         'source_log_prefix': '',
+         'ssl': False,
+         'tank_type': 'http',
+         'ammo_limit': -1,
+         'ammo_type': 'phantom',
+         'ammofile': '',
+         'autocases': '0',
+         'cache_dir': None,
+         'chosen_cases': '',
+         'client_certificate': '',
+         'client_cipher_suites': '',
+         'client_key': '',
+         'connection_test': True,
+         'file_cache': 8192,
+         'force_stepping': 0,
+         'headers': '',
+         'port': '',
+         'use_caching': True,
+         'header_http': '1.0',
+         'multi': []},
+      'core': {
+          'artifacts_base_dir': './logs',
+          'lock_dir': '/var/lock/',
+          'taskset_path': 'taskset',
+          'affinity': '',
+          'artifacts_dir': None}}
      )
 ])
 def test_validate_core(config, expected):
@@ -164,7 +231,7 @@ def test_validate_core(config, expected):
 @pytest.mark.parametrize('config, expected', [
     # plugins: no package
     ({
-     "version": "1.8.34",
+     "version": "1.9.3",
      "core": {
          'operator': 'fomars'
      },
@@ -199,7 +266,7 @@ def test_validate_core(config, expected):
      }, "package: [required field]"),
     # plugins: empty package
     ({
-     "version": "1.8.34",
+     "version": "1.9.3",
      "core": {
          'operator': 'fomars'
      },
@@ -226,7 +293,7 @@ def test_validate_core_error(config, expected):
 @pytest.mark.parametrize('configs, expected', [
     # test disable plugin
     ([{
-        "version": "1.8.34",
+        "version": "1.9.3",
         "core": {
             'operator': 'fomars'
         },
@@ -244,7 +311,7 @@ def test_validate_core_error(config, expected):
         }
     },
         {
-        "version": "1.8.34",
+        "version": "1.9.3",
         "core": {
             'operator': 'fomars'
         },
@@ -257,7 +324,7 @@ def test_validate_core_error(config, expected):
         }
     }
     ],
-        {"version": "1.8.34",
+        {"version": "1.9.3",
          "core": {
              'operator': 'fomars'
          },
@@ -283,7 +350,7 @@ def test_load_multiple(configs, expected):
 @pytest.mark.parametrize('config, expected', [
     (
         {
-            "version": "1.8.34",
+            "version": "1.9.3",
             "core": {
                 'operator': 'fomars',
                 'artifacts_base_dir': './'
@@ -304,7 +371,7 @@ def test_load_multiple(configs, expected):
             }
         },
         {
-            "version": "1.8.34",
+            "version": "1.9.3",
             "core": {
                 'operator': 'fomars',
                 'artifacts_base_dir': './',
@@ -319,7 +386,8 @@ def test_load_multiple(configs, expected):
                 'config': 'monitoring.xml',
                 'disguise_hostnames': True,
                 'ssh_timeout': '5s',
-                'default_target': 'localhost'
+                'default_target': 'localhost',
+                'kill_old': False
             },
             'phantom': {
                 'package': 'yandextank.plugins.Phantom',
@@ -400,7 +468,7 @@ def test_validate_all(config, expected):
     # plugins errors
     (
         {
-            "version": "1.8.34",
+            "version": "1.9.3",
             "core": {
                 'operator': 'fomars',
                 'artifacts_base_dir': './'
@@ -457,7 +525,7 @@ def test_get_plugins(config, expected):
 
 @pytest.mark.parametrize('config, plugin, key, value', [
     ({
-        "version": "1.8.34",
+        "version": "1.9.3",
         "core": {
             'operator': 'fomars',
             'artifacts_base_dir': './',
@@ -479,7 +547,7 @@ def test_setter(config, plugin, key, value):
     # configparser.read(config_file)
     # plugins_conf = {section: dict(configparser.items(section)) for section in configparser.sections()}
     # config = {
-    #     "version": "1.8.34",
+    #     "version": "1.9.3",
     #     "core": {
     #           'operator': 'fomars'
     #       },

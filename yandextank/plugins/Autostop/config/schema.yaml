@@ -1,8 +1,13 @@
 autostop:
+  description: list of autostop constraints
   type: list
   schema:
     type: string
+    description: autostop constraint
+    examples: {'http(4xx,50%,5)': 'stop when rate of 4xx http codes is 50% or more during 5 seconds'}
   default: []
+  examples: {'[quantile(50,100,20), http(4xx,50%,5)]': 'stop when either quantile 50% or 4xx http codes exceeds specified levels'}
 report_file:
+  description: path to file to store autostop report
   type: string
   default: autostop_report.txt

@@ -35,7 +35,15 @@ jobno_file:
   default: jobno_file.txt
 lock_targets:
   default: auto
-  type: string
+  description: targets to lock
+  values_description:
+    auto: automatically identify target host
+    list_of_targets: list of targets to lock
+  anyof:
+    - type: list
+    - type: string
+      allowed: [auto]
+  tutorial_link: http://yandextank.readthedocs.io
 log_data_requests:
   default: false
   type: boolean

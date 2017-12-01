@@ -6,7 +6,8 @@ import uuid
 import logging
 import pkg_resources
 import yaml
-from cerberus import Validator
+from cerberus.validator import Validator, InspectedValidator
+
 from yandextank.common.util import recursive_dict_update
 logger = logging.getLogger(__name__)
 
@@ -35,13 +36,24 @@ def load_py_schema(path):
 
 def load_plugin_schema(package):
     try:
-        return load_yaml_schema(pkg_resources.resource_filename(package, 'config/schema.yaml'))
+        return load_yaml_schema(
+            pkg_resources.resource_filename(
+                package, 'config/schema.yaml'))
     except IOError:
         try:
-            return load_py_schema(pkg_resources.resource_filename(package, 'config/schema.py'))
+            return load_py_schema(
+                pkg_resources.resource_filename(
+                    package, 'config/schema.py'))
         except ImportError:
-            logger.error("Could not find schema for %s (should be located in config/ directory of a plugin)", package)
+            logger.error(
+                "Could not find schema for %s (should be located in config/ directory of a plugin)",
+                package)
             raise IOError('No schema found for plugin %s' % package)
+    except ImportError:
+        if 'aggregator' in package.lower():
+            logger.warning('Plugin Aggregator is now deprecated, please remove this section from your config')
+            return load_yaml_schema(pkg_resources.resource_filename('yandextank.aggregator', 'config/schema.yaml'))
+        raise
 
 
 def load_schema(directory, filename=None):
@@ -51,7 +63,9 @@ def load_schema(directory, filename=None):
         try:
             return load_py_schema(directory)
         except ImportError:
-            raise IOError('Neither .yaml nor .py schema found in %s' % directory)
+            raise IOError(
+                'Neither .yaml nor .py schema found in %s' %
+                directory)
 
 
 class TankConfig(object):
@@ -61,11 +75,19 @@ class TankConfig(object):
         'cmdline': lambda: ' '.join(sys.argv)
     }
 
-    def __init__(self, configs, with_dynamic_options=True, core_section='core', error_output='validation_error.yaml'):
+    def __init__(
+            self,
+            configs,
+            with_dynamic_options=True,
+            core_section='core',
+            error_output='validation_error.yaml'):
         self._errors = None
         if not isinstance(configs, list):
             configs = [configs]
-        self.raw_config_dict = self.__load_multiple([config for config in configs if config is not None])
+        self.raw_config_dict = self.__load_multiple(
+            [config for config in configs if config is not None])
+        if self.raw_config_dict.get(core_section) is None:
+            self.raw_config_dict[core_section] = {}
         self.with_dynamic_options = with_dynamic_options
         self.CORE_SECTION = core_section
         self._validated = None
@@ -73,6 +95,7 @@ class TankConfig(object):
         self.ERROR_OUTPUT = error_output
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
         self.PLUGINS_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml'))
+        self.PatchedValidator = self.__get_patched_validator()
 
     def get_option(self, section, option):
         return self.validated[section][option]
@@ -87,9 +110,13 @@ class TankConfig(object):
             :rtype: list of tuple
         """
         if not self._plugins:
-            self._plugins = [(plugin_name, plugin_cfg['package'], plugin_cfg, self.__get_cfg_updater(plugin_name))
-                             for plugin_name, plugin_cfg in self.validated.items()
-                             if (plugin_name not in self.BASE_SCHEMA.keys()) and plugin_cfg['enabled']]
+            self._plugins = [
+                (plugin_name,
+                 plugin_cfg['package'],
+                    plugin_cfg,
+                    self.__get_cfg_updater(plugin_name)) for plugin_name,
+                plugin_cfg in self.validated.items() if (
+                    plugin_name not in self.BASE_SCHEMA.keys()) and plugin_cfg['enabled']]
         return self._plugins
 
     @property
@@ -115,25 +142,61 @@ class TankConfig(object):
         with open(filename, 'w') as f:
             yaml.dump(self.raw_config_dict, f)
 
+    @staticmethod
+    def __get_patched_validator():
+        # monkey-patch cerberus validator to allow description field
+        def _validate_description(self, description, field, value):
+            """ {'type': 'string'} """
+            pass
+
+        # monkey-patch cerberus validator to allow values descriptions field
+        def _validate_values_description(self, values_description, field, value):
+            """ {'type': 'dict'} """
+            pass
+
+        # monkey-patch cerberus validator to allow tutorial_link field
+        def _validate_tutorial_link(self, tutorial_link, field, value):
+            """ {'type': 'string'} """
+            pass
+
+        # monkey-patch cerberus validator to allow examples field
+        def _validate_examples(self, examples, field, value):
+            """ {'type': 'dict'} """
+            pass
+
+        Validator._validate_description = _validate_description
+        Validator._validate_values_description = _validate_values_description
+        Validator._validate_tutorial_link = _validate_tutorial_link
+        Validator._validate_examples = _validate_examples
+
+        return InspectedValidator('Validator', (Validator,), {})
+
     def __load_multiple(self, configs):
-        l = len(configs)
-        if l == 0:
+        configs_count = len(configs)
+        if configs_count == 0:
             return {}
-        elif l == 1:
+        elif configs_count == 1:
             return configs[0]
-        elif l == 2:
+        elif configs_count == 2:
             return recursive_dict_update(configs[0], configs[1])
         else:
-            return self.__load_multiple([recursive_dict_update(configs[0], configs[1])] + configs[2:])
+            return self.__load_multiple(
+                [recursive_dict_update(configs[0], configs[1])] + configs[2:])
 
     def __parse_enabled_plugins(self):
         """
         :returns: [(plugin_name, plugin_package, plugin_config), ...]
         :rtype: list of tuple
         """
-        return [(plugin_name, plugin['package'], plugin)
-                for plugin_name, plugin in self.raw_config_dict.items()
-                if (plugin_name not in self.BASE_SCHEMA.keys()) and isinstance(plugin, dict) and plugin.get('enabled')]
+        return [
+            (
+                plugin_name,
+                plugin['package'],
+                plugin) for plugin_name,
+            plugin in self.raw_config_dict.items() if (
+                plugin_name not in self.BASE_SCHEMA.keys()) and isinstance(
+                plugin,
+                dict) and plugin.get('enabled')]
 
     def __validate(self):
         core_validated = self.__validate_core()
@@ -155,7 +218,7 @@ class TankConfig(object):
         return core_validated
 
     def __validate_core(self):
-        v = Validator(self.BASE_SCHEMA, allow_unknown=self.PLUGINS_SCHEMA)
+        v = self.PatchedValidator(allow_unknown=self.PLUGINS_SCHEMA)
         result = v.validate(self.raw_config_dict, self.BASE_SCHEMA)
         if not result:
             errors = v.errors
@@ -164,11 +227,12 @@ class TankConfig(object):
                     errors[key] = ['unknown field']
             raise ValidationError(errors)
         normalized = v.normalized(self.raw_config_dict)
-        return self.__set_core_dynamic_options(normalized) if self.with_dynamic_options else normalized
+        return self.__set_core_dynamic_options(
+            normalized) if self.with_dynamic_options else normalized
 
     def __validate_plugin(self, config, schema):
         schema.update(self.PLUGINS_SCHEMA['schema'])
-        v = Validator(schema, allow_unknown=False)
+        v = self.PatchedValidator(schema, allow_unknown=False)
         # .validate() makes .errors as side effect if there's any
         if not v.validate(config):
             raise ValidationError(v.errors)
@@ -177,7 +241,10 @@ class TankConfig(object):
 
     def __set_core_dynamic_options(self, config):
         for option, setter in self.DYNAMIC_OPTIONS.items():
-            config[self.CORE_SECTION][option] = setter()
+            try:
+                config[self.CORE_SECTION][option] = setter()
+            except KeyError:
+                config[self.CORE_SECTION] = {option: setter()}
         return config
 
     def __get_cfg_updater(self, plugin_name):

@@ -3,7 +3,7 @@ import sys
 import traceback
 from optparse import OptionParser
 
-from .consoleworker import ConsoleTank, CompletionHelperOptionParser
+from yandextank.core.consoleworker import ConsoleTank, CompletionHelperOptionParser
 
 
 def main():
@@ -80,8 +80,8 @@ def main():
     completion_helper = CompletionHelperOptionParser()
     completion_helper.handle_request(parser)
 
-    options, ammofile = parser.parse_args()
-
+    options, ammofiles = parser.parse_args()
+    ammofile = ammofiles[0] if len(ammofiles) > 0 else None
     worker = ConsoleTank(options, ammofile)
     try:
         worker.configure()

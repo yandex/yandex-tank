@@ -4,26 +4,27 @@ import logging
 import subprocess
 import time
 
-from ...common.interfaces import AbstractPlugin, \
-    AbstractInfoWidget, GeneratorPlugin
-
+from yandextank.common.resource import manager as resource_manager
 from .reader import PandoraStatsReader
-from ..Aggregator import Plugin as AggregatorPlugin
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ..Phantom import PhantomReader
+from ...common.interfaces import AbstractPlugin, \
+    AbstractInfoWidget, GeneratorPlugin
 
 logger = logging.getLogger(__name__)
 
 
 class Plugin(AbstractPlugin, GeneratorPlugin):
-    '''    Pandora load generator plugin    '''
+    """    Pandora load generator plugin    """
 
     OPTION_CONFIG = "config"
     SECTION = "pandora"
 
     def __init__(self, core, cfg, cfg_updater):
         super(Plugin, self).__init__(core, cfg, cfg_updater)
+        self.stats_reader = None
+        self.reader = None
         self.buffered_seconds = 2
         self.enum_ammo = False
         self.process = None
@@ -53,7 +54,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             pass
         self.core.add_artifact_file(self.sample_log)
 
-        config_content = self.get_option("config_content")
+        config_content = self.patch_config(self.get_option("config_content"))
         if len(config_content) > 0:
             self.pandora_config_file = self.core.mkstemp(
                 ".json", "pandora_config_")
@@ -76,20 +77,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 with open(self.pandora_config_file, 'wb') as config_file:
                     config_file.write(config_content)
 
+    def get_reader(self):
+        if self.reader is None:
+            self.reader = PhantomReader(self.sample_log)
+        return self.reader
+
+    def get_stats_reader(self):
+        if self.stats_reader is None:
+            self.stats_reader = PandoraStatsReader(self.expvar)
+        return self.stats_reader
+
     def prepare_test(self):
-        aggregator = None
-        try:
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-        except KeyError as ex:
-            logger.warning("No aggregator found: %s", ex)
-
-        if aggregator:
-            logger.info(
-                "Linking sample and stats readers to aggregator. Reading samples from %s",
-                self.sample_log)
-            aggregator.reader = PhantomReader(self.sample_log)
-            aggregator.stats_reader = PandoraStatsReader(self.expvar)
-
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
         except KeyError as ex:
@@ -99,8 +97,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         if console:
             widget = PandoraInfoWidget(self)
             console.add_info_widget(widget)
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
-            aggregator.add_result_listener(widget)
+            self.core.job.aggregator.add_result_listener(widget)
 
     def start_test(self):
         args = [self.pandora_cmd, "-expvar", self.pandora_config_file]
@@ -133,6 +130,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         else:
             logger.debug("Seems subprocess finished OK")
         return retcode
+
+    @staticmethod
+    def patch_config(config):
+        """
+        download remote resources, replace links with local filenames
+        :param dict config: pandora config
+        """
+        for pool in config['pools']:
+            if 'file' in pool.get('ammo', {}):
+                pool['ammo']['file'] = resource_manager.resource_filename(pool['ammo']['file'])
+        return config
 
 
 class PandoraInfoWidget(AbstractInfoWidget):

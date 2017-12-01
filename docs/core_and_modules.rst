@@ -181,14 +181,13 @@ Basic options
   Limit request number.
 
 :autocases:
-  Enable marking requests automatically.
+  Enable marking requests automatically. ``autocases = 2`` means 2 uri path elements will be used. I.e ``/hello/world/please/help`` will produce case ``_hello_world``
 
-  Available options: 1 -- enable, 0 -- disable).
 
 :chosen_cases:
   Use only selected cases.
 
-There are 3 ways to constrain requests number: by schedule with ``rps_schedule``, by requests number with ``ammo_limit`` or by loop number with ``loop`` option. Tank stops if any constrain is reached. If stop reason is reached ``ammo_limit`` or ``loop`` it will be mentioned in log file. In test without ``rps_schedule`` file with requests is used one time by default.
+There are 3 ways to constrain requests number: by schedule with ``rps_schedule``, by requests number with ``ammo_limit`` or by loop number with ``loop`` option. Tank stops if any constraint is reached. If stop reason is reached ``ammo_limit`` or ``loop`` it will be mentioned in log file. In test without ``rps_schedule`` file with requests is used one time by default.
 
 Additional options
 ^^^^^^^^^^^^^^^^^^
@@ -488,7 +487,7 @@ Options
   They will be passed as User Defined Variables to JMeter.
 
 Timing calculation issues
------------------------
+-------------------------
 
 Since version 2.13 jmeter could measure connection time, latency and full request time (aka <interval_real> in phantom), but do it in it's own uniq way: latency include connection time but not recieve time. For the sake of consistency we recalculate <latency> as <latency - connect_time> and calculate <recieve_time> as <interval_real - latency - connect_time>>, but it does not guranteed to work perfectly in all cases (i.e. some samplers may not support latency and connect_time and you may get something strange in case of timeouts).
 
@@ -618,7 +617,7 @@ How it works
 .. image:: ./pic/tank-bfg.png
 
 BFG Worker Type
------------
+---------------
 By default, BFG will create lots of processes (number is defined by ``instances`` option).
 Every process will execute requests in a single thread. These processes will comsume a lot of memory.
 It's also possible to switch this behavior and use ``gevent`` to power up every worker process,
@@ -664,7 +663,7 @@ INI file section: **[bfg]**
   
 
 Ultimate Gun Options
-------------------
+--------------------
 
 gun_type = **ultimate**
 
@@ -752,7 +751,7 @@ Disable phantom first (unless you really want to keep it active alongside at you
           "AmmoLimit": 10000000
         },
         "result": {
-          "type": "log/phout",
+          "type": "phout",
           "destination": "./phout.log"
         },
         "shared-limits": false,
@@ -844,8 +843,8 @@ Options
 :job_dsc:
   (Optional) Description of a job to be displayed in Yandex.Overload
 
-Example:
-::
+Example::
+
   [tank]
   ; plugin is disabled by default, enable it:
   plugin_uploader=yandextank.plugins.DataUploader overload
@@ -1151,7 +1150,17 @@ List of metrics group names and particular metrics in them:
     * measure - default: call - metric value is a command or script execution output. Example: `<Custom measure="call" diff="1" label="Base size">du -s /var/lib/mysql/ | awk '{print $1}'</Custom>`
 * TelegrafRaw
     * raw telegraf TOML format, transparently added to final collector config 
-* Source additional source file in telegraf json format, can be used to add custom metrics that needs complex processing and do not fit into standart custom metrics (like log parsing with aggregation)
+* Source
+    * additional source file in telegraf json format, can be used to add custom metrics that needs complex processing and do not fit into standart custom metrics (like log parsing with aggregation). Custom metrics do not include timestamps but source does. You can import async data with Source.
+
+    Config Host section example:
+    ``<Source>/path/to/file</Source>``
+
+    File format: `jsonline`. Each line is a json document.
+
+    Example:
+    ``{"fields":{"metric_name_1":0,"metric_name_2":98.27694231863998,},"name":"custom_group-name","timestamp":1503990965}``
+
 
 
 Console on-line screen

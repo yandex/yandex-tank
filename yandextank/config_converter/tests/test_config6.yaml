@@ -26,10 +26,6 @@ jmeter:
     auth: 'false'
     ammo: /home/f2nd/smtp/mulca4fix128kb.ammo
     users: users.devnull.csv
-aggregator:
-  package: yandextank.plugins.Aggregator
-  enabled: true
-  verbose_histogram: true
 uploader:
   package: yandextank.plugins.DataUploader
   enabled: true
@@ -38,7 +34,8 @@ uploader:
   api_timeout: 1
   job_name: Hello kitty
   job_dsc: hell of a kitty
-  lock_targets: foo.bar
+  lock_targets:
+    - foo.bar
   log_other_requests: true
   maintenance_timeout: 5
   network_attempts: 2

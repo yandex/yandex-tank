@@ -1,9 +1,11 @@
 allow_unknown: true
 schema:
   enabled:
+    description: enable/disable the execution of the plugin
     type: boolean
     required: true
   package:
+    description: plugin\'s python package
     empty: false
     regex: '[^/]+'
     required: true

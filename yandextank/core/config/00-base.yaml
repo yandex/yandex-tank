@@ -1,6 +1,3 @@
-aggregator:
-  enabled: true
-  package: yandextank.plugins.Aggregator
 android:
   enabled: false
   package: yandextank.plugins.Android
@@ -40,3 +37,6 @@ rcassert:
 overload:
   enabled: false
   package: yandextank.plugins.DataUploader
+influx:
+  enabled: false
+  package: yandextank.plugins.Influx

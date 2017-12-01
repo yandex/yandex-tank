@@ -10,7 +10,7 @@ import json
 import threading
 import time
 
-from optparse import OptionParser
+from argparse import ArgumentParser
 import Queue as q
 
 logger = logging.getLogger("agent")
@@ -125,7 +125,7 @@ class Consolidator(object):
                     source,
                     chunk,
                     exc_info=True)
-            except:
+            except BaseException:
                 logger.error(
                     'Something nasty happend in consolidator work',
                     exc_info=True)
@@ -142,7 +142,8 @@ class Consolidator(object):
                 if len(self.results) > 2:
                     logger.debug(
                         'Now in buffer: %s', [i for i in self.results.keys()])
-                    dump_seconds = sorted([i for i in self.results.keys()])[:-2]
+                    dump_seconds = sorted(
+                        [i for i in self.results.keys()])[:-2]
                     for ready_second in dump_seconds:
                         yield json.dumps({
                             ready_second: self.results.pop(ready_second, None)
@@ -196,13 +197,13 @@ class AgentWorker(threading.Thread):
         self.results_err = q.Queue()
 
     @staticmethod
-    def popen(cmnd):
+    def __popen(cmnd, shell=False):
         return subprocess.Popen(
             cmnd,
             bufsize=0,
             preexec_fn=os.setsid,
             close_fds=True,
-            shell=True,
+            shell=shell,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE, )
@@ -226,12 +227,13 @@ class AgentWorker(threading.Thread):
             if config.has_section('source'):
                 for option in config.options('source'):
                     if option.startswith('file'):
-                        self.custom_sources.append(config.get('source', option))
+                        self.custom_sources.append(
+                            config.get('source', option))
             logger.info(
                 'Successfully loaded startup config.\n'
                 'Startups: %s\n'
                 'Shutdowns: %s\n', self.startups, self.shutdowns)
-        except:
+        except BaseException:
             logger.error(
                 'Error trying to read agent startup config', exc_info=True)
 
@@ -239,14 +241,17 @@ class AgentWorker(threading.Thread):
         logger.info("Running startup commands")
         for cmnd in self.startups:
             logger.debug("Run: %s", cmnd)
-            proc = self.popen(cmnd)
+            # fixme: shell=True is insecure, should save startup script and
+            # launch directly
+            proc = self.__popen(cmnd, shell=True)
             logger.info('Started with pid %d', proc.pid)
             self.startup_processes.append(proc)
 
         logger.info('Starting metrics collector..')
-        cmnd = "{telegraf} -config {working_dir}/agent.cfg".format(
-            telegraf=self.telegraf_path, working_dir=self.working_dir)
-        self.collector = self.popen(cmnd)
+        # todo: add identificators into {} for python 2.6
+        args = [self.telegraf_path, '-config',
+                '{0}/agent.cfg'.format(self.working_dir)]
+        self.collector = self.__popen(cmnd=args)
         logger.info('Started with pid %d', self.collector.pid)
 
         telegraf_output = self.working_dir + '/monitoring.rawdata'
@@ -288,7 +293,7 @@ class AgentWorker(threading.Thread):
                     sys.stdout.flush()
                 except q.Empty:
                     break
-                except:
+                except BaseException:
                     logger.error(
                         'Something nasty happend trying to send data',
                         exc_info=True)
@@ -354,6 +359,20 @@ class AgentWorker(threading.Thread):
         sys.stderr.write('stopped\n')
 
 
+def kill_old_agents(telegraf_path):
+    my_pid = os.getpid()
+    parent = os.getppid()
+    logger.info('My pid: {0} Parent pid: {1}'.format(my_pid, parent))
+    ps_output = subprocess.check_output(['ps', 'aux'])
+    for line in ps_output.splitlines():
+        if telegraf_path in line:
+            pid = int(line.split()[1])
+            logger.info('Found pid: {0}'.format(pid))
+            if pid not in [my_pid, parent]:
+                logger.info('Killing process {0}:\n{1}'.format(pid, line))
+                os.kill(pid, signal.SIGKILL)
+
+
 def main():
     fname = os.path.dirname(__file__) + "/_agent.log"
     logging.basicConfig(
@@ -361,23 +380,30 @@ def main():
         filename=fname,
         format='%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(message)s')
 
-    parser = OptionParser()
-    parser.add_option(
-        "",
+    parser = ArgumentParser()
+    parser.add_argument(
         "--telegraf",
         dest="telegraf_path",
         help="telegraf_path",
         default="/tmp/telegraf")
-    parser.add_option(
-        "",
+    parser.add_argument(
         "--host",
         dest="hostname_path",
         help="telegraf_path",
         default="/usr/bin/telegraf")
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        "-k", "--kill-old",
+        action="store_true",
+        dest="kill_old"
+    )
+    options = parser.parse_args()
 
     logger.info('Init')
     customs_script = os.path.dirname(__file__) + '/agent_customs.sh'
+    # todo: deprecate
+    if options.kill_old:
+        kill_old_agents(options.telegraf_path)
+
     try:
         logger.info(
             'Trying to make telegraf executable: %s', options.telegraf_path)
@@ -412,7 +438,7 @@ def main():
             logger.info("Stdin cmd received: %s", cmd)
     except KeyboardInterrupt:
         logger.debug("Interrupted")
-    except:
+    except BaseException:
         logger.error(
             "Something nasty happened while waiting for stop", exc_info=True)
     worker.finished = True
@@ -430,7 +456,7 @@ def main():
                 agent_finished = True
             else:
                 agent_finished = True
-        except:
+        except BaseException:
             logger.info(
                 "Something nasty happened while waiting for worker shutdown",
                 exc_info=True)

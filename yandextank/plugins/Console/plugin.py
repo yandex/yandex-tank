@@ -4,10 +4,8 @@ import sys
 import threading
 import traceback
 
-from ...common.interfaces import AbstractPlugin, AggregateResultListener
-
 from .screen import Screen
-from ..Aggregator import Plugin as AggregatorPlugin
+from ...common.interfaces import AbstractPlugin, AggregateResultListener
 
 LOG = logging.getLogger(__name__)
 
@@ -51,7 +49,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         self.screen = Screen(self.info_panel_width, self.console_markup)
 
         try:
-            aggregator = self.core.get_plugin_of_type(AggregatorPlugin)
+            aggregator = self.core.job.aggregator
             aggregator.add_result_listener(self)
         except KeyError:
             LOG.debug("No aggregator for console")

@@ -11,7 +11,7 @@ from yandextank.validator.validator import load_plugin_schema, load_yaml_schema
 logger = logging.getLogger(__name__)
 CORE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
 
-DEPRECATED_SECTIONS = ['lunaport']
+DEPRECATED_SECTIONS = ['lunaport', 'aggregator']
 
 
 def old_plugin_mapper(package):
@@ -41,11 +41,14 @@ SECTIONS_PATTERNS = {
     'JMeter': 'jmeter',
     'ResourceCheck': 'rcheck',
     'ShellExec': 'shell_?exec',
+    'ShootExec': 'shoot_?exec',
     'Console': 'console',
     'TipsAndTricks': 'tips',
     'RCAssert': 'rcassert',
     'JsonReport': 'json_report|jsonreport',
     'Pandora': 'pandora',
+    'Influx': 'influx',
+
 }
 
 
@@ -179,6 +182,9 @@ class Option(object):
         },
         'Autostop': {
             'autostop': lambda k, v: {k: re.findall('\w+\(.+?\)', v)}
+        },
+        'DataUploader': {
+            'lock_targets': lambda k, v: {k: v.strip().split() if v != 'auto' else v}
         }
     }
     CONVERTERS_FOR_UNKNOWN = {
@@ -393,6 +399,7 @@ class PluginInstance(object):
             'RCAssert': 'rcassert',
             'ResourceCheck': 'rcheck',
             'ShellExec': 'shellexec',
+            'ShootExec': 'shootexec',
             'SvgReport': 'svgreport',
             'Telegraf': 'telegraf',
             'TipsAndTricks': 'tips'
@@ -410,8 +417,10 @@ def enable_sections(sections, core_opts):
 
     :type sections: list of Section
     """
+    DEPRECATED_PLUGINS = ['yandextank.plugins.Aggregator', 'Tank/Plugins/Aggregator.py']
+
     plugin_instances = [PluginInstance(key.split('_')[1], value) for key, value in core_opts if
-                        key.startswith(PLUGIN_PREFIX)]
+                        key.startswith(PLUGIN_PREFIX) and value not in DEPRECATED_PLUGINS]
     enabled_instances = {instance.section_name: instance for instance in plugin_instances if instance.enabled}
     disabled_instances = {instance.section_name: instance for instance in plugin_instances if not instance.enabled}
 
@@ -479,6 +488,7 @@ def convert_ini(ini_file):
                       for key, value in without_defaults(cfg_ini, CORE_SECTION_OLD)
                       if not key.startswith(PLUGIN_PREFIX)])
     })
+    logger.info('Converted config:\n{}'.format(yaml.dump(plugins_cfg_dict)))
     return plugins_cfg_dict
 
 

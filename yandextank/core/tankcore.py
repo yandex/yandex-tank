@@ -29,7 +29,7 @@ from yandextank.validator.validator import TankConfig
 from ..common.util import update_status, execute, pid_exists
 
 from ..common.resource import manager as resource
-from ..plugins.Aggregator import Plugin as AggregatorPlugin
+from yandextank.aggregator import TankAggregator
 from ..plugins.Telegraf import Plugin as TelegrafPlugin
 
 if sys.version_info[0] < 3:
@@ -47,17 +47,21 @@ class Job(object):
     def __init__(
             self,
             monitoring_plugin,
-            aggregator_plugin,
+            aggregator,
             tank,
             generator_plugin=None):
+        """
+
+        :type aggregator: TankAggregator
+        """
         self.monitoring_plugin = monitoring_plugin
-        self.aggregator_plugin = aggregator_plugin
+        self.aggregator = aggregator
         self.tank = tank
         self._phantom_info = None
         self.generator_plugin = generator_plugin
 
     def subscribe_plugin(self, plugin):
-        self.aggregator_plugin.add_result_listener(plugin)
+        self.aggregator.add_result_listener(plugin)
         try:
             self.monitoring_plugin.monitoring.add_listener(plugin)
         except AttributeError:
@@ -235,21 +239,17 @@ class TankCore(object):
             except KeyError:
                 logger.debug("Telegraf plugin not found:", exc_info=True)
                 mon = None
-            # aggregator plugin
-            try:
-                aggregator = self.get_plugin_of_type(AggregatorPlugin)
-            except KeyError:
-                logger.warning("Aggregator plugin not found:", exc_info=True)
-                aggregator = None
             # generator plugin
             try:
                 gen = self.get_plugin_of_type(GeneratorPlugin)
+                # aggregator
             except KeyError:
                 logger.warning("Load generator not found:", exc_info=True)
-                gen = None
+                gen = GeneratorPlugin()
+            aggregator = TankAggregator(gen)
             self._job = Job(monitoring_plugin=mon,
-                            aggregator_plugin=aggregator,
                             generator_plugin=gen,
+                            aggregator=aggregator,
                             tank=socket.getfqdn())
         return self._job
 
@@ -277,6 +277,7 @@ class TankCore(object):
         """        Call start_test() on all plugins        """
         logger.info("Starting test...")
         self.publish("core", "stage", "start")
+        self.job.aggregator.start_test()
         for plugin in self.plugins.values():
             logger.debug("Starting %s", plugin)
             start_time = time.time()
@@ -297,6 +298,9 @@ class TankCore(object):
 
         while not self.interrupted:
             begin_time = time.time()
+            aggr_retcode = self.job.aggregator.is_test_finished()
+            if aggr_retcode >= 0:
+                return aggr_retcode
             for plugin in self.plugins.values():
                 logger.debug("Polling %s", plugin)
                 retcode = plugin.is_test_finished()
@@ -315,12 +319,14 @@ class TankCore(object):
         """        Call end_test() on all plugins        """
         logger.info("Finishing test...")
         self.publish("core", "stage", "end")
-
-        for plugin in self.plugins.values():
+        logger.info("Stopping load generator and aggregator")
+        retcode = self.job.aggregator.end_test(retcode)
+        logger.debug("RC after: %s", retcode)
+        for plugin in [p for p in self.plugins.values() if p is not self.job.generator_plugin]:
             logger.debug("Finalize %s", plugin)
             try:
                 logger.debug("RC before: %s", retcode)
-                plugin.end_test(retcode)
+                retcode = plugin.end_test(retcode)
                 logger.debug("RC after: %s", retcode)
             except Exception as ex:
                 logger.error("Failed finishing plugin %s: %s", plugin, ex)

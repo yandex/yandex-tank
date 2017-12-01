@@ -1,0 +1,9 @@
+"\e[A": history-search-backward
+"\e[B": history-search-forward
+"\e[1;5C": shell-forward-word
+"\e[1;5D": shell-backward-word
+set completion-ignore-case On
+set completion-query-items 300
+set show-all-if-ambiguous On
+set skip-completed-text On
+

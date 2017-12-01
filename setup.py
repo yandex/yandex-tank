@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='1.9.0',
+    version='1.9.4',
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -17,10 +17,10 @@ analytic tools for the results they produce.
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
         'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
-        'pandas>=0.18.0', 'numpy>=1.11.0', 'future>=0.16.0',
+        'pandas>=0.18.0', 'numpy>=1.12.1', 'future>=0.16.0',
         'pip>=8.1.2',
         'matplotlib>=1.5.3', 'seaborn>=0.7.1',
-        'pyyaml>=3.12', 'cerberus>=1.1'
+        'pyyaml>=3.12', 'cerberus>=1.1', 'influxdb>=5.0.0',
     ],
     setup_requires=[
         'pytest-runner', 'flake8',
@@ -48,13 +48,14 @@ analytic tools for the results they produce.
         'console_scripts': [
             'yandex-tank = yandextank.core.cli:main',
             'yandex-tank-check-ssh = yandextank.common.util:check_ssh_connection',
-            'tank-postloader = yandextank.plugins.DataUploader.cli:post_loader'
+            'tank-postloader = yandextank.plugins.DataUploader.cli:post_loader',
+            'tank-docs-gen = yandextank.validator.docs_gen:main'
         ],
     },
     package_data={
         'yandextank.api': ['config/*'],
         'yandextank.core': ['config/*'],
-        'yandextank.plugins.Aggregator': ['config/*'],
+        'yandextank.aggregator': ['config/*'],
         'yandextank.plugins.Android': ['binary/*', 'config/*'],
         'yandextank.plugins.Appium': ['config/*'],
         'yandextank.plugins.Autostop': ['config/*'],
@@ -63,6 +64,7 @@ analytic tools for the results they produce.
         'yandextank.plugins.Console': ['config/*'],
         'yandextank.plugins.DataUploader': ['config/*'],
         'yandextank.plugins.GraphiteUploader': ['config/*'],
+        'yandextank.plugins.Influx': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],
         'yandextank.plugins.JsonReport': ['config/*'],
         'yandextank.plugins.Monitoring': ['config/*'],
@@ -71,6 +73,7 @@ analytic tools for the results they produce.
         'yandextank.plugins.RCAssert': ['config/*'],
         'yandextank.plugins.ResourceCheck': ['config/*'],
         'yandextank.plugins.ShellExec': ['config/*'],
+        'yandextank.plugins.ShootExec': ['config/*'],
         'yandextank.plugins.Telegraf': ['config/*'],
         'yandextank.plugins.TipsAndTricks': ['config/*'],
     },

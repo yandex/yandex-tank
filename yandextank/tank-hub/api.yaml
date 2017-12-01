@@ -1,9 +1,9 @@
 swagger: '2.0'
 
 info:
-  title: Master Tank
-  version: "0.1"
-  description: Master tank receives tasks and schedules them for tank-agents
+  title: Tank Validator
+  version: "0.2"
+  description: Validates tank configs
 
 # schemes:
   # - https

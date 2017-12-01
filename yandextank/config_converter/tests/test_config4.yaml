@@ -1,4 +1,3 @@
-aggregator: {package: yandextank.plugins.Aggregator}
 core: {}
 phantom:
   address: '[bar.example.net]:443'
@@ -13,7 +12,10 @@ telegraf: {config: monitoring.xml, package: yandextank.plugins.Telegraf}
 uploader:
   component: 'air_tickets_search [imbalance]'
   job_name: '[regress] air_tickets_search imbalance'
-  lock_targets: foo.example.net bar.example.net foobar.example.net
+  lock_targets:
+    - foo.example.net
+    - bar.example.net
+    - foobar.example.net
   package: yandextank.plugins.DataUploader
   task: RASPTICKETS-2579
   meta:

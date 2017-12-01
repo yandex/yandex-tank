@@ -42,7 +42,9 @@ class Plugin(AbstractPlugin):
         self.default_config = "{path}/config/monitoring_default_config.xml".format(
             path=os.path.dirname(__file__))
         self.process = None
-        self.monitoring = MonitoringCollector(disguise_hostnames=self.get_option('disguise_hostnames'))
+        self.monitoring = MonitoringCollector(
+            disguise_hostnames=self.get_option('disguise_hostnames'),
+            kill_old=self.get_option('kill_old'))
         self.die_on_fail = True
         self.data_file = None
         self.mon_saver = None
@@ -98,7 +100,7 @@ class Plugin(AbstractPlugin):
                 is_telegraf_dt = None
             try:
                 is_monitoring_dt = self.core.get_option('monitoring')
-            except:
+            except BaseException:
                 is_monitoring_dt = None
             if is_telegraf_dt and is_monitoring_dt:
                 raise ValueError(
@@ -201,7 +203,7 @@ class Plugin(AbstractPlugin):
                 time.sleep(0.2)
                 self.monitoring.poll()
                 count += 1
-        except:
+        except BaseException:
             logger.error("Could not start monitoring", exc_info=True)
             if self.die_on_fail:
                 raise
@@ -224,6 +226,9 @@ class Plugin(AbstractPlugin):
             self.monitoring.send_rest_data()
         if self.mon_saver:
             self.mon_saver.close()
+        return retcode
+
+    def post_process(self, retcode):
         return retcode
 
 
@@ -326,8 +331,8 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
             for hostname, metrics in self.data.items():
                 tm_stamp = datetime.datetime.fromtimestamp(
                     float(self.time[hostname])).strftime('%H:%M:%S')
-                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET +
-                        " at %s:\n") % (hostname, tm_stamp)
+                res += ("   " + screen.markup.CYAN + "%s" +
+                        screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
