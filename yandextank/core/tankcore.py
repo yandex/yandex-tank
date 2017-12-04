@@ -244,7 +244,7 @@ class TankCore(object):
                 gen = self.get_plugin_of_type(GeneratorPlugin)
                 # aggregator
             except KeyError:
-                logger.warning("Load generator not found:", exc_info=True)
+                logger.warning("Load generator not found")
                 gen = GeneratorPlugin()
             aggregator = TankAggregator(gen)
             self._job = Job(monitoring_plugin=mon,
