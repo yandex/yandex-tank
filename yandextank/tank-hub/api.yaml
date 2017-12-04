@@ -1,0 +1,44 @@
+swagger: '2.0'
+
+info:
+  title: Tank Validator
+  version: "0.2"
+  description: Validates tank configs
+
+# schemes:
+  # - https
+
+basePath: /
+
+paths:
+  /config/validate:
+    post:
+      operationId: api.validate_config
+      # summary: returns list of validation errors
+      # consumes: ""
+      parameters:
+        - name: config
+          in: formData
+          type: file
+          required: true
+        - name: fmt
+          in: query
+          required: true
+          type: string
+          enum:
+            - ini
+            - yaml
+      consumes: ["text/*", "multipart-form/file"]
+      responses:
+        '200':
+          description: validation info
+          schema:
+            type: object
+            properties:
+              config:
+                type: object
+                description: resulting config (accounting local tank configuration)
+              errors:
+                type: array
+                items:
+                  type: object
