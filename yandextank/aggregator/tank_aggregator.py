@@ -4,7 +4,6 @@ import logging
 
 import queue as q
 from pkg_resources import resource_string
-from yandextank.common.exceptions import PluginImplementationError
 
 from .aggregator import Aggregator, DataPoller
 from .chopper import TimeChopper
