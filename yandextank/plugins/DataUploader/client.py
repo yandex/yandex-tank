@@ -11,6 +11,7 @@ import requests
 import logging
 
 from requests.exceptions import ConnectionError, Timeout
+from urllib3.exceptions import ProtocolError
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
@@ -188,7 +189,7 @@ class APIClient(object):
             try:
                 response = self.__send_single_request(request, ids.next(), trace=trace)
                 return response_callback(response)
-            except (Timeout, ConnectionError):
+            except (Timeout, ConnectionError, ProtocolError):
                 logger.warn(traceback.format_exc())
                 try:
                     timeout = next(network_timeouts)
