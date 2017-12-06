@@ -150,14 +150,11 @@ class RealConsoleMarkup(object):
     BG_CYAN = '\033[1;46m'
 
     def get_markup_vars(self):
-        result = []
-        for val in [
+        return [
             self.YELLOW, self.RED, self.RESET, self.CYAN, self.BG_MAGENTA,
             self.WHITE, self.BG_GREEN, self.GREEN, self.BG_BROWN,
             self.RED_DARK, self.MAGENTA, self.BG_CYAN
-        ]:
-            result.append(val)
-        return result
+        ]
 
     def clean_markup(self, orig_str):
         ''' clean markup from string '''
