@@ -26,15 +26,18 @@ DATA_LOG = 'test_data.log'
 MONITORING_LOG = 'monitoring.log'
 SECTION = 'meta'
 
-logger = logging.getLogger('')
-logger.setLevel(logging.DEBUG)
-handler = logging.StreamHandler(stream=sys.stdout)
-handler.setLevel(logging.INFO)
-logger.addHandler(handler)
-verbose_handler = logging.FileHandler(
-    datetime.now().strftime("post_loader_%Y-%m-%d_%H-%M-%S.log"), 'w')
-verbose_handler.setLevel(logging.DEBUG)
-logger.addHandler(verbose_handler)
+
+def get_logger():
+    global logger
+    logger = logging.getLogger('')
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(stream=sys.stdout)
+    handler.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    verbose_handler = logging.FileHandler(
+        datetime.now().strftime("post_loader_%Y-%m-%d_%H-%M-%S.log"), 'w')
+    verbose_handler.setLevel(logging.DEBUG)
+    logger.addHandler(verbose_handler)
 
 
 def from_tank_config(test_dir):
@@ -139,6 +142,7 @@ def post_loader():
                         help='Directory containing test artifacts')
     args = parser.parse_args()
     assert os.path.exists(args.test_dir), 'Directory {} not found'.format(args.test_dir)
+    get_logger()
     # load cfg
     if args.config:
         with open(args.config) as f:
