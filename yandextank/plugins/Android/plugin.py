@@ -2,7 +2,7 @@ import logging
 import time
 
 import requests
-from yandextank.plugins.Overload.client import OverloadClient
+from yandextank.plugins.DataUploader.client import APIClient
 
 from .reader import AndroidReader, AndroidStatsReader
 from ...common.interfaces import AbstractPlugin, GeneratorPlugin
@@ -88,8 +88,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         return retcode
 
     def link_jobs(self, url, jobno, mobile_key):
-        api_client = OverloadClient()
-        api_client.set_api_address(url)
+        api_client = APIClient()
+        api_client.base_url = url
         api_client.session.verify = False
 
         addr = "/api/job/{jobno}/edit.json".format(jobno=jobno)
@@ -98,18 +98,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         }
 
         logger.info("Jobs link request: url = %s, data = %s", url + addr, data)
-        while True:
-            try:
-                response = api_client.post(addr, data)
-                return response
-            except requests.exceptions.HTTPError as ex:
-                logger.debug("Got error for jobs link request: %s", ex)
-                if ex.response.status_code == 423:
-                    logger.warn(
-                        "Overload is under maintenance, will retry in 5s...")
-                    time.sleep(5)
-                else:
-                    raise ex
+        response = api_client.__post(addr, data)
+        return response
 
     def get_info(self):
         return AndroidInfo()
