@@ -218,3 +218,6 @@ class GeneratorPlugin(object):
         :rtype: collections.Iterable
         """
         pass
+
+    def end_test(self, retcode):
+        pass
