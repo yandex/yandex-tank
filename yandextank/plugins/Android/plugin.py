@@ -1,9 +1,6 @@
 import logging
-import time
 
-import requests
-from yandextank.plugins.DataUploader.client import APIClient
-
+from ..DataUploader import Plugin as DataUploaderPlugin
 from .reader import AndroidReader, AndroidStatsReader
 from ...common.interfaces import AbstractPlugin, GeneratorPlugin
 
@@ -22,6 +19,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def __init__(self, core, cfg, cfg_updater):
         self.stats_reader = None
         self.reader = None
+        self.core = core
         try:
             super(Plugin, self).__init__(core, cfg, cfg_updater)
             self.device = None
@@ -73,33 +71,17 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def end_test(self, retcode):
         self.volta_core.end_test()
-
-        mobile_key = self.volta_core.uploader.jobno
-        logger.info("Mobile jobno: %s", mobile_key)
-
-        jobno = self.core.status['uploader']['job_no']
-        logger.info("Simple jobno: %s", jobno)
-
-        web_link = self.core.status['uploader']['web_link']
-        url = web_link.replace(str(jobno), '')
-        logger.info("Url: %s", url)
-
-        self.link_jobs(url, jobno, mobile_key)
+        uploaders = self.core.get_plugin_of_type(DataUploaderPlugin)
+        for uploader in uploaders:
+            response = uploader.lp_job.link_mobile_job(
+                lp_key=uploader.lp_job.number,
+                mobile_key=self.volta_core.uploader.jobno
+            )
+            logger.info(
+                'Linked mobile job %s to %s for plugin: %s. Response: %s',
+                self.volta_core.uploader.jobno, uploader.lp_job.number, uploader.backend_type, response
+            )
         return retcode
-
-    def link_jobs(self, url, jobno, mobile_key):
-        api_client = APIClient()
-        api_client.base_url = url
-        api_client.session.verify = False
-
-        addr = "/api/job/{jobno}/edit.json".format(jobno=jobno)
-        data = {
-            'mobile_key': mobile_key
-        }
-
-        logger.info("Jobs link request: url = %s, data = %s", url + addr, data)
-        response = api_client.__post(addr, data)
-        return response
 
     def get_info(self):
         return AndroidInfo()

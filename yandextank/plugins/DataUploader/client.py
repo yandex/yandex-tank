@@ -612,9 +612,17 @@ class APIClient(object):
         addr = "api/job/%s/configinfo.txt" % jobno
         self.__post_raw(addr, {"configinfo": config}, trace=trace)
 
+    def link_mobile_job(self, lp_key, mobile_key):
+        addr = "/api/job/{jobno}/edit.json".format(jobno=lp_key)
+        data = {
+            'mobile_key': mobile_key
+        }
+        response = self.__post(addr, data)
+        return response
+
 
 class OverloadClient(APIClient):
-
+    """ mocks below for nonexistent backend methods """
     def send_status(self, jobno, upload_token, status, trace=False):
         return
 
@@ -622,4 +630,7 @@ class OverloadClient(APIClient):
         return
 
     def unlock_target(self, *args, **kwargs):
+        return
+
+    def link_mobile_job(self, lp_key, mobile_key):
         return
