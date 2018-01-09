@@ -61,13 +61,16 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.volta_core.start_test()
 
     def is_test_finished(self):
-        if hasattr(self.volta_core, 'phone'):
-            if hasattr(self.volta_core.phone, 'test_performer'):
-                if not self.volta_core.phone.test_performer._finished:
-                    logger.debug('Waiting for phone test for finish...')
-                    return -1
-                else:
-                    return self.volta_core.phone.test_performer.retcode
+        try:
+            if hasattr(self.volta_core, 'phone'):
+                if hasattr(self.volta_core.phone, 'test_performer'):
+                    if not self.volta_core.phone.test_performer._finished:
+                        logger.debug('Waiting for phone test for finish...')
+                        return -1
+                    else:
+                        return self.volta_core.phone.test_performer.retcode
+        except:
+            raise RuntimeError('Unknown exception of android plugin')
 
     def end_test(self, retcode):
         self.volta_core.end_test()
