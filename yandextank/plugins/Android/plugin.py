@@ -77,7 +77,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.volta_core.end_test()
         uploaders = self.core.get_plugins_of_type(DataUploaderPlugin)
         for uploader in uploaders:
-            response = uploader.lp_job.link_mobile_job(
+            response = uploader.lp_job.api_client.link_mobile_job(
                 lp_key=uploader.lp_job.number,
                 mobile_key=self.volta_core.uploader.jobno
             )
