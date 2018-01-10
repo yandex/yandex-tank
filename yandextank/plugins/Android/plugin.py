@@ -70,6 +70,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                     else:
                         return self.volta_core.phone.test_performer.retcode
         except:
+            logger.error('Unknown exception of android plugin', exc_info=True)
             raise RuntimeError('Unknown exception of android plugin')
 
     def end_test(self, retcode):
