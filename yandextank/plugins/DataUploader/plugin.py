@@ -92,6 +92,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self._info = None
         self.locked_targets = []
 
+        self.finished = False
+
     @staticmethod
     def get_key():
         return __file__
@@ -296,6 +298,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         logger.info("Waiting for sender threads to join.")
         self.monitoring.join()
         self.upload.join()
+        self.finished = True
         try:
             self.lp_job.close(rc)
         except Exception:  # pylint: disable=W0703
@@ -381,6 +384,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 logger.info("Test stopped from Lunapark")
                 lp_job.is_alive = False
                 self.retcode = 8
+                break
+            if self.finished:
                 break
         logger.info("Closing Status sender thread")
 

@@ -68,8 +68,8 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                         logger.debug('Waiting for phone test for finish...')
                         return -1
                     else:
-                        return 1
-                        #return self.volta_core.phone.test_performer.retcode
+                        #return 1
+                        return self.volta_core.phone.test_performer.retcode
         except:
             logger.error('Unknown exception of android plugin. Interrupting', exc_info=True)
             return 1
