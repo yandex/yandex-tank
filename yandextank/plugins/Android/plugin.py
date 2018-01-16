@@ -64,12 +64,11 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         try:
             if hasattr(self.volta_core, 'phone'):
                 if hasattr(self.volta_core.phone, 'test_performer'):
-                    if not self.volta_core.phone.test_performer._finished:
+                    if not self.volta_core.phone.test_performer.is_finished():
                         logger.debug('Waiting for phone test for finish...')
                         return -1
                     else:
-                        #return 1
-                        return self.volta_core.phone.test_performer.retcode
+                        return self.volta_core.phone.test_performer.process.returncode
         except:
             logger.error('Unknown exception of android plugin. Interrupting', exc_info=True)
             return 1
