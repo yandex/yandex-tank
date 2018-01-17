@@ -58,7 +58,10 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         [self.core.add_artifact_file(fname) for fname in self.volta_core.event_fnames.values()]
 
     def start_test(self):
-        self.volta_core.start_test()
+        try:
+            self.volta_core.start_test()
+        except:
+            logger.info('Failed to start test of Android plugin', exc_info=True)
 
     def is_test_finished(self):
         try:
@@ -77,24 +80,32 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             return 1
 
     def end_test(self, retcode):
-        self.volta_core.end_test()
-        uploaders = self.core.get_plugins_of_type(DataUploaderPlugin)
-        for uploader in uploaders:
-            response = uploader.lp_job.api_client.link_mobile_job(
-                lp_key=uploader.lp_job.number,
-                mobile_key=self.volta_core.uploader.jobno
-            )
-            logger.info(
-                'Linked mobile job %s to %s for plugin: %s. Response: %s',
-                self.volta_core.uploader.jobno, uploader.lp_job.number, uploader.backend_type, response
-            )
+        try:
+            self.volta_core.end_test()
+            uploaders = self.core.get_plugins_of_type(DataUploaderPlugin)
+            for uploader in uploaders:
+                response = uploader.lp_job.api_client.link_mobile_job(
+                    lp_key=uploader.lp_job.number,
+                    mobile_key=self.volta_core.uploader.jobno
+                )
+                logger.info(
+                    'Linked mobile job %s to %s for plugin: %s. Response: %s',
+                    self.volta_core.uploader.jobno, uploader.lp_job.number, uploader.backend_type, response
+                )
+        except:
+            logger.error('Failed to complete end_test of Android plugin', exc_info=True)
+            retcode = 1
         return retcode
 
     def get_info(self):
         return AndroidInfo()
 
     def post_process(self, retcode):
-        self.volta_core.post_process()
+        try:
+            self.volta_core.post_process()
+        except:
+            logger.error('Failed to complete post_process of Android plugin', exc_info=True)
+            retcode = 1
         return retcode
 
 
