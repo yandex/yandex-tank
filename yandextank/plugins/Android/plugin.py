@@ -19,10 +19,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def __init__(self, core, cfg, cfg_updater):
         self.stats_reader = None
         self.reader = None
-        self.core = core
+        super(Plugin, self).__init__(core, cfg, cfg_updater)
+        self.device = None
         try:
-            super(Plugin, self).__init__(core, cfg, cfg_updater)
-            self.device = None
             self.cfg = cfg['volta_options']
             for key, value in self.cfg.iteritems():
                 if not isinstance(value, dict):
@@ -60,8 +59,10 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def start_test(self):
         try:
             self.volta_core.start_test()
+        # FIXME raise/catch appropriate exception here
         except:
             logger.info('Failed to start test of Android plugin', exc_info=True)
+            return 1
 
     def is_test_finished(self):
         try:
@@ -75,6 +76,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                         return -1
                     else:
                         return self.volta_core.phone.test_performer.retcode
+        # FIXME raise/catch appropriate exception here
         except:
             logger.error('Unknown exception of Android plugin. Interrupting test', exc_info=True)
             return 1
@@ -92,6 +94,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                     'Linked mobile job %s to %s for plugin: %s. Response: %s',
                     self.volta_core.uploader.jobno, uploader.lp_job.number, uploader.backend_type, response
                 )
+        # FIXME raise/catch appropriate exception here
         except:
             logger.error('Failed to complete end_test of Android plugin', exc_info=True)
             retcode = 1
@@ -103,6 +106,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def post_process(self, retcode):
         try:
             self.volta_core.post_process()
+        # FIXME raise/catch appropriate exception here
         except:
             logger.error('Failed to complete post_process of Android plugin', exc_info=True)
             retcode = 1
