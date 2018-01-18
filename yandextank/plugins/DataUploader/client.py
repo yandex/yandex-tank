@@ -86,6 +86,7 @@ class APIClient(object):
             super(self.__class__, self).__init__(self.message)
 
     class StoppedFromOnline(Exception):
+        """http code 410"""
         message = "Shooting is stopped from online"
 
     class JobNotCreated(Exception):
