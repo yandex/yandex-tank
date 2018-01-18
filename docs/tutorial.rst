@@ -62,9 +62,6 @@ Example:
   -- from 1.1rps to 2.5 for 10 seconds. 
 
 .. note::
-  ``const(0, 10)`` 0 rps for 10 seconds, in fact 10s pause in a test.
-
-.. note::
   ``step`` and ``line`` could be used with increasing and decreasing intensity: 
 
 
