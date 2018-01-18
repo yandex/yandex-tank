@@ -54,6 +54,10 @@ class TankAggregator(object):
         self.stats = q.Queue()
         self.data_cache = {}
         self.stat_cache = {}
+        self.reader = None
+        self.stats_reader = None
+        self.drain = None
+        self.stats_drain = None
 
     def start_test(self):
         self.reader = self.generator.get_reader()
