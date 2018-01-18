@@ -60,7 +60,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         try:
             self.volta_core.start_test()
         # FIXME raise/catch appropriate exception here
-        except:
+        except:  # noqa: E722
             logger.info('Failed to start test of Android plugin', exc_info=True)
             return 1
 
@@ -77,7 +77,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                     else:
                         return self.volta_core.phone.test_performer.retcode
         # FIXME raise/catch appropriate exception here
-        except:
+        except:  # noqa: E722
             logger.error('Unknown exception of Android plugin. Interrupting test', exc_info=True)
             return 1
 
@@ -95,7 +95,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                     self.volta_core.uploader.jobno, uploader.lp_job.number, uploader.backend_type, response
                 )
         # FIXME raise/catch appropriate exception here
-        except:
+        except:  # noqa: E722
             logger.error('Failed to complete end_test of Android plugin', exc_info=True)
             retcode = 1
         return retcode
@@ -107,7 +107,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         try:
             self.volta_core.post_process()
         # FIXME raise/catch appropriate exception here
-        except:
+        except:  # noqa: E722
             logger.error('Failed to complete post_process of Android plugin', exc_info=True)
             retcode = 1
         return retcode
