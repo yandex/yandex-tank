@@ -182,21 +182,43 @@ Bfg
 Console
 =======
 
-``short_only`` (boolean)
-------------------------
-*\- (no description). Default:* ``False``
-
-``info_panel_width`` (integer)
-------------------------------
-*\- (no description). Default:* ``33``
+``max_case_len`` (integer)
+--------------------------
+*\- max lenght of case name, longer names will be cut in console output. Default:* ``32``
 
 ``disable_all_colors`` (boolean)
 --------------------------------
-*\- (no description). Default:* ``False``
+*\- disable colors in full output. Default:* ``False``
+
+``info_panel_width`` (integer)
+------------------------------
+*\- width of right panel. Default:* ``33``
+
+``sizes_max_spark`` (integer)
+-----------------------------
+*\- max length of sparkline for request/response sizes, 0 to disable. Default:* ``120``
 
 ``disable_colors`` (string)
 ---------------------------
 *\- (no description). Default:* ``""``
+
+``cases_max_spark`` (integer)
+-----------------------------
+*\- length of sparkline for each case, 0 to disable. Default:* ``120``
+
+``times_max_spark`` (integer)
+-----------------------------
+*\- max length of sparkline for fractions of request time, 0 to disable. Default:* ``120``
+
+``short_only`` (boolean)
+------------------------
+*\- do not draw full console screen, write short info for each second. Default:* ``False``
+
+``cases_sort_by`` (string)
+--------------------------
+*\- field for cases data sort. Default:* ``count``
+
+:one of: [``count``, ``net_err``, ``http_err``]
 
 DataUploader
 ============
@@ -354,25 +376,37 @@ DataUploader
 Influx
 ======
 
+``username`` (string)
+---------------------
+*\- (no description). Default:* ``root``
+
 ``tank_tag`` (string)
 ---------------------
 *\- (no description). Default:* ``unknown``
 
-``grafana_root`` (string)
--------------------------
-*\- (no description). Default:* ``http://localhost/``
+``password`` (string)
+---------------------
+*\- (no description). Default:* ``root``
+
+``database`` (string)
+---------------------
+*\- (no description). Default:* ``mydb``
 
 ``address`` (string)
 --------------------
 *\- (no description). Default:* ``localhost``
 
+``chunk_size`` (integer)
+------------------------
+*\- (no description). Default:* ``500000``
+
 ``grafana_dashboard`` (string)
 ------------------------------
 *\- (no description). Default:* ``tank-dashboard``
 
-``chunk_size`` (integer)
-------------------------
-*\- (no description). Default:* ``500000``
+``grafana_root`` (string)
+-------------------------
+*\- (no description). Default:* ``http://localhost/``
 
 ``port`` (integer)
 ------------------
@@ -471,6 +505,460 @@ Pandora
 ``pandora_cmd`` (string)
 ------------------------
 *\- (no description). Default:* ``pandora``
+
+Phantom
+=======
+
+``phantom_http_field_num`` (string)
+-----------------------------------
+*\- (no description). Default:* ``""``
+
+``header_http`` (string)
+------------------------
+*\- (no description). Default:* ``1.0``
+
+``address`` (string)
+--------------------
+*\- (no description).* **Required.**
+
+``phout_file`` (string)
+-----------------------
+*\- (no description). Default:* ``""``
+
+``instances`` (integer)
+-----------------------
+*\- (no description). Default:* ``1000``
+
+``source_log_prefix`` (string)
+------------------------------
+*\- (no description). Default:* ``""``
+
+``gatling_ip`` (string)
+-----------------------
+*\- (no description). Default:* ``""``
+
+``phantom_path`` (string)
+-------------------------
+*\- (no description). Default:* ``phantom``
+
+``port`` (string)
+-----------------
+*\- (no description). Default:* ``""``
+
+:regex:
+ \d{0,5}
+
+``client_key`` (string)
+-----------------------
+*\- (no description). Default:* ``""``
+
+``connection_test`` (boolean)
+-----------------------------
+*\- (no description). Default:* ``True``
+
+``affinity`` (string)
+---------------------
+*\- (no description). Default:* ``""``
+
+``config`` (string)
+-------------------
+*\- (no description). Default:* ``""``
+
+``uris`` (string)
+-----------------
+*\- (no description). Default:* ``""``
+
+``additional_libs`` (string)
+----------------------------
+*\- (no description). Default:* ``""``
+
+``force_stepping`` (integer)
+----------------------------
+*\- (no description). Default:* ``0``
+
+``phantom_http_field`` (string)
+-------------------------------
+*\- (no description). Default:* ``""``
+
+``writelog`` (string)
+---------------------
+*\- (no description). Default:* ``none``
+
+``phantom_modules_path`` (string)
+---------------------------------
+*\- (no description). Default:* ``/usr/lib/phantom``
+
+``ammo_type`` (string)
+----------------------
+*\- (no description). Default:* ``phantom``
+
+``autocases`` (string)
+----------------------
+*\- (no description). Default:* ``0``
+
+``method_options`` (string)
+---------------------------
+*\- (no description). Default:* ``""``
+
+``cache_dir`` (string)
+----------------------
+*\- (no description). Default:* ``None``
+
+:nullable:
+ True
+
+``threads`` (integer)
+---------------------
+*\- (no description). Default:* ``None``
+
+:nullable:
+ True
+
+``method_prefix`` (string)
+--------------------------
+*\- (no description). Default:* ``method_stream``
+
+``file_cache`` (integer)
+------------------------
+*\- (no description). Default:* ``8192``
+
+``chosen_cases`` (string)
+-------------------------
+*\- (no description). Default:* ``""``
+
+``phantom_http_entity`` (string)
+--------------------------------
+*\- (no description). Default:* ``""``
+
+``ammofile`` (string)
+---------------------
+*\- (no description). Default:* ``""``
+
+``load_profile`` (dict)
+-----------------------
+*\- (no description).* **Required.**
+
+:``load_type`` (string):
+ *\- (no description).*
+ 
+ :one of:
+  :``instances``: fix number of instances
+  :``rps``: fix rps rate
+  :``stpd_file``: use ready schedule file
+:``schedule`` (string):
+ *\- load schedule or path to stpd file.* **Required.**
+ 
+ :examples:
+  :``const(200,90s)``:
+   constant load of 200 instances/rps during 90s
+  :``line(100,200,10m)``:
+   linear growth from 100 to 200 instances/rps during 10 minutes
+  :``test_dir/test_backend.stpd``:
+   path to ready schedule file
+
+``ssl`` (boolean)
+-----------------
+*\- (no description). Default:* ``False``
+
+``phantom_http_line`` (string)
+------------------------------
+*\- (no description). Default:* ``""``
+
+``multi`` (list of )
+--------------------
+*\- (no description). Default:* ``[]``
+
+:[list_element] ():
+ *\- (no description).*
+ 
+ :additional_libs:
+  :default:
+   
+  :type:
+   string
+ :address:
+  :required:
+   True
+  :type:
+   string
+ :affinity:
+  :default:
+   
+  :type:
+   string
+ :ammo_limit:
+  :default:
+   -1
+  :type:
+   integer
+ :ammo_type:
+  :default:
+   phantom
+  :type:
+   string
+ :ammofile:
+  :default:
+   
+  :type:
+   string
+ :autocases:
+  :default:
+   0
+  :type:
+   string
+ :buffered_seconds:
+  :default:
+   2
+  :type:
+   integer
+ :cache_dir:
+  :default:
+   None
+  :nullable:
+   True
+  :type:
+   string
+ :chosen_cases:
+  :default:
+   
+  :type:
+   string
+ :client_certificate:
+  :default:
+   
+  :type:
+   string
+ :client_cipher_suites:
+  :default:
+   
+  :type:
+   string
+ :client_key:
+  :default:
+   
+  :type:
+   string
+ :config:
+  :default:
+   
+  :type:
+   string
+ :connection_test:
+  :default:
+   True
+  :type:
+   boolean
+ :enum_ammo:
+  :default:
+   False
+  :type:
+   boolean
+ :file_cache:
+  :default:
+   8192
+  :type:
+   integer
+ :force_stepping:
+  :default:
+   0
+  :type:
+   integer
+ :gatling_ip:
+  :default:
+   
+  :type:
+   string
+ :header_http:
+  :default:
+   1.0
+  :type:
+   string
+ :headers:
+  :default:
+   
+  :type:
+   string
+ :instances:
+  :default:
+   1000
+  :type:
+   integer
+ :load_profile:
+  :required:
+   True
+  :schema:
+   :load_type:
+    :allowed:
+     - rps
+     - instances
+     - stpd_file
+    :type:
+     string
+    :values_description:
+     :instances:
+      fix number of instances
+     :rps:
+      fix rps rate
+     :stpd_file:
+      use ready schedule file
+   :schedule:
+    :description:
+     load schedule or path to stpd file
+    :examples:
+     :const(200,90s):
+      constant load of 200 instances/rps during 90s
+     :line(100,200,10m):
+      linear growth from 100 to 200 instances/rps during 10 minutes
+     :test_dir/test_backend.stpd:
+      path to ready schedule file
+    :required:
+     True
+    :type:
+     string
+  :type:
+   dict
+ :loop:
+  :default:
+   -1
+  :type:
+   integer
+ :method_options:
+  :default:
+   
+  :type:
+   string
+ :method_prefix:
+  :default:
+   method_stream
+  :type:
+   string
+ :phantom_http_entity:
+  :default:
+   
+  :type:
+   string
+ :phantom_http_field:
+  :default:
+   
+  :type:
+   string
+ :phantom_http_field_num:
+  :default:
+   
+  :type:
+   string
+ :phantom_http_line:
+  :default:
+   
+  :type:
+   string
+ :phantom_modules_path:
+  :default:
+   /usr/lib/phantom
+  :type:
+   string
+ :phantom_path:
+  :default:
+   phantom
+  :type:
+   string
+ :phout_file:
+  :default:
+   
+  :type:
+   string
+ :port:
+  :default:
+   
+  :regex:
+   \d{0,5}
+  :type:
+   string
+ :source_log_prefix:
+  :default:
+   
+  :type:
+   string
+ :ssl:
+  :default:
+   False
+  :type:
+   boolean
+ :tank_type:
+  :default:
+   http
+  :type:
+   string
+ :threads:
+  :default:
+   None
+  :nullable:
+   True
+  :type:
+   integer
+ :timeout:
+  :default:
+   11s
+  :type:
+   string
+ :uris:
+  :default:
+   
+  :type:
+   string
+ :use_caching:
+  :default:
+   True
+  :type:
+   boolean
+ :writelog:
+  :default:
+   none
+  :type:
+   string
+
+:allow_unknown:
+ True
+
+``tank_type`` (string)
+----------------------
+*\- (no description). Default:* ``http``
+
+``ammo_limit`` (integer)
+------------------------
+*\- (no description). Default:* ``-1``
+
+``headers`` (string)
+--------------------
+*\- (no description). Default:* ``""``
+
+``client_cipher_suites`` (string)
+---------------------------------
+*\- (no description). Default:* ``""``
+
+``timeout`` (string)
+--------------------
+*\- (no description). Default:* ``11s``
+
+``use_caching`` (boolean)
+-------------------------
+*\- (no description). Default:* ``True``
+
+``enum_ammo`` (boolean)
+-----------------------
+*\- (no description). Default:* ``False``
+
+``buffered_seconds`` (integer)
+------------------------------
+*\- (no description). Default:* ``2``
+
+``loop`` (integer)
+------------------
+*\- (no description). Default:* ``-1``
+
+``client_certificate`` (string)
+-------------------------------
+*\- (no description). Default:* ``""``
 
 RCAssert
 ========

@@ -1,7 +1,9 @@
 import argparse
 from types import NoneType
 
+import imp
 import yaml
+from yaml.scanner import ScannerError
 
 TYPE = 'type'
 LIST = 'list'
@@ -379,8 +381,12 @@ def main():
     title = args.title
     append = args.append
 
-    with open(schema_path) as f:
-        schema = yaml.load(f)
+    try:
+        with open(schema_path) as f:
+            schema = yaml.load(f)
+    except ScannerError:
+        schema_module = imp.load_source('schema', schema_path)
+        schema = schema_module.SCHEMA
     document = format_schema(schema, RSTRenderer(), title)
 
     if append:
