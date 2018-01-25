@@ -60,7 +60,7 @@ class PhantomConfig:
         """        Read phantom tool specific options        """
         self.threads = self.cfg["threads"] or str(int(multiprocessing.cpu_count() / 2) + 1)
         self.phantom_modules_path = self.cfg["phantom_modules_path"]
-        self.additional_libs = self.cfg["additional_libs"]
+        self.additional_libs = ' '.join(self.cfg["additional_libs"])
         self.answ_log_level = self.cfg["writelog"]
         if self.answ_log_level.lower() in ['0', 'false']:
             self.answ_log_level = 'none'

@@ -1,15 +1,38 @@
 OPTIONS = {
     "additional_libs": {
-        "type": "string",
-        "default": ""
+        "type": "list",
+        "default": [],
+        'description': 'Libs for Phantom, to be added to phantom config file in section "module_setup"',
+        'schema': {
+            'type': 'string'
+        }
     },
     "address": {
+        'description': 'Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port. Port is optional. '
+                       'Tank checks each test if port is available',
         "type": "string",
-        "required": True
+        "required": True,
+        'examples': {'127.0.0.1:8080': '', 'www.w3c.org': ''}
     },
     'autocases': {
-        'type': 'string',
-        'default': '0'
+        'description': 'Use to automatically tag requests. Requests might be grouped by tag for later analysis.',
+        'anyof': [
+            {'type': 'integer'},
+            {'type': 'string',
+             'allowed': ['uri', 'uniq']}],
+        'default': 0,
+        'values_description': {
+            'uri': 'tag each request with its uri path, slashes are replaced with underscores',
+            'uniq': 'tag each request with unique uid',
+            '<N>': 'use N first uri parts to tag request, slashes are replaced with underscores'
+        },
+        'examples': {
+            2: '/example/'
+               'search/hello/help/us?param1=50 -> _example_search',
+            3: '/example/search/hello/help/us?param1=50 -> _example_search_hello',
+            'uri': '/example/search/hello/help/us?param1=50 -> _example_search_hello_help_us',
+            'uniq': '/example/search/hello/help/us?param1=50 -> c98b0520bb6a451c8bc924ed1fd72553'
+        }
     },
     "affinity": {
         "type": "string",
@@ -126,6 +149,7 @@ OPTIONS = {
     },
     "phout_file": {
         "type": "string",
+        'description': 'deprecated',
         "default": ""
     },
     'port': {

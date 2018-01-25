@@ -162,6 +162,28 @@ class RSTRenderer(object):
         return '- ' + '\n  '.join(block.lines)
 
     @staticmethod
+    def def_list(items, sort=True, newlines=True):
+        def format_value(value):
+            if isinstance(value, (int, bool, NoneType)):
+                return format_value(str(value))
+            if isinstance(value, str):
+                return '\n '.join(value.splitlines())
+            elif isinstance(value, TextBlock):
+                return '\n '.join(value.lines)
+            elif isinstance(value, dict):
+                return '\n '.join(RSTRenderer.def_list(value, sort, newlines).splitlines())
+            elif isinstance(value, list):
+                return '\n '.join(RSTRenderer.bullet_list([TextBlock(item) for item in value]).lines)
+            else:
+                raise ValueError('Unsupported value type: {}\n{}'.format(type(value), value))
+
+        sort = sorted if sort else lambda x: x
+        template = '{}\n {}' if newlines else ':{}: {}'
+        return '\n' + '\n'.join([template.format(k.replace('\n', ' '),
+                                                 format_value(v).strip())
+                                 for k, v in sort(items.items())]) if items else ''
+
+    @staticmethod
     def field_list(items, sort=True, newlines=True):
         """
 
@@ -220,7 +242,7 @@ def render_body(renderer, option_kwargs, exclude_keys, special_keys=None):
     :type special_keys: dict
     """
     common_formatters = {
-        'examples': lambda examples: {renderer.mono(example): note for example, note in examples.items()}
+        EXAMPLES: lambda examples: renderer.def_list({renderer.mono(example): annotation for example, annotation in examples.items()})
     }
 
     def default_fmt(x):
@@ -386,7 +408,7 @@ def main():
             schema = yaml.load(f)
     except ScannerError:
         schema_module = imp.load_source('schema', schema_path)
-        schema = schema_module.SCHEMA
+        schema = schema_module.OPTIONS
     document = format_schema(schema, RSTRenderer(), title)
 
     if append:

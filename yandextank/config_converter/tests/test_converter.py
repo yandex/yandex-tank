@@ -33,12 +33,12 @@ def test_parse_sections(ini_file, expected):
                 'api_address': 'https://lunapark.yandex-team.ru/'},
             'phantom': {
                 'load_profile': {'load_type': 'rps', 'schedule': 'line(1,6000,20m)'},
-                'autocases': '0',
+                'autocases': 0,
                 'multi': [
                     {'ammofile': '/var/bmpt-data/goods/ligreen/projects/regress/analyser-usershandler/get-segmentshandler.ammo',
                      'instances': 10,
                      'load_profile': {'load_type': 'rps', 'schedule': 'const(0.2,20m)'},
-                     'autocases': '1',
+                     'autocases': 1,
                      'address': 'foo.example.org'}],
                 'instances': 10000,
                 'address': 'foo.example.net',
