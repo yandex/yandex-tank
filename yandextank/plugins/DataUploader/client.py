@@ -86,6 +86,7 @@ class APIClient(object):
             super(self.__class__, self).__init__(self.message)
 
     class StoppedFromOnline(Exception):
+        """http code 410"""
         message = "Shooting is stopped from online"
 
     class JobNotCreated(Exception):
@@ -156,7 +157,7 @@ class APIClient(object):
             'id': request_id,
             'elapsed_time': resp.elapsed.total_seconds(),
             'reason': resp.reason,
-            'status code': resp.status_code,
+            'http code': resp.status_code,
             'headers': str(self.filter_headers(resp.headers)),
             'content': resp.content.replace('\n', '\\n') if isinstance(resp.content, str) else resp.content
         }
@@ -233,7 +234,7 @@ class APIClient(object):
             try:
                 response = self.__send_single_request(request, ids.next(), trace=trace)
                 return response
-            except (Timeout, ConnectionError):
+            except (Timeout, ConnectionError, ProtocolError):
                 logger.warn(traceback.format_exc())
                 try:
                     timeout = next(network_timeouts)
@@ -612,9 +613,17 @@ class APIClient(object):
         addr = "api/job/%s/configinfo.txt" % jobno
         self.__post_raw(addr, {"configinfo": config}, trace=trace)
 
+    def link_mobile_job(self, lp_key, mobile_key):
+        addr = "/api/job/{jobno}/edit.json".format(jobno=lp_key)
+        data = {
+            'mobile_key': mobile_key
+        }
+        response = self.__post(addr, data)
+        return response
+
 
 class OverloadClient(APIClient):
-
+    """ mocks below for nonexistent backend methods """
     def send_status(self, jobno, upload_token, status, trace=False):
         return
 
@@ -622,4 +631,7 @@ class OverloadClient(APIClient):
         return
 
     def unlock_target(self, *args, **kwargs):
+        return
+
+    def link_mobile_job(self, lp_key, mobile_key):
         return

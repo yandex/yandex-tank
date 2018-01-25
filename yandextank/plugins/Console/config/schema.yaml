@@ -1,12 +1,39 @@
 info_panel_width:
   type: integer
   default: 33
+  description: width of right panel
 short_only:
   type: boolean
   default: false
+  description: do not draw full console screen, write short info for each second
 disable_all_colors:
   type: boolean
   default: false
+  description: disable colors in full output
 disable_colors:
   type: string
   default: ''
+sizes_max_spark:
+  type: integer
+  default: 120
+  description: max length of sparkline for request/response sizes, 0 to disable
+times_max_spark:
+  type: integer
+  default: 120
+  description: max length of sparkline for fractions of request time, 0 to disable
+cases_max_spark:
+  type: integer
+  default: 120
+  description: length of sparkline for each case, 0 to disable
+cases_sort_by:
+  type: string
+  default: 'count'
+  description: field for cases data sort
+  allowed:
+    - 'count'
+    - 'net_err'
+    - 'http_err'
+max_case_len:
+  type: integer
+  default: 32
+  description: max lenght of case name, longer names will be cut in console output

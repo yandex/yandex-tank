@@ -1,11 +1,14 @@
+# -*- coding: utf-8 -*-
 ''' Classes to build full console screen '''
 import fcntl
 import logging
-import math
 import os
 import struct
 import termios
+import time
+import bisect
 from collections import defaultdict
+import pandas as pd
 
 from ...common import util
 
@@ -14,7 +17,7 @@ def get_terminal_size():
     '''
     Gets width and height of terminal viewport
     '''
-    default_size = (60, 140)
+    default_size = (30, 120)
     env = os.environ
 
     def ioctl_gwinsz(file_d):
@@ -44,6 +47,26 @@ def get_terminal_size():
     return int(sizes[1]), int(sizes[0])
 
 
+def safe_div(summ, count):
+    if count == 0:
+        return 0
+    else:
+        return float(summ) / count
+
+
+def str_len(n):
+    return len(str(n))
+
+
+def avg_from_dict(src):
+    result = {}
+    count = src['count']
+    for k, v in src.iteritems():
+        if k != 'count':
+            result[k] = safe_div(v, count)
+    return result
+
+
 def krutilka():
     pos = 0
     chars = "|/-\\"
@@ -54,11 +77,215 @@ def krutilka():
             pos = 0
 
 
+def try_color(old, new, markup):
+    order = [
+        markup.WHITE, markup.GREEN, markup.CYAN,
+        markup.YELLOW, markup.MAGENTA, markup.RED]
+    if not old:
+        return new
+    else:
+        if order.index(old) > order.index(new):
+            return old
+        else:
+            return new
+
+
+def combine_codes(tag_data, markup):
+    net_err, http_err = 0, 0
+    color = ''
+    net_codes = tag_data['net_code']['count']
+    for code, count in sorted(net_codes.iteritems()):
+        if count > 0:
+            if int(code) == 0:
+                continue
+            elif int(code) == 314:
+                color = try_color(color, markup.MAGENTA, markup)
+                net_err += count
+            else:
+                color = try_color(color, markup.RED, markup)
+                net_err += count
+    http_codes = tag_data['proto_code']['count']
+    for code, count in sorted(http_codes.iteritems()):
+        if count > 0:
+            if 100 <= int(code) <= 299:
+                color = try_color(color, markup.GREEN, markup)
+            elif 300 <= int(code) <= 399:
+                color = try_color(color, markup.CYAN, markup)
+            elif 400 <= int(code) <= 499:
+                color = try_color(color, markup.YELLOW, markup)
+                http_err += count
+            elif 500 <= int(code) <= 599:
+                color = try_color(color, markup.RED, markup)
+                http_err += count
+            else:
+                color = try_color(color, markup.MAGENTA, markup)
+                http_err += count
+    return (net_err, http_err, color)
+
+
+class TableFormatter(object):
+    def __init__(self, template, delimiters, reshape_delay=5):
+        self.log = logging.getLogger(__name__)
+        self.template = template
+        self.delimiters = delimiters
+        self.default_final = '{{{:}:>{len}}}'
+        self.last_reshaped = time.time()
+        self.old_shape = {}
+        self.reshape_delay = reshape_delay
+
+    def __delimiter_gen(self):
+        for d in self.delimiters:
+            yield d
+        while True:
+            yield self.delimiters[-1]
+
+    def __prepare(self, data):
+        prepared = []
+        shape = {}
+        for line in data:
+            new = {}
+            for f in line:
+                if f in self.template:
+                    new[f] = self.template[f]['tpl'].format(line[f])
+                    if f not in shape:
+                        shape[f] = len(new[f])
+                    else:
+                        shape[f] = max(shape[f], len(new[f]))
+            prepared.append(new)
+        return (prepared, shape)
+
+    def __update_shape(self, shape):
+        def change_shape():
+            self.last_reshaped = time.time()
+            self.old_shape = shape
+        if set(shape.keys()) != set(self.old_shape.keys()):
+            change_shape()
+            return shape
+        else:
+            for f in shape:
+                if shape[f] > self.old_shape[f]:
+                    change_shape()
+                    return shape
+                elif shape[f] < self.old_shape[f]:
+                    if time.time() > (self.last_reshaped + self.reshape_delay):
+                        change_shape()
+                        return shape
+        return self.old_shape
+
+    def render_table(self, data, fields):
+        prepared, shape = self.__prepare(data)
+        headers = {}
+        for f in shape:
+            if 'header' in self.template[f]:
+                headers[f] = self.template[f]['header']
+                shape[f] = max(shape[f], len(headers[f]))
+            else:
+                headers[f] = ''
+        shape = self.__update_shape(shape)
+        has_headers = any(headers.values())
+        delimiter_gen = self.__delimiter_gen()
+        row_tpl = ''
+        for num, field in enumerate(fields):
+            if 'final' in self.template[field]:
+                final = self.template[field]['final']
+            else:
+                final = self.default_final
+            row_tpl += final.format(field, len=shape[field])
+            if num < len(fields) - 1:
+                row_tpl += delimiter_gen.next()
+        result = []
+        if has_headers:
+            result.append(
+                (row_tpl.format(**headers),))
+        for line in prepared:
+            result.append(
+                (row_tpl.format(**line),))
+        return result
+
+
+class Sparkline(object):
+    def __init__(self, window):
+        self.log = logging.getLogger(__name__)
+        self.data = {}
+        self.window = window
+        self.active_seconds = []
+        self.ticks = '_▁▂▃▄▅▆▇'.decode('utf-8')
+
+    def recalc_active(self, ts):
+        if ts not in self.active_seconds:
+            if self.active_seconds:
+                for i in range(max(self.active_seconds) + 1, ts + 1):
+                    self.active_seconds.append(i)
+                    self.active_seconds.sort()
+                    self.data[i] = {}
+            else:
+                self.active_seconds.append(ts)
+                self.data[ts] = {}
+        while len(self.active_seconds) > self.window:
+            self.active_seconds.pop(0)
+        for sec in self.data.keys():
+            if sec not in self.active_seconds:
+                self.data.pop(sec)
+
+    def get_key_data(self, key):
+        result = []
+        if not self.active_seconds:
+            return None
+        for sec in self.active_seconds:
+            if key in self.data[sec]:
+                result.append(self.data[sec][key])
+            else:
+                result.append(('', 0))
+        return result
+
+    def add(self, ts, key, value, color=''):
+        if ts not in self.data:
+            self.recalc_active(ts)
+        value = max(value, 0)
+        self.data[ts][key] = (color, value)
+
+    def get_sparkline(self, key, baseline='zero', spark_len='auto', align='right'):
+        if spark_len is 'auto':
+            spark_len = self.window
+        elif spark_len <= 0:
+            return ''
+        key_data = self.get_key_data(key)
+        if not key_data:
+            return ''
+        active_data = key_data[-spark_len:]
+        result = []
+        if active_data:
+            values = [i[1] for i in active_data]
+            if baseline == 'zero':
+                min_val = 0
+                step = float(max(values)) / len(self.ticks)
+            elif baseline == 'min':
+                min_val = min(values)
+                step = float(max(values) - min_val) / len(self.ticks)
+            ranges = [step * i for i in range(len(self.ticks) + 1)]
+            for color, value in active_data:
+                if value <= 0:
+                    tick = ' '
+                else:
+                    rank = bisect.bisect_left(ranges, value) - 1
+                    rank = max(rank, 0)
+                    rank = min(rank, len(self.ticks) - 1)
+                    tick = self.ticks[rank]
+                result.append(color)
+                result.append(tick)
+        space = ' ' * (spark_len - len(active_data))
+        if align == 'right':
+            result = [space] + result
+        elif align == 'left':
+            result = result + [space]
+        return result
+
+
 class Screen(object):
     '''     Console screen renderer class    '''
     RIGHT_PANEL_SEPARATOR = ' . '
 
-    def __init__(self, info_panel_width, markup_provider):
+    def __init__(self, info_panel_width, markup_provider, **kwargs):
         self.log = logging.getLogger(__name__)
         self.info_panel_percent = int(info_panel_width)
         self.info_widgets = {}
@@ -68,14 +295,22 @@ class Screen(object):
         self.right_panel_width = 10
         self.left_panel_width = self.term_width - self.right_panel_width - len(
             self.RIGHT_PANEL_SEPARATOR)
+        cases_args = dict(
+            [(k, v)
+                for k, v in kwargs.iteritems()
+                if k in ['cases_sort_by', 'cases_max_spark', 'max_case_len']]
+        )
+        times_args = {'times_max_spark': kwargs['times_max_spark']}
+        sizes_args = {'sizes_max_spark': kwargs['sizes_max_spark']}
 
-        block1 = VerticalBlock(CurrentHTTPBlock(self), CurrentNetBlock(self))
-        block2 = VerticalBlock(block1, CasesBlock(self))
-        block3 = VerticalBlock(block2, CurrentQuantilesBlock(self))
-        block4 = VerticalBlock(block3, AnswSizesBlock(self))
-        block5 = VerticalBlock(block4, AvgTimesBlock(self))
+        codes_block = VerticalBlock(CurrentHTTPBlock(self), CurrentNetBlock(self), self)
+        times_block = VerticalBlock(AnswSizesBlock(self, **sizes_args), AvgTimesBlock(self, **times_args), self)
+        top_block = VerticalBlock(codes_block, times_block, self)
+        general_block = HorizontalBlock(PercentilesBlock(self), top_block, self)
+        overall_block = VerticalBlock(RPSBlock(self), general_block, self)
+        final_block = VerticalBlock(overall_block, CasesBlock(self, **cases_args), self)
 
-        self.block_rows = [[CurrentTimesDistBlock(self), block5]]
+        self.left_panel = final_block
 
     def __get_right_line(self, widget_output):
         '''        Gets next line for right panel        '''
@@ -85,40 +320,64 @@ class Screen(object):
             if len(right_line) > self.right_panel_width:
                 right_line_plain = self.markup.clean_markup(right_line)
                 if len(right_line_plain) > self.right_panel_width:
-                    right_line = right_line[:self.
-                                            right_panel_width] + self.markup.RESET
+                    right_line = right_line[:self.right_panel_width] + self.markup.RESET
         return right_line
+
+    def __truncate(self, line_arr, max_width):
+        '''  Cut tuple of line chunks according to it's wisible lenght  '''
+        def is_space(chunk):
+            return all([True if i == ' ' else False for i in chunk])
+
+        def is_empty(chunks, markups):
+            result = []
+            for chunk in chunks:
+                if chunk in markups:
+                    result.append(True)
+                elif is_space(chunk):
+                    result.append(True)
+                else:
+                    result.append(False)
+            return all(result)
+        left = max_width
+        result = ''
+        markups = self.markup.get_markup_vars()
+        for num, chunk in enumerate(line_arr):
+            if chunk in markups:
+                result += chunk
+            else:
+                if left > 0:
+                    if len(chunk) <= left:
+                        result += chunk
+                        left -= len(chunk)
+                    else:
+                        leftover = (chunk[left:],) + line_arr[num + 1:]
+                        was_cut = not is_empty(leftover, markups)
+                        if was_cut:
+                            result += chunk[:left - 1] + self.markup.RESET + u'\u2026'
+                        else:
+                            result += chunk[:left]
+                        left = 0
+        return result
 
     def __render_left_panel(self):
         ''' Render left blocks '''
         self.log.debug("Rendering left blocks")
-        lines = []
-        for row in self.block_rows:
-            space_left = self.left_panel_width
-            # render blocks
-            for block in row:
-                block.render()
-                space_left -= block.width
+        left_block = self.left_panel
+        left_block.render()
+        blank_space = self.left_panel_width - left_block.width
 
-            # merge blocks output into row
-            space = ' ' * int(math.floor(float(space_left) / (len(row) + 1)))
-            had_lines = True
-            while had_lines:
-                had_lines = False
-                line = space
-                for block in row:
-                    if block.lines:
-                        block_line = block.lines.pop(0)
-                        line += block_line + ' ' * (
-                            block.width -
-                            len(self.markup.clean_markup(block_line)))
-                        had_lines = True
-                    else:
-                        line += ' ' * block.width
-                    line += space
+        lines = []
+        pre_space = ' ' * int(blank_space / 2)
+        if not left_block.lines:
+            lines = [(''), (self.markup.RED + 'BROKEN LEFT PANEL' + self.markup.RESET)]
+        else:
+            while self.left_panel.lines:
+                src_line = self.left_panel.lines.pop(0)
+                line = pre_space + self.__truncate(src_line, self.left_panel_width)
+                post_space = ' ' * (self.left_panel_width -
+                                    len(self.markup.clean_markup(line)))
+                line += post_space + self.markup.RESET
                 lines.append(line)
-                # lines.append(".  " * (1 + self.left_panel_width / 3))
-                # lines.append("")
         return lines
 
     def render_screen(self):
@@ -162,10 +421,6 @@ class Screen(object):
             if line_no > 1 and left_lines:
                 left_line = left_lines.pop(0)
                 left_line_plain = self.markup.clean_markup(left_line)
-                if len(left_line) > self.left_panel_width:
-                    if len(left_line_plain) > self.left_panel_width:
-                        left_line = left_line[:self.
-                                              left_panel_width] + self.markup.RESET
 
                 left_line += (
                     ' ' * (self.left_panel_width - len(left_line_plain)))
@@ -173,6 +428,7 @@ class Screen(object):
             else:
                 line += ' ' * self.left_panel_width
             if self.right_panel_width:
+                line += self.markup.RESET
                 line += self.markup.WHITE
                 line += self.RIGHT_PANEL_SEPARATOR
                 line += self.markup.RESET
@@ -195,9 +451,7 @@ class Screen(object):
         '''
         Notification method about new aggregator data
         '''
-        for row in self.block_rows:
-            for block in row:
-                block.add_second(data)
+        self.left_panel.add_second(data)
 
 
 class AbstractBlock:
@@ -217,6 +471,27 @@ class AbstractBlock:
         '''
         pass
 
+    def fill_rectangle(self, prepared):
+        '''  Right-pad lines of block to equal width  '''
+        result = []
+        width = max([self.clean_len(line) for line in prepared])
+        for line in prepared:
+            spacer = ' ' * (width - self.clean_len(line))
+            result.append(line + (self.screen.markup.RESET, spacer))
+        return (width, result)
+
+    def clean_len(self, line):
+        '''  Calculate wisible length of string  '''
+        if isinstance(line, basestring):
+            return len(self.screen.markup.clean_markup(line))
+        elif isinstance(line, tuple) or isinstance(line, list):
+            markups = self.screen.markup.get_markup_vars()
+            length = 0
+            for i in line:
+                if i not in markups:
+                    length += len(i)
+            return length
+
     def render(self):
         '''
         Render method, fills .lines and .width properties with rendered data
@@ -224,7 +499,47 @@ class AbstractBlock:
         raise RuntimeError("Abstract method needs to be overridden")
 
 
-# ======================================================
+class HorizontalBlock(AbstractBlock):
+    '''
+    Block to merge two other blocks horizontaly
+    '''
+
+    def __init__(self, left_block, right_block, screen):
+        AbstractBlock.__init__(self, screen)
+        self.left = left_block
+        self.right = right_block
+        self.separator = '  . '
+
+    def render(self, expected_width=None):
+        if not expected_width:
+            expected_width = self.screen.left_panel_width
+
+        def get_line(source, num):
+            if num >= len(source.lines):
+                return (' ' * source.width,)
+            else:
+                source_line = source.lines[n]
+                spacer = ' ' * (source.width - self.clean_len(source_line))
+                return source_line + (spacer,)
+        self.left.render(expected_width=expected_width)
+        right_width_limit = expected_width - self.left.width - len(self.separator)
+        self.right.render(expected_width=right_width_limit)
+        self.height = max(len(self.left.lines), len(self.right.lines))
+        self.width = self.left.width + self.right.width + len(self.separator)
+
+        self.lines = []
+
+        for n in range(self.height):
+            self.lines.append(
+                get_line(self.left, n) +
+                (self.separator,) +
+                get_line(self.right, n)
+            )
+        self.lines.append((' ' * self.width,))
+
+    def add_second(self, data):
+        self.left.add_second(data)
+        self.right.add_second(data)
 
 
 class VerticalBlock(AbstractBlock):
@@ -232,418 +547,525 @@ class VerticalBlock(AbstractBlock):
     Block to merge two other blocks vertically
     '''
 
-    def __init__(self, top_block, bottom_block):
-        AbstractBlock.__init__(self, None)
+    def __init__(self, top_block, bottom_block, screen):
+        AbstractBlock.__init__(self, screen)
         self.top = top_block
         self.bottom = bottom_block
 
-    def render(self):
-        self.top.render()
-        self.bottom.render()
+    def render(self, expected_width=None):
+        if not expected_width:
+            expected_width = self.screen.left_panel_width
+
+        self.top.render(expected_width=expected_width)
+        self.bottom.render(expected_width=expected_width)
         self.width = max(self.top.width, self.bottom.width)
 
         self.lines = []
         for line in self.top.lines:
-            self.lines.append(line + ' ' * (self.width - self.top.width))
+            spacer = ' ' * (self.width - self.top.width)
+            self.lines.append(line + (spacer,))
 
         if self.top.lines and self.bottom.lines:
-            self.lines.append(' ' * self.width)
+            spacer = ' ' * self.width
+            self.lines.append((spacer,))
 
         for line in self.bottom.lines:
-            self.lines.append(line + ' ' * (self.width - self.bottom.width))
+            spacer = ' ' * (self.width - self.bottom.width)
+            self.lines.append(line + (spacer,))
 
     def add_second(self, data):
         self.top.add_second(data)
         self.bottom.add_second(data)
 
 
-# ======================================================
-class CurrentTimesDistBlock(AbstractBlock):
-    '''
-    Current times distribution
-    '''
+class RPSBlock(AbstractBlock):
+    ''' Actual RPS sparkline '''
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
-        self.current_rps = 0
-        self.hist = []
-        self.width = 0
+        self.begin_tpl = 'Data delay: {delay}s, RPS: {rps:>3,} '
+        self.sparkline = Sparkline(180)
+        self.last_count = 0
+        self.last_second = None
 
     def add_second(self, data):
-        self.current_rps = data["overall"]["interval_real"]["len"]
-        self.hist = zip(
-            data["overall"]["interval_real"]["hist"]["bins"],
-            data["overall"]["interval_real"]["hist"]["data"], )
+        count = data['overall']['interval_real']['len']
+        self.last_count = count
+        ts = data['ts']
+        self.last_second = ts
+        self.sparkline.add(ts, 'rps', count)
 
-    def render(self):
-        self.lines = []
-        for bin, cnt in self.hist:
-            line = "{cnt}({pct:.2%}) < {bin} ms".format(
-                cnt=cnt,
-                pct=cnt / float(self.current_rps),
-                bin=bin / 1000, )
-            self.width = max(self.width, len(line))
-            self.lines.append(line)
-        self.lines.reverse()
-        self.lines = [
-            self.screen.markup.GREEN + 'RPS: %s' % self.current_rps +
-            self.screen.markup.RESET, '', 'Times distribution:'
-        ] + self.lines
-        self.lines.append("")
+    def render(self, expected_width=None):
+        if self.last_second:
+            delay = int(time.time() - self.last_second)
+        else:
+            delay = ' - '
+        line_start = self.begin_tpl.format(rps=self.last_count, delay=delay)
+        spark_len = expected_width - len(line_start) - 2
 
-        self.width = max(self.width, len(self.lines[0]))
+        spark = self.sparkline.get_sparkline('rps', spark_len=spark_len)
+        prepared = [(self.screen.markup.WHITE, line_start, ' ') + tuple(spark) + (self.screen.markup.RESET,)]
+        self.width, self.lines = self.fill_rectangle(prepared)
 
 
-# ======================================================
+class PercentilesBlock(AbstractBlock):
+    ''' Aggregated percentiles '''
+
+    def __init__(self, screen):
+        AbstractBlock.__init__(self, screen)
+        self.title = 'Percentiles (all/last 1m/last), ms:'
+        self.overall = None
+        self.width = 10
+        self.last_ts = None
+        self.last_min = {}
+        self.quantiles = [10, 20, 30, 40, 50, 60, 70, 75, 80, 85, 90, 95, 99, 99.5, 100]
+        template = {
+            'quantile': {'tpl': '{:>.1f}%'},
+            'all':      {'tpl': '{:>,.1f}'},  # noqa: E241
+            'last_1m':  {'tpl': '{:>,.1f}'},  # noqa: E241
+            'last':     {'tpl': '{:>,.1f}'}   # noqa: E241
+        }
+        delimiters = [' <  ', '  ']
+        self.formatter = TableFormatter(template, delimiters)
+
+    def add_second(self, data):
+        incoming_hist = data['overall']['interval_real']['hist']
+        ts = data['ts']
+        self.precise_quantiles = {
+            q: float(v) / 1000
+            for q, v in zip(
+                data["overall"]["interval_real"]["q"]["q"],
+                data["overall"]["interval_real"]["q"]["value"])
+        }
+        dist = pd.Series(incoming_hist['data'], index=incoming_hist['bins'])
+        if self.overall is None:
+            self.overall = dist
+        else:
+            self.overall = self.overall.add(dist, fill_value=0)
+        for second in self.last_min.keys():
+            if ts - second > 60:
+                self.last_min.pop(second)
+        self.last_min[ts] = dist
+
+    def __calc_percentiles(self):
+        def hist_to_quant(histogram, quant):
+            cumulative = histogram.cumsum()
+            total = cumulative.max()
+            positions = cumulative.searchsorted([float(i) / 100 * total for i in quant])
+            quant_times = [cumulative.index[i] / 1000. for i in positions]
+            return quant_times
+
+        all_times = hist_to_quant(self.overall, self.quantiles)
+        last_data = self.last_min[max(self.last_min.keys())]
+        last_times = hist_to_quant(last_data, self.quantiles)
+        # Check if we have precise data for last second quantiles instead of binned histogram
+        for position, q in enumerate(self.quantiles):
+            if q in self.precise_quantiles:
+                last_times[position] = self.precise_quantiles[q]
+        # Replace binned values with precise, if lower quantile bin happens to be
+        # greater than upper quantile precise values
+        for position in reversed(range(1, len(last_times))):
+            if last_times[position - 1] > last_times[position]:
+                last_times[position - 1] = last_times[position]
+        last_1m = pd.Series()
+        for ts, data in self.last_min.iteritems():
+            if last_1m.empty:
+                last_1m = data
+            else:
+                last_1m = last_1m.add(data, fill_value=0)
+        last_1m_times = hist_to_quant(last_1m, self.quantiles)
+        quant_times = reversed(
+            zip(self.quantiles, all_times, last_1m_times, last_times)
+        )
+        data = []
+        for q, all_time, last_1m, last_time in quant_times:
+            data.append({
+                'quantile': q,
+                'all': all_time,
+                'last_1m': last_1m,
+                'last': last_time
+            })
+        return data
+
+    def render(self, expected_width=None):
+        prepared = [(self.screen.markup.WHITE, self.title)]
+        if self.overall is None:
+            prepared.append(('',))
+        else:
+            data = self.__calc_percentiles()
+            prepared += self.formatter.render_table(data, ['quantile', 'all', 'last_1m', 'last'])
+        self.width, self.lines = self.fill_rectangle(prepared)
 
 
 class CurrentHTTPBlock(AbstractBlock):
     ''' Http codes with highlight'''
-    TITLE = 'HTTP codes:'
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
-        self.times_dist = defaultdict(int)
+        self.overall_dist = defaultdict(int)
+        self.title = 'HTTP codes: '
         self.total_count = 0
-        self.highlight_codes = []
+        template = {
+            'count':       {'tpl': '{:>,}'},  # noqa: E241
+            'last':        {'tpl': '+{:>,}'},  # noqa: E241
+            'percent':     {'tpl': '{:>.2f}%'},  # noqa: E241
+            'code':        {'tpl': '{:>3}', 'final': '{{{:}:<{len}}}'},  # noqa: E241
+            'description': {'tpl': '{:<10}', 'final': '{{{:}:<{len}}}'}
+        }
+        delimiters = [' ', '  ', ' : ', ' ']
+        self.formatter = TableFormatter(template, delimiters)
 
     def add_second(self, data):
-        codes_dist = data["overall"]["proto_code"]["count"]
-
-        self.log.debug("Arrived codes data: %s", codes_dist)
-        self.highlight_codes = []
-
-        for code, count in codes_dist.iteritems():
+        self.last_dist = data["overall"]["proto_code"]["count"]
+        for code, count in self.last_dist.iteritems():
             self.total_count += count
-            self.highlight_codes.append(code)
-            self.times_dist[code] += count
+            self.overall_dist[code] += count
 
-        self.log.debug("Current codes dist: %s", self.times_dist)
-
-    def render(self):
-        self.lines = [
-            self.screen.markup.WHITE + self.TITLE + self.screen.markup.RESET
-        ]
-        for code, count in sorted(self.times_dist.iteritems()):
-            line = self.format_line(code, count)
-            self.width = max(
-                self.width, len(self.screen.markup.clean_markup(line)))
-            self.lines.append(line)
-
-    def format_line(self, code, count):
-        ''' format line for display '''
-        if self.total_count:
-            perc = float(count) / self.total_count
+    def __code_color(self, code):
+        colors = {(200, 299): self.screen.markup.GREEN,
+                  (300, 399): self.screen.markup.CYAN,
+                  (400, 499): self.screen.markup.YELLOW,
+                  (500, 599): self.screen.markup.RED}
+        if code in self.last_dist.keys():
+            for left, right in colors:
+                if left <= int(code) <= right:
+                    return colors[(left, right)]
+            return self.screen.markup.MAGENTA
         else:
-            perc = 1
-        # 11083   5.07%: 304 Not Modified
-        count_len = str(len(str(self.total_count)))
+            return ''
+
+    def __code_descr(self, code):
         if int(code) in util.HTTP:
-            code_desc = util.HTTP[int(code)]
+            return util.HTTP[int(code)]
         else:
-            code_desc = "N/A"
-        tpl = '  %' + count_len + 'd %6.2f%%: %s %s'
-        data = (count, perc * 100, code, code_desc)
-        left_line = tpl % data
+            return 'N/A'
 
-        if code in self.highlight_codes:
-            code = str(code)
-            if code[0] == '2':
-                left_line = self.screen.markup.GREEN + left_line + self.screen.markup.RESET
-            elif code[0] == '3':
-                left_line = self.screen.markup.CYAN + left_line + self.screen.markup.RESET
-            elif code[0] == '4':
-                left_line = self.screen.markup.YELLOW + left_line + self.screen.markup.RESET
-            elif code[0] == '5':
-                left_line = self.screen.markup.RED + left_line + self.screen.markup.RESET
-            else:
-                left_line = self.screen.markup.MAGENTA + left_line + self.screen.markup.RESET
-
-        return left_line
-
-
-# ======================================================
+    def render(self, expected_width=None):
+        prepared = [(self.screen.markup.WHITE, self.title)]
+        if not self.overall_dist:
+            prepared.append(('',))
+        else:
+            data = []
+            for code, count in sorted(self.overall_dist.iteritems()):
+                if code in self.last_dist:
+                    last_count = self.last_dist[code]
+                else:
+                    last_count = 0
+                data.append({
+                    'count': count,
+                    'last': last_count,
+                    'percent': 100 * safe_div(count, self.total_count),
+                    'code': code,
+                    'description': self.__code_descr(code)
+                })
+            table = self.formatter.render_table(data, ['count', 'last', 'percent', 'code', 'description'])
+            for num, line in enumerate(data):
+                color = self.__code_color(line['code'])
+                prepared.append((color, table[num][0]))
+        self.width, self.lines = self.fill_rectangle(prepared)
 
 
 class CurrentNetBlock(AbstractBlock):
     ''' NET codes with highlight'''
-    TITLE = 'NET codes:'
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
-        self.times_dist = defaultdict(int)
+        self.overall_dist = defaultdict(int)
+        self.title = 'Net codes:'
         self.total_count = 0
-
-    def add_second(self, data):
-        net_dist = data["overall"]["net_code"]["count"]
-
-        self.log.debug("Arrived net codes data: %s", net_dist)
-        self.highlight_codes = []
-
-        for code, count in net_dist.iteritems():
-            self.total_count += count
-            self.highlight_codes.append(code)
-            self.times_dist[code] += count
-
-        self.log.debug("Current net codes dist: %s", self.times_dist)
-
-    def format_line(self, code, count):
-        if self.total_count:
-            perc = float(count) / self.total_count
-        else:
-            perc = 1
-        # 11083   5.07%: 304 Not Modified
-        count_len = str(len(str(self.total_count)))
-        if int(code) in util.NET:
-            code_desc = util.NET[int(code)]
-        else:
-            code_desc = "N/A"
-        tpl = '  %' + count_len + 'd %6.2f%%: %s %s'
-        data = (count, perc * 100, code, code_desc)
-        left_line = tpl % data
-
-        if code in self.highlight_codes:
-            if code == '0':
-                left_line = self.screen.markup.GREEN + left_line + self.screen.markup.RESET
-            else:
-                left_line = self.screen.markup.RED + left_line + self.screen.markup.RESET
-
-        return left_line
-
-    def render(self):
-        self.lines = [
-            self.screen.markup.WHITE + self.TITLE + self.screen.markup.RESET
-        ]
-        for code, count in sorted(self.times_dist.iteritems()):
-            line = self.format_line(code, count)
-            self.width = max(
-                self.width, len(self.screen.markup.clean_markup(line)))
-            self.lines.append(line)
-
-
-# ======================================================
-
-
-class CurrentQuantilesBlock(AbstractBlock):
-    ''' Current test quantiles '''
-
-    def __init__(self, screen):
-        AbstractBlock.__init__(self, screen)
-        self.total_count = 0
-        self.current_max_rt = 0
-        self.quantiles = {}
-
-    def add_second(self, data):
-        self.quantiles = {
-            k: v
-            for k, v in zip(
-                data["overall"]["interval_real"]["q"]["q"], data["overall"][
-                    "interval_real"]["q"]["value"])
+        template = {
+            'count':       {'tpl': '{:>,}'},  # noqa: E241
+            'last':        {'tpl': '+{:>,}'},  # noqa: E241
+            'percent':     {'tpl': '{:>.2f}%'},  # noqa: E241
+            'code':        {'tpl': '{:>2}', 'final': '{{{:}:<{len}}}'},  # noqa: E241
+            'description': {'tpl': '{:<10}', 'final': '{{{:}:<{len}}}'}
         }
+        delimiters = [' ', '  ', ' : ', ' ']
+        self.formatter = TableFormatter(template, delimiters)
 
-    def render(self):
-        self.lines = []
-        for quant in sorted(self.quantiles):
-            line = self.__format_line(quant, self.quantiles[quant])
-            self.width = max(self.width, len(line))
-            self.lines.append(line)
+    def add_second(self, data):
+        self.last_dist = data["overall"]["net_code"]["count"]
 
-        self.lines.reverse()
-        self.lines = [
-            self.screen.markup.WHITE + 'Current Percentiles:' +
-            self.screen.markup.RESET
-        ] + self.lines
-        self.width = max(
-            self.width, len(self.screen.markup.clean_markup(self.lines[0])))
+        for code, count in self.last_dist.iteritems():
+            self.total_count += count
+            self.overall_dist[code] += count
 
-    def __format_line(self, quan, timing):
-        ''' Format line '''
-        timing_len = str(len(str(self.current_max_rt)))
-        tpl = '   %3s%% < %' + timing_len + '.2f ms'
-        data = (quan, timing / 1000.0)
-        left_line = tpl % data
-        return left_line
+    def __code_descr(self, code):
+        if int(code) in util.NET:
+            return util.NET[int(code)]
+        else:
+            return 'N/A'
 
+    def __code_color(self, code):
+        if code in self.last_dist.keys():
+            if int(code) == 0:
+                return self.screen.markup.GREEN
+            elif int(code) == 314:
+                return self.screen.markup.MAGENTA
+            else:
+                return self.screen.markup.RED
+        else:
+            return ''
 
-# ======================================================
+    def render(self, expected_width=None):
+        prepared = [(self.screen.markup.WHITE, self.title)]
+        if not self.overall_dist:
+            prepared.append(('',))
+        else:
+            data = []
+            for code, count in sorted(self.overall_dist.iteritems()):
+                if code in self.last_dist:
+                    last_count = self.last_dist[code]
+                else:
+                    last_count = 0
+                data.append({
+                    'count': count,
+                    'last': last_count,
+                    'percent': 100 * safe_div(count, self.total_count),
+                    'code': code,
+                    'description': self.__code_descr(code)
+                })
+            table = self.formatter.render_table(data, ['count', 'last', 'percent', 'code', 'description'])
+            for num, line in enumerate(data):
+                color = self.__code_color(line['code'])
+                prepared.append((color, table[num][0]))
+        self.width, self.lines = self.fill_rectangle(prepared)
 
 
 class AnswSizesBlock(AbstractBlock):
-    ''' Answer sizes, if available '''
+    ''' Answer and response sizes, if available '''
 
-    def __init__(self, screen):
+    def __init__(self, screen, sizes_max_spark=120):
         AbstractBlock.__init__(self, screen)
-        self.sum_in = 0
-        self.sum_out = 0
-        self.count = 0
-        self.header = screen.markup.WHITE + 'Request/Response Sizes:' + screen.markup.RESET
-        self.cur_count = 0
-        self.cur_in = 0
-        self.cur_out = 0
-
-    def render(self):
-        self.lines = [self.header]
-        if self.count:
-            self.lines.append(
-                "   Avg Request: %d bytes" % (self.sum_out / self.count))
-            self.lines.append(
-                "  Avg Response: %d bytes" % (self.sum_in / self.count))
-            self.lines.append("")
-        if self.cur_count:
-            self.lines.append(
-                "   Last Avg Request: %d bytes" %
-                (self.cur_out / self.cur_count))
-            self.lines.append(
-                "  Last Avg Response: %d bytes" %
-                (self.cur_in / self.cur_count))
-        else:
-            self.lines.append("")
-            self.lines.append("")
-        for line in self.lines:
-            self.width = max(
-                self.width, len(self.screen.markup.clean_markup(line)))
+        self.sparkline = Sparkline(sizes_max_spark)
+        self.overall = {'count': 0, 'Response': 0, 'Request': 0}
+        self.last = {'count': 0, 'Response': 0, 'Request': 0}
+        self.title = 'Average Sizes (all/last), bytes:'
+        template = {
+            'name': {'tpl': '{:>}'},
+            'avg': {'tpl': '{:>,.1f}'},
+            'last_avg': {'tpl': '{:>,.1f}'}
+        }
+        delimiters = [': ', ' / ']
+        self.formatter = TableFormatter(template, delimiters)
 
     def add_second(self, data):
+        self.last['count'] = data["overall"]["interval_real"]["len"]
+        self.last['Request'] = data["overall"]["size_out"]["total"]
+        self.last['Response'] = data["overall"]["size_in"]["total"]
 
-        self.cur_in = data["overall"]["size_out"]["total"]
-        self.cur_out = data["overall"]["size_out"]["total"]
-        self.cur_count = data["overall"]["interval_real"]["len"]
+        self.overall['count'] += self.last['count']
+        self.overall['Request'] += self.last['Request']
+        self.overall['Response'] += self.last['Response']
+        ts = data['ts']
+        for direction in ['Request', 'Response']:
+            self.sparkline.add(ts, direction, self.last[direction] / self.last['count'])
 
-        self.count += self.cur_count
-        self.sum_in += self.cur_in
-        self.sum_out += self.cur_out
-
-
-# ======================================================
+    def render(self, expected_width=None):
+        prepared = [(self.screen.markup.WHITE, self.title)]
+        if self.overall['count']:
+            overall_avg = avg_from_dict(self.overall)
+            last_avg = avg_from_dict(self.last)
+            data = []
+            for direction in ['Request', 'Response']:
+                data.append({
+                    'name': direction,
+                    'avg': overall_avg[direction],
+                    'last_avg': last_avg[direction]
+                })
+            table = self.formatter.render_table(data, ['name', 'avg', 'last_avg'])
+            for num, direction in enumerate(['Request', 'Response']):
+                spark_len = expected_width - self.clean_len(table[0]) - 3
+                spark = self.sparkline.get_sparkline(direction, spark_len=spark_len)
+                prepared.append(table[num] + ('  ',) + tuple(spark))
+        else:
+            self.lines.append(('',))
+            self.lines.append(('',))
+        self.width, self.lines = self.fill_rectangle(prepared)
 
 
 class AvgTimesBlock(AbstractBlock):
     ''' Average times breakdown '''
 
-    def __init__(self, screen):
+    def __init__(self, screen, times_max_spark=120):
         AbstractBlock.__init__(self, screen)
-
-        self.all_connect = 0
-        self.all_send = 0
-        self.all_latency = 0
-        self.all_receive = 0
-        self.all_overall = 0
-        self.all_count = 0
-
-        self.last_connect = 0
-        self.last_send = 0
-        self.last_latency = 0
-        self.last_receive = 0
-        self.last_overall = 0
-        self.last_count = 0
-
-        self.header = 'Avg Times (all / last):'
+        self.sparkline = Sparkline(times_max_spark)
+        self.fraction_keys = [
+            'interval_real', 'connect_time', 'send_time', 'latency', 'receive_time']
+        self.fraction_names = {
+            'interval_real': 'Overall',
+            'connect_time':  'Connect',  # noqa: E241
+            'send_time':     'Send',  # noqa: E241
+            'latency':       'Latency',  # noqa: E241
+            'receive_time':  'Receive'}  # noqa: E241
+        self.overall = dict([(k, 0) for k in self.fraction_keys])
+        self.overall['count'] = 0
+        self.last = dict([(k, 0) for k in self.fraction_keys])
+        self.last['count'] = 0
+        self.title = 'Average Times (all/last), ms:'
+        template = {
+            'name': {'tpl': '{:>}'},
+            'avg': {'tpl': '{:>,.2f}'},
+            'last_avg': {'tpl': '{:>,.2f}'}
+        }
+        delimiters = [': ', ' / ']
+        self.formatter = TableFormatter(template, delimiters)
 
     def add_second(self, data):
-        count = data["overall"]["interval_real"]["len"]
-        self.last_connect = data["overall"]["connect_time"]["total"]
-        self.last_send = data["overall"]["send_time"]["total"]
-        self.last_latency = data["overall"]["latency"]["total"]
-        self.last_receive = data["overall"]["receive_time"]["total"]
-        self.last_overall = data["overall"]["interval_real"]["total"]
-        self.last_count = count
+        self.last = {}
+        self.last['count'] = data["overall"]["interval_real"]["len"]
+        self.overall['count'] += self.last['count']
+        ts = data["ts"]
+        for fraction in self.fraction_keys:
+            self.last[fraction] = float(data["overall"][fraction]["total"]) / 1000
+            self.overall[fraction] += self.last[fraction]
+            self.sparkline.add(ts, fraction, self.last[fraction] / self.last['count'])
 
-        self.all_connect += self.last_connect
-        self.all_send += self.last_send
-        self.all_latency += self.last_latency
-        self.all_receive += self.last_receive
-        self.all_overall += self.last_overall
-        self.all_count += count
-
-    def render(self):
-        self.lines = [
-            self.screen.markup.WHITE + self.header + self.screen.markup.RESET
-        ]
-        if self.last_count:
-            len_all = str(
-                len(
-                    str(
-                        max([
-                            self.all_connect, self.all_latency,
-                            self.all_overall, self.all_receive, self.all_send
-                        ]))))
-            len_last = str(
-                len(
-                    str(
-                        max([
-                            self.last_connect, self.last_latency,
-                            self.last_overall, self.last_receive, self.last_send
-                        ]))))
-            tpl = "%" + len_all + "d / %" + len_last + "d"
-            self.lines.append(
-                "  Overall: " + tpl % (
-                    float(self.all_overall) / self.all_count, float(
-                        self.last_overall) / self.last_count))
-            self.lines.append(
-                "  Connect: " + tpl % (
-                    float(self.all_connect) / self.all_count, float(
-                        self.last_connect) / self.last_count))
-            self.lines.append(
-                "     Send: " + tpl % (
-                    float(self.all_send) / self.all_count, float(
-                        self.last_send) / self.last_count))
-            self.lines.append(
-                "  Latency: " + tpl % (
-                    float(self.all_latency) / self.all_count, float(
-                        self.last_latency) / self.last_count))
-            self.lines.append(
-                "  Receive: " + tpl % (
-                    float(self.all_receive) / self.all_count, float(
-                        self.last_receive) / self.last_count))
+    def render(self, expected_width=None):
+        prepared = [(self.screen.markup.WHITE, self.title)]
+        if self.overall['count']:
+            overall_avg = avg_from_dict(self.overall)
+            last_avg = avg_from_dict(self.last)
+            data = []
+            for fraction in self.fraction_keys:
+                data.append({
+                    'name': self.fraction_names[fraction],
+                    'avg': overall_avg[fraction],
+                    'last_avg': last_avg[fraction]
+                })
+            table = self.formatter.render_table(data, ['name', 'avg', 'last_avg'])
+            for num, fraction in enumerate(self.fraction_keys):
+                spark_len = expected_width - self.clean_len(table[0]) - 3
+                spark = self.sparkline.get_sparkline(fraction, spark_len=spark_len)
+                prepared.append(table[num] + ('  ',) + tuple(spark))
         else:
-            self.lines.append("")
-            self.lines.append("")
-            self.lines.append("")
-            self.lines.append("")
-            self.lines.append("")
-        for line in self.lines:
-            self.width = max(
-                self.width, len(self.screen.markup.clean_markup(line)))
-
-
-# ======================================================
+            for fraction in self.fraction_keys:
+                prepared.append(('-',))
+        self.width, self.lines = self.fill_rectangle(prepared)
 
 
 class CasesBlock(AbstractBlock):
     '''     Cases info    '''
 
-    def __init__(self, screen):
+    def __init__(self, screen, cases_sort_by='http_err', cases_max_spark=60, reorder_delay=5, max_case_len=32):
         AbstractBlock.__init__(self, screen)
-        self.cases = {}
-        self.count = 0
-        self.header = "Cumulative Cases Info:"
-        self.max_case_len = 0
+        self.cumulative_cases = {}
+        self.last_cases = {}
+        self.title = 'Cumulative Cases Info:'
+        self.max_case_len = max_case_len
+        self.cases_order = []
+        self.reorder_delay = reorder_delay
+        self.sparkline = Sparkline(cases_max_spark)
+        self.cases_sort_by = cases_sort_by
+        self.last_reordered = time.time()
+        self.field_order = ['name', 'count', 'percent', 'last', 'net_err', 'http_err', 'avg', 'last_avg']
+
+        template = {
+            'name':     {'tpl': u'{:>}:',   'header': 'name', 'final': u'{{{:}:>{len}}}'},  # noqa: E241
+            'count':    {'tpl': '{:>,}',    'header': 'count'},   # noqa: E241
+            'last':     {'tpl': '+{:>,}',   'header': 'last'},    # noqa: E241
+            'percent':  {'tpl': '{:>.2f}%', 'header': '%'},       # noqa: E241
+            'net_err':  {'tpl': '{:>,}',    'header': 'net_e'},   # noqa: E241
+            'http_err': {'tpl': '{:>,}',    'header': 'http_e'},  # noqa: E241
+            'avg':      {'tpl': '{:>,.1f}', 'header': 'avg ms'},  # noqa: E241
+            'last_avg': {'tpl': '{:>,.1f}', 'header': 'last ms'}
+        }
+        delimiters = [' ']
+        self.formatter = TableFormatter(template, delimiters)
 
     def add_second(self, data):
+        def prepare_data(tag_data, display_name):
+            count = tag_data["interval_real"]["len"]
+            time = tag_data["interval_real"]["total"] / 1000
+            net_err, http_err, spark_color = combine_codes(tag_data, self.screen.markup)
+            if spark_color == self.screen.markup.GREEN:
+                text_color = self.screen.markup.WHITE
+            else:
+                text_color = spark_color
+            return (spark_color, {
+                'count': count, 'net_err': net_err, 'http_err': http_err,
+                'time': time, 'color': text_color, 'display_name': display_name})
+
+        ts = data["ts"]
+        overall = data["overall"]
+        self.last_cases = {}
+        spark_color, self.last_cases[0] = prepare_data(overall, u'OVERALL')
+        self.sparkline.add(ts, 0, self.last_cases[0]['count'], color=spark_color)
+
         tagged = data["tagged"]
         for tag_name, tag_data in tagged.iteritems():
-            # decode symbols to utf-8 in order to support cyrillic symbols in
-            # cases
+            # decode symbols to utf-8 in order to support cyrillic symbols in cases
             name = tag_name.decode('utf-8')
-            if name not in self.cases.keys():
-                self.cases[name] = [0, 0]
-                self.max_case_len = max(self.max_case_len, len(name))
-            rps = tag_data["interval_real"]["len"]
-            self.cases[name][0] += rps
-            self.cases[name][1] += tag_data["interval_real"]["total"] / 1000
+            spark_color, self.last_cases[name] = prepare_data(tag_data, name)
+            self.sparkline.add(ts, name, self.last_cases[name]['count'], color=spark_color)
+        for name in self.last_cases:
+            if name not in self.cumulative_cases:
+                self.cumulative_cases[name] = {}
+                for k in ['count', 'net_err', 'http_err', 'time', 'display_name']:
+                    self.cumulative_cases[name][k] = self.last_cases[name][k]
+            else:
+                for k in ['count', 'net_err', 'http_err', 'time']:
+                    self.cumulative_cases[name][k] += self.last_cases[name][k]
 
-    def render(self):
-        self.lines = [
-            self.screen.markup.WHITE + self.header + self.screen.markup.RESET
-        ]
-        total_count = sum(case[0] for case in self.cases.values())
-        tpl = "  %s: %" + str(len(str(total_count))) + "d %5.2f%% / avg %.1f ms"
-        for name, (count, resp_time) in sorted(self.cases.iteritems()):
-            line = tpl % (
-                " " * (self.max_case_len - len(name)) + name, count,
-                100 * float(count) / total_count, float(resp_time) / count)
-            self.lines.append(line)
+    def __cut_name(self, name):
+        if len(name) > self.max_case_len:
+            return name[:self.max_case_len - 1] + u'\u2026'
+        else:
+            return name
 
-        for line in self.lines:
-            self.width = max(
-                self.width, len(self.screen.markup.clean_markup(line)))
+    def __reorder_cases(self):
+        sorted_cases = sorted(self.cumulative_cases.iteritems(),
+                              key=lambda (k, v): (-1 * v[self.cases_sort_by], k))
+        new_order = [case for (case, data) in sorted_cases]
+        now = time.time()
+        if now - self.reorder_delay > self.last_reordered:
+            self.cases_order = new_order
+            self.last_reordered = now
+        else:
+            if len(new_order) > len(self.cases_order):
+                for case in new_order:
+                    if case not in self.cases_order:
+                        self.cases_order.append(case)
+
+    def render(self, expected_width=None):
+        prepared = [(self.screen.markup.WHITE, self.title)]
+
+        if 0 in self.cumulative_cases:  # 0 used as special name for OVERALL to avoid name collision
+            total_count = self.cumulative_cases[0]['count']
+
+            self.__reorder_cases()
+            data = []
+            for name in self.cases_order:
+                case_data = self.cumulative_cases[name]
+                if name in self.last_cases:
+                    last = self.last_cases[name]
+                else:
+                    last = {'count': 0, 'net_err': 0, 'http_err': 0, 'time': 0, 'color': '', 'display_name': name}
+                data.append({
+                    'full_name': name,
+                    'name': self.__cut_name(case_data['display_name']),
+                    'count': case_data['count'],
+                    'percent': 100 * safe_div(case_data['count'], total_count),
+                    'last': last['count'],
+                    'net_err': case_data['net_err'],
+                    'http_err': case_data['http_err'],
+                    'avg': safe_div(case_data['time'], case_data['count']),
+                    'last_avg': safe_div(last['time'], last['count'])
+                })
+            table = self.formatter.render_table(data, self.field_order)
+            prepared.append(table[0])  # first line is table header
+            for num, line in enumerate(data):
+                full_name = line['full_name']
+                if full_name in self.last_cases:
+                    color = self.last_cases[full_name]['color']
+                else:
+                    color = ''
+                spark_len = expected_width - self.clean_len(table[0]) - 3
+                spark = self.sparkline.get_sparkline(full_name, spark_len=spark_len)
+                prepared.append((color,) + table[num + 1] + ('  ',) +
+                                tuple(spark))
+
+        for _ in range(3 - len(self.cumulative_cases)):
+            prepared.append(('',))
+
+        self.width, self.lines = self.fill_rectangle(prepared)

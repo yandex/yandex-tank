@@ -4,7 +4,6 @@ import logging
 
 import queue as q
 from pkg_resources import resource_string
-from yandextank.common.exceptions import PluginImplementationError
 
 from .aggregator import Aggregator, DataPoller
 from .chopper import TimeChopper
@@ -55,6 +54,10 @@ class TankAggregator(object):
         self.stats = q.Queue()
         self.data_cache = {}
         self.stat_cache = {}
+        self.reader = None
+        self.stats_reader = None
+        self.drain = None
+        self.stats_drain = None
 
     def start_test(self):
         self.reader = self.generator.get_reader()
@@ -79,9 +82,7 @@ class TankAggregator(object):
                 self.stats)
             self.stats_drain.start()
         else:
-            raise PluginImplementationError(
-                "Generator must pass a Reader and a StatsReader"
-                " to Aggregator before starting test")
+            logger.warning("Generator not found. Generator must provide a reader and a stats_reader interface")
 
     def _collect_data(self):
         """

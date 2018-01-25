@@ -244,7 +244,7 @@ class TankCore(object):
                 gen = self.get_plugin_of_type(GeneratorPlugin)
                 # aggregator
             except KeyError:
-                logger.warning("Load generator not found:", exc_info=True)
+                logger.warning("Load generator not found")
                 gen = GeneratorPlugin()
             aggregator = TankAggregator(gen)
             self._job = Job(monitoring_plugin=mon,
@@ -400,12 +400,23 @@ class TankCore(object):
         """
         logger.debug("Searching for plugin: %s", plugin_class)
         matches = [plugin for plugin in self.plugins.values() if isinstance(plugin, plugin_class)]
-        if len(matches) > 0:
+        if matches:
             if len(matches) > 1:
                 logger.debug(
                     "More then one plugin of type %s found. Using first one.",
                     plugin_class)
             return matches[-1]
+        else:
+            raise KeyError("Requested plugin type not found: %s" % plugin_class)
+
+    def get_plugins_of_type(self, plugin_class):
+        """
+        Retrieve a list of plugins of desired class, KeyError raised otherwise
+        """
+        logger.debug("Searching for plugins: %s", plugin_class)
+        matches = [plugin for plugin in self.plugins.values() if isinstance(plugin, plugin_class)]
+        if matches:
+            return matches
         else:
             raise KeyError("Requested plugin type not found: %s" % plugin_class)
 

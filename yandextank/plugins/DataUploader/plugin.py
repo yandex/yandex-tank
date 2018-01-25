@@ -92,6 +92,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self._info = None
         self.locked_targets = []
 
+        self.finished = False
+
     @staticmethod
     def get_key():
         return __file__
@@ -296,6 +298,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         logger.info("Waiting for sender threads to join.")
         self.monitoring.join()
         self.upload.join()
+        self.finished = True
         try:
             self.lp_job.close(rc)
         except Exception:  # pylint: disable=W0703
@@ -382,6 +385,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 lp_job.is_alive = False
                 self.retcode = 8
                 break
+            if self.finished:
+                break
         logger.info("Closing Status sender thread")
 
     def __data_uploader(self):
@@ -404,8 +409,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 lp_job.is_alive = False
                 self.retcode = 8
                 break
-            except Exception as e:
-                logger.info("Mysterious exception: %s", e)
+            except Exception:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                logger.info("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
                 break
         logger.info("Closing Data uploader thread")
 
@@ -433,7 +439,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 self.retcode = 8
                 break
             except Exception as e:
-                logger.info("Mysterious exception: %s", e)
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                logger.info("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
                 break
         logger.info('Closing Monitoring uploader thread')
 

@@ -1,9 +1,6 @@
 import logging
-import time
 
-import requests
-from yandextank.plugins.Overload.client import OverloadClient
-
+from ..DataUploader import Plugin as DataUploaderPlugin
 from .reader import AndroidReader, AndroidStatsReader
 from ...common.interfaces import AbstractPlugin, GeneratorPlugin
 
@@ -22,9 +19,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def __init__(self, core, cfg, cfg_updater):
         self.stats_reader = None
         self.reader = None
+        super(Plugin, self).__init__(core, cfg, cfg_updater)
+        self.device = None
         try:
-            super(Plugin, self).__init__(core, cfg, cfg_updater)
-            self.device = None
             self.cfg = cfg['volta_options']
             for key, value in self.cfg.iteritems():
                 if not isinstance(value, dict):
@@ -60,62 +57,59 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         [self.core.add_artifact_file(fname) for fname in self.volta_core.event_fnames.values()]
 
     def start_test(self):
-        self.volta_core.start_test()
+        try:
+            self.volta_core.start_test()
+        # FIXME raise/catch appropriate exception here
+        except:  # noqa: E722
+            logger.info('Failed to start test of Android plugin', exc_info=True)
+            return 1
 
     def is_test_finished(self):
-        if hasattr(self.volta_core, 'phone'):
-            if hasattr(self.volta_core.phone, 'test_performer'):
-                if not self.volta_core.phone.test_performer._finished:
-                    logger.debug('Waiting for phone test for finish...')
-                    return -1
-                else:
-                    return self.volta_core.phone.test_performer.retcode
+        try:
+            if hasattr(self.volta_core, 'phone'):
+                if hasattr(self.volta_core.phone, 'test_performer'):
+                    if not self.volta_core.phone.test_performer:
+                        logger.warning('There is no test performer process on the phone, interrupting test')
+                        return 1
+                    if not self.volta_core.phone.test_performer.is_finished():
+                        logger.debug('Waiting for phone test to finish...')
+                        return -1
+                    else:
+                        return self.volta_core.phone.test_performer.retcode
+        # FIXME raise/catch appropriate exception here
+        except:  # noqa: E722
+            logger.error('Unknown exception of Android plugin. Interrupting test', exc_info=True)
+            return 1
 
     def end_test(self, retcode):
-        self.volta_core.end_test()
-
-        mobile_key = self.volta_core.uploader.jobno
-        logger.info("Mobile jobno: %s", mobile_key)
-
-        jobno = self.core.status['uploader']['job_no']
-        logger.info("Simple jobno: %s", jobno)
-
-        web_link = self.core.status['uploader']['web_link']
-        url = web_link.replace(str(jobno), '')
-        logger.info("Url: %s", url)
-
-        self.link_jobs(url, jobno, mobile_key)
+        try:
+            self.volta_core.end_test()
+            uploaders = self.core.get_plugins_of_type(DataUploaderPlugin)
+            for uploader in uploaders:
+                response = uploader.lp_job.api_client.link_mobile_job(
+                    lp_key=uploader.lp_job.number,
+                    mobile_key=self.volta_core.uploader.jobno
+                )
+                logger.info(
+                    'Linked mobile job %s to %s for plugin: %s. Response: %s',
+                    self.volta_core.uploader.jobno, uploader.lp_job.number, uploader.backend_type, response
+                )
+        # FIXME raise/catch appropriate exception here
+        except:  # noqa: E722
+            logger.error('Failed to complete end_test of Android plugin', exc_info=True)
+            retcode = 1
         return retcode
-
-    def link_jobs(self, url, jobno, mobile_key):
-        api_client = OverloadClient()
-        api_client.set_api_address(url)
-        api_client.session.verify = False
-
-        addr = "/api/job/{jobno}/edit.json".format(jobno=jobno)
-        data = {
-            'mobile_key': mobile_key
-        }
-
-        logger.info("Jobs link request: url = %s, data = %s", url + addr, data)
-        while True:
-            try:
-                response = api_client.post(addr, data)
-                return response
-            except requests.exceptions.HTTPError as ex:
-                logger.debug("Got error for jobs link request: %s", ex)
-                if ex.response.status_code == 423:
-                    logger.warn(
-                        "Overload is under maintenance, will retry in 5s...")
-                    time.sleep(5)
-                else:
-                    raise ex
 
     def get_info(self):
         return AndroidInfo()
 
     def post_process(self, retcode):
-        self.volta_core.post_process()
+        try:
+            self.volta_core.post_process()
+        # FIXME raise/catch appropriate exception here
+        except:  # noqa: E722
+            logger.error('Failed to complete post_process of Android plugin', exc_info=True)
+            retcode = 1
         return retcode
 
 
