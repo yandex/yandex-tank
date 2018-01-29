@@ -653,15 +653,15 @@ Phantom
 
 ``load_profile`` (dict)
 -----------------------
-*\- (no description).* **Required.**
+*\- Configure your load setting the number of RPS or instances (clients) as a function of time,or using a prearranged schedule.* **Required.**
 
 :``load_type`` (string):
- *\- (no description).*
+ *\- Choose control parameter.* **Required.**
  
  :one of:
-  :``instances``: fix number of instances
-  :``rps``: fix rps rate
-  :``stpd_file``: use ready schedule file
+  :``instances``: control the number of instances
+  :``rps``: control the rps rate
+  :``stpd_file``: use prearranged schedule file
 :``schedule`` (string):
  *\- load schedule or path to stpd file.* **Required.**
  
@@ -672,6 +672,8 @@ Phantom
    linear growth from 100 to 200 instances/rps during 10 minutes
   ``test_dir/test_backend.stpd``
    path to ready schedule file
+ :tutorial_link:
+  http://yandextank.readthedocs.io/en/latest/tutorial.html#tutorials
 
 ``loop`` (integer)
 ------------------
