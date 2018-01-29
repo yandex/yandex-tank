@@ -28,10 +28,6 @@ Appium
 Autostop
 ========
 
-``report_file`` (string)
-------------------------
-*\- path to file to store autostop report. Default:* ``autostop_report.txt``
-
 ``autostop`` (list of string)
 -----------------------------
 *\- list of autostop constraints. Default:* ``[]``
@@ -47,6 +43,10 @@ Autostop
  ``[quantile(50,100,20), http(4xx,50%,5)]``
   stop when either quantile 50% or 4xx http codes exceeds specified levels
 
+``report_file`` (string)
+------------------------
+*\- path to file to store autostop report. Default:* ``autostop_report.txt``
+
 BatteryHistorian
 ================
 
@@ -60,35 +60,25 @@ BatteryHistorian
 Bfg
 ===
 
-``worker_type`` (string)
+``address`` (string)
+--------------------
+*\- (no description).*
+
+``ammo_limit`` (integer)
 ------------------------
-*\- (no description). Default:* ``""``
+*\- (no description). Default:* ``-1``
 
-``force_stepping`` (integer)
-----------------------------
-*\- (no description). Default:* ``0``
-
-``gun_type`` (string)
----------------------
-*\- (no description).* **Required.**
-
-:one of: [``custom``, ``http``, ``scenario``, ``ultimate``]
-
-``header_http`` (string)
-------------------------
-*\- (no description). Default:* ``1.0``
-
-``file_cache`` (integer)
-------------------------
-*\- (no description). Default:* ``8192``
+``ammo_type`` (string)
+----------------------
+*\- (no description). Default:* ``caseline``
 
 ``ammofile`` (string)
 ---------------------
 *\- (no description). Default:* ``""``
 
-``instances`` (integer)
------------------------
-*\- (no description). Default:* ``1000``
+``autocases`` (string)
+----------------------
+*\- (no description). Default:* ``0``
 
 ``cache_dir`` (string)
 ----------------------
@@ -97,33 +87,29 @@ Bfg
 :nullable:
  True
 
-``address`` (string)
---------------------
-*\- (no description).*
-
-``pip`` (string)
-----------------
-*\- (no description). Default:* ``""``
+``cached_stpd`` (boolean)
+-------------------------
+*\- (no description). Default:* ``False``
 
 ``chosen_cases`` (string)
 -------------------------
 *\- (no description). Default:* ``""``
 
-``ammo_type`` (string)
-----------------------
-*\- (no description). Default:* ``caseline``
-
-``load_profile`` (dict)
+``enum_ammo`` (boolean)
 -----------------------
-*\- (no description).* **Required.**
+*\- (no description). Default:* ``False``
 
-:``load_type`` (string):
- *\- (no description).* **Required.**
- 
- :regex:
-  ^rps|instances|stpd_file$
-:``schedule`` (string):
- *\- (no description).* **Required.**
+``file_cache`` (integer)
+------------------------
+*\- (no description). Default:* ``8192``
+
+``force_stepping`` (integer)
+----------------------------
+*\- (no description). Default:* ``0``
+
+``green_threads_per_instance`` (integer)
+----------------------------------------
+*\- (no description). Default:* ``1000``
 
 ``gun_config`` (dict)
 ---------------------
@@ -143,76 +129,62 @@ Bfg
 :allow_unknown:
  True
 
-``autocases`` (string)
-----------------------
-*\- (no description). Default:* ``0``
+``gun_type`` (string)
+---------------------
+*\- (no description).* **Required.**
 
-``cached_stpd`` (boolean)
--------------------------
-*\- (no description). Default:* ``False``
+:one of: [``custom``, ``http``, ``scenario``, ``ultimate``]
 
-``ammo_limit`` (integer)
+``header_http`` (string)
 ------------------------
-*\- (no description). Default:* ``-1``
+*\- (no description). Default:* ``1.0``
 
 ``headers`` (string)
 --------------------
 *\- (no description). Default:* ``""``
 
-``green_threads_per_instance`` (integer)
-----------------------------------------
+``instances`` (integer)
+-----------------------
 *\- (no description). Default:* ``1000``
 
-``use_caching`` (boolean)
--------------------------
-*\- (no description). Default:* ``True``
-
-``enum_ammo`` (boolean)
+``load_profile`` (dict)
 -----------------------
-*\- (no description). Default:* ``False``
+*\- (no description).* **Required.**
 
-``uris`` (string)
------------------
-*\- (no description). Default:* ``""``
+:``load_type`` (string):
+ *\- (no description).* **Required.**
+ 
+ :regex:
+  ^rps|instances|stpd_file$
+:``schedule`` (string):
+ *\- (no description).* **Required.**
 
 ``loop`` (integer)
 ------------------
 *\- (no description). Default:* ``-1``
 
+``pip`` (string)
+----------------
+*\- (no description). Default:* ``""``
+
+``uris`` (string)
+-----------------
+*\- (no description). Default:* ``""``
+
+``use_caching`` (boolean)
+-------------------------
+*\- (no description). Default:* ``True``
+
+``worker_type`` (string)
+------------------------
+*\- (no description). Default:* ``""``
+
 Console
 =======
-
-``max_case_len`` (integer)
---------------------------
-*\- max lenght of case name, longer names will be cut in console output. Default:* ``32``
-
-``disable_all_colors`` (boolean)
---------------------------------
-*\- disable colors in full output. Default:* ``False``
-
-``info_panel_width`` (integer)
-------------------------------
-*\- width of right panel. Default:* ``33``
-
-``sizes_max_spark`` (integer)
------------------------------
-*\- max length of sparkline for request/response sizes, 0 to disable. Default:* ``120``
-
-``disable_colors`` (string)
----------------------------
-*\- (no description). Default:* ``""``
 
 ``cases_max_spark`` (integer)
 -----------------------------
 *\- length of sparkline for each case, 0 to disable. Default:* ``120``
-
-``times_max_spark`` (integer)
------------------------------
-*\- max length of sparkline for fractions of request time, 0 to disable. Default:* ``120``
-
-``short_only`` (boolean)
-------------------------
-*\- do not draw full console screen, write short info for each second. Default:* ``False``
 
 ``cases_sort_by`` (string)
 --------------------------
@@ -220,59 +192,76 @@ Console
 
 :one of: [``count``, ``net_err``, ``http_err``]
 
+``disable_all_colors`` (boolean)
+--------------------------------
+*\- disable colors in full output. Default:* ``False``
+
+``disable_colors`` (string)
+---------------------------
+*\- (no description). Default:* ``""``
+
+``info_panel_width`` (integer)
+------------------------------
+*\- width of right panel. Default:* ``33``
+
+``max_case_len`` (integer)
+--------------------------
+*\- max lenght of case name, longer names will be cut in console output. Default:* ``32``
+
+``short_only`` (boolean)
+------------------------
+*\- do not draw full console screen, write short info for each second. Default:* ``False``
+
+``sizes_max_spark`` (integer)
+-----------------------------
+*\- max length of sparkline for request/response sizes, 0 to disable. Default:* ``120``
+
+``times_max_spark`` (integer)
+-----------------------------
+*\- max length of sparkline for fractions of request time, 0 to disable. Default:* ``120``
+
 DataUploader
 ============
-
-``jobno_file`` (string)
------------------------
-*\- (no description). Default:* ``jobno_file.txt``
-
-``network_timeout`` (integer)
------------------------------
-*\- (no description). Default:* ``10``
-
-``meta`` (dict)
----------------
-*\- (no description).*
-
-``notify`` (string)
--------------------
-*\- (no description). Default:* ``""``
-
-``operator`` (string)
----------------------
-*\- (no description). Default:* ``None``
-
-:nullable:
- True
-
-``job_dsc`` (string)
---------------------
-*\- (no description). Default:* ``""``
-
-``ver`` (string)
-----------------
-*\- (no description). Default:* ``""``
-
-``maintenance_timeout`` (integer)
----------------------------------
-*\- (no description). Default:* ``60``
-
-``network_attempts`` (integer)
-------------------------------
-*\- (no description). Default:* ``60``
 
 ``api_address`` (string)
 ------------------------
 *\- (no description). Default:* ``https://overload.yandex.net/``
 
-``log_data_requests`` (boolean)
--------------------------------
-*\- (no description). Default:* ``False``
-
 ``api_attempts`` (integer)
 --------------------------
 *\- (no description). Default:* ``60``
+
+``api_timeout`` (integer)
+-------------------------
+*\- (no description). Default:* ``10``
+
+``chunk_size`` (integer)
+------------------------
+*\- (no description). Default:* ``500000``
+
+``component`` (string)
+----------------------
+*\- (no description). Default:* ``""``
+
+``connection_timeout`` (integer)
+--------------------------------
+*\- (no description). Default:* ``30``
+
+``ignore_target_lock`` (boolean)
+--------------------------------
+*\- (no description). Default:* ``False``
+
+``job_dsc`` (string)
+--------------------
+*\- (no description). Default:* ``""``
+
+``job_name`` (string)
+---------------------
+*\- (no description). Default:* ``none``
+
+``jobno_file`` (string)
+-----------------------
+*\- (no description). Default:* ``jobno_file.txt``
 
 ``jobno`` (string)
 ------------------
@@ -280,14 +269,6 @@ DataUploader
 
 :dependencies:
  upload_token
-
-``api_timeout`` (integer)
--------------------------
-*\- (no description). Default:* ``10``
-
-``component`` (string)
-----------------------
-*\- (no description). Default:* ``""``
 
 ``lock_targets`` (list or string)
 ---------------------------------
@@ -300,21 +281,80 @@ DataUploader
 :tutorial_link:
  http://yandextank.readthedocs.io
 
-``regress`` (boolean)
----------------------
+``log_data_requests`` (boolean)
+-------------------------------
 *\- (no description). Default:* ``False``
-
-``token_file`` (string)
------------------------
-*\- (no description).*
 
 ``log_monitoring_requests`` (boolean)
 -------------------------------------
 *\- (no description). Default:* ``False``
 
-``chunk_size`` (integer)
-------------------------
-*\- (no description). Default:* ``500000``
+``log_other_requests`` (boolean)
+--------------------------------
+*\- (no description). Default:* ``False``
+
+``log_status_requests`` (boolean)
+---------------------------------
+*\- (no description). Default:* ``False``
+
+``maintenance_attempts`` (integer)
+----------------------------------
+*\- (no description). Default:* ``10``
+
+``maintenance_timeout`` (integer)
+---------------------------------
+*\- (no description). Default:* ``60``
+
+``meta`` (dict)
+---------------
+*\- (no description).*
+
+``network_attempts`` (integer)
+------------------------------
+*\- (no description). Default:* ``60``
+
+``network_timeout`` (integer)
+-----------------------------
+*\- (no description). Default:* ``10``
+
+``notify`` (string)
+-------------------
+*\- (no description). Default:* ``""``
+
+``operator`` (string)
+---------------------
+*\- (no description). Default:* ``None``
+
+:nullable:
+ True
+
+``regress`` (boolean)
+---------------------
+*\- (no description). Default:* ``False``
+
+``send_status_period`` (integer)
+--------------------------------
+*\- (no description). Default:* ``10``
+
+``strict_lock`` (boolean)
+-------------------------
+*\- (no description). Default:* ``False``
+
+``target_lock_duration`` (string)
+---------------------------------
+*\- (no description). Default:* ``30m``
+
+``task`` (string)
+-----------------
+*\- (no description). Default:* ``""``
+
+``threads_timeout`` (integer)
+-----------------------------
+*\- (no description). Default:* ``60``
+
+``token_file`` (string)
+-----------------------
+*\- (no description).*
 
 ``upload_token`` (string)
 -------------------------
@@ -325,72 +365,16 @@ DataUploader
 :nullable:
  True
 
-``connection_timeout`` (integer)
---------------------------------
-*\- (no description). Default:* ``30``
-
-``log_other_requests`` (boolean)
---------------------------------
-*\- (no description). Default:* ``False``
-
-``send_status_period`` (integer)
---------------------------------
-*\- (no description). Default:* ``10``
-
-``task`` (string)
------------------
+``ver`` (string)
+----------------
 *\- (no description). Default:* ``""``
-
-``maintenance_attempts`` (integer)
-----------------------------------
-*\- (no description). Default:* ``10``
-
-``strict_lock`` (boolean)
--------------------------
-*\- (no description). Default:* ``False``
 
 ``writer_endpoint`` (string)
 ----------------------------
 *\- (no description). Default:* ``""``
 
-``job_name`` (string)
----------------------
-*\- (no description). Default:* ``none``
-
-``log_status_requests`` (boolean)
----------------------------------
-*\- (no description). Default:* ``False``
-
-``threads_timeout`` (integer)
------------------------------
-*\- (no description). Default:* ``60``
-
-``target_lock_duration`` (string)
----------------------------------
-*\- (no description). Default:* ``30m``
-
-``ignore_target_lock`` (boolean)
---------------------------------
-*\- (no description). Default:* ``False``
-
 Influx
 ======
-
-``username`` (string)
----------------------
-*\- (no description). Default:* ``root``
-
-``tank_tag`` (string)
----------------------
-*\- (no description). Default:* ``unknown``
-
-``password`` (string)
----------------------
-*\- (no description). Default:* ``root``
-
-``database`` (string)
----------------------
-*\- (no description). Default:* ``mydb``
 
 ``address`` (string)
 --------------------
@@ -400,6 +384,10 @@ Influx
 ------------------------
 *\- (no description). Default:* ``500000``
 
+``database`` (string)
+---------------------
+*\- (no description). Default:* ``mydb``
+
 ``grafana_dashboard`` (string)
 ------------------------------
 *\- (no description). Default:* ``tank-dashboard``
@@ -408,54 +396,28 @@ Influx
 -------------------------
 *\- (no description). Default:* ``http://localhost/``
 
+``password`` (string)
+---------------------
+*\- (no description). Default:* ``root``
+
 ``port`` (integer)
 ------------------
 *\- (no description). Default:* ``8086``
 
+``tank_tag`` (string)
+---------------------
+*\- (no description). Default:* ``unknown``
+
+``username`` (string)
+---------------------
+*\- (no description). Default:* ``root``
+
 JMeter
 ======
-
-``jmx`` (string)
-----------------
-*\- (no description).*
-
-``ext_log`` (string)
---------------------
-*\- (no description). Default:* ``none``
-
-:one of: [``none``, ``errors``, ``all``]
-
-``variables`` (dict)
---------------------
-*\- (no description). Default:* ``{}``
 
 ``args`` (string)
 -----------------
 *\- (no description). Default:* ``""``
-
-``extended_log`` (string)
--------------------------
-*\- (no description). Default:* ``none``
-
-:one of: [``none``, ``errors``, ``all``]
-
-``exclude_markers`` (list of string)
-------------------------------------
-*\- (no description). Default:* ``[]``
-
-:[list_element] (string):
- *\- (no description).*
- 
- :empty:
-  False
-
-``jmeter_ver`` (float)
-----------------------
-*\- (no description). Default:* ``3.0``
-
-``shutdown_timeout`` (integer)
-------------------------------
-*\- (no description). Default:* ``10``
 
 ``buffer_size`` (integer)
 -------------------------
@@ -468,9 +430,47 @@ JMeter
 ------------------------------
 *\- (no description). Default:* ``3``
 
+``exclude_markers`` (list of string)
+------------------------------------
+*\- (no description). Default:* ``[]``
+
+:[list_element] (string):
+ *\- (no description).*
+ 
+ :empty:
+  False
+
+``ext_log`` (string)
+--------------------
+*\- (no description). Default:* ``none``
+
+:one of: [``none``, ``errors``, ``all``]
+
+``extended_log`` (string)
+-------------------------
+*\- (no description). Default:* ``none``
+
+:one of: [``none``, ``errors``, ``all``]
+
 ``jmeter_path`` (string)
 ------------------------
 *\- (no description). Default:* ``jmeter``
+
+``jmeter_ver`` (float)
+----------------------
+*\- (no description). Default:* ``3.0``
+
+``jmx`` (string)
+----------------
+*\- (no description).*
+
+``shutdown_timeout`` (integer)
+------------------------------
+*\- (no description). Default:* ``10``
+
+``variables`` (dict)
+--------------------
+*\- (no description). Default:* ``{}``
 
 JsonReport
 ==========
@@ -486,13 +486,13 @@ JsonReport
 Pandora
 =======
 
-``config_content`` (dict)
--------------------------
-*\- (no description). Default:* ``{}``
-
 ``buffered_seconds`` (integer)
 ------------------------------
 *\- (no description). Default:* ``2``
+
+``config_content`` (dict)
+-------------------------
+*\- (no description). Default:* ``{}``
 
 ``config_file`` (string)
 ------------------------
@@ -509,47 +509,35 @@ Pandora
 Phantom
 =======
 
-``phantom_http_entity`` (string)
---------------------------------
-*\- Limits the amount of bytes Phantom reads from response. Default:* ``8M``
+``additional_libs`` (list of string)
+------------------------------------
+*\- Libs for Phantom, to be added to phantom config file in section "module_setup". Default:* ``[]``
 
-``force_stepping`` (integer)
-----------------------------
-*\- Ignore cached stpd files, force stepping. Default:* ``0``
+:[list_element] (string):
+ *\- (no description).*
 
-``phantom_http_field`` (string)
--------------------------------
-*\- Header size. Default:* ``8K``
+``address`` (string)
+--------------------
+*\- Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port. Port is optional. Tank checks each test if port is available.* **Required.**
 
-``writelog`` (string)
+:examples:
+ ``127.0.0.1:8080``
+  
+ ``www.w3c.org``
+
+``affinity`` (string)
 ---------------------
-*\- Enable verbose request/response logging. Default:* ``0``
+*\- Use to set CPU affinity. Default:* ``""``
 
-:one of:
- :``0``: disable
- :``all``: all messages
- :``proto_error``: 5xx+network errors
- :``proto_warning``: 4xx+5xx+network errors
+:examples:
+ ``0,1,2,16,17,18``
+  enable 6 specified cores
+ ``0-3``
+  enable first 4 cores
 
-``header_http`` (string)
+``ammo_limit`` (integer)
 ------------------------
-*\- HTTP version. Default:* ``1.0``
-
-:one of:
- :``1.0``: http 1.0
- :``1.1``: http 1.1
-
-``method_prefix`` (string)
---------------------------
-*\- Object's type, that has a functionality to create test requests. Default:* ``method_stream``
-
-``phantom_modules_path`` (string)
----------------------------------
-*\- Phantom modules path. Default:* ``/usr/lib/phantom``
-
-``enum_ammo`` (boolean)
------------------------
-*\- (no description). Default:* ``False``
+*\- Sets the upper limit for the total number of requests. Default:* ``-1``
 
 ``ammo_type`` (string)
 ----------------------
@@ -563,6 +551,13 @@ Phantom
  :``phantom``: Use Request-style file. Most versatile, HTTP as is. See tutorial for details
  :``uri``: Use URIs listed in file with headers. Simple but allows for GET requests only. See tutorial for details
  :``uripost``: Use URI-POST file. Allows POST requests with bodies. See tutorial for details
+
+``ammofile`` (string)
+---------------------
+*\- Path to ammo file. Ammo file contains requests to be sent to a server. Can be gzipped. Default:* ``""``
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/tutorial.html#preparing-requests
 
 ``autocases`` (integer or string)
 ---------------------------------
@@ -583,9 +578,9 @@ Phantom
  ``uri``
   /example/search/hello/help/us?param1=50 -> _example_search_hello_help_us
 
-``method_options`` (string)
----------------------------
-*\- Additional options for method objects. It is used for Elliptics etc. Default:* ``""``
+``buffered_seconds`` (integer)
+------------------------------
+*\- Aggregator latency. Default:* ``2``
 
 ``cache_dir`` (string)
 ----------------------
@@ -594,56 +589,67 @@ Phantom
 :nullable:
  True
 
-``phout_file`` (string)
------------------------
-*\- deprecated. Default:* ``""``
-
-``source_log_prefix`` (string)
-------------------------------
-*\- Prefix added to class name that reads source data. Default:* ``""``
-
-``address`` (string)
---------------------
-*\- Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port. Port is optional. Tank checks each test if port is available.* **Required.**
-
-:examples:
- ``127.0.0.1:8080``
-  
- ``www.w3c.org``
-
-``phantom_http_field_num`` (integer)
-------------------------------------
-*\- Max number of headers. Default:* ``128``
-
-``gatling_ip`` (string)
------------------------
-*\- (no description). Default:* ``""``
-
-``file_cache`` (integer)
-------------------------
-*\- (no description). Default:* ``8192``
-
 ``chosen_cases`` (string)
 -------------------------
 *\- Use only selected cases. Default:* ``""``
 
-``port`` (string)
------------------
-*\- Explicit target port, overwrites port defined with address. Default:* ``""``
+``client_certificate`` (string)
+-------------------------------
+*\- Path to client SSL certificate. Default:* ``""``
 
-:regex:
- \d{0,5}
+``client_cipher_suites`` (string)
+---------------------------------
+*\- Cipher list, consists of one or more cipher strings separated by colons (see man ciphers). Default:* ``""``
 
 ``client_key`` (string)
 -----------------------
 *\- Path to client's certificate's private key. Default:* ``""``
 
-``ammofile`` (string)
----------------------
-*\- Path to ammo file. Ammo file contains requests to be sent to a server. Can be gzipped. Default:* ``""``
+``config`` (string)
+-------------------
+*\- Use ready phantom config instead of generated. Default:* ``""``
 
-:tutorial_link:
- http://yandextank.readthedocs.io/en/latest/tutorial.html#preparing-requests
+``connection_test`` (boolean)
+-----------------------------
+*\- Test TCP socket connection before starting the test. Default:* ``True``
+
+``enum_ammo`` (boolean)
+-----------------------
+*\- (no description). Default:* ``False``
+
+``file_cache`` (integer)
+------------------------
+*\- (no description). Default:* ``8192``
+
+``force_stepping`` (integer)
+----------------------------
+*\- Ignore cached stpd files, force stepping. Default:* ``0``
+
+``gatling_ip`` (string)
+-----------------------
+*\- (no description). Default:* ``""``
+
+``header_http`` (string)
+------------------------
+*\- HTTP version. Default:* ``1.0``
+
+:one of:
+ :``1.0``: http 1.0
+ :``1.1``: http 1.1
+
+``headers`` (list of string)
+----------------------------
+*\- HTTP headers. Default:* ``[]``
+
+:[list_element] (string):
+ *\- Format: "Header: Value".*
+ 
+ :examples:
+  ``accept: text/html``
+
+``instances`` (integer)
+-----------------------
+*\- Max number of concurrent clients. Default:* ``1000``
 
 ``load_profile`` (dict)
 -----------------------
@@ -667,32 +673,60 @@ Phantom
   ``test_dir/test_backend.stpd``
    path to ready schedule file
 
-``phantom_path`` (string)
--------------------------
-*\- Path to Phantom binary. Default:* ``phantom``
+``loop`` (integer)
+------------------
+*\- Loop over ammo file for the given amount of times. Default:* ``-1``
 
-``threads`` (integer)
----------------------
-*\- Phantom thread count. When not specified, defaults to <processor cores count> / 2 + 1. Default:* ``None``
+``method_options`` (string)
+---------------------------
+*\- Additional options for method objects. It is used for Elliptics etc. Default:* ``""``
 
-:nullable:
- True
+``method_prefix`` (string)
+--------------------------
+*\- Object's type, that has a functionality to create test requests. Default:* ``method_stream``
 
-``ssl`` (boolean)
------------------
-*\- Enable ssl. Default:* ``False``
+``phantom_http_entity`` (string)
+--------------------------------
+*\- Limits the amount of bytes Phantom reads from response. Default:* ``8M``
 
-``instances`` (integer)
------------------------
-*\- Max number of concurrent clients. Default:* ``1000``
+``phantom_http_field_num`` (integer)
+------------------------------------
+*\- Max number of headers. Default:* ``128``
 
-``connection_test`` (boolean)
------------------------------
-*\- Test TCP socket connection before starting the test. Default:* ``True``
+``phantom_http_field`` (string)
+-------------------------------
+*\- Header size. Default:* ``8K``
 
 ``phantom_http_line`` (string)
 ------------------------------
 *\- First line length. Default:* ``1K``
+
+``phantom_modules_path`` (string)
+---------------------------------
+*\- Phantom modules path. Default:* ``/usr/lib/phantom``
+
+``phantom_path`` (string)
+-------------------------
+*\- Path to Phantom binary. Default:* ``phantom``
+
+``phout_file`` (string)
+-----------------------
+*\- deprecated. Default:* ``""``
+
+``port`` (string)
+-----------------
+*\- Explicit target port, overwrites port defined with address. Default:* ``""``
+
+:regex:
+ \d{0,5}
+
+``source_log_prefix`` (string)
+------------------------------
+*\- Prefix added to class name that reads source data. Default:* ``""``
+
+``ssl`` (boolean)
+-----------------
+*\- Enable ssl. Default:* ``False``
 
 ``tank_type`` (string)
 ----------------------
@@ -702,56 +736,16 @@ Phantom
  :``http``: HTTP gun
  :``none``: TCP gun
 
-``ammo_limit`` (integer)
-------------------------
-*\- Sets the upper limit for the total number of requests. Default:* ``-1``
-
-``headers`` (list of string)
-----------------------------
-*\- HTTP headers. Default:* ``[]``
-
-:[list_element] (string):
- *\- Format: "Header: Value".*
- 
- :examples:
-  ``accept: text/html``
-
-``client_cipher_suites`` (string)
----------------------------------
-*\- Cipher list, consists of one or more cipher strings separated by colons (see man ciphers). Default:* ``""``
-
-``affinity`` (string)
+``threads`` (integer)
 ---------------------
-*\- Use to set CPU affinity. Default:* ``""``
+*\- Phantom thread count. When not specified, defaults to <processor cores count> / 2 + 1. Default:* ``None``
 
-:examples:
- ``0,1,2,16,17,18``
-  enable 6 specified cores
- ``0-3``
-  enable first 4 cores
+:nullable:
+ True
 
 ``timeout`` (string)
 --------------------
 *\- Response timeout. Default:* ``11s``
-
-``use_caching`` (boolean)
--------------------------
-*\- Enable stpd\-file caching. Default:* ``True``
-
-``additional_libs`` (list of string)
-------------------------------------
-*\- Libs for Phantom, to be added to phantom config file in section "module_setup". Default:* ``[]``
-
-:[list_element] (string):
- *\- (no description).*
-
-``buffered_seconds`` (integer)
-------------------------------
-*\- Aggregator latency. Default:* ``2``
-
-``config`` (string)
--------------------
-*\- Use ready phantom config instead of generated. Default:* ``""``
 
 ``uris`` (list of string)
 -------------------------
@@ -763,13 +757,19 @@ Phantom
 :examples:
  ``["/example/search", "/example/search/hello", "/example/search/hello/help"]``
 
-``loop`` (integer)
-------------------
-*\- Loop over ammo file for the given amount of times. Default:* ``-1``
+``use_caching`` (boolean)
+-------------------------
+*\- Enable stpd\-file caching. Default:* ``True``
 
-``client_certificate`` (string)
--------------------------------
-*\- Path to client SSL certificate. Default:* ``""``
+``writelog`` (string)
+---------------------
+*\- Enable verbose request/response logging. Default:* ``0``
+
+:one of:
+ :``0``: disable
+ :``all``: all messages
+ :``proto_error``: 5xx+network errors
+ :``proto_warning``: 4xx+5xx+network errors
 
 RCAssert
 ========
@@ -785,44 +785,44 @@ RCAssert
 ResourceCheck
 =============
 
-``mem_limit`` (integer)
------------------------
-*\- (no description). Default:* ``512``
+``disk_limit`` (integer)
+------------------------
+*\- (no description). Default:* ``2048``
 
 ``interval`` (string)
 ---------------------
 *\- (no description). Default:* ``10s``
 
-``disk_limit`` (integer)
-------------------------
-*\- (no description). Default:* ``2048``
+``mem_limit`` (integer)
+-----------------------
+*\- (no description). Default:* ``512``
 
 ShellExec
 =========
 
-``start`` (string)
-------------------
-*\- (no description). Default:* ``""``
+``catch_out`` (boolean)
+-----------------------
+*\- (no description). Default:* ``False``
 
 ``end`` (string)
 ----------------
-*\- (no description). Default:* ``""``
-
-``prepare`` (string)
---------------------
-*\- (no description). Default:* ``""``
-
-``post_process`` (string)
--------------------------
 *\- (no description). Default:* ``""``
 
 ``poll`` (string)
 -----------------
 *\- (no description). Default:* ``""``
 
-``catch_out`` (boolean)
------------------------
-*\- (no description). Default:* ``False``
+``post_process`` (string)
+-------------------------
+*\- (no description). Default:* ``""``
+
+``prepare`` (string)
+--------------------
+*\- (no description). Default:* ``""``
+
+``start`` (string)
+------------------
+*\- (no description). Default:* ``""``
 
 ShootExec
 =========
@@ -842,29 +842,29 @@ ShootExec
 Telegraf
 ========
 
-``kill_old`` (boolean)
-----------------------
-*\- (no description). Default:* ``False``
+``config_contents`` (string)
+----------------------------
+*\- (no description).*
+
+``config`` (string)
+-------------------
+*\- (no description). Default:* ``auto``
 
 ``default_target`` (string)
 ---------------------------
 *\- (no description). Default:* ``localhost``
 
-``ssh_timeout`` (string)
-------------------------
-*\- (no description). Default:* ``5s``
-
-``config_contents`` (string)
-----------------------------
-*\- (no description).*
-
 ``disguise_hostnames`` (boolean)
 --------------------------------
 *\- (no description). Default:* ``True``
 
-``config`` (string)
--------------------
-*\- (no description). Default:* ``auto``
+``kill_old`` (boolean)
+----------------------
+*\- (no description). Default:* ``False``
+
+``ssh_timeout`` (string)
+------------------------
+*\- (no description). Default:* ``5s``
 
 TipsAndTricks
 =============
