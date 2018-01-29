@@ -207,7 +207,7 @@ OPTIONS = {
         'regex': '\d{0,5}'
     },
     "load_profile": {
-        'description': 'Configure your load, setting the number of RPS or instances (clients) as a function of time;'
+        'description': 'Configure your load setting the number of RPS or instances (clients) as a function of time,'
                        'or using a prearranged schedule',
         "type": "dict",
         'schema': {
