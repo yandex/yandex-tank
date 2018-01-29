@@ -382,14 +382,13 @@ def format_schema(schema, renderer, title=None):
     :type renderer: RSTRenderer
     """
     body = '\n\n'.join(
-        [format_option({option_name: option_schema}, renderer) for option_name, option_schema in schema.items()])
+        sorted([format_option({option_name: option_schema}, renderer) for option_name, option_schema in schema.items()]))
 
     if title:
         title = renderer.title(title)
         return title + '\n\n' + body
-    return '\n\n'.join(
-        [format_option({option_name: option_schema}, renderer) for option_name, option_schema in schema.items()])
-
+    else:
+        return body
 
 def main():
     parser = argparse.ArgumentParser()
