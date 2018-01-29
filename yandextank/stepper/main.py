@@ -5,7 +5,6 @@ import hashlib
 import json
 import logging
 import os
-import re
 
 from builtins import zip
 from ..common.resource import manager as resource
