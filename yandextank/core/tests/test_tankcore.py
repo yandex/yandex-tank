@@ -43,7 +43,7 @@ CFG1 = {
         'enabled': True,
         'address': 'lunapark.test.yandex-team.ru',
         'header_http': '1.1',
-        'uris': '/',
+        'uris': ['/'],
         'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
         'phantom_path': './phantom_mock.sh',
         'connection_test': False
@@ -72,7 +72,7 @@ CFG2 = {
         'enabled': True,
         'address': 'lunapark.test.yandex-team.ru',
         'header_http': '1.1',
-        'uris': '/',
+        'uris': ['/'],
         'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
         'connection_test': False
     },

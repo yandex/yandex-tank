@@ -175,7 +175,8 @@ class Option(object):
             'rps_schedule': convert_rps_schedule,
             'instances_schedule': convert_instances_schedule,
             'stpd_file': convert_stpd_schedule,
-            'autocases': TYPE_CASTERS['integer']
+            'autocases': TYPE_CASTERS['integer'],
+            'headers': lambda key, value: {key: re.compile('\[(.*?)\]').findall(value)}
         },
         'Bfg': {
             'rps_schedule': convert_rps_schedule,

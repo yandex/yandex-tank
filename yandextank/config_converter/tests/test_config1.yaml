@@ -20,7 +20,8 @@ phantom:
   ammo_limit: -1
   enum_ammo: false
   connection_test: false
-  uris: /
+  uris:
+    - /
 uploader:
   package: yandextank.plugins.DataUploader
   enabled: true

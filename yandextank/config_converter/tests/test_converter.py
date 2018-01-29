@@ -123,7 +123,7 @@ def test_validate(ini_file):
 
 @pytest.mark.parametrize('key, value, expected', [
     ('phantom.uris', '/',
-     {'phantom': {'package': 'yandextank.plugins.Phantom', 'uris': '/'}}),
+     {'phantom': {'package': 'yandextank.plugins.Phantom', 'uris': ['/']}}),
     ('tank.plugin_uploader', 'yandextank.plugins.DataUploader',
      {'uploader': {'enabled': True, 'package': 'yandextank.plugins.DataUploader'}}),
     ('phantom.rps_schedule', 'line(1,10)',

@@ -280,9 +280,9 @@ OPTIONS = {
     "writelog": {
         'description': 'Enable verbose request/response logging.',
         "type": "string",
-        "default": "none",
-        'allowed': [''],
-        'values_descriptions': {
+        "default": "0",
+        'allowed': ['0', 'all', 'proto_warning', 'proto_error'],
+        'values_description': {
             '0': 'disable',
             'all': 'all messages',
             'proto_warning': '4xx+5xx+network errors',
