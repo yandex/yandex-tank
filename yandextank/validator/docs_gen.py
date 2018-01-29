@@ -288,18 +288,19 @@ class OptionFormatter(object):
         self.formatter = self.__guess_formatter()
 
     def format_dsc(self, renderer):
+        dsc = self.option_kwargs.get(DESCRIPTION, NO_DSC).strip('. ')
         if DEFAULT in self.option_kwargs:
             default_value = self.option_kwargs.get(DEFAULT)
             if default_value == '':
                 default_value = '""'
-            return ' '.join([renderer.italic('- {}. Default:'.format(self.option_kwargs.get(DESCRIPTION, NO_DSC))),
+            return ' '.join([renderer.italic('- {}. Default:'.format(dsc)),
                              renderer.mono(default_value)])
         elif REQUIRED in self.option_kwargs:
-            return renderer.italic('- {}.'.format(self.option_kwargs.get(DESCRIPTION, NO_DSC))) +\
+            return renderer.italic('- {}.'.format(dsc)) +\
                 ' ' +\
                 renderer.bold('Required.')
         else:
-            return renderer.italic('- {}.'.format(self.option_kwargs.get(DESCRIPTION, NO_DSC)))
+            return renderer.italic('- {}.'.format(dsc))
 
     def scalar_formatter(self, renderer, header=True):
         hdr = renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \

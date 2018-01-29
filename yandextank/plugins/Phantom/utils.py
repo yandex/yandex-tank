@@ -344,7 +344,7 @@ class StreamConfig:
         if self.phantom_http_field:
             tune += "field = " + self.phantom_http_field + "\n"
         if self.phantom_http_field_num:
-            tune += "field_num = " + self.phantom_http_field_num + "\n"
+            tune += "field_num = {}\n".format(self.phantom_http_field_num)
         if self.phantom_http_line:
             tune += "line = " + self.phantom_http_line + "\n"
         if tune:
