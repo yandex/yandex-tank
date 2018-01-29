@@ -40,11 +40,11 @@ Autostop
  *\- autostop constraint.*
  
  :examples:
-  :``http(4xx,50%,5)``:
+  ``http(4xx,50%,5)``
    stop when rate of 4xx http codes is 50% or more during 5 seconds
 
 :examples:
- :``[quantile(50,100,20), http(4xx,50%,5)]``:
+ ``[quantile(50,100,20), http(4xx,50%,5)]``
   stop when either quantile 50% or 4xx http codes exceeds specified levels
 
 BatteryHistorian
@@ -509,114 +509,115 @@ Pandora
 Phantom
 =======
 
-``phantom_http_field_num`` (string)
------------------------------------
-*\- (no description). Default:* ``""``
+``phantom_http_entity`` (string)
+--------------------------------
+*\- Limits the amount of bytes Phantom reads from response. Default:* ``8M``
+
+``force_stepping`` (integer)
+----------------------------
+*\- Ignore cached stpd files, force stepping. Default:* ``0``
+
+``phantom_http_field`` (string)
+-------------------------------
+*\- Header size. Default:* ``8K``
+
+``writelog`` (string)
+---------------------
+*\- Enable verbose request/response logging. Default:* ``0``
+
+:one of:
+ :``0``: disable
+ :``all``: all messages
+ :``proto_error``: 5xx+network errors
+ :``proto_warning``: 4xx+5xx+network errors
 
 ``header_http`` (string)
 ------------------------
-*\- (no description). Default:* ``1.0``
+*\- HTTP version. Default:* ``1.0``
 
-``address`` (string)
---------------------
-*\- (no description).* **Required.**
+:one of:
+ :``1.0``: http 1.0
+ :``1.1``: http 1.1
+
+``method_prefix`` (string)
+--------------------------
+*\- Object's type, that has a functionality to create test requests. Default:* ``method_stream``
+
+``phantom_modules_path`` (string)
+---------------------------------
+*\- Phantom modules path. Default:* ``/usr/lib/phantom``
+
+``enum_ammo`` (boolean)
+-----------------------
+*\- (no description). Default:* ``False``
+
+``ammo_type`` (string)
+----------------------
+*\- Ammo format. Don't forget to change ammo_type option if you switch the format of your ammo, otherwise you might get errors. Default:* ``phantom``
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/tutorial.html#preparing-requests
+
+:one of:
+ :``access``: Use access.log from your web server as a source of requests
+ :``phantom``: Use Request-style file. Most versatile, HTTP as is. See tutorial for details
+ :``uri``: Use URIs listed in file with headers. Simple but allows for GET requests only. See tutorial for details
+ :``uripost``: Use URI-POST file. Allows POST requests with bodies. See tutorial for details
+
+``autocases`` (integer or string)
+---------------------------------
+*\- Use to automatically tag requests. Requests might be grouped by tag for later analysis. Default:* ``0``
+
+:one of:
+ :``<N>``: use N first uri parts to tag request, slashes are replaced with underscores
+ :``uniq``: tag each request with unique uid
+ :``uri``: tag each request with its uri path, slashes are replaced with underscores
+
+:examples:
+ ``2``
+  /example/search/hello/help/us?param1=50 -> _example_search
+ ``3``
+  /example/search/hello/help/us?param1=50 -> _example_search_hello
+ ``uniq``
+  /example/search/hello/help/us?param1=50 -> c98b0520bb6a451c8bc924ed1fd72553
+ ``uri``
+  /example/search/hello/help/us?param1=50 -> _example_search_hello_help_us
+
+``method_options`` (string)
+---------------------------
+*\- Additional options for method objects. It is used for Elliptics etc. Default:* ``""``
+
+``cache_dir`` (string)
+----------------------
+*\- stpd\-file cache directory. Default:* ``None``
+
+:nullable:
+ True
 
 ``phout_file`` (string)
 -----------------------
-*\- (no description). Default:* ``""``
-
-``instances`` (integer)
------------------------
-*\- (no description). Default:* ``1000``
+*\- deprecated. Default:* ``""``
 
 ``source_log_prefix`` (string)
 ------------------------------
-*\- (no description). Default:* ``""``
+*\- Prefix added to class name that reads source data. Default:* ``""``
+
+``address`` (string)
+--------------------
+*\- Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port. Port is optional. Tank checks each test if port is available.* **Required.**
+
+:examples:
+ ``127.0.0.1:8080``
+  
+ ``www.w3c.org``
+
+``phantom_http_field_num`` (integer)
+------------------------------------
+*\- Max number of headers. Default:* ``128``
 
 ``gatling_ip`` (string)
 -----------------------
 *\- (no description). Default:* ``""``
-
-``phantom_path`` (string)
--------------------------
-*\- (no description). Default:* ``phantom``
-
-``port`` (string)
------------------
-*\- (no description). Default:* ``""``
-
-:regex:
- \d{0,5}
-
-``client_key`` (string)
------------------------
-*\- (no description). Default:* ``""``
-
-``connection_test`` (boolean)
------------------------------
-*\- (no description). Default:* ``True``
-
-``affinity`` (string)
----------------------
-*\- (no description). Default:* ``""``
-
-``config`` (string)
--------------------
-*\- (no description). Default:* ``""``
-
-``uris`` (string)
------------------
-*\- (no description). Default:* ``""``
-
-``additional_libs`` (string)
-----------------------------
-*\- (no description). Default:* ``""``
-
-``force_stepping`` (integer)
-----------------------------
-*\- (no description). Default:* ``0``
-
-``phantom_http_field`` (string)
--------------------------------
-*\- (no description). Default:* ``""``
-
-``writelog`` (string)
----------------------
-*\- (no description). Default:* ``none``
-
-``phantom_modules_path`` (string)
----------------------------------
-*\- (no description). Default:* ``/usr/lib/phantom``
-
-``ammo_type`` (string)
-----------------------
-*\- (no description). Default:* ``phantom``
-
-``autocases`` (string)
-----------------------
-*\- (no description). Default:* ``0``
-
-``method_options`` (string)
----------------------------
-*\- (no description). Default:* ``""``
-
-``cache_dir`` (string)
-----------------------
-*\- (no description). Default:* ``None``
-
-:nullable:
- True
-
-``threads`` (integer)
----------------------
-*\- (no description). Default:* ``None``
-
-:nullable:
- True
-
-``method_prefix`` (string)
---------------------------
-*\- (no description). Default:* ``method_stream``
 
 ``file_cache`` (integer)
 ------------------------
@@ -624,15 +625,25 @@ Phantom
 
 ``chosen_cases`` (string)
 -------------------------
-*\- (no description). Default:* ``""``
+*\- Use only selected cases. Default:* ``""``
 
-``phantom_http_entity`` (string)
---------------------------------
-*\- (no description). Default:* ``""``
+``port`` (string)
+-----------------
+*\- Explicit target port, overwrites port defined with address. Default:* ``""``
+
+:regex:
+ \d{0,5}
+
+``client_key`` (string)
+-----------------------
+*\- Path to client's certificate's private key. Default:* ``""``
 
 ``ammofile`` (string)
 ---------------------
-*\- (no description). Default:* ``""``
+*\- Path to ammo file. Ammo file contains requests to be sent to a server. Can be gzipped. Default:* ``""``
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/tutorial.html#preparing-requests
 
 ``load_profile`` (dict)
 -----------------------
@@ -649,316 +660,116 @@ Phantom
  *\- load schedule or path to stpd file.* **Required.**
  
  :examples:
-  :``const(200,90s)``:
+  ``const(200,90s)``
    constant load of 200 instances/rps during 90s
-  :``line(100,200,10m)``:
+  ``line(100,200,10m)``
    linear growth from 100 to 200 instances/rps during 10 minutes
-  :``test_dir/test_backend.stpd``:
+  ``test_dir/test_backend.stpd``
    path to ready schedule file
+
+``phantom_path`` (string)
+-------------------------
+*\- Path to Phantom binary. Default:* ``phantom``
+
+``threads`` (integer)
+---------------------
+*\- Phantom thread count. When not specified, defaults to <processor cores count> / 2 + 1. Default:* ``None``
+
+:nullable:
+ True
 
 ``ssl`` (boolean)
 -----------------
-*\- (no description). Default:* ``False``
+*\- Enable ssl. Default:* ``False``
+
+``instances`` (integer)
+-----------------------
+*\- Max number of concurrent clients. Default:* ``1000``
+
+``connection_test`` (boolean)
+-----------------------------
+*\- Test TCP socket connection before starting the test. Default:* ``True``
 
 ``phantom_http_line`` (string)
 ------------------------------
-*\- (no description). Default:* ``""``
-
-``multi`` (list of )
---------------------
-*\- (no description). Default:* ``[]``
-
-:[list_element] ():
- *\- (no description).*
- 
- :additional_libs:
-  :default:
-   
-  :type:
-   string
- :address:
-  :required:
-   True
-  :type:
-   string
- :affinity:
-  :default:
-   
-  :type:
-   string
- :ammo_limit:
-  :default:
-   -1
-  :type:
-   integer
- :ammo_type:
-  :default:
-   phantom
-  :type:
-   string
- :ammofile:
-  :default:
-   
-  :type:
-   string
- :autocases:
-  :default:
-   0
-  :type:
-   string
- :buffered_seconds:
-  :default:
-   2
-  :type:
-   integer
- :cache_dir:
-  :default:
-   None
-  :nullable:
-   True
-  :type:
-   string
- :chosen_cases:
-  :default:
-   
-  :type:
-   string
- :client_certificate:
-  :default:
-   
-  :type:
-   string
- :client_cipher_suites:
-  :default:
-   
-  :type:
-   string
- :client_key:
-  :default:
-   
-  :type:
-   string
- :config:
-  :default:
-   
-  :type:
-   string
- :connection_test:
-  :default:
-   True
-  :type:
-   boolean
- :enum_ammo:
-  :default:
-   False
-  :type:
-   boolean
- :file_cache:
-  :default:
-   8192
-  :type:
-   integer
- :force_stepping:
-  :default:
-   0
-  :type:
-   integer
- :gatling_ip:
-  :default:
-   
-  :type:
-   string
- :header_http:
-  :default:
-   1.0
-  :type:
-   string
- :headers:
-  :default:
-   
-  :type:
-   string
- :instances:
-  :default:
-   1000
-  :type:
-   integer
- :load_profile:
-  :required:
-   True
-  :schema:
-   :load_type:
-    :allowed:
-     - rps
-     - instances
-     - stpd_file
-    :type:
-     string
-    :values_description:
-     :instances:
-      fix number of instances
-     :rps:
-      fix rps rate
-     :stpd_file:
-      use ready schedule file
-   :schedule:
-    :description:
-     load schedule or path to stpd file
-    :examples:
-     :const(200,90s):
-      constant load of 200 instances/rps during 90s
-     :line(100,200,10m):
-      linear growth from 100 to 200 instances/rps during 10 minutes
-     :test_dir/test_backend.stpd:
-      path to ready schedule file
-    :required:
-     True
-    :type:
-     string
-  :type:
-   dict
- :loop:
-  :default:
-   -1
-  :type:
-   integer
- :method_options:
-  :default:
-   
-  :type:
-   string
- :method_prefix:
-  :default:
-   method_stream
-  :type:
-   string
- :phantom_http_entity:
-  :default:
-   
-  :type:
-   string
- :phantom_http_field:
-  :default:
-   
-  :type:
-   string
- :phantom_http_field_num:
-  :default:
-   
-  :type:
-   string
- :phantom_http_line:
-  :default:
-   
-  :type:
-   string
- :phantom_modules_path:
-  :default:
-   /usr/lib/phantom
-  :type:
-   string
- :phantom_path:
-  :default:
-   phantom
-  :type:
-   string
- :phout_file:
-  :default:
-   
-  :type:
-   string
- :port:
-  :default:
-   
-  :regex:
-   \d{0,5}
-  :type:
-   string
- :source_log_prefix:
-  :default:
-   
-  :type:
-   string
- :ssl:
-  :default:
-   False
-  :type:
-   boolean
- :tank_type:
-  :default:
-   http
-  :type:
-   string
- :threads:
-  :default:
-   None
-  :nullable:
-   True
-  :type:
-   integer
- :timeout:
-  :default:
-   11s
-  :type:
-   string
- :uris:
-  :default:
-   
-  :type:
-   string
- :use_caching:
-  :default:
-   True
-  :type:
-   boolean
- :writelog:
-  :default:
-   none
-  :type:
-   string
-
-:allow_unknown:
- True
+*\- First line length. Default:* ``1K``
 
 ``tank_type`` (string)
 ----------------------
-*\- (no description). Default:* ``http``
+*\- Choose between http and pure tcp guns. Default:* ``http``
+
+:one of:
+ :``http``: HTTP gun
+ :``none``: TCP gun
 
 ``ammo_limit`` (integer)
 ------------------------
-*\- (no description). Default:* ``-1``
+*\- Sets the upper limit for the total number of requests. Default:* ``-1``
 
-``headers`` (string)
---------------------
-*\- (no description). Default:* ``""``
+``headers`` (list of string)
+----------------------------
+*\- HTTP headers. Default:* ``[]``
+
+:[list_element] (string):
+ *\- Format: "Header: Value".*
+ 
+ :examples:
+  ``accept: text/html``
 
 ``client_cipher_suites`` (string)
 ---------------------------------
-*\- (no description). Default:* ``""``
+*\- Cipher list, consists of one or more cipher strings separated by colons (see man ciphers). Default:* ``""``
+
+``affinity`` (string)
+---------------------
+*\- Use to set CPU affinity. Default:* ``""``
+
+:examples:
+ ``0,1,2,16,17,18``
+  enable 6 specified cores
+ ``0-3``
+  enable first 4 cores
 
 ``timeout`` (string)
 --------------------
-*\- (no description). Default:* ``11s``
+*\- Response timeout. Default:* ``11s``
 
 ``use_caching`` (boolean)
 -------------------------
-*\- (no description). Default:* ``True``
+*\- Enable stpd\-file caching. Default:* ``True``
 
-``enum_ammo`` (boolean)
------------------------
-*\- (no description). Default:* ``False``
+``additional_libs`` (list of string)
+------------------------------------
+*\- Libs for Phantom, to be added to phantom config file in section "module_setup". Default:* ``[]``
+
+:[list_element] (string):
+ *\- (no description).*
 
 ``buffered_seconds`` (integer)
 ------------------------------
-*\- (no description). Default:* ``2``
+*\- Aggregator latency. Default:* ``2``
+
+``config`` (string)
+-------------------
+*\- Use ready phantom config instead of generated. Default:* ``""``
+
+``uris`` (list of string)
+-------------------------
+*\- URI list. Default:* ``[]``
+
+:[list_element] (string):
+ *\- URI path string.*
+
+:examples:
+ ``["/example/search", "/example/search/hello", "/example/search/hello/help"]``
 
 ``loop`` (integer)
 ------------------
-*\- (no description). Default:* ``-1``
+*\- Loop over ammo file for the given amount of times. Default:* ``-1``
 
 ``client_certificate`` (string)
 -------------------------------
-*\- (no description). Default:* ``""``
+*\- Path to client SSL certificate. Default:* ``""``
 
 RCAssert
 ========

@@ -12,7 +12,7 @@ phantom:
       load_type: rps
       schedule: line(1,6000,20m)
   instances: 10000
-  autocases: '0'
+  autocases: 0
   address: foo.example.net
   port: '80'
   multi:
@@ -22,7 +22,7 @@ phantom:
         schedule: const(0.2,20m)
       instances: 10
       address: foo.example.org
-      autocases: '1'
+      autocases: 1
 telegraf:
   enabled: true
   package: yandextank.plugins.Telegraf

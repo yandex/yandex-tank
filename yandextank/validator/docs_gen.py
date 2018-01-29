@@ -162,6 +162,28 @@ class RSTRenderer(object):
         return '- ' + '\n  '.join(block.lines)
 
     @staticmethod
+    def def_list(items, sort=True, newlines=True):
+        def format_value(value):
+            if isinstance(value, (int, bool, NoneType)):
+                return format_value(str(value))
+            if isinstance(value, str):
+                return '\n '.join(value.splitlines())
+            elif isinstance(value, TextBlock):
+                return '\n '.join(value.lines)
+            elif isinstance(value, dict):
+                return '\n '.join(RSTRenderer.def_list(value, sort, newlines).splitlines())
+            elif isinstance(value, list):
+                return '\n '.join(RSTRenderer.bullet_list([TextBlock(item) for item in value]).lines)
+            else:
+                raise ValueError('Unsupported value type: {}\n{}'.format(type(value), value))
+
+        sort = sorted if sort else lambda x: x
+        template = '{}\n {}' if newlines else ':{}: {}'
+        return '\n' + '\n'.join([template.format(k.replace('\n', ' '),
+                                                 format_value(v).strip())
+                                 for k, v in sort(items.items())]) if items else ''
+
+    @staticmethod
     def field_list(items, sort=True, newlines=True):
         """
 
@@ -220,7 +242,7 @@ def render_body(renderer, option_kwargs, exclude_keys, special_keys=None):
     :type special_keys: dict
     """
     common_formatters = {
-        'examples': lambda examples: {renderer.mono(example): note for example, note in examples.items()}
+        EXAMPLES: lambda examples: renderer.def_list({renderer.mono(example): annotation for example, annotation in examples.items()})
     }
 
     def default_fmt(x):
@@ -266,18 +288,19 @@ class OptionFormatter(object):
         self.formatter = self.__guess_formatter()
 
     def format_dsc(self, renderer):
+        dsc = self.option_kwargs.get(DESCRIPTION, NO_DSC).strip('. ')
         if DEFAULT in self.option_kwargs:
             default_value = self.option_kwargs.get(DEFAULT)
             if default_value == '':
                 default_value = '""'
-            return ' '.join([renderer.italic('- {}. Default:'.format(self.option_kwargs.get(DESCRIPTION, NO_DSC))),
+            return ' '.join([renderer.italic('- {}. Default:'.format(dsc)),
                              renderer.mono(default_value)])
         elif REQUIRED in self.option_kwargs:
-            return renderer.italic('- {}.'.format(self.option_kwargs.get(DESCRIPTION, NO_DSC))) +\
+            return renderer.italic('- {}.'.format(dsc)) +\
                 ' ' +\
                 renderer.bold('Required.')
         else:
-            return renderer.italic('- {}.'.format(self.option_kwargs.get(DESCRIPTION, NO_DSC)))
+            return renderer.italic('- {}.'.format(dsc))
 
     def scalar_formatter(self, renderer, header=True):
         hdr = renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \
@@ -386,7 +409,7 @@ def main():
             schema = yaml.load(f)
     except ScannerError:
         schema_module = imp.load_source('schema', schema_path)
-        schema = schema_module.SCHEMA
+        schema = schema_module.OPTIONS
     document = format_schema(schema, RSTRenderer(), title)
 
     if append:
