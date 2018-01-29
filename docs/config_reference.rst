@@ -523,19 +523,13 @@ Phantom
 
 ``writelog`` (string)
 ---------------------
-*\- Enable verbose request/response logging. Default:* ``none``
+*\- Enable verbose request/response logging. Default:* ``0``
 
-:values_descriptions:
- :0:
-  disable
- :all:
-  all messages
- :proto_error:
-  5xx+network errors
- :proto_warning:
-  4xx+5xx+network errors
-
-:one of: []
+:one of:
+ :``0``: disable
+ :``all``: all messages
+ :``proto_error``: 5xx+network errors
+ :``proto_warning``: 4xx+5xx+network errors
 
 ``header_http`` (string)
 ------------------------
