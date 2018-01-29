@@ -207,15 +207,19 @@ OPTIONS = {
         'regex': '\d{0,5}'
     },
     "load_profile": {
+        'description': 'Configure your load setting the number of RPS or instances (clients) as a function of time,'
+                       'or using a prearranged schedule',
         "type": "dict",
         'schema': {
             'load_type': {
+                'required': True,
+                'description': 'Choose control parameter',
                 'type': 'string',
                 'allowed': ['rps', 'instances', 'stpd_file'],
                 'values_description': {
-                    'rps': 'fix rps rate',
-                    'instances': 'fix number of instances',
-                    'stpd_file': 'use ready schedule file'}
+                    'rps': 'control the rps rate',
+                    'instances': 'control the number of instances',
+                    'stpd_file': 'use prearranged schedule file'}
             },
             'schedule': {
                 'type': 'string',
@@ -224,7 +228,8 @@ OPTIONS = {
                 'examples': {
                     'line(100,200,10m)': 'linear growth from 100 to 200 instances/rps during 10 minutes',
                     'const(200,90s)': 'constant load of 200 instances/rps during 90s',
-                    'test_dir/test_backend.stpd': 'path to ready schedule file'}
+                    'test_dir/test_backend.stpd': 'path to ready schedule file'},
+                'tutorial_link': 'http://yandextank.readthedocs.io/en/latest/tutorial.html#tutorials'
             }
         },
         'required': True
