@@ -145,7 +145,7 @@ class ConfigManager(object):
             elif (str(metric.tag)).lower() == 'telegrafraw':
                 telegrafraw.append(metric.text)
         if len(host_config) == 0:
-            logging.info('Empty host config, using defaults')
+            logger.info('Empty host config, using defaults')
             for section in defaults_enabled:
                 host_config[section] = defaults[section]
         result = {
