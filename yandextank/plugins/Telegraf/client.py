@@ -218,11 +218,11 @@ class SSHClient(object):
                 exc_info=True)
             return None, None, None
         if errors:
-            logging.error("[%s] error: '%s'", self.host, errors)
+            logger.error("[%s] error: '%s'", self.host, errors)
             return None, None, None
 
         if err_code:
-            logging.error(
+            logger.error(
                 "Failed to create remote dir via SSH at %s@%s, code %s: %s" %
                 (self.username, self.host, err_code, out.strip()))
             return None, None, None
@@ -256,7 +256,7 @@ class SSHClient(object):
                 exc_info=True)
         else:
             if err:
-                logging.error("[%s] error: '%s'", self.host, errors)
+                logger.error("[%s] error: '%s'", self.host, errors)
             if out.strip():
                 remote_telegraf_exists = out.strip()
 
@@ -322,7 +322,7 @@ class SSHClient(object):
             telegraf_path=self.path['TELEGRAF_REMOTE_PATH'],
             host=self.host,
             kill_old=self.kill_old)
-        logging.debug('Command to start agent: %s', command)
+        logger.debug('Command to start agent: %s', command)
         self.session = self.ssh.async_session(command)
         self.reader_thread = threading.Thread(target=self.read_buffer)
         self.reader_thread.setDaemon(True)
@@ -384,7 +384,7 @@ class SSHClient(object):
                 self.agent_remote_folder)
             out, errors, err_code = self.ssh.execute(cmd)
             if errors:
-                logging.error(
+                logger.error(
                     "[%s] error while killing agent: '%s'",
                     self.host,
                     errors)
