@@ -70,10 +70,10 @@ class LocalhostClient(object):
                     self.AGENT_FILENAME))
             copyfile(agent_config, os.path.join(self.workdir, 'agent.cfg'))
             copyfile(startup_config, os.path.join(
-                            self.workdir,
-                            'agent_startup.cfg'
-                        )
-                    )
+                self.workdir,
+                'agent_startup.cfg'
+                )
+            )
             copyfile(
                 customs_script,
                 os.path.join(
