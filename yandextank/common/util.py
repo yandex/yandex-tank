@@ -658,33 +658,3 @@ class FileScanner(object):
 
     def close(self):
         self.__closed = True
-
-
-
-def multifactor_auth_sftp_client(host, username, keyfile, passphrase, password):
-    """
-    Return an open paramiko SFTP client to a host that requires multifactor
-    authentication.
-    """
-    from paramiko import RSAKey, Transport, Event, AuthHandler, Message
-    logger.debug("Create private key object from file")
-
-    key = None
-    try:
-        key = RSAKey.from_private_key(keyfile)
-    except Exception:
-        logger.critical('Failed to import private key: %s', keyfile, exc_info=True)
-
-    logger.debug("Create an SSH transport configured to the host")
-    transport = Transport(host)
-
-    logger.debug("Negotiate an SSH2 session")
-    transport.connect()
-
-    logger.debug("Attempt authenticating using a private key")
-    transport.auth_publickey(username, key)
-
-    logger.debug("Create an open SFTP client channel")
-    sftp = transport.open_sftp_client()
-
-    return sftp
