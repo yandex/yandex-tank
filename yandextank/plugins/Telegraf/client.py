@@ -69,11 +69,9 @@ class LocalhostClient(object):
                     self.workdir,
                     self.AGENT_FILENAME))
             copyfile(agent_config, os.path.join(self.workdir, 'agent.cfg'))
-            copyfile(
-                startup_config,
-                os.path.join(
-                    self.workdir,
-                    'agent_startup.cfg'))
+            copyfile(startup_config, os.path.join(
+                self.workdir,
+                'agent_startup.cfg'))
             copyfile(
                 customs_script,
                 os.path.join(
@@ -87,10 +85,8 @@ class LocalhostClient(object):
                     self.path['TELEGRAF_LOCAL_PATH'])
                 return None, None, None
         except Exception:
-            logger.error(
-                "Failed to copy agent to %s on localhost",
-                self.workdir,
-                exc_info=True)
+            logger.error("Failed to copy agent to %s on localhost", self.workdir)
+            logger.debug("Failed to copy agent to %s on localhost", self.workdir, exc_info=True)
             return None, None, None
         return agent_config, startup_config, customs_script
 
@@ -219,6 +215,7 @@ class SSHClient(object):
             return None, None, None
         if errors:
             logger.error("[%s] error: '%s'", self.host, errors)
+            logger.error("Cancelling agent installation on %s", self.host)
             return None, None, None
 
         if err_code:
