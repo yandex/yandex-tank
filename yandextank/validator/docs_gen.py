@@ -390,6 +390,7 @@ def format_schema(schema, renderer, title=None):
     else:
         return body
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('schema', help='Path to schema file')
