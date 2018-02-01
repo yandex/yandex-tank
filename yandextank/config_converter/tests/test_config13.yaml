@@ -3,7 +3,8 @@ phantom:
   load_profile:
     load_type: rps
     schedule: const(1,10)
-  uris: /
+  uris:
+   - /
   ssl: true
   address: lunapark.test.yandex-team.ru:443
   package: yandextank.plugins.Phantom

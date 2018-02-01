@@ -5,7 +5,6 @@ import hashlib
 import json
 import logging
 import os
-import re
 
 from builtins import zip
 from ..common.resource import manager as resource
@@ -171,11 +170,10 @@ class StepperWrapper(object):
 
         self.instances = int(
             self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
-        self.uris = self.get_option("uris", '').strip().split("\n")
+        self.uris = self.get_option("uris", [])
         while '' in self.uris:
             self.uris.remove('')
-        rx = re.compile('\[(.*?)\]')
-        self.headers = rx.findall(self.get_option("headers"))
+        self.headers = self.get_option("headers")
         self.http_ver = self.get_option("header_http")
         self.autocases = self.get_option("autocases")
         self.enum_ammo = self.get_option("enum_ammo")

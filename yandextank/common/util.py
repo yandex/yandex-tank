@@ -114,6 +114,7 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
         logger.info(
             "Sending [{local}] to {host}:[{remote}]".format(
                 local=local_path, host=self.host, remote=remote_path))
+
         with self.connect() as client, client.open_sftp() as sftp:
             result = sftp.put(local_path, remote_path)
         return result
@@ -148,7 +149,20 @@ def check_ssh_connection():
     logging.info(
         "Checking SSH to %s@%s:%d", args.username, args.endpoint, args.port)
     ssh = SecuredShell(args.endpoint, args.port, args.username, 10)
-    print(ssh.execute("ls -l"))
+    data = ssh.execute("ls -l")
+    logging.info('Output data of ssh.execute("ls -l"): %s', data[0])
+    logging.info('Output errors of ssh.execute("ls -l"): %s', data[1])
+    logging.info('Output code of ssh.execute("ls -l"): %s', data[2])
+
+    logging.info('Trying to create paramiko ssh connection client')
+    client = ssh.connect()
+    logging.info('Created paramiko ssh connection client: %s', client)
+    logging.info('Trying to open sftp')
+    sftp = client.open_sftp()
+    logging.info('Opened sftp: %s', sftp)
+    logging.info('Trying to send test file to /tmp')
+    res = sftp.put('/usr/lib/yandex/yandex-tank/bin/tank.log', '/opt')
+    logging.info('Result of sending test file: %s', res)
 
 
 class AsyncSession(object):

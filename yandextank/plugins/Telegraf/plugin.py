@@ -147,7 +147,7 @@ class Plugin(AbstractPlugin):
     def configure(self):
         self.detected_conf = self.__detect_configuration()
         if self.detected_conf:
-            logging.info(
+            logger.info(
                 'Detected monitoring configuration: %s', self.detected_conf)
             self.SECTION = self.detected_conf
         self.default_target = self.get_option("default_target", "localhost")
