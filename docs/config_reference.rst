@@ -62,38 +62,61 @@ Bfg
 
 ``address`` (string)
 --------------------
-*\- (no description).*
+*\- Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port. Port is optional. Tank checks each test if port is available.*
+
+:examples:
+ ``127.0.0.1:8080``
+  
+ ``www.w3c.org``
 
 ``ammo_limit`` (integer)
 ------------------------
-*\- (no description). Default:* ``-1``
+*\- Upper limit for the total number of requests. Default:* ``-1``
 
 ``ammo_type`` (string)
 ----------------------
-*\- (no description). Default:* ``caseline``
+*\- Ammo format. Default:* ``caseline``
 
 ``ammofile`` (string)
 ---------------------
-*\- (no description). Default:* ``""``
+*\- Path to ammo file. Default:* ``""``
 
-``autocases`` (string)
-----------------------
-*\- (no description). Default:* ``0``
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/core_and_modules.html#bfg
+
+``autocases`` (integer or string)
+---------------------------------
+*\- Use to automatically tag requests. Requests might be grouped by tag for later analysis. Default:* ``0``
+
+:one of:
+ :``<N>``: use N first uri parts to tag request, slashes are replaced with underscores
+ :``uniq``: tag each request with unique uid
+ :``uri``: tag each request with its uri path, slashes are replaced with underscores
+
+:examples:
+ ``2``
+  /example/search/hello/help/us?param1=50 -> _example_search
+ ``3``
+  /example/search/hello/help/us?param1=50 -> _example_search_hello
+ ``uniq``
+  /example/search/hello/help/us?param1=50 -> c98b0520bb6a451c8bc924ed1fd72553
+ ``uri``
+  /example/search/hello/help/us?param1=50 -> _example_search_hello_help_us
 
 ``cache_dir`` (string)
 ----------------------
-*\- (no description). Default:* ``None``
+*\- stpd\-file cache directory. If not specified, defaults to base artifacts directory. Default:* ``None``
 
 :nullable:
  True
 
 ``cached_stpd`` (boolean)
 -------------------------
-*\- (no description). Default:* ``False``
+*\- Use cached stpd file. Default:* ``False``
 
 ``chosen_cases`` (string)
 -------------------------
-*\- (no description). Default:* ``""``
+*\- Use only selected cases. Default:* ``""``
 
 ``enum_ammo`` (boolean)
 -----------------------
@@ -105,79 +128,119 @@ Bfg
 
 ``force_stepping`` (integer)
 ----------------------------
-*\- (no description). Default:* ``0``
+*\- Ignore cached stpd files, force stepping. Default:* ``0``
 
 ``green_threads_per_instance`` (integer)
 ----------------------------------------
-*\- (no description). Default:* ``1000``
+*\- Number of green threads every worker process will execute. For "green" worker type only. Default:* ``1000``
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/core_and_modules.html#bfg
 
 ``gun_config`` (dict)
 ---------------------
-*\- (no description).*
+*\- Options for your load scripts.*
 
 :``base_address`` (string):
- *\- (no description).*
+ *\- base target address.*
 :``class_name`` (string):
- *\- (no description). Default:* ``LoadTest``
+ *\- class that contains load scripts. Default:* ``LoadTest``
 :``init_param`` (string):
- *\- (no description). Default:* ``""``
+ *\- parameter that's passed to "setup" method. Default:* ``""``
 :``module_name`` (string):
- *\- (no description).*
+ *\- name of module that contains load scripts.*
 :``module_path`` (string):
- *\- (no description). Default:* ``""``
+ *\- directory of python module that contains load scripts. Default:* ``""``
 
 :allow_unknown:
  True
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/core_and_modules.html#bfg
 
 ``gun_type`` (string)
 ---------------------
-*\- (no description).* **Required.**
+*\- Type of gun BFG should use.* **Required.**
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/core_and_modules.html#bfg-options
 
 :one of: [``custom``, ``http``, ``scenario``, ``ultimate``]
 
 ``header_http`` (string)
 ------------------------
-*\- (no description). Default:* ``1.0``
+*\- HTTP version. Default:* ``1.0``
 
-``headers`` (string)
---------------------
-*\- (no description). Default:* ``""``
+:one of:
+ :``1.0``: http 1.0
+ :``1.1``: http 1.1
+
+``headers`` (list of string)
+----------------------------
+*\- HTTP headers. Default:* ``[]``
+
+:[list_element] (string):
+ *\- Format: "Header: Value".*
+ 
+ :examples:
+  ``accept: text/html``
 
 ``instances`` (integer)
 -----------------------
-*\- (no description). Default:* ``1000``
+*\- number of processes (simultaneously working clients). Default:* ``1000``
 
 ``load_profile`` (dict)
 -----------------------
-*\- (no description).* **Required.**
+*\- Configure your load setting the number of RPS or instances (clients) as a function of time, or using a prearranged schedule.* **Required.**
 
 :``load_type`` (string):
- *\- (no description).* **Required.**
+ *\- Choose control parameter.* **Required.**
  
- :regex:
-  ^rps|instances|stpd_file$
+ :one of:
+  :``instances``: control the number of instances
+  :``rps``: control the rps rate
+  :``stpd_file``: use prearranged schedule file
 :``schedule`` (string):
- *\- (no description).* **Required.**
+ *\- load schedule or path to stpd file.* **Required.**
+ 
+ :examples:
+  ``const(200,90s)``
+   constant load of 200 instances/rps during 90s
+  ``line(100,200,10m)``
+   linear growth from 100 to 200 instances/rps during 10 minutes
+  ``test_dir/test_backend.stpd``
+   path to ready schedule file
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/tutorial.html#tutorials
 
 ``loop`` (integer)
 ------------------
-*\- (no description). Default:* ``-1``
+*\- Loop over ammo file for the given amount of times. Default:* ``-1``
 
 ``pip`` (string)
 ----------------
-*\- (no description). Default:* ``""``
+*\- pip modules to install before the test. Use multiline to install multiple modules. Default:* ``""``
 
-``uris`` (string)
------------------
-*\- (no description). Default:* ``""``
+``uris`` (list of string)
+-------------------------
+*\- URI list. Default:* ``[]``
+
+:[list_element] (string):
+ *\- URI path string.*
+ 
+ :examples:
+  ``["/example/search", "/example/search/hello", "/example/search/hello/help"]``
 
 ``use_caching`` (boolean)
 -------------------------
-*\- (no description). Default:* ``True``
+*\- Enable stpd\-file caching. Default:* ``True``
 
 ``worker_type`` (string)
 ------------------------
 *\- (no description). Default:* ``""``
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/core_and_modules.html#bfg-worker-type
 
 Console
 =======
@@ -672,8 +735,9 @@ Phantom
    linear growth from 100 to 200 instances/rps during 10 minutes
   ``test_dir/test_backend.stpd``
    path to ready schedule file
- :tutorial_link:
-  http://yandextank.readthedocs.io/en/latest/tutorial.html#tutorials
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/tutorial.html#tutorials
 
 ``loop`` (integer)
 ------------------
