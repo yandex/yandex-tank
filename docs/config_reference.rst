@@ -910,27 +910,38 @@ Telegraf
 
 ``config_contents`` (string)
 ----------------------------
-*\- (no description).*
+*\- used to repeat tests from Overload, not for manual editing.*
 
 ``config`` (string)
 -------------------
-*\- (no description). Default:* ``auto``
+*\- Path to monitoring config file. Default:* ``auto``
+
+:one of:
+ :``<path/to/file.xml>``: path to telegraf configuration file
+ :``auto``: collect default metrics from default_target host
+ :``none``: disable monitoring
 
 ``default_target`` (string)
 ---------------------------
-*\- (no description). Default:* ``localhost``
+*\- host to collect default metrics from (if "config: auto" specified). Default:* ``localhost``
 
 ``disguise_hostnames`` (boolean)
 --------------------------------
-*\- (no description). Default:* ``True``
+*\- Disguise real host names \- use this if you upload results to Overload and dont want others to see your hostnames. Default:* ``True``
 
 ``kill_old`` (boolean)
 ----------------------
-*\- (no description). Default:* ``False``
+*\- kill old hanging agents on target(s). Default:* ``False``
 
 ``ssh_timeout`` (string)
 ------------------------
-*\- (no description). Default:* ``5s``
+*\- timeout of ssh connection to target(s). Default:* ``5s``
+
+:examples:
+ ``10s``
+  10 seconds
+ ``2m``
+  2 minutes
 
 TipsAndTricks
 =============
