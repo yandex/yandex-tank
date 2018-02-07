@@ -20,7 +20,7 @@ phantom:
   load_profile:
     load_type: rps
     schedule: line(1,3000,10m)
-  autocases: '1'
+  autocases: 1
   header_http: '1.1'
   force_stepping: 1
   multi:
@@ -31,7 +31,7 @@ phantom:
         load_type: rps
         schedule: line(1,125,10m)
       header_http: '1.1'
-      autocases: '1'
+      autocases: 1
     - ammofile: ammo.txt
       instances: 2000
       address: foobar.example.net
@@ -39,7 +39,7 @@ phantom:
         load_type: rps
         schedule: line(1,100,10m)
       header_http: '1.1'
-      autocases: '1'
+      autocases: 1
 telegraf:
   enabled: False
 autostop:

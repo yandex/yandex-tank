@@ -60,7 +60,7 @@ class PhantomConfig:
         """        Read phantom tool specific options        """
         self.threads = self.cfg["threads"] or str(int(multiprocessing.cpu_count() / 2) + 1)
         self.phantom_modules_path = self.cfg["phantom_modules_path"]
-        self.additional_libs = self.cfg["additional_libs"]
+        self.additional_libs = ' '.join(self.cfg["additional_libs"])
         self.answ_log_level = self.cfg["writelog"]
         if self.answ_log_level.lower() in ['0', 'false']:
             self.answ_log_level = 'none'
@@ -344,7 +344,7 @@ class StreamConfig:
         if self.phantom_http_field:
             tune += "field = " + self.phantom_http_field + "\n"
         if self.phantom_http_field_num:
-            tune += "field_num = " + self.phantom_http_field_num + "\n"
+            tune += "field_num = {}\n".format(self.phantom_http_field_num)
         if self.phantom_http_line:
             tune += "line = " + self.phantom_http_line + "\n"
         if tune:

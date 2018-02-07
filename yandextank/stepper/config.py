@@ -25,7 +25,7 @@ class ComponentFactory():
             autocases=None,
             enum_ammo=False,
             ammo_type='phantom',
-            chosen_cases=[], ):
+            chosen_cases=None, ):
         self.log = logging.getLogger(__name__)
         self.ammo_file = ammo_file
         self.ammo_type = ammo_type
@@ -49,7 +49,7 @@ class ComponentFactory():
             info.status.ammo_limit = len(self.uris) * loop_limit
         self.headers = headers
         self.marker = get_marker(autocases, enum_ammo)
-        self.chosen_cases = chosen_cases
+        self.chosen_cases = chosen_cases or []
 
     def get_load_plan(self):
         """

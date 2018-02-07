@@ -3,7 +3,10 @@ phantom:
   address: '[bar.example.net]:443'
   ammofile: air-tickets-search-ammo.log
   header_http: '1.1'
-  headers: "[Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3]\n[Connection: close]\n[Host: avia.yandex.ru]"
+  headers:
+    - 'Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3'
+    - 'Connection: close'
+    - 'Host: avia.yandex.ru'
   load_profile: {load_type: rps, schedule: 'line(1,200,10m)'}
   package: yandextank.plugins.Phantom
   ssl: true

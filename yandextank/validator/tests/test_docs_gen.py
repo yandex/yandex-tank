@@ -81,11 +81,11 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
  *\- load schedule or path to stpd file.* **Required.**
  
  :examples:
-  :``const(200,90s)``:
+  ``const(200,90s)``
    constant load of 200 instances/rps during 90s
-  :``line(100,200,10m)``:
+  ``line(100,200,10m)``
    linear growth from 100 to 200 instances/rps during 10 minutes
-  :``test_dir/test_backend.stpd``:
+  ``test_dir/test_backend.stpd``
    path to ready schedule file"""),  # noqa: W293
     ({'lock_targets': {
         'default': 'auto',
@@ -126,7 +126,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
  *\- autostop constraint.*
  
  :examples:
-  :``http(4xx,50%,5)``:
+  ``http(4xx,50%,5)``
    stop when rate of 4xx http codes is 50% or more during 5 seconds""")  # noqa: W293
 ])
 def test_format_option(option_schema, expected):

@@ -28,7 +28,7 @@ Default entrypoint is ``/usr/local/bin/yandex-tank`` so you may just run it to s
 
 * ``$SSH_AUTH_SOCK:/ssh-agent`` - ssh agent socket mounted in order to provide use telegraf plugin (monitoring). It uses your ssh keys to remotely login to monitored hosts
 
-If you want to do something in the container befor running tank, you will need to change entrypoint:
+If you want to do something in the container before running tank, you will need to change entrypoint:
 
 .. code-block:: bash
 

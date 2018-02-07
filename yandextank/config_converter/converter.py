@@ -163,11 +163,20 @@ class UnknownOption(ConversionError):
 
 
 class Option(object):
+    TYPE_CASTERS = {
+        'boolean': lambda k, v: {k: to_bool(v)},
+        'integer': lambda k, v: {k: int(v)},
+        'list': lambda k, v: {k: [_.strip() for _ in v.strip().split()]},
+        'float': lambda k, v: {k: float(v)}
+    }
+
     SPECIAL_CONVERTERS = {
         'Phantom': {
             'rps_schedule': convert_rps_schedule,
             'instances_schedule': convert_instances_schedule,
             'stpd_file': convert_stpd_schedule,
+            'autocases': TYPE_CASTERS['integer'],
+            'headers': lambda key, value: {key: re.compile('\[(.*?)\]').findall(value)}
         },
         'Bfg': {
             'rps_schedule': convert_rps_schedule,
@@ -255,13 +264,6 @@ class Option(object):
         return self._converter
 
     def _get_scheme_converter(self):
-        type_casters = {
-            'boolean': lambda k, v: {k: to_bool(v)},
-            'integer': lambda k, v: {k: int(v)},
-            'list': lambda k, v: {k: [_.strip() for _ in v.strip().split('\n')]},
-            'float': lambda k, v: {k: float(v)}
-        }
-
         if self.schema.get(self.name) is None:
             logger.warning('Unknown option {}:{}'.format(self.plugin, self.name))
             raise UnknownOption
@@ -271,7 +273,7 @@ class Option(object):
             logger.warning('Option {}:{}: no type specified in schema'.format(self.plugin, self.name))
             return self.dummy_converter
 
-        return type_casters.get(_type, self.dummy_converter)
+        return self.TYPE_CASTERS.get(_type, self.dummy_converter)
 
 
 class Section(object):
