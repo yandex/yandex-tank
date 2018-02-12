@@ -494,13 +494,17 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         PLUGIN_DIR = os.path.join(self.core.artifacts_base_dir, 'lunapark')
         if not os.path.exists(PLUGIN_DIR):
             os.makedirs(PLUGIN_DIR)
-        os.symlink(
-            os.path.relpath(
-                self.core.artifacts_dir,
-                PLUGIN_DIR),
-            os.path.join(
-                PLUGIN_DIR,
-                str(name)))
+        try:
+            os.symlink(
+                os.path.relpath(
+                    self.core.artifacts_dir,
+                    PLUGIN_DIR),
+                os.path.join(
+                    PLUGIN_DIR,
+                    str(name)))
+        # this exception catch for filesystems w/o symlinks
+        except OSError:
+            logger.warning('Unable to create symlink for artifact: %s', name)
 
     def _get_user_agent(self):
         plugin_agent = 'Uploader/{}'.format(self.VERSION)
