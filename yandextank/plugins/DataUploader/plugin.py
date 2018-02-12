@@ -502,7 +502,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 os.path.join(
                     PLUGIN_DIR,
                     str(name)))
-        # FIXME find not broad exception clause
         # this exception catch for filesystems w/o symlinks
         except OSError:
             logger.warning('Unable to create symlink for artifact: %s', name)
