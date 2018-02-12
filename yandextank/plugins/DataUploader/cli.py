@@ -117,9 +117,10 @@ def make_symlink(shooting_dir, name):
     link_name = os.path.join(plugin_dir, str(name))
     try:
         os.symlink(os.path.relpath(shooting_dir, plugin_dir), link_name)
-    except Exception:
+    except OSError:
         logger.warning('Unable to create symlink for artifact: %s', link_name)
-    logger.info('Symlink created: {}'.format(os.path.abspath(link_name)))
+    else:
+        logger.info('Symlink created: {}'.format(os.path.abspath(link_name)))
 
 
 class ConfigError(Exception):
