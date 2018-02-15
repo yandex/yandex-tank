@@ -1,18 +1,24 @@
 catch_out:
+  description: show commands stdout
   type: boolean
   default: False
 prepare:
+  description: shell command to execute on prepare stage
   type: string
   default: ''
 start:
+  description: shell command to execute on start
   type: string
   default: ''
 end:
+  description: shell command to execute after test end
   type: string
   default: ''
 poll:
+  description: shell command to execute every second while test is running
   type: string
   default: ''
 post_process:
+  description: shell command to execute on post process stage
   type: string
   default: ''

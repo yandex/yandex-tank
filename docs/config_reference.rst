@@ -62,38 +62,61 @@ Bfg
 
 ``address`` (string)
 --------------------
-*\- (no description).*
+*\- Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port. Port is optional. Tank checks each test if port is available.*
+
+:examples:
+ ``127.0.0.1:8080``
+  
+ ``www.w3c.org``
 
 ``ammo_limit`` (integer)
 ------------------------
-*\- (no description). Default:* ``-1``
+*\- Upper limit for the total number of requests. Default:* ``-1``
 
 ``ammo_type`` (string)
 ----------------------
-*\- (no description). Default:* ``caseline``
+*\- Ammo format. Default:* ``caseline``
 
 ``ammofile`` (string)
 ---------------------
-*\- (no description). Default:* ``""``
+*\- Path to ammo file. Default:* ``""``
 
-``autocases`` (string)
-----------------------
-*\- (no description). Default:* ``0``
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/core_and_modules.html#bfg
+
+``autocases`` (integer or string)
+---------------------------------
+*\- Use to automatically tag requests. Requests might be grouped by tag for later analysis. Default:* ``0``
+
+:one of:
+ :``<N>``: use N first uri parts to tag request, slashes are replaced with underscores
+ :``uniq``: tag each request with unique uid
+ :``uri``: tag each request with its uri path, slashes are replaced with underscores
+
+:examples:
+ ``2``
+  /example/search/hello/help/us?param1=50 -> _example_search
+ ``3``
+  /example/search/hello/help/us?param1=50 -> _example_search_hello
+ ``uniq``
+  /example/search/hello/help/us?param1=50 -> c98b0520bb6a451c8bc924ed1fd72553
+ ``uri``
+  /example/search/hello/help/us?param1=50 -> _example_search_hello_help_us
 
 ``cache_dir`` (string)
 ----------------------
-*\- (no description). Default:* ``None``
+*\- stpd\-file cache directory. If not specified, defaults to base artifacts directory. Default:* ``None``
 
 :nullable:
  True
 
 ``cached_stpd`` (boolean)
 -------------------------
-*\- (no description). Default:* ``False``
+*\- Use cached stpd file. Default:* ``False``
 
 ``chosen_cases`` (string)
 -------------------------
-*\- (no description). Default:* ``""``
+*\- Use only selected cases. Default:* ``""``
 
 ``enum_ammo`` (boolean)
 -----------------------
@@ -105,79 +128,119 @@ Bfg
 
 ``force_stepping`` (integer)
 ----------------------------
-*\- (no description). Default:* ``0``
+*\- Ignore cached stpd files, force stepping. Default:* ``0``
 
 ``green_threads_per_instance`` (integer)
 ----------------------------------------
-*\- (no description). Default:* ``1000``
+*\- Number of green threads every worker process will execute. For "green" worker type only. Default:* ``1000``
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/core_and_modules.html#bfg
 
 ``gun_config`` (dict)
 ---------------------
-*\- (no description).*
+*\- Options for your load scripts.*
 
 :``base_address`` (string):
- *\- (no description).*
+ *\- base target address.*
 :``class_name`` (string):
- *\- (no description). Default:* ``LoadTest``
+ *\- class that contains load scripts. Default:* ``LoadTest``
 :``init_param`` (string):
- *\- (no description). Default:* ``""``
+ *\- parameter that's passed to "setup" method. Default:* ``""``
 :``module_name`` (string):
- *\- (no description).*
+ *\- name of module that contains load scripts.*
 :``module_path`` (string):
- *\- (no description). Default:* ``""``
+ *\- directory of python module that contains load scripts. Default:* ``""``
 
 :allow_unknown:
  True
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/core_and_modules.html#bfg
 
 ``gun_type`` (string)
 ---------------------
-*\- (no description).* **Required.**
+*\- Type of gun BFG should use.* **Required.**
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/core_and_modules.html#bfg-options
 
 :one of: [``custom``, ``http``, ``scenario``, ``ultimate``]
 
 ``header_http`` (string)
 ------------------------
-*\- (no description). Default:* ``1.0``
+*\- HTTP version. Default:* ``1.0``
 
-``headers`` (string)
---------------------
-*\- (no description). Default:* ``""``
+:one of:
+ :``1.0``: http 1.0
+ :``1.1``: http 1.1
+
+``headers`` (list of string)
+----------------------------
+*\- HTTP headers. Default:* ``[]``
+
+:[list_element] (string):
+ *\- Format: "Header: Value".*
+ 
+ :examples:
+  ``accept: text/html``
 
 ``instances`` (integer)
 -----------------------
-*\- (no description). Default:* ``1000``
+*\- number of processes (simultaneously working clients). Default:* ``1000``
 
 ``load_profile`` (dict)
 -----------------------
-*\- (no description).* **Required.**
+*\- Configure your load setting the number of RPS or instances (clients) as a function of time, or using a prearranged schedule.* **Required.**
 
 :``load_type`` (string):
- *\- (no description).* **Required.**
+ *\- Choose control parameter.* **Required.**
  
- :regex:
-  ^rps|instances|stpd_file$
+ :one of:
+  :``instances``: control the number of instances
+  :``rps``: control the rps rate
+  :``stpd_file``: use prearranged schedule file
 :``schedule`` (string):
- *\- (no description).* **Required.**
+ *\- load schedule or path to stpd file.* **Required.**
+ 
+ :examples:
+  ``const(200,90s)``
+   constant load of 200 instances/rps during 90s
+  ``line(100,200,10m)``
+   linear growth from 100 to 200 instances/rps during 10 minutes
+  ``test_dir/test_backend.stpd``
+   path to ready schedule file
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/tutorial.html#tutorials
 
 ``loop`` (integer)
 ------------------
-*\- (no description). Default:* ``-1``
+*\- Loop over ammo file for the given amount of times. Default:* ``-1``
 
 ``pip`` (string)
 ----------------
-*\- (no description). Default:* ``""``
+*\- pip modules to install before the test. Use multiline to install multiple modules. Default:* ``""``
 
-``uris`` (string)
------------------
-*\- (no description). Default:* ``""``
+``uris`` (list of string)
+-------------------------
+*\- URI list. Default:* ``[]``
+
+:[list_element] (string):
+ *\- URI path string.*
+ 
+ :examples:
+  ``["/example/search", "/example/search/hello", "/example/search/hello/help"]``
 
 ``use_caching`` (boolean)
 -------------------------
-*\- (no description). Default:* ``True``
+*\- Enable stpd\-file caching. Default:* ``True``
 
 ``worker_type`` (string)
 ------------------------
 *\- (no description). Default:* ``""``
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/core_and_modules.html#bfg-worker-type
 
 Console
 =======
@@ -225,47 +288,47 @@ DataUploader
 
 ``api_address`` (string)
 ------------------------
-*\- (no description). Default:* ``https://overload.yandex.net/``
+*\- api base address. Default:* ``https://overload.yandex.net/``
 
 ``api_attempts`` (integer)
 --------------------------
-*\- (no description). Default:* ``60``
+*\- number of retries in case of api fault. Default:* ``60``
 
 ``api_timeout`` (integer)
 -------------------------
-*\- (no description). Default:* ``10``
+*\- delay between retries in case of api fault. Default:* ``10``
 
 ``chunk_size`` (integer)
 ------------------------
-*\- (no description). Default:* ``500000``
+*\- max amount of data to be sent in single requests. Default:* ``500000``
 
 ``component`` (string)
 ----------------------
-*\- (no description). Default:* ``""``
+*\- component of your software. Default:* ``""``
 
 ``connection_timeout`` (integer)
 --------------------------------
-*\- (no description). Default:* ``30``
+*\- tcp connection timeout. Default:* ``30``
 
 ``ignore_target_lock`` (boolean)
 --------------------------------
-*\- (no description). Default:* ``False``
+*\- start test even if target is locked. Default:* ``False``
 
 ``job_dsc`` (string)
 --------------------
-*\- (no description). Default:* ``""``
+*\- job description. Default:* ``""``
 
 ``job_name`` (string)
 ---------------------
-*\- (no description). Default:* ``none``
+*\- job name. Default:* ``none``
 
 ``jobno_file`` (string)
 -----------------------
-*\- (no description). Default:* ``jobno_file.txt``
+*\- file to save job number to. Default:* ``jobno_file.txt``
 
 ``jobno`` (string)
 ------------------
-*\- (no description).*
+*\- number of an existing job. Use to upload data to an existing job. Requres upload token.*
 
 :dependencies:
  upload_token
@@ -283,70 +346,70 @@ DataUploader
 
 ``log_data_requests`` (boolean)
 -------------------------------
-*\- (no description). Default:* ``False``
+*\- log POSTs of test data for debugging. Tank should be launched in debug mode (\-\-debug). Default:* ``False``
 
 ``log_monitoring_requests`` (boolean)
 -------------------------------------
-*\- (no description). Default:* ``False``
+*\- log POSTs of monitoring data for debugging. Tank should be launched in debug mode (\-\-debug). Default:* ``False``
 
 ``log_other_requests`` (boolean)
 --------------------------------
-*\- (no description). Default:* ``False``
+*\- log other api requests for debugging. Tank should be launched in debug mode (\-\-debug). Default:* ``False``
 
 ``log_status_requests`` (boolean)
 ---------------------------------
-*\- (no description). Default:* ``False``
+*\- log status api requests for debugging. Tank should be launched in debug mode (\-\-debug). Default:* ``False``
 
 ``maintenance_attempts`` (integer)
 ----------------------------------
-*\- (no description). Default:* ``10``
+*\- number of retries in case of api maintanance downtime. Default:* ``10``
 
 ``maintenance_timeout`` (integer)
 ---------------------------------
-*\- (no description). Default:* ``60``
+*\- delay between retries in case of api maintanance downtime. Default:* ``60``
 
 ``meta`` (dict)
 ---------------
-*\- (no description).*
+*\- additional meta information.*
 
 ``network_attempts`` (integer)
 ------------------------------
-*\- (no description). Default:* ``60``
+*\- number of retries in case of network fault. Default:* ``60``
 
 ``network_timeout`` (integer)
 -----------------------------
-*\- (no description). Default:* ``10``
+*\- delay between retries in case of network fault. Default:* ``10``
 
-``notify`` (string)
--------------------
-*\- (no description). Default:* ``""``
+``notify`` (list of string)
+---------------------------
+*\- users to notify. Default:* ``[]``
 
 ``operator`` (string)
 ---------------------
-*\- (no description). Default:* ``None``
+*\- user who started the test. Default:* ``None``
 
 :nullable:
  True
 
 ``regress`` (boolean)
 ---------------------
-*\- (no description). Default:* ``False``
+*\- mark test as regression. Default:* ``False``
 
 ``send_status_period`` (integer)
 --------------------------------
-*\- (no description). Default:* ``10``
+*\- delay between status notifications. Default:* ``10``
 
 ``strict_lock`` (boolean)
 -------------------------
-*\- (no description). Default:* ``False``
+*\- set true to abort the test if the the target's lock check is failed. Default:* ``False``
 
 ``target_lock_duration`` (string)
 ---------------------------------
-*\- (no description). Default:* ``30m``
+*\- how long should the target be locked. In most cases this should be long enough for the test to run. Target will be unlocked automatically right after the test is finished. Default:* ``30m``
 
 ``task`` (string)
 -----------------
-*\- (no description). Default:* ``""``
+*\- task title. Default:* ``""``
 
 ``threads_timeout`` (integer)
 -----------------------------
@@ -354,11 +417,11 @@ DataUploader
 
 ``token_file`` (string)
 -----------------------
-*\- (no description).*
+*\- API token.*
 
 ``upload_token`` (string)
 -------------------------
-*\- (no description). Default:* ``None``
+*\- Job's token. Use to upload data to an existing job. Requres jobno. Default:* ``None``
 
 :dependencies:
  jobno
@@ -367,11 +430,11 @@ DataUploader
 
 ``ver`` (string)
 ----------------
-*\- (no description). Default:* ``""``
+*\- version of the software tested. Default:* ``""``
 
 ``writer_endpoint`` (string)
 ----------------------------
-*\- (no description). Default:* ``""``
+*\- writer api endpoint. Default:* ``""``
 
 Influx
 ======
@@ -417,18 +480,18 @@ JMeter
 
 ``args`` (string)
 -----------------
-*\- (no description). Default:* ``""``
+*\- additional commandline arguments for JMeter. Default:* ``""``
 
 ``buffer_size`` (integer)
 -------------------------
-*\- (no description). Default:* ``None``
+*\- jmeter buffer size. Default:* ``None``
 
 :nullable:
  True
 
 ``buffered_seconds`` (integer)
 ------------------------------
-*\- (no description). Default:* ``3``
+*\- Aggregator delay \- to be sure that everything were read from jmeter results file. Default:* ``3``
 
 ``exclude_markers`` (list of string)
 ------------------------------------
@@ -442,46 +505,46 @@ JMeter
 
 ``ext_log`` (string)
 --------------------
-*\- (no description). Default:* ``none``
+*\- additional log, jmeter xml format. Saved in test dir as jmeter_ext_XXXX.jtl. Default:* ``none``
 
 :one of: [``none``, ``errors``, ``all``]
 
 ``extended_log`` (string)
 -------------------------
-*\- (no description). Default:* ``none``
+*\- additional log, jmeter xml format. Saved in test dir as jmeter_ext_XXXX.jtl. Default:* ``none``
 
 :one of: [``none``, ``errors``, ``all``]
 
 ``jmeter_path`` (string)
 ------------------------
-*\- (no description). Default:* ``jmeter``
+*\- Path to JMeter. Default:* ``jmeter``
 
 ``jmeter_ver`` (float)
 ----------------------
-*\- (no description). Default:* ``3.0``
+*\- Which JMeter version tank should expect. Affects the way connection time is logged. Default:* ``3.0``
 
 ``jmx`` (string)
 ----------------
-*\- (no description).*
+*\- Testplan for execution.*
 
 ``shutdown_timeout`` (integer)
 ------------------------------
-*\- (no description). Default:* ``10``
+*\- timeout for automatic test shutdown. Default:* ``10``
 
 ``variables`` (dict)
 --------------------
-*\- (no description). Default:* ``{}``
+*\- variables for jmx testplan. Default:* ``{}``
 
 JsonReport
 ==========
 
 ``monitoring_log`` (string)
 ---------------------------
-*\- (no description). Default:* ``monitoring.log``
+*\- file name for monitoring log. Default:* ``monitoring.log``
 
 ``test_data_log`` (string)
 --------------------------
-*\- (no description). Default:* ``test_data.log``
+*\- file name for test data log. Default:* ``test_data.log``
 
 Pandora
 =======
@@ -512,9 +575,6 @@ Phantom
 ``additional_libs`` (list of string)
 ------------------------------------
 *\- Libs for Phantom, to be added to phantom config file in section "module_setup". Default:* ``[]``
-
-:[list_element] (string):
- *\- (no description).*
 
 ``address`` (string)
 --------------------
@@ -672,8 +732,9 @@ Phantom
    linear growth from 100 to 200 instances/rps during 10 minutes
   ``test_dir/test_backend.stpd``
    path to ready schedule file
- :tutorial_link:
-  http://yandextank.readthedocs.io/en/latest/tutorial.html#tutorials
+
+:tutorial_link:
+ http://yandextank.readthedocs.io/en/latest/tutorial.html#tutorials
 
 ``loop`` (integer)
 ------------------
@@ -804,73 +865,77 @@ ShellExec
 
 ``catch_out`` (boolean)
 -----------------------
-*\- (no description). Default:* ``False``
+*\- show commands stdout. Default:* ``False``
 
 ``end`` (string)
 ----------------
-*\- (no description). Default:* ``""``
+*\- shell command to execute after test end. Default:* ``""``
 
 ``poll`` (string)
 -----------------
-*\- (no description). Default:* ``""``
+*\- shell command to execute every second while test is running. Default:* ``""``
 
 ``post_process`` (string)
 -------------------------
-*\- (no description). Default:* ``""``
+*\- shell command to execute on post process stage. Default:* ``""``
 
 ``prepare`` (string)
 --------------------
-*\- (no description). Default:* ``""``
+*\- shell command to execute on prepare stage. Default:* ``""``
 
 ``start`` (string)
 ------------------
-*\- (no description). Default:* ``""``
+*\- shell command to execute on start. Default:* ``""``
 
 ShootExec
 =========
 
 ``cmd`` (string)
 ----------------
-*\- (no description).* **Required.**
+*\- command that produces test results and stats in Phantom format.* **Required.**
 
 ``output_path`` (string)
 ------------------------
-*\- (no description).* **Required.**
+*\- path to test results.* **Required.**
 
 ``stats_path`` (string)
 -----------------------
-*\- (no description). Default:* ``""``
+*\- path to tests stats. Default:* ``""``
 
 Telegraf
 ========
 
 ``config_contents`` (string)
 ----------------------------
-*\- (no description).*
+*\- used to repeat tests from Overload, not for manual editing.*
 
 ``config`` (string)
 -------------------
-*\- (no description). Default:* ``auto``
+*\- Path to monitoring config file. Default:* ``auto``
+
+:one of:
+ :``<path/to/file.xml>``: path to telegraf configuration file
+ :``auto``: collect default metrics from default_target host
+ :``none``: disable monitoring
 
 ``default_target`` (string)
 ---------------------------
-*\- (no description). Default:* ``localhost``
+*\- host to collect default metrics from (if "config: auto" specified). Default:* ``localhost``
 
 ``disguise_hostnames`` (boolean)
 --------------------------------
-*\- (no description). Default:* ``True``
+*\- Disguise real host names \- use this if you upload results to Overload and dont want others to see your hostnames. Default:* ``True``
 
 ``kill_old`` (boolean)
 ----------------------
-*\- (no description). Default:* ``False``
+*\- kill old hanging agents on target(s). Default:* ``False``
 
 ``ssh_timeout`` (string)
 ------------------------
-*\- (no description). Default:* ``5s``
+*\- timeout of ssh connection to target(s). Default:* ``5s``
 
-TipsAndTricks
-=============
-
-``disable`` (boolean)
----------------------
-*\- (no description). Default:* ``False``
+:examples:
+ ``10s``
+  10 seconds
+ ``2m``
+  2 minutes

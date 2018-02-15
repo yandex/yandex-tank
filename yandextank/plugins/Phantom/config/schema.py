@@ -210,6 +210,7 @@ OPTIONS = {
         'description': 'Configure your load setting the number of RPS or instances (clients) as a function of time,'
                        'or using a prearranged schedule',
         "type": "dict",
+        'tutorial_link': 'http://yandextank.readthedocs.io/en/latest/tutorial.html#tutorials',
         'schema': {
             'load_type': {
                 'required': True,
@@ -229,7 +230,6 @@ OPTIONS = {
                     'line(100,200,10m)': 'linear growth from 100 to 200 instances/rps during 10 minutes',
                     'const(200,90s)': 'constant load of 200 instances/rps during 90s',
                     'test_dir/test_backend.stpd': 'path to ready schedule file'},
-                'tutorial_link': 'http://yandextank.readthedocs.io/en/latest/tutorial.html#tutorials'
             }
         },
         'required': True

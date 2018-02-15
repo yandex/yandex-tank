@@ -28,9 +28,6 @@ shellexec:
 telegraf:
   enabled: true
   package: yandextank.plugins.Telegraf
-tips:
-  enabled: true
-  package: yandextank.plugins.TipsAndTricks
 rcassert:
   enabled: true
   package: yandextank.plugins.RCAssert
