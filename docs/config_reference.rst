@@ -480,18 +480,18 @@ JMeter
 
 ``args`` (string)
 -----------------
-*\- (no description). Default:* ``""``
+*\- additional commandline arguments for JMeter. Default:* ``""``
 
 ``buffer_size`` (integer)
 -------------------------
-*\- (no description). Default:* ``None``
+*\- jmeter buffer size. Default:* ``None``
 
 :nullable:
  True
 
 ``buffered_seconds`` (integer)
 ------------------------------
-*\- (no description). Default:* ``3``
+*\- Aggregator delay \- to be sure that everything were read from jmeter results file. Default:* ``3``
 
 ``exclude_markers`` (list of string)
 ------------------------------------
@@ -505,46 +505,49 @@ JMeter
 
 ``ext_log`` (string)
 --------------------
-*\- (no description). Default:* ``none``
+*\- additional log, jmeter xml format. Saved in test dir as jmeter_ext_XXXX.jtl. Default:* ``none``
 
 :one of: [``none``, ``errors``, ``all``]
 
 ``extended_log`` (string)
 -------------------------
-*\- (no description). Default:* ``none``
+*\- additional log, jmeter xml format. Saved in test dir as jmeter_ext_XXXX.jtl. Default:* ``none``
 
 :one of: [``none``, ``errors``, ``all``]
 
 ``jmeter_path`` (string)
 ------------------------
-*\- (no description). Default:* ``jmeter``
+*\- Path to JMeter. Default:* ``jmeter``
 
 ``jmeter_ver`` (float)
 ----------------------
 *\- (no description). Default:* ``3.0``
 
+:descrition:
+ Which JMeter version tank should expect. Affects the way connection time is logged.
+
 ``jmx`` (string)
 ----------------
-*\- (no description).*
+*\- Testplan for execution.*
 
 ``shutdown_timeout`` (integer)
 ------------------------------
-*\- (no description). Default:* ``10``
+*\- timeout for automatic test shutdown. Default:* ``10``
 
 ``variables`` (dict)
 --------------------
-*\- (no description). Default:* ``{}``
+*\- variables for jmx testplan. Default:* ``{}``
 
 JsonReport
 ==========
 
 ``monitoring_log`` (string)
 ---------------------------
-*\- (no description). Default:* ``monitoring.log``
+*\- file name for monitoring log. Default:* ``monitoring.log``
 
 ``test_data_log`` (string)
 --------------------------
-*\- (no description). Default:* ``test_data.log``
+*\- file name for test data log. Default:* ``test_data.log``
 
 Pandora
 =======
@@ -865,42 +868,42 @@ ShellExec
 
 ``catch_out`` (boolean)
 -----------------------
-*\- (no description). Default:* ``False``
+*\- show commands stdout. Default:* ``False``
 
 ``end`` (string)
 ----------------
-*\- (no description). Default:* ``""``
+*\- shell command to execute after test end. Default:* ``""``
 
 ``poll`` (string)
 -----------------
-*\- (no description). Default:* ``""``
+*\- shell command to execute every second while test is running. Default:* ``""``
 
 ``post_process`` (string)
 -------------------------
-*\- (no description). Default:* ``""``
+*\- shell command to execute on post process stage. Default:* ``""``
 
 ``prepare`` (string)
 --------------------
-*\- (no description). Default:* ``""``
+*\- shell command to execute on prepare stage. Default:* ``""``
 
 ``start`` (string)
 ------------------
-*\- (no description). Default:* ``""``
+*\- shell command to execute on start. Default:* ``""``
 
 ShootExec
 =========
 
 ``cmd`` (string)
 ----------------
-*\- (no description).* **Required.**
+*\- command that produces test results and stats in Phantom format.* **Required.**
 
 ``output_path`` (string)
 ------------------------
-*\- (no description).* **Required.**
+*\- path to test results.* **Required.**
 
 ``stats_path`` (string)
 -----------------------
-*\- (no description). Default:* ``""``
+*\- path to tests stats. Default:* ``""``
 
 Telegraf
 ========

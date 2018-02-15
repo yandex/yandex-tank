@@ -1,9 +1,12 @@
 cmd:
+  description: command that produces test results and stats in Phantom format
   type: string
   required: true
 output_path:
+  description: path to test results
   type: string
   required: true
 stats_path:
+  description: path to tests stats
   type: string
   default: ''
