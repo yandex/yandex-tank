@@ -288,47 +288,47 @@ DataUploader
 
 ``api_address`` (string)
 ------------------------
-*\- (no description). Default:* ``https://overload.yandex.net/``
+*\- api base address. Default:* ``https://overload.yandex.net/``
 
 ``api_attempts`` (integer)
 --------------------------
-*\- (no description). Default:* ``60``
+*\- number of retries in case of api fault. Default:* ``60``
 
 ``api_timeout`` (integer)
 -------------------------
-*\- (no description). Default:* ``10``
+*\- delay between retries in case of api fault. Default:* ``10``
 
 ``chunk_size`` (integer)
 ------------------------
-*\- (no description). Default:* ``500000``
+*\- max amount of data to be sent in single requests. Default:* ``500000``
 
 ``component`` (string)
 ----------------------
-*\- (no description). Default:* ``""``
+*\- component of your software. Default:* ``""``
 
 ``connection_timeout`` (integer)
 --------------------------------
-*\- (no description). Default:* ``30``
+*\- tcp connection timeout. Default:* ``30``
 
 ``ignore_target_lock`` (boolean)
 --------------------------------
-*\- (no description). Default:* ``False``
+*\- start test even if target is locked. Default:* ``False``
 
 ``job_dsc`` (string)
 --------------------
-*\- (no description). Default:* ``""``
+*\- job description. Default:* ``""``
 
 ``job_name`` (string)
 ---------------------
-*\- (no description). Default:* ``none``
+*\- job name. Default:* ``none``
 
 ``jobno_file`` (string)
 -----------------------
-*\- (no description). Default:* ``jobno_file.txt``
+*\- file to save job number to. Default:* ``jobno_file.txt``
 
 ``jobno`` (string)
 ------------------
-*\- (no description).*
+*\- number of an existing job. Use to upload data to an existing job. Requres upload token.*
 
 :dependencies:
  upload_token
@@ -346,70 +346,70 @@ DataUploader
 
 ``log_data_requests`` (boolean)
 -------------------------------
-*\- (no description). Default:* ``False``
+*\- log POSTs of test data for debugging. Tank should be launched in debug mode (\-\-debug). Default:* ``False``
 
 ``log_monitoring_requests`` (boolean)
 -------------------------------------
-*\- (no description). Default:* ``False``
+*\- log POSTs of monitoring data for debugging. Tank should be launched in debug mode (\-\-debug). Default:* ``False``
 
 ``log_other_requests`` (boolean)
 --------------------------------
-*\- (no description). Default:* ``False``
+*\- log other api requests for debugging. Tank should be launched in debug mode (\-\-debug). Default:* ``False``
 
 ``log_status_requests`` (boolean)
 ---------------------------------
-*\- (no description). Default:* ``False``
+*\- log status api requests for debugging. Tank should be launched in debug mode (\-\-debug). Default:* ``False``
 
 ``maintenance_attempts`` (integer)
 ----------------------------------
-*\- (no description). Default:* ``10``
+*\- number of retries in case of api maintanance downtime. Default:* ``10``
 
 ``maintenance_timeout`` (integer)
 ---------------------------------
-*\- (no description). Default:* ``60``
+*\- delay between retries in case of api maintanance downtime. Default:* ``60``
 
 ``meta`` (dict)
 ---------------
-*\- (no description).*
+*\- additional meta information.*
 
 ``network_attempts`` (integer)
 ------------------------------
-*\- (no description). Default:* ``60``
+*\- number of retries in case of network fault. Default:* ``60``
 
 ``network_timeout`` (integer)
 -----------------------------
-*\- (no description). Default:* ``10``
+*\- delay between retries in case of network fault. Default:* ``10``
 
-``notify`` (string)
--------------------
-*\- (no description). Default:* ``""``
+``notify`` (list of string)
+---------------------------
+*\- users to notify. Default:* ``[]``
 
 ``operator`` (string)
 ---------------------
-*\- (no description). Default:* ``None``
+*\- user who started the test. Default:* ``None``
 
 :nullable:
  True
 
 ``regress`` (boolean)
 ---------------------
-*\- (no description). Default:* ``False``
+*\- mark test as regression. Default:* ``False``
 
 ``send_status_period`` (integer)
 --------------------------------
-*\- (no description). Default:* ``10``
+*\- delay between status notifications. Default:* ``10``
 
 ``strict_lock`` (boolean)
 -------------------------
-*\- (no description). Default:* ``False``
+*\- set true to abort the test if the the target's lock check is failed. Default:* ``False``
 
 ``target_lock_duration`` (string)
 ---------------------------------
-*\- (no description). Default:* ``30m``
+*\- how long should the target be locked. In most cases this should be long enough for the test to run. Target will be unlocked automatically right after the test is finished. Default:* ``30m``
 
 ``task`` (string)
 -----------------
-*\- (no description). Default:* ``""``
+*\- task title. Default:* ``""``
 
 ``threads_timeout`` (integer)
 -----------------------------
@@ -417,11 +417,11 @@ DataUploader
 
 ``token_file`` (string)
 -----------------------
-*\- (no description).*
+*\- API token.*
 
 ``upload_token`` (string)
 -------------------------
-*\- (no description). Default:* ``None``
+*\- Job's token. Use to upload data to an existing job. Requres jobno. Default:* ``None``
 
 :dependencies:
  jobno
@@ -430,11 +430,11 @@ DataUploader
 
 ``ver`` (string)
 ----------------
-*\- (no description). Default:* ``""``
+*\- version of the software tested. Default:* ``""``
 
 ``writer_endpoint`` (string)
 ----------------------------
-*\- (no description). Default:* ``""``
+*\- writer api endpoint. Default:* ``""``
 
 Influx
 ======
@@ -575,9 +575,6 @@ Phantom
 ``additional_libs`` (list of string)
 ------------------------------------
 *\- Libs for Phantom, to be added to phantom config file in section "module_setup". Default:* ``[]``
-
-:[list_element] (string):
- *\- (no description).*
 
 ``address`` (string)
 --------------------
