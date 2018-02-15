@@ -521,10 +521,7 @@ JMeter
 
 ``jmeter_ver`` (float)
 ----------------------
-*\- (no description). Default:* ``3.0``
-
-:descrition:
- Which JMeter version tank should expect. Affects the way connection time is logged.
+*\- Which JMeter version tank should expect. Affects the way connection time is logged. Default:* ``3.0``
 
 ``jmx`` (string)
 ----------------
@@ -942,10 +939,3 @@ Telegraf
   10 seconds
  ``2m``
   2 minutes
-
-TipsAndTricks
-=============
-
-``disable`` (boolean)
----------------------
-*\- (no description). Default:* ``False``
