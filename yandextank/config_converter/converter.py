@@ -181,6 +181,7 @@ class Option(object):
         'Bfg': {
             'rps_schedule': convert_rps_schedule,
             'instances_schedule': convert_instances_schedule,
+            'headers': lambda key, value: {key: re.compile('\[(.*?)\]').findall(value)}
         },
         'JMeter': {
             'exclude_markers': lambda key, value: {key: value.strip().split(' ')}

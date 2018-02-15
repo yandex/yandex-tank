@@ -38,7 +38,7 @@ jmeter_path:
   type: string
   default: jmeter
 jmeter_ver:
-  descrition: Which JMeter version tank should expect. Affects the way connection time is logged.
+  description: Which JMeter version tank should expect. Affects the way connection time is logged.
   type: float
   default: 3.0
 jmx:
