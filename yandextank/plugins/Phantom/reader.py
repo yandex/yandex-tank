@@ -8,6 +8,9 @@ import json
 import time
 import datetime
 import itertools as itt
+
+from yandextank.common.interfaces import StatsReader
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -91,7 +94,7 @@ class PhantomReader(object):
         self.closed = True
 
 
-class PhantomStatsReader(object):
+class PhantomStatsReader(StatsReader):
     def __init__(self, filename, phantom_info, cache_size=1024 * 1024 * 50):
         self.phantom_info = phantom_info
         self.stat_buffer = ""
@@ -120,13 +123,7 @@ class PhantomStatsReader(object):
             reqps = 0
             if offset >= 0 and offset < len(self.phantom_info.steps):
                 reqps = self.phantom_info.steps[offset][0]
-            yield {
-                'ts': chunk_date - 1,
-                'metrics': {
-                    'instances': instances,
-                    'reqps': reqps
-                }
-            }
+            yield self.stats_item(chunk_date - 1, instances, reqps)
 
     def _read_stat_data(self, stat_file):
         chunk = stat_file.read(self.cache_size)

@@ -221,3 +221,15 @@ class GeneratorPlugin(object):
 
     def end_test(self, retcode):
         pass
+
+
+class StatsReader(object):
+    @staticmethod
+    def stats_item(ts, instances, rps):
+        return {
+            'ts': ts,
+            'metrics': {
+                'instances': instances,
+                'reqps': rps
+            }
+        }
