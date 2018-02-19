@@ -111,8 +111,8 @@ class TankAggregator(object):
             else:
                 self.stat_cache[ts] = item
         if end and len(self.data_cache) > 0:
-            for ts, data_item in sorted(self.data_cache.items(), key= lambda i: i[0]):
-                self.__notify_listeners(data_item, StatsReader.stats_item(ts, 0, 0)) # 1516358400
+            for ts, data_item in sorted(self.data_cache.items(), key=lambda i: i[0]):
+                self.__notify_listeners(data_item, StatsReader.stats_item(ts, 0, 0))
 
     def is_test_finished(self):
         self._collect_data()
