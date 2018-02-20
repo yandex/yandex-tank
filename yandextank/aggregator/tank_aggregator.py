@@ -59,11 +59,14 @@ class TankAggregator(object):
         self.drain = None
         self.stats_drain = None
 
+    @staticmethod
+    def load_config():
+        return json.loads(resource_string(__name__, 'config/phout.json').decode('utf8'))
+
     def start_test(self):
         self.reader = self.generator.get_reader()
         self.stats_reader = self.generator.get_stats_reader()
-        aggregator_config = json.loads(
-            resource_string(__name__, 'config/phout.json').decode('utf8'))
+        aggregator_config = self.load_config()
         verbose_histogram = True
         if verbose_histogram:
             logger.info("using verbose histogram")
