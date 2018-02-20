@@ -9,4 +9,5 @@ output_path:
 stats_path:
   description: path to tests stats
   type: string
-  default: ''
+  default: null
+  nullable: true
