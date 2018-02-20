@@ -1,16 +1,19 @@
 import json
 
 import numpy as np
-from pkg_resources import resource_filename
+import pytest
 from queue import Queue
+
+from yandextank.aggregator import TankAggregator
 from yandextank.aggregator.aggregator import Aggregator, DataPoller
 from yandextank.aggregator.chopper import TimeChopper
 
 from conftest import MAX_TS, random_split
 from yandextank.common.util import Drain
 
-with open(resource_filename("yandextank.aggregator", 'config/phout.json')) as f:
-    AGGR_CONFIG = json.load(f)
+from yandextank.plugins.Phantom.reader import string_to_df
+
+AGGR_CONFIG = TankAggregator.load_config()
 
 
 class TestPipeline(object):
@@ -49,3 +52,20 @@ class TestPipeline(object):
         drain = Drain(pipeline, results_queue)
         drain.run()
         assert results_queue.qsize() == MAX_TS
+
+    @pytest.mark.parametrize('phout, results', [
+        ('yandextank/aggregator/tests/phout2927', 'yandextank/aggregator/tests/phout2927res.jsonl')
+    ])
+    def test_invalid_ammo(self, phout, results):
+        with open(phout) as fp:
+            reader = [string_to_df(line) for line in fp.readlines()]
+        pipeline = Aggregator(
+            TimeChopper(
+                DataPoller(source=reader, poll_period=0),
+                cache_size=3),
+            AGGR_CONFIG,
+            True)
+        with open(results) as fp:
+            results_parsed = json.load(fp)
+        for item, result in zip(pipeline, results_parsed):
+            assert item == result

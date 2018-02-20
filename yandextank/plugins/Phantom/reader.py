@@ -1,6 +1,8 @@
 """
 Phantom phout format reader. Read chunks from phout and produce data frames
 """
+from _csv import QUOTE_NONE
+
 import pandas as pd
 import numpy as np
 import logging
@@ -8,6 +10,8 @@ import json
 import time
 import datetime
 import itertools as itt
+
+from pandas.parser import CParserError
 
 from yandextank.common.interfaces import StatsReader
 
@@ -42,8 +46,12 @@ dtypes = {
 
 def string_to_df(data):
     start_time = time.time()
-    chunk = pd.read_csv(
-        StringIO(data), sep='\t', names=phout_columns, dtype=dtypes)
+    try:
+        chunk = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
+    except CParserError as e:
+        logger.error(e.message)
+        logger.error('Incorrect phout data: {}'.format(data))
+        return
 
     chunk['receive_ts'] = chunk.send_ts + chunk.interval_real / 1e6
     chunk['receive_sec'] = chunk.receive_ts.astype(np.int64)
