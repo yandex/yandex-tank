@@ -110,7 +110,8 @@ There are several ways to set up requests:
 To specify external ammo file use ``ammofile`` option. 
 
 .. note::
-  You can specify URL to ammofile, http(s). Small ammofiles (~<100MB) will be downloaded as is, to directory ``/tmp/<hash>``, large files will be readed from stream. 
+  You can specify URL to ammofile, http(s). Small ammofiles (~<100MB) will be downloaded as is,
+  to directory ``/tmp/<hash>``, large files will be readed from stream.
 
 .. note::
 

@@ -9,7 +9,7 @@ TankCore
 Core class. Represents basic steps of test execution. Simplifies plugin configuration, 
 configs reading, artifacts storing. Represents parent class for modules/plugins.
 
-INI file section: **[tank]**
+yaml file section: **core**
 
 Architecture
 ============
@@ -45,7 +45,8 @@ Basic options:
   Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
 
 :flush_config_to:
-  Dump configuration options after each tank step (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file
+  Dump configuration options after each tank step
+  (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file
 
 :taskset_path:
   Path to taskset command.
@@ -166,7 +167,7 @@ Basic options
   Ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped). 
 
 :load_profile:
-  Load profile behaviour. Specify load_type (`rps`, schedule load by defining requests per second or `instances`
+  Load profile behaviour. Specify load_type (``rps``, schedule load by defining requests per second or ``instances``
   - schedule load defining concurrent active threads) and schedule.
 
   .. code-block:: yaml
@@ -187,20 +188,21 @@ Basic options
   Limit request number.
 
 :autocases:
-  Enable marking requests automatically. ``autocases: 2`` means 2 uri path elements will be used. I.e ``/hello/world/please/help`` will produce case ``_hello_world``
+  Enable marking requests automatically. ``autocases: 2`` means 2 uri path elements will be used.
+  I.e ``/hello/world/please/help`` will produce case ``_hello_world``
 
 
 :chosen_cases:
   Use only selected cases.
 
 There are 3 ways to constrain requests number:
-    * by load_type `rps` and `schedule`,
-    * by requests number with `ammo_limit`
-    * by loop number with `loop` option.
+    * by load_type ``rps`` and ``schedule``,
+    * by requests number with ``ammo_limit``
+    * by loop number with ``loop`` option.
 
 Tank stops if any constraint is reached.
-If stop reason is reached `ammo_limit` or `loop` it will be mentioned in log file.
-In test without load_type `rps` ammofile with requests used once by default.
+If stop reason is reached ``ammo_limit`` or ``loop`` it will be mentioned in log file.
+In test without load_type ``rps`` ammofile with requests used once by default.
 
 Additional options
 ^^^^^^^^^^^^^^^^^^
@@ -341,7 +343,7 @@ Advanced options
 :affinity:
   Set a phantom's CPU affinity. 
 
-  Example: `0-3` enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
+  Example: ``0-3`` enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
   Default: empty.
 
@@ -350,7 +352,7 @@ TLS/SSL additional options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
-  `ssl: 1` is required
+  ``ssl: 1`` is required
 
 :client_cipher_suites:
   Cipher list, consists of one or more cipher strings separated by colons (see man ciphers).
@@ -417,7 +419,7 @@ Artifacts
 Multi-tests
 -----------
 
-To make several simultaneous tests with phantom, add proper amount of sections to special section `multi` for `phantom`
+To make several simultaneous tests with phantom, add proper amount of sections to special section ``multi`` for ``phantom``
  with names ``phantom-N``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops.
 
 Example:
@@ -457,7 +459,7 @@ Example:
     enabled: false
 
 Options that apply only for main section:
-`buffered_seconds`, `writelog`, `phantom_modules_path`, `phout_file`, `config`, `eta_file`, `phantom_path`
+``buffered_seconds``, ``writelog``, ``phantom_modules_path``, ``phout_file``, ``config``, ``eta_file``, ``phantom_path``
 
 JMeter
 ======
@@ -548,8 +550,8 @@ if you want to implement your own gun class, use them as an example.
 
 But the main purpose of BFG is to support user-defined scenarios in python. Here is how you do it using 'ultimate' gun.
 
-1. Define your scenario as a python class, for example, `LoadTest` (in a single-file module, for example, `test` in
-current working directory `./`), or a package:
+1. Define your scenario as a python class, for example, ``LoadTest`` (in a single-file module, for example, ``test`` in
+current working directory ``./``), or a package:
 
 .. code-block:: python
 
@@ -690,7 +692,7 @@ Ultimate Gun Options
 yaml gun_type section: **ultimate**
 
 
-Specify `gun_config` with:
+Specify ``gun_config`` with:
 
 :module_path:
   Path to your module
@@ -996,6 +998,7 @@ Advanced criteria types
   Exit code - 30
 
 
+## FIXME
 Telegraf
 ========
 Runs metrics collection through SSH connection. You can debug your SSH connection using ``yandex-tank-check-ssh`` tool.
@@ -1174,7 +1177,7 @@ List of metrics group names and particular metrics in them:
     Config Host section example:
     ``<Source>/path/to/file</Source>``
 
-    File format: `jsonline`. Each line is a json document.
+    File format: ``jsonline``. Each line is a json document.
 
     Example:
     ``{"fields":{"metric_name_1":0,"metric_name_2":98.27694231863998,},"name":"custom_group-name","timestamp":1503990965}``
