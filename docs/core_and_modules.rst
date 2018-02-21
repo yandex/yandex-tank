@@ -149,7 +149,7 @@ Phantom
 
 Load generator module that uses phantom utility.
 
-INI file section: **[phantom]**
+yaml file section: **phantom**
 
 How it works
 ------------
@@ -462,17 +462,18 @@ Options that apply only for main section:
 JMeter
 ======
 
-JMeter module uses JMeter as a load generator. To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable JMeter plugin and then specify the parameters for JMeter:
+JMeter module uses JMeter as a load generator.
+To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk),
+enable JMeter plugin and then specify the parameters for JMeter:
 
-::
+.. code-block:: yaml
 
-    [tank]
-    ; Disable phantom:
-    plugin_phantom=
-    ; Enable JMeter instead:
-    plugin_jmeter=yandextank.plugins.JMeter
+  phantom:
+    enabled: false
+  jmeter:
+    enabled: true
 
-INI file section: **[jmeter]**
+yaml file section: **jmeter**
 
 Options
 -------
@@ -497,7 +498,9 @@ Options
   Default: ``3.0``
 
 :ext_log:
-  Available options: ``none``, ``errors``, ``all``. Add one more simple data writer which logs all possible fields in jmeter xml format, this log is saved in test dir as ``jmeter_ext_XXXX.jtl``.
+  Available options: ``none``, ``errors``, ``all``.
+  Add one more simple data writer which logs all possible fields in jmeter xml format,
+  this log is saved in test dir as ``jmeter_ext_XXXX.jtl``.
 
   Default: ``none``
 
@@ -507,9 +510,15 @@ Options
 Timing calculation issues
 -------------------------
 
-Since version 2.13 jmeter could measure connection time, latency and full request time (aka <interval_real> in phantom), but do it in it's own uniq way: latency include connection time but not recieve time. For the sake of consistency we recalculate <latency> as <latency - connect_time> and calculate <recieve_time> as <interval_real - latency - connect_time>>, but it does not guranteed to work perfectly in all cases (i.e. some samplers may not support latency and connect_time and you may get something strange in case of timeouts).
+Since version 2.13 jmeter could measure connection time, latency and full request time (aka <interval_real> in phantom),
+but do it in it's own uniq way: latency include connection time but not recieve time. For the sake of consistency we
+recalculate <latency> as <latency - connect_time> and
+calculate <recieve_time> as <interval_real - latency - connect_time>>,
+but it does not guranteed to work perfectly in all cases (i.e. some samplers may not support latency
+and connect_time and you may get something strange in case of timeouts).
 
-For jmeter 2.12 and older connection time logging not avaliable, set ``jmeter_ver`` properly or you'll get an error for unknown field in Simlpe Data Writer listner added by tank.
+For jmeter 2.12 and older connection time logging not avaliable, set ``jmeter_ver`` properly or you'll
+get an error for unknown field in Simlpe Data Writer listner added by tank.
 
 Artifacts
 ---------
@@ -530,13 +539,17 @@ BFG
 ===
 
 (`What is BFG <http://en.wikipedia.org/wiki/BFG_(weapon)>`_)
-BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable BFG plugin and then specify the parameters for BFG and for the gun of your choice.
+BFG is a generic gun that is able to use different kinds of cannons to shoot.
+To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk),
+enable BFG plugin and then specify the parameters for BFG and for the gun of your choice.
 
-There are three predefined guns: Log Gun, Http Gun and SQL gun. First two are mostly for demo, if you want to implement your own gun class, use them as an example.
+There are three predefined guns: Log Gun, Http Gun and SQL gun. First two are mostly for demo,
+if you want to implement your own gun class, use them as an example.
 
 But the main purpose of BFG is to support user-defined scenarios in python. Here is how you do it using 'ultimate' gun.
 
-1. Define your scenario as a python class (in a single-file module, or a package):
+1. Define your scenario as a python class, for example, `LoadTest` (in a single-file module, for example, `test` in
+current working directory `./`), or a package:
 
 .. code-block:: python
 
@@ -584,33 +597,22 @@ But the main purpose of BFG is to support user-defined scenarios in python. Here
 
 2. Define your options in a config file:
 
-::
+.. code-block:: yaml
 
-    [tank]
-    ; Disable phantom:
-    plugin_phantom=
-    ; Enable BFG instead:
-    plugin_bfg=yandextank.plugins.Bfg
-        
-    [bfg]
-    ; parallel processes count
-    instances = 10
-    ; gun type
-    gun_type = ultimate
-
-    ; ammo file
-    ammofile=req_json.log
-
-    ; load schedule
-    rps_schedule=line(1,100,10m)
-    
-    [ultimate_gun]
-    ; path to your custom module
-    module_path = ./my_own_service
-    ; python module name
-    module_name = mygun
-    ; gun initialization parameter
-    init_param = Hello
+  phantom:
+    enabled: false
+  bfg:
+    enabled: true
+    instances: 10
+    gun_config:
+      class_name: LoadTest
+      module_path: ./
+      module_name: test
+      init_param: Hello
+    gun_type: ultimate
+    load_profile:
+      load_type: rps
+      schedule: const(1, 30s)
 
 3. Create an ammo file:
 Ammo format: one line -- one request, each line begins with case name separated by tab symbol ('\t').
@@ -644,7 +646,6 @@ allowing it to have multiple concurrent threads executing HTTP requests.
 With green worker, it's recommended to set ``instances`` to number of CPU cores,
 and adjust the number of real threads by ``green_threads_per_instance`` option.
 
-INI file section: **[bfg]**
 
 :worker_type:
   Set it to ``green`` to let every process have multiple concurrent green threads.
@@ -655,7 +656,7 @@ INI file section: **[bfg]**
 BFG Options
 -----------
 
-INI file section: **[bfg]**
+yaml file section: **[bfg]**
 
 :gun_type:
   What kind of gun should BFG use.
