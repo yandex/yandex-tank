@@ -656,10 +656,13 @@ and adjust the number of real threads by ``green_threads_per_instance`` option.
 BFG Options
 -----------
 
-yaml file section: **[bfg]**
+yaml file section: **bfg**
 
 :gun_type:
   What kind of gun should BFG use.
+
+:gun_config:
+  Gun configuration options
 
 :ammo_type:
   What ammo parser should BFG use.
@@ -684,9 +687,10 @@ yaml file section: **[bfg]**
 Ultimate Gun Options
 --------------------
 
-gun_type = **ultimate**
+yaml gun_type section: **ultimate**
 
-INI file section: **[ultimate_gun]**
+
+Specify `gun_config` with:
 
 :module_path:
   Path to your module
@@ -725,12 +729,7 @@ The fields of measuring context object and their default values:
 SQL Gun Options
 ---------------
 
-gun_type = **sql**
-
-INI file section: **[sql_gun]**
-
-:db:
-  DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
+SQL gun is deprecated. Use ultimate gun.
 
 Pandora
 =======
