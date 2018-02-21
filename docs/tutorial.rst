@@ -606,7 +606,7 @@ Example:
     load_profile:
       load_type: instances
       schedule: line(1,10,10m)
-    loop=10000 # don't stop when the end of ammo is reached but loop it 10000 times
+    loop: 10000 # don't stop when the end of ammo is reached but loop it 10000 times
 
 .. note::
   Load scheme is excluded from this load.yaml as we used ``instances_schedule`` parameter.
@@ -635,7 +635,7 @@ any data, receiving any answer in return. To do that add
     load_profile:
       load_type: rps
       schedule: line(1, 10, 10m)
-    instances=: 10
+    instances: 10
     tank_type: 2
 
 Gatling 
@@ -645,7 +645,8 @@ If server with Yandex.Tank have several IPs, they may be
 used to avoid outcome port shortage. Use ``gatling_ip`` parameter for
 that. load.yaml:
 
-::
+
+.. code-block:: yaml
 
  phantom:
     address: 203.0.113.1:80
