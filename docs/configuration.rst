@@ -160,7 +160,7 @@ load.yaml example
 .. code-block:: yaml
 
   phantom:
-    address: [fe80::200:f8ff:fe21:67cf]:8080
+    address: "[fe80::200:f8ff:fe21:67cf]:8080"
     instances: 1000
     load_profile:
       load_type: rps
