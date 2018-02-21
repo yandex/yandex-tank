@@ -1,8 +1,10 @@
+from __future__ import absolute_import
 import numpy as np
 import pandas as pd
 import pytest
 
 from yandextank.aggregator.aggregator import phout_columns
+from six.moves import range
 
 np.random.seed(42)
 MAX_TS = 1000

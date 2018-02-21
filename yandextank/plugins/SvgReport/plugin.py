@@ -1,9 +1,11 @@
+from __future__ import absolute_import
 import os.path
 import seaborn
 
 from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener
 
 import matplotlib
+import six
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa:E402
 
@@ -76,7 +78,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
         # monitoring
         for plot_num, chartset_data in enumerate(
-                sorted(monitoring_chartsets.iteritems()), 1):
+                sorted(six.iteritems(monitoring_chartsets)), 1):
             chartset_title, signals = chartset_data
 
             plt.subplot(plot_count, 1, plot_num + 1)
@@ -103,10 +105,9 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         if signal_prefix.startswith(_CUSTOM_PREFIX):
             signal_prefix = signal_prefix[len(_CUSTOM_PREFIX):]
 
-        for chartset_prefix, chartset_data in _CHARTSETS.iteritems():
+        for chartset_prefix, chartset_data in six.iteritems(_CHARTSETS):
             if signal_prefix.startswith(chartset_prefix):
-                for chartset_title, chartset_signals in chartset_data.iteritems(
-                ):
+                for chartset_title, chartset_signals in six.iteritems(chartset_data):
                     if chartset_signals is _ALL_ or signal_suffix in chartset_signals:
                         return "{} {}".format(
                             chartset_title,
@@ -122,7 +123,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         chartsets = {}
         for p in self.__monitoring_data:
             metrics = p["data"]["localhost"]["metrics"]
-            for signal_name, signal_value in metrics.iteritems():
+            for signal_name, signal_value in six.iteritems(metrics):
                 if not signal_value:
                     continue
 
@@ -156,8 +157,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         y = {}
         for data in self.__shooting_data:
             timestamp = data["ts"]
-            for variant, count in data["overall"][signal_name][
-                    "count"].iteritems():
+            for variant, count in six.iteritems(data["overall"][signal_name][
+                    "count"]):
                 x.setdefault(variant, []).append(timestamp - min_x)
                 y.setdefault(variant, []).append(count)
         return x, y

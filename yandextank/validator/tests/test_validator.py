@@ -1,4 +1,5 @@
 
+from __future__ import absolute_import
 import pytest
 
 from yandextank.validator.validator import TankConfig, ValidationError

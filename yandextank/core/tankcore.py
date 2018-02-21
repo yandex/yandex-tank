@@ -1,4 +1,5 @@
 """ The central part of the tool: Core """
+from __future__ import absolute_import
 import datetime
 import fnmatch
 import importlib as il
@@ -33,7 +34,7 @@ from yandextank.aggregator import TankAggregator
 from ..plugins.Telegraf import Plugin as TelegrafPlugin
 
 if sys.version_info[0] < 3:
-    import ConfigParser
+    import six.moves.configparser
 else:
     import configparser as ConfigParser
 
@@ -594,7 +595,7 @@ class ConfigManager(object):
 
     def __init__(self):
         self.file = None
-        self.config = ConfigParser.ConfigParser()
+        self.config = six.moves.configparser.ConfigParser()
 
     def load_files(self, configs):
         """         Read configs set into storage        """
@@ -623,7 +624,7 @@ class ConfigManager(object):
                 if not prefix or option.find(prefix) == 0:
                     res += [(
                         option[len(prefix):], self.config.get(section, option))]
-        except ConfigParser.NoSectionError as ex:
+        except six.moves.configparser.NoSectionError as ex:
             logger.warning("No section: %s", ex)
 
         logger.debug(

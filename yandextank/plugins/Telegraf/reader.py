@@ -1,11 +1,13 @@
 """
 Monitoring stdout pipe reader. Read chunks from stdout and produce data frames
 """
+from __future__ import absolute_import
 import logging
 import queue
 import json
 
 from ..Telegraf.decoder import decoder
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +37,8 @@ class MonitoringReader(object):
                     if chunk:
                         prepared_results = {}
                         jsn = json.loads(chunk)
-                        for ts, values in jsn.iteritems():
-                            for key, value in values.iteritems():
+                        for ts, values in six.iteritems(jsn):
+                            for key, value in six.iteritems(values):
                                 # key sample: diskio-sda1_io_time
                                 # key_group sample: diskio
                                 # key_name sample: io_time
@@ -44,7 +46,7 @@ class MonitoringReader(object):
                                     key_group, key_name = key.split('_')[0].split('-')[0], '_'.join(key.split('_')[1:])
                                 except:  # noqa: E722
                                     key_group, key_name = key.split('_')[0], '_'.join(key.split('_')[1:])
-                                if key_group in decoder.diff_metrics.keys():
+                                if key_group in list(decoder.diff_metrics.keys()):
                                     if key_name in decoder.diff_metrics[key_group]:
                                         decoded_key = decoder.find_common_names(
                                             key)

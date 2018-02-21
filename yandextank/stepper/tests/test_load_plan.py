@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import pytest
 from yandextank.stepper.load_plan import create, Const, Line, Composite, Stairway
 from yandextank.stepper.util import take

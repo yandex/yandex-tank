@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import datetime
 import logging
 import os
@@ -75,7 +76,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget):
         pb_width = screen.right_panel_width - 1 - len(str_perc)
 
         progress_chars = '=' * (int(pb_width * progress) - 1)
-        progress_chars += self.krutilka.next()
+        progress_chars += next(self.krutilka)
 
         res += color_bg + progress_chars + screen.markup.RESET + color_fg
         res += '~' * (pb_width - int(pb_width * progress)

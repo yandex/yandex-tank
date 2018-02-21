@@ -1,4 +1,5 @@
 ''' Cummulative Autostops '''
+from __future__ import absolute_import
 import logging
 import math
 import re
@@ -211,7 +212,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         codes = data["overall"]["net_code"]["count"].copy()
-        if '0' in codes.keys():
+        if '0' in list(codes.keys()):
             codes.pop('0')
         matched_responses = self.count_matched_codes(self.codes_regex, codes)
         if self.is_relative:

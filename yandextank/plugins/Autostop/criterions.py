@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import copy
 import json
 import logging
@@ -6,6 +7,7 @@ import time
 
 from yandextank.common.util import expand_to_seconds, expand_to_milliseconds
 from ...common.interfaces import AbstractCriterion
+from six.moves import zip
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +161,7 @@ class NetCodesCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         codes = copy.deepcopy(data["overall"]["net_code"]["count"])
-        if '0' in codes.keys():
+        if '0' in list(codes.keys()):
             codes.pop('0')
         matched_responses = self.count_matched_codes(self.codes_regex, codes)
         if self.is_relative:
@@ -229,12 +231,12 @@ class QuantileCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         quantiles = dict(
-            zip(
+            list(zip(
                 data["overall"]["interval_real"]["q"]["q"], data["overall"][
-                    "interval_real"]["q"]["value"]))
-        if self.quantile not in quantiles.keys():
+                    "interval_real"]["q"]["value"])))
+        if self.quantile not in list(quantiles.keys()):
             logger.warning("No quantile %s in %s", self.quantile, quantiles)
-        if self.quantile in quantiles.keys() \
+        if self.quantile in list(quantiles.keys()) \
                 and quantiles[self.quantile] / 1000.0 > self.rt_limit:
             if not self.seconds_count:
                 self.cause_second = (data, stat)
@@ -284,7 +286,7 @@ class SteadyCumulativeQuantilesCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         quantiles = dict(
-            zip(data["overall"]["q"]["q"], data["overall"]["q"]["values"]))
+            list(zip(data["overall"]["q"]["q"], data["overall"]["q"]["values"])))
         quantile_hash = json.dumps(quantiles)
         logging.debug("Cumulative quantiles hash: %s", quantile_hash)
         if self.quantile_hash == quantile_hash:

@@ -1,4 +1,5 @@
 """ Resource Opener tool """
+from __future__ import absolute_import
 import logging
 import os
 import requests
@@ -6,6 +7,7 @@ import gzip
 import hashlib
 import traceback
 from contextlib import closing
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +20,7 @@ class FormatDetector(object):
         self.formats = {'gzip': (0, b'\x1f\x8b'), 'tar': (257, b'ustar\x0000')}
 
     def detect_format(self, header):
-        for fmt, signature in self.formats.iteritems():
+        for fmt, signature in six.iteritems(self.formats):
             if signature[1] == header[signature[0]:len(signature[1])]:
                 return fmt
 
@@ -148,7 +150,7 @@ class HttpOpener(object):
                     self.url, stream=True, verify=False,
                     timeout=self.timeout)) as stream:
             stream_iterator = stream.raw.stream(100, decode_content=True)
-            header = stream_iterator.next()
+            header = next(stream_iterator)
             fmt = self.fmt_detector.detect_format(header)
             logger.debug('Resource %s format detected: %s.', self.url, fmt)
         if not self.force_download and fmt != 'gzip' and self.data_length > 10**8:
@@ -291,7 +293,7 @@ class HttpStreamWrapper:
 
     def __iter__(self):
         while True:
-            yield self.next()
+            yield next(self)
 
     def _reopen_stream(self):
         self.stream.connection.close()
@@ -316,7 +318,7 @@ class HttpStreamWrapper:
         self._content_consumed = False
 
     def _enhance_buffer(self):
-        self.buffer += self.stream_iterator.next()
+        self.buffer += next(self.stream_iterator)
 
     def tell(self):
         return self.pointer
@@ -374,7 +376,7 @@ class HttpStreamWrapper:
         a bunch into it already
         """
         try:
-            return self.next()
+            return next(self)
         except StopIteration:
             return ''
 

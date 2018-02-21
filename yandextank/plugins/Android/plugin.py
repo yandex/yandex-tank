@@ -1,8 +1,10 @@
+from __future__ import absolute_import
 import logging
 
 from ..DataUploader import Plugin as DataUploaderPlugin
 from .reader import AndroidReader, AndroidStatsReader
 from ...common.interfaces import AbstractPlugin, GeneratorPlugin
+import six
 
 try:
     from volta.core.core import Core as VoltaCore
@@ -23,7 +25,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.device = None
         try:
             self.cfg = cfg['volta_options']
-            for key, value in self.cfg.iteritems():
+            for key, value in six.iteritems(self.cfg):
                 if not isinstance(value, dict):
                     logger.debug('Malformed VoltaConfig key: %s value %s', key, value)
                     raise RuntimeError('Malformed VoltaConfig passed, key: %s. Should by dict' % key)

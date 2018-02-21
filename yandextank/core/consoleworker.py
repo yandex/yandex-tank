@@ -1,5 +1,7 @@
 """ Provides classes to run TankCore from console environment """
-from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves.configparser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
 import datetime
 import fnmatch
 import glob
@@ -17,6 +19,7 @@ from pkg_resources import resource_filename
 from ..config_converter.converter import convert_ini, convert_single_option
 from .tankcore import TankCore, LockError
 from ..common.resource import manager as resource_manager
+from six.moves import input
 
 
 DEFAULT_CONFIG = 'load.yaml'
@@ -414,7 +417,7 @@ class ConsoleTank:
                 self.log.info("Time has come: %s", datetime.datetime.now())
 
             if self.options.manual_start:
-                raw_input("Press Enter key to start test:")
+                input("Press Enter key to start test:")
 
             self.core.plugins_start_test()
             retcode = self.core.wait_for_finish()
@@ -494,7 +497,7 @@ class CompletionHelperOptionParser(OptionParser):
             for option in parser.option_list:
                 if "--bash" not in option.get_opt_string():
                     opts.append(option.get_opt_string())
-            print(' '.join(opts))
+            print((' '.join(opts)))
             exit(0)
 
         if options.list_options_cur or options.list_options_prev:
@@ -516,5 +519,5 @@ class CompletionHelperOptionParser(OptionParser):
             for plugin in cmdtank.core.plugins:
                 for option in plugin.get_available_options():
                     opts.append(plugin.SECTION + '.' + option + '=')
-            print(' '.join(sorted(opts)))
+            print((' '.join(sorted(opts))))
             exit(0)

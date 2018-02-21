@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """ Provides class to run TankCore from python """
+from __future__ import absolute_import
 import logging
 import os
 import sys
@@ -9,6 +10,7 @@ import fnmatch
 from pkg_resources import resource_filename
 
 from ..core import tankcore
+from six.moves import input
 
 
 class ApiWorker:
@@ -101,7 +103,7 @@ class ApiWorker:
             if self.options.get('manual_start', None):
                 self.log.info(
                     "Manual start option specified, waiting for user actions")
-                raw_input("Press Enter key to start test")
+                input("Press Enter key to start test")
 
             self.core.plugins_start_test()
             retcode = self.core.wait_for_finish()

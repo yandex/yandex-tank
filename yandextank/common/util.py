@@ -1,6 +1,7 @@
 '''
 Common utilities
 '''
+from __future__ import absolute_import
 import collections
 import os
 import pwd
@@ -19,6 +20,8 @@ import psutil
 import subprocess
 import argparse
 from paramiko import SSHClient, AutoAddPolicy
+import six
+from six.moves import zip
 
 logger = logging.getLogger(__name__)
 
@@ -460,7 +463,7 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
     stdout = ""
     stderr = ""
 
-    if not shell and isinstance(cmd, basestring):
+    if not shell and isinstance(cmd, six.string_types):
         cmd = shlex.split(cmd)
 
     if catch_out:
@@ -503,7 +506,7 @@ def pairs(lst):
     """
     Iterate over pairs in the list
     """
-    return itertools.izip(lst[::2], lst[1::2])
+    return zip(lst[::2], lst[1::2])
 
 
 def update_status(status, multi_key, value):

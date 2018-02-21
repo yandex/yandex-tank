@@ -1,5 +1,6 @@
 """ Utility classes for phantom module """
 # TODO: use separate answ log per benchmark
+from __future__ import absolute_import
 import copy
 import logging
 import multiprocessing
@@ -10,6 +11,7 @@ from yandextank.common.util import AddressWizard
 
 from ...stepper import StepperWrapper
 from ...stepper.util import parse_duration
+from six.moves import range
 
 logger = logging.getLogger(__name__)
 

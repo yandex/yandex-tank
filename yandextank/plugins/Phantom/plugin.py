@@ -1,6 +1,7 @@
 """ Contains Phantom Plugin, Console widgets, result reader classes """
 # FIXME: 3 there is no graceful way to interrupt the process of phout import
 # TODO: phout import
+from __future__ import absolute_import
 import logging
 import multiprocessing as mp
 import subprocess

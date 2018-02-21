@@ -1,6 +1,7 @@
 '''
 Utilities: parsers, converters, etc.
 '''
+from __future__ import absolute_import
 import re
 import logging
 import math

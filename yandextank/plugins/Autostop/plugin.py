@@ -1,5 +1,6 @@
 """ Autostop facility """
 # pylint: disable=C0301
+from __future__ import absolute_import
 import logging
 import os.path
 
@@ -7,6 +8,7 @@ from . import criterions as cr
 from . import cumulative_criterions as cum_cr
 from ..Console import Plugin as ConsolePlugin
 from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +112,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
     def on_aggregated_data(self, data, stat):
         self.counting = []
         if not self.cause_criterion:
-            for criterion_text, criterion in self._criterions.iteritems():
+            for criterion_text, criterion in six.iteritems(self._criterions):
                 if criterion.notify(data, stat):
                     self.log.debug(
                         "Autostop criterion requested test stop: %s", criterion)

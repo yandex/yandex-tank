@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import json
 
 import numpy as np
@@ -12,6 +13,7 @@ from conftest import MAX_TS, random_split
 from yandextank.common.util import Drain
 
 from yandextank.plugins.Phantom.reader import string_to_df
+from six.moves import zip
 
 AGGR_CONFIG = TankAggregator.load_config()
 

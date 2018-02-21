@@ -3,6 +3,7 @@ Missile object and generators
 
 You should update Stepper.status.ammo_count and Stepper.status.loop_count in your custom generators!
 '''
+from __future__ import absolute_import
 import logging
 from itertools import cycle
 

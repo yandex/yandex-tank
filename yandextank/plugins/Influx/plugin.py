@@ -2,6 +2,7 @@
 # TODO: make the next two lines unnecessary
 # pylint: disable=line-too-long
 # pylint: disable=missing-docstring
+from __future__ import absolute_import
 import logging
 import sys
 import datetime

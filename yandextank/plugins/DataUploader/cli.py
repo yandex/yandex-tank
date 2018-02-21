@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import argparse
 import glob
 import json
@@ -8,7 +9,7 @@ import socket
 import sys
 
 import pwd
-from urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 
 from datetime import datetime
 import pkg_resources
@@ -50,7 +51,7 @@ def from_tank_config(test_dir):
     with open(config_file) as f:
         tank_cfg = yaml.load(f)
     try:
-        config = filter(lambda options: 'DataUploader' in options.get('package', ''), tank_cfg.values())[0]
+        config = filter(lambda options: 'DataUploader' in options.get('package', ''), list(tank_cfg.values()))[0]
     except IndexError:
         logger.warning('DataUploader configuration not found in {}'.format(config_file))
         config = {}

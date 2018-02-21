@@ -1,4 +1,5 @@
 """ jmeter load generator support """
+from __future__ import absolute_import
 import datetime
 import logging
 import os
@@ -15,6 +16,7 @@ from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget, GeneratorPlugin
 from ...common.util import splitstring
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +221,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
         udv_tpl = resource_string(__name__, 'config/jmeter_var_template.xml')
         udv_set = []
-        for var_name, var_value in variables.iteritems():
+        for var_name, var_value in six.iteritems(variables):
             udv_set.append(udv_tpl % (var_name, var_name, var_value))
         udv = "\n".join(udv_set)
 
@@ -306,7 +308,7 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.RPS = data['overall']['interval_real']['len']
 
     def render(self, screen):
-        jmeter = " JMeter Test %s" % self.krutilka.next()
+        jmeter = " JMeter Test %s" % next(self.krutilka)
         space = screen.right_panel_width - len(jmeter) - 1
         left_spaces = space / 2
         right_spaces = space / 2

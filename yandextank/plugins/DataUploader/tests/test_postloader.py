@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import pytest
 from yandextank.plugins.DataUploader.cli import from_tank_config, get_logger
 

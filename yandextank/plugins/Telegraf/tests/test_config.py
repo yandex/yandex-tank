@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 from yandextank.plugins.Telegraf.config import ConfigManager, AgentConfig
 import sys
 if sys.version_info[0] < 3:
-    from ConfigParser import ConfigParser
+    from six.moves.configparser import ConfigParser
 else:
     from configparser import ConfigParser
 

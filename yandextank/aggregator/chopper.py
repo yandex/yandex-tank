@@ -3,6 +3,7 @@ Split incoming DataFrames into chunks, cache them, union chunks with same key
 and pass to the underlying aggregator.
 """
 
+from __future__ import absolute_import
 import pandas as pd
 
 

@@ -1,6 +1,7 @@
 '''
 Module contains top-level generators.
 '''
+from __future__ import absolute_import
 import hashlib
 import json
 import logging
@@ -12,6 +13,7 @@ from ..common.resource import manager as resource
 from . import format as fmt
 from . import info
 from .config import ComponentFactory
+from six.moves import zip
 
 
 class AmmoFactory(object):

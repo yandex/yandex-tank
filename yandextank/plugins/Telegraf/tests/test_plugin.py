@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from yandextank.core.tankcore import TankCore
 from yandextank.plugins.Telegraf import Plugin as TelegrafPlugin
 

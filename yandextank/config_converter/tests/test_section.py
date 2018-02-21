@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import pytest
 
 from yandextank.config_converter.converter import Section

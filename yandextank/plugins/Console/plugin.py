@@ -1,4 +1,5 @@
 ''' Plugin provides fullscreen console '''
+from __future__ import absolute_import
 import logging
 import sys
 import threading
@@ -6,6 +7,7 @@ import traceback
 
 from .screen import Screen
 from ...common.interfaces import AbstractPlugin, AggregateResultListener
+from six.moves import zip
 
 
 class Plugin(AbstractPlugin, AggregateResultListener):
@@ -99,9 +101,9 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             overall = data.get('overall')
 
             quantiles = dict(
-                zip(
+                list(zip(
                     overall['interval_real']['q']['q'],
-                    overall['interval_real']['q']['value']))
+                    overall['interval_real']['q']['value'])))
             info = (
                 "ts:{ts}\tRPS:{rps}\tavg:{avg_rt:.2f}\t"
                 "min:{min:.2f}\tmax:{q100:.2f}\tq95:{q95:.2f}\t").format(

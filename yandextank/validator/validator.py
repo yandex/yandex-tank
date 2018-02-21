@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import imp
 import os
 import sys
@@ -116,7 +117,7 @@ class TankConfig(object):
                     plugin_cfg,
                     self.__get_cfg_updater(plugin_name)) for plugin_name,
                 plugin_cfg in self.validated.items() if (
-                    plugin_name not in self.BASE_SCHEMA.keys()) and plugin_cfg['enabled']]
+                    plugin_name not in list(self.BASE_SCHEMA.keys())) and plugin_cfg['enabled']]
         return self._plugins
 
     @property
@@ -194,7 +195,7 @@ class TankConfig(object):
                 plugin['package'],
                 plugin) for plugin_name,
             plugin in self.raw_config_dict.items() if (
-                plugin_name not in self.BASE_SCHEMA.keys()) and isinstance(
+                plugin_name not in list(self.BASE_SCHEMA.keys())) and isinstance(
                 plugin,
                 dict) and plugin.get('enabled')]
 

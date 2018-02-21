@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import queue
 import hashlib
 import logging

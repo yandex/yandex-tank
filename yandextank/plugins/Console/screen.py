@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 ''' Classes to build full console screen '''
+from __future__ import absolute_import
 import fcntl
 import logging
 import os
@@ -11,6 +12,9 @@ from collections import defaultdict
 import pandas as pd
 
 from ...common import util
+import six
+from six.moves import range
+from six.moves import zip
 
 
 def get_terminal_size():
@@ -61,7 +65,7 @@ def str_len(n):
 def avg_from_dict(src):
     result = {}
     count = src['count']
-    for k, v in src.iteritems():
+    for k, v in six.iteritems(src):
         if k != 'count':
             result[k] = safe_div(v, count)
     return result
@@ -94,7 +98,7 @@ def combine_codes(tag_data, markup):
     net_err, http_err = 0, 0
     color = ''
     net_codes = tag_data['net_code']['count']
-    for code, count in sorted(net_codes.iteritems()):
+    for code, count in sorted(six.iteritems(net_codes)):
         if count > 0:
             if int(code) == 0:
                 continue
@@ -105,7 +109,7 @@ def combine_codes(tag_data, markup):
                 color = try_color(color, markup.RED, markup)
                 net_err += count
     http_codes = tag_data['proto_code']['count']
-    for code, count in sorted(http_codes.iteritems()):
+    for code, count in sorted(six.iteritems(http_codes)):
         if count > 0:
             if 100 <= int(code) <= 299:
                 color = try_color(color, markup.GREEN, markup)
@@ -192,7 +196,7 @@ class TableFormatter(object):
                 final = self.default_final
             row_tpl += final.format(field, len=shape[field])
             if num < len(fields) - 1:
-                row_tpl += delimiter_gen.next()
+                row_tpl += next(delimiter_gen)
         result = []
         if has_headers:
             result.append(
@@ -297,7 +301,7 @@ class Screen(object):
             self.RIGHT_PANEL_SEPARATOR)
         cases_args = dict(
             [(k, v)
-                for k, v in kwargs.iteritems()
+                for k, v in six.iteritems(kwargs)
                 if k in ['cases_sort_by', 'cases_max_spark', 'max_case_len']]
         )
         times_args = {'times_max_spark': kwargs['times_max_spark']}
@@ -403,7 +407,7 @@ class Screen(object):
             widget_output = []
             self.log.debug("There are %d info widgets" % len(self.info_widgets))
             for index, widget in sorted(
-                    self.info_widgets.iteritems(),
+                    six.iteritems(self.info_widgets),
                     key=lambda item: (item[1].get_index(), item[0])):
                 self.log.debug("Rendering info widget #%s: %s", index, widget)
                 widget_out = widget.render(self).strip()
@@ -443,7 +447,7 @@ class Screen(object):
         Add widget string to right panel of the screen
         '''
         index = widget.get_index()
-        while index in self.info_widgets.keys():
+        while index in list(self.info_widgets.keys()):
             index += 1
         self.info_widgets[widget.get_index()] = widget
 
@@ -482,7 +486,7 @@ class AbstractBlock:
 
     def clean_len(self, line):
         '''  Calculate wisible length of string  '''
-        if isinstance(line, basestring):
+        if isinstance(line, six.string_types):
             return len(self.screen.markup.clean_markup(line))
         elif isinstance(line, tuple) or isinstance(line, list):
             markups = self.screen.markup.get_markup_vars()
@@ -664,18 +668,18 @@ class PercentilesBlock(AbstractBlock):
                 last_times[position] = self.precise_quantiles[q]
         # Replace binned values with precise, if lower quantile bin happens to be
         # greater than upper quantile precise values
-        for position in reversed(range(1, len(last_times))):
+        for position in reversed(list(range(1, len(last_times)))):
             if last_times[position - 1] > last_times[position]:
                 last_times[position - 1] = last_times[position]
         last_1m = pd.Series()
-        for ts, data in self.last_min.iteritems():
+        for ts, data in six.iteritems(self.last_min):
             if last_1m.empty:
                 last_1m = data
             else:
                 last_1m = last_1m.add(data, fill_value=0)
         last_1m_times = hist_to_quant(last_1m, self.quantiles)
         quant_times = reversed(
-            zip(self.quantiles, all_times, last_1m_times, last_times)
+            list(zip(self.quantiles, all_times, last_1m_times, last_times))
         )
         data = []
         for q, all_time, last_1m, last_time in quant_times:
@@ -717,7 +721,7 @@ class CurrentHTTPBlock(AbstractBlock):
 
     def add_second(self, data):
         self.last_dist = data["overall"]["proto_code"]["count"]
-        for code, count in self.last_dist.iteritems():
+        for code, count in six.iteritems(self.last_dist):
             self.total_count += count
             self.overall_dist[code] += count
 
@@ -726,7 +730,7 @@ class CurrentHTTPBlock(AbstractBlock):
                   (300, 399): self.screen.markup.CYAN,
                   (400, 499): self.screen.markup.YELLOW,
                   (500, 599): self.screen.markup.RED}
-        if code in self.last_dist.keys():
+        if code in list(self.last_dist.keys()):
             for left, right in colors:
                 if left <= int(code) <= right:
                     return colors[(left, right)]
@@ -746,7 +750,7 @@ class CurrentHTTPBlock(AbstractBlock):
             prepared.append(('',))
         else:
             data = []
-            for code, count in sorted(self.overall_dist.iteritems()):
+            for code, count in sorted(six.iteritems(self.overall_dist)):
                 if code in self.last_dist:
                     last_count = self.last_dist[code]
                 else:
@@ -786,7 +790,7 @@ class CurrentNetBlock(AbstractBlock):
     def add_second(self, data):
         self.last_dist = data["overall"]["net_code"]["count"]
 
-        for code, count in self.last_dist.iteritems():
+        for code, count in six.iteritems(self.last_dist):
             self.total_count += count
             self.overall_dist[code] += count
 
@@ -797,7 +801,7 @@ class CurrentNetBlock(AbstractBlock):
             return 'N/A'
 
     def __code_color(self, code):
-        if code in self.last_dist.keys():
+        if code in list(self.last_dist.keys()):
             if int(code) == 0:
                 return self.screen.markup.GREEN
             elif int(code) == 314:
@@ -813,7 +817,7 @@ class CurrentNetBlock(AbstractBlock):
             prepared.append(('',))
         else:
             data = []
-            for code, count in sorted(self.overall_dist.iteritems()):
+            for code, count in sorted(six.iteritems(self.overall_dist)):
                 if code in self.last_dist:
                     last_count = self.last_dist[code]
                 else:
@@ -993,7 +997,7 @@ class CasesBlock(AbstractBlock):
         self.sparkline.add(ts, 0, self.last_cases[0]['count'], color=spark_color)
 
         tagged = data["tagged"]
-        for tag_name, tag_data in tagged.iteritems():
+        for tag_name, tag_data in six.iteritems(tagged):
             # decode symbols to utf-8 in order to support cyrillic symbols in cases
             name = tag_name.decode('utf-8')
             spark_color, self.last_cases[name] = prepare_data(tag_data, name)
@@ -1014,8 +1018,8 @@ class CasesBlock(AbstractBlock):
             return name
 
     def __reorder_cases(self):
-        sorted_cases = sorted(self.cumulative_cases.iteritems(),
-                              key=lambda (k, v): (-1 * v[self.cases_sort_by], k))
+        sorted_cases = sorted(six.iteritems(self.cumulative_cases),
+                              key=lambda k_v: (-1 * k_v[1][self.cases_sort_by], k_v[0]))
         new_order = [case for (case, data) in sorted_cases]
         now = time.time()
         if now - self.reorder_delay > self.last_reordered:

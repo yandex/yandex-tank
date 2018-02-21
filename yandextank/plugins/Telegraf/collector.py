@@ -1,4 +1,5 @@
 """Monitoring collector """
+from __future__ import absolute_import
 import hashlib
 import logging
 import sys

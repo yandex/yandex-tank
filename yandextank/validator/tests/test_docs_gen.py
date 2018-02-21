@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import absolute_import
 import pytest
 from yandextank.validator.docs_gen import RSTRenderer, format_option
 

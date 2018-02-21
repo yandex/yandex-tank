@@ -1,9 +1,11 @@
+from __future__ import absolute_import
 import argparse
 from types import NoneType
 
 import imp
 import yaml
 from yaml.scanner import ScannerError
+from six.moves import range
 
 TYPE = 'type'
 LIST = 'list'
@@ -181,7 +183,7 @@ class RSTRenderer(object):
         template = '{}\n {}' if newlines else ':{}: {}'
         return '\n' + '\n'.join([template.format(k.replace('\n', ' '),
                                                  format_value(v).strip())
-                                 for k, v in sort(items.items())]) if items else ''
+                                 for k, v in sort(list(items.items()))]) if items else ''
 
     @staticmethod
     def field_list(items, sort=True, newlines=True):
@@ -211,7 +213,7 @@ class RSTRenderer(object):
         template = ':{}:\n {}' if newlines else ':{}: {}'
         return '\n' + '\n'.join([template.format(k.replace('\n', ' '),
                                                  format_value(v).strip())
-                                 for k, v in sort(items.items())]) if items else ''
+                                 for k, v in sort(list(items.items()))]) if items else ''
 
     @staticmethod
     def dict_list_structure(items, sort_dict=True):
@@ -253,7 +255,7 @@ def render_body(renderer, option_kwargs, exclude_keys, special_keys=None):
                               for special_key, special_handler in special_keys.items()
                               if special_key in option_kwargs])
     common_part = renderer.field_list({k: common_formatters.get(k, default_fmt)(v) for k, v in option_kwargs.items()
-                                       if k not in exclude_keys + special_keys.keys()})
+                                       if k not in exclude_keys + list(special_keys.keys())})
 
     return '\n'.join([_ for _ in [common_part, special_part] if _])
 
@@ -283,7 +285,7 @@ class OptionFormatter(object):
 
         :type option_schema: dict
         """
-        self.option_name, self.option_kwargs = option_schema.items()[0]
+        self.option_name, self.option_kwargs = list(option_schema.items())[0]
         # print(option_name, option_kwargs)
         self.formatter = self.__guess_formatter()
 

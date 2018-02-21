@@ -3,6 +3,7 @@ metrics collector - influxdata's `telegraf` - https://github.com/influxdata/tele
 backward compatibility with yandextank's Monitoring module configuration and tools.
 """
 
+from __future__ import absolute_import
 import datetime
 import fnmatch
 import json
@@ -22,8 +23,9 @@ from ..Console import Plugin as ConsolePlugin
 from ..Telegraf.collector import MonitoringCollector
 
 import sys
+import six
 if sys.version_info[0] < 3:
-    from ConfigParser import NoOptionError
+    from six.moves.configparser import NoOptionError
 else:
     from configparser import NoOptionError
 
@@ -277,7 +279,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         sign > 1 is YELLOW, means metric value is higher then prevoius,
         sign == 0 is WHITE, means initial or equal metric value
         """
-        for metric, value in data.iteritems():
+        for metric, value in six.iteritems(data):
             if value == '':
                 self.sign[host][metric] = -1
                 self.data[host][metric] = value
@@ -309,14 +311,14 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         #   ...
         # }]
         for chunk in block:
-            host = chunk['data'].keys()[0]
+            host = list(chunk['data'].keys())[0]
             self.time[host] = chunk['timestamp']
             # if initial call, we create dicts w/ data and `signs`
             # `signs` used later to paint metrics w/ different colors
             if not self.data.get(host, None):
                 self.data[host] = {}
                 self.sign[host] = {}
-                for key, value in chunk['data'][host]['metrics'].iteritems():
+                for key, value in six.iteritems(chunk['data'][host]['metrics']):
                     self.sign[host][key] = 0
                     self.data[host][key] = value
             else:
@@ -333,7 +335,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                     float(self.time[hostname])).strftime('%H:%M:%S')
                 res += ("   " + screen.markup.CYAN + "%s" +
                         screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
-                for metric, value in sorted(metrics.iteritems()):
+                for metric, value in sorted(six.iteritems(metrics)):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
                     elif self.sign[hostname][metric] < 0:
@@ -372,7 +374,7 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
 
         block = deepcopy(_block)
         for chunk in block:
-            host = chunk['data'].keys()[0]
+            host = list(chunk['data'].keys())[0]
             data = chunk['data'][host]['metrics']
 
             if not fnmatch.fnmatch(host, self.host):
@@ -385,7 +387,7 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
                     config_metric_name = metric_name.replace('custom:', '')
                     data[config_metric_name] = data.pop(metric_name)
 
-            if self.metric not in data.keys() or not data[self.metric]:
+            if self.metric not in list(data.keys()) or not data[self.metric]:
                 data[self.metric] = 0
             logger.debug(
                 "Compare %s %s/%s=%s to %s",

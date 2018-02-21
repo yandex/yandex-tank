@@ -4,8 +4,10 @@ Global metrics publishing module. Inspired by Golang's expvar module
 This implementation is not thread-safe
 """
 
+from __future__ import absolute_import
 from queue import Queue, Empty
 import time
+import six
 
 
 class ExpVar(object):
@@ -29,7 +31,7 @@ class ExpVar(object):
         return self.variables[name]
 
     def get_dict(self):
-        return {k: v.get() for k, v in self.variables.iteritems()}
+        return {k: v.get() for k, v in six.iteritems(self.variables)}
 
 
 class Var(object):

@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import json
 import time
 import traceback
-import urllib
+import six.moves.urllib.request, six.moves.urllib.parse, six.moves.urllib.error
 import uuid
 
 from future.moves.urllib.parse import urljoin
@@ -12,6 +13,8 @@ import logging
 
 from requests.exceptions import ConnectionError, Timeout
 from urllib3.exceptions import ProtocolError
+from six.moves import range
+from six.moves import zip
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
@@ -188,7 +191,7 @@ class APIClient(object):
         maintenance_msg = maintenance_msg or "%s is under maintenance" % (self._base_url)
         while True:
             try:
-                response = self.__send_single_request(request, ids.next(), trace=trace)
+                response = self.__send_single_request(request, next(ids), trace=trace)
                 return response_callback(response)
             except (Timeout, ConnectionError, ProtocolError):
                 logger.warn(traceback.format_exc())
@@ -232,7 +235,7 @@ class APIClient(object):
         maintenance_timeouts = self.maintenance_timeouts()
         while True:
             try:
-                response = self.__send_single_request(request, ids.next(), trace=trace)
+                response = self.__send_single_request(request, next(ids), trace=trace)
                 return response
             except (Timeout, ConnectionError, ProtocolError):
                 logger.warn(traceback.format_exc())
@@ -357,7 +360,7 @@ class APIClient(object):
         params = {'exitcode': str(retcode)}
 
         result = self.__get('api/job/' + str(jobno) + '/close.json?' +
-                            urllib.urlencode(params), trace=trace)
+                            six.moves.urllib.parse.urlencode(params), trace=trace)
         return result[0]['success']
 
     def edit_job_metainfo(

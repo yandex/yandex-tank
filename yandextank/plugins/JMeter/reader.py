@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+from __future__ import absolute_import
 import logging
 from StringIO import StringIO
 
@@ -8,6 +9,7 @@ import queue as q
 
 from yandextank.aggregator import TimeChopper
 from yandextank.aggregator import aggregator as agg
+from six.moves import range
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +46,7 @@ def _exc_to_net(param1, success):
             return 314
 
     exc = param1.split(' ')[-1]
-    if exc in KNOWN_EXC.keys():
+    if exc in list(KNOWN_EXC.keys()):
         return KNOWN_EXC[exc]
     else:
         logger.warning(
@@ -65,7 +67,7 @@ def _exc_to_http(param1):
             return int(param1)
 
     exc = param1.split(' ')[-1]
-    if exc in KNOWN_EXC.keys():
+    if exc in list(KNOWN_EXC.keys()):
         return 0
     else:
         logger.warning("Unknown Java exception. %s", param1)

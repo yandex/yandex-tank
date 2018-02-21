@@ -1,4 +1,7 @@
+from __future__ import absolute_import
 import time
+import six
+from six.moves import zip
 
 
 def uts(dt):
@@ -27,7 +30,7 @@ class Decoder(object):
         points = []
         for second_data in data:
             timestamp = second_data["timestamp"]
-            for host, host_data in second_data["data"].iteritems():
+            for host, host_data in six.iteritems(second_data["data"]):
                 points += [{
                     "measurement": "monitoring",
                     "tags": {
@@ -39,7 +42,7 @@ class Decoder(object):
                     "time": timestamp,
                     "fields": {  # quantiles
                         metric: value
-                        for metric, value in host_data["metrics"].iteritems()
+                        for metric, value in six.iteritems(host_data["metrics"])
                     },
                 }]
         return points

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import pytest
 from yandextank.stepper.instance_plan import LoadPlanBuilder, create
 

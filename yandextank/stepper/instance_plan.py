@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import logging
 import re
 from . import info
@@ -6,6 +7,7 @@ from itertools import cycle, repeat, chain
 from .util import parse_duration
 from .module_exceptions import StepperConfigurationError
 from builtins import range
+from six.moves import range
 
 
 class LoadPlanBuilder(object):

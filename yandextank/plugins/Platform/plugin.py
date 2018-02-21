@@ -1,11 +1,13 @@
 ''' Module that collects remote system information '''
 
+from __future__ import absolute_import
 import getpass
 import logging
 
 from yandextank.common.util import SecuredShell
 from ...common.interfaces import AbstractPlugin
 from ..Phantom import Plugin as PhantomPlugin
+import six
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +46,7 @@ class Plugin(AbstractPlugin):
             "lsmod": "lsmod"
         }
         self.cmd = "%s" % ";\n".join(
-            [_echo_wrapper(cmd) for key, cmd in cmds.iteritems()])
+            [_echo_wrapper(cmd) for key, cmd in six.iteritems(cmds)])
 
     def get_available_options(self):
         return ["hosts", "port", "username", "timeout"]

@@ -1,6 +1,7 @@
 """
 Phantom phout format reader. Read chunks from phout and produce data frames
 """
+from __future__ import absolute_import
 from _csv import QUOTE_NONE
 
 import pandas as pd
@@ -14,6 +15,7 @@ import itertools as itt
 from pandas.parser import CParserError
 
 from yandextank.common.interfaces import StatsReader
+import six
 
 try:
     from StringIO import StringIO
@@ -115,15 +117,15 @@ class PhantomStatsReader(StatsReader):
         """
         Return all items found in this chunk
         """
-        for date_str, statistics in chunk.iteritems():
+        for date_str, statistics in six.iteritems(chunk):
             date_obj = datetime.datetime.strptime(
                 date_str.split(".")[0], '%Y-%m-%d %H:%M:%S')
             chunk_date = int(time.mktime(date_obj.timetuple()))
             instances = 0
-            for benchmark_name, benchmark in statistics.iteritems():
+            for benchmark_name, benchmark in six.iteritems(statistics):
                 if not benchmark_name.startswith("benchmark_io"):
                     continue
-                for method, meth_obj in benchmark.iteritems():
+                for method, meth_obj in six.iteritems(benchmark):
                     if "mmtasks" in meth_obj:
                         instances += meth_obj["mmtasks"][2]
 

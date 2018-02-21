@@ -1,6 +1,8 @@
+from __future__ import absolute_import
 import pandas as pd
 
 from yandextank.plugins.Phantom.reader import PhantomReader, PhantomStatsReader
+from functools import reduce
 
 
 class TestPhantomReader(object):

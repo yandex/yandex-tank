@@ -1,5 +1,6 @@
 ''' Module to check system resources at load generator'''
 
+from __future__ import absolute_import
 import logging
 import time
 
