@@ -12,10 +12,10 @@ Here are available command line options:
   show command line options
 
 :-c CONFIG, --config=CONFIG:
-  Read options from INI file. 
-  It is possible to set multiple INI files by specifying the option serveral times.
+  Read options from yaml file.
+  It is possible to set multiple configuration files by specifying the option serveral times.
 
-  Default: ``./load.ini``
+  Default: ``./load.yaml``
 
 :-i, --ignore-lock:
   Ignore lock files.
