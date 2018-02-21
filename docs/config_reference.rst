@@ -10,21 +10,6 @@ Android
 ------------------------
 *\- (no description).*
 
-Appium
-======
-
-``appium_cmd`` (string)
------------------------
-*\- (no description). Default:* ``appium``
-
-``port`` (string)
------------------
-*\- (no description). Default:* ``4723``
-
-``user`` (string)
------------------
-*\- (no description). Default:* ``""``
-
 Autostop
 ========
 
@@ -46,16 +31,6 @@ Autostop
 ``report_file`` (string)
 ------------------------
 *\- path to file to store autostop report. Default:* ``autostop_report.txt``
-
-BatteryHistorian
-================
-
-``device_id`` (string)
-----------------------
-*\- (no description). Default:* ``None``
-
-:nullable:
- True
 
 Bfg
 ===
@@ -900,7 +875,10 @@ ShootExec
 
 ``stats_path`` (string)
 -----------------------
-*\- path to tests stats. Default:* ``""``
+*\- path to tests stats. Default:* ``None``
+
+:nullable:
+ True
 
 Telegraf
 ========
