@@ -73,9 +73,9 @@ Example:
       load_type: rps
       schedule: const(100,60s)
   autostop:
-    autostop:|
-      instances(80%,10)
-      time(1s,10s)
+    autostop:
+      - instances(80%,10)
+      - time(1s,10s)
 
 .. note:: 
   A common rule: options with the
@@ -102,10 +102,10 @@ Use indent to show that a line is a continuation of a previous one:
 .. code-block:: yaml
 
   autostop:
-    autostop:|
-      time(1,10)
-      http(404,1%,5s)
-      net(xx,1,30)
+    autostop:
+      - time(1,10)
+      - http(404,1%,5s)
+      - net(xx,1,30)
 
 .. note::
 
@@ -160,21 +160,21 @@ load.yaml example
 .. code-block:: yaml
 
   phantom:
-    address: "[fe80::200:f8ff:fe21:67cf]:8080"
+    address: "ya.ru:80"
     instances: 1000
     load_profile:
       load_type: rps
       schedule: const(1,30) line(1,1000,2m) const(1000,5m)
-    header_http: 1.1
-    uris:|
-      /
-      /test
-      /test2
-    headers:|
-      [Host: www.ya.ru]
-      [Connection: close]
+    header_http: "1.1"
+    uris:
+      - "/"
+      - "/test"
+      - "/test2"
+    headers:
+      - "[Host: www.ya.ru]"
+      - "[Connection: close]"
+  autostop:
     autostop:
-      autostop:|
-        http(5xx,10%,5s)
+      - http(5xx,10%,5s)
 
     

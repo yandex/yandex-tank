@@ -165,14 +165,20 @@ Basic options
 :ammofile:
   Ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped). 
 
-:rps_schedule:
-  Load schedule in terms of RPS.
+:load_profile:
+  Load profile behaviour. Specify load_type (`rps`, schedule load by defining requests per second or `instances`
+  - schedule load defining concurrent active threads) and schedule.
+
+  .. code-block:: yaml
+
+  phantom:
+    address: [hostname]:port
+    load_profile:
+      load_type: rps #
+      schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
 
 :instances:
   Max number of instances (concurrent requests).
-
-:instances_schedule:
-  Load schedule in terms of number of instances.
 
 :loop:
   Number of times requests from ammo file are repeated in loop.
@@ -181,13 +187,20 @@ Basic options
   Limit request number.
 
 :autocases:
-  Enable marking requests automatically. ``autocases = 2`` means 2 uri path elements will be used. I.e ``/hello/world/please/help`` will produce case ``_hello_world``
+  Enable marking requests automatically. ``autocases: 2`` means 2 uri path elements will be used. I.e ``/hello/world/please/help`` will produce case ``_hello_world``
 
 
 :chosen_cases:
   Use only selected cases.
 
-There are 3 ways to constrain requests number: by schedule with ``rps_schedule``, by requests number with ``ammo_limit`` or by loop number with ``loop`` option. Tank stops if any constraint is reached. If stop reason is reached ``ammo_limit`` or ``loop`` it will be mentioned in log file. In test without ``rps_schedule`` file with requests is used one time by default.
+There are 3 ways to constrain requests number:
+    * by load_type `rps` and `schedule`,
+    * by requests number with `ammo_limit`
+    * by loop number with `loop` option.
+
+Tank stops if any constraint is reached.
+If stop reason is reached `ammo_limit` or `loop` it will be mentioned in log file.
+In test without load_type `rps` ammofile with requests used once by default.
 
 Additional options
 ^^^^^^^^^^^^^^^^^^
@@ -225,11 +238,6 @@ Additional options
 
   Format: ``[host]:port``, ``[ipv4]:port``, ``[ipv6]:port``. Tank checks each test if port is available. 
 
-:port (deprecated, use ``address``):
-  Port of target.
-
-  Default: ``80``.
-
 :gatling_ip:
   Use multiple source addresses. List, divided by spaces. 
 
@@ -254,13 +262,16 @@ URI-style options
 :uris:
   URI list, multiline option. 
 :headers:
-  HTTP headers list in the following form: ``[Header: value]``, multiline option. 
+  HTTP headers list in the following form: `[Header: value]`.
 :header\_http:
   HTTP version.
 
   Default: ``1.0``
 
-  Available options: ``1.0`` and ``1.1``. ``2.0`` is NOT supported by this load generator.
+  Available options: ``1.0`` and ``1.1``.
+
+  .. note::
+     HTTP/2.0 is NOT supported by this load generator. Use Pandora or BFG.
 
 stpd-file cache options
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -330,7 +341,7 @@ Advanced options
 :affinity:
   Set a phantom's CPU affinity. 
 
-  Example: ``0-3`` enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
+  Example: `0-3` enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
   Default: empty.
 
@@ -339,7 +350,7 @@ TLS/SSL additional options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
-  ``ssl=1`` is required
+  `ssl: 1` is required
 
 :client_cipher_suites:
   Cipher list, consists of one or more cipher strings separated by colons (see man ciphers).
@@ -406,40 +417,47 @@ Artifacts
 Multi-tests
 -----------
 
-To make several simultaneous tests with phantom, add proper amount of sections with names ``phantom-_N_``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops. 
+To make several simultaneous tests with phantom, add proper amount of sections to special section `multi` for `phantom`
+ with names ``phantom-N``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops.
 
 Example:
 
-:: 
+.. code-block:: yaml
 
-    [phantom]
-    phantom_path=phantom
-    ammofile=data/dummy.ammo
-    instances=10
-    instances_schedule=line(1,10,1m)
-    loop=1
-    use_caching=1
-    
-    [phantom-1]
-    uris=/
-            /test
-            /test2
-    headers=[Host: www.ya.ru]
-            [Connection: close]
-    rps_schedule=const(1,30) line(1,1000,2m) const(1000,5m)
-    address=fe80::200:f8ff:fe21:67cf
-    port=8080
-    ssl=1
-    timeout=15
-    instances=3
-    gatling_ip=127.0.0.1 127.0.0.2
-    phantom_http_line=123M
-    
-    [phantom-2]
-    uris=/3
-    rps_schedule=const(1,30) line(1,50,2m) const(50,5m)
+  phantom:
+    address: hostname:port
+    load_profile:
+      load_type: rps
+      schedule: const(1,30s)
+    uris:
+      - /
+    autocases: 1
+    multi:
+      - phantom-1:
+        address: hostname1:port1
+        load_profile:
+          load_type: rps
+          schedule: const(1,10s)
+        uris:
+          - /123
+          - /321
+        ssl: 1
+        autocases: 1
+      - phantom-2:
+        address: hostname2:port2
+        load_profile:
+          load_type: rps
+          schedule: const(1,10s)
+        uris:
+          - /123
+          - /321
+        ssl: 1
+        autocases: 1
+  telegraf:
+    enabled: false
 
-Options that apply only for main section: buffered_seconds, writelog, phantom_modules_path, phout_file, config, eta_file, phantom_path
+Options that apply only for main section:
+`buffered_seconds`, `writelog`, `phantom_modules_path`, `phout_file`, `config`, `eta_file`, `phantom_path`
 
 JMeter
 ======

@@ -85,6 +85,9 @@ have following lines:
     load_profile:
       load_type: rps
       schedule: const(10, 10m)
+    uris:
+      - "/uri1"
+      - "/uri2"
   telegraf:
     enabled: false # let's disable telegraf monitoring for this time
 
@@ -139,10 +142,10 @@ where /tmp/access.log is a path to access.log file.
     load_profile:
       load_type: rps
       schedule: line(1, 10, 10m)
-    header_http: '1.1'
-    headers: |
-        [Host: www.target.example.com]
-        [Connection: close]
+    header_http: "1.1"
+    headers:
+      - "[Host: www.target.example.com]"
+      - "[Connection: close]"
     ammofile: /tmp/access.log
     ammo_type: access
   telegraf:
@@ -165,15 +168,15 @@ Update configuration file with HTTP headers and URIs:
     load_profile:
       load_type: rps
       schedule: line(1, 10, 10m)
-    header_http: '1.1'
-    headers: |
-      [Host: www.target.example.com]
-      [Connection: close]
-    uris: |
-      /
-      /buy
-      /sdfg?sdf=rwerf
-      /sdfbv/swdfvs/ssfsf
+    header_http: "1.1"
+    headers:
+      - "[Host: www.target.example.com]"
+      - "[Connection: close]"
+    uris:
+      - "/uri1"
+      - "/buy"
+      - "/sdfg?sdf=rwerf"
+      - "/sdfbv/swdfvs/ssfsf"
   telegraf:
     enabled: false # let's disable telegraf monitoring for this time
 
@@ -455,10 +458,10 @@ So, if we want to stop test when all answers in 1 second period are 5xx plus som
       load_type: rps
       schedule: line(1, 10, 10m)
   autostop:
-    autostop: |
-      time(1s,10s)
-      http(5xx,100%,1s)
-      net(xx,1,30)
+    autostop:
+      - time(1s,10s)
+      - http(5xx,100%,1s)
+      - net(xx,1,30)
 
 Logging
 =======
@@ -511,10 +514,10 @@ For ``load.yaml`` like this:
       schedule: line(1, 10, 10m)
       writelog: true
   autostop:
-    autostop: |
-      time(1,10)
-      http(5xx,100%,1s)
-      net(xx,1,30)
+    autostop:
+      - time(1,10)
+      - http(5xx,100%,1s)
+      - net(xx,1,30)
 
 Results in phout
 ================
