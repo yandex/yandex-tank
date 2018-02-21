@@ -11,9 +11,11 @@ bfg:
       schedule: const(10, 60s)
   instances: 1
   header_http: '1.1'
-  uris: /
+  uris: ['/']
   loop: 1000
-  headers: "[Host: nodejs.load.yandex.net]\n[Connection: close]"
+  headers:
+    - 'Host: nodejs.load.yandex.net'
+    - 'Connection: close'
   gun_type: ultimate
   gun_config:
     module_path: '.'

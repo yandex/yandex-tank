@@ -347,10 +347,15 @@ class OptionFormatter(object):
                                 ' ' +
                                 '({} of {})'.format(self.option_kwargs.get(TYPE, LIST), schema.get(TYPE, '')))
         dsc = self.format_dsc(renderer)
-        schema_block = renderer.field_list({'[list_element] ({})'.format(schema.get(TYPE, '')):
-                                            get_formatter({'list_element': schema})(renderer, header=False)})
         body = render_body(renderer, self.option_kwargs, [TYPE, DEFAULT, REQUIRED, DESCRIPTION, SCHEMA])
-        return '\n'.join([_ for _ in [hdr, dsc, schema_block, body] if _])
+        if set(schema.keys()) - {TYPE}:
+            schema_block = renderer.field_list({
+                '[list_element] ({})'.format(schema.get(TYPE, '')):
+                    get_formatter({'list_element': schema})(renderer, header=False)
+            })
+            return '\n'.join([_ for _ in [hdr, dsc, schema_block, body] if _])
+        else:
+            return '\n'.join([_ for _ in [hdr, dsc, body] if _])
 
     def __guess_formatter(self):
         if ANYOF in self.option_kwargs:

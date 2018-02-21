@@ -1,9 +1,0 @@
-appium_cmd:
-  type: string
-  default: appium
-user:
-  type: string
-  default: ''
-port:
-  type: string
-  default: '4723'

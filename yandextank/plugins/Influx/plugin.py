@@ -5,11 +5,9 @@
 import logging
 import sys
 import datetime
+
 from uuid import uuid4
-
 from builtins import str
-
-
 from influxdb import InfluxDBClient
 
 from ...common.interfaces import AbstractPlugin, \

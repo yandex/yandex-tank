@@ -7,7 +7,7 @@ from pkg_resources import resource_string
 
 from .aggregator import Aggregator, DataPoller
 from .chopper import TimeChopper
-from yandextank.common.interfaces import AggregateResultListener
+from yandextank.common.interfaces import AggregateResultListener, StatsReader
 from yandextank.common.util import Drain, Chopper
 
 logger = logging.getLogger(__name__)
@@ -59,11 +59,14 @@ class TankAggregator(object):
         self.drain = None
         self.stats_drain = None
 
+    @staticmethod
+    def load_config():
+        return json.loads(resource_string(__name__, 'config/phout.json').decode('utf8'))
+
     def start_test(self):
         self.reader = self.generator.get_reader()
         self.stats_reader = self.generator.get_stats_reader()
-        aggregator_config = json.loads(
-            resource_string(__name__, 'config/phout.json').decode('utf8'))
+        aggregator_config = self.load_config()
         verbose_histogram = True
         if verbose_histogram:
             logger.info("using verbose histogram")
@@ -84,7 +87,7 @@ class TankAggregator(object):
         else:
             logger.warning("Generator not found. Generator must provide a reader and a stats_reader interface")
 
-    def _collect_data(self):
+    def _collect_data(self, end=True):
         """
         Collect data, cache it and send to listeners
         """
@@ -110,6 +113,9 @@ class TankAggregator(object):
                 self.__notify_listeners(data_item, stat_item)
             else:
                 self.stat_cache[ts] = item
+        if end and len(self.data_cache) > 0:
+            for ts, data_item in sorted(self.data_cache.items(), key=lambda i: i[0]):
+                self.__notify_listeners(data_item, StatsReader.stats_item(ts, 0, 0))
 
     def is_test_finished(self):
         self._collect_data()
@@ -125,7 +131,7 @@ class TankAggregator(object):
             self.drain.join()
         if self.stats_drain:
             self.stats_drain.join()
-        self._collect_data()
+        self._collect_data(end=True)
         return retcode
 
     def add_result_listener(self, listener):

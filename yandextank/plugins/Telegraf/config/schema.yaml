@@ -1,17 +1,30 @@
 config:
   type: string
   default: auto
+  description: Path to monitoring config file.
+  values_description:
+    auto: collect default metrics from default_target host
+    <path/to/file.xml>: path to telegraf configuration file
+    none: disable monitoring
 config_contents:
   type: string
+  description: used to repeat tests from Overload, not for manual editing
 default_target:
   type: string
   default: localhost
+  description: 'host to collect default metrics from (if "config: auto" specified)'
 disguise_hostnames:
   type: boolean
   default: true
+  description: Disguise real host names - use this if you upload results to Overload and dont want others to see your hostnames
 ssh_timeout:
   type: string
   default: 5s
+  description: timeout of ssh connection to target(s)
+  examples:
+    10s: 10 seconds
+    2m: 2 minutes
 kill_old:
   type: boolean
   default: false
+  description: kill old hanging agents on target(s)
