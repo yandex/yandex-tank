@@ -1,13 +1,8 @@
-'''
-Common utilities
-'''
 import collections
 import os
 import pwd
 import socket
-import threading as th
 import traceback
-
 import http.client
 import logging
 import errno
@@ -18,30 +13,10 @@ import shlex
 import psutil
 import subprocess
 import argparse
+
 from paramiko import SSHClient, AutoAddPolicy
 
 logger = logging.getLogger(__name__)
-
-
-class Drain(th.Thread):
-    """
-    Drain a generator to a destination that answers to put(), in a thread
-    """
-
-    def __init__(self, source, destination):
-        super(Drain, self).__init__()
-        self.source = source
-        self.destination = destination
-        self._interrupted = th.Event()
-
-    def run(self):
-        for item in self.source:
-            self.destination.put(item)
-            if self._interrupted.is_set():
-                break
-
-    def close(self):
-        self._interrupted.set()
 
 
 class SecuredShell(object):
@@ -450,40 +425,6 @@ def pid_exists(pid):
         return p.status != psutil.STATUS_ZOMBIE
 
 
-def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
-    """
-    Wrapper for Popen
-    """
-    log = logging.getLogger(__name__)
-    log.debug("Starting: %s", cmd)
-
-    stdout = ""
-    stderr = ""
-
-    if not shell and isinstance(cmd, basestring):
-        cmd = shlex.split(cmd)
-
-    if catch_out:
-        process = subprocess.Popen(
-            cmd,
-            shell=shell,
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            close_fds=True)
-    else:
-        process = subprocess.Popen(cmd, shell=shell, close_fds=True)
-
-    stdout, stderr = process.communicate()
-    if stderr:
-        log.error("There were errors:\n%s", stderr)
-
-    if stdout:
-        log.debug("Process output:\n%s", stdout)
-    returncode = process.returncode
-    log.debug("Process exit code: %s", returncode)
-    return returncode, stdout, stderr
-
-
 def splitstring(string):
     """
     >>> string = 'apple orange "banana tree" green'
@@ -602,16 +543,6 @@ class AddressWizard:
             raise RuntimeError(msg % (sa[0], sa[1]))
         finally:
             test_sock.close()
-
-
-class Chopper(object):
-    def __init__(self, source):
-        self.source = source
-
-    def __iter__(self):
-        for chunk in self.source:
-            for item in chunk:
-                yield item
 
 
 def recursive_dict_update(d1, d2):

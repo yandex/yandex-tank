@@ -1,6 +1,6 @@
 import logging
 
-from ..common.resource import manager as resource
+from netort.resource import manager as resource
 
 from . import info
 from . import instance_plan as ip
