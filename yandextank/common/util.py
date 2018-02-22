@@ -9,9 +9,7 @@ import errno
 import itertools
 import re
 import select
-import shlex
 import psutil
-import subprocess
 import argparse
 
 from paramiko import SSHClient, AutoAddPolicy

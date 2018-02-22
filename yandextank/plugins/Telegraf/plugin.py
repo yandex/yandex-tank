@@ -11,11 +11,6 @@ import os
 import time
 import sys
 
-if sys.version_info[0] < 3:
-    from ConfigParser import NoOptionError
-else:
-    from configparser import NoOptionError
-
 from copy import deepcopy
 
 from netort.resource import manager as resource
@@ -25,6 +20,12 @@ from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 from ..Console import Plugin as ConsolePlugin
 from ..Telegraf.collector import MonitoringCollector
+
+if sys.version_info[0] < 3:
+    from ConfigParser import NoOptionError
+else:
+    from configparser import NoOptionError
+
 
 logger = logging.getLogger(__name__)
 
