@@ -87,7 +87,7 @@ class TankAggregator(object):
         else:
             logger.warning("Generator not found. Generator must provide a reader and a stats_reader interface")
 
-    def _collect_data(self, end=True):
+    def _collect_data(self, end=False):
         """
         Collect data, cache it and send to listeners
         """
