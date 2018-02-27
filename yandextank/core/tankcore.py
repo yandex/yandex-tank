@@ -25,12 +25,12 @@ from builtins import str
 from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin
 from yandextank.validator.validator import TankConfig
-
-from ..common.util import update_status, execute, pid_exists
-
-from ..common.resource import manager as resource
 from yandextank.aggregator import TankAggregator
+from ..common.util import update_status, pid_exists
 from ..plugins.Telegraf import Plugin as TelegrafPlugin
+
+from netort.resource import manager as resource
+from netort.process import execute
 
 if sys.version_info[0] < 3:
     import ConfigParser
