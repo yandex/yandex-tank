@@ -10,10 +10,6 @@ import socket
 import tempfile
 import time
 import traceback
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO  # noqa: F401
 
 import pkg_resources
 import sys
