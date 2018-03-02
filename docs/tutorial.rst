@@ -14,55 +14,48 @@ Create a file on a server with Yandex.Tank: **load.yaml**
 .. code-block:: yaml
 
   phantom:
-    address: 203.0.113.1:80 # [Target's address]:[target's port]
-    load_profile:
-      load_type: rps # schedule load by defining requests per second
-      schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
+  address: 203.0.113.1:80 # [Target's address]:[target's port]
+  uris:
+    - /
+  load_profile:
+    load_type: rps # schedule load by defining requests per second
+    schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
+  console:
+    enabled: true # enable console output
   telegraf:
-    enabled: false # let's disable telegraf monitoring for this time
+    enabled: false # let's disable telegraf monitoring for the first time
 
-``phantom`` have 3 primitives for describing load scheme: 
-
-------------
-
-1. ``step (a,b,step,dur)`` makes stepped load, where a,b are start/end load
-values, step - increment value, dur - step duration. 
-
-Example:
-  ``step(25, 5, 5, 60)`` - stepped load from 25 to 5 rps, with 5 rps steps, 
-  step duration 60s. ``step(5, 25, 5, 60)`` - stepped load from 5 to 25 rps, 
-  with 5 rps steps, step duration 60s
+And run:
+``$ yandex-tank -c load.yaml``
 
 ------------
 
-2. ``line (a,b,dur)`` makes linear load, where ``a,b`` are start/end load, ``dur``
-- the time for linear load increase from a to b. 
+``phantom`` have 3 primitives for describing load scheme:
 
-Example:
-  ``line(10, 1, 10m)`` - linear load from 10 to 1 rps, duration - 10
-  minutes ``line(1, 10, 10m)`` - linear load from 1 to 10 rps, duration
-  - 10 minutes
+ 1. ``step (a,b,step,dur)`` makes stepped load, where a,b are start/end load values, step - increment value, dur - step duration.
 
-------------
+  Examples:
+   * ``step(25, 5, 5, 60)`` - stepped load from 25 to 5 rps, with 5 rps steps, step duration 60s.
+   * ``step(5, 25, 5, 60)`` - stepped load from 5 to 25 rps, with 5 rps steps, step duration 60s
 
-3. ``const (load,dur)`` makes constant load. ``load`` - rps amount, ``dur`` 
-- load duration. 
+ 2. ``line (a,b,dur)`` makes linear load, where ``a,b`` are start/end load, ``dur`` - the time for linear load increase from a to b.
+
+  Examples:
+   * ``line(10, 1, 10m)`` - linear load from 10 to 1 rps, duration - 10 minutes
+   * ``line(1, 10, 10m)`` - linear load from 1 to 10 rps, duration - 10 minutes
+
+ 3. ``const (load,dur)`` makes constant load. ``load`` - rps amount, ``dur`` - load duration.
+
+  Examples:
+   * ``const(10,10m)`` - constant load for 10 rps for 10 minutes.
+   * ``const(0, 10)`` - 0 rps for 10 seconds, in fact 10s pause in a test.
 
 .. note::
-  ``const(0, 10)`` - 0 rps for 10 seconds, 
-  in fact 10s pause in a test.
-
-Example:
-  ``const(10,10m)`` - constant load for 10 rps for 10 minutes.
-
-------------
-
-.. note::
-  You can set fractional load like this: ``line(1.1, 2.5, 10)`` 
+You can set fractional load like this: ``line(1.1, 2.5, 10)``
   -- from 1.1rps to 2.5 for 10 seconds. 
 
 .. note::
-  ``step`` and ``line`` could be used with increasing and decreasing intensity: 
+``step`` and ``line`` could be used with increasing and decreasing intensity:
 
 
 You can specify complex load schemes using those primitives.
@@ -81,15 +74,17 @@ have following lines:
 .. code-block:: yaml
 
   phantom:
-    address: 203.0.113.1:80
-    load_profile:
-      load_type: rps
-      schedule: const(10, 10m)
-    uris:
-      - "/uri1"
-      - "/uri2"
+  address: 203.0.113.1:80 # [Target's address]:[target's port]
+  uris:
+    - /uri1
+    - /uri2
+  load_profile:
+    load_type: rps # schedule load by defining requests per second
+    schedule: const(10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
+  console:
+    enabled: true # enable console output
   telegraf:
-    enabled: false # let's disable telegraf monitoring for this time
+    enabled: false # let's disable telegraf monitoring for the first time
 
 
 Preparing requests
@@ -127,34 +122,6 @@ To specify external ammo file use ``ammofile`` option.
       ammofile: https://yourhost.tld/path/to/ammofile.txt
 
 
-Access mode
------------
-
-YAML-file configuration: ``ammo_type: access``
-
-You can use ``access.log`` file from your webserver as a source of requests.
-Just add to load.yaml options ``ammo_type: access`` and ``ammofile: /tmp/access.log``
-where /tmp/access.log is a path to access.log file.
-
-.. code-block:: yaml
-
-  phantom:
-    address: 203.0.113.1:80
-    load_profile:
-      load_type: rps
-      schedule: line(1, 10, 10m)
-    header_http: "1.1"
-    headers:
-      - "[Host: www.target.example.com]"
-      - "[Connection: close]"
-    ammofile: /tmp/access.log
-    ammo_type: access
-  telegraf:
-    enabled: false # let's disable telegraf monitoring for this time
-
-Parameter ``headers`` defines headers values (if it necessary).
-
-
 URI-style, URIs in load.yaml
 ----------------------------
 
@@ -178,8 +145,10 @@ Update configuration file with HTTP headers and URIs:
       - "/buy"
       - "/sdfg?sdf=rwerf"
       - "/sdfbv/swdfvs/ssfsf"
+  console:
+    enabled: true
   telegraf:
-    enabled: false # let's disable telegraf monitoring for this time
+    enabled: false
 
 Parameter ``uris`` contains uri, which should be used for requests generation.
 

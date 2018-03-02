@@ -10,10 +10,6 @@ import socket
 import tempfile
 import time
 import traceback
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 import pkg_resources
 import sys
@@ -133,12 +129,7 @@ class TankCore(object):
     @property
     def cfg_snapshot(self):
         if not self._cfg_snapshot:
-            if self.cfg_depr:
-                output = StringIO()
-                self.cfg_depr.write(output)
-                self._cfg_snapshot = output.getvalue()
-            else:
-                self._cfg_snapshot = str(self.config)
+            self._cfg_snapshot = str(self.config)
         return self._cfg_snapshot
 
     @staticmethod
