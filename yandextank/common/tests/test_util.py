@@ -83,6 +83,7 @@ class TestAddressResolver(object):
     @staticmethod
     def __resolve(chunk):
         aw = AddressWizard()
+        # return format: is_v6, parsed_ip, int(port), address_str
         return aw.resolve(chunk)
 
     def __resolve_hostname_and_test(self, address_str, test_hostname, test_port):
