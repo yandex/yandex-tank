@@ -1,9 +1,10 @@
-from queue import Queue
-from yandextank.common.util import FileScanner
 import socket
 
-from netort.data_processing import Drain, Chopper
+from queue import Queue
+from yandextank.common.util import FileScanner
 from yandextank.common.util import AddressWizard
+
+from netort.data_processing import Drain, Chopper
 
 
 class TestDrain(object):

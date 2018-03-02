@@ -475,7 +475,7 @@ class AddressWizard:
             ^
             \[           # opening brace
             \s?          # space sym?
-            (\S+)      # address - string until ]
+            (\S+)        # address - string until ]
             \s?          # space sym?
             \]           # closing brace
             :            # port separator
@@ -487,7 +487,7 @@ class AddressWizard:
             ^
             \[           # opening brace
             \s?          # space sym?
-            (\S+)      # address - string until ]
+            (\S+)        # address - string until ]
             \s?          # space sym?
             \]           # closing brace
             $
