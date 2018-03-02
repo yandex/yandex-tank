@@ -471,16 +471,36 @@ class AddressWizard:
 
         port = None
 
-        braceport_pat = "^\[([^]]+)\]:(\d+)$"
-        braceonly_pat = "^\[([^]]+)\]$"
-        if re.match(braceport_pat, address_str):
+        braceport_re = re.compile(r"""
+            ^
+            \[           # opening brace
+            \s?          # space sym?
+            (\S+)      # address - string until ]
+            \s?          # space sym?
+            \]           # closing brace
+            :            # port separator
+            \s?          # space sym?
+            (\d+)        # port
+            $
+        """, re.X)
+        braceonly_re = re.compile(r"""
+            ^
+            \[           # opening brace
+            \s?          # space sym?
+            (\S+)      # address - string until ]
+            \s?          # space sym?
+            \]           # closing brace
+            $
+        """, re.X)
+
+        if braceport_re.match(address_str):
             logger.debug("Braces and port present")
-            match = re.match(braceport_pat, address_str)
+            match = braceport_re.match(address_str)
             logger.debug("Match: %s %s ", match.group(1), match.group(2))
             address_str, port = match.group(1), match.group(2)
-        elif re.match(braceonly_pat, address_str):
+        elif braceonly_re.match(address_str):
             logger.debug("Braces only present")
-            match = re.match(braceonly_pat, address_str)
+            match = braceonly_re.match(address_str)
             logger.debug("Match: %s", match.group(1))
             address_str = match.group(1)
         else:
