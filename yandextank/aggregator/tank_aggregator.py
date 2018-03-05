@@ -82,10 +82,10 @@ class TankAggregator(object):
         """
         Collect data, cache it and send to listeners
         """
-        data = get_nowait_from_queue(self.results)
-        stats = get_nowait_from_queue(self.stats)
-        logger.debug("Data timestamps:\n%s" % [d.get('ts') for d in data])
-        logger.debug("Stats timestamps:\n%s" % [d.get('ts') for d in stats])
+        data = get_from_queue(self.results)
+        stats = get_from_queue(self.stats)
+        logger.debug("Data timestamps: %s" % [d.get('ts') for d in data])
+        logger.debug("Stats timestamps: %s" % [d.get('ts') for d in stats])
         for item in data:
             ts = item['ts']
             if ts in self.stat_cache:
