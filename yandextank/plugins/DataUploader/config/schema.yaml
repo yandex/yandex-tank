@@ -99,10 +99,6 @@ operator:
   type: string
   nullable: true
   default: null
-regress:
-  description: mark test as regression
-  default: false
-  type: boolean
 send_status_period:
   description: delay between status notifications
   default: 10

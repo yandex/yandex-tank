@@ -12,7 +12,9 @@ from .widget import PhantomInfoWidget, PhantomProgressBarWidget
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
 from ...common.interfaces import AbstractPlugin, AbstractCriterion, GeneratorPlugin
-from ...common.util import execute, expand_to_seconds
+from ...common.util import expand_to_seconds
+
+from netort.process import execute
 
 logger = logging.getLogger(__name__)
 

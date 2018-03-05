@@ -9,23 +9,23 @@ import json
 import logging
 import os
 import time
+import sys
 
 from copy import deepcopy
 
-from ...common.resource import manager as resource
-from ...common.interfaces import MonitoringDataListener, \
-    AbstractPlugin, AbstractInfoWidget
-from ...common.util import expand_to_seconds
+from netort.resource import manager as resource
 
+from ...common.interfaces import MonitoringDataListener, AbstractPlugin, AbstractInfoWidget
+from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 from ..Console import Plugin as ConsolePlugin
 from ..Telegraf.collector import MonitoringCollector
 
-import sys
 if sys.version_info[0] < 3:
     from ConfigParser import NoOptionError
 else:
     from configparser import NoOptionError
+
 
 logger = logging.getLogger(__name__)
 

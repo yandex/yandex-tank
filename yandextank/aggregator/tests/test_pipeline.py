@@ -1,17 +1,17 @@
 import json
-
 import numpy as np
 import pytest
+
 from queue import Queue
+from conftest import MAX_TS, random_split
 
 from yandextank.aggregator import TankAggregator
 from yandextank.aggregator.aggregator import Aggregator, DataPoller
 from yandextank.aggregator.chopper import TimeChopper
-
-from conftest import MAX_TS, random_split
-from yandextank.common.util import Drain
-
 from yandextank.plugins.Phantom.reader import string_to_df
+
+from netort.data_processing import Drain
+
 
 AGGR_CONFIG = TankAggregator.load_config()
 

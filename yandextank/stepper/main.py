@@ -7,7 +7,8 @@ import logging
 import os
 
 from builtins import zip
-from ..common.resource import manager as resource
+
+from netort.resource import manager as resource
 
 from . import format as fmt
 from . import info
