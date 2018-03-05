@@ -212,15 +212,15 @@ class Sparkline(object):
         self.ticks = '_▁▂▃▄▅▆▇'.decode('utf-8')
 
     def recalc_active(self, ts):
+        if not self.active_seconds:
+            self.active_seconds.append(ts)
+            self.data[ts] = {}
         if ts not in self.active_seconds:
-            if self.active_seconds:
+            if ts > max(self.active_seconds):
                 for i in range(max(self.active_seconds) + 1, ts + 1):
                     self.active_seconds.append(i)
                     self.active_seconds.sort()
                     self.data[i] = {}
-            else:
-                self.active_seconds.append(ts)
-                self.data[ts] = {}
         while len(self.active_seconds) > self.window:
             self.active_seconds.pop(0)
         for sec in self.data.keys():
@@ -241,6 +241,9 @@ class Sparkline(object):
     def add(self, ts, key, value, color=''):
         if ts not in self.data:
             self.recalc_active(ts)
+        if ts < min(self.active_seconds):
+            self.log.warning('Sparkline got outdated second %s, oldest in list %s', ts, min(self.active_seconds))
+            return
         value = max(value, 0)
         self.data[ts][key] = (color, value)
 
