@@ -10,10 +10,6 @@ import socket
 import tempfile
 import time
 import traceback
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 import pkg_resources
 import sys
@@ -25,12 +21,12 @@ from builtins import str
 from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin
 from yandextank.validator.validator import TankConfig
-
-from ..common.util import update_status, execute, pid_exists
-
-from ..common.resource import manager as resource
 from yandextank.aggregator import TankAggregator
+from ..common.util import update_status, pid_exists
 from ..plugins.Telegraf import Plugin as TelegrafPlugin
+
+from netort.resource import manager as resource
+from netort.process import execute
 
 if sys.version_info[0] < 3:
     import ConfigParser
@@ -133,12 +129,7 @@ class TankCore(object):
     @property
     def cfg_snapshot(self):
         if not self._cfg_snapshot:
-            if self.cfg_depr:
-                output = StringIO()
-                self.cfg_depr.write(output)
-                self._cfg_snapshot = output.getvalue()
-            else:
-                self._cfg_snapshot = str(self.config)
+            self._cfg_snapshot = str(self.config)
         return self._cfg_snapshot
 
     @staticmethod

@@ -1,14 +1,15 @@
 """ Core module to calculate aggregate data """
 import json
 import logging
-
 import queue as q
+
 from pkg_resources import resource_string
 
 from .aggregator import Aggregator, DataPoller
 from .chopper import TimeChopper
 from yandextank.common.interfaces import AggregateResultListener, StatsReader
-from yandextank.common.util import Drain, Chopper
+
+from netort.data_processing import Drain, Chopper, get_nowait_from_queue
 
 logger = logging.getLogger(__name__)
 
@@ -19,16 +20,6 @@ class LoggingListener(AggregateResultListener):
     def on_aggregated_data(self, data, stats):
         logger.info("Got aggregated sample:\n%s", json.dumps(data, indent=2))
         logger.info("Stats:\n%s", json.dumps(stats, indent=2))
-
-
-def get_from_queue(queue):
-    data = []
-    for _ in range(queue.qsize()):
-        try:
-            data.append(queue.get_nowait())
-        except q.Empty:
-            break
-    return data
 
 
 class TankAggregator(object):
@@ -91,8 +82,8 @@ class TankAggregator(object):
         """
         Collect data, cache it and send to listeners
         """
-        data = get_from_queue(self.results)
-        stats = get_from_queue(self.stats)
+        data = get_nowait_from_queue(self.results)
+        stats = get_nowait_from_queue(self.stats)
         logger.debug("Data timestamps: %s" % [d.get('ts') for d in data])
         logger.debug("Stats timestamps: %s" % [d.get('ts') for d in stats])
         for item in data:

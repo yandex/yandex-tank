@@ -12,10 +12,10 @@ Here are available command line options:
   show command line options
 
 :-c CONFIG, --config=CONFIG:
-  Read options from INI file. 
-  It is possible to set multiple INI files by specifying the option serveral times.
+  Read options from yaml file.
+  It is possible to set multiple configuration files by specifying the option serveral times.
 
-  Default: ``./load.ini``
+  Default: ``./load.yaml``
 
 :-i, --ignore-lock:
   Ignore lock files.
@@ -60,18 +60,22 @@ Add an ammo file name as a nameless parameter, e.g.:
 Advanced configuration
 ============================
 
-Configuration files organized as standard INI files. Those are files
-partitioned into named sections that contain 'name=value' records. 
+Configuration files organized as yaml-files. Those are files
+partitioned into named sections that contain 'name: value' records. 
 
 Example:
-::
 
-  [phantom] 
-  address=example.com:80
-  rps_schedule=const(100,60s)
-  
-  [autostop] 
-  autostop=instances(80%,10)
+.. code-block:: yaml
+
+  phantom: 
+    address: example.com:80
+    load_profile:
+      load_type: rps
+      schedule: const(100,60s)
+  autostop:
+    autostop:
+      - instances(80%,10)
+      - time(1s,10s)
 
 .. note:: 
   A common rule: options with the
@@ -80,40 +84,14 @@ Example:
 Default configuration files
 --------------------------------
 
-If no ``--no-rc`` option passed, Yandex.Tank reads all ``*.ini`` from
-``/etc/yandex-tank`` directory, then a personal config file ``~/.yandex-tank``. 
+.. note::
+
+  ``--no-rc`` command line option disables this behavior
+
+Yandex.Tank reads all ``*.yaml`` from ``/etc/yandex-tank`` directory, then a personal config file ``~/.yandex-tank``.
 So you can easily put your favourite settings in ``~/.yandex-tank``
 
 Example: ``tank.artifacts_base_dir``, ``phantom.cache_dir``, ``console.info_panel_width``
-
-The ``DEFAULT`` section
---------------------------------
-
-One can use a **magic** ``DEFAULT`` section, that contains global
-options. Those options are in charge for every section: 
-
-::
-
-    [autostop] 
-    autostop=time(1,10)
-    
-    [console] 
-    short_only=1
-    
-    [meta] 
-    job_name=ask 
-
-is an equivalent for:
-
-::
-
-    [DEFAULT]
-    autostop=time(1,10) 
-    short_only=1 
-    job_name=ask
-    
-.. note::
-  Don't use global options wich have same name in different sections.
 
 
 Multiline options
@@ -121,39 +99,18 @@ Multiline options
 
 Use indent to show that a line is a continuation of a previous one:
 
-:: 
+.. code-block:: yaml
 
-    [autostop]
-    autostop=time(1,10)
-      http(404,1%,5s)
-      net(xx,1,30)
+  autostop:
+    autostop:
+      - time(1,10)
+      - http(404,1%,5s)
+      - net(xx,1,30)
 
 .. note::
 
-  Ask Yandex.Tank developers to add multiline capability for options
-  where you need it!*
+  Ask Yandex.Tank developers to add multiline capability for options where you need it!*
 
-Referencing one option to another
------------------------------------
-
-``%(optname)s`` gives you ability to reference from option to another. It helps to reduce duplication. 
-
-Example:
-
-::
-
-    [DEFAULT]
-    host=target12.load.net  
-    
-    [phantom]
-    address=%(host)s
-    port=8080
-    
-    [monitoring]
-    default_target=%(host)s
-    
-    [shellexec]
-    prepare=echo Target is %(host)s
 
 Time units
 --------------------------------
@@ -181,17 +138,6 @@ h             hours
 .. note::
   You can also  mix them: ``1h30m15s`` or ``2s15ms``. 
 
-Shell-options
----------------------
-
-Option value with backquotes is evaluated in shell.
-
-Example:
-
-::
-
-  [meta]
-  job_name=`pwd`
 
 Artifacts
 ================
@@ -206,28 +152,29 @@ there.
 Sources
 ================
 
-Yandex.Tank sources are `here <https://github.com/yandex-load/yandex-tank>`_.
+Yandex.Tank sources are `here <https://github.com/yandex/yandex-tank>`_.
 
-load.ini example
+load.yaml example
 ================
 
-::
+.. code-block:: yaml
 
-    ;Yandex.Tank config file
-    [phantom]
-    ;Target's address and port
-    address=fe80::200:f8ff:fe21:67cf
-    port=8080 
-    instances=1000
-    ;Load scheme
-    rps_schedule=const(1,30) line(1,1000,2m) const(1000,5m) 
-    ;  Headers and URIs for GET requests
-    header_http = 1.1
-    uris=/
-        /test
-        /test2
-    headers=[Host: www.ya.ru]
-            [Connection: close]
-    [autostop] autostop = http(5xx,10%,5s)
+  phantom:
+    address: "ya.ru:80"
+    instances: 1000
+    load_profile:
+      load_type: rps
+      schedule: const(1,30) line(1,1000,2m) const(1000,5m)
+    header_http: "1.1"
+    uris:
+      - "/"
+      - "/test"
+      - "/test2"
+    headers:
+      - "[Host: www.ya.ru]"
+      - "[Connection: close]"
+  autostop:
+    autostop:
+      - http(5xx,10%,5s)
 
     
