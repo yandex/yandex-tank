@@ -300,7 +300,7 @@ class TankCore(object):
             end_time = time.time()
             diff = end_time - begin_time
             logger.debug("Polling took %s", diff)
-            logger.debug("Tank status:\n%s", json.dumps(self.status, indent=2))
+            logger.debug("Tank status: %s", json.dumps(self.status))
             # screen refresh every 0.5 s
             if diff < 0.5:
                 time.sleep(0.5 - diff)
