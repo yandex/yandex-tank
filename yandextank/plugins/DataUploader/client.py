@@ -149,8 +149,7 @@ class APIClient(object):
             'headers': str(self.filter_headers(request.headers)),
             'body': request.body.replace('\n', '\\n') if isinstance(request.body, str) else request.body
         }
-        return """
-        Request: {}""".format(json.dumps(request_info))
+        return """Request: {}""".format(json.dumps(request_info))
 
     def format_response_info(self, resp, request_id):
         response_info = {
@@ -161,8 +160,7 @@ class APIClient(object):
             'headers': str(self.filter_headers(resp.headers)),
             'content': resp.content.replace('\n', '\\n') if isinstance(resp.content, str) else resp.content
         }
-        return """
-        Response: {}""".format(json.dumps(response_info))
+        return """Response: {}""".format(json.dumps(response_info))
 
     def __make_api_request(
             self,
