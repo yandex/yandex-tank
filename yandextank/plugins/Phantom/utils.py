@@ -130,9 +130,8 @@ class PhantomConfig:
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
 
-        handle = open(filename, 'w')
-        handle.write(config)
-        handle.close()
+        with open(filename, 'w') as conffile:
+            conffile.write(config)
         return filename
 
     def set_timeout(self, timeout):

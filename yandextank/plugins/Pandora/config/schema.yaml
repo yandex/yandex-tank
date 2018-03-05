@@ -1,3 +1,7 @@
+affinity:
+  description: Use to set CPU affinity
+  type: string
+  defailt: ''
 pandora_cmd:
   type: string
   default: pandora
