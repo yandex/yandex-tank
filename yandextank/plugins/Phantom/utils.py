@@ -356,7 +356,7 @@ class StreamConfig:
             fname = 'phantom_benchmark_main.tpl'
         else:
             fname = 'phantom_benchmark_additional.tpl'
-        template_str = template_str = resource_string(
+        template_str = resource_string(
             __name__, "config/" + fname)
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
