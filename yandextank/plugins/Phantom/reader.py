@@ -1,6 +1,8 @@
 """
 Phantom phout format reader. Read chunks from phout and produce data frames
 """
+from _csv import QUOTE_NONE
+
 import pandas as pd
 import numpy as np
 import logging
@@ -8,6 +10,11 @@ import json
 import time
 import datetime
 import itertools as itt
+
+from pandas.parser import CParserError
+
+from yandextank.common.interfaces import StatsReader
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -39,8 +46,12 @@ dtypes = {
 
 def string_to_df(data):
     start_time = time.time()
-    chunk = pd.read_csv(
-        StringIO(data), sep='\t', names=phout_columns, dtype=dtypes)
+    try:
+        chunk = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
+    except CParserError as e:
+        logger.error(e.message)
+        logger.error('Incorrect phout data: {}'.format(data))
+        return
 
     chunk['receive_ts'] = chunk.send_ts + chunk.interval_real / 1e6
     chunk['receive_sec'] = chunk.receive_ts.astype(np.int64)
@@ -91,7 +102,7 @@ class PhantomReader(object):
         self.closed = True
 
 
-class PhantomStatsReader(object):
+class PhantomStatsReader(StatsReader):
     def __init__(self, filename, phantom_info, cache_size=1024 * 1024 * 50):
         self.phantom_info = phantom_info
         self.stat_buffer = ""
@@ -120,13 +131,7 @@ class PhantomStatsReader(object):
             reqps = 0
             if offset >= 0 and offset < len(self.phantom_info.steps):
                 reqps = self.phantom_info.steps[offset][0]
-            yield {
-                'ts': chunk_date - 1,
-                'metrics': {
-                    'instances': instances,
-                    'reqps': reqps
-                }
-            }
+            yield self.stats_item(chunk_date - 1, instances, reqps)
 
     def _read_stat_data(self, stat_file):
         chunk = stat_file.read(self.cache_size)

@@ -8,7 +8,8 @@ uploader:
   job_name: light
   ignore_target_lock: true
   regress: true
-  notify: fomars
+  notify:
+    - fomars
   meta:
     launched_from: centurion
 #production log

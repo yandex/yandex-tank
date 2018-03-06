@@ -36,7 +36,7 @@ SECTIONS_PATTERNS = {
     'BatteryHistorian': 'battery_historian',
     'Bfg': 'bfg|ultimate_gun|http_gun|custom_gun|scenario_gun',
     'Phantom': 'phantom(-.*)?',
-    'DataUploader': 'meta|overload',
+    'DataUploader': 'meta|overload|uploader|datauploader',
     'Telegraf': 'telegraf|monitoring',
     'JMeter': 'jmeter',
     'ResourceCheck': 'rcheck',
@@ -181,6 +181,7 @@ class Option(object):
         'Bfg': {
             'rps_schedule': convert_rps_schedule,
             'instances_schedule': convert_instances_schedule,
+            'headers': lambda key, value: {key: re.compile('\[(.*?)\]').findall(value)}
         },
         'JMeter': {
             'exclude_markers': lambda key, value: {key: value.strip().split(' ')}
