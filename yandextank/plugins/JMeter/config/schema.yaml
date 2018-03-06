@@ -1,7 +1,7 @@
 affinity:
   description: Use to set CPU affinity
   type: string
-  defailt: ''
+  default: ''
 args:
   description: additional commandline arguments for JMeter.
   type: string
