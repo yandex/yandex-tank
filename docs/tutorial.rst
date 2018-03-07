@@ -51,11 +51,11 @@ And run:
    * ``const(0, 10)`` - 0 rps for 10 seconds, in fact 10s pause in a test.
 
 .. note::
-You can set fractional load like this: ``line(1.1, 2.5, 10)``
-  -- from 1.1rps to 2.5 for 10 seconds. 
+ You can set fractional load like this:
+  ``line(1.1, 2.5, 10)`` - from 1.1rps to 2.5 for 10 seconds.
 
 .. note::
-``step`` and ``line`` could be used with increasing and decreasing intensity:
+ ``step`` and ``line`` could be used with increasing and decreasing intensity:
 
 
 You can specify complex load schemes using those primitives.
@@ -437,7 +437,7 @@ Logging
 =======
 
 Looking into target's answers is quite useful in debugging. For doing
-that add ``phantom: {writelog: true}`` to ``load.yaml``.
+that use parameter `writelog <http://yandextank.readthedocs.io/en/latest/config_reference.html#writelog-string>`_, e.g. add ``phantom: {writelog: all}`` to ``load.yaml`` to log all messages.
 
 .. note::
   Writing answers on high load leads to intensive disk i/o 
@@ -482,7 +482,7 @@ For ``load.yaml`` like this:
     load_profile:
       load_type: rps
       schedule: line(1, 10, 10m)
-      writelog: true
+    writelog: all
   autostop:
     autostop:
       - time(1,10)
@@ -524,26 +524,6 @@ Use `Report plugin <https://github.com/yandex-load/yatank-online>`_
 OR
 use your favorite stats packet, R, for example.
 
-Precise timings
-===============
-
-You can set precise timings in ``load.yaml`` with ``verbose_histogram``
-parameter like this:
-
-.. code-block:: yaml
-  
-  phantom:
-    address: 203.0.113.1:80
-    load_profile:
-      load_type: rps
-      schedule: line(1, 10, 10m)
-  aggregator:
-    verbose_histogram: true
-
-.. note::
-  Please keep an eye, last value of `time_periods` is no longer used as response timeout
-  Use phantom.timeout option.
-
 
 Thread limit
 ============
@@ -579,10 +559,8 @@ Example:
     load_profile:
       load_type: instances
       schedule: line(1,10,10m)
+    instances: 10
     loop: 10000 # don't stop when the end of ammo is reached but loop it 10000 times
-
-.. note::
-  Load scheme is excluded from this load.yaml as we used ``instances_schedule`` parameter.
 
 .. note::
   When using ``load_type: instances`` you should specify how many loops of
@@ -594,12 +572,8 @@ Custom stateless protocol
 
 In necessity of testing stateless HTTP-like protocol, Yandex.Tank's HTTP
 parser could be switched off, providing ability to generate load with
-any data, receiving any answer in return. To do that add
-``tank_type: '2'`` to ``load.yaml``.
-
-.. note::
-
-  **Indispensable condition: Connection close must be initiated by remote side**
+any data, receiving any answer in return. To do that use
+`tank_type <http://yandextank.readthedocs.io/en/latest/config_reference.html#tank-type-string>`_ parameter:
 
 .. code-block:: yaml
 
@@ -609,7 +583,11 @@ any data, receiving any answer in return. To do that add
       load_type: rps
       schedule: line(1, 10, 10m)
     instances: 10
-    tank_type: 2
+    tank_type: none
+
+.. note::
+
+  **Indispensable condition: Connection close must be initiated by remote side**
 
 Gatling 
 =======
