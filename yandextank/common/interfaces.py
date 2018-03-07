@@ -182,7 +182,7 @@ class AbstractCriterion(object):
         raise NotImplementedError("Abstract methods requires overriding")
 
 
-class GeneratorPlugin(object):
+class GeneratorPlugin(AbstractPlugin):
     DEFAULT_INFO = {
         'address': '',
         'port': 80,
@@ -193,8 +193,8 @@ class GeneratorPlugin(object):
         'loop_count': 0
     }
 
-    def __init__(self):
-        super(GeneratorPlugin, self).__init__()
+    def __init__(self, core, cfg, cfg_updater):
+        super(GeneratorPlugin, self).__init__(core, cfg, cfg_updater)
         self.stats_reader = None
         self.reader = None
         self.process = None

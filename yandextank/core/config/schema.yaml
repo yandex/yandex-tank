@@ -5,8 +5,7 @@ core:
     affinity:
       description: specify cpu core(s) to bind tank process to,  http://linuxhowtos.org/manpages/1/taskset.htm
       type: string
-      nullable: true
-      default: none
+      default: ''
     api_jobno:
       description: tankapi job id, also used as test\'s directory name - determined by tank
       type: string

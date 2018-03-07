@@ -37,7 +37,6 @@ OPTIONS = {
     "affinity": {
         'description': 'Use to set CPU affinity',
         "type": "string",
-        'nullable': True,
         "default": '',
         'examples': {
             '0-3': 'enable first 4 cores',

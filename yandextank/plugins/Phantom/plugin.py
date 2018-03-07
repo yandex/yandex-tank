@@ -10,7 +10,7 @@ from .utils import PhantomConfig
 from .widget import PhantomInfoWidget, PhantomProgressBarWidget
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
-from ...common.interfaces import AbstractPlugin, AbstractCriterion, GeneratorPlugin
+from ...common.interfaces import AbstractCriterion, GeneratorPlugin
 from ...common.util import expand_to_seconds
 
 from netort.process import execute
@@ -18,7 +18,7 @@ from netort.process import execute
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin, GeneratorPlugin):
+class Plugin(GeneratorPlugin):
     """     Plugin for running phantom tool    """
 
     OPTION_CONFIG = "config"

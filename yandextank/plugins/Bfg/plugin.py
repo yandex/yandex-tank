@@ -8,11 +8,11 @@ from .reader import BfgReader, BfgStatsReader
 from .widgets import BfgInfoWidget
 from .worker import BFGMultiprocessing, BFGGreen
 from ..Console import Plugin as ConsolePlugin
-from ...common.interfaces import AbstractPlugin, GeneratorPlugin
+from ...common.interfaces import GeneratorPlugin
 from ...stepper import StepperWrapper
 
 
-class Plugin(AbstractPlugin, GeneratorPlugin):
+class Plugin(GeneratorPlugin):
     """ Big Fucking Gun plugin """
     SECTION = 'bfg'
 

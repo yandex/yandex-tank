@@ -10,13 +10,12 @@ from .reader import PandoraStatsReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ..Phantom import PhantomReader
-from ...common.interfaces import AbstractPlugin, \
-    AbstractInfoWidget, GeneratorPlugin
+from ...common.interfaces import AbstractInfoWidget, GeneratorPlugin
 
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin, GeneratorPlugin):
+class Plugin(GeneratorPlugin):
     """    Pandora load generator plugin    """
 
     OPTION_CONFIG = "config"
