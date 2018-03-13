@@ -1,12 +1,12 @@
 from __future__ import absolute_import
 import argparse
-from types import NoneType
 
 import imp
 import yaml
 from yaml.scanner import ScannerError
 from six.moves import range
 
+NoneType = type(None)
 TYPE = 'type'
 LIST = 'list'
 DESCRIPTION = 'description'

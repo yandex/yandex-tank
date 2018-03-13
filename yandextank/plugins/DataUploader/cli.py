@@ -51,8 +51,8 @@ def from_tank_config(test_dir):
     with open(config_file) as f:
         tank_cfg = yaml.load(f)
     try:
-        config = filter(lambda options: 'DataUploader' in options.get('package', ''), list(tank_cfg.values()))[0]
-    except IndexError:
+        config = next(filter(lambda options: 'DataUploader' in options.get('package', ''), list(tank_cfg.values())))
+    except StopIteration:
         logger.warning('DataUploader configuration not found in {}'.format(config_file))
         config = {}
     return config
