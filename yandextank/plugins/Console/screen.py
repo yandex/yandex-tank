@@ -213,7 +213,7 @@ class Sparkline(object):
         self.data = {}
         self.window = window
         self.active_seconds = []
-        self.ticks = '_▁▂▃▄▅▆▇'.decode('utf-8')
+        self.ticks = '_▁▂▃▄▅▆▇'
 
     def recalc_active(self, ts):
         if ts not in self.active_seconds:
@@ -999,7 +999,7 @@ class CasesBlock(AbstractBlock):
         tagged = data["tagged"]
         for tag_name, tag_data in six.iteritems(tagged):
             # decode symbols to utf-8 in order to support cyrillic symbols in cases
-            name = tag_name.decode('utf-8')
+            name = tag_name
             spark_color, self.last_cases[name] = prepare_data(tag_data, name)
             self.sparkline.add(ts, name, self.last_cases[name]['count'], color=spark_color)
         for name in self.last_cases:

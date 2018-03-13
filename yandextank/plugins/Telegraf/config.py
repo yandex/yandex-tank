@@ -7,6 +7,7 @@ import tempfile
 from future.utils import iteritems
 from ..Telegraf.decoder import decoder
 import sys
+import six.moves
 from six.moves import range
 if sys.version_info[0] < 3:
     import six.moves.configparser
