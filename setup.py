@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='1.9.10',
+    version='1.9.11',
 
     description='a performance measurement tool',
     longer_description='''
