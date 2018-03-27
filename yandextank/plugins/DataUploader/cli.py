@@ -93,8 +93,7 @@ def send_config_snapshot(config, lp_job):
 
 
 def edit_metainfo(lp_config, lp_job):
-    lp_job.edit_metainfo(is_regression=lp_config.get('regress'),
-                         regression_component=lp_config.get('component'),
+    lp_job.edit_metainfo(regression_component=lp_config.get('component'),
                          cmdline=lp_config.get('cmdline'),
                          ammo_path=lp_config.get('ammo_path'),
                          loop_count=lp_config.get('loop_count'))

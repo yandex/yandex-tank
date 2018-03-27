@@ -1,3 +1,8 @@
+affinity:
+  description: Use to set CPU affinity
+  type: string
+  nullable: true
+  default: ''
 args:
   description: additional commandline arguments for JMeter.
   type: string

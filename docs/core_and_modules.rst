@@ -9,7 +9,7 @@ TankCore
 Core class. Represents basic steps of test execution. Simplifies plugin configuration, 
 configs reading, artifacts storing. Represents parent class for modules/plugins.
 
-INI file section: **[tank]**
+yaml file section: **core**
 
 Architecture
 ============
@@ -45,7 +45,8 @@ Basic options:
   Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
 
 :flush_config_to:
-  Dump configuration options after each tank step (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file
+  Dump configuration options after each tank step
+  (`yandex.tank steps. sorry, russian only <http://clubs.ya.ru/yandex-tank/replies.xml?item_no=6>`_) to that file
 
 :taskset_path:
   Path to taskset command.
@@ -149,7 +150,7 @@ Phantom
 
 Load generator module that uses phantom utility.
 
-INI file section: **[phantom]**
+yaml file section: **phantom**
 
 How it works
 ------------
@@ -165,14 +166,20 @@ Basic options
 :ammofile:
   Ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped). 
 
-:rps_schedule:
-  Load schedule in terms of RPS.
+:load_profile:
+  Load profile behaviour. Specify load_type (``rps``, schedule load by defining requests per second or ``instances``
+  - schedule load defining concurrent active threads) and schedule.
+
+  .. code-block:: yaml
+
+  phantom:
+    address: [hostname]:port
+    load_profile:
+      load_type: rps #
+      schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
 
 :instances:
   Max number of instances (concurrent requests).
-
-:instances_schedule:
-  Load schedule in terms of number of instances.
 
 :loop:
   Number of times requests from ammo file are repeated in loop.
@@ -181,13 +188,21 @@ Basic options
   Limit request number.
 
 :autocases:
-  Enable marking requests automatically. ``autocases = 2`` means 2 uri path elements will be used. I.e ``/hello/world/please/help`` will produce case ``_hello_world``
+  Enable marking requests automatically. ``autocases: 2`` means 2 uri path elements will be used.
+  I.e ``/hello/world/please/help`` will produce case ``_hello_world``
 
 
 :chosen_cases:
   Use only selected cases.
 
-There are 3 ways to constrain requests number: by schedule with ``rps_schedule``, by requests number with ``ammo_limit`` or by loop number with ``loop`` option. Tank stops if any constraint is reached. If stop reason is reached ``ammo_limit`` or ``loop`` it will be mentioned in log file. In test without ``rps_schedule`` file with requests is used one time by default.
+There are 3 ways to constrain requests number:
+    * by load_type ``rps`` and ``schedule``,
+    * by requests number with ``ammo_limit``
+    * by loop number with ``loop`` option.
+
+Tank stops if any constraint is reached.
+If stop reason is reached ``ammo_limit`` or ``loop`` it will be mentioned in log file.
+In test without load_type ``rps`` ammofile with requests used once by default.
 
 Additional options
 ^^^^^^^^^^^^^^^^^^
@@ -225,11 +240,6 @@ Additional options
 
   Format: ``[host]:port``, ``[ipv4]:port``, ``[ipv6]:port``. Tank checks each test if port is available. 
 
-:port (deprecated, use ``address``):
-  Port of target.
-
-  Default: ``80``.
-
 :gatling_ip:
   Use multiple source addresses. List, divided by spaces. 
 
@@ -254,13 +264,16 @@ URI-style options
 :uris:
   URI list, multiline option. 
 :headers:
-  HTTP headers list in the following form: ``[Header: value]``, multiline option. 
+  HTTP headers list in the following form: `[Header: value]`.
 :header\_http:
   HTTP version.
 
   Default: ``1.0``
 
-  Available options: ``1.0`` and ``1.1``. ``2.0`` is NOT supported by this load generator.
+  Available options: ``1.0`` and ``1.1``.
+
+  .. note::
+     HTTP/2.0 is NOT supported by this load generator. Use Pandora or BFG.
 
 stpd-file cache options
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -339,7 +352,7 @@ TLS/SSL additional options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
-  ``ssl=1`` is required
+  ``ssl: 1`` is required
 
 :client_cipher_suites:
   Cipher list, consists of one or more cipher strings separated by colons (see man ciphers).
@@ -406,55 +419,63 @@ Artifacts
 Multi-tests
 -----------
 
-To make several simultaneous tests with phantom, add proper amount of sections with names ``phantom-_N_``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops. 
+To make several simultaneous tests with phantom, add proper amount of sections to special section ``multi`` for ``phantom``
+ with names ``phantom-N``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops.
 
 Example:
 
-:: 
+.. code-block:: yaml
 
-    [phantom]
-    phantom_path=phantom
-    ammofile=data/dummy.ammo
-    instances=10
-    instances_schedule=line(1,10,1m)
-    loop=1
-    use_caching=1
-    
-    [phantom-1]
-    uris=/
-            /test
-            /test2
-    headers=[Host: www.ya.ru]
-            [Connection: close]
-    rps_schedule=const(1,30) line(1,1000,2m) const(1000,5m)
-    address=fe80::200:f8ff:fe21:67cf
-    port=8080
-    ssl=1
-    timeout=15
-    instances=3
-    gatling_ip=127.0.0.1 127.0.0.2
-    phantom_http_line=123M
-    
-    [phantom-2]
-    uris=/3
-    rps_schedule=const(1,30) line(1,50,2m) const(50,5m)
+  phantom:
+    address: hostname:port
+    load_profile:
+      load_type: rps
+      schedule: const(1,30s)
+    uris:
+      - /
+    autocases: 1
+    multi:
+      - phantom-1:
+        address: hostname1:port1
+        load_profile:
+          load_type: rps
+          schedule: const(1,10s)
+        uris:
+          - /123
+          - /321
+        ssl: 1
+        autocases: 1
+      - phantom-2:
+        address: hostname2:port2
+        load_profile:
+          load_type: rps
+          schedule: const(1,10s)
+        uris:
+          - /123
+          - /321
+        ssl: 1
+        autocases: 1
+  telegraf:
+    enabled: false
 
-Options that apply only for main section: buffered_seconds, writelog, phantom_modules_path, phout_file, config, eta_file, phantom_path
+Options that apply only for main section:
+``buffered_seconds``, ``writelog``, ``phantom_modules_path``, ``phout_file``, ``config``, ``eta_file``, ``phantom_path``
 
 JMeter
 ======
 
-JMeter module uses JMeter as a load generator. To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable JMeter plugin and then specify the parameters for JMeter:
+JMeter module uses JMeter as a load generator.
+To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk),
+enable JMeter plugin and then specify the parameters for JMeter:
 
-::
+.. code-block:: yaml
 
-    [tank]
-    ; Disable phantom:
-    plugin_phantom=
-    ; Enable JMeter instead:
-    plugin_jmeter=yandextank.plugins.JMeter
+  phantom:
+    enabled: false
+  jmeter:
+    enabled: true
 
-INI file section: **[jmeter]**
+yaml file section: **jmeter**
 
 Options
 -------
@@ -479,7 +500,9 @@ Options
   Default: ``3.0``
 
 :ext_log:
-  Available options: ``none``, ``errors``, ``all``. Add one more simple data writer which logs all possible fields in jmeter xml format, this log is saved in test dir as ``jmeter_ext_XXXX.jtl``.
+  Available options: ``none``, ``errors``, ``all``.
+  Add one more simple data writer which logs all possible fields in jmeter xml format,
+  this log is saved in test dir as ``jmeter_ext_XXXX.jtl``.
 
   Default: ``none``
 
@@ -489,9 +512,15 @@ Options
 Timing calculation issues
 -------------------------
 
-Since version 2.13 jmeter could measure connection time, latency and full request time (aka <interval_real> in phantom), but do it in it's own uniq way: latency include connection time but not recieve time. For the sake of consistency we recalculate <latency> as <latency - connect_time> and calculate <recieve_time> as <interval_real - latency - connect_time>>, but it does not guranteed to work perfectly in all cases (i.e. some samplers may not support latency and connect_time and you may get something strange in case of timeouts).
+Since version 2.13 jmeter could measure connection time, latency and full request time (aka <interval_real> in phantom),
+but do it in it's own uniq way: latency include connection time but not recieve time. For the sake of consistency we
+recalculate <latency> as <latency - connect_time> and
+calculate <recieve_time> as <interval_real - latency - connect_time>>,
+but it does not guranteed to work perfectly in all cases (i.e. some samplers may not support latency
+and connect_time and you may get something strange in case of timeouts).
 
-For jmeter 2.12 and older connection time logging not avaliable, set ``jmeter_ver`` properly or you'll get an error for unknown field in Simlpe Data Writer listner added by tank.
+For jmeter 2.12 and older connection time logging not avaliable, set ``jmeter_ver`` properly or you'll
+get an error for unknown field in Simlpe Data Writer listner added by tank.
 
 Artifacts
 ---------
@@ -512,13 +541,17 @@ BFG
 ===
 
 (`What is BFG <http://en.wikipedia.org/wiki/BFG_(weapon)>`_)
-BFG is a generic gun that is able to use different kinds of cannons to shoot. To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk), enable BFG plugin and then specify the parameters for BFG and for the gun of your choice.
+BFG is a generic gun that is able to use different kinds of cannons to shoot.
+To enable it, disable phantom first (unless you really want to keep it active alongside at your own risk),
+enable BFG plugin and then specify the parameters for BFG and for the gun of your choice.
 
-There are three predefined guns: Log Gun, Http Gun and SQL gun. First two are mostly for demo, if you want to implement your own gun class, use them as an example.
+There are three predefined guns: Log Gun, Http Gun and SQL gun. First two are mostly for demo,
+if you want to implement your own gun class, use them as an example.
 
 But the main purpose of BFG is to support user-defined scenarios in python. Here is how you do it using 'ultimate' gun.
 
-1. Define your scenario as a python class (in a single-file module, or a package):
+1. Define your scenario as a python class, for example, ``LoadTest`` (in a single-file module, for example, ``test`` in
+current working directory ``./``), or a package:
 
 .. code-block:: python
 
@@ -566,33 +599,22 @@ But the main purpose of BFG is to support user-defined scenarios in python. Here
 
 2. Define your options in a config file:
 
-::
+.. code-block:: yaml
 
-    [tank]
-    ; Disable phantom:
-    plugin_phantom=
-    ; Enable BFG instead:
-    plugin_bfg=yandextank.plugins.Bfg
-        
-    [bfg]
-    ; parallel processes count
-    instances = 10
-    ; gun type
-    gun_type = ultimate
-
-    ; ammo file
-    ammofile=req_json.log
-
-    ; load schedule
-    rps_schedule=line(1,100,10m)
-    
-    [ultimate_gun]
-    ; path to your custom module
-    module_path = ./my_own_service
-    ; python module name
-    module_name = mygun
-    ; gun initialization parameter
-    init_param = Hello
+  phantom:
+    enabled: false
+  bfg:
+    enabled: true
+    instances: 10
+    gun_config:
+      class_name: LoadTest
+      module_path: ./
+      module_name: test
+      init_param: Hello
+    gun_type: ultimate
+    load_profile:
+      load_type: rps
+      schedule: const(1, 30s)
 
 3. Create an ammo file:
 Ammo format: one line -- one request, each line begins with case name separated by tab symbol ('\t').
@@ -626,7 +648,6 @@ allowing it to have multiple concurrent threads executing HTTP requests.
 With green worker, it's recommended to set ``instances`` to number of CPU cores,
 and adjust the number of real threads by ``green_threads_per_instance`` option.
 
-INI file section: **[bfg]**
 
 :worker_type:
   Set it to ``green`` to let every process have multiple concurrent green threads.
@@ -637,10 +658,13 @@ INI file section: **[bfg]**
 BFG Options
 -----------
 
-INI file section: **[bfg]**
+yaml file section: **bfg**
 
 :gun_type:
   What kind of gun should BFG use.
+
+:gun_config:
+  Gun configuration options
 
 :ammo_type:
   What ammo parser should BFG use.
@@ -665,9 +689,10 @@ INI file section: **[bfg]**
 Ultimate Gun Options
 --------------------
 
-gun_type = **ultimate**
+yaml gun_type section: **ultimate**
 
-INI file section: **[ultimate_gun]**
+
+Specify ``gun_config`` with:
 
 :module_path:
   Path to your module
@@ -706,12 +731,7 @@ The fields of measuring context object and their default values:
 SQL Gun Options
 ---------------
 
-gun_type = **sql**
-
-INI file section: **[sql_gun]**
-
-:db:
-  DB uri in format:  ``dialect+driver://user:password@host/dbname[?key=value..]``, where dialect is a database name such as mysql, oracle, postgresql, etc., and driver the name of a DBAPI, such as psycopg2, pyodbc, cx_oracle, etc. `details <http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls>`_
+SQL gun is deprecated. Use ultimate gun.
 
 Pandora
 =======
@@ -831,7 +851,7 @@ Overload 𝛃 is a service for performance analytics made by Yandex. We will sto
 
 .. image:: ./pic/overload-screen.png
 
-INI file section: **[overload]**
+yaml file section: **overload**
 
 Options
 -------
@@ -843,16 +863,14 @@ Options
 :job_dsc:
   (Optional) Description of a job to be displayed in Yandex.Overload
 
-Example::
+Example:
 
-  [tank]
-  ; plugin is disabled by default, enable it:
-  plugin_uploader=yandextank.plugins.DataUploader overload
+.. code-block:: yaml
 
-  [overload]
-  token_file=token.txt
-  job_name=test
-  job_dsc=test description
+  overload:
+    token_file: token.txt
+    job_name: test
+    job_dsc: test description
 
 ***********
 Handy tools
@@ -864,13 +882,13 @@ Auto-stop
 The Auto-stop module gets the data from the aggregator and passes them
 to the criteria-objects that decide if we should stop the test.
 
-INI file section: **[autostop]**
+yaml file section: **autostop**
 
 Options
 -------
 
 :autostop:
-  Criteria list divided by spaces, in following format: ``type(parameters)``
+  Criteria list in following format: ``type(parameters)``
 
 Basic criteria types
 ^^^^^^^^^^^^^^^^^^^^
@@ -971,13 +989,16 @@ Advanced criteria types
   Exit code - 29
 
 :http_trend: 
-  Stop if trend for defined http codes is negative on defined period. Trend is a sum of an average coefficient for linear functions calculated for each pair points in last n seconds and standart deviation for it
+  Stop if trend for defined http codes is negative on defined period.
+  Trend is a sum of an average coefficient for linear functions calculated for each pair points in last
+  n seconds and standart deviation for it
 
   Example: http_trend(2xx,10s). 
 
   Exit code - 30
 
 
+## FIXME
 Telegraf
 ========
 Runs metrics collection through SSH connection. You can debug your SSH connection using ``yandex-tank-check-ssh`` tool.
@@ -1156,7 +1177,7 @@ List of metrics group names and particular metrics in them:
     Config Host section example:
     ``<Source>/path/to/file</Source>``
 
-    File format: `jsonline`. Each line is a json document.
+    File format: ``jsonline``. Each line is a json document.
 
     Example:
     ``{"fields":{"metric_name_1":0,"metric_name_2":98.27694231863998,},"name":"custom_group-name","timestamp":1503990965}``
@@ -1254,7 +1275,7 @@ Resource Check
 
 Module checks free memory and disk space amount before and during test. Test stops if minimum values are reached. 
 
-INI file section: **[rcheck]**
+yaml file section: **rcheck**
 
 Options
 -------
@@ -1280,7 +1301,7 @@ RC Assert
 
 Module checks test's exit code with predefined acceptable codes. If exit code matches, it is overrides as 0. Otherwise it is replaced with code from option ``fail_code``
 
-INI file section: **[rcassert]**
+yaml file section: **rcassert**
 
 Options
 -------
@@ -1294,255 +1315,3 @@ Options
   Exit code when check fails, integer number. 
 
   Default: 10
-
-
-Tips&Tricks
-===========
-
-Shows tips and tricks in fullscreen console.
-
-INI-file section: **[tips]**
-
-Options
--------
-
-:disable:
-  Disable tips and tricks.
-
-  Default: 0 (don't).
-
-
-BatteryHistorian
-================
-
-Module collects android device battery historian log to artifacts.  
-
-INI-file section: **[battery_historian]**  
-
-Options
--------
-
-:device_id:  
-  Android device id. Should be specified.  
-
-  Default: None (will raise an exception).  
-
-
-SvgReport
-================
-
-Module generates svg file with various test results, e.g.,
-monitoring plots, RPS during test etc.
-
-INI-file section: **[svgreport]**
-
-Options
--------
-
-:report_file:
-  Name of report file.
-
-  Default: report.svg
-
-
-
-**********
-Deprecated
-**********
-
-Monitoring
-==========
-
-Runs metrics collection through ssh connect.
-
-INI file section: **[monitoring]**
-
-Options
--------
-
-:config:
-  Path to monitoring config file.
-
-  Default: ``auto`` means collect default metrics from ``default_target`` host. If ``none`` is defined, monitoring won't be executed. Also it is possible to write plain multiline XML config.
-
-:default_target:
-  An address where from collect "default" metrics. When phantom module is used, address will be obtained from it.
-
-:ssh_timeout:
-  Ssh connection timeout.
-
-  Default: 5s
-
-Artifacts
----------
-
-:agent_*.cfg:
-  Configuration files sent to hosts to run monitoring agents.
-
-:agent_<host>_*.log:
-  Monitoring agents' log files, downloaded from hosts.
-
-:monitoring_*.data:
-  Data collected by monitoring agents, received by ssh.
-
-:<monitoring config:
-  Monitoring config file.
-
-Configuration
--------------
-
-
-Net access and authentication
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Monitoring requires ssh access to hosts for copy and executing agents on them. SSH session is established with user account specified by "username" parameter of Host element, otherwise current user account, so you need to copy your public keys (ssh-copy-id) and enable nonpassword authorization on hosts.
-If connection establishing failed for some reason in ``ssh_timeout`` seconds, corresponding message will be written to console and monitoring log and task will proceed further.
-Tip: write to ``.ssh/config`` next lines to eliminate ``-A`` option in ``ssh``
-
-::
-
-    StrictHostKeyChecking no
-    ForwardAgent yes
-
-
-Configuration file format
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Config is an XML file with structure:
-root element ``Monitoring`` includes elements ``Host`` which contains elements-metrics
-Example:
-
-::
-
-    <Monitoring>
-      <Host address="xxx.load.net">
-        <CPU measure="user,system,iowait"/>
-        <System measure="csw,int"/>
-        <Memory measure="free,used"/>
-        <Disk measure="read,write"/>
-        <Net measure="recv,send"/>
-      </Host>
-    </Monitoring>
-
-
-Element ``Monitoring``
-^^^^^^^^^^^^^^^^^^^^^^
-
-Global monitoring settings.
-
-:loglevel:
-  Logging level.
-
-  Available options: ``info``, ``debug``. Optional.
-
-  Default: info.
-
-
-Element ``Host``
-^^^^^^^^^^^^^^^^
-
-Contains address and role of monitored server. Attributes:
-
-:address="<IP address or domain name>:
-  Server adddress. Mandatory. Special mask ``[target]`` could be used here, which means "get from the tank target address"
-
-:port="<SSH port>":
-  Server's ssh port. Optional.
-
-  Default: 22
-
-:python="<python path>":
-  The way to use alternative python version. Optional.
-
-:interval="<seconds>":
-  Metrics collection interval. Optional.
-
-  Default: 1 second
-
-:comment="<short commentary>":
-  Short notice about server's role in test. Optional.
-
-  Default: empty
-
-:username="<user name>":
-  User account to connect with. Optional.
-
-  Default: current user account.
-
-
-Example:
-``<Host address="localhost" comment="frontend" priority="1" interval="5" username="tank"/>``
-
-
-
-Metric elements
-^^^^^^^^^^^^^^^
-
-Metric elements in general are set by metrics group name and particular metrics enumeration in attribute `measure`. Example: `<CPU measure="idle,user,system" />`
-
-List of metrics group names and particular metrics in them:
-
-* CPU
-    * idle
-    * user - default
-    * system - default
-    * iowait - default
-    * nice
-* System
-    * la1 - load average 1 min
-    * la5 - ...
-    * la15 - ...
-    * csw - context switches, default
-    * int - interrupts, default
-    * numproc - process amount in system
-    * numthreads - threads amount in system
-* Memory
-    * free - default
-    * used - default
-    * cached
-    * buff
-* Disk
-    * read  - default
-    * write - default
-* Net
-    * recv - bytes received, default
-    * send - bytes sent,  default
-    * tx - outgoing packet rate
-    * rx - incoming packet rate
-    * retransmit - retransmit amount
-    * estab - number of sockets in ESTABLISHED state
-    * closewait - number of sockets in CLOSEWAIT
-    * timewait - number of sockets in TIMEWAIT
-* Custom
-    * tail - metric value is read from file's last line, file path is specified in node text. Example: `<Custom measure="tail" label="size history">/tmp/dbsize.log</Custom>`
-    * call - metric value is a command or script execution output. Example: `<Custom measure="call" diff="1" label="Base size">du -hs /usr/mysql/data</Custom>`
-
-Custom metrics have an additional attribute `diff`, that signals to obtain as metric value the difference between previous and current value. So in example above, not the file size, but the dynamic of changes in size will be written.
-Also custom metrics must have attribute `label`, which defines metric short name (only latin). `Underline symbol should be avoided.`
-
-Monitoring default logic
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-Default logic is applied on next levels:
-
-1. Host level: by default target is derived from `address` in `phantom` module.
-2. Metrics group level: If config contain host address only, without metrics, i.e `<Host address="somehost.yandex.ru" />`, then default metrics in groups `CPU`, `Memory`, `Disk` are collected. If host has defined any metric, then only it is collected.
-3. Metric level: if metrics group is defined without attribute `measure`, then only default group metrics are collected.
-
-Startup and Shutdown elements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-There is special non-metric elements called Startup and Shutdown. Startup shell scripts will be started before metric collection. On the normal shutdown startup scripts will be stopped and shutdown scripts will run. There may be any number of Startup and Shutdown elements.
-
-Following example illustrates this feature:
-
-::
-
-    <Monitoring>
-        <Host address="[target]">
-            <Startup>cat /dev/urandom | hexdump | awk 'BEGIN {RS="0000"} {print length($0)}' > /tmp/urandom.txt</Startup>
-            <Custom measure="tail" label="random int tail">/tmp/urandom.txt</Custom>
-            <Custom measure="call" label="random int call">tail -n1 /tmp/urandom.txt</Custom>
-            <Shutdown>rm /tmp/urandom.txt</Shutdown>
-        </Host>
-    </Monitoring>

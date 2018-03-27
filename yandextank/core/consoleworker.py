@@ -16,7 +16,8 @@ import yaml
 from pkg_resources import resource_filename
 from ..config_converter.converter import convert_ini, convert_single_option
 from .tankcore import TankCore, LockError
-from ..common.resource import manager as resource_manager
+
+from netort.resource import manager as resource_manager
 
 
 DEFAULT_CONFIG = 'load.yaml'

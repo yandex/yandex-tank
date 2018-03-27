@@ -2,7 +2,6 @@
 # FIXME: 3 there is no graceful way to interrupt the process of phout import
 # TODO: phout import
 import logging
-import multiprocessing as mp
 import subprocess
 import time
 
@@ -11,38 +10,32 @@ from .utils import PhantomConfig
 from .widget import PhantomInfoWidget, PhantomProgressBarWidget
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
-from ...common.interfaces import AbstractPlugin, AbstractCriterion, GeneratorPlugin
-from ...common.util import execute, expand_to_seconds
+from ...common.interfaces import AbstractCriterion, GeneratorPlugin
+from ...common.util import expand_to_seconds
+
+from netort.process import execute
 
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin, GeneratorPlugin):
+class Plugin(GeneratorPlugin):
     """     Plugin for running phantom tool    """
 
     OPTION_CONFIG = "config"
 
     def __init__(self, core, cfg, cfg_updater):
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
-        self.stats_reader = None
-        self.reader = None
-        self.process = None
-
+        super(Plugin, self).__init__(core, cfg, cfg_updater)
         self.predefined_phout = None
         self.did_phout_import_try = False
-
         self.eta_file = None
         self.processed_ammo_count = 0
-        self.phantom_start_time = time.time()
-        self.buffered_seconds = "2"
-        self.cpu_count = mp.cpu_count()
-
         self.cached_info = None
-        self.phantom_stderr = None
-
         self.exclude_markers = []
         self._stat_log = None
         self._phantom = None
+        self.config = None
+        self.enum_ammo = None
+        self.phout_import_mode = None
 
     @staticmethod
     def get_key():
@@ -59,6 +52,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def configure(self):
         # plugin part
         self.config = self.get_option(self.OPTION_CONFIG, '')
+        self.affinity = self.get_option('affinity', '')
         self.enum_ammo = self.get_option("enum_ammo", False)
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
@@ -71,8 +65,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 "No autostop plugin found, not adding instances criterion")
 
         self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
-        if not self.get_option(
-                self.OPTION_CONFIG, '') and self.predefined_phout:
+        if not self.get_option(self.OPTION_CONFIG, '') and self.predefined_phout:
             self.phout_import_mode = True
 
     @property
@@ -102,21 +95,19 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         return self.stats_reader
 
     def prepare_test(self):
-        args = [self.get_option("phantom_path"), 'check', self.phantom.config_file]
-
         try:
-            result = execute(args, catch_out=True)
+            retcode, stdout, stderr = execute(
+                [self.get_option("phantom_path"), 'check', self.phantom.config_file], catch_out=True
+            )
         except OSError:
-            raise RuntimeError("Phantom I/O engine is not installed!")
+            logger.debug("Phantom I/O engine is not installed!", exc_info=True)
+            raise OSError("Phantom I/O engine not found. \nMore information: {doc_url}".format(
+                doc_url='http://yandextank.readthedocs.io/en/latest/install.html')
+            )
+        else:
+            if retcode or stderr:
+                raise RuntimeError("Config check failed. Subprocess returned code %s. Stderr: %s" % (retcode, stderr))
 
-        retcode = result[0]
-        if retcode:
-            raise RuntimeError(
-                "Config check failed. Subprocess returned code %s" %
-                retcode)
-        if result[2]:
-            raise RuntimeError(
-                "Subprocess returned message: %s" % result[2])
         logger.debug(
             "Linking sample reader to aggregator."
             " Reading samples from %s", self.phantom.phout_file)
@@ -127,15 +118,13 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
         self.core.job.aggregator.add_result_listener(self)
 
-        try:
-            console = self.core.get_plugin_of_type(ConsolePlugin)
-        except Exception as ex:
-            logger.debug("Console not found: %s", ex)
-            console = None
-
         self.core.job.phantom_info = self.phantom.get_info()
 
-        if console:
+        try:
+            console = self.core.get_plugin_of_type(ConsolePlugin)
+        except KeyError:
+            logger.debug("Console not found: %s", exc_info=True)
+        else:
             widget1 = PhantomProgressBarWidget(self)
             console.add_info_widget(widget1)
             self.core.job.aggregator.add_result_listener(widget1)
@@ -146,25 +135,19 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def start_test(self):
         args = [self.get_option("phantom_path"), 'run', self.phantom.config_file]
-        logger.debug(
-            "Starting %s with arguments: %s", self.get_option("phantom_path"), args)
-        affinity = self.get_option('affinity')
-        if affinity != '':
-            args = [
-                self.core.taskset_path, '-c', affinity
-            ] + args
-            logger.debug(
-                "Enabling taskset for phantom with affinity: %s,"
-                " cores count: %d", affinity, self.cpu_count)
-        self.phantom_start_time = time.time()
+        if self.affinity:
+            logger.info('Enabled cpu affinity %s for phantom', self.affinity)
+            args = self.core.__setup_affinity(self.affinity, args=args)
+        logger.debug("Starting %s with arguments: %s", self.get_option("phantom_path"), args)
+        self.start_time = time.time()
         phantom_stderr_file = self.core.mkstemp(
             ".log", "phantom_stdout_stderr_")
         self.core.add_artifact_file(phantom_stderr_file)
-        self.phantom_stderr = open(phantom_stderr_file, 'w')
+        self.process_stderr = open(phantom_stderr_file, 'w')
         self.process = subprocess.Popen(
             args,
-            stderr=self.phantom_stderr,
-            stdout=self.phantom_stderr,
+            stderr=self.process_stderr,
+            stdout=self.process_stderr,
             close_fds=True)
 
     def is_test_finished(self):
@@ -175,22 +158,20 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         else:
             info = self.get_info()
             if info:
-                eta = int(info.duration) - (
-                    int(time.time()) - int(self.phantom_start_time))
+                eta = int(info.duration) - (int(time.time()) - int(self.start_time))
                 self.publish('eta', eta)
             return -1
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            logger.warn(
-                "Terminating phantom process with PID %s", self.process.pid)
+            logger.warn("Terminating phantom process with PID %s", self.process.pid)
             self.process.terminate()
             if self.process:
                 self.process.communicate()
         else:
             logger.debug("Seems phantom finished OK")
-        if self.phantom_stderr:
-            self.phantom_stderr.close()
+        if self.process_stderr:
+            self.process_stderr.close()
         return retcode
 
     def post_process(self, retcode):

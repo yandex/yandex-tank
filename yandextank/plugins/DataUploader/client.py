@@ -367,7 +367,6 @@ class APIClient(object):
             ammo_path,
             loop_count,
             version_tested,
-            is_regression,
             component,
             cmdline,
             is_starred,
@@ -380,7 +379,6 @@ class APIClient(object):
             'ammo': ammo_path,
             'loop': loop_count,
             'version': version_tested,
-            'regression': str(is_regression),
             'component': component,
             'tank_type': int(tank_type),
             'command_line': cmdline,
@@ -609,7 +607,7 @@ class APIClient(object):
     def send_config_snapshot(self, jobno, config, trace=False):
         logger.debug("Sending config snapshot")
         addr = "api/job/%s/configinfo.txt" % jobno
-        self.__post_raw(addr, {"configinfo": config}, trace=trace)
+        self.__post_raw(addr, {"configinfo": unicode(config)}, trace=trace)
 
     def link_mobile_job(self, lp_key, mobile_key):
         addr = "/api/job/{jobno}/edit.json".format(jobno=lp_key)
