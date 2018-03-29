@@ -37,7 +37,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget):
     def render(self, screen):
         res = ""
 
-        dur_seconds = int(time.time()) - int(self.owner.phantom_start_time)
+        dur_seconds = int(time.time()) - int(self.owner.start_time)
 
         eta_time = 'N/A'
         eta_secs = -1
