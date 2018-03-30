@@ -79,7 +79,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self.events = threading.Thread(target=self.__events_uploader)
             self.events.daemon = True
 
-
         self.retcode = -1
         self._target = None
         self.task_name = ''
