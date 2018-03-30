@@ -164,7 +164,7 @@ class Plugin(GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            logger.warn("Terminating phantom process with PID %s", self.process.pid)
+            logger.info("Terminating phantom process with PID %s", self.process.pid)
             self.process.terminate()
             if self.process:
                 self.process.communicate()

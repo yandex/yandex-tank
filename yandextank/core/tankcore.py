@@ -61,7 +61,7 @@ class Job(object):
         try:
             self.monitoring_plugin.monitoring.add_listener(plugin)
         except AttributeError:
-            logging.warning('Monitoring plugin is not enabled')
+            logging.info('Monitoring plugin is not enabled')
 
     @property
     def phantom_info(self):

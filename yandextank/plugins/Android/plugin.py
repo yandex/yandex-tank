@@ -12,7 +12,7 @@ except Exception:
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin, GeneratorPlugin):
+class Plugin(AbstractPlugin):
     SECTION = "android"
     SECTION_META = "meta"
 
