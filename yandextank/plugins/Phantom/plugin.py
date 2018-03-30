@@ -73,9 +73,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
                 "No autostop plugin found, not adding instances criterion")
 
         self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
-        if not self.get_option(
-                self.OPTION_CONFIG, '') and self.predefined_phout:
+        if not self.get_option(self.OPTION_CONFIG, '') and self.predefined_phout:
             self.phout_import_mode = True
+        self.phantom_config = self.phantom.config_file
 
     @property
     def phantom(self):
@@ -104,7 +104,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         return self.stats_reader
 
     def prepare_test(self):
-        args = [self.get_option("phantom_path"), 'check', self.phantom.config_file]
+        args = [self.get_option("phantom_path"), 'check', self.phantom_config]
 
         try:
             result = execute(args, catch_out=True)
@@ -147,7 +147,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             self.core.job.aggregator.add_result_listener(widget2)
 
     def start_test(self):
-        args = [self.get_option("phantom_path"), 'run', self.phantom.config_file]
+        args = [self.get_option("phantom_path"), 'run', self.phantom_config]
         logger.debug(
             "Starting %s with arguments: %s", self.get_option("phantom_path"), args)
         affinity = self.get_option('affinity')
