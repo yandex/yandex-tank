@@ -122,6 +122,8 @@ class TankCore(object):
         self._cfg_snapshot = None
 
         self.interrupted = False
+
+        self.error_log = None
     #
     # def get_uuid(self):
     #     return self.uuid

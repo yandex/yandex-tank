@@ -71,10 +71,14 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.data_queue = Queue()
         self.monitoring_queue = Queue()
-        self.events_queue = Queue()
-        self.events_reader = EventsReader(self.core.error_log)
-        self.events_processing = Drain(self.events_reader, self.events_queue)
-        self.events_processing.start()
+        if self.core.error_log:
+            self.events_queue = Queue()
+            self.events_reader = EventsReader(self.core.error_log)
+            self.events_processing = Drain(self.events_reader, self.events_queue)
+            self.events_processing.start()
+            self.events = threading.Thread(target=self.__events_uploader)
+            self.events.daemon = True
+
 
         self.retcode = -1
         self._target = None
@@ -91,9 +95,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
         self.monitoring = threading.Thread(target=self.__monitoring_uploader)
         self.monitoring.daemon = True
-
-        self.events = threading.Thread(target=self.__events_uploader)
-        self.events.daemon = True
 
         self._generator_info = None
         self._is_telegraf = None
@@ -278,7 +279,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.status_sender.start()
         self.upload.start()
         self.monitoring.start()
-        self.events.start()
+        if self.core.error_log:
+            self.events.start()
 
         web_link = urljoin(self.lp_job.api_client.base_url, str(self.lp_job.number))
         logger.info("Web link: %s", web_link)
@@ -306,13 +308,14 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def post_process(self, rc):
         self.monitoring_queue.put(None)
         self.data_queue.put(None)
-        self.events_queue.put(None)
-        self.events_reader.close()
-        self.events_processing.close()
+        if self.core.error_log:
+            self.events_queue.put(None)
+            self.events_reader.close()
+            self.events_processing.close()
+            self.events.join()
         logger.info("Waiting for sender threads to join.")
         self.monitoring.join()
         self.upload.join()
-        self.events.join()
         self.finished = True
         try:
             self.lp_job.close(rc)
