@@ -366,10 +366,6 @@ DataUploader
 :nullable:
  True
 
-``regress`` (boolean)
----------------------
-*\- mark test as regression. Default:* ``False``
-
 ``send_status_period`` (integer)
 --------------------------------
 *\- delay between status notifications. Default:* ``10``
@@ -453,6 +449,13 @@ Influx
 JMeter
 ======
 
+``affinity`` (string)
+---------------------
+*\- Use to set CPU affinity. Default:* ``""``
+
+:nullable:
+ True
+
 ``args`` (string)
 -----------------
 *\- additional commandline arguments for JMeter. Default:* ``""``
@@ -523,6 +526,13 @@ JsonReport
 
 Pandora
 =======
+
+``affinity`` (string)
+---------------------
+*\- Use to set CPU affinity. Default:* ``""``
+
+:nullable:
+ True
 
 ``buffered_seconds`` (integer)
 ------------------------------
