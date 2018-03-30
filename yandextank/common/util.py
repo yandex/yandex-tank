@@ -1,47 +1,20 @@
-'''
-Common utilities
-'''
 import collections
 import os
 import pwd
 import socket
-import threading as th
 import traceback
-
 import http.client
 import logging
 import errno
 import itertools
 import re
 import select
-import shlex
 import psutil
-import subprocess
 import argparse
+
 from paramiko import SSHClient, AutoAddPolicy
 
 logger = logging.getLogger(__name__)
-
-
-class Drain(th.Thread):
-    """
-    Drain a generator to a destination that answers to put(), in a thread
-    """
-
-    def __init__(self, source, destination):
-        super(Drain, self).__init__()
-        self.source = source
-        self.destination = destination
-        self._interrupted = th.Event()
-
-    def run(self):
-        for item in self.source:
-            self.destination.put(item)
-            if self._interrupted.is_set():
-                break
-
-    def close(self):
-        self._interrupted.set()
 
 
 class SecuredShell(object):
@@ -450,40 +423,6 @@ def pid_exists(pid):
         return p.status != psutil.STATUS_ZOMBIE
 
 
-def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
-    """
-    Wrapper for Popen
-    """
-    log = logging.getLogger(__name__)
-    log.debug("Starting: %s", cmd)
-
-    stdout = ""
-    stderr = ""
-
-    if not shell and isinstance(cmd, basestring):
-        cmd = shlex.split(cmd)
-
-    if catch_out:
-        process = subprocess.Popen(
-            cmd,
-            shell=shell,
-            stderr=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            close_fds=True)
-    else:
-        process = subprocess.Popen(cmd, shell=shell, close_fds=True)
-
-    stdout, stderr = process.communicate()
-    if stderr:
-        log.error("There were errors:\n%s", stderr)
-
-    if stdout:
-        log.debug("Process output:\n%s", stdout)
-    returncode = process.returncode
-    log.debug("Process exit code: %s", returncode)
-    return returncode, stdout, stderr
-
-
 def splitstring(string):
     """
     >>> string = 'apple orange "banana tree" green'
@@ -532,16 +471,36 @@ class AddressWizard:
 
         port = None
 
-        braceport_pat = "^\[([^]]+)\]:(\d+)$"
-        braceonly_pat = "^\[([^]]+)\]$"
-        if re.match(braceport_pat, address_str):
+        braceport_re = re.compile(r"""
+            ^
+            \[           # opening brace
+            \s?          # space sym?
+            (\S+)        # address - string
+            \s?          # space sym?
+            \]           # closing brace
+            :            # port separator
+            \s?          # space sym?
+            (\d+)        # port
+            $
+        """, re.X)
+        braceonly_re = re.compile(r"""
+            ^
+            \[           # opening brace
+            \s?          # space sym?
+            (\S+)        # address - string
+            \s?          # space sym?
+            \]           # closing brace
+            $
+        """, re.X)
+
+        if braceport_re.match(address_str):
             logger.debug("Braces and port present")
-            match = re.match(braceport_pat, address_str)
+            match = braceport_re.match(address_str)
             logger.debug("Match: %s %s ", match.group(1), match.group(2))
             address_str, port = match.group(1), match.group(2)
-        elif re.match(braceonly_pat, address_str):
+        elif braceonly_re.match(address_str):
             logger.debug("Braces only present")
-            match = re.match(braceonly_pat, address_str)
+            match = braceonly_re.match(address_str)
             logger.debug("Match: %s", match.group(1))
             address_str = match.group(1)
         else:
@@ -556,12 +515,9 @@ class AddressWizard:
         try:
             resolved = self.lookup_fn(address_str, port)
             logger.debug("Lookup result: %s", resolved)
-        except Exception as exc:
-            logger.debug(
-                "Exception trying to resolve hostname %s : %s", address_str,
-                traceback.format_exc(exc))
-            msg = "Failed to resolve hostname: %s. Error: %s"
-            raise RuntimeError(msg % (address_str, exc))
+        except Exception:
+            logger.debug("Exception trying to resolve hostname %s : %s", address_str, exc_info=True)
+            raise
 
         for (family, socktype, proto, canonname, sockaddr) in resolved:
             is_v6 = family == socket.AF_INET6
@@ -577,13 +533,12 @@ class AddressWizard:
 
             if do_test:
                 try:
+                    logger.info("Testing connection to resolved address %s and port %s", parsed_ip, port)
                     self.__test(family, (parsed_ip, port))
-                except RuntimeError as exc:
-                    logger.warn(
-                        "Failed TCP connection test using [%s]:%s", parsed_ip,
-                        port)
+                except RuntimeError:
+                    logger.info("Failed TCP connection test using [%s]:%s", parsed_ip, port)
+                    logger.debug("Failed TCP connection test using [%s]:%s", parsed_ip, port, exc_info=True)
                     continue
-
             return is_v6, parsed_ip, int(port), address_str
 
         msg = "All connection attempts failed for %s, use {phantom.connection_test: false} to disable it"
@@ -602,16 +557,6 @@ class AddressWizard:
             raise RuntimeError(msg % (sa[0], sa[1]))
         finally:
             test_sock.close()
-
-
-class Chopper(object):
-    def __init__(self, source):
-        self.source = source
-
-    def __iter__(self):
-        for chunk in self.source:
-            for item in chunk:
-                yield item
 
 
 def recursive_dict_update(d1, d2):

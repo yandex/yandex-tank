@@ -130,9 +130,8 @@ class PhantomConfig:
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
 
-        handle = open(filename, 'w')
-        handle.write(config)
-        handle.close()
+        with open(filename, 'w') as conffile:
+            conffile.write(config)
         return filename
 
     def set_timeout(self, timeout):
@@ -356,7 +355,7 @@ class StreamConfig:
             fname = 'phantom_benchmark_main.tpl'
         else:
             fname = 'phantom_benchmark_additional.tpl'
-        template_str = template_str = resource_string(
+        template_str = resource_string(
             __name__, "config/" + fname)
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)

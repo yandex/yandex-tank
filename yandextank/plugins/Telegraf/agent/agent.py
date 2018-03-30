@@ -318,7 +318,8 @@ class AgentWorker(threading.Thread):
         self.drain_err.close()
         self.stop()
 
-    def proc_stop(self, proc, kill=False):
+    @staticmethod
+    def proc_stop(proc, kill=False):
         proc.poll()
         if proc.returncode is None:
             try:

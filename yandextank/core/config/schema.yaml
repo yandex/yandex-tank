@@ -3,7 +3,7 @@ core:
   allow_unknown: false
   schema:
     affinity:
-      description: specify cpu core(s) to bind tank process to
+      description: specify cpu core(s) to bind tank process to,  http://linuxhowtos.org/manpages/1/taskset.htm
       type: string
       default: ''
     api_jobno:
