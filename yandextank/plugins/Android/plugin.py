@@ -2,7 +2,7 @@ import logging
 
 from ..DataUploader import Plugin as DataUploaderPlugin
 from .reader import AndroidReader, AndroidStatsReader
-from ...common.interfaces import AbstractPlugin, GeneratorPlugin
+from ...common.interfaces import AbstractPlugin
 
 try:
     from volta.core.core import Core as VoltaCore
