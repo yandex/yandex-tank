@@ -121,7 +121,6 @@ class StepperWrapper(object):
         self.headers = []
         self.autocases = 0
         self.enum_ammo = False
-        self.use_caching = True
         self.force_stepping = None
         self.chosen_cases = []
 
@@ -314,6 +313,7 @@ class StepperWrapper(object):
             autocases=self.autocases,
             enum_ammo=self.enum_ammo,
             ammo_type=self.ammo_type,
-            chosen_cases=self.chosen_cases, )
+            chosen_cases=self.chosen_cases,
+            use_cache=self.use_caching)
         with open(self.stpd, 'w', self.file_cache) as os:
             stepper.write(os)
