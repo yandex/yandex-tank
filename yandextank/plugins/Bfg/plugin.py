@@ -8,20 +8,18 @@ from .reader import BfgReader, BfgStatsReader
 from .widgets import BfgInfoWidget
 from .worker import BFGMultiprocessing, BFGGreen
 from ..Console import Plugin as ConsolePlugin
-from ...common.interfaces import AbstractPlugin, GeneratorPlugin
+from ...common.interfaces import GeneratorPlugin
 from ...stepper import StepperWrapper
 
 
-class Plugin(AbstractPlugin, GeneratorPlugin):
-    ''' Big Fucking Gun plugin '''
+class Plugin(GeneratorPlugin):
+    """ Big Fucking Gun plugin """
     SECTION = 'bfg'
 
     def __init__(self, core, cfg, cfg_updater):
+        super(Plugin, self).__init__(core, cfg, cfg_updater)
         self._bfg = None
-        self.reader = None
-        self.stats_reader = None
         self.log = logging.getLogger(__name__)
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
         self.gun_type = None
         self.start_time = time.time()
         self.stepper_wrapper = StepperWrapper(core, cfg)
@@ -43,7 +41,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def get_available_options(self):
         return [
             "gun_type", "instances", "cached_stpd", "pip"
-        ] + self.stepper_wrapper.get_available_options
+        ]
 
     def configure(self):
         self.log.info("Configuring BFG...")

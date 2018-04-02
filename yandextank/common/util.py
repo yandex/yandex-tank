@@ -515,12 +515,9 @@ class AddressWizard:
         try:
             resolved = self.lookup_fn(address_str, port)
             logger.debug("Lookup result: %s", resolved)
-        except Exception as exc:
-            logger.debug(
-                "Exception trying to resolve hostname %s : %s", address_str,
-                traceback.format_exc(exc))
-            msg = "Failed to resolve hostname: %s. Error: %s"
-            raise RuntimeError(msg % (address_str, exc))
+        except Exception:
+            logger.debug("Exception trying to resolve hostname %s : %s", address_str, exc_info=True)
+            raise
 
         for (family, socktype, proto, canonname, sockaddr) in resolved:
             is_v6 = family == socket.AF_INET6
@@ -536,13 +533,12 @@ class AddressWizard:
 
             if do_test:
                 try:
+                    logger.info("Testing connection to resolved address %s and port %s", parsed_ip, port)
                     self.__test(family, (parsed_ip, port))
-                except RuntimeError as exc:
-                    logger.warn(
-                        "Failed TCP connection test using [%s]:%s", parsed_ip,
-                        port)
+                except RuntimeError:
+                    logger.info("Failed TCP connection test using [%s]:%s", parsed_ip, port)
+                    logger.debug("Failed TCP connection test using [%s]:%s", parsed_ip, port, exc_info=True)
                     continue
-
             return is_v6, parsed_ip, int(port), address_str
 
         msg = "All connection attempts failed for %s, use {phantom.connection_test: false} to disable it"

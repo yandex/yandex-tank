@@ -13,13 +13,13 @@ from pkg_resources import resource_string
 from .reader import JMeterReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
-from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget, GeneratorPlugin
+from ...common.interfaces import AggregateResultListener, AbstractInfoWidget, GeneratorPlugin
 from ...common.util import splitstring
 
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin, GeneratorPlugin):
+class Plugin(GeneratorPlugin):
     """ JMeter tank plugin """
     SECTION = 'jmeter'
     SHUTDOWN_TEST = 'Shutdown'
@@ -27,10 +27,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     DISCOVER_PORT_PATTERN = 'Waiting for possible shutdown message on port (?P<port>\d+)'
 
     def __init__(self, core, cfg, cfg_updater):
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
-        self.stats_reader = None
-        self.reader = None
-        self.jmeter_process = None
+        super(Plugin, self).__init__(core, cfg, cfg_updater)
         self.args = None
         self.original_jmx = None
         self.jtl_file = None
@@ -72,7 +69,6 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             self.ext_log_file = self.core.mkstemp('.jtl', 'jmeter_ext_')
             self.core.add_artifact_file(self.ext_log_file)
 
-        self.jmeter_buffer_size = self.get_option('buffer_size', self.get_option('buffered_seconds', '3'))
         self.core.add_artifact_file(self.jmeter_log, True)
         self.exclude_markers = set(self.get_option('exclude_markers', []))
         self.jmx = self.__add_jmeter_components(
@@ -81,8 +77,10 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
         jmeter_stderr_file = self.core.mkstemp(".log", "jmeter_stdout_stderr_")
         self.core.add_artifact_file(jmeter_stderr_file)
-        self.jmeter_stderr = open(jmeter_stderr_file, 'w')
+        self.process_stderr = open(jmeter_stderr_file, 'w')
         self.shutdown_timeout = self.get_option('shutdown_timeout', 3)
+
+        self.affinity = self.get_option('affinity', '')
 
     def get_reader(self):
         if self.reader is None:
@@ -102,6 +100,9 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         ]
         self.args += splitstring(self.user_args)
 
+        if self.affinity:
+            self.core.__setup_affinity(self.affinity, args=self.args)
+
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
         except Exception as ex:
@@ -117,13 +118,13 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         logger.info(
             "Starting %s with arguments: %s", self.jmeter_path, self.args)
         try:
-            self.jmeter_process = subprocess.Popen(
+            self.process = subprocess.Popen(
                 self.args,
                 executable=self.jmeter_path,
                 preexec_fn=os.setsid,
                 close_fds=True,
-                stdout=self.jmeter_stderr,
-                stderr=self.jmeter_stderr)
+                stdout=self.process_stderr,
+                stderr=self.process_stderr)
         except OSError:
             logger.debug(
                 "Unable to start JMeter process. Args: %s, Executable: %s",
@@ -137,7 +138,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         self.jmeter_udp_port = self.__discover_jmeter_udp_port()
 
     def is_test_finished(self):
-        retcode = self.jmeter_process.poll()
+        retcode = self.process.poll()
         aggregator = self.core.job.aggregator
         if not aggregator.reader.jmeter_finished and retcode is not None:
             logger.info(
@@ -156,12 +157,12 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
             return -1
 
     def end_test(self, retcode):
-        if self.jmeter_process:
+        if self.process:
             gracefully_shutdown = self.__graceful_shutdown()
             if not gracefully_shutdown:
                 self.__kill_jmeter()
-        if self.jmeter_stderr:
-            self.jmeter_stderr.close()
+        if self.process_stderr:
+            self.process_stderr.close()
         self.core.add_artifact_file(self.jmeter_log)
         return retcode
 
@@ -172,7 +173,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         r = re.compile(self.DISCOVER_PORT_PATTERN)
         with open(self.jmeter_log) as f:
             cnt = 0
-            while self.jmeter_process.pid and cnt < 10:
+            while self.process.pid and cnt < 10:
                 line = f.readline()
                 m = r.match(line)
                 if m is None:
@@ -188,12 +189,12 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
     def __kill_jmeter(self):
         logger.info(
             "Terminating jmeter process group with PID %s",
-            self.jmeter_process.pid)
+            self.process.pid)
         try:
-            os.killpg(self.jmeter_process.pid, signal.SIGTERM)
+            os.killpg(self.process.pid, signal.SIGTERM)
         except OSError as exc:
             logger.debug("Seems JMeter exited itself: %s", exc)
-            # Utils.log_stdout_stderr(logger, self.jmeter_process.stdout, self.jmeter_process.stderr, "jmeter")
+            # Utils.log_stdout_stderr(logger, self.process.stdout, self.process.stderr, "jmeter")
 
     def __add_jmeter_components(self, jmx, jtl, variables):
         """ Genius idea by Alexey Lavrenyuk """
@@ -267,7 +268,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         shutdown_test_started = time.time()
         while time.time() - shutdown_test_started < self.shutdown_timeout:
             self.__send_udp_message(self.SHUTDOWN_TEST)
-            if self.jmeter_process.poll() is not None:
+            if self.process.poll() is not None:
                 return True
             else:
                 time.sleep(1)
@@ -276,7 +277,7 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
         stop_test_started = time.time()
         while time.time() - stop_test_started < self.shutdown_timeout:
             self.__send_udp_message(self.STOP_TEST_NOW)
-            if self.jmeter_process.poll() is not None:
+            if self.process.poll() is not None:
                 return True
             else:
                 time.sleep(1)

@@ -19,6 +19,7 @@ class AbstractPlugin(object):
 
         @type core: TankCore
         """
+        super(AbstractPlugin, self).__init__()
         self.log = logging.getLogger(__name__)
         self.core = core
         self.cfg = cfg
@@ -118,21 +119,24 @@ class AggregateResultListener(object):
         data and stats are cached and synchronized by timestamp. Stat items
         are holded until corresponding data item is received and vice versa.
         """
-        raise NotImplementedError("Abstract method needs to be overridden")
+        raise NotImplementedError("Abstract method should be overridden")
 
 
 class AbstractInfoWidget(object):
-    ''' InfoWidgets interface
-    parent class for all InfoWidgets'''
+    """ InfoWidgets interface
+    parent class for all InfoWidgets"""
 
     def __init__(self):
         pass
 
     def render(self, screen):
-        raise NotImplementedError("Abstract method needs to be overridden")
+        raise NotImplementedError("Abstract method should be overridden")
+
+    def on_aggregated_data(self, data, stats):
+        raise NotImplementedError("Abstract method should be overridden")
 
     def get_index(self):
-        ''' get vertical priority index '''
+        """ get vertical priority index """
         return 0
 
 
@@ -178,7 +182,7 @@ class AbstractCriterion(object):
         raise NotImplementedError("Abstract methods requires overriding")
 
 
-class GeneratorPlugin(object):
+class GeneratorPlugin(AbstractPlugin):
     DEFAULT_INFO = {
         'address': '',
         'port': 80,
@@ -188,6 +192,16 @@ class GeneratorPlugin(object):
         'duration': 0,
         'loop_count': 0
     }
+
+    def __init__(self, core, cfg, cfg_updater):
+        super(GeneratorPlugin, self).__init__(core, cfg, cfg_updater)
+        self.stats_reader = None
+        self.reader = None
+        self.process = None
+        self.process_stderr = None
+        self.start_time = None
+        self.affinity = None
+        self.buffered_seconds = 2
 
     class Info(object):
         def __init__(

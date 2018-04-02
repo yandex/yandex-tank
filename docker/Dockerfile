@@ -28,6 +28,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         telnet   \
         atop     \
         openssh-client \
+        git            \
         python-pip  && \
     add-apt-repository ppa:yandex-load/main -y && \
     apt-get update -q && \
