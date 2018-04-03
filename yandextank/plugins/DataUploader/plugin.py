@@ -406,8 +406,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def __uploader(self, queue, sender_method, name='Uploader'):
         logger.info('{} thread started'.format(name))
-        lp_job = self.lp_job
-        while lp_job.is_alive:
+        while self.lp_job.is_alive:
             try:
                 entry = queue.get(timeout=1)
                 if entry is None:
@@ -423,7 +422,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
                 logger.warn('Failed to push {} data'.format(name))
                 logger.warn(e.message)
-                break
+                self.lp_job.is_alive = False
             except Exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 logger.info("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
