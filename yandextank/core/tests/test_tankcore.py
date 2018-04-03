@@ -41,7 +41,7 @@ CFG1 = {
     'phantom': {
         'package': 'yandextank.plugins.Phantom',
         'enabled': True,
-        'address': 'lunapark.test.yandex-team.ru',
+        'address': 'lunapark.yandex-team.ru',
         'header_http': '1.1',
         'uris': ['/'],
         'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
