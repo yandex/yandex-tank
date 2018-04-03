@@ -398,7 +398,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 break
             except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
-                lp_job.is_alive = False
                 self.retcode = 8
                 break
             if self.finished:
@@ -419,7 +418,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 continue
             except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
-                lp_job.is_alive = False
                 self.retcode = 8
                 break
             except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
