@@ -556,6 +556,35 @@ class APIClient(object):
                     except StopIteration:
                         raise e
 
+    def push_events_data(self, jobno, operator, send_data):
+        if send_data:
+            # logger.info('send data: %s', send_data)
+            for key in send_data:
+                addr = "/api/job/{jobno}/event.json".format(
+                    jobno=jobno,
+                )
+                body = dict(
+                    operator=operator,
+                    text=key[1],
+                    timestamp=key[0]
+                )
+                api_timeouts = self.api_timeouts()
+                while True:
+                    try:
+                        # logger.debug('Sending event: %s', body)
+                        res = self.__post_raw(addr, body)
+                        logger.debug("API response for events push: %s", res)
+                        success = res == 'ok'
+                        return success
+                    except self.NotAvailable as e:
+                        try:
+                            timeout = next(api_timeouts)
+                            logger.warn("API error, will retry in %ss...", timeout)
+                            time.sleep(timeout)
+                            continue
+                        except StopIteration:
+                            raise e
+
     def send_status(self, jobno, upload_token, status, trace=False):
         addr = "api/v2/jobs/%s/?upload_token=%s" % (jobno, upload_token)
         status_line = status.get("core", {}).get("stage", "unknown")
@@ -630,4 +659,7 @@ class OverloadClient(APIClient):
         return
 
     def link_mobile_job(self, lp_key, mobile_key):
+        return
+
+    def push_events_data(self, number, token, data):
         return

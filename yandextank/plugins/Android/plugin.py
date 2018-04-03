@@ -2,7 +2,7 @@ import logging
 
 from ..DataUploader import Plugin as DataUploaderPlugin
 from .reader import AndroidReader, AndroidStatsReader
-from ...common.interfaces import AbstractPlugin, GeneratorPlugin
+from ...common.interfaces import AbstractPlugin
 
 try:
     from volta.core.core import Core as VoltaCore
@@ -12,7 +12,7 @@ except Exception:
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin, GeneratorPlugin):
+class Plugin(AbstractPlugin):
     SECTION = "android"
     SECTION_META = "meta"
 
