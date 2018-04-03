@@ -29,7 +29,7 @@ Basic options:
 :lock_dir:
   Directory for lockfile.
 
-  Default: ``/var/lock/``. 
+  Default: ``/var/lock/``.
 
 :plugin_<pluginname>:
   Path to plugin. Empty path interpreted as disable of plugin.
@@ -40,7 +40,7 @@ Basic options:
   Default: current directory.
 
 :artifacts_dir:
-  Directory where to keep artifacts after test. 
+  Directory where to keep artifacts after test.
 
   Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
 
@@ -54,7 +54,7 @@ Basic options:
   Default: taskset.
 
 :affinity:
-  Set a yandex-tank's (python process and load generator process) CPU affinity. 
+  Set a yandex-tank's (python process and load generator process) CPU affinity.
 
   Default: empty.
 
@@ -164,7 +164,7 @@ Basic options
 ^^^^^^^^^^^^^
 
 :ammofile:
-  Ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped). 
+  Ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped).
 
 :load_profile:
   Load profile behaviour. Specify load_type (``rps``, schedule load by defining requests per second or ``instances``
@@ -172,11 +172,11 @@ Basic options
 
   .. code-block:: yaml
 
-  phantom:
-    address: [hostname]:port
-    load_profile:
-      load_type: rps #
-      schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
+    phantom:
+      address: [hostname]:port
+      load_profile:
+        load_type: rps #
+        schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
 
 :instances:
   Max number of instances (concurrent requests).
@@ -208,33 +208,33 @@ Additional options
 ^^^^^^^^^^^^^^^^^^
 
 :writelog:
-  Enable verbose request/response logging. 
+  Enable verbose request/response logging.
 
   Default: 0.
 
   Available options: 0 - disable, all - all messages, proto_warning - 4хх+5хх+network errors, proto_error - 5хх+network errors.
 
 :ssl:
-  Enable SSL. 
+  Enable SSL.
 
-  Default: 0. 
+  Default: 0.
 
   Available options: 1 - enable, 0 - disable.
 
 :timeout:
-  Response timeout. 
-  
+  Response timeout.
+
   Default: ``11s``.
   
 .. note::
   Default multiplier is ``seconds``. If you specify ``10``, timeout will be 10 seconds.
   Currently we support here multipliers: 'd' for days, 'h' for hours, 'm' for minutes, 's' for seconds
-  Examples:  
+  Examples:
   ``0.1s`` is 100 milliseconds.
   ``1m`` for 1 minute.
 
 :address:
-  Address of target. 
+  Address of target.
 
   Default: ``127.0.0.1``.
 
@@ -252,7 +252,7 @@ Additional options
   Path to ETA file.
 
 :connection_test:
-  Test TCP socket connection before starting the test. 
+  Test TCP socket connection before starting the test.
 
   Default: 1.
 
@@ -262,7 +262,7 @@ URI-style options
 ^^^^^^^^^^^^^^^^^
 
 :uris:
-  URI list, multiline option. 
+  URI list, multiline option.
 :headers:
   HTTP headers list in the following form: `[Header: value]`.
 :header\_http:
@@ -306,13 +306,13 @@ Advanced options
   Default: ``/usr/lib/phantom``.
 
 :config:
-  Use given (in this option) config file for phantom instead of generated. 
+  Use given (in this option) config file for phantom instead of generated.
 
 :phout_file:
   Import this phout instead of launching phantom (import phantom results).
 
 :stpd_file:
-  Use this stpd-file instead of generated. 
+  Use this stpd-file instead of generated.
 
 :threads:
   Phantom thread count.
@@ -323,7 +323,7 @@ Advanced options
   Amount of seconds to which delay aggregator, to be sure that everything were read from phout.
 
 :additional_libs:
-  List separated by whitespaces, will be added to phantom config file in section ``module_setup`` 
+  List separated by whitespaces, will be added to phantom config file in section ``module_setup``
 
 :method_prefix:
   Object's type, that has a functionality to create test requests.
@@ -341,7 +341,7 @@ Advanced options
   Default: empty.
 
 :affinity:
-  Set a phantom's CPU affinity. 
+  Set a phantom's CPU affinity.
 
   Example: ``0-3`` enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
@@ -391,7 +391,7 @@ Phantom http-module tuning options
   Default: ``8K``.
 
 :phantom_http_entity:
-  Answer ``size``. 
+  Answer ``size``.
   
   Default: ``8M``.
  
@@ -684,7 +684,7 @@ yaml file section: **bfg**
   An initialization parameter that will be passed to your ``setup`` method.
 
 :other common stepper options:
-  
+
 
 Ultimate Gun Options
 --------------------
@@ -743,51 +743,43 @@ First of all you'll need to obtain a binary of pandora and place it somewhere on
 By default, Yandex.Tank will try to just run ``pandora`` (or you could specify a path to binary in ``pandora_cmd``).
 Disable phantom first (unless you really want to keep it active alongside at your own risk), enable Pandora plugin and then specify the parameters.
 
-::
+.. code-block:: yaml
 
-    [tank]
-    ; Disable phantom:
-    plugin_phantom=
-    ; Enable Pandora instead:
-    plugin_pandora=yandextank.plugins.Pandora
-            
-    ; Pandora config section:
-    [pandora]
+  # load.yaml
 
-    ; Pandora executable path
-    pandora_cmd=/usr/bin/pandora
+  phantom:
+    enabled: false
+  pandora:
+    package: yandextank.plugins.Pandora
+    enabled: true
+    pandora_cmd: /usr/bin/pandora # Pandora executable path
+    config_file: pandora_config.yml # Pandora config path
 
-    ; Enable/disable expvar monitoring
-    expvar = 1 ; default
+.. code-block:: yaml
 
-    ; Pandora config contents (json)
-    config_content = {
-      "pools": [
-      {
+  # pandora_config.yml
+
+      pools: [{
         "name": "dummy pool",
         "gun": {"type": "log"},
         "ammo": {
           "type": "dummy/log",
           "AmmoLimit": 10000000
-        },
+          },
         "result": {
           "type": "phout",
           "destination": "./phout.log"
-        },
+          },
         "shared-limits": false,
-        "user-limiter": {
-          "type": "unlimited"
-        },
+        "user-limiter": {"type": "unlimited"},
         "startup-limiter": {
           "type": "periodic",
           "batch": 1,
           "max": 5,
           "period": "0.5s"
+          }
         }
-      }]}
-
-    ; OR config file (yaml or json)
-    config_file = pandora_config.yml
+      ]
 
 Schedules
 ---------
@@ -894,29 +886,29 @@ Basic criteria types
 ^^^^^^^^^^^^^^^^^^^^
 
 :time:
-  Stop the test if average response time is higher then allowed. 
+  Stop the test if average response time is higher then allowed.
 
-  Example: ``time(1s500ms, 30s) time(50,15)``. 
+  Example: ``time(1s500ms, 30s) time(50,15)``.
 
   Exit code - 21
 
 :http:
-  Stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value. 
+  Stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value.
 
-  Examples: ``http(404,10,15) http(5xx, 10%, 1m)``. 
+  Examples: ``http(404,10,15) http(5xx, 10%, 1m)``.
   Exit code - 22
 
 :net:
-  Like ``http``, but for network codes. Use ``xx`` for all non-zero codes. 
+  Like ``http``, but for network codes. Use ``xx`` for all non-zero codes.
 
   Exit code - 23
 
 :quantile: 
-  Stop the test if the specified percentile is larger then specified level for as long as the time period specified. 
+  Stop the test if the specified percentile is larger then specified level for as long as the time period specified.
 
-  Available percentile values: 25, 50, 75, 80, 90, 95, 98, 99, 100. 
+  Available percentile values: 25, 50, 75, 80, 90, 95, 98, 99, 100.
 
-  Example: ``quantile (95,100ms,10s)`` 
+  Example: ``quantile (95,100ms,10s)``
 
 :instances: 
   Available when phantom module is included. Stop the test if instance count is larger then specified value. 
@@ -926,23 +918,23 @@ Basic criteria types
   Exit code - 24
 
 :metric_lower and metric_higher: 
-  Stop test if monitored metrics are lower/higher than specified for time period. 
+  Stop test if monitored metrics are lower/higher than specified for time period.
 
-  Example: metric_lower(127.0.0.1,Memory_free,500,10). 
+  Example: metric_lower(127.0.0.1,Memory_free,500,10).
 
-  Exit code - 31 and 32 
+  Exit code - 31 and 32
 
   **Note**: metric names (except customs) are written with underline. For hostnames masks are allowed (i.e target-\*.load.net)
 
 :steady_cumulative:
-  Stops the test if cumulative percentiles does not change for specified interval. 
+  Stops the test if cumulative percentiles does not change for specified interval.
 
-  Example: ``steady_cumulative(1m)``. 
+  Example: ``steady_cumulative(1m)``.
 
   Exit code - 33
 
 :limit:
-  Will stop test after specified period of time. 
+  Will stop test after specified period of time.
 
   Example: ``limit(1m)``.
 
@@ -954,35 +946,35 @@ Advanced criteria types
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 :total_time:
-  Like ``time``, but accumulate for all time period (responses that fit may not be one-after-another, but only lay into specified time period). 
+  Like ``time``, but accumulate for all time period (responses that fit may not be one-after-another, but only lay into specified time period).
 
   Example: ``total_time(300ms, 70%, 3s)``. 
 
   Exit code - 25
 
 :total_http: 
-  Like ``http``, but accumulated. See ``total_time``. 
+  Like ``http``, but accumulated. See ``total_time``.
 
-  Example: ``total_http(5xx,10%,10s) total_http(3xx,40%,10s)``.  
+  Example: ``total_http(5xx,10%,10s) total_http(3xx,40%,10s)``.
 
   Exit code - 26
 
 :total_net: 
-  Like ``net``, but accumulated. See ``total_time``. 
+  Like ``net``, but accumulated. See ``total_time``.
 
-  Example: ``total_net(79,10%,10s) total_net(11x,50%,15s)``  
+  Example: ``total_net(79,10%,10s) total_net(11x,50%,15s)``
 
   Exit code - 27
 
 :negative_http: 
-  Inversed ``total_http``. Stop if there are not enough responses that fit the specified mask. Use to be shure that server responds 200. 
+  Inversed ``total_http``. Stop if there are not enough responses that fit the specified mask. Use to be shure that server responds 200.
 
   Example: ``negative_http(2xx,10%,10s)``. 
 
   Exit code - 28
 
 :negative_net: 
-  Inversed ``total_net``. Stop if there are not enough responses that fit the specified mask. 
+  Inversed ``total_net``. Stop if there are not enough responses that fit the specified mask.
 
   Example: ``negative_net(0,10%,10s)``. 
 
@@ -993,7 +985,7 @@ Advanced criteria types
   Trend is a sum of an average coefficient for linear functions calculated for each pair points in last
   n seconds and standart deviation for it
 
-  Example: http_trend(2xx,10s). 
+  Example: http_trend(2xx,10s).
 
   Exit code - 30
 
@@ -1003,20 +995,22 @@ Telegraf
 Runs metrics collection through SSH connection. You can debug your SSH connection using ``yandex-tank-check-ssh`` tool.
 It is supplied with Yandex.Tank.
 
-Thanks to https://github.com/influxdata/telegraf for metric collection agent.
+Credits to https://github.com/influxdata/telegraf for metric collection agent.
 
-For using this plugin, replace old plugin ``plugin_monitoring=yandextank.plugins.Monitoring`` in .ini file with this:
-::
+.. code-block:: yaml
 
-    [tank]
-    plugin_telegraf=yandextank.plugins.Telegraf
-    
-In https://github.com/yandex/yandex-tank/blob/master/yandextank/core/config/00-base.ini it is already done. Please, don't use both ``plugin_monitoring=yandextank.plugins.Telegraf`` and ``plugin_monitoring=yandextank.plugins.Monitoring`` simultaneously.
+  # load.yaml
+  # ...
+  telegraf:
+    enabled: true
+    package: yandextank.plugins.Telegraf
 
-INI file section: **[telegraf]**
+In https://github.com/yandex/yandex-tank/blob/master/yandextank/core/config/00-base.yaml it is already done. Please, don't use both ``yandextank.plugins.Telegraf`` and ``yandextank.plugins.Monitoring`` simultaneously.
 
-You can use old monitoring config format, if you specify it in [monitoring] section. Telegraf plugin transparently supports it.
-You can use new monitoring config format, if you specify it in [telegraf] section.
+Config file section: **telegraf**
+
+You can use old monitoring config format, if you specify it in **monitoring** section. Telegraf plugin transparently supports it.
+You can use new monitoring config format, if you specify it in **telegraf** section.
 
 Backward compatibility logic:
 
@@ -1169,7 +1163,7 @@ List of metrics group names and particular metrics in them:
     * diff - default: 0
     * measure - default: call - metric value is a command or script execution output. Example: `<Custom measure="call" diff="1" label="Base size">du -s /var/lib/mysql/ | awk '{print $1}'</Custom>`
 * TelegrafRaw
-    * raw telegraf TOML format, transparently added to final collector config 
+    * raw telegraf TOML format, transparently added to final collector config
 * Source
     * additional source file in telegraf json format, can be used to add custom metrics that needs complex processing and do not fit into standart custom metrics (like log parsing with aggregation). Custom metrics do not include timestamps but source does. You can import async data with Source.
 
@@ -1188,7 +1182,7 @@ Console on-line screen
 
 Shows usefull information in console while running the test
 
-INI file section: **[console]**
+Config file section: **console**
 
 Options
 -------
@@ -1203,7 +1197,7 @@ Options
 
   Default: 33
 
-:disable_all_colors: 
+:disable_all_colors:
   Switch off color scheme
 
   Available options: 0/1
@@ -1218,20 +1212,7 @@ Aggregator
 
 The aggregator module is responsible for aggregation of data received
 from different kind of modules and transmitting that aggregated data to
-consumer modules (Console screen module is an example of such kind). 
-
-INI file section: **[aggregator]** 
- 
-Options
--------
- 
-:verbose_histogram:  
-  Controls the accuracy of cumulative percentile.  
-  
-  Available options: 0/1.
-
-  Default: ``0``. 
-
+consumer modules.
 
 ShellExec
 =========
@@ -1240,15 +1221,22 @@ The ShellExec module executes the shell-scripts (hooks) on different
 stages of test, for example, you could start/stop some services just
 before/after the test. Every hook must return 0 as an exit code or the
 test is terminated. Hook's stdout will be written to DEBUG, stderr will
-be WARNINGs. 
+be WARNINGs.
 
-Example: ``[shellexec] start=/bin/ls -l``. 
+Example:
+
+.. code-block:: yaml
+
+  # load.yaml
+  # ...
+  shellexec:
+    start: /bin/ls -l
 
 .. note::
- 
+
    Command quoting is not needed. That line doesn't work: ``start="/bin/ls -l"``
 
-INI file section: **[shellexec]**
+Config file section: **shellexec**
 
 Options
 -------
@@ -1280,17 +1268,17 @@ Options
 -------
 
 :interval:
-  How often to check resources. 
+  How often to check resources.
 
   Default interval: ``10s``
 
 :disk_limit:
-  Minimum free disk space in MB. 
+  Minimum free disk space in MB.
 
   Default: ``2GB``
 
 :mem_limit: 
-  Minimum free memory amount in MB. 
+  Minimum free memory amount in MB.
 
   Default: ``512MB``
 
@@ -1306,11 +1294,11 @@ Options
 -------
 
 :pass:
-  list of acceptable codes, delimiter - whitespace. 
+  list of acceptable codes, delimiter - whitespace.
 
   Default: empty, no check is performed.
 
 :fail_code:
-  Exit code when check fails, integer number. 
+  Exit code when check fails, integer number.
 
   Default: 10
