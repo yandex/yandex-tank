@@ -998,7 +998,6 @@ Advanced criteria types
   Exit code - 30
 
 
-## FIXME
 Telegraf
 ========
 Runs metrics collection through SSH connection. You can debug your SSH connection using ``yandex-tank-check-ssh`` tool.
