@@ -67,6 +67,7 @@ class Plugin(GeneratorPlugin):
         self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
         if not self.get_option(self.OPTION_CONFIG, '') and self.predefined_phout:
             self.phout_import_mode = True
+        self.phantom_config = self.phantom.config_file
 
     @property
     def phantom(self):

@@ -25,7 +25,8 @@ class ComponentFactory():
             autocases=None,
             enum_ammo=False,
             ammo_type='phantom',
-            chosen_cases=None, ):
+            chosen_cases=None,
+            use_cache=True):
         self.log = logging.getLogger(__name__)
         self.ammo_file = ammo_file
         self.ammo_type = ammo_type
@@ -50,6 +51,7 @@ class ComponentFactory():
         self.headers = headers
         self.marker = get_marker(autocases, enum_ammo)
         self.chosen_cases = chosen_cases or []
+        self.use_cache = use_cache
 
     def get_load_plan(self):
         """
@@ -94,7 +96,7 @@ class ComponentFactory():
             if self.ammo_type in af_readers:
                 if self.ammo_type == 'phantom':
                     opener = resource.get_opener(self.ammo_file)
-                    with opener() as ammo:
+                    with opener(self.use_cache) as ammo:
                         try:
                             if not ammo.next()[0].isdigit():
                                 self.ammo_type = 'uri'
@@ -114,7 +116,7 @@ class ComponentFactory():
                 raise NotImplementedError(
                     'No such ammo type implemented: "%s"' % self.ammo_type)
             ammo_gen = af_readers[self.ammo_type](
-                self.ammo_file, headers=self.headers, http_ver=self.http_ver)
+                self.ammo_file, headers=self.headers, http_ver=self.http_ver, use_cache=self.use_cache)
         else:
             raise StepperConfigurationError(
                 'Ammo not found. Specify uris or ammo file')

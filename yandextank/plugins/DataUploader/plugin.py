@@ -26,7 +26,6 @@ from ...common.util import FileScanner
 
 from netort.data_processing import Drain
 
-
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 
@@ -158,7 +157,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def check_task_is_open(self):
         if self.backend_type == BackendTypes.OVERLOAD:
             return
-        TASK_TIP = 'The task should be connected to Lunapark.'\
+        TASK_TIP = 'The task should be connected to Lunapark.' \
                    'Open startrek task page, click "actions" -> "load testing".'
 
         logger.debug("Check if task %s is open", self.task)
@@ -399,98 +398,55 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 break
             except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
-                lp_job.is_alive = False
                 self.retcode = 8
                 break
             if self.finished:
                 break
         logger.info("Closing Status sender thread")
 
-    def __data_uploader(self):
-        logger.info('Data uploader thread started')
-        lp_job = self.lp_job
-        queue = self.data_queue
-        while lp_job.is_alive:
+    def __uploader(self, queue, sender_method, name='Uploader'):
+        logger.info('{} thread started'.format(name))
+        while self.lp_job.is_alive:
             try:
                 entry = queue.get(timeout=1)
-                if entry is not None:
-                    data, stats = entry
-                else:
-                    logger.info("Data uploader queue returned None")
+                if entry is None:
+                    logger.info("{} queue returned None".format(name))
                     break
-                lp_job.push_test_data(data, stats)
+                sender_method(entry)
             except Empty:
                 continue
             except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
-                lp_job.is_alive = False
                 self.retcode = 8
                 break
+            except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
+                logger.warn('Failed to push {} data'.format(name))
+                logger.warn(e.message)
+                self.lp_job.is_alive = False
             except Exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 logger.info("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
                 break
-        logger.info("Closing Data uploader thread")
+        # purge queue
+        while not queue.empty():
+            if queue.get_nowait() is None:
+                break
+        logger.info("Closing {} thread".format(name))
+
+    def __data_uploader(self):
+        self.__uploader(self.data_queue,
+                        lambda entry: self.lp_job.push_test_data(*entry),
+                        'Data Uploader')
 
     def __monitoring_uploader(self):
-        logger.info('Monitoring uploader thread started')
-        lp_job = self.lp_job
-        queue = self.monitoring_queue
-        while lp_job.is_alive:
-            try:
-                data = queue.get(timeout=1)
-                if data is not None:
-                    lp_job.push_monitoring_data(data)
-                else:
-                    logger.info('Monitoring queue returned None')
-                    break
-            except Empty:
-                continue
-            except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
-                logger.warn('Failed to push monitoring data')
-                logger.warn(e.message)
-                break
-            except APIClient.StoppedFromOnline:
-                logger.info("Test stopped from Lunapark")
-                lp_job.is_alive = False
-                self.retcode = 8
-                break
-            except Exception as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                logger.info("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
-                break
-        logger.info('Closing Monitoring uploader thread')
+        self.__uploader(self.monitoring_queue,
+                        self.lp_job.push_monitoring_data,
+                        'Monitoring Uploader')
 
     def __events_uploader(self):
-        logger.info('Events uploader thread started')
-        lp_job = self.lp_job
-        queue = self.events_queue
-
-        while lp_job.is_alive:
-            try:
-                data = queue.get(timeout=1)
-                if data is not None:
-                    logger.debug('Events data sending...: %s', data)
-                    lp_job.push_events_data(data)
-                else:
-                    logger.info('Events queue returned None')
-                    break
-            except Empty:
-                continue
-            except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
-                logger.warn('Failed to push events data')
-                logger.warn(e.message)
-                break
-            except APIClient.StoppedFromOnline:
-                logger.info("Test stopped from Lunapark")
-                lp_job.is_alive = False
-                self.retcode = 8
-                break
-            except Exception as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                logger.info("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
-                break
-        logger.info('Closing Events uploader thread')
+        self.__uploader(self.events_queue,
+                        self.lp_job.push_events_data,
+                        'Events Uploader')
 
     # TODO: why we do it here? should be in core
     def __save_conf(self):
