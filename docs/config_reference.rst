@@ -366,10 +366,6 @@ DataUploader
 :nullable:
  True
 
-``regress`` (boolean)
----------------------
-*\- mark test as regression. Default:* ``False``
-
 ``send_status_period`` (integer)
 --------------------------------
 *\- delay between status notifications. Default:* ``10``
@@ -453,6 +449,13 @@ Influx
 JMeter
 ======
 
+``affinity`` (string)
+---------------------
+*\- Use to set CPU affinity. Default:* ``""``
+
+:nullable:
+ True
+
 ``args`` (string)
 -----------------
 *\- additional commandline arguments for JMeter. Default:* ``""``
@@ -524,25 +527,32 @@ JsonReport
 Pandora
 =======
 
+``affinity`` (string)
+---------------------
+*\- Use to set CPU affinity. Default:* ``""``
+
+:nullable:
+ True
+
 ``buffered_seconds`` (integer)
 ------------------------------
 *\- (no description). Default:* ``2``
 
 ``config_content`` (dict)
 -------------------------
-*\- (no description). Default:* ``{}``
+*\- Pandora config contents. Default:* ``{}``
 
 ``config_file`` (string)
 ------------------------
-*\- (no description). Default:* ``""``
+*\- Pandora config file path. Default:* ``""``
 
 ``expvar`` (boolean)
 --------------------
-*\- (no description). Default:* ``True``
+*\- Toggle expvar monitoring. Default:* ``True``
 
 ``pandora_cmd`` (string)
 ------------------------
-*\- (no description). Default:* ``pandora``
+*\- Pandora executable path. Default:* ``pandora``
 
 Phantom
 =======
