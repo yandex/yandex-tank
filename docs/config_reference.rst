@@ -540,19 +540,19 @@ Pandora
 
 ``config_content`` (dict)
 -------------------------
-*\- (no description). Default:* ``{}``
+*\- Pandora config contents. Default:* ``{}``
 
 ``config_file`` (string)
 ------------------------
-*\- (no description). Default:* ``""``
+*\- Pandora config file path. Default:* ``""``
 
 ``expvar`` (boolean)
 --------------------
-*\- (no description). Default:* ``True``
+*\- Toggle expvar monitoring. Default:* ``True``
 
 ``pandora_cmd`` (string)
 ------------------------
-*\- (no description). Default:* ``pandora``
+*\- Pandora executable path. Default:* ``pandora``
 
 Phantom
 =======

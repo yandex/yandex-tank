@@ -67,6 +67,7 @@ class Plugin(GeneratorPlugin):
         self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
         if not self.get_option(self.OPTION_CONFIG, '') and self.predefined_phout:
             self.phout_import_mode = True
+        self.phantom_config = self.phantom.config_file
 
     @property
     def phantom(self):
@@ -164,7 +165,7 @@ class Plugin(GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            logger.warn("Terminating phantom process with PID %s", self.process.pid)
+            logger.info("Terminating phantom process with PID %s", self.process.pid)
             self.process.terminate()
             if self.process:
                 self.process.communicate()
