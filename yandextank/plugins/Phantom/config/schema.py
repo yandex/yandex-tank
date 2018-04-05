@@ -278,7 +278,7 @@ OPTIONS = {
         }
     },
     'use_caching': {
-        'description': 'Enable stpd-file caching.',
+        'description': 'Enable stpd-file caching for similar tests. Set false to reload ammo file and generate new stpd',
         'type': 'boolean',
         'default': True
     },
