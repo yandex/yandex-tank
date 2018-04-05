@@ -174,7 +174,7 @@ def get_default_configs():
                         baseconfigs_location + os.sep + filename)
                 ]
     except OSError:
-        logging.warn(
+        logging.info(
             baseconfigs_location +
             ' is not accessible to get configs list')
 
@@ -290,6 +290,9 @@ class ConsoleTank:
         self.core.add_artifact_file(raw_cfg_path)
 
         self.core.add_artifact_file(options.log)
+        self.core.add_artifact_file(options.error_log)
+
+        self.core.error_log = options.error_log
 
         self.signal_count = 0
         self.scheduled_start = None
@@ -303,6 +306,8 @@ class ConsoleTank:
         logger = logging.getLogger('')
         logger.setLevel(logging.DEBUG)
         log_filename = self.options.log
+        events_log_fname = self.options.error_log
+
         # create file handler which logs even debug messages
         if log_filename:
             file_handler = logging.FileHandler(log_filename)
@@ -312,6 +317,17 @@ class ConsoleTank:
                     "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"
                 ))
             logger.addHandler(file_handler)
+
+        # create file handler which logs error messages
+
+        if events_log_fname:
+            err_file_handler = logging.FileHandler(events_log_fname)
+            err_file_handler.setLevel(logging.WARNING)
+            err_file_handler.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s\t%(message)s"
+                ))
+            logger.addHandler(err_file_handler)
 
         # create console handler with a higher log level
         console_handler = logging.StreamHandler(sys.stdout)
@@ -464,6 +480,7 @@ class DevNullOpts:
 
 
 class CompletionHelperOptionParser(OptionParser):
+    """ FIXME: DEPRECATED? Switch to Validator schema for completion """
     def __init__(self):
         OptionParser.__init__(self, add_help_option=False)
         self.add_option(

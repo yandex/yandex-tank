@@ -6,15 +6,19 @@ affinity:
 pandora_cmd:
   type: string
   default: pandora
+  description: Pandora executable path
 buffered_seconds:
   type: integer
   default: 2
 config_content:
   type: dict
   default: {}
+  description: Pandora config contents
 config_file:
   type: string
   default: ''
+  description: Pandora config file path
 expvar:
   type: boolean
   default: true
+  description: Toggle expvar monitoring

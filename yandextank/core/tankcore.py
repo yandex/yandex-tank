@@ -61,7 +61,7 @@ class Job(object):
         try:
             self.monitoring_plugin.monitoring.add_listener(plugin)
         except AttributeError:
-            logging.warning('Monitoring plugin is not enabled')
+            logging.info('Monitoring plugin is not enabled')
 
     @property
     def phantom_info(self):
@@ -122,6 +122,8 @@ class TankCore(object):
         self._cfg_snapshot = None
 
         self.interrupted = False
+
+        self.error_log = None
     #
     # def get_uuid(self):
     #     return self.uuid
