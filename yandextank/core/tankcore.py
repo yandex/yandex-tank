@@ -59,7 +59,7 @@ class Job(object):
     def subscribe_plugin(self, plugin):
         self.aggregator.add_result_listener(plugin)
         try:
-            self.monitoring_plugin.monitoring.add_listener(plugin)
+            self.monitoring_plugin.add_listener(plugin)
         except AttributeError:
             logging.info('Monitoring plugin is not enabled')
 

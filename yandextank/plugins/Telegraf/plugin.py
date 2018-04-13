@@ -210,6 +210,9 @@ class Plugin(AbstractPlugin):
             else:
                 self.monitoring = None
 
+    def add_listener(self, plugin):
+        return self.monitoring.add_listener(plugin)
+
     def is_test_finished(self):
         if self.monitoring:
             data_len = self.monitoring.poll()

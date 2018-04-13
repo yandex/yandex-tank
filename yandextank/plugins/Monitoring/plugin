@@ -1,0 +1,65 @@
+import copy
+
+import time
+from yandextank.common.interfaces import AbstractPlugin
+from yasmapi import RtGolovanRequest
+
+
+DEFAULT_SIGNALS = [
+    'portoinst-cpu_usage_cores_tmmv',
+    'portoinst-cpu_guarantee_cores_tmmv',
+    'portoinst-cpu_limit_cores_tmmv',
+]
+
+
+def signals_stream(host, tags, signals):
+    for point in RtGolovanRequest({host: {tags: signals}}):
+        yield point.ts, point.values[host][tags]
+
+
+def host_monitoring(host, tags, signals, results_queue, stop_event):
+    stream = signals_stream(host, tags, signals)
+    while not stop_event.is_set():
+        results_queue.put(stream.next())
+        time.sleep(5)
+
+
+def map_metric_name(name):
+    NAME_MAP = {}
+    return NAME_MAP.get(name, name)
+
+
+def convert_value(name, value):
+    return value
+
+
+def monitoring_data(ts, signals, comment=''):
+    return {
+        "timestamp": ts,
+        "data": {
+            "hostname": {
+                "comment": comment,
+                "metrics": {map_metric_name(name): convert_value(name, value) for name, value in signals}
+            }
+        }}
+
+
+class Plugin(AbstractPlugin):
+
+    def __init__(self, core, cfg, cfg_updater=None):
+        super(Plugin, self).__init__(core, cfg, cfg_updater=None)
+        self.listeners = []
+
+    def add_listener(self, plugin):
+        self.listeners.append(plugin)
+
+    def send_collected_data(self):
+        """sends pending data set to listeners"""
+        data = self.__collected_data
+        self.__collected_data = []
+        for listener in self.listeners:
+            # deep copy to ensure each listener gets it's own copy
+            listener.monitoring_data(copy.deepcopy(data))
+
+    def prepare_test(self):
+        pass
