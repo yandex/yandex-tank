@@ -1,0 +1,10 @@
+host:
+  type: string
+  required: true
+tags:
+  type: string
+signals:
+  type: list
+  default: []
+  schema:
+    type: string

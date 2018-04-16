@@ -103,7 +103,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self._lock_duration = None
         self._info = None
         self.locked_targets = []
-
+        self.web_link = None
         self.finished = False
 
     @staticmethod
@@ -280,11 +280,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         if self.core.error_log:
             self.events.start()
 
-        web_link = urljoin(self.lp_job.api_client.base_url, str(self.lp_job.number))
-        logger.info("Web link: %s", web_link)
+        self.web_link = urljoin(self.lp_job.api_client.base_url, str(self.lp_job.number))
+        logger.info("Web link: %s", self.web_link)
 
         self.publish("jobno", self.lp_job.number)
-        self.publish("web_link", web_link)
+        self.publish("web_link", self.web_link)
 
         jobno_file = self.get_option("jobno_file", '')
         if jobno_file:
@@ -320,9 +320,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         except Exception:  # pylint: disable=W0703
             logger.warning("Failed to close job", exc_info=True)
         logger.info(
-            "Web link: %s%s",
-            self.lp_job.api_client.base_url,
-            self.lp_job.number)
+            "Web link: %s", self.web_link)
 
         autostop = None
         try:
@@ -366,9 +364,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     @property
     def is_telegraf(self):
-        if self._is_telegraf is None:
-            self._is_telegraf = 'Telegraf' in self.core.job.monitoring_plugin.__module__
-        return self._is_telegraf
+        return True
 
     def _core_with_tank_api(self):
         """

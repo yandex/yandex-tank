@@ -23,7 +23,7 @@ from yandextank.common.interfaces import GeneratorPlugin
 from yandextank.validator.validator import TankConfig
 from yandextank.aggregator import TankAggregator
 from ..common.util import update_status, pid_exists
-from ..plugins.Telegraf import Plugin as TelegrafPlugin
+from ..plugins.Monitoring import Plugin as MonitoringPlugin
 
 from netort.resource import manager as resource
 from netort.process import execute
@@ -200,7 +200,7 @@ class TankCore(object):
         if not self._job:
             # monitoring plugin
             try:
-                mon = self.get_plugin_of_type(TelegrafPlugin)
+                mon = self.get_plugin_of_type(MonitoringPlugin)
             except KeyError:
                 logger.debug("Telegraf plugin not found:", exc_info=True)
                 mon = None
@@ -295,7 +295,7 @@ class TankCore(object):
                 retcode = plugin.end_test(retcode)
                 logger.debug("RC after: %s", retcode)
             except Exception:  # FIXME too broad exception clause
-                logger.error("Failed finishing plugin %s: %s", plugin, exc_info=True)
+                logger.error("Failed finishing plugin %s:", plugin, exc_info=True)
                 if not retcode:
                     retcode = 1
         return retcode
