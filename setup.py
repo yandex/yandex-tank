@@ -21,7 +21,7 @@ analytic tools for the results they produce.
         'pandas>=0.18.0', 'numpy>=1.12.1', 'future>=0.16.0',
         'pip>=8.1.2',
         'pyyaml>=3.12', 'cerberus>=1.1', 'influxdb>=5.0.0',
-        'netort>=0.0.11'
+        'netort>=0.0.11', 'yasmapi',
     ],
     setup_requires=[
         'pytest-runner', 'flake8',
