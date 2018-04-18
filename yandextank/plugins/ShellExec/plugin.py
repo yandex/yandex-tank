@@ -1,15 +1,15 @@
 '''
 Contains shellexec plugin
 '''
-from ...common import util
+from netort.process import execute
 from ...common.interfaces import AbstractPlugin
 
 
 class Plugin(AbstractPlugin):
-    '''
+    """
     ShellExec plugin
     allows executing shell scripts before/after test
-    '''
+    """
     SECTION = 'shellexec'
 
     def __init__(self, core, cfg, cfg_updater):
@@ -47,7 +47,7 @@ class Plugin(AbstractPlugin):
     def is_test_finished(self):
         if self.poll:
             self.log.info("Executing: %s", self.poll)
-            retcode = util.execute(
+            retcode = execute(
                 self.poll,
                 shell=True,
                 poll_period=0.1,
@@ -69,11 +69,12 @@ class Plugin(AbstractPlugin):
         return retcode
 
     def execute(self, cmd):
-        '''
+        """
         Execute and check exit code
-        '''
+        """
         self.log.info("Executing: %s", cmd)
-        retcode = util.execute(
+        retcode = execute(
             cmd, shell=True, poll_period=0.1, catch_out=self.catch_out)[0]
         if retcode:
             raise RuntimeError("Subprocess returned %s" % retcode)
+        return retcode
