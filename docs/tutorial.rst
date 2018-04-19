@@ -14,16 +14,16 @@ Create a file on a server with Yandex.Tank: **load.yaml**
 .. code-block:: yaml
 
   phantom:
-  address: 203.0.113.1:80 # [Target's address]:[target's port]
-  uris:
-    - /
-  load_profile:
-    load_type: rps # schedule load by defining requests per second
-    schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
-  console:
-    enabled: true # enable console output
-  telegraf:
-    enabled: false # let's disable telegraf monitoring for the first time
+    address: 203.0.113.1:80 # [Target's address]:[target's port]
+    uris:
+      - /
+    load_profile:
+      load_type: rps # schedule load by defining requests per second
+      schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
+    console:
+      enabled: true # enable console output
+    telegraf:
+      enabled: false # let's disable telegraf monitoring for the first time
 
 And run:
 ``$ yandex-tank -c load.yaml``
@@ -74,17 +74,17 @@ have following lines:
 .. code-block:: yaml
 
   phantom:
-  address: 203.0.113.1:80 # [Target's address]:[target's port]
-  uris:
-    - /uri1
-    - /uri2
-  load_profile:
-    load_type: rps # schedule load by defining requests per second
-    schedule: const(10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
-  console:
-    enabled: true # enable console output
-  telegraf:
-    enabled: false # let's disable telegraf monitoring for the first time
+    address: 203.0.113.1:80 # [Target's address]:[target's port]
+    uris:
+      - /uri1
+      - /uri2
+    load_profile:
+      load_type: rps # schedule load by defining requests per second
+      schedule: const(10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
+    console:
+      enabled: true # enable console output
+    telegraf:
+      enabled: false # let's disable telegraf monitoring for the first time
 
 
 Preparing requests
@@ -599,7 +599,7 @@ that. load.yaml:
 
 .. code-block:: yaml
 
- phantom:
+  phantom:
     address: 203.0.113.1:80
     load_profile:
       load_type: rps
