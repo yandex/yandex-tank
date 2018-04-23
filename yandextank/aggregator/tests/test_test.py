@@ -1,4 +1,4 @@
-from utils import random_split
+from utils import random_split, data
 import pandas as pd
 import numpy as np
 
