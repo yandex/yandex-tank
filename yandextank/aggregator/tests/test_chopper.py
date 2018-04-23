@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from utils import MAX_TS, random_split, data
+from conftest import MAX_TS, random_split
 from yandextank.aggregator.chopper import TimeChopper
 
 

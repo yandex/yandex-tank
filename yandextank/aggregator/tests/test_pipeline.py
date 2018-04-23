@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from queue import Queue
-from utils import MAX_TS, random_split, data
+from conftest import MAX_TS, random_split
 
 from yandextank.aggregator import TankAggregator
 from yandextank.aggregator.aggregator import Aggregator, DataPoller
