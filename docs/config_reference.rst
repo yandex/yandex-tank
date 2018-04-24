@@ -392,12 +392,10 @@ DataUploader
 
 ``upload_token`` (string)
 -------------------------
-*\- Job's token. Use to upload data to an existing job. Requres jobno. Default:* ``None``
+*\- Job's token. Use to upload data to an existing job. Requres jobno.*
 
 :dependencies:
  jobno
-:nullable:
- True
 
 ``ver`` (string)
 ----------------

@@ -59,10 +59,7 @@ class AbstractPlugin(object):
 
     def get_option(self, option_name, default_value=None):
         """ Wrapper to get option from plugins' section """
-        option = self.cfg[option_name]
-        if option is None:
-            option = default_value
-        return option
+        return self.cfg.get(option_name, default_value)
 
     def get_available_options(self):
         """ returns array containing known options for plugin """
