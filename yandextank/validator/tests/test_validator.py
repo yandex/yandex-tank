@@ -607,6 +607,7 @@ def test_load_scheme_validator(value):
     cfg = {'load_type': 'rps', 'schedule': value}
     assert validator.validate(cfg)
 
+
 @pytest.mark.parametrize('value', [
     'step(10,5,180)',
     'step(5,50,2.5,5m,30s)',
