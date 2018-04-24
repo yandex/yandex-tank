@@ -603,5 +603,18 @@ def test_setter(config, plugin, key, value):
     'line(10, 120, 300s)',
 ])
 def test_load_scheme_validator(value):
-    validator = PatchedValidator()
-    assert validator._validator_load_scheme('load_scheme', value) is None
+    validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'validator': 'load_scheme'}})
+    cfg = {'load_type': 'rps', 'schedule': value}
+    assert validator.validate(cfg)
+
+@pytest.mark.parametrize('value', [
+    'step(10,5,180)',
+    'step(5,50,2.5,5m,30s)',
+    'lien(22,154,2h5m)',
+    'step(5,50,2.5,5m) line(22,154,2h5m) const(10, 20, 3m)',
+    'const(10,1.5h)',
+])
+def test_negative_load_scheme_validator(value):
+    validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'validator': 'load_scheme'}})
+    cfg = {'load_type': 'rps', 'schedule': value}
+    assert not validator.validate(cfg)
