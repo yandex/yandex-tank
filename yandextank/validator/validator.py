@@ -1,12 +1,13 @@
 import imp
 import os
+import re
 import sys
 import uuid
 
 import logging
 import pkg_resources
 import yaml
-from cerberus.validator import Validator, InspectedValidator
+from cerberus.validator import Validator
 
 from yandextank.common.util import recursive_dict_update
 logger = logging.getLogger(__name__)
@@ -68,6 +69,92 @@ def load_schema(directory, filename=None):
                 directory)
 
 
+class PatchedValidator(Validator):
+
+    def _validate_description(self, description, field, value):
+        """ {'type': 'string'} """
+        pass
+
+    # monkey-patch cerberus validator to allow values descriptions field
+    def _validate_values_description(self, values_description, field, value):
+        """ {'type': 'dict'} """
+        pass
+
+    # monkey-patch cerberus validator to allow tutorial_link field
+    def _validate_tutorial_link(self, tutorial_link, field, value):
+        """ {'type': 'string'} """
+        pass
+
+    # monkey-patch cerberus validator to allow examples field
+    def _validate_examples(self, examples, field, value):
+        """ {'type': 'dict'} """
+        pass
+
+    @staticmethod
+    def is_number(value):
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+
+    def validate_duration(self, field, duration):
+        '''
+        2h
+        2h5m
+        5m
+        180
+        1h4m3
+        :param duration:
+        :return:
+        '''
+        DURATION_RE = r'^(\d+d)?(\d+h)?(\d+m)?(\d+s?)?$'
+        if not re.match(DURATION_RE, duration):
+            self._error(field, 'Load duration examples: 2h30m; 5m15; 180')
+
+    def _validator_load_scheme(self, field, value):
+        '''
+        step(10,200,5,180)
+        step(5,50,2.5,5m)
+        line(22,154,2h5m)
+        step(5,50,2.5,5m) line(22,154,2h5m)
+        const(10,1h4m3s)
+        :param field:
+        :param value:
+        :return:
+        '''
+        # stpd file can be any value
+        if self.document['load_type'] in 'stpd_file':
+            return
+
+        PRIMARY_RE = r'(step|line|const)\((.+?)\)'
+        N_OF_ARGS = {
+            'step': 4,
+            'line': 3,
+            'const': 2,
+        }
+        matches = re.findall(PRIMARY_RE, value)
+        if len(matches) == 0:
+            self._error(field, 'Should match one of the following patterns: step(...) / line(...) / const(...)')
+        else:
+            for match in matches:
+                curve, params_str = match
+                params = [v.strip() for v in params_str.split(',')]
+                # check number of arguments
+                if not len(params) == N_OF_ARGS[curve]:
+                    self._error(field, '{} load scheme: expected {} arguments, found {}'.format(curve,
+                                                                                                N_OF_ARGS[curve],
+                                                                                                len(params)))
+                # check arguments' types
+                for param in params[:-1]:
+                    if not self.is_number(param):
+                        self._error(field, 'Argument {} in load scheme should be a number'.format(param))
+                self.validate_duration(field, params[-1])
+
+    # def _normalize_coerce_load_scheme(self, value):
+    #     pass
+
+
 class TankConfig(object):
     DYNAMIC_OPTIONS = {
         'uuid': lambda: str(uuid.uuid4()),
@@ -95,7 +182,6 @@ class TankConfig(object):
         self.ERROR_OUTPUT = error_output
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
         self.PLUGINS_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml'))
-        self.PatchedValidator = self.__get_patched_validator()
 
     def get_option(self, section, option):
         return self.validated[section][option]
@@ -141,35 +227,6 @@ class TankConfig(object):
     def save_raw(self, filename):
         with open(filename, 'w') as f:
             yaml.dump(self.raw_config_dict, f)
-
-    @staticmethod
-    def __get_patched_validator():
-        # monkey-patch cerberus validator to allow description field
-        def _validate_description(self, description, field, value):
-            """ {'type': 'string'} """
-            pass
-
-        # monkey-patch cerberus validator to allow values descriptions field
-        def _validate_values_description(self, values_description, field, value):
-            """ {'type': 'dict'} """
-            pass
-
-        # monkey-patch cerberus validator to allow tutorial_link field
-        def _validate_tutorial_link(self, tutorial_link, field, value):
-            """ {'type': 'string'} """
-            pass
-
-        # monkey-patch cerberus validator to allow examples field
-        def _validate_examples(self, examples, field, value):
-            """ {'type': 'dict'} """
-            pass
-
-        Validator._validate_description = _validate_description
-        Validator._validate_values_description = _validate_values_description
-        Validator._validate_tutorial_link = _validate_tutorial_link
-        Validator._validate_examples = _validate_examples
-
-        return InspectedValidator('Validator', (Validator,), {})
 
     def __load_multiple(self, configs):
         configs_count = len(configs)
@@ -218,7 +275,7 @@ class TankConfig(object):
         return core_validated
 
     def __validate_core(self):
-        v = self.PatchedValidator(allow_unknown=self.PLUGINS_SCHEMA)
+        v = PatchedValidator(allow_unknown=self.PLUGINS_SCHEMA)
         result = v.validate(self.raw_config_dict, self.BASE_SCHEMA)
         if not result:
             errors = v.errors
@@ -232,7 +289,7 @@ class TankConfig(object):
 
     def __validate_plugin(self, config, schema):
         schema.update(self.PLUGINS_SCHEMA['schema'])
-        v = self.PatchedValidator(schema, allow_unknown=False)
+        v = PatchedValidator(schema, allow_unknown=False)
         # .validate() makes .errors as side effect if there's any
         if not v.validate(config):
             raise ValidationError(v.errors)
