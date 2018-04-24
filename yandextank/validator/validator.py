@@ -7,7 +7,7 @@ import uuid
 import logging
 import pkg_resources
 import yaml
-from cerberus.validator import Validator, InspectedValidator
+from cerberus.validator import Validator
 
 from yandextank.common.util import recursive_dict_update
 logger = logging.getLogger(__name__)

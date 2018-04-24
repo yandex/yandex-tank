@@ -490,41 +490,41 @@ def test_validate_all(config, expected):
         {'phantom': {'address': ['required field'], 'load_profile': ['required field']},
          'telegraf': {'config': ['must be of string type']}}),
     (
-            {
-                "core": {},
-                'phantom': {
-                    'package': 'yandextank.plugins.Phantom',
-                    'enabled': True,
-                    'address': 'nodejs.load.yandex.net',
-                    'uris': ['/'],
-                    'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 20, 2, 10m)'}
-                }
-            },
-            {'phantom': {'load_profile': [{'schedule': ['line load scheme: expected 3 arguments, found 4']}]}}),
+        {
+            "core": {},
+            'phantom': {
+                'package': 'yandextank.plugins.Phantom',
+                'enabled': True,
+                'address': 'nodejs.load.yandex.net',
+                'uris': ['/'],
+                'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 20, 2, 10m)'}
+            }
+        },
+        {'phantom': {'load_profile': [{'schedule': ['line load scheme: expected 3 arguments, found 4']}]}}),
     (
-            {
-                "core": {},
-                'phantom': {
-                    'package': 'yandextank.plugins.Phantom',
-                    'enabled': True,
-                    'address': 'nodejs.load.yandex.net',
-                    'uris': ['/'],
-                    'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 20, 10m5m)'}
-                }
-            },
-            {'phantom': {'load_profile': [{'schedule': ['Load duration examples: 2h30m; 5m15; 180']}]}}),
+        {
+            "core": {},
+            'phantom': {
+                'package': 'yandextank.plugins.Phantom',
+                'enabled': True,
+                'address': 'nodejs.load.yandex.net',
+                'uris': ['/'],
+                'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 20, 10m5m)'}
+            }
+        },
+        {'phantom': {'load_profile': [{'schedule': ['Load duration examples: 2h30m; 5m15; 180']}]}}),
     (
-            {
-                "core": {},
-                'phantom': {
-                    'package': 'yandextank.plugins.Phantom',
-                    'enabled': True,
-                    'address': 'nodejs.load.yandex.net',
-                    'uris': ['/'],
-                    'load_profile': {'load_type': 'rps', 'schedule': 'line(1n,20,100)'}
-                }
-            },
-            {'phantom': {'load_profile': [{'schedule': ['Argument 1n in load scheme should be a number']}]}})
+        {
+            "core": {},
+            'phantom': {
+                'package': 'yandextank.plugins.Phantom',
+                'enabled': True,
+                'address': 'nodejs.load.yandex.net',
+                'uris': ['/'],
+                'load_profile': {'load_type': 'rps', 'schedule': 'line(1n,20,100)'}
+            }
+        },
+        {'phantom': {'load_profile': [{'schedule': ['Argument 1n in load scheme should be a number']}]}})
 
 ])
 def test_validate_all_error(config, expected):
@@ -604,5 +604,4 @@ def test_setter(config, plugin, key, value):
 ])
 def test_load_scheme_validator(value):
     validator = PatchedValidator()
-
-    assert validator._validator_load_scheme('load_scheme', value) == None
+    assert validator._validator_load_scheme('load_scheme', value) is None
