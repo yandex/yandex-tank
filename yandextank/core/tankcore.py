@@ -20,7 +20,7 @@ from builtins import str
 
 from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin
-from yandextank.validator.validator import TankConfig
+from yandextank.validator.validator import TankConfig, ValidationError
 from yandextank.aggregator import TankAggregator
 from ..common.util import update_status, pid_exists
 from ..plugins.Telegraf import Plugin as TelegrafPlugin
@@ -316,7 +316,7 @@ class TankCore(object):
                 logger.error("Failed post-processing plugin %s: %s", plugin, exc_info=True)
                 if not retcode:
                     retcode = 1
-        self.__collect_artifacts()
+        self._collect_artifacts()
         return retcode
 
     def __setup_taskset(self, affinity, pid=None, args=None):
@@ -338,7 +338,7 @@ class TankCore(object):
                 logger.debug('Taskset setup failed w/ retcode :%s', retcode)
                 raise KeyError(stderr)
 
-    def __collect_artifacts(self):
+    def _collect_artifacts(self, validation_failed=False):
         logger.debug("Collecting artifacts")
         logger.info("Artifacts dir: %s", self.artifacts_dir)
         for filename, keep in self.artifact_files.items():
@@ -525,7 +525,10 @@ class TankCore(object):
     @property
     def artifacts_dir(self):
         if not self._artifacts_dir:
-            dir_name = self.get_option(self.SECTION, 'artifacts_dir')
+            try:
+                dir_name = self.get_option(self.SECTION, 'artifacts_dir')
+            except ValidationError:
+                dir_name = None
             if not dir_name:
                 date_str = datetime.datetime.now().strftime(
                     "%Y-%m-%d_%H-%M-%S.")
