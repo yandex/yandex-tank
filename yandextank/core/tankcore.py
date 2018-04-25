@@ -102,9 +102,6 @@ class TankCore(object):
         :param configs: list of dict
         """
         self.raw_configs = configs
-        self.config = TankConfig(self.raw_configs,
-                                 with_dynamic_options=True,
-                                 core_section=self.SECTION)
         self.status = {}
         self._plugins = None
         self._artifacts_dir = None
@@ -124,6 +121,13 @@ class TankCore(object):
         self.interrupted = False
 
         self.error_log = None
+
+        error_output = 'validation_error.yaml'
+        self.config = TankConfig(self.raw_configs,
+                                 with_dynamic_options=True,
+                                 core_section=self.SECTION,
+                                 error_output=error_output)
+        self.add_artifact_file(error_output)
     #
     # def get_uuid(self):
     #     return self.uuid
@@ -160,7 +164,10 @@ class TankCore(object):
     @property
     def artifacts_base_dir(self):
         if not self._artifacts_base_dir:
-            artifacts_base_dir = os.path.expanduser(self.get_option(self.SECTION, "artifacts_base_dir"))
+            try:
+                artifacts_base_dir = os.path.expanduser(self.get_option(self.SECTION, "artifacts_base_dir"))
+            except ValidationError:
+                artifacts_base_dir = 'logs'
             if not os.path.exists(artifacts_base_dir):
                 os.makedirs(artifacts_base_dir)
                 os.chmod(self.artifacts_base_dir, 0o755)
