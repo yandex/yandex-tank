@@ -26,8 +26,8 @@ class Plugin(GeneratorPlugin):
     STOP_TEST_NOW = 'Stop Test'
     DISCOVER_PORT_PATTERN = 'Waiting for possible shutdown message on port (?P<port>\d+)'
 
-    def __init__(self, core, cfg, cfg_updater):
-        super(Plugin, self).__init__(core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        super(Plugin, self).__init__(core, cfg)
         self.args = None
         self.original_jmx = None
         self.jtl_file = None

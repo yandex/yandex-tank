@@ -14,7 +14,7 @@ class AbstractPlugin(object):
         raise TypeError("Abstract method needs to be overridden")
 
     # TODO: do we realy need cfg_updater here?
-    def __init__(self, core, cfg, cfg_updater=None):
+    def __init__(self, core, cfg):
         """
 
         @type core: TankCore
@@ -25,7 +25,7 @@ class AbstractPlugin(object):
         self.cfg = cfg
 
     def set_option(self, option, value):
-        self.cfg.setdefault('meta', {})[option] = value
+        self.cfg[option] = value
 
     def configure(self):
         """ A stage to read config values and instantiate objects """
@@ -190,8 +190,8 @@ class GeneratorPlugin(AbstractPlugin):
         'loop_count': 0
     }
 
-    def __init__(self, core, cfg, cfg_updater):
-        super(GeneratorPlugin, self).__init__(core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        super(GeneratorPlugin, self).__init__(core, cfg)
         self.stats_reader = None
         self.reader = None
         self.process = None

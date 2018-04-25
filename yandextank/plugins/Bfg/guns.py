@@ -22,7 +22,7 @@ class GunConfigError(Exception):
 
 class AbstractGun(AbstractPlugin):
     def __init__(self, core, cfg):
-        super(AbstractGun, self).__init__(core, cfg, None)
+        super(AbstractGun, self).__init__(core, cfg)
         self.results = None
 
     @contextmanager

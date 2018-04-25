@@ -557,39 +557,7 @@ def test_validate_all_error(config, expected):
     )
 ])
 def test_get_plugins(config, expected):
-    assert {(name, pack) for name, pack, cfg, updater in TankConfig(config).plugins} == expected
-
-
-@pytest.mark.parametrize('config, plugin, key, value', [
-    ({
-        "version": "1.9.3",
-        "core": {
-            'operator': 'fomars',
-            'artifacts_base_dir': './',
-        },
-        'telegraf': {
-            'package': 'yandextank.plugins.Telegraf',
-            'enabled': True,
-            'config': 'monitoring.xml',
-            'disguise_hostnames': True
-        },
-    }, 'telegraf', 'config', 'foobar.xml')
-])
-def test_setter(config, plugin, key, value):
-    tankconfig = TankConfig(config)
-    tankconfig._TankConfig__get_cfg_updater(plugin)(key, value)
-    assert tankconfig.get_option(plugin, key) == value
-
-    # configparser = ConfigParser.ConfigParser()
-    # configparser.read(config_file)
-    # plugins_conf = {section: dict(configparser.items(section)) for section in configparser.sections()}
-    # config = {
-    #     "version": "1.9.3",
-    #     "core": {
-    #           'operator': 'fomars'
-    #       },
-    #     "plugins": plugins_conf
-    # }
+    assert {(name, pack) for name, pack, cfg in TankConfig(config).plugins} == expected
 
 
 @pytest.mark.parametrize('value', [

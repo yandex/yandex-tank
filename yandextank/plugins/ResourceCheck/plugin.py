@@ -18,9 +18,9 @@ class Plugin(AbstractPlugin):
     def get_key():
         return __file__
 
-    def __init__(self, core, cfg, cfg_updater):
+    def __init__(self, core, cfg):
         '''         Constructor        '''
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+        AbstractPlugin.__init__(self, core, cfg)
         self.interval = "10s"
         self.disk_limit = 2048  # 2 GB
         self.mem_limit = 512  # 0.5 GB

@@ -66,8 +66,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     VERSION = '3.0'
     SECTION = 'uploader'
 
-    def __init__(self, core, cfg, cfg_updater):
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        AbstractPlugin.__init__(self, core, cfg)
         self.data_queue = Queue()
         self.monitoring_queue = Queue()
         if self.core.error_log:
@@ -105,6 +105,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.locked_targets = []
 
         self.finished = False
+
+    def set_option(self, option, value):
+        self.cfg.setdefault('meta', {})[option] = value
 
     @staticmethod
     def get_key():
