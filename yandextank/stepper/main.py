@@ -162,7 +162,7 @@ class StepperWrapper(object):
         self.ammo_file = self.get_option(self.OPTION_AMMOFILE)
         self.ammo_type = self.get_option('ammo_type')
         if self.ammo_file:
-            self.ammo_file = os.path.abspath(os.path.expanduser(self.ammo_file))
+            self.ammo_file = os.path.expanduser(self.ammo_file)
         self.loop_limit = self.get_option(self.OPTION_LOOP)
         self.ammo_limit = self.get_option("ammo_limit")
 
