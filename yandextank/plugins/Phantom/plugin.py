@@ -23,8 +23,8 @@ class Plugin(GeneratorPlugin):
 
     OPTION_CONFIG = "config"
 
-    def __init__(self, core, cfg, cfg_updater):
-        super(Plugin, self).__init__(core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        super(Plugin, self).__init__(core, cfg)
         self.predefined_phout = None
         self.did_phout_import_try = False
         self.eta_file = None

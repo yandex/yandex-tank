@@ -75,17 +75,14 @@ class PatchedValidator(Validator):
         """ {'type': 'string'} """
         pass
 
-    # monkey-patch cerberus validator to allow values descriptions field
     def _validate_values_description(self, values_description, field, value):
         """ {'type': 'dict'} """
         pass
 
-    # monkey-patch cerberus validator to allow tutorial_link field
     def _validate_tutorial_link(self, tutorial_link, field, value):
         """ {'type': 'string'} """
         pass
 
-    # monkey-patch cerberus validator to allow examples field
     def _validate_examples(self, examples, field, value):
         """ {'type': 'dict'} """
         pass
@@ -199,8 +196,7 @@ class TankConfig(object):
             self._plugins = [
                 (plugin_name,
                  plugin_cfg['package'],
-                    plugin_cfg,
-                    self.__get_cfg_updater(plugin_name)) for plugin_name,
+                    plugin_cfg) for plugin_name,
                 plugin_cfg in self.validated.items() if (
                     plugin_name not in self.BASE_SCHEMA.keys()) and plugin_cfg['enabled']]
         return self._plugins
@@ -303,11 +299,6 @@ class TankConfig(object):
             except KeyError:
                 config[self.CORE_SECTION] = {option: setter()}
         return config
-
-    def __get_cfg_updater(self, plugin_name):
-        def cfg_updater(key, value):
-            self.validated[plugin_name][key] = value
-        return cfg_updater
 
     def __str__(self):
         return yaml.dump(self.validated)
