@@ -295,7 +295,7 @@ class TankCore(object):
                 retcode = plugin.end_test(retcode)
                 logger.debug("RC after: %s", retcode)
             except Exception:  # FIXME too broad exception clause
-                logger.error("Failed finishing plugin %s: %s", plugin, exc_info=True)
+                logger.error("Failed finishing plugin %s", plugin, exc_info=True)
                 if not retcode:
                     retcode = 1
         return retcode
@@ -313,7 +313,7 @@ class TankCore(object):
                 retcode = plugin.post_process(retcode)
                 logger.debug("RC after: %s", retcode)
             except Exception:  # FIXME too broad exception clause
-                logger.error("Failed post-processing plugin %s: %s", plugin, exc_info=True)
+                logger.error("Failed post-processing plugin %s", plugin, exc_info=True)
                 if not retcode:
                     retcode = 1
         self.__collect_artifacts()
