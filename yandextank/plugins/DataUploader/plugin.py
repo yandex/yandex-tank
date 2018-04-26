@@ -292,10 +292,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.monitoring_queue.put(None)
         self.data_queue.put(None)
         logger.info("Waiting for sender threads to join.")
-        try:
+        if self.monitoring.is_alive():
             self.monitoring.join()
+        if self.upload.is_alive():
             self.upload.join()
-        except RuntimeError:
             logger.warning("Thread not joined", exc_info=True)
         self.finished = True
         try:
