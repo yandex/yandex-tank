@@ -292,8 +292,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.monitoring_queue.put(None)
         self.data_queue.put(None)
         logger.info("Waiting for sender threads to join.")
-        self.monitoring.join()
-        self.upload.join()
+        try:
+            self.monitoring.join()
+            self.upload.join()
+        except RuntimeError:
+            logger.warning("Thread not joined", exc_info=True)
         self.finished = True
         try:
             self.lp_job.close(rc)
@@ -573,8 +576,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                      token=self.get_option('upload_token'),
                      person=self.__get_operator(),
                      task=self.task,
-                     name=self.get_option('job_name', 'none').decode('utf8'),
-                     description=self.get_option('job_dsc').decode('utf8'),
+                     name=self.get_option('job_name', 'none'),
+                     description=self.get_option('job_dsc'),
                      tank=self.core.job.tank,
                      notify_list=self.get_option("notify"),
                      load_scheme=loadscheme,
