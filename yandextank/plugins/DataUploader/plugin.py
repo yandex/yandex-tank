@@ -296,7 +296,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self.monitoring.join()
         if self.upload.is_alive():
             self.upload.join()
-            logger.warning("Thread not joined", exc_info=True)
         self.finished = True
         try:
             self.lp_job.close(rc)
