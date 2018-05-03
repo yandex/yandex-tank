@@ -248,8 +248,8 @@ class StatsReader(object):
 
 class MonitoringPlugin(AbstractPlugin):
 
-    def __init__(self, core, cfg, cfg_updater=None):
-        super(MonitoringPlugin, self).__init__(core, cfg, cfg_updater=None)
+    def __init__(self, core, cfg):
+        super(MonitoringPlugin, self).__init__(core, cfg)
         self.listeners = []
 
     def add_listener(self, plugin):

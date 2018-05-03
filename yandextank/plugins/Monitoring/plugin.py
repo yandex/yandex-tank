@@ -78,7 +78,7 @@ class ImmutableDict(dict):
 
 class Plugin(MonitoringPlugin):
     def __init__(self, core, cfg, cfg_updater=None):
-        super(Plugin, self).__init__(core, cfg, cfg_updater=None)
+        super(Plugin, self).__init__(core, cfg)
         self.data_queue = Queue()
         self.start_event = Event()
         self.stop_event = Event()
