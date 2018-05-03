@@ -20,7 +20,7 @@ from builtins import str
 
 from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin
-from yandextank.validator.validator import TankConfig
+from yandextank.validator.validator import TankConfig, ValidationError
 from yandextank.aggregator import TankAggregator
 from ..common.util import update_status, pid_exists
 
@@ -100,9 +100,6 @@ class TankCore(object):
         :param configs: list of dict
         """
         self.raw_configs = configs
-        self.config = TankConfig(self.raw_configs,
-                                 with_dynamic_options=True,
-                                 core_section=self.SECTION)
         self.status = {}
         self._plugins = None
         self._artifacts_dir = None
@@ -122,6 +119,13 @@ class TankCore(object):
         self.interrupted = False
 
         self.error_log = None
+
+        error_output = 'validation_error.yaml'
+        self.config = TankConfig(self.raw_configs,
+                                 with_dynamic_options=True,
+                                 core_section=self.SECTION,
+                                 error_output=error_output)
+        self.add_artifact_file(error_output)
     #
     # def get_uuid(self):
     #     return self.uuid
@@ -158,7 +162,10 @@ class TankCore(object):
     @property
     def artifacts_base_dir(self):
         if not self._artifacts_base_dir:
-            artifacts_base_dir = os.path.expanduser(self.get_option(self.SECTION, "artifacts_base_dir"))
+            try:
+                artifacts_base_dir = os.path.expanduser(self.get_option(self.SECTION, "artifacts_base_dir"))
+            except ValidationError:
+                artifacts_base_dir = 'logs'
             if not os.path.exists(artifacts_base_dir):
                 os.makedirs(artifacts_base_dir)
                 os.chmod(self.artifacts_base_dir, 0o755)
@@ -170,7 +177,7 @@ class TankCore(object):
         Tells core to take plugin options and instantiate plugin classes
         """
         logger.info("Loading plugins...")
-        for (plugin_name, plugin_path, plugin_cfg, cfg_updater) in self.config.plugins:
+        for (plugin_name, plugin_path, plugin_cfg) in self.config.plugins:
             logger.debug("Loading plugin %s from %s", plugin_name, plugin_path)
             if plugin_path is "yandextank.plugins.Overload":
                 logger.warning(
@@ -185,7 +192,7 @@ class TankCore(object):
                 logger.debug('Plugin name %s path %s import error', plugin_name, plugin_path, exc_info=True)
                 raise
             try:
-                instance = getattr(plugin, 'Plugin')(self, cfg=plugin_cfg, cfg_updater=cfg_updater)
+                instance = getattr(plugin, 'Plugin')(self, cfg=plugin_cfg)
             except AttributeError:
                 logger.warning('Plugin %s classname should be `Plugin`', plugin_name)
                 raise
@@ -289,7 +296,7 @@ class TankCore(object):
                 retcode = plugin.end_test(retcode)
                 logger.debug("RC after: %s", retcode)
             except Exception:  # FIXME too broad exception clause
-                logger.error("Failed finishing plugin %s:", plugin, exc_info=True)
+                logger.error("Failed finishing plugin %s", plugin, exc_info=True)
                 if not retcode:
                     retcode = 1
         return retcode
@@ -307,10 +314,10 @@ class TankCore(object):
                 retcode = plugin.post_process(retcode)
                 logger.debug("RC after: %s", retcode)
             except Exception:  # FIXME too broad exception clause
-                logger.error("Failed post-processing plugin %s: %s", plugin, exc_info=True)
+                logger.error("Failed post-processing plugin %s", plugin, exc_info=True)
                 if not retcode:
                     retcode = 1
-        self.__collect_artifacts()
+        self._collect_artifacts()
         return retcode
 
     def __setup_taskset(self, affinity, pid=None, args=None):
@@ -332,7 +339,7 @@ class TankCore(object):
                 logger.debug('Taskset setup failed w/ retcode :%s', retcode)
                 raise KeyError(stderr)
 
-    def __collect_artifacts(self):
+    def _collect_artifacts(self, validation_failed=False):
         logger.debug("Collecting artifacts")
         logger.info("Artifacts dir: %s", self.artifacts_dir)
         for filename, keep in self.artifact_files.items():
@@ -519,7 +526,10 @@ class TankCore(object):
     @property
     def artifacts_dir(self):
         if not self._artifacts_dir:
-            dir_name = self.get_option(self.SECTION, 'artifacts_dir')
+            try:
+                dir_name = self.get_option(self.SECTION, 'artifacts_dir')
+            except ValidationError:
+                dir_name = None
             if not dir_name:
                 date_str = datetime.datetime.now().strftime(
                     "%Y-%m-%d_%H-%M-%S.")

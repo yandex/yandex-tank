@@ -94,6 +94,7 @@ def main():
         rc = worker.perform_test()
         sys.exit(rc)
     except Exception as ex:
+        worker.core._collect_artifacts()
         logging.error("Exception: %s", ex)
         logging.debug("Exception: %s", traceback.format_exc(ex))
         sys.exit(1)

@@ -230,6 +230,7 @@ OPTIONS = {
                     'line(100,200,10m)': 'linear growth from 100 to 200 instances/rps during 10 minutes',
                     'const(200,90s)': 'constant load of 200 instances/rps during 90s',
                     'test_dir/test_backend.stpd': 'path to ready schedule file'},
+                'validator': 'load_scheme'
             }
         },
         'required': True
@@ -278,7 +279,7 @@ OPTIONS = {
         }
     },
     'use_caching': {
-        'description': 'Enable stpd-file caching.',
+        'description': 'Enable stpd-file caching for similar tests. Set false to reload ammo file and generate new stpd',
         'type': 'boolean',
         'default': True
     },

@@ -16,8 +16,8 @@ class Plugin(GeneratorPlugin):
     """ Big Fucking Gun plugin """
     SECTION = 'bfg'
 
-    def __init__(self, core, cfg, cfg_updater):
-        super(Plugin, self).__init__(core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        super(Plugin, self).__init__(core, cfg)
         self._bfg = None
         self.log = logging.getLogger(__name__)
         self.gun_type = None

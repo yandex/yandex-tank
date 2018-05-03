@@ -392,12 +392,10 @@ DataUploader
 
 ``upload_token`` (string)
 -------------------------
-*\- Job's token. Use to upload data to an existing job. Requres jobno. Default:* ``None``
+*\- Job's token. Use to upload data to an existing job. Requres jobno.*
 
 :dependencies:
  jobno
-:nullable:
- True
 
 ``ver`` (string)
 ----------------
@@ -807,7 +805,7 @@ Phantom
 
 ``use_caching`` (boolean)
 -------------------------
-*\- Enable stpd\-file caching. Default:* ``True``
+*\- Enable stpd\-file caching for similar tests. Set false to reload ammo file and generate new stpd. Default:* ``True``
 
 ``writelog`` (string)
 ---------------------

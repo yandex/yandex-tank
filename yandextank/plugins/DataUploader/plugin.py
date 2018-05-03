@@ -66,8 +66,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     VERSION = '3.0'
     SECTION = 'uploader'
 
-    def __init__(self, core, cfg, cfg_updater):
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        AbstractPlugin.__init__(self, core, cfg)
         self.data_queue = Queue()
         self.monitoring_queue = Queue()
         if self.core.error_log:
@@ -105,6 +105,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.locked_targets = []
         self.web_link = None
         self.finished = False
+
+    def set_option(self, option, value):
+        self.cfg.setdefault('meta', {})[option] = value
 
     @staticmethod
     def get_key():
@@ -312,8 +315,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self.events_processing.close()
             self.events.join()
         logger.info("Waiting for sender threads to join.")
-        self.monitoring.join()
-        self.upload.join()
+        if self.monitoring.is_alive():
+            self.monitoring.join()
+        if self.upload.is_alive():
+            self.upload.join()
         self.finished = True
         try:
             self.lp_job.close(rc)
@@ -577,8 +582,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                      token=self.get_option('upload_token'),
                      person=self.__get_operator(),
                      task=self.task,
-                     name=self.get_option('job_name', 'none').decode('utf8'),
-                     description=self.get_option('job_dsc').decode('utf8'),
+                     name=self.get_option('job_name', 'none'),
+                     description=self.get_option('job_dsc'),
                      tank=self.core.job.tank,
                      notify_list=self.get_option("notify"),
                      load_scheme=loadscheme,

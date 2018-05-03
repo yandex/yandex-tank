@@ -35,8 +35,8 @@ class Plugin(MonitoringPlugin):
 
     SECTION = 'telegraf'  # may be redefined to 'monitoring' sometimes.
 
-    def __init__(self, core, cfg, cfg_updater):
-        super(Plugin, self).__init__(core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        super(Plugin, self).__init__(core, cfg)
         self.jobno = None
         self.default_target = None
         self.default_config = "{path}/config/monitoring_default_config.xml".format(

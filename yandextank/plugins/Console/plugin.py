@@ -12,8 +12,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
     ''' Console plugin '''
     SECTION = 'console'
 
-    def __init__(self, core, cfg, cfg_updater):
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        AbstractPlugin.__init__(self, core, cfg)
         self.log = logging.getLogger(__name__)
         self.screen = None
         self.render_exception = None

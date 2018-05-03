@@ -33,8 +33,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     SECTION = 'influx'
 
-    def __init__(self, core, cfg, cfg_updater):
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        AbstractPlugin.__init__(self, core, cfg)
         self.tank_tag = self.get_option("tank_tag")
         address = self.get_option("address")
         port = self.get_option("port")
