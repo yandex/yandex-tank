@@ -7,7 +7,7 @@ from Queue import Empty
 from multiprocessing import Queue, Event
 
 import logging
-from yandextank.common.interfaces import AbstractPlugin
+from yandextank.common.interfaces import AbstractPlugin, MonitoringPlugin
 from yasmapi import RtGolovanRequest
 from threading import Thread
 
@@ -60,10 +60,25 @@ def monitoring_data(ts, signals, comment=''):
         }}
 
 
-class Plugin(AbstractPlugin):
+class ImmutableDict(dict):
+    def __init__(self, _dict):
+        super(ImmutableDict, self).__init__(_dict)
+
+    def __setitem__(self, key, value):
+        raise ValueError('Immutable dict')
+
+    def set_copy(self, key=None, value=None):
+        copy = dict(self)
+        if key is None:
+            return copy
+        else:
+            copy[key] = value
+            return copy
+
+
+class Plugin(MonitoringPlugin):
     def __init__(self, core, cfg, cfg_updater=None):
         super(Plugin, self).__init__(core, cfg, cfg_updater=None)
-        self.listeners = []
         self.data_queue = Queue()
         self.start_event = Event()
         self.stop_event = Event()
@@ -77,7 +92,7 @@ class Plugin(AbstractPlugin):
         # self.__collected_data = []
         for listener in self.listeners:
             # deep copy to ensure each listener gets it's own copy
-            listener.monitoring_data([copy.deepcopy(data)])
+            listener.monitoring_data(ImmutableDict(data))
 
     def is_test_finished(self):
         if not self.data_queue.empty():

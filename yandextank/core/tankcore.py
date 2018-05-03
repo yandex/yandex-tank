@@ -19,11 +19,10 @@ import yaml
 from builtins import str
 
 from yandextank.common.exceptions import PluginNotPrepared
-from yandextank.common.interfaces import GeneratorPlugin
+from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin
 from yandextank.validator.validator import TankConfig
 from yandextank.aggregator import TankAggregator
 from ..common.util import update_status, pid_exists
-from ..plugins.Monitoring import Plugin as MonitoringPlugin
 
 from netort.resource import manager as resource
 from netort.process import execute
@@ -42,15 +41,16 @@ LOCK_FILE_WILDCARD = 'lunapark_*.lock'
 class Job(object):
     def __init__(
             self,
-            monitoring_plugin,
+            monitoring_plugins,
             aggregator,
             tank,
             generator_plugin=None):
         """
 
         :type aggregator: TankAggregator
+        :type monitoring_plugins: list of
         """
-        self.monitoring_plugin = monitoring_plugin
+        self.monitoring_plugins = monitoring_plugins
         self.aggregator = aggregator
         self.tank = tank
         self._phantom_info = None
@@ -58,10 +58,8 @@ class Job(object):
 
     def subscribe_plugin(self, plugin):
         self.aggregator.add_result_listener(plugin)
-        try:
-            self.monitoring_plugin.add_listener(plugin)
-        except AttributeError:
-            logging.info('Monitoring plugin is not enabled')
+        for monitoring_plugin in self.monitoring_plugins:
+            monitoring_plugin.add_listener(plugin)
 
     @property
     def phantom_info(self):
@@ -199,20 +197,16 @@ class TankCore(object):
     def job(self):
         if not self._job:
             # monitoring plugin
-            try:
-                mon = self.get_plugin_of_type(MonitoringPlugin)
-            except KeyError:
-                logger.debug("Telegraf plugin not found:", exc_info=True)
-                mon = None
+            monitorings = [plugin for plugin in self.plugins.values() if isinstance(plugin, MonitoringPlugin)]
             # generator plugin
             try:
                 gen = self.get_plugin_of_type(GeneratorPlugin)
             except KeyError:
                 logger.warning("Load generator not found")
-                gen = GeneratorPlugin()
+                gen = GeneratorPlugin(self, {}, None)
             # aggregator
             aggregator = TankAggregator(gen)
-            self._job = Job(monitoring_plugin=mon,
+            self._job = Job(monitoring_plugins=monitorings,
                             generator_plugin=gen,
                             aggregator=aggregator,
                             tank=socket.getfqdn())

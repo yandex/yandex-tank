@@ -247,3 +247,13 @@ class StatsReader(object):
                 'reqps': rps
             }
         }
+
+
+class MonitoringPlugin(AbstractPlugin):
+
+    def __init__(self, core, cfg, cfg_updater=None):
+        super(MonitoringPlugin, self).__init__(core, cfg, cfg_updater=None)
+        self.listeners = []
+
+    def add_listener(self, plugin):
+        self.listeners.append(plugin)
