@@ -23,8 +23,8 @@ class Plugin(GeneratorPlugin):
 
     OPTION_CONFIG = "config"
 
-    def __init__(self, core, cfg, cfg_updater):
-        super(Plugin, self).__init__(core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        super(Plugin, self).__init__(core, cfg)
         self.predefined_phout = None
         self.did_phout_import_try = False
         self.eta_file = None
@@ -67,6 +67,7 @@ class Plugin(GeneratorPlugin):
         self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
         if not self.get_option(self.OPTION_CONFIG, '') and self.predefined_phout:
             self.phout_import_mode = True
+        self.phantom_config = self.phantom.config_file
 
     @property
     def phantom(self):
@@ -164,7 +165,7 @@ class Plugin(GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            logger.warn("Terminating phantom process with PID %s", self.process.pid)
+            logger.info("Terminating phantom process with PID %s", self.process.pid)
             self.process.terminate()
             if self.process:
                 self.process.communicate()

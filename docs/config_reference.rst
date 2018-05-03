@@ -392,12 +392,10 @@ DataUploader
 
 ``upload_token`` (string)
 -------------------------
-*\- Job's token. Use to upload data to an existing job. Requres jobno. Default:* ``None``
+*\- Job's token. Use to upload data to an existing job. Requres jobno.*
 
 :dependencies:
  jobno
-:nullable:
- True
 
 ``ver`` (string)
 ----------------
@@ -540,19 +538,19 @@ Pandora
 
 ``config_content`` (dict)
 -------------------------
-*\- (no description). Default:* ``{}``
+*\- Pandora config contents. Default:* ``{}``
 
 ``config_file`` (string)
 ------------------------
-*\- (no description). Default:* ``""``
+*\- Pandora config file path. Default:* ``""``
 
 ``expvar`` (boolean)
 --------------------
-*\- (no description). Default:* ``True``
+*\- Toggle expvar monitoring. Default:* ``True``
 
 ``pandora_cmd`` (string)
 ------------------------
-*\- (no description). Default:* ``pandora``
+*\- Pandora executable path. Default:* ``pandora``
 
 Phantom
 =======
@@ -807,7 +805,7 @@ Phantom
 
 ``use_caching`` (boolean)
 -------------------------
-*\- Enable stpd\-file caching. Default:* ``True``
+*\- Enable stpd\-file caching for similar tests. Set false to reload ammo file and generate new stpd. Default:* ``True``
 
 ``writelog`` (string)
 ---------------------

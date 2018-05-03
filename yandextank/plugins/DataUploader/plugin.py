@@ -8,6 +8,7 @@ import pwd
 import re
 import sys
 import time
+import datetime
 from future.moves.urllib.parse import urljoin
 
 from queue import Empty, Queue
@@ -21,6 +22,9 @@ from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
 from .client import APIClient, OverloadClient
+from ...common.util import FileScanner
+
+from netort.data_processing import Drain
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
@@ -49,7 +53,7 @@ def chop(data_list, chunk_size):
     if sys.getsizeof(str(data_list)) <= chunk_size:
         return [data_list]
     elif len(data_list) == 1:
-        logger.warning("Too large piece of Telegraf data. Might experience upload problems.")
+        logger.info("Too large piece of Telegraf data. Might experience upload problems.")
         return [data_list]
     else:
         mid = len(data_list) / 2
@@ -62,10 +66,18 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     VERSION = '3.0'
     SECTION = 'uploader'
 
-    def __init__(self, core, cfg, cfg_updater):
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        AbstractPlugin.__init__(self, core, cfg)
         self.data_queue = Queue()
         self.monitoring_queue = Queue()
+        if self.core.error_log:
+            self.events_queue = Queue()
+            self.events_reader = EventsReader(self.core.error_log)
+            self.events_processing = Drain(self.events_reader, self.events_queue)
+            self.events_processing.start()
+            self.events = threading.Thread(target=self.__events_uploader)
+            self.events.daemon = True
+
         self.retcode = -1
         self._target = None
         self.task_name = ''
@@ -93,6 +105,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.locked_targets = []
 
         self.finished = False
+
+    def set_option(self, option, value):
+        self.cfg.setdefault('meta', {})[option] = value
 
     @staticmethod
     def get_key():
@@ -145,7 +160,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def check_task_is_open(self):
         if self.backend_type == BackendTypes.OVERLOAD:
             return
-        TASK_TIP = 'The task should be connected to Lunapark. Open startrek task page, click "actions" -> "load testing".'
+        TASK_TIP = 'The task should be connected to Lunapark.' \
+                   'Open startrek task page, click "actions" -> "load testing".'
 
         logger.debug("Check if task %s is open", self.task)
         try:
@@ -264,6 +280,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.status_sender.start()
         self.upload.start()
         self.monitoring.start()
+        if self.core.error_log:
+            self.events.start()
 
         web_link = urljoin(self.lp_job.api_client.base_url, str(self.lp_job.number))
         logger.info("Web link: %s", web_link)
@@ -291,6 +309,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def post_process(self, rc):
         self.monitoring_queue.put(None)
         self.data_queue.put(None)
+        if self.core.error_log:
+            self.events_queue.put(None)
+            self.events_reader.close()
+            self.events_processing.close()
+            self.events.join()
         logger.info("Waiting for sender threads to join.")
         if self.monitoring.is_alive():
             self.monitoring.join()
@@ -380,67 +403,55 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 break
             except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
-                lp_job.is_alive = False
                 self.retcode = 8
                 break
             if self.finished:
                 break
         logger.info("Closing Status sender thread")
 
-    def __data_uploader(self):
-        logger.info('Data uploader thread started')
-        lp_job = self.lp_job
-        queue = self.data_queue
-        while lp_job.is_alive:
+    def __uploader(self, queue, sender_method, name='Uploader'):
+        logger.info('{} thread started'.format(name))
+        while self.lp_job.is_alive:
             try:
                 entry = queue.get(timeout=1)
-                if entry is not None:
-                    data, stats = entry
-                else:
-                    logger.info("Data uploader queue returned None")
+                if entry is None:
+                    logger.info("{} queue returned None".format(name))
                     break
-                lp_job.push_test_data(data, stats)
+                sender_method(entry)
             except Empty:
                 continue
             except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
-                lp_job.is_alive = False
                 self.retcode = 8
                 break
+            except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
+                logger.warn('Failed to push {} data'.format(name))
+                logger.warn(e.message)
+                self.lp_job.is_alive = False
             except Exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 logger.info("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
                 break
-        logger.info("Closing Data uploader thread")
+        # purge queue
+        while not queue.empty():
+            if queue.get_nowait() is None:
+                break
+        logger.info("Closing {} thread".format(name))
+
+    def __data_uploader(self):
+        self.__uploader(self.data_queue,
+                        lambda entry: self.lp_job.push_test_data(*entry),
+                        'Data Uploader')
 
     def __monitoring_uploader(self):
-        logger.info('Monitoring uploader thread started')
-        lp_job = self.lp_job
-        queue = self.monitoring_queue
-        while lp_job.is_alive:
-            try:
-                data = queue.get(timeout=1)
-                if data is not None:
-                    lp_job.push_monitoring_data(data)
-                else:
-                    logger.info('Monitoring queue returned None')
-                    break
-            except Empty:
-                continue
-            except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
-                logger.warn('Failed to push monitoring data')
-                logger.warn(e.message)
-                break
-            except APIClient.StoppedFromOnline:
-                logger.info("Test stopped from Lunapark")
-                lp_job.is_alive = False
-                self.retcode = 8
-                break
-            except Exception as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                logger.info("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
-                break
-        logger.info('Closing Monitoring uploader thread')
+        self.__uploader(self.monitoring_queue,
+                        self.lp_job.push_monitoring_data,
+                        'Monitoring Uploader')
+
+    def __events_uploader(self):
+        self.__uploader(self.events_queue,
+                        self.lp_job.push_events_data,
+                        'Events Uploader')
 
     # TODO: why we do it here? should be in core
     def __save_conf(self):
@@ -451,7 +462,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 with open(config_filename) as config_file:
                     self.core.job.monitoring_plugin.set_option("config_contents", config_file.read())
         except AttributeError:  # pylint: disable=W0703
-            logger.warning("Can't get monitoring config")
+            logger.info("Can't get monitoring config")
 
         self.lp_job.send_config_snapshot(self.core.cfg_snapshot)
         self.core.config.save(
@@ -809,6 +820,10 @@ class LPJob(object):
             self.api_client.push_monitoring_data(
                 self.number, self.token, data, trace=self.log_monitoring_requests)
 
+    def push_events_data(self, data):
+        if self.is_alive:
+            self.api_client.push_events_data(self.number, self.person, data)
+
     def lock_target(self, lock_target, lock_target_duration, ignore, strict):
         lock_wait_timeout = 10
         maintenance_timeouts = iter([0]) if ignore else iter(lambda: lock_wait_timeout, 0)
@@ -855,10 +870,31 @@ class LPJob(object):
                 logger.info('Target is locked, retrying...')
                 continue
             except (APIClient.StoppedFromOnline, APIClient.NotAvailable, APIClient.NetworkError):
-                logger.warn('Can\'t check whether target is locked\n')
+                logger.info('Can\'t check whether target is locked\n')
                 if strict:
                     logger.warn('Stopping test due to strict_lock')
                     raise
                 else:
                     logger.warn('strict_lock is False, proceeding')
                     return {'status': 'ok'}
+
+
+class EventsReader(FileScanner):
+    """
+    Parse lines and return stats
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(EventsReader, self).__init__(*args, **kwargs)
+
+    def _read_data(self, lines):
+        results = []
+        for line in lines:
+            # 2018-03-30 13:40:50,541\tCan't get monitoring config
+            data = line.split("\t")
+            if len(data) > 1:
+                timestamp, message = data[0], data[1]
+                dt = datetime.datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S,%f')
+                unix_ts = int(time.mktime(dt.timetuple()))
+                results.append([unix_ts, message])
+        return results

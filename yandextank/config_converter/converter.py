@@ -162,12 +162,21 @@ class UnknownOption(ConversionError):
     pass
 
 
+def empty_to_none(func):
+    def new_func(k, v):
+        if v in '':
+            return {k: None}
+        else:
+            return func(k, v)
+    return new_func
+
+
 class Option(object):
     TYPE_CASTERS = {
-        'boolean': lambda k, v: {k: to_bool(v)},
-        'integer': lambda k, v: {k: int(v)},
-        'list': lambda k, v: {k: [_.strip() for _ in v.strip().split()]},
-        'float': lambda k, v: {k: float(v)}
+        'boolean': empty_to_none(lambda k, v: {k: to_bool(v)}),
+        'integer': empty_to_none(lambda k, v: {k: int(v)}),
+        'list': empty_to_none(lambda k, v: {k: [_.strip() for _ in v.strip().split()]}),
+        'float': empty_to_none(lambda k, v: {k: float(v)})
     }
 
     SPECIAL_CONVERTERS = {

@@ -42,6 +42,12 @@ def main():
         default="tank.log",
         help="Tank log file location")
     parser.add_option(
+        '--error_log',
+        action='store',
+        dest='error_log',
+        default="tank_errors.log",
+        help="Tank errors log file location")
+    parser.add_option(
         '-m',
         '--manual-start',
         action='store_true',

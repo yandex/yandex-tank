@@ -127,6 +127,7 @@ load_profile:
     schedule:
       type: string
       required: true
+      validator: load_scheme
       description: load schedule or path to stpd file
       examples:
         line(100,200,10m): linear growth from 100 to 200 instances/rps during 10 minutes

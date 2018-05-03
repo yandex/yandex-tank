@@ -381,9 +381,9 @@ Now, our basic config looks like that:
 
   phantom:
     address: 203.0.113.1:443
-      load_profile:
-        load_type: rps
-        schedule: line(1, 10, 10m)
+    load_profile:
+      load_type: rps
+      schedule: line(1, 10, 10m)
     ssl: true
 
 .. note::

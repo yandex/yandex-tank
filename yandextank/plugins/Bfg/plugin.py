@@ -16,8 +16,8 @@ class Plugin(GeneratorPlugin):
     """ Big Fucking Gun plugin """
     SECTION = 'bfg'
 
-    def __init__(self, core, cfg, cfg_updater):
-        super(Plugin, self).__init__(core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        super(Plugin, self).__init__(core, cfg)
         self._bfg = None
         self.log = logging.getLogger(__name__)
         self.gun_type = None
@@ -46,6 +46,7 @@ class Plugin(GeneratorPlugin):
     def configure(self):
         self.log.info("Configuring BFG...")
         self.stepper_wrapper.read_config()
+        self.stepper_wrapper.prepare_stepper()
 
     def get_reader(self):
         if self.reader is None:
@@ -61,7 +62,6 @@ class Plugin(GeneratorPlugin):
     def bfg(self):
         if self._bfg is None:
             BFG = BFGGreen if self.get_option("worker_type", "") == "green" else BFGMultiprocessing
-            self.stepper_wrapper.prepare_stepper()
             self._bfg = BFG(
                 gun=self.gun,
                 instances=self.stepper_wrapper.instances,

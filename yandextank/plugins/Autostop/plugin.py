@@ -15,8 +15,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
     """ Plugin that accepts criterion classes and triggers autostop """
     SECTION = 'autostop'
 
-    def __init__(self, core, cfg, cfg_updater):
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+    def __init__(self, core, cfg):
+        AbstractPlugin.__init__(self, core, cfg)
         AggregateResultListener.__init__(self)
 
         self.cause_criterion = None
@@ -88,7 +88,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
 
     def is_test_finished(self):
         if self.cause_criterion:
-            self.log.info(
+            self.log.warning(
                 "Autostop criterion requested test stop: %s",
                 self.cause_criterion.explain())
             return self.cause_criterion.get_rc()
@@ -112,8 +112,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         if not self.cause_criterion:
             for criterion_text, criterion in self._criterions.iteritems():
                 if criterion.notify(data, stat):
-                    self.log.debug(
-                        "Autostop criterion requested test stop: %s", criterion)
+                    self.log.warning(
+                        "Autostop criterion requested test stop: %s", criterion_text)
                     self.cause_criterion = criterion
                     open(self._stop_report_path, 'w').write(criterion_text)
                     self.core.add_artifact_file(self._stop_report_path)
