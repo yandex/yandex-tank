@@ -17,6 +17,7 @@ SCHEMA = 'schema'
 EXAMPLES = 'examples'
 ANYOF = 'anyof'
 NO_DSC = '(no description)'
+VALIDATOR = 'validator'
 
 
 class TextBlock(object):
@@ -306,14 +307,14 @@ class OptionFormatter(object):
         hdr = renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \
             if header else ''
         dsc = self.format_dsc(renderer)
-        body = render_body(renderer, self.option_kwargs, [TYPE, DESCRIPTION, DEFAULT, REQUIRED], {'allowed': allowed})
+        body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED], {'allowed': allowed})
         return '\n'.join([_ for _ in [hdr, dsc, body] if _])
 
     def scalar_with_values_description(self, renderer, header=True):
         hdr = renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \
             if header else ''
         dsc = self.format_dsc(renderer)
-        body = render_body(renderer, self.option_kwargs, [TYPE, DESCRIPTION, DEFAULT, REQUIRED, ALLOWED, VALUES_DSC])
+        body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED, ALLOWED, VALUES_DSC])
         values_description_block = render_values_description(renderer, self.option_kwargs)
         return '\n'.join([_ for _ in [hdr, dsc, body, values_description_block] if _])
 
@@ -327,7 +328,7 @@ class OptionFormatter(object):
         schema_block = renderer.field_list({
             '{} ({})'.format(renderer.mono(key), dict_schema[key][TYPE]): get_formatter({key: value})(renderer, header=False)
             for key, value in dict_schema.items()})
-        body = render_body(renderer, self.option_kwargs, [TYPE, DESCRIPTION, DEFAULT, REQUIRED, SCHEMA])
+        body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED, SCHEMA])
         return '\n'.join([_ for _ in [hdr, dsc, schema_block, body] if _])
 
     def anyof_formatter(self, renderer, header=True):
@@ -337,7 +338,7 @@ class OptionFormatter(object):
         dsc = self.format_dsc(renderer)
         values_description_block = render_values_description(renderer, self.option_kwargs) \
             if VALUES_DSC in self.option_kwargs else ''
-        body = render_body(renderer, self.option_kwargs, [TYPE, DESCRIPTION, DEFAULT, REQUIRED, ANYOF, VALUES_DSC])
+        body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED, ANYOF, VALUES_DSC])
 
         return '\n'.join([_ for _ in [hdr, dsc, values_description_block, body] if _])
 
@@ -347,7 +348,7 @@ class OptionFormatter(object):
                                 ' ' +
                                 '({} of {})'.format(self.option_kwargs.get(TYPE, LIST), schema.get(TYPE, '')))
         dsc = self.format_dsc(renderer)
-        body = render_body(renderer, self.option_kwargs, [TYPE, DEFAULT, REQUIRED, DESCRIPTION, SCHEMA])
+        body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DEFAULT, REQUIRED, DESCRIPTION, SCHEMA])
         if set(schema.keys()) - {TYPE}:
             schema_block = renderer.field_list({
                 '[list_element] ({})'.format(schema.get(TYPE, '')):
