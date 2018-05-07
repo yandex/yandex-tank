@@ -88,11 +88,8 @@ class Plugin(MonitoringPlugin):
 
     def send_collected_data(self, data):
         """sends pending data set to listeners"""
-        # data = self.__collected_data
-        # self.__collected_data = []
         for listener in self.listeners:
-            # deep copy to ensure each listener gets it's own copy
-            listener.monitoring_data(ImmutableDict(data))
+            listener.monitoring_data([ImmutableDict(data)])
 
     def is_test_finished(self):
         if not self.data_queue.empty():
@@ -117,6 +114,7 @@ class Plugin(MonitoringPlugin):
         self.stop_event.set()
         self.send_rest()
         self.yasm_client_thread.join()
+        return retcode
 
     def send_rest(self):
         while not self.data_queue.empty():

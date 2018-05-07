@@ -302,6 +302,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def end_test(self, retcode):
         self.on_air = False
+        if retcode != 0:
+            self.lp_job.interrupted.set()
         self.__save_conf()
         self.unlock_targets(self.locked_targets)
         return retcode
@@ -309,15 +311,21 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def post_process(self, rc):
         self.monitoring_queue.put(None)
         self.data_queue.put(None)
-        if self.core.error_log:
-            self.events_queue.put(None)
-            self.events_reader.close()
-            self.events_processing.close()
+        try:
+            if self.core.error_log:
+                self.events_queue.put(None)
+                self.events_reader.close()
+                self.events_processing.close()
+                self.events.join()
+            logger.info("Waiting for sender threads to join.")
+            if self.monitoring.is_alive():
+                self.monitoring.join()
+            if self.upload.is_alive():
+                self.upload.join()
+        except KeyboardInterrupt:
+            self.lp_job.interrupted.set()
             self.events.join()
-        logger.info("Waiting for sender threads to join.")
-        if self.monitoring.is_alive():
             self.monitoring.join()
-        if self.upload.is_alive():
             self.upload.join()
         self.finished = True
         try:
@@ -354,18 +362,13 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         @data: aggregated data
         @stats: stats about gun
         """
-        if self.lp_job.is_alive:
+        if not self.lp_job.interrupted.is_set():
             self.data_queue.put((data, stats))
 
     def monitoring_data(self, data_list):
-        if self.lp_job.is_alive:
+        if not self.lp_job.interrupted.is_set():
             if len(data_list) > 0:
-                if self.is_telegraf:
-                    # telegraf
-                    [self.monitoring_queue.put(chunk) for chunk in chop(data_list, self.get_option("chunk_size"))]
-                else:
-                    # monitoring
-                    [self.monitoring_queue.put(data) for data in data_list]
+                [self.monitoring_queue.put(chunk) for chunk in chop(data_list, self.get_option("chunk_size"))]
 
     @property
     def is_telegraf(self):
@@ -389,7 +392,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def __send_status(self):
         logger.info('Status sender thread started')
         lp_job = self.lp_job
-        while lp_job.is_alive and self.on_air:
+        while not lp_job.interrupted.is_set() and self.on_air:
             try:
                 self.lp_job.send_status(self.core.status)
                 time.sleep(self.get_option('send_status_period'))
@@ -407,7 +410,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def __uploader(self, queue, sender_method, name='Uploader'):
         logger.info('{} thread started'.format(name))
-        while self.lp_job.is_alive:
+        while not self.lp_job.interrupted.is_set():
             try:
                 entry = queue.get(timeout=1)
                 if entry is None:
@@ -423,7 +426,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
                 logger.warn('Failed to push {} data'.format(name))
                 logger.warn(e.message)
-                self.lp_job.is_alive = False
+                self.lp_job.interrupted.set()
             except Exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 logger.info("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
@@ -691,7 +694,6 @@ class LPJob(object):
             log_monitoring_requests=False,
             number=None,
             token=None,
-            is_alive=True,
             notify_list=None,
             version=None,
             detailed_time=None,
@@ -715,7 +717,7 @@ class LPJob(object):
         self.target_port = target_port
         self.person = person
         self.task = task
-        self.is_alive = is_alive
+        self.interrupted = threading.Event()
         self._number = number
         self._token = token
         self.api_client = client
@@ -728,13 +730,13 @@ class LPJob(object):
         self.web_link = ''
 
     def push_test_data(self, data, stats):
-        if self.is_alive:
+        if not self.interrupted.is_set():
             try:
                 self.api_client.push_test_data(
-                    self.number, self.token, data, stats, trace=self.log_data_requests)
+                    self.number, self.token, data, stats, self.interrupted, trace=self.log_data_requests)
             except (APIClient.NotAvailable, APIClient.NetworkError, APIClient.UnderMaintenance):
                 logger.warn('Failed to push test data')
-                self.is_alive = False
+                self.interrupted.set()
 
     def edit_metainfo(
             self,
@@ -795,7 +797,7 @@ class LPJob(object):
         self.web_link = urljoin(self.api_client.base_url, str(self._number))
 
     def send_status(self, status):
-        if self._number and self.is_alive:
+        if self._number and not self.interrupted.is_set():
             self.api_client.send_status(
                 self.number,
                 self.token,
@@ -812,12 +814,12 @@ class LPJob(object):
                 self.number, config, trace=self.log_other_requests)
 
     def push_monitoring_data(self, data):
-        if self.is_alive:
+        if not self.interrupted.is_set():
             self.api_client.push_monitoring_data(
-                self.number, self.token, data, trace=self.log_monitoring_requests)
+                self.number, self.token, data, self.interrupted, trace=self.log_monitoring_requests)
 
     def push_events_data(self, data):
-        if self.is_alive:
+        if not self.interrupted.is_set():
             self.api_client.push_events_data(self.number, self.person, data)
 
     def lock_target(self, lock_target, lock_target_duration, ignore, strict):
