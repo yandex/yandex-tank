@@ -54,7 +54,7 @@ def load_plugin_schema(package):
         if 'aggregator' in package.lower():
             logger.warning('Plugin Aggregator is now deprecated, please remove this section from your config')
             return load_yaml_schema(pkg_resources.resource_filename('yandextank.aggregator', 'config/schema.yaml'))
-        raise
+        raise ValidationError({'package': ['No module named {}'.format(package)]})
 
 
 def load_schema(directory, filename=None):
