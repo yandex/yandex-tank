@@ -435,8 +435,7 @@ Example:
       - /
     autocases: 1
     multi:
-      - phantom-1:
-        address: hostname1:port1
+      - address: hostname1:port1
         load_profile:
           load_type: rps
           schedule: const(1,10s)
@@ -445,8 +444,7 @@ Example:
           - /321
         ssl: 1
         autocases: 1
-      - phantom-2:
-        address: hostname2:port2
+      - address: hostname2:port2
         load_profile:
           load_type: rps
           schedule: const(1,10s)
