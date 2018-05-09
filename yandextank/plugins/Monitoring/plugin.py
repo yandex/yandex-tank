@@ -33,6 +33,7 @@ DEFAULT_SIGNALS = [
 
 def signals_stream(host, tags, signals):
     for point in RtGolovanRequest({host: {tags: signals}}):
+        # logger.info('Monitoring data:\n{}'.format(point.values))
         yield point.ts, point.values[host][tags]
 
 
@@ -53,7 +54,7 @@ def monitoring_data(ts, signals, comment=''):
     return {
         "timestamp": ts,
         "data": {
-            "hostname": {
+            "yasm": {
                 "comment": comment,
                 "metrics": {map_metric_name(name): convert_value(name, value) for name, value in signals.items()}
             }
@@ -82,6 +83,7 @@ class Plugin(MonitoringPlugin):
         self.data_queue = Queue()
         self.start_event = Event()
         self.stop_event = Event()
+        self.last_ts = 0
 
     def add_listener(self, plugin):
         self.listeners.append(plugin)
@@ -111,6 +113,14 @@ class Plugin(MonitoringPlugin):
         logger.info('Listeners: {}'.format(self.listeners))
 
     def end_test(self, retcode):
+        self.end_time = time.time()
+        while self.last_ts < self.end_time:
+            try:
+                logger.info('Waiting for yasm metrics')
+                time.sleep(1)
+            except KeyboardInterrupt:
+                logger.info('Metrics receiving interrupted')
+                break
         self.stop_event.set()
         self.send_rest()
         self.yasm_client_thread.join()
@@ -130,11 +140,11 @@ class Plugin(MonitoringPlugin):
         while not self.stop_event.is_set():
             ts, data = stream.next()
             logger.info('Received monitoring data for {}'.format(ts))
+            self.last_ts = int(ts)
             chunk = monitoring_data(ts, data)
             if self.start_event.is_set():
                 self.data_queue.put(chunk)
-                logger.info('Putting to monitoring data queue: {}'.format(chunk))
-            time.sleep(4.5)
+                # logger.info('Putting to monitoring data queue: {}'.format(chunk))
 
             # host='QLOUD'
             # tags='itype=qloud;prj=load.lpq.lpq-prod'

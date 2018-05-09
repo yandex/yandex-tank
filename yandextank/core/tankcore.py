@@ -289,7 +289,15 @@ class TankCore(object):
         logger.info("Stopping load generator and aggregator")
         retcode = self.job.aggregator.end_test(retcode)
         logger.debug("RC after: %s", retcode)
-        for plugin in [p for p in self.plugins.values() if p is not self.job.generator_plugin]:
+
+        logger.info('Stopping monitoring')
+        for plugin in self.job.monitoring_plugins:
+            logger.info('Stopping %s', plugin)
+            retcode = plugin.end_test(retcode)
+            logger.info('RC after: %s', retcode)
+
+        for plugin in [p for p in self.plugins.values() if
+                       p is not self.job.generator_plugin and p not in self.job.monitoring_plugins]:
             logger.debug("Finalize %s", plugin)
             try:
                 logger.debug("RC before: %s", retcode)
