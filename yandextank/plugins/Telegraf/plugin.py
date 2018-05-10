@@ -15,7 +15,7 @@ from copy import deepcopy
 
 from netort.resource import manager as resource
 
-from ...common.interfaces import MonitoringDataListener, AbstractPlugin, AbstractInfoWidget, MonitoringPlugin
+from ...common.interfaces import MonitoringDataListener, AbstractInfoWidget, MonitoringPlugin
 from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 from ..Console import Plugin as ConsolePlugin

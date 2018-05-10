@@ -1,4 +1,3 @@
-import copy
 import ctypes
 import re
 
@@ -8,7 +7,7 @@ from Queue import Empty
 from multiprocessing import Queue, Event, Process
 
 import logging
-from yandextank.common.interfaces import AbstractPlugin, MonitoringPlugin
+from yandextank.common.interfaces import MonitoringPlugin
 from yasmapi import RtGolovanRequest
 from threading import Thread, _active
 
@@ -132,9 +131,9 @@ class Plugin(MonitoringPlugin):
     def prepare_test(self):
         self.yasm_receiver_ps = Process(target=self.yasm_receiver,
                                         args=(self.get_option('hosts'),
-                                                 self.get_option('tags'),
-                                                 self.get_option('signals'),
-                                                 ))
+                                              self.get_option('tags'),
+                                              self.get_option('signals'),
+                                              ))
         self.yasm_receiver_ps.start()
         self.consumer_thread = Thread(target=self.consumer)
         self.consumer_thread.start()

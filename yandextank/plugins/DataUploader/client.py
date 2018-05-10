@@ -531,7 +531,7 @@ class APIClient(object):
             addr = "api/monitoring/receiver/push?job_id=%s&upload_token=%s" % (
                 jobno, upload_token)
             api_timeouts = self.api_timeouts()
-            while not interrupted_event.is_set() :
+            while not interrupted_event.is_set():
                 try:
                     if self.writer_url:
                         res = self.__make_writer_request(
