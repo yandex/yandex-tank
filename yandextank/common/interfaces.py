@@ -91,8 +91,8 @@ class AbstractPlugin(object):
 
 
 class MonitoringDataListener(object):
-    """ Monitoring interface
-    parent class for Monitoring data listeners"""
+    """ YASM interface
+    parent class for YASM data listeners"""
 
     def __init__(self):
         pass
@@ -244,3 +244,13 @@ class StatsReader(object):
                 'reqps': rps
             }
         }
+
+
+class MonitoringPlugin(AbstractPlugin):
+
+    def __init__(self, core, cfg):
+        super(MonitoringPlugin, self).__init__(core, cfg)
+        self.listeners = []
+
+    def add_listener(self, plugin):
+        self.listeners.append(plugin)

@@ -15,7 +15,7 @@ from copy import deepcopy
 
 from netort.resource import manager as resource
 
-from ...common.interfaces import MonitoringDataListener, AbstractPlugin, AbstractInfoWidget
+from ...common.interfaces import MonitoringDataListener, AbstractPlugin, AbstractInfoWidget, MonitoringPlugin
 from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 from ..Console import Plugin as ConsolePlugin
@@ -30,7 +30,7 @@ else:
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin):
+class Plugin(MonitoringPlugin):
     """  resource mon plugin  """
 
     SECTION = 'telegraf'  # may be redefined to 'monitoring' sometimes.
@@ -209,6 +209,9 @@ class Plugin(AbstractPlugin):
                 raise
             else:
                 self.monitoring = None
+
+    def add_listener(self, plugin):
+        return self.monitoring.add_listener(plugin)
 
     def is_test_finished(self):
         if self.monitoring:

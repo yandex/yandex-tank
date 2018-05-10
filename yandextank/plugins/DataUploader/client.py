@@ -169,6 +169,7 @@ class APIClient(object):
             data=None,
             response_callback=lambda x: x,
             writer=False,
+            interrupted_event=None,
             trace=False,
             json=None,
             maintenance_timeouts=None,
@@ -184,7 +185,7 @@ class APIClient(object):
         network_timeouts = self.network_timeouts()
         maintenance_timeouts = maintenance_timeouts or self.maintenance_timeouts()
         maintenance_msg = maintenance_msg or "%s is under maintenance" % (self._base_url)
-        while True:
+        while interrupted_event is None or not interrupted_event.is_set():
             try:
                 response = self.__send_single_request(request, ids.next(), trace=trace)
                 return response_callback(response)
@@ -264,16 +265,17 @@ class APIClient(object):
             maintenance_msg=maintenance_msg
         )
 
-    def __post_raw(self, addr, txt_data, trace=False):
+    def __post_raw(self, addr, txt_data, trace=False, interrupted_event=None):
         return self.__make_api_request(
-            'POST', addr, txt_data, lambda r: r.content, trace=trace)
+            'POST', addr, txt_data, lambda r: r.content, trace=trace, interrupted_event=interrupted_event)
 
-    def __post(self, addr, data, trace=False):
+    def __post(self, addr, data, interrupted_event=None, trace=False):
         return self.__make_api_request(
             'POST',
             addr,
             json=data,
             response_callback=lambda r: r.json(),
+            interrupted_event=interrupted_event,
             trace=trace)
 
     def __put(self, addr, data, trace=False):
@@ -344,7 +346,7 @@ class APIClient(object):
                 raise self.JobNotCreated('Failed to create job on lunapark\n{}'.format(e.response.content))
             except Exception as e:
                 logger.warn('Failed to create job on lunapark')
-                logger.warn(e.message)
+                logger.warn(repr(e), )
                 raise self.JobNotCreated()
 
     def get_job_summary(self, jobno):
@@ -471,6 +473,7 @@ class APIClient(object):
             upload_token,
             data_item,
             stat_item,
+            interrupted_event,
             trace=False):
         items = []
         uri = 'api/job/{0}/push_data.json?upload_token={1}'.format(
@@ -489,7 +492,7 @@ class APIClient(object):
         items.append(overall)
 
         api_timeouts = self.api_timeouts()
-        while True:
+        while not interrupted_event.is_set():
             try:
                 if self.writer_url:
                     res = self.__make_writer_request(
@@ -504,7 +507,7 @@ class APIClient(object):
                     logger.debug("Writer response: %s", res.text)
                     return res.json()["success"]
                 else:
-                    res = self.__post(uri, items, trace=trace)
+                    res = self.__post(uri, items, interrupted_event, trace=trace)
                     logger.debug("API response: %s", res)
                     success = int(res[0]['success'])
                     return success
@@ -522,12 +525,13 @@ class APIClient(object):
             jobno,
             upload_token,
             send_data,
+            interrupted_event,
             trace=False):
         if send_data:
             addr = "api/monitoring/receiver/push?job_id=%s&upload_token=%s" % (
                 jobno, upload_token)
             api_timeouts = self.api_timeouts()
-            while True:
+            while not interrupted_event.is_set() :
                 try:
                     if self.writer_url:
                         res = self.__make_writer_request(
@@ -543,7 +547,7 @@ class APIClient(object):
                         return res.json()["success"]
                     else:
                         res = self.__post_raw(
-                            addr, json.dumps(send_data), trace=trace)
+                            addr, json.dumps(send_data), trace=trace, interrupted_event=interrupted_event)
                         logger.debug("API response: %s", res)
                         success = res == 'ok'
                         return success
