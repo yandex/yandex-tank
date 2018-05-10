@@ -91,8 +91,8 @@ class AbstractPlugin(object):
 
 
 class MonitoringDataListener(object):
-    """ Monitoring interface
-    parent class for Monitoring data listeners"""
+    """ YASM interface
+    parent class for YASM data listeners"""
 
     def __init__(self):
         pass

@@ -1,6 +1,8 @@
-host:
-  type: string
+hosts:
+  type: list
   required: true
+  schema:
+    type: string
 tags:
   type: string
 signals:

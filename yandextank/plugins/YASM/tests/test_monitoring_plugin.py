@@ -1,6 +1,6 @@
 import pytest
 
-from yandextank.plugins.Monitoring.plugin import map_metric_name
+from yandextank.plugins.YASM.plugin import map_metric_name
 
 
 @pytest.mark.parametrize('init_name, expected_name',
