@@ -3,6 +3,7 @@ import pytest
 from yandextank.plugins.YASM.plugin import map_metric_name
 
 
+@pytest.mark.skip()
 @pytest.mark.parametrize('init_name, expected_name', [
     ('portoinst-cpu_usage_cores_tmmv', 'custom:portoinst-cpu_usage_cores_tmmv'),
     ('portoinst-cpu_guarantee_cores_tmmv', 'custom:portoinst-cpu_guarantee_cores_tmmv'),
