@@ -370,10 +370,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             if len(data_list) > 0:
                 [self.monitoring_queue.put(chunk) for chunk in chop(data_list, self.get_option("chunk_size"))]
 
-    @property
-    def is_telegraf(self):
-        return True
-
     def _core_with_tank_api(self):
         """
         Return True if we are running under Tank API
