@@ -91,7 +91,7 @@ class AbstractPlugin(object):
 
 
 class MonitoringDataListener(object):
-    """ Monitoring interface
+    """ Monitoring listener interface
     parent class for Monitoring data listeners"""
 
     def __init__(self):
@@ -244,3 +244,13 @@ class StatsReader(object):
                 'reqps': rps
             }
         }
+
+
+class MonitoringPlugin(AbstractPlugin):
+
+    def __init__(self, core, cfg):
+        super(MonitoringPlugin, self).__init__(core, cfg)
+        self.listeners = []
+
+    def add_listener(self, plugin):
+        self.listeners.append(plugin)

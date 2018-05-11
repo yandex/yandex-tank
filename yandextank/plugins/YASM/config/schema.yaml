@@ -1,0 +1,12 @@
+hosts:
+  type: list
+  required: true
+  schema:
+    type: string
+tags:
+  type: string
+signals:
+  type: list
+  default: []
+  schema:
+    type: string
