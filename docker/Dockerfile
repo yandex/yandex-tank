@@ -50,8 +50,8 @@ ENV BUILD_DEPS="python-dev build-essential gfortran libssl-dev libffi-dev"
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -yq --no-install-recommends ${BUILD_DEPS} && \
-    pip install --upgrade pip &&        \
     pip install --upgrade setuptools && \
+    pip install --upgrade pip &&        \
     pip install https://api.github.com/repos/yandex/yandex-tank/tarball/${BRANCH} && \
     apt-get autoremove -y ${BUILD_DEPS} && \
     apt-get clean && \
