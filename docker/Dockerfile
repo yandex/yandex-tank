@@ -51,7 +51,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -yq --no-install-recommends ${BUILD_DEPS} && \
     pip install --upgrade setuptools && \
-    pip install --upgrade pip &&        \
+    pip install --upgrade pip==9.0.3 &&        \
     pip install https://api.github.com/repos/yandex/yandex-tank/tarball/${BRANCH} && \
     apt-get autoremove -y ${BUILD_DEPS} && \
     apt-get clean && \
