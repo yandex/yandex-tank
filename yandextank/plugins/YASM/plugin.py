@@ -50,40 +50,15 @@ def convert_value(name, value):
     return value
 
 
-def ctype_async_raise(thread_obj, exception):
-    found = False
-    target_tid = 0
-    for tid, tobj in _active.items():
-        if tobj is thread_obj:
-            found = True
-            target_tid = tid
-            break
-
-    if not found:
-        raise ValueError("Invalid thread object")
-
-    ret = ctypes.pythonapi.PyThreadState_SetAsyncExc(target_tid, ctypes.py_object(exception))
-    # ref: http://docs.python.org/c-api/init.html#PyThreadState_SetAsyncExc
-    if ret == 0:
-        raise ValueError("Invalid thread ID")
-    elif ret > 1:
-        # Huh? Why would we notify more than one threads?
-        # Because we punch a hole into C level interpreter.
-        # So it is better to clean up the mess.
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(target_tid, 0)
-        raise SystemError("PyThreadState_SetAsyncExc failed")
-    logger.debug("Successfully set asynchronized exception for %s", target_tid)
-
-
 def monitoring_data(ts, data, comment=''):
-    return {
+    return ImmutableDict({
         "timestamp": ts,
         "data": {
             host: {
                 "comment": comment,
                 "metrics": {map_metric_name(name): convert_value(name, value) for name, value in host_data.items()}
             }
-            for host, host_data in data.items()}}
+            for host, host_data in data.items()}})
 
 
 class ImmutableDict(dict):
@@ -146,7 +121,7 @@ class Plugin(MonitoringPlugin):
         self.end_time = time.time()
         while self.last_ts < self.end_time and not self.stop_event.is_set():
             try:
-                logger.info('Waiting for yasm metrics')
+                logger.info('Waiting for yasm metrics till {}'.format(self.end_time))
                 time.sleep(1)
             except KeyboardInterrupt:
                 logger.info('Metrics receiving interrupted')
@@ -165,8 +140,10 @@ class Plugin(MonitoringPlugin):
     def consumer(self):
         while not self.stop_event.is_set():
             try:
-                data = self.data_queue.get(timeout=self.RECEIVE_TIMEOUT)
-                self.data_buffer.append(ImmutableDict(data))
+                ts, data = self.data_queue.get(timeout=self.RECEIVE_TIMEOUT)
+                logger.info('Received monitoring data for {}'.format(ts))
+                self.last_ts = ts
+                self.data_buffer.append(monitoring_data(ts, data))
             except Empty:
                 logger.warning(
                     'Not receiving any data from YASM. Probably your hosts/tags specification is not correct')
@@ -185,11 +162,8 @@ class Plugin(MonitoringPlugin):
         try:
             while not self.stop_event.is_set():
                 ts, data = stream.next()
-                logger.info('Received monitoring data for {}'.format(ts))
-                self.last_ts = int(ts)
-                chunk = monitoring_data(ts, data)
                 if self.start_event.is_set():
-                    self.data_queue.put(chunk)
+                    self.data_queue.put((ts, data))
         finally:
             logger.info('Closing YASM receiver thread')
             # logger.info('Putting to monitoring data queue: {}'.format(chunk))

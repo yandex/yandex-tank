@@ -416,8 +416,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             except Empty:
                 continue
             except APIClient.StoppedFromOnline:
-                logger.info("Test stopped from Lunapark")
-                self.retcode = 8
+                logger.warning("Lunapark is rejecting {} data".format(name))
                 break
             except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
                 logger.warn('Failed to push {} data'.format(name))
