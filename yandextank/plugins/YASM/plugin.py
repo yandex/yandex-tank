@@ -1,4 +1,3 @@
-import ctypes
 import re
 
 import time
@@ -9,7 +8,7 @@ from multiprocessing import Queue, Event, Process
 import logging
 from yandextank.common.interfaces import MonitoringPlugin
 from yasmapi import RtGolovanRequest
-from threading import Thread, _active
+from threading import Thread
 
 logger = logging.getLogger(__name__)
 
