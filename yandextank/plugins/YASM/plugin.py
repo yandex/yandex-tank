@@ -6,6 +6,8 @@ from Queue import Empty
 from multiprocessing import Queue, Event, Process
 
 import logging
+
+import signal
 from yandextank.common.interfaces import MonitoringPlugin
 from yasmapi import RtGolovanRequest
 from threading import Thread
@@ -30,10 +32,14 @@ DEFAULT_SIGNALS = [
 ]
 
 
-def signals_stream(hosts, tags, signals):
-    for point in RtGolovanRequest({host: {tags: signals} for host in hosts}):
+def signals_stream(yasmapi_cfg):
+    '''
+    :type yasmapi_cfg: YasmCfg
+    :return:
+    '''
+    for point in RtGolovanRequest(yasmapi_cfg.as_dict()):
         # logger.info('YASM data:\n{}'.format(point.values))
-        yield point.ts, {host: point.values[host][tags] for host in hosts}
+        yield point.ts, {panel.alias: point.values[panel.host][panel.tags] for panel in yasmapi_cfg.panels}
 
 
 def map_metric_name(name):
@@ -60,6 +66,25 @@ def monitoring_data(ts, data, comment=''):
             for host, host_data in data.items()}})
 
 
+class YasmCfg(object):
+
+    def __init__(self, panels):
+        self.panels = [self.Panel(alias, **attrs) for alias, attrs in panels.items()]
+
+    def as_dict(self):
+        return {panel.host: {panel.tags: panel.signals} for panel in self.panels}
+
+    class Panel(object):
+        def __init__(self, alias, host, tags, signals=None, default_signals=True):
+            self.alias = alias
+            custom_signals = signals if signals else []
+            self.signals = DEFAULT_SIGNALS + custom_signals if default_signals else custom_signals
+            self.host = host
+            self.tags = tags
+            if len(self.signals) == 0:
+                logger.warning('No signals specified for {} panel'.format(self.alias))
+
+
 class ImmutableDict(dict):
     def __init__(self, _dict):
         super(ImmutableDict, self).__init__(_dict)
@@ -77,7 +102,7 @@ class ImmutableDict(dict):
 
 
 class Plugin(MonitoringPlugin):
-    RECEIVE_TIMEOUT = 30
+    RECEIVE_TIMEOUT = 45
 
     def __init__(self, core, cfg, cfg_updater=None):
         super(Plugin, self).__init__(core, cfg)
@@ -99,15 +124,11 @@ class Plugin(MonitoringPlugin):
         if len(self.data_buffer) > 0:
             data, self.data_buffer = self.data_buffer, []
             self.send_collected_data(data)
-            logger.info('YASM data transmitted')
         return -1
 
     def prepare_test(self):
-        self.yasm_receiver_ps = Process(target=self.yasm_receiver,
-                                        args=(self.get_option('hosts'),
-                                              self.get_option('tags'),
-                                              self.get_option('signals'),
-                                              ))
+        yasmapi_cfg = YasmCfg(self.get_option('panels'))
+        self.yasm_receiver_ps = Process(target=self.yasm_receiver, args=(yasmapi_cfg,),)
         self.yasm_receiver_ps.start()
         self.consumer_thread = Thread(target=self.consumer)
         self.consumer_thread.start()
@@ -121,7 +142,7 @@ class Plugin(MonitoringPlugin):
         while self.last_ts < self.end_time and not self.stop_event.is_set():
             try:
                 logger.info('Waiting for yasm metrics till {}'.format(self.end_time))
-                time.sleep(1)
+                time.sleep(5)
             except KeyboardInterrupt:
                 logger.info('Metrics receiving interrupted')
                 break
@@ -140,7 +161,7 @@ class Plugin(MonitoringPlugin):
         while not self.stop_event.is_set():
             try:
                 ts, data = self.data_queue.get(timeout=self.RECEIVE_TIMEOUT)
-                logger.info('Received monitoring data for {}'.format(ts))
+                # logger.info('Received monitoring data for {}'.format(ts))
                 self.last_ts = ts
                 self.data_buffer.append(monitoring_data(ts, data))
             except Empty:
@@ -151,13 +172,11 @@ class Plugin(MonitoringPlugin):
                     self.yasm_receiver_ps.terminate()
                 break
 
-    def yasm_receiver(self, hosts, tags, custom_signals=None,
-                      include_default_signals=True):
-        if custom_signals is None:
-            signals = DEFAULT_SIGNALS
-        else:
-            signals = DEFAULT_SIGNALS + custom_signals
-        stream = signals_stream(hosts, tags, signals)
+    def yasm_receiver(self, yasmapi_cfg):
+        # ignore SIGINT (process is controlled by .stop_event)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+        stream = signals_stream(yasmapi_cfg)
         try:
             while not self.stop_event.is_set():
                 ts, data = stream.next()
@@ -165,8 +184,3 @@ class Plugin(MonitoringPlugin):
                     self.data_queue.put((ts, data))
         finally:
             logger.info('Closing YASM receiver thread')
-            # logger.info('Putting to monitoring data queue: {}'.format(chunk))
-
-            # host='QLOUD'
-            # tags='itype=qloud;prj=load.lpq.lpq-prod'
-            # signals =

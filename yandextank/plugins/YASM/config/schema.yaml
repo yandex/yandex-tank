@@ -1,12 +1,18 @@
-hosts:
-  type: list
+panels:
   required: true
-  schema:
-    type: string
-tags:
-  type: string
-signals:
-  type: list
-  default: []
-  schema:
-    type: string
+  type: dict
+  valueschema:
+    type: dict
+    schema:
+      host:
+        type: string
+        required: true
+      tags:
+        type: string
+        required: true
+      signals:
+        required: false
+        type: list
+      default_signals:
+        type: boolean
+        default: true
