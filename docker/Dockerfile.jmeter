@@ -20,7 +20,7 @@ RUN DEBIAN_FRONTEND=noninteractive && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/*
 
 ENV JMETER_PLUGINS="jpgc-csl,jpgc-tst,jpgc-dummy,jmeter-jdbc,jpgc-functions,jpgc-casutg,bzm-http2"
-ENV JMETER_HOME="/usr/local/apache-jmeter-"${JMETER_VERSION}"
+ENV JMETER_HOME=/usr/local/apache-jmeter-"${JMETER_VERSION}"
 RUN wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz --progress=dot:giga && \
     tar -xzf apache-jmeter-${JMETER_VERSION}.tgz -C /usr/local && \
     rm apache-jmeter-${JMETER_VERSION}.tgz
