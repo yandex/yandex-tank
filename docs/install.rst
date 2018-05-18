@@ -6,7 +6,7 @@ Installation
 Docker container
 ****************
 
-`Install <https://www.docker.com/products/overview>`_ docker and use ``direvius/yandex-tank`` (or, if you need jmeter, try ``direvius/yandex-tank-jmeter``) container.
+`Install <https://www.docker.com/products/overview>`_ docker and use ``direvius/yandex-tank`` (or, if you need jmeter, try ``direvius/yandex-tank:jmeter-latest``) container.
 Default entrypoint is ``/usr/local/bin/yandex-tank`` so you may just run it to start test:
 
 .. code-block:: bash
