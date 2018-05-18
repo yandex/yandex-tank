@@ -1,7 +1,7 @@
 # Yandex.Tank with jmeter and some plugins
 
 ARG VERSION=latest
-FROM yandex-tank:"${VERSION}"
+FROM direvius/yandex-tank:"${VERSION}"
 ARG VERSION
 ARG JMETER_VERSION=3.3
 
