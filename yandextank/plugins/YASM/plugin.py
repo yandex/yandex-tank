@@ -72,7 +72,7 @@ class YasmCfg(object):
         self.panels = [self.Panel(alias, **attrs) for alias, attrs in panels.items()]
 
     def as_dict(self):
-        yasmapi_cfg =  {}#{panel.host: {panel.tags: panel.signals} for panel in self.panels}
+        yasmapi_cfg = {}
         for panel in self.panels:
             yasmapi_cfg.setdefault(panel.host, {})[panel.tags] = panel.signals
         logger.info('yasmapi cfg: {}'.format(yasmapi_cfg))
