@@ -72,7 +72,11 @@ class YasmCfg(object):
         self.panels = [self.Panel(alias, **attrs) for alias, attrs in panels.items()]
 
     def as_dict(self):
-        return {panel.host: {panel.tags: panel.signals} for panel in self.panels}
+        yasmapi_cfg = {}
+        for panel in self.panels:
+            yasmapi_cfg.setdefault(panel.host, {})[panel.tags] = panel.signals
+        logger.info('yasmapi cfg: {}'.format(yasmapi_cfg))
+        return yasmapi_cfg
 
     class Panel(object):
         def __init__(self, alias, host, tags, signals=None, default_signals=True):
@@ -83,6 +87,7 @@ class YasmCfg(object):
             self.tags = tags
             if len(self.signals) == 0:
                 logger.warning('No signals specified for {} panel'.format(self.alias))
+            self.dict_cfg = {self.host: {self.tags: self.signals}}
 
 
 class ImmutableDict(dict):
