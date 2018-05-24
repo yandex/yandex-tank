@@ -369,6 +369,7 @@ def test_load_multiple(configs, expected):
                 'header_http': '1.1',
                 'uris': ['/'],
                 'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'},
+                'multi': [{'name': 'foo'}],
             }
         },
         {
@@ -434,7 +435,7 @@ def test_load_multiple(configs, expected):
                 'loop': -1,
                 'port': '',
                 'use_caching': True,
-                'multi': [],
+                'multi': [{'name': 'foo'}],
                 'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'}
             }
         }

@@ -516,7 +516,7 @@ class AddressWizard:
             resolved = self.lookup_fn(address_str, port)
             logger.debug("Lookup result: %s", resolved)
         except Exception:
-            logger.debug("Exception trying to resolve hostname %s : %s", address_str, exc_info=True)
+            logger.debug("Exception trying to resolve hostname %s :", address_str, exc_info=True)
             raise
 
         for (family, socktype, proto, canonname, sockaddr) in resolved:
