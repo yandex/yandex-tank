@@ -731,6 +731,10 @@ Phantom
 --------------------------
 *\- Object's type, that has a functionality to create test requests. Default:* ``method_stream``
 
+``name`` (string)
+-----------------
+*\- Name of a part in multi config.* **Required.**
+
 ``phantom_http_entity`` (string)
 --------------------------------
 *\- Limits the amount of bytes Phantom reads from response. Default:* ``8M``
@@ -925,3 +929,35 @@ Telegraf
   10 seconds
  ``2m``
   2 minutes
+
+YASM
+====
+
+``panels`` (dict)
+-----------------
+*\- (no description).* **Required.**
+
+:valueschema:
+ :schema:
+  :default_signals:
+   :default:
+    True
+   :type:
+    boolean
+  :host:
+   :required:
+    True
+   :type:
+    string
+  :signals:
+   :required:
+    False
+   :type:
+    list
+  :tags:
+   :required:
+    True
+   :type:
+    string
+ :type:
+  dict

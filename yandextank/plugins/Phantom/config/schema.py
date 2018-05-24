@@ -165,6 +165,11 @@ OPTIONS = {
         'type': 'string',
         'default': 'method_stream'
     },
+    'name': {
+        'description': 'Name of a part in multi config',
+        'type': 'string',
+        'required': False
+    },
     'phantom_http_entity': {
         'type': 'string',
         'default': '8M',
@@ -297,11 +302,15 @@ OPTIONS = {
     }
 }
 
+
+MULTI_OPTIONS = {n: {k: v for k, v in d.items() if k != 'required' and k != 'default'} for n, d in OPTIONS.items()}
+
+
 MULTI = {
     'multi': {
         'type': 'list',
         'allow_unknown': True,
-        'schema': OPTIONS,
+        'schema': {'type': 'dict', 'schema': MULTI_OPTIONS},
         'default': []}
 }
 
