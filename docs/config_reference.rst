@@ -961,3 +961,11 @@ YASM
     string
  :type:
   dict
+
+``timeout`` (integer)
+---------------------
+*\- (no description). Default:* ``120``
+
+``verbose_logging`` (boolean)
+-----------------------------
+*\- (no description). Default:* ``False``

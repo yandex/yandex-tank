@@ -38,7 +38,9 @@ def signals_stream(yasmapi_cfg):
     :return:
     '''
     for point in RtGolovanRequest(yasmapi_cfg.as_dict()):
-        # logger.info('YASM data:\n{}'.format(point.values))
+        logger.debug('received YASM data for {} for following hosts an tags: {}'.
+                     format(point.ts,
+                            {host: tags.keys() for host, tags in point.values.items()}))
         yield point.ts, {panel.alias: point.values[panel.host][panel.tags] for panel in yasmapi_cfg.panels}
 
 
@@ -107,7 +109,6 @@ class ImmutableDict(dict):
 
 
 class Plugin(MonitoringPlugin):
-    RECEIVE_TIMEOUT = 45
 
     def __init__(self, core, cfg, cfg_updater=None):
         super(Plugin, self).__init__(core, cfg)
@@ -116,6 +117,9 @@ class Plugin(MonitoringPlugin):
         self.stop_event = Event()
         self.last_ts = 0
         self.data_buffer = []
+        self.timeout = self.get_option('timeout')
+        if self.get_option('verbose_logging'):
+            logger.setLevel(logging.DEBUG)
 
     def add_listener(self, plugin):
         self.listeners.append(plugin)
@@ -165,7 +169,7 @@ class Plugin(MonitoringPlugin):
     def consumer(self):
         while not self.stop_event.is_set():
             try:
-                ts, data = self.data_queue.get(timeout=self.RECEIVE_TIMEOUT)
+                ts, data = self.data_queue.get(timeout=self.timeout)
                 # logger.info('Received monitoring data for {}'.format(ts))
                 self.last_ts = ts
                 self.data_buffer.append(monitoring_data(ts, data))
