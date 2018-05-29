@@ -119,7 +119,7 @@ def parse_options(options):
         return [
             convert_single_option(key.strip(), value.strip())
             for key, value
-            in [option.split('=') for option in options]
+            in [option.split('=', 1) for option in options]
         ]
 
 
