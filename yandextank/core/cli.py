@@ -82,6 +82,14 @@ def main():
         '--verbose',
         action='store_true',
         help="More console output, +debug messages")
+    parser.add_option(
+        '-p',
+        '--patch-cfg',
+        action='append',
+        help='Patch config with yaml snippet (similar to -o, but has full compatibility to\
+        and the exact scheme of yaml format config)',
+        dest = 'patches'
+    )
 
     completion_helper = CompletionHelperOptionParser()
     completion_helper.handle_request(parser)
