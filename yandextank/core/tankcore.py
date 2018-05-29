@@ -94,7 +94,7 @@ class TankCore(object):
     PID_OPTION = 'pid'
     UUID_OPTION = 'uuid'
 
-    def __init__(self, configs, artifacts_base_dir=None, artifacts_dir_name=None, cfg_depr=None):
+    def __init__(self, configs, artifacts_base_dir=None, artifacts_dir_name=None):
         """
 
         :param configs: list of dict
@@ -113,7 +113,6 @@ class TankCore(object):
         self.taskset_path = None
         self.taskset_affinity = None
         self._job = None
-        self.cfg_depr = cfg_depr
         self._cfg_snapshot = None
 
         self.interrupted = False
