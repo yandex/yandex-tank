@@ -88,7 +88,7 @@ def main():
         action='append',
         help='Patch config with yaml snippet (similar to -o, but has full compatibility to\
         and the exact scheme of yaml format config)',
-        dest = 'patches'
+        dest='patches'
     )
 
     completion_helper = CompletionHelperOptionParser()

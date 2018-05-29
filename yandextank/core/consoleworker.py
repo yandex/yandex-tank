@@ -250,16 +250,16 @@ def load_tank_core(config_files, cmd_options, no_rc, depr_options, other_opts, p
     config_files = config_files if len(config_files) > 0 else [DEFAULT_CONFIG]
     if no_rc:
         configs = [load_cfg(cfg) for cfg in config_files] +\
-                  other_opts +\
-                  parse_options(cmd_options) +\
-                  [yaml.load(p) for p in patches]
+            other_opts +\
+            parse_options(cmd_options) +\
+            [yaml.load(p) for p in patches]
     else:
         configs = [load_core_base_cfg()] +\
             load_local_base_cfgs() +\
             [load_cfg(cfg) for cfg in config_files] +\
-                  other_opts +\
-                  parse_options(cmd_options) +\
-                  [yaml.load(p) for p in patches]
+            other_opts +\
+            parse_options(cmd_options) +\
+            [yaml.load(p) for p in patches]
     return TankCore(configs)
 
 
