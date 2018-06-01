@@ -24,7 +24,7 @@ class Plugin(GeneratorPlugin):
     SECTION = 'jmeter'
     SHUTDOWN_TEST = 'Shutdown'
     STOP_TEST_NOW = 'Stop Test'
-    DISCOVER_PORT_PATTERN = 'Waiting for possible shutdown message on port (?P<port>\d+)'
+    DISCOVER_PORT_PATTERN = 'Waiting for possible .* message on port (?P<port>\d+)'
 
     def __init__(self, core, cfg):
         super(Plugin, self).__init__(core, cfg)
@@ -171,7 +171,7 @@ class Plugin(GeneratorPlugin):
         Waiting for possible shutdown message on port 4445
         """
         r = re.compile(self.DISCOVER_PORT_PATTERN)
-        with open(self.jmeter_log) as f:
+        with open(self.process_stderr.name,'r') as f:
             cnt = 0
             while self.process.pid and cnt < 10:
                 line = f.readline()
