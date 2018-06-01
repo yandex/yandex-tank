@@ -171,7 +171,7 @@ class Plugin(GeneratorPlugin):
         Waiting for possible shutdown message on port 4445
         """
         r = re.compile(self.DISCOVER_PORT_PATTERN)
-        with open(self.process_stderr.name,'r') as f:
+        with open(self.process_stderr.name, 'r') as f:
             cnt = 0
             while self.process.pid and cnt < 10:
                 line = f.readline()
