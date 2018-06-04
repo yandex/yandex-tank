@@ -248,7 +248,7 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
 def load_tank_core(config_files, cmd_options, no_rc, depr_options, other_opts, patches=None):
     if patches is None:
         patches = []
-    other_opts = list(other_opts) if other_opts else []
+    other_opts = [other_opts] if other_opts else []
     config_files = config_files if len(config_files) > 0 else [DEFAULT_CONFIG]
     if no_rc:
         configs = [load_cfg(cfg) for cfg in config_files] +\
