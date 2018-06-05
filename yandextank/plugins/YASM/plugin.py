@@ -143,11 +143,11 @@ class YasmMPReceiver(object):
         return data
 
     def start_collecting(self):
-        [p.start() for p in self.ps_pool]
+        [p.start() for p in self.ps_pool.values()]
 
     def start_transmitting(self):
         self._start_event.set()
-        [consumer.start() for consumer in self.consumers]
+        [consumer.start() for consumer in self.consumers.values()]
 
     def single_receiver(self, panel):
         # ignore SIGINT (process is controlled by .stop_event)
@@ -250,6 +250,6 @@ class Plugin(MonitoringPlugin):
         return retcode
 
     def send_rest(self):
-        if len(self.data_buffer) > 0:
-            data, self.data_buffer = self.data_buffer, []
+        data = self.yasm_receiver.get_buffered_data()
+        if len(data) > 0:
             self.send_collected_data(data)
