@@ -25,3 +25,9 @@ grafana_dashboard:
 chunk_size:
   default: 500000
   type: integer
+labeled:
+  default: false
+  type: boolean
+prefix_measurement:
+  default: ""
+  type: string
