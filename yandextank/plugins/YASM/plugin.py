@@ -134,8 +134,7 @@ class YasmMPReceiver(object):
         self.ps_pool = {panel.alias: Process(target=self.single_receiver,
                                              args=(panel,))
                         for panel in self.panels}
-        self.consumers = {panel.alias: Thread(target=self.single_controller,
-                                 args=(panel, self.ps_pool[panel.alias]))
+        self.consumers = {panel.alias: Thread(target=self.single_controller, args=(panel, self.ps_pool[panel.alias]))
                           for panel in self.panels}
 
     def get_buffered_data(self):
@@ -205,7 +204,8 @@ class YasmMPReceiver(object):
                         self.ps_pool[panel.alias].join()
                         self.consumers[panel.alias].join()
                 active_panels = [panel for panel in active_panels if not panel.stop_trigger.is_set()]
-                if len(active_panels) > 0: time.sleep(5)
+                if len(active_panels) > 0:
+                    time.sleep(5)
             except KeyboardInterrupt:
                 logger.info('Metrics receiving interrupted')
                 [panel.stop_trigger.set() for panel in active_panels]
