@@ -282,11 +282,12 @@ def test_validate_core(config, expected):
          'address': 'nodejs.load.yandex.net',
          'header_http': '1.1',
          'uris': ['/']}
-     }, 'telegraf:\n- package: [empty values not allowed, \'value does not match regex')
+     }, 'telegraf:\n- package: [empty values not allowed')
 ])
 def test_validate_core_error(config, expected):
     with pytest.raises(Exception) as e:
         TankConfig(config).validated
+        print('exception value:\n', str(e.value))
     assert expected in str(e.value)
 
 
@@ -368,6 +369,7 @@ def test_load_multiple(configs, expected):
                 'header_http': '1.1',
                 'uris': ['/'],
                 'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'},
+                'multi': [{'name': 'foo'}],
             }
         },
         {
@@ -433,7 +435,7 @@ def test_load_multiple(configs, expected):
                 'loop': -1,
                 'port': '',
                 'use_caching': True,
-                'multi': [],
+                'multi': [{'name': 'foo'}],
                 'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'}
             }
         }

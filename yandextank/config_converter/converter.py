@@ -274,6 +274,8 @@ class Option(object):
         return self._converter
 
     def _get_scheme_converter(self):
+        if self.name == 'enabled':
+            return self.TYPE_CASTERS['boolean']
         if self.schema.get(self.name) is None:
             logger.warning('Unknown option {}:{}'.format(self.plugin, self.name))
             raise UnknownOption

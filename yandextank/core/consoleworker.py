@@ -119,7 +119,7 @@ def parse_options(options):
         return [
             convert_single_option(key.strip(), value.strip())
             for key, value
-            in [option.split('=') for option in options]
+            in [option.split('=', 1) for option in options]
         ]
 
 
@@ -245,17 +245,24 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
         raise ex
 
 
-def load_tank_core(config_files, cmd_options, no_rc, depr_options, *other_opts):
-    other_opts = list(other_opts) if other_opts else []
+def load_tank_core(config_files, cmd_options, no_rc, depr_options, other_opts, patches=None):
+    if patches is None:
+        patches = []
+    other_opts = [other_opts] if other_opts else []
     config_files = config_files if len(config_files) > 0 else [DEFAULT_CONFIG]
     if no_rc:
-        configs = [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
+        configs = [load_cfg(cfg) for cfg in config_files] +\
+            other_opts +\
+            parse_options(cmd_options) +\
+            [yaml.load(p) for p in patches]
     else:
         configs = [load_core_base_cfg()] +\
             load_local_base_cfgs() +\
-            [load_cfg(cfg) for cfg in config_files] + other_opts + parse_options(cmd_options)
-    return TankCore(configs,
-                    cfg_depr=get_depr_cfg(config_files, no_rc, cmd_options, depr_options))
+            [load_cfg(cfg) for cfg in config_files] +\
+            other_opts +\
+            parse_options(cmd_options) +\
+            [yaml.load(p) for p in patches]
+    return TankCore(configs)
 
 
 class ConsoleTank:
@@ -266,7 +273,6 @@ class ConsoleTank:
     def __init__(self, options, ammofile):
         overwrite_options = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
         self.options = options
-        # self.lock_dir = options.lock_dir if options.lock_dir else '/var/lock'
         self.baseconfigs_location = '/etc/yandex-tank'
         self.init_logging()
         self.log = logging.getLogger(__name__)
@@ -282,7 +288,8 @@ class ConsoleTank:
                                    options.option,
                                    options.no_rc,
                                    [],
-                                   overwrite_options)
+                                   overwrite_options,
+                                   options.patches)
 
         raw_cfg_file, raw_cfg_path = tempfile.mkstemp(suffix='_pre-validation-config.yaml')
         os.close(raw_cfg_file)
