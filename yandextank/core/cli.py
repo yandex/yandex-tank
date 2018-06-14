@@ -45,7 +45,7 @@ def main():
         '--error_log',
         action='store',
         dest='error_log',
-        default="tank_errors.log",
+        default="",
         help="Tank errors log file location")
     parser.add_option(
         '-m',
