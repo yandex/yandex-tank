@@ -424,7 +424,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 self.lp_job.interrupted.set()
             except Exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                logger.info("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
+                logger.error("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
                 break
         # purge queue
         while not queue.empty():
