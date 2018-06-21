@@ -64,11 +64,12 @@ def string_to_df(data):
 
 
 class PhantomReader(object):
-    def __init__(self, filename, cache_size=1024 * 1024 * 50):
+    def __init__(self, filename, cache_size=1024 * 1024 * 50, ready_file=False):
         self.buffer = ""
         self.phout = open(filename, 'r')
         self.closed = False
         self.cache_size = cache_size
+        self.ready_file=ready_file
 
     def _read_phout_chunk(self):
         data = self.phout.read(self.cache_size)
@@ -82,6 +83,8 @@ class PhantomReader(object):
                 self.buffer += parts[0]
         else:
             self.buffer += self.phout.readline()
+            if self.ready_file:
+                self.close()
         return None
 
     def __iter__(self):

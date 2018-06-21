@@ -146,7 +146,7 @@ class Aggregator(object):
         self.groupby = 'tag'
 
     def __iter__(self):
-        for ts, chunk in self.source:
+        for ts, chunk, rps in self.source:
             by_tag = list(chunk.groupby([self.groupby]))
             start_time = time.time()
             result = {
@@ -155,6 +155,7 @@ class Aggregator(object):
                 {tag: self.worker.aggregate(data)
                  for tag, data in by_tag},
                 "overall": self.worker.aggregate(chunk),
+                "counted_rps": rps
             }
             logger.debug(
                 "Aggregation time: %.2fms", (time.time() - start_time) * 1000)
