@@ -4,7 +4,6 @@ import pytest as pytest
 
 from yandextank.aggregator import TankAggregator
 from yandextank.plugins.Phantom import PhantomReader
-from yandextank.plugins.Phantom.reader import string_to_df
 
 
 class PhantomMock(object):
@@ -34,6 +33,7 @@ class PhantomMock(object):
     def end_test(self, retcode):
         return retcode
 
+
 class ListenerMock(object):
     def __init__(self, expected):
         self.collected_data = []
@@ -46,8 +46,8 @@ class ListenerMock(object):
         self.avg = (self.avg * (self.cnt - 1) + rps) / self.cnt
 
 
-@pytest.mark.parametrize('phout, expected_rps',[
-    ('phout1', 300)
+@pytest.mark.parametrize('phout, expected_rps', [
+    ('yandextank/aggregator/tests/phout1', 300)
 ])
 def test_agregator(phout, expected_rps):
     generator = PhantomMock(phout)
@@ -59,5 +59,3 @@ def test_agregator(phout, expected_rps):
         aggregator.is_test_finished()
     aggregator.end_test(1)
     assert abs(listener.avg - expected_rps) < 0.1 * expected_rps
-
-

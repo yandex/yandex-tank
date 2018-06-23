@@ -14,7 +14,7 @@ class PandoraStatsPoller(Thread):
         self.buffer = []
 
     def run(self):
-        last_ts = int(time.time()-1)
+        last_ts = int(time.time() - 1)
 
         while not self._stop.is_set():
             curr_ts = int(time.time())

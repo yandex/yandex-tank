@@ -69,7 +69,7 @@ class PhantomReader(object):
         self.phout = open(filename, 'r')
         self.closed = False
         self.cache_size = cache_size
-        self.ready_file=ready_file
+        self.ready_file = ready_file
 
     def _read_phout_chunk(self):
         data = self.phout.read(self.cache_size)

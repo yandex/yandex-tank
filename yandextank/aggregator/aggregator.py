@@ -150,12 +150,12 @@ class Aggregator(object):
             by_tag = list(chunk.groupby([self.groupby]))
             start_time = time.time()
             result = {
-                "ts": ts,
-                "tagged":
+                u"ts": ts,
+                u"tagged":
                 {tag: self.worker.aggregate(data)
                  for tag, data in by_tag},
-                "overall": self.worker.aggregate(chunk),
-                "counted_rps": rps
+                u"overall": self.worker.aggregate(chunk),
+                # u"counted_rps": rps
             }
             logger.debug(
                 "Aggregation time: %.2fms", (time.time() - start_time) * 1000)
