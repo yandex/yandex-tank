@@ -155,7 +155,7 @@ class Aggregator(object):
                 {tag: self.worker.aggregate(data)
                  for tag, data in by_tag},
                 u"overall": self.worker.aggregate(chunk),
-                # u"counted_rps": rps
+                u"counted_rps": rps
             }
             logger.debug(
                 "Aggregation time: %.2fms", (time.time() - start_time) * 1000)
