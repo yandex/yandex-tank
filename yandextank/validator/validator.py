@@ -52,8 +52,7 @@ def load_plugin_schema(package):
             raise IOError('No schema found for plugin %s' % package)
     except ImportError:
         if 'aggregator' in package.lower():
-            logger.warning('Plugin Aggregator is now deprecated, please remove this section from your config')
-            return load_yaml_schema(pkg_resources.resource_filename('yandextank.aggregator', 'config/schema.yaml'))
+            logger.exception('Plugin Aggregator is now deprecated, please remove this section from your config.')
         raise ValidationError({'package': ['No module named {}'.format(package)]})
 
 

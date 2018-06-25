@@ -54,7 +54,7 @@ class TankAggregator(object):
     def load_config():
         return json.loads(resource_string(__name__, 'config/phout.json').decode('utf8'))
 
-    def start_test(self):
+    def start_test(self, poll_period=1):
         self.reader = self.generator.get_reader()
         self.stats_reader = self.generator.get_stats_reader()
         aggregator_config = self.load_config()
@@ -64,7 +64,7 @@ class TankAggregator(object):
         if self.reader and self.stats_reader:
             pipeline = Aggregator(
                 TimeChopper(
-                    DataPoller(source=self.reader, poll_period=1),
+                    DataPoller(source=self.reader, poll_period=poll_period),
                     cache_size=3),
                 aggregator_config,
                 verbose_histogram)
@@ -72,7 +72,7 @@ class TankAggregator(object):
             self.drain.start()
             self.stats_drain = Drain(
                 Chopper(DataPoller(
-                    source=self.stats_reader, poll_period=1)),
+                    source=self.stats_reader, poll_period=poll_period)),
                 self.stats)
             self.stats_drain.start()
         else:
@@ -105,7 +105,9 @@ class TankAggregator(object):
             else:
                 self.stat_cache[ts] = item
         if end and len(self.data_cache) > 0:
+            logger.info('Timestamps without stats:')
             for ts, data_item in sorted(self.data_cache.items(), key=lambda i: i[0]):
+                logger.info(ts)
                 self.__notify_listeners(data_item, StatsReader.stats_item(ts, 0, 0))
 
     def is_test_finished(self):
@@ -119,10 +121,13 @@ class TankAggregator(object):
         if self.stats_reader:
             self.stats_reader.close()
         if self.drain:
-            self.drain.join()
-        if self.stats_drain:
-            self.stats_drain.join()
+            self.drain.wait()
+            self.stats_drain.wait()
         self._collect_data(end=True)
+        if self.drain:
+            self.drain.join()
+            self.stats_drain.join()
+
         return retcode
 
     def add_result_listener(self, listener):
