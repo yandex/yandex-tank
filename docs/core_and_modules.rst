@@ -419,8 +419,7 @@ Artifacts
 Multi-tests
 -----------
 
-To make several simultaneous tests with phantom, add proper amount of sections to special section ``multi`` for ``phantom``
- with names ``phantom-N``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops.
+To make several simultaneous tests with phantom, add proper amount of sections to special section ``multi`` for ``phantom``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops.
 
 Example:
 
