@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM load/yandex-tank-pip:testing
 WORKDIR /yandextank
 RUN apt-get update && \
     apt-get install -y python-pip
