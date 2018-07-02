@@ -16,11 +16,12 @@ analytic tools for the results they produce.
     namespace_packages=["yandextank", "yandextank.plugins"],
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
+        'cryptography>=2.2.1', 'pyopenssl==18.0.0',
         'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
         'pandas>=0.18.0', 'numpy>=1.12.1', 'future>=0.16.0',
         'pip>=8.1.2',
         'pyyaml>=3.12', 'cerberus==1.2', 'influxdb>=5.0.0',
-        'netort>=0.0.11', 'pyopenssl>=17.5.0'
+        'netort>=0.0.11',
     ],
     setup_requires=[
         'pytest-runner', 'flake8',
