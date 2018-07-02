@@ -254,6 +254,7 @@ def parse_and_check_patches(patches):
             raise ValidationError('Config patch "{}" should be a dict'.format(patch))
     return parsed
 
+
 def load_tank_core(config_files, cmd_options, no_rc, depr_options, other_opts, patches=None):
     if patches is None:
         patches = []
