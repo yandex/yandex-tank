@@ -53,10 +53,10 @@ class TestPipeline(object):
         drain.run()
         assert results_queue.qsize() == MAX_TS
 
-    @pytest.mark.parametrize('phout, results', [
+    @pytest.mark.parametrize('phout, expected_results', [
         ('yandextank/aggregator/tests/phout2927', 'yandextank/aggregator/tests/phout2927res.jsonl')
     ])
-    def test_invalid_ammo(self, phout, results):
+    def test_invalid_ammo(self, phout, expected_results):
         with open(phout) as fp:
             reader = [string_to_df(line) for line in fp.readlines()]
         pipeline = Aggregator(
@@ -65,7 +65,8 @@ class TestPipeline(object):
                 cache_size=3),
             AGGR_CONFIG,
             True)
-        with open(results) as fp:
-            results_parsed = json.load(fp)
-        for item, result in zip(pipeline, results_parsed):
-            assert item == result
+        with open(expected_results) as fp:
+            expected_results_parsed = json.load(fp)
+        for item, expected_result in zip(pipeline, expected_results_parsed):
+            for key, expected_value in expected_result.items():
+                assert item[key] == expected_value

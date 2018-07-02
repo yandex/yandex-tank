@@ -45,6 +45,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             password=self.get_option("password"),
             database=self.get_option("database"),
         )
+        self.labeled = self.get_option("labeled")
+        self.prefix_measurement = self.get_option("prefix_measurement")
         grafana_root = self.get_option("grafana_root")
         grafana_dashboard = self.get_option("grafana_dashboard")
         uuid = str(uuid4())
@@ -70,7 +72,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def on_aggregated_data(self, data, stats):
         if self.client:
-            points = self.decoder.decode_aggregate(data, stats)
+            if self.labeled:
+                points = self.decoder.decode_aggregate_labeled(data, stats, self.prefix_measurement)
+            else:
+                points = self.decoder.decode_aggregate(data, stats)
             self.client.write_points(points, 's')
 
     def monitoring_data(self, data_list):

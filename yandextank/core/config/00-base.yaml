@@ -12,7 +12,7 @@ console:
   package: yandextank.plugins.Console
 jmeter:
   enabled: false
-  package: JMeter
+  package: yandextank.plugins.JMeter
 json_report:
   enabled: true
   package: yandextank.plugins.JsonReport
