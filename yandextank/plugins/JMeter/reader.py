@@ -139,7 +139,7 @@ class JMeterStatAggregator(object):
         self.source = source
 
     def __iter__(self):
-        for ts, chunk in self.source:
+        for ts, chunk, rps in self.source:
             stats = self.worker.aggregate(chunk)
             yield [{
                 'ts': ts,
@@ -167,13 +167,13 @@ class JMeterReader(object):
 
     def _read_stat_queue(self):
         while not self.closed:
-            for _ in range(self.stat_queue.qsize()):
-                try:
-                    si = self.stat_queue.get_nowait()
-                    if si is not None:
-                        yield si
-                except q.Empty:
-                    break
+            # for _ in range(self.stat_queue.qsize()):
+            try:
+                si = self.stat_queue.get_nowait()
+                if si is not None:
+                    yield si
+            except q.Empty:
+                pass
 
     def _read_jtl_chunk(self, jtl):
         data = jtl.read(1024 * 1024 * 10)
@@ -184,6 +184,7 @@ class JMeterReader(object):
                 self.buffer = parts[1]
                 df = string_to_df(ready_chunk)
                 self.stat_queue.put(df)
+
                 return df
             else:
                 self.buffer += parts[0]
