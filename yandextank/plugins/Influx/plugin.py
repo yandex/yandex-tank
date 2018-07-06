@@ -30,7 +30,6 @@ def chop(data_list, chunk_size):
 
 class Plugin(AbstractPlugin, AggregateResultListener,
              MonitoringDataListener):
-
     SECTION = 'influx'
 
     def __init__(self, core, cfg):
@@ -45,7 +44,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             password=self.get_option("password"),
             database=self.get_option("database"),
         )
-        self.labeled = self.get_option("labeled")        
+        self.labeled = self.get_option("labeled")
         self.prefix_measurement = self.get_option("prefix_measurement")
         self.custom_tags = self.get_multiline_option("custom_tags")
         grafana_root = self.get_option("grafana_root")
