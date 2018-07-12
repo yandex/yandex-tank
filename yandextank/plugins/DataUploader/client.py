@@ -482,8 +482,6 @@ class APIClient(object):
         for case_name, case_data in data_item["tagged"].items():
             if case_name == "":
                 case_name = "__NOTAG__"
-            if (len(case_name)) > 128:
-                raise RuntimeError('tag (case) name is too long: ' + case_name)
             push_item = self.second_data_to_push_item(case_data, stat_item, ts,
                                                       0, case_name)
             items.append(push_item)

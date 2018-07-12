@@ -512,6 +512,7 @@ class AddressWizard:
                     port = int(parts[1])
         if port is not None:
             port = int(port)
+        address_str = address_str.strip()
         try:
             resolved = self.lookup_fn(address_str, port)
             logger.debug("Lookup result: %s", resolved)

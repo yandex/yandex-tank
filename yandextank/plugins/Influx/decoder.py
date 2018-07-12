@@ -44,6 +44,63 @@ class Decoder(object):
                 }]
         return points
 
+    def decode_aggregate_labeled(self, data, stat, prefix):
+        timestamp = int(data["ts"])
+        points = []
+        for key, value in data["tagged"].items():
+            points += [{
+                "measurement": prefix + "overall_quantiles",
+                "tags": {
+                    "tank": self.tank_tag,
+                    "uuid": self.uuid,
+                    "label": key
+                },
+                "time": timestamp,
+                "fields": {  # quantiles
+                    'q' + str(q): value / 1000.0
+                    for q, value in zip(value["interval_real"]["q"]["q"],
+                                        value["interval_real"]["q"]["value"])
+                },
+            }, {
+                "measurement": prefix + "overall_meta",
+                "tags": {
+                    "tank": self.tank_tag,
+                    "uuid": self.uuid,
+                    "label": key,
+                },
+                "time": timestamp,
+                "fields": {
+                    "active_threads": stat["metrics"]["instances"],
+                    "RPS": value["interval_real"]["len"],
+                    "planned_requests": float(stat["metrics"]["reqps"]),
+                },
+            }, {
+                "measurement": prefix + "net_codes",
+                "tags": {
+                    "tank": self.tank_tag,
+                    "uuid": self.uuid,
+                    "label": key
+                },
+                "time": timestamp,
+                "fields": {
+                    str(code): int(cnt)
+                    for code, cnt in value["net_code"]["count"].items()
+                },
+            }, {
+                "measurement": prefix + "proto_codes",
+                "tags": {
+                    "tank": self.tank_tag,
+                    "uuid": self.uuid,
+                },
+                "time": timestamp,
+                "fields": {
+                    str(code): int(cnt)
+                    for code, cnt in value["proto_code"]["count"].items()
+                },
+            },
+            ]
+        return points
+
     def decode_aggregate(self, data, stat):
         timestamp = int(data["ts"])
         points = [

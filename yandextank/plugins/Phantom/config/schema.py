@@ -11,6 +11,7 @@ OPTIONS = {
         'description': 'Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port. Port is optional. '
                        'Tank checks each test if port is available',
         "type": "string",
+        "empty": False,
         "required": True,
         'examples': {'127.0.0.1:8080': '', 'www.w3c.org': ''}
     },
