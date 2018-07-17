@@ -24,10 +24,9 @@ analytic tools for the results they produce.
         'netort>=0.0.11',
     ],
     setup_requires=[
-        'pytest-runner', 'flake8',
     ],
     tests_require=[
-        'pytest',
+        'pytest', 'pytest-runner', 'flake8',
     ],
     license='LGPLv2',
     classifiers=[

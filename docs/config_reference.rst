@@ -428,6 +428,10 @@ Influx
 -------------------------
 *\- (no description). Default:* ``http://localhost/``
 
+``labeled`` (boolean)
+---------------------
+*\- (no description). Default:* ``False``
+
 ``password`` (string)
 ---------------------
 *\- (no description). Default:* ``root``
@@ -435,6 +439,10 @@ Influx
 ``port`` (integer)
 ------------------
 *\- (no description). Default:* ``8086``
+
+``prefix_measurement`` (string)
+-------------------------------
+*\- (no description). Default:* ``""``
 
 ``tank_tag`` (string)
 ---------------------
@@ -563,6 +571,8 @@ Phantom
 --------------------
 *\- Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port. Port is optional. Tank checks each test if port is available.* **Required.**
 
+:empty:
+ False
 :examples:
  ``127.0.0.1:8080``
   
