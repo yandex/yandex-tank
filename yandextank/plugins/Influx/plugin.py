@@ -30,7 +30,6 @@ def chop(data_list, chunk_size):
 
 class Plugin(AbstractPlugin, AggregateResultListener,
              MonitoringDataListener):
-
     SECTION = 'influx'
 
     def __init__(self, core, cfg):
@@ -47,6 +46,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         )
         self.labeled = self.get_option("labeled")
         self.prefix_measurement = self.get_option("prefix_measurement")
+        self.custom_tags = self.get_multiline_option("custom_tags")
         grafana_root = self.get_option("grafana_root")
         grafana_dashboard = self.get_option("grafana_dashboard")
         uuid = str(uuid4())
@@ -76,7 +76,15 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 points = self.decoder.decode_aggregate_labeled(data, stats, self.prefix_measurement)
             else:
                 points = self.decoder.decode_aggregate(data, stats)
+            if len(self.custom_tags):
+                self.add_custom_tags(points)
             self.client.write_points(points, 's')
+
+    def add_custom_tags(self, points):
+        for p in points:
+            common_tags = p['tags']
+            merged_tags = common_tags.update(self.custom_tags)
+            p['tags'] = merged_tags
 
     def monitoring_data(self, data_list):
         if self.client:
