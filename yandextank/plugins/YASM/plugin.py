@@ -91,7 +91,7 @@ class Panel(object):
         custom_signals = signals if signals else []
         self.signals = DEFAULT_SIGNALS + custom_signals if default_signals else custom_signals
         self.host = host
-        self.tags = tags
+        self.tags = tags.strip(';')
         if len(self.signals) == 0:
             logger.warning('No signals specified for {} panel'.format(self.alias))
         self.as_dict = {self.host: {self.tags: self.signals}}
