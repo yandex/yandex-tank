@@ -416,6 +416,10 @@ Influx
 ------------------------
 *\- (no description). Default:* ``500000``
 
+``custom_tags`` (dict)
+----------------------
+*\- (no description). Default:* ``{}``
+
 ``database`` (string)
 ---------------------
 *\- (no description). Default:* ``mydb``
