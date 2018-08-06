@@ -47,6 +47,23 @@ class Decoder(object):
     def decode_aggregate_labeled(self, data, stat, prefix):
         timestamp = int(data["ts"])
         points = []
+        # overall quantiles w/ __OVERALL__ label
+        points += [
+            {
+                "measurement": prefix + "overall_quantiles",
+                "tags": {
+                    "tank": self.tank_tag,
+                    "uuid": self.uuid,
+                    "label": "__OVERALL__"
+                },
+                "time": timestamp,
+                "fields": {
+                    'q' + str(q): value / 1000.0
+                    for q, value in zip(data["overall"]["interval_real"]["q"]["q"],
+                                        data["overall"]["interval_real"]["q"]["value"])
+                },
+            }
+        ]
         for key, value in data["tagged"].items():
             points += [{
                 "measurement": prefix + "overall_quantiles",
