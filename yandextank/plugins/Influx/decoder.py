@@ -91,6 +91,7 @@ class Decoder(object):
                 "tags": {
                     "tank": self.tank_tag,
                     "uuid": self.uuid,
+                    "label": key
                 },
                 "time": timestamp,
                 "fields": {
