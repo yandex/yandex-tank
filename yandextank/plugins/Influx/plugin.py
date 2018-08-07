@@ -2,17 +2,17 @@
 # TODO: make the next two lines unnecessary
 # pylint: disable=line-too-long
 # pylint: disable=missing-docstring
+import datetime
 import logging
 import sys
-import datetime
-
 from uuid import uuid4
+
 from builtins import str
 from influxdb import InfluxDBClient
 
+from .decoder import Decoder
 from ...common.interfaces import AbstractPlugin, \
     MonitoringDataListener, AggregateResultListener
-from .decoder import Decoder
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
@@ -46,7 +46,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         )
         self.labeled = self.get_option("labeled")
         self.prefix_measurement = self.get_option("prefix_measurement")
-        self.custom_tags = self.get_multiline_option("custom_tags")
+        self.custom_tags = self.get_option("custom_tags")
         grafana_root = self.get_option("grafana_root")
         grafana_dashboard = self.get_option("grafana_dashboard")
         uuid = str(uuid4())
@@ -83,8 +83,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def add_custom_tags(self, points):
         for p in points:
             common_tags = p['tags']
-            merged_tags = common_tags.update(self.custom_tags)
-            p['tags'] = merged_tags
+            common_tags.update(self.custom_tags)
+            p['tags'] = common_tags
 
     def monitoring_data(self, data_list):
         if self.client:
