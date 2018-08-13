@@ -3,6 +3,7 @@ import json
 import logging
 import subprocess
 import time
+import yaml
 
 from netort.resource import manager as resource_manager
 
@@ -27,9 +28,10 @@ class Plugin(GeneratorPlugin):
         self.process_start_time = None
         self.pandora_cmd = None
         self.pandora_config_file = None
+        self.config_contents = None
         self.custom_config = False
-        self.sample_log = "./phout.log"
         self.expvar = True
+        self.sample_log = 'phout.log'
 
     @staticmethod
     def get_key():
@@ -48,32 +50,42 @@ class Plugin(GeneratorPlugin):
         self.pandora_cmd = self.get_option("pandora_cmd")
         self.buffered_seconds = self.get_option("buffered_seconds")
         self.affinity = self.get_option("affinity", "")
+
+        # get config_contents and patch it: expand resources via resource manager
+        # config_content option has more priority over config_file
+        if self.get_option("config_content"):
+            logger.info('Found config_content option configuration')
+            self.config_contents = self.__patch_and_dump_config(self.get_option("config_content"))
+        elif self.get_option("config_file"):
+            logger.info('Found config_file option configuration')
+            with open(self.get_option("config_file"), 'rb') as config:
+                raw_config_contents = yaml.safe_load(config.read())
+            self.config_contents = self.__patch_and_dump_config(raw_config_contents)
+        else:
+            raise RuntimeError("Neither pandora.config_content, nor pandora.config_file specified")
+        logger.debug('Config after parsing for patching: %s', self.config_contents)
+        report_file = self.__find_closest_report_file()
+        if report_file:
+            self.sample_log = report_file
         with open(self.sample_log, 'w'):
             pass
         self.core.add_artifact_file(self.sample_log)
 
-        config_content = self.patch_config(self.get_option("config_content"))
-        if len(config_content) > 0:
-            self.pandora_config_file = self.core.mkstemp(
-                ".json", "pandora_config_")
-            self.core.add_artifact_file(self.pandora_config_file)
-            with open(self.pandora_config_file, 'w') as config_file:
-                json.dump(config_content, config_file)
-        else:
-            config_file = self.get_option("config_file")
-            if not config_file:
-                raise RuntimeError(
-                    "neither pandora config content"
-                    "nor pandora config file is specified")
-            else:
-                extension = config_file.rsplit(".", 1)[1]
-                self.pandora_config_file = self.core.mkstemp(
-                    "." + extension, "pandora_config_")
-                self.core.add_artifact_file(self.pandora_config_file)
-                with open(config_file, 'rb') as config:
-                    config_content = config.read()
-                with open(self.pandora_config_file, 'wb') as config_file:
-                    config_file.write(config_content)
+    def __patch_and_dump_config(self, cfg_dict):
+        config_content = self.patch_config(cfg_dict)
+        self.pandora_config_file = self.core.mkstemp(".yaml", "pandora_config_")
+        self.core.add_artifact_file(self.pandora_config_file)
+        with open(self.pandora_config_file, 'w') as config_file:
+            yaml.dump(config_content, config_file)
+        return config_content
+
+    def __find_closest_report_file(self):
+        for pool in self.config_contents['pools']:
+            if pool.get('result'):
+                if pool.get('result').get('destination'):
+                    report_filename = pool.get('result').get('destination')
+                    logger.info('Found report file in pandora config: %s', report_filename)
+                    return report_filename
 
     def get_reader(self):
         if self.reader is None:
