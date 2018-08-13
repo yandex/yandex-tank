@@ -21,6 +21,7 @@ class Plugin(GeneratorPlugin):
 
     OPTION_CONFIG = "config"
     SECTION = "pandora"
+    DEFAULT_REPORT_FILE = "phout.log"
 
     def __init__(self, core, cfg):
         super(Plugin, self).__init__(core, cfg)
@@ -31,7 +32,7 @@ class Plugin(GeneratorPlugin):
         self.config_contents = None
         self.custom_config = False
         self.expvar = True
-        self.sample_log = 'phout.log'
+        self.sample_log = None
 
     @staticmethod
     def get_key():
@@ -64,9 +65,7 @@ class Plugin(GeneratorPlugin):
         else:
             raise RuntimeError("Neither pandora.config_content, nor pandora.config_file specified")
         logger.debug('Config after parsing for patching: %s', self.config_contents)
-        report_file = self.__find_closest_report_file()
-        if report_file:
-            self.sample_log = report_file
+        self.sample_log = self.__find_closest_report_file()
         with open(self.sample_log, 'w'):
             pass
         self.core.add_artifact_file(self.sample_log)
@@ -86,6 +85,7 @@ class Plugin(GeneratorPlugin):
                     report_filename = pool.get('result').get('destination')
                     logger.info('Found report file in pandora config: %s', report_filename)
                     return report_filename
+        return self.DEFAULT_REPORT_FILE
 
     def get_reader(self):
         if self.reader is None:
