@@ -66,12 +66,13 @@ class ApiWorker:
         """ Make preparations before running Tank """
         self.options = options
         if self.options.get('lock_dir', None):
-            self.core.set_option(
-                self.core.SECTION, "lock_dir", self.options['lock_dir'])
+            self.core.set_option(self.core.SECTION, "lock_dir", self.options['lock_dir'])
+        if self.options.get('ignore_lock', None):
+            self.core.set_option(self.core.SECTION, 'ignore_lock', self.options['ignore_lock'])
 
         while True:
             try:
-                self.core.get_lock(self.options.get('ignore_lock', None))
+                self.core.get_lock()
                 break
             except Exception as exc:
                 if self.options.get('lock_fail', None):
