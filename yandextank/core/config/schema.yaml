@@ -28,6 +28,7 @@ core:
     ignore_lock:
       description: if tank is locked ( *.lock file(s) presented in lock_dir), shoot nevertheless
       type: boolean
+      default: false
     uuid:
       type: string
     pid:
