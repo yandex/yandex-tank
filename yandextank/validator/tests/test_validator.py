@@ -74,6 +74,7 @@ PHANTOM_SCHEMA_V_G = {
      "core": {
          'operator': 'fomars',
          'artifacts_base_dir': './',
+         'ignore_lock': False
      },
      'telegraf': {
          'package': 'yandextank.plugins.Telegraf',
@@ -98,7 +99,8 @@ PHANTOM_SCHEMA_V_G = {
          'lock_dir': '/var/lock/',
          'taskset_path': 'taskset',
          'affinity': '',
-         'artifacts_dir': None
+         'artifacts_dir': None,
+         'ignore_lock': False
      },
      'telegraf': {
          'package': 'yandextank.plugins.Telegraf',
@@ -221,7 +223,8 @@ PHANTOM_SCHEMA_V_G = {
           'lock_dir': '/var/lock/',
           'taskset_path': 'taskset',
           'affinity': '',
-          'artifacts_dir': None}}
+          'artifacts_dir': None,
+          'ignore_lock': False}}
      )
 ])
 def test_validate_core(config, expected):
@@ -380,7 +383,8 @@ def test_load_multiple(configs, expected):
                 'lock_dir': '/var/lock/',
                 'taskset_path': 'taskset',
                 'affinity': '',
-                'artifacts_dir': None
+                'artifacts_dir': None,
+                'ignore_lock': False
             },
             'telegraf': {
                 'package': 'yandextank.plugins.Telegraf',
