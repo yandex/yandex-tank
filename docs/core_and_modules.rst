@@ -806,7 +806,7 @@ Artifact uploaders
 
 .. note::
 
-  Graphite uploader, InfluxDB uploader and BlazeMeter Sense are not currently supported in the last Yandex.Tank version.
+  Graphite uploader and BlazeMeter Sense are not currently supported in the last Yandex.Tank version.
   If you want one of them, use 1.7 branch.
 
 Yandex.Overload
@@ -836,6 +836,49 @@ Example:
     token_file: token.txt
     job_name: test
     job_dsc: test description
+
+
+InfluxDB
+========
+
+InfluxDB uploader.
+
+Options
+-------
+
+:address:
+  (Optional) InfluxDB address. (Default: 'localhost')
+:port:
+  (Optional) InfluxDB port. (Default: 8086)
+:database:
+  (Optional) InfluxDB database. (Default: 'mydb')
+:username:
+  (Optional) InfluxDB user name. (Default: 'root')
+:password:
+  (Optional) InfluxDB password. (Default: 'root')
+:labeled:
+  (Optional) Send labels (ammo tags) to influx. (Default: false)
+:prefix_measurement:
+  (Optional) Add prefix to measurement name. (Default: '')
+:tank_tag:
+  (Optional) Tank tag. (Default: 'unknown')
+:grafana_root:
+  (Optional) Grafana root path. Used to generate link to grafana dashboard.
+:grafana_dashboard:
+  (Optional) Grafana dashboard name. Used to generate link to grafana dashboard.
+
+Example:
+
+.. code-block:: yaml
+
+  influx:
+    enabled: true
+    address: yourhost.tld
+    database: yourbase
+    tank_tag: 'mytank'
+    prefix_measurement: 'your_test_prefix_'
+    labeled: true
+
 
 ***********
 Handy tools
