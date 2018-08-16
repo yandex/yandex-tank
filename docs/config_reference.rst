@@ -27,8 +27,8 @@ Core
  *\- (no description).*
 :``flush_config_to`` (string):
  *\- path to store config.*
-:``ignore_locks`` (boolean):
- *\- if tank is locked ( *.lock file(s) presented in lock_dir), shoot nevertheless.*
+:``ignore_lock`` (boolean):
+ *\- if tank is locked ( *.lock file(s) presented in lock_dir), shoot nevertheless. Default:* ``False``
 :``lock_dir`` (string):
  *\- directory to store *.lock files. Default:* ``/var/lock/``
 :``message`` (string):
