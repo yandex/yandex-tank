@@ -31,3 +31,6 @@ labeled:
 prefix_measurement:
   default: ""
   type: string
+custom_tags:
+  default: {}
+  type: dict

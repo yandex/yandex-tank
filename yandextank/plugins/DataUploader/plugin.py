@@ -46,7 +46,6 @@ class BackendTypes(object):
             raise KeyError(
                 'Config section name doesn\'t match any of the patterns:\n%s' %
                 '\n'.join(['*%s*' % ptrn[0] for ptrn in clues]))
-        pass
 
 
 def chop(data_list, chunk_size):
@@ -223,7 +222,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             ammo_path = info.ammo_file
         else:
             ammo_path = os.path.realpath(info.ammo_file)
-        loop_count = info.loop_count
+        loop_count = int(info.loop_count)
 
         try:
             lp_job = self.lp_job
@@ -456,7 +455,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 with open(config_filename) as config_file:
                     self.core.job.monitoring_plugin.set_option("config_contents", config_file.read())
         except AttributeError:  # pylint: disable=W0703
-            logger.info("Can't get monitoring config")
+            logger.info("Can't get monitoring config", exc_info=True)
 
         self.lp_job.send_config_snapshot(self.core.cfg_snapshot)
         self.core.config.save(
@@ -526,6 +525,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             raise
 
     def __get_api_client(self):
+        logging.info('Using {} backend'.format(self.backend_type))
         if self.backend_type == BackendTypes.LUNAPARK:
             client = APIClient
             self._api_token = None

@@ -209,7 +209,7 @@ class TankCore(object):
                 gen = self.get_plugin_of_type(GeneratorPlugin)
             except KeyError:
                 logger.warning("Load generator not found")
-                gen = GeneratorPlugin(self, {}, None)
+                gen = GeneratorPlugin(self, {})
             # aggregator
             aggregator = TankAggregator(gen)
             self._job = Job(monitoring_plugins=monitorings,
@@ -292,7 +292,7 @@ class TankCore(object):
         logger.info('Stopping monitoring')
         for plugin in self.job.monitoring_plugins:
             logger.info('Stopping %s', plugin)
-            retcode = plugin.end_test(retcode)
+            retcode = plugin.end_test(retcode) or retcode
             logger.info('RC after: %s', retcode)
 
         for plugin in [p for p in self.plugins.values() if
@@ -449,9 +449,9 @@ class TankCore(object):
                 self.SECTION, "lock_dir")
         return os.path.expanduser(self.lock_dir)
 
-    def get_lock(self, force=False, lock_dir=None):
+    def get_lock(self, lock_dir=None):
         lock_dir = lock_dir if lock_dir else self.get_lock_dir()
-        if not force and self.is_locked(lock_dir):
+        if not self.get_option(self.SECTION, 'ignore_lock') and self.is_locked(lock_dir):
             raise LockError("Lock file(s) found")
 
         fh, self.lock_file = tempfile.mkstemp(
@@ -481,7 +481,9 @@ class TankCore(object):
                         running_cfg = yaml.load(f)
                     pid = running_cfg.get(TankCore.SECTION).get(cls.PID_OPTION)
                     if not pid:
-                        logger.warning('Failed to get {}.{} from lock file {}'.format(TankCore.SECTION))
+                        logger.warning('Failed to get {}.{} from lock file {}'.format(TankCore.SECTION,
+                                                                                      cls.PID_OPTION,
+                                                                                      full_name))
                     else:
                         if not pid_exists(int(pid)):
                             logger.debug(

@@ -3,6 +3,52 @@ Config reference
 ================
 
 
+Core
+====
+
+``core`` (dict)
+---------------
+*\- (no description).*
+
+:``affinity`` (string):
+ *\- specify cpu core(s) to bind tank process to,  http://linuxhowtos.org/manpages/1/taskset.htm. Default:* ``""``
+:``api_jobno`` (string):
+ *\- tankapi job id, also used as test\'s directory name \- determined by tank.*
+:``artifacts_base_dir`` (string):
+ *\- base directory to store tests\' artifacts directories. Default:* ``./logs``
+:``artifacts_dir`` (string):
+ *\- directory inside base directory to store test\'s artifacts, defaults to api_jobno if null. Default:* ``None``
+ 
+ :nullable:
+  True
+:``cmdline`` (string):
+ *\- (no description).*
+:``exitcode`` (integer):
+ *\- (no description).*
+:``flush_config_to`` (string):
+ *\- path to store config.*
+:``ignore_lock`` (boolean):
+ *\- if tank is locked ( *.lock file(s) presented in lock_dir), shoot nevertheless. Default:* ``False``
+:``lock_dir`` (string):
+ *\- directory to store *.lock files. Default:* ``/var/lock/``
+:``message`` (string):
+ *\- (no description).*
+:``operator`` (string):
+ *\- your username.*
+:``pid`` (integer):
+ *\- (no description).*
+:``taskset_path`` (string):
+ *\- (no description). Default:* ``taskset``
+:``uuid`` (string):
+ *\- (no description).*
+
+:allow_unknown:
+ False
+
+``version`` (string)
+--------------------
+*\- (no description).*
+
 Android
 =======
 
@@ -416,6 +462,10 @@ Influx
 ------------------------
 *\- (no description). Default:* ``500000``
 
+``custom_tags`` (dict)
+----------------------
+*\- (no description). Default:* ``{}``
+
 ``database`` (string)
 ---------------------
 *\- (no description). Default:* ``mydb``
@@ -428,6 +478,10 @@ Influx
 -------------------------
 *\- (no description). Default:* ``http://localhost/``
 
+``labeled`` (boolean)
+---------------------
+*\- (no description). Default:* ``False``
+
 ``password`` (string)
 ---------------------
 *\- (no description). Default:* ``root``
@@ -435,6 +489,10 @@ Influx
 ``port`` (integer)
 ------------------
 *\- (no description). Default:* ``8086``
+
+``prefix_measurement`` (string)
+-------------------------------
+*\- (no description). Default:* ``""``
 
 ``tank_tag`` (string)
 ---------------------
@@ -563,6 +621,8 @@ Phantom
 --------------------
 *\- Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port. Port is optional. Tank checks each test if port is available.* **Required.**
 
+:empty:
+ False
 :examples:
  ``127.0.0.1:8080``
   

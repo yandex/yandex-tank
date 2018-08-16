@@ -282,7 +282,9 @@ class ConsoleTank:
     IGNORE_LOCKS = "ignore_locks"
 
     def __init__(self, options, ammofile):
-        overwrite_options = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
+        cli_kwargs = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
+        if options.ignore_lock:
+            cli_kwargs.setdefault('core', {})['ignore_lock'] = options.ignore_lock
         self.options = options
         self.baseconfigs_location = '/etc/yandex-tank'
         self.init_logging()
@@ -290,7 +292,7 @@ class ConsoleTank:
 
         if ammofile:
             self.log.debug("Ammofile: %s", ammofile)
-            overwrite_options['phantom'] = {
+            cli_kwargs['phantom'] = {
                 'use_caching': False,
                 'ammofile': ammofile
             }
@@ -299,7 +301,7 @@ class ConsoleTank:
                                    options.option,
                                    options.no_rc,
                                    [],
-                                   overwrite_options,
+                                   cli_kwargs,
                                    options.patches)
 
         raw_cfg_file, raw_cfg_path = tempfile.mkstemp(suffix='_pre-validation-config.yaml')
@@ -387,7 +389,7 @@ class ConsoleTank:
     def configure(self):
         while True:
             try:
-                self.core.get_lock(self.options.ignore_lock)
+                self.core.get_lock()
                 break
             except LockError:
                 if self.options.lock_fail:
