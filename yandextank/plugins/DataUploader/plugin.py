@@ -448,19 +448,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     # TODO: why we do it here? should be in core
     def __save_conf(self):
-        # config = copy.deepcopy(self.core.config)
-        try:
-            config_filename = self.core.job.monitoring_plugin.config
-            if config_filename and config_filename not in ['none', 'auto']:
-                with open(config_filename) as config_file:
-                    self.core.job.monitoring_plugin.set_option("config_contents", config_file.read())
-        except AttributeError:  # pylint: disable=W0703
-            logger.info("Can't get monitoring config", exc_info=True)
-
-        self.lp_job.send_config_snapshot(self.core.cfg_snapshot)
         self.core.config.save(
             os.path.join(
                 self.core.artifacts_dir, 'saved_conf.yaml'))
+        for requisites, content in self.core.artifacts_to_send:
+            self.lp_job.send_config(requisites, content)
 
     def parse_lock_targets(self):
         # prepare target lock list
@@ -803,10 +795,8 @@ class LPJob(object):
         return self.api_client.get_task_data(
             task, trace=self.log_other_requests)
 
-    def send_config_snapshot(self, config):
-        if self._number:
-            self.api_client.send_config_snapshot(
-                self.number, config, trace=self.log_other_requests)
+    def send_config(self, lp_requisites, content):
+        self.api_client.send_config(self.number, lp_requisites, content, trace=self.log_other_requests)
 
     def push_monitoring_data(self, data):
         if not self.interrupted.is_set():

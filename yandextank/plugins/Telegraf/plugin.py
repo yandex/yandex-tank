@@ -15,6 +15,7 @@ from copy import deepcopy
 
 from netort.resource import manager as resource
 
+from yandextank.plugins.DataUploader.client import LPRequisites
 from ...common.interfaces import MonitoringDataListener, AbstractInfoWidget, MonitoringPlugin
 from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
@@ -116,6 +117,10 @@ class Plugin(MonitoringPlugin):
 
     @property
     def config(self):
+        """
+
+        :rtype: str
+        """
         if self._config is None:
             value = self.get_option('config')
 
@@ -155,6 +160,9 @@ class Plugin(MonitoringPlugin):
             self.monitoring = None
             self.die_on_fail = False
             return
+
+        with open(self.config) as f:
+            self.core.add_artifact_to_send(LPRequisites.MONITORING, unicode(f.read()))
 
         # FIXME [legacy] backward compatibility with Monitoring module
         # configuration below.
