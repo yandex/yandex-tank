@@ -117,12 +117,17 @@ class TankAggregator(object):
     def end_test(self, retcode):
         retcode = self.generator.end_test(retcode)
         if self.reader:
+            logger.debug('Closing gun reader')
             self.reader.close()
         if self.stats_reader:
+            logger.debug('Closing stats reader')
             self.stats_reader.close()
         if self.drain:
+            logger.debug('Waiting for gun drain to finish')
             self.drain.wait()
+            logger.debug('Waiting for stats drain to finish')
             self.stats_drain.wait()
+        logger.debug('Collecting remaining data')
         self._collect_data(end=True)
         if self.drain:
             self.drain.join()

@@ -71,8 +71,6 @@ class PandoraStatsReader(object):
             }]
         else:
             if self.closed:
-                self.poller.stop()
-                self.poller.join()
                 raise StopIteration()
             elif not self.started:
                 self.poller.start()
@@ -81,6 +79,8 @@ class PandoraStatsReader(object):
 
     def close(self):
         self.closed = True
+        self.poller.stop()
+        self.poller.join()
 
     def __iter__(self):
         return self
