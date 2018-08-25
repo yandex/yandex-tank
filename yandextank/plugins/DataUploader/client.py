@@ -636,8 +636,8 @@ class APIClient(object):
     def get_manual_unlock_link(target):
         return "api/server/lock.json?action=unlock&address=%s" % target
 
-    def send_config(self, jobno, lp_requisities, config_content, trace=False):
-        endpoint, field_name = lp_requisities
+    def send_config(self, jobno, lp_requisites, config_content, trace=False):
+        endpoint, field_name = lp_requisites
         logger.debug("Sending {} config".format(field_name))
         addr = "/api/job/%s/%s" % (jobno, endpoint)
         self.__post_raw(addr, {field_name: unicode(config_content)}, trace=trace)
@@ -654,6 +654,7 @@ class APIClient(object):
 class LPRequisites():
     CONFIGINFO = ('configinfo.txt', 'configinfo')
     MONITORING = ('jobmonitoringconfig.txt', 'monitoringconfig')
+    CONFIGINITIAL = ('configinitial.txt', 'configinitial')
 
 
 class OverloadClient(APIClient):

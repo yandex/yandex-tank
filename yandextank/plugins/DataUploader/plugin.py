@@ -21,7 +21,7 @@ from ...common.interfaces import AbstractPlugin, \
 from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
-from .client import APIClient, OverloadClient
+from .client import APIClient, OverloadClient, LPRequisites
 from ...common.util import FileScanner
 
 from netort.data_processing import Drain
@@ -565,23 +565,25 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         loadscheme = [] if isinstance(info.rps_schedule,
                                       str) else info.rps_schedule
 
-        return LPJob(client=api_client,
-                     target_host=self.target,
-                     target_port=port,
-                     number=self.cfg.get('jobno', None),
-                     token=self.get_option('upload_token'),
-                     person=self.__get_operator(),
-                     task=self.task,
-                     name=self.get_option('job_name', 'none'),
-                     description=self.get_option('job_dsc'),
-                     tank=self.core.job.tank,
-                     notify_list=self.get_option("notify"),
-                     load_scheme=loadscheme,
-                     version=self.get_option('ver'),
-                     log_data_requests=self.get_option('log_data_requests'),
-                     log_monitoring_requests=self.get_option('log_monitoring_requests'),
-                     log_status_requests=self.get_option('log_status_requests'),
-                     log_other_requests=self.get_option('log_other_requests'))
+        lp_job = LPJob(client=api_client,
+                       target_host=self.target,
+                       target_port=port,
+                       number=self.cfg.get('jobno', None),
+                       token=self.get_option('upload_token'),
+                       person=self.__get_operator(),
+                       task=self.task,
+                       name=self.get_option('job_name', 'none'),
+                       description=self.get_option('job_dsc'),
+                       tank=self.core.job.tank,
+                       notify_list=self.get_option("notify"),
+                       load_scheme=loadscheme,
+                       version=self.get_option('ver'),
+                       log_data_requests=self.get_option('log_data_requests'),
+                       log_monitoring_requests=self.get_option('log_monitoring_requests'),
+                       log_status_requests=self.get_option('log_status_requests'),
+                       log_other_requests=self.get_option('log_other_requests'))
+        lp_job.send_config(LPRequisites.CONFIGINITIAL, self.core.config.get_configinitial())
+        return lp_job
 
     @property
     def task(self):

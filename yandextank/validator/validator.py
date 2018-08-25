@@ -185,6 +185,9 @@ class TankConfig(object):
     def has_option(self, section, option):
         return self.validated
 
+    def get_configinitial(self):
+        return self.raw_config_dict
+
     @property
     def plugins(self):
         """

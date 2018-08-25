@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class SecuredShell(object):
-    def __init__(self, host, port, username, timeout):
+    def __init__(self, host, port, username, timeout=10):
         self.host = host
         self.port = port
         self.username = username
@@ -62,7 +62,7 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
                 self.host,
                 port=self.port,
                 username=self.username,
-                timeout=self.timeout, )
+                timeout=self.timeout)
         return client
 
     def execute(self, cmd):
@@ -89,15 +89,22 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
                 local=local_path, host=self.host, remote=remote_path))
 
         with self.connect() as client, client.open_sftp() as sftp:
-            result = sftp.put(local_path, remote_path)
+            result = sftp.put(local_path, remote_path, self.get_progress_logger(local_path))
         return result
+
+    @staticmethod
+    def get_progress_logger(name):
+
+        def print_progress(done, total):
+            logger.info("Transferring {}: {}%".format(name, done * 100 / total))
+        return print_progress
 
     def get_file(self, remote_path, local_path):
         logger.info(
             "Receiving from {host}:[{remote}] to [{local}]".format(
                 local=local_path, host=self.host, remote=remote_path))
         with self.connect() as client, client.open_sftp() as sftp:
-            result = sftp.get(remote_path, local_path)
+            result = sftp.get(remote_path, local_path, self.get_progress_logger(remote_path))
         return result
 
     def async_session(self, cmd):
