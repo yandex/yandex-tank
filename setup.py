@@ -63,7 +63,6 @@ analytic tools for the results they produce.
         'yandextank.plugins.Influx': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],
         'yandextank.plugins.JsonReport': ['config/*'],
-        'yandextank.plugins.YASM': ['config/*'],
         'yandextank.plugins.Pandora': ['config/*'],
         'yandextank.plugins.Phantom': ['config/*'],
         'yandextank.plugins.RCAssert': ['config/*'],
