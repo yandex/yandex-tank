@@ -59,7 +59,7 @@ execution of ``tracepath`` command or it analogs
     6:  8.example.com (203.0.113.1)                 0.525ms asymm  5
     7:  no reply
 
-In second example you'd better find another closer located tank.
+In the second example you'd better find another closer located tank.
 
 ******
 Tuning
