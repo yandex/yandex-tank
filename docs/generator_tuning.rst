@@ -65,7 +65,7 @@ In the second example you'd better find another closer located tank.
 Tuning
 ******
 
-To achieve the top most performance you should tune the source server
+To achieve top performance you should tune the source server
 system limits:
 
 .. code-block:: bash
