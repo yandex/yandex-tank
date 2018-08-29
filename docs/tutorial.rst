@@ -106,7 +106,7 @@ To specify external ammo file use ``ammofile`` option.
 
 .. note::
   You can specify URL to ammofile, http(s). Small ammofiles (~<100MB) will be downloaded as is,
-  to directory ``/tmp/<hash>``, large files will be readed from stream.
+  to directory ``/tmp/<hash>``, large files will be read from stream.
 
 .. note::
 
@@ -154,7 +154,7 @@ Parameter ``uris`` contains uri, which should be used for requests generation.
 
 .. note::
 
-  Pay attention to sample above, because whitespaces in multiline ``uris`` and ``headers`` options are important.
+  Pay attention to the sample above, because whitespaces in multiline ``uris`` and ``headers`` options are important.
 
 URI-style, URIs in file
 -----------------------
@@ -174,7 +174,7 @@ Create a file with declared requests: ``ammo.txt``
   [Cookie: test]
   /buy/?rt=0&station_to=7&station_from=9
 
-File consist of list of URIs and headers to be added to every request defined below.
+File consists of list of URIs and headers to be added to every request defined below.
 Every URI must begin from a new line, with leading ``/``.
 Each line that begins from ``[`` is considered as a header.
 Headers could be (re)defined in the middle of URIs, as in sample above. 
@@ -340,7 +340,7 @@ file ``phout.txt`` is being written, which could be analyzed later.
 If you need more human-readable report, you can try Report plugin,
 You can found it `here <https://github.com/yandex-load/yatank-online>`_
 
-If you need to upload results to external storage, such as Graphite or InfluxDB, you can use one of existing artifacts uploading modules :doc:`core_and_modules`
+If you need to upload results to an external storage, such as Graphite or InfluxDB, you can use one of existing artifacts uploading modules :doc:`core_and_modules`
 
 Tags
 ====
