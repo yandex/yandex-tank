@@ -865,7 +865,7 @@ We create a new gun and define ```shoot``` method for it w/ our test logic.
 
   func (g *Gun) Bind(aggr core.Aggregator, deps core.GunDeps) error {
       // create gRPC stub at gun initialization
-	  conn, err := grpc.Dial(
+      conn, err := grpc.Dial(
  		  g.conf.Target,
  		  grpc.WithInsecure(),
 		  grpc.WithTimeout(time.Second),
@@ -964,12 +964,12 @@ We create a new gun and define ```shoot``` method for it w/ our test logic.
 	  client := pb.NewClient(&conn)
 
 	  switch ammo.Tag {
-		  case "/MyCase1":
-			  code = g.case1_method(client, ammo)
+          case "/MyCase1":
+              code = g.case1_method(client, ammo)
           case "/MyCase2":
-			  code = g.case2_method(client, ammo)
-		  default:
-			  code = 404
+              code = g.case2_method(client, ammo)
+          default:
+              code = 404
 	  }
 
 	  defer func() {
