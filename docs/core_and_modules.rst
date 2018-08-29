@@ -779,10 +779,10 @@ Disable phantom first (unless you really want to keep it active alongside at you
         times: 5                       #
 
 
-You may specify pandora config contents in tank's config file via `config_content` option.
+You may specify pandora config contents in tank's config file via ```config_content``` option.
 This option has more priority over config_file option.
 
-Create `ammo.uri` file, put your ammo inside and start the test.
+Create ```ammo.uri``` file, put your ammo inside and start the test.
 
 .. code-block:: yaml
 
@@ -793,26 +793,29 @@ Create `ammo.uri` file, put your ammo inside and start the test.
 
 Schedules
 ---------
-`Pandora` has two main RPS scheduler types:
-  1. ``line`` - makes linear load, where `from` and `to` are start and end,
-  `duration` is a time for linear load increase from `from` to `to`.
+```Pandora``` has two main RPS scheduler types:
+  1. ``line`` - makes linear load, where ```from``` and ```to``` are start and end,
+  `duration` is a time for linear load increase from ```from``` to ```to```.
 
-  2. ``const`` - makes constant load, where `ops` is a load value for `duration` time.
+  2. ``const`` - makes constant load, where ```ops``` is a load value for ```duration``` time.
 
 
 Custom_guns
 -----------
 You can create you own Golang-based gun with `pandora`.
 For example, here is an example of custom gun shooting via gRPC.
-We create a new gun and define `shoot` method for it w/ our test logic.
+We create a new gun and define ```shoot``` method for it w/ our test logic.
 
 .. code-block:: python
 
   // create a package
   package main
 
+  // import some pandora stuff
+  // stuff you need for your scenario
+  // and, for example, protobuf contracts
+
   import (
-      // import some pandora stuff
 	  "github.com/golang/protobuf/ptypes/timestamp"
 	  "github.com/satori/go.uuid"
 	  "github.com/spf13/afero"
@@ -822,14 +825,12 @@ We create a new gun and define `shoot` method for it w/ our test logic.
 	  "github.com/yandex/pandora/core/aggregator/netsample"
 	  "github.com/yandex/pandora/core/import"
 	  "github.com/yandex/pandora/core/register"
-      // stuff you need for your scenario
 	  "google.golang.org/grpc"
 	  "log"
       "context"
 	  "strconv"
 	  "strings"
 	  "time"
-      // and, for example, protobuf contracts
 	  pb "my_package/my_contracts"
   )
 
@@ -997,10 +998,10 @@ We create a new gun and define `shoot` method for it w/ our test logic.
 	  cli.Run()
   }
 
-Now it's time to compile our gun. Install deps and compile your custom gun file (`go build my_custom_gun.go`).
-After that step you'll get `my_custom_gun` binary file, it is compiled pandora with your custom gun inside.
+Now it's time to compile our gun. Install deps and compile your custom gun file (```go build my_custom_gun.go```).
+After that step you'll get ```my_custom_gun``` binary file, it is compiled pandora with your custom gun inside.
 
-Now its time to create `load.yaml`:
+Now its time to create ```load.yaml```:
 
 .. code-block:: yaml
 
@@ -1029,7 +1030,7 @@ Now its time to create `load.yaml`:
           log:
               level: error
 
-And create ammofile `./json.ammo`:
+And create ammofile ```./json.ammo```:
 
 .. code-block:: yaml
 
