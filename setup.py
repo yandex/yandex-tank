@@ -20,7 +20,7 @@ analytic tools for the results they produce.
         'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
         'pandas>=0.18.0', 'numpy>=1.12.1', 'future>=0.16.0',
         'pip>=8.1.2',
-        'pyyaml>=3.12', 'cerberus==1.2', 'influxdb>=5.0.0', 'netort==0.2.4',
+        'pyyaml>=3.12', 'cerberus==1.2', 'influxdb>=5.0.0', 'netort==0.2.6',
     ],
     setup_requires=[
     ],
@@ -63,7 +63,6 @@ analytic tools for the results they produce.
         'yandextank.plugins.Influx': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],
         'yandextank.plugins.JsonReport': ['config/*'],
-        'yandextank.plugins.YASM': ['config/*'],
         'yandextank.plugins.Pandora': ['config/*'],
         'yandextank.plugins.Phantom': ['config/*'],
         'yandextank.plugins.RCAssert': ['config/*'],

@@ -21,7 +21,7 @@ from ...common.interfaces import AbstractPlugin, \
 from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
-from .client import APIClient, OverloadClient
+from .client import APIClient, OverloadClient, LPRequisites
 from ...common.util import FileScanner
 
 from netort.data_processing import Drain
@@ -448,19 +448,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     # TODO: why we do it here? should be in core
     def __save_conf(self):
-        # config = copy.deepcopy(self.core.config)
-        try:
-            config_filename = self.core.job.monitoring_plugin.config
-            if config_filename and config_filename not in ['none', 'auto']:
-                with open(config_filename) as config_file:
-                    self.core.job.monitoring_plugin.set_option("config_contents", config_file.read())
-        except AttributeError:  # pylint: disable=W0703
-            logger.info("Can't get monitoring config", exc_info=True)
-
-        self.lp_job.send_config_snapshot(self.core.cfg_snapshot)
         self.core.config.save(
             os.path.join(
                 self.core.artifacts_dir, 'saved_conf.yaml'))
+        for requisites, content in self.core.artifacts_to_send:
+            self.lp_job.send_config(requisites, content)
 
     def parse_lock_targets(self):
         # prepare target lock list
@@ -573,23 +565,25 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         loadscheme = [] if isinstance(info.rps_schedule,
                                       str) else info.rps_schedule
 
-        return LPJob(client=api_client,
-                     target_host=self.target,
-                     target_port=port,
-                     number=self.cfg.get('jobno', None),
-                     token=self.get_option('upload_token'),
-                     person=self.__get_operator(),
-                     task=self.task,
-                     name=self.get_option('job_name', 'none'),
-                     description=self.get_option('job_dsc'),
-                     tank=self.core.job.tank,
-                     notify_list=self.get_option("notify"),
-                     load_scheme=loadscheme,
-                     version=self.get_option('ver'),
-                     log_data_requests=self.get_option('log_data_requests'),
-                     log_monitoring_requests=self.get_option('log_monitoring_requests'),
-                     log_status_requests=self.get_option('log_status_requests'),
-                     log_other_requests=self.get_option('log_other_requests'))
+        lp_job = LPJob(client=api_client,
+                       target_host=self.target,
+                       target_port=port,
+                       number=self.cfg.get('jobno', None),
+                       token=self.get_option('upload_token'),
+                       person=self.__get_operator(),
+                       task=self.task,
+                       name=self.get_option('job_name', 'none'),
+                       description=self.get_option('job_dsc'),
+                       tank=self.core.job.tank,
+                       notify_list=self.get_option("notify"),
+                       load_scheme=loadscheme,
+                       version=self.get_option('ver'),
+                       log_data_requests=self.get_option('log_data_requests'),
+                       log_monitoring_requests=self.get_option('log_monitoring_requests'),
+                       log_status_requests=self.get_option('log_status_requests'),
+                       log_other_requests=self.get_option('log_other_requests'))
+        lp_job.send_config(LPRequisites.CONFIGINITIAL, self.core.config.get_configinitial())
+        return lp_job
 
     @property
     def task(self):
@@ -803,10 +797,8 @@ class LPJob(object):
         return self.api_client.get_task_data(
             task, trace=self.log_other_requests)
 
-    def send_config_snapshot(self, config):
-        if self._number:
-            self.api_client.send_config_snapshot(
-                self.number, config, trace=self.log_other_requests)
+    def send_config(self, lp_requisites, content):
+        self.api_client.send_config(self.number, lp_requisites, content, trace=self.log_other_requests)
 
     def push_monitoring_data(self, data):
         if not self.interrupted.is_set():
