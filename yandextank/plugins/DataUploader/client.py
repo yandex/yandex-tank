@@ -4,7 +4,6 @@ import traceback
 import urllib
 import uuid
 
-from enum import Enum
 from future.moves.urllib.parse import urljoin
 from builtins import range
 
