@@ -802,7 +802,7 @@ Schedules
 
 Custom_guns
 -----------
-You can create you own Golang-based gun with `pandora`. Feel free to find examples from [pandora documentation](https://yandexpandora.readthedocs.io/en/develop/)
+You can create you own Golang-based gun with `pandora`. Feel free to find examples at [pandora documentation](https://yandexpandora.readthedocs.io/en/develop/)
 
 
 ******************
