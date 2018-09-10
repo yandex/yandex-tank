@@ -11,7 +11,6 @@ from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ..Phantom import PhantomReader
 from ...common.interfaces import AbstractInfoWidget, GeneratorPlugin
-from ...common.util import expand_time
 
 logger = logging.getLogger(__name__)
 
