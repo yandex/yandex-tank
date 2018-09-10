@@ -15,7 +15,6 @@ from .reader import JMeterReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ...common.interfaces import AggregateResultListener, AbstractInfoWidget, GeneratorPlugin
-from ...common.util import splitstring
 
 logger = logging.getLogger(__name__)
 
