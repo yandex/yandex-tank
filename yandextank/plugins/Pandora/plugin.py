@@ -93,12 +93,12 @@ class Plugin(GeneratorPlugin):
         :param dict config: pandora config
         """
         for pool in config['pools']:
-            if 'file' in pool.get('ammo', {}).get('source', {}).get('type'):
+            if 'file' in pool.get('ammo', {}).get('source', {}).get('type', ''):
                 self.ammofile = pool['ammo']['source']['path']
                 pool['ammo']['source']['path'] = resource_manager.resource_filename(
                     self.ammofile
                 )
-            if not pool.get('result') or 'phout' not in pool.get('result', {}).get('type'):
+            if not pool.get('result') or 'phout' not in pool.get('result', {}).get('type', ''):
                 logger.warning('Seems like pandora result file not specified... adding defaults')
                 pool['result'] = dict(
                     destination=self.DEFAULT_REPORT_FILE,
