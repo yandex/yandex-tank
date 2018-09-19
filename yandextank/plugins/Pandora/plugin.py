@@ -1,8 +1,8 @@
 import datetime
-import json
 import logging
 import subprocess
 import time
+import yaml
 
 from netort.resource import manager as resource_manager
 
@@ -20,6 +20,7 @@ class Plugin(GeneratorPlugin):
 
     OPTION_CONFIG = "config"
     SECTION = "pandora"
+    DEFAULT_REPORT_FILE = "phout.log"
 
     def __init__(self, core, cfg):
         super(Plugin, self).__init__(core, cfg)
@@ -27,9 +28,13 @@ class Plugin(GeneratorPlugin):
         self.process_start_time = None
         self.pandora_cmd = None
         self.pandora_config_file = None
+        self.config_contents = None
         self.custom_config = False
-        self.sample_log = "./phout.log"
         self.expvar = True
+        self.sample_log = None
+        self.__address = None
+        self.__schedule = None
+        self.ammofile = None
 
     @staticmethod
     def get_key():
@@ -48,32 +53,99 @@ class Plugin(GeneratorPlugin):
         self.pandora_cmd = self.get_option("pandora_cmd")
         self.buffered_seconds = self.get_option("buffered_seconds")
         self.affinity = self.get_option("affinity", "")
+
+        # get config_contents and patch it: expand resources via resource manager
+        # config_content option has more priority over config_file
+        if self.get_option("config_content"):
+            logger.info('Found config_content option configuration')
+            self.config_contents = self.__patch_raw_config_and_dump(self.get_option("config_content"))
+        elif self.get_option("config_file"):
+            logger.info('Found config_file option configuration')
+            with open(self.get_option("config_file"), 'rb') as config:
+                external_file_config_contents = yaml.safe_load(config.read())
+            self.config_contents = self.__patch_raw_config_and_dump(external_file_config_contents)
+        else:
+            raise RuntimeError("Neither pandora.config_content, nor pandora.config_file specified")
+        logger.debug('Config after parsing for patching: %s', self.config_contents)
+
+        # find report filename and add to artifacts
+        self.sample_log = self.__find_report_filename()
         with open(self.sample_log, 'w'):
             pass
         self.core.add_artifact_file(self.sample_log)
 
-        config_content = self.patch_config(self.get_option("config_content"))
-        if len(config_content) > 0:
-            self.pandora_config_file = self.core.mkstemp(
-                ".json", "pandora_config_")
-            self.core.add_artifact_file(self.pandora_config_file)
-            with open(self.pandora_config_file, 'w') as config_file:
-                json.dump(config_content, config_file)
-        else:
-            config_file = self.get_option("config_file")
-            if not config_file:
-                raise RuntimeError(
-                    "neither pandora config content"
-                    "nor pandora config file is specified")
+    def __patch_raw_config_and_dump(self, cfg_dict):
+        if not cfg_dict:
+            raise RuntimeError('Empty pandora config')
+        # patch
+        config_content = self.patch_config(cfg_dict)
+        # dump
+        self.pandora_config_file = self.core.mkstemp(".yaml", "pandora_config_")
+        self.core.add_artifact_file(self.pandora_config_file)
+        with open(self.pandora_config_file, 'w') as config_file:
+            yaml.dump(config_content, config_file)
+        return config_content
+
+    def patch_config(self, config):
+        """
+        download remote resources, replace links with local filenames
+        add result file section
+        :param dict config: pandora config
+        """
+        for pool in config['pools']:
+            if 'file' in pool.get('ammo', {}).get('source', {}).get('type', ''):
+                self.ammofile = pool['ammo']['source']['path']
+                pool['ammo']['source']['path'] = resource_manager.resource_filename(
+                    self.ammofile
+                )
+            if not pool.get('result') or 'phout' not in pool.get('result', {}).get('type', ''):
+                logger.warning('Seems like pandora result file not specified... adding defaults')
+                pool['result'] = dict(
+                    destination=self.DEFAULT_REPORT_FILE,
+                    type='phout',
+                )
+        return config
+
+    @property
+    def address(self):
+        if not self.__address:
+            for pool in self.config_contents['pools']:
+                if pool.get('gun', {}).get('target'):
+                    self.__address = pool.get('gun', {}).get('target')
+                    break
             else:
-                extension = config_file.rsplit(".", 1)[1]
-                self.pandora_config_file = self.core.mkstemp(
-                    "." + extension, "pandora_config_")
-                self.core.add_artifact_file(self.pandora_config_file)
-                with open(config_file, 'rb') as config:
-                    config_content = config.read()
-                with open(self.pandora_config_file, 'wb') as config_file:
-                    config_file.write(config_content)
+                self.__address = 'unknown'
+        return self.__address
+
+    @property
+    def schedule(self):
+        if not self.__schedule:
+            for pool in self.config_contents['pools']:
+                if pool.get('rps'):
+                    self.__schedule = pool.get('rps')
+                    break
+            else:
+                self.__schedule = 'unknown'
+        return self.__schedule
+
+    def get_info(self):
+        return self.Info(
+            address=self.address,
+            ammo_file=self.ammofile,
+            duration=0,
+            instances=0,
+            loop_count=0,
+            port=self.address.split(':')[-1],
+            rps_schedule=self.schedule
+        )
+
+    def __find_report_filename(self):
+        for pool in self.config_contents['pools']:
+            if pool.get('result', {}).get('destination', None):
+                report_filename = pool.get('result').get('destination')
+                logger.info('Found report file in pandora config: %s', report_filename)
+                return report_filename
+        return self.DEFAULT_REPORT_FILE
 
     def get_reader(self):
         if self.reader is None:
@@ -131,17 +203,6 @@ class Plugin(GeneratorPlugin):
             logger.debug("Seems subprocess finished OK")
         return retcode
 
-    @staticmethod
-    def patch_config(config):
-        """
-        download remote resources, replace links with local filenames
-        :param dict config: pandora config
-        """
-        for pool in config['pools']:
-            if 'file' in pool.get('ammo', {}):
-                pool['ammo']['file'] = resource_manager.resource_filename(pool['ammo']['file'])
-        return config
-
 
 class PandoraInfoWidget(AbstractInfoWidget):
     ''' Right panel widget '''
@@ -174,7 +235,16 @@ class PandoraInfoWidget(AbstractInfoWidget):
         template += "Command Line: %s\n"
         template += "    Duration: %s\n"
         template += "  Requests/s: %s\n"
-        template += " Active reqs: %s"
-        data = (self.owner.pandora_cmd, duration, self.reqps, self.active)
+        template += " Active reqs: %s\n"
+        template += "      Target: %s\n"
+        template += "    Schedule: \n%s\n"
+        data = (
+            self.owner.pandora_cmd,
+            duration,
+            self.reqps,
+            self.active,
+            self.owner.address,
+            yaml.dump(self.owner.schedule)
+        )
 
         return template % data

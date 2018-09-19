@@ -756,72 +756,53 @@ Disable phantom first (unless you really want to keep it active alongside at you
 
   # pandora_config.yml
 
-      pools: [{
-        "name": "dummy pool",
-        "gun": {"type": "log"},
-        "ammo": {
-          "type": "dummy/log",
-          "AmmoLimit": 10000000
-          },
-        "result": {
-          "type": "phout",
-          "destination": "./phout.log"
-          },
-        "shared-limits": false,
-        "user-limiter": {"type": "unlimited"},
-        "startup-limiter": {
-          "type": "periodic",
-          "batch": 1,
-          "max": 5,
-          "period": "0.5s"
-          }
-        }
-      ]
+  pools:
+    - id: HTTP pool                    # pool name (for your choice)
+      gun:
+        type: http                     # gun type
+        target: example.com:80         # gun target
+      ammo:
+        type: uri                      # ammo format
+        file: ./ammo.uri               # ammo file path
+      result:
+        type: phout                    # report format (phout is compatible for Yandex.Tank)
+        destination: ./phout.log       # report file name
+
+      rps:                             # RPS scheduler - controls throughput over test
+        type: line                     # linear growth load
+        from: 1                        # from 1 responses per second
+        to: 5                          # to 5 responses per second
+        duration: 2s                   # for 2 seconds
+
+      startup:                         # startup scheduler - control the level of parallelism
+        type: once                     # start 5 instances
+        times: 5                       #
+
+
+You may specify pandora config contents in tank's config file via ```config_content``` option.
+This option has more priority over config_file option.
+
+Create ```ammo.uri``` file, put your ammo inside and start the test.
+
+.. code-block:: yaml
+
+  # ammo.uri
+
+  /my/first/url
+  /my/second/url
 
 Schedules
 ---------
+```Pandora``` has two main RPS scheduler types:
+  1. ``line`` - makes linear load, where ```from``` and ```to``` are start and end,
+  `duration` is a time for linear load increase from ```from``` to ```to```.
 
-The first schedule type is ``periodic`` schedule. It is defined as ``periodic(<batch_size>, <period>, <limit>)``.
-Pandora will issue one batch of size ``batch_size``, once in ``period`` seconds, maximum of ``limit`` ticks. Those ticks may be
-used in different places, for example as a limiter for user startups or as a limiter for each user request rate.
+  2. ``const`` - makes constant load, where ```ops``` is a load value for ```duration``` time.
 
-Example:
-::
 
-    startup_schedule = periodic(2, 0.1, 100)
-    user_schedule = periodic(10, 15, 100)
-    shared_schedule = 0
-
-Start 2 users every 0.1 seconds, 100 batches, maximum of 2 * 100 = 200 users. Each user will issue requests in batches of 10 requests, every 15 seconds, maximum
-of 100 requests. All users will read from one ammo source.
-
-Second schedule type is ``linear``. It is defined like this: ``linear(<start_rps>, <end_rps>, <time>)``.
-
-Example:
-::
-
-    user_schedule = linear(.1, 10, 10m)
-    shared_schedule = 1
-
-The load will raise from .1 RPS (1 request in 10 seconds) until 10 RPS during 10 minutes. Since
-``shared_schedule`` is 1, this defines the overall load.
-
-The last schedule type is ``unlimited``. It has no parameters and users will shoot as soon
-as possible. It is convenient to use this type of load to find out maximum performance of a
-service and its level of parallelism. You should limit the loop number if you want the test
-to stop eventually. 
-
-Example:
-::
-
-    loop = 1000000
-    startup_schedule = periodic(2, 10, 50)
-    user_schedule = unlimited()
-    shared_schedule = 0
-
-Start 2 users every 10 seconds. Every user will shoot without any limits (next request is sended
-as soon as the previous response have been received). This is analogous to phantom's instances
-schedule mode.
+Custom_guns
+-----------
+You can create you own Golang-based gun with `pandora`. Feel free to find examples at [pandora documentation](https://yandexpandora.readthedocs.io/en/develop/)
 
 
 ******************
@@ -830,7 +811,7 @@ Artifact uploaders
 
 .. note::
 
-  Graphite uploader, InfluxDB uploader and BlazeMeter Sense are not currently supported in the last Yandex.Tank version.
+  Graphite uploader and BlazeMeter Sense are not currently supported in the last Yandex.Tank version.
   If you want one of them, use 1.7 branch.
 
 Yandex.Overload
@@ -860,6 +841,49 @@ Example:
     token_file: token.txt
     job_name: test
     job_dsc: test description
+
+
+InfluxDB
+========
+
+InfluxDB uploader.
+
+Options
+-------
+
+:address:
+  (Optional) InfluxDB address. (Default: 'localhost')
+:port:
+  (Optional) InfluxDB port. (Default: 8086)
+:database:
+  (Optional) InfluxDB database. (Default: 'mydb')
+:username:
+  (Optional) InfluxDB user name. (Default: 'root')
+:password:
+  (Optional) InfluxDB password. (Default: 'root')
+:labeled:
+  (Optional) Send labels (ammo tags) to influx. (Default: false)
+:prefix_measurement:
+  (Optional) Add prefix to measurement name. (Default: '')
+:tank_tag:
+  (Optional) Tank tag. (Default: 'unknown')
+:grafana_root:
+  (Optional) Grafana root path. Used to generate link to grafana dashboard.
+:grafana_dashboard:
+  (Optional) Grafana dashboard name. Used to generate link to grafana dashboard.
+
+Example:
+
+.. code-block:: yaml
+
+  influx:
+    enabled: true
+    address: yourhost.tld
+    database: yourbase
+    tank_tag: 'mytank'
+    prefix_measurement: 'your_test_prefix_'
+    labeled: true
+
 
 ***********
 Handy tools

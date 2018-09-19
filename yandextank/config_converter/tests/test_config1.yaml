@@ -1,6 +1,7 @@
 core:
   lock_dir: /var/lock
   artifacts_base_dir: logs
+  ignore_lock: true
 phantom:
   package: yandextank.plugins.Phantom
   enabled: true

@@ -205,6 +205,9 @@ class Option(object):
         },
         'DataUploader': {
             'lock_targets': lambda k, v: {k: v.strip().split() if v != 'auto' else v}
+        },
+        'core': {
+            'ignore_locks': lambda k, v: {'ignore_lock': to_bool(v)}
         }
     }
     CONVERTERS_FOR_UNKNOWN = {
@@ -490,10 +493,10 @@ def core_options(cfg_ini):
 
 def convert_ini(ini_file):
     cfg_ini = ConfigParser()
-    if isinstance(ini_file, file):
-        cfg_ini.readfp(ini_file)
-    else:
+    if isinstance(ini_file, str):
         cfg_ini.read(ini_file)
+    else:
+        cfg_ini.readfp(ini_file)
 
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
