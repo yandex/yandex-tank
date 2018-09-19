@@ -100,6 +100,7 @@ class TankCore(object):
 
         :param configs: list of dict
         """
+        self.output = {}
         self.raw_configs = configs
         self.status = {}
         self._plugins = None
@@ -109,7 +110,6 @@ class TankCore(object):
         self._artifacts_base_dir = None
         self.manual_start = False
         self.scheduled_start = None
-        self.interrupted = False
         self.lock_file = None
         self.lock_dir = None
         self.taskset_path = None
@@ -126,6 +126,10 @@ class TankCore(object):
                                  with_dynamic_options=True,
                                  core_section=self.SECTION,
                                  error_output=error_output)
+        raw_cfg_file, raw_cfg_path = tempfile.mkstemp(suffix='_pre-validation-config.yaml')
+        os.close(raw_cfg_file)
+        self.config.save_raw(raw_cfg_path)
+        self.add_artifact_file(raw_cfg_path)
         self.add_artifact_file(error_output)
         self.add_artifact_to_send(LPRequisites.CONFIGINFO, unicode(self.config))
     #
@@ -157,9 +161,6 @@ class TankCore(object):
             if self._plugins is None:
                 self._plugins = {}
         return self._plugins
-
-    def save_config(self, filename):
-        self.config.save(filename)
 
     @property
     def artifacts_base_dir(self):
@@ -368,7 +369,7 @@ class TankCore(object):
         raise NotImplementedError
 
     def set_exitcode(self, code):
-        self.config.validated['core']['exitcode'] = code
+        self.output['core']['exitcode'] = code
 
     def get_plugin_of_type(self, plugin_class):
         """
@@ -464,11 +465,11 @@ class TankCore(object):
             '.lock', 'lunapark_', lock_dir)
         os.close(fh)
         os.chmod(self.lock_file, 0o644)
-        self.config.save(self.lock_file)
+        self.save_cfg(self.lock_file)
 
     def write_cfg_to_lock(self):
         if self.lock_file:
-            self.config.save(self.lock_file)
+            self.save_cfg(self.lock_file)
 
     def release_lock(self):
         if self.lock_file and os.path.exists(self.lock_file):
@@ -571,6 +572,10 @@ class TankCore(object):
         if self._plugins.get(plugin_name, None) is not None:
             logger.exception('Plugins\' names should diverse')
         self._plugins[plugin_name] = instance
+
+    def save_cfg(self, path):
+        with open(path, 'w') as f:
+            yaml.dump(self.cfg, f)
 
 
 class ConfigManager(object):

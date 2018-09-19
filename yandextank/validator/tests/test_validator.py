@@ -228,7 +228,8 @@ PHANTOM_SCHEMA_V_G = {
      )
 ])
 def test_validate_core(config, expected):
-    assert TankConfig(config, False).validated == expected
+    validated, errors, initial = TankConfig(config, False).validate()
+    assert validated == expected, errors == errors
 
 
 @pytest.mark.parametrize('config, expected', [
