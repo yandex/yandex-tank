@@ -11,6 +11,7 @@ import time
 import traceback
 import signal
 from optparse import OptionParser
+from threading import Thread
 
 import yaml
 from pkg_resources import resource_filename
@@ -274,6 +275,223 @@ def load_tank_core(config_files, cmd_options, no_rc, depr_options, other_opts, p
             parse_options(cmd_options) + \
             parse_and_check_patches(patches)
     return TankCore(configs)
+
+
+class Cleanup:
+    def __init__(self):
+        self._actions = []
+
+    def add_action(self, name, fn):
+        """
+
+        :type fn: callable
+        :type name: str
+        """
+        assert callable(fn)
+        self._actions.append((name, fn))
+
+    def __enter__(self):
+        return self.add_action
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            logging.error('Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, exc_tb))
+        logging.info('Trying to clean up')
+        for name, action in reversed(self._actions):
+            try:
+                action()
+            except:
+                logging.error('Exception occurred during cleanup action {}'.format(name), exc_info=True)
+        return False  # re-raise exception
+
+
+class Finish:
+    def __init__(self, tankcore):
+        """
+        :type tankcore: TankCore
+        """
+        self.core = tankcore
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        retcode = 0
+        if exc_type:
+            logging.error('Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, exc_tb))
+            retcode = 1
+        self.core.plugins_end_test(retcode)
+        return True  # swallow exception & proceed to post-processing
+
+
+
+class TankWorker(Thread):
+
+    def __init__(self):
+        super(TankWorker, self).__init__()
+        self.core = load_tank_core([resource_manager.resource_filename(cfg) for cfg in options.config],
+                                   options.option,
+                                   options.no_rc,
+                                   [],
+                                   cli_kwargs,
+                                   options.patches)
+
+
+    def run(self):
+        with Cleanup() as add_cleanup:
+            self.folder = create_folder()
+
+            self.core.save_cfg(
+                os.path.join(
+                    self.folder, 'saved_conf.yaml'))
+
+            self.init_logging()
+            self.get_lock
+            add_cleanup(self.release_lock)
+            self.core.plugins_configure()
+            self.core.plugins_prepare_test()
+            add_cleanup(self.plugins_cleanup)
+            with Finish(self.core):
+                self.start_test()
+            self.core.plugins_post_process()
+
+
+
+    def perform_test(self):
+        """
+        Run the test sequence via Tank Core
+        """
+        self.log.info("Performing test")
+        retcode = 1
+        try:
+            self.core.plugins_configure()
+            self.core.plugins_prepare_test()
+            if self.scheduled_start:
+                self.log.info(
+                    "Waiting scheduled time: %s...", self.scheduled_start)
+                while datetime.datetime.now() < self.scheduled_start:
+                    self.log.debug(
+                        "Not yet: %s < %s",
+                        datetime.datetime.now(), self.scheduled_start)
+                    time.sleep(1)
+                self.log.info("Time has come: %s", datetime.datetime.now())
+
+            if self.options.manual_start:
+                raw_input("Press Enter key to start test:")
+
+            self.core.plugins_start_test()
+            retcode = self.core.wait_for_finish()
+            retcode = self.core.plugins_end_test(retcode)
+            retcode = self.core.plugins_post_process(retcode)
+
+        except KeyboardInterrupt as ex:
+            sys.stdout.write(RealConsoleMarkup.YELLOW)
+            self.log.info(
+                "Do not press Ctrl+C again, the test will be broken otherwise")
+            sys.stdout.write(RealConsoleMarkup.RESET)
+            sys.stdout.write(RealConsoleMarkup.TOTAL_RESET)
+            self.signal_count += 1
+            self.log.debug(
+                "Caught KeyboardInterrupt: %s", traceback.format_exc(ex))
+            try:
+                retcode = self.__graceful_shutdown()
+            except KeyboardInterrupt as ex:
+                self.log.debug(
+                    "Caught KeyboardInterrupt again: %s",
+                    traceback.format_exc(ex))
+                self.log.info(
+                    "User insists on exiting, aborting graceful shutdown...")
+                retcode = 1
+
+        except Exception as ex:
+            self.log.info("Exception: %s", traceback.format_exc(ex))
+            sys.stderr.write(RealConsoleMarkup.RED)
+            self.log.error("%s", ex)
+            sys.stderr.write(RealConsoleMarkup.RESET)
+            sys.stderr.write(RealConsoleMarkup.TOTAL_RESET)
+            retcode = self.__graceful_shutdown()
+            self.core.release_lock()
+        finally:
+            self.core.close()
+
+        self.log.info("Done performing test with code %s", retcode)
+        return retcode
+
+    def init_logging(self, general_verbosity, debug_filename=None, warning_filename=None):
+        """ Set up logging, as it is very important for console tool """
+        logger = logging.getLogger('')
+        logger.setLevel(logging.DEBUG)
+        log_filename = self.options.log
+        events_log_fname = self.options.error_log
+
+        # create file handler which logs even debug messages
+        if log_filename:
+            file_handler = logging.FileHandler(log_filename)
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"
+                ))
+            logger.addHandler(file_handler)
+
+        # create file handler which logs error messages
+
+        if events_log_fname:
+            err_file_handler = logging.FileHandler(events_log_fname)
+            err_file_handler.setLevel(logging.WARNING)
+            err_file_handler.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s\t%(message)s"
+                ))
+            logger.addHandler(err_file_handler)
+
+        # create console handler with a higher log level
+        console_handler = logging.StreamHandler(sys.stdout)
+        stderr_hdl = logging.StreamHandler(sys.stderr)
+
+        fmt_verbose = logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"
+        )
+        fmt_regular = logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(message)s", "%H:%M:%S")
+
+        if self.options.verbose:
+            console_handler.setLevel(logging.DEBUG)
+            console_handler.setFormatter(fmt_verbose)
+            stderr_hdl.setFormatter(fmt_verbose)
+        elif self.options.quiet:
+            console_handler.setLevel(logging.WARNING)
+            console_handler.setFormatter(fmt_regular)
+            stderr_hdl.setFormatter(fmt_regular)
+        else:
+            console_handler.setLevel(logging.INFO)
+            console_handler.setFormatter(fmt_regular)
+            stderr_hdl.setFormatter(fmt_regular)
+
+        f_err = SingleLevelFilter(logging.ERROR, True)
+        f_warn = SingleLevelFilter(logging.WARNING, True)
+        f_crit = SingleLevelFilter(logging.CRITICAL, True)
+        console_handler.addFilter(f_err)
+        console_handler.addFilter(f_warn)
+        console_handler.addFilter(f_crit)
+        logger.addHandler(console_handler)
+
+        f_info = SingleLevelFilter(logging.INFO, True)
+        f_debug = SingleLevelFilter(logging.DEBUG, True)
+        stderr_hdl.addFilter(f_info)
+        stderr_hdl.addFilter(f_debug)
+        logger.addHandler(stderr_hdl)
+
+
+    def __add_cleanup(self, action):
+        assert callable(action)
+        self.__cleanup_actions.add(action)
+
+    def cleanup(self):
+        for action in self.__cleanup_actions:
+            action()
+
+
 
 
 class ConsoleTank:

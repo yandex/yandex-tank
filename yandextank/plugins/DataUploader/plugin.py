@@ -448,9 +448,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     # TODO: why we do it here? should be in core
     def __save_conf(self):
-        self.core.config.save(
-            os.path.join(
-                self.core.artifacts_dir, 'saved_conf.yaml'))
         for requisites, content in self.core.artifacts_to_send:
             self.lp_job.send_config(requisites, content)
 

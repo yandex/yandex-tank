@@ -163,7 +163,7 @@ class TankConfig(object):
             configs,
             with_dynamic_options=True,
             core_section='core',
-            error_output='validation_error.yaml'):
+            error_output=None):
         self._errors = None
         if not isinstance(configs, list):
             configs = [configs]
@@ -179,29 +179,19 @@ class TankConfig(object):
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
         self.PLUGINS_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml'))
 
-    def get_option(self, section, option):
-        return self.validated[section][option]
-
-    def has_option(self, section, option):
-        return self.validated
 
     def get_configinitial(self):
         return self.raw_config_dict
 
-    @property
-    def plugins(self):
-        """
-            :returns: [(plugin_name, plugin_package, plugin_config), ...]
-            :rtype: list of tuple
-        """
-        if not self._plugins:
-            self._plugins = [
-                (plugin_name,
-                 plugin_cfg['package'],
-                    plugin_cfg) for plugin_name,
-                plugin_cfg in self.validated.items() if (
-                    plugin_name not in self.BASE_SCHEMA.keys()) and plugin_cfg['enabled']]
-        return self._plugins
+    def validate(self):
+        if not self._validated:
+            try:
+                self._validated = ValidatedConfig(self.__validate())
+                self._errors = []
+            except ValidationError as e:
+                self._validated = None
+                self._errors = e.errors
+        return self._validated, self._errors, self.raw_config_dict
 
     @property
     def validated(self):
@@ -209,18 +199,12 @@ class TankConfig(object):
             try:
                 self._validated = self.__validate()
             except ValidationError as e:
-                with open(self.ERROR_OUTPUT, 'w') as f:
-                    yaml.dump(e.errors, f)
+                self._errors = e.errors
+                if self.ERROR_OUTPUT:
+                    with open(self.ERROR_OUTPUT, 'w') as f:
+                        yaml.dump(e.errors, f)
                 raise
         return self._validated
-
-    def save(self, filename, error_message=''):
-        with open(filename, 'w') as f:
-            yaml.dump(
-                self.__load_multiple(
-                    [self.validated,
-                     {self.CORE_SECTION: {'message': error_message}}]
-                ), f)
 
     def save_raw(self, filename):
         with open(filename, 'w') as f:
@@ -303,14 +287,37 @@ class TankConfig(object):
         return config
 
     def __str__(self):
-        return yaml.dump(self.validated)
+        return yaml.dump(self.raw_config_dict)
 
-    def errors(self):
-        if not self._errors:
-            try:
-                self.validated
-            except ValidationError as e:
-                self._errors = e.errors
-            else:
-                self._errors = []
-        return self._errors
+
+class ValidatedConfig(object):
+    def __init__(self, validated):
+        """
+
+        :type validated: dict
+        """
+        self.validated = validated
+        self._plugins = None
+
+    @property
+    def plugins(self):
+        """
+            :returns: [(plugin_name, plugin_package, plugin_config), ...]
+            :rtype: list of tuple
+        """
+        if not self._plugins:
+            self._plugins = [
+                (plugin_name,
+                 plugin_cfg['package'],
+                 plugin_cfg) for plugin_name, plugin_cfg in self.validated.items() if (
+                    plugin_name not in self.BASE_SCHEMA.keys()) and plugin_cfg['enabled']]
+        return self._plugins
+
+    def get_option(self, section, option):
+        return self.validated[section][option]
+
+    def __nonzero__(self):
+        return len(self.validated) > 0
+
+    def __bool__(self):
+        return self.__nonzero__()
