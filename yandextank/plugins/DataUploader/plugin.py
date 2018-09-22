@@ -9,6 +9,7 @@ import re
 import sys
 import time
 import datetime
+import yaml
 from future.moves.urllib.parse import urljoin
 
 from queue import Empty, Queue
@@ -582,7 +583,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                        log_monitoring_requests=self.get_option('log_monitoring_requests'),
                        log_status_requests=self.get_option('log_status_requests'),
                        log_other_requests=self.get_option('log_other_requests'))
-        lp_job.send_config(LPRequisites.CONFIGINITIAL, self.core.config.get_configinitial())
+        lp_job.send_config(LPRequisites.CONFIGINITIAL, yaml.dump(self.core.config.get_configinitial()))
         return lp_job
 
     @property
