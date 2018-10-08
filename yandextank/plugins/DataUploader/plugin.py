@@ -567,8 +567,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
         info = self.get_generator_info()
         port = info.port
-        loadscheme = [] if isinstance(info.rps_schedule,
-                                      str) else info.rps_schedule
+        loadscheme = [] if isinstance(info.rps_schedule, (str, dict)) else info.rps_schedule
 
         lp_job = LPJob(client=api_client,
                        target_host=self.target,
