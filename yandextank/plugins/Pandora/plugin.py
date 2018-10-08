@@ -136,7 +136,7 @@ class Plugin(GeneratorPlugin):
             instances=0,
             loop_count=0,
             port=self.address.split(':')[-1],
-            rps_schedule=self.schedule
+            rps_schedule=''
         )
 
     def __find_report_filename(self):
