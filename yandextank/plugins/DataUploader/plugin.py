@@ -9,6 +9,7 @@ import re
 import sys
 import time
 import datetime
+import yaml
 from future.moves.urllib.parse import urljoin
 
 from queue import Empty, Queue
@@ -21,7 +22,7 @@ from ...common.interfaces import AbstractPlugin, \
 from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
-from .client import APIClient, OverloadClient
+from .client import APIClient, OverloadClient, LPRequisites
 from ...common.util import FileScanner
 
 from netort.data_processing import Drain
@@ -93,7 +94,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.monitoring = threading.Thread(target=self.__monitoring_uploader)
         self.monitoring.daemon = True
 
-        self._generator_info = None
         self._is_telegraf = None
         self.backend_type = BackendTypes.identify_backend(self.cfg['api_address'])
         self._task = None
@@ -115,7 +115,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     @property
     def lock_duration(self):
         if self._lock_duration is None:
-            self._lock_duration = self.generator_info.duration if self.generator_info.duration else \
+            info = self.get_generator_info()
+            self._lock_duration = info.duration if info.duration else \
                 expand_to_seconds(self.get_option("target_lock_duration"))
         return self._lock_duration
 
@@ -214,14 +215,18 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             os.getcwd())
 
     def prepare_test(self):
-        info = self.generator_info
+        info = self.get_generator_info()
         port = info.port
         instances = info.instances
-        if info.ammo_file.startswith(
-                "http://") or info.ammo_file.startswith("https://"):
-            ammo_path = info.ammo_file
+        if info.ammo_file is not None:
+            if info.ammo_file.startswith(
+                    "http://") or info.ammo_file.startswith("https://"):
+                ammo_path = info.ammo_file
+            else:
+                ammo_path = os.path.realpath(info.ammo_file)
         else:
-            ammo_path = os.path.realpath(info.ammo_file)
+            logger.warning('Failed to get info about ammo path')
+            ammo_path = 'Undefined'
         loop_count = int(info.loop_count)
 
         try:
@@ -448,19 +453,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     # TODO: why we do it here? should be in core
     def __save_conf(self):
-        # config = copy.deepcopy(self.core.config)
-        try:
-            config_filename = self.core.job.monitoring_plugin.config
-            if config_filename and config_filename not in ['none', 'auto']:
-                with open(config_filename) as config_file:
-                    self.core.job.monitoring_plugin.set_option("config_contents", config_file.read())
-        except AttributeError:  # pylint: disable=W0703
-            logger.info("Can't get monitoring config", exc_info=True)
-
-        self.lp_job.send_config_snapshot(self.core.cfg_snapshot)
         self.core.config.save(
             os.path.join(
                 self.core.artifacts_dir, 'saved_conf.yaml'))
+        for requisites, content in self.core.artifacts_to_send:
+            self.lp_job.send_config(requisites, content)
 
     def parse_lock_targets(self):
         # prepare target lock list
@@ -568,28 +565,29 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         """
         api_client = self.__get_api_client()
 
-        info = self.generator_info
+        info = self.get_generator_info()
         port = info.port
-        loadscheme = [] if isinstance(info.rps_schedule,
-                                      str) else info.rps_schedule
+        loadscheme = [] if isinstance(info.rps_schedule, (str, dict)) else info.rps_schedule
 
-        return LPJob(client=api_client,
-                     target_host=self.target,
-                     target_port=port,
-                     number=self.cfg.get('jobno', None),
-                     token=self.get_option('upload_token'),
-                     person=self.__get_operator(),
-                     task=self.task,
-                     name=self.get_option('job_name', 'none'),
-                     description=self.get_option('job_dsc'),
-                     tank=self.core.job.tank,
-                     notify_list=self.get_option("notify"),
-                     load_scheme=loadscheme,
-                     version=self.get_option('ver'),
-                     log_data_requests=self.get_option('log_data_requests'),
-                     log_monitoring_requests=self.get_option('log_monitoring_requests'),
-                     log_status_requests=self.get_option('log_status_requests'),
-                     log_other_requests=self.get_option('log_other_requests'))
+        lp_job = LPJob(client=api_client,
+                       target_host=self.target,
+                       target_port=port,
+                       number=self.cfg.get('jobno', None),
+                       token=self.get_option('upload_token'),
+                       person=self.__get_operator(),
+                       task=self.task,
+                       name=self.get_option('job_name', 'none'),
+                       description=self.get_option('job_dsc'),
+                       tank=self.core.job.tank,
+                       notify_list=self.get_option("notify"),
+                       load_scheme=loadscheme,
+                       version=self.get_option('ver'),
+                       log_data_requests=self.get_option('log_data_requests'),
+                       log_monitoring_requests=self.get_option('log_monitoring_requests'),
+                       log_status_requests=self.get_option('log_status_requests'),
+                       log_other_requests=self.get_option('log_other_requests'))
+        lp_job.send_config(LPRequisites.CONFIGINITIAL, yaml.dump(self.core.config.get_configinitial()))
+        return lp_job
 
     @property
     def task(self):
@@ -636,16 +634,13 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             )
             raise RuntimeError("API token error")
 
-    @property
-    def generator_info(self):
-        if self._generator_info is None:
-            self._generator_info = self.core.job.generator_plugin.get_info()
-        return self._generator_info
+    def get_generator_info(self):
+        return self.core.job.generator_plugin.get_info()
 
     @property
     def target(self):
         if self._target is None:
-            self._target = self.generator_info.address
+            self._target = self.get_generator_info().address
             logger.info("Detected target: %s", self.target)
         return self._target
 
@@ -803,10 +798,8 @@ class LPJob(object):
         return self.api_client.get_task_data(
             task, trace=self.log_other_requests)
 
-    def send_config_snapshot(self, config):
-        if self._number:
-            self.api_client.send_config_snapshot(
-                self.number, config, trace=self.log_other_requests)
+    def send_config(self, lp_requisites, content):
+        self.api_client.send_config(self.number, lp_requisites, content, trace=self.log_other_requests)
 
     def push_monitoring_data(self, data):
         if not self.interrupted.is_set():

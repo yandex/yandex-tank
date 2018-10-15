@@ -31,7 +31,7 @@ Otherwise if port is unreachable:
 Routing
 *******
 
-OK, service is reachable, next thing
+OK, the service is reachable, next thing
 you should know is how far Yandex.Tank is located from the service you'd
 like to test. Heavy load can make switch to be unresponsible or to
 reboot, or at least it may lead to network losses, so the test results
@@ -59,13 +59,13 @@ execution of ``tracepath`` command or it analogs
     6:  8.example.com (203.0.113.1)                 0.525ms asymm  5
     7:  no reply
 
-In second example you'd better find another closer located tank.
+In the second example you'd better find another closer located tank.
 
 ******
 Tuning
 ******
 
-To achieve the top most performance you should tune the source server
+To achieve top performance you should tune the source server
 system limits:
 
 .. code-block:: bash

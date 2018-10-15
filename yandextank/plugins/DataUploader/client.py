@@ -635,10 +635,11 @@ class APIClient(object):
     def get_manual_unlock_link(target):
         return "api/server/lock.json?action=unlock&address=%s" % target
 
-    def send_config_snapshot(self, jobno, config, trace=False):
-        logger.debug("Sending config snapshot")
-        addr = "api/job/%s/configinfo.txt" % jobno
-        self.__post_raw(addr, {"configinfo": unicode(config)}, trace=trace)
+    def send_config(self, jobno, lp_requisites, config_content, trace=False):
+        endpoint, field_name = lp_requisites
+        logger.debug("Sending {} config".format(field_name))
+        addr = "/api/job/%s/%s" % (jobno, endpoint)
+        self.__post_raw(addr, {field_name: unicode(config_content)}, trace=trace)
 
     def link_mobile_job(self, lp_key, mobile_key):
         addr = "/api/job/{jobno}/edit.json".format(jobno=lp_key)
@@ -647,6 +648,12 @@ class APIClient(object):
         }
         response = self.__post(addr, data)
         return response
+
+
+class LPRequisites():
+    CONFIGINFO = ('configinfo.txt', 'configinfo')
+    MONITORING = ('jobmonitoringconfig.txt', 'monitoringconfig')
+    CONFIGINITIAL = ('configinitial.txt', 'configinitial')
 
 
 class OverloadClient(APIClient):

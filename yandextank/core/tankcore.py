@@ -20,6 +20,7 @@ from builtins import str
 
 from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin
+from yandextank.plugins.DataUploader.client import LPRequisites
 from yandextank.validator.validator import TankConfig, ValidationError
 from yandextank.aggregator import TankAggregator
 from ..common.util import update_status, pid_exists
@@ -104,6 +105,7 @@ class TankCore(object):
         self._plugins = None
         self._artifacts_dir = None
         self.artifact_files = {}
+        self.artifacts_to_send = []
         self._artifacts_base_dir = None
         self.manual_start = False
         self.scheduled_start = None
@@ -125,6 +127,7 @@ class TankCore(object):
                                  core_section=self.SECTION,
                                  error_output=error_output)
         self.add_artifact_file(error_output)
+        self.add_artifact_to_send(LPRequisites.CONFIGINFO, unicode(self.config))
     #
     # def get_uuid(self):
     #     return self.uuid
@@ -428,6 +431,9 @@ class TankCore(object):
                 "Adding artifact file to collect (keep=%s): %s", keep_original,
                 filename)
             self.artifact_files[filename] = keep_original
+
+    def add_artifact_to_send(self, lp_requisites, content):
+        self.artifacts_to_send.append((lp_requisites, content))
 
     def apply_shorthand_options(self, options, default_section='DEFAULT'):
         for option_str in options:

@@ -7,6 +7,7 @@ import subprocess
 import time
 import socket
 import re
+import shlex
 
 from pkg_resources import resource_string
 
@@ -14,7 +15,6 @@ from .reader import JMeterReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ...common.interfaces import AggregateResultListener, AbstractInfoWidget, GeneratorPlugin
-from ...common.util import splitstring
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ class Plugin(GeneratorPlugin):
             '-Jjmeter.save.saveservice.default_delimiter=\\t',
             '-Jjmeter.save.saveservice.connect_time=true'
         ]
-        self.args += splitstring(self.user_args)
+        self.args += shlex.split(self.user_args)
 
         if self.affinity:
             self.core.__setup_affinity(self.affinity, args=self.args)

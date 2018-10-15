@@ -30,7 +30,7 @@ class PandoraStatsPoller(Thread):
                         }
                     }
                 except (requests.ConnectionError, requests.HTTPError, requests.exceptions.Timeout):
-                    logger.warning("Pandora expvar http interface is unavailable", exc_info=True)
+                    logger.debug("Pandora expvar http interface is unavailable", exc_info=True)
                     data = {
                         'ts': last_ts - 1,
                         'metrics': {
@@ -71,8 +71,6 @@ class PandoraStatsReader(object):
             }]
         else:
             if self.closed:
-                self.poller.stop()
-                self.poller.join()
                 raise StopIteration()
             elif not self.started:
                 self.poller.start()
@@ -81,6 +79,8 @@ class PandoraStatsReader(object):
 
     def close(self):
         self.closed = True
+        self.poller.stop()
+        self.poller.join()
 
     def __iter__(self):
         return self

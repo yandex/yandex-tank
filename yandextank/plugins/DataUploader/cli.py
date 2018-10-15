@@ -17,7 +17,7 @@ from cerberus import Validator
 
 from yandextank.core import TankCore
 from yandextank.validator.validator import ValidationError, load_yaml_schema
-from .client import APIClient, OverloadClient
+from .client import APIClient, OverloadClient, LPRequisites
 from .plugin import LPJob, BackendTypes
 from .plugin import Plugin as DataUploader
 
@@ -89,7 +89,7 @@ def upload_monitoring(shooting_dir, log_name, lp_job):
 
 
 def send_config_snapshot(config, lp_job):
-    lp_job.send_config_snapshot(yaml.dump(config))
+    lp_job.send_config(LPRequisites.CONFIGINFO, yaml.dump(config))
 
 
 def edit_metainfo(lp_config, lp_job):
