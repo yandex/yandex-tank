@@ -186,7 +186,7 @@ class TankConfig(object):
     def validate(self):
         if not self._validated:
             try:
-                self._validated = ValidatedConfig(self.__validate())
+                self._validated = ValidatedConfig(self.__validate(), self.BASE_SCHEMA)
                 self._errors = []
             except ValidationError as e:
                 self._validated = None
@@ -291,12 +291,13 @@ class TankConfig(object):
 
 
 class ValidatedConfig(object):
-    def __init__(self, validated):
+    def __init__(self, validated, base_schema):
         """
 
         :type validated: dict
         """
         self.validated = validated
+        self.base_schema = base_schema
         self._plugins = None
 
     @property
@@ -310,11 +311,16 @@ class ValidatedConfig(object):
                 (plugin_name,
                  plugin_cfg['package'],
                  plugin_cfg) for plugin_name, plugin_cfg in self.validated.items() if (
-                    plugin_name not in self.BASE_SCHEMA.keys()) and plugin_cfg['enabled']]
+                    plugin_name not in self.base_schema.keys()) and plugin_cfg['enabled']]
         return self._plugins
 
-    def get_option(self, section, option):
-        return self.validated[section][option]
+    def get_option(self, section, option, default=None):
+        try:
+            return self.validated[section][option]
+        except KeyError:
+            if default is not None:
+                return default
+            raise
 
     def __nonzero__(self):
         return len(self.validated) > 0

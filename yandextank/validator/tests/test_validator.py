@@ -229,7 +229,7 @@ PHANTOM_SCHEMA_V_G = {
 ])
 def test_validate_core(config, expected):
     validated, errors, initial = TankConfig(config, False).validate()
-    assert validated == expected, errors == errors
+    assert validated.validated == expected, errors == errors
 
 
 @pytest.mark.parametrize('config, expected', [
@@ -564,7 +564,8 @@ def test_validate_all_error(config, expected):
     )
 ])
 def test_get_plugins(config, expected):
-    assert {(name, pack) for name, pack, cfg in TankConfig(config).plugins} == expected
+    validated, errors, raw = TankConfig(config).validate()
+    assert {(name, pack) for name, pack, cfg in validated.plugins} == expected
 
 
 @pytest.mark.parametrize('value', [

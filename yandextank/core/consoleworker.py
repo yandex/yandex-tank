@@ -1,4 +1,5 @@
 """ Provides classes to run TankCore from console environment """
+import shutil
 from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
 import datetime
 import fnmatch
@@ -12,7 +13,7 @@ import traceback
 import signal
 from optparse import OptionParser
 from threading import Thread
-
+import stat
 import yaml
 from pkg_resources import resource_filename
 
@@ -284,7 +285,7 @@ class Cleanup:
     def add_action(self, name, fn):
         """
 
-        :type fn: callable
+        :type fn: function
         :type name: str
         """
         assert callable(fn)
@@ -300,68 +301,123 @@ class Cleanup:
         for name, action in reversed(self._actions):
             try:
                 action()
-            except:
+            except Exception:
                 logging.error('Exception occurred during cleanup action {}'.format(name), exc_info=True)
         return False  # re-raise exception
 
 
 class Finish:
-    def __init__(self, tankcore):
+    def __init__(self, tankworker):
         """
-        :type tankcore: TankCore
+        :type tankworker: TankWorker
         """
-        self.core = tankcore
+        self.worker = tankworker
 
     def __enter__(self):
         pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.worker.status = Status.TEST_FINISHING
         retcode = 0
         if exc_type:
             logging.error('Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, exc_tb))
             retcode = 1
-        self.core.plugins_end_test(retcode)
+        retcode = self.worker.core.plugins_end_test(retcode)
+        self.worker.retcode = retcode
         return True  # swallow exception & proceed to post-processing
 
 
+class Status():
+    TEST_POST_PROCESS = 'POST_PROCESS'
+    TEST_INITIATED = 'INITIATED'
+    TEST_PREPARING = "PREPARING"
+    TEST_NOT_FOUND = "NOT_FOUND"
+    TEST_RUNNING = "RUNNING"
+    TEST_FINISHING = "FINISHING"
+    TEST_FINISHED = "FINISHED"
+
 
 class TankWorker(Thread):
+    SECTION = 'core'
 
-    def __init__(self):
+    def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
+                 log_handlers=None, wait_lock=True, files=None, ammo_file=None):
         super(TankWorker, self).__init__()
-        self.core = load_tank_core([resource_manager.resource_filename(cfg) for cfg in options.config],
-                                   options.option,
-                                   options.no_rc,
-                                   [],
-                                   cli_kwargs,
-                                   options.patches)
+        self.wait_lock = wait_lock
+        self.log_handlers = log_handlers if log_handlers is not None else []
+        self.files = [] if files is None else files
+        self.ammo_file = ammo_file
 
+        self.config_list = self._combine_configs(configs, cli_options, cfg_patches, cli_args, no_local)
+        self.core = TankCore(self.config_list)
+        validated, errors, configinitial = self.core.config.validate()
+        if len(errors) > 0:
+            raise ValidationError(errors)
+        self.config = validated
+        self.configinitial = configinitial
+        self.status = Status.TEST_INITIATED
+        self.test_id = self.core.test_id
+
+
+    @staticmethod
+    def _combine_configs(run_cfgs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False):
+        if cli_options is None:
+            cli_options = []
+        if cfg_patches is None:
+            cfg_patches = []
+        if cli_args is None:
+            cli_args = []
+        run_cfgs = run_cfgs if len(run_cfgs) > 0 else [DEFAULT_CONFIG]
+
+        if no_local:
+            configs = [load_cfg(cfg) for cfg in run_cfgs] + \
+                      parse_options(cli_options) + \
+                      parse_and_check_patches(cfg_patches) + \
+                      cli_args
+        else:
+            configs = [load_core_base_cfg()] + \
+                      load_local_base_cfgs() + \
+                      [load_cfg(cfg) for cfg in run_cfgs] + \
+                      parse_options(cli_options) + \
+                      parse_and_check_patches(cfg_patches) + \
+                      cli_args
+        return configs
+
+    def _init_folder(self):
+        folder = self.core.artifacts_dir
+        for f in self.files:
+            shutil.move(f, folder)
+        shutil.move(self.ammo_file, folder)
+        os.chdir(folder)
 
     def run(self):
         with Cleanup() as add_cleanup:
-            self.folder = create_folder()
-
-            self.core.save_cfg(
-                os.path.join(
-                    self.folder, 'saved_conf.yaml'))
-
+            self.get_lock()
+            self.status = Status.TEST_PREPARING
+            self.folder = self._init_folder()
             self.init_logging()
-            self.get_lock
-            add_cleanup(self.release_lock)
-            self.core.plugins_configure()
-            self.core.plugins_prepare_test()
-            add_cleanup(self.plugins_cleanup)
-            with Finish(self.core):
-                self.start_test()
-            self.core.plugins_post_process()
+            logging.info('Created a folder for the test. %s' % self.folder)
+            # self.core.save_cfg(
+            #     os.path.join(
+            #         self.folder, 'saved_conf.yaml'))
 
+            add_cleanup('release lock', self.core.release_lock)
+            self.core.plugins_configure()
+            add_cleanup('plugins cleanup', self.core.plugins_cleanup)
+            self.core.plugins_prepare_test()
+            with Finish(self):
+                self.status = Status.TEST_RUNNING
+                self.core.plugins_start_test()
+                self.retcode = self.core.wait_for_finish()
+            self.status = Status.TEST_POST_PROCESS
+            self.core.plugins_post_process(self.retcode)
 
 
     def perform_test(self):
         """
         Run the test sequence via Tank Core
         """
-        self.log.info("Performing test")
+        logging.info("Performing test")
         retcode = 1
         try:
             self.core.plugins_configure()
@@ -417,81 +473,41 @@ class TankWorker(Thread):
         self.log.info("Done performing test with code %s", retcode)
         return retcode
 
-    def init_logging(self, general_verbosity, debug_filename=None, warning_filename=None):
-        """ Set up logging, as it is very important for console tool """
-        logger = logging.getLogger('')
-        logger.setLevel(logging.DEBUG)
-        log_filename = self.options.log
-        events_log_fname = self.options.error_log
+    def init_logging(self, debug=False):
 
-        # create file handler which logs even debug messages
-        if log_filename:
-            file_handler = logging.FileHandler(log_filename)
-            file_handler.setLevel(logging.DEBUG)
-            file_handler.setFormatter(
-                logging.Formatter(
-                    "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"
-                ))
-            logger.addHandler(file_handler)
+        # stdout handler level info
+        # file handler info/debug level
+        # file handler warning level
+        filename = os.path.join(self.core.artifacts_dir, 'tank.log')
+        current_file_mode = os.stat(filename).st_mode
+        os.chmod(filename, current_file_mode | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
-        # create file handler which logs error messages
+        logger = logging.getLogger('yandextank')
+        logger.handlers = []
+        logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
-        if events_log_fname:
-            err_file_handler = logging.FileHandler(events_log_fname)
-            err_file_handler.setLevel(logging.WARNING)
-            err_file_handler.setFormatter(
-                logging.Formatter(
-                    "%(asctime)s\t%(message)s"
-                ))
-            logger.addHandler(err_file_handler)
+        self.file_handler = logging.FileHandler(filename)
+        self.file_handler.setLevel(logging.DEBUG)
+        self.file_handler.setFormatter(logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"))
+        logger.addHandler(self.file_handler)
+        logging.info("Log file created")
 
-        # create console handler with a higher log level
-        console_handler = logging.StreamHandler(sys.stdout)
-        stderr_hdl = logging.StreamHandler(sys.stderr)
+        for handler in self.log_handlers:
+            logger.addHandler(handler)
+            logging.info("Logging handler {} added".format(handler))
 
-        fmt_verbose = logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"
-        )
-        fmt_regular = logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(message)s", "%H:%M:%S")
-
-        if self.options.verbose:
-            console_handler.setLevel(logging.DEBUG)
-            console_handler.setFormatter(fmt_verbose)
-            stderr_hdl.setFormatter(fmt_verbose)
-        elif self.options.quiet:
-            console_handler.setLevel(logging.WARNING)
-            console_handler.setFormatter(fmt_regular)
-            stderr_hdl.setFormatter(fmt_regular)
-        else:
-            console_handler.setLevel(logging.INFO)
-            console_handler.setFormatter(fmt_regular)
-            stderr_hdl.setFormatter(fmt_regular)
-
-        f_err = SingleLevelFilter(logging.ERROR, True)
-        f_warn = SingleLevelFilter(logging.WARNING, True)
-        f_crit = SingleLevelFilter(logging.CRITICAL, True)
-        console_handler.addFilter(f_err)
-        console_handler.addFilter(f_warn)
-        console_handler.addFilter(f_crit)
-        logger.addHandler(console_handler)
-
-        f_info = SingleLevelFilter(logging.INFO, True)
-        f_debug = SingleLevelFilter(logging.DEBUG, True)
-        stderr_hdl.addFilter(f_info)
-        stderr_hdl.addFilter(f_debug)
-        logger.addHandler(stderr_hdl)
-
-
-    def __add_cleanup(self, action):
-        assert callable(action)
-        self.__cleanup_actions.add(action)
-
-    def cleanup(self):
-        for action in self.__cleanup_actions:
-            action()
-
-
+    def get_lock(self):
+        while True:
+            try:
+                self.core.get_lock()
+                break
+            except LockError:
+                if not self.wait_lock:
+                    raise RuntimeError("Lock file present, cannot continue")
+                logging.warning(
+                    "Couldn't get lock. Will retry in 5 seconds...")
+                time.sleep(5)
 
 
 class ConsoleTank:
