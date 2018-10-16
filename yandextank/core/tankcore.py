@@ -125,16 +125,18 @@ class TankCore(object):
         self.config = TankConfig(self.raw_configs,
                                  with_dynamic_options=True,
                                  core_section=self.SECTION,
-                                 error_output=error_output)
+                                 error_output=error_output).validate()
         raw_cfg_file, raw_cfg_path = tempfile.mkstemp(suffix='_pre-validation-config.yaml')
         os.close(raw_cfg_file)
         self.config.save_raw(raw_cfg_path)
         self.add_artifact_file(raw_cfg_path)
         self.add_artifact_file(error_output)
         self.add_artifact_to_send(LPRequisites.CONFIGINFO, unicode(self.config))
-    #
-    # def get_uuid(self):
-    #     return self.uuid
+
+
+        self.test_id = self.get_option(self.SECTION, 'artifacts_dir',
+                                       datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f"))
+        logging.info('New test id %s' % self.test_id)
 
     @property
     def cfg_snapshot(self):
@@ -360,7 +362,7 @@ class TankCore(object):
                 logger.warn("Failed to collect file %s: %s", filename, ex)
 
     def get_option(self, section, option, default=None):
-        return self.config.get_option(section, option)
+        return self.config.get_option(section, option, default)
 
     def set_option(self, section, option, value):
         """
@@ -542,18 +544,11 @@ class TankCore(object):
     @property
     def artifacts_dir(self):
         if not self._artifacts_dir:
-            try:
-                dir_name = self.get_option(self.SECTION, 'artifacts_dir')
-            except ValidationError:
-                dir_name = None
-            if not dir_name:
-                date_str = datetime.datetime.now().strftime(
-                    "%Y-%m-%d_%H-%M-%S.")
-                dir_name = tempfile.mkdtemp("", date_str, self.artifacts_base_dir)
-            elif not os.path.isdir(dir_name):
-                os.makedirs(dir_name)
-            os.chmod(dir_name, 0o755)
-            self._artifacts_dir = os.path.abspath(dir_name)
+            new_path = os.path.join(self.artifacts_base_dir, self.test_id)
+            if not os.path.isdir(new_path):
+                os.makedirs(new_path)
+            os.chmod(new_path, 0o755)
+            self._artifacts_dir = os.path.abspath(new_path)
         return self._artifacts_dir
 
     @staticmethod
@@ -575,7 +570,13 @@ class TankCore(object):
 
     def save_cfg(self, path):
         with open(path, 'w') as f:
-            yaml.dump(self.cfg, f)
+            yaml.dump(self.config, f)
+
+    def plugins_cleanup(self):
+        self.job.aggregator.cleanup()
+        for plugin_name, plugin in self.plugins.items():
+            logging.info('Cleaning up plugin {}'.format(plugin_name))
+            plugin.cleanup()
 
 
 class ConfigManager(object):
