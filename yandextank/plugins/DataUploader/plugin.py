@@ -9,6 +9,7 @@ import re
 import sys
 import time
 import datetime
+import yaml
 from future.moves.urllib.parse import urljoin
 
 from queue import Empty, Queue
@@ -94,7 +95,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.monitoring = threading.Thread(target=self.__monitoring_uploader)
         self.monitoring.daemon = True
 
-        self._generator_info = None
         self._is_telegraf = None
         self.backend_type = BackendTypes.identify_backend(self.cfg['api_address'])
         self._task = None
@@ -116,7 +116,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     @property
     def lock_duration(self):
         if self._lock_duration is None:
-            self._lock_duration = self.generator_info.duration if self.generator_info.duration else \
+            info = self.get_generator_info()
+            self._lock_duration = info.duration if info.duration else \
                 expand_to_seconds(self.get_option("target_lock_duration"))
         return self._lock_duration
 
@@ -215,14 +216,18 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             os.getcwd())
 
     def prepare_test(self):
-        info = self.generator_info
+        info = self.get_generator_info()
         port = info.port
         instances = info.instances
-        if info.ammo_file.startswith(
-                "http://") or info.ammo_file.startswith("https://"):
-            ammo_path = info.ammo_file
+        if info.ammo_file is not None:
+            if info.ammo_file.startswith(
+                    "http://") or info.ammo_file.startswith("https://"):
+                ammo_path = info.ammo_file
+            else:
+                ammo_path = os.path.realpath(info.ammo_file)
         else:
-            ammo_path = os.path.realpath(info.ammo_file)
+            logger.warning('Failed to get info about ammo path')
+            ammo_path = 'Undefined'
         loop_count = int(info.loop_count)
 
         try:
@@ -551,10 +556,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         """
         api_client = self.__get_api_client()
 
-        info = self.generator_info
+        info = self.get_generator_info()
         port = info.port
-        loadscheme = [] if isinstance(info.rps_schedule,
-                                      str) else info.rps_schedule
+        loadscheme = [] if isinstance(info.rps_schedule, (str, dict)) else info.rps_schedule
 
         lp_job = LPJob(client=api_client,
                        target_host=self.target,
@@ -573,7 +577,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                        log_monitoring_requests=self.get_option('log_monitoring_requests'),
                        log_status_requests=self.get_option('log_status_requests'),
                        log_other_requests=self.get_option('log_other_requests'))
-        lp_job.send_config(LPRequisites.CONFIGINITIAL, self.core.configinitial)
+        lp_job.send_config(LPRequisites.CONFIGINITIAL, yaml.dump(self.core.configinitial))
         return lp_job
 
     @property
@@ -621,16 +625,13 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             )
             raise RuntimeError("API token error")
 
-    @property
-    def generator_info(self):
-        if self._generator_info is None:
-            self._generator_info = self.core.job.generator_plugin.get_info()
-        return self._generator_info
+    def get_generator_info(self):
+        return self.core.job.generator_plugin.get_info()
 
     @property
     def target(self):
         if self._target is None:
-            self._target = self.generator_info.address
+            self._target = self.get_generator_info().address
             logger.info("Detected target: %s", self.target)
         return self._target
 

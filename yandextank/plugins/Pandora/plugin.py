@@ -32,6 +32,9 @@ class Plugin(GeneratorPlugin):
         self.custom_config = False
         self.expvar = True
         self.sample_log = None
+        self.__address = None
+        self.__schedule = None
+        self.ammofile = None
 
     @staticmethod
     def get_key():
@@ -55,35 +58,93 @@ class Plugin(GeneratorPlugin):
         # config_content option has more priority over config_file
         if self.get_option("config_content"):
             logger.info('Found config_content option configuration')
-            self.config_contents = self.__patch_and_dump_config(self.get_option("config_content"))
+            self.config_contents = self.__patch_raw_config_and_dump(self.get_option("config_content"))
         elif self.get_option("config_file"):
             logger.info('Found config_file option configuration')
             with open(self.get_option("config_file"), 'rb') as config:
-                raw_config_contents = yaml.safe_load(config.read())
-            self.config_contents = self.__patch_and_dump_config(raw_config_contents)
+                external_file_config_contents = yaml.safe_load(config.read())
+            self.config_contents = self.__patch_raw_config_and_dump(external_file_config_contents)
         else:
             raise RuntimeError("Neither pandora.config_content, nor pandora.config_file specified")
         logger.debug('Config after parsing for patching: %s', self.config_contents)
-        self.sample_log = self.__find_closest_report_file()
+
+        # find report filename and add to artifacts
+        self.sample_log = self.__find_report_filename()
         with open(self.sample_log, 'w'):
             pass
         self.core.add_artifact_file(self.sample_log)
 
-    def __patch_and_dump_config(self, cfg_dict):
+    def __patch_raw_config_and_dump(self, cfg_dict):
+        if not cfg_dict:
+            raise RuntimeError('Empty pandora config')
+        # patch
         config_content = self.patch_config(cfg_dict)
+        # dump
         self.pandora_config_file = self.core.mkstemp(".yaml", "pandora_config_")
         self.core.add_artifact_file(self.pandora_config_file)
         with open(self.pandora_config_file, 'w') as config_file:
             yaml.dump(config_content, config_file)
         return config_content
 
-    def __find_closest_report_file(self):
+    def patch_config(self, config):
+        """
+        download remote resources, replace links with local filenames
+        add result file section
+        :param dict config: pandora config
+        """
+        for pool in config['pools']:
+            if 'file' in pool.get('ammo', {}).get('source', {}).get('type', ''):
+                self.ammofile = pool['ammo']['source']['path']
+                pool['ammo']['source']['path'] = resource_manager.resource_filename(
+                    self.ammofile
+                )
+            if not pool.get('result') or 'phout' not in pool.get('result', {}).get('type', ''):
+                logger.warning('Seems like pandora result file not specified... adding defaults')
+                pool['result'] = dict(
+                    destination=self.DEFAULT_REPORT_FILE,
+                    type='phout',
+                )
+        return config
+
+    @property
+    def address(self):
+        if not self.__address:
+            for pool in self.config_contents['pools']:
+                if pool.get('gun', {}).get('target'):
+                    self.__address = pool.get('gun', {}).get('target')
+                    break
+            else:
+                self.__address = 'unknown'
+        return self.__address
+
+    @property
+    def schedule(self):
+        if not self.__schedule:
+            for pool in self.config_contents['pools']:
+                if pool.get('rps'):
+                    self.__schedule = pool.get('rps')
+                    break
+            else:
+                self.__schedule = 'unknown'
+        return self.__schedule
+
+    def get_info(self):
+        return self.Info(
+            address=self.address,
+            ammo_file=self.ammofile,
+            duration=0,
+            instances=0,
+            loop_count=0,
+            port=self.address.split(':')[-1],
+            rps_schedule=self.schedule
+        )
+
+    def __find_report_filename(self):
         for pool in self.config_contents['pools']:
-            if pool.get('result'):
-                if pool.get('result').get('destination'):
-                    report_filename = pool.get('result').get('destination')
-                    logger.info('Found report file in pandora config: %s', report_filename)
-                    return report_filename
+            if pool.get('result', {}).get('destination', None):
+                report_filename = pool.get('result').get('destination')
+                logger.info('Found report file in pandora config: %s', report_filename)
+                return report_filename
         return self.DEFAULT_REPORT_FILE
 
     def get_reader(self):
@@ -142,17 +203,6 @@ class Plugin(GeneratorPlugin):
             logger.debug("Seems subprocess finished OK")
         return retcode
 
-    @staticmethod
-    def patch_config(config):
-        """
-        download remote resources, replace links with local filenames
-        :param dict config: pandora config
-        """
-        for pool in config['pools']:
-            if 'file' in pool.get('ammo', {}):
-                pool['ammo']['file'] = resource_manager.resource_filename(pool['ammo']['file'])
-        return config
-
 
 class PandoraInfoWidget(AbstractInfoWidget):
     ''' Right panel widget '''
@@ -185,7 +235,16 @@ class PandoraInfoWidget(AbstractInfoWidget):
         template += "Command Line: %s\n"
         template += "    Duration: %s\n"
         template += "  Requests/s: %s\n"
-        template += " Active reqs: %s"
-        data = (self.owner.pandora_cmd, duration, self.reqps, self.active)
+        template += " Active reqs: %s\n"
+        template += "      Target: %s\n"
+        template += "    Schedule: \n%s\n"
+        data = (
+            self.owner.pandora_cmd,
+            duration,
+            self.reqps,
+            self.active,
+            self.owner.address,
+            yaml.dump(self.owner.schedule)
+        )
 
         return template % data

@@ -779,10 +779,10 @@ Disable phantom first (unless you really want to keep it active alongside at you
         times: 5                       #
 
 
-You may specify pandora config contents in tank's config file via `config_content` option.
+You may specify pandora config contents in tank's config file via ```config_content``` option.
 This option has more priority over config_file option.
 
-Create `ammo.uri` file, put your ammo inside and start the test.
+Create ```ammo.uri``` file, put your ammo inside and start the test.
 
 .. code-block:: yaml
 
@@ -793,11 +793,16 @@ Create `ammo.uri` file, put your ammo inside and start the test.
 
 Schedules
 ---------
-`Pandora` has two main RPS scheduler types:
-  1. ``line`` - makes linear load, where `from` and `to` are start and end,
-  `duration` is a time for linear load increase from `from` to `to`.
-  2. ``const`` - makes constant load, where `ops` is a load value for `duration` time.
+```Pandora``` has two main RPS scheduler types:
+  1. ``line`` - makes linear load, where ```from``` and ```to``` are start and end,
+  `duration` is a time for linear load increase from ```from``` to ```to```.
 
+  2. ``const`` - makes constant load, where ```ops``` is a load value for ```duration``` time.
+
+
+Custom_guns
+-----------
+You can create you own Golang-based gun with `pandora`. Feel free to find examples at [pandora documentation](https://yandexpandora.readthedocs.io/en/develop/)
 
 
 ******************

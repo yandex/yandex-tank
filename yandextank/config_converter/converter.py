@@ -205,6 +205,9 @@ class Option(object):
         },
         'DataUploader': {
             'lock_targets': lambda k, v: {k: v.strip().split() if v != 'auto' else v}
+        },
+        'core': {
+            'ignore_locks': lambda k, v: {'ignore_lock': to_bool(v)}
         }
     }
     CONVERTERS_FOR_UNKNOWN = {
