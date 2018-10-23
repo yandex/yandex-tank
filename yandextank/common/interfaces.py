@@ -54,8 +54,7 @@ class AbstractPlugin(object):
         assert callable(action)
         self._cleanup_actions.append(action)
 
-    def cleanup(self, retcode):
-        self.retcode = retcode
+    def cleanup(self):
         for action in reversed(self._cleanup_actions):
             try:
                 action()

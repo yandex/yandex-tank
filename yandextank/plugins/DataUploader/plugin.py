@@ -542,8 +542,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._lp_job = self.__get_lp_job()
             self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
             self.core.publish(self.SECTION, 'web_link', self._lp_job.web_link)
-            self.set_option("jobno", self.lp_job.number)
-            self.core.write_cfg_to_lock()
         return self._lp_job
 
     def __get_lp_job(self):
@@ -575,7 +573,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                        log_monitoring_requests=self.get_option('log_monitoring_requests'),
                        log_status_requests=self.get_option('log_status_requests'),
                        log_other_requests=self.get_option('log_other_requests'))
-        lp_job.send_config(LPRequisites.CONFIGINITIAL, self.core.config.get_configinitial())
+        lp_job.send_config(LPRequisites.CONFIGINITIAL, self.core.configinitial)
         return lp_job
 
     @property

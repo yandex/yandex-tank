@@ -1,6 +1,7 @@
 """ The central part of the tool: Core """
 import datetime
 import fnmatch
+import glob
 import importlib as il
 import json
 import logging
@@ -34,9 +35,6 @@ else:
     import configparser as ConfigParser
 
 logger = logging.getLogger(__name__)
-
-
-LOCK_FILE_WILDCARD = 'lunapark_*.lock'
 
 
 class Job(object):
@@ -110,8 +108,6 @@ class TankCore(object):
         self._artifacts_base_dir = None
         self.manual_start = False
         self.scheduled_start = None
-        self.lock_file = None
-        self.lock_dir = None
         self.taskset_path = None
         self.taskset_affinity = None
         self._job = None
@@ -122,20 +118,20 @@ class TankCore(object):
         self.error_log = None
 
         error_output = 'validation_error.yaml'
-        self.config = TankConfig(self.raw_configs,
-                                 with_dynamic_options=True,
-                                 core_section=self.SECTION,
-                                 error_output=error_output).validate()
-        raw_cfg_file, raw_cfg_path = tempfile.mkstemp(suffix='_pre-validation-config.yaml')
-        os.close(raw_cfg_file)
-        self.config.save_raw(raw_cfg_path)
-        self.add_artifact_file(raw_cfg_path)
-        self.add_artifact_file(error_output)
-        self.add_artifact_to_send(LPRequisites.CONFIGINFO, unicode(self.config))
-
-
+        self.config, self.errors, self.configinitial = TankConfig(self.raw_configs,
+                                                                  with_dynamic_options=True,
+                                                                  core_section=self.SECTION,
+                                                                  error_output=error_output).validate()
+        if not self.config:
+            raise ValidationError(self.errors)
         self.test_id = self.get_option(self.SECTION, 'artifacts_dir',
                                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f"))
+        self.lock_dir = self.get_option(self.SECTION, 'lock_dir')
+        with open(os.path.join(self.artifacts_dir, 'configinitial.yaml'), 'w') as f:
+            yaml.dump(self.configinitial, f)
+        self.add_artifact_file(error_output)
+        self.add_artifact_to_send(LPRequisites.CONFIGINITIAL, yaml.dump(self.configinitial))
+        self.add_artifact_to_send(LPRequisites.CONFIGINFO, unicode(self.config.validated))
         logging.info('New test id %s' % self.test_id)
 
     @property
@@ -234,39 +230,42 @@ class TankCore(object):
             self.__setup_taskset(self.taskset_affinity, pid=os.getpid())
 
         for plugin in self.plugins.values():
-            logger.debug("Configuring %s", plugin)
-            plugin.configure()
+            if not self.interrupted:
+                logger.debug("Configuring %s", plugin)
+                plugin.configure()
 
     def plugins_prepare_test(self):
         """ Call prepare_test() on all plugins        """
         logger.info("Preparing test...")
         self.publish("core", "stage", "prepare")
         for plugin in self.plugins.values():
-            logger.debug("Preparing %s", plugin)
-            plugin.prepare_test()
+            if not self.interrupted:
+                logger.debug("Preparing %s", plugin)
+                plugin.prepare_test()
 
     def plugins_start_test(self):
         """        Call start_test() on all plugins        """
-        logger.info("Starting test...")
-        self.publish("core", "stage", "start")
-        self.job.aggregator.start_test()
-        for plugin in self.plugins.values():
-            logger.debug("Starting %s", plugin)
-            start_time = time.time()
-            plugin.start_test()
-            logger.info("Plugin {0:s} required {1:f} seconds to start".format(plugin,
-                                                                              time.time() - start_time))
+        if not self.interrupted:
+            logger.info("Starting test...")
+            self.publish("core", "stage", "start")
+            self.job.aggregator.start_test()
+            for plugin in self.plugins.values():
+                logger.debug("Starting %s", plugin)
+                start_time = time.time()
+                plugin.start_test()
+                logger.info("Plugin {0:s} required {1:f} seconds to start".format(plugin,
+                                                                                  time.time() - start_time))
 
     def wait_for_finish(self):
         """
         Call is_test_finished() on all plugins 'till one of them initiates exit
         """
-
-        logger.info("Waiting for test to finish...")
-        logger.info('Artifacts dir: {dir}'.format(dir=self.artifacts_dir))
-        self.publish("core", "stage", "shoot")
-        if not self.plugins:
-            raise RuntimeError("It's strange: we have no plugins loaded...")
+        if not self.interrupted:
+            logger.info("Waiting for test to finish...")
+            logger.info('Artifacts dir: {dir}'.format(dir=self.artifacts_dir))
+            self.publish("core", "stage", "shoot")
+            if not self.plugins:
+                raise RuntimeError("It's strange: we have no plugins loaded...")
 
         while not self.interrupted:
             begin_time = time.time()
@@ -332,6 +331,10 @@ class TankCore(object):
                     retcode = 1
         self._collect_artifacts()
         return retcode
+
+    def interrupt(self):
+        logging.warning('Interrupting')
+        self.interrupted = True
 
     def __setup_taskset(self, affinity, pid=None, args=None):
         """ if pid specified: set process w/ pid `pid` CPU affinity to specified `affinity` core(s)
@@ -451,66 +454,6 @@ class TankCore(object):
                 option, value)
             self.set_option(section, option, value)
 
-    # todo: remove lock_dir from config
-    def get_lock_dir(self):
-        if not self.lock_dir:
-            self.lock_dir = self.get_option(
-                self.SECTION, "lock_dir")
-        return os.path.expanduser(self.lock_dir)
-
-    def get_lock(self, lock_dir=None):
-        lock_dir = lock_dir if lock_dir else self.get_lock_dir()
-        if not self.get_option(self.SECTION, 'ignore_lock') and self.is_locked(lock_dir):
-            raise LockError("Lock file(s) found")
-
-        fh, self.lock_file = tempfile.mkstemp(
-            '.lock', 'lunapark_', lock_dir)
-        os.close(fh)
-        os.chmod(self.lock_file, 0o644)
-        self.save_cfg(self.lock_file)
-
-    def write_cfg_to_lock(self):
-        if self.lock_file:
-            self.save_cfg(self.lock_file)
-
-    def release_lock(self):
-        if self.lock_file and os.path.exists(self.lock_file):
-            logger.debug("Releasing lock: %s", self.lock_file)
-            os.remove(self.lock_file)
-
-    @classmethod
-    def is_locked(cls, lock_dir='/var/lock'):
-        retcode = False
-        for filename in os.listdir(lock_dir):
-            if fnmatch.fnmatch(filename, LOCK_FILE_WILDCARD):
-                full_name = os.path.join(lock_dir, filename)
-                logger.info("Lock file is found: %s", full_name)
-                try:
-                    with open(full_name) as f:
-                        running_cfg = yaml.load(f)
-                    pid = running_cfg.get(TankCore.SECTION).get(cls.PID_OPTION)
-                    if not pid:
-                        logger.warning('Failed to get {}.{} from lock file {}'.format(TankCore.SECTION,
-                                                                                      cls.PID_OPTION,
-                                                                                      full_name))
-                    else:
-                        if not pid_exists(int(pid)):
-                            logger.debug(
-                                "Lock PID %s not exists, ignoring and "
-                                "trying to remove", pid)
-                            try:
-                                os.remove(full_name)
-                            except Exception as exc:
-                                logger.debug(
-                                    "Failed to delete lock %s: %s", full_name, exc)
-                        else:
-                            retcode = True
-                except Exception as exc:
-                    logger.warn(
-                        "Failed to load info from lock %s: %s", full_name, exc)
-                    retcode = True
-        return retcode
-
     def mkstemp(self, suffix, prefix, directory=None):
         """
         Generate temp file name in artifacts base dir
@@ -531,7 +474,6 @@ class TankCore(object):
         Call close() for all plugins
         """
         logger.info("Close allocated resources...")
-        self.release_lock()
         for plugin in self.plugins.values():
             logger.debug("Close %s", plugin)
             try:
@@ -569,14 +511,93 @@ class TankCore(object):
         self._plugins[plugin_name] = instance
 
     def save_cfg(self, path):
-        with open(path, 'w') as f:
-            yaml.dump(self.config, f)
+        self.config.dump(path)
 
     def plugins_cleanup(self):
-        self.job.aggregator.cleanup()
         for plugin_name, plugin in self.plugins.items():
             logging.info('Cleaning up plugin {}'.format(plugin_name))
             plugin.cleanup()
+
+
+class Lock(object):
+    PID = 'pid'
+    TEST_ID = 'test_id'
+    TEST_DIR = 'test_dir'
+    LOCK_FILE_WILDCARD = 'lunapark_*.lock'
+
+    def __init__(self, test_id, test_dir, pid=None):
+        self.test_id = test_id
+        self.test_dir = test_dir
+        self.pid = pid if pid is not None else os.getpid()
+        self.info = {
+            self.PID: self.pid,
+            self.TEST_ID: self.test_id,
+            self.TEST_DIR: self.test_dir
+        }
+        self.lock_file = None
+
+    def acquire(self, lock_dir, ignore=None):
+        is_locked = self.is_locked(lock_dir)
+        if not ignore and is_locked:
+            raise LockError("Lock file(s) found\n{}".format(is_locked))
+        prefix, suffix = self.LOCK_FILE_WILDCARD.split('*')
+        fh, self.lock_file = tempfile.mkstemp(suffix, prefix, lock_dir)
+        os.close(fh)
+        with open(self.lock_file, 'w') as f:
+            yaml.dump(self.info, f)
+        os.chmod(self.lock_file, 0o644)
+        return self
+
+    def release(self):
+        if self.lock_file is not None and os.path.exists(self.lock_file):
+            logger.info("Releasing lock: %s", self.lock_file)
+            os.remove(self.lock_file)
+        else:
+            logger.warning('Lock file not found')
+
+    @classmethod
+    def load(cls, path):
+        with open(path) as f:
+            info = yaml.load(f)
+        pid = info.get(cls.PID)
+        test_id = info.get(cls.TEST_ID)
+        test_dir = info.get(cls.TEST_DIR)
+        lock = Lock(test_id, test_dir, pid)
+        lock.lock_file = path
+        return lock
+
+    @classmethod
+    def is_locked(cls, lock_dir='/var/lock'):
+        for filename in os.listdir(lock_dir):
+            if fnmatch.fnmatch(filename, cls.LOCK_FILE_WILDCARD):
+                full_name = os.path.join(lock_dir, filename)
+                logger.info("Lock file is found: %s", full_name)
+                try:
+                    running_lock = cls.load(full_name)
+                    if not running_lock.pid:
+                        msg = 'Failed to get {} from lock file {}.'.format(cls.PID,
+                                                                           full_name)
+                        logger.warning(msg)
+                        return msg
+                    else:
+                        if not pid_exists(int(running_lock.pid)):
+                            logger.debug("Lock PID %s not exists, ignoring and trying to remove", running_lock.pid)
+                            try:
+                                os.remove(full_name)
+                            except Exception as exc:
+                                logger.warning("Failed to delete lock %s: %s", full_name, exc)
+                            return False
+                        else:
+                            return "Another test is running with pid {}".format(running_lock.pid)
+                except Exception as exc:
+                    msg = "Failed to load info from lock %s" % full_name
+                    logger.warn(msg, exc_info=True)
+                    return msg
+        return False
+
+    @classmethod
+    def running_ids(cls, lock_dir='/var/lock'):
+        return [Lock.load(fname).test_id for fname in glob.glob(os.path.join(lock_dir, cls.LOCK_FILE_WILDCARD))]
 
 
 class ConfigManager(object):
