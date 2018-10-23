@@ -147,9 +147,6 @@ class PatchedValidator(Validator):
                         self._error(field, 'Argument {} in load scheme should be a number'.format(param))
                 self.validate_duration(field, params[-1])
 
-    # def _normalize_coerce_load_scheme(self, value):
-    #     pass
-
 
 class TankConfig(object):
     DYNAMIC_OPTIONS = {
@@ -178,7 +175,6 @@ class TankConfig(object):
         self.ERROR_OUTPUT = error_output
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
         self.PLUGINS_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml'))
-
 
     def get_configinitial(self):
         return self.raw_config_dict
@@ -327,3 +323,10 @@ class ValidatedConfig(object):
 
     def __bool__(self):
         return self.__nonzero__()
+
+    def dump(self, path):
+        with open(path, 'w') as f:
+            yaml.dump(self.validated, f)
+
+    def __str__(self):
+        return yaml.dump(self.validated)

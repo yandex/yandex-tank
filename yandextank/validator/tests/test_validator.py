@@ -99,7 +99,6 @@ PHANTOM_SCHEMA_V_G = {
          'lock_dir': '/var/lock/',
          'taskset_path': 'taskset',
          'affinity': '',
-         'artifacts_dir': None,
          'ignore_lock': False
      },
      'telegraf': {
@@ -223,7 +222,6 @@ PHANTOM_SCHEMA_V_G = {
           'lock_dir': '/var/lock/',
           'taskset_path': 'taskset',
           'affinity': '',
-          'artifacts_dir': None,
           'ignore_lock': False}}
      )
 ])
@@ -384,7 +382,6 @@ def test_load_multiple(configs, expected):
                 'lock_dir': '/var/lock/',
                 'taskset_path': 'taskset',
                 'affinity': '',
-                'artifacts_dir': None,
                 'ignore_lock': False
             },
             'telegraf': {
