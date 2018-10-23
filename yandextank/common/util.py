@@ -11,7 +11,6 @@ import re
 import select
 import psutil
 import argparse
-import sys
 
 from paramiko import SSHClient, AutoAddPolicy
 
