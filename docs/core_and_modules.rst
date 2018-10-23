@@ -638,7 +638,7 @@ How it works
 BFG Worker Type
 ---------------
 By default, BFG will create lots of processes (number is defined by ``instances`` option).
-Every process will execute requests in a single thread. These processes will comsume a lot of memory.
+Every process will execute requests in a single thread. These processes will consume a lot of memory.
 It's also possible to switch this behavior and use ``gevent`` to power up every worker process,
 allowing it to have multiple concurrent threads executing HTTP requests.
 
