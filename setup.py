@@ -41,7 +41,6 @@ analytic tools for the results they produce.
         'Topic :: Software Development :: Testing',
         'Topic :: Software Development :: Testing :: Traffic Generation',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 3',
     ],
     entry_points={
         'console_scripts': [

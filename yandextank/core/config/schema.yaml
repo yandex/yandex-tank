@@ -16,8 +16,6 @@ core:
     artifacts_dir:
       description: directory inside base directory to store test\'s artifacts, defaults to api_jobno if null
       type: string
-      nullable: true
-      default: null
     cmdline:
       type: string
     exitcode:
