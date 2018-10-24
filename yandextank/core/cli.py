@@ -142,21 +142,8 @@ def init_logging(events_log_fname, verbose, quiet):
     """ Set up logging, as it is very important for console tool """
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)
-    # log_filename = log
-    # events_log_fname = self.options.error_log
-
-    # create file handler which logs even debug messages
-    # if log_filename:
-    #     file_handler = logging.FileHandler(log_filename)
-    #     file_handler.setLevel(logging.DEBUG)
-    #     file_handler.setFormatter(
-    #         logging.Formatter(
-    #             "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"
-    #         ))
-    #     logger.addHandler(file_handler)
 
     # create file handler which logs error messages
-
     if events_log_fname:
         err_file_handler = logging.FileHandler(events_log_fname)
         err_file_handler.setLevel(logging.WARNING)
