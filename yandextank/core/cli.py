@@ -2,6 +2,7 @@ import logging
 import sys
 from optparse import OptionParser
 
+import pkg_resources
 from netort.resource import manager as resource_manager
 from yandextank.core.consoleworker import TankWorker
 from yandextank.validator.validator import ValidationError
@@ -91,12 +92,20 @@ def main():
         and the exact scheme of yaml format config)',
         dest='patches'
     )
-
+    parser.add_option(
+        '--version',
+        action='store_true',
+        dest='version'
+    )
     # FIXME: restore completion helper
     # completion_helper = CompletionHelperOptionParser()
     # completion_helper.handle_request(parser)
 
     options, ammofiles = parser.parse_args()
+    if options.version:
+        print('YandexTank/{}'.format(pkg_resources.require('yandextank')[0].version))
+        return
+
     ammofile = ammofiles[0] if len(ammofiles) > 0 else None
 
     init_logging(options.error_log, options.verbose, options.quiet)
