@@ -159,8 +159,7 @@ def get_default_configs():
                 ]
     except OSError:
         logging.info(
-            baseconfigs_location +
-            ' is not accessible to get configs list')
+            baseconfigs_location + ' is not accessible to get configs list')
 
     configs += [os.path.expanduser('~/.yandex-tank')]
     return configs

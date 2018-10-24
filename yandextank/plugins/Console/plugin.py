@@ -107,8 +107,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
                 "min:{min:.2f}\tmax:{q100:.2f}\tq95:{q95:.2f}\t").format(
                     ts=data.get('ts'),
                     rps=overall['interval_real']['len'],
-                    avg_rt=float(overall['interval_real']['total']) /
-                    overall['interval_real']['len'] / 1000.0,
+                    avg_rt=float(overall['interval_real']['total'])
+                    / overall['interval_real']['len'] / 1000.0,
                     min=overall['interval_real']['min'] / 1000.0,
                     q100=quantiles[100] / 1000,
                     q95=quantiles[95] / 1000)
