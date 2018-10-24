@@ -166,20 +166,20 @@ class Stairway(Composite):
 class StepFactory(object):
     @staticmethod
     def line(params):
-        template = re.compile('([0-9.]+),\s*([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
+        template = re.compile(r'([0-9.]+),\s*([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
         minrps, maxrps, duration = template.search(params).groups()
         return Line(float(minrps), float(maxrps), parse_duration(duration))
 
     @staticmethod
     def const(params):
-        template = re.compile('([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
+        template = re.compile(r'([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
         rps, duration = template.search(params).groups()
         return Const(float(rps), parse_duration(duration))
 
     @staticmethod
     def stairway(params):
         template = re.compile(
-            '([0-9.]+),\s*([0-9.]+),\s*([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
+            r'([0-9.]+),\s*([0-9.]+),\s*([0-9.]+),\s*([0-9.]+[dhms]?)+\)')
         minrps, maxrps, increment, duration = template.search(params).groups()
         return Stairway(
             float(minrps),

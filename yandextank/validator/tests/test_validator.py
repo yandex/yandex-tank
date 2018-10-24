@@ -57,7 +57,7 @@ PHANTOM_SCHEMA_V_G = {
     },
     'headers': {
         'type': 'string',
-        'regex': '(\[[\w\d\.]+:\s[\w\d\.]+\]\s*)+'
+        'regex': r'(\[[\w\d\.]+:\s[\w\d\.]+\]\s*)+'
     },
     'rps_schedule': {
         'type': 'string'

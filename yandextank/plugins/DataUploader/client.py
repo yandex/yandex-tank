@@ -356,8 +356,8 @@ class APIClient(object):
     def close_job(self, jobno, retcode, trace=False):
         params = {'exitcode': str(retcode)}
 
-        result = self.__get('api/job/' + str(jobno) + '/close.json?' +
-                            urllib.urlencode(params), trace=trace)
+        result = self.__get('api/job/' + str(jobno) + '/close.json?'
+                            + urllib.urlencode(params), trace=trace)
         return result[0]['success']
 
     def edit_job_metainfo(
@@ -388,9 +388,7 @@ class APIClient(object):
         }
 
         response = self.__post(
-            'api/job/' +
-            str(jobno) +
-            '/edit.json',
+            'api/job/' + str(jobno) + '/edit.json',
             data,
             trace=trace)
         return response
@@ -420,22 +418,18 @@ class APIClient(object):
                 'time': str(timestamp),
                 'reqps': stat["metrics"]["reqps"],
                 'resps': data["interval_real"]["len"],
-                'expect': data["interval_real"]["total"] / 1000.0 /
-                data["interval_real"]["len"],
+                'expect': data["interval_real"]["total"] / 1000.0 / data["interval_real"]["len"],
                 'disper': 0,
                 'self_load':
                     0,  # TODO abs(round(100 - float(data.selfload), 2)),
                 'input': data["size_in"]["total"],
                 'output': data["size_out"]["total"],
-                'connect_time': data["connect_time"]["total"] / 1000.0 /
-                data["connect_time"]["len"],
+                'connect_time': data["connect_time"]["total"] / 1000.0 / data["connect_time"]["len"],
                 'send_time':
-                    data["send_time"]["total"] / \
-                1000.0 / data["send_time"]["len"],
+                    data["send_time"]["total"] / 1000.0 / data["send_time"]["len"],
                 'latency':
                     data["latency"]["total"] / 1000.0 / data["latency"]["len"],
-                'receive_time': data["receive_time"]["total"] / 1000.0 /
-                data["receive_time"]["len"],
+                'receive_time': data["receive_time"]["total"] / 1000.0 / data["receive_time"]["len"],
                 'threads': stat["metrics"]["instances"],  # TODO
             }
         }

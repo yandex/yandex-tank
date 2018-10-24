@@ -186,12 +186,12 @@ class Option(object):
             'instances_schedule': convert_instances_schedule,
             'stpd_file': convert_stpd_schedule,
             'autocases': TYPE_CASTERS['integer'],
-            'headers': lambda key, value: {key: re.compile('\[(.*?)\]').findall(value)}
+            'headers': lambda key, value: {key: re.compile(r'\[(.*?)\]').findall(value)}
         },
         'Bfg': {
             'rps_schedule': convert_rps_schedule,
             'instances_schedule': convert_instances_schedule,
-            'headers': lambda key, value: {key: re.compile('\[(.*?)\]').findall(value)}
+            'headers': lambda key, value: {key: re.compile(r'\[(.*?)\]').findall(value)}
         },
         'JMeter': {
             'exclude_markers': lambda key, value: {key: value.strip().split(' ')}
@@ -201,7 +201,7 @@ class Option(object):
             'config_content': lambda key, value: {key: yaml.load(value)}  # works for json as well
         },
         'Autostop': {
-            'autostop': lambda k, v: {k: re.findall('\w+\(.+?\)', v)}
+            'autostop': lambda k, v: {k: re.findall(r'\w+\(.+?\)', v)}
         },
         'DataUploader': {
             'lock_targets': lambda k, v: {k: v.strip().split() if v != 'auto' else v}

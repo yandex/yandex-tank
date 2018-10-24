@@ -40,14 +40,10 @@ class Worker(object):
                              np.linspace(10, 499, 490) * 1000)  # 1ms accuracy
             bins = np.append(bins,
                              np.linspace(500, 2995, 500) * 1000)  # 5ms accuracy
-            bins = np.append(bins, np.linspace(3000, 9990, 700) *
-                             1000)  # 10ms accuracy
-            bins = np.append(bins, np.linspace(10000, 29950, 400) *
-                             1000)  # 50ms accuracy
-            bins = np.append(bins, np.linspace(30000, 119900, 900) *
-                             1000)  # 100ms accuracy
-            bins = np.append(bins, np.linspace(120, 300, 181) *
-                             1000000)  # 1s accuracy
+            bins = np.append(bins, np.linspace(3000, 9990, 700) * 1000)  # 10ms accuracy
+            bins = np.append(bins, np.linspace(10000, 29950, 400) * 1000)  # 50ms accuracy
+            bins = np.append(bins, np.linspace(30000, 119900, 900) * 1000)  # 100ms accuracy
+            bins = np.append(bins, np.linspace(120, 300, 181) * 1000000)  # 1s accuracy
         else:
             # yapf: disable
             bins = np.array([
