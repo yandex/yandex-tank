@@ -211,8 +211,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         codes = data["overall"]["net_code"]["count"].copy()
-        if '0' in codes.keys():
-            codes.pop('0')
+        codes.pop('0', None)
         matched_responses = self.count_matched_codes(self.codes_regex, codes)
         if self.is_relative:
             if data["overall"]["interval_real"]["len"]:
@@ -395,8 +394,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         codes = data["overall"]["net_code"]["count"].copy()
-        # if '0' in codes.keys():
-        #     codes.pop('0')
+        # codes.pop('0', None)
         matched_responses = self.count_matched_codes(self.codes_regex, codes)
         if self.is_relative:
             if data["overall"]["interval_real"]["len"]:

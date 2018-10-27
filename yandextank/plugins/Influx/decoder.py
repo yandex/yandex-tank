@@ -27,7 +27,7 @@ class Decoder(object):
         points = []
         for second_data in data:
             timestamp = second_data["timestamp"]
-            for host, host_data in second_data["data"].iteritems():
+            for host, host_data in second_data["data"].items():
                 points += [{
                     "measurement": "monitoring",
                     "tags": {
@@ -39,7 +39,7 @@ class Decoder(object):
                     "time": timestamp,
                     "fields": {  # quantiles
                         metric: value
-                        for metric, value in host_data["metrics"].iteritems()
+                        for metric, value in host_data["metrics"].items()
                     },
                 }]
         return points

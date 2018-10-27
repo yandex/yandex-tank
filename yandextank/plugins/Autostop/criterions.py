@@ -159,8 +159,7 @@ class NetCodesCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         codes = copy.deepcopy(data["overall"]["net_code"]["count"])
-        if '0' in codes.keys():
-            codes.pop('0')
+        codes.pop('0', None)
         matched_responses = self.count_matched_codes(self.codes_regex, codes)
         if self.is_relative:
             if data["overall"]["interval_real"]["len"]:
@@ -228,14 +227,12 @@ class QuantileCriterion(AbstractCriterion):
         self.autostop = autostop
 
     def notify(self, data, stat):
-        quantiles = dict(
-            zip(
-                data["overall"]["interval_real"]["q"]["q"], data["overall"][
-                    "interval_real"]["q"]["value"]))
-        if self.quantile not in quantiles.keys():
+        quantile_data = data["overall"]["interval_real"]["q"]
+        quantiles = dict(zip(quantile_data["q"], quantile_data["value"]))
+        if self.quantile not in quantiles:
             logger.warning("No quantile %s in %s", self.quantile, quantiles)
-        if self.quantile in quantiles.keys() \
-                and quantiles[self.quantile] / 1000.0 > self.rt_limit:
+        if (self.quantile in quantiles
+                and quantiles[self.quantile] / 1000.0 > self.rt_limit):
             if not self.seconds_count:
                 self.cause_second = (data, stat)
 
@@ -283,8 +280,8 @@ class SteadyCumulativeQuantilesCriterion(AbstractCriterion):
         self.autostop = autostop
 
     def notify(self, data, stat):
-        quantiles = dict(
-            zip(data["overall"]["q"]["q"], data["overall"]["q"]["values"]))
+        quantile_data = data["overall"]["interval_real"]["q"]
+        quantiles = dict(zip(quantile_data["q"], quantile_data["value"]))
         quantile_hash = json.dumps(quantiles)
         logging.debug("Cumulative quantiles hash: %s", quantile_hash)
         if self.quantile_hash == quantile_hash:

@@ -6,7 +6,6 @@ import traceback
 import http.client
 import logging
 import errno
-import itertools
 import re
 import select
 import psutil
@@ -449,7 +448,7 @@ def pairs(lst):
     """
     Iterate over pairs in the list
     """
-    return itertools.izip(lst[::2], lst[1::2])
+    return zip(lst[::2], lst[1::2])
 
 
 def update_status(status, multi_key, value):

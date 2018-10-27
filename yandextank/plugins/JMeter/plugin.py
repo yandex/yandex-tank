@@ -220,7 +220,7 @@ class Plugin(GeneratorPlugin):
 
         udv_tpl = resource_string(__name__, 'config/jmeter_var_template.xml')
         udv_set = []
-        for var_name, var_value in variables.iteritems():
+        for var_name, var_value in variables.items():
             udv_set.append(udv_tpl % (var_name, var_name, var_value))
         udv = "\n".join(udv_set)
 
@@ -307,7 +307,7 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         self.RPS = data['overall']['interval_real']['len']
 
     def render(self, screen):
-        jmeter = " JMeter Test %s" % self.krutilka.next()
+        jmeter = " JMeter Test %s" % next(self.krutilka)
         space = screen.right_panel_width - len(jmeter) - 1
         left_spaces = space / 2
         right_spaces = space / 2

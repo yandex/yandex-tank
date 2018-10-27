@@ -23,7 +23,7 @@ class Plugin(AbstractPlugin):
         self.device = None
         try:
             self.cfg = cfg['volta_options']
-            for key, value in self.cfg.iteritems():
+            for key, value in self.cfg.items():
                 if not isinstance(value, dict):
                     logger.debug('Malformed VoltaConfig key: %s value %s', key, value)
                     raise RuntimeError('Malformed VoltaConfig passed, key: %s. Should by dict' % key)
@@ -54,7 +54,8 @@ class Plugin(AbstractPlugin):
 
     def prepare_test(self):
         self.core.add_artifact_file(self.volta_core.currents_fname)
-        [self.core.add_artifact_file(fname) for fname in self.volta_core.event_fnames.values()]
+        for fname in self.volta_core.event_fnames.values():
+            self.core.add_artifact_file(fname)
 
     def start_test(self):
         try:

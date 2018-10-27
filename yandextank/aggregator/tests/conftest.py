@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from yandextank.aggregator.aggregator import phout_columns
+from ..aggregator import phout_columns
 
 np.random.seed(42)
 MAX_TS = 1000

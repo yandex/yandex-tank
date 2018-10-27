@@ -1,6 +1,6 @@
 import logging
 import re
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 from functools import reduce
 
 import pkg_resources
@@ -54,7 +54,8 @@ SECTIONS_PATTERNS = {
 
 
 class ConversionError(Exception):
-    pass
+    def __init__(self, message=None):
+        self.message = message
 
 
 class OptionsConflict(ConversionError):
@@ -259,7 +260,7 @@ class Option(object):
         :rtype: (str, object)
         """
         if self._as_tuple is None:
-            self._as_tuple = self.converted.items()[0]
+            self._as_tuple = list(self.converted.items())[0]
         return self._as_tuple
 
     @property
@@ -334,7 +335,7 @@ class Section(object):
         if len(sections) == 1:
             return sections[0]
         if parent_name:
-            master_section = filter(lambda section: section.name == parent_name, sections)[0]
+            master_section = next(filter(lambda section: section.name == parent_name, sections))
             rest = filter(lambda section: section.name != parent_name, sections)
         else:
             master_section = sections[0]
@@ -353,7 +354,7 @@ class Section(object):
         MAP = {
             'bfg': lambda section: section.name == '{}_gun'.format(master_section.get_cfg_dict()['gun_type'])
         }
-        return filter(MAP.get(master_section.name, lambda x: True), rest)[0]
+        return next(filter(MAP.get(master_section.name, lambda x: True), rest))
         # return filter(lambda section: section.name == MAP.get(master_section.name, ), rest)[0]
 
 
@@ -443,16 +444,18 @@ def enable_sections(sections, core_opts):
     disabled_instances = {instance.section_name: instance for instance in plugin_instances if not instance.enabled}
 
     for section in sections:
-        if section.name in enabled_instances.keys():
+        if section.name in enabled_instances:
             section.enabled = True
             enabled_instances.pop(section.name)
-        elif section.name in disabled_instances.keys():
+        elif section.name in disabled_instances:
             section.enabled = False
             disabled_instances.pop(section.name)
     # add leftovers
-    for plugin_instance in [i for i in plugin_instances if
-                            i.section_name in enabled_instances.keys() + disabled_instances.keys()]:
-        sections.append(Section(plugin_instance.section_name, plugin_instance.plugin_name, [], plugin_instance.enabled))
+    for plugin_instance in plugin_instances:
+        if (plugin_instance.section_name in enabled_instances
+                or plugin_instance.section_name in disabled_instances):
+            sections.append(Section(
+                plugin_instance.section_name, plugin_instance.plugin_name, [], plugin_instance.enabled))
     return sections
 
 
@@ -472,7 +475,7 @@ def combine_sections(sections):
     plugins = {}
     ready_sections = []
     for section in sections:
-        if section.plugin in PLUGINS_TO_COMBINE.keys():
+        if section.plugin in PLUGINS_TO_COMBINE:
             try:
                 plugins[section.plugin].append(section)
             except KeyError:
@@ -492,7 +495,7 @@ def core_options(cfg_ini):
 
 
 def convert_ini(ini_file):
-    cfg_ini = ConfigParser()
+    cfg_ini = ConfigParser(strict=False, interpolation=None)
     if isinstance(ini_file, str):
         cfg_ini.read(ini_file)
     else:

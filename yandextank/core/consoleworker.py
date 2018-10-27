@@ -1,5 +1,5 @@
 """ Provides classes to run TankCore from console environment """
-from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
+from configparser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
 import datetime
 import fnmatch
 import glob
@@ -32,7 +32,7 @@ class RealConsoleMarkup(object):
     WHITE_ON_BLACK = '\033[37;40m'
     TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
-    new_line = u"\n"
+    new_line = "\n"
 
     YELLOW = '\033[1;33m'
     RED = '\033[1;31m'
@@ -147,7 +147,7 @@ def apply_shorthand_options(config, options, default_section='DEFAULT'):
 
 def load_ini_cfgs(config_files):
     config_filenames = [resource_manager.resource_filename(config) for config in config_files]
-    cfg = ConfigParser()
+    cfg = ConfigParser(strict=False, interpolation=None)
     cfg.read(config_filenames)
 
     dotted_options = []
@@ -188,7 +188,7 @@ def is_ini(cfg_file):
     if cfg_file.endswith('.yaml') or cfg_file.endswith('.json'):
         return False
     try:
-        ConfigParser().read(cfg_file)
+        ConfigParser(strict=False, interpolation=None).read(cfg_file)
         return True
     except MissingSectionHeaderError:
         return False
@@ -451,7 +451,7 @@ class ConsoleTank:
                 self.log.info("Time has come: %s", datetime.datetime.now())
 
             if self.options.manual_start:
-                raw_input("Press Enter key to start test:")
+                input("Press Enter key to start test:")
 
             self.core.plugins_start_test()
             retcode = self.core.wait_for_finish()

@@ -5,11 +5,7 @@ import logging
 import tempfile
 from future.utils import iteritems
 from ..Telegraf.decoder import decoder
-import sys
-if sys.version_info[0] < 3:
-    import ConfigParser
-else:
-    import configparser as ConfigParser
+import configparser
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +192,7 @@ class AgentConfig(object):
             handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
             os.close(handle)
         try:
-            config = ConfigParser.RawConfigParser()
+            config = configparser.ConfigParser(strict=False, interpolation=None)
             # FIXME incinerate such a string formatting inside a method call
             # T_T
             config.add_section('startup')
@@ -277,7 +273,7 @@ class AgentConfig(object):
         defaults_old_enabled = ['CPU', 'Memory', 'Disk', 'Net', 'System']
 
         try:
-            config = ConfigParser.RawConfigParser()
+            config = configparser.ConfigParser(strict=False, interpolation=None)
 
             config.add_section("global_tags")
             config.add_section("agent")
@@ -290,37 +286,30 @@ class AgentConfig(object):
             config.set("agent", "collection_jitter", "'0s'")
             config.set("agent", "flush_jitter", "'1s'")
 
-            for section in self.host_config.keys():
-                # telegraf-style config
-                if not self.old_style_configs:
-                    config.add_section(
-                        "{section_name}".format(
-                            section_name=self.host_config[section]['name']))
-                    for key, value in iteritems(self.host_config[section]):
-                        if key != 'name':
-                            config.set(
-                                "{section_name}".format(
-                                    section_name=self.host_config[section][
-                                        'name']),
-                                "{key}".format(key=key),
-                                "{value}".format(value=value))
-                # monitoring-style config
-                else:
-                    if section in defaults_old_enabled:
-                        config.add_section(
-                            "{section_name}".format(
-                                section_name=self.host_config[section]['name']))
-                        for key, value in iteritems(self.host_config[section]):
+            # monitoring-style config
+            if self.old_style_configs:
+                for section_key, section in self.host_config.items():
+                    if section_key in defaults_old_enabled:
+                        config.add_section(f"{section['name']}")
+                        for key, value in iteritems(section):
                             if key in [
                                     'fielddrop', 'fieldpass', 'percpu',
                                     'devices', 'interfaces'
                             ]:
                                 config.set(
-                                    "{section_name}".format(
-                                        section_name=self.host_config[section][
-                                            'name']),
-                                    "{key}".format(key=key),
-                                    "{value}".format(value=value))
+                                    f"{section['name']}",
+                                    f"{key}",
+                                    f"{value}")
+            # telegraf-style config
+            else:
+                for section in self.host_config.values():
+                    config.add_section(f"{section['name']}")
+                    for key, value in section.items():
+                        if key != 'name':
+                            config.set(
+                                f"{section['name']}",
+                                f"{key}",
+                                f"{value}")
 
             # outputs
             config.add_section("[outputs.file]")

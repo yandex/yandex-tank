@@ -44,7 +44,7 @@ class Plugin(AbstractPlugin):
             "lsmod": "lsmod"
         }
         self.cmd = "%s" % ";\n".join(
-            [_echo_wrapper(cmd) for key, cmd in cmds.iteritems()])
+            [_echo_wrapper(cmd) for key, cmd in cmds.items()])
 
     def get_available_options(self):
         return ["hosts", "port", "username", "timeout"]

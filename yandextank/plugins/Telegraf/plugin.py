@@ -23,7 +23,7 @@ from ..Console import Plugin as ConsolePlugin
 from ..Telegraf.collector import MonitoringCollector
 
 if sys.version_info[0] < 3:
-    from ConfigParser import NoOptionError
+    from configparser import NoOptionError
 else:
     from configparser import NoOptionError
 
@@ -162,7 +162,7 @@ class Plugin(MonitoringPlugin):
             return
 
         with open(self.config) as f:
-            self.core.add_artifact_to_send(LPRequisites.MONITORING, unicode(f.read()))
+            self.core.add_artifact_to_send(LPRequisites.MONITORING, f.read())
 
         # FIXME [legacy] backward compatibility with Monitoring module
         # configuration below.
@@ -288,7 +288,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         sign > 1 is YELLOW, means metric value is higher then prevoius,
         sign == 0 is WHITE, means initial or equal metric value
         """
-        for metric, value in data.iteritems():
+        for metric, value in data.items():
             if value == '':
                 self.sign[host][metric] = -1
                 self.data[host][metric] = value
@@ -320,14 +320,14 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         #   ...
         # }]
         for chunk in block:
-            host = chunk['data'].keys()[0]
+            host = list(chunk['data'].keys())[0]
             self.time[host] = chunk['timestamp']
             # if initial call, we create dicts w/ data and `signs`
             # `signs` used later to paint metrics w/ different colors
             if not self.data.get(host, None):
                 self.data[host] = {}
                 self.sign[host] = {}
-                for key, value in chunk['data'][host]['metrics'].iteritems():
+                for key, value in chunk['data'][host]['metrics'].items():
                     self.sign[host][key] = 0
                     self.data[host][key] = value
             else:
@@ -344,7 +344,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                     float(self.time[hostname])).strftime('%H:%M:%S')
                 res += ("   " + screen.markup.CYAN + "%s" +
                         screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
-                for metric, value in sorted(metrics.iteritems()):
+                for metric, value in sorted(metrics.items()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
                     elif self.sign[hostname][metric] < 0:
@@ -383,7 +383,7 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
 
         block = deepcopy(_block)
         for chunk in block:
-            host = chunk['data'].keys()[0]
+            host = list(chunk['data'].keys())[0]
             data = chunk['data'][host]['metrics']
 
             if not fnmatch.fnmatch(host, self.host):
@@ -391,12 +391,12 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
 
             # some magic, converting custom metric names into names that was in
             # config
-            for metric_name in data.keys():
+            for metric_name in list(data.keys()):
                 if metric_name.startswith('custom:'):
                     config_metric_name = metric_name.replace('custom:', '')
                     data[config_metric_name] = data.pop(metric_name)
 
-            if self.metric not in data.keys() or not data[self.metric]:
+            if self.metric not in data or not data[self.metric]:
                 data[self.metric] = 0
             logger.debug(
                 "Compare %s %s/%s=%s to %s",

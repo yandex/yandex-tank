@@ -42,7 +42,7 @@ class BfgReader(object):
             except Empty:
                 time.sleep(0.1)
 
-    def next(self):
+    def __next__(self):
         if self.closed:
             raise StopIteration
         with self.lock:

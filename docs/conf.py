@@ -44,8 +44,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Yandex.Tank'
-copyright = u'2016, Yandex'
+project = 'Yandex.Tank'
+copyright = '2016, Yandex'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -187,7 +187,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'YandexTank.tex', u'Yandex.Tank Documentation', u'Yandex',
+    ('index', 'YandexTank.tex', 'Yandex.Tank Documentation', 'Yandex',
      'manual'),
 ]
 
@@ -216,7 +216,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'yandextank', u'Yandex.Tank Documentation', [u'Yandex'], 1)
+    ('index', 'yandextank', 'Yandex.Tank Documentation', ['Yandex'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -228,7 +228,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'YandexTank', u'Yandex.Tank Documentation', u'Yandex',
+    ('index', 'YandexTank', 'Yandex.Tank Documentation', 'Yandex',
      'YandexTank', 'One line description of project.', 'Miscellaneous'),
 ]
 
@@ -244,10 +244,10 @@ texinfo_documents = [
 # -- Options for Epub output ---------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = u'Yandex.Tank'
-epub_author = u'Yandex'
-epub_publisher = u'Yandex'
-epub_copyright = u'2016, Yandex'
+epub_title = 'Yandex.Tank'
+epub_author = 'Yandex'
+epub_publisher = 'Yandex'
+epub_copyright = '2016, Yandex'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

@@ -1,4 +1,5 @@
 """ The central part of the tool: Core """
+import configparser
 import datetime
 import fnmatch
 import importlib as il
@@ -27,11 +28,6 @@ from ..common.util import update_status, pid_exists
 
 from netort.resource import manager as resource
 from netort.process import execute
-
-if sys.version_info[0] < 3:
-    import ConfigParser
-else:
-    import configparser as ConfigParser
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +123,7 @@ class TankCore(object):
                                  core_section=self.SECTION,
                                  error_output=error_output)
         self.add_artifact_file(error_output)
-        self.add_artifact_to_send(LPRequisites.CONFIGINFO, unicode(self.config))
+        self.add_artifact_to_send(LPRequisites.CONFIGINFO, str(self.config))
     #
     # def get_uuid(self):
     #     return self.uuid
@@ -298,17 +294,17 @@ class TankCore(object):
             retcode = plugin.end_test(retcode) or retcode
             logger.info('RC after: %s', retcode)
 
-        for plugin in [p for p in self.plugins.values() if
-                       p is not self.job.generator_plugin and p not in self.job.monitoring_plugins]:
-            logger.debug("Finalize %s", plugin)
-            try:
-                logger.debug("RC before: %s", retcode)
-                retcode = plugin.end_test(retcode)
-                logger.debug("RC after: %s", retcode)
-            except Exception:  # FIXME too broad exception clause
-                logger.error("Failed finishing plugin %s", plugin, exc_info=True)
-                if not retcode:
-                    retcode = 1
+        for plugin in self.plugins.values():
+            if plugin is not self.job.generator_plugin and plugin not in self.job.monitoring_plugins:
+                logger.debug("Finalize %s", plugin)
+                try:
+                    logger.debug("RC before: %s", retcode)
+                    retcode = plugin.end_test(retcode)
+                    logger.debug("RC after: %s", retcode)
+                except Exception:  # FIXME too broad exception clause
+                    logger.error("Failed finishing plugin %s", plugin, exc_info=True)
+                    if not retcode:
+                        retcode = 1
         return retcode
 
     def plugins_post_process(self, retcode):
@@ -578,7 +574,7 @@ class ConfigManager(object):
 
     def __init__(self):
         self.file = None
-        self.config = ConfigParser.ConfigParser()
+        self.config = configparser.ConfigParser(strict=False, interpolation=None)
 
     def load_files(self, configs):
         """         Read configs set into storage        """
@@ -607,7 +603,7 @@ class ConfigManager(object):
                 if not prefix or option.find(prefix) == 0:
                     res += [(
                         option[len(prefix):], self.config.get(section, option))]
-        except ConfigParser.NoSectionError as ex:
+        except configparser.NoSectionError as ex:
             logger.warning("No section: %s", ex)
 
         logger.debug(

@@ -5,13 +5,13 @@ import logging
 import os
 import sys
 import signal
-import ConfigParser
+import configparser
 import json
 import threading
 import time
 
 from argparse import ArgumentParser
-import Queue as q
+import queue as q
 
 logger = logging.getLogger("agent")
 collector_logger = logging.getLogger("telegraf")
@@ -102,7 +102,7 @@ class Consolidator(object):
             try:
                 ts = data['timestamp']
                 self.results.setdefault(ts, {})
-                for key, value in data['fields'].iteritems():
+                for key, value in data['fields'].items():
                     if data['name'] == 'diskio':
                         data['name'] = "{metric_name}-{disk_id}".format(
                             metric_name=data['name'],
@@ -135,15 +135,15 @@ class Consolidator(object):
             for s in self.sources:
                 chunk_limit = 10
                 chunks_done = 0
-                chunk = s.next()
+                chunk = next(s)
                 while chunk and chunks_done < chunk_limit:
                     self.append_chunk(s, chunk)
-                    chunk = s.next()
+                    chunk = next(s)
                 if len(self.results) > 2:
                     logger.debug(
-                        'Now in buffer: %s', [i for i in self.results.keys()])
+                        'Now in buffer: %s', list(self.results.keys()))
                     dump_seconds = sorted(
-                        [i for i in self.results.keys()])[:-2]
+                        list(self.results.keys()))[:-2]
                     for ready_second in dump_seconds:
                         yield json.dumps({
                             ready_second: self.results.pop(ready_second, None)
@@ -210,7 +210,7 @@ class AgentWorker(threading.Thread):
 
     def read_startup_config(self, cfg_file='agent_startup.cfg'):
         try:
-            config = ConfigParser.ConfigParser()
+            config = configparser.ConfigParser(strict=False, interpolation=None)
             with open(os.path.join(self.working_dir, cfg_file), 'rb') as f:
                 config.readfp(f)
 

@@ -1,7 +1,7 @@
 from yandextank.plugins.Telegraf.config import ConfigManager, AgentConfig
 import sys
 if sys.version_info[0] < 3:
-    from ConfigParser import ConfigParser
+    from configparser import ConfigParser
 else:
     from configparser import ConfigParser
 
@@ -58,7 +58,7 @@ class TestAgentConfig(object):
             'sometargethint')
         agent_config = AgentConfig(telegraf_configs[0], False)
         startup = agent_config.create_startup_config()
-        cfg_parser = ConfigParser()
+        cfg_parser = ConfigParser(strict=False, interpolation=None)
         cfg_parser.read(startup)
         assert cfg_parser.has_section('startup')
 
@@ -71,7 +71,7 @@ class TestAgentConfig(object):
         agent_config = AgentConfig(telegraf_configs[0], False)
         remote_workdir = '/path/to/workdir/temp'
         collector_config = agent_config.create_collector_config(remote_workdir)
-        cfg_parser = ConfigParser()
+        cfg_parser = ConfigParser(strict=False, interpolation=None)
         cfg_parser.read(collector_config)
         assert (
             cfg_parser.has_section('agent') and

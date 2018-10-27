@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 import logging
-from StringIO import StringIO
+from io import StringIO
 
 import numpy as np
 import pandas as pd
@@ -44,7 +44,7 @@ def _exc_to_net(param1, success):
             return 314
 
     exc = param1.split(' ')[-1]
-    if exc in KNOWN_EXC.keys():
+    if exc in KNOWN_EXC:
         return KNOWN_EXC[exc]
     else:
         logger.warning(

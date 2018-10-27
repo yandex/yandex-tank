@@ -8,7 +8,7 @@ import socket
 import sys
 
 import pwd
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 from datetime import datetime
 import pkg_resources
@@ -50,8 +50,8 @@ def from_tank_config(test_dir):
     with open(config_file) as f:
         tank_cfg = yaml.load(f)
     try:
-        config = filter(lambda options: 'DataUploader' in options.get('package', ''), tank_cfg.values())[0]
-    except IndexError:
+        config = next(filter(lambda options: 'DataUploader' in options.get('package', ''), tank_cfg.values()))
+    except StopIteration:
         logger.warning('DataUploader configuration not found in {}'.format(config_file))
         config = {}
     return config

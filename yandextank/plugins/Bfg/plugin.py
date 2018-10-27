@@ -1,5 +1,6 @@
 import logging
 import time
+from importlib import reload
 
 import pip
 
@@ -79,7 +80,7 @@ class Plugin(GeneratorPlugin):
             if retcode != 0:
                 raise RuntimeError("Could not install required deps")
             import site
-            reload(site)
+            site = reload(site)
         self.log.info("BFG using ammo type %s", self.get_option("ammo_type"))
         gun_type = self.get_option("gun_type")
         if gun_type in self.gun_classes:

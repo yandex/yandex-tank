@@ -97,11 +97,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         # TODO: use stats data somehow
         if self.short_only:
             overall = data.get('overall')
-
-            quantiles = dict(
-                zip(
-                    overall['interval_real']['q']['q'],
-                    overall['interval_real']['q']['value']))
+            quantile_data = overall['interval_real']['q']
+            quantiles = dict(zip(quantile_data['q'], quantile_data['value']))
             info = (
                 "ts:{ts}\tRPS:{rps}\tavg:{avg_rt:.2f}\t"
                 "min:{min:.2f}\tmax:{q100:.2f}\tq95:{q95:.2f}\t").format(
@@ -134,7 +131,7 @@ class RealConsoleMarkup(object):
     WHITE_ON_BLACK = '\033[37;40m'
     TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
-    new_line = u"\n"
+    new_line = "\n"
 
     YELLOW = '\033[1;33m'
     RED = '\033[1;31m'
@@ -172,7 +169,7 @@ class NoConsoleMarkup(RealConsoleMarkup):
     WHITE_ON_BLACK = ''
     TOTAL_RESET = ''
     clear = ""
-    new_line = u"\n"
+    new_line = "\n"
 
     YELLOW = ''
     RED = ''

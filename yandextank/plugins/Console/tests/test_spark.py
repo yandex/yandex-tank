@@ -6,7 +6,7 @@ from yandextank.plugins.Console.screen import Sparkline
 class TestSparkline(object):
     def test_unusual_vals(self):
         data = [0, 1, -100, 0.1, 1000, -0.1, 50]
-        expected = ' _ _▇ _'.decode('utf-8')
+        expected = ' _ _▇ _'
         sparkline = Sparkline(len(data))
         start = int(time.time()) - len(data)
         for num, val in enumerate(data):
@@ -21,9 +21,9 @@ class TestSparkline(object):
 
     def test_non_continuos(self):
         data = range(20)
-        expected = ' _▁▂▃▄▅▆▇    ▃▄▅▆▇ _'.decode('utf-8')
-        expected_short = '▆▇ _'.decode('utf-8')
-        expected_long = '     _▁▂▃▄▅▆▇    ▃▄▅▆▇ _'.decode('utf-8')
+        expected = ' _▁▂▃▄▅▆▇    ▃▄▅▆▇ _'
+        expected_short = '▆▇ _'
+        expected_long = '     _▁▂▃▄▅▆▇    ▃▄▅▆▇ _'
         spark_len = 24
         sparkline = Sparkline(spark_len)
         start = int(time.time()) - len(data)
@@ -38,8 +38,8 @@ class TestSparkline(object):
         assert (long_spark == expected_long)
 
     def test_multi_graphs(self):
-        expected_continous = '__▁▁▂▂▃▃▄▄▅▅▆▆▇▇'.decode('utf-8')
-        expected_spotty = '_ ▁ ▂ ▃ ▄ ▅ ▆ ▇ '.decode('utf-8')
+        expected_continous = '__▁▁▂▂▃▃▄▄▅▅▆▆▇▇'
+        expected_spotty = '_ ▁ ▂ ▃ ▄ ▅ ▆ ▇ '
         continous_vals = range(1, 17)
         sparkline = Sparkline(len(continous_vals))
         start = int(time.time()) - len(continous_vals)
