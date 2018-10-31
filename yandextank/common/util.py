@@ -611,3 +611,21 @@ class FileScanner(object):
 
     def close(self):
         self.__closed = True
+
+
+def tail_lines(filepath, lines_num, bufsize=8192):
+    fsize = os.stat(filepath).st_size
+    iter_ = 0
+    with open(filepath) as f:
+        if bufsize > fsize:
+            bufsize = fsize - 1
+        data = []
+        try:
+            while True:
+                iter_ += 1
+                f.seek(fsize - bufsize * iter_)
+                data.extend(f.readlines())
+                if len(data) >= lines_num or f.tell() == 0:
+                    return data[-lines_num:]
+        except (IOError, OSError):
+            return data

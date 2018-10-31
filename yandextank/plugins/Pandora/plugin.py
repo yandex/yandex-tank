@@ -11,6 +11,7 @@ from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ..Phantom import PhantomReader
 from ...common.interfaces import AbstractInfoWidget, GeneratorPlugin
+from ...common.util import tail_lines
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ class Plugin(GeneratorPlugin):
         self.__address = None
         self.__schedule = None
         self.ammofile = None
+        self.process_stderr_file = None
 
     @staticmethod
     def get_key():
@@ -175,26 +177,39 @@ class Plugin(GeneratorPlugin):
             self.core.__setup_affinity(self.affinity, args=args)
         logger.info("Starting: %s", args)
         self.process_start_time = time.time()
-        process_stderr_file = self.core.mkstemp(".log", "pandora_")
-        self.core.add_artifact_file(process_stderr_file)
-        self.process_stderr = open(process_stderr_file, 'w')
-        self.process = subprocess.Popen(
-            args,
-            stderr=self.process_stderr,
-            stdout=self.process_stderr,
-            close_fds=True)
+        self.process_stderr_file = self.core.mkstemp(".log", "pandora_")
+        self.core.add_artifact_file(self.process_stderr_file)
+        self.process_stderr = open(self.process_stderr_file, 'w')
+        try:
+            self.process = subprocess.Popen(
+                args,
+                stderr=self.process_stderr,
+                stdout=self.process_stderr,
+                close_fds=True)
+        except OSError:
+            logger.debug(
+                "Unable to start Pandora binary. Args: %s", args, exc_info=True)
+            raise RuntimeError(
+                "Unable to start Pandora binary and/or file does not exist: %s" % args)
 
     def is_test_finished(self):
         retcode = self.process.poll()
-        if retcode is not None:
-            logger.info("Subprocess done its work with exit code: %s", retcode)
+        if retcode is not None and retcode == 0:
+            logger.info("Pandora subprocess done its work successfully and finished w/ retcode 0")
+            return retcode
+        elif retcode is not None and retcode != 0:
+            lines_amount = 20
+            logger.info("Pandora finished with non-zero retcode. Last %s logs of Pandora log:", lines_amount)
+            last_log_contents = tail_lines(self.process_stderr_file, lines_amount)
+            for logline in last_log_contents:
+                logger.info(logline.strip('\n'))
             return abs(retcode)
         else:
             return -1
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            logger.warn(
+            logger.warning(
                 "Terminating worker process with PID %s", self.process.pid)
             self.process.terminate()
             if self.process_stderr:
