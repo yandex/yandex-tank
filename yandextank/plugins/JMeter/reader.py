@@ -119,8 +119,7 @@ def string_to_df(data):
     chunk['interval_real'] = chunk["interval_real"] * 1000  # convert to µs
     chunk.set_index(['receive_sec'], inplace=True)
     chunk_length = len(chunk)
-    chunk['connect_time'] = (chunk['connect_time'].fillna(0) *
-                             1000).astype(np.int64)
+    chunk['connect_time'] = (chunk['connect_time'].fillna(0) * 1000).astype(np.int64)
     chunk['latency'] = chunk['latency'] * 1000
     chunk['latency'] = chunk.apply(fix_latency, axis=1)
     chunk['send_time'] = np.zeros(chunk_length)

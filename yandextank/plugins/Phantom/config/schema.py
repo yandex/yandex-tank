@@ -210,7 +210,7 @@ OPTIONS = {
         'description': 'Explicit target port, overwrites port defined with address',
         'type': 'string',
         'default': '',
-        'regex': '\d{0,5}'
+        'regex': r'\d{0,5}'
     },
     "load_profile": {
         'description': 'Configure your load setting the number of RPS or instances (clients) as a function of time,'

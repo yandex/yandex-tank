@@ -383,7 +383,7 @@ def expand_time(str_time, default_unit='s', multiplier=1):
     """
     helper for above functions
     """
-    parser = re.compile('(\d+)([a-zA-Z]*)')
+    parser = re.compile(r'(\d+)([a-zA-Z]*)')
     parts = parser.findall(str_time)
     result = 0.0
     for value, unit in parts:

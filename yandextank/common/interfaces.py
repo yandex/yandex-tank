@@ -20,6 +20,7 @@ class AbstractPlugin(object):
         @type core: TankCore
         """
         super(AbstractPlugin, self).__init__()
+        self._cleanup_actions = []
         self.log = logging.getLogger(__name__)
         self.core = core
         self.cfg = cfg
@@ -42,9 +43,23 @@ class AbstractPlugin(object):
     def is_test_finished(self):
         """
         Polling call, if result differs from -1 then test end
-        will be triggeted
+        will be triggered
         """
         return -1
+
+    def add_cleanup(self, action):
+        """
+        :type action: function
+        """
+        assert callable(action)
+        self._cleanup_actions.append(action)
+
+    def cleanup(self):
+        for action in reversed(self._cleanup_actions):
+            try:
+                action()
+            except Exception:
+                logging.error('Exception occurred during plugin cleanup {}'.format(self.__module__), exc_info=True)
 
     def end_test(self, retcode):
         """

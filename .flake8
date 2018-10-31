@@ -25,4 +25,4 @@ exclude =
     *.egg-info/,
     .installed.cfg,
     *.egg
-ignore = E501
+ignore = E501 W503
