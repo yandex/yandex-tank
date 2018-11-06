@@ -9,7 +9,7 @@ import shutil
 import yaml
 
 from yandextank.core import TankCore
-from yandextank.core.consoleworker import parse_options, TankWorker
+from yandextank.core.consoleworker import parse_options
 
 logger = logging.getLogger('')
 logger.setLevel(logging.DEBUG)
@@ -196,28 +196,3 @@ def sort_schema_alphabetically(filename):
             f.write(key + ':\n')
             for attr in schema[key].keys():
                 f.write('  ' + attr + ': ' + str(schema[key][attr]).lower() + '\n')
-
-
-class TestTankWorker(object):
-
-    def test_lock(self):
-        tank_worker = TankWorker([], cfg_patches=[{}])
-
-    def test_locked_while_ammo_download(self):
-        pass
-
-class TestStop(object):
-
-    def test_stop_on_prepare(self):
-        tank_worker = TankWorker([], )
-
-        raise NotImplemented
-
-    def test_stop_on_run(self):
-        raise NotImplemented
-
-    def test_stop_on_finishing(self):
-        raise NotImplemented
-
-    def test_stop_on_postprocess(self):
-        raise NotImplemented

@@ -2,14 +2,16 @@ import pytest
 
 from yandextank.plugins.Pandora import Plugin
 
+
 @pytest.mark.parametrize('cfg, expected', [
     (
         {'pools': [
             {
                 'ammo': {'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
                          'type': 'uri',
-                         'file': 'https://raw.githubusercontent.com/yandex/yandex-tank/develop/README.md'}
-                }]},
+                         'file': 'https://raw.githubusercontent.com/yandex/yandex-tank/develop/README.md'
+                         }
+            }]},
         {'pools': [
             {
                 'ammo': {'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',

@@ -1,9 +1,0 @@
-core:
-  artifacts_base_dir: ./tests_dir
-shellexec:
-  enabled: true
-  package: yandextank.plugins.ShellExec
-  prepare:
-  start:
-phantom:
-  enabled: false
