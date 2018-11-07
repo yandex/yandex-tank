@@ -92,3 +92,8 @@ ENV/
 tmp/
 yandex-tank.iml
 .idea/
+
+.pytest_cache/
+*.tld.cfg
+logs/
+*.DS_Store

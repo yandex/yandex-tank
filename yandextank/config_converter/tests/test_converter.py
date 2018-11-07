@@ -116,9 +116,9 @@ def test_conflict_opts(ini_file, msgs):
 ])
 def test_validate(ini_file):
     # noinspection PyStatementEffect
-    TankConfig([load_core_base_cfg()] +
-               cfg_folder_loader(os.path.join(os.path.dirname(__file__), 'etc_cfg')) +
-               [load_cfg(os.path.join(os.path.dirname(__file__), ini_file))]).validated
+    TankConfig([load_core_base_cfg()]
+               + cfg_folder_loader(os.path.join(os.path.dirname(__file__), 'etc_cfg'))
+               + [load_cfg(os.path.join(os.path.dirname(__file__), ini_file))]).validated
 
 
 @pytest.mark.parametrize('key, value, expected', [

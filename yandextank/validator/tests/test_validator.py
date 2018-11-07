@@ -57,7 +57,7 @@ PHANTOM_SCHEMA_V_G = {
     },
     'headers': {
         'type': 'string',
-        'regex': '(\[[\w\d\.]+:\s[\w\d\.]+\]\s*)+'
+        'regex': r'(\[[\w\d\.]+:\s[\w\d\.]+\]\s*)+'
     },
     'rps_schedule': {
         'type': 'string'
@@ -99,7 +99,6 @@ PHANTOM_SCHEMA_V_G = {
          'lock_dir': '/var/lock/',
          'taskset_path': 'taskset',
          'affinity': '',
-         'artifacts_dir': None,
          'ignore_lock': False
      },
      'telegraf': {
@@ -223,12 +222,12 @@ PHANTOM_SCHEMA_V_G = {
           'lock_dir': '/var/lock/',
           'taskset_path': 'taskset',
           'affinity': '',
-          'artifacts_dir': None,
           'ignore_lock': False}}
      )
 ])
 def test_validate_core(config, expected):
-    assert TankConfig(config, False).validated == expected
+    validated, errors, initial = TankConfig(config, False).validate()
+    assert validated.validated == expected, errors == errors
 
 
 @pytest.mark.parametrize('config, expected', [
@@ -383,7 +382,6 @@ def test_load_multiple(configs, expected):
                 'lock_dir': '/var/lock/',
                 'taskset_path': 'taskset',
                 'affinity': '',
-                'artifacts_dir': None,
                 'ignore_lock': False
             },
             'telegraf': {
@@ -563,7 +561,8 @@ def test_validate_all_error(config, expected):
     )
 ])
 def test_get_plugins(config, expected):
-    assert {(name, pack) for name, pack, cfg in TankConfig(config).plugins} == expected
+    validated, errors, raw = TankConfig(config).validate()
+    assert {(name, pack) for name, pack, cfg in validated.plugins} == expected
 
 
 @pytest.mark.parametrize('value', [
