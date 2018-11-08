@@ -161,6 +161,13 @@ class TankConfig(object):
             with_dynamic_options=True,
             core_section='core',
             error_output=None):
+        """
+
+        :param configs: list of configs dicts
+        :param with_dynamic_options: insert uuid, pid, and other DYNAMIC_OPTIONS
+        :param core_section: name of core section in config
+        :param error_output: file to output error messages
+        """
         self._errors = None
         if not isinstance(configs, list):
             configs = [configs]
