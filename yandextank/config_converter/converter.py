@@ -1,6 +1,6 @@
 import logging
 import re
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, ParsingError
 from functools import reduce
 
 import pkg_resources
@@ -54,7 +54,10 @@ SECTIONS_PATTERNS = {
 
 
 class ConversionError(Exception):
-    pass
+    MSG = 'ConversionError:\n{}\nCheck your file format'
+
+    def __init__(self, message=''):
+        self.message = self.MSG.format(message)
 
 
 class OptionsConflict(ConversionError):
@@ -160,7 +163,9 @@ class Package(object):
 
 
 class UnknownOption(ConversionError):
-    pass
+
+    def __init__(self, option):
+        self.message = 'Unknown option: {}'.format(option)
 
 
 def empty_to_none(func):
@@ -282,7 +287,7 @@ class Option(object):
             return self.TYPE_CASTERS['boolean']
         if self.schema.get(self.name) is None:
             logger.warning('Unknown option {}:{}'.format(self.plugin, self.name))
-            raise UnknownOption
+            raise UnknownOption('{}:{}'.format(self.plugin, self.name))
 
         _type = self.schema[self.name].get('type', None)
         if _type is None:
@@ -493,10 +498,13 @@ def core_options(cfg_ini):
 
 def convert_ini(ini_file):
     cfg_ini = ConfigParser()
-    if isinstance(ini_file, str):
-        cfg_ini.read(ini_file)
-    else:
-        cfg_ini.readfp(ini_file)
+    try:
+        if isinstance(ini_file, str):
+            cfg_ini.read(ini_file)
+        else:
+            cfg_ini.readfp(ini_file)
+    except ParsingError as e:
+        raise ConversionError(e.message)
 
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
