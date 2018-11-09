@@ -8,6 +8,7 @@ import signal
 import stat
 import sys
 import time
+import traceback
 from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
 from threading import Thread
 
@@ -261,7 +262,7 @@ class Cleanup:
     def __exit__(self, exc_type, exc_val, exc_tb):
         msgs = []
         if exc_type:
-            msg = 'Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, exc_tb)
+            msg = 'Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
             msgs.append(msg)
             logging.error(msg)
         logging.info('Trying to clean up')
@@ -415,7 +416,7 @@ class TankWorker(Thread):
         current_file_mode = os.stat(filename).st_mode
         os.chmod(filename, current_file_mode | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
-        logger = logging.getLogger('yandextank')
+        logger = logging.getLogger()
         logger.handlers = []
         logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
