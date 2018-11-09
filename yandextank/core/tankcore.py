@@ -460,7 +460,7 @@ class TankCore(object):
         and close temp file handle
         """
         if not directory:
-            directory = self.artifacts_base_dir
+            directory = self.artifacts_dir
         fd, fname = tempfile.mkstemp(suffix, prefix, directory)
         os.close(fd)
         os.chmod(fname, 0o644)  # FIXME: chmod to parent dir's mode?
