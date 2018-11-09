@@ -164,9 +164,9 @@ class TankCore(object):
     def artifacts_base_dir(self):
         if not self._artifacts_base_dir:
             try:
-                artifacts_base_dir = os.path.expanduser(self.get_option(self.SECTION, "artifacts_base_dir"))
+                artifacts_base_dir = os.path.abspath(self.get_option(self.SECTION, "artifacts_base_dir"))
             except ValidationError:
-                artifacts_base_dir = 'logs'
+                artifacts_base_dir = os.path.abspath('logs')
             if not os.path.exists(artifacts_base_dir):
                 os.makedirs(artifacts_base_dir)
                 os.chmod(self.artifacts_base_dir, 0o755)

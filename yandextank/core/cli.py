@@ -108,7 +108,7 @@ def main():
 
     ammofile = ammofiles[0] if len(ammofiles) > 0 else None
 
-    init_logging(options.error_log, options.verbose, options.quiet)
+    log_handlers = init_logging(options.error_log, options.verbose, options.quiet)
 
     cli_kwargs = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
     if options.ignore_lock:
@@ -126,7 +126,8 @@ def main():
                             options.patches,
                             [cli_kwargs],
                             options.no_rc,
-                            ammo_file=ammofile if ammofile else None)
+                            ammo_file=ammofile if ammofile else None,
+                            log_handlers=log_handlers)
     except ValidationError as e:
         logging.error('Config validation error:\n{}'.format(e.errors))
         return
@@ -149,18 +150,10 @@ def main():
 
 def init_logging(events_log_fname, verbose, quiet):
     """ Set up logging, as it is very important for console tool """
-    logger = logging.getLogger('')
-    logger.setLevel(logging.DEBUG)
+    # logger = logging.getLogger('')
+    # logger.setLevel(logging.DEBUG)
 
     # create file handler which logs error messages
-    if events_log_fname:
-        err_file_handler = logging.FileHandler(events_log_fname)
-        err_file_handler.setLevel(logging.WARNING)
-        err_file_handler.setFormatter(
-            logging.Formatter(
-                "%(asctime)s\t%(message)s"
-            ))
-        logger.addHandler(err_file_handler)
 
     # create console handler with a higher log level
     console_handler = logging.StreamHandler(sys.stdout)
@@ -191,13 +184,25 @@ def init_logging(events_log_fname, verbose, quiet):
     console_handler.addFilter(f_err)
     console_handler.addFilter(f_warn)
     console_handler.addFilter(f_crit)
-    logger.addHandler(console_handler)
+    # logger.addHandler(console_handler)
 
     f_info = SingleLevelFilter(logging.INFO, True)
     f_debug = SingleLevelFilter(logging.DEBUG, True)
     stderr_hdl.addFilter(f_info)
     stderr_hdl.addFilter(f_debug)
-    logger.addHandler(stderr_hdl)
+    # logger.addHandler(stderr_hdl)
+
+    if events_log_fname:
+        err_file_handler = logging.FileHandler(events_log_fname)
+        err_file_handler.setLevel(logging.WARNING)
+        err_file_handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s\t%(message)s"
+            ))
+        return [err_file_handler, console_handler, stderr_hdl]
+    else:
+        return [console_handler, stderr_hdl]
+        # logger.addHandler(err_file_handler)
 
 
 class SingleLevelFilter(logging.Filter):
