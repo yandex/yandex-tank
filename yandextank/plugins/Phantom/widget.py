@@ -54,8 +54,7 @@ class PhantomProgressBarWidget(AbstractInfoWidget):
             left_part = self.ammo_count - self.ammo_progress
             if left_part > 0:
                 eta_secs = int(
-                    float(dur_seconds) / float(self.ammo_progress) *
-                    float(left_part))
+                    float(dur_seconds) / float(self.ammo_progress) * float(left_part))
             else:
                 eta_secs = 0
             eta_time = datetime.timedelta(seconds=eta_secs)

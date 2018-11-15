@@ -17,10 +17,7 @@ Core
 :``artifacts_base_dir`` (string):
  *\- base directory to store tests\' artifacts directories. Default:* ``./logs``
 :``artifacts_dir`` (string):
- *\- directory inside base directory to store test\'s artifacts, defaults to api_jobno if null. Default:* ``None``
- 
- :nullable:
-  True
+ *\- directory inside base directory to store test\'s artifacts, defaults to api_jobno if null.*
 :``cmdline`` (string):
  *\- (no description).*
 :``exitcode`` (integer):
@@ -49,12 +46,112 @@ Core
 --------------------
 *\- (no description).*
 
-Android
-=======
+ShootExec
+=========
 
-``volta_options`` (dict)
+``cmd`` (string)
+----------------
+*\- command that produces test results and stats in Phantom format.* **Required.**
+
+``output_path`` (string)
 ------------------------
-*\- (no description).*
+*\- path to test results.* **Required.**
+
+``stats_path`` (string)
+-----------------------
+*\- path to tests stats. Default:* ``None``
+
+:nullable:
+ True
+
+Influx
+======
+
+``address`` (string)
+--------------------
+*\- (no description). Default:* ``localhost``
+
+``chunk_size`` (integer)
+------------------------
+*\- (no description). Default:* ``500000``
+
+``custom_tags`` (dict)
+----------------------
+*\- (no description). Default:* ``{}``
+
+``database`` (string)
+---------------------
+*\- (no description). Default:* ``mydb``
+
+``grafana_dashboard`` (string)
+------------------------------
+*\- (no description). Default:* ``tank-dashboard``
+
+``grafana_root`` (string)
+-------------------------
+*\- (no description). Default:* ``http://localhost/``
+
+``labeled`` (boolean)
+---------------------
+*\- (no description). Default:* ``False``
+
+``password`` (string)
+---------------------
+*\- (no description). Default:* ``root``
+
+``port`` (integer)
+------------------
+*\- (no description). Default:* ``8086``
+
+``prefix_measurement`` (string)
+-------------------------------
+*\- (no description). Default:* ``""``
+
+``tank_tag`` (string)
+---------------------
+*\- (no description). Default:* ``unknown``
+
+``username`` (string)
+---------------------
+*\- (no description). Default:* ``root``
+
+Telegraf
+========
+
+``config_contents`` (string)
+----------------------------
+*\- used to repeat tests from Overload, not for manual editing.*
+
+``config`` (string)
+-------------------
+*\- Path to monitoring config file. Default:* ``auto``
+
+:one of:
+ :``<path/to/file.xml>``: path to telegraf configuration file
+ :``auto``: collect default metrics from default_target host
+ :``none``: disable monitoring
+
+``default_target`` (string)
+---------------------------
+*\- host to collect default metrics from (if "config: auto" specified). Default:* ``localhost``
+
+``disguise_hostnames`` (boolean)
+--------------------------------
+*\- Disguise real host names \- use this if you upload results to Overload and dont want others to see your hostnames. Default:* ``True``
+
+``kill_old`` (boolean)
+----------------------
+*\- kill old hanging agents on target(s). Default:* ``False``
+
+``ssh_timeout`` (string)
+------------------------
+*\- timeout of ssh connection to target(s). Default:* ``5s``
+
+:examples:
+ ``10s``
+  10 seconds
+ ``2m``
+  2 minutes
 
 Autostop
 ========
@@ -77,6 +174,125 @@ Autostop
 ``report_file`` (string)
 ------------------------
 *\- path to file to store autostop report. Default:* ``autostop_report.txt``
+
+JMeter
+======
+
+``affinity`` (string)
+---------------------
+*\- Use to set CPU affinity. Default:* ``""``
+
+:nullable:
+ True
+
+``args`` (string)
+-----------------
+*\- additional commandline arguments for JMeter. Default:* ``""``
+
+``buffer_size`` (integer)
+-------------------------
+*\- jmeter buffer size. Default:* ``None``
+
+:nullable:
+ True
+
+``buffered_seconds`` (integer)
+------------------------------
+*\- Aggregator delay \- to be sure that everything were read from jmeter results file. Default:* ``3``
+
+``exclude_markers`` (list of string)
+------------------------------------
+*\- (no description). Default:* ``[]``
+
+:[list_element] (string):
+ *\- (no description).*
+ 
+ :empty:
+  False
+
+``ext_log`` (string)
+--------------------
+*\- additional log, jmeter xml format. Saved in test dir as jmeter_ext_XXXX.jtl. Default:* ``none``
+
+:one of: [``none``, ``errors``, ``all``]
+
+``extended_log`` (string)
+-------------------------
+*\- additional log, jmeter xml format. Saved in test dir as jmeter_ext_XXXX.jtl. Default:* ``none``
+
+:one of: [``none``, ``errors``, ``all``]
+
+``jmeter_path`` (string)
+------------------------
+*\- Path to JMeter. Default:* ``jmeter``
+
+``jmeter_ver`` (float)
+----------------------
+*\- Which JMeter version tank should expect. Affects the way connection time is logged. Default:* ``3.0``
+
+``jmx`` (string)
+----------------
+*\- Testplan for execution.*
+
+``shutdown_timeout`` (integer)
+------------------------------
+*\- timeout for automatic test shutdown. Default:* ``10``
+
+``variables`` (dict)
+--------------------
+*\- variables for jmx testplan. Default:* ``{}``
+
+Pandora
+=======
+
+``affinity`` (string)
+---------------------
+*\- Use to set CPU affinity. Default:* ``""``
+
+:nullable:
+ True
+
+``buffered_seconds`` (integer)
+------------------------------
+*\- (no description). Default:* ``2``
+
+``config_content`` (dict)
+-------------------------
+*\- Pandora config contents. Default:* ``{}``
+
+``config_file`` (string)
+------------------------
+*\- Pandora config file path. Default:* ``""``
+
+``expvar`` (boolean)
+--------------------
+*\- Toggle expvar monitoring. Default:* ``True``
+
+``pandora_cmd`` (string)
+------------------------
+*\- Pandora executable path. Default:* ``pandora``
+
+Android
+=======
+
+``volta_options`` (dict)
+------------------------
+*\- (no description).*
+
+ResourceCheck
+=============
+
+``disk_limit`` (integer)
+------------------------
+*\- (no description). Default:* ``2048``
+
+``interval`` (string)
+---------------------
+*\- (no description). Default:* ``10s``
+
+``mem_limit`` (integer)
+-----------------------
+*\- (no description). Default:* ``512``
 
 Bfg
 ===
@@ -263,46 +479,54 @@ Bfg
 :tutorial_link:
  http://yandextank.readthedocs.io/en/latest/core_and_modules.html#bfg-worker-type
 
-Console
-=======
+RCAssert
+========
 
-``cases_max_spark`` (integer)
------------------------------
-*\- length of sparkline for each case, 0 to disable. Default:* ``120``
+``fail_code`` (integer)
+-----------------------
+*\- (no description). Default:* ``10``
 
-``cases_sort_by`` (string)
---------------------------
-*\- field for cases data sort. Default:* ``count``
-
-:one of: [``count``, ``net_err``, ``http_err``]
-
-``disable_all_colors`` (boolean)
---------------------------------
-*\- disable colors in full output. Default:* ``False``
-
-``disable_colors`` (string)
----------------------------
+``pass`` (string)
+-----------------
 *\- (no description). Default:* ``""``
 
-``info_panel_width`` (integer)
-------------------------------
-*\- width of right panel. Default:* ``33``
+ShellExec
+=========
 
-``max_case_len`` (integer)
+``catch_out`` (boolean)
+-----------------------
+*\- show commands stdout. Default:* ``False``
+
+``end`` (string)
+----------------
+*\- shell command to execute after test end. Default:* ``""``
+
+``poll`` (string)
+-----------------
+*\- shell command to execute every second while test is running. Default:* ``""``
+
+``post_process`` (string)
+-------------------------
+*\- shell command to execute on post process stage. Default:* ``""``
+
+``prepare`` (string)
+--------------------
+*\- shell command to execute on prepare stage. Default:* ``""``
+
+``start`` (string)
+------------------
+*\- shell command to execute on start. Default:* ``""``
+
+JsonReport
+==========
+
+``monitoring_log`` (string)
+---------------------------
+*\- file name for monitoring log. Default:* ``monitoring.log``
+
+``test_data_log`` (string)
 --------------------------
-*\- max lenght of case name, longer names will be cut in console output. Default:* ``32``
-
-``short_only`` (boolean)
-------------------------
-*\- do not draw full console screen, write short info for each second. Default:* ``False``
-
-``sizes_max_spark`` (integer)
------------------------------
-*\- max length of sparkline for request/response sizes, 0 to disable. Default:* ``120``
-
-``times_max_spark`` (integer)
------------------------------
-*\- max length of sparkline for fractions of request time, 0 to disable. Default:* ``120``
+*\- file name for test data log. Default:* ``test_data.log``
 
 DataUploader
 ============
@@ -450,165 +674,6 @@ DataUploader
 ``writer_endpoint`` (string)
 ----------------------------
 *\- writer api endpoint. Default:* ``""``
-
-Influx
-======
-
-``address`` (string)
---------------------
-*\- (no description). Default:* ``localhost``
-
-``chunk_size`` (integer)
-------------------------
-*\- (no description). Default:* ``500000``
-
-``custom_tags`` (dict)
-----------------------
-*\- (no description). Default:* ``{}``
-
-``database`` (string)
----------------------
-*\- (no description). Default:* ``mydb``
-
-``grafana_dashboard`` (string)
-------------------------------
-*\- (no description). Default:* ``tank-dashboard``
-
-``grafana_root`` (string)
--------------------------
-*\- (no description). Default:* ``http://localhost/``
-
-``labeled`` (boolean)
----------------------
-*\- (no description). Default:* ``False``
-
-``password`` (string)
----------------------
-*\- (no description). Default:* ``root``
-
-``port`` (integer)
-------------------
-*\- (no description). Default:* ``8086``
-
-``prefix_measurement`` (string)
--------------------------------
-*\- (no description). Default:* ``""``
-
-``tank_tag`` (string)
----------------------
-*\- (no description). Default:* ``unknown``
-
-``username`` (string)
----------------------
-*\- (no description). Default:* ``root``
-
-JMeter
-======
-
-``affinity`` (string)
----------------------
-*\- Use to set CPU affinity. Default:* ``""``
-
-:nullable:
- True
-
-``args`` (string)
------------------
-*\- additional commandline arguments for JMeter. Default:* ``""``
-
-``buffer_size`` (integer)
--------------------------
-*\- jmeter buffer size. Default:* ``None``
-
-:nullable:
- True
-
-``buffered_seconds`` (integer)
-------------------------------
-*\- Aggregator delay \- to be sure that everything were read from jmeter results file. Default:* ``3``
-
-``exclude_markers`` (list of string)
-------------------------------------
-*\- (no description). Default:* ``[]``
-
-:[list_element] (string):
- *\- (no description).*
- 
- :empty:
-  False
-
-``ext_log`` (string)
---------------------
-*\- additional log, jmeter xml format. Saved in test dir as jmeter_ext_XXXX.jtl. Default:* ``none``
-
-:one of: [``none``, ``errors``, ``all``]
-
-``extended_log`` (string)
--------------------------
-*\- additional log, jmeter xml format. Saved in test dir as jmeter_ext_XXXX.jtl. Default:* ``none``
-
-:one of: [``none``, ``errors``, ``all``]
-
-``jmeter_path`` (string)
-------------------------
-*\- Path to JMeter. Default:* ``jmeter``
-
-``jmeter_ver`` (float)
-----------------------
-*\- Which JMeter version tank should expect. Affects the way connection time is logged. Default:* ``3.0``
-
-``jmx`` (string)
-----------------
-*\- Testplan for execution.*
-
-``shutdown_timeout`` (integer)
-------------------------------
-*\- timeout for automatic test shutdown. Default:* ``10``
-
-``variables`` (dict)
---------------------
-*\- variables for jmx testplan. Default:* ``{}``
-
-JsonReport
-==========
-
-``monitoring_log`` (string)
----------------------------
-*\- file name for monitoring log. Default:* ``monitoring.log``
-
-``test_data_log`` (string)
---------------------------
-*\- file name for test data log. Default:* ``test_data.log``
-
-Pandora
-=======
-
-``affinity`` (string)
----------------------
-*\- Use to set CPU affinity. Default:* ``""``
-
-:nullable:
- True
-
-``buffered_seconds`` (integer)
-------------------------------
-*\- (no description). Default:* ``2``
-
-``config_content`` (dict)
--------------------------
-*\- Pandora config contents. Default:* ``{}``
-
-``config_file`` (string)
-------------------------
-*\- Pandora config file path. Default:* ``""``
-
-``expvar`` (boolean)
---------------------
-*\- Toggle expvar monitoring. Default:* ``True``
-
-``pandora_cmd`` (string)
-------------------------
-*\- Pandora executable path. Default:* ``pandora``
 
 Phantom
 =======
@@ -881,111 +946,43 @@ Phantom
  :``proto_error``: 5xx+network errors
  :``proto_warning``: 4xx+5xx+network errors
 
-RCAssert
-========
+Console
+=======
 
-``fail_code`` (integer)
------------------------
-*\- (no description). Default:* ``10``
+``cases_max_spark`` (integer)
+-----------------------------
+*\- length of sparkline for each case, 0 to disable. Default:* ``120``
 
-``pass`` (string)
------------------
+``cases_sort_by`` (string)
+--------------------------
+*\- field for cases data sort. Default:* ``count``
+
+:one of: [``count``, ``net_err``, ``http_err``]
+
+``disable_all_colors`` (boolean)
+--------------------------------
+*\- disable colors in full output. Default:* ``False``
+
+``disable_colors`` (string)
+---------------------------
 *\- (no description). Default:* ``""``
 
-ResourceCheck
-=============
+``info_panel_width`` (integer)
+------------------------------
+*\- width of right panel. Default:* ``33``
 
-``disk_limit`` (integer)
+``max_case_len`` (integer)
+--------------------------
+*\- max lenght of case name, longer names will be cut in console output. Default:* ``32``
+
+``short_only`` (boolean)
 ------------------------
-*\- (no description). Default:* ``2048``
+*\- do not draw full console screen, write short info for each second. Default:* ``False``
 
-``interval`` (string)
----------------------
-*\- (no description). Default:* ``10s``
+``sizes_max_spark`` (integer)
+-----------------------------
+*\- max length of sparkline for request/response sizes, 0 to disable. Default:* ``120``
 
-``mem_limit`` (integer)
------------------------
-*\- (no description). Default:* ``512``
-
-ShellExec
-=========
-
-``catch_out`` (boolean)
------------------------
-*\- show commands stdout. Default:* ``False``
-
-``end`` (string)
-----------------
-*\- shell command to execute after test end. Default:* ``""``
-
-``poll`` (string)
------------------
-*\- shell command to execute every second while test is running. Default:* ``""``
-
-``post_process`` (string)
--------------------------
-*\- shell command to execute on post process stage. Default:* ``""``
-
-``prepare`` (string)
---------------------
-*\- shell command to execute on prepare stage. Default:* ``""``
-
-``start`` (string)
-------------------
-*\- shell command to execute on start. Default:* ``""``
-
-ShootExec
-=========
-
-``cmd`` (string)
-----------------
-*\- command that produces test results and stats in Phantom format.* **Required.**
-
-``output_path`` (string)
-------------------------
-*\- path to test results.* **Required.**
-
-``stats_path`` (string)
------------------------
-*\- path to tests stats. Default:* ``None``
-
-:nullable:
- True
-
-Telegraf
-========
-
-``config_contents`` (string)
-----------------------------
-*\- used to repeat tests from Overload, not for manual editing.*
-
-``config`` (string)
--------------------
-*\- Path to monitoring config file. Default:* ``auto``
-
-:one of:
- :``<path/to/file.xml>``: path to telegraf configuration file
- :``auto``: collect default metrics from default_target host
- :``none``: disable monitoring
-
-``default_target`` (string)
----------------------------
-*\- host to collect default metrics from (if "config: auto" specified). Default:* ``localhost``
-
-``disguise_hostnames`` (boolean)
---------------------------------
-*\- Disguise real host names \- use this if you upload results to Overload and dont want others to see your hostnames. Default:* ``True``
-
-``kill_old`` (boolean)
-----------------------
-*\- kill old hanging agents on target(s). Default:* ``False``
-
-``ssh_timeout`` (string)
-------------------------
-*\- timeout of ssh connection to target(s). Default:* ``5s``
-
-:examples:
- ``10s``
-  10 seconds
- ``2m``
-  2 minutes
+``times_max_spark`` (integer)
+-----------------------------
+*\- max length of sparkline for fractions of request time, 0 to disable. Default:* ``120``

@@ -27,8 +27,8 @@ class TestConfigManager(object):
         configs = manager.getconfig(
             'yandextank/plugins/Telegraf/tests/old_mon.xml', 'sometargethint')
         assert (
-            configs[0]['host'] == 'somehost.yandex.tld' and
-            configs[0]['host_config']['CPU']['name'] == '[inputs.cpu]')
+            configs[0]['host'] == 'somehost.yandex.tld'
+            and configs[0]['host_config']['CPU']['name'] == '[inputs.cpu]')
 
     def test_xml_telegraf_parse(self):
         """ telegraf-style monitoring xml parse """
@@ -37,8 +37,8 @@ class TestConfigManager(object):
             'yandextank/plugins/Telegraf/tests/telegraf_mon.xml',
             'sometargethint')
         assert (
-            configs[0]['host'] == 'somehost.yandex.tld' and
-            configs[0]['host_config']['CPU']['name'] == '[inputs.cpu]')
+            configs[0]['host'] == 'somehost.yandex.tld'
+            and configs[0]['host_config']['CPU']['name'] == '[inputs.cpu]')
 
     def test_target_hint(self):
         """ test target hint (special address=[target] option) """
@@ -74,11 +74,11 @@ class TestAgentConfig(object):
         cfg_parser = ConfigParser()
         cfg_parser.read(collector_config)
         assert (
-            cfg_parser.has_section('agent') and
-            cfg_parser.get('agent', 'interval') == "'1s'" and
-            cfg_parser.has_section('[outputs.file') and
-            cfg_parser.get('[outputs.file', 'files') ==
-            "['{rmt}/monitoring.rawdata']".format(rmt=remote_workdir))
+            cfg_parser.has_section('agent')
+            and cfg_parser.get('agent', 'interval') == "'1s'"
+            and cfg_parser.has_section('[outputs.file')
+            and cfg_parser.get('[outputs.file', 'files')
+            == "['{rmt}/monitoring.rawdata']".format(rmt=remote_workdir))
 
     def test_create_custom_exec_script(self):
         """ test agent config creates custom_exec config """

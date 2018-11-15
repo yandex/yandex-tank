@@ -24,7 +24,7 @@ class Plugin(GeneratorPlugin):
     SECTION = 'jmeter'
     SHUTDOWN_TEST = 'Shutdown'
     STOP_TEST_NOW = 'Stop Test'
-    DISCOVER_PORT_PATTERN = 'Waiting for possible .* message on port (?P<port>\d+)'
+    DISCOVER_PORT_PATTERN = r'Waiting for possible .* message on port (?P<port>\d+)'
 
     def __init__(self, core, cfg):
         super(Plugin, self).__init__(core, cfg)
