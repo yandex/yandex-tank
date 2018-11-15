@@ -17,7 +17,7 @@ class AbstractPlugin(object):
     def __init__(self, core, cfg):
         """
 
-        @type core: TankCore
+        :type core: TankCore
         """
         super(AbstractPlugin, self).__init__()
         self._cleanup_actions = []

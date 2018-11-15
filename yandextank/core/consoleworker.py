@@ -21,7 +21,7 @@ from .tankcore import TankCore, LockError, Lock
 from ..config_converter.converter import convert_ini, convert_single_option
 
 DEFAULT_CONFIG = 'load.yaml'
-
+logger = logging.getLogger('yandextank')
 
 class RealConsoleMarkup(object):
     '''
@@ -159,7 +159,7 @@ def get_default_configs():
                         baseconfigs_location + os.sep + filename)
                 ]
     except OSError:
-        logging.info(
+        logger.info(
             baseconfigs_location + ' is not accessible to get configs list')
 
     configs += [os.path.expanduser('~/.yandex-tank')]
@@ -264,15 +264,15 @@ class Cleanup:
         if exc_type:
             msg = 'Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
             msgs.append(msg)
-            logging.error(msg)
-        logging.info('Trying to clean up')
+            logger.error(msg)
+        logger.info('Trying to clean up')
         for name, action in reversed(self._actions):
             try:
                 action()
             except Exception:
                 msg = 'Exception occurred during cleanup action {}'.format(name)
                 msgs.append(msg)
-                logging.error(msg, exc_info=True)
+                logger.error(msg, exc_info=True)
         self.tankworker.save_status('\n'.join(msgs))
         self.tankworker.core._collect_artifacts()
         return False  # re-raise exception
@@ -292,7 +292,7 @@ class Finish:
         self.worker.status = Status.TEST_FINISHING
         retcode = 0
         if exc_type:
-            logging.error('Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, exc_tb))
+            logger.error('Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, exc_tb))
             retcode = 1
         retcode = self.worker.core.plugins_end_test(retcode)
         self.worker.retcode = retcode
@@ -314,8 +314,9 @@ class TankWorker(Thread):
     FINISH_FILENAME = 'finish_status.yaml'
 
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
-                 log_handlers=None, wait_lock=True, files=None, ammo_file=None):
+                 log_handlers=None, wait_lock=True, files=None, ammo_file=None, api_start=False):
         super(TankWorker, self).__init__()
+        self.api_start = api_start
         self.wait_lock = wait_lock
         self.log_handlers = log_handlers if log_handlers is not None else []
         self.files = [] if files is None else files
@@ -354,11 +355,12 @@ class TankWorker(Thread):
 
     def init_folder(self):
         self.folder = self.core.artifacts_dir
-        for f in self.files:
-            shutil.move(f, self.folder)
-        if self.ammo_file:
-            shutil.move(self.ammo_file, self.folder)
-        # os.chdir(self.folder)
+        if self.api_start > 0:
+            for f in self.files:
+                shutil.move(f, self.folder)
+            if self.ammo_file:
+                shutil.move(self.ammo_file, self.folder)
+            os.chdir(self.folder)
 
     def run(self):
         with Cleanup(self) as add_cleanup:
@@ -366,7 +368,7 @@ class TankWorker(Thread):
             add_cleanup('release lock', lock.release)
             self.status = Status.TEST_PREPARING
             self.init_logging(debug=True)
-            logging.info('Created a folder for the test. %s' % self.folder)
+            logger.info('Created a folder for the test. %s' % self.folder)
 
             self.core.plugins_configure()
             add_cleanup('plugins cleanup', self.core.plugins_cleanup)
@@ -400,14 +402,14 @@ class TankWorker(Thread):
         try:
             return str(self.core.status['uploader']['job_no'])
         except KeyError:
-            logging.warning('Job number is not available yet')
+            logger.warning('Job number is not available yet')
             return None
 
     def get_lunapark_link(self):
         try:
             return str(self.core.status['uploader']['web_link'])
         except KeyError:
-            logging.warning('Job number is not available yet')
+            logger.warning('Job number is not available yet')
             return None
 
     def init_logging(self, debug=False):
@@ -417,7 +419,6 @@ class TankWorker(Thread):
         current_file_mode = os.stat(filename).st_mode
         os.chmod(filename, current_file_mode | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
-        logger = logging.getLogger()
         logger.handlers = []
         logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
@@ -426,11 +427,11 @@ class TankWorker(Thread):
         self.file_handler.setFormatter(logging.Formatter(
             "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"))
         logger.addHandler(self.file_handler)
-        logging.info("Log file created")
+        logger.info("Log file created")
 
         for handler in self.log_handlers:
             logger.addHandler(handler)
-            logging.info("Logging handler {} added".format(handler))
+            logger.info("Logging handler {} added".format(handler))
 
     def get_lock(self):
         while True:
@@ -442,7 +443,7 @@ class TankWorker(Thread):
                 self.set_msg(e.message)
                 if not self.wait_lock:
                     raise RuntimeError("Lock file present, cannot continue")
-                logging.warning(
+                logger.warning(
                     "Couldn't get lock. Will retry in 5 seconds...")
                 time.sleep(5)
         return lock
