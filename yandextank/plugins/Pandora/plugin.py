@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 import subprocess
 import time
 import yaml
@@ -148,8 +149,8 @@ class Plugin(GeneratorPlugin):
             if pool.get('result', {}).get('destination', None):
                 report_filename = pool.get('result').get('destination')
                 logger.info('Found report file in pandora config: %s', report_filename)
-                return report_filename
-        return self.DEFAULT_REPORT_FILE
+                return os.path.join(self.core.artifacts_dir, report_filename)
+        return os.path.join(self.core.artifacts_dir, self.DEFAULT_REPORT_FILE)
 
     def get_reader(self):
         if self.reader is None:
