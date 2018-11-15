@@ -92,6 +92,7 @@ class TankCore(object):
     PLUGIN_PREFIX = 'plugin_'
     PID_OPTION = 'pid'
     UUID_OPTION = 'uuid'
+    API_JOBNO = 'api_jobno'
 
     def __init__(self, configs, artifacts_base_dir=None, artifacts_dir_name=None):
         """
@@ -131,7 +132,10 @@ class TankCore(object):
             yaml.dump(self.configinitial, f)
         self.add_artifact_file(error_output)
         self.add_artifact_to_send(LPRequisites.CONFIGINITIAL, yaml.dump(self.configinitial))
-        self.add_artifact_to_send(LPRequisites.CONFIGINFO, unicode(self.config.validated))
+        configinfo = self.config.validated.copy()
+        configinfo.setdefault(self.SECTION, {})
+        configinfo[self.SECTION][self.API_JOBNO] = self.test_id
+        self.add_artifact_to_send(LPRequisites.CONFIGINFO, yaml.dump(configinfo))
         logging.info('New test id %s' % self.test_id)
 
     @property
@@ -329,7 +333,6 @@ class TankCore(object):
                 logger.error("Failed post-processing plugin %s", plugin, exc_info=True)
                 if not retcode:
                     retcode = 1
-        self._collect_artifacts()
         return retcode
 
     def interrupt(self):
