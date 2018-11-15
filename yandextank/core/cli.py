@@ -126,7 +126,8 @@ def main():
                             options.patches,
                             [cli_kwargs],
                             options.no_rc,
-                            ammo_file=ammofile if ammofile else None)
+                            ammo_file=ammofile if ammofile else None,
+                            )
     except ValidationError as e:
         logging.error('Config validation error:\n{}'.format(e.errors))
         return
@@ -136,15 +137,6 @@ def main():
     except KeyboardInterrupt:
         worker.stop()
         worker.join()
-    # try:
-    #     worker.configure()
-    #     rc = worker.perform_test()
-    #     sys.exit(rc)
-    # except Exception as ex:
-    #     worker.core._collect_artifacts()
-    #     logging.error("Exception: %s", ex)
-    #     logging.debug("Exception: %s", traceback.format_exc(ex))
-    #     sys.exit(1)
 
 
 def init_logging(events_log_fname, verbose, quiet):
@@ -153,14 +145,6 @@ def init_logging(events_log_fname, verbose, quiet):
     logger.setLevel(logging.DEBUG)
 
     # create file handler which logs error messages
-    if events_log_fname:
-        err_file_handler = logging.FileHandler(events_log_fname)
-        err_file_handler.setLevel(logging.WARNING)
-        err_file_handler.setFormatter(
-            logging.Formatter(
-                "%(asctime)s\t%(message)s"
-            ))
-        logger.addHandler(err_file_handler)
 
     # create console handler with a higher log level
     console_handler = logging.StreamHandler(sys.stdout)
@@ -198,6 +182,18 @@ def init_logging(events_log_fname, verbose, quiet):
     stderr_hdl.addFilter(f_info)
     stderr_hdl.addFilter(f_debug)
     logger.addHandler(stderr_hdl)
+
+    if events_log_fname:
+        err_file_handler = logging.FileHandler(events_log_fname)
+        err_file_handler.setLevel(logging.WARNING)
+        err_file_handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s\t%(message)s"
+            ))
+        return [err_file_handler, console_handler, stderr_hdl]
+    else:
+        return [console_handler, stderr_hdl]
+        # logger.addHandler(err_file_handler)
 
 
 class SingleLevelFilter(logging.Filter):
