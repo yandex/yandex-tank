@@ -273,7 +273,8 @@ class Cleanup:
                 msg = 'Exception occurred during cleanup action {}'.format(name)
                 msgs.append(msg)
                 logging.error(msg, exc_info=True)
-            self.tankworker.save_status('\n'.join(msgs))
+        self.tankworker.save_status('\n'.join(msgs))
+        self.tankworker.core._collect_artifacts()
         return False  # re-raise exception
 
 
@@ -357,7 +358,7 @@ class TankWorker(Thread):
             shutil.move(f, self.folder)
         if self.ammo_file:
             shutil.move(self.ammo_file, self.folder)
-        os.chdir(self.folder)
+        # os.chdir(self.folder)
 
     def run(self):
         with Cleanup(self) as add_cleanup:
