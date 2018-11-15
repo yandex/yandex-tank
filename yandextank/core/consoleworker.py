@@ -23,6 +23,7 @@ from ..config_converter.converter import convert_ini, convert_single_option
 DEFAULT_CONFIG = 'load.yaml'
 logger = logging.getLogger('yandextank')
 
+
 class RealConsoleMarkup(object):
     '''
     Took colors from here: https://www.siafoo.net/snippet/88
