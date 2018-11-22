@@ -584,7 +584,7 @@ class Lock(object):
                         return msg
                     else:
                         if not pid_exists(int(running_lock.pid)):
-                            logger.debug("Lock PID %s not exists, ignoring and trying to remove", running_lock.pid)
+                            logger.info("Lock PID %s not exists, ignoring and trying to remove", running_lock.pid)
                             try:
                                 os.remove(full_name)
                             except Exception as exc:
@@ -592,7 +592,7 @@ class Lock(object):
                             return False
                         else:
                             return "Another test is running with pid {}".format(running_lock.pid)
-                except Exception as exc:
+                except Exception:
                     msg = "Failed to load info from lock %s" % full_name
                     logger.warn(msg, exc_info=True)
                     return msg
