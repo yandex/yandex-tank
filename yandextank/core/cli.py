@@ -133,7 +133,10 @@ def main():
         return
     worker.start()
     try:
-        worker.join()
+        while True:
+            worker.join(timeout=2)
+            if not worker.is_alive():
+                break
     except KeyboardInterrupt:
         worker.stop()
         worker.join()
