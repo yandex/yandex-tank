@@ -439,7 +439,8 @@ class TankWorker(Thread):
     def get_lock(self):
         while not self.interrupted.is_set():
             try:
-                lock = Lock(self.test_id, self.folder).acquire(self.core.lock_dir)
+                lock = Lock(self.test_id, self.folder).acquire(self.core.lock_dir,
+                                                               self.core.config.get_option(self.SECTION, 'ignore_lock'))
                 self.set_msg('')
                 break
             except LockError as e:

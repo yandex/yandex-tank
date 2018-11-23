@@ -539,7 +539,7 @@ class Lock(object):
         }
         self.lock_file = None
 
-    def acquire(self, lock_dir, ignore=None):
+    def acquire(self, lock_dir, ignore=False):
         is_locked = self.is_locked(lock_dir)
         if not ignore and is_locked:
             raise LockError("Lock file(s) found\n{}".format(is_locked))
