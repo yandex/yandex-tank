@@ -425,11 +425,11 @@ class TankWorker(Thread):
         logger.handlers = []
         logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
-        self.file_handler = logging.FileHandler(filename)
-        self.file_handler.setLevel(logging.DEBUG)
-        self.file_handler.setFormatter(logging.Formatter(
+        file_handler = logging.FileHandler(filename)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(logging.Formatter(
             "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"))
-        logger.addHandler(self.file_handler)
+        logger.addHandler(file_handler)
         logger.info("Log file created")
 
         for handler in self.log_handlers:
