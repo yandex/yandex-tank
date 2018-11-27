@@ -136,7 +136,7 @@ class TankCore(object):
         configinfo.setdefault(self.SECTION, {})
         configinfo[self.SECTION][self.API_JOBNO] = self.test_id
         self.add_artifact_to_send(LPRequisites.CONFIGINFO, yaml.dump(configinfo))
-        logging.info('New test id %s' % self.test_id)
+        logger.info('New test id %s' % self.test_id)
 
     @property
     def cfg_snapshot(self):
@@ -336,7 +336,7 @@ class TankCore(object):
         return retcode
 
     def interrupt(self):
-        logging.warning('Interrupting')
+        logger.warning('Interrupting')
         self.interrupted = True
 
     def __setup_taskset(self, affinity, pid=None, args=None):
@@ -518,7 +518,7 @@ class TankCore(object):
 
     def plugins_cleanup(self):
         for plugin_name, plugin in self.plugins.items():
-            logging.info('Cleaning up plugin {}'.format(plugin_name))
+            logger.info('Cleaning up plugin {}'.format(plugin_name))
             plugin.cleanup()
 
 
@@ -539,7 +539,7 @@ class Lock(object):
         }
         self.lock_file = None
 
-    def acquire(self, lock_dir, ignore=None):
+    def acquire(self, lock_dir, ignore=False):
         is_locked = self.is_locked(lock_dir)
         if not ignore and is_locked:
             raise LockError("Lock file(s) found\n{}".format(is_locked))
@@ -584,7 +584,7 @@ class Lock(object):
                         return msg
                     else:
                         if not pid_exists(int(running_lock.pid)):
-                            logger.debug("Lock PID %s not exists, ignoring and trying to remove", running_lock.pid)
+                            logger.info("Lock PID %s not exists, ignoring and trying to remove", running_lock.pid)
                             try:
                                 os.remove(full_name)
                             except Exception as exc:
@@ -592,7 +592,7 @@ class Lock(object):
                             return False
                         else:
                             return "Another test is running with pid {}".format(running_lock.pid)
-                except Exception as exc:
+                except Exception:
                     msg = "Failed to load info from lock %s" % full_name
                     logger.warn(msg, exc_info=True)
                     return msg

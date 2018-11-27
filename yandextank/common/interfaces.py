@@ -17,13 +17,15 @@ class AbstractPlugin(object):
     def __init__(self, core, cfg):
         """
 
-        @type core: TankCore
+        :type core: TankCore
+        :type cfg: dict
         """
         super(AbstractPlugin, self).__init__()
         self._cleanup_actions = []
         self.log = logging.getLogger(__name__)
         self.core = core
         self.cfg = cfg
+        self.interrupted = self.core.interrupted
 
     def set_option(self, option, value):
         self.cfg[option] = value
