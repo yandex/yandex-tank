@@ -136,7 +136,7 @@ class TankCore(object):
         configinfo.setdefault(self.SECTION, {})
         configinfo[self.SECTION][self.API_JOBNO] = self.test_id
         self.add_artifact_to_send(LPRequisites.CONFIGINFO, yaml.dump(configinfo))
-        logging.info('New test id %s' % self.test_id)
+        logger.info('New test id %s' % self.test_id)
 
     @property
     def cfg_snapshot(self):
@@ -336,7 +336,7 @@ class TankCore(object):
         return retcode
 
     def interrupt(self):
-        logging.warning('Interrupting')
+        logger.warning('Interrupting')
         self.interrupted = True
 
     def __setup_taskset(self, affinity, pid=None, args=None):
@@ -518,7 +518,7 @@ class TankCore(object):
 
     def plugins_cleanup(self):
         for plugin_name, plugin in self.plugins.items():
-            logging.info('Cleaning up plugin {}'.format(plugin_name))
+            logger.info('Cleaning up plugin {}'.format(plugin_name))
             plugin.cleanup()
 
 
