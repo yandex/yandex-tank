@@ -1,4 +1,5 @@
 import pytest
+from mock import MagicMock
 
 from yandextank.plugins.Pandora import Plugin
 
@@ -21,7 +22,7 @@ from yandextank.plugins.Pandora import Plugin
     )
 ])
 def test_patch_config(cfg, expected):
-    plugin = Plugin(None, None)
+    plugin = Plugin(MagicMock(), None)
     # '/tmp/9b73d966bcbf27467d4c4190cfe58c2a.downloaded_resource'
     filename = plugin.patch_config(cfg)['pools'][0]['ammo']['file']
     assert filename.endswith('.downloaded_resource')
