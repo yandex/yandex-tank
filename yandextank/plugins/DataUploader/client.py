@@ -206,14 +206,17 @@ class APIClient(object):
                 else:
                     break
             except self.UnderMaintenance as e:
-                try:
-                    timeout = next(maintenance_timeouts)
-                    logger.warn(maintenance_msg)
-                    logger.warn("Retrying in %ss..." % timeout)
-                    time.sleep(timeout)
-                    continue
-                except StopIteration:
-                    raise e
+                if not self.core_interrupted.is_set():
+                    try:
+                        timeout = next(maintenance_timeouts)
+                        logger.warn(maintenance_msg)
+                        logger.warn("Retrying in %ss..." % timeout)
+                        time.sleep(timeout)
+                        continue
+                    except StopIteration:
+                        raise e
+                else:
+                    break
 
     def __make_writer_request(
             self,
