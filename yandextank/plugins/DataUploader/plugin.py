@@ -535,7 +535,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                       maintenance_timeout=self.get_option('maintenance_timeout'),
                       connection_timeout=self.get_option('connection_timeout'),
                       user_agent=self._get_user_agent(),
-                      api_token=self.api_token)
+                      api_token=self.api_token,
+                      core_interrupted=self.interrupted)
 
     @property
     def lp_job(self):

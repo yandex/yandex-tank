@@ -10,7 +10,7 @@ import sys
 import time
 import traceback
 from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
-from threading import Thread
+from threading import Thread, Event
 
 import yaml
 from netort.resource import manager as resource_manager
@@ -323,6 +323,7 @@ class TankWorker(Thread):
         self.files = [] if files is None else files
         self.ammo_file = ammo_file
 
+        self.interrupted = Event()
         self.config_list = self._combine_configs(configs, cli_options, cfg_patches, cli_args, no_local)
         self.core = TankCore(self.config_list)
         self.status = Status.TEST_INITIATED
@@ -383,6 +384,7 @@ class TankWorker(Thread):
             self.status = Status.TEST_FINISHED
 
     def stop(self):
+        self.interrupted.set()
         self.core.interrupt()
 
     def get_status(self):
@@ -423,11 +425,11 @@ class TankWorker(Thread):
         logger.handlers = []
         logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
-        self.file_handler = logging.FileHandler(filename)
-        self.file_handler.setLevel(logging.DEBUG)
-        self.file_handler.setFormatter(logging.Formatter(
+        file_handler = logging.FileHandler(filename)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(logging.Formatter(
             "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"))
-        logger.addHandler(self.file_handler)
+        logger.addHandler(file_handler)
         logger.info("Log file created")
 
         for handler in self.log_handlers:
@@ -435,9 +437,10 @@ class TankWorker(Thread):
             logger.info("Logging handler {} added".format(handler))
 
     def get_lock(self):
-        while True:
+        while not self.interrupted.is_set():
             try:
-                lock = Lock(self.test_id, self.folder).acquire(self.core.lock_dir)
+                lock = Lock(self.test_id, self.folder).acquire(self.core.lock_dir,
+                                                               self.core.config.get_option(self.SECTION, 'ignore_lock'))
                 self.set_msg('')
                 break
             except LockError as e:
@@ -447,6 +450,8 @@ class TankWorker(Thread):
                 logger.warning(
                     "Couldn't get lock. Will retry in 5 seconds...")
                 time.sleep(5)
+        else:
+            raise KeyboardInterrupt
         return lock
 
     def set_msg(self, msg):

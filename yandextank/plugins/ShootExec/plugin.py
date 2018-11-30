@@ -22,7 +22,7 @@ _PROCESS_KILL_TIMEOUT = 10  # Kill running process after specified number of sec
 _OUTPUT_WAIT_TIMEOUT = 10  # Output files should be found after specified number of seconds
 
 
-class Plugin(AbstractPlugin, GeneratorPlugin):
+class Plugin(GeneratorPlugin):
     """Simple executor of shooting process with phantom compatible output"""
 
     SECTION = 'shootexec'
