@@ -231,7 +231,7 @@ class RSTRenderer(object):
         """
         :type content: str
         """
-        return content.replace('-', '\-')
+        return content.replace('-', r'\-')
 
     del with_escape
 
@@ -345,9 +345,8 @@ class OptionFormatter(object):
 
     def list_formatter(self, renderer, header=True):
         schema = self.option_kwargs[SCHEMA]
-        hdr = renderer.subtitle(renderer.mono(self.option_name) +
-                                ' ' +
-                                '({} of {})'.format(self.option_kwargs.get(TYPE, LIST), schema.get(TYPE, '')))
+        hdr = renderer.subtitle(renderer.mono(self.option_name) + ' '
+                                + '({} of {})'.format(self.option_kwargs.get(TYPE, LIST), schema.get(TYPE, '')))
         dsc = self.format_dsc(renderer)
         body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DEFAULT, REQUIRED, DESCRIPTION, SCHEMA])
         if set(schema.keys()) - {TYPE}:

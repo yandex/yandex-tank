@@ -8,7 +8,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
         'description': 'path to file to store autostop report',
         'type': 'string',
         'default': 'autostop_report.txt'}
-     }, """``report_file`` (string)
+     }, r"""``report_file`` (string)
 ------------------------
 *\- path to file to store autostop report. Default:* ``autostop_report.txt``"""),
     ({'gun_type': {
@@ -19,7 +19,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
         #     'custom': 'custom gun', 'http': 'http gun', 'scenario': 'scenario gun', 'ultimate': 'ultimate gun'
         # },
         'required': 'true'}
-     }, """``gun_type`` (string)
+     }, r"""``gun_type`` (string)
 ---------------------
 *\- gun type.* **Required.**
 
@@ -32,7 +32,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
             'custom': 'custom gun', 'http': 'http gun', 'scenario': 'scenario gun', 'ultimate': 'ultimate gun'
         },
         'required': 'true'}
-     }, """``gun_type`` (string)
+     }, r"""``gun_type`` (string)
 ---------------------
 *\- gun type.* **Required.**
 
@@ -66,7 +66,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
             }
         },
         'required': True}
-     }, """``load_profile`` (dict)
+     }, r"""``load_profile`` (dict)
 -----------------------
 *\- specify parameters of your load.* **Required.**
 
@@ -99,7 +99,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
             {'type': 'string', 'allowed': ['auto']}
         ],
         'tutorial_link': 'http://yandextank.readthedocs.io'}
-     }, """``lock_targets`` (list or string)
+     }, r"""``lock_targets`` (list or string)
 ---------------------------------
 *\- targets to lock. Default:* ``auto``
 
@@ -118,7 +118,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
             'examples': {'http(4xx,50%,5)': 'stop when rate of 4xx http codes is 50% or more during 5 seconds'}
         },
         'default': []}
-     }, """``autostop`` (list of string)
+     }, r"""``autostop`` (list of string)
 -----------------------------
 *\- list of autostop constraints. Default:* ``[]``
 

@@ -342,8 +342,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
             for hostname, metrics in self.data.items():
                 tm_stamp = datetime.datetime.fromtimestamp(
                     float(self.time[hostname])).strftime('%H:%M:%S')
-                res += ("   " + screen.markup.CYAN + "%s" +
-                        screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
+                res += f"   {screen.markup.CYAN}{hostname}{screen.markup.RESET} at {tm_stamp}:\n"
                 for metric, value in sorted(metrics.items()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET

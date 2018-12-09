@@ -8,6 +8,7 @@ import socket
 import sys
 
 import pwd
+import threading
 from urllib.parse import urljoin
 
 from datetime import datetime
@@ -196,7 +197,8 @@ def post_loader():
                            TankCore.get_user_agent()))
     api_client = client(base_url=config['api_address'],
                         user_agent=user_agent,
-                        api_token=api_token
+                        api_token=api_token,
+                        core_interrupted=threading.Event()
                         # todo: add timeouts
                         )
     lp_job = LPJob(

@@ -1,6 +1,6 @@
 import logging
 import re
-from configparser import ConfigParser
+from configparser import ConfigParser, ParsingError
 from functools import reduce
 
 import pkg_resources
@@ -54,8 +54,10 @@ SECTIONS_PATTERNS = {
 
 
 class ConversionError(Exception):
-    def __init__(self, message=None):
-        self.message = message
+    MSG = 'ConversionError:\n{}\nCheck your file format'
+
+    def __init__(self, message=''):
+        self.message = self.MSG.format(message)
 
 
 class OptionsConflict(ConversionError):
@@ -161,7 +163,9 @@ class Package(object):
 
 
 class UnknownOption(ConversionError):
-    pass
+
+    def __init__(self, option):
+        self.message = 'Unknown option: {}'.format(option)
 
 
 def empty_to_none(func):
@@ -187,12 +191,12 @@ class Option(object):
             'instances_schedule': convert_instances_schedule,
             'stpd_file': convert_stpd_schedule,
             'autocases': TYPE_CASTERS['integer'],
-            'headers': lambda key, value: {key: re.compile('\[(.*?)\]').findall(value)}
+            'headers': lambda key, value: {key: re.compile(r'\[(.*?)\]').findall(value)}
         },
         'Bfg': {
             'rps_schedule': convert_rps_schedule,
             'instances_schedule': convert_instances_schedule,
-            'headers': lambda key, value: {key: re.compile('\[(.*?)\]').findall(value)}
+            'headers': lambda key, value: {key: re.compile(r'\[(.*?)\]').findall(value)}
         },
         'JMeter': {
             'exclude_markers': lambda key, value: {key: value.strip().split(' ')}
@@ -202,7 +206,7 @@ class Option(object):
             'config_content': lambda key, value: {key: yaml.load(value)}  # works for json as well
         },
         'Autostop': {
-            'autostop': lambda k, v: {k: re.findall('\w+\(.+?\)', v)}
+            'autostop': lambda k, v: {k: re.findall(r'\w+\(.+?\)', v)}
         },
         'DataUploader': {
             'lock_targets': lambda k, v: {k: v.strip().split() if v != 'auto' else v}
@@ -283,7 +287,7 @@ class Option(object):
             return self.TYPE_CASTERS['boolean']
         if self.schema.get(self.name) is None:
             logger.warning('Unknown option {}:{}'.format(self.plugin, self.name))
-            raise UnknownOption
+            raise UnknownOption('{}:{}'.format(self.plugin, self.name))
 
         _type = self.schema[self.name].get('type', None)
         if _type is None:
@@ -496,10 +500,13 @@ def core_options(cfg_ini):
 
 def convert_ini(ini_file):
     cfg_ini = ConfigParser(strict=False, interpolation=None)
-    if isinstance(ini_file, str):
-        cfg_ini.read(ini_file)
-    else:
-        cfg_ini.readfp(ini_file)
+    try:
+        if isinstance(ini_file, str):
+            cfg_ini.read(ini_file)
+        else:
+            cfg_ini.readfp(ini_file)
+    except ParsingError as e:
+        raise ConversionError(e.message) from e
 
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 

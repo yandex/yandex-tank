@@ -74,6 +74,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self.events_queue = Queue()
             self.events_reader = EventsReader(self.core.error_log)
             self.events_processing = Drain(self.events_reader, self.events_queue)
+            self.add_cleanup(self.stop_events_processing)
             self.events_processing.start()
             self.events = threading.Thread(target=self.__events_uploader)
             self.events.daemon = True
@@ -231,8 +232,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
         try:
             lp_job = self.lp_job
+            self.add_cleanup(self.unlock_targets)
             self.locked_targets = self.check_and_lock_targets(strict=self.get_option('strict_lock'),
                                                               ignore=self.get_option('ignore_target_lock'))
+            self.add_cleanup(self.close_job)
             if lp_job._number:
                 self.make_symlink(lp_job._number)
                 self.check_task_is_open()
@@ -258,7 +261,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             loop_count=loop_count,
             regression_component=self.get_option("component"),
             cmdline=cmdline,
-        )  # todo: tanktype?
+        )
 
         self.core.job.subscribe_plugin(self)
 
@@ -279,8 +282,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.__save_conf()
 
     def start_test(self):
-        self.on_air = True
-
+        self.add_cleanup(self.join_threads)
         self.status_sender.start()
         self.upload.start()
         self.monitoring.start()
@@ -305,40 +307,49 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return self.retcode
 
     def end_test(self, retcode):
-        self.on_air = False
         if retcode != 0:
             self.lp_job.interrupted.set()
         self.__save_conf()
-        self.unlock_targets(self.locked_targets)
+        self.unlock_targets()
         return retcode
 
-    def post_process(self, rc):
-        self.monitoring_queue.put(None)
-        self.data_queue.put(None)
-        try:
-            if self.core.error_log:
-                self.events_queue.put(None)
-                self.events_reader.close()
-                self.events_processing.close()
-                self.events.join()
-            logger.info("Waiting for sender threads to join.")
-            if self.monitoring.is_alive():
-                self.monitoring.join()
-            if self.upload.is_alive():
-                self.upload.join()
-        except KeyboardInterrupt:
+    def close_job(self):
+        self.lp_job.close(self.retcode)
+
+    def join_threads(self):
+        self.lp_job.interrupted.set()
+        if self.monitoring.is_alive():
+            self.monitoring.join()
+        if self.upload.is_alive():
+            self.upload.join()
+
+    def stop_events_processing(self):
+        self.events_queue.put(None)
+        self.events_reader.close()
+        self.events_processing.close()
+        if self.events_processing.is_alive():
+            self.events_processing.join()
+        if self.events.is_alive():
             self.lp_job.interrupted.set()
             self.events.join()
+
+    def post_process(self, rc):
+        self.retcode = rc
+        self.monitoring_queue.put(None)
+        self.data_queue.put(None)
+        if self.core.error_log:
+            self.events_queue.put(None)
+            self.events_reader.close()
+            self.events_processing.close()
+            self.events.join()
+        logger.info("Waiting for sender threads to join.")
+        if self.monitoring.is_alive():
             self.monitoring.join()
+        if self.upload.is_alive():
             self.upload.join()
         self.finished = True
-        try:
-            self.lp_job.close(rc)
-        except Exception:  # pylint: disable=W0703
-            logger.warning("Failed to close job", exc_info=True)
         logger.info(
             "Web link: %s", self.web_link)
-
         autostop = None
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -374,25 +385,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             if len(data_list) > 0:
                 [self.monitoring_queue.put(chunk) for chunk in chop(data_list, self.get_option("chunk_size"))]
 
-    def _core_with_tank_api(self):
-        """
-        Return True if we are running under Tank API
-        """
-        api_found = False
-        try:
-            import yandex_tank_api.worker  # pylint: disable=F0401
-        except ImportError:
-            logger.debug("Attempt to import yandex_tank_api.worker failed")
-        else:
-            api_found = isinstance(self.core, yandex_tank_api.worker.TankCore)
-        logger.debug(
-            "We are%s running under API server", '' if api_found else ' likely not')
-        return api_found
-
     def __send_status(self):
         logger.info('Status sender thread started')
         lp_job = self.lp_job
-        while not lp_job.interrupted.is_set() and self.on_air:
+        while not lp_job.interrupted.is_set():
             try:
                 self.lp_job.send_status(self.core.status)
                 time.sleep(self.get_option('send_status_period'))
@@ -402,7 +398,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 break
             except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
-                self.retcode = 8
+                self.retcode = self.RC_STOP_FROM_WEB
                 break
             if self.finished:
                 break
@@ -453,9 +449,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     # TODO: why we do it here? should be in core
     def __save_conf(self):
-        self.core.config.save(
-            os.path.join(
-                self.core.artifacts_dir, 'saved_conf.yaml'))
         for requisites, content in self.core.artifacts_to_send:
             self.lp_job.send_config(requisites, content)
 
@@ -476,9 +469,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                           if self.lp_job.lock_target(target, self.lock_duration, ignore, strict)]
         return locked_targets
 
-    def unlock_targets(self, locked_targets):
-        logger.info("Unlocking targets: %s", locked_targets)
-        for target in locked_targets:
+    def unlock_targets(self):
+        logger.info("Unlocking targets: %s", self.locked_targets)
+        for target in self.locked_targets:
             logger.info(target)
             self.lp_job.api_client.unlock_target(target)
 
@@ -542,7 +535,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                       maintenance_timeout=self.get_option('maintenance_timeout'),
                       connection_timeout=self.get_option('connection_timeout'),
                       user_agent=self._get_user_agent(),
-                      api_token=self.api_token)
+                      api_token=self.api_token,
+                      core_interrupted=self.interrupted)
 
     @property
     def lp_job(self):
@@ -554,8 +548,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._lp_job = self.__get_lp_job()
             self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
             self.core.publish(self.SECTION, 'web_link', self._lp_job.web_link)
-            self.set_option("jobno", self.lp_job.number)
-            self.core.write_cfg_to_lock()
         return self._lp_job
 
     def __get_lp_job(self):
@@ -586,7 +578,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                        log_monitoring_requests=self.get_option('log_monitoring_requests'),
                        log_status_requests=self.get_option('log_status_requests'),
                        log_other_requests=self.get_option('log_other_requests'))
-        lp_job.send_config(LPRequisites.CONFIGINITIAL, yaml.dump(self.core.config.get_configinitial()))
+        lp_job.send_config(LPRequisites.CONFIGINITIAL, yaml.dump(self.core.configinitial))
         return lp_job
 
     @property

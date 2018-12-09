@@ -377,8 +377,7 @@ class Screen(object):
             while self.left_panel.lines:
                 src_line = self.left_panel.lines.pop(0)
                 line = pre_space + self.__truncate(src_line, self.left_panel_width)
-                post_space = ' ' * (self.left_panel_width -
-                                    len(self.markup.clean_markup(line)))
+                post_space = ' ' * (self.left_panel_width - len(self.markup.clean_markup(line)))
                 line += post_space + self.markup.RESET
                 lines.append(line)
         return lines
@@ -389,8 +388,8 @@ class Screen(object):
         self.log.debug(
             "Terminal size: %sx%s", self.term_width, self.term_height)
         self.right_panel_width = int(
-            (self.term_width - len(self.RIGHT_PANEL_SEPARATOR)) *
-            (float(self.info_panel_percent) / 100)) - 1
+            (self.term_width - len(self.RIGHT_PANEL_SEPARATOR))
+            * (float(self.info_panel_percent) / 100)) - 1
         if self.right_panel_width > 0:
             self.left_panel_width = self.term_width - \
                 self.right_panel_width - len(self.RIGHT_PANEL_SEPARATOR) - 2
@@ -534,9 +533,7 @@ class HorizontalBlock(AbstractBlock):
 
         for n in range(self.height):
             self.lines.append(
-                get_line(self.left, n) +
-                (self.separator,) +
-                get_line(self.right, n)
+                get_line(self.left, n) + (self.separator,) + get_line(self.right, n)
             )
         self.lines.append((' ' * self.width,))
 
@@ -1065,8 +1062,7 @@ class CasesBlock(AbstractBlock):
                     color = ''
                 spark_len = expected_width - self.clean_len(table[0]) - 3
                 spark = self.sparkline.get_sparkline(full_name, spark_len=spark_len)
-                prepared.append((color,) + table[num + 1] + ('  ',) +
-                                tuple(spark))
+                prepared.append((color,) + table[num + 1] + ('  ',) + tuple(spark))
 
         for _ in range(3 - len(self.cumulative_cases)):
             prepared.append(('',))

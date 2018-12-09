@@ -382,7 +382,7 @@ def expand_time(str_time, default_unit='s', multiplier=1):
     """
     helper for above functions
     """
-    parser = re.compile('(\d+)([a-zA-Z]*)')
+    parser = re.compile(r'(\d+)([a-zA-Z]*)')
     parts = parser.findall(str_time)
     result = 0.0
     for value, unit in parts:
@@ -610,3 +610,21 @@ class FileScanner(object):
 
     def close(self):
         self.__closed = True
+
+
+def tail_lines(filepath, lines_num, bufsize=8192):
+    fsize = os.stat(filepath).st_size
+    iter_ = 0
+    with open(filepath) as f:
+        if bufsize > fsize:
+            bufsize = fsize - 1
+        data = []
+        try:
+            while True:
+                iter_ += 1
+                f.seek(fsize - bufsize * iter_)
+                data.extend(f.readlines())
+                if len(data) >= lines_num or f.tell() == 0:
+                    return data[-lines_num:]
+        except (IOError, OSError):
+            return data
