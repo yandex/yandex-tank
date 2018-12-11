@@ -165,22 +165,24 @@ class Stairway(Composite):
 
 
 class StepFactory(object):
-    @staticmethod
-    def line(params):
-        template = re.compile(r'([0-9.]+),\s*([0-9.]+),\s*(([0-9.]+d)?([0-9.]+h)?([0-9.]+m)?([0-9.]+s?)?)\)')
+    DURATION_RE = r'([0-9.]+d)?([0-9.]+h)?([0-9.]+m)?([0-9.]+s?)?'
+
+    @classmethod
+    def line(cls, params):
+        template = re.compile(r'([0-9.]+),\s*([0-9.]+),\s*({})\)'.format(cls.DURATION_RE))
         minrps, maxrps, duration = template.search(params).groups()[:3]
         return Line(float(minrps), float(maxrps), parse_duration(duration))
 
-    @staticmethod
-    def const(params):
-        template = re.compile(r'([0-9.]+),\s*(([0-9.]+d)?([0-9.]+h)?([0-9.]+m)?([0-9.]+s?)?)\)')
+    @classmethod
+    def const(cls, params):
+        template = re.compile(r'([0-9.]+),\s*({})\)'.format(cls.DURATION_RE))
         rps, duration = template.search(params).groups()[:2]
         return Const(float(rps), parse_duration(duration))
 
-    @staticmethod
-    def stairway(params):
+    @classmethod
+    def stairway(cls, params):
         template = re.compile(
-            r'([0-9.]+),\s*([0-9.]+),\s*([0-9.]+),\s*(([0-9.]+d)?([0-9.]+h)?([0-9.]+m)?([0-9.]+s?)?)\)')
+            r'([0-9.]+),\s*([0-9.]+),\s*([0-9.]+),\s*({})\)'.format(cls.DURATION_RE))
         minrps, maxrps, increment, duration = template.search(params).groups()[:4]
         return Stairway(
             float(minrps),
