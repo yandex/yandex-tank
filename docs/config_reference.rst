@@ -856,6 +856,10 @@ Phantom
 --------------------------
 *\- Object's type, that has a functionality to create test requests. Default:* ``method_stream``
 
+``multi`` (list of dict)
+------------------------
+*\- List of configs for multi\-test. All of the options from main config supported. All of them not required and inherited from main config if not specified. Default:* ``[]``
+
 ``name`` (string)
 -----------------
 *\- Name of a part in multi config.* **Required.**
