@@ -197,7 +197,7 @@ class RSTRenderer(object):
         def format_value(value):
             if isinstance(value, (int, bool, NoneType)):
                 return format_value(str(value))
-            if isinstance(value, str):
+            if isinstance(value, (str, unicode)):
                 return '\n '.join(value.splitlines())
             elif isinstance(value, TextBlock):
                 return '\n '.join(value.lines)
@@ -326,7 +326,7 @@ class OptionFormatter(object):
         dict_schema = self.option_kwargs[SCHEMA]
 
         schema_block = renderer.field_list({
-            '{} ({})'.format(renderer.mono(key), dict_schema[key][TYPE]): get_formatter({key: value})(renderer, header=False)
+            '{} ({})'.format(renderer.mono(key), dict_schema[key].get(TYPE, 'anyof')): get_formatter({key: value})(renderer, header=False)
             for key, value in dict_schema.items()})
         body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED, SCHEMA])
         return '\n'.join([_ for _ in [hdr, dsc, schema_block, body] if _])
