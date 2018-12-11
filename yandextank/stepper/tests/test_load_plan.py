@@ -1,5 +1,5 @@
 import pytest
-from yandextank.stepper.load_plan import create, Const, Line, Composite, Stairway
+from yandextank.stepper.load_plan import create, Const, Line, Composite, Stairway, StepFactory
 from yandextank.stepper.util import take
 
 
@@ -146,3 +146,14 @@ class TestCreate(object):
     def test_create(self, rps_schedule, check_point, expected):
         # pytest.set_trace()
         assert take(check_point, (create(rps_schedule))) == expected
+
+
+# ([0-9.]+d)?([0-9.]+h)?([0-9.]+m)?([0-9.]+s)?
+@pytest.mark.parametrize('step_config, expected_duration', [
+    ('line(1,500,1m30s)', 90),
+    ('const(50,1h30s)', 3630 * 1000),
+    ('step(10,200,10,1h20m)', 4800 * 1000)
+])
+def test_step_factory(step_config, expected_duration):
+    steps = StepFactory.produce(step_config)
+    assert steps.duration == expected_duration
