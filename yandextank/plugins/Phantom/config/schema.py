@@ -166,6 +166,12 @@ OPTIONS = {
         'type': 'string',
         'default': 'method_stream'
     },
+    'multi': {
+        'type': 'list',
+        'schema': {'type': 'dict'},
+        'default': [],
+        'description': 'List of configs for multi-test. All of the options from main config supported. All of them not required and inherited from main config if not specified'
+    },
     'name': {
         'description': 'Name of a part in multi config',
         'type': 'string',
