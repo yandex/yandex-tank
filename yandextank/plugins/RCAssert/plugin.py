@@ -5,8 +5,8 @@ from ...common.interfaces import AbstractPlugin
 class Plugin(AbstractPlugin):
     SECTION = 'rcassert'
 
-    def __init__(self, core, cfg):
-        AbstractPlugin.__init__(self, core, cfg)
+    def __init__(self, core, cfg, name):
+        AbstractPlugin.__init__(self, core, cfg, name)
         self.ok_codes = []
         self.fail_code = 10
 
