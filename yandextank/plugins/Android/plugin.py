@@ -16,10 +16,10 @@ class Plugin(AbstractPlugin):
     SECTION = "android"
     SECTION_META = "meta"
 
-    def __init__(self, core, cfg):
+    def __init__(self, core, cfg, name):
         self.stats_reader = None
         self.reader = None
-        super(Plugin, self).__init__(core, cfg)
+        super(Plugin, self).__init__(core, cfg, name)
         self.device = None
         try:
             self.cfg = cfg['volta_options']

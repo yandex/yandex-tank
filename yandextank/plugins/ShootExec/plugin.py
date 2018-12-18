@@ -27,8 +27,8 @@ class Plugin(GeneratorPlugin):
 
     SECTION = 'shootexec'
 
-    def __init__(self, core, cfg):
-        AbstractPlugin.__init__(self, core, cfg)
+    def __init__(self, core, cfg, name):
+        AbstractPlugin.__init__(self, core, cfg, name)
         self.stats_reader = None
         self.reader = None
         self.__process = None

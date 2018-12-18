@@ -1,3 +1,5 @@
+import threading
+
 from yandextank.core.tankcore import TankCore
 from yandextank.plugins.Telegraf import Plugin as TelegrafPlugin
 
@@ -13,7 +15,7 @@ class TestTelegrafPlugin(object):
                 'config': 'yandextank/plugins/Telegraf/tests/telegraf_mon.xml'
             }
         }
-        core = TankCore(cfg)
+        core = TankCore(cfg, threading.Event())
         telegraf_plugin = core.get_plugin_of_type(TelegrafPlugin)
         telegraf_plugin.configure()
         assert telegraf_plugin.detected_conf == 'telegraf'
@@ -28,7 +30,7 @@ class TestTelegrafPlugin(object):
                 'config': 'yandextank/plugins/Telegraf/tests/old_mon.xml'
             }
         }
-        core = TankCore(cfg)
+        core = TankCore(cfg, threading.Event())
         telegraf_plugin = core.get_plugin_of_type(TelegrafPlugin)
         telegraf_plugin.configure()
         assert telegraf_plugin.detected_conf == 'monitoring'
