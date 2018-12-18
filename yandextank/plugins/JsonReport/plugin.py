@@ -17,8 +17,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     # pylint:disable=R0902
     SECTION = 'json_report'
 
-    def __init__(self, core, cfg):
-        super(Plugin, self).__init__(core, cfg)
+    def __init__(self, core, cfg, name):
+        super(Plugin, self).__init__(core, cfg, name)
         self.monitoring_stream = io.open(os.path.join(self.core.artifacts_dir,
                                                       self.get_option('monitoring_log')),
                                          mode='wb')

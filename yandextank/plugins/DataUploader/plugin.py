@@ -35,7 +35,7 @@ class BackendTypes(object):
     LUNAPARK = 'LUNAPARK'
 
     @classmethod
-    def identify_backend(cls, api_address):
+    def identify_backend(cls, api_address, cfg_section_name):
         clues = [
             ('overload', cls.OVERLOAD),
             ('lunapark', cls.LUNAPARK),
@@ -44,9 +44,13 @@ class BackendTypes(object):
             if clue in api_address:
                 return backend_type
         else:
-            raise KeyError(
-                'Config section name doesn\'t match any of the patterns:\n%s' %
-                '\n'.join(['*%s*' % ptrn[0] for ptrn in clues]))
+            for clue, backend_type in clues:
+                if clue in cfg_section_name:
+                    return backend_type
+            else:
+                raise KeyError(
+                    'Can not identify backend: neither api address nor section name match any of the patterns:\n%s' %
+                    '\n'.join(['*%s*' % ptrn[0] for ptrn in clues]))
 
 
 def chop(data_list, chunk_size):
@@ -66,8 +70,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     VERSION = '3.0'
     SECTION = 'uploader'
 
-    def __init__(self, core, cfg):
-        AbstractPlugin.__init__(self, core, cfg)
+    def __init__(self, core, cfg, name):
+        AbstractPlugin.__init__(self, core, cfg, name)
         self.data_queue = Queue()
         self.monitoring_queue = Queue()
         if self.core.error_log:
@@ -96,7 +100,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.monitoring.daemon = True
 
         self._is_telegraf = None
-        self.backend_type = BackendTypes.identify_backend(self.cfg['api_address'])
+        self.backend_type = BackendTypes.identify_backend(self.cfg['api_address'], self.cfg_section_name)
         self._task = None
         self._api_token = ''
         self._lp_job = None
