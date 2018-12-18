@@ -325,7 +325,7 @@ class TankWorker(Thread):
 
         self.interrupted = Event()
         self.config_list = self._combine_configs(configs, cli_options, cfg_patches, cli_args, no_local)
-        self.core = TankCore(self.config_list)
+        self.core = TankCore(self.config_list, self.interrupted)
         self.status = Status.TEST_INITIATED
         self.test_id = self.core.test_id
         self.retcode = None

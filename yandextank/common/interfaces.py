@@ -14,9 +14,10 @@ class AbstractPlugin(object):
         raise TypeError("Abstract method needs to be overridden")
 
     # TODO: do we realy need cfg_updater here?
-    def __init__(self, core, cfg):
+    def __init__(self, core, cfg, name):
         """
 
+        :param name:
         :type core: TankCore
         :type cfg: dict
         """
@@ -25,6 +26,7 @@ class AbstractPlugin(object):
         self.log = logging.getLogger(__name__)
         self.core = core
         self.cfg = cfg
+        self.cfg_section_name = name
         self.interrupted = self.core.interrupted
 
     def set_option(self, option, value):
@@ -207,8 +209,8 @@ class GeneratorPlugin(AbstractPlugin):
         'loop_count': 0
     }
 
-    def __init__(self, core, cfg):
-        super(GeneratorPlugin, self).__init__(core, cfg)
+    def __init__(self, core, cfg, name):
+        super(GeneratorPlugin, self).__init__(core, cfg, name)
         self.stats_reader = None
         self.reader = None
         self.process = None
@@ -265,8 +267,8 @@ class StatsReader(object):
 
 class MonitoringPlugin(AbstractPlugin):
 
-    def __init__(self, core, cfg):
-        super(MonitoringPlugin, self).__init__(core, cfg)
+    def __init__(self, core, cfg, name):
+        super(MonitoringPlugin, self).__init__(core, cfg, name)
         self.listeners = []
 
     def add_listener(self, plugin):

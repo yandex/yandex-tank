@@ -1,6 +1,7 @@
 import glob
 import logging
 import os
+import threading
 
 import pytest
 import sys
@@ -110,7 +111,8 @@ def setup_module(module):
      )
 ])
 def test_core_load_plugins(config, expected):
-    core = TankCore(configs=[load_yaml(os.path.join(os.path.dirname(__file__), '../config'), '00-base.yaml'), config])
+    core = TankCore([load_yaml(os.path.join(os.path.dirname(__file__), '../config'), '00-base.yaml'), config],
+                    threading.Event())
     core.load_plugins()
     assert set(core.plugins.keys()) == expected
 
@@ -119,7 +121,7 @@ def test_core_load_plugins(config, expected):
     (CFG1, None)
 ])
 def test_core_plugins_configure(config, expected):
-    core = TankCore(configs=[config])
+    core = TankCore([config], threading.Event())
     core.plugins_configure()
 
 
@@ -129,7 +131,7 @@ def test_core_plugins_configure(config, expected):
     (CFG_MULTI, None)
 ])
 def test_plugins_prepare_test(config, expected):
-    core = TankCore(configs=[config])
+    core = TankCore([config], threading.Event())
     core.plugins_prepare_test()
 
 
