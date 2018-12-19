@@ -178,22 +178,24 @@ class JMeterReader(object):
         logger.info('reading jtl chunk')
         data = jtl.read(1024 * 1024 * 10)
         if data:
+            logger.info('data read')
             parts = data.rsplit('\n', 1)
             if len(parts) > 1:
                 ready_chunk = self.buffer + parts[0] + '\n'
                 self.buffer = parts[1]
                 df = string_to_df(ready_chunk)
+                logger.info('dataframe ready')
                 self.stat_queue.put(df)
-                logger.info('dataframe read')
+                logger.info('dataframe put in queue')
                 return df
             else:
                 self.buffer += parts[0]
                 logger.info('buffer refilled')
         else:
+            logger.info('nothing read')
             if self.jmeter_finished:
                 self.agg_finished = True
             jtl.readline()
-        logger.info('nothing read')
         return None
 
     def __iter__(self):
