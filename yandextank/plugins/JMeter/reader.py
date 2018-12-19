@@ -179,12 +179,13 @@ class JMeterReader(object):
         data = jtl.read(1024 * 1024 * 10)
         if data:
             logger.info('data read')
+            logger.info('data: {}'.format(data))
             parts = data.rsplit('\n', 1)
             if len(parts) > 1:
                 ready_chunk = self.buffer + parts[0] + '\n'
                 self.buffer = parts[1]
                 logger.info('composing dataframe')
-                logger.info('chunk:\n{}'.format(ready_chunk))
+                logger.info('chunk: {}'.format(ready_chunk))
                 df = string_to_df(ready_chunk)
                 logger.info('dataframe ready')
                 self.stat_queue.put(df)
