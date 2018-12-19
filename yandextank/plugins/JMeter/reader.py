@@ -112,8 +112,10 @@ def fix_latency(row):
 
 # timeStamp,elapsed,label,responseCode,success,bytes,grpThreads,allThreads,Latency
 def string_to_df(data):
-    chunk = pd.read_csv(
-        StringIO(data), sep='\t', names=jtl_columns, dtype=jtl_types)
+    chunk = pd.read_csv(StringIO(data),
+                        sep='\t',
+                        names=jtl_columns, dtype=jtl_types,
+                        keep_default_na=False)
     chunk["receive_ts"] = (chunk["send_ts"] + chunk['interval_real']) / 1000.0
     chunk['receive_sec'] = chunk["receive_ts"].astype(np.int64)
     chunk['interval_real'] = chunk["interval_real"] * 1000  # convert to µs
@@ -175,27 +177,18 @@ class JMeterReader(object):
                 pass
 
     def _read_jtl_chunk(self, jtl):
-        logger.info('reading jtl chunk')
         data = jtl.read(1024 * 1024 * 10)
         if data:
-            logger.info('data read')
-            logger.info('data: {}'.format(data))
             parts = data.rsplit('\n', 1)
             if len(parts) > 1:
                 ready_chunk = self.buffer + parts[0] + '\n'
                 self.buffer = parts[1]
-                logger.info('composing dataframe')
-                logger.info('chunk: {}'.format(ready_chunk))
                 df = string_to_df(ready_chunk)
-                logger.info('dataframe ready')
                 self.stat_queue.put(df)
-                logger.info('dataframe put in queue')
                 return df
             else:
                 self.buffer += parts[0]
-                logger.info('buffer refilled')
         else:
-            logger.info('nothing read')
             if self.jmeter_finished:
                 self.agg_finished = True
             jtl.readline()
@@ -205,9 +198,7 @@ class JMeterReader(object):
         with open(self.jtl_file, 'r') as jtl:
             while not self.closed:
                 yield self._read_jtl_chunk(jtl)
-            logger.info('last jtl chunk')
             yield self._read_jtl_chunk(jtl)
 
     def close(self):
         self.closed = True
-        logger.info('jmeter reader closed')
