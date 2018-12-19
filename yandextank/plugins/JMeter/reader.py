@@ -175,6 +175,7 @@ class JMeterReader(object):
                 pass
 
     def _read_jtl_chunk(self, jtl):
+        logger.info('reading jtl chunk')
         data = jtl.read(1024 * 1024 * 10)
         if data:
             parts = data.rsplit('\n', 1)
@@ -183,21 +184,25 @@ class JMeterReader(object):
                 self.buffer = parts[1]
                 df = string_to_df(ready_chunk)
                 self.stat_queue.put(df)
-
+                logger.info('dataframe read')
                 return df
             else:
                 self.buffer += parts[0]
+                logger.info('buffer refilled')
         else:
             if self.jmeter_finished:
                 self.agg_finished = True
             jtl.readline()
+        logger.info('nothing read')
         return None
 
     def __iter__(self):
         with open(self.jtl_file, 'r') as jtl:
             while not self.closed:
                 yield self._read_jtl_chunk(jtl)
+            logger.info('last jtl chunk')
             yield self._read_jtl_chunk(jtl)
 
     def close(self):
         self.closed = True
+        logger.info('jmeter reader closed')
