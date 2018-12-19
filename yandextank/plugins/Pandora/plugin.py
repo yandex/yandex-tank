@@ -23,8 +23,8 @@ class Plugin(GeneratorPlugin):
     SECTION = "pandora"
     DEFAULT_REPORT_FILE = "phout.log"
 
-    def __init__(self, core, cfg):
-        super(Plugin, self).__init__(core, cfg)
+    def __init__(self, core, cfg, name):
+        super(Plugin, self).__init__(core, cfg, name)
         self.enum_ammo = False
         self.process_start_time = None
         self.pandora_cmd = None

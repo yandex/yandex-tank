@@ -94,10 +94,11 @@ class TankCore(object):
     UUID_OPTION = 'uuid'
     API_JOBNO = 'api_jobno'
 
-    def __init__(self, configs, artifacts_base_dir=None, artifacts_dir_name=None):
+    def __init__(self, configs, interrupted_event, artifacts_base_dir=None, artifacts_dir_name=None):
         """
 
         :param configs: list of dict
+        :param interrupted_event: threading.Event
         """
         self.output = {}
         self.raw_configs = configs
@@ -114,7 +115,7 @@ class TankCore(object):
         self._job = None
         self._cfg_snapshot = None
 
-        self.interrupted = False
+        self.interrupted = interrupted_event
 
         self.error_log = None
 
@@ -197,7 +198,7 @@ class TankCore(object):
                 logger.debug('Plugin name %s path %s import error', plugin_name, plugin_path, exc_info=True)
                 raise
             try:
-                instance = getattr(plugin, 'Plugin')(self, cfg=plugin_cfg)
+                instance = getattr(plugin, 'Plugin')(self, cfg=plugin_cfg, name=plugin_name)
             except AttributeError:
                 logger.warning('Plugin %s classname should be `Plugin`', plugin_name)
                 raise
@@ -215,7 +216,7 @@ class TankCore(object):
                 gen = self.get_plugin_of_type(GeneratorPlugin)
             except KeyError:
                 logger.warning("Load generator not found")
-                gen = GeneratorPlugin(self, {})
+                gen = GeneratorPlugin(self, {}, 'generator dummy')
             # aggregator
             aggregator = TankAggregator(gen)
             self._job = Job(monitoring_plugins=monitorings,
@@ -234,7 +235,7 @@ class TankCore(object):
             self.__setup_taskset(self.taskset_affinity, pid=os.getpid())
 
         for plugin in self.plugins.values():
-            if not self.interrupted:
+            if not self.interrupted.is_set():
                 logger.debug("Configuring %s", plugin)
                 plugin.configure()
 
@@ -243,13 +244,13 @@ class TankCore(object):
         logger.info("Preparing test...")
         self.publish("core", "stage", "prepare")
         for plugin in self.plugins.values():
-            if not self.interrupted:
+            if not self.interrupted.is_set():
                 logger.debug("Preparing %s", plugin)
                 plugin.prepare_test()
 
     def plugins_start_test(self):
         """        Call start_test() on all plugins        """
-        if not self.interrupted:
+        if not self.interrupted.is_set():
             logger.info("Starting test...")
             self.publish("core", "stage", "start")
             self.job.aggregator.start_test()
@@ -264,14 +265,14 @@ class TankCore(object):
         """
         Call is_test_finished() on all plugins 'till one of them initiates exit
         """
-        if not self.interrupted:
+        if not self.interrupted.is_set():
             logger.info("Waiting for test to finish...")
             logger.info('Artifacts dir: {dir}'.format(dir=self.artifacts_dir))
             self.publish("core", "stage", "shoot")
             if not self.plugins:
                 raise RuntimeError("It's strange: we have no plugins loaded...")
 
-        while not self.interrupted:
+        while not self.interrupted.is_set():
             begin_time = time.time()
             aggr_retcode = self.job.aggregator.is_test_finished()
             if aggr_retcode >= 0:
@@ -337,7 +338,6 @@ class TankCore(object):
 
     def interrupt(self):
         logger.warning('Interrupting')
-        self.interrupted = True
 
     def __setup_taskset(self, affinity, pid=None, args=None):
         """ if pid specified: set process w/ pid `pid` CPU affinity to specified `affinity` core(s)

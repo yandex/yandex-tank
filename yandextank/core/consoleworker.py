@@ -291,7 +291,7 @@ class Finish:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.worker.status = Status.TEST_FINISHING
-        retcode = 0
+        retcode = self.worker.retcode
         if exc_type:
             logger.error('Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, exc_tb))
             retcode = 1
@@ -325,7 +325,7 @@ class TankWorker(Thread):
 
         self.interrupted = Event()
         self.config_list = self._combine_configs(configs, cli_options, cfg_patches, cli_args, no_local)
-        self.core = TankCore(self.config_list)
+        self.core = TankCore(self.config_list, self.interrupted)
         self.status = Status.TEST_INITIATED
         self.test_id = self.core.test_id
         self.retcode = None
@@ -380,7 +380,7 @@ class TankWorker(Thread):
                 self.core.plugins_start_test()
                 self.retcode = self.core.wait_for_finish()
             self.status = Status.TEST_POST_PROCESS
-            self.core.plugins_post_process(self.retcode)
+            self.retcode = self.core.plugins_post_process(self.retcode)
             self.status = Status.TEST_FINISHED
 
     def stop(self):
@@ -390,7 +390,7 @@ class TankWorker(Thread):
     def get_status(self):
         return {'status_code': self.status,
                 'left_time': None,
-                'exit_code': self.retcode,
+                'exit_code': self.retcode if self.status is Status.TEST_FINISHED else None,
                 'lunapark_id': self.get_lunapark_jobno(),
                 'tank_msg': self.msg,
                 'lunapark_url': self.get_lunapark_link()}

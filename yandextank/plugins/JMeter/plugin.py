@@ -26,8 +26,8 @@ class Plugin(GeneratorPlugin):
     STOP_TEST_NOW = 'Stop Test'
     DISCOVER_PORT_PATTERN = r'Waiting for possible .* message on port (?P<port>\d+)'
 
-    def __init__(self, core, cfg):
-        super(Plugin, self).__init__(core, cfg)
+    def __init__(self, core, cfg, name):
+        super(Plugin, self).__init__(core, cfg, name)
         self.args = None
         self.original_jmx = None
         self.jtl_file = None

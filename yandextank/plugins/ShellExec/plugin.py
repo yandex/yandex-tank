@@ -12,8 +12,8 @@ class Plugin(AbstractPlugin):
     """
     SECTION = 'shellexec'
 
-    def __init__(self, core, cfg):
-        AbstractPlugin.__init__(self, core, cfg)
+    def __init__(self, core, cfg, name):
+        AbstractPlugin.__init__(self, core, cfg, name)
         self.catch_out = False
         self.end = None
         self.poll = None
