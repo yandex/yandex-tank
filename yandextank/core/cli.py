@@ -108,7 +108,7 @@ def main():
 
     ammofile = ammofiles[0] if len(ammofiles) > 0 else None
 
-    init_logging(options.error_log, options.verbose, options.quiet)
+    handlers = init_logging(options.error_log, options.verbose, options.quiet)
 
     cli_kwargs = {'core': {'lock_dir': options.lock_dir}} if options.lock_dir else {}
     if options.ignore_lock:
@@ -127,6 +127,7 @@ def main():
                             [cli_kwargs],
                             options.no_rc,
                             ammo_file=ammofile if ammofile else None,
+                            log_handlers=handlers
                             )
     except ValidationError as e:
         logging.error('Config validation error:\n{}'.format(e.errors))
