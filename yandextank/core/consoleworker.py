@@ -21,7 +21,7 @@ from .tankcore import TankCore, LockError, Lock
 from ..config_converter.converter import convert_ini, convert_single_option
 
 DEFAULT_CONFIG = 'load.yaml'
-logger = logging.getLogger('yandextank')
+logger = logging.getLogger()
 
 
 class RealConsoleMarkup(object):
@@ -429,6 +429,7 @@ class TankWorker(Thread):
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(logging.Formatter(
             "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"))
+        file_handler.addFilter(TankapiLogFilter())
         logger.addHandler(file_handler)
         logger.info("Log file created")
 
@@ -456,6 +457,11 @@ class TankWorker(Thread):
 
     def set_msg(self, msg):
         self.msg = msg
+
+
+class TankapiLogFilter(logging.Filter):
+    def filter(self, record):
+        return record.name != 'tankapi'
 
 
 class DevNullOpts:
