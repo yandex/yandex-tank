@@ -124,15 +124,11 @@ class TankAggregator(object):
             self.stats_reader.close()
         if self.drain:
             logger.debug('Waiting for gun drain to finish')
-            self.drain.wait()
+            self.drain.join()
             logger.debug('Waiting for stats drain to finish')
-            self.stats_drain.wait()
+            self.stats_drain.join()
         logger.debug('Collecting remaining data')
         self._collect_data(end=True)
-        if self.drain:
-            self.drain.join()
-            self.stats_drain.join()
-
         return retcode
 
     def add_result_listener(self, listener):
