@@ -1,6 +1,6 @@
 import pandas as pd
 
-from yandextank.plugins.Phantom.reader import PhantomReader, PhantomStatsReader
+from yandextank.plugins.Phantom.reader import PhantomReader, PhantomStatsReader, string_to_df_microsec
 
 
 class TestPhantomReader(object):
@@ -23,6 +23,13 @@ class TestPhantomReader(object):
         result = pd.concat(frames)
         assert len(result) == 200
         assert (result['interval_real'].mean() == 11000714.0)
+
+    def test_reader_us(self):
+        with open('yandextank/plugins/Phantom/tests/phout.dat') as f:
+            chunk = f.read()
+        result = string_to_df_microsec(chunk)
+        expected = pd.read_pickle('yandextank/plugins/Phantom/tests/expected_df.dat')
+        assert result.equals(expected)
 
 
 class MockInfo(object):
