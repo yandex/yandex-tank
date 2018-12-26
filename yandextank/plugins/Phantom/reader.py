@@ -62,6 +62,7 @@ def string_to_df(data):
     logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
     return chunk
 
+
 def string_to_df_microsec(data):
     # start_time = time.time()
     try:
@@ -76,6 +77,7 @@ def string_to_df_microsec(data):
     df['tag'] = df.tag.str.rsplit('#', 1, expand=True)[0]
     # logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
     return df
+
 
 class PhantomReader(object):
     def __init__(self, filename, cache_size=1024 * 1024 * 50, ready_file=False):
