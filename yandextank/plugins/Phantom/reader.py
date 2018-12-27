@@ -63,6 +63,22 @@ def string_to_df(data):
     return chunk
 
 
+def string_to_df_microsec(data):
+    # start_time = time.time()
+    try:
+        df = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
+    except CParserError as e:
+        logger.error(e.message)
+        logger.error('Incorrect phout data: {}'.format(data))
+        return
+
+    df['ts'] = (df['send_ts'] * 1e6 + df['interval_real']).astype(int)
+    df['ts'] -= df["ts"][0]
+    df['tag'] = df.tag.str.rsplit('#', 1, expand=True)[0]
+    # logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
+    return df
+
+
 class PhantomReader(object):
     def __init__(self, filename, cache_size=1024 * 1024 * 50, ready_file=False):
         self.buffer = ""
