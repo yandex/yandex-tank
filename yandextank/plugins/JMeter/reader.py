@@ -112,8 +112,10 @@ def fix_latency(row):
 
 # timeStamp,elapsed,label,responseCode,success,bytes,grpThreads,allThreads,Latency
 def string_to_df(data):
-    chunk = pd.read_csv(
-        StringIO(data), sep='\t', names=jtl_columns, dtype=jtl_types)
+    chunk = pd.read_csv(StringIO(data),
+                        sep='\t',
+                        names=jtl_columns, dtype=jtl_types,
+                        keep_default_na=False)
     chunk["receive_ts"] = (chunk["send_ts"] + chunk['interval_real']) / 1000.0
     chunk['receive_sec'] = chunk["receive_ts"].astype(np.int64)
     chunk['interval_real'] = chunk["interval_real"] * 1000  # convert to µs
@@ -183,7 +185,6 @@ class JMeterReader(object):
                 self.buffer = parts[1]
                 df = string_to_df(ready_chunk)
                 self.stat_queue.put(df)
-
                 return df
             else:
                 self.buffer += parts[0]
