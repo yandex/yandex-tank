@@ -3,7 +3,7 @@ api_address:
   required: true
 target_host:
   type: string
-  required: true
+  default: undefined
 target_port:
   anyof:
     - type: string
@@ -11,6 +11,8 @@ target_port:
   default: 80
 operator:
   type: string
+  nullable: true
+  default: null
 task:
   type: string
 job_name:

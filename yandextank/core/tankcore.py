@@ -36,6 +36,8 @@ else:
 
 logger = logging.getLogger(__name__)
 
+CONFIGINITIAL = 'configinitial.yaml'
+VALIDATED_CONF = 'validated_conf.yaml'
 
 class Job(object):
     def __init__(
@@ -129,7 +131,7 @@ class TankCore(object):
         self.test_id = self.get_option(self.SECTION, 'artifacts_dir',
                                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f"))
         self.lock_dir = self.get_option(self.SECTION, 'lock_dir')
-        with open(os.path.join(self.artifacts_dir, 'configinitial.yaml'), 'w') as f:
+        with open(os.path.join(self.artifacts_dir, CONFIGINITIAL), 'w') as f:
             yaml.dump(self.configinitial, f)
         self.add_artifact_file(error_output)
         self.add_artifact_to_send(LPRequisites.CONFIGINITIAL, yaml.dump(self.configinitial))
@@ -137,6 +139,8 @@ class TankCore(object):
         configinfo.setdefault(self.SECTION, {})
         configinfo[self.SECTION][self.API_JOBNO] = self.test_id
         self.add_artifact_to_send(LPRequisites.CONFIGINFO, yaml.dump(configinfo))
+        with open(os.path.join(self.artifacts_dir, VALIDATED_CONF), 'w') as f:
+            yaml.dump(configinfo, f)
         logger.info('New test id %s' % self.test_id)
 
     @property
