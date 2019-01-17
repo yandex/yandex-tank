@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 CONFIGINITIAL = 'configinitial.yaml'
 VALIDATED_CONF = 'validated_conf.yaml'
 
+
 class Job(object):
     def __init__(
             self,
