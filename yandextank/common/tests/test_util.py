@@ -138,11 +138,19 @@ class TestFileMultiReader(object):
     filename = 'yandextank/common/tests/ph.out'
 
     @staticmethod
-    def mock_consumer(read, expected, step, errors):
+    def mock_consumer(f, expected, step, errors):
         for line in [expected[i: i + step] for i in range(0, len(expected), step)]:
-            res = read(step)
+            res = f.read(step)
             if line not in res:
                 errors.append("Expected: {}\nGot: {}".format(expected, res))
+
+    @staticmethod
+    def mock_complex_consumer(f, expected, n_steps, errors):
+        for n in range(n_steps):
+            f.read()
+        res = f.readline() + f.read(10)
+        if res != expected:
+            errors.append("Expected: {}\nGot: {}".format(expected, res))
 
     def phout_multi_read(self):
         with open(self.filename) as f:
@@ -150,13 +158,31 @@ class TestFileMultiReader(object):
         errors = []
         with FileMultiReader(self.filename) as get_reader:
             threads = [Thread(target=self.mock_consumer,
-                              args=(get_reader(), exp, i, errors),
+                              args=(get_reader(i), exp, i, errors),
                               name='Thread-%d' % i) for i in [1000, 4000, 8000]]
             [th.start() for th in threads]
             [th.join() for th in threads]
         return errors
 
+    def phout_multi_readline(self):
+        errors = []
+        with FileMultiReader(self.filename) as get_reader:
+            threads = [Thread(target=self.mock_complex_consumer,
+                              args=(get_reader(i), exp, 10, errors),
+                              name='Thread-%d' % i) for i, exp in
+                       [(1000, '\n1543699431'),
+                        (4000, '815\t0\t200\n1543699487'),
+                        (8000, '10968\t3633\t16\t7283\t36\t7387\t1066\t328\t0\t405\n1543699534')]]
+            [th.start() for th in threads]
+            [th.join() for th in threads]
+        return errors
+
     @pytest.mark.benchmark(min_rounds=10)
-    def test_reader_time(self, benchmark):
+    def test_read(self, benchmark):
         errors = benchmark(self.phout_multi_read)
+        assert len(errors) == 0
+
+    @pytest.mark.benchmark(min_rounds=5)
+    def test_readline(self, benchmark):
+        errors = benchmark(self.phout_multi_readline)
         assert len(errors) == 0
