@@ -651,6 +651,8 @@ class FileMultiReader(object):
         return self.get_reader
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.wait_lock()
+        self._opened_file.close()
         if exc_type:
             msg = 'Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
             logger.error(msg)
