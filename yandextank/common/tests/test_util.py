@@ -138,7 +138,7 @@ class TestFileMultiReader(object):
 
     @staticmethod
     def mock_consumer(read, expected, step, errors):
-        for line in [expected[i: i+step] for i in range(0, len(expected), step)]:
+        for line in [expected[i: i + step] for i in range(0, len(expected), step)]:
             res = read(step)
             if line not in res:
                 errors.append("Expected: {}\nGot: {}".format(expected, res))
