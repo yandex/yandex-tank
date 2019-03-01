@@ -1,6 +1,7 @@
 import collections
 import os
 import pwd
+import random
 import socket
 import traceback
 import http.client
@@ -12,6 +13,7 @@ import select
 import psutil
 import argparse
 
+import time
 from paramiko import SSHClient, AutoAddPolicy
 
 logger = logging.getLogger(__name__)
@@ -629,3 +631,55 @@ def tail_lines(filepath, lines_num, bufsize=8192):
                     return data[-lines_num:]
         except (IOError, OSError):
             return data
+
+
+class FileLockedError(RuntimeError):
+    pass
+
+
+class FileMultiReader(object):
+    def __init__(self, filename, cache_size=1024 * 1024 * 50):
+        self.buffer = ""
+        self.filename = filename
+        self.closed = False
+        self.cache_size = cache_size
+        self._cursor_map = {}
+        self._is_locked = False
+
+    def __enter__(self):
+        self._opened_file = open(self.filename)
+        return self.get_reader
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type:
+            msg = 'Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
+            logger.error(msg)
+
+    def get_reader(self, reader_id):
+        def read(_len=self.cache_size):
+            cursor = self._cursor_map.setdefault(reader_id, 0)
+            result = self.read_with_lock(cursor, _len)
+            self._cursor_map[reader_id] = self._opened_file.tell()
+            return result
+        return read
+
+    def read_with_lock(self, pos, _len):
+        self.wait_lock()
+        self._opened_file.seek(pos)
+        result = self._opened_file.read(_len)
+        self.unlock()
+        return result
+
+    def wait_lock(self, timeout=10):
+        end_time = time.time() + timeout
+        while time.time() < end_time:
+            if not self._is_locked:
+                self._is_locked = True
+                return True
+            else:
+                time.sleep(random.gauss(0.1, 0.02))
+        else:
+            raise FileLockedError('Generator output file {} is locked'.format(self.filename))
+
+    def unlock(self):
+        self._is_locked = False

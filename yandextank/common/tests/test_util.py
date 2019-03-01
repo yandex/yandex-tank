@@ -1,7 +1,8 @@
 import socket
+from threading import Thread
 
 from queue import Queue
-from yandextank.common.util import FileScanner
+from yandextank.common.util import FileScanner, FileMultiReader
 from yandextank.common.util import AddressWizard
 
 from netort.data_processing import Drain, Chopper
@@ -130,3 +131,26 @@ class TestAddressResolver(object):
 
     def test_hostname_braces_port(self):
         self.__resolve_hostname_and_test('[ya.ru]:666', 'ya.ru', '666')
+
+
+class TestFileMultiReader(object):
+    filename = 'yandextank/common/tests/ph.out'
+
+    @staticmethod
+    def mock_consumer(read, expected, step, errors):
+        for line in [expected[i: i+step] for i in range(0, len(expected), step)]:
+            res = read(step)
+            if line not in res:
+                errors.append("Expected: {}\nGot: {}".format(expected, res))
+
+    def test_read_phout_twice(self):
+        with open(self.filename) as f:
+            exp = f.read()
+        errors = []
+        with FileMultiReader(self.filename) as get_file:
+            threads = [Thread(target=self.mock_consumer,
+                              args=(get_file(i), exp, i, errors),
+                              name='Thread-%d' % i) for i in [500, 1000, 2000]]
+            [th.start() for th in threads]
+            [th.join() for th in threads]
+        assert len(errors) == 0
