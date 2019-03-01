@@ -1,7 +1,6 @@
 import collections
 import os
 import pwd
-import random
 import socket
 import traceback
 import uuid
@@ -15,7 +14,6 @@ import select
 import psutil
 import argparse
 
-import time
 from paramiko import SSHClient, AutoAddPolicy
 from retrying import retry
 
