@@ -105,9 +105,9 @@ class AmmoFileReader(Reader):
     def __iter__(self):
         def read_chunk_header(ammo_file):
             chunk_header = ''
-            while chunk_header is '':
+            while chunk_header == '':
                 line = ammo_file.readline()
-                if line is '':
+                if line == '':
                     return line
                 chunk_header = line.strip('\r\n')
             return chunk_header
@@ -118,7 +118,7 @@ class AmmoFileReader(Reader):
             # if we got StopIteration here, the file is empty
             chunk_header = read_chunk_header(ammo_file)
             while chunk_header:
-                if chunk_header is not '':
+                if chunk_header != '':
                     try:
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])
@@ -312,11 +312,11 @@ class UriPostReader(Reader):
     def __iter__(self):
         def read_chunk_header(ammo_file):
             chunk_header = ''
-            while chunk_header is '':
+            while chunk_header == '':
                 line = ammo_file.readline()
                 if line.startswith('['):
                     self.headers.update(_parse_header(line.strip('\r\n[]\t ')))
-                elif line is '':
+                elif line == '':
                     return line
                 else:
                     chunk_header = line.strip('\r\n')
@@ -328,7 +328,7 @@ class UriPostReader(Reader):
             # if we got StopIteration here, the file is empty
             chunk_header = read_chunk_header(ammo_file)
             while chunk_header:
-                if chunk_header is not '':
+                if chunk_header != '':
                     try:
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])

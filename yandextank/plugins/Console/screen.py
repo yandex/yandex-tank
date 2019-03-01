@@ -248,7 +248,7 @@ class Sparkline(object):
         self.data[ts][key] = (color, value)
 
     def get_sparkline(self, key, baseline='zero', spark_len='auto', align='right'):
-        if spark_len is 'auto':
+        if spark_len == 'auto':
             spark_len = self.window
         elif spark_len <= 0:
             return ''

@@ -232,7 +232,9 @@ class GeneratorPlugin(AbstractPlugin):
             self.loop_count = loop_count
 
     def get_info(self):
-        # type: () -> Info
+        """
+        :rtype: GeneratorPlugin.Info
+        """
         return self.Info(**self.DEFAULT_INFO)
 
     def get_reader(self):
