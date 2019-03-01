@@ -3,7 +3,6 @@ import os
 import pwd
 import socket
 import traceback
-import uuid
 
 import http.client
 import logging
@@ -662,22 +661,25 @@ class FileMultiReader(object):
             msg = 'Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
             logger.error(msg)
 
-    def get_reader(self):
-        reader_id = uuid.uuid4()
-
-        def read(_len=self.cache_size):
-            cursor = self._cursor_map.setdefault(reader_id, 0)
-            result = self.read_with_lock(cursor, _len)
-            self._cursor_map[reader_id] = self._opened_file.tell()
-            return result
-        return read
+    def get_reader(self, cache_size=None):
+        cache_size = self.cache_size if not cache_size else cache_size
+        return FileLike(self, cache_size)
 
     def read_with_lock(self, pos, _len):
         self.wait_lock()
         self._opened_file.seek(pos)
         result = self._opened_file.read(_len)
+        stop_pos = self._opened_file.tell()
         self.unlock()
-        return result
+        return result, stop_pos
+
+    def readline_with_lock(self, pos):
+        self.wait_lock
+        self._opened_file.seek(pos)
+        result = self._opened_file.readline()
+        stop_pos = self._opened_file.tell()
+        self.unlock()
+        return result, stop_pos
 
     @retry(wait_random_min=5, wait_random_max=20, stop_max_delay=10000,
            retry_on_exception=FileLockedError.retry, wrap_exception=True)
@@ -690,3 +692,22 @@ class FileMultiReader(object):
 
     def unlock(self):
         self._is_locked = False
+
+
+class FileLike(object):
+    def __init__(self, multireader, cache_size):
+        """
+        :type multireader: FileMultiReader
+        """
+        self.multireader = multireader
+        self.cache_size = cache_size
+        self._cursor = 0
+
+    def read(self, _len=None):
+        _len = self.cache_size if not _len else _len
+        result, self._cursor = self.multireader.read_with_lock(self._cursor, _len)
+        return result
+
+    def readline(self):
+        result, self._cursor = self.multireader.readline_with_lock(self._cursor)
+        return result
