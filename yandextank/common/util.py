@@ -4,6 +4,8 @@ import pwd
 import random
 import socket
 import traceback
+import uuid
+
 import http.client
 import logging
 import errno
@@ -15,6 +17,7 @@ import argparse
 
 import time
 from paramiko import SSHClient, AutoAddPolicy
+from retrying import retry
 
 logger = logging.getLogger(__name__)
 
@@ -636,6 +639,10 @@ def tail_lines(filepath, lines_num, bufsize=8192):
 class FileLockedError(RuntimeError):
     pass
 
+    @classmethod
+    def retry(cls, exception):
+        return isinstance(exception, cls)
+
 
 class FileMultiReader(object):
     def __init__(self, filename, cache_size=1024 * 1024 * 50):
@@ -657,7 +664,9 @@ class FileMultiReader(object):
             msg = 'Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
             logger.error(msg)
 
-    def get_reader(self, reader_id):
+    def get_reader(self):
+        reader_id = uuid.uuid4()
+
         def read(_len=self.cache_size):
             cursor = self._cursor_map.setdefault(reader_id, 0)
             result = self.read_with_lock(cursor, _len)
@@ -672,16 +681,14 @@ class FileMultiReader(object):
         self.unlock()
         return result
 
-    def wait_lock(self, timeout=10):
-        end_time = time.time() + timeout
-        while time.time() < end_time:
-            if not self._is_locked:
-                self._is_locked = True
-                return True
-            else:
-                time.sleep(random.gauss(0.1, 0.02))
-        else:
+    @retry(wait_random_min=5, wait_random_max=20, stop_max_delay=10000,
+           retry_on_exception=FileLockedError.retry, wrap_exception=True)
+    def wait_lock(self):
+        if self._is_locked:
             raise FileLockedError('Generator output file {} is locked'.format(self.filename))
+        else:
+            self._is_locked = True
+            return True
 
     def unlock(self):
         self._is_locked = False

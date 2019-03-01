@@ -1,6 +1,7 @@
 import socket
 from threading import Thread
 
+import pytest
 from queue import Queue
 from yandextank.common.util import FileScanner, FileMultiReader
 from yandextank.common.util import AddressWizard
@@ -143,14 +144,19 @@ class TestFileMultiReader(object):
             if line not in res:
                 errors.append("Expected: {}\nGot: {}".format(expected, res))
 
-    def test_read_phout_twice(self):
+    def phout_multi_read(self):
         with open(self.filename) as f:
             exp = f.read()
         errors = []
-        with FileMultiReader(self.filename) as get_file:
+        with FileMultiReader(self.filename) as get_reader:
             threads = [Thread(target=self.mock_consumer,
-                              args=(get_file(i), exp, i, errors),
-                              name='Thread-%d' % i) for i in [500, 1000, 2000]]
+                              args=(get_reader(), exp, i, errors),
+                              name='Thread-%d' % i) for i in [1000, 4000, 8000]]
             [th.start() for th in threads]
             [th.join() for th in threads]
+        return errors
+
+    @pytest.mark.benchmark(min_rounds=10)
+    def test_reader_time(self, benchmark):
+        errors = benchmark(self.phout_multi_read)
         assert len(errors) == 0
