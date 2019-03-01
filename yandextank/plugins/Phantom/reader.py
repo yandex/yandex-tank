@@ -80,15 +80,16 @@ def string_to_df_microsec(data):
 
 
 class PhantomReader(object):
-    def __init__(self, read, cache_size=1024 * 1024 * 50, parser=string_to_df):
+    def __init__(self, filename, cache_size=1024 * 1024 * 50, ready_file=False, parser=string_to_df):
         self.buffer = ""
-        self.read = read
+        self.phout = open(filename, 'r')
         self.closed = False
         self.cache_size = cache_size
+        self.ready_file = ready_file
         self.parser = parser
 
     def _read_phout_chunk(self):
-        data = self.read(self.cache_size)
+        data = self.phout.read(self.cache_size)
         if data:
             parts = data.rsplit('\n', 1)
             if len(parts) > 1:
