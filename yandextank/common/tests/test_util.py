@@ -158,7 +158,7 @@ class TestFileMultiReader(object):
         errors = []
         mr = FileMultiReader(self.filename)
         threads = [Thread(target=self.mock_consumer,
-                          args=(mr.get_reader(i), exp, i, errors),
+                          args=(mr.get_file(i), exp, i, errors),
                           name='Thread-%d' % i) for i in [1000, 4000, 8000]]
         [th.start() for th in threads]
         [th.join() for th in threads]
@@ -169,7 +169,7 @@ class TestFileMultiReader(object):
         errors = []
         mr = FileMultiReader(self.filename)
         threads = [Thread(target=self.mock_complex_consumer,
-                          args=(mr.get_reader(i), exp, 10, errors),
+                          args=(mr.get_file(i), exp, 10, errors),
                           name='Thread-%d' % i) for i, exp in
                    [(1000, '\n1543699431'),
                     (4000, '815\t0\t200\n1543699487'),

@@ -3,7 +3,8 @@ from threading import Event
 import pytest as pytest
 
 from yandextank.aggregator import TankAggregator
-from yandextank.plugins.Phantom import PhantomReader
+from yandextank.common.util import FileMultiReader
+from yandextank.plugins.Phantom.reader import PhantomReader
 
 
 class PhantomMock(object):
@@ -24,7 +25,8 @@ class PhantomMock(object):
             #             else:
             #                 self.finished.set()
             #                 break
-            self.reader = PhantomReader(self.phout_filename, ready_file=True)
+            self.reader = PhantomReader(FileMultiReader(self.phout_filename).get_file(),
+                                        ready_file=True)
         return self.reader
 
     def get_stats_reader(self):
