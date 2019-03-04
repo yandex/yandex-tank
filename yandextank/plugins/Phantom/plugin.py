@@ -11,7 +11,7 @@ from .widget import PhantomInfoWidget, PhantomProgressBarWidget
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
 from ...common.interfaces import AbstractCriterion, GeneratorPlugin
-from ...common.util import expand_to_seconds
+from ...common.util import expand_to_seconds, FileMultiReader
 
 from netort.process import execute
 
@@ -87,8 +87,8 @@ class Plugin(GeneratorPlugin):
 
     def get_reader(self):
         if self.reader is None:
-            self.reader = PhantomReader(self.phantom.phout_file)
-        return self.reader
+            self.reader = FileMultiReader(self.phantom.phout_file)
+        return PhantomReader(self.reader.get_file())
 
     def get_stats_reader(self):
         if self.stats_reader is None:

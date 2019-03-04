@@ -1,12 +1,19 @@
 import pandas as pd
 
+from yandextank.common.util import FileMultiReader
 from yandextank.plugins.Phantom.reader import PhantomReader, PhantomStatsReader, string_to_df_microsec
 
 
 class TestPhantomReader(object):
+    def setup_class(self):
+        self.multireader = FileMultiReader('yandextank/plugins/Phantom/tests/phout.dat')
+
+    def teardown_class(self):
+        self.multireader.close()
+
     def test_read_all(self):
         reader = PhantomReader(
-            'yandextank/plugins/Phantom/tests/phout.dat', cache_size=1024)
+            self.multireader.get_file(), cache_size=1024)
         df = pd.DataFrame()
         for chunk in reader:
             if chunk is None:
@@ -17,7 +24,7 @@ class TestPhantomReader(object):
         assert (df['interval_real'].mean() == 11000714.0)
 
     def test_reader_closed(self):
-        reader = PhantomReader('yandextank/plugins/Phantom/tests/phout.dat', cache_size=64)
+        reader = PhantomReader(self.multireader.get_file(), cache_size=64)
         reader.close()
         frames = [i for i in reader]
         result = pd.concat(frames)

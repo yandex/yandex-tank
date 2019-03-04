@@ -11,7 +11,7 @@ from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ..Phantom import PhantomReader
 from ...common.interfaces import AbstractInfoWidget, GeneratorPlugin
-from ...common.util import tail_lines
+from ...common.util import tail_lines, FileMultiReader
 
 logger = logging.getLogger(__name__)
 
@@ -153,8 +153,8 @@ class Plugin(GeneratorPlugin):
 
     def get_reader(self):
         if self.reader is None:
-            self.reader = PhantomReader(self.sample_log)
-        return self.reader
+            self.reader = FileMultiReader(self.sample_log)
+        return PhantomReader(self.reader.get_file())
 
     def get_stats_reader(self):
         if self.stats_reader is None:
