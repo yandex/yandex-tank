@@ -80,9 +80,9 @@ def string_to_df_microsec(data):
 
 
 class PhantomReader(object):
-    def __init__(self, filename, cache_size=1024 * 1024 * 50, ready_file=False, parser=string_to_df):
+    def __init__(self, fileobj, cache_size=1024 * 1024 * 50, ready_file=False, parser=string_to_df):
         self.buffer = ""
-        self.phout = open(filename, 'r')
+        self.phout = fileobj
         self.closed = False
         self.cache_size = cache_size
         self.ready_file = ready_file

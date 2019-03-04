@@ -649,29 +649,44 @@ class FileMultiReader(object):
         self._cursor_map = {}
         self._is_locked = False
         self._opened_file = open(self.filename)
+        self.can_close_map = {}
 
-    def close(self):
+    def close(self, force=False):
+        while not self.can_close() and force:
+            logger.warning('Cannot close until all children finish reading'.format(
+                [k for k, v in self.can_close_map.items() if not v]))
         self.wait_lock()
         self._opened_file.close()
+        self.unlock()
 
-    def get_reader(self, cache_size=None):
+    def get_file(self, cache_size=None):
         cache_size = self.cache_size if not cache_size else cache_size
-        return FileLike(self, cache_size)
+        fileobj = FileLike(self, cache_size)
+        self.can_close_map[id(fileobj)] = False
+        return fileobj
 
     def read_with_lock(self, pos, _len):
         self.wait_lock()
-        self._opened_file.seek(pos)
-        result = self._opened_file.read(_len)
-        stop_pos = self._opened_file.tell()
-        self.unlock()
+        try:
+            self._opened_file.seek(pos)
+            result = self._opened_file.read(_len)
+            stop_pos = self._opened_file.tell()
+        except ValueError:
+            result, stop_pos = '', pos
+        finally:
+            self.unlock()
         return result, stop_pos
 
     def readline_with_lock(self, pos):
-        self.wait_lock
-        self._opened_file.seek(pos)
-        result = self._opened_file.readline()
-        stop_pos = self._opened_file.tell()
-        self.unlock()
+        self.wait_lock()
+        try:
+            self._opened_file.seek(pos)
+            result = self._opened_file.readline()
+            stop_pos = self._opened_file.tell()
+        except ValueError:
+            result, stop_pos = '', pos
+        finally:
+            self.unlock()
         return result, stop_pos
 
     @retry(wait_random_min=5, wait_random_max=20, stop_max_delay=10000,
@@ -685,6 +700,12 @@ class FileMultiReader(object):
 
     def unlock(self):
         self._is_locked = False
+
+    def _close_child(self, _id):
+        self.can_close_map[_id] = True
+
+    def can_close(self):
+        return all(self.can_close_map.values())
 
 
 class FileLike(object):
@@ -704,3 +725,6 @@ class FileLike(object):
     def readline(self):
         result, self._cursor = self.multireader.readline_with_lock(self._cursor)
         return result
+
+    def close(self):
+        self.multireader._close_child(id(self))

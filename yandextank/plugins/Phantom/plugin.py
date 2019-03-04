@@ -5,7 +5,7 @@ import logging
 import subprocess
 import time
 
-from .reader import PhantomStatsReader
+from .reader import PhantomReader, PhantomStatsReader
 from .utils import PhantomConfig
 from .widget import PhantomInfoWidget, PhantomProgressBarWidget
 from ..Autostop import Plugin as AutostopPlugin
@@ -88,7 +88,7 @@ class Plugin(GeneratorPlugin):
     def get_reader(self):
         if self.reader is None:
             self.reader = FileMultiReader(self.phantom.phout_file)
-        return self.reader.get_reader()
+        return PhantomReader(self.reader.get_file())
 
     def get_stats_reader(self):
         if self.stats_reader is None:
