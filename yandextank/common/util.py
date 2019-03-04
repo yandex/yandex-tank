@@ -645,21 +645,14 @@ class FileMultiReader(object):
     def __init__(self, filename, cache_size=1024 * 1024 * 50):
         self.buffer = ""
         self.filename = filename
-        self.closed = False
         self.cache_size = cache_size
         self._cursor_map = {}
         self._is_locked = False
-
-    def __enter__(self):
         self._opened_file = open(self.filename)
-        return self.get_reader
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def close(self):
         self.wait_lock()
         self._opened_file.close()
-        if exc_type:
-            msg = 'Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
-            logger.error(msg)
 
     def get_reader(self, cache_size=None):
         cache_size = self.cache_size if not cache_size else cache_size
