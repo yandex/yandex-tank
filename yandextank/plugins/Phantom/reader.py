@@ -149,7 +149,7 @@ class PhantomStatsReader(StatsReader):
 
             offset = chunk_date - 1 - self.start_time
             reqps = 0
-            if offset >= 0 and offset < len(self.phantom_info.steps):
+            if 0 <= offset < len(self.phantom_info.steps):
                 reqps = self.phantom_info.steps[offset][0]
             yield self.stats_item(chunk_date - 1, instances, reqps)
 
