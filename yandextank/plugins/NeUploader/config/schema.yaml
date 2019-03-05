@@ -1,0 +1,8 @@
+api_address:
+  description: luna back url
+  type: string
+  default: https://volta-back-testing.common-int.yandex-team.ru/
+test_name:
+  description: test name
+  type: string
+  default: my test
