@@ -80,24 +80,22 @@ class HTTPCodesCriterion(AbstractCriterion):
             self.level = int(level_str)
             self.is_relative = False
         self.seconds_limit = expand_to_seconds(param_str.split(',')[2])
-        if len(param_str.split(',')) == 4:
-            self.tag = param_str.split(',')[3].strip()
-        else:
-            self.tag = None
+        self.tag = param_str.split(',')[3].strip() if len(param_str.split(',')) == 4 else None
 
     def notify(self, data, stat):
         logger.info("which tag %s", self.tag)
         logger.info("DATA %s", data)
+
+
         code_dict = data["overall"]["proto_code"]["count"]
         length = data["overall"]["interval_real"]["len"]
+
         if self.tag:
             if data["tagged"].get(self.tag):
                 code_dict = data["tagged"][self.tag]["proto_code"]["count"]
                 length = data["tagged"][self.tag]["interval_real"]["len"]
                 matched_responses = self.count_matched_codes(
                     self.codes_regex, code_dict)
-            else:
-                matched_responses = 0
         else:
             matched_responses = self.count_matched_codes(
                 self.codes_regex, code_dict)
