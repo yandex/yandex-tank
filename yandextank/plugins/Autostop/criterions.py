@@ -80,8 +80,11 @@ class HTTPCodesCriterion(AbstractCriterion):
             self.level = int(level_str)
             self.is_relative = False
         self.seconds_limit = expand_to_seconds(param_str.split(',')[2])
+        self.tag = param_str.split(',')[3].strip()
+        logger.info("which tag %s", self.tag)
 
     def notify(self, data, stat):
+        logger.info("DATA %s", data)
         matched_responses = self.count_matched_codes(
             self.codes_regex, data["overall"]["proto_code"]["count"])
         if self.is_relative:
