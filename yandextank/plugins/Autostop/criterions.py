@@ -89,6 +89,7 @@ class HTTPCodesCriterion(AbstractCriterion):
 
         code_dict = data["overall"]["proto_code"]["count"]
         length = data["overall"]["interval_real"]["len"]
+        matched_responses = 0
 
         if self.tag:
             if data["tagged"].get(self.tag):
@@ -99,6 +100,7 @@ class HTTPCodesCriterion(AbstractCriterion):
         else:
             matched_responses = self.count_matched_codes(
                 self.codes_regex, code_dict)
+
         logger.info("matched_responses %d", matched_responses)
 
 
