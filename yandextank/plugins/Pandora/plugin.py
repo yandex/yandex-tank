@@ -9,7 +9,7 @@ from netort.resource import manager as resource_manager
 from .reader import PandoraStatsReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
-from ..Phantom import PhantomReader
+from ..Phantom import PhantomReader, string_to_df
 from ...common.interfaces import AbstractInfoWidget, GeneratorPlugin
 from ...common.util import tail_lines, FileMultiReader
 
@@ -151,10 +151,10 @@ class Plugin(GeneratorPlugin):
                 return report_filename
         return self.DEFAULT_REPORT_FILE
 
-    def get_reader(self):
+    def get_reader(self, parser=string_to_df):
         if self.reader is None:
             self.reader = FileMultiReader(self.sample_log)
-        return PhantomReader(self.reader.get_file())
+        return PhantomReader(self.reader.get_file(), parser=parser)
 
     def get_stats_reader(self):
         if self.stats_reader is None:

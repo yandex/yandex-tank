@@ -105,18 +105,30 @@ class PhantomReader(object):
         return None
 
     def __iter__(self):
-        while not self.closed:
-            yield self._read_phout_chunk()
-        # read end
-        chunk = self._read_phout_chunk()
-        while chunk is not None:
-            yield chunk
-            chunk = self._read_phout_chunk()
-        # don't forget the buffer
-        if self.buffer:
-            yield string_to_df(self.buffer)
+        return self
+        # while not self.closed:
+        #     yield self._read_phout_chunk()
+        # # read end
+        # chunk = self._read_phout_chunk()
+        # while chunk is not None:
+        #     yield chunk
+        #     chunk = self._read_phout_chunk()
+        # # don't forget the buffer
+        # if self.buffer:
+        #     yield self.parser(self.buffer)
+        # self.phout.close()
 
-        self.phout.close()
+    def next(self):
+        chunk = self._read_phout_chunk()
+        if self.closed and chunk is None:
+            if self.buffer:
+                buff, self.buffer = self.buffer, ''
+                return self.parser(buff)
+            else:
+                self.phout.close()
+                raise StopIteration
+        else:
+            return chunk
 
     def close(self):
         self.closed = True

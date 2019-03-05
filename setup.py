@@ -69,6 +69,7 @@ analytic tools for the results they produce.
         'yandextank.plugins.ResourceCheck': ['config/*'],
         'yandextank.plugins.ShellExec': ['config/*'],
         'yandextank.plugins.ShootExec': ['config/*'],
-        'yandextank.plugins.Telegraf': ['config/*']
+        'yandextank.plugins.Telegraf': ['config/*'],
+        'yandextank.plugins.NeUploader': ['config/*']
     },
     use_2to3=False, )
