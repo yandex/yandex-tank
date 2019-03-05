@@ -82,24 +82,25 @@ class HTTPCodesCriterion(AbstractCriterion):
         self.seconds_limit = expand_to_seconds(param_str.split(',')[2])
         if len(param_str.split(',')) == 4:
             self.tag = param_str.split(',')[3].strip()
+        else:
+            self.tag = None
 
     def notify(self, data, stat):
         logger.info("which tag %s", self.tag)
         logger.info("DATA %s", data)
-        if self.tag:
-            if data["tagged"].get(self.tag):
-                matched_responses = self.count_matched_codes(
-                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"])
-        else:
-            matched_responses = self.count_matched_codes(
-                self.codes_regex, data["overall"]["proto_code"]["count"])
+        aggregate_keys = data["overall"]["proto_code"]["count"]
+        relative_keys = data["overall"]["interval_real"]["len"]
+        if self.tag and data["tagged"].get(self.tag):
+            aggregate_keys = data["tagged"][self.tag]["proto_code"]["count"]
+            relative_keys = data["tagged"][self.tag]["interval_real"]["len"]
+        matched_responses = self.count_matched_codes(
+            self.codes_regex, aggregate_keys)
         logger.info("matched_responses %d", matched_responses)
-        # if self.is_relative:
-        #     if data["overall"]["interval_real"]["len"]:
-        #         matched_responses = float(matched_responses) / data["overall"][
-        #             "interval_real"]["len"]
-        #     else:
-        #         matched_responses = 0
+        if self.is_relative:
+            if relative_keys:
+                matched_responses = float(matched_responses) / relative_keys
+            else:
+                matched_responses = 0
         logger.debug(
             "HTTP codes matching mask %s: %s/%s", self.codes_mask,
             matched_responses, self.level)
