@@ -146,6 +146,9 @@ class HTTPCodesCriterion(AbstractCriterion):
             datetime.fromtimestamp(self.cause_second[0].get('ts')).strftime('%Y-%m-%d %H:%M:%S'))
         return "%s codes count for %s higher than %s for %ss, since %s" % items
 
+    def get_autostop_time(self):
+        return self.cause_second[0].get('ts')
+
     def widget_explain(self):
         items = (
             self.codes_mask, self.get_level_str(), self.seconds_count,
