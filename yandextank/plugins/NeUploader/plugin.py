@@ -21,6 +21,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     def start_test(self):
         self.data_session = DataSession({'clients': self.clients_cfg})
+        self.add_cleanup(self.data_session.close)
         self.data_session.update_job({'name': self.cfg.get('test_name')})
         col_map_aggr = {name: 'metric %s' % name for name in
                         ['interval_real', 'connect_time', 'send_time', 'latency',
@@ -29,7 +30,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         self.reader = self.core.job.generator_plugin.get_reader(parser=string_to_df_microsec)
 
     def is_test_finished(self):
-        self.uploader(next(self.reader))
+        df = next(self.reader)
+        if df is not None:
+            self.uploader(df)
         return -1
 
     def monitoring_data(self, data_list):
@@ -38,7 +41,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     def post_process(self, retcode):
         for chunk in self.reader:
             self.uploader(chunk)
-        self.data_session.close()
         return retcode
 
     @property
