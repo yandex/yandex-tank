@@ -81,18 +81,23 @@ class HTTPCodesCriterion(AbstractCriterion):
             self.is_relative = False
         self.seconds_limit = expand_to_seconds(param_str.split(',')[2])
         self.tag = param_str.split(',')[3].strip()
-        logger.info("which tag %s", self.tag)
 
     def notify(self, data, stat):
+        logger.info("which tag %s", self.tag)
         logger.info("DATA %s", data)
-        matched_responses = self.count_matched_codes(
-            self.codes_regex, data["overall"]["proto_code"]["count"])
-        if self.is_relative:
-            if data["overall"]["interval_real"]["len"]:
-                matched_responses = float(matched_responses) / data["overall"][
-                    "interval_real"]["len"]
-            else:
-                matched_responses = 0
+        if self.tag:
+            matched_responses = self.count_matched_codes(
+                self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"])
+        else:
+            matched_responses = self.count_matched_codes(
+                self.codes_regex, data["overall"]["proto_code"]["count"])
+        logger.info("matched_responses %d", matched_responses)
+        # if self.is_relative:
+        #     if data["overall"]["interval_real"]["len"]:
+        #         matched_responses = float(matched_responses) / data["overall"][
+        #             "interval_real"]["len"]
+        #     else:
+        #         matched_responses = 0
         logger.debug(
             "HTTP codes matching mask %s: %s/%s", self.codes_mask,
             matched_responses, self.level)
