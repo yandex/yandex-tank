@@ -141,9 +141,9 @@ class HTTPCodesCriterion(AbstractCriterion):
 
     def explain(self):
         items = (
-            self.codes_mask, self.get_level_str(), self.seconds_count,
+            self.codes_mask, self.tag, self.get_level_str(), self.seconds_count,
             self.cause_second[0].get('ts'))
-        return "%s codes count higher than %s for %ss, since %s" % items
+        return "%s codes count for %s higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
         items = (
