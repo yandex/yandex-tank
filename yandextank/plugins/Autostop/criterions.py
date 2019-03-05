@@ -3,6 +3,7 @@ import json
 import logging
 import re
 import time
+from datetime import datetime
 
 from yandextank.common.util import expand_to_seconds, expand_to_milliseconds
 from ...common.interfaces import AbstractCriterion
@@ -49,7 +50,7 @@ class AvgTimeCriterion(AbstractCriterion):
         explanation = (
             "Average response time higher"
             " than %sms for %ss, since %s" %
-            (self.rt_limit, self.seconds_count, self.cause_second[0]["ts"]))
+            (self.rt_limit, self.seconds_count, datetime.fromtimestamp(self.cause_second[0]["ts"]).strftime('%Y-%m-%d %H:%M:%S')))
         return explanation
 
     def widget_explain(self):
@@ -142,7 +143,7 @@ class HTTPCodesCriterion(AbstractCriterion):
     def explain(self):
         items = (
             self.codes_mask, self.tag, self.get_level_str(), self.seconds_count,
-            self.cause_second[0].get('ts'))
+            datetime.fromtimestamp(self.cause_second[0].get('ts')).strftime('%Y-%m-%d %H:%M:%S'))
         return "%s codes count for %s higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -220,7 +221,7 @@ class NetCodesCriterion(AbstractCriterion):
     def explain(self):
         items = (
             self.codes_mask, self.get_level_str(), self.seconds_count,
-            self.cause_second[0].get("ts"))
+            datetime.fromtimestamp(self.cause_second[0].get("ts")).strftime('%Y-%m-%d %H:%M:%S'))
         return "%s net codes count higher than %s for %ss, since %s" % items
 
     def widget_explain(self):
@@ -275,7 +276,7 @@ class QuantileCriterion(AbstractCriterion):
     def explain(self):
         items = (
             self.quantile, self.rt_limit, self.seconds_count,
-            self.cause_second[0].get("ts"))
+            datetime.fromtimestamp(self.cause_second[0].get("ts")).strftime('%Y-%m-%d %H:%M:%S'))
         return "Percentile %s higher than %sms for %ss, since %s" % items
 
     def widget_explain(self):
@@ -326,7 +327,7 @@ class SteadyCumulativeQuantilesCriterion(AbstractCriterion):
         return self.RC_STEADY
 
     def explain(self):
-        items = (self.seconds_count, self.cause_second[0]["ts"])
+        items = (self.seconds_count, datetime.fromtimestamp(self.cause_second[0]["ts"]).strftime('%Y-%m-%d %H:%M:%S'))
         return "Cumulative percentiles are steady for %ss, since %s" % items
 
     def widget_explain(self):
