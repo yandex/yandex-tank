@@ -88,17 +88,25 @@ class HTTPCodesCriterion(AbstractCriterion):
     def notify(self, data, stat):
         logger.info("which tag %s", self.tag)
         logger.info("DATA %s", data)
-        aggregate_keys = data["overall"]["proto_code"]["count"]
-        relative_keys = data["overall"]["interval_real"]["len"]
-        if self.tag and data["tagged"].get(self.tag):
-            aggregate_keys = data["tagged"][self.tag]["proto_code"]["count"]
-            relative_keys = data["tagged"][self.tag]["interval_real"]["len"]
-        matched_responses = self.count_matched_codes(
-            self.codes_regex, aggregate_keys)
+        code_dict = data["overall"]["proto_code"]["count"]
+        length = data["overall"]["interval_real"]["len"]
+        if self.tag:
+            if data["tagged"].get(self.tag):
+                code_dict = data["tagged"][self.tag]["proto_code"]["count"]
+                length = data["tagged"][self.tag]["interval_real"]["len"]
+                matched_responses = self.count_matched_codes(
+                    self.codes_regex, code_dict)
+            else:
+                matched_responses = 0
+        else:
+            matched_responses = self.count_matched_codes(
+                self.codes_regex, code_dict)
         logger.info("matched_responses %d", matched_responses)
+
+
         if self.is_relative:
-            if relative_keys:
-                matched_responses = float(matched_responses) / relative_keys
+            if length:
+                matched_responses = float(matched_responses) / length
             else:
                 matched_responses = 0
         logger.debug(
