@@ -1,0 +1,4 @@
+neuploader:
+  enabled: true
+  package: yandextank.plugins.NeUploader
+  test_name: my_test

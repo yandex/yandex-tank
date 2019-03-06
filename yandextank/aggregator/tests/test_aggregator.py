@@ -15,18 +15,7 @@ class PhantomMock(object):
 
     def get_reader(self):
         if self.reader is None:
-            # def reader(phout):
-            #     with open(phout) as f:
-            #         while True:
-            #             line = f.readline()
-            #             if line:
-            #                 print '.'
-            #                 yield string_to_df(line)
-            #             else:
-            #                 self.finished.set()
-            #                 break
-            self.reader = PhantomReader(FileMultiReader(self.phout_filename).get_file(),
-                                        ready_file=True)
+            self.reader = PhantomReader(FileMultiReader(self.phout_filename, self.finished).get_file())
         return self.reader
 
     def get_stats_reader(self):
@@ -57,7 +46,8 @@ def test_agregator(phout, expected_rps):
     listener = ListenerMock(expected_rps)
     aggregator.add_result_listener(listener)
     aggregator.start_test(poll_period=0)
-    while not generator.reader.closed:
+    generator.finished.set()
+    while not aggregator.is_aggr_finished():
         aggregator.is_test_finished()
     aggregator.end_test(1)
     assert abs(listener.avg - expected_rps) < 0.1 * expected_rps

@@ -40,7 +40,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     def post_process(self, retcode):
         for chunk in self.reader:
-            self.uploader(chunk)
+            if chunk is not None:
+                self.uploader(chunk)
         return retcode
 
     @property

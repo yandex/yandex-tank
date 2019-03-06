@@ -110,15 +110,18 @@ class TankAggregator(object):
                 logger.info(ts)
                 self.__notify_listeners(data_item, StatsReader.stats_item(ts, 0, 0))
 
+    def is_aggr_finished(self):
+        return self.drain._finished.is_set() and self.stats_drain._finished.is_set()
+
     def is_test_finished(self):
         self._collect_data()
         return -1
 
     def end_test(self, retcode):
         retcode = self.generator.end_test(retcode)
-        if self.reader:
-            logger.debug('Closing gun reader')
-            self.reader.close()
+        # if self.reader:
+        #     logger.debug('Closing gun reader')
+        #     self.reader.close()
         if self.stats_reader:
             logger.debug('Closing stats reader')
             self.stats_reader.close()
