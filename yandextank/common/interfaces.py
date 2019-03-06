@@ -189,7 +189,7 @@ class AbstractCriterion(object):
         raise NotImplementedError("Abstract methods requires overriding")
 
     def get_criterion_parameters(self):
-        """ returns tuple with all criterion parameters """
+        """ returns dict with all criterion parameters """
         raise NotImplementedError("Abstract methods requires overriding")
 
     def widget_explain(self):
