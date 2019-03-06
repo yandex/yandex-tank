@@ -103,7 +103,7 @@ class HTTPCodesCriterion(AbstractCriterion):
             self.level = int(level_str)
             self.is_relative = False
         self.seconds_limit = expand_to_seconds(params[2])
-        self.tag = params[3].strip() if len(params == 4) else None
+        self.tag = params[3].strip() if len(params) == 4 else None
 
     def notify(self, data, stat):
         logger.info("which tag %s", self.tag)
