@@ -56,6 +56,7 @@ class TotalFracTimeCriterion(AbstractCriterion):
         self.total_counter = WindowCounter(self.window_size)
         self.total_fail_ratio = 0.0
         self.seconds = deque()
+        self.tag = param[3].strip() if len(param) == 4 else None
 
     def __fail_count(self, data):
         ecdf = np.cumsum(data["overall"]["interval_real"]["hist"]["data"])
@@ -88,10 +89,18 @@ class TotalFracTimeCriterion(AbstractCriterion):
 
     def explain(self):
         return (
-            "%.2f%% responses times higher "
-            "than %sms for %ss since: %s" % (
-                self.total_fail_ratio * 100, self.rt_limit / 1000,
-                self.window_size, self.cause_second[0]["ts"]))
+            "%(ratio).2f%% responses times higher "
+            "than %(limit)sms for %(seconds_count)ss since: %(since_time)s" % self.get_criterion_parameters())
+
+    def get_criterion_parameters(self):
+        parameters = {
+            'ratio': self.total_fail_ratio * 100,
+            'limit': self.rt_limit / 1000,
+            'seconds_count': self.window_size,
+            'since_time': self.cause_second[0]["ts"],
+            'tag': self.tag
+        }
+        return parameters
 
     def widget_explain(self):
         return (
@@ -110,28 +119,41 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        self.codes_mask = param_str.split(',')[0].lower()
+        params = param_str.split(',')
+        self.codes_mask = params[0].lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
         self.autostop = autostop
         self.data = deque()
         self.second_window = deque()
 
-        level_str = param_str.split(',')[1].strip()
+        level_str = params[1].strip()
         if level_str[-1:] == '%':
             self.level = float(level_str[:-1])
             self.is_relative = True
         else:
             self.level = int(level_str)
             self.is_relative = False
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[2])
+        self.seconds_limit = expand_to_seconds(params[2])
+        self.tag = params[3].strip() if len(params) == 4 else None
 
     def notify(self, data, stat):
-        matched_responses = self.count_matched_codes(
-            self.codes_regex, data["overall"]["proto_code"]["count"])
+        logger.info("which tag %s", self.tag)
+        logger.info("DATA %s", data)
+
+        matched_responses = 0
+        total_responses = data["overall"]["interval_real"]["len"]
+        if self.tag:
+            if data["tagged"].get(self.tag):
+                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
+                matched_responses = self.count_matched_codes(
+                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"])
+        else:
+            matched_responses = self.count_matched_codes(
+                self.codes_regex, data["overall"]["proto_code"]["count"])
+
         if self.is_relative:
-            if data["overall"]["interval_real"]["len"] > 0:
-                matched_responses = float(matched_responses) / data["overall"][
-                    "interval_real"]["len"] * 100
+            if total_responses > 0:
+                matched_responses = float(matched_responses) / total_responses * 100
             else:
                 matched_responses = 1
         logger.debug(

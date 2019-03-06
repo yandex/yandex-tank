@@ -27,9 +27,6 @@ class AvgTimeCriterion(AbstractCriterion):
         self.tag = params[2].strip() if len(params) == 3 else None
 
     def notify(self, data, stat):
-        logger.info("which tag %s", self.tag)
-        logger.info("DATA %s", data)
-
         rt_actual = (data["overall"]["interval_real"]["total"] / 1000.0
                     / data["overall"]["interval_real"]["len"])
 
@@ -39,7 +36,7 @@ class AvgTimeCriterion(AbstractCriterion):
                             /data["tagged"][self.tag]["interval_real"]["len"])
             else:
                 rt_actual = 0
-        logger.info("resptime %s", rt_actual)
+
         if rt_actual > self.rt_limit:
             if not self.seconds_count:
                 self.cause_second = (data, stat)
@@ -106,9 +103,6 @@ class HTTPCodesCriterion(AbstractCriterion):
         self.tag = params[3].strip() if len(params) == 4 else None
 
     def notify(self, data, stat):
-        logger.info("which tag %s", self.tag)
-        logger.info("DATA %s", data)
-
         matched_responses = 0
         total_responses = data["overall"]["interval_real"]["len"]
         if self.tag:
@@ -119,8 +113,6 @@ class HTTPCodesCriterion(AbstractCriterion):
         else:
             matched_responses = self.count_matched_codes(
                 self.codes_regex, data["overall"]["proto_code"]["count"])
-
-        logger.info("matched_responses %d", matched_responses)
 
         if self.is_relative:
             if total_responses:
@@ -310,7 +302,7 @@ class QuantileCriterion(AbstractCriterion):
                 quantile_values = []
 
         quantiles = dict(
-            zip(data["overall"]["interval_real"]["q"]["q"], quantile_values, fillvalue=0))
+            zip(data["overall"]["interval_real"]["q"]["q"], quantile_values))
 
         if self.quantile not in quantiles.keys():
             logger.warning("No quantile %s in %s", self.quantile, quantiles)
