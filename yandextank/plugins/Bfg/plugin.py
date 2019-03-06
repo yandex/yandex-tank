@@ -110,10 +110,14 @@ class Plugin(GeneratorPlugin):
             return -1
         else:
             self.log.info("BFG finished")
+            self.reader.close()
+            self.stats_reader.close()
             return 0
 
     def end_test(self, retcode):
         if self.bfg.running():
             self.log.info("Terminating BFG")
             self.bfg.stop()
+            self.reader.close()
+            self.stats_reader.close()
         return retcode
