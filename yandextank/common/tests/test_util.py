@@ -1,5 +1,5 @@
 import socket
-from threading import Thread
+from threading import Thread, Event
 
 import pytest
 from queue import Queue
@@ -156,18 +156,21 @@ class TestFileMultiReader(object):
         with open(self.filename) as f:
             exp = f.read()
         errors = []
-        mr = FileMultiReader(self.filename)
+        stop = Event()
+        mr = FileMultiReader(self.filename, stop)
         threads = [Thread(target=self.mock_consumer,
                           args=(mr.get_file(i), exp, i, errors),
                           name='Thread-%d' % i) for i in [1000, 4000, 8000]]
         [th.start() for th in threads]
+        stop.set()
         [th.join() for th in threads]
         mr.close()
         return errors
 
     def phout_multi_readline(self):
         errors = []
-        mr = FileMultiReader(self.filename)
+        stop = Event()
+        mr = FileMultiReader(self.filename, stop)
         threads = [Thread(target=self.mock_complex_consumer,
                           args=(mr.get_file(i), exp, 10, errors),
                           name='Thread-%d' % i) for i, exp in
@@ -175,6 +178,7 @@ class TestFileMultiReader(object):
                     (4000, '815\t0\t200\n1543699487'),
                     (8000, '10968\t3633\t16\t7283\t36\t7387\t1066\t328\t0\t405\n1543699534')]]
         [th.start() for th in threads]
+        stop.set()
         [th.join() for th in threads]
         mr.close()
         return errors

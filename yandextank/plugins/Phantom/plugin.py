@@ -4,6 +4,7 @@
 import logging
 import subprocess
 import time
+from threading import Event
 
 from .reader import PhantomReader, PhantomStatsReader, string_to_df
 from .utils import PhantomConfig
@@ -25,6 +26,7 @@ class Plugin(GeneratorPlugin):
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
+        self.phout_finished = Event()
         self.predefined_phout = None
         self.did_phout_import_try = False
         self.eta_file = None
@@ -87,7 +89,7 @@ class Plugin(GeneratorPlugin):
 
     def get_reader(self, parser=string_to_df):
         if self.reader is None:
-            self.reader = FileMultiReader(self.phantom.phout_file)
+            self.reader = FileMultiReader(self.phantom.phout_file, self.phout_finished)
         return PhantomReader(self.reader.get_file(), parser=parser)
 
     def get_stats_reader(self):
@@ -155,6 +157,7 @@ class Plugin(GeneratorPlugin):
         retcode = self.process.poll()
         if retcode is not None:
             logger.info("Phantom done its work with exit code: %s", retcode)
+            self.phout_finished.set()
             return abs(retcode)
         else:
             info = self.get_info()
@@ -167,6 +170,7 @@ class Plugin(GeneratorPlugin):
         if self.process and self.process.poll() is None:
             logger.info("Terminating phantom process with PID %s", self.process.pid)
             self.process.terminate()
+            self.phout_finished.set()
             if self.process:
                 self.process.communicate()
         else:
