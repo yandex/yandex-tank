@@ -2,6 +2,8 @@ import datetime
 import logging
 import subprocess
 import time
+from threading import Event
+
 import yaml
 
 from netort.resource import manager as resource_manager
@@ -25,6 +27,7 @@ class Plugin(GeneratorPlugin):
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
+        self.output_finished = Event()
         self.enum_ammo = False
         self.process_start_time = None
         self.pandora_cmd = None
@@ -153,7 +156,7 @@ class Plugin(GeneratorPlugin):
 
     def get_reader(self, parser=string_to_df):
         if self.reader is None:
-            self.reader = FileMultiReader(self.sample_log)
+            self.reader = FileMultiReader(self.sample_log, self.output_finished)
         return PhantomReader(self.reader.get_file(), parser=parser)
 
     def get_stats_reader(self):
@@ -198,10 +201,12 @@ class Plugin(GeneratorPlugin):
         retcode = self.process.poll()
         if retcode is not None and retcode == 0:
             logger.info("Pandora subprocess done its work successfully and finished w/ retcode 0")
+            self.output_finished.set()
             return retcode
         elif retcode is not None and retcode != 0:
             lines_amount = 20
             logger.info("Pandora finished with non-zero retcode. Last %s logs of Pandora log:", lines_amount)
+            self.output_finished.set()
             last_log_contents = tail_lines(self.process_stderr_file, lines_amount)
             for logline in last_log_contents:
                 logger.info(logline.strip('\n'))
@@ -214,6 +219,7 @@ class Plugin(GeneratorPlugin):
             logger.warning(
                 "Terminating worker process with PID %s", self.process.pid)
             self.process.terminate()
+            self.output_finished.set()
             if self.process_stderr:
                 self.process_stderr.close()
         else:

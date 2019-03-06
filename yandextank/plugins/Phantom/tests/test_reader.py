@@ -1,3 +1,5 @@
+from threading import Event
+
 import pandas as pd
 
 from yandextank.common.util import FileMultiReader
@@ -6,7 +8,9 @@ from yandextank.plugins.Phantom.reader import PhantomReader, PhantomStatsReader,
 
 class TestPhantomReader(object):
     def setup_class(self):
-        self.multireader = FileMultiReader('yandextank/plugins/Phantom/tests/phout.dat')
+        stop = Event()
+        self.multireader = FileMultiReader('yandextank/plugins/Phantom/tests/phout.dat', stop)
+        stop.set()
 
     def teardown_class(self):
         self.multireader.close()
@@ -16,16 +20,12 @@ class TestPhantomReader(object):
             self.multireader.get_file(), cache_size=1024)
         df = pd.DataFrame()
         for chunk in reader:
-            if chunk is None:
-                reader.close()
-            else:
-                df = df.append(chunk)
+            df = df.append(chunk)
         assert (len(df) == 200)
         assert (df['interval_real'].mean() == 11000714.0)
 
     def test_reader_closed(self):
         reader = PhantomReader(self.multireader.get_file(), cache_size=64)
-        reader.close()
         frames = [i for i in reader]
         result = pd.concat(frames)
         assert len(result) == 200

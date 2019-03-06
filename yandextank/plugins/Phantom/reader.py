@@ -80,58 +80,28 @@ def string_to_df_microsec(data):
 
 
 class PhantomReader(object):
-    def __init__(self, fileobj, cache_size=1024 * 1024 * 50, ready_file=False, parser=string_to_df):
+    def __init__(self, fileobj, cache_size=1024 * 1024 * 50, parser=string_to_df):
         self.buffer = ""
         self.phout = fileobj
-        self.closed = False
         self.cache_size = cache_size
-        self.ready_file = ready_file
         self.parser = parser
-
-    def _read_phout_chunk(self):
-        data = self.phout.read(self.cache_size)
-        if data:
-            parts = data.rsplit('\n', 1)
-            if len(parts) > 1:
-                ready_chunk = self.buffer + parts[0] + '\n'
-                self.buffer = parts[1]
-                return self.parser(ready_chunk)
-            else:
-                self.buffer += parts[0]
-        else:
-            self.buffer += self.phout.readline()
-            if self.ready_file:
-                self.close()
-        return None
 
     def __iter__(self):
         return self
-        # while not self.closed:
-        #     yield self._read_phout_chunk()
-        # # read end
-        # chunk = self._read_phout_chunk()
-        # while chunk is not None:
-        #     yield chunk
-        #     chunk = self._read_phout_chunk()
-        # # don't forget the buffer
-        # if self.buffer:
-        #     yield self.parser(self.buffer)
-        # self.phout.close()
 
     def next(self):
-        chunk = self._read_phout_chunk()
-        if self.closed and chunk is None:
-            if self.buffer:
-                buff, self.buffer = self.buffer, ''
-                return self.parser(buff)
-            else:
-                self.phout.close()
-                raise StopIteration
+        data = self.phout.read(self.cache_size)
+        if data is None:
+            raise StopIteration
         else:
-            return chunk
-
-    def close(self):
-        self.closed = True
+            parts = data.rsplit('\n', 1)
+            if len(parts) > 1:
+                chunk = self.buffer + parts[0] + '\n'
+                self.buffer = parts[1]
+                return self.parser(chunk)
+            else:
+                self.buffer += parts[0]
+                return None
 
 
 class PhantomStatsReader(StatsReader):
