@@ -67,6 +67,8 @@ class TotalFracTimeCriterion(AbstractCriterion):
                 idx = np.searchsorted(data["tagged"][self.tag]["interval_real"]["hist"]["bins"], self.rt_limit)
             else:
                 idx = 0
+
+        logger.info("idx %d, ecdf %d", idx, ecdf)
         if idx == 0:
             return ecdf[-1]
         elif idx == len(ecdf):
@@ -75,6 +77,10 @@ class TotalFracTimeCriterion(AbstractCriterion):
             return ecdf[-1] - ecdf[idx]
 
     def notify(self, data, stat):
+        logger.info("TAG %s", self.tag)
+        logger.info("DATA %s", data)
+        logger.info("stat %s", stat)
+
         total_responses = data["overall"]["interval_real"]["len"]
         if self.tag:
             if data["tagged"].get(self.tag):
