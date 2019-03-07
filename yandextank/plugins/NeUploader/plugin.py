@@ -53,27 +53,9 @@ def get_uploader(data_session, column_mapping, overall_only=False):
     """
     :type data_session: DataSession
     """
-
-    def get_router(tags):
-        """
-
-        :param tags:
-        :return: {'%tag': {'%column_name': metric_object(name, group)}}
-        """
-        router = {tag: {col_name: data_session.new_aggregated_metric(name + '-' + tag)
-                        for col_name, name in column_mapping.items()} if not overall_only else {}
-                  for tag in tags}
-        overall = {col_name: data_session.new_aggregated_metric(name + ' overall')
-                   for col_name, name in column_mapping.items()}
-        return router, overall
-
+    overall = {col_name: data_session.new_aggregated_metric(name + ' overall')
+               for col_name, name in column_mapping.items()}
     def upload_df(df):
-        router, overall = get_router(df.tag.unique().tolist())
-        if len(router) > 0:
-            for tag, df_tagged in df.groupby('tag'):
-                for col_name, metric in router[tag].items():
-                    df_tagged['value'] = df_tagged[col_name]
-                    metric.put(df_tagged)
         for col_name, metric in overall.items():
             df['value'] = df[col_name]
             metric.put(df)
