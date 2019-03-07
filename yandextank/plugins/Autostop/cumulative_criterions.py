@@ -67,9 +67,8 @@ class TotalFracTimeCriterion(AbstractCriterion):
                 idx = np.searchsorted(data["tagged"][self.tag]["interval_real"]["hist"]["bins"], self.rt_limit)
             else:
                 ecdf = []
-                idx = 0
 
-        logger.info("idx %d, ecdf %s", idx, ecdf)
+        logger.info("idx %s, ecdf %s", idx, ecdf)
         if idx == 0:
             return ecdf[-1]
         elif idx == len(ecdf):
@@ -88,9 +87,12 @@ class TotalFracTimeCriterion(AbstractCriterion):
                 total_responses = data["tagged"][self.tag]["interval_real"]["len"]
         self.seconds.append((data, stat))
         self.fail_counter.push(self.__fail_count(data))
+        logger.info("fail", self.fail_counter)
         self.total_counter.push(total_responses)
+        logger.info("total %d", self.total_counter)
         self.total_fail_ratio = (
             self.fail_counter.value / self.total_counter.value)
+        logger.info(self.total_fail_ratio)
         if self.total_fail_ratio >= self.fail_ratio_limit and len(
                 self.fail_counter) >= self.window_size:
             self.cause_second = self.seconds[0]
