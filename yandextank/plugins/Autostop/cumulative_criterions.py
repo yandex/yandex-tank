@@ -68,22 +68,14 @@ class TotalFracTimeCriterion(AbstractCriterion):
             else:
                 idx = 0
 
-        logger.info("idx %s, ecdf %s", idx, ecdf)
         if idx == 0:
-            logger.info("case 0 idx %s, ecdf %s", idx, ecdf)
             return ecdf[-1]
         elif idx == len(ecdf):
-            logger.info("case 1 idx %s, ecdf %s", idx, ecdf)
             return 0
         else:
-            logger.info("case 2 idx %s, ecdf %s", idx, ecdf)
             return ecdf[-1] - ecdf[idx]
 
     def notify(self, data, stat):
-        logger.info("TAG %s", self.tag)
-        logger.info("DATA %s", data)
-        logger.info("stat %s", stat)
-
         total_responses = data["overall"]["interval_real"]["len"]
         if self.tag:
             if data["tagged"].get(self.tag):
@@ -93,7 +85,6 @@ class TotalFracTimeCriterion(AbstractCriterion):
         self.total_counter.push(total_responses)
         self.total_fail_ratio = (
             self.fail_counter.value / self.total_counter.value)
-        logger.info("total fail ratio %s", str(self.total_fail_ratio))
         if self.total_fail_ratio >= self.fail_ratio_limit and len(
                 self.fail_counter) >= self.window_size:
             self.cause_second = self.seconds[0]
@@ -107,6 +98,9 @@ class TotalFracTimeCriterion(AbstractCriterion):
         return 25
 
     def explain(self):
+        if self.tag:
+            return ("%(ratio).2f%% responses times higher "
+            "than %(limit)sms for %(seconds_count)ss for tag %(tag)s since: %(since_time)s" % self.get_criterion_parameters())
         return (
             "%(ratio).2f%% responses times higher "
             "than %(limit)sms for %(seconds_count)ss since: %(since_time)s" % self.get_criterion_parameters())
@@ -577,9 +571,6 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
         self.tag = params[2].strip() if len(params) == 3 else None
 
     def notify(self, data, stat):
-        logger.info("which tag %s", self.tag)
-        logger.info("DATA %s", data)
-
         matched_responses = 0
         if self.tag:
             if data["tagged"].get(self.tag):
@@ -588,9 +579,6 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
         else:
             matched_responses = self.count_matched_codes(
                 self.codes_regex, data["overall"]["proto_code"]["count"])
-
-        logger.info("matched %s", matched_responses)
-
 
         self.tangents.append(matched_responses - self.last)
         self.second_window.append((data, stat))
