@@ -66,9 +66,10 @@ class TotalFracTimeCriterion(AbstractCriterion):
                 ecdf = np.cumsum(data["tagged"][self.tag]["interval_real"]["hist"]["data"])
                 idx = np.searchsorted(data["tagged"][self.tag]["interval_real"]["hist"]["bins"], self.rt_limit)
             else:
+                ecdf = []
                 idx = 0
 
-        logger.info("idx %d, ecdf %d", idx, ecdf)
+        logger.info("idx %d, ecdf %s", idx, ecdf)
         if idx == 0:
             return ecdf[-1]
         elif idx == len(ecdf):
@@ -251,9 +252,6 @@ class TotalNetCodesCriterion(AbstractCriterion):
         self.tag = params[3].strip() if len(params) == 4 else None
 
     def notify(self, data, stat):
-        logger.info("which tag %s", self.tag)
-        logger.info("DATA %s", data)
-
         matched_responses = 0
         total_responses = data["overall"]["interval_real"]["len"]
         if self.tag:
@@ -472,9 +470,6 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         self.tag = params[3].strip() if len(params) == 4 else None
 
     def notify(self, data, stat):
-        logger.info("which tag %s", self.tag)
-        logger.info("DATA %s", data)
-
         matched_responses = 0
         total_responses = data["overall"]["interval_real"]["len"]
         if self.tag:
@@ -486,11 +481,6 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
             codes = data["overall"]["net_code"]["count"].copy()
             matched_responses = self.count_matched_codes(self.codes_regex, codes)
 
-        logger.info("matched", matched_responses)
-
-        matched_responses = self.count_matched_codes(self.codes_regex, codes)
-
-        logger.info("matched %s", matched_responses)
         if self.is_relative:
             if data["overall"]["interval_real"]["len"]:
                 matched_responses = float(matched_responses) / total_responses * 100
