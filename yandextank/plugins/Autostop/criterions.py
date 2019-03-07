@@ -290,8 +290,6 @@ class QuantileCriterion(AbstractCriterion):
         self.tag = params[3].strip() if len(params) == 4 else None
 
     def notify(self, data, stat):
-        logger.info("which tag %s", self.tag)
-
         quantile_values = data["overall"]["interval_real"]["q"]["value"]
 
         if self.tag:
@@ -302,9 +300,6 @@ class QuantileCriterion(AbstractCriterion):
 
         quantiles = dict(
             zip(data["overall"]["interval_real"]["q"]["q"], quantile_values))
-
-        logger.info("quanitle %s", quantiles)
-
         if self.quantile not in quantiles.keys():
             logger.warning("No quantile %s in %s", self.quantile, quantiles)
         if self.quantile in quantiles.keys() \
