@@ -90,12 +90,10 @@ class TotalFracTimeCriterion(AbstractCriterion):
                 total_responses = data["tagged"][self.tag]["interval_real"]["len"]
         self.seconds.append((data, stat))
         self.fail_counter.push(self.__fail_count(data))
-        logger.info("fail", self.fail_counter)
         self.total_counter.push(total_responses)
-        logger.info("total", self.total_counter)
         self.total_fail_ratio = (
             self.fail_counter.value / self.total_counter.value)
-        logger.info(self.total_fail_ratio)
+        logger.info("total fail ratio",self.total_fail_ratio)
         if self.total_fail_ratio >= self.fail_ratio_limit and len(
                 self.fail_counter) >= self.window_size:
             self.cause_second = self.seconds[0]
