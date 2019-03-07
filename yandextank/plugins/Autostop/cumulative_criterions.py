@@ -92,7 +92,7 @@ class TotalFracTimeCriterion(AbstractCriterion):
         self.fail_counter.push(self.__fail_count(data))
         logger.info("fail", self.fail_counter)
         self.total_counter.push(total_responses)
-        logger.info("total %d", self.total_counter)
+        logger.info("total", self.total_counter)
         self.total_fail_ratio = (
             self.fail_counter.value / self.total_counter.value)
         logger.info(self.total_fail_ratio)
