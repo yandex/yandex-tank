@@ -457,7 +457,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
 
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
-        self.seconds_count =
+        self.seconds_count = 0
         params = param_str.split(',')
         self.codes_mask = params[0].lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
