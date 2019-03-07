@@ -170,11 +170,11 @@ class Plugin(GeneratorPlugin):
         if self.process and self.process.poll() is None:
             logger.info("Terminating phantom process with PID %s", self.process.pid)
             self.process.terminate()
-            self.phout_finished.set()
             if self.process:
                 self.process.communicate()
         else:
             logger.debug("Seems phantom finished OK")
+        self.phout_finished.set()
         if self.process_stderr:
             self.process_stderr.close()
         return retcode

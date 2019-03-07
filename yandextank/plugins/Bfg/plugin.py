@@ -1,5 +1,6 @@
 import logging
 import time
+from threading import Event
 
 import pip
 
@@ -18,6 +19,7 @@ class Plugin(GeneratorPlugin):
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
+        self.close_event = Event()
         self._bfg = None
         self.log = logging.getLogger(__name__)
         self.gun_type = None
@@ -50,7 +52,7 @@ class Plugin(GeneratorPlugin):
 
     def get_reader(self):
         if self.reader is None:
-            self.reader = BfgReader(self.bfg.results)
+            self.reader = BfgReader(self.bfg.results, self.close_event)
         return self.reader
 
     def get_stats_reader(self):
@@ -110,10 +112,14 @@ class Plugin(GeneratorPlugin):
             return -1
         else:
             self.log.info("BFG finished")
+            self.close_event.set()
+            self.stats_reader.close()
             return 0
 
     def end_test(self, retcode):
         if self.bfg.running():
             self.log.info("Terminating BFG")
             self.bfg.stop()
+        self.close_event.set()
+        self.stats_reader.close()
         return retcode
