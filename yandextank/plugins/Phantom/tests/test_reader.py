@@ -36,6 +36,7 @@ class TestPhantomReader(object):
             chunk = f.read()
         result = string_to_df_microsec(chunk)
         expected = pd.read_pickle('yandextank/plugins/Phantom/tests/expected_df.dat')
+        result['ts'] -= result['ts'][0]
         assert result.equals(expected)
 
 

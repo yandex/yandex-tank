@@ -51,10 +51,12 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
 def get_uploader(data_session, column_mapping, overall_only=False):
     """
+    :type column_mapping: dict
     :type data_session: DataSession
     """
     overall = {col_name: data_session.new_aggregated_metric(name + ' overall')
                for col_name, name in column_mapping.items()}
+
     def upload_df(df):
         for col_name, metric in overall.items():
             df['value'] = df[col_name]
