@@ -48,15 +48,15 @@ class TotalFracTimeCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.autostop = autostop
-        param = param_str.split(',')
-        self.rt_limit = expand_to_milliseconds(param[0]) * 1000
-        self.fail_ratio_limit = float(param[1][:-1]) / 100.0
-        self.window_size = expand_to_seconds(param[2])
+        params = param_str.split(',')
+        self.rt_limit = expand_to_milliseconds(params[0]) * 1000
+        self.fail_ratio_limit = float(params[1][:-1]) / 100.0
+        self.window_size = expand_to_seconds(params[2])
         self.fail_counter = WindowCounter(self.window_size)
         self.total_counter = WindowCounter(self.window_size)
         self.total_fail_ratio = 0.0
         self.seconds = deque()
-        self.tag = param[3].strip() if len(param) == 4 else None
+        self.tag = params[3].strip() if len(params) == 4 else None
 
     def __fail_count(self, data):
         ecdf = np.cumsum(data["overall"]["interval_real"]["hist"]["data"])
@@ -66,14 +66,17 @@ class TotalFracTimeCriterion(AbstractCriterion):
                 ecdf = np.cumsum(data["tagged"][self.tag]["interval_real"]["hist"]["data"])
                 idx = np.searchsorted(data["tagged"][self.tag]["interval_real"]["hist"]["bins"], self.rt_limit)
             else:
-                ecdf = []
+                idx = 0
 
         logger.info("idx %s, ecdf %s", idx, ecdf)
         if idx == 0:
+            logger.info("case 0 idx %s, ecdf %s", idx, ecdf)
             return ecdf[-1]
         elif idx == len(ecdf):
+            logger.info("case 1 idx %s, ecdf %s", idx, ecdf)
             return 0
         else:
+            logger.info("case 2 idx %s, ecdf %s", idx, ecdf)
             return ecdf[-1] - ecdf[idx]
 
     def notify(self, data, stat):
