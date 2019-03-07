@@ -264,8 +264,6 @@ class TotalNetCodesCriterion(AbstractCriterion):
                 codes.pop('0')
             matched_responses = self.count_matched_codes(self.codes_regex, codes)
 
-        logger.info("matched", matched_responses)
-
         if self.is_relative:
             if total_responses:
                 matched_responses = float(matched_responses) / total_responses * 100
