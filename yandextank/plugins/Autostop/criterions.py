@@ -56,10 +56,14 @@ class AvgTimeCriterion(AbstractCriterion):
         return self.RC_TIME
 
     def explain(self):
+        items = self.get_criterion_parameters()
         explanation = (
             "Average response time higher"
-            " than %(limit)sms for %(seconds_count)ss, since %(since_time)s" %
-            self.get_criterion_parameters())
+            " than %(limit)sms for %(seconds_count)ss for tag %(tag)s, since %(since_time)s" % items)
+        if self.tag:
+            explanation = (
+                "Average response time higher"
+                " than %(limit)sms for %(seconds_count)ss, since %(since_time)s" % items)
         return explanation
 
     def get_criterion_parameters(self):
@@ -151,6 +155,8 @@ class HTTPCodesCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
+        if self.tag:
+            return "%(code)s codes count higher than %(level)s for %(seconds_count)ss for tag %(tag)s, since %(since_time)s" % items
         return "%(code)s codes count higher than %(level)s for %(seconds_count)ss, since %(since_time)s" % items
 
     def get_criterion_parameters(self):
@@ -197,9 +203,6 @@ class NetCodesCriterion(AbstractCriterion):
         self.tag = params[3].strip() if len(params) == 4 else None
 
     def notify(self, data, stat):
-        logger.info("which tag %s", self.tag)
-        logger.info("DATA %s", data)
-
         matched_responses = 0
         total_responses = data["overall"]["interval_real"]["len"]
         if self.tag:
@@ -252,6 +255,8 @@ class NetCodesCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
+        if self.tag:
+            "%(code)s net codes count higher than %(level)s for %(seconds_count)ss for tag %(tag)s, since %(since_time)s"
         return "%(code)s net codes count higher than %(level)s for %(seconds_count)ss, since %(since_time)s" % items
 
     def get_criterion_parameters(self):
@@ -323,6 +328,8 @@ class QuantileCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
+        if self.tag:
+            return "Percentile %(percentile)s higher than %(limit)sms for %(seconds_count)ss for tag %(tag)s, since %(since_time)s" % items
         return "Percentile %(percentile)s higher than %(limit)sms for %(seconds_count)ss, since %(since_time)s" % items
 
     def get_criterion_parameters(self):

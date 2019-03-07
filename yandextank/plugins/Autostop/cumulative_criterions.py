@@ -152,9 +152,6 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
         self.tag = params[3].strip() if len(params) == 4 else None
 
     def notify(self, data, stat):
-        logger.info("which tag %s", self.tag)
-        logger.info("DATA %s", data)
-
         matched_responses = 0
         total_responses = data["overall"]["interval_real"]["len"]
         if self.tag:
@@ -165,8 +162,6 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
         else:
             matched_responses = self.count_matched_codes(
                 self.codes_regex, data["overall"]["proto_code"]["count"])
-
-        logger.info("matched %s", matched_responses)
 
         if self.is_relative:
             if total_responses > 0:
@@ -370,9 +365,6 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         self.tag = params[3].strip() if len(params) == 4 else None
 
     def notify(self, data, stat):
-        logger.info("which tag %s", self.tag)
-        logger.info("DATA %s", data)
-
         matched_responses = 0
         total_responses = data["overall"]["interval_real"]["len"]
         if self.tag:
@@ -383,8 +375,6 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         else:
             matched_responses = self.count_matched_codes(
                 self.codes_regex, data["overall"]["proto_code"]["count"])
-
-        logger.info("matched %s", matched_responses)
 
         if self.is_relative:
             if total_responses:
@@ -433,8 +423,8 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         if self.is_relative:
             return (
                 "Not %(code)s codes count higher "
-                "than %(level)s for %(seconds_limit)ss, since %(since_tume)s" % items)
-        return "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_tume)s" % items
+                "than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items)
+        return "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
 
     def get_criterion_parameters(self):
         parameters = {
