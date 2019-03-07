@@ -219,11 +219,11 @@ class Plugin(GeneratorPlugin):
             logger.warning(
                 "Terminating worker process with PID %s", self.process.pid)
             self.process.terminate()
-            self.output_finished.set()
             if self.process_stderr:
                 self.process_stderr.close()
         else:
             logger.debug("Seems subprocess finished OK")
+        self.output_finished.set()
         return retcode
 
 
