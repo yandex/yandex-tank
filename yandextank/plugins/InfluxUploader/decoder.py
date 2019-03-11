@@ -189,3 +189,4 @@ class Decoder(object):
             "time": int(ts),
             "fields": fields,
         }
+
