@@ -7,5 +7,5 @@ install:
   - "pip install flake8"
   - "pip install ."
 script:
-  - "flake8 ."
+  - "flake8 --config .flake8 ."
   - "pytest -s"
