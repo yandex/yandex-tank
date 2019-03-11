@@ -2,6 +2,8 @@ import datetime
 import logging
 import subprocess
 import time
+from threading import Event
+
 import yaml
 
 from netort.resource import manager as resource_manager
@@ -9,9 +11,9 @@ from netort.resource import manager as resource_manager
 from .reader import PandoraStatsReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
-from ..Phantom import PhantomReader
+from ..Phantom import PhantomReader, string_to_df
 from ...common.interfaces import AbstractInfoWidget, GeneratorPlugin
-from ...common.util import tail_lines
+from ...common.util import tail_lines, FileMultiReader
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,7 @@ class Plugin(GeneratorPlugin):
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
+        self.output_finished = Event()
         self.enum_ammo = False
         self.process_start_time = None
         self.pandora_cmd = None
@@ -151,10 +154,10 @@ class Plugin(GeneratorPlugin):
                 return report_filename
         return self.DEFAULT_REPORT_FILE
 
-    def get_reader(self):
+    def get_reader(self, parser=string_to_df):
         if self.reader is None:
-            self.reader = PhantomReader(self.sample_log)
-        return self.reader
+            self.reader = FileMultiReader(self.sample_log, self.output_finished)
+        return PhantomReader(self.reader.get_file(), parser=parser)
 
     def get_stats_reader(self):
         if self.stats_reader is None:
@@ -198,10 +201,12 @@ class Plugin(GeneratorPlugin):
         retcode = self.process.poll()
         if retcode is not None and retcode == 0:
             logger.info("Pandora subprocess done its work successfully and finished w/ retcode 0")
+            self.output_finished.set()
             return retcode
         elif retcode is not None and retcode != 0:
             lines_amount = 20
             logger.info("Pandora finished with non-zero retcode. Last %s logs of Pandora log:", lines_amount)
+            self.output_finished.set()
             last_log_contents = tail_lines(self.process_stderr_file, lines_amount)
             for logline in last_log_contents:
                 logger.info(logline.strip('\n'))
@@ -218,6 +223,7 @@ class Plugin(GeneratorPlugin):
                 self.process_stderr.close()
         else:
             logger.debug("Seems subprocess finished OK")
+        self.output_finished.set()
         return retcode
 
 

@@ -190,7 +190,7 @@ class TankCore(object):
         logger.info("Loading plugins...")
         for (plugin_name, plugin_path, plugin_cfg) in self.config.plugins:
             logger.debug("Loading plugin %s from %s", plugin_name, plugin_path)
-            if plugin_path is "yandextank.plugins.Overload":
+            if plugin_path == "yandextank.plugins.Overload":
                 logger.warning(
                     "Deprecated plugin name: 'yandextank.plugins.Overload'\n"
                     "There is a new generic plugin now.\n"
