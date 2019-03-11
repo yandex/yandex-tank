@@ -866,7 +866,7 @@ Options
 :labeled:
   (Optional) Send per-label (ammo tags) stats to influxdb. (Default: false)
 :histograms:
-  (Optional) Send histograms (per-bucket stats) to influxdb. (Default: false)
+  (Optional) Send response time histograms to influxdb. (Default: false)
 :prefix_measurement:
   (Optional) Add prefix to measurement name. (Default: '')
 :tank_tag:
