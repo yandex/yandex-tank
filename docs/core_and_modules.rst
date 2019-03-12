@@ -848,6 +848,8 @@ InfluxDB
 
 InfluxDB uploader.
 
+yaml file section: **influx**
+
 Options
 -------
 
@@ -862,15 +864,15 @@ Options
 :password:
   (Optional) InfluxDB password. (Default: 'root')
 :labeled:
-  (Optional) Send labels (ammo tags) to influx. (Default: false)
+  (Optional) Send per-label (ammo tags) stats to influxdb. (Default: false)
+:histograms:
+  (Optional) Send response time histograms to influxdb. (Default: false)
 :prefix_measurement:
   (Optional) Add prefix to measurement name. (Default: '')
 :tank_tag:
   (Optional) Tank tag. (Default: 'unknown')
-:grafana_root:
-  (Optional) Grafana root path. Used to generate link to grafana dashboard.
-:grafana_dashboard:
-  (Optional) Grafana dashboard name. Used to generate link to grafana dashboard.
+:custom_tags:
+  (Optional) Dict of custom tags, added to every sample row.
 
 Example:
 
@@ -883,6 +885,7 @@ Example:
     tank_tag: 'mytank'
     prefix_measurement: 'your_test_prefix_'
     labeled: true
+    histograms: true
 
 
 ***********

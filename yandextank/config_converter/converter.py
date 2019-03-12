@@ -48,7 +48,7 @@ SECTIONS_PATTERNS = {
     'RCAssert': 'rcassert',
     'JsonReport': 'json_report|jsonreport',
     'Pandora': 'pandora',
-    'Influx': 'influx',
+    'InfluxUploader': 'influx',
 
 }
 
