@@ -27,13 +27,12 @@ class AvgTimeCriterion(AbstractCriterion):
         self.tag = params[2].strip() if len(params) == 3 else None
 
     def notify(self, data, stat):
-        rt_actual = (data["overall"]["interval_real"]["total"] / 1000.0
-                    / data["overall"]["interval_real"]["len"])
+        rt_actual = data["overall"]["interval_real"]["total"] / 1000.0 / data["overall"]["interval_real"]["len"]
 
         if self.tag:
             if data["tagged"].get(self.tag):
-                rt_actual = (data["tagged"][self.tag]["interval_real"]["total"] / 1000.0
-                            /data["tagged"][self.tag]["interval_real"]["len"])
+                rt_actual = data["tagged"][self.tag]["interval_real"]["total"] / 1000.0 / \
+                            data["tagged"][self.tag]["interval_real"]["len"]
             else:
                 rt_actual = 0
 
@@ -61,9 +60,8 @@ class AvgTimeCriterion(AbstractCriterion):
             "Average response time higher"
              " than %(limit)sms for %(seconds_count)ss, since %(since_time)s" % items)
         if self.tag:
-            explanation = (
-                "Average response time higher"
-                " than %(limit)sms for %(seconds_count)ss for tag %(tag)s, since %(since_time)s" % items)
+            explanation = ("Average response time higher than %(limit)sms for %(seconds_count)ss for tag %(tag)s, "
+                           "since %(since_time)s" % items)
         return explanation
 
     def get_criterion_parameters(self):

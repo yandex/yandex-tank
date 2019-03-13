@@ -100,7 +100,8 @@ class TotalFracTimeCriterion(AbstractCriterion):
     def explain(self):
         if self.tag:
             return ("%(ratio).2f%% responses times higher "
-            "than %(limit)sms for %(seconds_count)ss for tag %(tag)s since: %(since_time)s" % self.get_criterion_parameters())
+                    "than %(limit)sms for %(seconds_count)ss for tag %(tag)s since: %(since_time)s"
+                    % self.get_criterion_parameters())
         return (
             "%(ratio).2f%% responses times higher "
             "than %(limit)sms for %(seconds_count)ss since: %(since_time)s" % self.get_criterion_parameters())
@@ -202,8 +203,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
                 "%(code)s codes count higher "
                 "than %(level)s for %(seconds_limit)ss, ended at: %(since_time)s" % items)
         if self.tag:
-            return (
-                    "%(code)s codes count higher than %(level)s for %(seconds_limit)ss for tag %(tag)s, "
+            return ("%(code)s codes count higher than %(level)s for %(seconds_limit)ss for tag %(tag)s, "
                     "since %(since_time)s" % items)
         return "%(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
 
@@ -422,13 +422,10 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
     def explain(self):
         items = self.get_criterion_parameters()
         if self.is_relative:
-            return (
-                "Not %(code)s codes count higher "
-                "than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items)
+            return "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
         if self.tag:
-            return (
-                    "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss for tag %(tag)s, "
-                    "since %(since_time)s" % items)
+            return "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss for tag %(tag)s, " \
+                   "since %(since_time)s" % items
         return "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
 
     def get_criterion_parameters(self):
@@ -533,13 +530,10 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
     def explain(self):
         items = self.get_criterion_parameters()
         if self.is_relative:
-            return (
-                "Not %(code)s codes count higher "
-                "than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items)
+            return "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
         if self.tag:
-            return (
-                    "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss for tag %(tag)s, "
-                    "since %(since_time)s" % items)
+            return "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss for tag %(tag)s, " \
+                   "since %(since_time)s" % items
         return "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
 
     def get_criterion_parameters(self):
