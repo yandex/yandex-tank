@@ -201,6 +201,10 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
             return (
                 "%(code)s codes count higher "
                 "than %(level)s for %(seconds_limit)ss, ended at: %(since_time)s" % items)
+        if self.tag:
+            return (
+                    "%(code)s codes count higher than %(level)s for %(seconds_limit)ss for tag %(tag)s, "
+                    "since %(since_time)s" % items)
         return "%(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
 
     def get_criterion_parameters(self):
@@ -310,6 +314,10 @@ class TotalNetCodesCriterion(AbstractCriterion):
             return (
                 "%(code)s net codes count higher "
                 "than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items)
+        if self.tag:
+            return (
+                    "%(code)s net codes count higher than %(level)s for %(seconds_limit)ss for tag %(tag)s, "
+                    "since %(since_time)s" % items)
         return "%(code)s net codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
 
     def get_criterion_parameters(self):
@@ -417,6 +425,10 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
             return (
                 "Not %(code)s codes count higher "
                 "than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items)
+        if self.tag:
+            return (
+                    "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss for tag %(tag)s, "
+                    "since %(since_time)s" % items)
         return "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
 
     def get_criterion_parameters(self):
@@ -524,6 +536,10 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
             return (
                 "Not %(code)s codes count higher "
                 "than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items)
+        if self.tag:
+            return (
+                    "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss for tag %(tag)s, "
+                    "since %(since_time)s" % items)
         return "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
 
     def get_criterion_parameters(self):
