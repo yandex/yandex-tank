@@ -32,7 +32,7 @@ class AvgTimeCriterion(AbstractCriterion):
         if self.tag:
             if data["tagged"].get(self.tag):
                 rt_actual = data["tagged"][self.tag]["interval_real"]["total"] / 1000.0 / \
-                            data["tagged"][self.tag]["interval_real"]["len"]
+                    data["tagged"][self.tag]["interval_real"]["len"]
             else:
                 rt_actual = 0
 
@@ -56,12 +56,10 @@ class AvgTimeCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
-        explanation = (
-            "Average response time higher"
-             " than %(limit)sms for %(seconds_count)ss, since %(since_time)s" % items)
+        explanation = "Average response time higher than %(limit)sms for %(seconds_count)ss, since %(since_time)s" % items
         if self.tag:
-            explanation = ("Average response time higher than %(limit)sms for %(seconds_count)ss for tag %(tag)s, "
-                           "since %(since_time)s" % items)
+            explanation = "Average response time higher than %(limit)sms for %(seconds_count)ss for tag %(tag)s, " \
+                          "since %(since_time)s" % items
         return explanation
 
     def get_criterion_parameters(self):

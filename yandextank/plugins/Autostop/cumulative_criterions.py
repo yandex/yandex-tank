@@ -315,9 +315,8 @@ class TotalNetCodesCriterion(AbstractCriterion):
                 "%(code)s net codes count higher "
                 "than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items)
         if self.tag:
-            return (
-                    "%(code)s net codes count higher than %(level)s for %(seconds_limit)ss for tag %(tag)s, "
-                    "since %(since_time)s" % items)
+            return "%(code)s net codes count higher than %(level)s for %(seconds_limit)ss for tag %(tag)s, " \
+                   "since %(since_time)s" % items
         return "%(code)s net codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
 
     def get_criterion_parameters(self):
