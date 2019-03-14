@@ -76,7 +76,7 @@ class TotalFracTimeCriterion(AbstractCriterion):
             return ecdf[-1] - ecdf[idx]
 
     def notify(self, data, stat):
-        total_responses = self.parse_data()
+        total_responses = self.parse_data(data)
         self.seconds.append((data, stat))
         self.fail_counter.push(self.__fail_count(data))
         self.total_counter.push(total_responses)
@@ -191,7 +191,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
             # matched_responses=0 if current tag differs from selected one
             else:
                 matched_responses = 0
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
+                total_responses = data["overall"]["interval_real"]["len"]
         # Parse data for overall
         else:
             matched_responses = self.count_matched_codes(
@@ -423,7 +423,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
             # matched_responses=0 if current tag differs from selected one
             else:
                 matched_responses = 0
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
+                total_responses = data["overall"]["interval_real"]["len"]
         # Parse data for overall
         else:
             matched_responses = self.count_matched_codes(
@@ -539,7 +539,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
             # matched_responses=0 if current tag differs from selected one
             else:
                 matched_responses = 0
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
+                total_responses = data["overall"]["interval_real"]["len"]
         # Count data for overall
         else:
             codes = data["overall"]["net_code"]["count"].copy()

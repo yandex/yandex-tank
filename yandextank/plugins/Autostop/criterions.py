@@ -46,6 +46,7 @@ class AvgTimeCriterion(AbstractCriterion):
         return False
 
     def parse_data(self, data):
+        requests_number = data["overall"]["interval_real"]["len"]
         # Parse data for specific tag if it is present
         if self.tag:
             if data["tagged"].get(self.tag):
@@ -54,10 +55,8 @@ class AvgTimeCriterion(AbstractCriterion):
             # rt_total=0 if current tag differs from selected one
             else:
                 rt_total = 0
-                requests_number = data["tagged"][self.tag]["interval_real"]["len"]
         # Parse data for overall
         else:
-            requests_number = data["overall"]["interval_real"]["len"]
             rt_total = data["overall"]["interval_real"]["total"]
         return rt_total, requests_number
 
@@ -147,7 +146,7 @@ class HTTPCodesCriterion(AbstractCriterion):
             # matched_responses=0 if current tag differs from selected one
             else:
                 matched_responses = 0
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
+                total_responses = data["overall"]["interval_real"]["len"]
         # Parse data for overall
         else:
             matched_responses = self.count_matched_codes(self.codes_regex, data["overall"]["proto_code"]["count"])
@@ -252,7 +251,7 @@ class NetCodesCriterion(AbstractCriterion):
             # matched_responses=0 if current tag differs from selected one
             else:
                 matched_responses = 0
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
+                total_responses = data["overall"]["interval_real"]["len"]
         # Count data for overall
         else:
             code_count = data["overall"]["net_code"]["count"]
@@ -452,7 +451,7 @@ class TimeLimitCriterion(AbstractCriterion):
         return self.RC_TIME
 
     def explain(self):
-        return "Test time elapsed. Limit: %(limit)ss, actual time: %(actual)ss" % self.get_criterion_parametrs()
+        return "Test time elapsed. Limit: %(limit)ss, actual time: %(actual)ss" % self.get_criterion_parameters()
 
     def get_criterion_parameters(self):
         parameters = {
