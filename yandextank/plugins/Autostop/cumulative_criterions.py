@@ -199,7 +199,6 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
             total_responses = data["overall"]["interval_real"]["len"]
         return matched_responses, total_responses
 
-
     def get_rc(self):
         return 26
 
@@ -306,7 +305,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
             # matched_responses=0 if current tag differs from selected one
             else:
                 matched_responses = 0
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
+                total_responses = data["overall"]["interval_real"]["len"]
         # Count data for overall
         else:
             codes = data["overall"]["net_code"]["count"].copy()
