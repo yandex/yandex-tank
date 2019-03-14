@@ -566,7 +566,7 @@ class Lock(object):
     @classmethod
     def load(cls, path):
         with open(path) as f:
-            info = yaml.load(f)
+            info = yaml.full_load(f)
         pid = info.get(cls.PID)
         test_id = info.get(cls.TEST_ID)
         test_dir = info.get(cls.TEST_DIR)

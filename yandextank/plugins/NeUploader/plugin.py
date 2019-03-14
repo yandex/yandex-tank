@@ -14,20 +14,33 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
         self._is_telegraf = None
-        self.clients_cfg = [{'type': 'luna', 'api_address': self.cfg.get('api_address')}]
+        self.clients_cfg = [{'type': 'luna',
+                             'api_address': self.cfg.get('api_address'),
+                             'db_name': self.cfg.get('db_name')}]
 
     def configure(self):
         pass
 
     def start_test(self):
-        self.data_session = DataSession({'clients': self.clients_cfg})
-        self.add_cleanup(self.data_session.close)
-        self.data_session.update_job({'name': self.cfg.get('test_name')})
-        col_map_aggr = {name: 'metric %s' % name for name in
-                        ['interval_real', 'connect_time', 'send_time', 'latency',
-                         'receive_time', 'interval_event']}
-        self.uploader = get_uploader(self.data_session, col_map_aggr, True)
-        self.reader = self.core.job.generator_plugin.get_reader(parser=string_to_df_microsec)
+        try:
+            self.reader = self.core.job.generator_plugin.get_reader(parser=string_to_df_microsec)
+        except TypeError:
+            logger.error('Generator plugin does not support NeUploader')
+            self.is_test_finished = lambda: -1
+            self.reader = []
+        else:
+            self.data_session = DataSession({'clients': self.clients_cfg})
+            self.add_cleanup(self.cleanup)
+            self.data_session.update_job({'name': self.cfg.get('test_name')})
+            col_map_aggr = {name: 'metric %s' % name for name in
+                            ['interval_real', 'connect_time', 'send_time', 'latency',
+                             'receive_time', 'interval_event']}
+            self.uploader = get_uploader(self.data_session, col_map_aggr, True)
+
+    def cleanup(self):
+        uploader_metainfo = {'lunapark_{}'.format(k): v for k, v in self.core.status.get('uploader').items()}
+        self.data_session.update_job(uploader_metainfo)
+        self.data_session.close()
 
     def is_test_finished(self):
         df = next(self.reader)
