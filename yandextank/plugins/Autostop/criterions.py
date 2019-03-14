@@ -27,14 +27,8 @@ class AvgTimeCriterion(AbstractCriterion):
         self.tag = params[2].strip() if len(params) == 3 else None
 
     def notify(self, data, stat):
-        rt_actual = data["overall"]["interval_real"]["total"] / 1000.0 / data["overall"]["interval_real"]["len"]
-
-        if self.tag:
-            if data["tagged"].get(self.tag):
-                rt_actual = data["tagged"][self.tag]["interval_real"]["total"] / 1000.0 / \
-                    data["tagged"][self.tag]["interval_real"]["len"]
-            else:
-                rt_actual = 0
+        rt_total, requests_number = self.parse_data(data)
+        rt_actual = rt_total / 1000.0 / requests_number
 
         if rt_actual > self.rt_limit:
             if not self.seconds_count:
@@ -51,6 +45,22 @@ class AvgTimeCriterion(AbstractCriterion):
 
         return False
 
+    def parse_data(self, data):
+        # Parse data for specific tag if it is present
+        if self.tag:
+            if data["tagged"].get(self.tag):
+                rt_total = data["tagged"][self.tag]["interval_real"]["total"]
+                requests_number = data["tagged"][self.tag]["interval_real"]["len"]
+            # rt_total=0 if current tag differs from selected one
+            else:
+                rt_total = 0
+                requests_number = data["tagged"][self.tag]["interval_real"]["len"]
+        # Parse data for overall
+        else:
+            requests_number = data["overall"]["interval_real"]["len"]
+            rt_total = data["overall"]["interval_real"]["total"]
+        return rt_total, requests_number
+
     def get_rc(self):
         return self.RC_TIME
 
@@ -58,23 +68,23 @@ class AvgTimeCriterion(AbstractCriterion):
         items = self.get_criterion_parameters()
         explanation = "Average response time higher than %(limit)sms for %(seconds_count)ss, since %(since_time)s" % items
         if self.tag:
-            explanation = "Average response time higher than %(limit)sms for %(seconds_count)ss for tag %(tag)s, " \
-                          "since %(since_time)s" % items
+            explanation = explanation + " for tag %(tag)s" % items
         return explanation
 
     def get_criterion_parameters(self):
         parameters = {
             'limit': self.rt_limit,
             'seconds_count': self.seconds_count,
+            'seconds_limit': self.seconds_limit,
             'since_time': self.cause_second[0]["ts"],
             'tag': self.tag
         }
         return parameters
 
     def widget_explain(self):
-        items = (self.rt_limit, self.seconds_count, self.seconds_limit)
-        return "Avg Time >%sms for %s/%ss" % items, float(
-            self.seconds_count) / self.seconds_limit
+        items = self.get_criterion_parameters()
+        return "Avg Time >%(limit)sms for %(seconds_count)s/%(seconds_limit)ss" % items, \
+            float(self.seconds_count) / self.seconds_limit
 
 
 class HTTPCodesCriterion(AbstractCriterion):
@@ -103,25 +113,14 @@ class HTTPCodesCriterion(AbstractCriterion):
         self.tag = params[3].strip() if len(params) == 4 else None
 
     def notify(self, data, stat):
-        matched_responses = 0
-        total_responses = data["overall"]["interval_real"]["len"]
-        if self.tag:
-            if data["tagged"].get(self.tag):
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
-                matched_responses = self.count_matched_codes(
-                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"])
-        else:
-            matched_responses = self.count_matched_codes(
-                self.codes_regex, data["overall"]["proto_code"]["count"])
-
+        matched_responses, total_responses = self.parse_data(data)
         if self.is_relative:
             if total_responses:
                 matched_responses = float(matched_responses) / total_responses
             else:
                 matched_responses = 0
-        logger.debug(
-            "HTTP codes matching mask %s: %s/%s", self.codes_mask,
-            matched_responses, self.level)
+
+        logger.debug("HTTP codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.level)
 
         if matched_responses >= self.level:
             if not self.seconds_count:
@@ -138,6 +137,23 @@ class HTTPCodesCriterion(AbstractCriterion):
 
         return False
 
+    def parse_data(self, data):
+        # Parse data for specific tag
+        if self.tag:
+            if data["tagged"].get(self.tag):
+                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
+                matched_responses = self.count_matched_codes(
+                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"])
+            # matched_responses=0 if current tag differs from selected one
+            else:
+                matched_responses = 0
+                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
+        # Parse data for overall
+        else:
+            matched_responses = self.count_matched_codes(self.codes_regex, data["overall"]["proto_code"]["count"])
+            total_responses = data["overall"]["interval_real"]["len"]
+        return matched_responses, total_responses
+
     def get_rc(self):
         return self.RC_HTTP
 
@@ -151,26 +167,26 @@ class HTTPCodesCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
+        explanation = "%(code)s codes count higher than %(level)s for %(seconds_count)ss, since %(since_time)s" % items
         if self.tag:
-            return "%(code)s codes count higher than %(level)s for %(seconds_count)ss for tag %(tag)s, since %(since_time)s" % items
-        return "%(code)s codes count higher than %(level)s for %(seconds_count)ss, since %(since_time)s" % items
+            explanation = explanation + " for tag %(tag)s" % items
+        return explanation
 
     def get_criterion_parameters(self):
         parameters = {
             'code': self.codes_mask,
             'level': self.get_level_str(),
             'seconds_count': self.seconds_count,
+            'seconds_limit': self.seconds_limit,
             'since_time': self.cause_second[0].get('ts'),
             'tag': self.tag
         }
         return parameters
 
     def widget_explain(self):
-        items = (
-            self.codes_mask, self.get_level_str(), self.seconds_count,
-            self.seconds_limit)
-        return "HTTP %s>%s for %s/%ss" % items, float(
-            self.seconds_count) / self.seconds_limit
+        items = self.get_criterion_parameters()
+        return "HTTP %(code)s>%(level)s for %(seconds_count)s/%(seconds_limit)ss" % items, \
+            float(self.seconds_count) / self.seconds_limit
 
 
 class NetCodesCriterion(AbstractCriterion):
@@ -199,29 +215,14 @@ class NetCodesCriterion(AbstractCriterion):
         self.tag = params[3].strip() if len(params) == 4 else None
 
     def notify(self, data, stat):
-        matched_responses = 0
-        total_responses = data["overall"]["interval_real"]["len"]
-        if self.tag:
-            if data["tagged"].get(self.tag):
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
-                codes = copy.deepcopy(data["tagged"][self.tag]["net_code"]["count"])
-                if '0' in codes.keys():
-                    codes.pop('0')
-                matched_responses = self.count_matched_codes(self.codes_regex, codes)
-        else:
-            codes = copy.deepcopy(data["overall"]["net_code"]["count"])
-            if '0' in codes.keys():
-                codes.pop('0')
-            matched_responses = self.count_matched_codes(self.codes_regex, codes)
-
+        matched_responses, total_responses = self.parse_data(data)
         if self.is_relative:
             if total_responses:
                 matched_responses = float(matched_responses) / total_responses
             else:
                 matched_responses = 0
-        logger.debug(
-            "Net codes matching mask %s: %s/%s", self.codes_mask,
-            matched_responses, self.level)
+
+        logger.debug("Net codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.level)
 
         if matched_responses >= self.level:
             if not self.seconds_count:
@@ -238,6 +239,30 @@ class NetCodesCriterion(AbstractCriterion):
 
         return False
 
+    def parse_data(self, data):
+        # Count data for specific tag if it's present
+        if self.tag:
+            if data["tagged"].get(self.tag):
+                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
+                code_count = data["tagged"][self.tag]["net_code"]["count"]
+                codes = copy.deepcopy(code_count)
+                if '0' in codes.keys():
+                    codes.pop('0')
+                matched_responses = self.count_matched_codes(self.codes_regex, codes)
+            # matched_responses=0 if current tag differs from selected one
+            else:
+                matched_responses = 0
+                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
+        # Count data for overall
+        else:
+            code_count = data["overall"]["net_code"]["count"]
+            total_responses = data["overall"]["interval_real"]["len"]
+            codes = copy.deepcopy(code_count)
+            if '0' in codes.keys():
+                codes.pop('0')
+            matched_responses = self.count_matched_codes(self.codes_regex, codes)
+        return matched_responses, total_responses
+
     def get_rc(self):
         return self.RC_NET
 
@@ -251,26 +276,27 @@ class NetCodesCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
+        explanation = "%(code)s net codes count higher than %(level)s for %(seconds_count)ss, since %(since_time)s" \
+                      % items
         if self.tag:
-            "%(code)s net codes count higher than %(level)s for %(seconds_count)ss for tag %(tag)s, since %(since_time)s"
-        return "%(code)s net codes count higher than %(level)s for %(seconds_count)ss, since %(since_time)s" % items
+            explanation = explanation + " for tag %(tag)s" % items
+        return explanation
 
     def get_criterion_parameters(self):
         parameters = {
             'code': self.codes_mask,
             'level': self.get_level_str(),
             'seconds_count': self.seconds_count,
+            'seconds_limit': self.seconds_limit,
             'since_time': self.cause_second[0].get("ts"),
             'tag': self.tag
         }
         return parameters
 
     def widget_explain(self):
-        items = (
-            self.codes_mask, self.get_level_str(), self.seconds_count,
-            self.seconds_limit)
-        return "Net %s>%s for %s/%ss" % items, float(
-            self.seconds_count) / self.seconds_limit
+        items = self.get_criterion_parameters()
+        return "Net %(code)s>%(level)s for %(seconds_count)s/%(seconds_limit)ss" % items, \
+            float(self.seconds_count) / self.seconds_limit
 
 
 class QuantileCriterion(AbstractCriterion):
@@ -291,20 +317,10 @@ class QuantileCriterion(AbstractCriterion):
         self.tag = params[3].strip() if len(params) == 4 else None
 
     def notify(self, data, stat):
-        quantile_values = data["overall"]["interval_real"]["q"]["value"]
-
-        if self.tag:
-            if data["tagged"].get(self.tag):
-                quantile_values = data["tagged"][self.tag]["interval_real"]["q"]["value"]
-            else:
-                quantile_values = []
-
-        quantiles = dict(
-            zip(data["overall"]["interval_real"]["q"]["q"], quantile_values))
+        quantiles = self.parse_data(data)
         if self.quantile not in quantiles.keys():
             logger.warning("No quantile %s in %s", self.quantile, quantiles)
-        if self.quantile in quantiles.keys() \
-                and quantiles[self.quantile] / 1000.0 > self.rt_limit:
+        if self.quantile in quantiles.keys() and quantiles[self.quantile] / 1000.0 > self.rt_limit:
             if not self.seconds_count:
                 self.cause_second = (data, stat)
 
@@ -319,31 +335,46 @@ class QuantileCriterion(AbstractCriterion):
 
         return False
 
+    def parse_data(self, data):
+        # Parse data for specific tag
+        if self.tag:
+            if data["tagged"].get(self.tag):
+                quantile_values = data["tagged"][self.tag]["interval_real"]["q"]["value"]
+            # quantile_values empty if current tag differs from selected one
+            else:
+                quantile_values = []
+        # Parse data for overall
+        else:
+            quantile_values = data["overall"]["interval_real"]["q"]["value"]
+        quantiles = dict(zip(data["overall"]["interval_real"]["q"]["q"], quantile_values))
+        return quantiles
+
     def get_rc(self):
         return self.RC_TIME
 
     def explain(self):
         items = self.get_criterion_parameters()
+        explanation = "Percentile %(percentile)s higher than %(limit)sms for %(seconds_count)ss, since %(since_time)s" \
+            % items
         if self.tag:
-            return "Percentile %(percentile)s higher than %(limit)sms for %(seconds_count)ss for tag %(tag)s, since %(since_time)s" % items
-        return "Percentile %(percentile)s higher than %(limit)sms for %(seconds_count)ss, since %(since_time)s" % items
+            explanation = explanation + " for tag %(tag)s" % items
+        return explanation
 
     def get_criterion_parameters(self):
         parameters = {
             'percentile': self.quantile,
             'limit': self.rt_limit,
             'seconds_count': self.seconds_count,
+            'seconds_limit': self.seconds_limit,
             'since_time': self.cause_second[0].get("ts"),
             'tag': self.tag
         }
         return parameters
 
     def widget_explain(self):
-        items = (
-            self.quantile, self.rt_limit, self.seconds_count,
-            self.seconds_limit)
-        return "%s%% >%sms for %s/%ss" % items, float(
-            self.seconds_count) / self.seconds_limit
+        items = self.get_criterion_parameters()
+        return "%(percentile)s%% >%(limit)sms for %(seconds_count)s/%(seconds_limit)ss" % items, \
+            float(self.seconds_count) / self.seconds_limit
 
 
 class SteadyCumulativeQuantilesCriterion(AbstractCriterion):
@@ -423,7 +454,7 @@ class TimeLimitCriterion(AbstractCriterion):
     def explain(self):
         return "Test time elapsed. Limit: %(limit)ss, actual time: %(actual)ss" % self.get_criterion_parametrs()
 
-    def get_criterion_parametrs(self):
+    def get_criterion_parameters(self):
         parameters = {
             'limit': self.time_limit,
             'actual': self.end_time - self.start_time
@@ -431,4 +462,4 @@ class TimeLimitCriterion(AbstractCriterion):
         return parameters
 
     def widget_explain(self):
-        return "Time limit: %(limit)ss, actual time: %(actual)ss" % self.get_criterion_parametrs()
+        return "Time limit: %(limit)ss, actual time: %(actual)ss" % self.get_criterion_parameters()
