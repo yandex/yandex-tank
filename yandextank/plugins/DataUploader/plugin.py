@@ -552,6 +552,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._lp_job = self.__get_lp_job()
             self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
             self.core.publish(self.SECTION, 'web_link', self._lp_job.web_link)
+            self.core.publish(self.SECTION, 'job_name', self._lp_job.name)
+            self.core.publish(self.SECTION, 'job_description', self._lp_job.description)
         return self._lp_job
 
     def __get_lp_job(self):

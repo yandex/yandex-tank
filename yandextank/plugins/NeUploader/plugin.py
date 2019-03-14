@@ -14,7 +14,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
         self._is_telegraf = None
-        self.clients_cfg = [{'type': 'luna', 'api_address': self.cfg.get('api_address')}]
+        self.clients_cfg = [{'type': 'luna',
+                             'api_address': self.cfg.get('api_address'),
+                             'db_name': self.cfg.get('db_name')}]
 
     def configure(self):
         pass
@@ -42,6 +44,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         for chunk in self.reader:
             if chunk is not None:
                 self.uploader(chunk)
+        uploader_metainfo = {'lunapark_{}'.format(k): v for k, v in self.core.status.get('uploader').items()}
+        self.data_session.update_job(uploader_metainfo)
         return retcode
 
     @property
