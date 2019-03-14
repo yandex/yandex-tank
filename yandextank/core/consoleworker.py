@@ -75,7 +75,7 @@ def load_cfg(cfg_filename):
         return convert_ini(cfg_filename)
     else:
         with open(cfg_filename) as f:
-            return yaml.load(f)
+            return yaml.full_load(f)
 
 
 def cfg_folder_loader(path):
@@ -231,7 +231,7 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
 
 
 def parse_and_check_patches(patches):
-    parsed = [yaml.load(p) for p in patches]
+    parsed = [yaml.full_load(p) for p in patches]
     for patch in parsed:
         if not isinstance(patch, dict):
             raise ValidationError('Config patch "{}" should be a dict'.format(patch))

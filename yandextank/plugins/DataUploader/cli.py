@@ -49,7 +49,7 @@ def from_tank_config(test_dir):
         raise OSError('Config file {} not found in {}'.format(VALIDATED_CONF, test_dir))
 
     with open(config_file) as f:
-        tank_cfg = yaml.load(f)
+        tank_cfg = yaml.full_load(f)
     try:
         section, config = filter(lambda item: 'DataUploader' in item[1].get('package', ''), tank_cfg.items())[0]
     except IndexError:
@@ -150,7 +150,7 @@ def post_loader():
     # load cfg
     if args.config:
         with open(args.config) as f:
-            config = yaml.load(f)
+            config = yaml.full_load(f)
             section = None
     else:
         section, config = from_tank_config(args.test_dir)
