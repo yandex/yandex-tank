@@ -38,7 +38,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self.uploader = get_uploader(self.data_session, col_map_aggr, True)
 
     def cleanup(self):
-        uploader_metainfo = {'lunapark_{}'.format(k): v for k, v in self.core.status.get('uploader').items()}
+        uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader').items())
         self.data_session.update_job(uploader_metainfo)
         self.data_session.close()
 
@@ -60,6 +60,22 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     @property
     def is_telegraf(self):
         return True
+
+    @staticmethod
+    def map_uploader_tags(uploader_tags):
+        return dict(
+            [
+                ('component', uploader_tags.get('component')),
+                ('description', uploader_tags.get('job_dsc')),
+                ('name', uploader_tags.get('job_name')),
+                ('person', uploader_tags.get('person')),
+                ('task', uploader_tags.get('task')),
+                ('version', uploader_tags.get('version')),
+                ('lunapark_jobno', uploader_tags.get('job_no'))
+            ] + [
+                (k, v) for k, v in uploader_tags.get('meta', {}).items()
+            ]
+        )
 
 
 def get_uploader(data_session, column_mapping, overall_only=False):
