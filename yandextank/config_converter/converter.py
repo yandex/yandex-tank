@@ -203,7 +203,7 @@ class Option(object):
         },
         'Pandora': {
             'expvar': lambda key, value: {key: value == '1'},
-            'config_content': lambda key, value: {key: yaml.full_load(value)}  # works for json as well
+            'config_content': lambda key, value: {key: yaml.load(value)}  # works for json as well
         },
         'Autostop': {
             'autostop': lambda k, v: {k: re.findall(r'\w+\(.+?\)', v)}
