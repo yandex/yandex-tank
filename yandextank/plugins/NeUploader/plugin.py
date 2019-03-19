@@ -38,7 +38,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self.uploader = get_uploader(self.data_session, col_map_aggr, True)
 
     def cleanup(self):
-        uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader').items())
+        uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
         self.data_session.update_job(uploader_metainfo)
         self.data_session.close()
 
