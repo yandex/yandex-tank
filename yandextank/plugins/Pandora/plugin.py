@@ -67,7 +67,7 @@ class Plugin(GeneratorPlugin):
         elif self.get_option("config_file"):
             logger.info('Found config_file option configuration')
             with open(self.get_option("config_file"), 'rb') as config:
-                external_file_config_contents = yaml.safe_load(config.read())
+                external_file_config_contents = yaml.load(config.read())
             self.config_contents = self.__patch_raw_config_and_dump(external_file_config_contents)
         else:
             raise RuntimeError("Neither pandora.config_content, nor pandora.config_file specified")
