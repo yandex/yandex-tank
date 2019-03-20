@@ -42,7 +42,7 @@ class TankAggregator(object):
         self.generator = generator
         self.listeners = []  # [LoggingListener()]
         self.results = q.Queue()
-        self.stats = q.Queue()
+        self.stats_results = q.Queue()
         self.data_cache = {}
         self.stat_cache = {}
         self.reader = None
@@ -73,7 +73,7 @@ class TankAggregator(object):
             self.stats_drain = Drain(
                 Chopper(DataPoller(
                     source=self.stats_reader, poll_period=poll_period)),
-                self.stats)
+                self.stats_results)
             self.stats_drain.start()
         else:
             logger.warning("Generator not found. Generator must provide a reader and a stats_reader interface")
@@ -83,7 +83,7 @@ class TankAggregator(object):
         Collect data, cache it and send to listeners
         """
         data = get_nowait_from_queue(self.results)
-        stats = get_nowait_from_queue(self.stats)
+        stats = get_nowait_from_queue(self.stats_results)
         logger.debug("Data timestamps: %s" % [d.get('ts') for d in data])
         logger.debug("Stats timestamps: %s" % [d.get('ts') for d in stats])
         for item in data:
@@ -110,15 +110,15 @@ class TankAggregator(object):
                 logger.info(ts)
                 self.__notify_listeners(data_item, StatsReader.stats_item(ts, 0, 0))
 
+    def is_aggr_finished(self):
+        return self.drain._finished.is_set() and self.stats_drain._finished.is_set()
+
     def is_test_finished(self):
         self._collect_data()
         return -1
 
     def end_test(self, retcode):
         retcode = self.generator.end_test(retcode)
-        if self.reader:
-            logger.debug('Closing gun reader')
-            self.reader.close()
         if self.stats_reader:
             logger.debug('Closing stats reader')
             self.stats_reader.close()

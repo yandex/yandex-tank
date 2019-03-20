@@ -1,24 +1,31 @@
+from threading import Event
+
 import pandas as pd
 
+from yandextank.common.util import FileMultiReader
 from yandextank.plugins.Phantom.reader import PhantomReader, PhantomStatsReader, string_to_df_microsec
 
 
 class TestPhantomReader(object):
+    def setup_class(self):
+        stop = Event()
+        self.multireader = FileMultiReader('yandextank/plugins/Phantom/tests/phout.dat', stop)
+        stop.set()
+
+    def teardown_class(self):
+        self.multireader.close()
+
     def test_read_all(self):
         reader = PhantomReader(
-            'yandextank/plugins/Phantom/tests/phout.dat', cache_size=1024)
+            self.multireader.get_file(), cache_size=1024)
         df = pd.DataFrame()
         for chunk in reader:
-            if chunk is None:
-                reader.close()
-            else:
-                df = df.append(chunk)
+            df = df.append(chunk)
         assert (len(df) == 200)
         assert (df['interval_real'].mean() == 11000714.0)
 
     def test_reader_closed(self):
-        reader = PhantomReader('yandextank/plugins/Phantom/tests/phout.dat', cache_size=64)
-        reader.close()
+        reader = PhantomReader(self.multireader.get_file(), cache_size=64)
         frames = [i for i in reader]
         result = pd.concat(frames)
         assert len(result) == 200
@@ -29,6 +36,7 @@ class TestPhantomReader(object):
             chunk = f.read()
         result = string_to_df_microsec(chunk)
         expected = pd.read_pickle('yandextank/plugins/Phantom/tests/expected_df.dat')
+        result['ts'] -= result['ts'][0]
         assert result.equals(expected)
 
 

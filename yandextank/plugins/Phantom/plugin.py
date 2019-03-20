@@ -4,14 +4,15 @@
 import logging
 import subprocess
 import time
+from threading import Event
 
-from .reader import PhantomReader, PhantomStatsReader
+from .reader import PhantomReader, PhantomStatsReader, string_to_df
 from .utils import PhantomConfig
 from .widget import PhantomInfoWidget, PhantomProgressBarWidget
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
 from ...common.interfaces import AbstractCriterion, GeneratorPlugin
-from ...common.util import expand_to_seconds
+from ...common.util import expand_to_seconds, FileMultiReader
 
 from netort.process import execute
 
@@ -25,6 +26,7 @@ class Plugin(GeneratorPlugin):
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
+        self.phout_finished = Event()
         self.predefined_phout = None
         self.did_phout_import_try = False
         self.eta_file = None
@@ -85,10 +87,10 @@ class Plugin(GeneratorPlugin):
             self._stat_log = self.core.mkstemp(".log", "phantom_stat_")
         return self._stat_log
 
-    def get_reader(self):
+    def get_reader(self, parser=string_to_df):
         if self.reader is None:
-            self.reader = PhantomReader(self.phantom.phout_file)
-        return self.reader
+            self.reader = FileMultiReader(self.phantom.phout_file, self.phout_finished)
+        return PhantomReader(self.reader.get_file(), parser=parser)
 
     def get_stats_reader(self):
         if self.stats_reader is None:
@@ -155,6 +157,7 @@ class Plugin(GeneratorPlugin):
         retcode = self.process.poll()
         if retcode is not None:
             logger.info("Phantom done its work with exit code: %s", retcode)
+            self.phout_finished.set()
             return abs(retcode)
         else:
             info = self.get_info()
@@ -171,6 +174,7 @@ class Plugin(GeneratorPlugin):
                 self.process.communicate()
         else:
             logger.debug("Seems phantom finished OK")
+        self.phout_finished.set()
         if self.process_stderr:
             self.process_stderr.close()
         return retcode

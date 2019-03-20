@@ -73,52 +73,34 @@ def string_to_df_microsec(data):
         return
 
     df['ts'] = (df['send_ts'] * 1e6 + df['interval_real']).astype(int)
-    df['ts'] -= df["ts"][0]
     df['tag'] = df.tag.str.rsplit('#', 1, expand=True)[0]
     # logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
     return df
 
 
 class PhantomReader(object):
-    def __init__(self, filename, cache_size=1024 * 1024 * 50, ready_file=False):
+    def __init__(self, fileobj, cache_size=1024 * 1024 * 50, parser=string_to_df):
         self.buffer = ""
-        self.phout = open(filename, 'r')
-        self.closed = False
+        self.phout = fileobj
         self.cache_size = cache_size
-        self.ready_file = ready_file
-
-    def _read_phout_chunk(self):
-        data = self.phout.read(self.cache_size)
-        if data:
-            parts = data.rsplit('\n', 1)
-            if len(parts) > 1:
-                ready_chunk = self.buffer + parts[0] + '\n'
-                self.buffer = parts[1]
-                return string_to_df(ready_chunk)
-            else:
-                self.buffer += parts[0]
-        else:
-            self.buffer += self.phout.readline()
-            if self.ready_file:
-                self.close()
-        return None
+        self.parser = parser
 
     def __iter__(self):
-        while not self.closed:
-            yield self._read_phout_chunk()
-        # read end
-        chunk = self._read_phout_chunk()
-        while chunk is not None:
-            yield chunk
-            chunk = self._read_phout_chunk()
-        # don't forget the buffer
-        if self.buffer:
-            yield string_to_df(self.buffer)
+        return self
 
-        self.phout.close()
-
-    def close(self):
-        self.closed = True
+    def next(self):
+        data = self.phout.read(self.cache_size)
+        if data is None:
+            raise StopIteration
+        else:
+            parts = data.rsplit('\n', 1)
+            if len(parts) > 1:
+                chunk = self.buffer + parts[0] + '\n'
+                self.buffer = parts[1]
+                return self.parser(chunk)
+            else:
+                self.buffer += parts[0]
+                return None
 
 
 class PhantomStatsReader(StatsReader):
@@ -148,7 +130,7 @@ class PhantomStatsReader(StatsReader):
 
             offset = chunk_date - 1 - self.start_time
             reqps = 0
-            if offset >= 0 and offset < len(self.phantom_info.steps):
+            if 0 <= offset < len(self.phantom_info.steps):
                 reqps = self.phantom_info.steps[offset][0]
             yield self.stats_item(chunk_date - 1, instances, reqps)
 
