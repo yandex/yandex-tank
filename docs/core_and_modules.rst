@@ -1013,6 +1013,27 @@ Advanced criteria types
 
   Exit code - 30
 
+Сriteria for specific tag
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All criteria except ``limit`` could be used not for all test, but for a specially tagged uri.
+
+Example: ``time(1s, 5s, /latest/index/)``
+Stop test if average response time is higher than 1s ONLY from uri with tag ``/latest/index/`` for 5s.
+
+It can be used for developing specific test success criteria for each uri.
+
+Example:
+
+.. code-block:: yaml
+
+  autostop:
+    autostop:
+      - http(4xx, 20%, 15s, GET /weff?id=1)
+      - http(4xx, 5%, 5s, POST /authorize)
+
+Stop test if there're more than 5% of 4xx codes for uri with tag ``POST /authorize`` or if there're more than 20% of 4xx codes for uri with tag ``GET /weff?id=1``.
+
 
 Telegraf
 ========
