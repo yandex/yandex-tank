@@ -190,7 +190,7 @@ class TankConfig(object):
         if not self._validated:
             try:
                 self._validated = ValidatedConfig(self.__validate(), self.BASE_SCHEMA)
-                self._errors = []
+                self._errors = {}
             except ValidationError as e:
                 self._validated = None
                 self._errors = e.errors
