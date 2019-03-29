@@ -141,6 +141,7 @@ def main():
     except KeyboardInterrupt:
         worker.stop()
         worker.join()
+    sys.exit(worker.retcode)
 
 
 def init_logging(events_log_fname, verbose, quiet):
