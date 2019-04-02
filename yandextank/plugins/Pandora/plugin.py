@@ -111,6 +111,12 @@ class Plugin(GeneratorPlugin):
                     destination=self.DEFAULT_REPORT_FILE,
                     type='phout',
                 )
+        if not config.get("monitoring"):
+            config["monitoring"] = {
+                "expvar": {
+                    "enabled": self.expvar,
+                }
+            }
         return config
 
     @property
@@ -177,7 +183,7 @@ class Plugin(GeneratorPlugin):
             self.core.job.aggregator.add_result_listener(widget)
 
     def start_test(self):
-        args = [self.pandora_cmd, "-expvar", self.pandora_config_file]
+        args = [self.pandora_cmd, self.pandora_config_file]
         if self.affinity:
             self.core.__setup_affinity(self.affinity, args=args)
         logger.info("Starting: %s", args)
