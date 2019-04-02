@@ -105,6 +105,7 @@ class Plugin(GeneratorPlugin):
                     self.expvar_port = config["monitoring"]["expvar"].get("port")
                 else:
                     self.expvar_port = self.DEFAULT_EXPVAR_PORT
+        # or set if expvar not exists
         else:
             config["monitoring"] = {
                 "expvar": {
