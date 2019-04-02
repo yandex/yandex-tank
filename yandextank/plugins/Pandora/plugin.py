@@ -105,6 +105,14 @@ class Plugin(GeneratorPlugin):
                     self.expvar_port = config["monitoring"]["expvar"].get("port")
                 else:
                     self.expvar_port = self.DEFAULT_EXPVAR_PORT
+        else:
+            config["monitoring"] = {
+                "expvar": {
+                    "enabled": True,
+                }
+            }
+            self.expvar = True
+            self.expvar_port = self.DEFAULT_EXPVAR_PORT
 
         # FIXME this is broken for custom ammo providers due to interface incompatibility
         # FIXME refactor pandora plx
