@@ -24,7 +24,7 @@ class Plugin(GeneratorPlugin):
     OPTION_CONFIG = "config"
     SECTION = "pandora"
     DEFAULT_REPORT_FILE = "phout.log"
-    DEFAULT_PORT = 1234
+    DEFAULT_EXPVAR_PORT = 1234
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
@@ -104,7 +104,7 @@ class Plugin(GeneratorPlugin):
                 if config["monitoring"]["expvar"].get("port"):
                     self.expvar_port = config["monitoring"]["expvar"].get("port")
                 else:
-                    self.expvar_port = self.DEFAULT_PORT
+                    self.expvar_port = self.DEFAULT_EXPVAR_PORT
 
         # FIXME this is broken for custom ammo providers due to interface incompatibility
         # FIXME refactor pandora plx
