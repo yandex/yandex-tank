@@ -19,6 +19,9 @@ json_report:
 phantom:
   enabled: true
   package: yandextank.plugins.Phantom
+pandora:
+  enabled: false
+  package: yandextank.plugins.Pandora
 rcheck:
   enabled: true
   package: yandextank.plugins.ResourceCheck
