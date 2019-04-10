@@ -356,23 +356,22 @@ class SSHClient(object):
                 'Unable to correctly stop monitoring agent - session is broken. Pay attention to agent log (%s).',
                 log_filename,
                 exc_info=True)
-        try:
-            self.ssh.get_file(
-                os.path.join(
-                    self.path['AGENT_REMOTE_FOLDER'],
-                    "_agent.log"),
-                log_filename)
-            self.ssh.get_file(
-                os.path.join(
-                    self.path['AGENT_REMOTE_FOLDER'],
-                    "monitoring.rawdata"),
-                data_filename)
-            self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
-        except Exception:
-            logger.error("Unable to get agent artefacts", exc_info=True)
-
+        else:
+            try:
+                self.ssh.get_file(
+                    os.path.join(
+                        self.path['AGENT_REMOTE_FOLDER'],
+                        "_agent.log"),
+                    log_filename)
+                self.ssh.get_file(
+                    os.path.join(
+                        self.path['AGENT_REMOTE_FOLDER'],
+                        "monitoring.rawdata"),
+                    data_filename)
+                self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
+            except Exception:
+                logger.error("Unable to get agent artefacts", exc_info=True)
         self._kill_agent()
-
         return log_filename, data_filename
 
     def _kill_agent(self):
