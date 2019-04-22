@@ -1014,8 +1014,8 @@ class CasesBlock(AbstractBlock):
             return name
 
     def __reorder_cases(self):
-        sorted_cases = sorted(iter(self.cumulative_cases.items()),
-                              key=lambda k_v: (-1 * k_v[1][self.cases_sort_by], k_v[0]))
+        sorted_cases = sorted(self.cumulative_cases.items(),
+                              key=lambda k_v: -1 * k_v[1][self.cases_sort_by])
         new_order = [case for (case, data) in sorted_cases]
         now = time.time()
         if now - self.reorder_delay > self.last_reordered:
