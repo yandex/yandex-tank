@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-''' Classes to build full console screen '''
+""" Classes to build full console screen """
 import fcntl
 import logging
 import os
@@ -14,16 +14,16 @@ from ...common import util
 
 
 def get_terminal_size():
-    '''
+    """
     Gets width and height of terminal viewport
-    '''
+    """
     default_size = (30, 120)
     env = os.environ
 
     def ioctl_gwinsz(file_d):
-        '''
+        """
         Helper to get console size
-        '''
+        """
         try:
             sizes = struct.unpack(
                 'hh', fcntl.ioctl(file_d, termios.TIOCGWINSZ, '1234'))
@@ -120,7 +120,7 @@ def combine_codes(tag_data, markup):
             else:
                 color = try_color(color, markup.MAGENTA, markup)
                 http_err += count
-    return (net_err, http_err, color)
+    return net_err, http_err, color
 
 
 class TableFormatter(object):
@@ -152,7 +152,7 @@ class TableFormatter(object):
                     else:
                         shape[f] = max(shape[f], len(new[f]))
             prepared.append(new)
-        return (prepared, shape)
+        return prepared, shape
 
     def __update_shape(self, shape):
         def change_shape():
@@ -285,7 +285,7 @@ class Sparkline(object):
 
 
 class Screen(object):
-    '''     Console screen renderer class    '''
+    """     Console screen renderer class    """
     RIGHT_PANEL_SEPARATOR = ' . '
 
     def __init__(self, info_panel_width, markup_provider, **kwargs):
@@ -316,7 +316,7 @@ class Screen(object):
         self.left_panel = final_block
 
     def __get_right_line(self, widget_output):
-        '''        Gets next line for right panel        '''
+        """        Gets next line for right panel        """
         right_line = ''
         if widget_output:
             right_line = widget_output.pop(0)
@@ -327,7 +327,7 @@ class Screen(object):
         return right_line
 
     def __truncate(self, line_arr, max_width):
-        '''  Cut tuple of line chunks according to it's wisible lenght  '''
+        """  Cut tuple of line chunks according to it's wisible lenght  """
         def is_space(chunk):
             return all([True if i == ' ' else False for i in chunk])
 
@@ -363,7 +363,7 @@ class Screen(object):
         return result
 
     def __render_left_panel(self):
-        ''' Render left blocks '''
+        """ Render left blocks """
         self.log.debug("Rendering left blocks")
         left_block = self.left_panel
         left_block.render()
@@ -383,7 +383,7 @@ class Screen(object):
         return lines
 
     def render_screen(self):
-        '''        Main method to render screen view        '''
+        """        Main method to render screen view        """
         self.term_width, self.term_height = get_terminal_size()
         self.log.debug(
             "Terminal size: %sx%s", self.term_width, self.term_height)
@@ -441,25 +441,25 @@ class Screen(object):
         return self.markup.new_line.join(output) + self.markup.new_line
 
     def add_info_widget(self, widget):
-        '''
+        """
         Add widget string to right panel of the screen
-        '''
+        """
         index = widget.get_index()
         while index in list(self.info_widgets.keys()):
             index += 1
         self.info_widgets[widget.get_index()] = widget
 
     def add_second_data(self, data):
-        '''
+        """
         Notification method about new aggregator data
-        '''
+        """
         self.left_panel.add_second(data)
 
 
 class AbstractBlock:
-    '''
+    """
     Parent class for all left panel blocks
-    '''
+    """
 
     def __init__(self, screen):
         self.log = logging.getLogger(__name__)
@@ -468,22 +468,22 @@ class AbstractBlock:
         self.screen = screen
 
     def add_second(self, data):
-        '''
+        """
         Notification about new aggregate data
-        '''
+        """
         pass
 
     def fill_rectangle(self, prepared):
-        '''  Right-pad lines of block to equal width  '''
+        """  Right-pad lines of block to equal width  """
         result = []
         width = max([self.clean_len(line) for line in prepared])
         for line in prepared:
             spacer = ' ' * (width - self.clean_len(line))
             result.append(line + (self.screen.markup.RESET, spacer))
-        return (width, result)
+        return width, result
 
     def clean_len(self, line):
-        '''  Calculate wisible length of string  '''
+        """  Calculate wisible length of string  """
         if isinstance(line, str):
             return len(self.screen.markup.clean_markup(line))
         elif isinstance(line, tuple) or isinstance(line, list):
@@ -495,16 +495,16 @@ class AbstractBlock:
             return length
 
     def render(self):
-        '''
+        """
         Render method, fills .lines and .width properties with rendered data
-        '''
+        """
         raise RuntimeError("Abstract method needs to be overridden")
 
 
 class HorizontalBlock(AbstractBlock):
-    '''
+    """
     Block to merge two other blocks horizontaly
-    '''
+    """
 
     def __init__(self, left_block, right_block, screen):
         AbstractBlock.__init__(self, screen)
@@ -543,9 +543,9 @@ class HorizontalBlock(AbstractBlock):
 
 
 class VerticalBlock(AbstractBlock):
-    '''
+    """
     Block to merge two other blocks vertically
-    '''
+    """
 
     def __init__(self, top_block, bottom_block, screen):
         AbstractBlock.__init__(self, screen)
@@ -579,7 +579,7 @@ class VerticalBlock(AbstractBlock):
 
 
 class RPSBlock(AbstractBlock):
-    ''' Actual RPS sparkline '''
+    """ Actual RPS sparkline """
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -609,7 +609,7 @@ class RPSBlock(AbstractBlock):
 
 
 class PercentilesBlock(AbstractBlock):
-    ''' Aggregated percentiles '''
+    """ Aggregated percentiles """
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -698,7 +698,7 @@ class PercentilesBlock(AbstractBlock):
 
 
 class CurrentHTTPBlock(AbstractBlock):
-    ''' Http codes with highlight'''
+    """ Http codes with highlight"""
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -766,7 +766,7 @@ class CurrentHTTPBlock(AbstractBlock):
 
 
 class CurrentNetBlock(AbstractBlock):
-    ''' NET codes with highlight'''
+    """ NET codes with highlight"""
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -833,7 +833,7 @@ class CurrentNetBlock(AbstractBlock):
 
 
 class AnswSizesBlock(AbstractBlock):
-    ''' Answer and response sizes, if available '''
+    """ Answer and response sizes, if available """
 
     def __init__(self, screen, sizes_max_spark=120):
         AbstractBlock.__init__(self, screen)
@@ -885,7 +885,7 @@ class AnswSizesBlock(AbstractBlock):
 
 
 class AvgTimesBlock(AbstractBlock):
-    ''' Average times breakdown '''
+    """ Average times breakdown """
 
     def __init__(self, screen, times_max_spark=120):
         AbstractBlock.__init__(self, screen)
@@ -945,7 +945,7 @@ class AvgTimesBlock(AbstractBlock):
 
 
 class CasesBlock(AbstractBlock):
-    '''     Cases info    '''
+    """     Cases info    """
 
     def __init__(self, screen, cases_sort_by='http_err', cases_max_spark=60, reorder_delay=5, max_case_len=32):
         AbstractBlock.__init__(self, screen)
