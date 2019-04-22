@@ -1,8 +1,0 @@
-monitoring_log:
-  description: file name for monitoring log
-  type: string
-  default: monitoring.log
-test_data_log:
-  description: file name for test data log
-  type: string
-  default: test_data.log

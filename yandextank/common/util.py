@@ -451,7 +451,7 @@ def pairs(lst):
     """
     Iterate over pairs in the list
     """
-    return itertools.izip(lst[::2], lst[1::2])
+    return zip(lst[::2], lst[1::2])
 
 
 def update_status(status, multi_key, value):
@@ -570,7 +570,7 @@ class AddressWizard:
 
 
 def recursive_dict_update(d1, d2):
-    for k, v in d2.items():
+    for k, v in list(d2.items()):
         if isinstance(v, collections.Mapping):
             r = recursive_dict_update(d1.get(k, {}), v)
             d1[k] = r

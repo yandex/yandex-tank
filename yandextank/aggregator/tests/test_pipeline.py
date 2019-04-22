@@ -68,5 +68,5 @@ class TestPipeline(object):
         with open(expected_results) as fp:
             expected_results_parsed = json.load(fp)
         for item, expected_result in zip(pipeline, expected_results_parsed):
-            for key, expected_value in expected_result.items():
+            for key, expected_value in list(expected_result.items()):
                 assert item[key] == expected_value

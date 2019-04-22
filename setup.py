@@ -41,7 +41,7 @@ analytic tools for the results they produce.
         'Topic :: Software Development :: Quality Assurance',
         'Topic :: Software Development :: Testing',
         'Topic :: Software Development :: Testing :: Traffic Generation',
-        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',
     ],
     entry_points={
         'console_scripts': [
@@ -55,21 +55,14 @@ analytic tools for the results they produce.
         'yandextank.api': ['config/*'],
         'yandextank.core': ['config/*'],
         'yandextank.aggregator': ['config/*'],
-        'yandextank.plugins.Android': ['binary/*', 'config/*'],
         'yandextank.plugins.Autostop': ['config/*'],
         'yandextank.plugins.Bfg': ['config/*'],
         'yandextank.plugins.Console': ['config/*'],
-        'yandextank.plugins.DataUploader': ['config/*'],
         'yandextank.plugins.InfluxUploader': ['config/*'],
-        'yandextank.plugins.JMeter': ['config/*'],
-        'yandextank.plugins.JsonReport': ['config/*'],
-        'yandextank.plugins.Pandora': ['config/*'],
-        'yandextank.plugins.Phantom': ['config/*'],
         'yandextank.plugins.RCAssert': ['config/*'],
         'yandextank.plugins.ResourceCheck': ['config/*'],
         'yandextank.plugins.ShellExec': ['config/*'],
         'yandextank.plugins.ShootExec': ['config/*'],
         'yandextank.plugins.Telegraf': ['config/*'],
-        'yandextank.plugins.NeUploader': ['config/*']
     },
-    use_2to3=False, )
+    use_2to3=True, )

@@ -101,7 +101,7 @@ class Line(object):
         get list of constant load parts (we have no constant load at all, but tank will think so),
         with parts durations (float)
         '''
-        int_rps = range(int(self.minrps), int(self.maxrps) + 1)
+        int_rps = list(range(int(self.minrps), int(self.maxrps) + 1))
         step_duration = float(self.duration) / len(int_rps)
         rps_list = [(rps, int(step_duration)) for rps in int_rps]
         return rps_list
@@ -112,7 +112,7 @@ class Line(object):
         :returns: list of tuples (rps, duration of corresponding rps in seconds)
         :rtype: list
         """
-        seconds = range(0, int(self.duration) + 1)
+        seconds = list(range(0, int(self.duration) + 1))
         rps_groups = groupby([proper_round(self.rps_at(t)) for t in seconds],
                              lambda x: x)
         rps_list = [(rps, len(list(rpl))) for rps, rpl in rps_groups]

@@ -9,7 +9,7 @@ import stat
 import sys
 import time
 import traceback
-from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
+from configparser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
 from threading import Thread, Event
 
 import yaml
@@ -31,7 +31,7 @@ class RealConsoleMarkup(object):
     WHITE_ON_BLACK = '\033[37;40m'
     TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
-    new_line = u"\n"
+    new_line = "\n"
 
     YELLOW = '\033[1;33m'
     RED = '\033[1;31m'
@@ -293,7 +293,7 @@ class Finish:
         self.worker.status = Status.TEST_FINISHING
         retcode = self.worker.retcode
         if exc_type:
-            logger.error('Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, exc_tb))
+            logger.exception('Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, exc_tb))
             retcode = 1
         retcode = self.worker.core.plugins_end_test(retcode)
         self.worker.retcode = retcode
@@ -445,7 +445,7 @@ class TankWorker(Thread):
                 self.set_msg('')
                 break
             except LockError as e:
-                self.set_msg(e.message)
+                self.set_msg(e.__repr__())
                 if not self.wait_lock:
                     raise RuntimeError("Lock file present, cannot continue")
                 logger.warning(

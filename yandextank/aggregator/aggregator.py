@@ -93,7 +93,7 @@ class Worker(object):
         return series.min().item()
 
     def _count(self, series):
-        return {str(k): v for k, v in dict(Counter(series)).items()}
+        return {str(k): v for k, v in list(dict(Counter(series)).items())}
 
     def _len(self, series):
         return len(series)
@@ -146,12 +146,12 @@ class Aggregator(object):
             by_tag = list(chunk.groupby([self.groupby]))
             start_time = time.time()
             result = {
-                u"ts": ts,
-                u"tagged":
+                "ts": ts,
+                "tagged":
                 {tag: self.worker.aggregate(data)
                  for tag, data in by_tag},
-                u"overall": self.worker.aggregate(chunk),
-                u"counted_rps": rps
+                "overall": self.worker.aggregate(chunk),
+                "counted_rps": rps
             }
             logger.debug(
                 "Aggregation time: %.2fms", (time.time() - start_time) * 1000)

@@ -1,6 +1,6 @@
 import logging
 import re
-from ConfigParser import ConfigParser, ParsingError
+from configparser import ConfigParser, ParsingError
 from functools import reduce
 
 import pkg_resources
@@ -69,7 +69,7 @@ class UnrecognizedSection(ConversionError):
 
 
 def guess_plugin(section):
-    for plugin, section_name_pattern in SECTIONS_PATTERNS.items():
+    for plugin, section_name_pattern in list(SECTIONS_PATTERNS.items()):
         if re.match(section_name_pattern, section):
             return plugin
     else:
@@ -136,7 +136,7 @@ def without_deprecated(plugin, options):
     """
     :type options: list of tuple
     """
-    return filter(lambda option: not is_option_deprecated(plugin, option[0]), options)
+    return [option for option in options if not is_option_deprecated(plugin, option[0])]
 
 
 def old_section_name_mapper(name):
@@ -263,7 +263,7 @@ class Option(object):
         :rtype: (str, object)
         """
         if self._as_tuple is None:
-            self._as_tuple = self.converted.items()[0]
+            self._as_tuple = list(self.converted.items())[0]
         return self._as_tuple
 
     @property
@@ -338,8 +338,8 @@ class Section(object):
         if len(sections) == 1:
             return sections[0]
         if parent_name:
-            master_section = filter(lambda section: section.name == parent_name, sections)[0]
-            rest = filter(lambda section: section.name != parent_name, sections)
+            master_section = [section for section in sections if section.name == parent_name][0]
+            rest = [section for section in sections if section.name != parent_name]
         else:
             master_section = sections[0]
             parent_name = master_section.name
@@ -357,7 +357,7 @@ class Section(object):
         MAP = {
             'bfg': lambda section: section.name == '{}_gun'.format(master_section.get_cfg_dict()['gun_type'])
         }
-        return filter(MAP.get(master_section.name, lambda x: True), rest)[0]
+        return list(filter(MAP.get(master_section.name, lambda x: True), rest))[0]
         # return filter(lambda section: section.name == MAP.get(master_section.name, ), rest)[0]
 
 
@@ -369,7 +369,7 @@ def without_defaults(cfg_ini, section):
     """
     defaults = cfg_ini.defaults()
     options = cfg_ini.items(section) if cfg_ini.has_section(section) else []
-    return [(key, value) for key, value in options if key not in defaults.keys()]
+    return [(key, value) for key, value in options if key not in list(defaults.keys())]
 
 
 PLUGIN_PREFIX = 'plugin_'
@@ -447,15 +447,15 @@ def enable_sections(sections, core_opts):
     disabled_instances = {instance.section_name: instance for instance in plugin_instances if not instance.enabled}
 
     for section in sections:
-        if section.name in enabled_instances.keys():
+        if section.name in list(enabled_instances.keys()):
             section.enabled = True
             enabled_instances.pop(section.name)
-        elif section.name in disabled_instances.keys():
+        elif section.name in list(disabled_instances.keys()):
             section.enabled = False
             disabled_instances.pop(section.name)
     # add leftovers
     for plugin_instance in [i for i in plugin_instances if
-                            i.section_name in enabled_instances.keys() + disabled_instances.keys()]:
+                            i.section_name in list(enabled_instances.keys()) + list(disabled_instances.keys())]:
         sections.append(Section(plugin_instance.section_name, plugin_instance.plugin_name, [], plugin_instance.enabled))
     return sections
 
@@ -476,7 +476,7 @@ def combine_sections(sections):
     plugins = {}
     ready_sections = []
     for section in sections:
-        if section.plugin in PLUGINS_TO_COMBINE.keys():
+        if section.plugin in list(PLUGINS_TO_COMBINE.keys()):
             try:
                 plugins[section.plugin].append(section)
             except KeyError:
@@ -484,7 +484,7 @@ def combine_sections(sections):
         else:
             ready_sections.append(section)
 
-    for plugin_name, _sections in plugins.items():
+    for plugin_name, _sections in list(plugins.items()):
         if isinstance(_sections, list):
             parent_name, child_name, is_list = PLUGINS_TO_COMBINE[plugin_name]
             ready_sections.append(Section.from_multiple(_sections, parent_name, child_name, is_list))

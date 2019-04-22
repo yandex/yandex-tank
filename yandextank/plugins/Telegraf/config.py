@@ -7,7 +7,7 @@ from future.utils import iteritems
 from ..Telegraf.decoder import decoder
 import sys
 if sys.version_info[0] < 3:
-    import ConfigParser
+    import configparser
 else:
     import configparser as ConfigParser
 
@@ -114,7 +114,7 @@ class ConfigManager(object):
         # agent defaults
         host_config = {}
         for metric in host:
-            if str(metric.tag) in defaults.keys():
+            if str(metric.tag) in list(defaults.keys()):
                 for key in defaults[metric.tag]:
                     if key != 'name' and key not in defaults_boolean:
                         value = metric.get(key, None)
@@ -196,7 +196,7 @@ class AgentConfig(object):
             handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
             os.close(handle)
         try:
-            config = ConfigParser.RawConfigParser()
+            config = configparser.RawConfigParser()
             # FIXME incinerate such a string formatting inside a method call
             # T_T
             config.add_section('startup')
@@ -277,7 +277,7 @@ class AgentConfig(object):
         defaults_old_enabled = ['CPU', 'Memory', 'Disk', 'Net', 'System']
 
         try:
-            config = ConfigParser.RawConfigParser()
+            config = configparser.RawConfigParser()
 
             config.add_section("global_tags")
             config.add_section("agent")
@@ -290,7 +290,7 @@ class AgentConfig(object):
             config.set("agent", "collection_jitter", "'0s'")
             config.set("agent", "flush_jitter", "'1s'")
 
-            for section in self.host_config.keys():
+            for section in list(self.host_config.keys()):
                 # telegraf-style config
                 if not self.old_style_configs:
                     config.add_section(

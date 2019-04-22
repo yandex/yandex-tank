@@ -235,8 +235,8 @@ class TankConfig(object):
                 plugin_name,
                 plugin['package'],
                 plugin) for plugin_name,
-            plugin in self.raw_config_dict.items() if (
-                plugin_name not in self.BASE_SCHEMA.keys()) and isinstance(
+            plugin in list(self.raw_config_dict.items()) if (
+                plugin_name not in list(self.BASE_SCHEMA.keys())) and isinstance(
                 plugin,
                 dict) and plugin.get('enabled')]
 
@@ -255,7 +255,7 @@ class TankConfig(object):
         if len(errors) > 0:
             raise ValidationError((dict(errors)))
 
-        for plugin_name, plugin_conf in results.items():
+        for plugin_name, plugin_conf in list(results.items()):
             core_validated[plugin_name] = plugin_conf
         return core_validated
 
@@ -264,7 +264,7 @@ class TankConfig(object):
         result = v.validate(self.raw_config_dict, self.BASE_SCHEMA)
         if not result:
             errors = v.errors
-            for key, value in v.errors.items():
+            for key, value in list(v.errors.items()):
                 if 'must be of dict type' in value:
                     errors[key] = ['unknown field']
             raise ValidationError(errors)
@@ -282,7 +282,7 @@ class TankConfig(object):
         return v.normalized(config)
 
     def __set_core_dynamic_options(self, config):
-        for option, setter in self.DYNAMIC_OPTIONS.items():
+        for option, setter in list(self.DYNAMIC_OPTIONS.items()):
             try:
                 config[self.CORE_SECTION][option] = setter()
             except KeyError:
@@ -313,8 +313,8 @@ class ValidatedConfig(object):
             self._plugins = [
                 (plugin_name,
                  plugin_cfg['package'],
-                 plugin_cfg) for plugin_name, plugin_cfg in self.validated.items() if (
-                    plugin_name not in self.base_schema.keys()) and plugin_cfg['enabled']]
+                 plugin_cfg) for plugin_name, plugin_cfg in list(self.validated.items()) if (
+                    plugin_name not in list(self.base_schema.keys())) and plugin_cfg['enabled']]
         return self._plugins
 
     def get_option(self, section, option, default=None):
@@ -325,11 +325,8 @@ class ValidatedConfig(object):
                 return default
             raise
 
-    def __nonzero__(self):
-        return len(self.validated) > 0
-
     def __bool__(self):
-        return self.__nonzero__()
+        return len(self.validated) > 0
 
     def dump(self, path):
         with open(path, 'w') as f:

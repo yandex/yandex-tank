@@ -11,6 +11,7 @@ from .worker import BFGMultiprocessing, BFGGreen
 from ..Console import Plugin as ConsolePlugin
 from ...common.interfaces import GeneratorPlugin
 from ...stepper import StepperWrapper
+import importlib
 
 
 class Plugin(GeneratorPlugin):
@@ -81,7 +82,7 @@ class Plugin(GeneratorPlugin):
             if retcode != 0:
                 raise RuntimeError("Could not install required deps")
             import site
-            reload(site)
+            importlib.reload(site)
         self.log.info("BFG using ammo type %s", self.get_option("ammo_type"))
         gun_type = self.get_option("gun_type")
         if gun_type in self.gun_classes:

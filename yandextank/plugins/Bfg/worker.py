@@ -36,7 +36,7 @@ Gun: {gun.__class__.__name__}
         self.cached_stpd = cached_stpd
         self.stpd_filename = stpd_filename
         self.pool = [
-            mp.Process(target=self._worker) for _ in xrange(self.instances)
+            mp.Process(target=self._worker) for _ in range(self.instances)
         ]
         self.feeder = th.Thread(target=self._feed, name="Feeder")
         self.feeder.daemon = True
@@ -67,7 +67,7 @@ Gun: {gun.__class__.__name__}
         # yapf:disable
         while sorted([
                 self.pool[i].is_alive()
-                for i in xrange(len(self.pool))])[-1]:
+                for i in range(len(self.pool))])[-1]:
             time.sleep(1)
         # yapf:enable
         try:
@@ -108,7 +108,7 @@ Gun: {gun.__class__.__name__}
             try:
                 [
                     self.task_queue.put(None, timeout=1)
-                    for _ in xrange(0, workers_count)
+                    for _ in range(0, workers_count)
                 ]
                 break
             except Full:
@@ -120,7 +120,7 @@ Gun: {gun.__class__.__name__}
 
         try:
             logger.info("Waiting for workers")
-            map(lambda x: x.join(), self.pool)
+            list(map(lambda x: x.join(), self.pool))
             logger.info("All workers exited.")
             self.workers_finished = True
         except (KeyboardInterrupt, SystemExit):
@@ -128,7 +128,7 @@ Gun: {gun.__class__.__name__}
             self.results.close()
             self.quit.set()
             logger.info("Going to quit. Waiting for workers")
-            map(lambda x: x.join(), self.pool)
+            list(map(lambda x: x.join(), self.pool))
             self.workers_finished = True
 
 
@@ -205,7 +205,7 @@ class BFGGreen(BFGBase):
             return
 
         self.green_queue = GreenQueue(self.green_threads_per_instance)
-        self.green_pool = [spawn(self._green_worker) for _ in xrange(0, self.green_threads_per_instance)]
+        self.green_pool = [spawn(self._green_worker) for _ in range(0, self.green_threads_per_instance)]
 
         # Keep track of tasks sent to greenlets. If all greenlets are busy -
         # don't pull more tasks from the main queue, let other workers do that.
@@ -229,7 +229,7 @@ class BFGGreen(BFGBase):
 
             time.sleep(0.1)
 
-        map(lambda g: g.join(), self.green_pool)
+        list(map(lambda g: g.join(), self.green_pool))
 
         try:
             self.gun.teardown()
