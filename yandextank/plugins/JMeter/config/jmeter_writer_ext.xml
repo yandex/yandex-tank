@@ -1,0 +1,82 @@
+<!-- Yandex.Tank Addition -->
+<ResultCollector guiclass="SimpleDataWriter" testclass="ResultCollector" testname="Yandex.Tank results writer"
+                 enabled="true">
+    <boolProp name="ResultCollector.error_logging">false</boolProp>
+    <objProp>
+        <name>saveConfig</name>
+        <value class="SampleSaveConfiguration">
+            <time>true</time>
+            <latency>true</latency>
+            <timestamp>true</timestamp>
+            <success>true</success>
+            <label>true</label>
+            <code>true</code>
+            <message>false</message>
+            <threadName>false</threadName>
+            <dataType>false</dataType>
+            <encoding>false</encoding>
+            <assertions>false</assertions>
+            <subresults>false</subresults>
+            <responseData>false</responseData>
+            <samplerData>false</samplerData>
+            <xml>false</xml>
+            <fieldNames>true</fieldNames>
+            <responseHeaders>false</responseHeaders>
+            <requestHeaders>false</requestHeaders>
+            <responseDataOnError>false</responseDataOnError>
+            <saveAssertionResultsFailureMessage>false</saveAssertionResultsFailureMessage>
+            <assertionsResultsToSave>0</assertionsResultsToSave>
+            <bytes>true</bytes>
+            <threadCounts>true</threadCounts>
+            %(save_connect)s
+        </value>
+    </objProp>
+    <stringProp name="filename">%(jtl)s</stringProp>
+    <stringProp name="TestPlan.comments">Added automatically</stringProp>
+</ResultCollector>
+<hashTree/>
+<ResultCollector guiclass="SimpleDataWriter" testclass="ResultCollector" testname="Yandex.Tank debug logger" enabled="true">
+    <boolProp name="ResultCollector.error_logging">%(ext_level)s</boolProp>
+    <objProp>
+        <name>saveConfig</name>
+        <value class="SampleSaveConfiguration">
+            <time>true</time>
+            <latency>true</latency>
+            <timestamp>true</timestamp>
+            <success>true</success>
+            <label>true</label>
+            <code>true</code>
+            <message>true</message>
+            <threadName>true</threadName>
+            <dataType>true</dataType>
+            <encoding>true</encoding>
+            <assertions>true</assertions>
+            <subresults>true</subresults>
+            <responseData>true</responseData>
+            <samplerData>true</samplerData>
+            <xml>true</xml>
+            <fieldNames>true</fieldNames>
+            <responseHeaders>true</responseHeaders>
+            <requestHeaders>true</requestHeaders>
+            <responseDataOnError>false</responseDataOnError>
+            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+            <assertionsResultsToSave>0</assertionsResultsToSave>
+            <bytes>true</bytes>
+            <url>true</url>
+            <hostname>true</hostname>
+            <threadCounts>true</threadCounts>
+            <sampleCount>true</sampleCount>
+            <idleTime>true</idleTime>
+            %(save_connect)s
+        </value>
+    </objProp>
+<stringProp name="filename">%(ext_log)s</stringProp>
+<stringProp name="TestPlan.comments">Added automatically</stringProp>
+</ResultCollector>
+<hashTree/>
+<Arguments guiclass="ArgumentsPanel" testclass="Arguments" testname="Yandex.Tank Variables" enabled="true">
+<collectionProp name="Arguments.arguments">
+    %(udv)s
+</collectionProp>
+</Arguments>
+        <!-- /Yandex.Tank Addition -->

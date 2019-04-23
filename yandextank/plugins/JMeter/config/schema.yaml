@@ -1,0 +1,59 @@
+affinity:
+  description: Use to set CPU affinity
+  type: string
+  nullable: true
+  default: ''
+args:
+  description: additional commandline arguments for JMeter.
+  type: string
+  default: ''
+buffer_size:
+  description: jmeter buffer size
+  type: integer
+  nullable: true
+  default: null
+buffered_seconds:
+  description: Aggregator delay - to be sure that everything were read from jmeter results file.
+  type: integer
+  default: 3
+exclude_markers:
+  type: list
+  schema:
+    type: string
+    empty: false
+  default: []
+ext_log:
+  description: additional log, jmeter xml format. Saved in test dir as jmeter_ext_XXXX.jtl
+  type: string
+  allowed:
+    - none
+    - errors
+    - all
+  default: none
+extended_log:
+  description: additional log, jmeter xml format. Saved in test dir as jmeter_ext_XXXX.jtl
+  type: string
+  allowed:
+    - none
+    - errors
+    - all
+  default: none
+jmeter_path:
+  description: Path to JMeter
+  type: string
+  default: jmeter
+jmeter_ver:
+  description: Which JMeter version tank should expect. Affects the way connection time is logged.
+  type: float
+  default: 3.0
+jmx:
+  description: Testplan for execution.
+  type: string
+shutdown_timeout:
+  description: timeout for automatic test shutdown
+  type: integer
+  default: 10
+variables:
+  description: variables for jmx testplan
+  type: dict
+  default: {}
