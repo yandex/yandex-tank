@@ -58,23 +58,16 @@ class Plugin(GeneratorPlugin):
             pass
         self.core.add_artifact_file(self.report_filename)
 
-    def _listen_to_results(self):
+    def _write_results_into_file(self):
         """listens for messages on the q, writes to file. """
         with open(self.report_filename, 'w') as report_file:
             reader = BfgReader(self.bfg.results, self.close_event)
             columns = ['receive_ts', 'tag', 'interval_real', 'connect_time', 'send_time', 'latency', 'receive_time',
                        'interval_event', 'size_out', 'size_in', 'net_code', 'proto_code']
-            while True:
-                try:
-                    rere = next(reader)
-                    if rere is not None:
-                        rere.receive_ts = round(rere.receive_ts, 3)
-                        # df
-                        self.log.info(rere.to_csv(index=False, header=False, sep='\t', columns=columns))
-                        report_file.write(rere.to_csv(index=False, header=False, sep='\t', columns=columns))
-                except StopIteration:
-                    if self.close_event.is_set():
-                        break
+            for entry in reader:
+                if entry is not None:
+                    entry.receive_ts = round(entry.receive_ts, 3)
+                    report_file.write(entry.to_csv(index=False, header=False, sep='\t', columns=columns))
                 time.sleep(0.1)
 
     def get_reader(self, parser=string_to_df):
@@ -117,7 +110,7 @@ class Plugin(GeneratorPlugin):
             raise NotImplementedError(
                 'No such gun type implemented: "%s"' % gun_type)
 
-        self.results_listener = Thread(target=self._listen_to_results, name="ResultsQueueListener")
+        self.results_listener = Thread(target=self._write_results_into_file, name="ResultsQueueListener")
         # self.results_listener.daemon = True
 
         try:
