@@ -60,15 +60,15 @@ class Plugin(GeneratorPlugin):
 
     def _write_results_into_file(self):
         """listens for messages on the q, writes to file. """
-        with open(self.report_filename, 'w') as report_file:
-            reader = BfgReader(self.bfg.results, self.close_event)
-            columns = ['receive_ts', 'tag', 'interval_real', 'connect_time', 'send_time', 'latency', 'receive_time',
-                       'interval_event', 'size_out', 'size_in', 'net_code', 'proto_code']
-            for entry in reader:
-                if entry is not None:
-                    entry.receive_ts = round(entry.receive_ts, 3)
+        reader = BfgReader(self.bfg.results, self.close_event)
+        columns = ['receive_ts', 'tag', 'interval_real', 'connect_time', 'send_time', 'latency', 'receive_time',
+                   'interval_event', 'size_out', 'size_in', 'net_code', 'proto_code']
+        for entry in reader:
+            if entry is not None:
+                entry.receive_ts = round(entry.receive_ts, 3)
+                with open(self.report_filename, 'a') as report_file:
                     report_file.write(entry.to_csv(index=False, header=False, sep='\t', columns=columns))
-                time.sleep(0.1)
+            time.sleep(0.1)
 
     def get_reader(self, parser=string_to_df):
         if self.reader is None:
