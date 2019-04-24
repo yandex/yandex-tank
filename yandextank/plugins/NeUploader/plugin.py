@@ -45,9 +45,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         self.data_session.close()
 
     def is_test_finished(self):
-        datafr = next(self.reader)
-        if datafr is not None:
-            self.uploader(datafr)
+        df = next(self.reader)
+        if df is not None:
+            self.uploader(df)
         return -1
 
     def monitoring_data(self, data_list):
@@ -88,37 +88,37 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
         self.metrics_ids = {column: {} for column in self.columns}
 
-        def upload_df(datafr):
+        def upload_df(df):
             """
             Every metric in dataframe should be aggregated twice if it has not null tag column
-            :param datafr: input chunk with DataFrame
+            :param df: input chunk with DataFrame
             :return: function
             """
-            df_cases_set = set([row.tag for row in datafr.itertuples() if row.tag])
+            df_cases_set = set([row.tag for row in df.itertuples() if row.tag])
 
             for column in self.columns:
                 overall_metric_obj = self.metric_generator(column, 'overall')
-                overall_metric_obj.put(datafr)
+                overall_metric_obj.put(df)
 
                 for case_name in df_cases_set:
                     case_metric_obj = self.metric_generator(column, case_name)
                     self.metrics_ids[column][case_name] = case_metric_obj.local_id
 
-                    result_df = self.filter_df_by_case(datafr, case_name)
+                    result_df = self.filter_df_by_case(df, case_name)
                     result_df['value'] = result_df[column]
                     case_metric_obj.put(result_df)
 
         return upload_df
 
     @staticmethod
-    def filter_df_by_case(datafr, case):
+    def filter_df_by_case(df, case):
         """
         Filter dataframe by case name. If case is 'overall', return the whole dataframe.
-        :param datafr: DataFrame
+        :param df: DataFrame
         :param case: str with case name
         :return: DataFrame
         """
-        return datafr if case == 'overall' else datafr.loc[datafr['tag'] == case]
+        return df if case == 'overall' else df.loc[df['tag'] == case]
 
     @staticmethod
     def map_uploader_tags(uploader_tags):
