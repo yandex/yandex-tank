@@ -419,6 +419,7 @@ class TankWorker(Thread):
 
         filename = os.path.join(self.core.artifacts_dir, 'tank.log')
         open(filename, 'a').close()
+        self.core.add_artifact_file(filename)
         current_file_mode = os.stat(filename).st_mode
         os.chmod(filename, current_file_mode | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
