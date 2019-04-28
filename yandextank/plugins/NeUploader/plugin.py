@@ -57,7 +57,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         for chunk in self.reader:
             if chunk is not None:
                 self.uploader(chunk)
-        # TODO: create cases
         return retcode
 
     @property
@@ -76,7 +75,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         metric_obj = self.metrics_ids[col].get(case)
         if not metric_obj:
             parent = self.metrics_ids[col].get('overall')
-            metric_obj = self.data_session.new_aggregated_metric('metric {} {}'.format(col, case), parent=parent)
+            metric_obj = self.data_session.new_aggregated_metric(
+                name='metric {} {}'.format(col, case), parent=parent, case=case
+            )
             self.metrics_ids[col][case] = metric_obj.local_id
         return metric_obj
 
