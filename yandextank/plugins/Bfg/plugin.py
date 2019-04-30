@@ -1,6 +1,6 @@
 import logging
 import time
-from threading import Event
+from threading import Event, Thread
 
 import pip
 
