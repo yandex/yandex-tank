@@ -7,9 +7,11 @@ import pip
 from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun, UltimateGun
 from .reader import BfgReader, BfgStatsReader
 from .widgets import BfgInfoWidget
+from ..Phantom import PhantomReader, string_to_df
 from .worker import BFGMultiprocessing, BFGGreen
 from ..Console import Plugin as ConsolePlugin
 from ...common.interfaces import GeneratorPlugin
+from ...common.util import FileMultiReader
 from ...stepper import StepperWrapper
 
 
