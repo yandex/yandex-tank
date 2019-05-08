@@ -1,9 +1,9 @@
-""" Plugin uploading metrics from yandextank to Luna. """
+""" Plugin uploading metrics from yhttps://wiki.yandex-team.ru/hr/gor/moebius/andextank to Luna. """
 import logging
 from netort.data_manager import DataSession
 
 from yandextank.plugins.Phantom.reader import string_to_df_microsec
-from ...common.interfaces import AbstractPlugin,\
+from yandextank.common.interfaces import AbstractPlugin,\
     MonitoringDataListener
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
@@ -99,14 +99,13 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
             for column in self.columns:
                 overall_metric_obj = self.metric_generator(column, 'overall')
+                df['value'] = df[column]
                 overall_metric_obj.put(df)
 
                 for case_name in df_cases_set:
                     case_metric_obj = self.metric_generator(column, case_name)
                     self.metrics_ids[column][case_name] = case_metric_obj.local_id
-
                     result_df = self.filter_df_by_case(df, case_name)
-                    result_df['value'] = result_df[column]
                     case_metric_obj.put(result_df)
 
         return upload_df
