@@ -35,11 +35,11 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self.reader = []
         else:
             self.data_session = DataSession({'clients': self.clients_cfg})
-            self.add_cleanup(self.cleanup)
+            self.add_cleanup(self._cleanup)
             self.data_session.update_job({'name': self.cfg.get('test_name')})
             self.uploader = self.get_uploader()
 
-    def cleanup(self):
+    def _cleanup(self):
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
         self.data_session.update_job(uploader_metainfo)
         self.data_session.close()
@@ -66,7 +66,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     def metric_generator(self, col, case):
         """
         Generator of metric objects:
-        Checks existent metrics and creates new aggregated metric if it does not exist.
+        Checks existent metrics and creates new metric if it does not exist.
         :param col:  str with column name
         :param case: str with case name
         :return: metric object
@@ -75,8 +75,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         metric_obj = self.metrics_ids[col].get(case)
         if not metric_obj:
             parent = self.metrics_ids[col].get('overall')
-            metric_obj = self.data_session.new_aggregated_metric(
-                name='metric {} {}'.format(col, case), parent=parent, case=case
+            metric_obj = self.data_session.new_true_metric(
+                name='metric {} {}'.format(col, case), raw=False, aggregate=True
             )
             self.metrics_ids[col][case] = metric_obj.local_id
         return metric_obj
@@ -102,11 +102,11 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                 df['value'] = df[column]
                 overall_metric_obj.put(df)
 
-                for case_name in df_cases_set:
-                    case_metric_obj = self.metric_generator(column, case_name)
-                    self.metrics_ids[column][case_name] = case_metric_obj.local_id
-                    result_df = self.filter_df_by_case(df, case_name)
-                    case_metric_obj.put(result_df)
+                # for case_name in df_cases_set:
+                #     case_metric_obj = self.metric_generator(column, case_name)
+                #     self.metrics_ids[column][case_name] = case_metric_obj.local_id
+                #     result_df = self.filter_df_by_case(df, case_name)
+                #     case_metric_obj.put(result_df)
 
         return upload_df
 
