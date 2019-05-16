@@ -5,6 +5,7 @@ from optparse import OptionParser
 import pkg_resources
 from netort.resource import manager as resource_manager
 from yandextank.core.consoleworker import TankWorker
+from yandextank.core.tankcore import LockError
 from yandextank.validator.validator import ValidationError
 
 
@@ -129,8 +130,8 @@ def main():
                             ammo_file=ammofile if ammofile else None,
                             log_handlers=handlers
                             )
-    except ValidationError as e:
-        logging.error('Config validation error:\n{}'.format(e.errors))
+    except (ValidationError, LockError) as e:
+        logging.error('Config validation error:\n{}'.format(e.message))
         return
     worker.start()
     try:
