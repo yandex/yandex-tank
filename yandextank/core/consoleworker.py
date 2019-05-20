@@ -83,7 +83,7 @@ def load_cfg(cfg_filename):
     """
     if cfg_filename.endswith('.yaml'):
         with open(cfg_filename) as f:
-            cfg = yaml.load(f)
+            cfg = yaml.load(f, Loader=yaml.FullLoader)
     else:
         cfg = convert_ini(cfg_filename)
     return cfg

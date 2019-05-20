@@ -484,7 +484,7 @@ class TankCore(object):
                 logger.info("Lock file is found: %s", full_name)
                 try:
                     with open(full_name) as f:
-                        running_cfg = yaml.load(f)
+                        running_cfg = yaml.load(f, Loader=yaml.FullLoader)
                     pid = running_cfg.get(TankCore.SECTION).get(cls.PID_OPTION)
                     if not pid:
                         logger.warning('Failed to get {}.{} from lock file {}'.format(TankCore.SECTION))
