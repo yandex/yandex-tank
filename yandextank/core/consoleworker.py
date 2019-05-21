@@ -75,7 +75,7 @@ def load_cfg(cfg_filename):
         return convert_ini(cfg_filename)
     else:
         with open(cfg_filename) as f:
-            return yaml.load(f)
+            return yaml.load(f, Loader=yaml.FullLoader)
 
 
 def cfg_folder_loader(path):
