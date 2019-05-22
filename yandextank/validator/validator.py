@@ -27,7 +27,7 @@ class ValidationError(Exception):
 def load_yaml_schema(path):
     # DEFAULT_FILENAME = 'schema.yaml'
     with open(path, 'r') as f:
-        return yaml.load(f)
+        return yaml.load(f, Loader=yaml.FullLoader)
 
 
 def load_py_schema(path):

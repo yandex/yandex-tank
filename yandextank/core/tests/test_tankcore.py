@@ -23,7 +23,7 @@ logger.addHandler(console_handler)
 
 def load_yaml(directory, filename):
     with open(os.path.join(directory, filename), 'r') as f:
-        return yaml.load(f)
+        return yaml.load(f, Loader=yaml.FullLoader)
 
 
 CFG1 = {
@@ -192,7 +192,7 @@ def teardown_module(module):
 
 def sort_schema_alphabetically(filename):
     with open(filename, 'r') as f:
-        schema = yaml.load(f)
+        schema = yaml.load(f, Loader=yaml.FullLoader)
     with open(filename, 'w') as f:
         for key in sorted(schema.keys()):
             f.write(key + ':\n')
