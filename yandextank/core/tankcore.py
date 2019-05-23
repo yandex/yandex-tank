@@ -574,6 +574,9 @@ class Lock(object):
         lock.lock_file = path
         return lock
 
+    def __str__(self):
+        return str(self.info)
+
     @classmethod
     def is_locked(cls, lock_dir='/var/lock'):
         for filename in os.listdir(lock_dir):
@@ -596,7 +599,7 @@ class Lock(object):
                                 logger.warning("Failed to delete lock %s: %s", full_name, exc)
                             return False
                         else:
-                            return "Another test is running with pid {}".format(running_lock.pid)
+                            return "Another test is running: {}".format(running_lock)
                 except Exception:
                     msg = "Failed to load info from lock %s" % full_name
                     logger.warn(msg, exc_info=True)
