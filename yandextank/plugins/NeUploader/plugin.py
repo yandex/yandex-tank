@@ -74,7 +74,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
         metric_obj = self.metrics_ids[col].get(case)
         if not metric_obj:
-            parent = self.metrics_ids[col].get('overall')
+            # parent = self.metrics_ids[col].get('overall')
             metric_obj = self.data_session.new_true_metric(
                 name='metric {} {}'.format(col, case), raw=False, aggregate=True
             )
@@ -95,19 +95,17 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             :param df: input chunk with DataFrame
             :return: function
             """
-            df_cases_set = set([row.tag for row in df.itertuples() if row.tag])
+            # df_cases_set = set([row.tag for row in df.itertuples() if row.tag])
 
             for column in self.columns:
                 overall_metric_obj = self.metric_generator(column, 'overall')
                 df['value'] = df[column]
                 overall_metric_obj.put(df)
-
                 # for case_name in df_cases_set:
                 #     case_metric_obj = self.metric_generator(column, case_name)
                 #     self.metrics_ids[column][case_name] = case_metric_obj.local_id
                 #     result_df = self.filter_df_by_case(df, case_name)
                 #     case_metric_obj.put(result_df)
-
         return upload_df
 
     @staticmethod
