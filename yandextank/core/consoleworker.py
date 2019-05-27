@@ -75,7 +75,7 @@ def load_cfg(cfg_filename):
         return convert_ini(cfg_filename)
     else:
         with open(cfg_filename) as f:
-            return yaml.load(f)
+            return yaml.load(f, Loader=yaml.FullLoader)
 
 
 def cfg_folder_loader(path):
@@ -257,7 +257,6 @@ class Cleanup:
         self._actions.append((name, fn))
 
     def __enter__(self):
-        self.tankworker.init_folder()
         return self.add_action
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -315,7 +314,7 @@ class TankWorker(Thread):
     FINISH_FILENAME = 'finish_status.yaml'
 
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
-                 log_handlers=None, wait_lock=True, files=None, ammo_file=None, api_start=False):
+                 log_handlers=None, wait_lock=False, files=None, ammo_file=None, api_start=False):
         super(TankWorker, self).__init__()
         self.api_start = api_start
         self.wait_lock = wait_lock
@@ -326,8 +325,13 @@ class TankWorker(Thread):
         self.interrupted = Event()
         self.config_list = self._combine_configs(configs, cli_options, cfg_patches, cli_args, no_local)
         self.core = TankCore(self.config_list, self.interrupted)
+        self.folder = self.init_folder()
+        self.init_logging(debug=True)
         self.status = Status.TEST_INITIATED
         self.test_id = self.core.test_id
+        is_locked = Lock.is_locked(self.core.lock_dir)
+        if is_locked and not self.core.config.get_option(self.SECTION, 'ignore_lock'):
+            raise LockError(is_locked)
         self.retcode = None
         self.msg = ''
 
@@ -356,20 +360,20 @@ class TankWorker(Thread):
         return configs
 
     def init_folder(self):
-        self.folder = self.core.artifacts_dir
+        folder = self.core.artifacts_dir
         if self.api_start > 0:
             for f in self.files:
-                shutil.move(f, self.folder)
+                shutil.move(f, folder)
             if self.ammo_file:
-                shutil.move(self.ammo_file, self.folder)
-            os.chdir(self.folder)
+                shutil.move(self.ammo_file, folder)
+            os.chdir(folder)
+        return folder
 
     def run(self):
         with Cleanup(self) as add_cleanup:
             lock = self.get_lock()
             add_cleanup('release lock', lock.release)
             self.status = Status.TEST_PREPARING
-            self.init_logging(debug=True)
             logger.info('Created a folder for the test. %s' % self.folder)
 
             self.core.plugins_configure()
