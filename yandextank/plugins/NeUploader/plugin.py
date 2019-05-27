@@ -21,8 +21,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         self.clients_cfg = [{'type': 'luna',
                              'api_address': self.cfg.get('api_address'),
                              'db_name': self.cfg.get('db_name')}]
-        self.metrics_ids = {}  # map of case names and metric local ids
-
+        self.metrics_objs = {}  # map of case names and metric objects
     def configure(self):
         pass
 
@@ -72,13 +71,13 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         :return: metric object
         """
 
-        metric_obj = self.metrics_ids[col].get(case)
+        metric_obj = self.metrics_objs[col].get(case)
         if not metric_obj:
             # parent = self.metrics_ids[col].get('overall')
             metric_obj = self.data_session.new_true_metric(
                 name='metric {} {}'.format(col, case), raw=False, aggregate=True
             )
-            self.metrics_ids[col][case] = metric_obj.local_id
+            self.metrics_objs[col][case] = metric_obj
         return metric_obj
 
     def get_uploader(self):
@@ -87,7 +86,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         :return: upload_df function
         """
 
-        self.metrics_ids = {column: {} for column in self.columns}
+        self.metrics_objs = {column: {} for column in self.columns}
 
         def upload_df(df):
             """
