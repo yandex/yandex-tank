@@ -21,7 +21,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         self.clients_cfg = [{'type': 'luna',
                              'api_address': self.cfg.get('api_address'),
                              'db_name': self.cfg.get('db_name')}]
-        self.metrics_ids = {}  # map of case names and metric local ids
+        self.metrics_objs = {}  # map of case names and metric objects
 
     def configure(self):
         pass
@@ -37,7 +37,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self.data_session = DataSession({'clients': self.clients_cfg})
             self.add_cleanup(self._cleanup)
             self.data_session.update_job({'name': self.cfg.get('test_name')})
-            self.uploader = self.get_uploader()
 
     def _cleanup(self):
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
@@ -47,7 +46,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     def is_test_finished(self):
         df = next(self.reader)
         if df is not None:
-            self.uploader(df)
+            self.upload(df)
         return -1
 
     def monitoring_data(self, data_list):
@@ -56,14 +55,14 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     def post_process(self, retcode):
         for chunk in self.reader:
             if chunk is not None:
-                self.uploader(chunk)
+                self.upload(chunk)
         return retcode
 
     @property
     def is_telegraf(self):
         return True
 
-    def metric_generator(self, col, case):
+    def get_metric_obj(self, col, case):
         """
         Generator of metric objects:
         Checks existent metrics and creates new metric if it does not exist.
@@ -71,52 +70,50 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         :param case: str with case name
         :return: metric object
         """
+        col_map = {
+            'interval_real': self.data_session.new_true_metric,
+            'connect_time': self.data_session.new_true_metric,
+            'send_time': self.data_session.new_true_metric,
+            'latency': self.data_session.new_true_metric,
+            'receive_time': self.data_session.new_true_metric,
+            'interval_event': self.data_session.new_true_metric,
+            'net_code': self.data_session.new_event_metric,
+            'proto_code': self.data_session.new_event_metric
+        }
 
-        metric_obj = self.metrics_ids[col].get(case)
-        if not metric_obj:
-            # parent = self.metrics_ids[col].get('overall')
-            metric_obj = self.data_session.new_true_metric(
-                name='metric {} {}'.format(col, case), raw=False, aggregate=True
-            )
-            self.metrics_ids[col][case] = metric_obj.local_id
-        return metric_obj
+        case = self.metrics_objs.get(case)
+        if case is None:
+            # parent = self.metrics_objs.get('__overall__', {}).get(col)
+            metrics = {
+                col: constructor(
+                    name='{} {}'.format(col, case), raw=False, aggregate=True
+                ) for col, constructor in col_map.items()
+            }
+            self.metrics_objs[case] = metrics
+        return self.metrics_objs[case][col]
 
-    def get_uploader(self):
-        """
-        Creates metric_obj on every metric for every case in DataFrame and puts all them to queue.
-        :return: upload_df function
-        """
+    def upload(self, df):
+        # df_cases_set = set([row.tag for row in df.itertuples() if row.tag])
 
-        self.metrics_ids = {column: {} for column in self.columns}
-
-        def upload_df(df):
-            """
-            Every metric in dataframe should be aggregated twice if it has not null tag column
-            :param df: input chunk with DataFrame
-            :return: function
-            """
-            # df_cases_set = set([row.tag for row in df.itertuples() if row.tag])
-
-            for column in self.columns:
-                overall_metric_obj = self.metric_generator(column, 'overall')
-                df['value'] = df[column]
-                overall_metric_obj.put(df)
-                # for case_name in df_cases_set:
-                #     case_metric_obj = self.metric_generator(column, case_name)
-                #     self.metrics_ids[column][case_name] = case_metric_obj.local_id
-                #     result_df = self.filter_df_by_case(df, case_name)
-                #     case_metric_obj.put(result_df)
-        return upload_df
+        for column in self.columns:
+            overall_metric_obj = self.get_metric_obj(column, '__overall__')
+            df['value'] = df[column]
+            overall_metric_obj.put(df)
+            # for case_name in df_cases_set:
+            #     case_metric_obj = self.metric_generator(column, case_name)
+            #     self.metrics_ids[column][case_name] = case_metric_obj.local_id
+            #     result_df = self.filter_df_by_case(df, case_name)
+            #     case_metric_obj.put(result_df)
 
     @staticmethod
     def filter_df_by_case(df, case):
         """
-        Filter dataframe by case name. If case is 'overall', return the whole dataframe.
+        Filter dataframe by case name. If case is '__overall__', return the whole dataframe.
         :param df: DataFrame
         :param case: str with case name
         :return: DataFrame
         """
-        return df if case == 'overall' else df.loc[df['tag'] == case]
+        return df if case == '__overall__' else df.loc[df['tag'] == case]
 
     @staticmethod
     def map_uploader_tags(uploader_tags):
