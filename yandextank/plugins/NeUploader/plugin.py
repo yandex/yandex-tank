@@ -79,7 +79,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             'interval_event': self.data_session.new_true_metric,
             'net_code': self.data_session.new_event_metric,
             'proto_code': self.data_session.new_event_metric
-                   }
+            }
 
         case = self.metrics_objs.get(case)
         if case is None:
