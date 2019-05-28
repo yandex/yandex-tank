@@ -12,9 +12,6 @@ logger = logging.getLogger(__name__)  # pylint: disable=C0103
 class Plugin(AbstractPlugin, MonitoringDataListener):
     SECTION = 'neuploader'
 
-    columns = ['interval_real', 'connect_time', 'send_time',
-               'latency', 'receive_time', 'interval_event']
-
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
         self._is_telegraf = None
@@ -37,6 +34,16 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self.data_session = DataSession({'clients': self.clients_cfg})
             self.add_cleanup(self._cleanup)
             self.data_session.update_job({'name': self.cfg.get('test_name')})
+            self.col_map = {
+                'interval_real': self.data_session.new_true_metric,
+                'connect_time': self.data_session.new_true_metric,
+                'send_time': self.data_session.new_true_metric,
+                'latency': self.data_session.new_true_metric,
+                'receive_time': self.data_session.new_true_metric,
+                'interval_event': self.data_session.new_true_metric,
+                'net_code': self.data_session.new_event_metric,
+                'proto_code': self.data_session.new_event_metric
+            }
 
     def _cleanup(self):
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
@@ -70,32 +77,22 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         :param case: str with case name
         :return: metric object
         """
-        col_map = {
-            'interval_real': self.data_session.new_true_metric,
-            'connect_time': self.data_session.new_true_metric,
-            'send_time': self.data_session.new_true_metric,
-            'latency': self.data_session.new_true_metric,
-            'receive_time': self.data_session.new_true_metric,
-            'interval_event': self.data_session.new_true_metric,
-            'net_code': self.data_session.new_event_metric,
-            'proto_code': self.data_session.new_event_metric
-        }
 
-        case = self.metrics_objs.get(case)
-        if case is None:
+        case_metrics = self.metrics_objs.get(case)
+        if case_metrics is None:
             # parent = self.metrics_objs.get('__overall__', {}).get(col)
-            metrics = {
+            case_metrics = {
                 col: constructor(
                     name='{} {}'.format(col, case), raw=False, aggregate=True
-                ) for col, constructor in col_map.items()
+                ) for col, constructor in self.col_map.items()
             }
-            self.metrics_objs[case] = metrics
+            self.metrics_objs[case] = case_metrics
         return self.metrics_objs[case][col]
 
     def upload(self, df):
         # df_cases_set = set([row.tag for row in df.itertuples() if row.tag])
 
-        for column in self.columns:
+        for column in self.col_map:
             overall_metric_obj = self.get_metric_obj(column, '__overall__')
             df['value'] = df[column]
             overall_metric_obj.put(df)
