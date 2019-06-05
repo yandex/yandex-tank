@@ -132,7 +132,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                 for panelk, panelv in panels.items() for name, values in panelv.items()}
         # return {pandas.DataFrame({'ts': [], 'value': []})] * sum([len(metrics) for metrics in panels.values()})
 
-
     @staticmethod
     def filter_df_by_case(df, case):
         """
