@@ -64,7 +64,7 @@ class Plugin(GeneratorPlugin):
                    'interval_event', 'size_out', 'size_in', 'net_code', 'proto_code']
         for entry in reader:
             if entry is not None:
-                entry.receive_ts = round(entry.receive_ts, 3)
+                entry.receive_ts = entry.receive_ts.round(3)
                 with open(self.report_filename, 'a') as report_file:
                     report_file.write(entry.to_csv(index=False, header=False, sep='\t', columns=columns))
             time.sleep(0.1)

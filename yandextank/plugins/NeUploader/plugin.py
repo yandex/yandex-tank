@@ -1,5 +1,7 @@
 """ Plugin uploading metrics from yhttps://wiki.yandex-team.ru/hr/gor/moebius/andextank to Luna. """
 import logging
+
+import pandas
 from netort.data_manager import DataSession
 
 from yandextank.plugins.Phantom.reader import string_to_df_microsec
@@ -19,6 +21,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                              'api_address': self.cfg.get('api_address'),
                              'db_name': self.cfg.get('db_name')}]
         self.metrics_objs = {}  # map of case names and metric objects
+        self.monitoring_metrics = {}
 
     def configure(self):
         pass
@@ -57,7 +60,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         return -1
 
     def monitoring_data(self, data_list):
-        pass
+        self.upload_monitoring(data_list)
 
     def post_process(self, retcode):
         for chunk in self.reader:
@@ -101,6 +104,33 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             #     self.metrics_ids[column][case_name] = case_metric_obj.local_id
             #     result_df = self.filter_df_by_case(df, case_name)
             #     case_metric_obj.put(result_df)
+
+    def upload_monitoring(self, data):
+        for metric_name, df in self.monitoring_data_to_dfs(data).items():
+            if metric_name not in self.monitoring_metrics:
+                panel, metric = metric_name.split(':', 1)
+                self.monitoring_metrics[metric_name] = self.data_session.new_true_metric(metric,
+                                                                                         group='monitoring',
+                                                                                         host=panel)
+            self.monitoring_metrics[metric_name].put(df)
+
+    @staticmethod
+    def monitoring_data_to_dfs(data):
+        panels = {}
+        for chunk in data:
+            for panel_name, content in chunk['data'].items():
+                if panel_name in panels:
+                    for metric_name, value in content['metrics'].items():
+                        if metric_name in panels[panel_name]:
+                            panels[panel_name][metric_name]['value'].append(value)
+                            panels[panel_name][metric_name]['ts'].append(chunk['timestamp'])
+                        else:
+                            panels[panel_name][metric_name] = {'value': [value], 'ts': [chunk['timestamp']]}
+                else:
+                    panels[panel_name] = {name: {'value': [value], 'ts': [chunk['timestamp']]} for name, value in content['metrics'].items()}
+        return {'{}:{}'.format(panelk, name): pandas.DataFrame({'ts': values['ts'], 'value': values['value']})
+                for panelk, panelv in panels.items() for name, values in panelv.items()}
+        # return {pandas.DataFrame({'ts': [], 'value': []})] * sum([len(metrics) for metrics in panels.values()})
 
     @staticmethod
     def filter_df_by_case(df, case):
