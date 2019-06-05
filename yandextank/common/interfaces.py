@@ -275,7 +275,7 @@ class MonitoringPlugin(AbstractPlugin):
 
     def __init__(self, core, cfg, name):
         super(MonitoringPlugin, self).__init__(core, cfg, name)
-        self.listeners = []
+        self.listeners = set()
 
     def add_listener(self, plugin):
-        self.listeners.append(plugin)
+        self.listeners.add(plugin)
