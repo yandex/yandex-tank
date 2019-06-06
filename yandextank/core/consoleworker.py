@@ -292,7 +292,7 @@ class Finish:
         self.worker.status = Status.TEST_FINISHING
         retcode = self.worker.retcode
         if exc_type:
-            logger.error('Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, exc_tb))
+            logger.error('Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb))))
             retcode = 1
         retcode = self.worker.core.plugins_end_test(retcode)
         self.worker.retcode = retcode
@@ -316,6 +316,7 @@ class TankWorker(Thread):
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
                  log_handlers=None, wait_lock=False, files=None, ammo_file=None, api_start=False):
         super(TankWorker, self).__init__()
+        self.daemon = True
         self.api_start = api_start
         self.wait_lock = wait_lock
         self.log_handlers = log_handlers if log_handlers is not None else []

@@ -20,7 +20,7 @@ import yaml
 from builtins import str
 
 from yandextank.common.exceptions import PluginNotPrepared
-from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin
+from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin, MonitoringDataListener
 from yandextank.plugins.DataUploader.client import LPRequisites
 from yandextank.validator.validator import TankConfig, ValidationError
 from yandextank.aggregator import TankAggregator
@@ -243,6 +243,8 @@ class TankCore(object):
             if not self.interrupted.is_set():
                 logger.debug("Configuring %s", plugin)
                 plugin.configure()
+                if isinstance(plugin, MonitoringDataListener):
+                    [mon.add_listener(plugin) for mon in self.job.monitoring_plugins]
 
     def plugins_prepare_test(self):
         """ Call prepare_test() on all plugins        """
