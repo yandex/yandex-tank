@@ -35,11 +35,11 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self.reader = []
         else:
             self.data_session = DataSession({'clients': self.clients_cfg})
-            self.add_cleanup(self._cleanup)
+            self.add_cleanup(self.cleanup)
             self.data_session.update_job({'name': self.cfg.get('test_name')})
             self.uploader = self.get_uploader()
 
-    def _cleanup(self):
+    def cleanup(self):
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
         self.data_session.update_job(uploader_metainfo)
         self.data_session.close()
@@ -74,9 +74,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
         metric_obj = self.metrics_ids[col].get(case)
         if not metric_obj:
-            # parent = self.metrics_ids[col].get('overall')
+            parent = self.metrics_ids[col].get('overall')
             metric_obj = self.data_session.new_true_metric(
-                name='metric {} {}'.format(col, case), raw=False, aggregate=True
+                metric_name='metric {} {}'.format(col, case), parent=parent, raw=False, aggregate=True
             )
             self.metrics_ids[col][case] = metric_obj.local_id
         return metric_obj
@@ -95,28 +95,29 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             :param df: input chunk with DataFrame
             :return: function
             """
-            # df_cases_set = set([row.tag for row in df.itertuples() if row.tag])
+            df_cases_set = set([row.tag for row in df.itertuples() if row.tag])
 
             for column in self.columns:
                 overall_metric_obj = self.metric_generator(column, 'overall')
+                self.metrics_ids[column]['overall'] = overall_metric_obj.local_id
                 df['value'] = df[column]
-                overall_metric_obj.put(df)
-                # for case_name in df_cases_set:
-                #     case_metric_obj = self.metric_generator(column, case_name)
-                #     self.metrics_ids[column][case_name] = case_metric_obj.local_id
-                #     result_df = self.filter_df_by_case(df, case_name)
-                #     case_metric_obj.put(result_df)
+                overall_metric_obj.put(self.filter_df_by_case(df, 'overall'))
+
+                for case_name in df_cases_set:
+                    case_metric_obj = self.metric_generator(column, case_name)
+                    self.metrics_ids[column][case_name] = case_metric_obj.local_id
+                    case_metric_obj.put(self.filter_df_by_case(df, case_name))
         return upload_df
 
     @staticmethod
     def filter_df_by_case(df, case):
         """
-        Filter dataframe by case name. If case is 'overall', return the whole dataframe.
+        Filter dataframe by case name. If case is 'overall', return all rows.
         :param df: DataFrame
         :param case: str with case name
-        :return: DataFrame
+        :return: DataFrame with columns 'ts' and 'value'
         """
-        return df if case == 'overall' else df.loc[df['tag'] == case]
+        return df.loc[['ts', 'value']] if case == 'overall' else df.loc[df['tag'] == case, ['ts', 'value']]
 
     @staticmethod
     def map_uploader_tags(uploader_tags):
