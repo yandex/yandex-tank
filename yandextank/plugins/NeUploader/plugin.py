@@ -13,6 +13,11 @@ logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
 class Plugin(AbstractPlugin, MonitoringDataListener):
     SECTION = 'neuploader'
+    importance_high = {
+        'interval_real',
+        'proto_code',
+        'net_code'
+    }
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
@@ -80,13 +85,16 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         :param case: str with case name
         :return: metric object
         """
-
         case_metrics = self.metrics_objs.get(case)
         if case_metrics is None:
             # parent = self.metrics_objs.get('__overall__', {}).get(col)
             case_metrics = {
                 col: constructor(
-                    name='{} {}'.format(col, case), raw=False, aggregate=True
+                    name='{} {}'.format(col, case),
+                    raw=False,
+                    aggregate=True,
+                    source='tank',
+                    importance='high' if col in self.importance_high else ''
                 ) for col, constructor in self.col_map.items()
             }
             self.metrics_objs[case] = case_metrics
@@ -109,9 +117,11 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         for metric_name, df in self.monitoring_data_to_dfs(data).items():
             if metric_name not in self.monitoring_metrics:
                 panel, metric = metric_name.split(':', 1)
-                self.monitoring_metrics[metric_name] = self.data_session.new_true_metric(metric,
-                                                                                         group='monitoring',
-                                                                                         host=panel)
+                group, name = metric.split('_', 1)
+                self.monitoring_metrics[metric_name] = self.data_session.new_true_metric(name,
+                                                                                         group=group,
+                                                                                         host=panel,
+                                                                                         type='monitoring')
             self.monitoring_metrics[metric_name].put(df)
 
     @staticmethod
@@ -142,13 +152,12 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         """
         return df if case == '__overall__' else df.loc[df['tag'] == case]
 
-    @staticmethod
-    def map_uploader_tags(uploader_tags):
+    def map_uploader_tags(self, uploader_tags):
         return dict(
             [
                 ('component', uploader_tags.get('component')),
                 ('description', uploader_tags.get('job_dsc')),
-                ('name', uploader_tags.get('job_name')),
+                ('name', uploader_tags.get('job_name', self.cfg.get('test_name'))),
                 ('person', uploader_tags.get('person')),
                 ('task', uploader_tags.get('task')),
                 ('version', uploader_tags.get('version')),
