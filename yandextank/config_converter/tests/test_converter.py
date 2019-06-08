@@ -90,7 +90,7 @@ def test_parse_package(package_path, expected):
 ])
 def test_convert_ini_phantom(ini_file, yaml_file):
     with open(os.path.join(os.path.dirname(__file__), yaml_file), 'r') as f:
-        assert convert_ini(os.path.join(os.path.dirname(__file__), ini_file)) == yaml.load(f)
+        assert convert_ini(os.path.join(os.path.dirname(__file__), ini_file)) == yaml.load(f, Loader=yaml.FullLoader)
 
 
 @pytest.mark.parametrize('ini_file, msgs', [

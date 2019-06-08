@@ -411,7 +411,7 @@ def main():
 
     try:
         with open(schema_path) as f:
-            schema = yaml.load(f)
+            schema = yaml.load(f, Loader=yaml.FullLoader)
     except ScannerError:
         schema_module = imp.load_source('schema', schema_path)
         schema = schema_module.OPTIONS

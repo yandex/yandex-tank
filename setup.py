@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='1.12.0',
+    version='1.12.3',
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -20,7 +20,7 @@ analytic tools for the results they produce.
         'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
         'pandas>=0.18.0', 'numpy>=1.12.1', 'future>=0.16.0',
         'pip>=8.1.2',
-        'pyyaml==3.13', 'cerberus==1.2', 'influxdb>=5.0.0', 'netort>=0.4.2',
+        'pyyaml>=4.2b1', 'cerberus==1.2', 'influxdb>=5.0.0', 'netort>=0.5.0',
         'retrying==1.3.3', 'pytest-benchmark==3.2.2'
     ],
     setup_requires=[
@@ -60,7 +60,7 @@ analytic tools for the results they produce.
         'yandextank.plugins.Bfg': ['config/*'],
         'yandextank.plugins.Console': ['config/*'],
         'yandextank.plugins.DataUploader': ['config/*'],
-        'yandextank.plugins.Influx': ['config/*'],
+        'yandextank.plugins.InfluxUploader': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],
         'yandextank.plugins.JsonReport': ['config/*'],
         'yandextank.plugins.Pandora': ['config/*'],

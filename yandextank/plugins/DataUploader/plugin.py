@@ -240,7 +240,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self.add_cleanup(self.unlock_targets)
             self.locked_targets = self.check_and_lock_targets(strict=self.get_option('strict_lock'),
                                                               ignore=self.get_option('ignore_target_lock'))
-            self.add_cleanup(self.close_job)
             if lp_job._number:
                 self.make_symlink(lp_job._number)
                 self.check_task_is_open()
@@ -588,7 +587,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                        log_data_requests=self.get_option('log_data_requests'),
                        log_monitoring_requests=self.get_option('log_monitoring_requests'),
                        log_status_requests=self.get_option('log_status_requests'),
-                       log_other_requests=self.get_option('log_other_requests'))
+                       log_other_requests=self.get_option('log_other_requests'),
+                       add_cleanup=lambda: self.add_cleanup(self.close_job))
         lp_job.send_config(LPRequisites.CONFIGINITIAL, yaml.dump(self.core.configinitial))
         return lp_job
 
@@ -690,7 +690,8 @@ class LPJob(object):
             notify_list=None,
             version=None,
             detailed_time=None,
-            load_scheme=None):
+            load_scheme=None,
+            add_cleanup=lambda: None):
         """
         :param client: APIClient
         :param log_data_requests: bool
@@ -721,6 +722,7 @@ class LPJob(object):
         self.load_scheme = load_scheme
         self.is_finished = False
         self.web_link = ''
+        self.add_cleanup = add_cleanup
 
     def push_test_data(self, data, stats):
         if not self.interrupted.is_set():
@@ -786,6 +788,7 @@ class LPJob(object):
                                                             detailed_time=self.detailed_time,
                                                             notify_list=self.notify_list,
                                                             trace=self.log_other_requests)
+        self.add_cleanup()
         logger.info('Job created: {}'.format(self._number))
         self.web_link = urljoin(self.api_client.base_url, str(self._number))
 

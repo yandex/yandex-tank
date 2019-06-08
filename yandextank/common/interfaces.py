@@ -188,6 +188,10 @@ class AbstractCriterion(object):
         """ long explanation to show after test stop """
         raise NotImplementedError("Abstract methods requires overriding")
 
+    def get_criterion_parameters(self):
+        """ returns dict with all criterion parameters """
+        raise NotImplementedError("Abstract methods requires overriding")
+
     def widget_explain(self):
         """ short explanation to display in right panel """
         return self.explain(), 0
@@ -271,7 +275,7 @@ class MonitoringPlugin(AbstractPlugin):
 
     def __init__(self, core, cfg, name):
         super(MonitoringPlugin, self).__init__(core, cfg, name)
-        self.listeners = []
+        self.listeners = set()
 
     def add_listener(self, plugin):
-        self.listeners.append(plugin)
+        self.listeners.add(plugin)
