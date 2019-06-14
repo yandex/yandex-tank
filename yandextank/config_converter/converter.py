@@ -48,7 +48,7 @@ SECTIONS_PATTERNS = {
     'RCAssert': 'rcassert',
     'JsonReport': 'json_report|jsonreport',
     'Pandora': 'pandora',
-    'Influx': 'influx',
+    'InfluxUploader': 'influx',
 
 }
 
@@ -202,7 +202,6 @@ class Option(object):
             'exclude_markers': lambda key, value: {key: value.strip().split(' ')}
         },
         'Pandora': {
-            'expvar': lambda key, value: {key: value == '1'},
             'config_content': lambda key, value: {key: yaml.load(value)}  # works for json as well
         },
         'Autostop': {

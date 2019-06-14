@@ -134,7 +134,8 @@ class TankCore(object):
         self.lock_dir = self.get_option(self.SECTION, 'lock_dir')
         with open(os.path.join(self.artifacts_dir, CONFIGINITIAL), 'w') as f:
             yaml.dump(self.configinitial, f)
-        self.add_artifact_file(error_output)
+        if self.errors:
+            self.add_artifact_file(error_output)
         self.add_artifact_to_send(LPRequisites.CONFIGINITIAL, yaml.dump(self.configinitial))
         configinfo = self.config.validated.copy()
         configinfo.setdefault(self.SECTION, {})

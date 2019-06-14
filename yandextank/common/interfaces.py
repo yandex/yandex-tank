@@ -188,6 +188,10 @@ class AbstractCriterion(object):
         """ long explanation to show after test stop """
         raise NotImplementedError("Abstract methods requires overriding")
 
+    def get_criterion_parameters(self):
+        """ returns dict with all criterion parameters """
+        raise NotImplementedError("Abstract methods requires overriding")
+
     def widget_explain(self):
         """ short explanation to display in right panel """
         return self.explain(), 0

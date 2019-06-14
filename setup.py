@@ -60,7 +60,7 @@ analytic tools for the results they produce.
         'yandextank.plugins.Bfg': ['config/*'],
         'yandextank.plugins.Console': ['config/*'],
         'yandextank.plugins.DataUploader': ['config/*'],
-        'yandextank.plugins.Influx': ['config/*'],
+        'yandextank.plugins.InfluxUploader': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],
         'yandextank.plugins.JsonReport': ['config/*'],
         'yandextank.plugins.Pandora': ['config/*'],

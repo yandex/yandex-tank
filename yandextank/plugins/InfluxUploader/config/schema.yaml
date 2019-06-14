@@ -16,16 +16,13 @@ username:
 password:
   default: root
   type: string
-grafana_root:
-  default: "http://localhost/"
-  type: string
-grafana_dashboard:
-  default: tank-dashboard
-  type: string
 chunk_size:
   default: 500000
   type: integer
 labeled:
+  default: false
+  type: boolean
+histograms:
   default: false
   type: boolean
 prefix_measurement:
