@@ -289,7 +289,7 @@ def test_validate_core(config, expected):
 def test_validate_core_error(config, expected):
     with pytest.raises(Exception) as e:
         TankConfig(config).validated
-        print('exception value:\n', str(e.value))
+        print(('exception value:\n', str(e.value)))
     assert expected == e.value.errors
 
 

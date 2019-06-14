@@ -20,7 +20,7 @@ class TestSparkline(object):
         assert (len(negative) == 0)
 
     def test_non_continuos(self):
-        data = range(20)
+        data = list(range(20))
         expected = ' _▁▂▃▄▅▆▇    ▃▄▅▆▇ _'.decode('utf-8')
         expected_short = '▆▇ _'.decode('utf-8')
         expected_long = '     _▁▂▃▄▅▆▇    ▃▄▅▆▇ _'.decode('utf-8')
@@ -40,7 +40,7 @@ class TestSparkline(object):
     def test_multi_graphs(self):
         expected_continous = '__▁▁▂▂▃▃▄▄▅▅▆▆▇▇'.decode('utf-8')
         expected_spotty = '_ ▁ ▂ ▃ ▄ ▅ ▆ ▇ '.decode('utf-8')
-        continous_vals = range(1, 17)
+        continous_vals = list(range(1, 17))
         sparkline = Sparkline(len(continous_vals))
         start = int(time.time()) - len(continous_vals)
         for val in continous_vals:

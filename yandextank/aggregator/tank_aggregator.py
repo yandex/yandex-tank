@@ -106,7 +106,7 @@ class TankAggregator(object):
                 self.stat_cache[ts] = item
         if end and len(self.data_cache) > 0:
             logger.info('Timestamps without stats:')
-            for ts, data_item in sorted(self.data_cache.items(), key=lambda i: i[0]):
+            for ts, data_item in sorted(list(self.data_cache.items()), key=lambda i: i[0]):
                 logger.info(ts)
                 self.__notify_listeners(data_item, StatsReader.stats_item(ts, 0, 0))
 

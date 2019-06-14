@@ -310,7 +310,7 @@ OPTIONS = {
 }
 
 
-MULTI_OPTIONS = {n: {k: v for k, v in d.items() if k != 'required' and k != 'default'} for n, d in OPTIONS.items()}
+MULTI_OPTIONS = {n: {k: v for k, v in list(d.items()) if k != 'required' and k != 'default'} for n, d in list(OPTIONS.items())}
 
 
 MULTI = {

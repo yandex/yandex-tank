@@ -119,12 +119,12 @@ class RSTRenderer(object):
         :return: unicode
         """
         prepared_content = content.strip().replace('\n', new_line_replacement).replace('\t', tab_replacement)
-        return u'{}\n{}'.format(prepared_content, '=' * len(prepared_content))
+        return '{}\n{}'.format(prepared_content, '=' * len(prepared_content))
 
     @staticmethod
     def subtitle(content, new_line_replacement=' ', tab_replacement='  '):
         prepared_content = content.strip().replace('\n', new_line_replacement).replace('\t', tab_replacement)
-        return u'{}\n{}'.format(prepared_content, '-' * len(prepared_content))
+        return '{}\n{}'.format(prepared_content, '-' * len(prepared_content))
 
     @staticmethod
     @with_escape
@@ -182,7 +182,7 @@ class RSTRenderer(object):
         template = '{}\n {}' if newlines else ':{}: {}'
         return '\n' + '\n'.join([template.format(k.replace('\n', ' '),
                                                  format_value(v).strip())
-                                 for k, v in sort(items.items())]) if items else ''
+                                 for k, v in sort(list(items.items()))]) if items else ''
 
     @staticmethod
     def field_list(items, sort=True, newlines=True):
@@ -197,7 +197,7 @@ class RSTRenderer(object):
         def format_value(value):
             if isinstance(value, (int, bool, NoneType)):
                 return format_value(str(value))
-            if isinstance(value, (str, unicode)):
+            if isinstance(value, str):
                 return '\n '.join(value.splitlines())
             elif isinstance(value, TextBlock):
                 return '\n '.join(value.lines)
@@ -212,7 +212,7 @@ class RSTRenderer(object):
         template = ':{}:\n {}' if newlines else ':{}: {}'
         return '\n' + '\n'.join([template.format(k.replace('\n', ' '),
                                                  format_value(v).strip())
-                                 for k, v in sort(items.items())]) if items else ''
+                                 for k, v in sort(list(items.items()))]) if items else ''
 
     @staticmethod
     def dict_list_structure(items, sort_dict=True):
@@ -223,7 +223,7 @@ class RSTRenderer(object):
         elif isinstance(items, list):
             return RSTRenderer.bullet_list([RSTRenderer.dict_list_structure(item) for item in items])
         elif isinstance(items, dict):
-            return RSTRenderer.field_list({k: RSTRenderer.dict_list_structure(v) for k, v in items.items()}, sort_dict)
+            return RSTRenderer.field_list({k: RSTRenderer.dict_list_structure(v) for k, v in list(items.items())}, sort_dict)
 
     @staticmethod
     def escape(content):
@@ -243,7 +243,7 @@ def render_body(renderer, option_kwargs, exclude_keys, special_keys=None):
     :type special_keys: dict
     """
     common_formatters = {
-        EXAMPLES: lambda examples: renderer.def_list({renderer.mono(example): annotation for example, annotation in examples.items()})
+        EXAMPLES: lambda examples: renderer.def_list({renderer.mono(example): annotation for example, annotation in list(examples.items())})
     }
 
     def default_fmt(x):
@@ -251,10 +251,10 @@ def render_body(renderer, option_kwargs, exclude_keys, special_keys=None):
 
     special_keys = special_keys or {}
     special_part = '\n'.join([special_handler(renderer, option_kwargs[special_key])
-                              for special_key, special_handler in special_keys.items()
+                              for special_key, special_handler in list(special_keys.items())
                               if special_key in option_kwargs])
-    common_part = renderer.field_list({k: common_formatters.get(k, default_fmt)(v) for k, v in option_kwargs.items()
-                                       if k not in exclude_keys + special_keys.keys()})
+    common_part = renderer.field_list({k: common_formatters.get(k, default_fmt)(v) for k, v in list(option_kwargs.items())
+                                       if k not in exclude_keys + list(special_keys.keys())})
 
     return '\n'.join([_ for _ in [common_part, special_part] if _])
 
@@ -267,7 +267,7 @@ def render_values_description(renderer, option_kwargs):
         else \
         option_kwargs[VALUES_DSC]
     values_description = renderer.field_list(
-        {renderer.mono(value): dsc for value, dsc in values_description_dict.items()},
+        {renderer.mono(value): dsc for value, dsc in list(values_description_dict.items())},
         newlines=False
     )
     return renderer.field_list({ONE_OF: values_description})
@@ -284,7 +284,7 @@ class OptionFormatter(object):
 
         :type option_schema: dict
         """
-        self.option_name, self.option_kwargs = option_schema.items()[0]
+        self.option_name, self.option_kwargs = list(option_schema.items())[0]
         # print(option_name, option_kwargs)
         self.formatter = self.__guess_formatter()
 
@@ -327,7 +327,7 @@ class OptionFormatter(object):
 
         schema_block = renderer.field_list({
             '{} ({})'.format(renderer.mono(key), dict_schema[key].get(TYPE, 'anyof')): get_formatter({key: value})(renderer, header=False)
-            for key, value in dict_schema.items()})
+            for key, value in list(dict_schema.items())})
         body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED, SCHEMA])
         return '\n'.join([_ for _ in [hdr, dsc, schema_block, body] if _])
 
@@ -387,7 +387,7 @@ def format_schema(schema, renderer, title=None):
     :type renderer: RSTRenderer
     """
     body = '\n\n'.join(
-        sorted([format_option({option_name: option_schema}, renderer) for option_name, option_schema in schema.items()]))
+        sorted([format_option({option_name: option_schema}, renderer) for option_name, option_schema in list(schema.items())]))
 
     if title:
         title = renderer.title(title)

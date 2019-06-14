@@ -263,7 +263,7 @@ class PandoraInfoWidget(AbstractInfoWidget):
         self.active = stats["metrics"]["instances"]
 
     def render(self, screen):
-        text = " Pandora Test %s" % self.krutilka.next()
+        text = " Pandora Test %s" % next(self.krutilka)
         space = screen.right_panel_width - len(text) - 1
         left_spaces = space / 2
         right_spaces = space / 2

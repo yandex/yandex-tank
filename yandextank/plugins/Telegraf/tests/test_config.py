@@ -1,7 +1,7 @@
 from yandextank.plugins.Telegraf.config import ConfigManager, AgentConfig
 import sys
 if sys.version_info[0] < 3:
-    from ConfigParser import ConfigParser
+    from configparser import ConfigParser
 else:
     from configparser import ConfigParser
 

@@ -177,7 +177,7 @@ class PhantomConfig:
                 result.loadscheme = ''
 
             if result.loop_count:
-                result.loop_count = u'0'
+                result.loop_count = '0'
             else:
                 result.loop_count = stream.stepper_wrapper.loop_count
 

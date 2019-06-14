@@ -4,6 +4,7 @@ import pandas as pd
 
 from yandextank.common.util import FileMultiReader
 from yandextank.plugins.Phantom.reader import PhantomReader, PhantomStatsReader, string_to_df_microsec
+from functools import reduce
 
 
 class TestPhantomReader(object):

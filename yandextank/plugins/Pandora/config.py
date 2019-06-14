@@ -117,7 +117,7 @@ def main():
     pool_config.set_target("example.org:443")
     pandora_config = PandoraConfig()
     pandora_config.add_pool(pool_config)
-    print(pandora_config.json())
+    print((pandora_config.json()))
 
 
 if __name__ == '__main__':

@@ -196,5 +196,5 @@ def sort_schema_alphabetically(filename):
     with open(filename, 'w') as f:
         for key in sorted(schema.keys()):
             f.write(key + ':\n')
-            for attr in schema[key].keys():
+            for attr in list(schema[key].keys()):
                 f.write('  ' + attr + ': ' + str(schema[key][attr]).lower() + '\n')

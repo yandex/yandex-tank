@@ -62,7 +62,7 @@ class PandoraStatsReader(object):
         self.poller = PandoraStatsPoller(port)
         self.started = False
 
-    def next(self):
+    def __next__(self):
         if not self.expvar:
             if self.closed:
                 raise StopIteration

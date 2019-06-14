@@ -196,6 +196,7 @@ class CaseLineReader(Reader):
             info.status.af_size = opener.data_length
             while True:
                 for line in ammo_file:
+                    line = line.decode()
                     info.status.af_position = ammo_file.tell()
                     parts = line.rstrip('\r\n').split('\t', 1)
                     if len(parts) == 2:
@@ -287,7 +288,7 @@ class UriReader(Reader):
                                 uri,
                                 headers=[
                                     ': '.join(header)
-                                    for header in self.headers.items()
+                                    for header in list(self.headers.items())
                                 ],
                                 http_ver=self.http_ver, ).to_s(), marker)
                 if info.status.ammo_count == 0:
@@ -347,7 +348,7 @@ class UriPostReader(Reader):
                                 uri=uri,
                                 headers=[
                                     ': '.join(header)
-                                    for header in self.headers.items()
+                                    for header in list(self.headers.items())
                                 ],
                                 method='POST',
                                 body=missile,

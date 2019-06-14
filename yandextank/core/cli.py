@@ -103,7 +103,7 @@ def main():
 
     options, ammofiles = parser.parse_args()
     if options.version:
-        print('YandexTank/{}'.format(pkg_resources.require('yandextank')[0].version))
+        print(('YandexTank/{}'.format(pkg_resources.require('yandextank')[0].version)))
         return
 
     ammofile = ammofiles[0] if len(ammofiles) > 0 else None

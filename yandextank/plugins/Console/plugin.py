@@ -72,7 +72,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
                 if not self.short_only:
                     self.log.debug("Writing console view to STDOUT")
                     sys.stdout.write(self.console_markup.clear)
-                    sys.stdout.write(self.__console_view)
+                    sys.stdout.write(self.__console_view.decode())
                     sys.stdout.write(self.console_markup.TOTAL_RESET)
 
     def is_test_finished(self):
@@ -86,7 +86,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         try:
             self.__console_view = self.screen.render_screen().encode('utf-8')
         except Exception as ex:
-            self.log.warn("Exception inside render: %s", traceback.format_exc(ex))
+            self.log.warning("Exception inside render: %s", traceback.format_exc(ex))
             self.render_exception = ex
             self.__console_view = ""
 
@@ -99,9 +99,9 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             overall = data.get('overall')
 
             quantiles = dict(
-                zip(
+                list(zip(
                     overall['interval_real']['q']['q'],
-                    overall['interval_real']['q']['value']))
+                    overall['interval_real']['q']['value'])))
             info = (
                 "ts:{ts}\tRPS:{rps}\tavg:{avg_rt:.2f}\t"
                 "min:{min:.2f}\tmax:{q100:.2f}\tq95:{q95:.2f}\t").format(
@@ -134,7 +134,7 @@ class RealConsoleMarkup(object):
     WHITE_ON_BLACK = '\033[37;40m'
     TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
-    new_line = u"\n"
+    new_line = "\n"
 
     YELLOW = '\033[1;33m'
     RED = '\033[1;31m'
@@ -172,7 +172,7 @@ class NoConsoleMarkup(RealConsoleMarkup):
     WHITE_ON_BLACK = ''
     TOTAL_RESET = ''
     clear = ""
-    new_line = u"\n"
+    new_line = "\n"
 
     YELLOW = ''
     RED = ''

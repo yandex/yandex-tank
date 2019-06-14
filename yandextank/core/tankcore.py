@@ -21,18 +21,13 @@ from builtins import str
 
 from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin
-from yandextank.plugins.DataUploader.client import LPRequisites
 from yandextank.validator.validator import TankConfig, ValidationError
 from yandextank.aggregator import TankAggregator
 from ..common.util import update_status, pid_exists
 
 from netort.resource import manager as resource
 from netort.process import execute
-
-if sys.version_info[0] < 3:
-    import ConfigParser
-else:
-    import configparser as ConfigParser
+import configparser
 
 logger = logging.getLogger(__name__)
 
@@ -136,11 +131,9 @@ class TankCore(object):
             yaml.dump(self.configinitial, f)
         if self.errors:
             self.add_artifact_file(error_output)
-        self.add_artifact_to_send(LPRequisites.CONFIGINITIAL, yaml.dump(self.configinitial))
         configinfo = self.config.validated.copy()
         configinfo.setdefault(self.SECTION, {})
         configinfo[self.SECTION][self.API_JOBNO] = self.test_id
-        self.add_artifact_to_send(LPRequisites.CONFIGINFO, yaml.dump(configinfo))
         with open(os.path.join(self.artifacts_dir, VALIDATED_CONF), 'w') as f:
             yaml.dump(configinfo, f)
         logger.info('New test id %s' % self.test_id)
@@ -216,7 +209,7 @@ class TankCore(object):
     def job(self):
         if not self._job:
             # monitoring plugin
-            monitorings = [plugin for plugin in self.plugins.values() if isinstance(plugin, MonitoringPlugin)]
+            monitorings = [plugin for plugin in list(self.plugins.values()) if isinstance(plugin, MonitoringPlugin)]
             # generator plugin
             try:
                 gen = self.get_plugin_of_type(GeneratorPlugin)
@@ -240,7 +233,7 @@ class TankCore(object):
         if self.taskset_affinity:
             self.__setup_taskset(self.taskset_affinity, pid=os.getpid())
 
-        for plugin in self.plugins.values():
+        for plugin in list(self.plugins.values()):
             if not self.interrupted.is_set():
                 logger.debug("Configuring %s", plugin)
                 plugin.configure()
@@ -249,7 +242,7 @@ class TankCore(object):
         """ Call prepare_test() on all plugins        """
         logger.info("Preparing test...")
         self.publish("core", "stage", "prepare")
-        for plugin in self.plugins.values():
+        for plugin in list(self.plugins.values()):
             if not self.interrupted.is_set():
                 logger.debug("Preparing %s", plugin)
                 plugin.prepare_test()
@@ -260,12 +253,13 @@ class TankCore(object):
             logger.info("Starting test...")
             self.publish("core", "stage", "start")
             self.job.aggregator.start_test()
-            for plugin in self.plugins.values():
+            for plugin in list(self.plugins.values()):
                 logger.debug("Starting %s", plugin)
                 start_time = time.time()
                 plugin.start_test()
-                logger.info("Plugin {0:s} required {1:f} seconds to start".format(plugin,
-                                                                                  time.time() - start_time))
+                # logger.info("Plugin {0:s} required {1:f} seconds to start".format(
+                #     repr(plugin).decode(),time.time() - start_time)
+                # )
 
     def wait_for_finish(self):
         """
@@ -283,7 +277,7 @@ class TankCore(object):
             aggr_retcode = self.job.aggregator.is_test_finished()
             if aggr_retcode >= 0:
                 return aggr_retcode
-            for plugin in self.plugins.values():
+            for plugin in list(self.plugins.values()):
                 logger.debug("Polling %s", plugin)
                 retcode = plugin.is_test_finished()
                 if retcode >= 0:
@@ -311,7 +305,7 @@ class TankCore(object):
             retcode = plugin.end_test(retcode) or retcode
             logger.info('RC after: %s', retcode)
 
-        for plugin in [p for p in self.plugins.values() if
+        for plugin in [p for p in list(self.plugins.values()) if
                        p is not self.job.generator_plugin and p not in self.job.monitoring_plugins]:
             logger.debug("Finalize %s", plugin)
             try:
@@ -330,7 +324,7 @@ class TankCore(object):
         """
         logger.info("Post-processing test...")
         self.publish("core", "stage", "post_process")
-        for plugin in self.plugins.values():
+        for plugin in list(self.plugins.values()):
             logger.debug("Post-process %s", plugin)
             try:
                 logger.debug("RC before: %s", retcode)
@@ -367,7 +361,7 @@ class TankCore(object):
     def _collect_artifacts(self, validation_failed=False):
         logger.debug("Collecting artifacts")
         logger.info("Artifacts dir: %s", self.artifacts_dir)
-        for filename, keep in self.artifact_files.items():
+        for filename, keep in list(self.artifact_files.items()):
             try:
                 self.__collect_file(filename, keep)
             except Exception as ex:
@@ -390,7 +384,7 @@ class TankCore(object):
         Retrieve a plugin of desired class, KeyError raised otherwise
         """
         logger.debug("Searching for plugin: %s", plugin_class)
-        matches = [plugin for plugin in self.plugins.values() if isinstance(plugin, plugin_class)]
+        matches = [plugin for plugin in list(self.plugins.values()) if isinstance(plugin, plugin_class)]
         if matches:
             if len(matches) > 1:
                 logger.debug(
@@ -405,7 +399,7 @@ class TankCore(object):
         Retrieve a list of plugins of desired class, KeyError raised otherwise
         """
         logger.debug("Searching for plugins: %s", plugin_class)
-        matches = [plugin for plugin in self.plugins.values() if isinstance(plugin, plugin_class)]
+        matches = [plugin for plugin in list(self.plugins.values()) if isinstance(plugin, plugin_class)]
         if matches:
             return matches
         else:
@@ -483,7 +477,7 @@ class TankCore(object):
         Call close() for all plugins
         """
         logger.info("Close allocated resources...")
-        for plugin in self.plugins.values():
+        for plugin in list(self.plugins.values()):
             logger.debug("Close %s", plugin)
             try:
                 plugin.close()
@@ -523,7 +517,7 @@ class TankCore(object):
         self.config.dump(path)
 
     def plugins_cleanup(self):
-        for plugin_name, plugin in self.plugins.items():
+        for plugin_name, plugin in list(self.plugins.items()):
             logger.info('Cleaning up plugin {}'.format(plugin_name))
             plugin.cleanup()
 
@@ -614,7 +608,7 @@ class ConfigManager(object):
 
     def __init__(self):
         self.file = None
-        self.config = ConfigParser.ConfigParser()
+        self.config = configparser.ConfigParser()
 
     def load_files(self, configs):
         """         Read configs set into storage        """
@@ -643,7 +637,7 @@ class ConfigManager(object):
                 if not prefix or option.find(prefix) == 0:
                     res += [(
                         option[len(prefix):], self.config.get(section, option))]
-        except ConfigParser.NoSectionError as ex:
+        except configparser.NoSectionError as ex:
             logger.warning("No section: %s", ex)
 
         logger.debug(

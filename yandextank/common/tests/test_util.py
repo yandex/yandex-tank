@@ -14,7 +14,7 @@ class TestDrain(object):
         """
         Test drain's run function (in a same thread)
         """
-        source = range(5)
+        source = list(range(5))
         destination = Queue()
         drain = Drain(source, destination)
         drain.run()
@@ -24,7 +24,7 @@ class TestDrain(object):
         """
         Test we can interrupt the drain
         """
-        source = range(1000000)
+        source = list(range(1000000))
         destination = Queue()
         drain = Drain(source, destination)
         drain.start()
@@ -35,7 +35,7 @@ class TestDrain(object):
         """
         Test we can interrupt the drain
         """
-        source = range(1000000)
+        source = list(range(1000000))
         destination = Queue()
         drain = Drain(source, destination)
         drain.start()
@@ -45,7 +45,7 @@ class TestDrain(object):
 
 class TestChopper(object):
     def test_output(self):
-        source = (range(i) for i in range(5))
+        source = (list(range(i)) for i in range(5))
         expected = [0, 0, 1, 0, 1, 2, 0, 1, 2, 3]
         assert list(Chopper(source)) == expected
 

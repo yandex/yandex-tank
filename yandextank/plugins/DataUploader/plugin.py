@@ -112,7 +112,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def set_option(self, option, value):
         self.cfg.setdefault('meta', {})[option] = value
-        self.core.publish(self.SECTION, 'meta.{}'.format(option), value)
 
     @staticmethod
     def get_key():
@@ -552,12 +551,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._lp_job = self.__get_lp_job()
             self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
             self.core.publish(self.SECTION, 'web_link', self._lp_job.web_link)
-            self.core.publish(self.SECTION, 'job_name', self._lp_job.name)
-            self.core.publish(self.SECTION, 'job_dsc', self._lp_job.description)
-            self.core.publish(self.SECTION, 'person', self._lp_job.person)
-            self.core.publish(self.SECTION, 'task', self._lp_job.task)
-            self.core.publish(self.SECTION, 'version', self._lp_job.version)
-
         return self._lp_job
 
     def __get_lp_job(self):

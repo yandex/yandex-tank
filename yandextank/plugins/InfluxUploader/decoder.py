@@ -42,7 +42,7 @@ class Decoder(object):
         """
         points = list()
         for second_data in data:
-            for host, host_data in second_data["data"].iteritems():
+            for host, host_data in second_data["data"].items():
                 points.append(
                     self.__make_points(
                         "monitoring",
@@ -50,7 +50,7 @@ class Decoder(object):
                         second_data["timestamp"],
                         {
                             metric: value
-                            for metric, value in host_data["metrics"].iteritems()
+                            for metric, value in host_data["metrics"].items()
                         }
                     )
                 )
@@ -69,7 +69,7 @@ class Decoder(object):
         )
         # detailed stats per tag
         if self.labeled:
-            for label, aggregated_data_by_tag in aggregated_data["tagged"].items():
+            for label, aggregated_data_by_tag in list(aggregated_data["tagged"].items()):
                 points += self.__make_points_for_label(
                     ts,
                     aggregated_data_by_tag,
@@ -153,14 +153,14 @@ class Decoder(object):
     def __make_netcodes_fields(data):
         return {
             str(code): int(cnt)
-            for code, cnt in data["net_code"]["count"].items()
+            for code, cnt in list(data["net_code"]["count"].items())
         }
 
     @staticmethod
     def __make_protocodes_fields(data):
         return {
             str(code): int(cnt)
-            for code, cnt in data["proto_code"]["count"].items()
+            for code, cnt in list(data["proto_code"]["count"].items())
         }
 
     def __make_points(self, measurement, additional_tags, ts, fields):

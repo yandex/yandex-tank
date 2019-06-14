@@ -1,7 +1,7 @@
 import json
 import time
 import traceback
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import uuid
 
 from future.moves.urllib.parse import urljoin
@@ -189,7 +189,7 @@ class APIClient(object):
         maintenance_msg = maintenance_msg or "%s is under maintenance" % (self._base_url)
         while interrupted_event is None or not interrupted_event.is_set():
             try:
-                response = self.__send_single_request(request, ids.next(), trace=trace)
+                response = self.__send_single_request(request, next(ids), trace=trace)
                 return response_callback(response)
             except (Timeout, ConnectionError, ProtocolError):
                 logger.warn(traceback.format_exc())
@@ -239,7 +239,7 @@ class APIClient(object):
         maintenance_timeouts = self.maintenance_timeouts()
         while True:
             try:
-                response = self.__send_single_request(request, ids.next(), trace=trace)
+                response = self.__send_single_request(request, next(ids), trace=trace)
                 return response
             except (Timeout, ConnectionError, ProtocolError):
                 logger.warn(traceback.format_exc())
@@ -365,7 +365,7 @@ class APIClient(object):
         params = {'exitcode': str(retcode)}
 
         result = self.__get('api/job/' + str(jobno) + '/close.json?'
-                            + urllib.urlencode(params), trace=trace)
+                            + urllib.parse.urlencode(params), trace=trace)
         return result[0]['success']
 
     def edit_job_metainfo(
@@ -446,11 +446,11 @@ class APIClient(object):
                             data["interval_real"]["q"]["value"]):
             api_data['trail']['q' + str(q)] = value / 1000.0
 
-        for code, cnt in data["net_code"]["count"].items():
+        for code, cnt in list(data["net_code"]["count"].items()):
             api_data['net_codes'].append({'code': int(code),
                                           'count': int(cnt)})
 
-        for code, cnt in data["proto_code"]["count"].items():
+        for code, cnt in list(data["proto_code"]["count"].items()):
             api_data['http_codes'].append({'code': int(code),
                                            'count': int(cnt)})
 
@@ -481,7 +481,7 @@ class APIClient(object):
         uri = 'api/job/{0}/push_data.json?upload_token={1}'.format(
             jobno, upload_token)
         ts = data_item["ts"]
-        for case_name, case_data in data_item["tagged"].items():
+        for case_name, case_data in list(data_item["tagged"].items()):
             if case_name == "":
                 case_name = "__NOTAG__"
             push_item = self.second_data_to_push_item(case_data, stat_item, ts,
@@ -641,7 +641,7 @@ class APIClient(object):
         endpoint, field_name = lp_requisites
         logger.debug("Sending {} config".format(field_name))
         addr = "/api/job/%s/%s" % (jobno, endpoint)
-        self.__post_raw(addr, {field_name: unicode(config_content)}, trace=trace)
+        self.__post_raw(addr, {field_name: str(config_content)}, trace=trace)
 
     def link_mobile_job(self, lp_key, mobile_key):
         addr = "/api/job/{jobno}/edit.json".format(jobno=lp_key)
