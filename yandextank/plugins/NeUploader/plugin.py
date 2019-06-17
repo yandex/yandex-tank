@@ -157,7 +157,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             [
                 ('component', uploader_tags.get('component')),
                 ('description', uploader_tags.get('job_dsc')),
-                ('name', uploader_tags.get('job_name', self.cfg.get('test_name'))),
+                ('name', self.cfg.get('test_name', uploader_tags.get('job_name'))),
                 ('person', uploader_tags.get('person')),
                 ('task', uploader_tags.get('task')),
                 ('version', uploader_tags.get('version')),
