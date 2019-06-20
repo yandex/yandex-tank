@@ -120,9 +120,10 @@ class Plugin(GeneratorPlugin):
         for pool in config['pools']:
             if pool.get('ammo', {}).get('file', ''):
                 self.ammofile = pool['ammo']['file']
-                pool['ammo']['file'] = resource_manager.resource_filename(
+                pool['ammo']['file'] = resource_manager.get_opener(
                     self.ammofile
-                )
+                ).download_file(True, try_ungzip=True)
+                
             if not pool.get('result') or 'phout' not in pool.get('result', {}).get('type', ''):
                 logger.warning('Seems like pandora result file not specified... adding defaults')
                 pool['result'] = dict(
