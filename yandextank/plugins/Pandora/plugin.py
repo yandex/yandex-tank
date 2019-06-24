@@ -126,7 +126,7 @@ class Plugin(GeneratorPlugin):
                     pool['ammo']['file'] = opener.download_file(True, try_ungzip=True)
                 else:
                     pool['ammo']['file'] = opener.get_filename
-                
+
             if not pool.get('result') or 'phout' not in pool.get('result', {}).get('type', ''):
                 logger.warning('Seems like pandora result file not specified... adding defaults')
                 pool['result'] = dict(
