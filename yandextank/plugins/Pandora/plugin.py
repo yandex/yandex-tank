@@ -198,8 +198,8 @@ class Plugin(GeneratorPlugin):
 
     def start_test(self):
         args = [self.pandora_cmd] +\
-               (['-expvar'] if self.expvar else []) +\
-               [self.pandora_config_file]
+            (['-expvar'] if self.expvar else []) +\
+            [self.pandora_config_file]
         if self.affinity:
             self.core.__setup_affinity(self.affinity, args=args)
         logger.info("Starting: %s", args)
