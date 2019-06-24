@@ -36,8 +36,9 @@ class Plugin(GeneratorPlugin):
         self.pandora_config_file = None
         self.config_contents = None
         self.custom_config = False
-        self.expvar = None
-        self.expvar_port = None
+        self.expvar = self.get_option('expvar')
+        self.expvar_enabled = self.expvar
+        self.expvar_port = self.DEFAULT_EXPVAR_PORT
         self.sample_log = None
         self.__address = None
         self.__schedule = None
@@ -101,20 +102,17 @@ class Plugin(GeneratorPlugin):
         # get expvar parameters
         if config.get("monitoring"):
             if config["monitoring"].get("expvar"):
-                self.expvar = config["monitoring"]["expvar"].get("enabled")
+                self.expvar_enabled = config["monitoring"]["expvar"].get("enabled")
                 if config["monitoring"]["expvar"].get("port"):
                     self.expvar_port = config["monitoring"]["expvar"].get("port")
-                else:
-                    self.expvar_port = self.DEFAULT_EXPVAR_PORT
         # or set if expvar not exists
-        else:
+        elif not self.expvar:
             config["monitoring"] = {
                 "expvar": {
                     "enabled": True,
                 }
             }
-            self.expvar = True
-            self.expvar_port = self.DEFAULT_EXPVAR_PORT
+            self.expvar_enabled = True
 
         # FIXME this is broken for custom ammo providers due to interface incompatibility
         # FIXME refactor pandora plx
@@ -183,7 +181,7 @@ class Plugin(GeneratorPlugin):
 
     def get_stats_reader(self):
         if self.stats_reader is None:
-            self.stats_reader = PandoraStatsReader(self.expvar, self.expvar_port)
+            self.stats_reader = PandoraStatsReader(self.expvar_enabled, self.expvar_port)
         return self.stats_reader
 
     def prepare_test(self):
@@ -199,7 +197,9 @@ class Plugin(GeneratorPlugin):
             self.core.job.aggregator.add_result_listener(widget)
 
     def start_test(self):
-        args = [self.pandora_cmd, self.pandora_config_file]
+        args = [self.pandora_cmd] +\
+            (['-expvar'] if self.expvar else []) +\
+            [self.pandora_config_file]
         if self.affinity:
             self.core.__setup_affinity(self.affinity, args=args)
         logger.info("Starting: %s", args)
