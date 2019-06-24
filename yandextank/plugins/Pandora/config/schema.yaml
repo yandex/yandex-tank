@@ -18,3 +18,6 @@ config_file:
   type: string
   default: ''
   description: Pandora config file path
+expvar:
+  type: boolean
+  default: false
