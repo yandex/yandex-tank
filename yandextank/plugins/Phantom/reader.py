@@ -45,7 +45,6 @@ dtypes = {
 
 
 def string_to_df(data):
-    start_time = time.time()
     try:
         chunk = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
     except CParserError as e:
@@ -58,8 +57,6 @@ def string_to_df(data):
     # TODO: consider configuration for the following:
     chunk['tag'] = chunk.tag.str.rsplit('#', 1, expand=True)[0]
     chunk.set_index(['receive_sec'], inplace=True)
-
-    # logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
     return chunk
 
 
