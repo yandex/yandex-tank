@@ -7,6 +7,7 @@ from threading import Event
 import yaml
 
 from netort.resource import manager as resource_manager
+from netort.resource import HttpOpener
 
 from .reader import PandoraStatsReader
 from ..Console import Plugin as ConsolePlugin
@@ -120,9 +121,12 @@ class Plugin(GeneratorPlugin):
         for pool in config['pools']:
             if pool.get('ammo', {}).get('file', ''):
                 self.ammofile = pool['ammo']['file']
-                pool['ammo']['file'] = resource_manager.resource_filename(
-                    self.ammofile
-                )
+                opener = resource_manager.get_opener(self.ammofile)
+                if isinstance(opener, HttpOpener):
+                    pool['ammo']['file'] = opener.download_file(True, try_ungzip=True)
+                else:
+                    pool['ammo']['file'] = opener.get_filename
+
             if not pool.get('result') or 'phout' not in pool.get('result', {}).get('type', ''):
                 logger.warning('Seems like pandora result file not specified... adding defaults')
                 pool['result'] = dict(
