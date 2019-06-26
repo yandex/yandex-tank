@@ -41,7 +41,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         else:
             self.data_session = DataSession({'clients': self.clients_cfg})
             self.add_cleanup(self._cleanup)
-            self.data_session.update_job({'name': self.cfg.get('test_name')})
+            self.data_session.update_job({'name': self.cfg.get('test_name'),
+                                          '__type': 'tank'})
             self.col_map = {
                 'interval_real': self.data_session.new_true_metric,
                 'connect_time': self.data_session.new_true_metric,
