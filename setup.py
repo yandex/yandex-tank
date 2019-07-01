@@ -21,12 +21,12 @@ analytic tools for the results they produce.
         'pandas>=0.18.0', 'numpy>=1.12.1', 'future>=0.16.0',
         'pip>=8.1.2',
         'pyyaml>=4.2b1', 'cerberus==1.2', 'influxdb>=5.0.0', 'netort>=0.6.3',
-        'retrying>=1.3.3'
+        'retrying>=1.3.3', 'pytest-runner'
     ],
     setup_requires=[
     ],
     tests_require=[
-        'pytest==4.6.3', 'pytest-runner', 'flake8', 'pytest-benchmark'
+        'pytest==4.6.3', 'flake8', 'pytest-benchmark'
     ],
     license='LGPLv2',
     classifiers=[
