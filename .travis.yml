@@ -8,4 +8,4 @@ install:
   - "pip install ."
 script:
   - "flake8 --config .flake8 ."
-  - "pytest -s"
+  - "python setup.py test"
