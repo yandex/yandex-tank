@@ -95,7 +95,7 @@ class Plugin(GeneratorPlugin):
 
     def get_stats_reader(self):
         if self.stats_reader is None:
-            self.stats_reader = PhantomStatsReader(self.stat_log, self.phantom.get_info(), self.start_time)
+            self.stats_reader = PhantomStatsReader(self.stat_log, self.phantom.get_info(), lambda: self.start_time)
         return self.stats_reader
 
     def prepare_test(self):
