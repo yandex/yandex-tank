@@ -152,7 +152,7 @@ class PhantomStatsReader(StatsReader):
     @property
     def start_time(self):
         if self._start_time is None:
-            self._start_time = self.get_start_time()
+            self._start_time = int(self.get_start_time())
         return 0 if self._start_time is None else self._start_time
 
     def __iter__(self):
