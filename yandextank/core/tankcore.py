@@ -20,7 +20,7 @@ import yaml
 from builtins import str
 
 from yandextank.common.exceptions import PluginNotPrepared
-from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin
+from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin, MonitoringDataListener
 from yandextank.plugins.DataUploader.client import LPRequisites
 from yandextank.validator.validator import TankConfig, ValidationError
 from yandextank.aggregator import TankAggregator
@@ -243,6 +243,8 @@ class TankCore(object):
             if not self.interrupted.is_set():
                 logger.debug("Configuring %s", plugin)
                 plugin.configure()
+                if isinstance(plugin, MonitoringDataListener):
+                    [mon.add_listener(plugin) for mon in self.job.monitoring_plugins]
 
     def plugins_prepare_test(self):
         """ Call prepare_test() on all plugins        """
@@ -566,13 +568,16 @@ class Lock(object):
     @classmethod
     def load(cls, path):
         with open(path) as f:
-            info = yaml.load(f)
+            info = yaml.load(f, Loader=yaml.FullLoader)
         pid = info.get(cls.PID)
         test_id = info.get(cls.TEST_ID)
         test_dir = info.get(cls.TEST_DIR)
         lock = Lock(test_id, test_dir, pid)
         lock.lock_file = path
         return lock
+
+    def __str__(self):
+        return str(self.info)
 
     @classmethod
     def is_locked(cls, lock_dir='/var/lock'):
@@ -596,7 +601,7 @@ class Lock(object):
                                 logger.warning("Failed to delete lock %s: %s", full_name, exc)
                             return False
                         else:
-                            return "Another test is running with pid {}".format(running_lock.pid)
+                            return "Another test is running: {}".format(running_lock)
                 except Exception:
                     msg = "Failed to load info from lock %s" % full_name
                     logger.warn(msg, exc_info=True)
