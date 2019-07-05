@@ -49,8 +49,11 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             }
 
     def _cleanup(self):
-        uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
-        self.data_session.update_job(uploader_metainfo)
+        try:
+            uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
+            self.data_session.update_job(uploader_metainfo)
+        except AttributeError:
+            logging.info('No uploader metainfo found')
         self.data_session.close()
 
     def is_test_finished(self):
