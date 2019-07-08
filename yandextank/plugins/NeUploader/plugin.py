@@ -41,7 +41,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         else:
             self.data_session = DataSession({'clients': self.clients_cfg})
             self.add_cleanup(self._cleanup)
-            self.data_session.update_job({'name': self.cfg.get('test_name')})
+            self.data_session.update_job({'name': self.cfg.get('test_name'),
+                                          '__type': 'tank'})
             self.col_map = {
                 'interval_real': self.data_session.new_true_metric,
                 'connect_time': self.data_session.new_true_metric,
@@ -157,7 +158,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             [
                 ('component', uploader_tags.get('component')),
                 ('description', uploader_tags.get('job_dsc')),
-                ('name', uploader_tags.get('job_name', self.cfg.get('test_name'))),
+                ('name', self.cfg.get('test_name', uploader_tags.get('job_name'))),
                 ('person', uploader_tags.get('person')),
                 ('task', uploader_tags.get('task')),
                 ('version', uploader_tags.get('version')),
