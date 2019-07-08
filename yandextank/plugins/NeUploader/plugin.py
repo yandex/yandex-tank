@@ -1,4 +1,3 @@
-""" Plugin uploading metrics from yhttps://wiki.yandex-team.ru/hr/gor/moebius/andextank to Luna. """
 import logging
 
 import pandas
@@ -153,16 +152,21 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         return df if case == '__overall__' else df.loc[df['tag'] == case]
 
     def map_uploader_tags(self, uploader_tags):
-        return dict(
-            [
-                ('component', uploader_tags.get('component')),
-                ('description', uploader_tags.get('job_dsc')),
-                ('name', uploader_tags.get('job_name', self.cfg.get('test_name'))),
-                ('person', uploader_tags.get('person')),
-                ('task', uploader_tags.get('task')),
-                ('version', uploader_tags.get('version')),
-                ('lunapark_jobno', uploader_tags.get('job_no'))
-            ] + [
-                (k, v) for k, v in uploader_tags.get('meta', {}).items()
-            ]
-        )
+        try:
+            result_tags = dict(
+                [
+                    ('component', uploader_tags.get('component')),
+                    ('description', uploader_tags.get('job_dsc')),
+                    ('name', uploader_tags.get('job_name', self.cfg.get('test_name'))),
+                    ('person', uploader_tags.get('person')),
+                    ('task', uploader_tags.get('task')),
+                    ('version', uploader_tags.get('version')),
+                    ('lunapark_jobno', uploader_tags.get('job_no'))
+                ] + [
+                    (k, v) for k, v in uploader_tags.get('meta', {}).items()
+                ]
+            )
+        except AttributeError:
+            logger.info('No uploader metainfo found')
+            result_tags = {}
+        return result_tags
