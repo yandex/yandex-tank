@@ -121,9 +121,9 @@ class DataPoller(object):
         :param source: generator, should raise StopIteration at some point otherwise tank will be hanging
         :param poll_period:
         """
-        self.poll_period = poll_period
+        self.poll_period = poll_period or 0.01
         self.source = source
-        self.wait_cntr_max = max_wait // poll_period or 1
+        self.wait_cntr_max = max_wait // self.poll_period or 1
         self.wait_counter = 0
 
     def __iter__(self):
