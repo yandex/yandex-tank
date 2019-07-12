@@ -122,6 +122,7 @@ class Plugin(GeneratorPlugin):
 
         self.core.job.aggregator.add_result_listener(self)
 
+        # stepping inside get_info()
         self.core.job.phantom_info = self.phantom.get_info()
 
         try:
