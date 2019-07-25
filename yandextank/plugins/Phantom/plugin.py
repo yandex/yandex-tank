@@ -38,6 +38,7 @@ class Plugin(GeneratorPlugin):
         self.config = None
         self.enum_ammo = None
         self.phout_import_mode = None
+        self.start_time = None
 
     @staticmethod
     def get_key():
@@ -94,7 +95,7 @@ class Plugin(GeneratorPlugin):
 
     def get_stats_reader(self):
         if self.stats_reader is None:
-            self.stats_reader = PhantomStatsReader(self.stat_log, self.phantom.get_info())
+            self.stats_reader = PhantomStatsReader(self.stat_log, self.phantom.get_info(), lambda: self.start_time)
         return self.stats_reader
 
     def prepare_test(self):
@@ -121,6 +122,7 @@ class Plugin(GeneratorPlugin):
 
         self.core.job.aggregator.add_result_listener(self)
 
+        # stepping inside get_info()
         self.core.job.phantom_info = self.phantom.get_info()
 
         try:

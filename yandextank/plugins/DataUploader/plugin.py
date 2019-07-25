@@ -406,7 +406,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 break
             if self.finished:
                 break
-        logger.info("Closing Status sender thread")
+        logger.info("Closed Status sender thread")
 
     def __uploader(self, queue, sender_method, name='Uploader'):
         logger.info('{} thread started'.format(name))
@@ -578,7 +578,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                        token=self.get_option('upload_token'),
                        person=self.__get_operator(),
                        task=self.task,
-                       name=self.get_option('job_name', 'none'),
+                       name=self.get_option('job_name', 'untitled'),
                        description=self.get_option('job_dsc'),
                        tank=self.core.job.tank,
                        notify_list=self.get_option("notify"),

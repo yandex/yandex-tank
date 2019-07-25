@@ -22,7 +22,7 @@ from yandextank.plugins.Pandora import Plugin
     )
 ])
 def test_patch_config(cfg, expected):
-    plugin = Plugin(MagicMock(), None, 'pandora')
+    plugin = Plugin(MagicMock(), {}, 'pandora')
     # '/tmp/9b73d966bcbf27467d4c4190cfe58c2a.downloaded_resource'
     filename = plugin.patch_config(cfg)['pools'][0]['ammo']['file']
     assert filename.endswith('.downloaded_resource')
