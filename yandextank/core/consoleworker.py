@@ -25,9 +25,9 @@ logger = logging.getLogger()
 
 
 class RealConsoleMarkup(object):
-    '''
+    """
     Took colors from here: https://www.siafoo.net/snippet/88
-    '''
+    """
     WHITE_ON_BLACK = '\033[37;40m'
     TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
@@ -47,7 +47,7 @@ class RealConsoleMarkup(object):
     BG_CYAN = '\033[1;46m'
 
     def clean_markup(self, orig_str):
-        ''' clean markup from string '''
+        """ clean markup from string """
         for val in [
             self.YELLOW, self.RED, self.RESET, self.CYAN, self.BG_MAGENTA,
             self.WHITE, self.BG_GREEN, self.GREEN, self.BG_BROWN,

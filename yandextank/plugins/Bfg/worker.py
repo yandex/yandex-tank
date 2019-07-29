@@ -45,6 +45,9 @@ Gun: {gun.__class__.__name__}
         self.plan = None
         self.green_threads_per_instance = green_threads_per_instance
 
+    def _worker(self):
+        raise NotImplementedError
+
     def start(self):
         self.start_time = time.time()
         for process in self.pool:
@@ -102,7 +105,7 @@ Gun: {gun.__class__.__name__}
                         continue
         workers_count = self.instances
         logger.info(
-            "Feeded all data. Publishing %d killer tasks" % (workers_count))
+            "Fed all data. Publishing %d killer tasks" % (workers_count))
         retry_delay = 1
         for _ in range(5):
             try:
@@ -272,3 +275,108 @@ class BFGGreen(BFGBase):
                 logger.warning("Couldn't put to result queue because it's full")
             except Exception:
                 logger.exception("Bfg shoot exception")
+
+
+class BFGMeasureCounter(BFGBase):
+
+    def _worker(self):
+        """
+        A worker that does actual jobs
+        """
+        logger.debug("Init shooter process")
+        try:
+            self.gun.setup()
+        except Exception:
+            logger.exception("Couldn't initialize gun. Exit shooter process")
+            return
+        while not self.quit.is_set():
+            try:
+                task = self.task_queue.get(timeout=1)
+                if not task:
+                    logger.debug("Got killer task.")
+                    break
+                timestamp, missile, marker = task
+                planned_time = self.start_time + (timestamp / 1000.0)
+                delay = planned_time - time.time()
+                if delay > 0:
+                    time.sleep(delay)
+
+                try:
+                    with self.instance_counter.get_lock():
+                        self.instance_counter.value += 1
+                    self.gun.shoot(missile, marker)
+                finally:
+                    with self.instance_counter.get_lock():
+                        self.instance_counter.value -= 1
+
+            except (KeyboardInterrupt, SystemExit):
+                break
+            except Empty:
+                if self.quit.is_set():
+                    logger.debug("Empty queue. Exiting process")
+                    return
+            except Full:
+                logger.warning("Couldn't put to result queue because it's full")
+            except Exception:
+                logger.exception("Bfg shoot exception")
+
+        try:
+            self.gun.teardown()
+        except Exception:
+            logger.exception("Couldn't finalize gun. Exit shooter process")
+            return
+        logger.debug("Exit shooter process")
+
+    def _feed(self):
+        """
+        A feeder that runs in distinct thread in main process.
+        """
+        self.plan = StpdReader(self.stpd_filename)
+        if self.cached_stpd:
+            self.plan = list(self.plan)
+        for task in self.plan:
+            if self.quit.is_set():
+                logger.info("Stop feeding: gonna quit")
+                return
+            # try putting a task to a queue unless there is a quit flag
+            # or all workers have exited
+            while True:
+                try:
+                    self.task_queue.put(task, timeout=1)
+                    break
+                except Full:
+                    if self.quit.is_set() or self.workers_finished:
+                        return
+                    else:
+                        continue
+        workers_count = self.instances
+        logger.info(
+            "Fed all data. Publishing %d killer tasks" % (workers_count))
+        retry_delay = 1
+        for _ in range(5):
+            try:
+                [
+                    self.task_queue.put(None, timeout=1)
+                    for _ in range(0, workers_count)
+                ]
+                break
+            except Full:
+                logger.debug(
+                    "Couldn't post killer tasks"
+                    " because queue is full. Retrying in %ss", retry_delay)
+                time.sleep(retry_delay)
+                retry_delay *= 2
+
+        try:
+            logger.info("Waiting for workers")
+            list(map(lambda x: x.join(), self.pool))
+            logger.info("All workers exited.")
+            self.workers_finished = True
+        except (KeyboardInterrupt, SystemExit):
+            self.task_queue.close()
+            self.results.close()
+            self.quit.set()
+            logger.info("Going to quit. Waiting for workers")
+            list(map(lambda x: x.join(), self.pool))
+            self.workers_finished = True
+

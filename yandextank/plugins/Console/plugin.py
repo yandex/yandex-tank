@@ -1,4 +1,4 @@
-''' Plugin provides fullscreen console '''
+""" Plugin provides fullscreen console """
 import logging
 import sys
 import threading
@@ -9,7 +9,7 @@ from ...common.interfaces import AbstractPlugin, AggregateResultListener
 
 
 class Plugin(AbstractPlugin, AggregateResultListener):
-    ''' Console plugin '''
+    """ Console plugin """
     SECTION = 'console'
 
     def __init__(self, core, cfg, name):
@@ -117,7 +117,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             self.screen.add_second_data(data)
 
     def add_info_widget(self, widget):
-        ''' add right panel widget '''
+        """ add right panel widget """
         if not self.screen:
             self.log.debug("No screen instance to add widget")
         else:
@@ -128,9 +128,9 @@ class Plugin(AbstractPlugin, AggregateResultListener):
 
 
 class RealConsoleMarkup(object):
-    '''
+    """
     Took colors from here: https://www.siafoo.net/snippet/88
-    '''
+    """
     WHITE_ON_BLACK = '\033[37;40m'
     TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
@@ -168,7 +168,7 @@ class RealConsoleMarkup(object):
 
 
 class NoConsoleMarkup(RealConsoleMarkup):
-    ''' all colors are disabled '''
+    """ all colors are disabled """
     WHITE_ON_BLACK = ''
     TOTAL_RESET = ''
     clear = ""

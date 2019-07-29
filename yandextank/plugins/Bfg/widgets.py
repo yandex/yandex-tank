@@ -4,7 +4,7 @@ from ...common.interfaces import AbstractInfoWidget
 
 
 class BfgInfoWidget(AbstractInfoWidget):
-    ''' Console widget '''
+    """ Console widget """
 
     def __init__(self):
         AbstractInfoWidget.__init__(self)

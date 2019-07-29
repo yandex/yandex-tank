@@ -224,9 +224,9 @@ class APIClient(object):
             json=None,
             http_method="POST",
             trace=False):
-        '''
+        """
         Send request to writer service.
-        '''
+        """
         request = requests.Request(
             http_method,
             self.writer_url,

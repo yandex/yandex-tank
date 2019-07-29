@@ -1,8 +1,8 @@
-'''
+"""
 Missile object and generators
 
 You should update Stepper.status.ammo_count and Stepper.status.loop_count in your custom generators!
-'''
+"""
 import logging
 from itertools import cycle
 
@@ -13,7 +13,7 @@ from .module_exceptions import AmmoFileError
 
 
 class HttpAmmo(object):
-    '''
+    """
     Represents HTTP missile
 
     >>> print HttpAmmo('/', []).to_s()  # doctest: +NORMALIZE_WHITESPACE
@@ -30,7 +30,7 @@ class HttpAmmo(object):
     Content-Length: 6
     <BLANKLINE>
     hello!
-    '''
+    """
 
     def __init__(self, uri, headers, method='GET', http_ver='1.1', body=''):
         self.method = method
@@ -51,15 +51,15 @@ class HttpAmmo(object):
 
 
 class SimpleGenerator(object):
-    '''
+    """
     Generates ammo based on a given sample.
-    '''
+    """
 
     def __init__(self, missile_sample):
-        '''
+        """
         Missile sample is any object that has to_s method which
         returns its string representation.
-        '''
+        """
         self.missiles = cycle([(missile_sample.to_s(), None)])
 
     def __iter__(self):
@@ -69,14 +69,14 @@ class SimpleGenerator(object):
 
 
 class UriStyleGenerator(object):
-    '''
+    """
     Generates GET ammo based on given URI list.
-    '''
+    """
 
     def __init__(self, uris, headers, http_ver='1.1'):
-        '''
+        """
         uris - a list of URIs as strings.
-        '''
+        """
         self.uri_count = len(uris)
         self.missiles = cycle([(
             HttpAmmo(
@@ -95,7 +95,7 @@ class Reader(object):
 
 
 class AmmoFileReader(Reader):
-    '''Read missiles from ammo file'''
+    """Read missiles from ammo file"""
 
     def __init__(self, filename, use_cache=True, **kwargs):
         super(AmmoFileReader, self).__init__(filename, use_cache)

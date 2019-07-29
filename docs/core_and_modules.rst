@@ -584,11 +584,11 @@ current working directory ``./``), or a package:
               log.info("Shoot case 2: %s", missile)
   
       def setup(self, param):
-          ''' this will be executed in each worker before the test starts '''
+          """ this will be executed in each worker before the test starts """
           log.info("Setting up LoadTest: %s", param)
   
       def teardown(self):
-          ''' this will be executed in each worker after the end of the test '''
+          """ this will be executed in each worker after the end of the test """
           log.info("Tearing down LoadTest")
           #It's mandatory to explicitly stop worker process in teardown
           os._exit(0)

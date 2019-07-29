@@ -1,4 +1,4 @@
-''' Cummulative Autostops '''
+""" Cummulative Autostops """
 import logging
 import math
 import re
@@ -29,7 +29,7 @@ class WindowCounter(object):
 
 
 class TotalFracTimeCriterion(AbstractCriterion):
-    '''
+    """
     Windowed time criterion
 
     syntax: total_time(300ms, 70%, 3s)
@@ -39,7 +39,7 @@ class TotalFracTimeCriterion(AbstractCriterion):
 
     Warning: this criterion uses histogram to make its decision, so the
     time boundary is rounded to aggregator bin edge.
-    '''
+    """
 
     @staticmethod
     def get_type_string():
@@ -130,7 +130,7 @@ class TotalFracTimeCriterion(AbstractCriterion):
 
 
 class TotalHTTPCodesCriterion(AbstractCriterion):
-    ''' Cummulative HTTP Criterion '''
+    """ Cummulative HTTP Criterion """
 
     @staticmethod
     def get_type_string():
@@ -203,7 +203,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
         return 26
 
     def get_level_str(self):
-        ''' format level str '''
+        """ format level str """
         if self.is_relative:
             level_str = str(self.level) + "%"
         else:
@@ -236,7 +236,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
 
 
 class TotalNetCodesCriterion(AbstractCriterion):
-    ''' Cummulative Net Criterion '''
+    """ Cummulative Net Criterion """
 
     @staticmethod
     def get_type_string():
@@ -319,7 +319,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
         return 27
 
     def get_level_str(self):
-        ''' format level str '''
+        """ format level str """
         if self.is_relative:
             level_str = str(self.level) + "%"
         else:
@@ -353,7 +353,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
 
 
 class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
-    ''' Reversed HTTP Criterion '''
+    """ Reversed HTTP Criterion """
 
     @staticmethod
     def get_type_string():
@@ -434,7 +434,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         return 28
 
     def get_level_str(self):
-        ''' format level str'''
+        """ format level str"""
         if self.is_relative:
             level_str = str(self.level) + "%"
         else:
@@ -467,7 +467,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
 
 
 class TotalNegativeNetCodesCriterion(AbstractCriterion):
-    ''' Reversed NET Criterion '''
+    """ Reversed NET Criterion """
 
     @staticmethod
     def get_type_string():
@@ -552,7 +552,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         return 29
 
     def get_level_str(self):
-        ''' format level str'''
+        """ format level str"""
         if self.is_relative:
             level_str = str(self.level) + "%"
         else:
@@ -586,7 +586,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
 
 
 class TotalHTTPTrendCriterion(AbstractCriterion):
-    ''' HTTP Trend Criterion '''
+    """ HTTP Trend Criterion """
 
     @staticmethod
     def get_type_string():
@@ -650,10 +650,10 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
         return matched_responses
 
     def calc_measurement_error(self, tangents):
-        '''
+        """
         formula for measurement error
         sqrt ( (sum(1, n, (k_i - <k>)**2) / (n*(n-1)))
-        '''
+        """
 
         if len(tangents) < 2:
             return 0.0
@@ -690,8 +690,8 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
 
 
 class QuantileOfSaturationCriterion(AbstractCriterion):
-    ''' Quantile of Saturation Criterion
-        example: qsat(50ms, 3m, 10%) '''
+    """ Quantile of Saturation Criterion
+        example: qsat(50ms, 3m, 10%) """
 
     @staticmethod
     def get_type_string():
@@ -716,7 +716,7 @@ class QuantileOfSaturationCriterion(AbstractCriterion):
     #     self.deviation = float()
 
     # def __get_timing_quantile(self, data):
-    #     ''' get quantile level for criterion timing '''
+    #     """ get quantile level for criterion timing """
     #     quan = 0.0
     #     for timing in sorted(aggr_data.cumulative.times_dist.keys()):
     #         timing_item = aggr_data.cumulative.times_dist[timing]

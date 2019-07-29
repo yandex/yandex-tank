@@ -1,6 +1,6 @@
-'''
+"""
 Module contains top-level generators.
-'''
+"""
 import hashlib
 import json
 import logging
@@ -16,9 +16,9 @@ from .config import ComponentFactory
 
 
 class AmmoFactory(object):
-    '''
+    """
     A generator that produces ammo.
-    '''
+    """
 
     def __init__(self, factory):
         '''
@@ -32,13 +32,13 @@ class AmmoFactory(object):
         self.marker = factory.get_marker()
 
     def __iter__(self):
-        '''
+        """
         Returns a generator of (timestamp, marker, missile) tuples
         where missile is in a string representation. Load Plan (timestamps
         generator) and ammo generator are taken from the previously
         configured ComponentFactory, passed as a parameter to the
         __init__ method of this class.
-        '''
+        """
         ammo_stream = (
             ammo
             for ammo in ((missile, marker or self.marker(missile))
@@ -89,9 +89,9 @@ class LoadProfile(object):
 
 class StepperWrapper(object):
     # TODO: review and rewrite this class
-    '''
+    """
     Wrapper for cached stepper functionality
-    '''
+    """
     OPTION_LOAD = 'load_profile'
     OPTION_LOAD_TYPE = 'load_type'
     OPTION_SCHEDULE = 'schedule'
@@ -134,7 +134,7 @@ class StepperWrapper(object):
         self.file_cache = 8192
 
     def get_option(self, option, param2=None):
-        ''' get_option wrapper'''
+        """ get_option wrapper"""
         result = self.cfg[option]
         self.log.debug(
             "Option %s = %s", option, result)
@@ -157,7 +157,7 @@ class StepperWrapper(object):
         return opts
 
     def read_config(self):
-        ''' stepper part of reading options '''
+        """ stepper part of reading options """
         self.log.info("Configuring StepperWrapper...")
         self.ammo_file = self.get_option(self.OPTION_AMMOFILE)
         self.ammo_type = self.get_option('ammo_type')
@@ -191,7 +191,7 @@ class StepperWrapper(object):
             self.log.info("chosen_cases LIMITS: %s", self.chosen_cases)
 
     def prepare_stepper(self):
-        ''' Generate test data if necessary '''
+        """ Generate test data if necessary """
 
         def publish_info(stepper_info):
             info.status.publish('loadscheme', stepper_info.loadscheme)
@@ -240,11 +240,11 @@ class StepperWrapper(object):
             self.instances = stepper_info.instances
 
     def __si_filename(self):
-        '''Return name for stepper_info json file'''
+        """Return name for stepper_info json file"""
         return "%s_si.json" % self.stpd
 
     def __get_stpd_filename(self):
-        ''' Choose the name for stepped data file '''
+        """ Choose the name for stepped data file """
         if self.use_caching:
             sep = "|"
             hasher = hashlib.md5()
@@ -279,24 +279,24 @@ class StepperWrapper(object):
         return stpd
 
     def __read_cached_options(self):
-        '''
+        """
         Read stepper info from json
-        '''
+        """
         self.log.debug("Reading cached stepper info: %s", self.__si_filename())
         with open(self.__si_filename(), 'r') as si_file:
             si = info.StepperInfo(**json.load(si_file))
         return si
 
     def __write_cached_options(self, si):
-        '''
+        """
         Write stepper info to json
-        '''
+        """
         self.log.debug("Saving stepper info: %s", self.__si_filename())
         with open(self.__si_filename(), 'w') as si_file:
             json.dump(si._asdict(), si_file, indent=4)
 
     def __make_stpd_file(self):
-        ''' stpd generation using Stepper class '''
+        """ stpd generation using Stepper class """
         self.log.info("Making stpd-file: %s", self.stpd)
         stepper = Stepper(
             self.core,

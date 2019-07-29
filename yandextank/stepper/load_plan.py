@@ -1,6 +1,6 @@
-'''
+"""
 Load Plan generators
-'''
+"""
 import re
 from itertools import chain, groupby
 from builtins import range
@@ -9,9 +9,9 @@ from .util import parse_duration, solve_quadratic, proper_round
 
 
 class Const(object):
-    '''
+    """
     Load plan with constant load
-    '''
+    """
 
     def __init__(self, rps, duration):
         self.rps = float(rps)
@@ -26,18 +26,18 @@ class Const(object):
             for i in range(0, int(self.rps * self.duration / 1000)))
 
     def rps_at(self, t):
-        '''Return rps for second t'''
+        """Return rps for second t"""
         if 0 <= t <= self.duration:
             return self.rps
         else:
             return 0
 
     def get_duration(self):
-        '''Return step duration'''
+        """Return step duration"""
         return self.duration
 
     def __len__(self):
-        '''Return total ammo count'''
+        """Return total ammo count"""
         return int(self.duration / 1000 * self.rps)
 
     def get_rps_list(self):
@@ -48,7 +48,7 @@ class Const(object):
 
 
 class Line(object):
-    '''Load plan with linear load'''
+    """Load plan with linear load"""
 
     def __init__(self, minrps, maxrps, duration):
         """
@@ -81,7 +81,7 @@ class Line(object):
         return (self.ts(n) for n in range(0, self.__len__()))
 
     def rps_at(self, t):
-        '''Return rps for second t'''
+        """Return rps for second t"""
         if 0 <= t <= self.duration:
             return self.minrps + \
                 float(self.maxrps - self.minrps) * t / self.duration
@@ -89,18 +89,18 @@ class Line(object):
             return 0
 
     def get_duration(self):
-        '''Return load duration in seconds'''
+        """Return load duration in seconds"""
         return int(self.duration * 1000)
 
     def __len__(self):
-        '''Return total ammo count'''
+        """Return total ammo count"""
         return int((self.maxrps + self.minrps) / 2.0 * self.duration)
 
     def get_float_rps_list(self):
-        '''
+        """
         get list of constant load parts (we have no constant load at all, but tank will think so),
         with parts durations (float)
-        '''
+        """
         int_rps = list(range(int(self.minrps), int(self.maxrps) + 1))
         step_duration = float(self.duration) / len(int_rps)
         rps_list = [(rps, int(step_duration)) for rps in int_rps]
@@ -120,7 +120,7 @@ class Line(object):
 
 
 class Composite(object):
-    '''Load plan with multiple steps'''
+    """Load plan with multiple steps"""
 
     def __init__(self, steps):
         self.steps = steps
@@ -133,11 +133,11 @@ class Composite(object):
             base += step.get_duration()
 
     def get_duration(self):
-        '''Return total duration'''
+        """Return total duration"""
         return sum(step.get_duration() for step in self.steps)
 
     def __len__(self):
-        '''Return total ammo count'''
+        """Return total ammo count"""
         return int(sum(step.__len__() for step in self.steps))
 
     def get_rps_list(self):
