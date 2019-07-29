@@ -164,9 +164,18 @@ class AsyncSession(object):
     def finished(self):
         return self.session.exit_status_ready()
 
+    def exit_status(self):
+        return self.session.recv_exit_status()
+
     def read_maybe(self):
         if self.session.recv_ready():
             return self.session.recv(4096)
+        else:
+            return None
+
+    def read_err_maybe(self):
+        if self.session.recv_stderr_ready():
+            return self.session.recv_stderr(4096)
         else:
             return None
 
