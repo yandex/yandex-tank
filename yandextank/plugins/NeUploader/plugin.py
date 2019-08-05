@@ -88,7 +88,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
         case_metrics = self.metrics_objs.get(case)
         if case_metrics is None:
-            parent = self.metrics_objs.get('__overall__', {}).get(col)
             case_metrics = {
                 col: constructor(
                     name='{} {}'.format(col, case),
@@ -112,6 +111,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
             for case_name in df_cases_set:
                 case_metric_obj = self.get_metric_obj(column, case_name)
+                df['value'] = df[column]
                 result_df = self.filter_df_by_case(df, case_name)
                 case_metric_obj.put(result_df)
 
@@ -152,7 +152,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         :param case: str with case name
         :return: DataFrame with columns 'ts' and 'value'
         """
-        return df.loc[['ts', 'value']] if case == '__overall__' else df.loc[df['tag'] == case, ['ts', 'value']]
+        return df[['ts', 'value']] if case == '__overall__' else df[df.tag == case][['ts', 'value']]
 
     def map_uploader_tags(self, uploader_tags):
         if not uploader_tags:
