@@ -101,7 +101,13 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         return self.metrics_objs[case][col]
 
     def upload(self, df):
-        df_cases_set = set([row.tag for row in df.itertuples() if row.tag])
+        df_cases_set = set()
+        for row in df.itertuples():
+            if row.tag:
+                df_cases_set.add(row.tag)
+                if '|' in row.tag:
+                    for tag in row.tag.split('|'):
+                        df_cases_set.add(tag)
 
         for column in self.col_map:
             overall_metric_obj = self.get_metric_obj(column, '__overall__')
@@ -152,7 +158,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         :param case: str with case name
         :return: DataFrame with columns 'ts' and 'value'
         """
-        return df[['ts', 'value']] if case == '__overall__' else df[df.tag == case][['ts', 'value']]
+        return df[['ts', 'value']] if case == '__overall__' else df[df.tag.str.contains(case)][['ts', 'value']]
 
     def map_uploader_tags(self, uploader_tags):
         if not uploader_tags:
