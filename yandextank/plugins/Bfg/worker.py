@@ -2,7 +2,9 @@ import logging
 import time
 import threading as th
 import multiprocessing as mp
+import signal
 from queue import Empty, Full
+import os
 
 from ...stepper import StpdReader
 
@@ -17,7 +19,7 @@ def wait_before_kill(process, wait=5, timeout=1):
         time.sleep(timeout)
         wait -= 1
     if process.is_alive():
-        process.kill()
+        os.kill(process.pid, signal.SIGKILL)
 
 
 class BFGBase(object):
@@ -132,7 +134,7 @@ Gun: {gun.__class__.__name__}
             self.results.close()
             self.quit.set()
             logger.info("Going to quit. Killing workers")
-            [x.kill() for x in self.pool if x.is_alive()]
+            [os.kill(x.pid, signal.SIGKILL) for x in self.pool if x.is_alive()]
             logger.info("All workers exited.")
             self.workers_finished = True
         else:
