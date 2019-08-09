@@ -2,11 +2,24 @@ import logging
 import time
 import threading as th
 import multiprocessing as mp
+import signal
 from queue import Empty, Full
+import os
 
 from ...stepper import StpdReader
 
 logger = logging.getLogger(__name__)
+
+
+def wait_before_kill(process, wait=5, timeout=1):
+    while wait > 0:
+        logger.info(f'Time left before {process} will be killed: {wait*timeout}s')
+        if not process.is_alive():
+            break
+        time.sleep(timeout)
+        wait -= 1
+    if process.is_alive():
+        os.kill(process.pid, signal.SIGKILL)
 
 
 class BFGBase(object):
@@ -51,7 +64,7 @@ Gun: {gun.__class__.__name__}
     def start(self):
         self.start_time = time.time()
         for process in self.pool:
-            process.daemon = True
+            # process.daemon = True
             process.start()
         self.feeder.start()
 
@@ -67,12 +80,10 @@ Gun: {gun.__class__.__name__}
         Say the workers to finish their jobs and quit.
         """
         self.quit.set()
-        # yapf:disable
-        while sorted([
-                self.pool[i].is_alive()
-                for i in range(len(self.pool))])[-1]:
-            time.sleep(1)
-        # yapf:enable
+        # while any((p.is_alive() for p in self.pool)):
+        #     time.sleep(1)
+        logger.info('killing processes')
+        list(map(wait_before_kill, self.pool))
         try:
             while not self.task_queue.empty():
                 self.task_queue.get(timeout=0.1)
@@ -85,53 +96,54 @@ Gun: {gun.__class__.__name__}
         """
         A feeder that runs in distinct thread in main process.
         """
-        self.plan = StpdReader(self.stpd_filename)
-        if self.cached_stpd:
-            self.plan = list(self.plan)
-        for task in self.plan:
-            if self.quit.is_set():
-                logger.info("Stop feeding: gonna quit")
-                return
-            # try putting a task to a queue unless there is a quit flag
-            # or all workers have exited
-            while True:
+        try:
+            self.plan = StpdReader(self.stpd_filename)
+            if self.cached_stpd:
+                self.plan = list(self.plan)
+            for task in self.plan:
+                if self.quit.is_set():
+                    logger.info("Stop feeding: gonna quit")
+                    return
+                # try putting a task to a queue unless there is a quit flag
+                # or all workers have exited
+                while True:
+                    try:
+                        self.task_queue.put(task, timeout=1)
+                        break
+                    except Full:
+                        if self.quit.is_set() or self.workers_finished:
+                            return
+                        else:
+                            continue
+            workers_count = self.instances
+            logger.info(
+                "Feeded all data. Publishing %d killer tasks" % (workers_count))
+            retry_delay = 1
+            for _ in range(5):
                 try:
-                    self.task_queue.put(task, timeout=1)
+                    [
+                        self.task_queue.put(None, timeout=1)
+                        for _ in range(0, workers_count)
+                    ]
                     break
                 except Full:
-                    if self.quit.is_set() or self.workers_finished:
-                        return
-                    else:
-                        continue
-        workers_count = self.instances
-        logger.info(
-            "Fed all data. Publishing %d killer tasks" % (workers_count))
-        retry_delay = 1
-        for _ in range(5):
-            try:
-                [
-                    self.task_queue.put(None, timeout=1)
-                    for _ in range(0, workers_count)
-                ]
-                break
-            except Full:
-                logger.debug(
-                    "Couldn't post killer tasks"
-                    " because queue is full. Retrying in %ss", retry_delay)
-                time.sleep(retry_delay)
-                retry_delay *= 2
-
-        try:
-            logger.info("Waiting for workers")
-            list(map(lambda x: x.join(), self.pool))
-            logger.info("All workers exited.")
-            self.workers_finished = True
+                    logger.debug(
+                        "Couldn't post killer tasks"
+                        " because queue is full. Retrying in %ss", retry_delay)
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
         except (KeyboardInterrupt, SystemExit):
             self.task_queue.close()
             self.results.close()
             self.quit.set()
-            logger.info("Going to quit. Waiting for workers")
+            logger.info("Going to quit. Killing workers")
+            [os.kill(x.pid, signal.SIGKILL) for x in self.pool if x.is_alive()]
+            logger.info("All workers exited.")
+            self.workers_finished = True
+        else:
+            logger.info("Waiting for workers")
             list(map(lambda x: x.join(), self.pool))
+            logger.info("All workers exited.")
             self.workers_finished = True
 
 
@@ -186,7 +198,7 @@ class BFGMultiprocessing(BFGBase):
         except Exception:
             logger.exception("Couldn't finalize gun. Exit shooter process")
             return
-        logger.debug("Exit shooter process")
+        logger.info("Exit shooter process")
 
 
 class BFGGreen(BFGBase):
