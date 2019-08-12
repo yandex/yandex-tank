@@ -103,7 +103,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     def upload(self, df):
         df_cases_set = set()
         for row in df.itertuples():
-            if row.tag:
+            if row.tag and isinstance(row.tag, str):
                 df_cases_set.add(row.tag)
                 if '|' in row.tag:
                     for tag in row.tag.split('|'):
