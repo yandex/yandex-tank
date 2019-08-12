@@ -85,9 +85,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         :param case: str with case name
         :return: metric object
         """
+
         case_metrics = self.metrics_objs.get(case)
         if case_metrics is None:
-            # parent = self.metrics_objs.get('__overall__', {}).get(col)
             case_metrics = {
                 col: constructor(
                     name='{} {}'.format(col, case),
@@ -101,17 +101,25 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         return self.metrics_objs[case][col]
 
     def upload(self, df):
-        # df_cases_set = set([row.tag for row in df.itertuples() if row.tag])
+        df_cases_set = set()
+        for row in df.itertuples():
+            if row.tag and isinstance(row.tag, str):
+                df_cases_set.add(row.tag)
+                if '|' in row.tag:
+                    for tag in row.tag.split('|'):
+                        df_cases_set.add(tag)
 
         for column in self.col_map:
             overall_metric_obj = self.get_metric_obj(column, '__overall__')
             df['value'] = df[column]
-            overall_metric_obj.put(df)
-            # for case_name in df_cases_set:
-            #     case_metric_obj = self.metric_generator(column, case_name)
-            #     self.metrics_ids[column][case_name] = case_metric_obj.local_id
-            #     result_df = self.filter_df_by_case(df, case_name)
-            #     case_metric_obj.put(result_df)
+            result_df = self.filter_df_by_case(df, '__overall__')
+            overall_metric_obj.put(result_df)
+
+            for case_name in df_cases_set:
+                case_metric_obj = self.get_metric_obj(column, case_name)
+                df['value'] = df[column]
+                result_df = self.filter_df_by_case(df, case_name)
+                case_metric_obj.put(result_df)
 
     def upload_monitoring(self, data):
         for metric_name, df in self.monitoring_data_to_dfs(data).items():
@@ -145,12 +153,12 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     @staticmethod
     def filter_df_by_case(df, case):
         """
-        Filter dataframe by case name. If case is '__overall__', return the whole dataframe.
+        Filter dataframe by case name. If case is '__overall__', return all rows.
         :param df: DataFrame
         :param case: str with case name
-        :return: DataFrame
+        :return: DataFrame with columns 'ts' and 'value'
         """
-        return df if case == '__overall__' else df.loc[df['tag'] == case]
+        return df[['ts', 'value']] if case == '__overall__' else df[df.tag.str.contains(case)][['ts', 'value']]
 
     def map_uploader_tags(self, uploader_tags):
         if not uploader_tags:
