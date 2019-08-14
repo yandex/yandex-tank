@@ -68,9 +68,13 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         self.upload_monitoring(data_list)
 
     def post_process(self, retcode):
-        for chunk in self.reader:
-            if chunk is not None:
-                self.upload(chunk)
+        try:
+            for chunk in self.reader:
+                if chunk is not None:
+                    self.upload(chunk)
+        except KeyboardInterrupt:
+            logger.warning('Caught KeyboardInterrupt on Neuploader')
+            self._cleanup()
         return retcode
 
     @property
