@@ -6,6 +6,11 @@ import numpy as np
 import pandas as pd
 import queue as q
 
+try:
+    from _queue import SimpleQueue
+except ImportError:
+    SimpleQueue = None
+
 from yandextank.aggregator import TimeChopper
 from yandextank.aggregator import aggregator as agg
 
@@ -167,8 +172,8 @@ class JMeterReader(object):
             TimeChopper(self._read_stat_queue(), 3))
 
     def _read_stat_queue(self):
-        while not self.closed:
-            # for _ in range(self.stat_queue.qsize()):
+        while not self.closed and not self.stat_queue.empty():
+            logger.info(self.stat_queue.qsize())
             try:
                 si = self.stat_queue.get_nowait()
                 if si is not None:

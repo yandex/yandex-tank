@@ -256,13 +256,14 @@ class Plugin(GeneratorPlugin):
             logger.debug("Can't create modified jmx near original: %s", exc)
             new_jmx = self.core.mkstemp('.jmx', 'modified_')
         logger.debug("Modified JMX: %s", new_jmx)
-        with open(new_jmx, "wb") as fh:
+        with open(new_jmx, "w") as fh:
             fh.write(''.join(source_lines))
-            fh.write(tpl % tpl_args)
+            fh.write(tpl.decode('utf-8') % tpl_args)
             fh.write(closing)
         return new_jmx
 
     def __graceful_shutdown(self):
+        self.get_reader().close()
         if self.jmeter_udp_port is None:
             return False
         shutdown_test_started = time.time()
@@ -281,12 +282,12 @@ class Plugin(GeneratorPlugin):
                 return True
             else:
                 time.sleep(1)
-        self.log.info('Graceful stop failed after %s' % time.time() - stop_test_started)
+        self.log.info('Graceful stop failed after %s' % (time.time() - stop_test_started))
         return False
 
     def __send_udp_message(self, message):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.sendto(message, ('localhost', self.jmeter_udp_port))
+        sock.sendto(message.encode('utf-8'), ('localhost', self.jmeter_udp_port))
 
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
@@ -309,8 +310,8 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
     def render(self, screen):
         jmeter = " JMeter Test %s" % next(self.krutilka)
         space = screen.right_panel_width - len(jmeter) - 1
-        left_spaces = space / 2
-        right_spaces = space / 2
+        left_spaces = space // 2
+        right_spaces = space // 2
 
         dur_seconds = int(time.time()) - int(self.jmeter.start_time)
         duration = str(datetime.timedelta(seconds=dur_seconds))
