@@ -57,6 +57,8 @@ analytic tools for the results they produce.
         'yandextank.aggregator': ['config/*'],
         'yandextank.plugins.Autostop': ['config/*'],
         'yandextank.plugins.Bfg': ['config/*'],
+        'yandextank.plugins.Pandora': ['config/*'],
+        'yandextank.plugins.Jmeter': ['config/*'],
         'yandextank.plugins.Console': ['config/*'],
         'yandextank.plugins.InfluxUploader': ['config/*'],
         'yandextank.plugins.RCAssert': ['config/*'],

@@ -2,7 +2,6 @@
 import logging
 import sys
 import threading
-import traceback
 
 from .screen import Screen
 from ...common.interfaces import AbstractPlugin, AggregateResultListener
@@ -86,7 +85,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         try:
             self.__console_view = self.screen.render_screen().encode('utf-8')
         except Exception as ex:
-            self.log.warning("Exception inside render: %s", traceback.format_exc(ex))
+            self.log.warning("Exception inside render: %s", exc_info=True)
             self.render_exception = ex
             self.__console_view = ""
 

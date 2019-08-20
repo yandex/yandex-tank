@@ -281,3 +281,40 @@ class UltimateGun(AbstractGun):
                     marker, e, exc_info=True)
         else:
             logger.warning("Scenario not found: %s", marker)
+
+
+class ShmultimateGun(UltimateGun):
+    @contextmanager
+    def measure(self, marker):
+        start_time = time.time()
+        data_item = {
+            "send_ts": start_time,
+            "tag": marker,
+            "interval_real": None,
+            "connect_time": 0,
+            "send_time": 0,
+            "latency": 0,
+            "receive_time": 0,
+            "interval_event": 0,
+            "size_out": 0,
+            "size_in": 0,
+            "net_code": 0,
+            "proto_code": 200,
+        }
+        try:
+            yield data_item
+        except Exception as e:
+            logger.warning("%s failed while measuring with %s", marker, e)
+            if data_item["proto_code"] == 200:
+                data_item["proto_code"] = 500
+            if data_item["net_code"] == 0:
+                data_item["net_code"] == 1
+            raise
+        finally:
+            if data_item.get("interval_real") is None:
+                data_item["interval_real"] = int(
+                    (time.time() - start_time) * 1e6)
+            try:
+                self.results.put(data_item, block=False)
+            except Full:
+                logger.error("Results full. Data corrupted")

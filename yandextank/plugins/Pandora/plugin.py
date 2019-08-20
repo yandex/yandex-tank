@@ -71,7 +71,7 @@ class Plugin(GeneratorPlugin):
             self.config_contents = self.__patch_raw_config_and_dump(external_file_config_contents)
         else:
             raise RuntimeError("Neither pandora.config_content, nor pandora.config_file specified")
-        logger.debug('Config after parsing for patching: %s', self.config_contents)
+        logger.error('Config after parsing for patching: %s', self.config_contents)
 
         # find report filename and add to artifacts
         self.sample_log = self.__find_report_filename()
@@ -246,7 +246,7 @@ class Plugin(GeneratorPlugin):
 
 
 class PandoraInfoWidget(AbstractInfoWidget):
-    ''' Right panel widget '''
+    """ Right panel widget """
 
     def __init__(self, pandora):
         AbstractInfoWidget.__init__(self)
@@ -265,8 +265,8 @@ class PandoraInfoWidget(AbstractInfoWidget):
     def render(self, screen):
         text = " Pandora Test %s" % next(self.krutilka)
         space = screen.right_panel_width - len(text) - 1
-        left_spaces = space / 2
-        right_spaces = space / 2
+        left_spaces = space // 2
+        right_spaces = space // 2
 
         dur_seconds = int(time.time()) - int(self.owner.process_start_time)
         duration = str(datetime.timedelta(seconds=dur_seconds))
