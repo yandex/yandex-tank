@@ -296,10 +296,10 @@ class MeasureCounterGun(UltimateGun):
         at = self.q.get()
         delay = at/1000 - (time.time() - self.start_time)
         if delay > 0:
-            print(f'waiting {delay}s')
+            logger.debug(f'waiting {delay}s')
             time.sleep(delay)
         else:
-            print('no wait')
+            logger.debug('no wait')
         start_time = time.time()
         data_item = {
             "send_ts": start_time,
