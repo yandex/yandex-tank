@@ -85,7 +85,7 @@ gun_config:
   allow_unknown: true
 gun_type:
   type: string
-  allowed: [custom, http, scenario, ultimate]
+  allowed: [custom, http, scenario, ultimate, measure_counter]
   required: true
   description: Type of gun BFG should use
   tutorial_link: http://yandextank.readthedocs.io/en/latest/core_and_modules.html#bfg-options

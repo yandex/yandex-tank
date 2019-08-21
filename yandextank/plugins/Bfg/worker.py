@@ -303,24 +303,7 @@ class BFGMeasureCounter(BFGBase):
             return
         while not self.quit.is_set():
             try:
-                task = self.task_queue.get(timeout=1)
-                if not task:
-                    logger.debug("Got killer task.")
-                    break
-                timestamp, missile, marker = task
-                planned_time = self.start_time + (timestamp / 1000.0)
-                delay = planned_time - time.time()
-                if delay > 0:
-                    time.sleep(delay)
-
-                try:
-                    with self.instance_counter.get_lock():
-                        self.instance_counter.value += 1
-                    self.gun.shoot(missile, marker)
-                finally:
-                    with self.instance_counter.get_lock():
-                        self.instance_counter.value -= 1
-
+                self.gun.shoot(None, None)
             except (KeyboardInterrupt, SystemExit):
                 break
             except Empty:
@@ -354,7 +337,8 @@ class BFGMeasureCounter(BFGBase):
             # or all workers have exited
             while True:
                 try:
-                    self.task_queue.put(task, timeout=1)
+                    timestamp, _, _ = task
+                    self.gun.q.put(timestamp, timeout=1)
                     break
                 except Full:
                     if self.quit.is_set() or self.workers_finished:
@@ -368,7 +352,7 @@ class BFGMeasureCounter(BFGBase):
         for _ in range(5):
             try:
                 [
-                    self.task_queue.put(None, timeout=1)
+                    self.gun.q.put(None, timeout=1)
                     for _ in range(0, workers_count)
                 ]
                 break
@@ -386,6 +370,7 @@ class BFGMeasureCounter(BFGBase):
             self.workers_finished = True
         except (KeyboardInterrupt, SystemExit):
             self.task_queue.close()
+            self.gun.q.close()
             self.results.close()
             self.quit.set()
             logger.info("Going to quit. Waiting for workers")

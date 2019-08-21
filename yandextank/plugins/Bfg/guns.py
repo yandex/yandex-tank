@@ -3,6 +3,7 @@ import logging
 import time
 from contextlib import contextmanager
 from random import randint
+import multiprocessing as mp
 
 import requests
 from queue import Full
@@ -49,7 +50,7 @@ class AbstractGun(AbstractPlugin):
             if data_item["proto_code"] == 200:
                 data_item["proto_code"] = 500
             if data_item["net_code"] == 0:
-                data_item["net_code"] == 1
+                data_item["net_code"] = 1
             raise
         finally:
             if data_item.get("interval_real") is None:
@@ -283,9 +284,22 @@ class UltimateGun(AbstractGun):
             logger.warning("Scenario not found: %s", marker)
 
 
-class ShmultimateGun(UltimateGun):
+class MeasureCounterGun(UltimateGun):
+
+    def __init__(self, core, cfg):
+        super(MeasureCounterGun, self).__init__(core, cfg)
+        self.q = mp.Queue()
+        self.start_time = time.time()
+
     @contextmanager
     def measure(self, marker):
+        at = self.q.get()
+        delay = at/1000 - (time.time() - self.start_time)
+        if delay > 0:
+            print(f'waiting {delay}s')
+            time.sleep(delay)
+        else:
+            print('no wait')
         start_time = time.time()
         data_item = {
             "send_ts": start_time,
@@ -308,7 +322,7 @@ class ShmultimateGun(UltimateGun):
             if data_item["proto_code"] == 200:
                 data_item["proto_code"] = 500
             if data_item["net_code"] == 0:
-                data_item["net_code"] == 1
+                data_item["net_code"] = 1
             raise
         finally:
             if data_item.get("interval_real") is None:
@@ -318,3 +332,17 @@ class ShmultimateGun(UltimateGun):
                 self.results.put(data_item, block=False)
             except Full:
                 logger.error("Results full. Data corrupted")
+
+    def shoot(self, missile, marker):
+        if not marker:
+            marker = "default"
+        scenario = getattr(self.load_test, marker, None)
+        if callable(scenario):
+            try:
+                scenario('')
+            except Exception as e:
+                logger.warning(
+                    "Scenario %s failed with %s",
+                    marker, e, exc_info=True)
+        else:
+            logger.warning("Scenario not found: %s", marker)

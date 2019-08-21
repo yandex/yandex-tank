@@ -4,11 +4,10 @@ from threading import Event, Thread
 
 import pip
 
-from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun, UltimateGun
+from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun, UltimateGun, MeasureCounterGun
 from .reader import BfgReader, BfgStatsReader
 from .widgets import BfgInfoWidget
-from ..Phantom import PhantomReader, string_to_df
-from .worker import BFGMultiprocessing, BFGGreen
+from .worker import BFGMultiprocessing, BFGGreen, BFGMeasureCounter
 from ..Phantom import PhantomReader, string_to_df
 from ..Console import Plugin as ConsolePlugin
 from ...common.interfaces import GeneratorPlugin
@@ -40,6 +39,7 @@ class Plugin(GeneratorPlugin):
             'http': HttpGun,
             'scenario': ScenarioGun,
             'ultimate': UltimateGun,
+            'measure_counter': MeasureCounterGun,
         }
 
     @staticmethod
@@ -84,7 +84,12 @@ class Plugin(GeneratorPlugin):
     @property
     def bfg(self):
         if self._bfg is None:
-            BFG = BFGGreen if self.get_option("worker_type", "") == "green" else BFGMultiprocessing
+            if self.get_option("worker_type", "") == "green":
+                BFG = BFGGreen
+            elif self.get_option("worker_type", "") == "measure_counter":
+                BFG = BFGMeasureCounter
+            else:
+                BFG = BFGMultiprocessing
             self._bfg = BFG(
                 gun=self.gun,
                 instances=self.stepper_wrapper.instances,
