@@ -294,6 +294,9 @@ class MeasureCounterGun(UltimateGun):
     @contextmanager
     def measure(self, marker):
         at = self.q.get()
+        if at is None:
+            logger.info('killer task received')
+            raise KeyboardInterrupt
         delay = at/1000 - (time.time() - self.start_time)
         if delay > 0:
             logger.debug(f'waiting {delay}s')

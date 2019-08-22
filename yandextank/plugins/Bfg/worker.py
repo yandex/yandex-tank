@@ -80,9 +80,12 @@ Gun: {gun.__class__.__name__}
         Say the workers to finish their jobs and quit.
         """
         self.quit.set()
-        # while any((p.is_alive() for p in self.pool)):
-        #     time.sleep(1)
         logger.info('killing processes')
+        killers = [th.Thread(target=wait_before_kill, args=(p,)) for p in self.pool]
+        for k in killers:
+            k.start()
+        for k in killers:
+            k.join()
         list(map(wait_before_kill, self.pool))
         try:
             while not self.task_queue.empty():
