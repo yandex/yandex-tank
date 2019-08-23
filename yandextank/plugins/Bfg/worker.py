@@ -293,6 +293,10 @@ class BFGGreen(BFGBase):
 
 class BFGMeasureCounter(BFGBase):
 
+    def start(self):
+        super(BFGMeasureCounter, self).start()
+        th.Thread(target=self._monitor_worker_business, daemon=True).start()
+
     def _worker(self):
         """
         A worker that does actual jobs
@@ -388,10 +392,6 @@ class BFGMeasureCounter(BFGBase):
             logger.info("Going to quit. Waiting for workers")
             list(map(lambda p: p.join(), self.pool))
             self.workers_finished = True
-
-    def start(self):
-        super(BFGMeasureCounter, self).start()
-        th.Thread(target=self._monitor_worker_business, daemon=True).start()
 
     def _monitor_worker_business(self, critical_overload_duration=3):
         """
