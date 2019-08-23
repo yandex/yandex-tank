@@ -7,6 +7,7 @@ from queue import Empty, Full
 import os
 
 from ...stepper import StpdReader
+from .guns import MeasureCounterGun
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +52,7 @@ Gun: {gun.__class__.__name__}
         self.pool = [
             mp.Process(target=self._worker) for _ in range(self.instances)
         ]
-        self.feeder = th.Thread(target=self._feed, name="Feeder")
-        self.feeder.daemon = True
+        self.feeder = th.Thread(target=self._feed, name="Feeder", daemon=True)
         self.workers_finished = False
         self.start_time = None
         self.plan = None
@@ -86,7 +86,6 @@ Gun: {gun.__class__.__name__}
             k.start()
         for k in killers:
             k.join()
-        list(map(wait_before_kill, self.pool))
         try:
             while not self.task_queue.empty():
                 self.task_queue.get(timeout=0.1)
@@ -306,6 +305,8 @@ class BFGMeasureCounter(BFGBase):
             return
         while not self.quit.is_set():
             try:
+                with self.instance_counter.get_lock():
+                    self.instance_counter.value += 1
                 self.gun.shoot(None, None)
             except (KeyboardInterrupt, SystemExit):
                 break
@@ -317,6 +318,9 @@ class BFGMeasureCounter(BFGBase):
                 logger.warning("Couldn't put to result queue because it's full")
             except Exception:
                 logger.exception("Bfg shoot exception")
+            finally:
+                with self.instance_counter.get_lock():
+                    self.instance_counter.value -= 1
 
         try:
             self.gun.teardown()
@@ -324,6 +328,22 @@ class BFGMeasureCounter(BFGBase):
             logger.exception("Couldn't finalize gun. Exit shooter process")
             return
         logger.debug("Exit shooter process")
+
+    def _put_killer_task_into_queue(self):
+        retry_delay = 1
+        while True:
+            try:
+                self.gun.q.put(None, timeout=1)
+                break
+            except Full:
+                logger.debug(
+                    "Couldn't post killer task"
+                    " because queue is full. Retrying in %ss", retry_delay)
+                time.sleep(retry_delay)
+                if retry_delay >= 30:
+                    retry_delay = 30
+                else:
+                    retry_delay *= 2
 
     def _feed(self):
         """
@@ -348,27 +368,16 @@ class BFGMeasureCounter(BFGBase):
                         return
                     else:
                         continue
-        workers_count = self.instances
+
+        workers_count = len(self.pool)
         logger.info(
             "Fed all data. Publishing %d killer tasks" % (workers_count))
-        retry_delay = 1
-        for _ in range(5):
-            try:
-                [
-                    self.gun.q.put(None, timeout=1)
-                    for _ in range(0, workers_count)
-                ]
-                break
-            except Full:
-                logger.debug(
-                    "Couldn't post killer tasks"
-                    " because queue is full. Retrying in %ss", retry_delay)
-                time.sleep(retry_delay)
-                retry_delay *= 2
 
+        for _ in range(0, workers_count):
+            self._put_killer_task_into_queue()
         try:
             logger.info("Waiting for workers")
-            list(map(lambda x: x.join(), self.pool))
+            list(map(lambda p: p.join(), self.pool))
             logger.info("All workers exited.")
             self.workers_finished = True
         except (KeyboardInterrupt, SystemExit):
@@ -377,6 +386,56 @@ class BFGMeasureCounter(BFGBase):
             self.results.close()
             self.quit.set()
             logger.info("Going to quit. Waiting for workers")
-            list(map(lambda x: x.join(), self.pool))
+            list(map(lambda p: p.join(), self.pool))
             self.workers_finished = True
 
+    def start(self):
+        super(BFGMeasureCounter, self).start()
+        th.Thread(target=self._monitor_worker_business, daemon=True).start()
+
+    def _monitor_worker_business(self, critical_overload_duration=3):
+        """
+        monitores gun of type MeasureCounterGun values and decides if test needs more workers
+        after adding workers, it must wait for some time and check again after next_check_timeout
+        must be called in a separate thread.
+        addition criteria are as follows:
+        once critical percentage of late measures is reached SOME (heuristic) amount of workers are being added
+        next check compares previous percentage with current and adds new workers, only if newer late measures
+        have been occurring for critical_overload_duration time
+        :param critical_overload_duration: (heuristics) duration percentage of "late" measures,
+            that triggers adding workers procedure
+        :return:
+        """
+        late_percentage = 0
+        overload_duration = 0
+        while not self.workers_finished and not self.quit.is_set():
+            time.sleep(1)
+            if not isinstance(self.gun, MeasureCounterGun):
+                logger.warning("Wrong gun type for worker business monitoring. Expected MeasureCounterGun")
+                return
+            late = self.gun.late_measures.value
+            count = self.gun.measure_count.value
+            new_late_percentage = 100*late/count if count else 0
+            logger.debug(f'{round(new_late_percentage - late_percentage, 2)}% duration {overload_duration}s')
+            if new_late_percentage - late_percentage > 0:
+                overload = new_late_percentage - late_percentage
+                overload_duration += 1
+            else:
+                overload = 0
+                overload_duration = 0
+                late_percentage = new_late_percentage
+            if overload and overload_duration > critical_overload_duration:
+                quantity = int(len(self.pool) * overload // 100) + 1
+                self._add_pool_workers(quantity=quantity)
+                overload_duration = 0
+                late_percentage = new_late_percentage
+
+    def _add_pool_workers(self, quantity=1):
+        if not self.workers_finished and not self.quit.is_set():
+            # FIXME: race condition possible?
+            for _ in range(quantity):
+                p = mp.Process(target=self._worker)
+                self.pool.append(p)
+                p.start()
+                self._put_killer_task_into_queue()
+            logger.info(f"ADDED {quantity} WORKER{'S' if quantity > 1 else ''} current pool = {len(self.pool)}")

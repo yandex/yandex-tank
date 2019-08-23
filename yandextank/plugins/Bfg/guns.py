@@ -289,6 +289,8 @@ class MeasureCounterGun(UltimateGun):
     def __init__(self, core, cfg):
         super(MeasureCounterGun, self).__init__(core, cfg)
         self.q = mp.Queue()
+        self.measure_count = mp.Value('i')
+        self.late_measures = mp.Value('i')
         self.start_time = time.time()
 
     @contextmanager
@@ -298,11 +300,11 @@ class MeasureCounterGun(UltimateGun):
             logger.info('killer task received')
             raise KeyboardInterrupt
         delay = at/1000 - (time.time() - self.start_time)
+        self.measure_count.value += 1
         if delay > 0:
-            logger.debug(f'waiting {delay}s')
             time.sleep(delay)
-        else:
-            logger.debug('no wait')
+        elif at > 1000:  # they will always appear "late" in the first second
+            self.late_measures.value += 1
         start_time = time.time()
         data_item = {
             "send_ts": start_time,
