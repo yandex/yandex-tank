@@ -434,8 +434,8 @@ class BFGMeasureCounter(BFGBase):
         if not self.workers_finished and not self.quit.is_set():
             # FIXME: race condition possible?
             for _ in range(quantity):
+                self._put_killer_task_into_queue()
                 p = mp.Process(target=self._worker)
                 self.pool.append(p)
                 p.start()
-                self._put_killer_task_into_queue()
             logger.info(f"ADDED {quantity} WORKER{'S' if quantity > 1 else ''} current pool = {len(self.pool)}")

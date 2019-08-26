@@ -4,6 +4,7 @@ import time
 from contextlib import contextmanager
 from random import randint
 import multiprocessing as mp
+import sys
 
 import requests
 from queue import Full
@@ -298,7 +299,7 @@ class MeasureCounterGun(UltimateGun):
         at = self.q.get()
         if at is None:
             logger.info('killer task received')
-            raise KeyboardInterrupt
+            sys.exit(0)
         delay = at/1000 - (time.time() - self.start_time)
         self.measure_count.value += 1
         if delay > 0:
