@@ -30,7 +30,7 @@ class BFGBase(object):
     """
 
     def __init__(self, gun, instances, stpd_filename, cached_stpd=False,
-                 green_threads_per_instance=None):
+                 green_threads_per_instance=None, **kwargs):
         logger.info(
             """
 BFG using stpd from {stpd_filename}
@@ -297,6 +297,10 @@ class BFGMeasureCounter(BFGBase):
         super(BFGMeasureCounter, self).start()
         th.Thread(target=self._monitor_worker_business, daemon=True).start()
 
+    @property
+    def max_instances(self):
+        return self.gun.get_option('max_instances')
+
     def _worker(self):
         """
         A worker that does actual jobs
@@ -425,15 +429,19 @@ class BFGMeasureCounter(BFGBase):
                 overload_duration = 0
                 late_percentage = new_late_percentage
             if overload and overload_duration > critical_overload_duration:
-                quantity = int(len(self.pool) * overload // 100) + 1
-                self._add_pool_workers(quantity=quantity)
-                overload_duration = 0
-                late_percentage = new_late_percentage
+                if len(self.pool) < self.max_instances:
+                    quantity = int(len(self.pool) * overload // 100) + 1
+                    self._add_pool_workers(quantity=quantity)
+                    overload_duration = 0
+                    late_percentage = new_late_percentage
+                else:
+                    logger.info(f'Maximum amount of instances reached {self.max_instances}')
 
     def _add_pool_workers(self, quantity=1):
         if not self.workers_finished and not self.quit.is_set():
             # FIXME: race condition possible?
             for _ in range(quantity):
+                # FIXME: might insert a killer task in the middle of a queue, if not all task data is fed by the feeder
                 self._put_killer_task_into_queue()
                 p = mp.Process(target=self._worker)
                 self.pool.append(p)

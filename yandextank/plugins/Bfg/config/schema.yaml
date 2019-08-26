@@ -82,6 +82,10 @@ gun_config:
       type: string
       default: ''
       description: parameter that's passed to "setup" method
+    max_instances:
+      type: integer
+      default: 1000
+      description: maximum number of processes (simultaneously working clients) used in measure_counter gun
   allow_unknown: true
 gun_type:
   type: string
