@@ -2,6 +2,7 @@ import datetime
 import logging
 import subprocess
 import time
+import os
 from threading import Event
 
 import yaml
@@ -55,7 +56,12 @@ class Plugin(GeneratorPlugin):
         return opts
 
     def configure(self):
-        self.pandora_cmd = self.get_option("pandora_cmd")
+        pandora_path = self.get_option("pandora_cmd").strip()
+        if pandora_path.startswith("http://") or pandora_path.startswith("https://"):
+            self.pandora_cmd = resource_manager.resource_filename(pandora_path)
+            os.chmod(self.pandora_cmd, 0o755)
+        else:
+            self.pandora_cmd = pandora_path
         self.buffered_seconds = self.get_option("buffered_seconds")
         self.affinity = self.get_option("affinity", "")
 
