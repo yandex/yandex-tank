@@ -206,6 +206,7 @@ class Plugin(MonitoringPlugin):
         try:
             self.monitoring.prepare()
             self.monitoring.start()
+            self.add_cleanup(self.monitoring.stop)
             count = 0
             while not self.monitoring.first_data_received and count < 15 * 5:
                 time.sleep(0.2)

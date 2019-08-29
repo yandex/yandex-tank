@@ -136,6 +136,7 @@ class MonitoringCollector(object):
                 logger.debug(
                     'Waiting for agent %s reader thread to finish.', agent)
                 agent.reader_thread.join(10)
+                self.agents.remove(agent)
             except BaseException:
                 logger.error('Monitoring reader thread stuck!', exc_info=True)
 
