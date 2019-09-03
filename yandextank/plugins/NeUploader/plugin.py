@@ -150,9 +150,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                             panels[panel_name][metric_name] = {'value': [value], 'ts': [chunk['timestamp']]}
                 else:
                     panels[panel_name] = {name: {'value': [value], 'ts': [chunk['timestamp']]} for name, value in content['metrics'].items()}
-        return {'{}:{}'.format(panelk, name): pandas.DataFrame({'ts': values['ts'], 'value': values['value']})
+        return {'{}:{}'.format(panelk, name): pandas.DataFrame({'ts': [ts*1000000 for ts in values['ts']], 'value': values['value']})
                 for panelk, panelv in panels.items() for name, values in panelv.items()}
-        # return {pandas.DataFrame({'ts': [], 'value': []})] * sum([len(metrics) for metrics in panels.values()})
 
     @staticmethod
     def filter_df_by_case(df, case):
