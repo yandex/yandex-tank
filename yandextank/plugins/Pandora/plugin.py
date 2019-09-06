@@ -31,7 +31,6 @@ class Plugin(GeneratorPlugin):
         super(Plugin, self).__init__(core, cfg, name)
         self.output_finished = Event()
         self.enum_ammo = False
-        self.process_start_time = None
         self.pandora_cmd = None
         self.pandora_config_file = None
         self.config_contents = None
@@ -203,7 +202,7 @@ class Plugin(GeneratorPlugin):
         if self.affinity:
             self.core.__setup_affinity(self.affinity, args=args)
         logger.info("Starting: %s", args)
-        self.process_start_time = time.time()
+        self.start_time = time.time()
         self.process_stderr_file = self.core.mkstemp(".log", "pandora_")
         self.core.add_artifact_file(self.process_stderr_file)
         self.process_stderr = open(self.process_stderr_file, 'w')

@@ -26,6 +26,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                              'db_name': self.cfg.get('db_name')}]
         self.metrics_objs = {}  # map of case names and metric objects
         self.monitoring_metrics = {}
+        self._col_map = None
+        self._data_session = None
 
     def configure(self):
         pass
@@ -37,12 +39,11 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             logger.error('Generator plugin does not support NeUploader')
             self.is_test_finished = lambda: -1
             self.reader = []
-        else:
-            self.data_session = DataSession({'clients': self.clients_cfg})
-            self.add_cleanup(self._cleanup)
-            self.data_session.update_job({'name': self.cfg.get('test_name'),
-                                          '__type': 'tank'})
-            self.col_map = {
+
+    @property
+    def col_map(self):
+        if self._col_map is None:
+            self._col_map = {
                 'interval_real': self.data_session.new_true_metric,
                 'connect_time': self.data_session.new_true_metric,
                 'send_time': self.data_session.new_true_metric,
@@ -52,11 +53,22 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                 'net_code': self.data_session.new_event_metric,
                 'proto_code': self.data_session.new_event_metric
             }
+        return self._col_map
+
+    @property
+    def data_session(self):
+        if self._data_session is None:
+            self._data_session = DataSession({'clients': self.clients_cfg},
+                                             test_start=self.core.status['generator']['test_start'] * 10**6)
+            self.add_cleanup(self._cleanup)
+            self._data_session.update_job({'name': self.cfg.get('test_name'),
+                                          '__type': 'tank'})
+        return self._data_session
 
     def _cleanup(self):
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
         self.data_session.update_job(uploader_metainfo)
-        self.data_session.close()
+        self.data_session.close(test_end=self.core.status.get('generator',{}).get('test_end', 0) * 10**6)
 
     def is_test_finished(self):
         df = next(self.reader)
