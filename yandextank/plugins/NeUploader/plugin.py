@@ -68,7 +68,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     def _cleanup(self):
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
         self.data_session.update_job(uploader_metainfo)
-        self.data_session.close(test_end=self.core.status.get('generator',{}).get('test_end', 0) * 10**6)
+        self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
 
     def is_test_finished(self):
         df = next(self.reader)
