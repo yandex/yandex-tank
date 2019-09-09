@@ -267,6 +267,7 @@ class TankCore(object):
                 plugin.start_test()
                 logger.info("Plugin {0:s} required {1:f} seconds to start".format(plugin,
                                                                                   time.time() - start_time))
+            self.publish('generator', 'test_start', self.job.generator_plugin.start_time)
 
     def wait_for_finish(self):
         """
@@ -302,6 +303,7 @@ class TankCore(object):
         """        Call end_test() on all plugins        """
         logger.info("Finishing test...")
         self.publish("core", "stage", "end")
+        self.publish('generator', 'test_end', time.time())
         logger.info("Stopping load generator and aggregator")
         retcode = self.job.aggregator.end_test(retcode)
         logger.debug("RC after: %s", retcode)

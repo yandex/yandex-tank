@@ -25,7 +25,6 @@ class Plugin(GeneratorPlugin):
         self._bfg = None
         self.log = logging.getLogger(__name__)
         self.gun_type = None
-        self.start_time = time.time()
         self.stepper_wrapper = StepperWrapper(core, cfg)
         self.log.info("Initialized BFG")
         self.report_filename = "bfgout.log"
