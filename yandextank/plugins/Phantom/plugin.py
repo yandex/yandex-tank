@@ -122,6 +122,7 @@ class Plugin(GeneratorPlugin):
 
         self.core.job.aggregator.add_result_listener(self)
 
+        # stepping inside get_info()
         self.core.job.phantom_info = self.phantom.get_info()
 
         try:
@@ -143,11 +144,11 @@ class Plugin(GeneratorPlugin):
             logger.info('Enabled cpu affinity %s for phantom', self.affinity)
             args = self.core.__setup_affinity(self.affinity, args=args)
         logger.debug("Starting %s with arguments: %s", self.get_option("phantom_path"), args)
-        self.start_time = time.time()
         phantom_stderr_file = self.core.mkstemp(
             ".log", "phantom_stdout_stderr_")
         self.core.add_artifact_file(phantom_stderr_file)
         self.process_stderr = open(phantom_stderr_file, 'w')
+        self.start_time = time.time()
         self.process = subprocess.Popen(
             args,
             stderr=self.process_stderr,

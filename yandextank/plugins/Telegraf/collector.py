@@ -89,11 +89,14 @@ class MonitoringCollector(object):
         start_time = time.time()
         for agent in self.agents:
             for collect in agent.reader:
-                # don't crush if trash or traceback came from agent to stdout
+                # don't crash if trash or traceback came from agent to stdout
                 if not collect:
                     return 0
                 for chunk in collect:
                     ts, prepared_results = chunk
+                    if not self.first_data_received and prepared_results:
+                        self.first_data_received = True
+                        logger.info("Monitoring received first data.")
                     if self.load_start_time and int(
                             ts) >= self.load_start_time:
                         ready_to_send = {
@@ -113,25 +116,27 @@ class MonitoringCollector(object):
 
         collected_data_length = len(self.__collected_data)
 
-        if not self.first_data_received and self.__collected_data:
-            self.first_data_received = True
-            logger.info("Monitoring received first data.")
-        else:
-            self.send_collected_data()
+        self.send_collected_data()
         return collected_data_length
 
     def stop(self):
         """Shutdown agents"""
         logger.debug("Uninstalling monitoring agents")
         for agent in self.agents:
-            log_filename, data_filename = agent.uninstall()
-            self.artifact_files.append(log_filename)
-            self.artifact_files.append(data_filename)
+            agent._stop_agent()
+        for agent in self.agents:
+            try:
+                log_filename, data_filename = agent.uninstall()
+                self.artifact_files.append(log_filename)
+                self.artifact_files.append(data_filename)
+            except Exception as exc:
+                logger.warning("Error while uninstalling agent %s", exc, exc_info=True)
         for agent in self.agents:
             try:
                 logger.debug(
                     'Waiting for agent %s reader thread to finish.', agent)
                 agent.reader_thread.join(10)
+                self.agents.remove(agent)
             except BaseException:
                 logger.error('Monitoring reader thread stuck!', exc_info=True)
 
