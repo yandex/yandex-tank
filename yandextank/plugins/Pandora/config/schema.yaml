@@ -21,3 +21,8 @@ config_file:
 expvar:
   type: boolean
   default: false
+report_file:
+  type: string
+  nullable: true
+  default: null
+  description: Pandora phout path (normally will be taken from pandora config)
