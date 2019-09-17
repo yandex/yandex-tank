@@ -57,6 +57,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     @property
     def data_session(self):
+        """
+        :rtype: DataSession
+        """
         if self._data_session is None:
             self._data_session = DataSession({'clients': self.clients_cfg},
                                              test_start=self.core.status['generator']['test_start'] * 10**6)
