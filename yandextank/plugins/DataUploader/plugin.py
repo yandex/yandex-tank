@@ -559,7 +559,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self.core.publish(self.SECTION, 'version', self._lp_job.version)
             self.core.publish(self.SECTION, 'meta', self.cfg.get('meta'))
 
-
         return self._lp_job
 
     def __get_lp_job(self):
