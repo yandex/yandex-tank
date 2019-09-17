@@ -17,7 +17,7 @@ shellexec:
   enabled: true
   package: yandextank.plugins.ShellExec
 telegraf:
-  enabled: true
+  enabled: false
   package: yandextank.plugins.Telegraf
 rcassert:
   enabled: true
