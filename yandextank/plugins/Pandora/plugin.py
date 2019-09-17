@@ -121,12 +121,16 @@ class Plugin(GeneratorPlugin):
             self.expvar = True
             self.expvar_port = self.DEFAULT_EXPVAR_PORT
 
-        # FIXME this is broken for custom ammo providers due to interface incompatibility
         # FIXME refactor pandora plx
         for pool in config['pools']:
             if pool.get('ammo', {}).get('file', ''):
                 self.ammofile = pool['ammo']['file']
                 pool['ammo']['file'] = resource_manager.resource_filename(
+                    self.ammofile
+                )
+            if pool.get('ammo', {}).get('source', {}).get('path', ''):
+                self.ammofile = pool['ammo']['source']['path']
+                pool['ammo']['source']['path'] = resource_manager.resource_filename(
                     self.ammofile
                 )
             if not pool.get('result') or 'phout' not in pool.get('result', {}).get('type', ''):
