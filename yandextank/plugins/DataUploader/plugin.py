@@ -278,11 +278,14 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         if console:
             console.add_info_widget(JobInfoWidget(self))
 
+        meta_regression = self.cfg['meta'].get('regression')
+
         self.set_option('target_host', self.target)
         self.set_option('target_port', port)
         self.set_option('cmdline', cmdline)
         self.set_option('ammo_path', ammo_path)
         self.set_option('loop_count', loop_count)
+        self.set_option('regression', meta_regression)
         self.__save_conf()
 
     def start_test(self):
