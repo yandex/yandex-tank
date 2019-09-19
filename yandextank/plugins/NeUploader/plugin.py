@@ -184,6 +184,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             return {}
         else:
             meta_tags_names = ['component', 'description', 'name', 'person', 'task', 'version', 'lunapark_jobno']
-            meta_tags = {key: uploader_tags.get(key, self.cfg.get(key)) for key in meta_tags_names}
-            meta_tags.update({k: v for k, v in uploader_tags.get('meta', {}).items()})
+            meta_tags = {key: uploader_tags.get(key, self.cfg.get(key, '')) for key in meta_tags_names}
+            meta_tags.update({k: v if v is not None else '' for k, v in uploader_tags.get('meta', {}).items()})
             return meta_tags
