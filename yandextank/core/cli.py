@@ -1,7 +1,6 @@
 import logging
 import sys
 from optparse import OptionParser
-
 import pkg_resources
 from netort.resource import manager as resource_manager
 from yandextank.core.consoleworker import TankWorker
@@ -14,7 +13,7 @@ def main():
         '-c',
         '--config',
         action='append',
-        help="Path to INI file containing run options, multiple options accepted",
+        help="Path to YAML file containing run options, multiple options accepted",
         default=[]
     )
     parser.add_option(
@@ -127,7 +126,7 @@ def main():
                             [cli_kwargs],
                             options.no_rc,
                             ammo_file=ammofile if ammofile else None,
-                            log_handlers=handlers
+                            log_handlers=handlers,
                             )
     except ValidationError as e:
         logging.error('Config validation error:\n{}'.format(e.errors))

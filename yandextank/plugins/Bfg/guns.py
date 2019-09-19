@@ -352,3 +352,6 @@ class MeasureCounterGun(UltimateGun):
                     marker, e, exc_info=True)
         else:
             logger.warning("Scenario not found: %s", marker)
+
+    def teardown(self):
+        self.q.close()

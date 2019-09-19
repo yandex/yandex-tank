@@ -140,7 +140,7 @@ class Plugin(GeneratorPlugin):
             self.log.fatal("Result listener is not initialized")
 
     def is_test_finished(self):
-        if self.bfg.running():
+        if self.bfg.running:
             return -1
         else:
             self.log.info("BFG finished")
@@ -149,9 +149,12 @@ class Plugin(GeneratorPlugin):
             return 0
 
     def end_test(self, retcode):
-        if self.bfg.running():
+        if self.bfg.running:
             self.log.info("Terminating BFG")
             self.bfg.stop()
         self.close_event.set()
-        self.stats_reader.close()
+        if self.stats_reader is not None:
+            self.stats_reader.close()
+        if self.results_listener is not None:
+            self.results_listener.join()
         return retcode

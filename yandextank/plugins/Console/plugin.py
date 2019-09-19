@@ -78,6 +78,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         if not self.__writer_thread:
             self.__writer_event = threading.Event()
             self.__writer_thread = threading.Thread(
+                name='ConsoleWriter',
                 target=self.__console_writer)
             self.__writer_thread.daemon = True
             self.__writer_thread.start()

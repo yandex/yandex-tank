@@ -68,6 +68,7 @@ Gun: {gun.__class__.__name__}
             process.start()
         self.feeder.start()
 
+    @property
     def running(self):
         """
         True while there are alive workers out there. Tank
@@ -88,9 +89,13 @@ Gun: {gun.__class__.__name__}
             k.join()
         try:
             while not self.task_queue.empty():
+                logger.info('emptying queue')
                 self.task_queue.get(timeout=0.1)
+            logger.info('queue emptied')
             self.task_queue.close()
+            logger.info('joining feeder')
             self.feeder.join()
+            logger.info('feeder joined')
         except Exception as ex:
             logger.info(ex)
 
@@ -295,7 +300,7 @@ class BFGMeasureCounter(BFGBase):
 
     def start(self):
         super(BFGMeasureCounter, self).start()
-        th.Thread(target=self._monitor_worker_business, daemon=True).start()
+        th.Thread(target=self._monitor_worker_business, name='WorkerBusinessMonitor', daemon=True).start()
 
     @property
     def max_instances(self):
@@ -329,7 +334,6 @@ class BFGMeasureCounter(BFGBase):
             finally:
                 with self.instance_counter.get_lock():
                     self.instance_counter.value -= 1
-
         try:
             self.gun.teardown()
         except Exception:
@@ -352,6 +356,12 @@ class BFGMeasureCounter(BFGBase):
                     retry_delay = 30
                 else:
                     retry_delay *= 2
+            except AssertionError:
+                logger.debug(
+                    "Couldn't post killer task"
+                    " because queue is closed:"
+                )
+                break
 
     def _feed(self):
         """
@@ -390,8 +400,8 @@ class BFGMeasureCounter(BFGBase):
             self.workers_finished = True
         except (KeyboardInterrupt, SystemExit):
             self.task_queue.close()
-            self.gun.q.close()
             self.results.close()
+            self.gun.q.close()
             self.quit.set()
             logger.info("Going to quit. Waiting for workers")
             list(map(lambda p: p.join(), self.pool))
