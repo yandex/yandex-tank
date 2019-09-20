@@ -24,7 +24,7 @@ expvar:
 resources:
   default: []
   type: list
-  description: additional resources you need to download befor test
+  description: additional resources you need to download before test
 resource:
   type: dict
   description: dict with attributes for additional resources

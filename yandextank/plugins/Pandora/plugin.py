@@ -227,7 +227,6 @@ class Plugin(GeneratorPlugin):
             self.core.job.aggregator.add_result_listener(widget)
 
     def start_test(self):
-        print self.pandora_cmd
         args = [self.pandora_cmd] +\
             (['-expvar'] if self.expvar else []) +\
             [self.pandora_config_file]
