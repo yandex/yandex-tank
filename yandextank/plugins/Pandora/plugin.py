@@ -58,7 +58,6 @@ class Plugin(GeneratorPlugin):
         return opts
 
     def configure(self):
-        #self.pandora_cmd = self.get_option("pandora_cmd")
         self.report_file = self.get_option("report_file")
         self.buffered_seconds = self.get_option("buffered_seconds")
         self.affinity = self.get_option("affinity", "")
