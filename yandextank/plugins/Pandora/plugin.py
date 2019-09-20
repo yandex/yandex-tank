@@ -63,9 +63,9 @@ class Plugin(GeneratorPlugin):
         self.affinity = self.get_option("affinity", "")
         self.resources = self.get_option("resources")
 
-        #if we use custom pandora binary, we can download it and make it executable
+        # if we use custom pandora binary, we can download it and make it executable
         self.pandora_cmd = self.get_resource(self.get_option("pandora_cmd"), "./pandora", permissions=0755)
-	
+
         # get config_contents and patch it: expand resources via resource manager
         # config_content option has more priority over config_file
         if self.get_option("config_content"):
@@ -80,10 +80,10 @@ class Plugin(GeneratorPlugin):
             raise RuntimeError("Neither pandora.config_content, nor pandora.config_file specified")
         logger.debug('Config after parsing for patching: %s', self.config_contents)
 
-        #download all resources from self.get_options("resources")
+        # download all resources from self.get_options("resources")
         if len(self.resources) > 0:
             for resource in self.resources:
-                self.get_resource(resource["src"],resource["dst"])
+                self.get_resource(resource["src"], resource["dst"])
 
         # find report filename and add to artifacts
         self.report_file = self.__find_report_filename()
