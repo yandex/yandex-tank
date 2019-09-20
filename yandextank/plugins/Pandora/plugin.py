@@ -2,6 +2,7 @@ import datetime
 import logging
 import subprocess
 import time
+import os
 from threading import Event
 
 import yaml
@@ -43,6 +44,7 @@ class Plugin(GeneratorPlugin):
         self.__schedule = None
         self.ammofile = None
         self.process_stderr_file = None
+        self.resources = []
 
     @staticmethod
     def get_key():
@@ -56,11 +58,15 @@ class Plugin(GeneratorPlugin):
         return opts
 
     def configure(self):
-        self.pandora_cmd = self.get_option("pandora_cmd")
+        #self.pandora_cmd = self.get_option("pandora_cmd")
         self.report_file = self.get_option("report_file")
         self.buffered_seconds = self.get_option("buffered_seconds")
         self.affinity = self.get_option("affinity", "")
+        self.resources = self.get_option("resources")
 
+        #if we use custom pandora binary, we can download it and make it executable
+        self.pandora_cmd = self.get_resource(self.get_option("pandora_cmd"), "./pandora", permissions=0755)
+	
         # get config_contents and patch it: expand resources via resource manager
         # config_content option has more priority over config_file
         if self.get_option("config_content"):
@@ -74,6 +80,11 @@ class Plugin(GeneratorPlugin):
         else:
             raise RuntimeError("Neither pandora.config_content, nor pandora.config_file specified")
         logger.debug('Config after parsing for patching: %s', self.config_contents)
+
+        #download all resources from self.get_options("resources")
+        if len(self.resources) > 0:
+            for resource in self.resources:
+                self.get_resource(resource["src"],resource["dst"])
 
         # find report filename and add to artifacts
         self.report_file = self.__find_report_filename()
@@ -186,6 +197,24 @@ class Plugin(GeneratorPlugin):
             self.stats_reader = PandoraStatsReader(self.expvar_enabled, self.expvar_port)
         return self.stats_reader
 
+    def get_resource(self, resource, dst, permissions=0644):
+        opener = resource_manager.get_opener(resource)
+        if isinstance(opener, HttpOpener):
+            tmp_path = opener.download_file(True, try_ungzip=True)
+            try:
+                os.rename(tmp_path, dst)
+                logger.info('Successfully moved resource %s', dst)
+            except OSError as ex:
+                logger.debug("Could not move resource %s\n%s", dst, ex)
+        else:
+            dst = opener.get_filename
+        try:
+            os.chmod(dst, permissions)
+            logger.info('Permissions on %s have changed %d', dst, permissions)
+        except OSError as ex:
+            logger.debug("Could not chane pepermissions on %s\n%s", dst, ex)
+        return dst
+
     def prepare_test(self):
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
@@ -199,6 +228,7 @@ class Plugin(GeneratorPlugin):
             self.core.job.aggregator.add_result_listener(widget)
 
     def start_test(self):
+        print self.pandora_cmd
         args = [self.pandora_cmd] +\
             (['-expvar'] if self.expvar else []) +\
             [self.pandora_config_file]
