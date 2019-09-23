@@ -70,7 +70,7 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
     def execute(self, cmd):
         logger.info("Execute on %s: %s", self.host, cmd)
         with self.connect() as client:
-            _, stdout, stderr = client.exec_command(cmd)
+            _, stdout, stderr = client.exec_command(cmd, get_pty=True)
             output = stdout.read()
             errors = stderr.read()
             err_code = stdout.channel.recv_exit_status()
@@ -164,9 +164,18 @@ class AsyncSession(object):
     def finished(self):
         return self.session.exit_status_ready()
 
+    def exit_status(self):
+        return self.session.recv_exit_status()
+
     def read_maybe(self):
         if self.session.recv_ready():
             return self.session.recv(4096)
+        else:
+            return None
+
+    def read_err_maybe(self):
+        if self.session.recv_stderr_ready():
+            return self.session.recv_stderr(4096)
         else:
             return None
 
