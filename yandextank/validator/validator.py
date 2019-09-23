@@ -3,7 +3,6 @@ import os
 import re
 import sys
 import uuid
-
 import logging
 import pkg_resources
 import yaml
@@ -171,7 +170,7 @@ class TankConfig(object):
         self._errors = None
         if not isinstance(configs, list):
             configs = [configs]
-        self.raw_config_dict = self.__load_multiple(
+        self.raw_config_dict = load_multiple(
             [config for config in configs if config is not None])
         if self.raw_config_dict.get(core_section) is None:
             self.raw_config_dict[core_section] = {}
@@ -183,9 +182,6 @@ class TankConfig(object):
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
         self.PLUGINS_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml'))
 
-    def get_configinitial(self):
-        return self.raw_config_dict
-
     def validate(self):
         if not self._validated:
             try:
@@ -194,7 +190,7 @@ class TankConfig(object):
             except ValidationError as e:
                 self._validated = None
                 self._errors = e.errors
-        return self._validated, self._errors, self.raw_config_dict
+        return self._validated, self._errors
 
     @property
     def validated(self):
@@ -212,18 +208,6 @@ class TankConfig(object):
     def save_raw(self, filename):
         with open(filename, 'w') as f:
             yaml.dump(self.raw_config_dict, f)
-
-    def __load_multiple(self, configs):
-        configs_count = len(configs)
-        if configs_count == 0:
-            return {}
-        elif configs_count == 1:
-            return configs[0]
-        elif configs_count == 2:
-            return recursive_dict_update(configs[0], configs[1])
-        else:
-            return self.__load_multiple(
-                [recursive_dict_update(configs[0], configs[1])] + configs[2:])
 
     def __parse_enabled_plugins(self):
         """
@@ -291,6 +275,26 @@ class TankConfig(object):
 
     def __str__(self):
         return yaml.dump(self.raw_config_dict)
+
+
+def load_multiple(configs):
+    """
+    merges config dicts
+    :param configs:
+    :return:
+    """
+    if configs is None:
+        return {}
+    configs_count = len(configs)
+    if configs_count == 0:
+        return {}
+    elif configs_count == 1:
+        return configs[0]
+    elif configs_count == 2:
+        return recursive_dict_update(configs[0], configs[1])
+    else:
+        return load_multiple(
+            [recursive_dict_update(configs[0], configs[1])] + configs[2:])
 
 
 class ValidatedConfig(object):

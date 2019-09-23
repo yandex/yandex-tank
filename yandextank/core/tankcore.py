@@ -21,7 +21,7 @@ from builtins import str
 
 from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin
-from yandextank.validator.validator import TankConfig, ValidationError
+from yandextank.validator.validator import TankConfig, ValidationError, load_multiple
 from yandextank.aggregator import TankAggregator
 from ..common.util import update_status, pid_exists
 
@@ -31,7 +31,8 @@ import configparser
 
 logger = logging.getLogger(__name__)
 
-CONFIGINITIAL = 'configinitial.yaml'
+LOCAL_CONFIG = 'localconfig.yaml'
+USER_CONFIG = 'userconfig.yaml'
 VALIDATED_CONF = 'validated_conf.yaml'
 
 
@@ -92,7 +93,15 @@ class TankCore(object):
     UUID_OPTION = 'uuid'
     API_JOBNO = 'api_jobno'
 
-    def __init__(self, configs, interrupted_event, artifacts_base_dir=None, artifacts_dir_name=None):
+    def __init__(
+            self,
+            configs,
+            interrupted_event,
+            local_configs=None,
+            user_configs=None,
+            artifacts_base_dir=None,
+            artifacts_dir_name=None
+    ):
         """
 
         :param configs: list of dict
@@ -102,33 +111,40 @@ class TankCore(object):
         self.raw_configs = configs
         self.status = {}
         self._plugins = None
-        self._artifacts_dir = None
+        self._artifacts_dir = artifacts_dir_name
         self.artifact_files = {}
         self.artifacts_to_send = []
-        self._artifacts_base_dir = None
+        self._artifacts_base_dir = artifacts_base_dir
         self.manual_start = False
         self.scheduled_start = None
         self.taskset_path = None
         self.taskset_affinity = None
         self._job = None
         self._cfg_snapshot = None
+        self.local_configs = load_multiple(local_configs)
+        self.user_configs = load_multiple(user_configs)
+        self.configinitial = self.user_configs
 
         self.interrupted = interrupted_event
 
         self.error_log = None
 
         error_output = 'validation_error.yaml'
-        self.config, self.errors, self.configinitial = TankConfig(self.raw_configs,
-                                                                  with_dynamic_options=True,
-                                                                  core_section=self.SECTION,
-                                                                  error_output=error_output).validate()
+        self.config, self.errors = TankConfig(
+            self.raw_configs,
+            with_dynamic_options=True,
+            core_section=self.SECTION,
+            error_output=error_output
+        ).validate()
         if not self.config:
             raise ValidationError(self.errors)
         self.test_id = self.get_option(self.SECTION, 'artifacts_dir',
                                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f"))
         self.lock_dir = self.get_option(self.SECTION, 'lock_dir')
-        with open(os.path.join(self.artifacts_dir, CONFIGINITIAL), 'w') as f:
-            yaml.dump(self.configinitial, f)
+        with open(os.path.join(self.artifacts_dir, LOCAL_CONFIG), 'w') as f:
+            yaml.dump(self.local_configs, f)
+        with open(os.path.join(self.artifacts_dir, USER_CONFIG), 'w') as f:
+            yaml.dump(self.user_configs, f)
         if self.errors:
             self.add_artifact_file(error_output)
         configinfo = self.config.validated.copy()
