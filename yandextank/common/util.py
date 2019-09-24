@@ -1,8 +1,6 @@
 import collections
 import os
 import pwd
-import socket
-import traceback
 
 import http.client
 import logging
