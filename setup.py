@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='19.09.2',  # YY.0M.MICRO
+    version='19.09.3',  # YY.0M.MICRO
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -21,7 +21,7 @@ analytic tools for the results they produce.
         'pandas>=0.18.0', 'numpy>=1.12.1', 'future>=0.16.0',
         'pip>=8.1.2',
         'pyyaml==3.13', 'cerberus==1.2', 'influxdb>=5.0.0', 'netort>=0.6.7',
-        'retrying==1.3.3', 'pytest-benchmark==3.2.2'
+        'retrying==1.3.3', 'pytest-benchmark==3.2.2', 'boto'
     ],
     setup_requires=[
     ],
@@ -47,7 +47,6 @@ analytic tools for the results they produce.
         'console_scripts': [
             'yandex-tank = yandextank.core.cli:main',
             'yandex-tank-check-ssh = yandextank.common.util:check_ssh_connection',
-            'tank-postloader = yandextank.plugins.DataUploader.cli:post_loader',
             'tank-docs-gen = yandextank.validator.docs_gen:main'
         ],
     },

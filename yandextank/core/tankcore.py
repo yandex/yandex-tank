@@ -19,7 +19,6 @@ import platform
 import yaml
 from builtins import str
 
-from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin
 from yandextank.validator.validator import TankConfig, ValidationError, load_multiple
 from yandextank.aggregator import TankAggregator
@@ -31,9 +30,10 @@ import configparser
 
 logger = logging.getLogger(__name__)
 
-LOCAL_CONFIG = 'localconfig.yaml'
-USER_CONFIG = 'userconfig.yaml'
+LOCAL_CONFIG = 'local_conf.yaml'
+USER_CONFIG = 'user_conf.yaml'
 VALIDATED_CONF = 'validated_conf.yaml'
+ERROR_OUTPUT = 'validation_error.yaml'
 
 
 class Job(object):
@@ -51,23 +51,12 @@ class Job(object):
         self.monitoring_plugins = monitoring_plugins
         self.aggregator = aggregator
         self.tank = tank
-        self._phantom_info = None
         self.generator_plugin = generator_plugin
 
     def subscribe_plugin(self, plugin):
         self.aggregator.add_result_listener(plugin)
         for monitoring_plugin in self.monitoring_plugins:
             monitoring_plugin.add_listener(plugin)
-
-    @property
-    def phantom_info(self):
-        if self._phantom_info is None:
-            raise PluginNotPrepared
-        return self._phantom_info
-
-    @phantom_info.setter
-    def phantom_info(self, info):
-        self._phantom_info = info
 
 
 def parse_plugin(s):
@@ -129,12 +118,11 @@ class TankCore(object):
 
         self.error_log = None
 
-        error_output = 'validation_error.yaml'
         self.config, self.errors = TankConfig(
             self.raw_configs,
             with_dynamic_options=True,
             core_section=self.SECTION,
-            error_output=error_output
+            error_output=ERROR_OUTPUT
         ).validate()
         if not self.config:
             raise ValidationError(self.errors)
@@ -145,13 +133,16 @@ class TankCore(object):
             yaml.dump(self.local_configs, f)
         with open(os.path.join(self.artifacts_dir, USER_CONFIG), 'w') as f:
             yaml.dump(self.user_configs, f)
-        if self.errors:
-            self.add_artifact_file(error_output)
         configinfo = self.config.validated.copy()
         configinfo.setdefault(self.SECTION, {})
         configinfo[self.SECTION][self.API_JOBNO] = self.test_id
         with open(os.path.join(self.artifacts_dir, VALIDATED_CONF), 'w') as f:
             yaml.dump(configinfo, f)
+        self.add_artifact_file(os.path.join(self.artifacts_dir, USER_CONFIG))
+        self.add_artifact_file(os.path.join(self.artifacts_dir, LOCAL_CONFIG))
+        self.add_artifact_file(os.path.join(self.artifacts_dir, VALIDATED_CONF))
+        if self.errors:
+            self.add_artifact_file(os.path.join(self.artifacts_dir, ERROR_OUTPUT))
         logger.info('New test id %s' % self.test_id)
 
     @property
@@ -456,9 +447,6 @@ class TankCore(object):
                 "Adding artifact file to collect (keep=%s): %s", keep_original,
                 filename)
             self.artifact_files[filename] = keep_original
-
-    def add_artifact_to_send(self, lp_requisites, content):
-        self.artifacts_to_send.append((lp_requisites, content))
 
     def apply_shorthand_options(self, options, default_section='DEFAULT'):
         for option_str in options:

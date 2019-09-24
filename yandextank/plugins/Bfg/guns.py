@@ -293,6 +293,7 @@ class MeasureCounterGun(UltimateGun):
         self.measure_count = mp.Value('i')
         self.late_measures = mp.Value('i')
         self.start_time = time.time()
+        self.please_stop = mp.Event()
 
     @contextmanager
     def measure(self, marker):

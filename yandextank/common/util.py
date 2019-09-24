@@ -7,7 +7,6 @@ import traceback
 import http.client
 import logging
 import errno
-import itertools
 import re
 import select
 import psutil
@@ -15,6 +14,19 @@ import argparse
 
 from paramiko import SSHClient, AutoAddPolicy
 from retrying import retry
+
+from _csv import QUOTE_NONE
+
+import pandas as pd
+import numpy as np
+import time
+
+from pandas.io.common import CParserError
+
+try:
+    from io import StringIO
+except ImportError:
+    from io import StringIO
 
 logger = logging.getLogger(__name__)
 
@@ -461,114 +473,6 @@ def update_status(status, multi_key, value):
         status[multi_key[0]] = value
 
 
-class AddressWizard:
-    def __init__(self):
-        self.lookup_fn = socket.getaddrinfo
-        self.socket_class = socket.socket
-
-    def resolve(self, address_str, do_test=False, explicit_port=False):
-        """
-
-        :param address_str:
-        :return: tuple of boolean, string, int - isIPv6, resolved_ip, port (may be null), extracted_address
-        """
-
-        if not address_str:
-            raise RuntimeError("Mandatory option was not specified: address")
-
-        logger.debug("Trying to resolve address string: %s", address_str)
-
-        port = None
-
-        braceport_re = re.compile(r"""
-            ^
-            \[           # opening brace
-            \s?          # space sym?
-            (\S+)        # address - string
-            \s?          # space sym?
-            \]           # closing brace
-            :            # port separator
-            \s?          # space sym?
-            (\d+)        # port
-            $
-        """, re.X)
-        braceonly_re = re.compile(r"""
-            ^
-            \[           # opening brace
-            \s?          # space sym?
-            (\S+)        # address - string
-            \s?          # space sym?
-            \]           # closing brace
-            $
-        """, re.X)
-
-        if braceport_re.match(address_str):
-            logger.debug("Braces and port present")
-            match = braceport_re.match(address_str)
-            logger.debug("Match: %s %s ", match.group(1), match.group(2))
-            address_str, port = match.group(1), match.group(2)
-        elif braceonly_re.match(address_str):
-            logger.debug("Braces only present")
-            match = braceonly_re.match(address_str)
-            logger.debug("Match: %s", match.group(1))
-            address_str = match.group(1)
-        else:
-            logger.debug("Parsing port")
-            parts = address_str.split(":")
-            if len(parts) <= 2:  # otherwise it is v6 address
-                address_str = parts[0]
-                if len(parts) == 2:
-                    port = int(parts[1])
-        if port is not None:
-            port = int(port)
-        address_str = address_str.strip()
-        try:
-            resolved = self.lookup_fn(address_str, port)
-            logger.debug("Lookup result: %s", resolved)
-        except Exception:
-            logger.debug("Exception trying to resolve hostname %s :", address_str, exc_info=True)
-            raise
-
-        for (family, socktype, proto, canonname, sockaddr) in resolved:
-            is_v6 = family == socket.AF_INET6
-            parsed_ip, port = sockaddr[0], sockaddr[1]
-
-            if explicit_port:
-                logger.warn(
-                    "Using phantom.port option is deprecated. Use phantom.address=[address]:port instead"
-                )
-                port = int(explicit_port)
-            elif not port:
-                port = 80
-
-            if do_test:
-                try:
-                    logger.info("Testing connection to resolved address %s and port %s", parsed_ip, port)
-                    self.__test(family, (parsed_ip, port))
-                except RuntimeError:
-                    logger.info("Failed TCP connection test using [%s]:%s", parsed_ip, port)
-                    logger.debug("Failed TCP connection test using [%s]:%s", parsed_ip, port, exc_info=True)
-                    continue
-            return is_v6, parsed_ip, int(port), address_str
-
-        msg = "All connection attempts failed for %s, use {phantom.connection_test: false} to disable it"
-        raise RuntimeError(msg % address_str)
-
-    def __test(self, af, sa):
-        test_sock = self.socket_class(af)
-        try:
-            test_sock.settimeout(5)
-            test_sock.connect(sa)
-        except Exception as exc:
-            logger.debug(
-                "Exception on connect attempt [%s]:%s : %s", sa[0], sa[1],
-                traceback.format_exc(exc))
-            msg = "TCP Connection test failed for [%s]:%s, use phantom.connection_test=0 to disable it"
-            raise RuntimeError(msg % (sa[0], sa[1]))
-        finally:
-            test_sock.close()
-
-
 def recursive_dict_update(d1, d2):
     for k, v in list(d2.items()):
         if isinstance(v, collections.Mapping):
@@ -709,3 +613,69 @@ class FileLike(object):
     def readline(self):
         result, self._cursor = self.multireader.read_with_lock(self._cursor)
         return result
+
+
+phout_columns = [
+    'send_ts', 'tag', 'interval_real', 'connect_time', 'send_time', 'latency',
+    'receive_time', 'interval_event', 'size_out', 'size_in', 'net_code',
+    'proto_code'
+]
+
+dtypes = {
+    'time': np.float64,
+    'tag': np.str,
+    'interval_real': np.int64,
+    'connect_time': np.int64,
+    'send_time': np.int64,
+    'latency': np.int64,
+    'receive_time': np.int64,
+    'interval_event': np.int64,
+    'size_out': np.int64,
+    'size_in': np.int64,
+    'net_code': np.int64,
+    'proto_code': np.int64,
+}
+
+
+def string_to_df(data):
+    start_time = time.time()
+    try:
+        chunk = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
+    except CParserError as e:
+        logger.error(e.message)
+        logger.error('Incorrect phout data: {}'.format(data))
+        return
+
+    chunk['receive_ts'] = chunk.send_ts + chunk.interval_real / 1e6
+    chunk['receive_sec'] = chunk.receive_ts.astype(np.int64)
+    # TODO: consider configuration for the following:
+    chunk['tag'] = chunk.tag.str.rsplit('#', 1, expand=True)[0]
+    chunk.set_index(['receive_sec'], inplace=True)
+
+    logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
+    return chunk
+
+
+class PhantomReader(object):
+    def __init__(self, fileobj, cache_size=1024 * 1024 * 50, parser=string_to_df):
+        self.buffer = ""
+        self.phout = fileobj
+        self.cache_size = cache_size
+        self.parser = parser
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        data = self.phout.read(self.cache_size)
+        if data is None:
+            raise StopIteration
+        else:
+            parts = data.rsplit('\n', 1)
+            if len(parts) > 1:
+                chunk = self.buffer + parts[0] + '\n'
+                self.buffer = parts[1]
+                return self.parser(chunk)
+            else:
+                self.buffer += parts[0]
+                return None

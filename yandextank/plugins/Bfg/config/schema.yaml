@@ -145,6 +145,10 @@ pip:
   type: string
   default: ''
   description: pip modules to install before the test. Use multiline to install multiple modules.
+save_bfgout:
+  type: boolean
+  default: false
+  description: Save bfg output file as an artifact
 uris:
   type: list
   default: []

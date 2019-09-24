@@ -1,24 +1,20 @@
 """ Provides classes to run TankCore from console environment """
-import fnmatch
 import glob
 import logging
 import os
 import shutil
 import signal
 import stat
-import sys
 import time
 import traceback
-from configparser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
 from threading import Thread, Event
 
 import yaml
-from netort.resource import manager as resource_manager
 from pkg_resources import resource_filename
 
 from yandextank.validator.validator import ValidationError
 from .tankcore import TankCore, LockError, Lock
-from ..config_converter.converter import convert_ini, convert_single_option
+from ..config_converter.converter import convert_single_option
 
 DEFAULT_CONFIG = 'load.yaml'
 logger = logging.getLogger()
@@ -71,11 +67,8 @@ def load_cfg(cfg_filename):
 
     :type cfg_filename: str
     """
-    if is_ini(cfg_filename):
-        return convert_ini(cfg_filename)
-    else:
-        with open(cfg_filename) as f:
-            return yaml.load(f)
+    with open(cfg_filename) as f:
+        return yaml.load(f)
 
 
 def cfg_folder_loader(path):
@@ -107,127 +100,6 @@ def parse_options(options):
             for key, value
             in [option.split('=', 1) for option in options]
         ]
-
-
-def apply_shorthand_options(config, options, default_section='DEFAULT'):
-    """
-
-    :type config: ConfigParser
-    """
-    if not options:
-        return config
-    for option_str in options:
-        key, value = option_str.split('=')
-        try:
-            section, option = key.split('.')
-        except ValueError:
-            section = default_section
-            option = key
-        if not config.has_section(section):
-            config.add_section(section)
-        config.set(section, option, value)
-    return config
-
-
-def load_ini_cfgs(config_files):
-    config_filenames = [resource_manager.resource_filename(config) for config in config_files]
-    cfg = ConfigParser()
-    cfg.read(config_filenames)
-
-    dotted_options = []
-    if cfg.has_section('tank'):
-        for option, value in cfg.items('tank'):
-            if '.' in option:
-                dotted_options += [option + '=' + value]
-    else:
-        cfg.add_section('tank')
-    cfg = apply_shorthand_options(cfg, dotted_options)
-    cfg.set('tank', 'pid', str(os.getpid()))
-    return cfg
-
-
-def get_default_configs():
-    """ returns default configs list, from /etc and home dir """
-    # initialize basic defaults
-    configs = [resource_filename(__name__, 'config/00-base.ini')]
-    baseconfigs_location = '/etc/yandex-tank'
-    try:
-        conf_files = sorted(os.listdir(baseconfigs_location))
-        for filename in conf_files:
-            if fnmatch.fnmatch(filename, '*.ini'):
-                configs += [
-                    os.path.realpath(
-                        baseconfigs_location + os.sep + filename)
-                ]
-    except OSError:
-        logger.info(
-            baseconfigs_location + ' is not accessible to get configs list')
-
-    configs += [os.path.expanduser('~/.yandex-tank')]
-    return configs
-
-
-def is_ini(cfg_file):
-    if cfg_file.endswith('.yaml') or cfg_file.endswith('.json'):
-        return False
-    try:
-        ConfigParser().read(cfg_file)
-        return True
-    except MissingSectionHeaderError:
-        return False
-
-
-def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
-    try:
-        all_config_files = []
-
-        if not no_rc:
-            all_config_files = get_default_configs()
-
-        if not config_files:
-            if os.path.exists(os.path.realpath('load.ini')):
-                all_config_files += [os.path.realpath('load.ini')]
-            elif os.path.exists(os.path.realpath('load.conf')):
-                # just for old 'lunapark' compatibility
-                conf_file = os.path.realpath('load.conf')
-                all_config_files += [conf_file]
-        else:
-            for config_file in config_files:
-                all_config_files.append(config_file)
-
-        cfg_ini = load_ini_cfgs([cfg_file for cfg_file in all_config_files if is_ini(cfg_file)])
-
-        # substitute telegraf config
-        def patch_ini_config_with_monitoring(ini_config, mon_section_name):
-            """
-            :type ini_config: ConfigParser
-            """
-            CONFIG = 'config'
-            telegraf_cfg = ini_config.get(mon_section_name, CONFIG)
-            if not telegraf_cfg.startswith('<') and not telegraf_cfg.lower() == 'auto':
-                with open(resource_manager.resource_filename(telegraf_cfg), 'rb') as telegraf_cfg_file:
-                    config_contents = telegraf_cfg_file.read()
-                ini_config.set(mon_section_name, CONFIG, config_contents)
-            return ini_config
-
-        try:
-            cfg_ini = patch_ini_config_with_monitoring(cfg_ini, 'monitoring')
-        except (NoSectionError, NoOptionError):
-            try:
-                patch_ini_config_with_monitoring(cfg_ini, 'telegraf')
-            except (NoOptionError, NoSectionError):
-                pass
-
-        for section, key, value in depr_options:
-            if not cfg_ini.has_section(section):
-                cfg_ini.add_section(section)
-            cfg_ini.set(section, key, value)
-        return apply_shorthand_options(cfg_ini, cmd_options)
-    except Exception as ex:
-        sys.stderr.write(RealConsoleMarkup.RED)
-        sys.stderr.write(RealConsoleMarkup.RESET)
-        sys.stderr.write(RealConsoleMarkup.TOTAL_RESET)
-        raise ex
 
 
 def parse_and_check_patches(patches):

@@ -401,6 +401,8 @@ class BFGMeasureCounter(BFGBase):
         except (KeyboardInterrupt, SystemExit):
             self.task_queue.close()
             self.results.close()
+            if isinstance(self.gun, MeasureCounterGun):
+                self.gun.please_stop.set()
             self.gun.q.close()
             self.quit.set()
             logger.info("Going to quit. Waiting for workers")

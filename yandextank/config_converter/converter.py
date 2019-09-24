@@ -1,6 +1,5 @@
 import logging
 import re
-from configparser import ConfigParser, ParsingError
 from functools import reduce
 
 import pkg_resources
@@ -12,31 +11,16 @@ from yandextank.validator.validator import load_plugin_schema, load_yaml_schema
 logger = logging.getLogger(__name__)
 CORE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
 
-DEPRECATED_SECTIONS = ['lunaport', 'aggregator']
-
-
-def old_plugin_mapper(package):
-    MAP = {'Overload': 'DataUploader'}
-    return MAP.get(package, package)
-
 
 def parse_package_name(package_path):
-    if package_path.startswith("Tank/Plugins/"):
-        package = package_path.split('/')[-1].split('.')[0]
-    else:
-        package = package_path.split('.')[-1].split()[0]
-    return old_plugin_mapper(package)
+    return package_path.split('.')[-1].split()[0]
 
 
 SECTIONS_PATTERNS = {
     'tank': 'core|tank',
     'Aggregator': 'aggregator',
-    'Android': 'android',
-    'Appium': 'appium',
     'Autostop': 'autostop',
-    'BatteryHistorian': 'battery_historian',
     'Bfg': 'bfg|ultimate_gun|http_gun|custom_gun|scenario_gun',
-    'Phantom': 'phantom(-.*)?',
     'DataUploader': 'meta|overload|uploader|datauploader',
     'Telegraf': 'telegraf|monitoring',
     'JMeter': 'jmeter',
@@ -44,12 +28,9 @@ SECTIONS_PATTERNS = {
     'ShellExec': 'shell_?exec',
     'ShootExec': 'shoot_?exec',
     'Console': 'console',
-    'TipsAndTricks': 'tips',
     'RCAssert': 'rcassert',
-    'JsonReport': 'json_report|jsonreport',
     'Pandora': 'pandora',
     'InfluxUploader': 'influx',
-
 }
 
 
@@ -155,11 +136,8 @@ def rename(name):
 
 class Package(object):
     def __init__(self, package_path):
-        if package_path.startswith("Tank/Plugins/"):
-            self.package = package_path.split('.')[0].replace('Tank/Plugins/', 'yandextank.plugins.')
-        else:
-            self.package = package_path
-        self.plugin_name = old_plugin_mapper(self.package.split('.')[-1])
+        self.package = package_path
+        self.plugin_name = self.package.split('.')[-1]
 
 
 class UnknownOption(ConversionError):
@@ -361,32 +339,10 @@ class Section(object):
         # return filter(lambda section: section.name == MAP.get(master_section.name, ), rest)[0]
 
 
-def without_defaults(cfg_ini, section):
-    """
-
-    :rtype: (str, str)
-    :type cfg_ini: ConfigParser
-    """
-    defaults = cfg_ini.defaults()
-    options = cfg_ini.items(section) if cfg_ini.has_section(section) else []
-    return [(key, value) for key, value in options if key not in list(defaults.keys())]
-
-
 PLUGIN_PREFIX = 'plugin_'
 CORE_SECTION_PATTERN = 'tank|core'
 CORE_SECTION_OLD = 'tank'
 CORE_SECTION_NEW = 'core'
-
-
-def parse_sections(cfg_ini):
-    """
-    :type cfg_ini: ConfigParser
-    """
-    return [Section(section.lower(),
-                    guess_plugin(section.lower()),
-                    without_defaults(cfg_ini, section))
-            for section in cfg_ini.sections()
-            if not re.match(CORE_SECTION_PATTERN, section.lower()) and section.lower() not in DEPRECATED_SECTIONS]
 
 
 class PluginInstance(object):
@@ -439,7 +395,7 @@ def enable_sections(sections, core_opts):
 
     :type sections: list of Section
     """
-    DEPRECATED_PLUGINS = ['yandextank.plugins.Aggregator', 'Tank/Plugins/Aggregator.py']
+    DEPRECATED_PLUGINS = ['yandextank.plugins.Aggregator']
 
     plugin_instances = [PluginInstance(key.split('_')[1], value) for key, value in core_opts if
                         key.startswith(PLUGIN_PREFIX) and value not in DEPRECATED_PLUGINS]
@@ -462,60 +418,6 @@ def enable_sections(sections, core_opts):
 
 def partition(l, predicate):
     return reduce(lambda x, y: (x[0] + [y], x[1]) if predicate(y) else (x[0], x[1] + [y]), l, ([], []))
-
-
-def combine_sections(sections):
-    """
-    :type sections: list of Section
-    :rtype: list of Section
-    """
-    PLUGINS_TO_COMBINE = {
-        'Phantom': ('phantom', 'multi', True),
-        'Bfg': ('bfg', 'gun_config', False)
-    }
-    plugins = {}
-    ready_sections = []
-    for section in sections:
-        if section.plugin in list(PLUGINS_TO_COMBINE.keys()):
-            try:
-                plugins[section.plugin].append(section)
-            except KeyError:
-                plugins[section.plugin] = [section]
-        else:
-            ready_sections.append(section)
-
-    for plugin_name, _sections in list(plugins.items()):
-        if isinstance(_sections, list):
-            parent_name, child_name, is_list = PLUGINS_TO_COMBINE[plugin_name]
-            ready_sections.append(Section.from_multiple(_sections, parent_name, child_name, is_list))
-    return ready_sections
-
-
-def core_options(cfg_ini):
-    return cfg_ini.items(CORE_SECTION_OLD) if cfg_ini.has_section(CORE_SECTION_OLD) else []
-
-
-def convert_ini(ini_file):
-    cfg_ini = ConfigParser()
-    try:
-        if isinstance(ini_file, str):
-            cfg_ini.read(ini_file)
-        else:
-            cfg_ini.readfp(ini_file)
-    except ParsingError as e:
-        raise ConversionError(e.message)
-
-    ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
-
-    plugins_cfg_dict = {section.new_name: section.get_cfg_dict() for section in ready_sections}
-
-    plugins_cfg_dict.update({
-        'core': dict([Option('core', key, value, CORE_SCHEMA).as_tuple
-                      for key, value in without_defaults(cfg_ini, CORE_SECTION_OLD)
-                      if not key.startswith(PLUGIN_PREFIX)])
-    })
-    logger.info('Converted config:\n{}'.format(yaml.dump(plugins_cfg_dict)))
-    return plugins_cfg_dict
 
 
 def convert_single_option(key, value):

@@ -162,7 +162,7 @@ class Plugin(MonitoringPlugin):
             return
 
         with open(self.config) as f:
-            self.core.add_artifact_to_send(LPRequisites.MONITORING, str(f.read()))
+            self.core.add_artifact_file(LPRequisites.MONITORING, str(f.read()))
 
         # FIXME [legacy] backward compatibility with Monitoring module
         # configuration below.

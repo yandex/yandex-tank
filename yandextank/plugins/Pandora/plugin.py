@@ -12,9 +12,8 @@ from netort.resource import manager as resource_manager
 from .reader import PandoraStatsReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
-from ..Phantom import PhantomReader, string_to_df
 from ...common.interfaces import AbstractInfoWidget, GeneratorPlugin
-from ...common.util import tail_lines, FileMultiReader
+from ...common.util import tail_lines, FileMultiReader, PhantomReader, string_to_df
 
 logger = logging.getLogger(__name__)
 

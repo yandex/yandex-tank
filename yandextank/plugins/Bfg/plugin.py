@@ -3,15 +3,15 @@ import time
 from threading import Event, Thread
 
 import pip
+import os
 
 from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun, UltimateGun, MeasureCounterGun
 from .reader import BfgReader, BfgStatsReader
 from .widgets import BfgInfoWidget
 from .worker import BFGMultiprocessing, BFGGreen, BFGMeasureCounter
-from ..Phantom import PhantomReader, string_to_df
 from ..Console import Plugin as ConsolePlugin
 from ...common.interfaces import GeneratorPlugin
-from ...common.util import FileMultiReader
+from ...common.util import FileMultiReader, PhantomReader, string_to_df
 from ...stepper import StepperWrapper
 import importlib
 
@@ -29,7 +29,7 @@ class Plugin(GeneratorPlugin):
         self.start_time = time.time()
         self.stepper_wrapper = StepperWrapper(core, cfg)
         self.log.info("Initialized BFG")
-        self.report_filename = "bfgout.log"
+        self.report_filename = os.path.join(self.core.artifacts_dir, "bfgout.log")
         self.results_listener = None
 
         self.gun_classes = {
@@ -57,7 +57,8 @@ class Plugin(GeneratorPlugin):
         self.stepper_wrapper.prepare_stepper()
         with open(self.report_filename, 'w'):
             pass
-        self.core.add_artifact_file(self.report_filename)
+        if self.get_option('save_bfgout'):
+            self.core.add_artifact_file(self.report_filename)
 
     def _write_results_into_file(self):
         """listens for messages on the q, writes to file. """
