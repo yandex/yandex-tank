@@ -138,13 +138,16 @@ class LocalhostClient(object):
                     'otherwise something really nasty happend',
                     exc_info=True)
 
+    def _stop_agent(self):
+        if self.session:
+            self.session.terminate()
+            logger.info('Waiting localhost agent to terminate...')
+
     def uninstall(self):
         """
         Remove agent's files from remote host
         """
         if self.session:
-            logger.info('Waiting monitoring data...')
-            self.session.terminate()
             self.session.wait()
             self.session = None
         log_filename = "agent_{host}.log".format(host="localhost")
