@@ -9,7 +9,10 @@ import sys
 
 import pwd
 import threading
-from urlparse import urljoin
+try:
+    from urllib.parse import urljoin
+except ImportError:
+    from urlparse import urljoin
 
 from datetime import datetime
 import pkg_resources
@@ -51,7 +54,10 @@ def from_tank_config(test_dir):
     with open(config_file) as f:
         tank_cfg = yaml.load(f, Loader=yaml.FullLoader)
     try:
-        section, config = filter(lambda item: 'DataUploader' in item[1].get('package', ''), tank_cfg.items())[0]
+        section, config = tuple(filter(
+            lambda item: 'DataUploader' in item[1].get('package', ''),
+            tank_cfg.items(),
+        ))[0]
     except IndexError:
         logger.warning('DataUploader configuration not found in {}'.format(config_file))
         section, config = None, {}

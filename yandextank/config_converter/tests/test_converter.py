@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 import os
 
 import yaml
@@ -18,7 +18,7 @@ from yandextank.validator.validator import TankConfig
       'meta': 'DataUploader', 'autostop': 'Autostop'}),
 ])
 def test_parse_sections(ini_file, expected):
-    cfg_ini = ConfigParser.ConfigParser()
+    cfg_ini = configparser.ConfigParser(strict=False)
     cfg_ini.read(os.path.join(os.path.dirname(__file__), ini_file))
     assert {section.name: section.plugin for section in parse_sections(cfg_ini)} == expected
 
@@ -55,7 +55,7 @@ def test_parse_sections(ini_file, expected):
             }
         })])
 def test_combine_sections(ini_file, expected):
-    cfg_ini = ConfigParser.ConfigParser()
+    cfg_ini = configparser.ConfigParser(strict=False)
     cfg_ini.read(os.path.join(os.path.dirname(__file__), ini_file))
     assert {section.name: section.merged_options for section in combine_sections(parse_sections(cfg_ini))} == expected
 

@@ -264,7 +264,7 @@ class TankConfig(object):
         result = v.validate(self.raw_config_dict, self.BASE_SCHEMA)
         if not result:
             errors = v.errors
-            for key, value in v.errors.items():
+            for key, value in tuple(errors.items()):
                 if 'must be of dict type' in value:
                     errors[key] = ['unknown field']
             raise ValidationError(errors)
@@ -325,11 +325,10 @@ class ValidatedConfig(object):
                 return default
             raise
 
-    def __nonzero__(self):
+    def __bool__(self):
         return len(self.validated) > 0
 
-    def __bool__(self):
-        return self.__nonzero__()
+    __nonzero__ = __bool__
 
     def dump(self, path):
         with open(path, 'w') as f:

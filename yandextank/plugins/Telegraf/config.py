@@ -5,13 +5,14 @@ import logging
 import tempfile
 from future.utils import iteritems
 from ..Telegraf.decoder import decoder
-import sys
-if sys.version_info[0] < 3:
-    import ConfigParser
-else:
-    import configparser as ConfigParser
+import configparser
 
 logger = logging.getLogger(__name__)
+
+try:
+    unicode
+except NameError:
+    unicode = str
 
 
 class ConfigManager(object):
@@ -115,7 +116,7 @@ class ConfigManager(object):
         host_config = {}
         for metric in host:
             if str(metric.tag) in defaults.keys():
-                for key in defaults[metric.tag]:
+                for key in tuple(defaults[metric.tag].keys()):
                     if key != 'name' and key not in defaults_boolean:
                         value = metric.get(key, None)
                         if value:
@@ -151,7 +152,7 @@ class ConfigManager(object):
         result = {
             'host_config': host_config,
             'port': int(host.get('port', 22)),
-            'python': host.get('python', '/usr/bin/env python2'),
+            'python': host.get('python', '/usr/bin/env python3'),
             'interval': host.get('interval', 1),
             'username': host.get('username', getpass.getuser()),
             'telegraf': host.get('telegraf', '/usr/bin/telegraf'),
@@ -196,7 +197,7 @@ class AgentConfig(object):
             handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
             os.close(handle)
         try:
-            config = ConfigParser.RawConfigParser()
+            config = configparser.RawConfigParser(strict=False)
             # FIXME incinerate such a string formatting inside a method call
             # T_T
             config.add_section('startup')
@@ -277,7 +278,7 @@ class AgentConfig(object):
         defaults_old_enabled = ['CPU', 'Memory', 'Disk', 'Net', 'System']
 
         try:
-            config = ConfigParser.RawConfigParser()
+            config = configparser.RawConfigParser(strict=False)
 
             config.add_section("global_tags")
             config.add_section("agent")

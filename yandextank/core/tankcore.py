@@ -29,10 +29,7 @@ from ..common.util import update_status, pid_exists
 from netort.resource import manager as resource
 from netort.process import execute
 
-if sys.version_info[0] < 3:
-    import ConfigParser
-else:
-    import configparser as ConfigParser
+import configparser
 
 logger = logging.getLogger(__name__)
 
@@ -620,7 +617,7 @@ class ConfigManager(object):
 
     def __init__(self):
         self.file = None
-        self.config = ConfigParser.ConfigParser()
+        self.config = configparser.ConfigParser(strict=False)
 
     def load_files(self, configs):
         """         Read configs set into storage        """
@@ -649,7 +646,7 @@ class ConfigManager(object):
                 if not prefix or option.find(prefix) == 0:
                     res += [(
                         option[len(prefix):], self.config.get(section, option))]
-        except ConfigParser.NoSectionError as ex:
+        except configparser.NoSectionError as ex:
             logger.warning("No section: %s", ex)
 
         logger.debug(

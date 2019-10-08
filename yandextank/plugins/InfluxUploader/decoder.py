@@ -42,7 +42,7 @@ class Decoder(object):
         """
         points = list()
         for second_data in data:
-            for host, host_data in second_data["data"].iteritems():
+            for host, host_data in second_data["data"].items():
                 points.append(
                     self.__make_points(
                         "monitoring",
@@ -50,7 +50,7 @@ class Decoder(object):
                         second_data["timestamp"],
                         {
                             metric: value
-                            for metric, value in host_data["metrics"].iteritems()
+                            for metric, value in host_data["metrics"].items()
                         }
                     )
                 )

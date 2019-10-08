@@ -2,15 +2,20 @@
 import pytest
 from yandextank.validator.docs_gen import RSTRenderer, format_option
 
+try:
+    unicode
+except NameError:
+    unicode = str
+
 
 @pytest.mark.parametrize('option_schema, expected', [
     ({'report_file': {
         'description': 'path to file to store autostop report',
         'type': 'string',
         'default': 'autostop_report.txt'}
-     }, ur"""``report_file`` (string)
+     }, unicode(r"""``report_file`` (string)
 ------------------------
-*\- path to file to store autostop report. Default:* ``autostop_report.txt``"""),
+*\- path to file to store autostop report. Default:* ``autostop_report.txt``""")),
     ({'gun_type': {
         'type': 'string',
         'description': 'gun type',
@@ -19,11 +24,11 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
         #     'custom': 'custom gun', 'http': 'http gun', 'scenario': 'scenario gun', 'ultimate': 'ultimate gun'
         # },
         'required': 'true'}
-     }, ur"""``gun_type`` (string)
+     }, unicode(r"""``gun_type`` (string)
 ---------------------
 *\- gun type.* **Required.**
 
-:one of: [``custom``, ``http``, ``scenario``, ``ultimate``]"""),
+:one of: [``custom``, ``http``, ``scenario``, ``ultimate``]""")),
     ({'gun_type': {
         'type': 'string',
         'description': 'gun type',
@@ -32,7 +37,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
             'custom': 'custom gun', 'http': 'http gun', 'scenario': 'scenario gun', 'ultimate': 'ultimate gun'
         },
         'required': 'true'}
-     }, ur"""``gun_type`` (string)
+     }, unicode(r"""``gun_type`` (string)
 ---------------------
 *\- gun type.* **Required.**
 
@@ -40,7 +45,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
  :``custom``: custom gun
  :``http``: http gun
  :``scenario``: scenario gun
- :``ultimate``: ultimate gun"""),
+ :``ultimate``: ultimate gun""")),
     ({"load_profile": {
         "type": "dict",
         'description': 'specify parameters of your load',
@@ -66,7 +71,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
             }
         },
         'required': True}
-     }, ur"""``load_profile`` (dict)
+     }, unicode(r"""``load_profile`` (dict)
 -----------------------
 *\- specify parameters of your load.* **Required.**
 
@@ -86,7 +91,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
   ``line(100,200,10m)``
    linear growth from 100 to 200 instances/rps during 10 minutes
   ``test_dir/test_backend.stpd``
-   path to ready schedule file"""),  # noqa: W293
+   path to ready schedule file""")),  # noqa: W293
     ({'lock_targets': {
         'default': 'auto',
         'description': 'targets to lock',
@@ -99,7 +104,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
             {'type': 'string', 'allowed': ['auto']}
         ],
         'tutorial_link': 'http://yandextank.readthedocs.io'}
-     }, ur"""``lock_targets`` (list or string)
+     }, unicode(r"""``lock_targets`` (list or string)
 ---------------------------------
 *\- targets to lock. Default:* ``auto``
 
@@ -108,7 +113,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
  :``auto``: automatically identify target host
 
 :tutorial_link:
- http://yandextank.readthedocs.io"""),
+ http://yandextank.readthedocs.io""")),
     ({'autostop': {
         'description': 'list of autostop constraints',
         'type': 'list',
@@ -118,7 +123,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
             'examples': {'http(4xx,50%,5)': 'stop when rate of 4xx http codes is 50% or more during 5 seconds'}
         },
         'default': []}
-     }, ur"""``autostop`` (list of string)
+     }, unicode(r"""``autostop`` (list of string)
 -----------------------------
 *\- list of autostop constraints. Default:* ``[]``
 
@@ -127,7 +132,7 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
  
  :examples:
   ``http(4xx,50%,5)``
-   stop when rate of 4xx http codes is 50% or more during 5 seconds""")  # noqa: W293
+   stop when rate of 4xx http codes is 50% or more during 5 seconds"""))  # noqa: W293
 ])
 def test_format_option(option_schema, expected):
     assert format_option(option_schema, RSTRenderer) == expected

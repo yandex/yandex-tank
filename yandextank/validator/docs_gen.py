@@ -19,6 +19,11 @@ ANYOF = 'anyof'
 NO_DSC = '(no description)'
 VALIDATOR = 'validator'
 
+try:
+    unicode
+except NameError:
+    unicode = str
+
 
 class TextBlock(object):
     def __init__(self, text, tab_replacement='  ', ending=''):
@@ -119,12 +124,12 @@ class RSTRenderer(object):
         :return: unicode
         """
         prepared_content = content.strip().replace('\n', new_line_replacement).replace('\t', tab_replacement)
-        return u'{}\n{}'.format(prepared_content, '=' * len(prepared_content))
+        return unicode('{}\n{}').format(prepared_content, '=' * len(prepared_content))
 
     @staticmethod
     def subtitle(content, new_line_replacement=' ', tab_replacement='  '):
         prepared_content = content.strip().replace('\n', new_line_replacement).replace('\t', tab_replacement)
-        return u'{}\n{}'.format(prepared_content, '-' * len(prepared_content))
+        return unicode('{}\n{}').format(prepared_content, '-' * len(prepared_content))
 
     @staticmethod
     @with_escape
@@ -254,7 +259,7 @@ def render_body(renderer, option_kwargs, exclude_keys, special_keys=None):
                               for special_key, special_handler in special_keys.items()
                               if special_key in option_kwargs])
     common_part = renderer.field_list({k: common_formatters.get(k, default_fmt)(v) for k, v in option_kwargs.items()
-                                       if k not in exclude_keys + special_keys.keys()})
+                                       if k not in exclude_keys + list(special_keys.keys())})
 
     return '\n'.join([_ for _ in [common_part, special_part] if _])
 
@@ -284,7 +289,7 @@ class OptionFormatter(object):
 
         :type option_schema: dict
         """
-        self.option_name, self.option_kwargs = option_schema.items()[0]
+        self.option_name, self.option_kwargs = tuple(option_schema.items())[0]
         # print(option_name, option_kwargs)
         self.formatter = self.__guess_formatter()
 

@@ -110,7 +110,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
     def on_aggregated_data(self, data, stat):
         self.counting = []
         if not self.cause_criterion:
-            for criterion_text, criterion in self._criterions.iteritems():
+            for criterion_text, criterion in self._criterions.items():
                 if criterion.notify(data, stat):
                     self.log.warning(
                         "Autostop criterion requested test stop: %s", criterion_text)

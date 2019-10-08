@@ -102,7 +102,10 @@ class ApiWorker:
             if self.options.get('manual_start', None):
                 self.log.info(
                     "Manual start option specified, waiting for user actions")
-                raw_input("Press Enter key to start test")
+                if sys.version_info[0] < 3:
+                    raw_input("Press Enter key to start test")
+                else:
+                    input("Press Enter key to start test")
 
             self.core.plugins_start_test()
             retcode = self.core.wait_for_finish()
