@@ -1,5 +1,4 @@
 import argparse
-from types import NoneType
 
 import imp
 import yaml
@@ -18,6 +17,8 @@ EXAMPLES = 'examples'
 ANYOF = 'anyof'
 NO_DSC = '(no description)'
 VALIDATOR = 'validator'
+
+NoneType = type(None)
 
 try:
     unicode
