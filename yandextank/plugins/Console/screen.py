@@ -220,7 +220,8 @@ class Sparkline(object):
         self.data = {}
         self.window = window
         self.active_seconds = []
-        self.ticks = '_▁▂▃▄▅▆▇'.decode('utf-8')
+        # '_▁▂▃▄▅▆▇'
+        self.ticks = b'_\xe2\x96\x81\xe2\x96\x82\xe2\x96\x83\xe2\x96\x84\xe2\x96\x85\xe2\x96\x86\xe2\x96\x87'.decode('utf-8')
 
     def recalc_active(self, ts):
         if not self.active_seconds:
@@ -1026,7 +1027,7 @@ class CasesBlock(AbstractBlock):
 
     def __reorder_cases(self):
         sorted_cases = sorted(self.cumulative_cases.items(),
-                              key=lambda (k, v): (-1 * v[self.cases_sort_by], k))
+                              key=lambda k, v: (-1 * v[self.cases_sort_by], k))
         new_order = [case for (case, data) in sorted_cases]
         now = time.time()
         if now - self.reorder_delay > self.last_reordered:

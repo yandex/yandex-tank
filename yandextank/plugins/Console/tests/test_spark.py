@@ -6,7 +6,8 @@ from yandextank.plugins.Console.screen import Sparkline
 class TestSparkline(object):
     def test_unusual_vals(self):
         data = [0, 1, -100, 0.1, 1000, -0.1, 50]
-        expected = ' _ _▇ _'.decode('utf-8')
+        # ' _ _▇ _'
+        expected = b' _ _\xe2\x96\x87 _'.decode('utf-8')
         sparkline = Sparkline(len(data))
         start = int(time.time()) - len(data)
         for num, val in enumerate(data):
@@ -21,9 +22,12 @@ class TestSparkline(object):
 
     def test_non_continuos(self):
         data = range(20)
-        expected = ' _▁▂▃▄▅▆▇    ▃▄▅▆▇ _'.decode('utf-8')
-        expected_short = '▆▇ _'.decode('utf-8')
-        expected_long = '     _▁▂▃▄▅▆▇    ▃▄▅▆▇ _'.decode('utf-8')
+        # ' _▁▂▃▄▅▆▇    ▃▄▅▆▇ _'
+        expected = b' _\xe2\x96\x81\xe2\x96\x82\xe2\x96\x83\xe2\x96\x84\xe2\x96\x85\xe2\x96\x86\xe2\x96\x87    \xe2\x96\x83\xe2\x96\x84\xe2\x96\x85\xe2\x96\x86\xe2\x96\x87 _'.decode('utf-8')
+        # '▆▇ _'
+        expected_short = b'\xe2\x96\x86\xe2\x96\x87 _'.decode('utf-8')
+        # '     _▁▂▃▄▅▆▇    ▃▄▅▆▇ _'
+        expected_long = b'     _\xe2\x96\x81\xe2\x96\x82\xe2\x96\x83\xe2\x96\x84\xe2\x96\x85\xe2\x96\x86\xe2\x96\x87    \xe2\x96\x83\xe2\x96\x84\xe2\x96\x85\xe2\x96\x86\xe2\x96\x87 _'.decode('utf-8')
         spark_len = 24
         sparkline = Sparkline(spark_len)
         start = int(time.time()) - len(data)
@@ -38,8 +42,10 @@ class TestSparkline(object):
         assert (long_spark == expected_long)
 
     def test_multi_graphs(self):
-        expected_continous = '__▁▁▂▂▃▃▄▄▅▅▆▆▇▇'.decode('utf-8')
-        expected_spotty = '_ ▁ ▂ ▃ ▄ ▅ ▆ ▇ '.decode('utf-8')
+        # '__▁▁▂▂▃▃▄▄▅▅▆▆▇▇'
+        expected_continous = b'__\xe2\x96\x81\xe2\x96\x81\xe2\x96\x82\xe2\x96\x82\xe2\x96\x83\xe2\x96\x83\xe2\x96\x84\xe2\x96\x84\xe2\x96\x85\xe2\x96\x85\xe2\x96\x86\xe2\x96\x86\xe2\x96\x87\xe2\x96\x87'.decode('utf-8')
+        # '_ ▁ ▂ ▃ ▄ ▅ ▆ ▇ '
+        expected_spotty = b'_ \xe2\x96\x81 \xe2\x96\x82 \xe2\x96\x83 \xe2\x96\x84 \xe2\x96\x85 \xe2\x96\x86 \xe2\x96\x87 '.decode('utf-8')
         continous_vals = range(1, 17)
         sparkline = Sparkline(len(continous_vals))
         start = int(time.time()) - len(continous_vals)
