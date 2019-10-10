@@ -338,7 +338,7 @@ class Section(object):
         if len(sections) == 1:
             return sections[0]
         if parent_name:
-            master_section = filter(lambda section: section.name == parent_name, sections)[0]
+            master_section = tuple(filter(lambda section: section.name == parent_name, sections))[0]
             rest = filter(lambda section: section.name != parent_name, sections)
         else:
             master_section = sections[0]
@@ -357,7 +357,7 @@ class Section(object):
         MAP = {
             'bfg': lambda section: section.name == '{}_gun'.format(master_section.get_cfg_dict()['gun_type'])
         }
-        return filter(MAP.get(master_section.name, lambda x: True), rest)[0]
+        return tuple(filter(MAP.get(master_section.name, lambda x: True), rest))[0]
         # return filter(lambda section: section.name == MAP.get(master_section.name, ), rest)[0]
 
 
