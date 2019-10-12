@@ -50,7 +50,7 @@ class Decoder(object):
                         second_data["timestamp"],
                         {
                             # cast int to float. avoid https://github.com/yandex/yandex-tank/issues/776
-                            metric: float(value) if type(value) is int else value
+                            metric: float(value) if isinstance(value, int) else value
                             for metric, value in host_data["metrics"].iteritems()
                         }
                     )
