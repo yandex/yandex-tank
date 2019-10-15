@@ -57,6 +57,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     @property
     def data_session(self):
+        """
+        :rtype: DataSession
+        """
         if self._data_session is None:
             self._data_session = DataSession({'clients': self.clients_cfg},
                                              test_start=self.core.status['generator']['test_start'] * 10**6)
@@ -181,6 +184,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             return {}
         else:
             meta_tags_names = ['component', 'description', 'name', 'person', 'task', 'version', 'lunapark_jobno']
-            meta_tags = {key: uploader_tags.get(key, self.cfg.get(key)) for key in meta_tags_names}
-            meta_tags.update({k: v for k, v in uploader_tags.get('meta', {}).items()})
+            meta_tags = {key: uploader_tags.get(key, self.cfg.get(key, '')) for key in meta_tags_names}
+            meta_tags.update({k: v if v is not None else '' for k, v in uploader_tags.get('meta', {}).items()})
             return meta_tags
