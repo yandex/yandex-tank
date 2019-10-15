@@ -361,15 +361,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             logger.debug("No autostop plugin loaded", exc_info=True)
 
         if autostop and autostop.cause_criterion:
-            rps = 0
-            if autostop.cause_criterion.cause_second:
-                rps = autostop.cause_criterion.cause_second[
-                    1]["metrics"]["reqps"]
-                if not rps:
-                    rps = autostop.cause_criterion.cause_second[0][
-                        "overall"]["interval_real"]["len"]
             self.lp_job.set_imbalance_and_dsc(
-                int(rps), autostop.cause_criterion.explain())
+                autostop.imbalance_rps, autostop.cause_criterion.explain())
 
         else:
             logger.debug("No autostop cause detected")
