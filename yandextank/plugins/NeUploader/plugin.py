@@ -70,12 +70,12 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     def _cleanup(self):
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
-        self.data_session.update_job(uploader_metainfo)
         if self.core.status.get('autostop'):
-            autostop_rps = self.core.status['autostop'].get('rps', 0)
-            autostop_reason = self.core.status['autostop'].get('reason', '')
+            autostop_rps = self.core.status.get('autostop', {}).get('rps', 0)
+            autostop_reason = self.core.status.get('autostop', {}).get('reason', '')
             self.log.warning('Autostop: %s %s', autostop_rps, autostop_reason)
-            self.data_session.update_job({'autostop_rps': autostop_rps, 'autostop_reason': autostop_reason})
+            uploader_metainfo.update({'autostop_rps': autostop_rps, 'autostop_reason': autostop_reason})
+        self.data_session.update_job(uploader_metainfo)
         self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
 
     def is_test_finished(self):
@@ -189,6 +189,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             return {}
         else:
             meta_tags_names = ['component', 'description', 'name', 'person', 'task', 'version', 'lunapark_jobno']
-            meta_tags = {key: uploader_tags.get(key, self.cfg.get(key, '')) for key in meta_tags_names}
+            meta_tags = {key: uploader_tags.get(key) for key in meta_tags_names if key in uploader_tags}
             meta_tags.update({k: v if v is not None else '' for k, v in uploader_tags.get('meta', {}).items()})
             return meta_tags
