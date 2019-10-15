@@ -90,7 +90,7 @@ def test_parse_package(package_path, expected):
 ])
 def test_convert_ini_phantom(ini_file, yaml_file):
     with open(os.path.join(os.path.dirname(__file__), yaml_file), 'r') as f:
-        assert convert_ini(os.path.join(os.path.dirname(__file__), ini_file)) == yaml.load(f)
+        assert convert_ini(os.path.join(os.path.dirname(__file__), ini_file)) == yaml.load(f, Loader=yaml.FullLoader)
 
 
 @pytest.mark.parametrize('ini_file, msgs', [
@@ -116,9 +116,9 @@ def test_conflict_opts(ini_file, msgs):
 ])
 def test_validate(ini_file):
     # noinspection PyStatementEffect
-    TankConfig([load_core_base_cfg()] +
-               cfg_folder_loader(os.path.join(os.path.dirname(__file__), 'etc_cfg')) +
-               [load_cfg(os.path.join(os.path.dirname(__file__), ini_file))]).validated
+    TankConfig([load_core_base_cfg()]
+               + cfg_folder_loader(os.path.join(os.path.dirname(__file__), 'etc_cfg'))
+               + [load_cfg(os.path.join(os.path.dirname(__file__), ini_file))]).validated
 
 
 @pytest.mark.parametrize('key, value, expected', [

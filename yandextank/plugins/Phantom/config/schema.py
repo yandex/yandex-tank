@@ -11,6 +11,7 @@ OPTIONS = {
         'description': 'Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port. Port is optional. '
                        'Tank checks each test if port is available',
         "type": "string",
+        "empty": False,
         "required": True,
         'examples': {'127.0.0.1:8080': '', 'www.w3c.org': ''}
     },
@@ -165,6 +166,17 @@ OPTIONS = {
         'type': 'string',
         'default': 'method_stream'
     },
+    'multi': {
+        'type': 'list',
+        'schema': {'type': 'dict'},
+        'default': [],
+        'description': 'List of configs for multi-test. All of the options from main config supported. All of them not required and inherited from main config if not specified'
+    },
+    'name': {
+        'description': 'Name of a part in multi config',
+        'type': 'string',
+        'required': False
+    },
     'phantom_http_entity': {
         'type': 'string',
         'default': '8M',
@@ -204,7 +216,7 @@ OPTIONS = {
         'description': 'Explicit target port, overwrites port defined with address',
         'type': 'string',
         'default': '',
-        'regex': '\d{0,5}'
+        'regex': r'\d{0,5}'
     },
     "load_profile": {
         'description': 'Configure your load setting the number of RPS or instances (clients) as a function of time,'
@@ -230,6 +242,7 @@ OPTIONS = {
                     'line(100,200,10m)': 'linear growth from 100 to 200 instances/rps during 10 minutes',
                     'const(200,90s)': 'constant load of 200 instances/rps during 90s',
                     'test_dir/test_backend.stpd': 'path to ready schedule file'},
+                'validator': 'load_scheme'
             }
         },
         'required': True
@@ -278,7 +291,7 @@ OPTIONS = {
         }
     },
     'use_caching': {
-        'description': 'Enable stpd-file caching.',
+        'description': 'Enable stpd-file caching for similar tests. Set false to reload ammo file and generate new stpd',
         'type': 'boolean',
         'default': True
     },
@@ -296,11 +309,15 @@ OPTIONS = {
     }
 }
 
+
+MULTI_OPTIONS = {n: {k: v for k, v in d.items() if k != 'required' and k != 'default'} for n, d in OPTIONS.items()}
+
+
 MULTI = {
     'multi': {
         'type': 'list',
         'allow_unknown': True,
-        'schema': OPTIONS,
+        'schema': {'type': 'dict', 'schema': MULTI_OPTIONS},
         'default': []}
 }
 

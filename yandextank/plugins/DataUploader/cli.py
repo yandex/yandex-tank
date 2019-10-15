@@ -8,6 +8,7 @@ import socket
 import sys
 
 import pwd
+import threading
 from urlparse import urljoin
 
 from datetime import datetime
@@ -16,12 +17,12 @@ import yaml
 from cerberus import Validator
 
 from yandextank.core import TankCore
+from yandextank.core.tankcore import VALIDATED_CONF
 from yandextank.validator.validator import ValidationError, load_yaml_schema
-from .client import APIClient, OverloadClient
+from .client import APIClient, OverloadClient, LPRequisites
 from .plugin import LPJob, BackendTypes
 from .plugin import Plugin as DataUploader
 
-CONFIG_FILE = 'saved_conf.yaml'
 DATA_LOG = 'test_data.log'
 MONITORING_LOG = 'monitoring.log'
 SECTION = 'meta'
@@ -42,19 +43,19 @@ def get_logger():
 
 def from_tank_config(test_dir):
     try:
-        config_file = glob.glob(os.path.join(test_dir, CONFIG_FILE))[0]
+        config_file = glob.glob(os.path.join(test_dir, VALIDATED_CONF))[0]
         logger.info('Config file found: %s' % config_file)
     except IndexError:
-        raise OSError('Config file {} not found in {}'.format(CONFIG_FILE, test_dir))
+        raise OSError('Config file {} not found in {}'.format(VALIDATED_CONF, test_dir))
 
     with open(config_file) as f:
-        tank_cfg = yaml.load(f)
+        tank_cfg = yaml.load(f, Loader=yaml.FullLoader)
     try:
-        config = filter(lambda options: 'DataUploader' in options.get('package', ''), tank_cfg.values())[0]
+        section, config = filter(lambda item: 'DataUploader' in item[1].get('package', ''), tank_cfg.items())[0]
     except IndexError:
         logger.warning('DataUploader configuration not found in {}'.format(config_file))
-        config = {}
-    return config
+        section, config = None, {}
+    return section, config
 
 
 def check_log(log_name):
@@ -89,7 +90,7 @@ def upload_monitoring(shooting_dir, log_name, lp_job):
 
 
 def send_config_snapshot(config, lp_job):
-    lp_job.send_config_snapshot(yaml.dump(config))
+    lp_job.send_config(LPRequisites.CONFIGINFO, yaml.dump(config))
 
 
 def edit_metainfo(lp_config, lp_job):
@@ -149,9 +150,10 @@ def post_loader():
     # load cfg
     if args.config:
         with open(args.config) as f:
-            config = yaml.load(f)
+            config = yaml.load(f, Loader=yaml.FullLoader)
+            section = None
     else:
-        config = from_tank_config(args.test_dir)
+        section, config = from_tank_config(args.test_dir)
     # parse target host and port
     if args.target is not None:
         try:
@@ -179,7 +181,7 @@ def post_loader():
     config = v.normalized(config)
 
     # lunapark or overload?
-    backend_type = BackendTypes.identify_backend(config['api_address'])
+    backend_type = BackendTypes.identify_backend(config['api_address'], section)
     if backend_type == BackendTypes.LUNAPARK:
         client = APIClient
         api_token = None
@@ -196,7 +198,8 @@ def post_loader():
                            TankCore.get_user_agent()))
     api_client = client(base_url=config['api_address'],
                         user_agent=user_agent,
-                        api_token=api_token
+                        api_token=api_token,
+                        core_interrupted=threading.Event()
                         # todo: add timeouts
                         )
     lp_job = LPJob(

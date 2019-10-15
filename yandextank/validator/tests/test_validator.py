@@ -1,7 +1,7 @@
 
 import pytest
 
-from yandextank.validator.validator import TankConfig, ValidationError
+from yandextank.validator.validator import TankConfig, ValidationError, PatchedValidator
 
 CFG_VER_I_0 = {
     "version": "1.9.3",
@@ -57,7 +57,7 @@ PHANTOM_SCHEMA_V_G = {
     },
     'headers': {
         'type': 'string',
-        'regex': '(\[[\w\d\.]+:\s[\w\d\.]+\]\s*)+'
+        'regex': r'(\[[\w\d\.]+:\s[\w\d\.]+\]\s*)+'
     },
     'rps_schedule': {
         'type': 'string'
@@ -74,6 +74,7 @@ PHANTOM_SCHEMA_V_G = {
      "core": {
          'operator': 'fomars',
          'artifacts_base_dir': './',
+         'ignore_lock': False
      },
      'telegraf': {
          'package': 'yandextank.plugins.Telegraf',
@@ -98,7 +99,7 @@ PHANTOM_SCHEMA_V_G = {
          'lock_dir': '/var/lock/',
          'taskset_path': 'taskset',
          'affinity': '',
-         'artifacts_dir': None
+         'ignore_lock': False
      },
      'telegraf': {
          'package': 'yandextank.plugins.Telegraf',
@@ -221,11 +222,12 @@ PHANTOM_SCHEMA_V_G = {
           'lock_dir': '/var/lock/',
           'taskset_path': 'taskset',
           'affinity': '',
-          'artifacts_dir': None}}
+          'ignore_lock': False}}
      )
 ])
 def test_validate_core(config, expected):
-    assert TankConfig(config, False).validated == expected
+    validated, errors, initial = TankConfig(config, False).validate()
+    assert validated.validated == expected, errors == errors
 
 
 @pytest.mark.parametrize('config, expected', [
@@ -263,7 +265,7 @@ def test_validate_core(config, expected):
          'tank_type': 'http',
          'multi': [],
      }
-     }, "package: [required field]"),
+     }, {'telegraf': [{'package': ['required field']}]}),
     # plugins: empty package
     ({
      "version": "1.9.3",
@@ -282,12 +284,13 @@ def test_validate_core(config, expected):
          'address': 'nodejs.load.yandex.net',
          'header_http': '1.1',
          'uris': ['/']}
-     }, 'telegraf:\n- package: [empty values not allowed, \'value does not match regex')
+     }, {'telegraf': [{'package': ['empty values not allowed']}]})
 ])
 def test_validate_core_error(config, expected):
     with pytest.raises(Exception) as e:
         TankConfig(config).validated
-    assert expected in str(e.value)
+        print('exception value:\n', str(e.value))
+    assert expected == e.value.errors
 
 
 @pytest.mark.parametrize('configs, expected', [
@@ -368,6 +371,7 @@ def test_load_multiple(configs, expected):
                 'header_http': '1.1',
                 'uris': ['/'],
                 'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'},
+                'multi': [{'name': 'foo'}],
             }
         },
         {
@@ -378,7 +382,7 @@ def test_load_multiple(configs, expected):
                 'lock_dir': '/var/lock/',
                 'taskset_path': 'taskset',
                 'affinity': '',
-                'artifacts_dir': None
+                'ignore_lock': False
             },
             'telegraf': {
                 'package': 'yandextank.plugins.Telegraf',
@@ -433,7 +437,7 @@ def test_load_multiple(configs, expected):
                 'loop': -1,
                 'port': '',
                 'use_caching': True,
-                'multi': [],
+                'multi': [{'name': 'foo'}],
                 'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'}
             }
         }
@@ -488,7 +492,44 @@ def test_validate_all(config, expected):
 
         },
         {'phantom': {'address': ['required field'], 'load_profile': ['required field']},
-         'telegraf': {'config': ['must be of string type']}})
+         'telegraf': {'config': ['must be of string type']}}),
+    (
+        {
+            "core": {},
+            'phantom': {
+                'package': 'yandextank.plugins.Phantom',
+                'enabled': True,
+                'address': 'nodejs.load.yandex.net',
+                'uris': ['/'],
+                'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 20, 2, 10m)'}
+            }
+        },
+        {'phantom': {'load_profile': [{'schedule': ['line load scheme: expected 3 arguments, found 4']}]}}),
+    (
+        {
+            "core": {},
+            'phantom': {
+                'package': 'yandextank.plugins.Phantom',
+                'enabled': True,
+                'address': 'nodejs.load.yandex.net',
+                'uris': ['/'],
+                'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 20, 10m5m)'}
+            }
+        },
+        {'phantom': {'load_profile': [{'schedule': ['Load duration examples: 2h30m; 5m15; 180']}]}}),
+    (
+        {
+            "core": {},
+            'phantom': {
+                'package': 'yandextank.plugins.Phantom',
+                'enabled': True,
+                'address': 'nodejs.load.yandex.net',
+                'uris': ['/'],
+                'load_profile': {'load_type': 'rps', 'schedule': 'line(1n,20,100)'}
+            }
+        },
+        {'phantom': {'load_profile': [{'schedule': ['Argument 1n in load scheme should be a number']}]}})
+
 ])
 def test_validate_all_error(config, expected):
     with pytest.raises(ValidationError) as e:
@@ -520,36 +561,34 @@ def test_validate_all_error(config, expected):
     )
 ])
 def test_get_plugins(config, expected):
-    assert {(name, pack) for name, pack, cfg, updater in TankConfig(config).plugins} == expected
+    validated, errors, raw = TankConfig(config).validate()
+    assert {(name, pack) for name, pack, cfg in validated.plugins} == expected
 
 
-@pytest.mark.parametrize('config, plugin, key, value', [
-    ({
-        "version": "1.9.3",
-        "core": {
-            'operator': 'fomars',
-            'artifacts_base_dir': './',
-        },
-        'telegraf': {
-            'package': 'yandextank.plugins.Telegraf',
-            'enabled': True,
-            'config': 'monitoring.xml',
-            'disguise_hostnames': True
-        },
-    }, 'telegraf', 'config', 'foobar.xml')
+@pytest.mark.parametrize('value', [
+    'step(10,200,5,180)',
+    'step(5,50,2.5,5m)',
+    'line(22,154,2h5m)',
+    'step(5,50,2.5,5m) line(22,154,2h5m)',
+    'const(10,1h4m3s)',
+    'const(2.5,150)',
+    'const(100, 1d2h)',
+    'line(10, 120, 300s)',
 ])
-def test_setter(config, plugin, key, value):
-    tankconfig = TankConfig(config)
-    tankconfig._TankConfig__get_cfg_updater(plugin)(key, value)
-    assert tankconfig.get_option(plugin, key) == value
+def test_load_scheme_validator(value):
+    validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'validator': 'load_scheme'}})
+    cfg = {'load_type': 'rps', 'schedule': value}
+    assert validator.validate(cfg)
 
-    # configparser = ConfigParser.ConfigParser()
-    # configparser.read(config_file)
-    # plugins_conf = {section: dict(configparser.items(section)) for section in configparser.sections()}
-    # config = {
-    #     "version": "1.9.3",
-    #     "core": {
-    #           'operator': 'fomars'
-    #       },
-    #     "plugins": plugins_conf
-    # }
+
+@pytest.mark.parametrize('value', [
+    'step(10,5,180)',
+    'step(5,50,2.5,5m,30s)',
+    'lien(22,154,2h5m)',
+    'step(5,50,2.5,5m) line(22,154,2h5m) const(10, 20, 3m)',
+    'const(10,1.5h)',
+])
+def test_negative_load_scheme_validator(value):
+    validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'validator': 'load_scheme'}})
+    cfg = {'load_type': 'rps', 'schedule': value}
+    assert not validator.validate(cfg)

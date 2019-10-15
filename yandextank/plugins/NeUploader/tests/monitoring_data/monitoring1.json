@@ -1,0 +1,96 @@
+[
+  {
+    "timestamp": 1559212915,
+    "data": {
+      "panel1": {
+        "comment": "",
+        "metrics": {
+          "custom:portoinst-cpu_guarantee_cores_tmmv": 0.25,
+          "custom:portoinst-memory_usage_gb_tmmv": 0.045146942138671875,
+          "custom:portoinst-net_limit_mb_summ": 10,
+          "custom:portoinst-memory_limit_gb_tmmv": 1,
+          "custom:portoinst-net_guarantee_mb_summ": 2.5,
+          "custom:portoinst-io_write_fs_bytes_tmmv": 0,
+          "custom:unistat-auto_disk_rootfs_total_bytes_axxx": 5,
+          "custom:unistat-auto_disk_rootfs_usage_bytes_axxx": 0.0001068115234375,
+          "custom:portoinst-cpu_wait_cores_tmmv": 1.1546799999706536e-05,
+          "custom:portoinst-io_limit_bytes_tmmv": 52428800,
+          "custom:portoinst-net_mb_summ": 0.009309768676757812,
+          "custom:portoinst-io_read_fs_bytes_tmmv": 0,
+          "custom:portoinst-cpu_usage_cores_tmmv": 0.0043661741997311765,
+          "custom:portoinst-cpu_limit_cores_tmmv": 0.25
+        }
+      }
+    }
+  },
+  {
+    "timestamp": 1559212915,
+    "data": {
+      "panel2": {
+        "comment": "",
+        "metrics": {
+          "custom:portoinst-cpu_guarantee_cores_tmmv": 7.5,
+          "custom:portoinst-memory_usage_gb_tmmv": 36.21156692504883,
+          "custom:portoinst-io_read_fs_bytes_tmmv": 4096,
+          "custom:portoinst-memory_limit_gb_tmmv": 50,
+          "custom:portoinst-net_guarantee_mb_summ": 75,
+          "custom:portoinst-io_write_fs_bytes_tmmv": 7720960,
+          "custom:portoinst-cpu_wait_cores_tmmv": 0.6967493196016221,
+          "custom:portoinst-io_limit_bytes_tmmv": 655360000,
+          "custom:portoinst-net_mb_summ": 0.26386165618896484,
+          "custom:portoinst-net_limit_mb_summ": 640,
+          "custom:portoinst-cpu_usage_cores_tmmv": 1.1054252468020422,
+          "custom:portoinst-cpu_limit_cores_tmmv": 10
+        }
+      }
+    }
+  },
+  {
+    "timestamp": 1559212915,
+    "data": {
+      "myt1": {
+        "comment": "",
+        "metrics": {
+          "custom:portoinst-cpu_guarantee_cores_tmmv": 7,
+          "custom:portoinst-memory_usage_gb_tmmv": 23.724361419677734,
+          "custom:portoinst-io_read_fs_bytes_tmmv": 0,
+          "custom:portoinst-memory_limit_gb_tmmv": 24,
+          "custom:portoinst-net_guarantee_mb_summ": 120,
+          "custom:portoinst-io_write_fs_bytes_tmmv": 0,
+          "custom:unistat-auto_disk_rootfs_total_bytes_axxx": 200,
+          "custom:unistat-auto_disk_rootfs_usage_bytes_axxx": 23.592609405517578,
+          "custom:portoinst-cpu_wait_cores_tmmv": 3.422800546104554e-06,
+          "custom:portoinst-io_limit_bytes_tmmv": 52428800,
+          "custom:portoinst-net_mb_summ": 0.0017881393432617188,
+          "custom:portoinst-net_limit_mb_summ": 480,
+          "custom:portoinst-cpu_usage_cores_tmmv": 0.005141159399499884,
+          "custom:portoinst-cpu_limit_cores_tmmv": 7
+        }
+      }
+    }
+  },
+  {
+    "timestamp": 1559212915,
+    "data": {
+      "man2": {
+        "comment": "",
+        "metrics": {
+          "custom:portoinst-cpu_guarantee_cores_tmmv": 2,
+          "custom:portoinst-memory_usage_gb_tmmv": 1.6009635925292969,
+          "custom:portoinst-io_read_fs_bytes_tmmv": 0,
+          "custom:portoinst-memory_limit_gb_tmmv": 8,
+          "custom:portoinst-net_guarantee_mb_summ": 20,
+          "custom:portoinst-io_write_fs_bytes_tmmv": 0,
+          "custom:unistat-auto_disk_rootfs_total_bytes_axxx": 60,
+          "custom:unistat-auto_disk_rootfs_usage_bytes_axxx": 0.14423751831054688,
+          "custom:portoinst-cpu_wait_cores_tmmv": 5.069680014457845e-05,
+          "custom:portoinst-io_limit_bytes_tmmv": 52428800,
+          "custom:portoinst-net_mb_summ": 0.018650054931640625,
+          "custom:portoinst-net_limit_mb_summ": 80,
+          "custom:portoinst-cpu_usage_cores_tmmv": 0.02161935000003723,
+          "custom:portoinst-cpu_limit_cores_tmmv": 2
+        }
+      }
+    }
+  }
+]

@@ -12,13 +12,16 @@ console:
   package: yandextank.plugins.Console
 jmeter:
   enabled: false
-  package: JMeter
+  package: yandextank.plugins.JMeter
 json_report:
   enabled: true
   package: yandextank.plugins.JsonReport
 phantom:
   enabled: true
   package: yandextank.plugins.Phantom
+pandora:
+  enabled: false
+  package: yandextank.plugins.Pandora
 rcheck:
   enabled: true
   package: yandextank.plugins.ResourceCheck
@@ -36,4 +39,4 @@ overload:
   package: yandextank.plugins.DataUploader
 influx:
   enabled: false
-  package: yandextank.plugins.Influx
+  package: yandextank.plugins.InfluxUploader

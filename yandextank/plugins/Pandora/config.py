@@ -85,8 +85,8 @@ class PoolConfig(object):
     def set_loop(self, loop):
         self.config["AmmoProvider"]["Passes"] = loop
 
-    def set_sample_log(self, sample_log):
-        self.config["ResultListener"]["Destination"] = sample_log
+    def set_report_file(self, report_file):
+        self.config["ResultListener"]["Destination"] = report_file
 
     def set_startup_schedule(self, startup_schedule):
         self.config["StartupLimiter"] = startup_schedule

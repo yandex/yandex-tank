@@ -8,6 +8,8 @@ import pwd
 import re
 import sys
 import time
+import datetime
+import yaml
 from future.moves.urllib.parse import urljoin
 
 from queue import Empty, Queue
@@ -20,7 +22,10 @@ from ...common.interfaces import AbstractPlugin, \
 from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
-from .client import APIClient, OverloadClient
+from .client import APIClient, OverloadClient, LPRequisites
+from ...common.util import FileScanner
+
+from netort.data_processing import Drain
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
@@ -30,7 +35,7 @@ class BackendTypes(object):
     LUNAPARK = 'LUNAPARK'
 
     @classmethod
-    def identify_backend(cls, api_address):
+    def identify_backend(cls, api_address, cfg_section_name):
         clues = [
             ('overload', cls.OVERLOAD),
             ('lunapark', cls.LUNAPARK),
@@ -39,17 +44,20 @@ class BackendTypes(object):
             if clue in api_address:
                 return backend_type
         else:
-            raise KeyError(
-                'Config section name doesn\'t match any of the patterns:\n%s' %
-                '\n'.join(['*%s*' % ptrn[0] for ptrn in clues]))
-        pass
+            for clue, backend_type in clues:
+                if clue in cfg_section_name:
+                    return backend_type
+            else:
+                raise KeyError(
+                    'Can not identify backend: neither api address nor section name match any of the patterns:\n%s' %
+                    '\n'.join(['*%s*' % ptrn[0] for ptrn in clues]))
 
 
 def chop(data_list, chunk_size):
     if sys.getsizeof(str(data_list)) <= chunk_size:
         return [data_list]
     elif len(data_list) == 1:
-        logger.warning("Too large piece of Telegraf data. Might experience upload problems.")
+        logger.info("Too large piece of Telegraf data. Might experience upload problems.")
         return [data_list]
     else:
         mid = len(data_list) / 2
@@ -62,10 +70,19 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     VERSION = '3.0'
     SECTION = 'uploader'
 
-    def __init__(self, core, cfg, cfg_updater):
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+    def __init__(self, core, cfg, name):
+        AbstractPlugin.__init__(self, core, cfg, name)
         self.data_queue = Queue()
         self.monitoring_queue = Queue()
+        if self.core.error_log:
+            self.events_queue = Queue()
+            self.events_reader = EventsReader(self.core.error_log)
+            self.events_processing = Drain(self.events_reader, self.events_queue)
+            self.add_cleanup(self.stop_events_processing)
+            self.events_processing.start()
+            self.events = threading.Thread(target=self.__events_uploader)
+            self.events.daemon = True
+
         self.retcode = -1
         self._target = None
         self.task_name = ''
@@ -82,17 +99,20 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.monitoring = threading.Thread(target=self.__monitoring_uploader)
         self.monitoring.daemon = True
 
-        self._generator_info = None
         self._is_telegraf = None
-        self.backend_type = BackendTypes.identify_backend(self.cfg['api_address'])
+        self.backend_type = BackendTypes.identify_backend(self.cfg['api_address'], self.cfg_section_name)
         self._task = None
         self._api_token = ''
         self._lp_job = None
         self._lock_duration = None
         self._info = None
         self.locked_targets = []
-
+        self.web_link = None
         self.finished = False
+
+    def set_option(self, option, value):
+        self.cfg.setdefault('meta', {})[option] = value
+        self.core.publish(self.SECTION, 'meta.{}'.format(option), value)
 
     @staticmethod
     def get_key():
@@ -101,7 +121,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     @property
     def lock_duration(self):
         if self._lock_duration is None:
-            self._lock_duration = self.generator_info.duration if self.generator_info.duration else \
+            info = self.get_generator_info()
+            self._lock_duration = info.duration if info.duration else \
                 expand_to_seconds(self.get_option("target_lock_duration"))
         return self._lock_duration
 
@@ -145,7 +166,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def check_task_is_open(self):
         if self.backend_type == BackendTypes.OVERLOAD:
             return
-        TASK_TIP = 'The task should be connected to Lunapark. Open startrek task page, click "actions" -> "load testing".'
+        TASK_TIP = 'The task should be connected to Lunapark.' \
+                   'Open startrek task page, click "actions" -> "load testing".'
 
         logger.debug("Check if task %s is open", self.task)
         try:
@@ -199,18 +221,23 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             os.getcwd())
 
     def prepare_test(self):
-        info = self.generator_info
+        info = self.get_generator_info()
         port = info.port
         instances = info.instances
-        if info.ammo_file.startswith(
-                "http://") or info.ammo_file.startswith("https://"):
-            ammo_path = info.ammo_file
+        if info.ammo_file is not None:
+            if info.ammo_file.startswith(
+                    "http://") or info.ammo_file.startswith("https://"):
+                ammo_path = info.ammo_file
+            else:
+                ammo_path = os.path.realpath(info.ammo_file)
         else:
-            ammo_path = os.path.realpath(info.ammo_file)
-        loop_count = info.loop_count
+            logger.warning('Failed to get info about ammo path')
+            ammo_path = 'Undefined'
+        loop_count = int(info.loop_count)
 
         try:
             lp_job = self.lp_job
+            self.add_cleanup(self.unlock_targets)
             self.locked_targets = self.check_and_lock_targets(strict=self.get_option('strict_lock'),
                                                               ignore=self.get_option('ignore_target_lock'))
             if lp_job._number:
@@ -238,7 +265,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             loop_count=loop_count,
             regression_component=self.get_option("component"),
             cmdline=cmdline,
-        )  # todo: tanktype?
+        )
 
         self.core.job.subscribe_plugin(self)
 
@@ -259,17 +286,18 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.__save_conf()
 
     def start_test(self):
-        self.on_air = True
-
+        self.add_cleanup(self.join_threads)
         self.status_sender.start()
         self.upload.start()
         self.monitoring.start()
+        if self.core.error_log:
+            self.events.start()
 
-        web_link = urljoin(self.lp_job.api_client.base_url, str(self.lp_job.number))
-        logger.info("Web link: %s", web_link)
+        self.web_link = urljoin(self.lp_job.api_client.base_url, str(self.lp_job.number))
+        logger.info("Web link: %s", self.web_link)
 
         self.publish("jobno", self.lp_job.number)
-        self.publish("web_link", web_link)
+        self.publish("web_link", self.web_link)
 
         jobno_file = self.get_option("jobno_file", '')
         if jobno_file:
@@ -283,27 +311,49 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return self.retcode
 
     def end_test(self, retcode):
-        self.on_air = False
+        if retcode != 0:
+            self.lp_job.interrupted.set()
         self.__save_conf()
-        self.unlock_targets(self.locked_targets)
+        self.unlock_targets()
         return retcode
 
+    def close_job(self):
+        self.lp_job.close(self.retcode)
+
+    def join_threads(self):
+        self.lp_job.interrupted.set()
+        if self.monitoring.is_alive():
+            self.monitoring.join()
+        if self.upload.is_alive():
+            self.upload.join()
+
+    def stop_events_processing(self):
+        self.events_queue.put(None)
+        self.events_reader.close()
+        self.events_processing.close()
+        if self.events_processing.is_alive():
+            self.events_processing.join()
+        if self.events.is_alive():
+            self.lp_job.interrupted.set()
+            self.events.join()
+
     def post_process(self, rc):
+        self.retcode = rc
         self.monitoring_queue.put(None)
         self.data_queue.put(None)
+        if self.core.error_log:
+            self.events_queue.put(None)
+            self.events_reader.close()
+            self.events_processing.close()
+            self.events.join()
         logger.info("Waiting for sender threads to join.")
-        self.monitoring.join()
-        self.upload.join()
+        if self.monitoring.is_alive():
+            self.monitoring.join()
+        if self.upload.is_alive():
+            self.upload.join()
         self.finished = True
-        try:
-            self.lp_job.close(rc)
-        except Exception:  # pylint: disable=W0703
-            logger.warning("Failed to close job", exc_info=True)
         logger.info(
-            "Web link: %s%s",
-            self.lp_job.api_client.base_url,
-            self.lp_job.number)
-
+            "Web link: %s", self.web_link)
         autostop = None
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -331,44 +381,18 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         @data: aggregated data
         @stats: stats about gun
         """
-        if self.lp_job.is_alive:
+        if not self.lp_job.interrupted.is_set():
             self.data_queue.put((data, stats))
 
     def monitoring_data(self, data_list):
-        if self.lp_job.is_alive:
+        if not self.lp_job.interrupted.is_set():
             if len(data_list) > 0:
-                if self.is_telegraf:
-                    # telegraf
-                    [self.monitoring_queue.put(chunk) for chunk in chop(data_list, self.get_option("chunk_size"))]
-                else:
-                    # monitoring
-                    [self.monitoring_queue.put(data) for data in data_list]
-
-    @property
-    def is_telegraf(self):
-        if self._is_telegraf is None:
-            self._is_telegraf = 'Telegraf' in self.core.job.monitoring_plugin.__module__
-        return self._is_telegraf
-
-    def _core_with_tank_api(self):
-        """
-        Return True if we are running under Tank API
-        """
-        api_found = False
-        try:
-            import yandex_tank_api.worker  # pylint: disable=F0401
-        except ImportError:
-            logger.debug("Attempt to import yandex_tank_api.worker failed")
-        else:
-            api_found = isinstance(self.core, yandex_tank_api.worker.TankCore)
-        logger.debug(
-            "We are%s running under API server", '' if api_found else ' likely not')
-        return api_found
+                [self.monitoring_queue.put(chunk) for chunk in chop(data_list, self.get_option("chunk_size"))]
 
     def __send_status(self):
         logger.info('Status sender thread started')
         lp_job = self.lp_job
-        while lp_job.is_alive and self.on_air:
+        while not lp_job.interrupted.is_set():
             try:
                 self.lp_job.send_status(self.core.status)
                 time.sleep(self.get_option('send_status_period'))
@@ -378,83 +402,59 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 break
             except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
-                lp_job.is_alive = False
-                self.retcode = 8
+                self.retcode = self.RC_STOP_FROM_WEB
                 break
             if self.finished:
                 break
-        logger.info("Closing Status sender thread")
+        logger.info("Closed Status sender thread")
 
-    def __data_uploader(self):
-        logger.info('Data uploader thread started')
-        lp_job = self.lp_job
-        queue = self.data_queue
-        while lp_job.is_alive:
+    def __uploader(self, queue, sender_method, name='Uploader'):
+        logger.info('{} thread started'.format(name))
+        while not self.lp_job.interrupted.is_set():
             try:
                 entry = queue.get(timeout=1)
-                if entry is not None:
-                    data, stats = entry
-                else:
-                    logger.info("Data uploader queue returned None")
+                if entry is None:
+                    logger.info("{} queue returned None".format(name))
                     break
-                lp_job.push_test_data(data, stats)
+                sender_method(entry)
             except Empty:
                 continue
             except APIClient.StoppedFromOnline:
-                logger.info("Test stopped from Lunapark")
-                lp_job.is_alive = False
-                self.retcode = 8
+                logger.warning("Lunapark is rejecting {} data".format(name))
                 break
+            except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
+                logger.warn('Failed to push {} data'.format(name))
+                logger.warn(e.message)
+                self.lp_job.interrupted.set()
             except Exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                logger.info("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
+                logger.error("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
                 break
-        logger.info("Closing Data uploader thread")
+        # purge queue
+        while not queue.empty():
+            if queue.get_nowait() is None:
+                break
+        logger.info("Closing {} thread".format(name))
+
+    def __data_uploader(self):
+        self.__uploader(self.data_queue,
+                        lambda entry: self.lp_job.push_test_data(*entry),
+                        'Data Uploader')
 
     def __monitoring_uploader(self):
-        logger.info('Monitoring uploader thread started')
-        lp_job = self.lp_job
-        queue = self.monitoring_queue
-        while lp_job.is_alive:
-            try:
-                data = queue.get(timeout=1)
-                if data is not None:
-                    lp_job.push_monitoring_data(data)
-                else:
-                    logger.info('Monitoring queue returned None')
-                    break
-            except Empty:
-                continue
-            except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
-                logger.warn('Failed to push monitoring data')
-                logger.warn(e.message)
-                break
-            except APIClient.StoppedFromOnline:
-                logger.info("Test stopped from Lunapark")
-                lp_job.is_alive = False
-                self.retcode = 8
-                break
-            except Exception as e:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                logger.info("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
-                break
-        logger.info('Closing Monitoring uploader thread')
+        self.__uploader(self.monitoring_queue,
+                        self.lp_job.push_monitoring_data,
+                        'Monitoring Uploader')
+
+    def __events_uploader(self):
+        self.__uploader(self.events_queue,
+                        self.lp_job.push_events_data,
+                        'Events Uploader')
 
     # TODO: why we do it here? should be in core
     def __save_conf(self):
-        # config = copy.deepcopy(self.core.config)
-        try:
-            config_filename = self.core.job.monitoring_plugin.config
-            if config_filename and config_filename not in ['none', 'auto']:
-                with open(config_filename) as config_file:
-                    self.core.job.monitoring_plugin.set_option("config_contents", config_file.read())
-        except AttributeError:  # pylint: disable=W0703
-            logger.warning("Can't get monitoring config")
-
-        self.lp_job.send_config_snapshot(self.core.cfg_snapshot)
-        self.core.config.save(
-            os.path.join(
-                self.core.artifacts_dir, 'saved_conf.yaml'))
+        for requisites, content in self.core.artifacts_to_send:
+            self.lp_job.send_config(requisites, content)
 
     def parse_lock_targets(self):
         # prepare target lock list
@@ -473,9 +473,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                           if self.lp_job.lock_target(target, self.lock_duration, ignore, strict)]
         return locked_targets
 
-    def unlock_targets(self, locked_targets):
-        logger.info("Unlocking targets: %s", locked_targets)
-        for target in locked_targets:
+    def unlock_targets(self):
+        logger.info("Unlocking targets: %s", self.locked_targets)
+        for target in self.locked_targets:
             logger.info(target)
             self.lp_job.api_client.unlock_target(target)
 
@@ -519,6 +519,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             raise
 
     def __get_api_client(self):
+        logging.info('Using {} backend'.format(self.backend_type))
         if self.backend_type == BackendTypes.LUNAPARK:
             client = APIClient
             self._api_token = None
@@ -538,7 +539,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                       maintenance_timeout=self.get_option('maintenance_timeout'),
                       connection_timeout=self.get_option('connection_timeout'),
                       user_agent=self._get_user_agent(),
-                      api_token=self.api_token)
+                      api_token=self.api_token,
+                      core_interrupted=self.interrupted)
 
     @property
     def lp_job(self):
@@ -550,8 +552,12 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._lp_job = self.__get_lp_job()
             self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
             self.core.publish(self.SECTION, 'web_link', self._lp_job.web_link)
-            self.set_option("jobno", self.lp_job.number)
-            self.core.write_cfg_to_lock()
+            self.core.publish(self.SECTION, 'job_name', self._lp_job.name)
+            self.core.publish(self.SECTION, 'job_dsc', self._lp_job.description)
+            self.core.publish(self.SECTION, 'person', self._lp_job.person)
+            self.core.publish(self.SECTION, 'task', self._lp_job.task)
+            self.core.publish(self.SECTION, 'version', self._lp_job.version)
+
         return self._lp_job
 
     def __get_lp_job(self):
@@ -561,28 +567,30 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         """
         api_client = self.__get_api_client()
 
-        info = self.generator_info
+        info = self.get_generator_info()
         port = info.port
-        loadscheme = [] if isinstance(info.rps_schedule,
-                                      str) else info.rps_schedule
+        loadscheme = [] if isinstance(info.rps_schedule, (str, dict)) else info.rps_schedule
 
-        return LPJob(client=api_client,
-                     target_host=self.target,
-                     target_port=port,
-                     number=self.cfg.get('jobno', None),
-                     token=self.get_option('upload_token'),
-                     person=self.__get_operator(),
-                     task=self.task,
-                     name=self.get_option('job_name', 'none').decode('utf8'),
-                     description=self.get_option('job_dsc').decode('utf8'),
-                     tank=self.core.job.tank,
-                     notify_list=self.get_option("notify"),
-                     load_scheme=loadscheme,
-                     version=self.get_option('ver'),
-                     log_data_requests=self.get_option('log_data_requests'),
-                     log_monitoring_requests=self.get_option('log_monitoring_requests'),
-                     log_status_requests=self.get_option('log_status_requests'),
-                     log_other_requests=self.get_option('log_other_requests'))
+        lp_job = LPJob(client=api_client,
+                       target_host=self.target,
+                       target_port=port,
+                       number=self.cfg.get('jobno', None),
+                       token=self.get_option('upload_token'),
+                       person=self.__get_operator(),
+                       task=self.task,
+                       name=self.get_option('job_name', 'untitled'),
+                       description=self.get_option('job_dsc'),
+                       tank=self.core.job.tank,
+                       notify_list=self.get_option("notify"),
+                       load_scheme=loadscheme,
+                       version=self.get_option('ver'),
+                       log_data_requests=self.get_option('log_data_requests'),
+                       log_monitoring_requests=self.get_option('log_monitoring_requests'),
+                       log_status_requests=self.get_option('log_status_requests'),
+                       log_other_requests=self.get_option('log_other_requests'),
+                       add_cleanup=lambda: self.add_cleanup(self.close_job))
+        lp_job.send_config(LPRequisites.CONFIGINITIAL, yaml.dump(self.core.configinitial))
+        return lp_job
 
     @property
     def task(self):
@@ -629,16 +637,13 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             )
             raise RuntimeError("API token error")
 
-    @property
-    def generator_info(self):
-        if self._generator_info is None:
-            self._generator_info = self.core.job.generator_plugin.get_info()
-        return self._generator_info
+    def get_generator_info(self):
+        return self.core.job.generator_plugin.get_info()
 
     @property
     def target(self):
         if self._target is None:
-            self._target = self.generator_info.address
+            self._target = self.get_generator_info().address
             logger.info("Detected target: %s", self.target)
         return self._target
 
@@ -682,11 +687,11 @@ class LPJob(object):
             log_monitoring_requests=False,
             number=None,
             token=None,
-            is_alive=True,
             notify_list=None,
             version=None,
             detailed_time=None,
-            load_scheme=None):
+            load_scheme=None,
+            add_cleanup=lambda: None):
         """
         :param client: APIClient
         :param log_data_requests: bool
@@ -706,7 +711,7 @@ class LPJob(object):
         self.target_port = target_port
         self.person = person
         self.task = task
-        self.is_alive = is_alive
+        self.interrupted = threading.Event()
         self._number = number
         self._token = token
         self.api_client = client
@@ -717,15 +722,16 @@ class LPJob(object):
         self.load_scheme = load_scheme
         self.is_finished = False
         self.web_link = ''
+        self.add_cleanup = add_cleanup
 
     def push_test_data(self, data, stats):
-        if self.is_alive:
+        if not self.interrupted.is_set():
             try:
                 self.api_client.push_test_data(
-                    self.number, self.token, data, stats, trace=self.log_data_requests)
+                    self.number, self.token, data, stats, self.interrupted, trace=self.log_data_requests)
             except (APIClient.NotAvailable, APIClient.NetworkError, APIClient.UnderMaintenance):
                 logger.warn('Failed to push test data')
-                self.is_alive = False
+                self.interrupted.set()
 
     def edit_metainfo(
             self,
@@ -782,11 +788,12 @@ class LPJob(object):
                                                             detailed_time=self.detailed_time,
                                                             notify_list=self.notify_list,
                                                             trace=self.log_other_requests)
+        self.add_cleanup()
         logger.info('Job created: {}'.format(self._number))
         self.web_link = urljoin(self.api_client.base_url, str(self._number))
 
     def send_status(self, status):
-        if self._number and self.is_alive:
+        if self._number and not self.interrupted.is_set():
             self.api_client.send_status(
                 self.number,
                 self.token,
@@ -797,15 +804,17 @@ class LPJob(object):
         return self.api_client.get_task_data(
             task, trace=self.log_other_requests)
 
-    def send_config_snapshot(self, config):
-        if self._number:
-            self.api_client.send_config_snapshot(
-                self.number, config, trace=self.log_other_requests)
+    def send_config(self, lp_requisites, content):
+        self.api_client.send_config(self.number, lp_requisites, content, trace=self.log_other_requests)
 
     def push_monitoring_data(self, data):
-        if self.is_alive:
+        if not self.interrupted.is_set():
             self.api_client.push_monitoring_data(
-                self.number, self.token, data, trace=self.log_monitoring_requests)
+                self.number, self.token, data, self.interrupted, trace=self.log_monitoring_requests)
+
+    def push_events_data(self, data):
+        if not self.interrupted.is_set():
+            self.api_client.push_events_data(self.number, self.person, data)
 
     def lock_target(self, lock_target, lock_target_duration, ignore, strict):
         lock_wait_timeout = 10
@@ -853,10 +862,31 @@ class LPJob(object):
                 logger.info('Target is locked, retrying...')
                 continue
             except (APIClient.StoppedFromOnline, APIClient.NotAvailable, APIClient.NetworkError):
-                logger.warn('Can\'t check whether target is locked\n')
+                logger.info('Can\'t check whether target is locked\n')
                 if strict:
                     logger.warn('Stopping test due to strict_lock')
                     raise
                 else:
                     logger.warn('strict_lock is False, proceeding')
                     return {'status': 'ok'}
+
+
+class EventsReader(FileScanner):
+    """
+    Parse lines and return stats
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(EventsReader, self).__init__(*args, **kwargs)
+
+    def _read_data(self, lines):
+        results = []
+        for line in lines:
+            # 2018-03-30 13:40:50,541\tCan't get monitoring config
+            data = line.split("\t")
+            if len(data) > 1:
+                timestamp, message = data[0], data[1]
+                dt = datetime.datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S,%f')
+                unix_ts = int(time.mktime(dt.timetuple()))
+                results.append([unix_ts, message])
+        return results

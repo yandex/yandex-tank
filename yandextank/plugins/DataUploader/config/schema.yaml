@@ -124,8 +124,6 @@ token_file:
 upload_token:
   description: Job's token. Use to upload data to an existing job. Requres jobno.
   type: string
-  nullable: true
-  default: null
   dependencies: jobno
 ver:
   description: version of the software tested

@@ -16,8 +16,6 @@ core:
     artifacts_dir:
       description: directory inside base directory to store test\'s artifacts, defaults to api_jobno if null
       type: string
-      nullable: true
-      default: null
     cmdline:
       type: string
     exitcode:
@@ -25,9 +23,10 @@ core:
     flush_config_to:
       description: path to store config
       type: string
-    ignore_locks:
-      description: if tank is locked (*.lock file(s) presented in lock_dir), shoot nevertheless
+    ignore_lock:
+      description: if tank is locked ( *.lock file(s) presented in lock_dir), shoot nevertheless
       type: boolean
+      default: false
     uuid:
       type: string
     pid:

@@ -138,13 +138,16 @@ class LocalhostClient(object):
                     'otherwise something really nasty happend',
                     exc_info=True)
 
+    def _stop_agent(self):
+        if self.session:
+            self.session.terminate()
+            logger.info('Waiting localhost agent to terminate...')
+
     def uninstall(self):
         """
         Remove agent's files from remote host
         """
         if self.session:
-            logger.info('Waiting monitoring data...')
-            self.session.terminate()
             self.session.wait()
             self.session = None
         log_filename = "agent_{host}.log".format(host="localhost")
@@ -181,6 +184,8 @@ class SSHClient(object):
         self.ssh = SecuredShell(self.host, self.port, self.username, timeout)
         self.incoming_queue = queue.Queue()
         self.buffer = ""
+        self.stop_sent = None
+        self.successfull_stop = None
 
         self.reader = MonitoringReader(self.incoming_queue)
         handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
@@ -326,7 +331,7 @@ class SSHClient(object):
         return self.session
 
     def read_buffer(self):
-        while self.session:
+        while self.session and not self.stop_sent:
             chunk = self.session.read_maybe()
             if chunk:
                 parts = chunk.rsplit('\n', 1)
@@ -338,6 +343,22 @@ class SSHClient(object):
                     self.buffer += parts[0]
             else:
                 time.sleep(1)
+        logger.info('Daemon reader stopped')
+
+    def _stop_agent(self):
+        """
+        Stop data collection. Separated from uninstall to speed up multihost processing
+        """
+
+        try:
+            if self.session:
+                self.session.send("stop\n")
+                self.stop_sent = time.time()
+        except BaseException:
+            logger.warning(
+                'Unable to correctly stop monitoring agent - session is broken on %s.',
+                self.host,
+                exc_info=True)
 
     def uninstall(self):
         """
@@ -348,7 +369,7 @@ class SSHClient(object):
 
         try:
             if self.session:
-                self.session.send("stop\n")
+                self._wait_for_stop()
                 self.session.close()
                 self.session = None
         except BaseException:
@@ -356,29 +377,59 @@ class SSHClient(object):
                 'Unable to correctly stop monitoring agent - session is broken. Pay attention to agent log (%s).',
                 log_filename,
                 exc_info=True)
-        try:
-            self.ssh.get_file(
-                os.path.join(
-                    self.path['AGENT_REMOTE_FOLDER'],
-                    "_agent.log"),
-                log_filename)
-            self.ssh.get_file(
-                os.path.join(
-                    self.path['AGENT_REMOTE_FOLDER'],
-                    "monitoring.rawdata"),
-                data_filename)
-            self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
-        except Exception:
-            logger.error("Unable to get agent artefacts", exc_info=True)
-
-        self._kill_agent()
-
+        else:
+            try:
+                self.ssh.get_file(
+                    os.path.join(
+                        self.path['AGENT_REMOTE_FOLDER'],
+                        "_agent.log"),
+                    log_filename)
+                self.ssh.get_file(
+                    os.path.join(
+                        self.path['AGENT_REMOTE_FOLDER'],
+                        "monitoring.rawdata"),
+                    data_filename)
+                self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
+            except Exception:
+                logger.error("Unable to get agent artefacts", exc_info=True)
+        if not self.successfull_stop:
+            self._kill_agent()
         return log_filename, data_filename
+
+    def _wait_for_stop(self):
+        done = False
+        agent_stop_timeout = 5
+        while not done:
+            if not self.stop_sent:
+                logger.info('Session was broken on %s, switch to kill', self.host)
+                break
+            if (self.stop_sent + agent_stop_timeout) < time.time():
+                logger.info("Agent hasn't finished in %s sec, force quit on %s",
+                            agent_stop_timeout,
+                            self.host)
+                break
+            if self.session.finished():
+                logger.debug('Session ended with status %s with %s',
+                             self.session.exit_status(),
+                             self.host)
+                self.successfull_stop = True
+                done = True
+            agent_stderr = self.session.read_err_maybe()
+            if agent_stderr and 'stopped' in agent_stderr:
+                logger.debug('Got stopped message from %s', self.host)
+                done = True
 
     def _kill_agent(self):
         if self.agent_remote_folder:
-            cmd = 'pgrep -f {} | xargs kill -9'.format(
-                self.agent_remote_folder)
+            tpl = ('main_p=$(pgrep -f "[p]ython.*{folder}");'
+                   'tlgrf_p=$(pgrep -f "[t]elegraf.*{folder}");'
+                   'descendent_pids(){{ if [ "x$1" != "x" ]; then '
+                   'pids=$(pgrep -P $1); echo $pids;'
+                   'for p in $pids; do descendent_pids $p; done; fi }};'
+                   'all_p=$(descendent_pids ${{main_p}});'
+                   'if [ "x${{main_p}}${{tlgrf_p}}${{all_p}}" != "x" ] ; then '
+                   ' kill -9 ${{main_p}} ${{tlgrf_p}} ${{all_p}}; fi')
+            cmd = tpl.format(folder=self.agent_remote_folder)
             out, errors, err_code = self.ssh.execute(cmd)
             if errors:
                 logger.error(

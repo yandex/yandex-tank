@@ -3,6 +3,7 @@ import os
 import pwd
 import socket
 import traceback
+
 import http.client
 import logging
 import errno
@@ -13,12 +14,13 @@ import psutil
 import argparse
 
 from paramiko import SSHClient, AutoAddPolicy
+from retrying import retry
 
 logger = logging.getLogger(__name__)
 
 
 class SecuredShell(object):
-    def __init__(self, host, port, username, timeout):
+    def __init__(self, host, port, username, timeout=10):
         self.host = host
         self.port = port
         self.username = username
@@ -62,13 +64,13 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
                 self.host,
                 port=self.port,
                 username=self.username,
-                timeout=self.timeout, )
+                timeout=self.timeout)
         return client
 
     def execute(self, cmd):
         logger.info("Execute on %s: %s", self.host, cmd)
         with self.connect() as client:
-            _, stdout, stderr = client.exec_command(cmd)
+            _, stdout, stderr = client.exec_command(cmd, get_pty=True)
             output = stdout.read()
             errors = stderr.read()
             err_code = stdout.channel.recv_exit_status()
@@ -89,15 +91,22 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
                 local=local_path, host=self.host, remote=remote_path))
 
         with self.connect() as client, client.open_sftp() as sftp:
-            result = sftp.put(local_path, remote_path)
+            result = sftp.put(local_path, remote_path, self.get_progress_logger(local_path))
         return result
+
+    @staticmethod
+    def get_progress_logger(name):
+
+        def print_progress(done, total):
+            logger.info("Transferring {}: {}%".format(name, done * 100 / total))
+        return print_progress
 
     def get_file(self, remote_path, local_path):
         logger.info(
             "Receiving from {host}:[{remote}] to [{local}]".format(
                 local=local_path, host=self.host, remote=remote_path))
         with self.connect() as client, client.open_sftp() as sftp:
-            result = sftp.get(remote_path, local_path)
+            result = sftp.get(remote_path, local_path, self.get_progress_logger(remote_path))
         return result
 
     def async_session(self, cmd):
@@ -155,9 +164,18 @@ class AsyncSession(object):
     def finished(self):
         return self.session.exit_status_ready()
 
+    def exit_status(self):
+        return self.session.recv_exit_status()
+
     def read_maybe(self):
         if self.session.recv_ready():
             return self.session.recv(4096)
+        else:
+            return None
+
+    def read_err_maybe(self):
+        if self.session.recv_stderr_ready():
+            return self.session.recv_stderr(4096)
         else:
             return None
 
@@ -376,7 +394,7 @@ def expand_time(str_time, default_unit='s', multiplier=1):
     """
     helper for above functions
     """
-    parser = re.compile('(\d+)([a-zA-Z]*)')
+    parser = re.compile(r'(\d+)([a-zA-Z]*)')
     parts = parser.findall(str_time)
     result = 0.0
     for value, unit in parts:
@@ -512,11 +530,12 @@ class AddressWizard:
                     port = int(parts[1])
         if port is not None:
             port = int(port)
+        address_str = address_str.strip()
         try:
             resolved = self.lookup_fn(address_str, port)
             logger.debug("Lookup result: %s", resolved)
         except Exception:
-            logger.debug("Exception trying to resolve hostname %s : %s", address_str, exc_info=True)
+            logger.debug("Exception trying to resolve hostname %s :", address_str, exc_info=True)
             raise
 
         for (family, socktype, proto, canonname, sockaddr) in resolved:
@@ -603,3 +622,99 @@ class FileScanner(object):
 
     def close(self):
         self.__closed = True
+
+
+def tail_lines(filepath, lines_num, bufsize=8192):
+    fsize = os.stat(filepath).st_size
+    iter_ = 0
+    with open(filepath) as f:
+        if bufsize > fsize:
+            bufsize = fsize - 1
+        data = []
+        try:
+            while True:
+                iter_ += 1
+                f.seek(fsize - bufsize * iter_)
+                data.extend(f.readlines())
+                if len(data) >= lines_num or f.tell() == 0:
+                    return data[-lines_num:]
+        except (IOError, OSError):
+            return data
+
+
+class FileLockedError(RuntimeError):
+    pass
+
+    @classmethod
+    def retry(cls, exception):
+        return isinstance(exception, cls)
+
+
+class FileMultiReader(object):
+    def __init__(self, filename, provider_stop_event, cache_size=1024 * 1024 * 50):
+        self.buffer = ""
+        self.filename = filename
+        self.cache_size = cache_size
+        self._cursor_map = {}
+        self._is_locked = False
+        self._opened_file = open(self.filename)
+        self.stop = provider_stop_event
+
+    def close(self, force=False):
+        self.wait_lock()
+        self._opened_file.close()
+        self.unlock()
+
+    def get_file(self, cache_size=None):
+        cache_size = self.cache_size if not cache_size else cache_size
+        fileobj = FileLike(self, cache_size)
+        return fileobj
+
+    def read_with_lock(self, pos, _len=None):
+        """
+        Reads {_len} characters if _len is not None else reads line
+        :param pos: start reading position
+        :param _len: number of characters to read
+        :rtype: (string, int)
+        """
+        self.wait_lock()
+        try:
+            self._opened_file.seek(pos)
+            result = self._opened_file.read(_len) if _len is not None else self._opened_file.readline()
+            stop_pos = self._opened_file.tell()
+        finally:
+            self.unlock()
+        if not result and self.stop.is_set():
+            result = None
+        return result, stop_pos
+
+    @retry(wait_random_min=5, wait_random_max=20, stop_max_delay=10000,
+           retry_on_exception=FileLockedError.retry, wrap_exception=True)
+    def wait_lock(self):
+        if self._is_locked:
+            raise FileLockedError('Generator output file {} is locked'.format(self.filename))
+        else:
+            self._is_locked = True
+            return True
+
+    def unlock(self):
+        self._is_locked = False
+
+
+class FileLike(object):
+    def __init__(self, multireader, cache_size):
+        """
+        :type multireader: FileMultiReader
+        """
+        self.multireader = multireader
+        self.cache_size = cache_size
+        self._cursor = 0
+
+    def read(self, _len=None):
+        _len = self.cache_size if not _len else _len
+        result, self._cursor = self.multireader.read_with_lock(self._cursor, _len)
+        return result
+
+    def readline(self):
+        result, self._cursor = self.multireader.read_with_lock(self._cursor)
+        return result

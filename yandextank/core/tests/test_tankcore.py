@@ -1,6 +1,7 @@
 import glob
 import logging
 import os
+import threading
 
 import pytest
 import sys
@@ -22,7 +23,7 @@ logger.addHandler(console_handler)
 
 def load_yaml(directory, filename):
     with open(os.path.join(directory, filename), 'r') as f:
-        return yaml.load(f)
+        return yaml.load(f, Loader=yaml.FullLoader)
 
 
 CFG1 = {
@@ -41,7 +42,7 @@ CFG1 = {
     'phantom': {
         'package': 'yandextank.plugins.Phantom',
         'enabled': True,
-        'address': 'lunapark.test.yandex-team.ru',
+        'address': 'lunapark.yandex-team.ru',
         'header_http': '1.1',
         'uris': ['/'],
         'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
@@ -110,7 +111,8 @@ def setup_module(module):
      )
 ])
 def test_core_load_plugins(config, expected):
-    core = TankCore(configs=[load_yaml(os.path.join(os.path.dirname(__file__), '../config'), '00-base.yaml'), config])
+    core = TankCore([load_yaml(os.path.join(os.path.dirname(__file__), '../config'), '00-base.yaml'), config],
+                    threading.Event())
     core.load_plugins()
     assert set(core.plugins.keys()) == expected
 
@@ -119,7 +121,7 @@ def test_core_load_plugins(config, expected):
     (CFG1, None)
 ])
 def test_core_plugins_configure(config, expected):
-    core = TankCore(configs=[config])
+    core = TankCore([config], threading.Event())
     core.plugins_configure()
 
 
@@ -129,7 +131,7 @@ def test_core_plugins_configure(config, expected):
     (CFG_MULTI, None)
 ])
 def test_plugins_prepare_test(config, expected):
-    core = TankCore(configs=[config])
+    core = TankCore([config], threading.Event())
     core.plugins_prepare_test()
 
 
@@ -190,7 +192,7 @@ def teardown_module(module):
 
 def sort_schema_alphabetically(filename):
     with open(filename, 'r') as f:
-        schema = yaml.load(f)
+        schema = yaml.load(f, Loader=yaml.FullLoader)
     with open(filename, 'w') as f:
         for key in sorted(schema.keys()):
             f.write(key + ':\n')

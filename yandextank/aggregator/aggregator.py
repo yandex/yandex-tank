@@ -40,14 +40,10 @@ class Worker(object):
                              np.linspace(10, 499, 490) * 1000)  # 1ms accuracy
             bins = np.append(bins,
                              np.linspace(500, 2995, 500) * 1000)  # 5ms accuracy
-            bins = np.append(bins, np.linspace(3000, 9990, 700) *
-                             1000)  # 10ms accuracy
-            bins = np.append(bins, np.linspace(10000, 29950, 400) *
-                             1000)  # 50ms accuracy
-            bins = np.append(bins, np.linspace(30000, 119900, 900) *
-                             1000)  # 100ms accuracy
-            bins = np.append(bins, np.linspace(120, 300, 181) *
-                             1000000)  # 1s accuracy
+            bins = np.append(bins, np.linspace(3000, 9990, 700) * 1000)  # 10ms accuracy
+            bins = np.append(bins, np.linspace(10000, 29950, 400) * 1000)  # 50ms accuracy
+            bins = np.append(bins, np.linspace(30000, 119900, 900) * 1000)  # 100ms accuracy
+            bins = np.append(bins, np.linspace(120, 300, 181) * 1000000)  # 1s accuracy
         else:
             # yapf: disable
             bins = np.array([
@@ -119,14 +115,28 @@ class Worker(object):
 
 
 class DataPoller(object):
-    def __init__(self, source, poll_period):
-        self.poll_period = poll_period
+    def __init__(self, source, poll_period, max_wait=15):
+        """
+
+        :param source: generator, should raise StopIteration at some point otherwise tank will be hanging
+        :param poll_period:
+        """
+        self.poll_period = poll_period or 0.01
         self.source = source
+        self.wait_cntr_max = max_wait // self.poll_period or 1
+        self.wait_counter = 0
 
     def __iter__(self):
         for chunk in self.source:
             if chunk is not None:
+                self.wait_counter = 0
                 yield chunk
+            elif self.wait_counter < self.wait_cntr_max:
+                self.wait_counter += 1
+            else:
+                logger.warning('Data poller has been receiving no data for {} seconds.\n'
+                               'Closing data poller'.format(self.wait_cntr_max * self.poll_period))
+                break
             time.sleep(self.poll_period)
 
 
@@ -146,15 +156,16 @@ class Aggregator(object):
         self.groupby = 'tag'
 
     def __iter__(self):
-        for ts, chunk in self.source:
+        for ts, chunk, rps in self.source:
             by_tag = list(chunk.groupby([self.groupby]))
             start_time = time.time()
             result = {
-                "ts": ts,
-                "tagged":
+                u"ts": ts,
+                u"tagged":
                 {tag: self.worker.aggregate(data)
                  for tag, data in by_tag},
-                "overall": self.worker.aggregate(chunk),
+                u"overall": self.worker.aggregate(chunk),
+                u"counted_rps": rps
             }
             logger.debug(
                 "Aggregation time: %.2fms", (time.time() - start_time) * 1000)

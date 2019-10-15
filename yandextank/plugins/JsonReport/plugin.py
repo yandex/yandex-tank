@@ -17,8 +17,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     # pylint:disable=R0902
     SECTION = 'json_report'
 
-    def __init__(self, core, cfg, cfg_updater):
-        super(Plugin, self).__init__(core, cfg, cfg_updater)
+    def __init__(self, core, cfg, name):
+        super(Plugin, self).__init__(core, cfg, name)
         self.monitoring_stream = io.open(os.path.join(self.core.artifacts_dir,
                                                       self.get_option('monitoring_log')),
                                          mode='wb')
@@ -60,6 +60,4 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
     @property
     def is_telegraf(self):
-        if self._is_telegraf is None:
-            self._is_telegraf = 'Telegraf' in self.core.job.monitoring_plugin.__module__
-        return self._is_telegraf
+        return True

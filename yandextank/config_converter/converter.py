@@ -1,10 +1,11 @@
-from ConfigParser import ConfigParser
-import re
 import logging
+import re
+from ConfigParser import ConfigParser, ParsingError
+from functools import reduce
+
 import pkg_resources
 import yaml
 
-from functools import reduce
 from yandextank.common.util import recursive_dict_update
 from yandextank.validator.validator import load_plugin_schema, load_yaml_schema
 
@@ -47,13 +48,16 @@ SECTIONS_PATTERNS = {
     'RCAssert': 'rcassert',
     'JsonReport': 'json_report|jsonreport',
     'Pandora': 'pandora',
-    'Influx': 'influx',
+    'InfluxUploader': 'influx',
 
 }
 
 
 class ConversionError(Exception):
-    pass
+    MSG = 'ConversionError:\n{}\nCheck your file format'
+
+    def __init__(self, message=''):
+        self.message = self.MSG.format(message)
 
 
 class OptionsConflict(ConversionError):
@@ -159,15 +163,26 @@ class Package(object):
 
 
 class UnknownOption(ConversionError):
-    pass
+
+    def __init__(self, option):
+        self.message = 'Unknown option: {}'.format(option)
+
+
+def empty_to_none(func):
+    def new_func(k, v):
+        if v in '':
+            return {k: None}
+        else:
+            return func(k, v)
+    return new_func
 
 
 class Option(object):
     TYPE_CASTERS = {
-        'boolean': lambda k, v: {k: to_bool(v)},
-        'integer': lambda k, v: {k: int(v)},
-        'list': lambda k, v: {k: [_.strip() for _ in v.strip().split()]},
-        'float': lambda k, v: {k: float(v)}
+        'boolean': empty_to_none(lambda k, v: {k: to_bool(v)}),
+        'integer': empty_to_none(lambda k, v: {k: int(v)}),
+        'list': empty_to_none(lambda k, v: {k: [_.strip() for _ in v.strip().split()]}),
+        'float': empty_to_none(lambda k, v: {k: float(v)})
     }
 
     SPECIAL_CONVERTERS = {
@@ -176,25 +191,27 @@ class Option(object):
             'instances_schedule': convert_instances_schedule,
             'stpd_file': convert_stpd_schedule,
             'autocases': TYPE_CASTERS['integer'],
-            'headers': lambda key, value: {key: re.compile('\[(.*?)\]').findall(value)}
+            'headers': lambda key, value: {key: re.compile(r'\[(.*?)\]').findall(value)}
         },
         'Bfg': {
             'rps_schedule': convert_rps_schedule,
             'instances_schedule': convert_instances_schedule,
-            'headers': lambda key, value: {key: re.compile('\[(.*?)\]').findall(value)}
+            'headers': lambda key, value: {key: re.compile(r'\[(.*?)\]').findall(value)}
         },
         'JMeter': {
             'exclude_markers': lambda key, value: {key: value.strip().split(' ')}
         },
         'Pandora': {
-            'expvar': lambda key, value: {key: value == '1'},
             'config_content': lambda key, value: {key: yaml.load(value)}  # works for json as well
         },
         'Autostop': {
-            'autostop': lambda k, v: {k: re.findall('\w+\(.+?\)', v)}
+            'autostop': lambda k, v: {k: re.findall(r'\w+\(.+?\)', v)}
         },
         'DataUploader': {
             'lock_targets': lambda k, v: {k: v.strip().split() if v != 'auto' else v}
+        },
+        'core': {
+            'ignore_locks': lambda k, v: {'ignore_lock': to_bool(v)}
         }
     }
     CONVERTERS_FOR_UNKNOWN = {
@@ -265,9 +282,11 @@ class Option(object):
         return self._converter
 
     def _get_scheme_converter(self):
+        if self.name == 'enabled':
+            return self.TYPE_CASTERS['boolean']
         if self.schema.get(self.name) is None:
             logger.warning('Unknown option {}:{}'.format(self.plugin, self.name))
-            raise UnknownOption
+            raise UnknownOption('{}:{}'.format(self.plugin, self.name))
 
         _type = self.schema[self.name].get('type', None)
         if _type is None:
@@ -478,10 +497,14 @@ def core_options(cfg_ini):
 
 def convert_ini(ini_file):
     cfg_ini = ConfigParser()
-    if isinstance(ini_file, str):
-        cfg_ini.read(ini_file)
-    else:
-        cfg_ini.readfp(ini_file)
+    try:
+        if isinstance(ini_file, str):
+            cfg_ini.read(ini_file)
+        else:
+            cfg_ini.readfp(ini_file)
+    except ParsingError as e:
+        raise ConversionError(e.message)
+
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
     plugins_cfg_dict = {section.new_name: section.get_cfg_dict() for section in ready_sections}

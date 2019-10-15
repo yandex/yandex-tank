@@ -1,12 +1,13 @@
 import imp
 import os
+import re
 import sys
 import uuid
 
 import logging
 import pkg_resources
 import yaml
-from cerberus.validator import Validator, InspectedValidator
+from cerberus.validator import Validator
 
 from yandextank.common.util import recursive_dict_update
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ class ValidationError(Exception):
 def load_yaml_schema(path):
     # DEFAULT_FILENAME = 'schema.yaml'
     with open(path, 'r') as f:
-        return yaml.load(f)
+        return yaml.load(f, Loader=yaml.FullLoader)
 
 
 def load_py_schema(path):
@@ -51,9 +52,8 @@ def load_plugin_schema(package):
             raise IOError('No schema found for plugin %s' % package)
     except ImportError:
         if 'aggregator' in package.lower():
-            logger.warning('Plugin Aggregator is now deprecated, please remove this section from your config')
-            return load_yaml_schema(pkg_resources.resource_filename('yandextank.aggregator', 'config/schema.yaml'))
-        raise
+            logger.exception('Plugin Aggregator is now deprecated, please remove this section from your config.')
+        raise ValidationError({'package': ['No module named {}'.format(package)]})
 
 
 def load_schema(directory, filename=None):
@@ -68,6 +68,86 @@ def load_schema(directory, filename=None):
                 directory)
 
 
+class PatchedValidator(Validator):
+
+    def _validate_description(self, description, field, value):
+        """ {'type': 'string'} """
+        pass
+
+    def _validate_values_description(self, values_description, field, value):
+        """ {'type': 'dict'} """
+        pass
+
+    def _validate_tutorial_link(self, tutorial_link, field, value):
+        """ {'type': 'string'} """
+        pass
+
+    def _validate_examples(self, examples, field, value):
+        """ {'type': 'dict'} """
+        pass
+
+    @staticmethod
+    def is_number(value):
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+
+    def validate_duration(self, field, duration):
+        '''
+        2h
+        2h5m
+        5m
+        180
+        1h4m3
+        :param duration:
+        :return:
+        '''
+        DURATION_RE = r'^(\d+d)?(\d+h)?(\d+m)?(\d+s?)?$'
+        if not re.match(DURATION_RE, duration):
+            self._error(field, 'Load duration examples: 2h30m; 5m15; 180')
+
+    def _validator_load_scheme(self, field, value):
+        '''
+        step(10,200,5,180)
+        step(5,50,2.5,5m)
+        line(22,154,2h5m)
+        step(5,50,2.5,5m) line(22,154,2h5m)
+        const(10,1h4m3s)
+        :param field:
+        :param value:
+        :return:
+        '''
+        # stpd file can be any value
+        if self.document['load_type'] in 'stpd_file':
+            return
+
+        PRIMARY_RE = r'(step|line|const)\((.+?)\)'
+        N_OF_ARGS = {
+            'step': 4,
+            'line': 3,
+            'const': 2,
+        }
+        matches = re.findall(PRIMARY_RE, value)
+        if len(matches) == 0:
+            self._error(field, 'Should match one of the following patterns: step(...) / line(...) / const(...)')
+        else:
+            for match in matches:
+                curve, params_str = match
+                params = [v.strip() for v in params_str.split(',')]
+                # check number of arguments
+                if not len(params) == N_OF_ARGS[curve]:
+                    self._error(field, '{} load scheme: expected {} arguments, found {}'.format(curve,
+                                                                                                N_OF_ARGS[curve],
+                                                                                                len(params)))
+                # check arguments' types
+                for param in params[:-1]:
+                    if not self.is_number(param):
+                        self._error(field, 'Argument {} in load scheme should be a number'.format(param))
+                self.validate_duration(field, params[-1])
+
+
 class TankConfig(object):
     DYNAMIC_OPTIONS = {
         'uuid': lambda: str(uuid.uuid4()),
@@ -80,7 +160,14 @@ class TankConfig(object):
             configs,
             with_dynamic_options=True,
             core_section='core',
-            error_output='validation_error.yaml'):
+            error_output=None):
+        """
+
+        :param configs: list of configs dicts
+        :param with_dynamic_options: insert uuid, pid, and other DYNAMIC_OPTIONS
+        :param core_section: name of core section in config
+        :param error_output: file to output error messages
+        """
         self._errors = None
         if not isinstance(configs, list):
             configs = [configs]
@@ -95,29 +182,19 @@ class TankConfig(object):
         self.ERROR_OUTPUT = error_output
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
         self.PLUGINS_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml'))
-        self.PatchedValidator = self.__get_patched_validator()
 
-    def get_option(self, section, option):
-        return self.validated[section][option]
+    def get_configinitial(self):
+        return self.raw_config_dict
 
-    def has_option(self, section, option):
-        return self.validated
-
-    @property
-    def plugins(self):
-        """
-            :returns: [(plugin_name, plugin_package, plugin_config), ...]
-            :rtype: list of tuple
-        """
-        if not self._plugins:
-            self._plugins = [
-                (plugin_name,
-                 plugin_cfg['package'],
-                    plugin_cfg,
-                    self.__get_cfg_updater(plugin_name)) for plugin_name,
-                plugin_cfg in self.validated.items() if (
-                    plugin_name not in self.BASE_SCHEMA.keys()) and plugin_cfg['enabled']]
-        return self._plugins
+    def validate(self):
+        if not self._validated:
+            try:
+                self._validated = ValidatedConfig(self.__validate(), self.BASE_SCHEMA)
+                self._errors = {}
+            except ValidationError as e:
+                self._validated = None
+                self._errors = e.errors
+        return self._validated, self._errors, self.raw_config_dict
 
     @property
     def validated(self):
@@ -125,51 +202,16 @@ class TankConfig(object):
             try:
                 self._validated = self.__validate()
             except ValidationError as e:
-                with open(self.ERROR_OUTPUT, 'w') as f:
-                    yaml.dump(e.errors, f)
+                self._errors = e.errors
+                if self.ERROR_OUTPUT:
+                    with open(self.ERROR_OUTPUT, 'w') as f:
+                        yaml.dump(e.errors, f)
                 raise
         return self._validated
-
-    def save(self, filename, error_message=''):
-        with open(filename, 'w') as f:
-            yaml.dump(
-                self.__load_multiple(
-                    [self.validated,
-                     {self.CORE_SECTION: {'message': error_message}}]
-                ), f)
 
     def save_raw(self, filename):
         with open(filename, 'w') as f:
             yaml.dump(self.raw_config_dict, f)
-
-    @staticmethod
-    def __get_patched_validator():
-        # monkey-patch cerberus validator to allow description field
-        def _validate_description(self, description, field, value):
-            """ {'type': 'string'} """
-            pass
-
-        # monkey-patch cerberus validator to allow values descriptions field
-        def _validate_values_description(self, values_description, field, value):
-            """ {'type': 'dict'} """
-            pass
-
-        # monkey-patch cerberus validator to allow tutorial_link field
-        def _validate_tutorial_link(self, tutorial_link, field, value):
-            """ {'type': 'string'} """
-            pass
-
-        # monkey-patch cerberus validator to allow examples field
-        def _validate_examples(self, examples, field, value):
-            """ {'type': 'dict'} """
-            pass
-
-        Validator._validate_description = _validate_description
-        Validator._validate_values_description = _validate_values_description
-        Validator._validate_tutorial_link = _validate_tutorial_link
-        Validator._validate_examples = _validate_examples
-
-        return InspectedValidator('Validator', (Validator,), {})
 
     def __load_multiple(self, configs):
         configs_count = len(configs)
@@ -218,7 +260,7 @@ class TankConfig(object):
         return core_validated
 
     def __validate_core(self):
-        v = self.PatchedValidator(allow_unknown=self.PLUGINS_SCHEMA)
+        v = PatchedValidator(allow_unknown=self.PLUGINS_SCHEMA)
         result = v.validate(self.raw_config_dict, self.BASE_SCHEMA)
         if not result:
             errors = v.errors
@@ -232,7 +274,7 @@ class TankConfig(object):
 
     def __validate_plugin(self, config, schema):
         schema.update(self.PLUGINS_SCHEMA['schema'])
-        v = self.PatchedValidator(schema, allow_unknown=False)
+        v = PatchedValidator(schema, allow_unknown=False)
         # .validate() makes .errors as side effect if there's any
         if not v.validate(config):
             raise ValidationError(v.errors)
@@ -247,20 +289,51 @@ class TankConfig(object):
                 config[self.CORE_SECTION] = {option: setter()}
         return config
 
-    def __get_cfg_updater(self, plugin_name):
-        def cfg_updater(key, value):
-            self.validated[plugin_name][key] = value
-        return cfg_updater
+    def __str__(self):
+        return yaml.dump(self.raw_config_dict)
+
+
+class ValidatedConfig(object):
+    def __init__(self, validated, base_schema):
+        """
+
+        :type validated: dict
+        """
+        self.validated = validated
+        self.base_schema = base_schema
+        self._plugins = None
+
+    @property
+    def plugins(self):
+        """
+            :returns: [(plugin_name, plugin_package, plugin_config), ...]
+            :rtype: list of tuple
+        """
+        if not self._plugins:
+            self._plugins = [
+                (plugin_name,
+                 plugin_cfg['package'],
+                 plugin_cfg) for plugin_name, plugin_cfg in self.validated.items() if (
+                    plugin_name not in self.base_schema.keys()) and plugin_cfg['enabled']]
+        return self._plugins
+
+    def get_option(self, section, option, default=None):
+        try:
+            return self.validated[section][option]
+        except KeyError:
+            if default is not None:
+                return default
+            raise
+
+    def __nonzero__(self):
+        return len(self.validated) > 0
+
+    def __bool__(self):
+        return self.__nonzero__()
+
+    def dump(self, path):
+        with open(path, 'w') as f:
+            yaml.dump(self.validated, f)
 
     def __str__(self):
         return yaml.dump(self.validated)
-
-    def errors(self):
-        if not self._errors:
-            try:
-                self.validated
-            except ValidationError as e:
-                self._errors = e.errors
-            else:
-                self._errors = []
-        return self._errors

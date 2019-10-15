@@ -7,6 +7,7 @@ import subprocess
 import time
 import socket
 import re
+import shlex
 
 from pkg_resources import resource_string
 
@@ -14,7 +15,6 @@ from .reader import JMeterReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ...common.interfaces import AggregateResultListener, AbstractInfoWidget, GeneratorPlugin
-from ...common.util import splitstring
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +24,10 @@ class Plugin(GeneratorPlugin):
     SECTION = 'jmeter'
     SHUTDOWN_TEST = 'Shutdown'
     STOP_TEST_NOW = 'Stop Test'
-    DISCOVER_PORT_PATTERN = 'Waiting for possible shutdown message on port (?P<port>\d+)'
+    DISCOVER_PORT_PATTERN = r'Waiting for possible .* message on port (?P<port>\d+)'
 
-    def __init__(self, core, cfg, cfg_updater):
-        super(Plugin, self).__init__(core, cfg, cfg_updater)
+    def __init__(self, core, cfg, name):
+        super(Plugin, self).__init__(core, cfg, name)
         self.args = None
         self.original_jmx = None
         self.jtl_file = None
@@ -98,7 +98,7 @@ class Plugin(GeneratorPlugin):
             '-Jjmeter.save.saveservice.default_delimiter=\\t',
             '-Jjmeter.save.saveservice.connect_time=true'
         ]
-        self.args += splitstring(self.user_args)
+        self.args += shlex.split(self.user_args)
 
         if self.affinity:
             self.core.__setup_affinity(self.affinity, args=self.args)
@@ -149,6 +149,7 @@ class Plugin(GeneratorPlugin):
             return -1
         elif aggregator.reader.jmeter_finished is True:
             if aggregator.reader.agg_finished:
+                self.reader.close()
                 return retcode
             else:
                 logger.info("Waiting for aggregator to finish")
@@ -164,6 +165,7 @@ class Plugin(GeneratorPlugin):
         if self.process_stderr:
             self.process_stderr.close()
         self.core.add_artifact_file(self.jmeter_log)
+        self.reader.close()
         return retcode
 
     def __discover_jmeter_udp_port(self):
@@ -171,7 +173,7 @@ class Plugin(GeneratorPlugin):
         Waiting for possible shutdown message on port 4445
         """
         r = re.compile(self.DISCOVER_PORT_PATTERN)
-        with open(self.jmeter_log) as f:
+        with open(self.process_stderr.name, 'r') as f:
             cnt = 0
             while self.process.pid and cnt < 10:
                 line = f.readline()

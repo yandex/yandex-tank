@@ -18,8 +18,8 @@ class Plugin(AbstractPlugin):
     def get_key():
         return __file__
 
-    def __init__(self, core, cfg, cfg_updater):
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+    def __init__(self, core, cfg, name):
+        AbstractPlugin.__init__(self, core, cfg, name)
         self.hosts = []
         self.port = None
         self.logfile = None

@@ -15,7 +15,8 @@ from copy import deepcopy
 
 from netort.resource import manager as resource
 
-from ...common.interfaces import MonitoringDataListener, AbstractPlugin, AbstractInfoWidget
+from yandextank.plugins.DataUploader.client import LPRequisites
+from ...common.interfaces import MonitoringDataListener, AbstractInfoWidget, MonitoringPlugin
 from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 from ..Console import Plugin as ConsolePlugin
@@ -30,13 +31,13 @@ else:
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin):
+class Plugin(MonitoringPlugin):
     """  resource mon plugin  """
 
     SECTION = 'telegraf'  # may be redefined to 'monitoring' sometimes.
 
-    def __init__(self, core, cfg, cfg_updater):
-        super(Plugin, self).__init__(core, cfg, cfg_updater)
+    def __init__(self, core, cfg, name):
+        super(Plugin, self).__init__(core, cfg, name)
         self.jobno = None
         self.default_target = None
         self.default_config = "{path}/config/monitoring_default_config.xml".format(
@@ -116,6 +117,10 @@ class Plugin(AbstractPlugin):
 
     @property
     def config(self):
+        """
+
+        :rtype: str
+        """
         if self._config is None:
             value = self.get_option('config')
 
@@ -155,6 +160,9 @@ class Plugin(AbstractPlugin):
             self.monitoring = None
             self.die_on_fail = False
             return
+
+        with open(self.config) as f:
+            self.core.add_artifact_to_send(LPRequisites.MONITORING, unicode(f.read()))
 
         # FIXME [legacy] backward compatibility with Monitoring module
         # configuration below.
@@ -198,6 +206,7 @@ class Plugin(AbstractPlugin):
         try:
             self.monitoring.prepare()
             self.monitoring.start()
+            self.add_cleanup(self.monitoring.stop)
             count = 0
             while not self.monitoring.first_data_received and count < 15 * 5:
                 time.sleep(0.2)
@@ -209,6 +218,9 @@ class Plugin(AbstractPlugin):
                 raise
             else:
                 self.monitoring = None
+
+    def add_listener(self, plugin):
+        return self.monitoring.add_listener(plugin)
 
     def is_test_finished(self):
         if self.monitoring:
@@ -331,8 +343,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
             for hostname, metrics in self.data.items():
                 tm_stamp = datetime.datetime.fromtimestamp(
                     float(self.time[hostname])).strftime('%H:%M:%S')
-                res += ("   " + screen.markup.CYAN + "%s" +
-                        screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
+                res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
                 for metric, value in sorted(metrics.iteritems()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET

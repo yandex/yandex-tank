@@ -22,19 +22,20 @@ _PROCESS_KILL_TIMEOUT = 10  # Kill running process after specified number of sec
 _OUTPUT_WAIT_TIMEOUT = 10  # Output files should be found after specified number of seconds
 
 
-class Plugin(AbstractPlugin, GeneratorPlugin):
+class Plugin(GeneratorPlugin):
     """Simple executor of shooting process with phantom compatible output"""
 
     SECTION = 'shootexec'
 
-    def __init__(self, core, cfg, cfg_updater):
-        AbstractPlugin.__init__(self, core, cfg, cfg_updater)
+    def __init__(self, core, cfg, name):
+        AbstractPlugin.__init__(self, core, cfg, name)
         self.stats_reader = None
         self.reader = None
         self.__process = None
         self.__stderr_file = None
         self.__processed_ammo_count = 0
         self.__start_time = 0
+        self.opened_file = None
 
     @staticmethod
     def get_key():
@@ -55,10 +56,11 @@ class Plugin(AbstractPlugin, GeneratorPlugin):
 
     def get_reader(self):
         if self.reader is None:
-            # Touch output_path because PhantomReader wants to open it
-            with open(self.__output_path, "w"):
-                pass
-            self.reader = PhantomReader(self.__output_path)
+            # Touch output_path to clear it
+            open(self.__output_path, "w").close()
+            self.opened_file = open(self.__output_path, 'r')
+            self.add_cleanup(lambda: self.opened_file.close())
+            self.reader = PhantomReader(self.opened_file)
         return self.reader
 
     def get_stats_reader(self):

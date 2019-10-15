@@ -42,7 +42,7 @@ class TankAggregator(object):
         self.generator = generator
         self.listeners = []  # [LoggingListener()]
         self.results = q.Queue()
-        self.stats = q.Queue()
+        self.stats_results = q.Queue()
         self.data_cache = {}
         self.stat_cache = {}
         self.reader = None
@@ -54,7 +54,7 @@ class TankAggregator(object):
     def load_config():
         return json.loads(resource_string(__name__, 'config/phout.json').decode('utf8'))
 
-    def start_test(self):
+    def start_test(self, poll_period=1):
         self.reader = self.generator.get_reader()
         self.stats_reader = self.generator.get_stats_reader()
         aggregator_config = self.load_config()
@@ -64,7 +64,7 @@ class TankAggregator(object):
         if self.reader and self.stats_reader:
             pipeline = Aggregator(
                 TimeChopper(
-                    DataPoller(source=self.reader, poll_period=1),
+                    DataPoller(source=self.reader, poll_period=poll_period),
                     cache_size=3),
                 aggregator_config,
                 verbose_histogram)
@@ -72,8 +72,8 @@ class TankAggregator(object):
             self.drain.start()
             self.stats_drain = Drain(
                 Chopper(DataPoller(
-                    source=self.stats_reader, poll_period=1)),
-                self.stats)
+                    source=self.stats_reader, poll_period=poll_period)),
+                self.stats_results)
             self.stats_drain.start()
         else:
             logger.warning("Generator not found. Generator must provide a reader and a stats_reader interface")
@@ -83,7 +83,7 @@ class TankAggregator(object):
         Collect data, cache it and send to listeners
         """
         data = get_nowait_from_queue(self.results)
-        stats = get_nowait_from_queue(self.stats)
+        stats = get_nowait_from_queue(self.stats_results)
         logger.debug("Data timestamps: %s" % [d.get('ts') for d in data])
         logger.debug("Stats timestamps: %s" % [d.get('ts') for d in stats])
         for item in data:
@@ -105,8 +105,13 @@ class TankAggregator(object):
             else:
                 self.stat_cache[ts] = item
         if end and len(self.data_cache) > 0:
+            logger.info('Timestamps without stats:')
             for ts, data_item in sorted(self.data_cache.items(), key=lambda i: i[0]):
+                logger.info(ts)
                 self.__notify_listeners(data_item, StatsReader.stats_item(ts, 0, 0))
+
+    def is_aggr_finished(self):
+        return self.drain._finished.is_set() and self.stats_drain._finished.is_set()
 
     def is_test_finished(self):
         self._collect_data()
@@ -114,14 +119,15 @@ class TankAggregator(object):
 
     def end_test(self, retcode):
         retcode = self.generator.end_test(retcode)
-        if self.reader:
-            self.reader.close()
         if self.stats_reader:
+            logger.debug('Closing stats reader')
             self.stats_reader.close()
         if self.drain:
+            logger.debug('Waiting for gun drain to finish')
             self.drain.join()
-        if self.stats_drain:
+            logger.debug('Waiting for stats drain to finish')
             self.stats_drain.join()
+        logger.debug('Collecting remaining data')
         self._collect_data(end=True)
         return retcode
 

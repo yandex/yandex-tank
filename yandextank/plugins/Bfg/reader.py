@@ -24,26 +24,30 @@ def _expand_steps(steps):
 
 
 class BfgReader(object):
-    def __init__(self, results):
+    def __init__(self, results, closed):
         self.buffer = ""
         self.stat_buffer = ""
         self.results = results
-        self.closed = False
+        self.closed = closed
         self.records = []
         self.lock = Lock()
-        th.Thread(target=self._cacher).start()
+        self.thread = th.Thread(target=self._cacher)
+        self.thread.start()
 
     def _cacher(self):
-        while not self.closed:
+        while True:
             try:
-                while True:
-                    self.records.append(
-                        self.results.get(block=False))
+                self.records.append(
+                    self.results.get(block=False))
             except Empty:
-                time.sleep(0.1)
+                if not self.closed.is_set():
+                    time.sleep(0.1)
+                else:
+                    break
 
     def next(self):
-        if self.closed:
+        if self.closed.is_set():
+            self.thread.join()
             raise StopIteration
         with self.lock:
             records = self.records
@@ -54,9 +58,6 @@ class BfgReader(object):
 
     def __iter__(self):
         return self
-
-    def close(self):
-        self.closed = True
 
 
 class BfgStatsReader(object):

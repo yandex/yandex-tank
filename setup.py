@@ -2,8 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='1.9.11',
-
+    version='1.12.5.1',
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -11,23 +10,23 @@ It uses other load generators such as JMeter, ab or phantom inside of it for
 load generation and provides a common configuration system for them and
 analytic tools for the results they produce.
 ''',
-    maintainer='Alexey Lavrenuke (load testing)',
-    maintainer_email='direvius@yandex-team.ru',
+    maintainer='Yandex Load Team',
+    maintainer_email='load@yandex-team.ru',
     url='http://yandex.github.io/yandex-tank/',
     namespace_packages=["yandextank", "yandextank.plugins"],
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
+        'cryptography>=2.2.1', 'pyopenssl==18.0.0',
         'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
-        'pandas>=0.18.0', 'numpy>=1.12.1', 'future>=0.16.0',
+        'pandas==0.24.2', 'numpy==1.15.4', 'future>=0.16.0',
         'pip>=8.1.2',
-        'pyyaml>=3.12', 'cerberus==1.1', 'influxdb>=5.0.0',
-        'netort>=0.0.11'
+        'pyyaml>=4.2b1', 'cerberus==1.2', 'influxdb>=5.0.0', 'netort>=0.6.9',
+        'retrying>=1.3.3', 'pytest-runner'
     ],
     setup_requires=[
-        'pytest-runner', 'flake8',
     ],
     tests_require=[
-        'pytest',
+        'pytest==4.6.3', 'flake8', 'pytest-benchmark'
     ],
     license='LGPLv2',
     classifiers=[
@@ -43,7 +42,6 @@ analytic tools for the results they produce.
         'Topic :: Software Development :: Testing',
         'Topic :: Software Development :: Testing :: Traffic Generation',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 3',
     ],
     entry_points={
         'console_scripts': [
@@ -62,7 +60,7 @@ analytic tools for the results they produce.
         'yandextank.plugins.Bfg': ['config/*'],
         'yandextank.plugins.Console': ['config/*'],
         'yandextank.plugins.DataUploader': ['config/*'],
-        'yandextank.plugins.Influx': ['config/*'],
+        'yandextank.plugins.InfluxUploader': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],
         'yandextank.plugins.JsonReport': ['config/*'],
         'yandextank.plugins.Pandora': ['config/*'],
@@ -71,6 +69,7 @@ analytic tools for the results they produce.
         'yandextank.plugins.ResourceCheck': ['config/*'],
         'yandextank.plugins.ShellExec': ['config/*'],
         'yandextank.plugins.ShootExec': ['config/*'],
-        'yandextank.plugins.Telegraf': ['config/*']
+        'yandextank.plugins.Telegraf': ['config/*'],
+        'yandextank.plugins.NeUploader': ['config/*']
     },
     use_2to3=False, )

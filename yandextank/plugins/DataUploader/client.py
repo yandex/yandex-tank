@@ -29,6 +29,7 @@ class APIClient(object):
 
     def __init__(
             self,
+            core_interrupted,
             base_url=None,
             writer_url=None,
             network_attempts=10,
@@ -40,6 +41,7 @@ class APIClient(object):
             connection_timeout=5.0,
             user_agent=None,
             api_token=None):
+        self.core_interrupted = core_interrupted
         self.user_agent = user_agent
         self.connection_timeout = connection_timeout
         self._base_url = base_url
@@ -169,6 +171,7 @@ class APIClient(object):
             data=None,
             response_callback=lambda x: x,
             writer=False,
+            interrupted_event=None,
             trace=False,
             json=None,
             maintenance_timeouts=None,
@@ -184,30 +187,36 @@ class APIClient(object):
         network_timeouts = self.network_timeouts()
         maintenance_timeouts = maintenance_timeouts or self.maintenance_timeouts()
         maintenance_msg = maintenance_msg or "%s is under maintenance" % (self._base_url)
-        while True:
+        while interrupted_event is None or not interrupted_event.is_set():
             try:
                 response = self.__send_single_request(request, ids.next(), trace=trace)
                 return response_callback(response)
             except (Timeout, ConnectionError, ProtocolError):
                 logger.warn(traceback.format_exc())
-                try:
-                    timeout = next(network_timeouts)
-                    logger.warn(
-                        "Network error, will retry in %ss..." %
-                        timeout)
-                    time.sleep(timeout)
-                    continue
-                except StopIteration:
-                    raise self.NetworkError()
+                if not self.core_interrupted.is_set():
+                    try:
+                        timeout = next(network_timeouts)
+                        logger.warn(
+                            "Network error, will retry in %ss..." %
+                            timeout)
+                        time.sleep(timeout)
+                        continue
+                    except StopIteration:
+                        raise self.NetworkError()
+                else:
+                    break
             except self.UnderMaintenance as e:
-                try:
-                    timeout = next(maintenance_timeouts)
-                    logger.warn(maintenance_msg)
-                    logger.warn("Retrying in %ss..." % timeout)
-                    time.sleep(timeout)
-                    continue
-                except StopIteration:
-                    raise e
+                if not self.core_interrupted.is_set():
+                    try:
+                        timeout = next(maintenance_timeouts)
+                        logger.warn(maintenance_msg)
+                        logger.warn("Retrying in %ss..." % timeout)
+                        time.sleep(timeout)
+                        continue
+                    except StopIteration:
+                        raise e
+                else:
+                    break
 
     def __make_writer_request(
             self,
@@ -264,16 +273,17 @@ class APIClient(object):
             maintenance_msg=maintenance_msg
         )
 
-    def __post_raw(self, addr, txt_data, trace=False):
+    def __post_raw(self, addr, txt_data, trace=False, interrupted_event=None):
         return self.__make_api_request(
-            'POST', addr, txt_data, lambda r: r.content, trace=trace)
+            'POST', addr, txt_data, lambda r: r.content, trace=trace, interrupted_event=interrupted_event)
 
-    def __post(self, addr, data, trace=False):
+    def __post(self, addr, data, interrupted_event=None, trace=False):
         return self.__make_api_request(
             'POST',
             addr,
             json=data,
             response_callback=lambda r: r.json(),
+            interrupted_event=interrupted_event,
             trace=trace)
 
     def __put(self, addr, data, trace=False):
@@ -344,7 +354,7 @@ class APIClient(object):
                 raise self.JobNotCreated('Failed to create job on lunapark\n{}'.format(e.response.content))
             except Exception as e:
                 logger.warn('Failed to create job on lunapark')
-                logger.warn(e.message)
+                logger.warn(repr(e), )
                 raise self.JobNotCreated()
 
     def get_job_summary(self, jobno):
@@ -354,8 +364,8 @@ class APIClient(object):
     def close_job(self, jobno, retcode, trace=False):
         params = {'exitcode': str(retcode)}
 
-        result = self.__get('api/job/' + str(jobno) + '/close.json?' +
-                            urllib.urlencode(params), trace=trace)
+        result = self.__get('api/job/' + str(jobno) + '/close.json?'
+                            + urllib.urlencode(params), trace=trace)
         return result[0]['success']
 
     def edit_job_metainfo(
@@ -386,9 +396,7 @@ class APIClient(object):
         }
 
         response = self.__post(
-            'api/job/' +
-            str(jobno) +
-            '/edit.json',
+            'api/job/' + str(jobno) + '/edit.json',
             data,
             trace=trace)
         return response
@@ -418,22 +426,18 @@ class APIClient(object):
                 'time': str(timestamp),
                 'reqps': stat["metrics"]["reqps"],
                 'resps': data["interval_real"]["len"],
-                'expect': data["interval_real"]["total"] / 1000.0 /
-                data["interval_real"]["len"],
+                'expect': data["interval_real"]["total"] / 1000.0 / data["interval_real"]["len"],
                 'disper': 0,
                 'self_load':
                     0,  # TODO abs(round(100 - float(data.selfload), 2)),
                 'input': data["size_in"]["total"],
                 'output': data["size_out"]["total"],
-                'connect_time': data["connect_time"]["total"] / 1000.0 /
-                data["connect_time"]["len"],
+                'connect_time': data["connect_time"]["total"] / 1000.0 / data["connect_time"]["len"],
                 'send_time':
-                    data["send_time"]["total"] / \
-                1000.0 / data["send_time"]["len"],
+                    data["send_time"]["total"] / 1000.0 / data["send_time"]["len"],
                 'latency':
                     data["latency"]["total"] / 1000.0 / data["latency"]["len"],
-                'receive_time': data["receive_time"]["total"] / 1000.0 /
-                data["receive_time"]["len"],
+                'receive_time': data["receive_time"]["total"] / 1000.0 / data["receive_time"]["len"],
                 'threads': stat["metrics"]["instances"],  # TODO
             }
         }
@@ -471,6 +475,7 @@ class APIClient(object):
             upload_token,
             data_item,
             stat_item,
+            interrupted_event,
             trace=False):
         items = []
         uri = 'api/job/{0}/push_data.json?upload_token={1}'.format(
@@ -479,8 +484,6 @@ class APIClient(object):
         for case_name, case_data in data_item["tagged"].items():
             if case_name == "":
                 case_name = "__NOTAG__"
-            if (len(case_name)) > 128:
-                raise RuntimeError('tag (case) name is too long: ' + case_name)
             push_item = self.second_data_to_push_item(case_data, stat_item, ts,
                                                       0, case_name)
             items.append(push_item)
@@ -489,7 +492,7 @@ class APIClient(object):
         items.append(overall)
 
         api_timeouts = self.api_timeouts()
-        while True:
+        while not interrupted_event.is_set():
             try:
                 if self.writer_url:
                     res = self.__make_writer_request(
@@ -504,7 +507,7 @@ class APIClient(object):
                     logger.debug("Writer response: %s", res.text)
                     return res.json()["success"]
                 else:
-                    res = self.__post(uri, items, trace=trace)
+                    res = self.__post(uri, items, interrupted_event, trace=trace)
                     logger.debug("API response: %s", res)
                     success = int(res[0]['success'])
                     return success
@@ -522,12 +525,13 @@ class APIClient(object):
             jobno,
             upload_token,
             send_data,
+            interrupted_event,
             trace=False):
         if send_data:
             addr = "api/monitoring/receiver/push?job_id=%s&upload_token=%s" % (
                 jobno, upload_token)
             api_timeouts = self.api_timeouts()
-            while True:
+            while not interrupted_event.is_set():
                 try:
                     if self.writer_url:
                         res = self.__make_writer_request(
@@ -543,7 +547,7 @@ class APIClient(object):
                         return res.json()["success"]
                     else:
                         res = self.__post_raw(
-                            addr, json.dumps(send_data), trace=trace)
+                            addr, json.dumps(send_data), trace=trace, interrupted_event=interrupted_event)
                         logger.debug("API response: %s", res)
                         success = res == 'ok'
                         return success
@@ -555,6 +559,35 @@ class APIClient(object):
                         continue
                     except StopIteration:
                         raise e
+
+    def push_events_data(self, jobno, operator, send_data):
+        if send_data:
+            # logger.info('send data: %s', send_data)
+            for key in send_data:
+                addr = "/api/job/{jobno}/event.json".format(
+                    jobno=jobno,
+                )
+                body = dict(
+                    operator=operator,
+                    text=key[1],
+                    timestamp=key[0]
+                )
+                api_timeouts = self.api_timeouts()
+                while True:
+                    try:
+                        # logger.debug('Sending event: %s', body)
+                        res = self.__post_raw(addr, body)
+                        logger.debug("API response for events push: %s", res)
+                        success = res == 'ok'
+                        return success
+                    except self.NotAvailable as e:
+                        try:
+                            timeout = next(api_timeouts)
+                            logger.warn("API error, will retry in %ss...", timeout)
+                            time.sleep(timeout)
+                            continue
+                        except StopIteration:
+                            raise e
 
     def send_status(self, jobno, upload_token, status, trace=False):
         addr = "api/v2/jobs/%s/?upload_token=%s" % (jobno, upload_token)
@@ -604,10 +637,11 @@ class APIClient(object):
     def get_manual_unlock_link(target):
         return "api/server/lock.json?action=unlock&address=%s" % target
 
-    def send_config_snapshot(self, jobno, config, trace=False):
-        logger.debug("Sending config snapshot")
-        addr = "api/job/%s/configinfo.txt" % jobno
-        self.__post_raw(addr, {"configinfo": unicode(config)}, trace=trace)
+    def send_config(self, jobno, lp_requisites, config_content, trace=False):
+        endpoint, field_name = lp_requisites
+        logger.debug("Sending {} config".format(field_name))
+        addr = "/api/job/%s/%s" % (jobno, endpoint)
+        self.__post_raw(addr, {field_name: unicode(config_content)}, trace=trace)
 
     def link_mobile_job(self, lp_key, mobile_key):
         addr = "/api/job/{jobno}/edit.json".format(jobno=lp_key)
@@ -616,6 +650,12 @@ class APIClient(object):
         }
         response = self.__post(addr, data)
         return response
+
+
+class LPRequisites():
+    CONFIGINFO = ('configinfo.txt', 'configinfo')
+    MONITORING = ('jobmonitoringconfig.txt', 'monitoringconfig')
+    CONFIGINITIAL = ('configinitial.txt', 'configinitial')
 
 
 class OverloadClient(APIClient):
@@ -630,4 +670,10 @@ class OverloadClient(APIClient):
         return
 
     def link_mobile_job(self, lp_key, mobile_key):
+        return
+
+    def push_events_data(self, number, token, data):
+        return
+
+    def set_imbalance_and_dsc(self, **kwargs):
         return

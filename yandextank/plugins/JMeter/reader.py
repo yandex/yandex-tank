@@ -112,15 +112,16 @@ def fix_latency(row):
 
 # timeStamp,elapsed,label,responseCode,success,bytes,grpThreads,allThreads,Latency
 def string_to_df(data):
-    chunk = pd.read_csv(
-        StringIO(data), sep='\t', names=jtl_columns, dtype=jtl_types)
+    chunk = pd.read_csv(StringIO(data),
+                        sep='\t',
+                        names=jtl_columns, dtype=jtl_types,
+                        keep_default_na=False)
     chunk["receive_ts"] = (chunk["send_ts"] + chunk['interval_real']) / 1000.0
     chunk['receive_sec'] = chunk["receive_ts"].astype(np.int64)
     chunk['interval_real'] = chunk["interval_real"] * 1000  # convert to µs
     chunk.set_index(['receive_sec'], inplace=True)
     chunk_length = len(chunk)
-    chunk['connect_time'] = (chunk['connect_time'].fillna(0) *
-                             1000).astype(np.int64)
+    chunk['connect_time'] = (chunk['connect_time'].fillna(0) * 1000).astype(np.int64)
     chunk['latency'] = chunk['latency'] * 1000
     chunk['latency'] = chunk.apply(fix_latency, axis=1)
     chunk['send_time'] = np.zeros(chunk_length)
@@ -139,7 +140,7 @@ class JMeterStatAggregator(object):
         self.source = source
 
     def __iter__(self):
-        for ts, chunk in self.source:
+        for ts, chunk, rps in self.source:
             stats = self.worker.aggregate(chunk)
             yield [{
                 'ts': ts,
@@ -167,13 +168,13 @@ class JMeterReader(object):
 
     def _read_stat_queue(self):
         while not self.closed:
-            for _ in range(self.stat_queue.qsize()):
-                try:
-                    si = self.stat_queue.get_nowait()
-                    if si is not None:
-                        yield si
-                except q.Empty:
-                    break
+            # for _ in range(self.stat_queue.qsize()):
+            try:
+                si = self.stat_queue.get_nowait()
+                if si is not None:
+                    yield si
+            except q.Empty:
+                pass
 
     def _read_jtl_chunk(self, jtl):
         data = jtl.read(1024 * 1024 * 10)

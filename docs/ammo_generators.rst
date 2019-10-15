@@ -15,16 +15,17 @@ Line format: ``GET||/url||case_tag||body(optional)``
   
     import sys
     
+	
     def make_ammo(method, url, headers, case, body):
         """ makes phantom ammo """
-        #http request w/o entity body template
+        # http request w/o entity body template
         req_template = (
               "%s %s HTTP/1.1\r\n"
               "%s\r\n"
               "\r\n"
         )
     
-        #http request with entity body template
+        # http request with entity body template
         req_template_w_entity_body = (
               "%s %s HTTP/1.1\r\n"
               "%s\r\n"
@@ -38,7 +39,7 @@ Line format: ``GET||/url||case_tag||body(optional)``
         else:
             req = req_template_w_entity_body % (method, url, headers, len(body), body)
     
-        #phantom ammo template
+        # phantom ammo template
         ammo_template = (
             "%d %s\n"
             "%s"
@@ -46,12 +47,13 @@ Line format: ``GET||/url||case_tag||body(optional)``
   
         return ammo_template % (len(req), case, req)
   
+  
     def main():
         for stdin_line in sys.stdin:
             try:
                 method, url, case, body = stdin_line.split("||")
                 body = body.strip()
-            except:
+            except ValueError:
                 method, url, case = stdin_line.split("||")
                 body = None
 
@@ -64,6 +66,7 @@ Line format: ``GET||/url||case_tag||body(optional)``
 
             sys.stdout.write(make_ammo(method, url, headers, case, body))
 
+			
     if __name__ == "__main__":
         main()
 

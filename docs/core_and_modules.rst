@@ -29,7 +29,7 @@ Basic options:
 :lock_dir:
   Directory for lockfile.
 
-  Default: ``/var/lock/``. 
+  Default: ``/var/lock/``.
 
 :plugin_<pluginname>:
   Path to plugin. Empty path interpreted as disable of plugin.
@@ -40,7 +40,7 @@ Basic options:
   Default: current directory.
 
 :artifacts_dir:
-  Directory where to keep artifacts after test. 
+  Directory where to keep artifacts after test.
 
   Default: directory in ``artifacts_base_dir`` named in  Date/Time format.
 
@@ -54,7 +54,7 @@ Basic options:
   Default: taskset.
 
 :affinity:
-  Set a yandex-tank's (python process and load generator process) CPU affinity. 
+  Set a yandex-tank's (python process and load generator process) CPU affinity.
 
   Default: empty.
 
@@ -164,7 +164,7 @@ Basic options
 ^^^^^^^^^^^^^
 
 :ammofile:
-  Ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped). 
+  Ammo file path (ammo file is a file containing requests that are to be sent to a server. Could be gzipped).
 
 :load_profile:
   Load profile behaviour. Specify load_type (``rps``, schedule load by defining requests per second or ``instances``
@@ -172,11 +172,11 @@ Basic options
 
   .. code-block:: yaml
 
-  phantom:
-    address: [hostname]:port
-    load_profile:
-      load_type: rps #
-      schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
+    phantom:
+      address: [hostname]:port
+      load_profile:
+        load_type: rps #
+        schedule: line(1, 10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
 
 :instances:
   Max number of instances (concurrent requests).
@@ -208,33 +208,33 @@ Additional options
 ^^^^^^^^^^^^^^^^^^
 
 :writelog:
-  Enable verbose request/response logging. 
+  Enable verbose request/response logging.
 
   Default: 0.
 
   Available options: 0 - disable, all - all messages, proto_warning - 4хх+5хх+network errors, proto_error - 5хх+network errors.
 
 :ssl:
-  Enable SSL. 
+  Enable SSL.
 
-  Default: 0. 
+  Default: 0.
 
   Available options: 1 - enable, 0 - disable.
 
 :timeout:
-  Response timeout. 
-  
+  Response timeout.
+
   Default: ``11s``.
   
 .. note::
   Default multiplier is ``seconds``. If you specify ``10``, timeout will be 10 seconds.
   Currently we support here multipliers: 'd' for days, 'h' for hours, 'm' for minutes, 's' for seconds
-  Examples:  
+  Examples:
   ``0.1s`` is 100 milliseconds.
   ``1m`` for 1 minute.
 
 :address:
-  Address of target. 
+  Address of target.
 
   Default: ``127.0.0.1``.
 
@@ -252,7 +252,7 @@ Additional options
   Path to ETA file.
 
 :connection_test:
-  Test TCP socket connection before starting the test. 
+  Test TCP socket connection before starting the test.
 
   Default: 1.
 
@@ -262,7 +262,7 @@ URI-style options
 ^^^^^^^^^^^^^^^^^
 
 :uris:
-  URI list, multiline option. 
+  URI list, multiline option.
 :headers:
   HTTP headers list in the following form: `[Header: value]`.
 :header\_http:
@@ -306,13 +306,13 @@ Advanced options
   Default: ``/usr/lib/phantom``.
 
 :config:
-  Use given (in this option) config file for phantom instead of generated. 
+  Use given (in this option) config file for phantom instead of generated.
 
 :phout_file:
   Import this phout instead of launching phantom (import phantom results).
 
 :stpd_file:
-  Use this stpd-file instead of generated. 
+  Use this stpd-file instead of generated.
 
 :threads:
   Phantom thread count.
@@ -323,7 +323,7 @@ Advanced options
   Amount of seconds to which delay aggregator, to be sure that everything were read from phout.
 
 :additional_libs:
-  List separated by whitespaces, will be added to phantom config file in section ``module_setup`` 
+  List separated by whitespaces, will be added to phantom config file in section ``module_setup``
 
 :method_prefix:
   Object's type, that has a functionality to create test requests.
@@ -341,7 +341,7 @@ Advanced options
   Default: empty.
 
 :affinity:
-  Set a phantom's CPU affinity. 
+  Set a phantom's CPU affinity.
 
   Example: ``0-3`` enabling first 4 cores, '0,1,2,16,17,18' enabling 6 cores.
 
@@ -391,7 +391,7 @@ Phantom http-module tuning options
   Default: ``8K``.
 
 :phantom_http_entity:
-  Answer ``size``. 
+  Answer ``size``.
   
   Default: ``8M``.
  
@@ -419,8 +419,7 @@ Artifacts
 Multi-tests
 -----------
 
-To make several simultaneous tests with phantom, add proper amount of sections to special section ``multi`` for ``phantom``
- with names ``phantom-N``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops.
+To make several simultaneous tests with phantom, add proper amount of sections to special section ``multi`` for ``phantom``. All subtests are executed in parallel. Multi-test ends as soon as one subtest stops.
 
 Example:
 
@@ -435,8 +434,7 @@ Example:
       - /
     autocases: 1
     multi:
-      - phantom-1:
-        address: hostname1:port1
+      - address: hostname1:port1
         load_profile:
           load_type: rps
           schedule: const(1,10s)
@@ -445,8 +443,7 @@ Example:
           - /321
         ssl: 1
         autocases: 1
-      - phantom-2:
-        address: hostname2:port2
+      - address: hostname2:port2
         load_profile:
           load_type: rps
           schedule: const(1,10s)
@@ -641,7 +638,7 @@ How it works
 BFG Worker Type
 ---------------
 By default, BFG will create lots of processes (number is defined by ``instances`` option).
-Every process will execute requests in a single thread. These processes will comsume a lot of memory.
+Every process will execute requests in a single thread. These processes will consume a lot of memory.
 It's also possible to switch this behavior and use ``gevent`` to power up every worker process,
 allowing it to have multiple concurrent threads executing HTTP requests.
 
@@ -684,7 +681,7 @@ yaml file section: **bfg**
   An initialization parameter that will be passed to your ``setup`` method.
 
 :other common stepper options:
-  
+
 
 Ultimate Gun Options
 --------------------
@@ -743,96 +740,69 @@ First of all you'll need to obtain a binary of pandora and place it somewhere on
 By default, Yandex.Tank will try to just run ``pandora`` (or you could specify a path to binary in ``pandora_cmd``).
 Disable phantom first (unless you really want to keep it active alongside at your own risk), enable Pandora plugin and then specify the parameters.
 
-::
+.. code-block:: yaml
 
-    [tank]
-    ; Disable phantom:
-    plugin_phantom=
-    ; Enable Pandora instead:
-    plugin_pandora=yandextank.plugins.Pandora
-            
-    ; Pandora config section:
-    [pandora]
+  # load.yaml
 
-    ; Pandora executable path
-    pandora_cmd=/usr/bin/pandora
+  phantom:
+    enabled: false
+  pandora:
+    package: yandextank.plugins.Pandora
+    enabled: true
+    pandora_cmd: /usr/bin/pandora # Pandora executable path
+    config_file: pandora_config.yml # Pandora config path
 
-    ; Enable/disable expvar monitoring
-    expvar = 1 ; default
+.. code-block:: yaml
 
-    ; Pandora config contents (json)
-    config_content = {
-      "pools": [
-      {
-        "name": "dummy pool",
-        "gun": {"type": "log"},
-        "ammo": {
-          "type": "dummy/log",
-          "AmmoLimit": 10000000
-        },
-        "result": {
-          "type": "phout",
-          "destination": "./phout.log"
-        },
-        "shared-limits": false,
-        "user-limiter": {
-          "type": "unlimited"
-        },
-        "startup-limiter": {
-          "type": "periodic",
-          "batch": 1,
-          "max": 5,
-          "period": "0.5s"
-        }
-      }]}
+  # pandora_config.yml
 
-    ; OR config file (yaml or json)
-    config_file = pandora_config.yml
+  pools:
+    - id: HTTP pool                    # pool name (for your choice)
+      gun:
+        type: http                     # gun type
+        target: example.com:80         # gun target
+      ammo:
+        type: uri                      # ammo format
+        file: ./ammo.uri               # ammo file path
+      result:
+        type: phout                    # report format (phout is compatible for Yandex.Tank)
+        destination: ./phout.log       # report file name
+
+      rps:                             # RPS scheduler - controls throughput over test
+        type: line                     # linear growth load
+        from: 1                        # from 1 responses per second
+        to: 5                          # to 5 responses per second
+        duration: 2s                   # for 2 seconds
+
+      startup:                         # startup scheduler - control the level of parallelism
+        type: once                     # start 5 instances
+        times: 5                       #
+
+
+You may specify pandora config contents in tank's config file via ```config_content``` option.
+This option has more priority over config_file option.
+
+Create ```ammo.uri``` file, put your ammo inside and start the test.
+
+.. code-block:: yaml
+
+  # ammo.uri
+
+  /my/first/url
+  /my/second/url
 
 Schedules
 ---------
+```Pandora``` has two main RPS scheduler types:
+  1. ``line`` - makes linear load, where ```from``` and ```to``` are start and end,
+  `duration` is a time for linear load increase from ```from``` to ```to```.
 
-The first schedule type is ``periodic`` schedule. It is defined as ``periodic(<batch_size>, <period>, <limit>)``.
-Pandora will issue one batch of size ``batch_size``, once in ``period`` seconds, maximum of ``limit`` ticks. Those ticks may be
-used in different places, for example as a limiter for user startups or as a limiter for each user request rate.
+  2. ``const`` - makes constant load, where ```ops``` is a load value for ```duration``` time.
 
-Example:
-::
 
-    startup_schedule = periodic(2, 0.1, 100)
-    user_schedule = periodic(10, 15, 100)
-    shared_schedule = 0
-
-Start 2 users every 0.1 seconds, 100 batches, maximum of 2 * 100 = 200 users. Each user will issue requests in batches of 10 requests, every 15 seconds, maximum
-of 100 requests. All users will read from one ammo source.
-
-Second schedule type is ``linear``. It is defined like this: ``linear(<start_rps>, <end_rps>, <time>)``.
-
-Example:
-::
-
-    user_schedule = linear(.1, 10, 10m)
-    shared_schedule = 1
-
-The load will raise from .1 RPS (1 request in 10 seconds) until 10 RPS during 10 minutes. Since
-``shared_schedule`` is 1, this defines the overall load.
-
-The last schedule type is ``unlimited``. It has no parameters and users will shoot as soon
-as possible. It is convenient to use this type of load to find out maximum performance of a
-service and its level of parallelism. You should limit the loop number if you want the test
-to stop eventually. 
-
-Example:
-::
-
-    loop = 1000000
-    startup_schedule = periodic(2, 10, 50)
-    user_schedule = unlimited()
-    shared_schedule = 0
-
-Start 2 users every 10 seconds. Every user will shoot without any limits (next request is sended
-as soon as the previous response have been received). This is analogous to phantom's instances
-schedule mode.
+Custom_guns
+-----------
+You can create you own Golang-based gun with `pandora`. Feel free to find examples at [pandora documentation](https://yandexpandora.readthedocs.io/en/develop/)
 
 
 ******************
@@ -841,7 +811,7 @@ Artifact uploaders
 
 .. note::
 
-  Graphite uploader, InfluxDB uploader and BlazeMeter Sense are not currently supported in the last Yandex.Tank version.
+  Graphite uploader and BlazeMeter Sense are not currently supported in the last Yandex.Tank version.
   If you want one of them, use 1.7 branch.
 
 Yandex.Overload
@@ -872,6 +842,52 @@ Example:
     job_name: test
     job_dsc: test description
 
+
+InfluxDB
+========
+
+InfluxDB uploader.
+
+yaml file section: **influx**
+
+Options
+-------
+
+:address:
+  (Optional) InfluxDB address. (Default: 'localhost')
+:port:
+  (Optional) InfluxDB port. (Default: 8086)
+:database:
+  (Optional) InfluxDB database. (Default: 'mydb')
+:username:
+  (Optional) InfluxDB user name. (Default: 'root')
+:password:
+  (Optional) InfluxDB password. (Default: 'root')
+:labeled:
+  (Optional) Send per-label (ammo tags) stats to influxdb. (Default: false)
+:histograms:
+  (Optional) Send response time histograms to influxdb. (Default: false)
+:prefix_measurement:
+  (Optional) Add prefix to measurement name. (Default: '')
+:tank_tag:
+  (Optional) Tank tag. (Default: 'unknown')
+:custom_tags:
+  (Optional) Dict of custom tags, added to every sample row.
+
+Example:
+
+.. code-block:: yaml
+
+  influx:
+    enabled: true
+    address: yourhost.tld
+    database: yourbase
+    tank_tag: 'mytank'
+    prefix_measurement: 'your_test_prefix_'
+    labeled: true
+    histograms: true
+
+
 ***********
 Handy tools
 ***********
@@ -894,29 +910,29 @@ Basic criteria types
 ^^^^^^^^^^^^^^^^^^^^
 
 :time:
-  Stop the test if average response time is higher then allowed. 
+  Stop the test if average response time is higher then allowed.
 
-  Example: ``time(1s500ms, 30s) time(50,15)``. 
+  Example: ``time(1s500ms, 30s) time(50,15)``.
 
   Exit code - 21
 
 :http:
-  Stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value. 
+  Stop the test if the count of responses in time period (specified) with HTTP codes fitting the mask is larger then the specified absolute or relative value.
 
-  Examples: ``http(404,10,15) http(5xx, 10%, 1m)``. 
+  Examples: ``http(404,10,15) http(5xx, 10%, 1m)``.
   Exit code - 22
 
 :net:
-  Like ``http``, but for network codes. Use ``xx`` for all non-zero codes. 
+  Like ``http``, but for network codes. Use ``xx`` for all non-zero codes.
 
   Exit code - 23
 
 :quantile: 
-  Stop the test if the specified percentile is larger then specified level for as long as the time period specified. 
+  Stop the test if the specified percentile is larger then specified level for as long as the time period specified.
 
-  Available percentile values: 25, 50, 75, 80, 90, 95, 98, 99, 100. 
+  Available percentile values: 25, 50, 75, 80, 90, 95, 98, 99, 100.
 
-  Example: ``quantile (95,100ms,10s)`` 
+  Example: ``quantile (95,100ms,10s)``
 
 :instances: 
   Available when phantom module is included. Stop the test if instance count is larger then specified value. 
@@ -926,23 +942,23 @@ Basic criteria types
   Exit code - 24
 
 :metric_lower and metric_higher: 
-  Stop test if monitored metrics are lower/higher than specified for time period. 
+  Stop test if monitored metrics are lower/higher than specified for time period.
 
-  Example: metric_lower(127.0.0.1,Memory_free,500,10). 
+  Example: metric_lower(127.0.0.1,Memory_free,500,10).
 
-  Exit code - 31 and 32 
+  Exit code - 31 and 32
 
   **Note**: metric names (except customs) are written with underline. For hostnames masks are allowed (i.e target-\*.load.net)
 
 :steady_cumulative:
-  Stops the test if cumulative percentiles does not change for specified interval. 
+  Stops the test if cumulative percentiles does not change for specified interval.
 
-  Example: ``steady_cumulative(1m)``. 
+  Example: ``steady_cumulative(1m)``.
 
   Exit code - 33
 
 :limit:
-  Will stop test after specified period of time. 
+  Will stop test after specified period of time.
 
   Example: ``limit(1m)``.
 
@@ -954,35 +970,35 @@ Advanced criteria types
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 :total_time:
-  Like ``time``, but accumulate for all time period (responses that fit may not be one-after-another, but only lay into specified time period). 
+  Like ``time``, but accumulate for all time period (responses that fit may not be one-after-another, but only lay into specified time period).
 
   Example: ``total_time(300ms, 70%, 3s)``. 
 
   Exit code - 25
 
 :total_http: 
-  Like ``http``, but accumulated. See ``total_time``. 
+  Like ``http``, but accumulated. See ``total_time``.
 
-  Example: ``total_http(5xx,10%,10s) total_http(3xx,40%,10s)``.  
+  Example: ``total_http(5xx,10%,10s) total_http(3xx,40%,10s)``.
 
   Exit code - 26
 
 :total_net: 
-  Like ``net``, but accumulated. See ``total_time``. 
+  Like ``net``, but accumulated. See ``total_time``.
 
-  Example: ``total_net(79,10%,10s) total_net(11x,50%,15s)``  
+  Example: ``total_net(79,10%,10s) total_net(11x,50%,15s)``
 
   Exit code - 27
 
 :negative_http: 
-  Inversed ``total_http``. Stop if there are not enough responses that fit the specified mask. Use to be shure that server responds 200. 
+  Inversed ``total_http``. Stop if there are not enough responses that fit the specified mask. Use to be shure that server responds 200.
 
   Example: ``negative_http(2xx,10%,10s)``. 
 
   Exit code - 28
 
 :negative_net: 
-  Inversed ``total_net``. Stop if there are not enough responses that fit the specified mask. 
+  Inversed ``total_net``. Stop if there are not enough responses that fit the specified mask.
 
   Example: ``negative_net(0,10%,10s)``. 
 
@@ -993,31 +1009,53 @@ Advanced criteria types
   Trend is a sum of an average coefficient for linear functions calculated for each pair points in last
   n seconds and standart deviation for it
 
-  Example: http_trend(2xx,10s). 
+  Example: http_trend(2xx,10s).
 
   Exit code - 30
 
+Сriteria for specific tag
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-## FIXME
+All criteria except ``limit`` could be used not for all test, but for a specially tagged uri.
+
+Example: ``time(1s, 5s, /latest/index/)``
+Stop test if average response time is higher than 1s ONLY from uri with tag ``/latest/index/`` for 5s.
+
+It can be used for developing specific test success criteria for each uri.
+
+Example:
+
+.. code-block:: yaml
+
+  autostop:
+    autostop:
+      - http(4xx, 20%, 15s, GET /weff?id=1)
+      - http(4xx, 5%, 5s, POST /authorize)
+
+Stop test if there're more than 5% of 4xx codes for uri with tag ``POST /authorize`` or if there're more than 20% of 4xx codes for uri with tag ``GET /weff?id=1``.
+
+
 Telegraf
 ========
 Runs metrics collection through SSH connection. You can debug your SSH connection using ``yandex-tank-check-ssh`` tool.
 It is supplied with Yandex.Tank.
 
-Thanks to https://github.com/influxdata/telegraf for metric collection agent.
+Credits to https://github.com/influxdata/telegraf for metric collection agent.
 
-For using this plugin, replace old plugin ``plugin_monitoring=yandextank.plugins.Monitoring`` in .ini file with this:
-::
+.. code-block:: yaml
 
-    [tank]
-    plugin_telegraf=yandextank.plugins.Telegraf
-    
-In https://github.com/yandex/yandex-tank/blob/master/yandextank/core/config/00-base.ini it is already done. Please, don't use both ``plugin_monitoring=yandextank.plugins.Telegraf`` and ``plugin_monitoring=yandextank.plugins.Monitoring`` simultaneously.
+  # load.yaml
+  # ...
+  telegraf:
+    enabled: true
+    package: yandextank.plugins.Telegraf
 
-INI file section: **[telegraf]**
+In https://github.com/yandex/yandex-tank/blob/master/yandextank/core/config/00-base.yaml it is already done. Please, don't use both ``yandextank.plugins.Telegraf`` and ``yandextank.plugins.Monitoring`` simultaneously.
 
-You can use old monitoring config format, if you specify it in [monitoring] section. Telegraf plugin transparently supports it.
-You can use new monitoring config format, if you specify it in [telegraf] section.
+Config file section: **telegraf**
+
+You can use old monitoring config format, if you specify it in **monitoring** section. Telegraf plugin transparently supports it.
+You can use new monitoring config format, if you specify it in **telegraf** section.
 
 Backward compatibility logic:
 
@@ -1170,7 +1208,7 @@ List of metrics group names and particular metrics in them:
     * diff - default: 0
     * measure - default: call - metric value is a command or script execution output. Example: `<Custom measure="call" diff="1" label="Base size">du -s /var/lib/mysql/ | awk '{print $1}'</Custom>`
 * TelegrafRaw
-    * raw telegraf TOML format, transparently added to final collector config 
+    * raw telegraf TOML format, transparently added to final collector config
 * Source
     * additional source file in telegraf json format, can be used to add custom metrics that needs complex processing and do not fit into standart custom metrics (like log parsing with aggregation). Custom metrics do not include timestamps but source does. You can import async data with Source.
 
@@ -1189,7 +1227,7 @@ Console on-line screen
 
 Shows usefull information in console while running the test
 
-INI file section: **[console]**
+Config file section: **console**
 
 Options
 -------
@@ -1204,7 +1242,7 @@ Options
 
   Default: 33
 
-:disable_all_colors: 
+:disable_all_colors:
   Switch off color scheme
 
   Available options: 0/1
@@ -1219,20 +1257,7 @@ Aggregator
 
 The aggregator module is responsible for aggregation of data received
 from different kind of modules and transmitting that aggregated data to
-consumer modules (Console screen module is an example of such kind). 
-
-INI file section: **[aggregator]** 
- 
-Options
--------
- 
-:verbose_histogram:  
-  Controls the accuracy of cumulative percentile.  
-  
-  Available options: 0/1.
-
-  Default: ``0``. 
-
+consumer modules.
 
 ShellExec
 =========
@@ -1241,15 +1266,22 @@ The ShellExec module executes the shell-scripts (hooks) on different
 stages of test, for example, you could start/stop some services just
 before/after the test. Every hook must return 0 as an exit code or the
 test is terminated. Hook's stdout will be written to DEBUG, stderr will
-be WARNINGs. 
+be WARNINGs.
 
-Example: ``[shellexec] start=/bin/ls -l``. 
+Example:
+
+.. code-block:: yaml
+
+  # load.yaml
+  # ...
+  shellexec:
+    start: /bin/ls -l
 
 .. note::
- 
+
    Command quoting is not needed. That line doesn't work: ``start="/bin/ls -l"``
 
-INI file section: **[shellexec]**
+Config file section: **shellexec**
 
 Options
 -------
@@ -1281,17 +1313,17 @@ Options
 -------
 
 :interval:
-  How often to check resources. 
+  How often to check resources.
 
   Default interval: ``10s``
 
 :disk_limit:
-  Minimum free disk space in MB. 
+  Minimum free disk space in MB.
 
   Default: ``2GB``
 
 :mem_limit: 
-  Minimum free memory amount in MB. 
+  Minimum free memory amount in MB.
 
   Default: ``512MB``
 
@@ -1307,11 +1339,11 @@ Options
 -------
 
 :pass:
-  list of acceptable codes, delimiter - whitespace. 
+  list of acceptable codes, delimiter - whitespace.
 
   Default: empty, no check is performed.
 
 :fail_code:
-  Exit code when check fails, integer number. 
+  Exit code when check fails, integer number.
 
   Default: 10
