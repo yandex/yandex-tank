@@ -70,12 +70,12 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     def _cleanup(self):
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
-        self.data_session.update_job(uploader_metainfo)
         if self.core.status.get('autostop'):
-            autostop_rps = self.core.status['autostop'].get('rps', 0)
-            autostop_reason = self.core.status['autostop'].get('reason', '')
+            autostop_rps = self.core.status.get('autostop', {}).get('rps', 0)
+            autostop_reason = self.core.status.get('autostop', {}).get('reason', '')
             self.log.warning('Autostop: %s %s', autostop_rps, autostop_reason)
-            self.data_session.update_job({'autostop_rps': autostop_rps, 'autostop_reason': autostop_reason})
+            uploader_metainfo.update({'autostop_rps': autostop_rps, 'autostop_reason': autostop_reason})
+        self.data_session.update_job(uploader_metainfo)
         self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
 
     def is_test_finished(self):
