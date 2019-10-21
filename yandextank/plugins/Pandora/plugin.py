@@ -3,6 +3,7 @@ import logging
 import subprocess
 import time
 import os
+import shutil
 from threading import Event
 
 import yaml
@@ -201,9 +202,9 @@ class Plugin(GeneratorPlugin):
         if isinstance(opener, HttpOpener):
             tmp_path = opener.download_file(True, try_ungzip=True)
             try:
-                os.rename(tmp_path, dst)
+                shutil.copy(tmp_path, dst)
                 logger.info('Successfully moved resource %s', dst)
-            except OSError as ex:
+            except Exception as ex:
                 logger.debug("Could not move resource %s\n%s", dst, ex)
         else:
             dst = opener.get_filename
@@ -211,7 +212,7 @@ class Plugin(GeneratorPlugin):
             os.chmod(dst, permissions)
             logger.info('Permissions on %s have changed %d', dst, permissions)
         except OSError as ex:
-            logger.debug("Could not chane pepermissions on %s\n%s", dst, ex)
+            logger.debug("Could not change pepermissions on %s\n%s", dst, ex)
         return dst
 
     def prepare_test(self):
