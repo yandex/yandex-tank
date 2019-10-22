@@ -206,6 +206,7 @@ class Plugin(GeneratorPlugin):
                 logger.info('Successfully moved resource %s', dst)
             except Exception as ex:
                 logger.debug("Could not move resource %s\n%s", dst, ex)
+                raise RuntimeError('Unable to prepare resource')
         else:
             dst = opener.get_filename
         try:
@@ -213,6 +214,7 @@ class Plugin(GeneratorPlugin):
             logger.info('Permissions on %s have changed %d', dst, permissions)
         except OSError as ex:
             logger.debug("Could not change pepermissions on %s\n%s", dst, ex)
+            raise RuntimeError('Unable to prepare resource')
         return dst
 
     def prepare_test(self):
