@@ -6,6 +6,8 @@ import os
 from threading import Event
 
 import yaml
+import json
+import pprint
 
 from netort.resource import manager as resource_manager
 from netort.resource import HttpOpener
@@ -14,7 +16,7 @@ from .reader import PandoraStatsReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ...common.interfaces import AbstractInfoWidget, GeneratorPlugin
-from ...common.util import tail_lines, FileMultiReader, PhantomReader, string_to_df
+from ...common.util import tail_lines, FileMultiReader, FileLinesBackwardsIterator, PhantomReader, string_to_df
 
 logger = logging.getLogger(__name__)
 
@@ -238,12 +240,34 @@ class Plugin(GeneratorPlugin):
             self.output_finished.set()
             return retcode
         elif retcode is not None and retcode != 0:
-            lines_amount = 20
-            logger.info("Pandora finished with non-zero retcode. Last %s logs of Pandora log:", lines_amount)
-            self.output_finished.set()
-            last_log_contents = tail_lines(self.process_stderr_file, lines_amount)
-            for logline in last_log_contents:
-                logger.info(logline.strip('\n'))
+            logger.error("Pandora finished with non-zero retcode.")
+            err = None
+            # trying to make pandora error to look pretty in tank log
+            # iterating through pandora log file backwards searching for last error
+            # lines in pandora log look like this
+            # 2019-10-15T22:44:43.170Z\tERROR\tcli/cli.go:150\tEngine run failed. Awaiting started tasks.\t<JSON>
+            # so we look for \tERROR\t at a specific location in the string (for efficiency)
+            # if log format changes, this must be changed as well.
+            with FileLinesBackwardsIterator(self.process_stderr_file) as pandora_log:
+                while err is None:
+                    try:
+                        line = next(pandora_log)
+                    except StopIteration:
+                        break
+                    if line[24:31] == '\tERROR\t':
+                        try:
+                            err = json.loads(json.loads(line.split('\t')[-1]))
+                        except:
+                            err = line
+            if err is not None:
+                logger.error(pprint.pformat(err))
+            else:
+                lines_amount = 30
+                logger.error("Last %s logs of Pandora log:", lines_amount)
+                self.output_finished.set()
+                last_log_contents = tail_lines(self.process_stderr_file, lines_amount)
+                for logline in last_log_contents:
+                    logger.error(logline.strip('\n'))
             return abs(retcode)
         else:
             return -1

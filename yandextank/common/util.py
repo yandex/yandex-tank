@@ -531,8 +531,56 @@ def tail_lines(filepath, lines_num, bufsize=8192):
                 data.extend(f.readlines())
                 if len(data) >= lines_num or f.tell() == 0:
                     return data[-lines_num:]
-        except (IOError, OSError):
+        except (IOError, OSError, ValueError):
             return data
+
+
+class FileLinesBackwardsIterator:
+    available_modes = ('r', 'rb')
+    line_separators = ('\n', '\r\n')
+
+    def __init__(self, filepath, mode='r'):
+        if not mode in self.available_modes:
+            raise AttributeError(f'Unsupported file mode {mode}')
+        self.filepath = filepath
+        self.mode = mode
+        self.file = None
+
+        self.pos = 0
+        self.buffer = ''
+        self.lines = []
+
+    def __enter__(self):
+        self.file = open(self.filepath, self.mode)
+        self.pos = os.stat(self.filepath).st_size
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.file is not None:
+            self.file.close()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.lines:
+            return self.lines.pop()
+        else:
+            while '\n' not in self.buffer and self.pos > 0:
+                lim = 4 if self.pos >= 4 else self.pos
+                self.pos -= lim
+                self.file.seek(self.pos)
+                self.buffer = self.file.read(lim) + self.buffer
+            if not self.buffer:
+                raise StopIteration
+            else:
+                if self.pos > 0:
+                    self.lines.extend(self.buffer.split('\n')[1:])
+                    self.buffer = self.buffer.split('\n')[0]
+                else:
+                    self.lines.extend(self.buffer.split('\n'))
+                    self.buffer = ''
+            return self.lines.pop()
 
 
 class FileLockedError(RuntimeError):
@@ -677,3 +725,11 @@ class PhantomReader(object):
             else:
                 self.buffer += parts[0]
                 return None
+
+
+if __name__ == '__main__':
+    path = '/Users/belomore/deletemetoo0'
+    with FileLinesBackwardsIterator(path) as f:
+        for i, s in enumerate(f):
+            print(i, s)
+    print('OOOOOOOO')
