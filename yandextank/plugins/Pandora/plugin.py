@@ -244,19 +244,16 @@ class Plugin(GeneratorPlugin):
             err = None
             # trying to make pandora error to look pretty in tank log
             # iterating through pandora log file backwards searching for last error
-            # lines in pandora log look like this
-            # 2019-10-15T22:44:43.170Z\tERROR\tcli/cli.go:150\tEngine run failed. Awaiting started tasks.\t<JSON>
-            # so we look for \tERROR\t at a specific location in the string (for efficiency)
-            # if log format changes, this must be changed as well.
+            # we look for \tERROR\t or \tFATAL\t in the string
             with FileLinesBackwardsIterator(self.process_stderr_file) as pandora_log:
                 while err is None:
                     try:
                         line = next(pandora_log)
                     except StopIteration:
                         break
-                    if line[24:31] == '\tERROR\t':
+                    if '\tERROR\t' in line or '\tFATAL\t' in line:
                         try:
-                            err = json.loads(json.loads(line.split('\t')[-1]))
+                            err = json.loads(line.split('\t')[-1])
                         except:
                             err = line
             if err is not None:
