@@ -103,7 +103,7 @@ class ApiWorker:
                 self.log.info(
                     "Manual start option specified, waiting for user actions")
                 if sys.version_info[0] < 3:
-                    raw_input("Press Enter key to start test")
+                    raw_input("Press Enter key to start test")  # noqa: F821
                 else:
                     input("Press Enter key to start test")
 

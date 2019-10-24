@@ -99,6 +99,7 @@ class Plugin(GeneratorPlugin):
             if retcode != 0:
                 raise RuntimeError("Could not install required deps")
             import site
+            from importlib import reload
             reload(site)
         self.log.info("BFG using ammo type %s", self.get_option("ammo_type"))
         gun_type = self.get_option("gun_type")
