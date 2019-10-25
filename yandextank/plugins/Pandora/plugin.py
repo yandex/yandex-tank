@@ -19,6 +19,12 @@ from ...common.util import tail_lines, FileMultiReader
 
 logger = logging.getLogger(__name__)
 
+try:
+    next
+except NameError:
+    def next(x):
+        return x.next()
+
 
 class Plugin(GeneratorPlugin):
     """    Pandora load generator plugin    """
@@ -64,7 +70,7 @@ class Plugin(GeneratorPlugin):
         self.resources = self.get_option("resources")
 
         # if we use custom pandora binary, we can download it and make it executable
-        self.pandora_cmd = self.get_resource(self.get_option("pandora_cmd"), "./pandora", permissions=0755)
+        self.pandora_cmd = self.get_resource(self.get_option("pandora_cmd"), "./pandora", permissions=0o755)
 
         # get config_contents and patch it: expand resources via resource manager
         # config_content option has more priority over config_file
@@ -196,7 +202,7 @@ class Plugin(GeneratorPlugin):
             self.stats_reader = PandoraStatsReader(self.expvar_enabled, self.expvar_port)
         return self.stats_reader
 
-    def get_resource(self, resource, dst, permissions=0644):
+    def get_resource(self, resource, dst, permissions=0o644):
         opener = resource_manager.get_opener(resource)
         if isinstance(opener, HttpOpener):
             tmp_path = opener.download_file(True, try_ungzip=True)
@@ -297,7 +303,7 @@ class PandoraInfoWidget(AbstractInfoWidget):
         self.active = stats["metrics"]["instances"]
 
     def render(self, screen):
-        text = " Pandora Test %s" % self.krutilka.next()
+        text = " Pandora Test %s" % next(self.krutilka)
         space = screen.right_panel_width - len(text) - 1
         left_spaces = space / 2
         right_spaces = space / 2

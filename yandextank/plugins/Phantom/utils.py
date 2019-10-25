@@ -13,6 +13,11 @@ from ...stepper.util import parse_duration
 
 logger = logging.getLogger(__name__)
 
+try:
+    unicode
+except NameError:
+    unicode = str
+
 
 class PhantomConfig:
     """ config file generator """
@@ -126,7 +131,7 @@ class PhantomConfig:
         filename = self.core.mkstemp(".conf", "phantom_")
         self.core.add_artifact_file(filename)
         logger.debug("Generating phantom config: %s", filename)
-        template_str = resource_string(__name__, "config/phantom.conf.tpl")
+        template_str = resource_string(__name__, "config/phantom.conf.tpl").decode('utf8')
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
 
@@ -177,7 +182,7 @@ class PhantomConfig:
                 result.loadscheme = ''
 
             if result.loop_count:
-                result.loop_count = u'0'
+                result.loop_count = unicode('0')
             else:
                 result.loop_count = stream.stepper_wrapper.loop_count
 
@@ -356,7 +361,7 @@ class StreamConfig:
         else:
             fname = 'phantom_benchmark_additional.tpl'
         template_str = resource_string(
-            __name__, "config/" + fname)
+            __name__, "config/" + fname).decode('utf8')
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
 

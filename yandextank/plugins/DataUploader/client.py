@@ -1,7 +1,13 @@
 import json
 import time
 import traceback
-import urllib
+try:
+    import urllib.request as urllib_request
+    import urllib.parse as urllib_parse
+    import urllib.error as urllib_error
+except ImportError:
+    import urllib as urllib_request
+    urllib_parse = urllib_error = urllib_request
 import uuid
 
 from future.moves.urllib.parse import urljoin
@@ -15,6 +21,17 @@ from urllib3.exceptions import ProtocolError
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
+
+try:
+    next
+except NameError:
+    def next(x):
+        return x.next()
+
+try:
+    unicode
+except NameError:
+    unicode = str
 
 
 def id_gen(base, start=0):
@@ -189,7 +206,7 @@ class APIClient(object):
         maintenance_msg = maintenance_msg or "%s is under maintenance" % (self._base_url)
         while interrupted_event is None or not interrupted_event.is_set():
             try:
-                response = self.__send_single_request(request, ids.next(), trace=trace)
+                response = self.__send_single_request(request, next(ids), trace=trace)
                 return response_callback(response)
             except (Timeout, ConnectionError, ProtocolError):
                 logger.warn(traceback.format_exc())
@@ -239,7 +256,7 @@ class APIClient(object):
         maintenance_timeouts = self.maintenance_timeouts()
         while True:
             try:
-                response = self.__send_single_request(request, ids.next(), trace=trace)
+                response = self.__send_single_request(request, next(ids), trace=trace)
                 return response
             except (Timeout, ConnectionError, ProtocolError):
                 logger.warn(traceback.format_exc())
@@ -365,7 +382,7 @@ class APIClient(object):
         params = {'exitcode': str(retcode)}
 
         result = self.__get('api/job/' + str(jobno) + '/close.json?'
-                            + urllib.urlencode(params), trace=trace)
+                            + urllib_parse.urlencode(params), trace=trace)
         return result[0]['success']
 
     def edit_job_metainfo(

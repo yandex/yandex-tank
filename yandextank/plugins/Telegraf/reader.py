@@ -35,8 +35,8 @@ class MonitoringReader(object):
                     if chunk:
                         prepared_results = {}
                         jsn = json.loads(chunk)
-                        for ts, values in jsn.iteritems():
-                            for key, value in values.iteritems():
+                        for ts, values in jsn.items():
+                            for key, value in values.items():
                                 # key sample: diskio-sda1_io_time
                                 # key_group sample: diskio
                                 # key_name sample: io_time

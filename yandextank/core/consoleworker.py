@@ -9,7 +9,7 @@ import stat
 import sys
 import time
 import traceback
-from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
+from configparser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
 from threading import Thread, Event
 
 import yaml
@@ -23,6 +23,11 @@ from ..config_converter.converter import convert_ini, convert_single_option
 DEFAULT_CONFIG = 'load.yaml'
 logger = logging.getLogger()
 
+try:
+    unicode
+except NameError:
+    unicode = str
+
 
 class RealConsoleMarkup(object):
     '''
@@ -31,7 +36,7 @@ class RealConsoleMarkup(object):
     WHITE_ON_BLACK = '\033[37;40m'
     TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
-    new_line = u"\n"
+    new_line = unicode("\n")
 
     YELLOW = '\033[1;33m'
     RED = '\033[1;31m'
@@ -171,7 +176,7 @@ def is_ini(cfg_file):
     if cfg_file.endswith('.yaml') or cfg_file.endswith('.json'):
         return False
     try:
-        ConfigParser().read(cfg_file)
+        ConfigParser(strict=False).read(cfg_file)
         return True
     except MissingSectionHeaderError:
         return False

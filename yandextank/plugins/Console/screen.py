@@ -12,6 +12,17 @@ import pandas as pd
 
 from ...common import util
 
+try:
+    next
+except NameError:
+    def next(x):
+        return x.next()
+
+try:
+    unicode
+except NameError:
+    unicode = str
+
 
 def get_terminal_size():
     '''
@@ -61,7 +72,7 @@ def str_len(n):
 def avg_from_dict(src):
     result = {}
     count = src['count']
-    for k, v in src.iteritems():
+    for k, v in src.items():
         if k != 'count':
             result[k] = safe_div(v, count)
     return result
@@ -94,7 +105,7 @@ def combine_codes(tag_data, markup):
     net_err, http_err = 0, 0
     color = ''
     net_codes = tag_data['net_code']['count']
-    for code, count in sorted(net_codes.iteritems()):
+    for code, count in sorted(net_codes.items()):
         if count > 0:
             if int(code) == 0:
                 continue
@@ -105,7 +116,7 @@ def combine_codes(tag_data, markup):
                 color = try_color(color, markup.RED, markup)
                 net_err += count
     http_codes = tag_data['proto_code']['count']
-    for code, count in sorted(http_codes.iteritems()):
+    for code, count in sorted(http_codes.items()):
         if count > 0:
             if 100 <= int(code) <= 299:
                 color = try_color(color, markup.GREEN, markup)
@@ -192,7 +203,7 @@ class TableFormatter(object):
                 final = self.default_final
             row_tpl += final.format(field, len=shape[field])
             if num < len(fields) - 1:
-                row_tpl += delimiter_gen.next()
+                row_tpl += next(delimiter_gen)
         result = []
         if has_headers:
             result.append(
@@ -209,7 +220,8 @@ class Sparkline(object):
         self.data = {}
         self.window = window
         self.active_seconds = []
-        self.ticks = '_▁▂▃▄▅▆▇'.decode('utf-8')
+        # '_▁▂▃▄▅▆▇'
+        self.ticks = b'_\xe2\x96\x81\xe2\x96\x82\xe2\x96\x83\xe2\x96\x84\xe2\x96\x85\xe2\x96\x86\xe2\x96\x87'.decode('utf-8')
 
     def recalc_active(self, ts):
         if not self.active_seconds:
@@ -223,7 +235,7 @@ class Sparkline(object):
                     self.data[i] = {}
         while len(self.active_seconds) > self.window:
             self.active_seconds.pop(0)
-        for sec in self.data.keys():
+        for sec in tuple(self.data.keys()):
             if sec not in self.active_seconds:
                 self.data.pop(sec)
 
@@ -300,7 +312,7 @@ class Screen(object):
             self.RIGHT_PANEL_SEPARATOR)
         cases_args = dict(
             [(k, v)
-                for k, v in kwargs.iteritems()
+                for k, v in kwargs.items()
                 if k in ['cases_sort_by', 'cases_max_spark', 'max_case_len']]
         )
         times_args = {'times_max_spark': kwargs['times_max_spark']}
@@ -356,7 +368,7 @@ class Screen(object):
                         leftover = (chunk[left:],) + line_arr[num + 1:]
                         was_cut = not is_empty(leftover, markups)
                         if was_cut:
-                            result += chunk[:left - 1] + self.markup.RESET + u'\u2026'
+                            result += chunk[:left - 1] + self.markup.RESET + b'\xe2\x80\xa6'.decode('utf8')
                         else:
                             result += chunk[:left]
                         left = 0
@@ -405,7 +417,7 @@ class Screen(object):
             widget_output = []
             self.log.debug("There are %d info widgets" % len(self.info_widgets))
             for index, widget in sorted(
-                    self.info_widgets.iteritems(),
+                    self.info_widgets.items(),
                     key=lambda item: (item[1].get_index(), item[0])):
                 self.log.debug("Rendering info widget #%s: %s", index, widget)
                 widget_out = widget.render(self).strip()
@@ -484,7 +496,7 @@ class AbstractBlock:
 
     def clean_len(self, line):
         '''  Calculate wisible length of string  '''
-        if isinstance(line, basestring):
+        if isinstance(line, str):
             return len(self.screen.markup.clean_markup(line))
         elif isinstance(line, tuple) or isinstance(line, list):
             markups = self.screen.markup.get_markup_vars()
@@ -642,7 +654,7 @@ class PercentilesBlock(AbstractBlock):
             self.overall = dist
         else:
             self.overall = self.overall.add(dist, fill_value=0)
-        for second in self.last_min.keys():
+        for second in tuple(self.last_min.keys()):
             if ts - second > 60:
                 self.last_min.pop(second)
         self.last_min[ts] = dist
@@ -668,7 +680,7 @@ class PercentilesBlock(AbstractBlock):
             if last_times[position - 1] > last_times[position]:
                 last_times[position - 1] = last_times[position]
         last_1m = pd.Series()
-        for ts, data in self.last_min.iteritems():
+        for ts, data in self.last_min.items():
             if last_1m.empty:
                 last_1m = data
             else:
@@ -717,7 +729,7 @@ class CurrentHTTPBlock(AbstractBlock):
 
     def add_second(self, data):
         self.last_dist = data["overall"]["proto_code"]["count"]
-        for code, count in self.last_dist.iteritems():
+        for code, count in self.last_dist.items():
             self.total_count += count
             self.overall_dist[code] += count
 
@@ -746,7 +758,7 @@ class CurrentHTTPBlock(AbstractBlock):
             prepared.append(('',))
         else:
             data = []
-            for code, count in sorted(self.overall_dist.iteritems()):
+            for code, count in sorted(self.overall_dist.items()):
                 if code in self.last_dist:
                     last_count = self.last_dist[code]
                 else:
@@ -786,7 +798,7 @@ class CurrentNetBlock(AbstractBlock):
     def add_second(self, data):
         self.last_dist = data["overall"]["net_code"]["count"]
 
-        for code, count in self.last_dist.iteritems():
+        for code, count in self.last_dist.items():
             self.total_count += count
             self.overall_dist[code] += count
 
@@ -813,7 +825,7 @@ class CurrentNetBlock(AbstractBlock):
             prepared.append(('',))
         else:
             data = []
-            for code, count in sorted(self.overall_dist.iteritems()):
+            for code, count in sorted(self.overall_dist.items()):
                 if code in self.last_dist:
                     last_count = self.last_dist[code]
                 else:
@@ -961,7 +973,7 @@ class CasesBlock(AbstractBlock):
         self.field_order = ['name', 'count', 'percent', 'last', 'net_err', 'http_err', 'avg', 'last_avg']
 
         template = {
-            'name':     {'tpl': u'{:>}:',   'header': 'name', 'final': u'{{{:}:>{len}}}'},  # noqa: E241
+            'name':     {'tpl': unicode('{:>}:'),    'header': 'name', 'final': unicode('{{{:}:>{len}}}')},  # noqa: E241
             'count':    {'tpl': '{:>,}',    'header': 'count'},   # noqa: E241
             'last':     {'tpl': '+{:>,}',   'header': 'last'},    # noqa: E241
             'percent':  {'tpl': '{:>.2f}%', 'header': '%'},       # noqa: E241
@@ -989,11 +1001,11 @@ class CasesBlock(AbstractBlock):
         ts = data["ts"]
         overall = data["overall"]
         self.last_cases = {}
-        spark_color, self.last_cases[0] = prepare_data(overall, u'OVERALL')
+        spark_color, self.last_cases[0] = prepare_data(overall, unicode('OVERALL'))
         self.sparkline.add(ts, 0, self.last_cases[0]['count'], color=spark_color)
 
         tagged = data["tagged"]
-        for tag_name, tag_data in tagged.iteritems():
+        for tag_name, tag_data in tagged.items():
             # decode symbols to utf-8 in order to support cyrillic symbols in cases
             name = tag_name.decode('utf-8')
             spark_color, self.last_cases[name] = prepare_data(tag_data, name)
@@ -1009,13 +1021,13 @@ class CasesBlock(AbstractBlock):
 
     def __cut_name(self, name):
         if len(name) > self.max_case_len:
-            return name[:self.max_case_len - 1] + u'\u2026'
+            return name[:self.max_case_len - 1] + b'\xe2\x80\xa6'.decode('utf8')
         else:
             return name
 
     def __reorder_cases(self):
-        sorted_cases = sorted(self.cumulative_cases.iteritems(),
-                              key=lambda (k, v): (-1 * v[self.cases_sort_by], k))
+        sorted_cases = sorted(self.cumulative_cases.items(),
+                              key=lambda k, v: (-1 * v[self.cases_sort_by], k))
         new_order = [case for (case, data) in sorted_cases]
         now = time.time()
         if now - self.reorder_delay > self.last_reordered:
