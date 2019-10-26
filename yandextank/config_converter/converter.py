@@ -263,7 +263,7 @@ class Option(object):
         :rtype: (str, object)
         """
         if self._as_tuple is None:
-            self._as_tuple = tuple(self.converted.items())[0]
+            self._as_tuple = next(iter(self.converted.items()))
         return self._as_tuple
 
     @property
@@ -338,8 +338,8 @@ class Section(object):
         if len(sections) == 1:
             return sections[0]
         if parent_name:
-            master_section = tuple(filter(lambda section: section.name == parent_name, sections))[0]
-            rest = filter(lambda section: section.name != parent_name, sections)
+            master_section = next(filter(lambda section: section.name == parent_name, sections))
+            rest = filter(lambda section: section is not master_section, sections)
         else:
             master_section = sections[0]
             parent_name = master_section.name
@@ -357,7 +357,7 @@ class Section(object):
         MAP = {
             'bfg': lambda section: section.name == '{}_gun'.format(master_section.get_cfg_dict()['gun_type'])
         }
-        return tuple(filter(MAP.get(master_section.name, lambda x: True), rest))[0]
+        return next(filter(MAP.get(master_section.name, lambda x: True), rest))
         # return filter(lambda section: section.name == MAP.get(master_section.name, ), rest)[0]
 
 
@@ -447,15 +447,16 @@ def enable_sections(sections, core_opts):
     disabled_instances = {instance.section_name: instance for instance in plugin_instances if not instance.enabled}
 
     for section in sections:
-        if section.name in list(enabled_instances.keys()):
+        if enabled_instances.pop(section.name, None) is not None:
             section.enabled = True
-            enabled_instances.pop(section.name)
-        elif section.name in list(disabled_instances.keys()):
+        elif disabled_instances.pop(section.name, None) is not None:
             section.enabled = False
-            disabled_instances.pop(section.name)
     # add leftovers
-    for plugin_instance in [i for i in plugin_instances if
-                            i.section_name in list(enabled_instances.keys()) + list(disabled_instances.keys())]:
+    leftovers = set(enabled_instances.keys()) | set(disabled_instances.keys())
+    for plugin_instance in filter(
+        lambda lo: lo.section_name in leftovers,
+        plugin_instances,
+    ):
         sections.append(Section(plugin_instance.section_name, plugin_instance.plugin_name, [], plugin_instance.enabled))
     return sections
 
@@ -476,7 +477,7 @@ def combine_sections(sections):
     plugins = {}
     ready_sections = []
     for section in sections:
-        if section.plugin in PLUGINS_TO_COMBINE.keys():
+        if section.plugin in PLUGINS_TO_COMBINE:
             try:
                 plugins[section.plugin].append(section)
             except KeyError:

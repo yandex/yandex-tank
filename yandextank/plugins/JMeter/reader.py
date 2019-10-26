@@ -44,7 +44,7 @@ def _exc_to_net(param1, success):
             return 314
 
     exc = param1.split(' ')[-1]
-    if exc in KNOWN_EXC.keys():
+    if exc in KNOWN_EXC:
         return KNOWN_EXC[exc]
     else:
         logger.warning(
@@ -65,7 +65,7 @@ def _exc_to_http(param1):
             return int(param1)
 
     exc = param1.split(' ')[-1]
-    if exc in KNOWN_EXC.keys():
+    if exc in KNOWN_EXC:
         return 0
     else:
         logger.warning("Unknown Java exception. %s", param1)

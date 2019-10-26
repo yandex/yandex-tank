@@ -109,7 +109,7 @@ class ConfigManager(object):
         # agent defaults
         host_config = {}
         for metric in host:
-            if str(metric.tag) in defaults.keys():
+            if str(metric.tag) in defaults:
                 for key in tuple(defaults[metric.tag].keys()):
                     if key != 'name' and key not in defaults_boolean:
                         value = metric.get(key, None)

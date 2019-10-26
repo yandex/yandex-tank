@@ -254,8 +254,12 @@ def render_body(renderer, option_kwargs, exclude_keys, special_keys=None):
     special_part = '\n'.join([special_handler(renderer, option_kwargs[special_key])
                               for special_key, special_handler in special_keys.items()
                               if special_key in option_kwargs])
-    common_part = renderer.field_list({k: common_formatters.get(k, default_fmt)(v) for k, v in option_kwargs.items()
-                                       if k not in exclude_keys + list(special_keys.keys())})
+    uncommon_keys = set(exclude_keys) | set(special_keys.keys())
+    common_part = renderer.field_list({
+        k: common_formatters.get(k, default_fmt)(v)
+        for k, v in option_kwargs.items()
+        if k not in uncommon_keys
+    })
 
     return '\n'.join([_ for _ in [common_part, special_part] if _])
 
@@ -285,7 +289,7 @@ class OptionFormatter(object):
 
         :type option_schema: dict
         """
-        self.option_name, self.option_kwargs = tuple(option_schema.items())[0]
+        self.option_name, self.option_kwargs = next(iter(option_schema.items()))
         # print(option_name, option_kwargs)
         self.formatter = self.__guess_formatter()
 

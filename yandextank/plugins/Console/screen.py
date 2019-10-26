@@ -445,7 +445,7 @@ class Screen(object):
         Add widget string to right panel of the screen
         '''
         index = widget.get_index()
-        while index in self.info_widgets.keys():
+        while index in self.info_widgets:
             index += 1
         self.info_widgets[widget.get_index()] = widget
 
@@ -726,7 +726,7 @@ class CurrentHTTPBlock(AbstractBlock):
                   (300, 399): self.screen.markup.CYAN,
                   (400, 499): self.screen.markup.YELLOW,
                   (500, 599): self.screen.markup.RED}
-        if code in self.last_dist.keys():
+        if code in self.last_dist:
             for left, right in colors:
                 if left <= int(code) <= right:
                     return colors[(left, right)]
@@ -797,7 +797,7 @@ class CurrentNetBlock(AbstractBlock):
             return 'N/A'
 
     def __code_color(self, code):
-        if code in self.last_dist.keys():
+        if code in self.last_dist:
             if int(code) == 0:
                 return self.screen.markup.GREEN
             elif int(code) == 314:

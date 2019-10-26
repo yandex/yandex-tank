@@ -298,7 +298,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
         if self.tag:
             if data["tagged"].get(self.tag):
                 codes = data["tagged"][self.tag]["net_code"]["count"].copy()
-                if '0' in codes.keys():
+                if '0' in codes:
                     codes.pop('0')
                 matched_responses = self.count_matched_codes(self.codes_regex, codes)
                 total_responses = data["tagged"][self.tag]["interval_real"]["len"]
@@ -309,7 +309,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
         # Count data for overall
         else:
             codes = data["overall"]["net_code"]["count"].copy()
-            if '0' in codes.keys():
+            if '0' in codes:
                 codes.pop('0')
             matched_responses = self.count_matched_codes(self.codes_regex, codes)
             total_responses = data["overall"]["interval_real"]["len"]
@@ -531,7 +531,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         if self.tag:
             if data["tagged"].get(self.tag):
                 codes = data["tagged"][self.tag]["net_code"]["count"].copy()
-                if '0' in codes.keys():
+                if '0' in codes:
                     codes.pop('0')
                 matched_responses = self.count_matched_codes(self.codes_regex, codes)
                 total_responses = data["tagged"][self.tag]["interval_real"]["len"]
@@ -542,7 +542,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         # Count data for overall
         else:
             codes = data["overall"]["net_code"]["count"].copy()
-            if '0' in codes.keys():
+            if '0' in codes:
                 codes.pop('0')
             matched_responses = self.count_matched_codes(self.codes_regex, codes)
             total_responses = data["overall"]["interval_real"]["len"]
