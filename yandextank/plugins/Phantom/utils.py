@@ -13,11 +13,6 @@ from ...stepper.util import parse_duration
 
 logger = logging.getLogger(__name__)
 
-try:
-    unicode
-except NameError:
-    unicode = str
-
 
 class PhantomConfig:
     """ config file generator """
@@ -182,7 +177,7 @@ class PhantomConfig:
                 result.loadscheme = ''
 
             if result.loop_count:
-                result.loop_count = unicode('0')
+                result.loop_count = '0'
             else:
                 result.loop_count = stream.stepper_wrapper.loop_count
 

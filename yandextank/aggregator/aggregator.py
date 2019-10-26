@@ -25,11 +25,6 @@ phantom_config = {
     "proto_code": ["count"],
 }
 
-try:
-    unicode
-except NameError:
-    unicode = str
-
 
 class Worker(object):
     """
@@ -165,12 +160,12 @@ class Aggregator(object):
             by_tag = list(chunk.groupby([self.groupby]))
             start_time = time.time()
             result = {
-                unicode("ts"): ts,
-                unicode("tagged"):
+                "ts": ts,
+                "tagged":
                 {tag: self.worker.aggregate(data)
                  for tag, data in by_tag},
-                unicode("overall"): self.worker.aggregate(chunk),
-                unicode("counted_rps"): rps,
+                "overall": self.worker.aggregate(chunk),
+                "counted_rps": rps,
             }
             logger.debug(
                 "Aggregation time: %.2fms", (time.time() - start_time) * 1000)

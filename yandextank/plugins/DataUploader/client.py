@@ -1,17 +1,8 @@
 import json
 import time
 import traceback
-try:
-    import urllib.request as urllib_request
-    import urllib.parse as urllib_parse
-    import urllib.error as urllib_error
-except ImportError:
-    import urllib as urllib_request
-    urllib_parse = urllib_error = urllib_request
+import urllib.parse
 import uuid
-
-from future.moves.urllib.parse import urljoin
-from builtins import range
 
 import requests
 import logging
@@ -21,17 +12,6 @@ from urllib3.exceptions import ProtocolError
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
-
-try:
-    next
-except NameError:
-    def next(x):
-        return x.next()
-
-try:
-    unicode
-except NameError:
-    unicode = str
 
 
 def id_gen(base, start=0):
@@ -193,7 +173,7 @@ class APIClient(object):
             json=None,
             maintenance_timeouts=None,
             maintenance_msg=None):
-        url = urljoin(self.base_url, path)
+        url = urllib.parse.urljoin(self.base_url, path)
         ids = id_gen(str(uuid.uuid4()))
         if json:
             request = requests.Request(
@@ -382,7 +362,7 @@ class APIClient(object):
         params = {'exitcode': str(retcode)}
 
         result = self.__get('api/job/' + str(jobno) + '/close.json?'
-                            + urllib_parse.urlencode(params), trace=trace)
+                            + urllib.parse.urlencode(params), trace=trace)
         return result[0]['success']
 
     def edit_job_metainfo(
@@ -658,7 +638,7 @@ class APIClient(object):
         endpoint, field_name = lp_requisites
         logger.debug("Sending {} config".format(field_name))
         addr = "/api/job/%s/%s" % (jobno, endpoint)
-        self.__post_raw(addr, {field_name: unicode(config_content)}, trace=trace)
+        self.__post_raw(addr, {field_name: config_content}, trace=trace)
 
     def link_mobile_job(self, lp_key, mobile_key):
         addr = "/api/job/{jobno}/edit.json".format(jobno=lp_key)

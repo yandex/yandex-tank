@@ -328,8 +328,6 @@ class ValidatedConfig(object):
     def __bool__(self):
         return len(self.validated) > 0
 
-    __nonzero__ = __bool__
-
     def dump(self, path):
         with open(path, 'w') as f:
             yaml.dump(self.validated, f)

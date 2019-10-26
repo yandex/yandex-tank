@@ -10,12 +10,6 @@ from ..Console import screen
 
 logger = logging.getLogger(__name__)
 
-try:
-    next
-except NameError:
-    def next(x):
-        return x.next()
-
 
 class PhantomProgressBarWidget(AbstractInfoWidget):
     """

@@ -10,7 +10,7 @@ import sys
 import time
 import datetime
 import yaml
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from queue import Empty, Queue
 from builtins import str

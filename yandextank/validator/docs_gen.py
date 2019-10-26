@@ -20,11 +20,6 @@ VALIDATOR = 'validator'
 
 NoneType = type(None)
 
-try:
-    unicode
-except NameError:
-    unicode = str
-
 
 class TextBlock(object):
     def __init__(self, text, tab_replacement='  ', ending=''):
@@ -122,15 +117,15 @@ class RSTRenderer(object):
         :param str content:
         :param str new_line_replacement:
         :param str tab_replacement:
-        :return: unicode
+        :return: str
         """
         prepared_content = content.strip().replace('\n', new_line_replacement).replace('\t', tab_replacement)
-        return unicode('{}\n{}').format(prepared_content, '=' * len(prepared_content))
+        return '{}\n{}'.format(prepared_content, '=' * len(prepared_content))
 
     @staticmethod
     def subtitle(content, new_line_replacement=' ', tab_replacement='  '):
         prepared_content = content.strip().replace('\n', new_line_replacement).replace('\t', tab_replacement)
-        return unicode('{}\n{}').format(prepared_content, '-' * len(prepared_content))
+        return '{}\n{}'.format(prepared_content, '-' * len(prepared_content))
 
     @staticmethod
     @with_escape
@@ -203,7 +198,7 @@ class RSTRenderer(object):
         def format_value(value):
             if isinstance(value, (int, bool, NoneType)):
                 return format_value(str(value))
-            if isinstance(value, (str, unicode)):
+            if isinstance(value, str):
                 return '\n '.join(value.splitlines())
             elif isinstance(value, TextBlock):
                 return '\n '.join(value.lines)

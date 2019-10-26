@@ -56,8 +56,6 @@ class BfgReader(object):
             return records_to_df(records)
         return None
 
-    next = __next__
-
     def __iter__(self):
         return self
 

@@ -11,18 +11,10 @@ import threading
 import time
 
 from argparse import ArgumentParser
-try:
-    import queue as q
-except ImportError:
-    import Queue as q
+import queue as q
 
 logger = logging.getLogger("agent")
 collector_logger = logging.getLogger("telegraf")
-try:
-    next
-except NameError:
-    def next(x):
-        return x.next()
 
 
 def signal_handler(sig, frame):

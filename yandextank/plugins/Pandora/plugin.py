@@ -19,12 +19,6 @@ from ...common.util import tail_lines, FileMultiReader
 
 logger = logging.getLogger(__name__)
 
-try:
-    next
-except NameError:
-    def next(x):
-        return x.next()
-
 
 class Plugin(GeneratorPlugin):
     """    Pandora load generator plugin    """

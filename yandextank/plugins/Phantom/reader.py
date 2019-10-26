@@ -15,10 +15,7 @@ from pandas.io.common import CParserError
 
 from yandextank.common.interfaces import StatsReader
 
-try:
-    from io import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import StringIO
 
 logger = logging.getLogger(__name__)
 
@@ -43,15 +40,10 @@ dtypes = {
     'proto_code': np.int64,
 }
 
-try:
-    unicode
-except NameError:
-    unicode = str
-
 
 def string_to_df(data):
     try:
-        chunk = pd.read_csv(StringIO(unicode(data)), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
+        chunk = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
     except CParserError as e:
         logger.error(e.message)
         logger.error('Incorrect phout data: {}'.format(data))
@@ -68,7 +60,7 @@ def string_to_df(data):
 def string_to_df_microsec(data):
     # start_time = time.time()
     try:
-        df = pd.read_csv(StringIO(unicode(data)), sep='\t', names=phout_columns, na_values='', dtype=dtypes, quoting=QUOTE_NONE)
+        df = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, na_values='', dtype=dtypes, quoting=QUOTE_NONE)
     except CParserError as e:
         logger.error(e.message)
         logger.error('Incorrect phout data: {}'.format(data))
@@ -103,8 +95,6 @@ class PhantomReader(object):
             else:
                 self.buffer += parts[0]
                 return None
-
-    next = __next__
 
 
 class PhantomStatsReader(StatsReader):

@@ -16,10 +16,9 @@ analytic tools for the results they produce.
     namespace_packages=["yandextank", "yandextank.plugins"],
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
-        'future',
         'cryptography>=2.2.1', 'pyopenssl==18.0.0',
         'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
-        'pandas==0.24.2', 'numpy==1.15.4', 'future>=0.16.0',
+        'pandas==0.24.2', 'numpy==1.15.4',
         'pip>=8.1.2',
         'pyyaml>=4.2b1', 'cerberus==1.2', 'influxdb>=5.0.0', 'netort>=0.7.0',
         'retrying>=1.3.3', 'pytest-runner'
@@ -28,7 +27,6 @@ analytic tools for the results they produce.
     ],
     tests_require=[
         'pytest==4.6.3', 'flake8', 'pytest-benchmark',
-        'mock',
     ],
     license='LGPLv2',
     classifiers=[

@@ -9,10 +9,7 @@ import sys
 
 import pwd
 import threading
-try:
-    from urllib.parse import urljoin
-except ImportError:
-    from urlparse import urljoin
+from urllib.parse import urljoin
 
 from datetime import datetime
 import pkg_resources

@@ -1,9 +1,6 @@
 # -*- coding: UTF-8 -*-
 import logging
-try:
-    from io import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import StringIO
 
 import numpy as np
 import pandas as pd
@@ -33,11 +30,6 @@ KNOWN_EXC = {
     "java.io.InterruptedIOException": 32,
     "javax.net.ssl.SSLHandshakeException": 5,
 }
-
-try:
-    unicode
-except NameError:
-    unicode = str
 
 
 def _exc_to_net(param1, success):
@@ -120,7 +112,7 @@ def fix_latency(row):
 
 # timeStamp,elapsed,label,responseCode,success,bytes,grpThreads,allThreads,Latency
 def string_to_df(data):
-    chunk = pd.read_csv(StringIO(unicode(data)),
+    chunk = pd.read_csv(StringIO(data),
                         sep='\t',
                         names=jtl_columns, dtype=jtl_types,
                         keep_default_na=False)
