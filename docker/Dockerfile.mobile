@@ -38,7 +38,7 @@ VOLUME "$USER_HOME_DIR/.m2"
 # some street magic
 RUN echo "y" | android update sdk --no-ui --force --filter platform-tools
 
-RUN pip install uiautomator Appium-Python-Client
+RUN pip3 install uiautomator Appium-Python-Client
 
 RUN curl -sL https://deb.nodesource.com/setup_6.x | bash - && \
     apt install -y nodejs && npm install -g appium

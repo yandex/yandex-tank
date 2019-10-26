@@ -55,25 +55,25 @@ These are the packages that are required to build different python libraries. In
 
 .. code-block:: bash
 
-    sudo apt-get install python-pip build-essential python-dev libffi-dev gfortran libssl-dev
+    sudo apt-get install python3-pip build-essential python3-dev libffi-dev gfortran libssl-dev
 
 Update your pip:
 
 .. code-block:: bash
 
-    sudo -H pip install --upgrade pip
+    sudo -H pip3 install --upgrade pip
 
 Update/install your setuptools:
 
 .. code-block:: bash
 
-    sudo -H pip install --upgrade setuptools
+    sudo -H pip3 install --upgrade setuptools
 
 Install latest Yandex.Tank from master branch:
 
 .. code-block:: bash
 
-    sudo -H pip install https://api.github.com/repos/yandex/yandex-tank/tarball/master
+    sudo -H pip3 install https://api.github.com/repos/yandex/yandex-tank/tarball/master
 
 You'll probably need Phantom load generator, so install it from our ppa:
 
@@ -103,7 +103,7 @@ or this way
 
 .. code-block:: bash
 
-    sudo apt-get install python-software-properties
+    sudo apt-get install python3-software-properties
     sudo apt-get install software-properties-common
     sudo add-apt-repository ppa:yandex-load/main
 
