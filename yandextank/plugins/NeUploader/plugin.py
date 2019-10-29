@@ -118,7 +118,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                     raw=False,
                     aggregate=True,
                     source='tank',
-                    importance='high' if col in self.importance_high else ''
+                    importance='high' if col in self.importance_high else '',
+                    **self.cfg.get('meta', {})
                 ) for col, constructor in self.col_map.items()
             }
             self.metrics_objs[case] = case_metrics
@@ -153,7 +154,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                 self.monitoring_metrics[metric_name] = self.data_session.new_true_metric(name,
                                                                                          group=group,
                                                                                          host=panel,
-                                                                                         type='monitoring')
+                                                                                         type='monitoring',
+                                                                                         **self.cfg.get('meta', {}))
             self.monitoring_metrics[metric_name].put(df)
 
     @staticmethod
