@@ -81,8 +81,6 @@ class PandoraStatsReader(object):
                 self.started = True
             return self.poller.get_data()
 
-    next = __next__
-
     def close(self):
         self.closed = True
         self.poller.stop()

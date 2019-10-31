@@ -1,9 +1,6 @@
 # -*- coding: UTF-8 -*-
 import logging
-try:
-    from io import StringIO
-except ImportError:
-    from StringIO import StringIO
+from io import StringIO
 
 import numpy as np
 import pandas as pd
@@ -34,11 +31,6 @@ KNOWN_EXC = {
     "javax.net.ssl.SSLHandshakeException": 5,
 }
 
-try:
-    unicode
-except NameError:
-    unicode = str
-
 
 def _exc_to_net(param1, success):
     """ translate http code to net code. if accertion failed, set net code to 314 """
@@ -52,7 +44,7 @@ def _exc_to_net(param1, success):
             return 314
 
     exc = param1.split(' ')[-1]
-    if exc in KNOWN_EXC.keys():
+    if exc in KNOWN_EXC:
         return KNOWN_EXC[exc]
     else:
         logger.warning(
@@ -73,7 +65,7 @@ def _exc_to_http(param1):
             return int(param1)
 
     exc = param1.split(' ')[-1]
-    if exc in KNOWN_EXC.keys():
+    if exc in KNOWN_EXC:
         return 0
     else:
         logger.warning("Unknown Java exception. %s", param1)
@@ -120,7 +112,7 @@ def fix_latency(row):
 
 # timeStamp,elapsed,label,responseCode,success,bytes,grpThreads,allThreads,Latency
 def string_to_df(data):
-    chunk = pd.read_csv(StringIO(unicode(data)),
+    chunk = pd.read_csv(StringIO(data),
                         sep='\t',
                         names=jtl_columns, dtype=jtl_types,
                         keep_default_na=False)

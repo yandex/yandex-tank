@@ -46,7 +46,7 @@ RUN gpg --keyserver hkp://ha.pool.sks-keyservers.net --recv-keys 05CE15085FC09D1
     dpkg -i telegraf_${TELEGRAF_VERSION}_amd64.deb && \
     rm -f telegraf_${TELEGRAF_VERSION}_amd64.deb*
 
-ENV BUILD_DEPS="python-dev build-essential gfortran libssl-dev libffi-dev"
+ENV BUILD_DEPS="python3-dev build-essential gfortran libssl-dev libffi-dev"
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -yq --no-install-recommends ${BUILD_DEPS} && \

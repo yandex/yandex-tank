@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import logging
 import time
 from collections import namedtuple

@@ -23,11 +23,6 @@ from ..config_converter.converter import convert_ini, convert_single_option
 DEFAULT_CONFIG = 'load.yaml'
 logger = logging.getLogger()
 
-try:
-    unicode
-except NameError:
-    unicode = str
-
 
 class RealConsoleMarkup(object):
     '''
@@ -36,7 +31,7 @@ class RealConsoleMarkup(object):
     WHITE_ON_BLACK = '\033[37;40m'
     TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
-    new_line = unicode("\n")
+    new_line = "\n"
 
     YELLOW = '\033[1;33m'
     RED = '\033[1;31m'

@@ -18,12 +18,6 @@ from ...common.interfaces import AggregateResultListener, AbstractInfoWidget, Ge
 
 logger = logging.getLogger(__name__)
 
-try:
-    next
-except NameError:
-    def next(x):
-        return x.next()
-
 
 class Plugin(GeneratorPlugin):
     """ JMeter tank plugin """

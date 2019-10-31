@@ -316,7 +316,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         #   ...
         # }]
         for chunk in block:
-            host = tuple(chunk['data'].keys())[0]
+            host = next(iter(chunk['data'].keys()))
             self.time[host] = chunk['timestamp']
             # if initial call, we create dicts w/ data and `signs`
             # `signs` used later to paint metrics w/ different colors
@@ -378,7 +378,7 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
 
         block = deepcopy(_block)
         for chunk in block:
-            host = tuple(chunk['data'].keys())[0]
+            host = next(iter(chunk['data'].keys()))
             data = chunk['data'][host]['metrics']
 
             if not fnmatch.fnmatch(host, self.host):
@@ -391,7 +391,7 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
                     config_metric_name = metric_name.replace('custom:', '')
                     data[config_metric_name] = data.pop(metric_name)
 
-            if self.metric not in data.keys() or not data[self.metric]:
+            if self.metric not in data or not data[self.metric]:
                 data[self.metric] = 0
             logger.debug(
                 "Compare %s %s/%s=%s to %s",

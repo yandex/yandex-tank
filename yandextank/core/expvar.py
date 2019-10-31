@@ -86,8 +86,6 @@ class Metric(object):
         except Empty:
             raise StopIteration
 
-    next = __next__
-
     def get(self):
         # TODO: decide what we should return here
         return None

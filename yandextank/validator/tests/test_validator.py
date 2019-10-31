@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import pytest
 
 from yandextank.validator.validator import TankConfig, ValidationError, PatchedValidator

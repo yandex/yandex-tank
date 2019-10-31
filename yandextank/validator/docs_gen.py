@@ -20,11 +20,6 @@ VALIDATOR = 'validator'
 
 NoneType = type(None)
 
-try:
-    unicode
-except NameError:
-    unicode = str
-
 
 class TextBlock(object):
     def __init__(self, text, tab_replacement='  ', ending=''):
@@ -122,15 +117,15 @@ class RSTRenderer(object):
         :param str content:
         :param str new_line_replacement:
         :param str tab_replacement:
-        :return: unicode
+        :return: str
         """
         prepared_content = content.strip().replace('\n', new_line_replacement).replace('\t', tab_replacement)
-        return unicode('{}\n{}').format(prepared_content, '=' * len(prepared_content))
+        return '{}\n{}'.format(prepared_content, '=' * len(prepared_content))
 
     @staticmethod
     def subtitle(content, new_line_replacement=' ', tab_replacement='  '):
         prepared_content = content.strip().replace('\n', new_line_replacement).replace('\t', tab_replacement)
-        return unicode('{}\n{}').format(prepared_content, '-' * len(prepared_content))
+        return '{}\n{}'.format(prepared_content, '-' * len(prepared_content))
 
     @staticmethod
     @with_escape
@@ -203,7 +198,7 @@ class RSTRenderer(object):
         def format_value(value):
             if isinstance(value, (int, bool, NoneType)):
                 return format_value(str(value))
-            if isinstance(value, (str, unicode)):
+            if isinstance(value, str):
                 return '\n '.join(value.splitlines())
             elif isinstance(value, TextBlock):
                 return '\n '.join(value.lines)
@@ -259,8 +254,12 @@ def render_body(renderer, option_kwargs, exclude_keys, special_keys=None):
     special_part = '\n'.join([special_handler(renderer, option_kwargs[special_key])
                               for special_key, special_handler in special_keys.items()
                               if special_key in option_kwargs])
-    common_part = renderer.field_list({k: common_formatters.get(k, default_fmt)(v) for k, v in option_kwargs.items()
-                                       if k not in exclude_keys + list(special_keys.keys())})
+    uncommon_keys = set(exclude_keys) | set(special_keys.keys())
+    common_part = renderer.field_list({
+        k: common_formatters.get(k, default_fmt)(v)
+        for k, v in option_kwargs.items()
+        if k not in uncommon_keys
+    })
 
     return '\n'.join([_ for _ in [common_part, special_part] if _])
 
@@ -290,7 +289,7 @@ class OptionFormatter(object):
 
         :type option_schema: dict
         """
-        self.option_name, self.option_kwargs = tuple(option_schema.items())[0]
+        self.option_name, self.option_kwargs = next(iter(option_schema.items()))
         # print(option_name, option_kwargs)
         self.formatter = self.__guess_formatter()
 

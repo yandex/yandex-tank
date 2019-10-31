@@ -12,17 +12,6 @@ import pandas as pd
 
 from ...common import util
 
-try:
-    next
-except NameError:
-    def next(x):
-        return x.next()
-
-try:
-    unicode
-except NameError:
-    unicode = str
-
 
 def get_terminal_size():
     '''
@@ -220,8 +209,7 @@ class Sparkline(object):
         self.data = {}
         self.window = window
         self.active_seconds = []
-        # '_▁▂▃▄▅▆▇'
-        self.ticks = b'_\xe2\x96\x81\xe2\x96\x82\xe2\x96\x83\xe2\x96\x84\xe2\x96\x85\xe2\x96\x86\xe2\x96\x87'.decode('utf-8')
+        self.ticks = '_▁▂▃▄▅▆▇'
 
     def recalc_active(self, ts):
         if not self.active_seconds:
@@ -368,7 +356,7 @@ class Screen(object):
                         leftover = (chunk[left:],) + line_arr[num + 1:]
                         was_cut = not is_empty(leftover, markups)
                         if was_cut:
-                            result += chunk[:left - 1] + self.markup.RESET + b'\xe2\x80\xa6'.decode('utf8')
+                            result += chunk[:left - 1] + self.markup.RESET + '…'
                         else:
                             result += chunk[:left]
                         left = 0
@@ -457,7 +445,7 @@ class Screen(object):
         Add widget string to right panel of the screen
         '''
         index = widget.get_index()
-        while index in self.info_widgets.keys():
+        while index in self.info_widgets:
             index += 1
         self.info_widgets[widget.get_index()] = widget
 
@@ -738,7 +726,7 @@ class CurrentHTTPBlock(AbstractBlock):
                   (300, 399): self.screen.markup.CYAN,
                   (400, 499): self.screen.markup.YELLOW,
                   (500, 599): self.screen.markup.RED}
-        if code in self.last_dist.keys():
+        if code in self.last_dist:
             for left, right in colors:
                 if left <= int(code) <= right:
                     return colors[(left, right)]
@@ -809,7 +797,7 @@ class CurrentNetBlock(AbstractBlock):
             return 'N/A'
 
     def __code_color(self, code):
-        if code in self.last_dist.keys():
+        if code in self.last_dist:
             if int(code) == 0:
                 return self.screen.markup.GREEN
             elif int(code) == 314:
@@ -973,7 +961,7 @@ class CasesBlock(AbstractBlock):
         self.field_order = ['name', 'count', 'percent', 'last', 'net_err', 'http_err', 'avg', 'last_avg']
 
         template = {
-            'name':     {'tpl': unicode('{:>}:'),    'header': 'name', 'final': unicode('{{{:}:>{len}}}')},  # noqa: E241
+            'name':     {'tpl': '{:>}:',    'header': 'name', 'final': '{{{:}:>{len}}}'},  # noqa: E241
             'count':    {'tpl': '{:>,}',    'header': 'count'},   # noqa: E241
             'last':     {'tpl': '+{:>,}',   'header': 'last'},    # noqa: E241
             'percent':  {'tpl': '{:>.2f}%', 'header': '%'},       # noqa: E241
@@ -1001,7 +989,7 @@ class CasesBlock(AbstractBlock):
         ts = data["ts"]
         overall = data["overall"]
         self.last_cases = {}
-        spark_color, self.last_cases[0] = prepare_data(overall, unicode('OVERALL'))
+        spark_color, self.last_cases[0] = prepare_data(overall, 'OVERALL')
         self.sparkline.add(ts, 0, self.last_cases[0]['count'], color=spark_color)
 
         tagged = data["tagged"]
@@ -1021,7 +1009,7 @@ class CasesBlock(AbstractBlock):
 
     def __cut_name(self, name):
         if len(name) > self.max_case_len:
-            return name[:self.max_case_len - 1] + b'\xe2\x80\xa6'.decode('utf8')
+            return name[:self.max_case_len - 1] + '…'
         else:
             return name
 

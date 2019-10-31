@@ -44,7 +44,7 @@ class MonitoringReader(object):
                                     key_group, key_name = key.split('_')[0].split('-')[0], '_'.join(key.split('_')[1:])
                                 except:  # noqa: E722
                                     key_group, key_name = key.split('_')[0], '_'.join(key.split('_')[1:])
-                                if key_group in decoder.diff_metrics.keys():
+                                if key_group in decoder.diff_metrics:
                                     if key_name in decoder.diff_metrics[key_group]:
                                         decoded_key = decoder.find_common_names(
                                             key)

@@ -3,16 +3,10 @@ import os.path
 import getpass
 import logging
 import tempfile
-from future.utils import iteritems
 from ..Telegraf.decoder import decoder
 import configparser
 
 logger = logging.getLogger(__name__)
-
-try:
-    unicode
-except NameError:
-    unicode = str
 
 
 class ConfigManager(object):
@@ -115,7 +109,7 @@ class ConfigManager(object):
         # agent defaults
         host_config = {}
         for metric in host:
-            if str(metric.tag) in defaults.keys():
+            if str(metric.tag) in defaults:
                 for key in tuple(defaults[metric.tag].keys()):
                     if key != 'name' and key not in defaults_boolean:
                         value = metric.get(key, None)
@@ -297,7 +291,7 @@ class AgentConfig(object):
                     config.add_section(
                         "{section_name}".format(
                             section_name=self.host_config[section]['name']))
-                    for key, value in iteritems(self.host_config[section]):
+                    for key, value in self.host_config[section].items():
                         if key != 'name':
                             config.set(
                                 "{section_name}".format(
@@ -311,7 +305,7 @@ class AgentConfig(object):
                         config.add_section(
                             "{section_name}".format(
                                 section_name=self.host_config[section]['name']))
-                        for key, value in iteritems(self.host_config[section]):
+                        for key, value in self.host_config[section].items():
                             if key in [
                                     'fielddrop', 'fieldpass', 'percpu',
                                     'devices', 'interfaces'

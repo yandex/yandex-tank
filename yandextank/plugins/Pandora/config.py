@@ -1,6 +1,4 @@
 ''' Pandora config generator '''
-from __future__ import print_function
-
 import json
 from pkg_resources import resource_string
 
