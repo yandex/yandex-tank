@@ -201,20 +201,12 @@ class Plugin(GeneratorPlugin):
         opener = resource_manager.get_opener(resource)
         if isinstance(opener, HttpOpener):
             tmp_path = opener.download_file(True, try_ungzip=True)
-            try:
-                shutil.copy(tmp_path, dst)
-                logger.info('Successfully moved resource %s', dst)
-            except Exception as ex:
-                logger.debug("Could not move resource %s\n%s", dst, ex)
-                raise RuntimeError('Unable to prepare resource')
+            shutil.copy(tmp_path, dst)
+            logger.info('Successfully moved resource %s', dst)
         else:
             dst = opener.get_filename
-        try:
-            os.chmod(dst, permissions)
-            logger.info('Permissions on %s have changed %d', dst, permissions)
-        except OSError as ex:
-            logger.debug("Could not change pepermissions on %s\n%s", dst, ex)
-            raise RuntimeError('Unable to prepare resource')
+        os.chmod(dst, permissions)
+        logger.info('Permissions on %s have changed %d', dst, permissions)
         return dst
 
     def prepare_test(self):
