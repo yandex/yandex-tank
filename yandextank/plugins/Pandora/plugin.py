@@ -3,6 +3,7 @@ import logging
 import subprocess
 import time
 import os
+import shutil
 from threading import Event
 
 import yaml
@@ -66,6 +67,11 @@ class Plugin(GeneratorPlugin):
         # if we use custom pandora binary, we can download it and make it executable
         self.pandora_cmd = self.get_resource(self.get_option("pandora_cmd"), "./pandora", permissions=0755)
 
+        # download all resources from self.get_options("resources")
+        if len(self.resources) > 0:
+            for resource in self.resources:
+                self.get_resource(resource["src"], resource["dst"])
+
         # get config_contents and patch it: expand resources via resource manager
         # config_content option has more priority over config_file
         if self.get_option("config_content"):
@@ -79,11 +85,6 @@ class Plugin(GeneratorPlugin):
         else:
             raise RuntimeError("Neither pandora.config_content, nor pandora.config_file specified")
         logger.debug('Config after parsing for patching: %s', self.config_contents)
-
-        # download all resources from self.get_options("resources")
-        if len(self.resources) > 0:
-            for resource in self.resources:
-                self.get_resource(resource["src"], resource["dst"])
 
         # find report filename and add to artifacts
         self.report_file = self.__find_report_filename()
@@ -200,18 +201,12 @@ class Plugin(GeneratorPlugin):
         opener = resource_manager.get_opener(resource)
         if isinstance(opener, HttpOpener):
             tmp_path = opener.download_file(True, try_ungzip=True)
-            try:
-                os.rename(tmp_path, dst)
-                logger.info('Successfully moved resource %s', dst)
-            except OSError as ex:
-                logger.debug("Could not move resource %s\n%s", dst, ex)
+            shutil.copy(tmp_path, dst)
+            logger.info('Successfully moved resource %s', dst)
         else:
             dst = opener.get_filename
-        try:
-            os.chmod(dst, permissions)
-            logger.info('Permissions on %s have changed %d', dst, permissions)
-        except OSError as ex:
-            logger.debug("Could not chane pepermissions on %s\n%s", dst, ex)
+        os.chmod(dst, permissions)
+        logger.info('Permissions on %s have changed %d', dst, permissions)
         return dst
 
     def prepare_test(self):
