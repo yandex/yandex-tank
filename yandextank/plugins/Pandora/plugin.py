@@ -281,6 +281,13 @@ class Plugin(GeneratorPlugin):
         self.output_finished.set()
         return retcode
 
+    def post_process(self, retcode):
+        if self.get_option('delete_report'):
+            if self.sample_log in self.core.artifact_files:
+                del self.core.artifact_files[self.sample_log]
+            os.remove(self.sample_log)
+        return retcode
+
 
 class PandoraInfoWidget(AbstractInfoWidget):
     """ Right panel widget """

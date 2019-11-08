@@ -126,9 +126,9 @@ class Decoder(object):
                 label_points.append(
                     self.__make_points(
                         prefix + "histograms",
-                        {"label": label},
+                        {"label": label, "bin": bin_},
                         ts,
-                        {"bin": bin_, "count": count}
+                        {"count": count}
                     )
                 )
         return label_points

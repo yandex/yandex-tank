@@ -4,7 +4,7 @@ import pytest as pytest
 
 from yandextank.aggregator import TankAggregator
 from yandextank.common.util import FileMultiReader
-from yandextank.plugins.Phantom.reader import PhantomReader
+from ...common.util import PhantomReader
 
 
 class PhantomMock(object):
