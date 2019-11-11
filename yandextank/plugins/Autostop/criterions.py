@@ -20,7 +20,7 @@ class AvgTimeCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        params = param_str.split(',')
+        params = param_str.split(',', 3)
         self.rt_limit = expand_to_milliseconds(params[0])
         self.seconds_limit = expand_to_seconds(params[1])
         self.autostop = autostop
