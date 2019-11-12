@@ -1,5 +1,6 @@
 import logging
 
+import re
 import pandas
 from netort.data_manager import DataSession
 
@@ -63,6 +64,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         if self._data_session is None:
             self._data_session = DataSession({'clients': self.clients_cfg},
                                              test_start=self.core.status['generator']['test_start'] * 10**6)
+            self.upload_planned_rps()
             self.add_cleanup(self._cleanup)
             self._data_session.update_job({'name': self.cfg.get('test_name'),
                                           '__type': 'tank'})
@@ -100,6 +102,39 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     @property
     def is_telegraf(self):
         return True
+
+    def upload_planned_rps(self):
+        """
+        Reads rps plan from stpd file and uploads it as a raw metric
+        """
+        stpd_file = self.core.status.get('stepper', {}).get('stpd_file')
+        if not stpd_file:
+            return
+
+        pattern = r'^\d+ (\d+)\s*.*$'
+        regex = re.compile(pattern)
+
+        rows_list = []
+        test_start = int(self.core.status['generator']['test_start'] * 10**6)
+
+        planned_rps_obj = self.data_session.new_true_metric(
+            name='planned_rps',
+            raw=True, aggregate=False,
+            **self.cfg.get('meta', {})
+        )
+
+        try:
+            with open(stpd_file) as stpd:
+                for line in stpd:
+                    if regex.match(line):
+                        timestamp = int(line.split(' ')[1]) + test_start
+                        rows_list.append({'ts': timestamp, 'value': 1})
+        except Exception:
+            logger.warning('Failed to parse stpd file')
+            logger.debug('', exc_info=True)
+
+        df = pandas.DataFrame(rows_list)
+        planned_rps_obj.put(df=df)
 
     def get_metric_obj(self, col, case):
         """
