@@ -64,8 +64,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self._data_session = DataSession({'clients': self.clients_cfg},
                                              test_start=self.core.status['generator']['test_start'] * 10**6)
             self.add_cleanup(self._cleanup)
-            self._data_session.update_job({'name': self.cfg.get('test_name'),
-                                          '__type': 'tank'})
+            self._data_session.update_job(dict({'name': self.cfg.get('test_name'),
+                                                '__type': 'tank'},
+                                               **self.cfg.get('meta', {})))
         return self._data_session
 
     def _cleanup(self):
