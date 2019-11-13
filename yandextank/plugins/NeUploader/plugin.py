@@ -2,6 +2,7 @@ import logging
 
 import re
 import pandas
+import threading as th
 from netort.data_manager import DataSession
 
 from yandextank.plugins.Phantom.reader import string_to_df_microsec
@@ -29,6 +30,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         self.monitoring_metrics = {}
         self._col_map = None
         self._data_session = None
+        self.rps_uploader = None
 
     def configure(self):
         pass
@@ -40,6 +42,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             logger.error('Generator plugin does not support NeUploader')
             self.is_test_finished = lambda: -1
             self.reader = []
+        else:
+            self.rps_uploader = th.Thread(target=self.upload_planned_rps)
 
     @property
     def col_map(self):
@@ -64,7 +68,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         if self._data_session is None:
             self._data_session = DataSession({'clients': self.clients_cfg},
                                              test_start=self.core.status['generator']['test_start'] * 10**6)
-            self.upload_planned_rps()
             self.add_cleanup(self._cleanup)
             self._data_session.update_job({'name': self.cfg.get('test_name'),
                                           '__type': 'tank'})
@@ -79,6 +82,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             uploader_metainfo.update({'autostop_rps': autostop_rps, 'autostop_reason': autostop_reason})
         self.data_session.update_job(uploader_metainfo)
         self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
+        self.rps_uploader.join()
 
     def is_test_finished(self):
         df = next(self.reader)
@@ -134,7 +138,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             logger.debug('', exc_info=True)
 
         df = pandas.DataFrame(rows_list)
-        planned_rps_obj.put(df=df)
+        planned_rps_obj.put(df)
 
     def get_metric_obj(self, col, case):
         """
