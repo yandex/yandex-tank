@@ -76,6 +76,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             autostop_reason = self.core.status.get('autostop', {}).get('reason', '')
             self.log.warning('Autostop: %s %s', autostop_rps, autostop_reason)
             uploader_metainfo.update({'autostop_rps': autostop_rps, 'autostop_reason': autostop_reason})
+        uploader_metainfo.update(self.cfg.get('meta', {}))
         self.data_session.update_job(uploader_metainfo)
         self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
 
