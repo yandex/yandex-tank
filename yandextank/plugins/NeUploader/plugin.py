@@ -69,8 +69,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self._data_session = DataSession({'clients': self.clients_cfg},
                                              test_start=self.core.status['generator']['test_start'] * 10**6)
             self.add_cleanup(self._cleanup)
-            self._data_session.update_job({'name': self.cfg.get('test_name'),
-                                          '__type': 'tank'})
+            self._data_session.update_job(dict({'name': self.cfg.get('test_name'),
+                                                '__type': 'tank'},
+                                               **self.cfg.get('meta', {})))
         return self._data_session
 
     def _cleanup(self):
@@ -80,6 +81,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             autostop_reason = self.core.status.get('autostop', {}).get('reason', '')
             self.log.warning('Autostop: %s %s', autostop_rps, autostop_reason)
             uploader_metainfo.update({'autostop_rps': autostop_rps, 'autostop_reason': autostop_reason})
+        uploader_metainfo.update(self.cfg.get('meta', {}))
         self.data_session.update_job(uploader_metainfo)
         self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
         self.rps_uploader.join()
