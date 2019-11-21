@@ -154,7 +154,7 @@ class Plugin(GeneratorPlugin):
         if not self.__address:
             for pool in self.config_contents['pools']:
                 if pool.get('gun', {}).get('target'):
-                    self.__address = pool.get('gun', {}).get('target')
+                    self.__address = pool.get('gun', {}).get('target').strip()
                     break
             else:
                 self.__address = 'unknown'
