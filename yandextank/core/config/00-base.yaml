@@ -40,3 +40,7 @@ overload:
 influx:
   enabled: false
   package: yandextank.plugins.InfluxUploader
+opentsdb:
+  enabled: false
+  package: yandextank.plugins.OpenTSDBUploader
+

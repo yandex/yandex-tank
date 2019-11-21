@@ -49,6 +49,7 @@ SECTIONS_PATTERNS = {
     'JsonReport': 'json_report|jsonreport',
     'Pandora': 'pandora',
     'InfluxUploader': 'influx',
+    'OpenTSDBUploader': 'opentsdb',
 
 }
 
