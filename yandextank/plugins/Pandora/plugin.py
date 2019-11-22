@@ -242,22 +242,31 @@ class Plugin(GeneratorPlugin):
         elif retcode is not None and retcode != 0:
             logger.error("Pandora finished with non-zero retcode.")
             err = None
+            fatal = None
             # trying to make pandora error to look pretty in tank log
             # iterating through pandora log file backwards searching for last error
             # we look for \tERROR\t or \tFATAL\t in the string
+
             with FileLinesBackwardsIterator(self.process_stderr_file) as pandora_log:
                 while err is None:
                     try:
                         line = next(pandora_log)
                     except StopIteration:
                         break
-                    if '\tERROR\t' in line or '\tFATAL\t' in line:
+                    if '\tERROR\t' in line:
                         try:
                             err = json.loads(line.split('\t')[-1])
                         except:
                             err = line
+                    elif '\tFATAL\t' in line and fatal is None:
+                        try:
+                            fatal = json.loads(line.split('\t')[-1])
+                        except:
+                            fatal = line
             if err is not None:
                 logger.error(pprint.pformat(err))
+            if fatal is not None:
+                logger.fatal(pprint.pformat(fatal))
             else:
                 lines_amount = 30
                 logger.error("Last %s logs of Pandora log:", lines_amount)
