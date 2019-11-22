@@ -294,7 +294,6 @@ class Plugin(GeneratorPlugin):
         if self.get_option('delete_report'):
             if self.sample_log in self.core.artifact_files:
                 del self.core.artifact_files[self.sample_log]
-            os.remove(self.sample_log)
         return retcode
 
 
