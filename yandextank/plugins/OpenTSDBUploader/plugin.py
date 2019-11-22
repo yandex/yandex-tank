@@ -58,8 +58,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                 username=self.get_option("username"),
                 password=self.get_option("password"),
                 ssl=self.get_option("ssl"),
-                verify_ssl=self.get_option("verify_ssl")
-            )
+                verify_ssl=self.get_option("verify_ssl"))
         return self._client
 
     def prepare_test(self):

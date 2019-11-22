@@ -1,5 +1,6 @@
 import itertools
 import time
+from ...common import util
 
 
 def uts(dt):
@@ -23,7 +24,6 @@ class Decoder(object):
     histograms : bool
         response time histograms measurements
     """
-
     def __init__(self, tank_tag, uuid, parent_tags, labeled, histograms):
         self.labeled = labeled
         initial_tags = {"tank": tank_tag, "uuid": uuid}
@@ -54,8 +54,7 @@ class Decoder(object):
                             # cast int to float. avoid
                             # https://github.com/yandex/yandex-tank/issues/776
                             metric:
-                                float(value) if isinstance(
-                                    value, int) else value
+                            float(value) if isinstance(value, int) else value
                             for metric, value in
                             host_data["metrics"].iteritems()
                         }))
@@ -94,12 +93,16 @@ class Decoder(object):
                 self.__make_overall_meta_fields(data, gun_stats)),
             # net codes for label
             self.__make_points(
-                prefix + "net_codes", {"label": label}, ts,
-                self.__make_netcodes_fields(data)),
+                prefix + "net_codes", {"label": label},
+                ts,
+                self.__make_netcodes_fields(data),
+                field_lookup_table=util.NET),
             # proto codes for label
             self.__make_points(
-                prefix + "proto_codes", {"label": label}, ts,
-                self.__make_protocodes_fields(data))))
+                prefix + "proto_codes", {"label": label},
+                ts,
+                self.__make_protocodes_fields(data),
+                field_lookup_table=util.HTTP)))
         # histograms, one row for each bin
         if self.histograms:
             for bin_, count in zip(data["interval_real"]["hist"]["bins"],
@@ -124,26 +127,36 @@ class Decoder(object):
     @staticmethod
     def __make_overall_meta_fields(data, stats):
         return {
-            "active_threads": stats["metrics"]["instances"],
-            "RPS": data["interval_real"]["len"],
-            "planned_requests": float(stats["metrics"]["reqps"]),
+            "active_threads":
+            stats["metrics"]["instances"],
+            "RPS":
+            data["interval_real"]["len"],
+            "planned_requests":
+            float(stats["metrics"]["reqps"]),
+            "avg_rt":
+            float(data['interval_real']['total']) / data['interval_real']['len'] / 1000.0,
+            "min":
+            data['interval_real']['min'] / 1000.0,
+            "max":
+            data['interval_real']['max'] / 1000.0
         }
 
     @staticmethod
     def __make_netcodes_fields(data):
         return {
-            str(code): int(cnt)
+            int(code): int(cnt)
             for code, cnt in data["net_code"]["count"].items()
         }
 
     @staticmethod
     def __make_protocodes_fields(data):
         return {
-            str(code): int(cnt)
+            int(code): int(cnt)
             for code, cnt in data["proto_code"]["count"].items()
         }
 
-    def __make_points(self, metric, additional_tags, ts, fields):
+    def __make_points(
+            self, metric, additional_tags, ts, fields, field_lookup_table={}):
         """
         Parameters
         ----------
@@ -166,12 +179,14 @@ class Decoder(object):
         for key, value in fields.items():
             tags = self.tags.copy()
             tags.update(additional_tags)
-            tags["field"] = key
+            tags["field"] = str(key)
+            if field_lookup_table.get(key):
+                tags["field_label"] = field_lookup_table.get(key).replace(" ", "_")
             result.append({
                 "metric": metric,
                 "tags": tags,
                 "timestamp": int(ts),
-                "value": value
+                "value": value,
             })
 
         return result

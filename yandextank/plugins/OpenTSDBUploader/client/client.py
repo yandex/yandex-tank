@@ -44,7 +44,6 @@ class OpenTSDBClient(object):
     :type cert: str
     :raises ValueError: if cert is provided but ssl is disabled (set to False)
     """
-
     def __init__(
             self,
             host='localhost',
@@ -182,7 +181,7 @@ class OpenTSDBClient(object):
                 if self._retries != 0:
                     retry = _try < self._retries
                 if method == "POST":
-                    time.sleep((2 ** _try) * random.random() / 100.0)
+                    time.sleep((2**_try) * random.random() / 100.0)
                 if not retry:
                     raise
         # if there's not an error, there must have been a successful response
