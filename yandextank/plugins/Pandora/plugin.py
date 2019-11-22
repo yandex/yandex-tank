@@ -255,7 +255,7 @@ class Plugin(GeneratorPlugin):
                         break
                     if '\tERROR\t' in line:
                         try:
-                            err = json.loads(line.split('\t')[-1])
+                            err = json.loads(line.split('\t')[-1])['error']
                         except:
                             err = line
                     elif '\tFATAL\t' in line and fatal is None:
