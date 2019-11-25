@@ -43,15 +43,15 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     @thread_safe_property
     def col_map(self):
         return {
-                'interval_real': self.data_session.new_true_metric,
-                'connect_time': self.data_session.new_true_metric,
-                'send_time': self.data_session.new_true_metric,
-                'latency': self.data_session.new_true_metric,
-                'receive_time': self.data_session.new_true_metric,
-                'interval_event': self.data_session.new_true_metric,
-                'net_code': self.data_session.new_event_metric,
-                'proto_code': self.data_session.new_event_metric
-            }
+            'interval_real': self.data_session.new_true_metric,
+            'connect_time': self.data_session.new_true_metric,
+            'send_time': self.data_session.new_true_metric,
+            'latency': self.data_session.new_true_metric,
+            'receive_time': self.data_session.new_true_metric,
+            'interval_event': self.data_session.new_true_metric,
+            'net_code': self.data_session.new_event_metric,
+            'proto_code': self.data_session.new_event_metric
+        }
 
     @thread_safe_property
     def data_session(self):
