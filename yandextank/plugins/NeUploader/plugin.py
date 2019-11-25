@@ -1,7 +1,7 @@
 import logging
 
 import pandas
-from netort.data_manager import DataSession
+from netort.data_manager import DataSession, thread_safe_property
 
 from yandextank.plugins.Phantom.reader import string_to_df_microsec
 from yandextank.common.interfaces import AbstractPlugin,\
@@ -40,22 +40,20 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self.is_test_finished = lambda: -1
             self.reader = []
 
-    @property
+    @thread_safe_property
     def col_map(self):
-        if self._col_map is None:
-            self._col_map = {
-                'interval_real': self.data_session.new_true_metric,
-                'connect_time': self.data_session.new_true_metric,
-                'send_time': self.data_session.new_true_metric,
-                'latency': self.data_session.new_true_metric,
-                'receive_time': self.data_session.new_true_metric,
-                'interval_event': self.data_session.new_true_metric,
-                'net_code': self.data_session.new_event_metric,
-                'proto_code': self.data_session.new_event_metric
-            }
-        return self._col_map
+        return {
+            'interval_real': self.data_session.new_true_metric,
+            'connect_time': self.data_session.new_true_metric,
+            'send_time': self.data_session.new_true_metric,
+            'latency': self.data_session.new_true_metric,
+            'receive_time': self.data_session.new_true_metric,
+            'interval_event': self.data_session.new_true_metric,
+            'net_code': self.data_session.new_event_metric,
+            'proto_code': self.data_session.new_event_metric
+        }
 
-    @property
+    @thread_safe_property
     def data_session(self):
         """
         :rtype: DataSession
