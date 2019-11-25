@@ -1,0 +1,36 @@
+tank_tag:
+  default: unknown
+  type: string
+address:
+  default: localhost
+  type: string
+port:
+  default: 4242
+  type: integer
+username:
+  default: root
+  type: string
+password:
+  default: root
+  type: string
+chunk_size:
+  default: 4096
+  type: integer
+labeled:
+  default: false
+  type: boolean
+histograms:
+  default: false
+  type: boolean
+prefix_metric:
+  default: ""
+  type: string
+custom_tags:
+  default: {}
+  type: dict
+ssl:
+  default: true
+  type: boolean
+verify_ssl:
+  default: true
+  type: boolean

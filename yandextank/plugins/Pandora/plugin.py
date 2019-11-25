@@ -2,6 +2,8 @@ import datetime
 import logging
 import subprocess
 import time
+import os
+import shutil
 from threading import Event
 
 import yaml
@@ -43,6 +45,7 @@ class Plugin(GeneratorPlugin):
         self.__schedule = None
         self.ammofile = None
         self.process_stderr_file = None
+        self.resources = []
 
     @staticmethod
     def get_key():
@@ -56,10 +59,18 @@ class Plugin(GeneratorPlugin):
         return opts
 
     def configure(self):
-        self.pandora_cmd = self.get_option("pandora_cmd")
         self.report_file = self.get_option("report_file")
         self.buffered_seconds = self.get_option("buffered_seconds")
         self.affinity = self.get_option("affinity", "")
+        self.resources = self.get_option("resources")
+
+        # if we use custom pandora binary, we can download it and make it executable
+        self.pandora_cmd = self.get_resource(self.get_option("pandora_cmd"), "./pandora", permissions=0755)
+
+        # download all resources from self.get_options("resources")
+        if len(self.resources) > 0:
+            for resource in self.resources:
+                self.get_resource(resource["src"], resource["dst"])
 
         # get config_contents and patch it: expand resources via resource manager
         # config_content option has more priority over config_file
@@ -185,6 +196,18 @@ class Plugin(GeneratorPlugin):
         if self.stats_reader is None:
             self.stats_reader = PandoraStatsReader(self.expvar_enabled, self.expvar_port)
         return self.stats_reader
+
+    def get_resource(self, resource, dst, permissions=0644):
+        opener = resource_manager.get_opener(resource)
+        if isinstance(opener, HttpOpener):
+            tmp_path = opener.download_file(True, try_ungzip=True)
+            shutil.copy(tmp_path, dst)
+            logger.info('Successfully moved resource %s', dst)
+        else:
+            dst = opener.get_filename
+        os.chmod(dst, permissions)
+        logger.info('Permissions on %s have changed %d', dst, permissions)
+        return dst
 
     def prepare_test(self):
         try:

@@ -49,7 +49,8 @@ class Decoder(object):
                         {"host": host, "comment": host_data.get("comment")},
                         second_data["timestamp"],
                         {
-                            metric: value
+                            # cast int to float. avoid https://github.com/yandex/yandex-tank/issues/776
+                            metric: float(value) if isinstance(value, int) else value
                             for metric, value in host_data["metrics"].iteritems()
                         }
                     )
