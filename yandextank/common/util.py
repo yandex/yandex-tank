@@ -725,11 +725,3 @@ class PhantomReader(object):
             else:
                 self.buffer += parts[0]
                 return None
-
-
-if __name__ == '__main__':
-    path = '/Users/belomore/deletemetoo0'
-    with FileLinesBackwardsIterator(path) as f:
-        for i, s in enumerate(f):
-            print(i, s)
-    print('OOOOOOOO')
