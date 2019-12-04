@@ -297,7 +297,7 @@ class PandoraInfoWidget(AbstractInfoWidget):
         left_spaces = space / 2
         right_spaces = space / 2
 
-        dur_seconds = int(time.time()) - int(self.owner.process_start_time)
+        dur_seconds = int(time.time()) - int(self.owner.start_time)
         duration = str(datetime.timedelta(seconds=dur_seconds))
 
         template = screen.markup.BG_BROWN + '~' * left_spaces + \
