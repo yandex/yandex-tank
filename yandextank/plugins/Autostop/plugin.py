@@ -20,6 +20,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         AggregateResultListener.__init__(self)
 
         self.cause_criterion = None
+        self.imbalance_rps = 0
         self._criterions = {}
         self.custom_criterions = []
         self.counting = []
@@ -112,9 +113,16 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         if not self.cause_criterion:
             for criterion_text, criterion in self._criterions.iteritems():
                 if criterion.notify(data, stat):
-                    self.log.warning(
-                        "Autostop criterion requested test stop: %s", criterion_text)
                     self.cause_criterion = criterion
+                    if self.cause_criterion.cause_second:
+                        self.imbalance_rps = int(self.cause_criterion.cause_second[1]["metrics"]["reqps"])
+                        if not self.imbalance_rps:
+                            self.imbalance_rps = int(
+                                self.cause_criterion.cause_second[0]["overall"]["interval_real"]["len"])
+                    self.core.publish('autostop', 'rps', self.imbalance_rps)
+                    self.core.publish('autostop', 'reason', criterion.explain())
+                    self.log.warning(
+                        "Autostop criterion requested test stop on %d rps: %s", self.imbalance_rps, criterion_text)
                     open(self._stop_report_path, 'w').write(criterion_text)
                     self.core.add_artifact_file(self._stop_report_path)
 

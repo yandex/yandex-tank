@@ -724,7 +724,7 @@ that. load.yaml:
 
 .. code-block:: yaml
 
- phantom:
+  phantom:
     address: 203.0.113.1:80
     load_profile:
       load_type: rps

@@ -10,3 +10,7 @@ test_name:
   description: test name
   type: string
   default: my test
+meta:
+  type: dict
+  keysrules:
+    forbidden: ['name', 'raw', 'aggregate', 'group', 'host', 'type']

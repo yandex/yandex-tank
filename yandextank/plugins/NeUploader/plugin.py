@@ -1,7 +1,7 @@
 import logging
 
 import pandas
-from netort.data_manager import DataSession
+from netort.data_manager import DataSession, thread_safe_property
 
 from yandextank.plugins.Phantom.reader import string_to_df_microsec
 from yandextank.common.interfaces import AbstractPlugin,\
@@ -40,22 +40,20 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self.is_test_finished = lambda: -1
             self.reader = []
 
-    @property
+    @thread_safe_property
     def col_map(self):
-        if self._col_map is None:
-            self._col_map = {
-                'interval_real': self.data_session.new_true_metric,
-                'connect_time': self.data_session.new_true_metric,
-                'send_time': self.data_session.new_true_metric,
-                'latency': self.data_session.new_true_metric,
-                'receive_time': self.data_session.new_true_metric,
-                'interval_event': self.data_session.new_true_metric,
-                'net_code': self.data_session.new_event_metric,
-                'proto_code': self.data_session.new_event_metric
-            }
-        return self._col_map
+        return {
+            'interval_real': self.data_session.new_true_metric,
+            'connect_time': self.data_session.new_true_metric,
+            'send_time': self.data_session.new_true_metric,
+            'latency': self.data_session.new_true_metric,
+            'receive_time': self.data_session.new_true_metric,
+            'interval_event': self.data_session.new_true_metric,
+            'net_code': self.data_session.new_event_metric,
+            'proto_code': self.data_session.new_event_metric
+        }
 
-    @property
+    @thread_safe_property
     def data_session(self):
         """
         :rtype: DataSession
@@ -64,12 +62,19 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self._data_session = DataSession({'clients': self.clients_cfg},
                                              test_start=self.core.status['generator']['test_start'] * 10**6)
             self.add_cleanup(self._cleanup)
-            self._data_session.update_job({'name': self.cfg.get('test_name'),
-                                          '__type': 'tank'})
+            self._data_session.update_job(dict({'name': self.cfg.get('test_name'),
+                                                '__type': 'tank'},
+                                               **self.cfg.get('meta', {})))
         return self._data_session
 
     def _cleanup(self):
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
+        if self.core.status.get('autostop'):
+            autostop_rps = self.core.status.get('autostop', {}).get('rps', 0)
+            autostop_reason = self.core.status.get('autostop', {}).get('reason', '')
+            self.log.warning('Autostop: %s %s', autostop_rps, autostop_reason)
+            uploader_metainfo.update({'autostop_rps': autostop_rps, 'autostop_reason': autostop_reason})
+        uploader_metainfo.update(self.cfg.get('meta', {}))
         self.data_session.update_job(uploader_metainfo)
         self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
 
@@ -113,7 +118,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                     raw=False,
                     aggregate=True,
                     source='tank',
-                    importance='high' if col in self.importance_high else ''
+                    importance='high' if col in self.importance_high else '',
+                    **self.cfg.get('meta', {})
                 ) for col, constructor in self.col_map.items()
             }
             self.metrics_objs[case] = case_metrics
@@ -148,7 +154,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                 self.monitoring_metrics[metric_name] = self.data_session.new_true_metric(name,
                                                                                          group=group,
                                                                                          host=panel,
-                                                                                         type='monitoring')
+                                                                                         type='monitoring',
+                                                                                         **self.cfg.get('meta', {}))
             self.monitoring_metrics[metric_name].put(df)
 
     @staticmethod
@@ -184,6 +191,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             return {}
         else:
             meta_tags_names = ['component', 'description', 'name', 'person', 'task', 'version', 'lunapark_jobno']
-            meta_tags = {key: uploader_tags.get(key, self.cfg.get(key, '')) for key in meta_tags_names}
+            meta_tags = {key: uploader_tags.get(key) for key in meta_tags_names if key in uploader_tags}
             meta_tags.update({k: v if v is not None else '' for k, v in uploader_tags.get('meta', {}).items()})
             return meta_tags
