@@ -273,7 +273,7 @@ class Cleanup:
                 msg = 'Exception occurred during cleanup action {}'.format(name)
                 msgs.append(msg)
                 logger.error(msg, exc_info=True)
-        self.tankworker.save_status('\n'.join(msgs))
+        self.tankworker.save_finish_status('\n'.join(msgs))
         self.tankworker.core._collect_artifacts()
         return False  # re-raise exception
 
@@ -386,25 +386,23 @@ class TankWorker(Thread):
                 self.retcode = self.core.wait_for_finish()
             self.status = Status.TEST_POST_PROCESS
             self.retcode = self.core.plugins_post_process(self.retcode)
-            self.status = Status.TEST_FINISHED
 
     def stop(self):
         self.interrupted.set()
         self.core.interrupt()
 
-    def get_status(self):
-        return {'status_code': self.status,
+    def get_status(self, finish=False):
+        return {'status_code': self.status if not finish else Status.TEST_FINISHED,
                 'left_time': None,
-                'exit_code': self.retcode if self.status is Status.TEST_FINISHED else None,
+                'exit_code': self.retcode if finish else None,
                 'lunapark_id': self.get_lunapark_jobno(),
                 'tank_msg': self.msg,
                 'lunapark_url': self.get_lunapark_link()}
 
-    def save_status(self, msg):
+    def save_finish_status(self, msg):
         self.msg = msg
-        self.status = Status.TEST_FINISHED
         with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:
-            yaml.dump(self.get_status(), f)
+            yaml.dump(self.get_status(finish=True), f)
 
     def get_lunapark_jobno(self):
         try:
