@@ -1,5 +1,9 @@
+import pandas as pd
 import pytest
 import json
+
+from numpy.testing import assert_array_equal
+
 from yandextank.plugins.NeUploader.plugin import Plugin
 
 
@@ -24,3 +28,19 @@ class TestMonitoringData(object):
             jsondata = json.load(f)
             dfs = Plugin.monitoring_data_to_dfs(jsondata)
         assert set(dfs.keys()) == {'{}:{}'.format(panelk, name) for i in jsondata for panelk, panelv in i['data'].items() for name in panelv['metrics'].keys()}
+
+
+DF = pd.DataFrame({'ts': [0,1,2,3,4,5,6,7,8,9],
+                   'value': [43,75,12,65,24,65,41,87,15,62],
+                   'tag': ['foo','bar','foo','','','null','','not_null','','foo']})
+
+
+@pytest.mark.parametrize('df, case, expected', [
+    (DF, '__overall__', DF[['ts', 'value']]),
+    (DF, 'foo', pd.DataFrame({'ts': [0,2,9],
+                              'value': [43,12,62]})),
+    (DF, 'null', pd.DataFrame({'ts': [5],
+                               'value': [65]}))
+])
+def test_filter_df_by_case(df, case, expected):
+    assert_array_equal(Plugin.filter_df_by_case(df, case), expected, )
