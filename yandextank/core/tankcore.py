@@ -11,7 +11,7 @@ import socket
 import tempfile
 import time
 import traceback
-
+import copy
 import pkg_resources
 import sys
 import platform
@@ -121,6 +121,7 @@ class TankCore(object):
         self.interrupted = interrupted_event
 
         self.error_log = None
+        self.monitoring_data_listeners = []
 
         error_output = 'validation_error.yaml'
         self.config, self.errors, self.configinitial = TankConfig(self.raw_configs,
@@ -244,7 +245,7 @@ class TankCore(object):
                 logger.debug("Configuring %s", plugin)
                 plugin.configure()
                 if isinstance(plugin, MonitoringDataListener):
-                    [mon.add_listener(plugin) for mon in self.job.monitoring_plugins]
+                    self.monitoring_data_listeners.append(plugin)
 
     def plugins_prepare_test(self):
         """ Call prepare_test() on all plugins        """
@@ -345,8 +346,14 @@ class TankCore(object):
                     retcode = 1
         return retcode
 
-    def interrupt(self):
-        logger.warning('Interrupting')
+    def publish_monitoring_data(self, data):
+        """sends pending data set to listeners"""
+        for plugin in self.monitoring_data_listeners:
+            # deep copy to ensure each listener gets it's own copy
+            try:
+                plugin.monitoring_data(copy.deepcopy(data))
+            except Exception as e:
+                logger.error("Plugin failed to process monitoring data", exc_info=True)
 
     def __setup_taskset(self, affinity, pid=None, args=None):
         """ if pid specified: set process w/ pid `pid` CPU affinity to specified `affinity` core(s)
