@@ -352,7 +352,7 @@ class TankCore(object):
             # deep copy to ensure each listener gets it's own copy
             try:
                 plugin.monitoring_data(copy.deepcopy(data))
-            except Exception as e:
+            except Exception:
                 logger.error("Plugin failed to process monitoring data", exc_info=True)
 
     def __setup_taskset(self, affinity, pid=None, args=None):

@@ -3,9 +3,6 @@ import hashlib
 import logging
 import sys
 import time
-
-import copy
-
 from ...common.interfaces import MonitoringDataListener
 
 from ..Telegraf.client import SSHClient, LocalhostClient
