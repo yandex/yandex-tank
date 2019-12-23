@@ -279,6 +279,7 @@ class TankWorker(Thread):
         self.status = Status.TEST_FINISHED
         with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:
             yaml.dump(self.get_status(), f)
+        self.core.add_artifact_file(self.FINISH_FILENAME)
 
     def get_lunapark_jobno(self):
         try:

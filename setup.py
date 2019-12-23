@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yandextank',
-    version='19.11.2',  # YY.0M.MICRO
+    version='19.12.1',  # YY.0M.MICRO
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -10,9 +10,6 @@ It uses other load generators such as JMeter, ab or phantom inside of it for
 load generation and provides a common configuration system for them and
 analytic tools for the results they produce.
 ''',
-    maintainer='Alexey Lavrenuke (load testing)',
-    maintainer_email='direvius@yandex-team.ru',
-    url='http://yandex.github.io/yandex-tank/',
     namespace_packages=["yandextank", "yandextank.plugins"],
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
