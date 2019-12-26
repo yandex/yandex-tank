@@ -389,7 +389,7 @@ class TankWorker(Thread):
 
     def stop(self):
         self.interrupted.set()
-        self.core.interrupt()
+        logger.warning('Interrupting')
 
     def get_status(self, finish=False):
         return {'status_code': self.status if not finish else Status.TEST_FINISHED,
