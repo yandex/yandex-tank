@@ -115,7 +115,7 @@ class Worker(object):
 
 
 class DataPoller(object):
-    def __init__(self, source, poll_period, max_wait=15):
+    def __init__(self, source, poll_period, max_wait=31):
         """
 
         :param source: generator, should raise StopIteration at some point otherwise tank will be hanging
