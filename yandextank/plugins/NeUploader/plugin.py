@@ -150,7 +150,11 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         for metric_name, df in self.monitoring_data_to_dfs(data).items():
             if metric_name not in self.monitoring_metrics:
                 panel, metric = metric_name.split(':', 1)
-                group, name = metric.split('_', 1)
+                try:
+                    group, name = metric.split('_', 1)
+                except ValueError:
+                    name = metric
+                    group = '_OTHER_'
                 self.monitoring_metrics[metric_name] = self.data_session.new_true_metric(name,
                                                                                          group=group,
                                                                                          host=panel,
