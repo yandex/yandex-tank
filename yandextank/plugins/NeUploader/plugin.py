@@ -114,7 +114,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         if case_metrics is None:
             case_metrics = {
                 col: constructor(
-                    name='{} {}'.format(col, case),
+                    name=col,
+                    case=case,
                     raw=False,
                     aggregate=True,
                     source='tank',
