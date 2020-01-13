@@ -189,7 +189,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         :return: DataFrame with columns 'ts' and 'value'
         """
         case = case.strip()
-        return df[['ts', 'value']] if case == '__overall__' else df[df.tag.str.strip()==case][['ts', 'value']]
+        return df[['ts', 'value']] if case == '__overall__' else df[df.tag.str.strip() == case][['ts', 'value']]
 
     def map_uploader_tags(self, uploader_tags):
         if not uploader_tags:
