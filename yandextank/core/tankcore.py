@@ -281,10 +281,7 @@ class TankCore(object):
 
         while not self.interrupted.is_set():
             begin_time = time.time()
-            print("CALL")
             aggr_retcode = self.job.aggregator.is_test_finished()
-            print("aggr_retcode".upper(), aggr_retcode)
-            print('')
             if aggr_retcode >= 0:
                 return aggr_retcode
             for plugin in list(self.plugins.values()):
