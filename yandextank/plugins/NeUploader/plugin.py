@@ -114,7 +114,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         if case_metrics is None:
             case_metrics = {
                 col: constructor(
-                    name='{} {}'.format(col, case),
+                    name=col,
+                    case=case,
                     raw=False,
                     aggregate=True,
                     source='tank',
@@ -187,7 +188,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         :param case: str with case name
         :return: DataFrame with columns 'ts' and 'value'
         """
-        return df[['ts', 'value']] if case == '__overall__' else df[df.tag.str.contains(case)][['ts', 'value']]
+        case = case.strip()
+        return df[['ts', 'value']] if case == '__overall__' else df[df.tag.str.strip() == case][['ts', 'value']]
 
     def map_uploader_tags(self, uploader_tags):
         if not uploader_tags:
