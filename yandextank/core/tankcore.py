@@ -19,6 +19,7 @@ import platform
 import yaml
 from builtins import str
 
+from yandextank.common.const import RetCode
 from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin, MonitoringDataListener
 from yandextank.plugins.DataUploader.client import LPRequisites
@@ -286,11 +287,19 @@ class TankCore(object):
             aggr_retcode = self.job.aggregator.is_test_finished()
             if aggr_retcode >= 0:
                 return aggr_retcode
-            for plugin in self.plugins.values():
+            for plugin_name, plugin in self.plugins.items():
                 logger.debug("Polling %s", plugin)
-                retcode = plugin.is_test_finished()
-                if retcode >= 0:
-                    return retcode
+                try:
+                    retcode = plugin.is_test_finished()
+                    if retcode >= 0:
+                        return retcode
+                except Exception as e:
+                    logger.warning('Plugin {} failed:'.format(plugin_name), exc_info=True)
+                    if isinstance(plugin, GeneratorPlugin):
+                        return RetCode.ERROR
+                    else:
+                        logger.warning('Disabling plugin {}'.format(plugin_name))
+                        plugin.is_test_finished = lambda: RetCode.CONTINUE
             end_time = time.time()
             diff = end_time - begin_time
             logger.debug("Polling took %s", diff)
