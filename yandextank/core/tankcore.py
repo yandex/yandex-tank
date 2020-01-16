@@ -293,7 +293,7 @@ class TankCore(object):
                     retcode = plugin.is_test_finished()
                     if retcode >= 0:
                         return retcode
-                except Exception as e:
+                except Exception:
                     logger.warning('Plugin {} failed:'.format(plugin_name), exc_info=True)
                     if isinstance(plugin, GeneratorPlugin):
                         return RetCode.ERROR
