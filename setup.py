@@ -26,7 +26,7 @@ analytic tools for the results they produce.
     setup_requires=[
     ],
     tests_require=[
-        'pytest==4.6.3', 'flake8', 'pytest-benchmark'
+        'pytest==4.6.3', 'flake8', 'pytest-benchmark', 'zipp==0.5.1', 'mock'
     ],
     license='LGPLv2',
     classifiers=[
