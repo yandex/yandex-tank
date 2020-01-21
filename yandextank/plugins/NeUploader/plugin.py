@@ -26,6 +26,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                              'db_name': self.cfg.get('db_name')}]
         self.metrics_objs = {}  # map of case names and metric objects
         self.monitoring_metrics = {}
+        self.actual_rps_metrics = {'metrics_obj': None, 'latest': pandas.Series([])}
         self._col_map = None
         self._data_session = None
 
@@ -68,6 +69,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         return self._data_session
 
     def _cleanup(self):
+        self.upload_actual_rps(data=pandas.DataFrame([]), last_piece=True)
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
         if self.core.status.get('autostop'):
             autostop_rps = self.core.status.get('autostop', {}).get('rps', 0)
@@ -92,6 +94,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             for chunk in self.reader:
                 if chunk is not None:
                     self.upload(chunk)
+            self.upload_actual_rps(data=pandas.DataFrame([]), last_piece=False)
         except KeyboardInterrupt:
             logger.warning('Caught KeyboardInterrupt on Neuploader')
             self._cleanup()
@@ -126,6 +129,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         return self.metrics_objs[case][col]
 
     def upload(self, df):
+        self.upload_actual_rps(df)
+
         df_cases_set = set()
         for row in df.itertuples():
             if row.tag and isinstance(row.tag, str):
@@ -162,6 +167,40 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                                                                                          **self.cfg.get('meta', {}))
             self.monitoring_metrics[metric_name].put(df)
 
+    def upload_actual_rps(self, data, last_piece=False):
+        """
+        Counts actual rps on base of input chunk and puts it to netort queue.
+        Uses buffer for latest timestamp in df.
+        """
+        if self.actual_rps_metrics['metrics_obj'] is None:
+            self.actual_rps_metrics['metrics_obj'] = self.data_session.new_true_metric(
+                name='actual_rps',
+                raw=True,
+                aggregate=False,
+                source='tank',
+                importance='high',
+                **self.cfg.get('meta', {})
+            )
+        if not last_piece and not data.empty:
+            logger.error('Data is\n%s', data)
+            concat_ts = pandas.concat([(data.ts / 1e6).astype(int), self.actual_rps_metrics['latest']])
+            logger.error('Concat ts:\n%s', concat_ts)
+            self.actual_rps_metrics['latest'] = concat_ts.loc[lambda s: s >= data.send_ts.max() - 10]
+            logger.error('Buffer:\n%s', self.actual_rps_metrics['latest'])
+            series_to_send = concat_ts.loc[lambda s: s < data.send_ts.max() - 10].value_counts()
+            logger.error('Series to send:\n%s', series_to_send)
+            df_to_send = series_to_send.to_frame(name='value')
+        else:
+            df_to_send = self.actual_rps_metrics['latest'].value_counts().to_frame(name='value')
+
+        if not df_to_send.empty:
+            df_to_send = df_to_send.rename_axis('ts')
+            df_to_send.reset_index(inplace=True)
+            df_to_send['metric_local_id'] = self.actual_rps_metrics['metrics_obj'].local_id
+            df_to_send.loc[:, 'ts'] = (df_to_send['ts'] * 1e6).astype(int)
+            logger.error('Df to send:\n\n%s', df_to_send)
+            self.actual_rps_metrics['metrics_obj'].put(df_to_send)
+
     @staticmethod
     def monitoring_data_to_dfs(data):
         panels = {}
@@ -189,7 +228,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         """
         return df[['ts', 'value']] if case == '__overall__' else df[df.tag.str.contains(case)][['ts', 'value']]
 
-    def map_uploader_tags(self, uploader_tags):
+    @staticmethod
+    def map_uploader_tags(uploader_tags):
         if not uploader_tags:
             logger.info('No uploader metainfo found')
             return {}
