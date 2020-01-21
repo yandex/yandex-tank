@@ -11,7 +11,7 @@ import socket
 import tempfile
 import time
 import traceback
-
+import copy
 import pkg_resources
 import sys
 import platform
@@ -19,6 +19,7 @@ import platform
 import yaml
 from builtins import str
 
+from yandextank.common.const import RetCode
 from yandextank.common.exceptions import PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin, MonitoringDataListener
 from yandextank.plugins.DataUploader.client import LPRequisites
@@ -121,6 +122,7 @@ class TankCore(object):
         self.interrupted = interrupted_event
 
         self.error_log = None
+        self.monitoring_data_listeners = []
 
         error_output = 'validation_error.yaml'
         self.config, self.errors, self.configinitial = TankConfig(self.raw_configs,
@@ -244,7 +246,7 @@ class TankCore(object):
                 logger.debug("Configuring %s", plugin)
                 plugin.configure()
                 if isinstance(plugin, MonitoringDataListener):
-                    [mon.add_listener(plugin) for mon in self.job.monitoring_plugins]
+                    self.monitoring_data_listeners.append(plugin)
 
     def plugins_prepare_test(self):
         """ Call prepare_test() on all plugins        """
@@ -285,11 +287,19 @@ class TankCore(object):
             aggr_retcode = self.job.aggregator.is_test_finished()
             if aggr_retcode >= 0:
                 return aggr_retcode
-            for plugin in self.plugins.values():
+            for plugin_name, plugin in self.plugins.items():
                 logger.debug("Polling %s", plugin)
-                retcode = plugin.is_test_finished()
-                if retcode >= 0:
-                    return retcode
+                try:
+                    retcode = plugin.is_test_finished()
+                    if retcode >= 0:
+                        return retcode
+                except Exception:
+                    logger.warning('Plugin {} failed:'.format(plugin_name), exc_info=True)
+                    if isinstance(plugin, GeneratorPlugin):
+                        return RetCode.ERROR
+                    else:
+                        logger.warning('Disabling plugin {}'.format(plugin_name))
+                        plugin.is_test_finished = lambda: RetCode.CONTINUE
             end_time = time.time()
             diff = end_time - begin_time
             logger.debug("Polling took %s", diff)
@@ -345,8 +355,14 @@ class TankCore(object):
                     retcode = 1
         return retcode
 
-    def interrupt(self):
-        logger.warning('Interrupting')
+    def publish_monitoring_data(self, data):
+        """sends pending data set to listeners"""
+        for plugin in self.monitoring_data_listeners:
+            # deep copy to ensure each listener gets it's own copy
+            try:
+                plugin.monitoring_data(copy.deepcopy(data))
+            except Exception:
+                logger.error("Plugin failed to process monitoring data", exc_info=True)
 
     def __setup_taskset(self, affinity, pid=None, args=None):
         """ if pid specified: set process w/ pid `pid` CPU affinity to specified `affinity` core(s)

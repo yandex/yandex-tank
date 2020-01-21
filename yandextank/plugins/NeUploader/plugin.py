@@ -20,6 +20,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         'proto_code',
         'net_code'
     }
+    OVERALL = '__overall__'
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
@@ -152,17 +153,18 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
         case_metrics = self.metrics_objs.get(case)
         if case_metrics is None:
-            case_metrics = {
-                col: constructor(
-                    name='{} {}'.format(col, case),
-                    raw=False,
-                    aggregate=True,
-                    source='tank',
-                    importance='high' if col in self.importance_high else '',
-                    **self.cfg.get('meta', {})
-                ) for col, constructor in self.col_map.items()
-            }
-            self.metrics_objs[case] = case_metrics
+            for col, constructor in self.col_map.items():
+                args = dict(self.cfg.get('meta', {}),
+                            name=col,
+                            case=case,
+                            raw=False,
+                            aggregate=True,
+                            source='tank',
+                            importance='high' if col in self.importance_high else '',
+                            )
+                if case != self.OVERALL:
+                    args.update(parent=self.get_metric_obj(col, self.OVERALL))
+                self.metrics_objs.setdefault(case, {})[col] = constructor(**args)
         return self.metrics_objs[case][col]
 
     def upload(self, df):
@@ -175,9 +177,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                         df_cases_set.add(tag)
 
         for column in self.col_map:
-            overall_metric_obj = self.get_metric_obj(column, '__overall__')
+            overall_metric_obj = self.get_metric_obj(column, self.OVERALL)
             df['value'] = df[column]
-            result_df = self.filter_df_by_case(df, '__overall__')
+            result_df = self.filter_df_by_case(df, self.OVERALL)
             overall_metric_obj.put(result_df)
 
             for case_name in df_cases_set:
@@ -190,7 +192,11 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         for metric_name, df in self.monitoring_data_to_dfs(data).items():
             if metric_name not in self.monitoring_metrics:
                 panel, metric = metric_name.split(':', 1)
-                group, name = metric.split('_', 1)
+                try:
+                    group, name = metric.split('_', 1)
+                except ValueError:
+                    name = metric
+                    group = '_OTHER_'
                 self.monitoring_metrics[metric_name] = self.data_session.new_true_metric(name,
                                                                                          group=group,
                                                                                          host=panel,
@@ -223,7 +229,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         :param case: str with case name
         :return: DataFrame with columns 'ts' and 'value'
         """
-        return df[['ts', 'value']] if case == '__overall__' else df[df.tag.str.contains(case)][['ts', 'value']]
+        case = case.strip()
+        return df[['ts', 'value']] if case == Plugin.OVERALL else df[df.tag.str.strip() == case][['ts', 'value']]
 
     def map_uploader_tags(self, uploader_tags):
         if not uploader_tags:
