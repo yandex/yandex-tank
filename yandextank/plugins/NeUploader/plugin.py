@@ -127,17 +127,25 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         case_metrics = self.metrics_objs.get(case)
         if case_metrics is None:
             for col, constructor in self.col_map.items():
-                args = dict(self.cfg.get('meta', {}),
-                            name=col,
-                            case=case,
-                            raw=False,
-                            aggregate=True,
-                            source='tank',
-                            importance='high' if col in self.importance_high else '',
-                            )
-                if case != self.OVERALL:
-                    args.update(parent=self.get_metric_obj(col, self.OVERALL))
-                self.metrics_objs.setdefault(case, {})[col] = constructor(**args)
+                # args = dict(self.cfg.get('meta', {}),
+                #             name=col,
+                #             case=case,
+                #             raw=False,
+                #             aggregate=True,
+                #             source='tank',
+                #             importance='high' if col in self.importance_high else '',
+                #             )
+                # if case != self.OVERALL:
+                #     args.update(parent=self.get_metric_obj(col, self.OVERALL))
+                self.metrics_objs.setdefault(case, {})[col] = constructor(
+                    dict(self.cfg.get('meta', {}),
+                         name=col,
+                         source='tank',
+                         importance='high' if col in self.importance_high else ''),
+                    raw=False, aggregate=True,
+                    parent=self.get_metric_obj(col, self.OVERALL) if case != self.OVERALL else None,
+                    case=case if case != self.OVERALL else None
+                )
         return self.metrics_objs[case][col]
 
     def upload(self, df):
