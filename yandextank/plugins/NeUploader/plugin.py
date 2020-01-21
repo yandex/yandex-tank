@@ -182,23 +182,23 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                 **self.cfg.get('meta', {})
             )
         if not last_piece and not data.empty:
-            logger.error('Data is\n%s', data)
+            # logger.error('Data is\n%s', data)
             concat_ts = pandas.concat([(data.ts / 1e6).astype(int), self.actual_rps_metrics['latest']])
-            logger.error('Concat ts:\n%s', concat_ts)
-            self.actual_rps_metrics['latest'] = concat_ts.loc[lambda s: s >= data.send_ts.max() - 10]
-            logger.error('Buffer:\n%s', self.actual_rps_metrics['latest'])
-            series_to_send = concat_ts.loc[lambda s: s < data.send_ts.max() - 10].value_counts()
-            logger.error('Series to send:\n%s', series_to_send)
+            # logger.error('Concat ts:\n%s', concat_ts)
+            self.actual_rps_metrics['latest'] = concat_ts.loc[lambda s: s == concat_ts.max()]
+            # logger.error('Buffer:\n%s', self.actual_rps_metrics['latest'])
+            series_to_send = concat_ts.loc[lambda s: s < concat_ts.max()].value_counts()
+            # logger.error('Series to send:\n%s', series_to_send)
             df_to_send = series_to_send.to_frame(name='value')
         else:
             df_to_send = self.actual_rps_metrics['latest'].value_counts().to_frame(name='value')
 
         if not df_to_send.empty:
             df_to_send = df_to_send.rename_axis('ts')
+            df_to_send.loc[:, 'ts'] = (df_to_send['ts'] * 1e6).astype(int)
             df_to_send.reset_index(inplace=True)
             df_to_send['metric_local_id'] = self.actual_rps_metrics['metrics_obj'].local_id
-            df_to_send.loc[:, 'ts'] = (df_to_send['ts'] * 1e6).astype(int)
-            logger.error('Df to send:\n\n%s', df_to_send)
+            # logger.error('Df to send:\n\n%s', df_to_send)
             self.actual_rps_metrics['metrics_obj'].put(df_to_send)
 
     @staticmethod
