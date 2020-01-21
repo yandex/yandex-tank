@@ -30,7 +30,11 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                              'db_name': self.cfg.get('db_name')}]
         self.metrics_objs = {}  # map of case names and metric objects
         self.monitoring_metrics = {}
-        self.actual_rps_metrics = {'metrics_obj': None, 'latest': pandas.Series([])}
+        self.rps_metrics = {
+            'actual_rps_metrics_obj': None,
+            'planned_rps_metrics_obj': None,
+            'actual_rps_latest': pandas.Series([])
+        }
         self._col_map = None
         self._data_session = None
         self.rps_uploader = None
@@ -45,8 +49,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             logger.error('Generator plugin does not support NeUploader')
             self.is_test_finished = lambda: -1
             self.reader = []
-        else:
-            self.rps_uploader = th.Thread(target=self.upload_planned_rps)
 
     @thread_safe_property
     def col_map(self):
@@ -86,7 +88,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         uploader_metainfo.update(self.cfg.get('meta', {}))
         self.data_session.update_job(uploader_metainfo)
         self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
-        self.rps_uploader.join()
 
     def is_test_finished(self):
         df = next(self.reader)
@@ -102,7 +103,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             for chunk in self.reader:
                 if chunk is not None:
                     self.upload(chunk)
-            self.upload_actual_rps(data=pandas.DataFrame([]), last_piece=False)
+            self.upload_actual_rps(data=pandas.DataFrame([]), last_piece=True)
+            if self.rps_uploader.is_alive():
+                self.rps_uploader.join()
         except KeyboardInterrupt:
             logger.warning('Caught KeyboardInterrupt on Neuploader')
             self._cleanup()
@@ -111,39 +114,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     @property
     def is_telegraf(self):
         return True
-
-    def upload_planned_rps(self):
-        """
-        Reads rps plan from stpd file and uploads it as a raw metric
-        """
-        stpd_file = self.core.status.get('stepper', {}).get('stpd_file')
-        if not stpd_file:
-            return
-
-        pattern = r'^\d+ (\d+)\s*.*$'
-        regex = re.compile(pattern)
-
-        rows_list = []
-        test_start = int(self.core.status['generator']['test_start'] * 10**6)
-
-        planned_rps_obj = self.data_session.new_true_metric(
-            name='planned_rps',
-            raw=True, aggregate=False,
-            **self.cfg.get('meta', {})
-        )
-
-        try:
-            with open(stpd_file) as stpd:
-                for line in stpd:
-                    if regex.match(line):
-                        timestamp = int(line.split(' ')[1]) + test_start
-                        rows_list.append({'ts': timestamp, 'value': 1})
-        except Exception:
-            logger.warning('Failed to parse stpd file')
-            logger.debug('', exc_info=True)
-
-        df = pandas.DataFrame(rows_list)
-        planned_rps_obj.put(df)
 
     def get_metric_obj(self, col, case):
         """
@@ -172,6 +142,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     def upload(self, df):
         self.upload_actual_rps(df)
+        if self.rps_uploader is None:
+            self.rps_uploader = th.Thread(target=self.upload_planned_rps)
 
         df_cases_set = set()
         for row in df.itertuples():
@@ -209,13 +181,45 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                                                                                          **self.cfg.get('meta', {}))
             self.monitoring_metrics[metric_name].put(df)
 
+    def upload_planned_rps(self):
+        """
+        Reads rps plan from stpd file and uploads it as a raw metric
+        """
+        stpd_file = self.core.status.get('stepper', {}).get('stpd_file')
+        if not stpd_file:
+            logger.info('No stpd found, no planned_rps metrics')
+            return
+        self.rps_metrics['planned_rps_metrics_obj'] = self.data_session.new_true_metric(
+            name='planned_rps',
+            raw=True, aggregate=False,
+            **self.cfg.get('meta', {})
+        )
+
+        rows_list = []
+        test_start = int(self.core.status['generator']['test_start'] * 10**3)  # milliseconds
+        pattern = r'^\d+ (\d+)\s*.*$'
+        regex = re.compile(pattern)
+        try:
+            with open(stpd_file) as stpd:
+                for line in stpd:
+                    if regex.match(line):
+                        timestamp = int((int(line.split(' ')[1]) + test_start) / 1e3)  # seconds
+                        rows_list.append(timestamp)
+        except Exception:
+            logger.warning('Failed to parse stpd file')
+            logger.debug('', exc_info=True)
+
+        df = self.rps_series_to_df(pandas.Series(rows_list))
+        if not df.empty:
+            self.rps_metrics['planned_rps_metrics_obj'].put(df)
+
     def upload_actual_rps(self, data, last_piece=False):
         """
         Counts actual rps on base of input chunk and puts it to netort queue.
         Uses buffer for latest timestamp in df.
         """
-        if self.actual_rps_metrics['metrics_obj'] is None:
-            self.actual_rps_metrics['metrics_obj'] = self.data_session.new_true_metric(
+        if self.rps_metrics['actual_rps_metrics_obj'] is None:
+            self.rps_metrics['actual_rps_metrics_obj'] = self.data_session.new_true_metric(
                 name='actual_rps',
                 raw=True,
                 aggregate=False,
@@ -224,24 +228,16 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                 **self.cfg.get('meta', {})
             )
         if not last_piece and not data.empty:
-            # logger.error('Data is\n%s', data)
-            concat_ts = pandas.concat([(data.ts / 1e6).astype(int), self.actual_rps_metrics['latest']])
-            # logger.error('Concat ts:\n%s', concat_ts)
-            self.actual_rps_metrics['latest'] = concat_ts.loc[lambda s: s == concat_ts.max()]
-            # logger.error('Buffer:\n%s', self.actual_rps_metrics['latest'])
-            series_to_send = concat_ts.loc[lambda s: s < concat_ts.max()].value_counts()
-            # logger.error('Series to send:\n%s', series_to_send)
-            df_to_send = series_to_send.to_frame(name='value')
+            concat_ts = pandas.concat([(data.ts / 1e6).astype(int), self.rps_metrics['actual_rps_latest']])
+            self.rps_metrics['actual_rps_latest'] = concat_ts.loc[lambda s: s == concat_ts.max()]
+            series_to_send = concat_ts.loc[lambda s: s < concat_ts.max()]
+            df = self.rps_series_to_df(series_to_send) if series_to_send.any else pandas.DataFrame([])
         else:
-            df_to_send = self.actual_rps_metrics['latest'].value_counts().to_frame(name='value')
+            df = self.rps_series_to_df(self.rps_metrics['actual_rps_latest'])
+            self.rps_metrics['actual_rps_latest'] = pandas.Series()
 
-        if not df_to_send.empty:
-            df_to_send = df_to_send.rename_axis('ts')
-            df_to_send.loc[:, 'ts'] = (df_to_send['ts'] * 1e6).astype(int)
-            df_to_send.reset_index(inplace=True)
-            df_to_send['metric_local_id'] = self.actual_rps_metrics['metrics_obj'].local_id
-            # logger.error('Df to send:\n\n%s', df_to_send)
-            self.actual_rps_metrics['metrics_obj'].put(df_to_send)
+        if not df.empty:
+            self.rps_metrics['actual_rps_metrics_obj'].put(df)
 
     @staticmethod
     def monitoring_data_to_dfs(data):
@@ -259,6 +255,14 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                     panels[panel_name] = {name: {'value': [value], 'ts': [chunk['timestamp']]} for name, value in content['metrics'].items()}
         return {'{}:{}'.format(panelk, name): pandas.DataFrame({'ts': [ts * 1000000 for ts in values['ts']], 'value': values['value']})
                 for panelk, panelv in panels.items() for name, values in panelv.items()}
+
+    @staticmethod
+    def rps_series_to_df(series):
+        df = series.value_counts().to_frame(name='value')
+        df_to_send = df.rename_axis('ts')
+        df_to_send.reset_index(inplace=True)
+        df_to_send.loc[:, 'ts'] = (df_to_send['ts'] * 1e6).astype(int)
+        return df_to_send
 
     @staticmethod
     def filter_df_by_case(df, case):
