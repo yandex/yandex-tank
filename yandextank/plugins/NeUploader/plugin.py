@@ -20,6 +20,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         'net_code'
     }
     OVERALL = '__overall__'
+    PLANNED_RPS_METRICS_NAME = 'planned_rps'
+    ACTUAL_RPS_METRICS_NAME = 'actual_rps'
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
@@ -34,9 +36,11 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             'planned_rps_metrics_obj': None,
             'actual_rps_latest': pandas.Series([])
         }
+        self.rps_upload_start = False
+        self.rps_uploader = th.Thread(target=self.upload_planned_rps)
+
         self._col_map = None
         self._data_session = None
-        self.rps_uploader = None
 
     def configure(self):
         pass
@@ -149,8 +153,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     def upload(self, df):
         self.upload_actual_rps(df)
-        if self.rps_uploader is None:
-            self.rps_uploader = th.Thread(target=self.upload_planned_rps)
+        if not self.rps_upload_start:
+            self.rps_uploader.start()
 
         df_cases_set = set()
         for row in df.itertuples():
@@ -189,21 +193,39 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self.monitoring_metrics[metric_name].put(df)
 
     def upload_planned_rps(self):
-        """
-        Reads rps plan from stpd file and uploads it as a raw metric
-        """
+        """ Uploads planned rps as a raw metric """
+        self.rps_upload_start = True
+        df = self.parse_stpd()
+        if not df.empty:
+            self.rps_metrics['planned_rps_metrics_obj'] = self.data_session.new_true_metric(
+                name=self.PLANNED_RPS_METRICS_NAME,
+                raw=True, aggregate=False, parent=None,
+                meta=dict(self.cfg.get('meta', {}))
+            )
+            self.rps_metrics['planned_rps_metrics_obj'].put(df)
+
+    def upload_actual_rps(self, data, last_piece=False):
+        """ Upload actual rps metric """
+        if self.rps_metrics['actual_rps_metrics_obj'] is None:
+            self.rps_metrics['actual_rps_metrics_obj'] = self.data_session.new_true_metric(
+                name=self.ACTUAL_RPS_METRICS_NAME,
+                raw=True, aggregate=False,
+                source='tank', importance='high', parent=None,
+                meta=dict(self.cfg.get('meta', {}))
+            )
+        df = self.count_actual_rps(data, last_piece)
+        if not df.empty:
+            self.rps_metrics['actual_rps_metrics_obj'].put(df)
+
+    def parse_stpd(self):
+        """  Reads rps plan from stpd file """
         stpd_file = self.core.status.get('stepper', {}).get('stpd_file')
         if not stpd_file:
             logger.info('No stpd found, no planned_rps metrics')
-            return
-        self.rps_metrics['planned_rps_metrics_obj'] = self.data_session.new_true_metric(
-            name='planned_rps',
-            raw=True, aggregate=False,
-            **self.cfg.get('meta', {})
-        )
+            return pandas.DataFrame()
 
         rows_list = []
-        test_start = int(self.core.status['generator']['test_start'] * 10**3)  # milliseconds
+        test_start = int(self.core.status['generator']['test_start'] * 10 ** 3)
         pattern = r'^\d+ (\d+)\s*.*$'
         regex = re.compile(pattern)
         try:
@@ -215,25 +237,12 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         except Exception:
             logger.warning('Failed to parse stpd file')
             logger.debug('', exc_info=True)
+            return pandas.DataFrame()
 
-        df = self.rps_series_to_df(pandas.Series(rows_list))
-        if not df.empty:
-            self.rps_metrics['planned_rps_metrics_obj'].put(df)
+        return self.rps_series_to_df(pandas.Series(rows_list))
 
-    def upload_actual_rps(self, data, last_piece=False):
-        """
-        Counts actual rps on base of input chunk and puts it to netort queue.
-        Uses buffer for latest timestamp in df.
-        """
-        if self.rps_metrics['actual_rps_metrics_obj'] is None:
-            self.rps_metrics['actual_rps_metrics_obj'] = self.data_session.new_true_metric(
-                name='actual_rps',
-                raw=True,
-                aggregate=False,
-                source='tank',
-                importance='high',
-                **self.cfg.get('meta', {})
-            )
+    def count_actual_rps(self, data, last_piece):
+        """ Counts actual rps on base of input chunk. Uses buffer for latest timestamp in df. """
         if not last_piece and not data.empty:
             concat_ts = pandas.concat([(data.ts / 1e6).astype(int), self.rps_metrics['actual_rps_latest']])
             self.rps_metrics['actual_rps_latest'] = concat_ts.loc[lambda s: s == concat_ts.max()]
@@ -242,9 +251,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         else:
             df = self.rps_series_to_df(self.rps_metrics['actual_rps_latest'])
             self.rps_metrics['actual_rps_latest'] = pandas.Series()
-
-        if not df.empty:
-            self.rps_metrics['actual_rps_metrics_obj'].put(df)
+        return df
 
     @staticmethod
     def monitoring_data_to_dfs(data):
