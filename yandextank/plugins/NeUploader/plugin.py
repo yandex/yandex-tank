@@ -4,7 +4,6 @@ import re
 import pandas
 from netort.data_manager import DataSession, thread_safe_property
 import threading as th
-from netort.data_manager import DataSession
 
 from yandextank.plugins.Phantom.reader import string_to_df_microsec
 from yandextank.common.interfaces import AbstractPlugin,\
