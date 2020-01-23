@@ -63,6 +63,8 @@ class Plugin(GeneratorPlugin):
             self.pandora_cmd = resource_manager.resource_filename(pandora_path)
             os.chmod(self.pandora_cmd, 0o755)
         else:
+            if not os.path.exists(pandora_path):
+                raise RuntimeError("Pandora binary does not exist at %s" % pandora_path)
             self.pandora_cmd = pandora_path
         self.buffered_seconds = self.get_option("buffered_seconds")
         self.affinity = self.get_option("affinity", "")
@@ -231,7 +233,7 @@ class Plugin(GeneratorPlugin):
             logger.debug(
                 "Unable to start Pandora binary. Args: %s", args, exc_info=True)
             raise RuntimeError(
-                "Unable to start Pandora binary and/or file does not exist: %s" % args)
+                "Unable to start Pandora binary. Args: %s" % args)
 
     def is_test_finished(self):
         retcode = self.process.poll()

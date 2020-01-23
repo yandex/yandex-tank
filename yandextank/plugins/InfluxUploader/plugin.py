@@ -1,6 +1,5 @@
 # coding=utf-8
-# TODO: make the next two lines unnecessary
-# pylint: disable=line-too-long
+# TODO: make the next line unnecessary
 # pylint: disable=missing-docstring
 import datetime
 import logging
