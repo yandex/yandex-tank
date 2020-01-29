@@ -143,7 +143,6 @@ class TankCore(object):
         self.add_artifact_file(os.path.join(self.artifacts_dir, VALIDATED_CONF))
         if self.errors:
             self.add_artifact_file(os.path.join(self.artifacts_dir, ERROR_OUTPUT))
-        logger.info('New test id %s' % self.test_id)
 
     @property
     def cfg_snapshot(self):
@@ -188,6 +187,8 @@ class TankCore(object):
         """
         Tells core to take plugin options and instantiate plugin classes
         """
+        logger.info(self.get_user_agent())
+        logger.info('New test id %s' % self.test_id)
         logger.info("Loading plugins...")
         for (plugin_name, plugin_path, plugin_cfg) in self.config.plugins:
             logger.debug("Loading plugin %s from %s", plugin_name, plugin_path)
@@ -234,7 +235,6 @@ class TankCore(object):
     def plugins_configure(self):
         """        Call configure() on all plugins        """
         self.publish("core", "stage", "configure")
-
         logger.info("Configuring plugins...")
         self.taskset_affinity = self.get_option(self.SECTION, 'affinity')
         if self.taskset_affinity:
