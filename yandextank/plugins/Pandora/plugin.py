@@ -4,6 +4,7 @@ import subprocess
 import time
 import os
 from threading import Event
+import shutil
 
 import yaml
 import json
@@ -63,7 +64,7 @@ class Plugin(GeneratorPlugin):
             self.pandora_cmd = resource_manager.resource_filename(pandora_path)
             os.chmod(self.pandora_cmd, 0o755)
         else:
-            if not os.path.exists(pandora_path):
+            if shutil.which(pandora_path) is None:
                 raise RuntimeError("Pandora binary does not exist at %s" % pandora_path)
             self.pandora_cmd = pandora_path
         self.buffered_seconds = self.get_option("buffered_seconds")
