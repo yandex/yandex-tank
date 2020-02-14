@@ -56,6 +56,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 username=self.get_option("username"),
                 password=self.get_option("password"),
                 database=self.get_option("database"),
+                ssl=self.get_option("ssl"),
+                verify_ssl=self.get_option("verify_ssl"),
+                path=self.get_option("path"),
             )
         return self._client
 
