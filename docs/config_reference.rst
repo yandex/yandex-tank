@@ -99,6 +99,18 @@ InfluxUploader
 ------------------
 *\- (no description). Default:* ``8086``
 
+``ssl`` (boolean)
+------------------
+*\- (no description). Default:* ``False``
+
+``verify_ssl`` (boolean)
+------------------
+*\- (no description). Default:* ``False``
+
+``path`` (string)
+------------------
+*\- (no description). Default:* ``""``
+
 ``prefix_measurement`` (string)
 -------------------------------
 *\- (no description). Default:* ``""``
