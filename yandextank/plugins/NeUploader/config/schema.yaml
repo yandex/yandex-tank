@@ -1,7 +1,7 @@
 api_address:
   description: luna back url
   type: string
-  default: https://volta-back.yandex-team.ru/
+  default: https://back.luna.yandex-team.ru/
 db_name:
   description: luna db name
   type: string
@@ -10,3 +10,7 @@ test_name:
   description: test name
   type: string
   default: my test
+meta:
+  type: dict
+  keysrules:
+    forbidden: ['name', 'raw', 'aggregate', 'group', 'host', 'type']

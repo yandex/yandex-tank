@@ -45,7 +45,6 @@ dtypes = {
 
 
 def string_to_df(data):
-    start_time = time.time()
     try:
         chunk = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
     except CParserError as e:
@@ -58,15 +57,13 @@ def string_to_df(data):
     # TODO: consider configuration for the following:
     chunk['tag'] = chunk.tag.str.rsplit('#', 1, expand=True)[0]
     chunk.set_index(['receive_sec'], inplace=True)
-
-    logger.debug("Chunk decode time: %.2fms", (time.time() - start_time) * 1000)
     return chunk
 
 
 def string_to_df_microsec(data):
     # start_time = time.time()
     try:
-        df = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
+        df = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, na_values='', dtype=dtypes, quoting=QUOTE_NONE)
     except CParserError as e:
         logger.error(e.message)
         logger.error('Incorrect phout data: {}'.format(data))
@@ -104,13 +101,14 @@ class PhantomReader(object):
 
 
 class PhantomStatsReader(StatsReader):
-    def __init__(self, filename, phantom_info, cache_size=1024 * 1024 * 50):
+    def __init__(self, filename, phantom_info, get_start_time=lambda: 0, cache_size=1024 * 1024 * 50):
         self.phantom_info = phantom_info
         self.stat_buffer = ""
         self.stat_filename = filename
         self.closed = False
-        self.start_time = 0
         self.cache_size = cache_size
+        self.get_start_time = get_start_time
+        self._start_time = None
 
     def _decode_stat_data(self, chunk):
         """
@@ -151,12 +149,17 @@ class PhantomStatsReader(StatsReader):
         chunks = [json.loads('{%s}}' % s) for s in chunk.split('\n},')]
         return list(itt.chain(*(self._decode_stat_data(chunk) for chunk in chunks)))
 
+    @property
+    def start_time(self):
+        if self._start_time is None:
+            self._start_time = int(self.get_start_time())
+        return 0 if self._start_time is None else self._start_time
+
     def __iter__(self):
         """
         Union buffer and chunk, split using '\n},',
         return splitted parts
         """
-        self.start_time = int(time.time())
         with open(self.stat_filename, 'r') as stat_file:
             while not self.closed:
                 yield self._read_stat_data(stat_file)

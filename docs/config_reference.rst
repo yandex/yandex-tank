@@ -64,8 +64,8 @@ ShootExec
 :nullable:
  True
 
-Influx
-======
+InfluxUploader
+==============
 
 ``address`` (string)
 --------------------
@@ -83,13 +83,9 @@ Influx
 ---------------------
 *\- (no description). Default:* ``mydb``
 
-``grafana_dashboard`` (string)
-------------------------------
-*\- (no description). Default:* ``tank-dashboard``
-
-``grafana_root`` (string)
--------------------------
-*\- (no description). Default:* ``http://localhost/``
+``histograms`` (boolean)
+------------------------
+*\- (no description). Default:* ``False``
 
 ``labeled`` (boolean)
 ---------------------
@@ -266,11 +262,26 @@ Pandora
 
 ``expvar`` (boolean)
 --------------------
-*\- Toggle expvar monitoring. Default:* ``True``
+*\- (no description). Default:* ``False``
 
 ``pandora_cmd`` (string)
 ------------------------
-*\- Pandora executable path. Default:* ``pandora``
+*\- Pandora executable path or link to it. Default:* ``pandora``
+
+``report_file`` (string)
+------------------------
+*\- Pandora phout path (normally will be taken from pandora config). Default:* ``None``
+
+:nullable:
+ True
+
+``resource`` (dict)
+-------------------
+*\- dict with attributes for additional resources.*
+
+``resources`` (list)
+--------------------
+*\- additional resources you need to download before test. Default:* ``[]``
 
 Android
 =======

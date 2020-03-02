@@ -8,10 +8,11 @@ logger = logging.getLogger(__name__)
 
 
 class PandoraStatsPoller(Thread):
-    def __init__(self):
+    def __init__(self, port):
         super(PandoraStatsPoller, self).__init__()
         self._stop = Event()
         self.buffer = []
+        self.port = port
 
     def run(self):
         last_ts = int(time.time() - 1)
@@ -21,7 +22,9 @@ class PandoraStatsPoller(Thread):
             if curr_ts > last_ts:
                 last_ts = curr_ts
                 try:
-                    pandora_stat = requests.get("http://localhost:1234/debug/vars", timeout=0.9).json()
+                    pandora_stat = requests.get(
+                        "http://localhost:{port}/debug/vars".format(port=self.port), timeout=0.9
+                    ).json()
                     data = {
                         'ts': last_ts - 1,
                         'metrics': {
@@ -52,10 +55,11 @@ class PandoraStatsPoller(Thread):
 
 class PandoraStatsReader(object):
     # TODO: maybe make stats collection asyncronous
-    def __init__(self, expvar):
+    def __init__(self, expvar, port):
         self.closed = False
         self.expvar = expvar
-        self.poller = PandoraStatsPoller()
+        self.port = port
+        self.poller = PandoraStatsPoller(port)
         self.started = False
 
     def next(self):

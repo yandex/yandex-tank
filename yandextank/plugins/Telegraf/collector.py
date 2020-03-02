@@ -3,9 +3,6 @@ import hashlib
 import logging
 import sys
 import time
-
-import copy
-
 from ...common.interfaces import MonitoringDataListener
 
 from ..Telegraf.client import SSHClient, LocalhostClient
@@ -89,11 +86,14 @@ class MonitoringCollector(object):
         start_time = time.time()
         for agent in self.agents:
             for collect in agent.reader:
-                # don't crush if trash or traceback came from agent to stdout
+                # don't crash if trash or traceback came from agent to stdout
                 if not collect:
                     return 0
                 for chunk in collect:
                     ts, prepared_results = chunk
+                    if not self.first_data_received and prepared_results:
+                        self.first_data_received = True
+                        logger.info("Monitoring received first data.")
                     if self.load_start_time and int(
                             ts) >= self.load_start_time:
                         ready_to_send = {
@@ -111,45 +111,33 @@ class MonitoringCollector(object):
             'Polling/decoding agents data took: %.2fms',
             (time.time() - start_time) * 1000)
 
-        collected_data_length = len(self.__collected_data)
-
-        if not self.first_data_received and self.__collected_data:
-            self.first_data_received = True
-            logger.info("Monitoring received first data.")
-        else:
-            self.send_collected_data()
-        return collected_data_length
+        data = self.__collected_data
+        self.__collected_data = []
+        return data
 
     def stop(self):
         """Shutdown agents"""
         logger.debug("Uninstalling monitoring agents")
         for agent in self.agents:
-            log_filename, data_filename = agent.uninstall()
-            self.artifact_files.append(log_filename)
-            self.artifact_files.append(data_filename)
+            agent._stop_agent()
+        for agent in self.agents:
+            try:
+                log_filename, data_filename = agent.uninstall()
+                self.artifact_files.append(log_filename)
+                self.artifact_files.append(data_filename)
+            except Exception as exc:
+                logger.warning("Error while uninstalling agent %s", exc, exc_info=True)
         for agent in self.agents:
             try:
                 logger.debug(
                     'Waiting for agent %s reader thread to finish.', agent)
                 agent.reader_thread.join(10)
+                self.agents.remove(agent)
             except BaseException:
                 logger.error('Monitoring reader thread stuck!', exc_info=True)
 
-    def send_collected_data(self):
-        """sends pending data set to listeners"""
-        data = self.__collected_data
-        self.__collected_data = []
-        for listener in self.listeners:
-            # deep copy to ensure each listener gets it's own copy
-            listener.monitoring_data(copy.deepcopy(data))
-
-    def not_empty(self):
-        return len(self.__collected_data) > 0
-
-    def send_rest_data(self):
-        while self.not_empty():
-            logger.info("Sending monitoring data rests...")
-            self.send_collected_data()
+    def get_rest_data(self):
+        return self.__collected_data
 
     def hash_hostname(self, host):
         if self.disguise_hostnames and host:

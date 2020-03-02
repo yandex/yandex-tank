@@ -35,6 +35,7 @@ class Plugin(GeneratorPlugin):
         self.__stderr_file = None
         self.__processed_ammo_count = 0
         self.__start_time = 0
+        self.opened_file = None
 
     @staticmethod
     def get_key():
@@ -55,10 +56,11 @@ class Plugin(GeneratorPlugin):
 
     def get_reader(self):
         if self.reader is None:
-            # Touch output_path because PhantomReader wants to open it
-            with open(self.__output_path, "w"):
-                pass
-            self.reader = PhantomReader(self.__output_path)
+            # Touch output_path to clear it
+            open(self.__output_path, "w").close()
+            self.opened_file = open(self.__output_path, 'r')
+            self.add_cleanup(lambda: self.opened_file.close())
+            self.reader = PhantomReader(self.opened_file)
         return self.reader
 
     def get_stats_reader(self):

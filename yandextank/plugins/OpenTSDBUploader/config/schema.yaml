@@ -5,32 +5,32 @@ address:
   default: localhost
   type: string
 port:
-  default: 8086
+  default: 4242
   type: integer
-database:
-  default: mydb
-  type: string
 username:
   default: root
   type: string
 password:
   default: root
   type: string
-grafana_root:
-  default: "http://localhost/"
-  type: string
-grafana_dashboard:
-  default: tank-dashboard
-  type: string
 chunk_size:
-  default: 500000
+  default: 4096
   type: integer
 labeled:
   default: false
   type: boolean
-prefix_measurement:
+histograms:
+  default: false
+  type: boolean
+prefix_metric:
   default: ""
   type: string
 custom_tags:
   default: {}
   type: dict
+ssl:
+  default: true
+  type: boolean
+verify_ssl:
+  default: true
+  type: boolean

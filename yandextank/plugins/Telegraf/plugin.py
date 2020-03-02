@@ -206,6 +206,7 @@ class Plugin(MonitoringPlugin):
         try:
             self.monitoring.prepare()
             self.monitoring.start()
+            self.add_cleanup(self.monitoring.stop)
             count = 0
             while not self.monitoring.first_data_received and count < 15 * 5:
                 time.sleep(0.2)
@@ -223,8 +224,9 @@ class Plugin(MonitoringPlugin):
 
     def is_test_finished(self):
         if self.monitoring:
-            data_len = self.monitoring.poll()
-            logger.debug("Monitoring got %s lines", data_len)
+            monitoring_data = self.monitoring.poll()
+            logger.debug("Monitoring got %s lines", len(monitoring_data))
+            self.core.publish_monitoring_data(monitoring_data)
         return -1
 
     def end_test(self, retcode):
@@ -234,7 +236,7 @@ class Plugin(MonitoringPlugin):
             for log in self.monitoring.artifact_files:
                 self.core.add_artifact_file(log)
 
-            self.monitoring.send_rest_data()
+            self.core.publish_monitoring_data(self.monitoring.get_rest_data())
         if self.mon_saver:
             self.mon_saver.close()
         return retcode

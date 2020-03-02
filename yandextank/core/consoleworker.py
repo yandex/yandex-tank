@@ -75,7 +75,7 @@ def load_cfg(cfg_filename):
         return convert_ini(cfg_filename)
     else:
         with open(cfg_filename) as f:
-            return yaml.load(f)
+            return yaml.load(f, Loader=yaml.FullLoader)
 
 
 def cfg_folder_loader(path):
@@ -257,7 +257,6 @@ class Cleanup:
         self._actions.append((name, fn))
 
     def __enter__(self):
-        self.tankworker.init_folder()
         return self.add_action
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -274,7 +273,7 @@ class Cleanup:
                 msg = 'Exception occurred during cleanup action {}'.format(name)
                 msgs.append(msg)
                 logger.error(msg, exc_info=True)
-        self.tankworker.save_status('\n'.join(msgs))
+        self.tankworker.save_finish_status('\n'.join(msgs))
         self.tankworker.core._collect_artifacts()
         return False  # re-raise exception
 
@@ -293,7 +292,7 @@ class Finish:
         self.worker.status = Status.TEST_FINISHING
         retcode = self.worker.retcode
         if exc_type:
-            logger.error('Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, exc_tb))
+            logger.error('Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb))))
             retcode = 1
         retcode = self.worker.core.plugins_end_test(retcode)
         self.worker.retcode = retcode
@@ -315,8 +314,9 @@ class TankWorker(Thread):
     FINISH_FILENAME = 'finish_status.yaml'
 
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
-                 log_handlers=None, wait_lock=True, files=None, ammo_file=None, api_start=False):
+                 log_handlers=None, wait_lock=False, files=None, ammo_file=None, api_start=False):
         super(TankWorker, self).__init__()
+        self.daemon = True
         self.api_start = api_start
         self.wait_lock = wait_lock
         self.log_handlers = log_handlers if log_handlers is not None else []
@@ -326,8 +326,13 @@ class TankWorker(Thread):
         self.interrupted = Event()
         self.config_list = self._combine_configs(configs, cli_options, cfg_patches, cli_args, no_local)
         self.core = TankCore(self.config_list, self.interrupted)
+        self.folder = self.init_folder()
+        self.init_logging(debug=True)
         self.status = Status.TEST_INITIATED
         self.test_id = self.core.test_id
+        is_locked = Lock.is_locked(self.core.lock_dir)
+        if is_locked and not self.core.config.get_option(self.SECTION, 'ignore_lock'):
+            raise LockError(is_locked)
         self.retcode = None
         self.msg = ''
 
@@ -356,20 +361,20 @@ class TankWorker(Thread):
         return configs
 
     def init_folder(self):
-        self.folder = self.core.artifacts_dir
+        folder = self.core.artifacts_dir
         if self.api_start > 0:
             for f in self.files:
-                shutil.move(f, self.folder)
+                shutil.move(f, folder)
             if self.ammo_file:
-                shutil.move(self.ammo_file, self.folder)
-            os.chdir(self.folder)
+                shutil.move(self.ammo_file, folder)
+            os.chdir(folder)
+        return folder
 
     def run(self):
         with Cleanup(self) as add_cleanup:
             lock = self.get_lock()
             add_cleanup('release lock', lock.release)
             self.status = Status.TEST_PREPARING
-            self.init_logging(debug=True)
             logger.info('Created a folder for the test. %s' % self.folder)
 
             self.core.plugins_configure()
@@ -381,25 +386,23 @@ class TankWorker(Thread):
                 self.retcode = self.core.wait_for_finish()
             self.status = Status.TEST_POST_PROCESS
             self.retcode = self.core.plugins_post_process(self.retcode)
-            self.status = Status.TEST_FINISHED
 
     def stop(self):
         self.interrupted.set()
-        self.core.interrupt()
+        logger.warning('Interrupting')
 
-    def get_status(self):
-        return {'status_code': self.status,
+    def get_status(self, finish=False):
+        return {'status_code': self.status if not finish else Status.TEST_FINISHED,
                 'left_time': None,
-                'exit_code': self.retcode if self.status is Status.TEST_FINISHED else None,
+                'exit_code': self.retcode if finish else None,
                 'lunapark_id': self.get_lunapark_jobno(),
                 'tank_msg': self.msg,
                 'lunapark_url': self.get_lunapark_link()}
 
-    def save_status(self, msg):
+    def save_finish_status(self, msg):
         self.msg = msg
-        self.status = Status.TEST_FINISHED
         with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:
-            yaml.dump(self.get_status(), f)
+            yaml.dump(self.get_status(finish=True), f)
 
     def get_lunapark_jobno(self):
         try:

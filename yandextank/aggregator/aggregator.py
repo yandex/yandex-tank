@@ -115,14 +115,28 @@ class Worker(object):
 
 
 class DataPoller(object):
-    def __init__(self, source, poll_period):
-        self.poll_period = poll_period
+    def __init__(self, source, poll_period, max_wait=31):
+        """
+
+        :param source: generator, should raise StopIteration at some point otherwise tank will be hanging
+        :param poll_period:
+        """
+        self.poll_period = poll_period or 0.01
         self.source = source
+        self.wait_cntr_max = max_wait // self.poll_period or 1
+        self.wait_counter = 0
 
     def __iter__(self):
         for chunk in self.source:
             if chunk is not None:
+                self.wait_counter = 0
                 yield chunk
+            elif self.wait_counter < self.wait_cntr_max:
+                self.wait_counter += 1
+            else:
+                logger.warning('Data poller has been receiving no data for {} seconds.\n'
+                               'Closing data poller'.format(self.wait_cntr_max * self.poll_period))
+                break
             time.sleep(self.poll_period)
 
 

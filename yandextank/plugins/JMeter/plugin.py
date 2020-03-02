@@ -149,6 +149,7 @@ class Plugin(GeneratorPlugin):
             return -1
         elif aggregator.reader.jmeter_finished is True:
             if aggregator.reader.agg_finished:
+                self.reader.close()
                 return retcode
             else:
                 logger.info("Waiting for aggregator to finish")
@@ -164,6 +165,7 @@ class Plugin(GeneratorPlugin):
         if self.process_stderr:
             self.process_stderr.close()
         self.core.add_artifact_file(self.jmeter_log)
+        self.reader.close()
         return retcode
 
     def __discover_jmeter_udp_port(self):

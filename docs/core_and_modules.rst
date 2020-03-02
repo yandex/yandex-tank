@@ -848,6 +848,8 @@ InfluxDB
 
 InfluxDB uploader.
 
+yaml file section: **influx**
+
 Options
 -------
 
@@ -862,15 +864,15 @@ Options
 :password:
   (Optional) InfluxDB password. (Default: 'root')
 :labeled:
-  (Optional) Send labels (ammo tags) to influx. (Default: false)
+  (Optional) Send per-label (ammo tags) stats to influxdb. (Default: false)
+:histograms:
+  (Optional) Send response time histograms to influxdb. (Default: false)
 :prefix_measurement:
   (Optional) Add prefix to measurement name. (Default: '')
 :tank_tag:
   (Optional) Tank tag. (Default: 'unknown')
-:grafana_root:
-  (Optional) Grafana root path. Used to generate link to grafana dashboard.
-:grafana_dashboard:
-  (Optional) Grafana dashboard name. Used to generate link to grafana dashboard.
+:custom_tags:
+  (Optional) Dict of custom tags, added to every sample row.
 
 Example:
 
@@ -883,6 +885,7 @@ Example:
     tank_tag: 'mytank'
     prefix_measurement: 'your_test_prefix_'
     labeled: true
+    histograms: true
 
 
 ***********
@@ -1009,6 +1012,27 @@ Advanced criteria types
   Example: http_trend(2xx,10s).
 
   Exit code - 30
+
+Сriteria for specific tag
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All criteria except ``limit`` could be used not for all test, but for a specially tagged uri.
+
+Example: ``time(1s, 5s, /latest/index/)``
+Stop test if average response time is higher than 1s ONLY from uri with tag ``/latest/index/`` for 5s.
+
+It can be used for developing specific test success criteria for each uri.
+
+Example:
+
+.. code-block:: yaml
+
+  autostop:
+    autostop:
+      - http(4xx, 20%, 15s, GET /weff?id=1)
+      - http(4xx, 5%, 5s, POST /authorize)
+
+Stop test if there're more than 5% of 4xx codes for uri with tag ``POST /authorize`` or if there're more than 20% of 4xx codes for uri with tag ``GET /weff?id=1``.
 
 
 Telegraf

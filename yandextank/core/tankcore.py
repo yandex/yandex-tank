@@ -11,7 +11,7 @@ import socket
 import tempfile
 import time
 import traceback
-
+import copy
 import pkg_resources
 import sys
 import platform
@@ -19,8 +19,9 @@ import platform
 import yaml
 from builtins import str
 
+from yandextank.common.const import RetCode
 from yandextank.common.exceptions import PluginNotPrepared
-from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin
+from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin, MonitoringDataListener
 from yandextank.plugins.DataUploader.client import LPRequisites
 from yandextank.validator.validator import TankConfig, ValidationError
 from yandextank.aggregator import TankAggregator
@@ -121,6 +122,7 @@ class TankCore(object):
         self.interrupted = interrupted_event
 
         self.error_log = None
+        self.monitoring_data_listeners = []
 
         error_output = 'validation_error.yaml'
         self.config, self.errors, self.configinitial = TankConfig(self.raw_configs,
@@ -243,6 +245,8 @@ class TankCore(object):
             if not self.interrupted.is_set():
                 logger.debug("Configuring %s", plugin)
                 plugin.configure()
+                if isinstance(plugin, MonitoringDataListener):
+                    self.monitoring_data_listeners.append(plugin)
 
     def plugins_prepare_test(self):
         """ Call prepare_test() on all plugins        """
@@ -265,6 +269,7 @@ class TankCore(object):
                 plugin.start_test()
                 logger.info("Plugin {0:s} required {1:f} seconds to start".format(plugin,
                                                                                   time.time() - start_time))
+            self.publish('generator', 'test_start', self.job.generator_plugin.start_time)
 
     def wait_for_finish(self):
         """
@@ -282,11 +287,19 @@ class TankCore(object):
             aggr_retcode = self.job.aggregator.is_test_finished()
             if aggr_retcode >= 0:
                 return aggr_retcode
-            for plugin in self.plugins.values():
+            for plugin_name, plugin in self.plugins.items():
                 logger.debug("Polling %s", plugin)
-                retcode = plugin.is_test_finished()
-                if retcode >= 0:
-                    return retcode
+                try:
+                    retcode = plugin.is_test_finished()
+                    if retcode >= 0:
+                        return retcode
+                except Exception:
+                    logger.warning('Plugin {} failed:'.format(plugin_name), exc_info=True)
+                    if isinstance(plugin, GeneratorPlugin):
+                        return RetCode.ERROR
+                    else:
+                        logger.warning('Disabling plugin {}'.format(plugin_name))
+                        plugin.is_test_finished = lambda: RetCode.CONTINUE
             end_time = time.time()
             diff = end_time - begin_time
             logger.debug("Polling took %s", diff)
@@ -300,6 +313,7 @@ class TankCore(object):
         """        Call end_test() on all plugins        """
         logger.info("Finishing test...")
         self.publish("core", "stage", "end")
+        self.publish('generator', 'test_end', time.time())
         logger.info("Stopping load generator and aggregator")
         retcode = self.job.aggregator.end_test(retcode)
         logger.debug("RC after: %s", retcode)
@@ -341,8 +355,14 @@ class TankCore(object):
                     retcode = 1
         return retcode
 
-    def interrupt(self):
-        logger.warning('Interrupting')
+    def publish_monitoring_data(self, data):
+        """sends pending data set to listeners"""
+        for plugin in self.monitoring_data_listeners:
+            # deep copy to ensure each listener gets it's own copy
+            try:
+                plugin.monitoring_data(copy.deepcopy(data))
+            except Exception:
+                logger.error("Plugin failed to process monitoring data", exc_info=True)
 
     def __setup_taskset(self, affinity, pid=None, args=None):
         """ if pid specified: set process w/ pid `pid` CPU affinity to specified `affinity` core(s)
@@ -566,13 +586,16 @@ class Lock(object):
     @classmethod
     def load(cls, path):
         with open(path) as f:
-            info = yaml.load(f)
+            info = yaml.load(f, Loader=yaml.FullLoader)
         pid = info.get(cls.PID)
         test_id = info.get(cls.TEST_ID)
         test_dir = info.get(cls.TEST_DIR)
         lock = Lock(test_id, test_dir, pid)
         lock.lock_file = path
         return lock
+
+    def __str__(self):
+        return str(self.info)
 
     @classmethod
     def is_locked(cls, lock_dir='/var/lock'):
@@ -596,7 +619,7 @@ class Lock(object):
                                 logger.warning("Failed to delete lock %s: %s", full_name, exc)
                             return False
                         else:
-                            return "Another test is running with pid {}".format(running_lock.pid)
+                            return "Another test is running: {}".format(running_lock)
                 except Exception:
                     msg = "Failed to load info from lock %s" % full_name
                     logger.warn(msg, exc_info=True)

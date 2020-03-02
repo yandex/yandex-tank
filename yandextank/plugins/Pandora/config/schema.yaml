@@ -6,7 +6,7 @@ affinity:
 pandora_cmd:
   type: string
   default: pandora
-  description: Pandora executable path
+  description: Pandora executable path or link to it
 buffered_seconds:
   type: integer
   default: 2
@@ -20,5 +20,16 @@ config_file:
   description: Pandora config file path
 expvar:
   type: boolean
-  default: true
-  description: Toggle expvar monitoring
+  default: false
+resources:
+  default: []
+  type: list
+  description: additional resources you need to download before test
+resource:
+  type: dict
+  description: dict with attributes for additional resources
+report_file:
+  type: string
+  nullable: true
+  default: null
+  description: Pandora phout path (normally will be taken from pandora config)

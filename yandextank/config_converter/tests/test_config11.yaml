@@ -1,6 +1,5 @@
 core: {}
 pandora:
-  expvar: false
   config_file: pandora_cfg.json
   package: yandextank.plugins.Pandora
   enabled: true
