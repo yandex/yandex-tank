@@ -145,9 +145,18 @@ class Decoder(object):
     @staticmethod
     def __make_overall_meta_fields(data, stats):
         return {
-            "active_threads": stats["metrics"]["instances"],
-            "RPS": data["interval_real"]["len"],
-            "planned_requests": float(stats["metrics"]["reqps"]),
+            "active_threads":
+            stats["metrics"]["instances"],
+            "RPS":
+            data["interval_real"]["len"],
+            "planned_requests":
+            float(stats["metrics"]["reqps"]),
+            "avg_rt":
+            float(data['interval_real']['total']) / data['interval_real']['len'] / 1000.0,
+            "min":
+            data['interval_real']['min'] / 1000.0,
+            "max":
+            data['interval_real']['max'] / 1000.0
         }
 
     @staticmethod
