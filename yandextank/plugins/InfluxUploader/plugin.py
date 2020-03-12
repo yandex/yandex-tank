@@ -51,11 +51,12 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def client(self):
         if not self._client:
             self._client = InfluxDBClient(
-                self.get_option("address"),
-                self.get_option("port"),
+                host=self.get_option("address"),
+                port=self.get_option("port"),
                 username=self.get_option("username"),
                 password=self.get_option("password"),
                 database=self.get_option("database"),
+                ssl=self.get_option("ssl")
             )
         return self._client
 

@@ -7,6 +7,9 @@ address:
 port:
   default: 8086
   type: integer
+ssl:
+  default: false
+  type: boolean
 database:
   default: mydb
   type: string
