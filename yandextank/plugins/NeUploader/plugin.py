@@ -4,8 +4,10 @@ try:
 except ImportError:
     from urllib.parse import urljoin
 
+import re
 import pandas
 from netort.data_manager import DataSession, thread_safe_property
+import threading as th
 
 from yandextank.plugins.Phantom.reader import string_to_df_microsec
 from yandextank.common.interfaces import AbstractPlugin,\
@@ -23,6 +25,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     }
     OVERALL = '__overall__'
     LUNA_LINK = 'https://luna.yandex-team.ru/tests/'
+    PLANNED_RPS_METRICS_NAME = 'planned_rps'
+    ACTUAL_RPS_METRICS_NAME = 'actual_rps'
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
@@ -32,6 +36,13 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                              'db_name': self.cfg.get('db_name')}]
         self.metrics_objs = {}  # map of case names and metric objects
         self.monitoring_metrics = {}
+        self.rps_metrics = {
+            'actual_rps_metrics_obj': None,
+            'planned_rps_metrics_obj': None,
+            'actual_rps_latest': pandas.Series([])
+        }
+        self.rps_uploader = th.Thread(target=self.upload_planned_rps)
+
         self._col_map = None
         self._data_session = None
 
@@ -78,6 +89,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         return self._data_session
 
     def _cleanup(self):
+        self.upload_actual_rps(data=pandas.DataFrame([]), last_piece=True)
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
         if self.core.status.get('autostop'):
             autostop_rps = self.core.status.get('autostop', {}).get('rps', 0)
@@ -99,9 +111,13 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     def post_process(self, retcode):
         try:
+            self.rps_uploader.start()
             for chunk in self.reader:
                 if chunk is not None:
                     self.upload(chunk)
+            self.upload_actual_rps(data=pandas.DataFrame([]), last_piece=True)
+            if self.rps_uploader.is_alive():
+                self.rps_uploader.join()
         except KeyboardInterrupt:
             logger.warning('Caught KeyboardInterrupt on Neuploader')
             self._cleanup()
@@ -135,6 +151,10 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         return self.metrics_objs[case][col]
 
     def upload(self, df):
+        self.upload_actual_rps(df)
+        # if not self.rps_upload_start:
+        #     self.rps_uploader.start()
+
         df_cases_set = set()
         for row in df.itertuples():
             if row.tag and isinstance(row.tag, str):
@@ -173,6 +193,63 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                                   type='monitoring'))
             self.monitoring_metrics[metric_name].put(df)
 
+    def upload_planned_rps(self):
+        """ Uploads planned rps as a raw metric """
+        df = self.parse_stpd()
+
+        if not df.empty:
+            self.rps_metrics['planned_rps_metrics_obj'] = self.data_session.new_true_metric(
+                meta=dict(self.cfg.get('meta', {}), name=self.PLANNED_RPS_METRICS_NAME, source='tank'),
+                raw=True, aggregate=False, parent=None, case=None)
+            self.rps_metrics['planned_rps_metrics_obj'].put(df)
+
+    def upload_actual_rps(self, data, last_piece=False):
+        """ Upload actual rps metric """
+        if self.rps_metrics['actual_rps_metrics_obj'] is None:
+            self.rps_metrics['actual_rps_metrics_obj'] = self.data_session.new_true_metric(
+                meta=dict(self.cfg.get('meta', {}), name=self.ACTUAL_RPS_METRICS_NAME, source='tank'),
+                raw=True, aggregate=False, parent=None, case=None
+            )
+        df = self.count_actual_rps(data, last_piece)
+        if not df.empty:
+            self.rps_metrics['actual_rps_metrics_obj'].put(df)
+
+    def parse_stpd(self):
+        """  Reads rps plan from stpd file """
+        stpd_file = self.core.status.get('stepper', {}).get('stpd_file')
+        if not stpd_file:
+            logger.info('No stpd found, no planned_rps metrics')
+            return pandas.DataFrame()
+
+        rows_list = []
+        test_start = int(self.core.status['generator']['test_start'] * 10 ** 3)
+        pattern = r'^\d+ (\d+)\s*.*$'
+        regex = re.compile(pattern)
+        try:
+            with open(stpd_file) as stpd:
+                for line in stpd:
+                    if regex.match(line):
+                        timestamp = int((int(line.split(' ')[1]) + test_start) / 1e3)  # seconds
+                        rows_list.append(timestamp)
+        except Exception:
+            logger.warning('Failed to parse stpd file')
+            logger.debug('', exc_info=True)
+            return pandas.DataFrame()
+
+        return self.rps_series_to_df(pandas.Series(rows_list))
+
+    def count_actual_rps(self, data, last_piece):
+        """ Counts actual rps on base of input chunk. Uses buffer for latest timestamp in df. """
+        if not last_piece and not data.empty:
+            concat_ts = pandas.concat([(data.ts / 1e6).astype(int), self.rps_metrics['actual_rps_latest']])
+            self.rps_metrics['actual_rps_latest'] = concat_ts.loc[lambda s: s == concat_ts.max()]
+            series_to_send = concat_ts.loc[lambda s: s < concat_ts.max()]
+            df = self.rps_series_to_df(series_to_send) if series_to_send.any else pandas.DataFrame([])
+        else:
+            df = self.rps_series_to_df(self.rps_metrics['actual_rps_latest'])
+            self.rps_metrics['actual_rps_latest'] = pandas.Series()
+        return df
+
     @staticmethod
     def monitoring_data_to_dfs(data):
         panels = {}
@@ -189,6 +266,14 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                     panels[panel_name] = {name: {'value': [value], 'ts': [chunk['timestamp']]} for name, value in content['metrics'].items()}
         return {'{}:{}'.format(panelk, name): pandas.DataFrame({'ts': [ts * 1000000 for ts in values['ts']], 'value': values['value']})
                 for panelk, panelv in panels.items() for name, values in panelv.items()}
+
+    @staticmethod
+    def rps_series_to_df(series):
+        df = series.value_counts().to_frame(name='value')
+        df_to_send = df.rename_axis('ts')
+        df_to_send.reset_index(inplace=True)
+        df_to_send.loc[:, 'ts'] = (df_to_send['ts'] * 1e6).astype(int)
+        return df_to_send
 
     @staticmethod
     def filter_df_by_case(df, case):
