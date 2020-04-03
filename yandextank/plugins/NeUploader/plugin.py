@@ -109,10 +109,12 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
         autostop_info = self.get_autostop_info()
         regressions = self.get_regressions_names(uploader_metainfo)
+        lp_link = self.core.status.get('uploader', {}).get('web_link')
 
         uploader_metainfo.update(self.meta)
         uploader_metainfo.update(autostop_info)
         uploader_metainfo['regression'] = regressions
+        uploader_metainfo['lunapark_link'] = lp_link
 
         self.data_session.update_job(uploader_metainfo)
         self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
