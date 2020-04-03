@@ -24,11 +24,11 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def get_resource(path):
+def get_resource(path, file_open_mode='r'):
     if not pip and path in rs.iterkeys(prefix='resfs/file/load/projects/yandex-tank/'):
         return rs.find(path)
     else:
-        with open(path, 'r') as f:
+        with open(path, file_open_mode) as f:
             return f.read()
 
 

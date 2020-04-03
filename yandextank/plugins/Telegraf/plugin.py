@@ -7,9 +7,9 @@ import datetime
 import fnmatch
 import json
 import logging
-import os
 import time
 import sys
+import pkg_resources
 
 from copy import deepcopy
 
@@ -17,7 +17,7 @@ from netort.resource import manager as resource
 
 from yandextank.plugins.DataUploader.client import LPRequisites
 from ...common.interfaces import MonitoringDataListener, AbstractInfoWidget, MonitoringPlugin
-from ...common.util import expand_to_seconds
+from yandextank.common.util import expand_to_seconds, get_resource
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 from ..Console import Plugin as ConsolePlugin
 from ..Telegraf.collector import MonitoringCollector
@@ -40,8 +40,7 @@ class Plugin(MonitoringPlugin):
         super(Plugin, self).__init__(core, cfg, name)
         self.jobno = None
         self.default_target = None
-        self.default_config = "{path}/config/monitoring_default_config.xml".format(
-            path=os.path.dirname(__file__))
+        self.default_config = pkg_resources.resource_filename('yandextank.plugins.Telegraf', 'config/monitoring_default_config.xml')
         self.process = None
         self.monitoring = MonitoringCollector(
             disguise_hostnames=self.get_option('disguise_hostnames'),
@@ -134,8 +133,7 @@ class Plugin(MonitoringPlugin):
                     config_contents = value
                 elif value.lower() == "auto":
                     self.die_on_fail = False
-                    with open(resource.resource_filename(self.default_config), 'rb') as def_config:
-                        config_contents = def_config.read()
+                    config_contents = get_resource(self.default_config, file_open_mode='rb')
                 else:
                     with open(resource.resource_filename(value), 'rb') as config:
                         config_contents = config.read()
