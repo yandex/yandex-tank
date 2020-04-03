@@ -15,8 +15,21 @@ import argparse
 
 from paramiko import SSHClient, AutoAddPolicy
 from retrying import retry
+try:
+    from library.python import resource as rs
+    pip = False
+except ImportError:
+    pip = True
 
 logger = logging.getLogger(__name__)
+
+
+def get_resource(path):
+    if not pip and path in rs.iterkeys(prefix='resfs/file/load/projects/yandex-tank/'):
+        return rs.find(path)
+    else:
+        with open(path, 'r') as f:
+            return f.read()
 
 
 class SecuredShell(object):

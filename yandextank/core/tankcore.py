@@ -29,6 +29,7 @@ from ..common.util import update_status, pid_exists
 
 from netort.resource import manager as resource
 from netort.process import execute
+from version import VERSION
 
 if sys.version_info[0] < 3:
     import ConfigParser
@@ -523,8 +524,7 @@ class TankCore(object):
 
     @staticmethod
     def get_user_agent():
-        tank_agent = 'YandexTank/{}'.format(
-            pkg_resources.require('yandextank')[0].version)
+        tank_agent = 'YandexTank/{}'.format(VERSION)
         py_info = sys.version_info
         python_agent = 'Python/{}.{}.{}'.format(
             py_info[0], py_info[1], py_info[2])

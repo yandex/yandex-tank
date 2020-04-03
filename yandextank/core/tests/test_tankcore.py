@@ -11,6 +11,13 @@ import yaml
 
 from yandextank.core import TankCore
 from yandextank.core.consoleworker import parse_options
+try:
+    from yatest import common
+    PATH = common.source_path('load/projects/yandex-tank/yandextank/core/tests')
+    TMPDIR = os.path.join(os.getcwd(), 'artifacts_dir')
+except ImportError:
+    PATH = os.path.dirname(__file__)
+    TMPDIR = './'
 
 logger = logging.getLogger('')
 logger.setLevel(logging.DEBUG)
@@ -30,8 +37,8 @@ CFG1 = {
     "version": "1.8.36",
     "core": {
         'operator': 'fomars',
-        'artifacts_base_dir': './',
-        'artifacts_dir': './'
+        'artifacts_base_dir': TMPDIR,
+        'artifacts_dir': TMPDIR
     },
     'telegraf': {
         'package': 'yandextank.plugins.Telegraf',
@@ -42,7 +49,7 @@ CFG1 = {
     'phantom': {
         'package': 'yandextank.plugins.Phantom',
         'enabled': True,
-        'address': 'lunapark.yandex-team.ru',
+        'address': 'localhost',
         'header_http': '1.1',
         'uris': ['/'],
         'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
@@ -62,8 +69,8 @@ CFG2 = {
     "version": "1.8.36",
     "core": {
         'operator': 'fomars',
-        'artifacts_base_dir': './',
-        'artifacts_dir': './'
+        'artifacts_base_dir': TMPDIR,
+        'artifacts_dir': TMPDIR
     },
     'telegraf': {
         'enabled': False,
@@ -89,12 +96,12 @@ CFG2 = {
     }
 }
 
-CFG_MULTI = load_yaml(os.path.dirname(__file__), 'test_multi_cfg.yaml')
+CFG_MULTI = load_yaml(PATH, 'test_multi_cfg.yaml')
 original_working_dir = os.getcwd()
 
 
 def setup_module(module):
-    os.chdir(os.path.dirname(__file__))
+    os.chdir(PATH)
 
 
 @pytest.mark.parametrize('config, expected', [
@@ -111,7 +118,7 @@ def setup_module(module):
      )
 ])
 def test_core_load_plugins(config, expected):
-    core = TankCore([load_yaml(os.path.join(os.path.dirname(__file__), '../config'), '00-base.yaml'), config],
+    core = TankCore([load_yaml(os.path.join(PATH, '../config'), '00-base.yaml'), config],
                     threading.Event())
     core.load_plugins()
     assert set(core.plugins.keys()) == expected

@@ -17,6 +17,7 @@ from netort.resource import manager as resource_manager
 from pkg_resources import resource_filename
 
 from yandextank.validator.validator import ValidationError
+from yandextank.common.util import get_resource
 from .tankcore import TankCore, LockError, Lock
 from ..config_converter.converter import convert_ini, convert_single_option
 
@@ -74,8 +75,7 @@ def load_cfg(cfg_filename):
     if is_ini(cfg_filename):
         return convert_ini(cfg_filename)
     else:
-        with open(cfg_filename) as f:
-            return yaml.load(f, Loader=yaml.FullLoader)
+        return yaml.load(get_resource(cfg_filename), Loader=yaml.FullLoader)
 
 
 def cfg_folder_loader(path):

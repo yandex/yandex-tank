@@ -1,15 +1,20 @@
 from threading import Event
-
+import os
 import pandas as pd
 
 from yandextank.common.util import FileMultiReader
 from yandextank.plugins.Phantom.reader import PhantomReader, PhantomStatsReader, string_to_df_microsec
+try:
+    from yatest import common
+    PATH = common.source_path('load/projects/yandex-tank/yandextank/plugins/Phantom/tests')
+except ImportError:
+    PATH = os.path.dirname(__file__)
 
 
 class TestPhantomReader(object):
     def setup_class(self):
         stop = Event()
-        self.multireader = FileMultiReader('yandextank/plugins/Phantom/tests/phout.dat', stop)
+        self.multireader = FileMultiReader(os.path.join(PATH, 'phout.dat'), stop)
         stop.set()
 
     def teardown_class(self):
@@ -32,10 +37,10 @@ class TestPhantomReader(object):
         assert (result['interval_real'].mean() == 11000714.0)
 
     def test_reader_us(self):
-        with open('yandextank/plugins/Phantom/tests/phout.dat') as f:
+        with open(os.path.join(PATH, 'phout.dat')) as f:
             chunk = f.read()
         result = string_to_df_microsec(chunk)
-        expected = pd.read_pickle('yandextank/plugins/Phantom/tests/expected_df.dat')
+        expected = pd.read_pickle(os.path.join(PATH, 'expected_df.dat'))
         result['ts'] -= result['ts'][0]
         assert result.equals(expected)
 
@@ -51,7 +56,7 @@ class TestStatsReader(object):
         STEPS = [[1.0, 1], [1.0, 1], [1.0, 1], [2.0, 1], [2.0, 1], [2.0, 1], [2.0, 1], [2.0, 1], [3.0, 1], [3.0, 1],
                  [3.0, 1], [3.0, 1], [3.0, 1], [4.0, 1], [4.0, 1], [4.0, 1], [4.0, 1], [4.0, 1], [5.0, 1], [5.0, 1],
                  [5.0, 1]]
-        reader = PhantomStatsReader('yandextank/plugins/Phantom/tests/phantom_stat.dat',
+        reader = PhantomStatsReader(os.path.join(PATH, 'phantom_stat.dat'),
                                     MockInfo(STEPS), cache_size=1024 * 10)
         reader.close()
         stats = reduce(lambda l1, l2: l1 + l2, [i for i in reader])

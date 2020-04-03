@@ -1,11 +1,14 @@
 from xml.etree import ElementTree as etree
-import os.path
+import os
 import getpass
 import logging
 import tempfile
+import pkg_resources
 from future.utils import iteritems
 from ..Telegraf.decoder import decoder
+from yandextank.common.util import get_resource
 import sys
+
 if sys.version_info[0] < 3:
     import ConfigParser
 else:
@@ -181,6 +184,13 @@ class AgentConfig(object):
         self.telegrafraw = config['telegrafraw']
         self.host_config = config['host_config']
         self.old_style_configs = old_style_configs
+
+    def create_agent_py(self):
+        if not os.path.isfile('agent.py'):
+            with open('agent.py', 'w') as f:
+                f.write(get_resource(pkg_resources.resource_filename('yandextank.plugins.Telegraf', 'agent/agent.py')))
+            os.chmod('agent.py', 0o775)
+        return os.path.dirname('agent.py')
 
     def create_startup_config(self):
         """ Startup and shutdown commands config

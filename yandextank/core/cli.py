@@ -2,11 +2,11 @@ import logging
 import sys
 from optparse import OptionParser
 
-import pkg_resources
 from netort.resource import manager as resource_manager
 from yandextank.core.consoleworker import TankWorker
 from yandextank.core.tankcore import LockError
 from yandextank.validator.validator import ValidationError
+from version import VERSION
 
 
 def main():
@@ -104,7 +104,7 @@ def main():
 
     options, ammofiles = parser.parse_args()
     if options.version:
-        print('YandexTank/{}'.format(pkg_resources.require('yandextank')[0].version))
+        print('YandexTank/{}'.format(VERSION))
         return
 
     ammofile = ammofiles[0] if len(ammofiles) > 0 else None

@@ -1,7 +1,13 @@
 import threading
+import os
 
 from yandextank.core.tankcore import TankCore
 from yandextank.plugins.Telegraf import Plugin as TelegrafPlugin
+try:
+    from yatest import common
+    PATH = common.source_path('load/projects/yandex-tank/yandextank/plugins/Telegraf/tests')
+except ImportError:
+    PATH = os.path.dirname(__file__)
 
 
 class TestTelegrafPlugin(object):
@@ -12,7 +18,7 @@ class TestTelegrafPlugin(object):
             'telegraf': {
                 'package': 'yandextank.plugins.Telegraf',
                 'enabled': True,
-                'config': 'yandextank/plugins/Telegraf/tests/telegraf_mon.xml'
+                'config': os.path.join(PATH, 'telegraf_mon.xml')
             }
         }
         core = TankCore(cfg, threading.Event())
@@ -27,7 +33,7 @@ class TestTelegrafPlugin(object):
             'monitoring': {
                 'package': 'yandextank.plugins.Telegraf',
                 'enabled': True,
-                'config': 'yandextank/plugins/Telegraf/tests/old_mon.xml'
+                'config': os.path.join(PATH, 'old_mon.xml')
             }
         }
         core = TankCore(cfg, threading.Event())

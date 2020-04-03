@@ -7,9 +7,7 @@ import tempfile
 import threading
 import time
 from shutil import copyfile, rmtree
-
 from ...common.util import SecuredShell
-
 from ..Telegraf.config import AgentConfig
 from ..Telegraf.reader import MonitoringReader
 
@@ -60,10 +58,11 @@ class LocalhostClient(object):
         agent_config = self.config.create_collector_config(self.workdir)
         startup_config = self.config.create_startup_config()
         customs_script = self.config.create_custom_exec_script()
+        agent_path = self.config.create_agent_py()
         try:
             copyfile(
                 os.path.join(
-                    self.path['AGENT_LOCAL_FOLDER'],
+                    agent_path,
                     self.AGENT_FILENAME),
                 os.path.join(
                     self.workdir,
@@ -186,6 +185,7 @@ class SSHClient(object):
         self.buffer = ""
         self.stop_sent = None
         self.successfull_stop = None
+        self.agent_path = self.config.create_agent_py()
 
         self.reader = MonitoringReader(self.incoming_queue)
         handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
@@ -194,7 +194,7 @@ class SSHClient(object):
             # Destination path on remote host
             'AGENT_REMOTE_FOLDER': '/tmp/',
             # Source path on tank
-            'AGENT_LOCAL_FOLDER': os.path.dirname(__file__) + '/agent',
+            'AGENT_LOCAL_FOLDER': self.agent_path,
             'TELEGRAF_REMOTE_PATH': '/tmp/telegraf',
             'TELEGRAF_LOCAL_PATH': self.telegraf,
         }

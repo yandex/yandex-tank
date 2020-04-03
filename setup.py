@@ -1,8 +1,9 @@
 from setuptools import setup, find_packages
+from version import VERSION
 
 setup(
     name='yandextank',
-    version='1.12.8.1',
+    version=VERSION,
     description='a performance measurement tool',
     longer_description='''
 Yandex.Tank is a performance measurement and load testing automatization tool.
@@ -70,7 +71,7 @@ analytic tools for the results they produce.
         'yandextank.plugins.ResourceCheck': ['config/*'],
         'yandextank.plugins.ShellExec': ['config/*'],
         'yandextank.plugins.ShootExec': ['config/*'],
-        'yandextank.plugins.Telegraf': ['config/*'],
+        'yandextank.plugins.Telegraf': ['config/*', 'agent/*']
         'yandextank.plugins.NeUploader': ['config/*']
     },
     use_2to3=False, )

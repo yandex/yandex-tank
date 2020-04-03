@@ -1,5 +1,12 @@
 from yandextank.plugins.Telegraf.config import ConfigManager, AgentConfig
+import os
 import sys
+try:
+    from yatest import common
+    PATH = common.source_path('load/projects/yandex-tank/yandextank/plugins/Telegraf/tests')
+except ImportError:
+    PATH = os.path.dirname(__file__)
+
 if sys.version_info[0] < 3:
     from ConfigParser import ConfigParser
 else:
@@ -25,7 +32,7 @@ class TestConfigManager(object):
         """ old-style monitoring xml parse """
         manager = ConfigManager()
         configs = manager.getconfig(
-            'yandextank/plugins/Telegraf/tests/old_mon.xml', 'sometargethint')
+            os.path.join(PATH, 'old_mon.xml'), 'sometargethint')
         assert (
             configs[0]['host'] == 'somehost.yandex.tld'
             and configs[0]['host_config']['CPU']['name'] == '[inputs.cpu]')
@@ -34,7 +41,7 @@ class TestConfigManager(object):
         """ telegraf-style monitoring xml parse """
         manager = ConfigManager()
         configs = manager.getconfig(
-            'yandextank/plugins/Telegraf/tests/telegraf_mon.xml',
+            os.path.join(PATH, 'telegraf_mon.xml'),
             'sometargethint')
         assert (
             configs[0]['host'] == 'somehost.yandex.tld'
@@ -44,7 +51,7 @@ class TestConfigManager(object):
         """ test target hint (special address=[target] option) """
         manager = ConfigManager()
         configs = manager.getconfig(
-            'yandextank/plugins/Telegraf/tests/target_hint.xml',
+            os.path.join(PATH, 'target_hint.xml'),
             'somehost.yandex.tld')
         assert (configs[0]['host'] == 'somehost.yandex.tld')
 
@@ -54,7 +61,7 @@ class TestAgentConfig(object):
         """ test agent config creates startup config """
         manager = ConfigManager()
         telegraf_configs = manager.getconfig(
-            'yandextank/plugins/Telegraf/tests/telegraf_mon.xml',
+            os.path.join(PATH, 'telegraf_mon.xml'),
             'sometargethint')
         agent_config = AgentConfig(telegraf_configs[0], False)
         startup = agent_config.create_startup_config()
@@ -66,7 +73,7 @@ class TestAgentConfig(object):
         """ test agent config creates collector config """
         manager = ConfigManager()
         telegraf_configs = manager.getconfig(
-            'yandextank/plugins/Telegraf/tests/telegraf_mon.xml',
+            os.path.join(PATH, 'telegraf_mon.xml'),
             'sometargethint')
         agent_config = AgentConfig(telegraf_configs[0], False)
         remote_workdir = '/path/to/workdir/temp'
@@ -84,7 +91,7 @@ class TestAgentConfig(object):
         """ test agent config creates custom_exec config """
         manager = ConfigManager()
         telegraf_configs = manager.getconfig(
-            'yandextank/plugins/Telegraf/tests/telegraf_mon.xml',
+            os.path.join(PATH, 'telegraf_mon.xml'),
             'sometargethint')
         agent_config = AgentConfig(telegraf_configs[0], False)
         custom_exec_config = agent_config.create_custom_exec_script()

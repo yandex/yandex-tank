@@ -1,7 +1,7 @@
 import json
 import numpy as np
 import pytest
-
+import os
 from queue import Queue
 from conftest import MAX_TS, random_split
 
@@ -11,7 +11,11 @@ from yandextank.aggregator.chopper import TimeChopper
 from yandextank.plugins.Phantom.reader import string_to_df
 
 from netort.data_processing import Drain
-
+try:
+    from yatest import common
+    PATH = common.source_path('load/projects/yandex-tank/yandextank/aggregator/tests/')
+except ImportError:
+    PATH = 'yandextank/aggregator/tests/'
 
 AGGR_CONFIG = TankAggregator.load_config()
 
@@ -54,7 +58,7 @@ class TestPipeline(object):
         assert results_queue.qsize() == MAX_TS
 
     @pytest.mark.parametrize('phout, expected_results', [
-        ('yandextank/aggregator/tests/phout2927', 'yandextank/aggregator/tests/phout2927res.jsonl')
+        (os.path.join(PATH, 'phout2927'), os.path.join(PATH, 'phout2927res.jsonl'))
     ])
     def test_invalid_ammo(self, phout, expected_results):
         with open(phout) as fp:

@@ -3,13 +3,13 @@ import os
 import re
 import sys
 import uuid
-
 import logging
 import pkg_resources
 import yaml
+import importlib as il
 from cerberus.validator import Validator
 
-from yandextank.common.util import recursive_dict_update
+from yandextank.common.util import recursive_dict_update, get_resource
 logger = logging.getLogger(__name__)
 
 
@@ -26,13 +26,16 @@ class ValidationError(Exception):
 
 def load_yaml_schema(path):
     # DEFAULT_FILENAME = 'schema.yaml'
-    with open(path, 'r') as f:
-        return yaml.load(f, Loader=yaml.FullLoader)
+    return yaml.load(get_resource(path), Loader=yaml.FullLoader)
 
 
-def load_py_schema(path):
-    schema_module = imp.load_source('schema', path)
-    return schema_module.SCHEMA
+def load_py_schema(path, package):
+    try:
+        schema_module = imp.load_source('schema', path)
+        return schema_module.SCHEMA
+    except IOError:
+        schema_module = il.import_module('{}{}'.format(package, '.config.schema'))
+        return schema_module.SCHEMA
 
 
 def load_plugin_schema(package):
@@ -44,7 +47,7 @@ def load_plugin_schema(package):
         try:
             return load_py_schema(
                 pkg_resources.resource_filename(
-                    package, 'config/schema.py'))
+                    package, 'config/schema.py'), package)
         except ImportError:
             logger.error(
                 "Could not find schema for %s (should be located in config/ directory of a plugin)",

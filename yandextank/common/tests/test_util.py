@@ -1,4 +1,5 @@
 import socket
+import os
 from threading import Thread, Event
 
 import pytest
@@ -7,6 +8,11 @@ from yandextank.common.util import FileScanner, FileMultiReader
 from yandextank.common.util import AddressWizard
 
 from netort.data_processing import Drain, Chopper
+try:
+    from yatest import common
+    PATH = common.source_path('load/projects/yandex-tank/yandextank/core/tests')
+except ImportError:
+    PATH = os.path.dirname(__file__)
 
 
 class TestDrain(object):
@@ -135,7 +141,7 @@ class TestAddressResolver(object):
 
 
 class TestFileMultiReader(object):
-    filename = 'yandextank/common/tests/ph.out'
+    filename = os.path.join(PATH, 'ph.out')
 
     @staticmethod
     def mock_consumer(f, expected, step, errors):
@@ -183,11 +189,13 @@ class TestFileMultiReader(object):
         mr.close()
         return errors
 
+    @pytest.mark.skip('disabled in arcadia')
     @pytest.mark.benchmark(min_rounds=10)
     def test_read(self, benchmark):
         errors = benchmark(self.phout_multi_read)
         assert len(errors) == 0
 
+    @pytest.mark.skip('disabled in arcadia')
     @pytest.mark.benchmark(min_rounds=5)
     def test_readline(self, benchmark):
         errors = benchmark(self.phout_multi_readline)
