@@ -152,8 +152,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     def upload(self, df):
         self.upload_actual_rps(df)
-        # if not self.rps_upload_start:
-        #     self.rps_uploader.start()
 
         df_cases_set = set()
         for row in df.itertuples():
@@ -207,7 +205,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         """ Upload actual rps metric """
         if self.rps_metrics['actual_rps_metrics_obj'] is None:
             self.rps_metrics['actual_rps_metrics_obj'] = self.data_session.new_true_metric(
-                meta=dict(self.cfg.get('meta', {}), name=self.ACTUAL_RPS_METRICS_NAME, source='tank'),
+                meta=dict(self.cfg.get('meta', {}), name=self.ACTUAL_RPS_METRICS_NAME),
                 raw=True, aggregate=False, parent=None, case=None
             )
         df = self.count_actual_rps(data, last_piece)
