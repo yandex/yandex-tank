@@ -63,7 +63,8 @@ def string_to_df(data):
 def string_to_df_microsec(data):
     # start_time = time.time()
     try:
-        df = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, na_values='', dtype=dtypes, quoting=QUOTE_NONE)
+        df = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, na_values='',
+                         dtype=dtypes, quoting=QUOTE_NONE, keep_default_na=False)
     except CParserError as e:
         logger.error(e.message)
         logger.error('Incorrect phout data: {}'.format(data))
