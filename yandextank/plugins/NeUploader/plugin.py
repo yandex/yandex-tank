@@ -114,16 +114,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         case_metrics = self.metrics_objs.get(case)
         if case_metrics is None:
             for col, constructor in self.col_map.items():
-                # args = dict(self.cfg.get('meta', {}),
-                #             name=col,
-                #             case=case,
-                #             raw=False,
-                #             aggregate=True,
-                #             source='tank',
-                #             importance='high' if col in self.importance_high else '',
-                #             )
-                # if case != self.OVERALL:
-                #     args.update(parent=self.get_metric_obj(col, self.OVERALL))
                 self.metrics_objs.setdefault(case, {})[col] = constructor(
                     dict(self.cfg.get('meta', {}),
                          name=col,
@@ -165,11 +155,13 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                 except ValueError:
                     name = metric
                     group = '_OTHER_'
-                self.monitoring_metrics[metric_name] = self.data_session.new_true_metric(name,
-                                                                                         group=group,
-                                                                                         host=panel,
-                                                                                         type='monitoring',
-                                                                                         **self.cfg.get('meta', {}))
+                self.monitoring_metrics[metric_name] =\
+                    self.data_session.new_true_metric(
+                        meta=dict(self.cfg.get('meta', {}),
+                                  name=name,
+                                  group=group,
+                                  host=panel,
+                                  type='monitoring'))
             self.monitoring_metrics[metric_name].put(df)
 
     @staticmethod
