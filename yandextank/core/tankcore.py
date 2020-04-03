@@ -12,7 +12,6 @@ import tempfile
 import time
 import traceback
 import copy
-import pkg_resources
 import sys
 import platform
 

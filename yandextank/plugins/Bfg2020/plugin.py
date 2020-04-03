@@ -21,15 +21,12 @@ class Plugin(GeneratorPlugin):
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
         self.close_event = Event()
-        self._bfg = None
         self.bfg_cmd = self.get_option("bfg_cmd")
-        self.bfg_config_file = None
+        self.bfg_config_file = self.core.mkstemp(".yaml", "bfg_config_")
         self.log = logging.getLogger(__name__)
-        self.gun_type = None
         self.stepper_wrapper = StepperWrapper(core, cfg)
         self.log.info("Initialized BFG")
         self.report_filename = "phout.log"
-        self.results_listener = None
 
     @staticmethod
     def get_key():
@@ -50,7 +47,6 @@ class Plugin(GeneratorPlugin):
         config_content = self.core.config.validated["bfg"]
         cache_dir = self.get_option("cache_dir") or self.core.artifacts_base_dir
         config_content["cache_dir"] = cache_dir
-        self.bfg_config_file = self.core.mkstemp(".yaml", "bfg_config_")
         self.core.add_artifact_file(self.bfg_config_file)
         with open(self.bfg_config_file, 'w') as config_file:
             yaml.dump(config_content, config_file)

@@ -401,7 +401,6 @@ class TankWorker(Thread):
                 'luna_id': self.get_value_from_status('neuploader', 'job_no'),
                 'luna_url': self.get_value_from_status('neuploader', 'web_link')}
 
-
     def save_finish_status(self, msg):
         self.msg = msg
         with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:
