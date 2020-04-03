@@ -161,7 +161,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return opts
 
     def configure(self):
-        pass
+        self.core.publish(self.SECTION, 'component', self.get_option('component'))
+        self.core.publish(self.SECTION, 'task', self.get_option('task'))
+        self.core.publish(self.SECTION, 'job_name', self.get_option('job_name'))
 
     def check_task_is_open(self):
         if self.backend_type == BackendTypes.OVERLOAD:
@@ -550,6 +552,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self.core.publish(self.SECTION, 'person', self._lp_job.person)
             self.core.publish(self.SECTION, 'task', self._lp_job.task)
             self.core.publish(self.SECTION, 'version', self._lp_job.version)
+            self.core.publish(self.SECTION, 'component', self.get_option('component'))
             self.core.publish(self.SECTION, 'meta', self.cfg.get('meta', {}))
 
         return self._lp_job

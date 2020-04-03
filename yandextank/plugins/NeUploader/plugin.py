@@ -6,8 +6,10 @@ except ImportError:
 
 import re
 import pandas
+import requests
 from netort.data_manager import DataSession, thread_safe_property
 import threading as th
+from requests import ConnectionError
 
 from yandextank.plugins.Phantom.reader import string_to_df_microsec
 from yandextank.common.interfaces import AbstractPlugin,\
@@ -30,7 +32,6 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
-        self._is_telegraf = None
         self.clients_cfg = [{'type': 'luna',
                              'api_address': self.cfg.get('api_address'),
                              'db_name': self.cfg.get('db_name')}]
@@ -45,6 +46,21 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
         self._col_map = None
         self._data_session = None
+        self._meta = None
+        self._test_name = None
+
+    @property
+    def meta(self):
+        if self._meta is None:
+            self._meta = dict(self.cfg.get('meta', {}),
+                              component=self.core.status.get('uploader', {}).get('component'))
+        return self._meta
+
+    @property
+    def test_name(self):
+        if self._test_name is None:
+            self._test_name = self.cfg.get('test_name') or self.core.status.get('uploader', {}).get('job_name')
+        return self._test_name
 
     def configure(self):
         pass
@@ -79,9 +95,9 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self._data_session = DataSession({'clients': self.clients_cfg},
                                              test_start=self.core.status['generator']['test_start'] * 10**6)
             self.add_cleanup(self._cleanup)
-            self._data_session.update_job(dict({'name': self.cfg.get('test_name'),
+            self._data_session.update_job(dict({'name': self.test_name,
                                                 '__type': 'tank'},
-                                               **self.cfg.get('meta', {})))
+                                               **self.meta))
             job_no = self._data_session.clients[0].job_number
             if job_no:
                 self.publish('job_no', int(job_no))
@@ -91,12 +107,13 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     def _cleanup(self):
         self.upload_actual_rps(data=pandas.DataFrame([]), last_piece=True)
         uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
-        if self.core.status.get('autostop'):
-            autostop_rps = self.core.status.get('autostop', {}).get('rps', 0)
-            autostop_reason = self.core.status.get('autostop', {}).get('reason', '')
-            self.log.warning('Autostop: %s %s', autostop_rps, autostop_reason)
-            uploader_metainfo.update({'autostop_rps': autostop_rps, 'autostop_reason': autostop_reason})
-        uploader_metainfo.update(self.cfg.get('meta', {}))
+        autostop_info = self.get_autostop_info()
+        regressions = self.get_regressions_names(uploader_metainfo)
+
+        uploader_metainfo.update(self.meta)
+        uploader_metainfo.update(autostop_info)
+        uploader_metainfo.setdefault('regression', []).extend(regressions)
+
         self.data_session.update_job(uploader_metainfo)
         self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
 
@@ -140,7 +157,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         if case_metrics is None:
             for col, constructor in self.col_map.items():
                 self.metrics_objs.setdefault(case, {})[col] = constructor(
-                    dict(self.cfg.get('meta', {}),
+                    dict(self.meta,
                          name=col,
                          source='tank',
                          importance='high' if col in self.importance_high else ''),
@@ -184,7 +201,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                     group = '_OTHER_'
                 self.monitoring_metrics[metric_name] =\
                     self.data_session.new_true_metric(
-                        meta=dict(self.cfg.get('meta', {}),
+                        meta=dict(self.meta,
                                   name=name,
                                   group=group,
                                   host=panel,
@@ -197,7 +214,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
         if not df.empty:
             self.rps_metrics['planned_rps_metrics_obj'] = self.data_session.new_true_metric(
-                meta=dict(self.cfg.get('meta', {}), name=self.PLANNED_RPS_METRICS_NAME, source='tank'),
+                meta=dict(self.meta, name=self.PLANNED_RPS_METRICS_NAME, source='tank'),
                 raw=True, aggregate=False, parent=None, case=None)
             self.rps_metrics['planned_rps_metrics_obj'].put(df)
 
@@ -205,7 +222,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         """ Upload actual rps metric """
         if self.rps_metrics['actual_rps_metrics_obj'] is None:
             self.rps_metrics['actual_rps_metrics_obj'] = self.data_session.new_true_metric(
-                meta=dict(self.cfg.get('meta', {}), name=self.ACTUAL_RPS_METRICS_NAME),
+                meta=dict(self.meta, name=self.ACTUAL_RPS_METRICS_NAME),
                 raw=True, aggregate=False, parent=None, case=None
             )
         df = self.count_actual_rps(data, last_piece)
@@ -294,3 +311,37 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             meta_tags = {key: uploader_tags.get(key) for key in meta_tags_names if key in uploader_tags}
             meta_tags.update({k: v if v is not None else '' for k, v in uploader_tags.get('meta', {}).items()})
             return meta_tags
+
+    @staticmethod
+    def get_regressions_names(uploader_metainfo):
+        task, component_name = uploader_metainfo.get('task'), uploader_metainfo.get('component')
+        if not task or not component_name:
+            return []
+        project_name = task.split('-')[0]
+        lp_api_url = 'https://lunapark.yandex-team.ru/api/regress/{}/componentlist.json'.format(project_name)
+        try:
+            componentlist =\
+                requests.get(lp_api_url).json()
+        except (ValueError, ConnectionError):
+            logger.info("Failed to fetch data from {}".format(lp_api_url), exc_info=True)
+            return []
+        for component in componentlist:
+            try:
+                if component['name'] == component_name:
+                    services = component['services']
+                    if len(services) == 0:
+                        services = ['__OTHER__']
+                    return ['{}_{}'.format(project_name, s) for s in services]
+            except KeyError:
+                pass
+        else:
+            return []
+
+    def get_autostop_info(self):
+        if self.core.status.get('autostop'):
+            autostop_rps = self.core.status['autostop'].get('rps', 0)
+            autostop_reason = self.core.status['autostop'].get('reason', '')
+            self.log.warning('Autostop: %s %s', autostop_rps, autostop_reason)
+            return {'autostop_rps': autostop_rps, 'autostop_reason': autostop_reason}
+        else:
+            return {}
