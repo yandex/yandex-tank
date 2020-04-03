@@ -23,6 +23,7 @@ class Plugin(GeneratorPlugin):
     """     Plugin for running phantom tool    """
 
     OPTION_CONFIG = "config"
+    SECTION = 'phantom'
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)

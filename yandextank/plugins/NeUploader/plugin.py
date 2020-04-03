@@ -1,4 +1,8 @@
 import logging
+try:
+    from urlparse import urljoin
+except ImportError:
+    from urllib.parse import urljoin
 
 import pandas
 from netort.data_manager import DataSession, thread_safe_property
@@ -18,6 +22,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         'net_code'
     }
     OVERALL = '__overall__'
+    LUNA_LINK = 'https://luna.yandex-team.ru/tests/'
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
@@ -66,6 +71,10 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             self._data_session.update_job(dict({'name': self.cfg.get('test_name'),
                                                 '__type': 'tank'},
                                                **self.cfg.get('meta', {})))
+            job_no = self._data_session.clients[0].job_number
+            if job_no:
+                self.publish('job_no', int(job_no))
+                self.publish('web_link',  urljoin(self.LUNA_LINK, job_no))
         return self._data_session
 
     def _cleanup(self):
@@ -192,7 +201,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         case = case.strip()
         return df[['ts', 'value']] if case == Plugin.OVERALL else df[df.tag.str.strip() == case][['ts', 'value']]
 
-    def map_uploader_tags(self, uploader_tags):
+    @staticmethod
+    def map_uploader_tags(uploader_tags):
         if not uploader_tags:
             logger.info('No uploader metainfo found')
             return {}

@@ -99,7 +99,7 @@ class AbstractPlugin(object):
         """publish value to status"""
         self.log.debug(
             "Publishing status: %s/%s: %s", self.__class__.__name__, key, value)
-        self.core.publish(self.__class__.__name__, key, value)
+        self.core.publish(self.__class__.SECTION, key, value)
 
     def close(self):
         """

@@ -395,28 +395,20 @@ class TankWorker(Thread):
         return {'status_code': self.status if not finish else Status.TEST_FINISHED,
                 'left_time': None,
                 'exit_code': self.retcode if finish else None,
-                'lunapark_id': self.get_lunapark_jobno(),
+                'lunapark_id': self.get_value_from_status('uploader', 'job_no'),
                 'tank_msg': self.msg,
-                'lunapark_url': self.get_lunapark_link()}
+                'lunapark_url': self.get_value_from_status('uploader', 'web_link'),
+                'luna_id': self.get_value_from_status('neuploader', 'job_no'),
+                'luna_url': self.get_value_from_status('neuploader', 'web_link')}
+
 
     def save_finish_status(self, msg):
         self.msg = msg
         with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:
             yaml.dump(self.get_status(finish=True), f)
 
-    def get_lunapark_jobno(self):
-        try:
-            return str(self.core.status['uploader']['job_no'])
-        except KeyError:
-            logger.warning('Job number is not available yet')
-            return None
-
-    def get_lunapark_link(self):
-        try:
-            return str(self.core.status['uploader']['web_link'])
-        except KeyError:
-            logger.warning('Job number is not available yet')
-            return None
+    def get_value_from_status(self, section_name, key_name):
+        return self.core.status.get(section_name, {}).get(key_name, None)
 
     def init_logging(self, debug=False):
 
