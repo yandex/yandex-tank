@@ -112,7 +112,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
         uploader_metainfo.update(self.meta)
         uploader_metainfo.update(autostop_info)
-        uploader_metainfo.setdefault('regression', []).extend(regressions)
+        uploader_metainfo['regression'] = regressions
 
         self.data_session.update_job(uploader_metainfo)
         self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
@@ -331,7 +331,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                     services = component['services']
                     if len(services) == 0:
                         services = ['__OTHER__']
-                    return ['{}_{}'.format(project_name, s) for s in services]
+                    return ['{}_{}'.format(project_name, s).replace(' ', '_') for s in services]
             except KeyError:
                 pass
         else:
