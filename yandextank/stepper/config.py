@@ -99,14 +99,8 @@ class ComponentFactory():
                     with opener(self.use_cache) as ammo:
                         try:
                             if not ammo.next()[0].isdigit():
-                                self.ammo_type = 'uri'
-                                self.log.info(
-                                    "Setting ammo_type 'uri' because ammo is not started with digit and you did not specify ammo format"
-                                )
-                            else:
-                                self.log.info(
-                                    "Default ammo type ('phantom') used, use 'phantom.ammo_type' option to override it"
-                                )
+                                raise AmmoFileError(
+                                    "Ammo file type 'phantom' should start with digit")
                         except StopIteration:
                             self.log.exception(
                                 "Couldn't read first line of ammo file")
