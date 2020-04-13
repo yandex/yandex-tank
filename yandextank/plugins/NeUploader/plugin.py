@@ -52,8 +52,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     @property
     def meta(self):
         if self._meta is None:
-            self._meta = dict(self.cfg.get('meta', {}),
-                              component=self.core.status.get('uploader', {}).get('component'))
+            self._meta = dict(self.get_lp_meta(), **self.cfg.get('meta', {}))
         return self._meta
 
     @property
@@ -106,17 +105,17 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     def _cleanup(self):
         self.upload_actual_rps(data=pandas.DataFrame([]), last_piece=True)
-        uploader_metainfo = self.map_uploader_tags(self.core.status.get('uploader'))
+        uploader_metainfo = self.get_lp_meta()
         autostop_info = self.get_autostop_info()
         regressions = self.get_regressions_names(uploader_metainfo)
         lp_link = self.core.status.get('uploader', {}).get('web_link')
 
-        uploader_metainfo.update(self.meta)
-        uploader_metainfo.update(autostop_info)
-        uploader_metainfo['regression'] = regressions
-        uploader_metainfo['lunapark_link'] = lp_link
+        meta = self.meta
+        meta.update(autostop_info)
+        meta['regression'] = regressions
+        meta['lunapark_link'] = lp_link
 
-        self.data_session.update_job(uploader_metainfo)
+        self.data_session.update_job(meta)
         self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
 
     def is_test_finished(self):
@@ -303,15 +302,15 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         case = case.strip()
         return df[['ts', 'value']] if case == Plugin.OVERALL else df[df.tag.str.strip() == case][['ts', 'value']]
 
-    @staticmethod
-    def map_uploader_tags(uploader_tags):
-        if not uploader_tags:
+    def get_lp_meta(self):
+        uploader_meta = self.core.status.get('uploader')
+        if not uploader_meta:
             logger.info('No uploader metainfo found')
             return {}
         else:
             meta_tags_names = ['component', 'description', 'name', 'person', 'task', 'version', 'lunapark_jobno']
-            meta_tags = {key: uploader_tags.get(key) for key in meta_tags_names if key in uploader_tags}
-            meta_tags.update({k: v if v is not None else '' for k, v in uploader_tags.get('meta', {}).items()})
+            meta_tags = {key: uploader_meta.get(key) for key in meta_tags_names if key in uploader_meta}
+            meta_tags.update({k: v if v is not None else '' for k, v in uploader_meta.get('meta', {}).items()})
             return meta_tags
 
     @staticmethod
