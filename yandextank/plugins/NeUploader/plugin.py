@@ -91,7 +91,11 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         :rtype: DataSession
         """
         if self._data_session is None:
+            config_filenames = {'validated_conf.yaml', 'configinitial.yaml'}
             self._data_session = DataSession({'clients': self.clients_cfg},
+                                             tankapi_info=self.tankapi_info(),
+                                             config_filenames=config_filenames,
+                                             artifacts_dir=self.core.artifacts_dir,
                                              test_start=self.core.status['generator']['test_start'] * 10**6)
             self.add_cleanup(self._cleanup)
             self._data_session.update_job(dict({'name': self.test_name,
@@ -102,6 +106,14 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                 self.publish('job_no', int(job_no))
                 self.publish('web_link',  urljoin(self.LUNA_LINK, job_no))
         return self._data_session
+
+    def tankapi_info(self):
+        meta = self.cfg.get('meta', {})
+        return {
+            'host': meta.get('tankapi_host'),
+            'port': meta.get('tankapi_port'),
+            'local_id': self.core.test_id
+        }
 
     def _cleanup(self):
         self.upload_actual_rps(data=pandas.DataFrame([]), last_piece=True)
