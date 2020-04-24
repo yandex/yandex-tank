@@ -57,3 +57,18 @@ variables:
   description: variables for jmx testplan
   type: dict
   default: {}
+dependencies:
+  type: list
+  schema:
+    type: dict
+    #require_all: true
+    schema:
+      url:
+        description: url where to download dep from
+        type: string
+        required: true
+      filename:
+        description: name of file where downloaded data will go to
+        type: string
+        required: true
+  default: []

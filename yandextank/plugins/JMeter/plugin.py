@@ -8,8 +8,11 @@ import time
 import socket
 import re
 import shlex
+import shutil
+import requests
 
 from pkg_resources import resource_string
+from netort.resource import HttpOpener, manager as resource
 
 from .reader import JMeterReader
 from ..Console import Plugin as ConsolePlugin
@@ -42,6 +45,8 @@ class Plugin(GeneratorPlugin):
         self.start_time = time.time()
         self.jmeter_buffer_size = None
         self.jmeter_udp_port = None
+        self.jmeter_dependencies = None
+        self.jmeter_dependencies_paths = []
         self.shutdown_timeout = None
 
     @staticmethod
@@ -57,6 +62,7 @@ class Plugin(GeneratorPlugin):
     def configure(self):
         self.original_jmx = self.get_option("jmx")
         self.core.add_artifact_file(self.original_jmx, True)
+        self.jmeter_dependencies = self.get_option('dependencies')
         self.jtl_file = self.core.mkstemp('.jtl', 'jmeter_')
         self.core.add_artifact_file(self.jtl_file)
         self.user_args = self.get_option("args", '')
@@ -93,10 +99,29 @@ class Plugin(GeneratorPlugin):
         return self.stats_reader
 
     def prepare_test(self):
+        for dep in self.jmeter_dependencies:
+            url = dep['url']
+            filename = dep['filename']
+            try:
+                opener = resource.get_opener(url, force_download=True)
+            except requests.RequestException:
+                logger.exception('')
+                raise RuntimeError('Failed to download jmeter dependency from %s' % url)
+            else:
+                filepath = self.core.artifacts_dir + '/' + filename
+                with open(filepath, 'w'):
+                    pass
+                # Подразумевается, что зависимости будут скачиваться с удаленного ресурса.
+                # Если надо поддержать что-то еще, например локальные файлы, welcome
+                if isinstance(opener, HttpOpener):
+                    downloaded_file = opener.download_file(use_cache=True)
+                    shutil.move(downloaded_file, filepath)
+                self.jmeter_dependencies_paths.append(filepath)
         self.args = [
             self.jmeter_path, "-n", "-t", self.jmx, '-j', self.jmeter_log,
-            '-Jjmeter.save.saveservice.default_delimiter=\\t',
-            '-Jjmeter.save.saveservice.connect_time=true'
+            '-J', 'JMETER_HOME=%s' % self.core.artifacts_dir,
+            '-J', 'jmeter.save.saveservice.default_delimiter=\\t',
+            '-J', 'jmeter.save.saveservice.connect_time=true'
         ]
         self.args += shlex.split(self.user_args)
 
@@ -166,6 +191,14 @@ class Plugin(GeneratorPlugin):
         self.core.add_artifact_file(self.jmeter_log)
         return retcode
 
+    def post_process(self, retcode):
+        for path in self.jmeter_dependencies_paths:
+            try:
+                os.remove(path)
+            except Exception as e:
+                logger.error('%s: Failed to remove jmeter dependency at %s', repr(e), path)
+        return retcode
+
     def __discover_jmeter_udp_port(self):
         """Searching for line in jmeter.log such as
         Waiting for possible shutdown message on port 4445
@@ -198,10 +231,8 @@ class Plugin(GeneratorPlugin):
 
     def __add_jmeter_components(self, jmx, jtl, variables):
         """ Genius idea by Alexey Lavrenyuk """
-        logger.debug("Original JMX: %s", os.path.realpath(jmx))
-        with open(jmx, 'r') as src_jmx:
-            source_lines = src_jmx.readlines()
-
+        with resource.get_opener(jmx)() as src_jmx:
+            source_lines = [l.decode('utf-8') for l in src_jmx.readlines()]
         try:
             # In new Jmeter version (3.2 as example) WorkBench's plugin checkbox enabled by default
             # It totally crashes Yandex tank injection and raises XML Parse Exception
