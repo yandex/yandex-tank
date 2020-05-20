@@ -1,27 +1,18 @@
 """ Provides classes to run TankCore from console environment """
 import fnmatch
-import glob
 import logging
 import os
-import shutil
 import signal
-import stat
 import sys
-import time
-import traceback
-from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
-from threading import Thread, Event
+from ConfigParser import ConfigParser, NoOptionError, NoSectionError
+from threading import Thread
 
-import yaml
 from netort.resource import manager as resource_manager
 from pkg_resources import resource_filename
 
-from yandextank.validator.validator import ValidationError
-from yandextank.common.util import get_resource
-from .tankcore import TankCore, LockError, Lock
-from ..config_converter.converter import convert_ini, convert_single_option
+from yandextank.common.util import Cleanup, Finish, Status
+from yandextank.core.tankworker import TankWorker, is_ini
 
-DEFAULT_CONFIG = 'load.yaml'
 logger = logging.getLogger()
 
 
@@ -65,48 +56,6 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
-
-
-def load_cfg(cfg_filename):
-    """
-
-    :type cfg_filename: str
-    """
-    if is_ini(cfg_filename):
-        return convert_ini(cfg_filename)
-    else:
-        return yaml.load(get_resource(cfg_filename), Loader=yaml.FullLoader)
-
-
-def cfg_folder_loader(path):
-    """
-    :type path: str
-    """
-    CFG_WILDCARD = '*.yaml'
-    return [load_cfg(filename) for filename in sorted(glob.glob(os.path.join(path, CFG_WILDCARD)))]
-
-
-def load_core_base_cfg():
-    return load_cfg(resource_filename(__name__, 'config/00-base.yaml'))
-
-
-def load_local_base_cfgs():
-    return cfg_folder_loader('/etc/yandex-tank')
-
-
-def parse_options(options):
-    """
-    :type options: list of str
-    :rtype: list of dict
-    """
-    if options is None:
-        return []
-    else:
-        return [
-            convert_single_option(key.strip(), value.strip())
-            for key, value
-            in [option.split('=', 1) for option in options]
-        ]
 
 
 def apply_shorthand_options(config, options, default_section='DEFAULT'):
@@ -167,16 +116,6 @@ def get_default_configs():
     return configs
 
 
-def is_ini(cfg_file):
-    if cfg_file.endswith('.yaml') or cfg_file.endswith('.json'):
-        return False
-    try:
-        ConfigParser().read(cfg_file)
-        return True
-    except MissingSectionHeaderError:
-        return False
-
-
 def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
     try:
         all_config_files = []
@@ -230,145 +169,19 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
         raise ex
 
 
-def parse_and_check_patches(patches):
-    parsed = [yaml.load(p) for p in patches]
-    for patch in parsed:
-        if not isinstance(patch, dict):
-            raise ValidationError('Config patch "{}" should be a dict'.format(patch))
-    return parsed
-
-
-class Cleanup:
-    def __init__(self, tankworker):
-        """
-
-        :type tankworker: TankWorker
-        """
-        self._actions = []
-        self.tankworker = tankworker
-
-    def add_action(self, name, fn):
-        """
-
-        :type fn: function
-        :type name: str
-        """
-        assert callable(fn)
-        self._actions.append((name, fn))
-
-    def __enter__(self):
-        return self.add_action
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        msgs = []
-        if exc_type:
-            msg = 'Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
-            msgs.append(msg)
-            logger.error(msg)
-        logger.info('Trying to clean up')
-        for name, action in reversed(self._actions):
-            try:
-                action()
-            except Exception:
-                msg = 'Exception occurred during cleanup action {}'.format(name)
-                msgs.append(msg)
-                logger.error(msg, exc_info=True)
-        self.tankworker.save_finish_status('\n'.join(msgs))
-        self.tankworker.core._collect_artifacts()
-        return False  # re-raise exception
-
-
-class Finish:
-    def __init__(self, tankworker):
-        """
-        :type tankworker: TankWorker
-        """
-        self.worker = tankworker
-
-    def __enter__(self):
-        pass
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.worker.status = Status.TEST_FINISHING
-        retcode = self.worker.retcode
-        if exc_type:
-            logger.error('Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb))))
-            retcode = 1
-        retcode = self.worker.core.plugins_end_test(retcode)
-        self.worker.retcode = retcode
-        return True  # swallow exception & proceed to post-processing
-
-
-class Status():
-    TEST_POST_PROCESS = 'POST_PROCESS'
-    TEST_INITIATED = 'INITIATED'
-    TEST_PREPARING = "PREPARING"
-    TEST_NOT_FOUND = "NOT_FOUND"
-    TEST_RUNNING = "RUNNING"
-    TEST_FINISHING = "FINISHING"
-    TEST_FINISHED = "FINISHED"
-
-
-class TankWorker(Thread):
-    SECTION = 'core'
-    FINISH_FILENAME = 'finish_status.yaml'
+class ConsoleWorker(Thread, TankWorker):
 
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
-                 log_handlers=None, wait_lock=False, files=None, ammo_file=None, api_start=False):
-        super(TankWorker, self).__init__()
+                 log_handlers=None, wait_lock=False, files=None, ammo_file=None):
+        Thread.__init__(self)
+        TankWorker.__init__(self, configs=configs, cli_options=cli_options, cfg_patches=cfg_patches,
+                            cli_args=cli_args, no_local=no_local, log_handlers=log_handlers,
+                            wait_lock=wait_lock, files=files, ammo_file=ammo_file)
         self.daemon = True
-        self.api_start = api_start
-        self.wait_lock = wait_lock
-        self.log_handlers = log_handlers if log_handlers is not None else []
-        self.files = [] if files is None else files
-        self.ammo_file = ammo_file
-
-        self.interrupted = Event()
-        self.config_list = self._combine_configs(configs, cli_options, cfg_patches, cli_args, no_local)
-        self.core = TankCore(self.config_list, self.interrupted)
-        self.folder = self.init_folder()
-        self.init_logging(debug=True)
         self.status = Status.TEST_INITIATED
         self.test_id = self.core.test_id
-        is_locked = Lock.is_locked(self.core.lock_dir)
-        if is_locked and not self.core.config.get_option(self.SECTION, 'ignore_lock'):
-            raise LockError(is_locked)
         self.retcode = None
         self.msg = ''
-
-    @staticmethod
-    def _combine_configs(run_cfgs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False):
-        if cli_options is None:
-            cli_options = []
-        if cfg_patches is None:
-            cfg_patches = []
-        if cli_args is None:
-            cli_args = []
-        run_cfgs = run_cfgs if len(run_cfgs) > 0 else [DEFAULT_CONFIG]
-
-        if no_local:
-            configs = [load_cfg(cfg) for cfg in run_cfgs] + \
-                parse_options(cli_options) + \
-                parse_and_check_patches(cfg_patches) + \
-                cli_args
-        else:
-            configs = [load_core_base_cfg()] + \
-                load_local_base_cfgs() + \
-                [load_cfg(cfg) for cfg in run_cfgs] + \
-                parse_options(cli_options) + \
-                parse_and_check_patches(cfg_patches) + \
-                cli_args
-        return configs
-
-    def init_folder(self):
-        folder = self.core.artifacts_dir
-        if self.api_start > 0:
-            for f in self.files:
-                shutil.move(f, folder)
-            if self.ammo_file:
-                shutil.move(self.ammo_file, folder)
-            os.chdir(folder)
-        return folder
 
     def run(self):
         with Cleanup(self) as add_cleanup:
@@ -386,76 +199,6 @@ class TankWorker(Thread):
                 self.retcode = self.core.wait_for_finish()
             self.status = Status.TEST_POST_PROCESS
             self.retcode = self.core.plugins_post_process(self.retcode)
-
-    def stop(self):
-        self.interrupted.set()
-        logger.warning('Interrupting')
-
-    def get_status(self, finish=False):
-        return {'status_code': self.status if not finish else Status.TEST_FINISHED,
-                'left_time': None,
-                'exit_code': self.retcode if finish else None,
-                'lunapark_id': self.get_value_from_status('uploader', 'job_no'),
-                'tank_msg': self.msg,
-                'lunapark_url': self.get_value_from_status('uploader', 'web_link'),
-                'luna_id': self.get_value_from_status('neuploader', 'job_no'),
-                'luna_url': self.get_value_from_status('neuploader', 'web_link')}
-
-    def save_finish_status(self, msg):
-        self.msg = msg
-        with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:
-            yaml.dump(self.get_status(finish=True), f)
-
-    def get_value_from_status(self, section_name, key_name):
-        return self.core.status.get(section_name, {}).get(key_name, None)
-
-    def init_logging(self, debug=False):
-
-        filename = os.path.join(self.core.artifacts_dir, 'tank.log')
-        open(filename, 'a').close()
-        current_file_mode = os.stat(filename).st_mode
-        os.chmod(filename, current_file_mode | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
-
-        logger.handlers = []
-        logger.setLevel(logging.DEBUG if debug else logging.INFO)
-
-        file_handler = logging.FileHandler(filename)
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"))
-        file_handler.addFilter(TankapiLogFilter())
-        logger.addHandler(file_handler)
-        logger.info("Log file created")
-
-        for handler in self.log_handlers:
-            logger.addHandler(handler)
-            logger.info("Logging handler {} added".format(handler))
-
-    def get_lock(self):
-        while not self.interrupted.is_set():
-            try:
-                lock = Lock(self.test_id, self.folder).acquire(self.core.lock_dir,
-                                                               self.core.config.get_option(self.SECTION, 'ignore_lock'))
-                self.set_msg('')
-                break
-            except LockError as e:
-                self.set_msg(e.message)
-                if not self.wait_lock:
-                    raise RuntimeError("Lock file present, cannot continue")
-                logger.warning(
-                    "Couldn't get lock. Will retry in 5 seconds...")
-                time.sleep(5)
-        else:
-            raise KeyboardInterrupt
-        return lock
-
-    def set_msg(self, msg):
-        self.msg = msg
-
-
-class TankapiLogFilter(logging.Filter):
-    def filter(self, record):
-        return record.name != 'tankapi'
 
 
 class DevNullOpts:

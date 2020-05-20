@@ -2,6 +2,7 @@ import threading
 import os
 
 from yandextank.core.tankcore import TankCore
+from yandextank.core.tankworker import TankInfo
 from yandextank.plugins.Telegraf import Plugin as TelegrafPlugin
 try:
     from yatest import common
@@ -21,7 +22,7 @@ class TestTelegrafPlugin(object):
                 'config': os.path.join(PATH, 'telegraf_mon.xml')
             }
         }
-        core = TankCore(cfg, threading.Event())
+        core = TankCore(cfg, threading.Event(), TankInfo({}))
         telegraf_plugin = core.get_plugin_of_type(TelegrafPlugin)
         telegraf_plugin.configure()
         assert telegraf_plugin.detected_conf == 'telegraf'
@@ -36,7 +37,7 @@ class TestTelegrafPlugin(object):
                 'config': os.path.join(PATH, 'old_mon.xml')
             }
         }
-        core = TankCore(cfg, threading.Event())
+        core = TankCore(cfg, threading.Event(), TankInfo({}))
         telegraf_plugin = core.get_plugin_of_type(TelegrafPlugin)
         telegraf_plugin.configure()
         assert telegraf_plugin.detected_conf == 'monitoring'

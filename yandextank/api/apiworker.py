@@ -1,164 +1,75 @@
 # -*- coding: utf-8 -*-
 """ Provides class to run TankCore from python """
+import ctypes
 import logging
-import os
-import sys
-import time
-import traceback
-import fnmatch
-from pkg_resources import resource_filename
+from multiprocessing import Value
+from multiprocessing.process import Process
 
-from ..core import tankcore
+from yandextank.common.util import Cleanup, Finish, Status
+from yandextank.core.tankworker import TankWorker
+
+logger = logging.getLogger()
 
 
-class ApiWorker:
-    """    Worker class that runs tank core via python   """
+class ApiWorker(Process, TankWorker):
+    SECTION = 'core'
+    FINISH_FILENAME = 'finish_status.yaml'
 
-    def __init__(self):
-        self.core = tankcore.TankCore()
-        self.baseconfigs_location = '/etc/yandex-tank'
-        self.log = logging.getLogger(__name__)
+    def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
+                 log_handlers=None, wait_lock=False, files=None, ammo_file=None):
+        Process.__init__(self)
+        TankWorker.__init__(self, configs=configs, cli_options=cli_options, cfg_patches=cfg_patches,
+                            cli_args=cli_args, no_local=no_local, log_handlers=log_handlers,
+                            wait_lock=wait_lock, files=files, ammo_file=ammo_file, api_start=True)
+        self._status = Value(ctypes.c_char_p, Status.TEST_INITIATED)
+        self._test_id = Value(ctypes.c_char_p, self.core.test_id)
+        self._retcode = Value(ctypes.c_void_p, None)
+        self._msg = Value(ctypes.c_char_p, '')
 
-    def init_logging(self, log_filename="tank.log"):
-        """ Set up logging """
-        logger = logging.getLogger('')
-        self.log_filename = log_filename
-        self.core.add_artifact_file(self.log_filename)
+    @property
+    def test_id(self):
+        return self._test_id.value
 
-        file_handler = logging.FileHandler(self.log_filename)
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(
-            logging.Formatter(
-                "%(asctime)s [%(levelname)s] %(name)s %(message)s"))
-        logger.addHandler(file_handler)
-        console_handler = logging.StreamHandler(sys.stdout)
-        stderr_hdl = logging.StreamHandler(sys.stderr)
+    @property
+    def status(self):
+        return self._status.value
 
-        # fmt_verbose = logging.Formatter(
-        #     "%(asctime)s [%(levelname)s] %(name)s %(message)s")
-        fmt_regular = logging.Formatter(
-            "%(asctime)s %(levelname)s: %(message)s", "%H:%M:%S")
+    @status.setter
+    def status(self, val):
+        self._status.value = val
 
-        console_handler.setLevel(logging.INFO)
-        console_handler.setFormatter(fmt_regular)
-        stderr_hdl.setFormatter(fmt_regular)
+    @property
+    def retcode(self):
+        return self._retcode.value
 
-        f_err = SingleLevelFilter(logging.ERROR, True)
-        f_warn = SingleLevelFilter(logging.WARNING, True)
-        f_crit = SingleLevelFilter(logging.CRITICAL, True)
-        console_handler.addFilter(f_err)
-        console_handler.addFilter(f_warn)
-        console_handler.addFilter(f_crit)
-        logger.addHandler(console_handler)
+    @retcode.setter
+    def retcode(self, val):
+        self._retcode.value = val
 
-        f_info = SingleLevelFilter(logging.INFO, True)
-        f_debug = SingleLevelFilter(logging.DEBUG, True)
-        stderr_hdl.addFilter(f_info)
-        stderr_hdl.addFilter(f_debug)
-        logger.addHandler(stderr_hdl)
+    @property
+    def msg(self):
+        return self._msg.value
 
-    def __add_user_options(self):
-        """ override config options with user specified options"""
-        if self.options.get('user_options', None):
-            self.core.apply_shorthand_options(self.options['user_options'])
+    @msg.setter
+    def msg(self, val):
+        self._msg.value = val
 
-    def configure(self, options):
-        """ Make preparations before running Tank """
-        self.options = options
-        if self.options.get('lock_dir', None):
-            self.core.set_option(self.core.SECTION, "lock_dir", self.options['lock_dir'])
-        if self.options.get('ignore_lock', None):
-            self.core.set_option(self.core.SECTION, 'ignore_lock', self.options['ignore_lock'])
+    def run(self):
+        with Cleanup(self) as add_cleanup:
+            lock = self.get_lock()
+            add_cleanup('release lock', lock.release)
+            self.status = Status.TEST_PREPARING
+            logger.info('Created a folder for the test. %s' % self.folder)
 
-        while True:
-            try:
-                self.core.get_lock()
-                break
-            except Exception as exc:
-                if self.options.get('lock_fail', None):
-                    raise RuntimeError("Lock file present, cannot continue")
-                self.log.info(
-                    "Couldn't get lock. Will retry in 5 seconds... (%s)",
-                    str(exc))
-                time.sleep(5)
-
-        configs = self.get_default_configs()
-        if self.options.get('config', None):
-            configs.append(self.options['config'])
-        self.core.load_configs(configs)
-        self.__add_user_options()
-        self.core.load_plugins()
-
-        if self.options.get('ignore_lock', None):
-            self.core.set_option(self.core.SECTION, self.IGNORE_LOCKS, "1")
-
-    def perform_test(self):
-        """ Run the test and wait for finish """
-        self.log.info("Performing test...")
-        retcode = 1
-        try:
             self.core.plugins_configure()
+            add_cleanup('plugins cleanup', self.core.plugins_cleanup)
             self.core.plugins_prepare_test()
-            if self.options.get('manual_start', None):
-                self.log.info(
-                    "Manual start option specified, waiting for user actions")
-                raw_input("Press Enter key to start test")
-
-            self.core.plugins_start_test()
-            retcode = self.core.wait_for_finish()
-            retcode = self.core.plugins_end_test(retcode)
-            retcode = self.core.plugins_post_process(retcode)
-        except KeyboardInterrupt as ex:
-            self.log.info(
-                "Do not press Ctrl+C again, the test will be broken otherwise")
-            self.log.debug(
-                "Caught KeyboardInterrupt: %s", traceback.format_exc(ex))
-            try:
-                retcode = self.__graceful_shutdown()
-            except KeyboardInterrupt as ex:
-                self.log.debug(
-                    "Caught KeyboardInterrupt again: %s",
-                    traceback.format_exc(ex))
-                self.log.info(
-                    "User insists on exiting, aborting graceful shutdown...")
-                retcode = 1
-
-        except Exception as ex:
-            self.log.info("Exception: %s", traceback.format_exc(ex))
-            self.log.error("%s", ex)
-            retcode = self.__graceful_shutdown()
-            self.core.release_lock()
-
-        self.log.info("Done performing test with code %s", retcode)
-        return retcode
-
-    def get_default_configs(self):
-        """ returns default configs list, from /etc, home dir and package_data"""
-        # initialize basic defaults
-        configs = [resource_filename(__name__, 'config/00-base.ini')]
-        try:
-            conf_files = sorted(os.listdir(self.baseconfigs_location))
-            for filename in conf_files:
-                if fnmatch.fnmatch(filename, '*.ini'):
-                    configs += [
-                        os.path.realpath(
-                            self.baseconfigs_location + os.sep + filename)
-                    ]
-        except OSError:
-            self.log.warn(
-                self.baseconfigs_location + ' is not accessible to get configs list')
-
-        configs += [os.path.expanduser('~/.yandex-tank')]
-        return configs
-
-    def __graceful_shutdown(self):
-        """ call shutdown routines """
-        retcode = 1
-        self.log.info("Trying to shutdown gracefully...")
-        retcode = self.core.plugins_end_test(retcode)
-        retcode = self.core.plugins_post_process(retcode)
-        self.log.info("Done graceful shutdown")
-        return retcode
+            with Finish(self):
+                self.status = Status.TEST_RUNNING
+                self.core.plugins_start_test()
+                self.retcode = self.core.wait_for_finish()
+            self.status = Status.TEST_POST_PROCESS
+            self.retcode = self.core.plugins_post_process(self.retcode)
 
 
 class SingleLevelFilter(logging.Filter):

@@ -13,3 +13,6 @@ meta:
   type: dict
   keysrules:
     forbidden: ['name', 'raw', 'aggregate', 'group', 'host', 'type']
+max_df_len:
+  type: integer
+  default: 10000

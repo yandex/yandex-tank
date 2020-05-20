@@ -10,7 +10,8 @@ import shutil
 import yaml
 
 from yandextank.core import TankCore
-from yandextank.core.consoleworker import parse_options
+from yandextank.core.tankworker import parse_options, TankInfo
+
 try:
     from yatest import common
     PATH = common.source_path('load/projects/yandex-tank/yandextank/core/tests')
@@ -119,7 +120,7 @@ def setup_module(module):
 ])
 def test_core_load_plugins(config, expected):
     core = TankCore([load_yaml(os.path.join(PATH, '../config'), '00-base.yaml'), config],
-                    threading.Event())
+                    threading.Event(), TankInfo({}))
     core.load_plugins()
     assert set(core.plugins.keys()) == expected
 
@@ -128,7 +129,7 @@ def test_core_load_plugins(config, expected):
     (CFG1, None)
 ])
 def test_core_plugins_configure(config, expected):
-    core = TankCore([config], threading.Event())
+    core = TankCore([config], threading.Event(), TankInfo({}))
     core.plugins_configure()
 
 

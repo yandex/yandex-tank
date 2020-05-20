@@ -1,7 +1,9 @@
 import collections
+import inspect
 import os
 import pwd
 import socket
+import time
 import traceback
 
 import http.client
@@ -15,6 +17,7 @@ import argparse
 
 from paramiko import SSHClient, AutoAddPolicy
 from retrying import retry
+
 try:
     from library.python import resource as rs
     pip = False
@@ -476,13 +479,6 @@ def pairs(lst):
     return itertools.izip(lst[::2], lst[1::2])
 
 
-def update_status(status, multi_key, value):
-    if len(multi_key) > 1:
-        update_status(status.setdefault(multi_key[0], {}), multi_key[1:], value)
-    else:
-        status[multi_key[0]] = value
-
-
 class AddressWizard:
     def __init__(self):
         self.lookup_fn = socket.getaddrinfo
@@ -731,3 +727,122 @@ class FileLike(object):
     def readline(self):
         result, self._cursor = self.multireader.read_with_lock(self._cursor)
         return result
+
+
+def get_callstack():
+    """
+        Get call stack, clean wrapper functions from it and present
+        in dotted notation form
+    """
+    stack = inspect.stack(context=0)
+    cleaned = [frame[3] for frame in stack if frame[3] != 'wrapper']
+    return '.'.join(cleaned[1:])
+
+
+def timeit(min_duration_sec):
+    def timeit_fixed(func):
+        def wrapper(*args, **kwargs):
+            start_time = time.time()
+            result = func(*args, **kwargs)
+            stack = get_callstack()
+            duration = time.time() - start_time
+            if duration > min_duration_sec:
+                logger.warn('Slow call of %s (stack: %s), duration %s', func.__name__, stack, duration)
+            return result
+        return wrapper
+    return timeit_fixed
+
+
+def for_all_methods(decorator, exclude=None):
+    if exclude is None:
+        exclude = []
+    """
+        Decorator for all methods in a class,
+        shamelessly stolen from https://stackoverflow.com/questions/6307761
+    """
+    def decorate(cls):
+        for attr in cls.__dict__:  # there's propably a better way to do this
+            if callable(getattr(cls, attr)) and attr not in exclude:
+                setattr(cls, attr, decorator(getattr(cls, attr)))
+        return cls
+    return decorate
+
+
+class Cleanup:
+    def __init__(self, tankworker):
+        """
+
+        :type tankworker: TankWorker
+        """
+        self._actions = []
+        self.tankworker = tankworker
+
+    def add_action(self, name, fn):
+        """
+
+        :type fn: function
+        :type name: str
+        """
+        assert callable(fn)
+        self._actions.append((name, fn))
+
+    def __enter__(self):
+        return self.add_action
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        msgs = []
+        if exc_type:
+            msg = 'Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
+            msgs.append(msg)
+            logger.error(msg)
+        logger.info('Trying to clean up')
+        for name, action in reversed(self._actions):
+            try:
+                action()
+            except Exception:
+                msg = 'Exception occurred during cleanup action {}'.format(name)
+                msgs.append(msg)
+                logger.error(msg, exc_info=True)
+        self.tankworker.upd_msg('\n'.join(msgs))
+        self.tankworker.status = Status.TEST_FINISHED
+        self.tankworker.save_finish_status()
+        self.tankworker.core._collect_artifacts()
+        return False  # re-raise exception
+
+
+class Finish:
+    def __init__(self, tankworker):
+        """
+        :type tankworker: TankWorker
+        """
+        self.worker = tankworker
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.worker.status = Status.TEST_FINISHING
+        retcode = self.worker.retcode
+        if exc_type:
+            msg = 'Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
+            logger.error(msg)
+            self.worker.upd_msg(msg)
+            retcode = 1
+        retcode = self.worker.core.plugins_end_test(retcode)
+        self.worker.retcode = retcode
+        return True  # swallow exception & proceed to post-processing
+
+
+class TankapiLogFilter(logging.Filter):
+    def filter(self, record):
+        return record.name != 'tankapi'
+
+
+class Status():
+    TEST_POST_PROCESS = 'POST_PROCESS'
+    TEST_INITIATED = 'INITIATED'
+    TEST_PREPARING = "PREPARING"
+    TEST_NOT_FOUND = "NOT_FOUND"
+    TEST_RUNNING = "RUNNING"
+    TEST_FINISHING = "FINISHING"
+    TEST_FINISHED = "FINISHED"

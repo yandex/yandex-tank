@@ -6,7 +6,7 @@ import pytest
 
 from yandextank.config_converter.converter import convert_ini, parse_package_name, parse_sections, combine_sections, \
     convert_single_option, OptionsConflict
-from yandextank.core.consoleworker import load_core_base_cfg, cfg_folder_loader, load_cfg
+from yandextank.core.tankworker import load_cfg, load_core_base_cfg, cfg_folder_loader
 from yandextank.validator.validator import TankConfig
 
 

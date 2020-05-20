@@ -389,7 +389,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         lp_job = self.lp_job
         while not lp_job.interrupted.is_set():
             try:
-                self.lp_job.send_status(self.core.status)
+                self.lp_job.send_status(self.core.info.get_info_dict())
                 time.sleep(self.get_option('send_status_period'))
             except (APIClient.NetworkError, APIClient.NotAvailable) as e:
                 logger.warn('Failed to send status')
@@ -822,7 +822,7 @@ class LPJob(object):
                                             lock_target_duration,
                                             trace=self.log_other_requests,
                                             maintenance_timeouts=maintenance_timeouts,
-                                            maintenance_msg="Target is locked.\nManual unlock link: %s%s" % (
+                                            maintenance_msg="Target is locked.\nManual unlock link: %s/%s" % (
                                                 self.api_client.base_url,
                                                 self.api_client.get_manual_unlock_link(lock_target)
                                             ))
@@ -842,7 +842,7 @@ class LPJob(object):
                 if ignore:
                     logger.info('ignore_target_locks = 1')
                     return False
-                logger.info("Manual unlock link: %s%s",
+                logger.info("Manual unlock link: %s/%s",
                             self.api_client.base_url,
                             self.api_client.get_manual_unlock_link(lock_target))
                 continue

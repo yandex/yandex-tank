@@ -34,7 +34,8 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         super(Plugin, self).__init__(core, cfg, name)
         self.clients_cfg = [{'type': 'luna',
                              'api_address': self.cfg.get('api_address'),
-                             'db_name': self.cfg.get('db_name')}]
+                             'db_name': self.cfg.get('db_name'),
+                             'max_df_len': self.cfg.get('max_df_len')}]
         self.metrics_objs = {}  # map of case names and metric objects
         self.monitoring_metrics = {}
         self.rps_metrics = {
@@ -58,7 +59,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
     @property
     def test_name(self):
         if self._test_name is None:
-            self._test_name = self.cfg.get('test_name') or self.core.status.get('uploader', {}).get('job_name')
+            self._test_name = self.cfg.get('test_name') or self.core.info.get_value(['uploader', 'job_name'])
         return self._test_name
 
     def configure(self):
@@ -96,7 +97,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
                                              tankapi_info=self.tankapi_info(),
                                              config_filenames=config_filenames,
                                              artifacts_dir=self.core.artifacts_dir,
-                                             test_start=self.core.status['generator']['test_start'] * 10**6)
+                                             test_start=self.core.info.get_value(['generator', 'test_start'], 0) * 10**6)
             self.add_cleanup(self._cleanup)
             self._data_session.update_job(dict({'name': self.test_name,
                                                 '__type': 'tank'},
@@ -104,7 +105,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             job_no = self._data_session.clients[0].job_number
             if job_no:
                 self.publish('job_no', int(job_no))
-                self.publish('web_link',  urljoin(self.LUNA_LINK, job_no))
+                self.publish('web_link', urljoin(self.LUNA_LINK, job_no))
         return self._data_session
 
     def tankapi_info(self):
@@ -120,7 +121,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         uploader_metainfo = self.get_lp_meta()
         autostop_info = self.get_autostop_info()
         regressions = self.get_regressions_names(uploader_metainfo)
-        lp_link = self.core.status.get('uploader', {}).get('web_link')
+        lp_link = self.core.info.get_value(['uploader', 'web_link'])
 
         meta = self.meta
         meta.update(autostop_info)
@@ -128,7 +129,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         meta['lunapark_link'] = lp_link
 
         self.data_session.update_job(meta)
-        self.data_session.close(test_end=self.core.status.get('generator', {}).get('test_end', 0) * 10**6)
+        self.data_session.close(test_end=self.core.info.get_value(['generator', 'test_end'], 0) * 10**6)
 
     def is_test_finished(self):
         df = next(self.reader)
@@ -244,13 +245,13 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
 
     def parse_stpd(self):
         """  Reads rps plan from stpd file """
-        stpd_file = self.core.status.get('stepper', {}).get('stpd_file')
+        stpd_file = self.core.info.get_value(['stepper', 'stpd_file'])
         if not stpd_file:
             logger.info('No stpd found, no planned_rps metrics')
             return pandas.DataFrame()
 
         rows_list = []
-        test_start = int(self.core.status['generator']['test_start'] * 10 ** 3)
+        test_start = int(self.core.info.get_value(['generator', 'test_start'], 0) * 10 ** 3)
         pattern = r'^\d+ (\d+)\s*.*$'
         regex = re.compile(pattern)
         try:
@@ -315,7 +316,7 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
         return df[['ts', 'value']] if case == Plugin.OVERALL else df[df.tag.str.strip() == case][['ts', 'value']]
 
     def get_lp_meta(self):
-        uploader_meta = self.core.status.get('uploader')
+        uploader_meta = self.core.info.get_value(['uploader'])
         if not uploader_meta:
             logger.info('No uploader metainfo found')
             return {}
@@ -351,9 +352,10 @@ class Plugin(AbstractPlugin, MonitoringDataListener):
             return []
 
     def get_autostop_info(self):
-        if self.core.status.get('autostop'):
-            autostop_rps = self.core.status['autostop'].get('rps', 0)
-            autostop_reason = self.core.status['autostop'].get('reason', '')
+        autostop_info = self.core.info.get_value(['autostop'])
+        if autostop_info:
+            autostop_rps = autostop_info.get('rps', 0)
+            autostop_reason = autostop_info.get('reason', '')
             self.log.warning('Autostop: %s %s', autostop_rps, autostop_reason)
             return {'autostop_rps': autostop_rps, 'autostop_reason': autostop_reason}
         else:

@@ -24,7 +24,7 @@ from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin, Moni
 from yandextank.plugins.DataUploader.client import LPRequisites
 from yandextank.validator.validator import TankConfig, ValidationError
 from yandextank.aggregator import TankAggregator
-from ..common.util import update_status, pid_exists
+from yandextank.common.util import pid_exists
 
 from netort.resource import manager as resource
 from netort.process import execute
@@ -88,9 +88,6 @@ class LockError(Exception):
 
 
 class TankCore(object):
-    """
-    JMeter + dstat inspired :)
-    """
     SECTION = 'core'
     SECTION_META = 'meta'
     PLUGIN_PREFIX = 'plugin_'
@@ -98,15 +95,16 @@ class TankCore(object):
     UUID_OPTION = 'uuid'
     API_JOBNO = 'api_jobno'
 
-    def __init__(self, configs, interrupted_event, artifacts_base_dir=None, artifacts_dir_name=None):
+    def __init__(self, configs, interrupted_event, info):
         """
 
         :param configs: list of dict
         :param interrupted_event: threading.Event
+        :type info: yandextank.common.interfaces.TankInfo
         """
         self.output = {}
         self.raw_configs = configs
-        self.status = {}
+        self.info = info
         self._plugins = None
         self._artifacts_dir = None
         self.artifact_files = {}
@@ -303,7 +301,7 @@ class TankCore(object):
             end_time = time.time()
             diff = end_time - begin_time
             logger.debug("Polling took %s", diff)
-            logger.debug("Tank status: %s", json.dumps(self.status))
+            logger.debug("Tank status: %s", json.dumps(self.info.get_info_dict()))
             # screen refresh every 0.5 s
             if diff < 0.5:
                 time.sleep(0.5 - diff)
@@ -495,7 +493,7 @@ class TankCore(object):
         return fname
 
     def publish(self, publisher, key, value):
-        update_status(self.status, [publisher] + key.split('.'), value)
+        self.info.update([publisher] + key.split('.'), value)
 
     def close(self):
         """

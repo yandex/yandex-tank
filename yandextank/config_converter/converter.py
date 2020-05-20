@@ -203,7 +203,7 @@ class Option(object):
             'exclude_markers': lambda key, value: {key: value.strip().split(' ')}
         },
         'Pandora': {
-            'config_content': lambda key, value: {key: yaml.load(value)}  # works for json as well
+            'config_content': lambda key, value: {key: yaml.load(value, Loader=yaml.FullLoader)}  # works for json as well
         },
         'Autostop': {
             'autostop': lambda k, v: {k: re.findall(r'\w+\(.+?\)', v)}
