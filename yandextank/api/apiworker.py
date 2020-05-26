@@ -23,7 +23,7 @@ class ApiWorker(Process, TankWorker):
                             wait_lock=wait_lock, files=files, ammo_file=ammo_file, api_start=True)
         self._status = Value(ctypes.c_char_p, Status.TEST_INITIATED)
         self._test_id = Value(ctypes.c_char_p, self.core.test_id)
-        self._retcode = Value(ctypes.c_void_p, None)
+        self._retcode = None
         self._msg = Value(ctypes.c_char_p, '')
 
     @property
@@ -40,11 +40,14 @@ class ApiWorker(Process, TankWorker):
 
     @property
     def retcode(self):
-        return self._retcode.value
+        return self._retcode.value if self._retcode is not None else None
 
     @retcode.setter
     def retcode(self, val):
-        self._retcode.value = val
+        if self._retcode is None:
+            self._retcode = Value(ctypes.c_int, val)
+        else:
+            self._retcode.value = val
 
     @property
     def msg(self):

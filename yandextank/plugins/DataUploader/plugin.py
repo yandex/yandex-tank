@@ -298,7 +298,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.web_link = urljoin(self.lp_job.api_client.base_url, str(self.lp_job.number))
         logger.info("Web link: %s", self.web_link)
 
-        self.publish("jobno", self.lp_job.number)
+        self.publish("job_no", self.lp_job.number)
         self.publish("web_link", self.web_link)
 
         jobno_file = self.get_option("jobno_file", '')

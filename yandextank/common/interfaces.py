@@ -293,7 +293,7 @@ class TankInfo(object):
 
     def update(self, keys, value):
         if len(keys) > 1:
-            self._info[keys[0]] = self._update_dict(self.get_value(keys[0], {}), keys[1:], value)
+            self._info[keys[0]] = self._update_dict(self.get_value([keys[0]], {}), keys[1:], value)
         else:
             self._info[keys[0]] = value
 
@@ -304,9 +304,9 @@ class TankInfo(object):
         return value or default
 
     @classmethod
-    def _update_dict(cls, status_dict, keys, value):
+    def _update_dict(cls, plugin_status_dict, keys, value):
         if len(keys) > 1:
-            cls._update_dict(status_dict.setdefault(keys[0], {}), keys[1:], value)
+            cls._update_dict(plugin_status_dict.setdefault(keys[0], {}), keys[1:], value)
         else:
-            status_dict[keys[0]] = value
-        return status_dict
+            plugin_status_dict[keys[0]] = value
+        return plugin_status_dict
