@@ -6,7 +6,7 @@ from netort.resource import manager as resource_manager
 from yandextank.core.consoleworker import ConsoleWorker
 from yandextank.core.tankcore import LockError
 from yandextank.validator.validator import ValidationError
-from version import VERSION
+from yandextank.version import VERSION
 
 
 def main():

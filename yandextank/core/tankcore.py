@@ -28,7 +28,7 @@ from yandextank.common.util import pid_exists
 
 from netort.resource import manager as resource
 from netort.process import execute
-from version import VERSION
+from yandextank.version import VERSION
 
 if sys.version_info[0] < 3:
     import ConfigParser

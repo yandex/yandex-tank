@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from version import VERSION
+from yandextank.version import VERSION
 
 setup(
     name='yandextank',
