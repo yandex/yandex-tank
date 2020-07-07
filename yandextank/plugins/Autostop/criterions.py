@@ -317,15 +317,15 @@ class QuantileCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         quantiles = self.parse_data(data)
+        logger.debug('Autostop quantiles for ts %s: %s', data['ts'], quantiles)
         if self.quantile not in quantiles.keys():
             logger.warning("No quantile %s in %s", self.quantile, quantiles)
         if self.quantile in quantiles.keys() and quantiles[self.quantile] / 1000.0 > self.rt_limit:
             if not self.seconds_count:
                 self.cause_second = (data, stat)
 
-            logger.debug(self.explain())
-
             self.seconds_count += 1
+            logger.debug(self.explain())
             self.autostop.add_counting(self)
             if self.seconds_count >= self.seconds_limit:
                 return True
