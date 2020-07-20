@@ -256,6 +256,9 @@ class Plugin(GeneratorPlugin):
                         line = next(pandora_log)
                     except StopIteration:
                         break
+                    except UnicodeDecodeError:
+                        # TODO: make proper string handling
+                        continue
                     if '\tERROR\t' in line:
                         try:
                             err = json.loads(line.split('\t')[-1])['error']
