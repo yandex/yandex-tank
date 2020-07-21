@@ -13,6 +13,7 @@ import pprint
 from netort.resource import manager as resource_manager
 from netort.resource import HttpOpener
 
+
 from .reader import PandoraStatsReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
@@ -45,6 +46,8 @@ class Plugin(GeneratorPlugin):
         self.__address = None
         self.__schedule = None
         self.ammofile = None
+        self.dependencies = None
+        self.dependencies_paths = []
         self.process_stderr_file = None
 
     @staticmethod
@@ -59,6 +62,7 @@ class Plugin(GeneratorPlugin):
         return opts
 
     def configure(self):
+        self.dependencies = self.get_option('dependencies')
         pandora_path = self.get_option("pandora_cmd").strip()
         if pandora_path.startswith("http://") or pandora_path.startswith("https://"):
             self.pandora_cmd = resource_manager.resource_filename(pandora_path)
@@ -215,6 +219,23 @@ class Plugin(GeneratorPlugin):
             console.add_info_widget(widget)
             self.core.job.aggregator.add_result_listener(widget)
 
+        for dep in self.dependencies:
+            url = dep['url']
+            filepath = dep['filepath']
+            try:
+                opener = resource_manager.get_opener(url, force_download=True)
+            except resource_manager.RequestException:
+                logger.exception('')
+                raise RuntimeError('Failed to download jmeter dependency from %s' % url)
+            else:
+                # Подразумевается, что зависимости будут скачиваться с удаленного ресурса по http.
+                if not os.path.exists(os.path.abspath(os.path.dirname(filepath))):
+                    os.makedirs(os.path.abspath(os.path.dirname(filepath)))
+                if isinstance(opener, HttpOpener):
+                    downloaded_file = opener.download_file(use_cache=True)
+                    shutil.move(downloaded_file, filepath)
+                self.dependencies_paths.append(filepath)
+
     def start_test(self):
         args = [self.pandora_cmd, self.pandora_config_file]
         if self.affinity:
@@ -297,6 +318,11 @@ class Plugin(GeneratorPlugin):
         return retcode
 
     def post_process(self, retcode):
+        for path in self.dependencies_paths:
+            try:
+                os.remove(path)
+            except Exception as e:
+                logger.error('%s: Failed to remove dependency at %s', repr(e), path)
         if self.get_option('delete_report'):
             if self.sample_log in self.core.artifact_files:
                 del self.core.artifact_files[self.sample_log]

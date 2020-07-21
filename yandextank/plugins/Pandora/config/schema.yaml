@@ -22,3 +22,18 @@ delete_report:
   type: boolean
   default: false
   description: Delete report in postprocess aka sample_log aka phout.log
+dependencies:
+  type: list
+  schema:
+    type: dict
+    #require_all: true
+    schema:
+      url:
+        description: url where to download dep from
+        type: string
+        required: true
+      filepath:
+        description: path to file where downloaded data will go to
+        type: string
+        required: true
+  default: []
