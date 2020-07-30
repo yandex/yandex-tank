@@ -110,11 +110,13 @@ def setup_module(module):
      {'plugin_telegraf', 'plugin_phantom', 'plugin_lunapark',
       'plugin_rcheck', 'plugin_shellexec', 'plugin_autostop',
       'plugin_console', 'plugin_rcassert', 'plugin_json_report',
+      'plugin_offline_report',
       }),
     (CFG2,
      {'plugin_phantom', 'plugin_lunapark', 'plugin_rcheck',
       'plugin_autostop', 'plugin_console',
       'plugin_rcassert', 'plugin_json_report',
+      'plugin_offline_report',
       }
      )
 ])
