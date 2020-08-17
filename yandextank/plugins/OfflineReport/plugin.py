@@ -31,7 +31,7 @@ def calc_duration(first_ts, last_ts):
     return str(last_time - first_time + timedelta(seconds=1))
 
 
-def make_resp_json(overall_times, overall_proto_code, overall_net_code, duration, loadscheme, time_start):
+def make_resp_json(overall_times, overall_proto_code, overall_net_code, duration, loadscheme, time_start, autostop_info):
     quant = {}
     for q, t in overall_times:
         quant['q'+str(q)] = t
@@ -43,6 +43,11 @@ def make_resp_json(overall_times, overall_proto_code, overall_net_code, duration
         "proto_code": overall_proto_code,
         "net_code": overall_net_code
     }
+
+    if autostop_info:
+        res['autostop_rps'] = autostop_info['rps']
+        res['autostop_reason'] = autostop_info['reason']
+
     try:
         response = json.dumps(res, indent=2, sort_keys=False)
     except ValueError as e:
@@ -51,9 +56,12 @@ def make_resp_json(overall_times, overall_proto_code, overall_net_code, duration
     return response
 
 
-def make_resp_text(overall_times, overall_proto_code, overall_net_code, duration, loadscheme, time_start):
+def make_resp_text(overall_times, overall_proto_code, overall_net_code, duration, loadscheme, time_start, autostop_info):
     res = ['Duration: {:>8}\n'.format(duration)]
     res.append('Loadscheme: {}\n'.format(loadscheme))
+    if autostop_info:
+        res.append('Autostop rps: {}\n'.format(autostop_info['rps']))
+        res.append('Autostop reason: {}\n'.format(autostop_info['reason']))
     res.append('Start time: {}\n'.format(time_start))
     res.append('Percentiles all ms:\n')
     for q, t in overall_times:
@@ -178,13 +186,16 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             logger.error('Can\'t get test start time %s', e)
             time_start = datetime.fromtimestamp(self.first_ts).strftime("%Y-%m-%d %H:%M:%S")
 
+        autostop_info = self.core.info.get_value(['autostop'])
+
         resp_json = make_resp_json(
             overall_times,
             self.overall_proto_code,
             self.overall_net_code,
             duration,
             loadscheme,
-            time_start
+            time_start,
+            autostop_info
         )
         if resp_json is not None:
             self.overall_json_stream.write('%s' % resp_json)
@@ -195,7 +206,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             self.overall_net_code,
             duration,
             loadscheme,
-            time_start
+            time_start,
+            autostop_info
         )
         self.overall_text_stream.write('%s' % resp_text)
 
