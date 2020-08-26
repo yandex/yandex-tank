@@ -245,7 +245,7 @@ class NetCodesCriterion(AbstractCriterion):
                 total_responses = data["tagged"][self.tag]["interval_real"]["len"]
                 code_count = data["tagged"][self.tag]["net_code"]["count"]
                 codes = copy.deepcopy(code_count)
-                if '0' in codes.keys():
+                if '0' in codes:
                     codes.pop('0')
                 matched_responses = self.count_matched_codes(self.codes_regex, codes)
             # matched_responses=0 if current tag differs from selected one
@@ -257,7 +257,7 @@ class NetCodesCriterion(AbstractCriterion):
             code_count = data["overall"]["net_code"]["count"]
             total_responses = data["overall"]["interval_real"]["len"]
             codes = copy.deepcopy(code_count)
-            if '0' in codes.keys():
+            if '0' in codes:
                 codes.pop('0')
             matched_responses = self.count_matched_codes(self.codes_regex, codes)
         return matched_responses, total_responses

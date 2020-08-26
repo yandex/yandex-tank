@@ -1,1 +1,1 @@
-from plugin import *  # noqa
+from .plugin import *  # noqa

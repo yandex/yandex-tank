@@ -98,7 +98,8 @@ class ComponentFactory():
                     opener = resource.get_opener(self.ammo_file)
                     with opener(self.use_cache) as ammo:
                         try:
-                            if not ammo.next()[0].isdigit():
+                            ammo_str = next(ammo).decode('utf-8')
+                            if not ammo_str[0].isdigit():
                                 self.ammo_type = 'uri'
                                 self.log.info(
                                     "Setting ammo_type 'uri' because ammo is not started with digit and you did not specify ammo format"

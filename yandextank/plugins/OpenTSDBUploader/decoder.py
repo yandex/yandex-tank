@@ -15,9 +15,9 @@ class Decoder(object):
     ----------
     parent_tags : dict
         common per-test tags
-    tank_tag : basestring
+    tank_tag : str
         tank identifier tag
-    uuid : basestring
+    uuid : str
         test id tag
     labeled : bool
         detailed stats for each label
@@ -41,7 +41,7 @@ class Decoder(object):
         """
         points = list()
         for second_data in data:
-            for host, host_data in second_data["data"].iteritems():
+            for host, host_data in second_data["data"].items():
                 points.append(
                     self.__make_points(
                         "monitoring",
@@ -56,7 +56,7 @@ class Decoder(object):
                             metric:
                             float(value) if isinstance(value, int) else value
                             for metric, value in
-                            host_data["metrics"].iteritems()
+                            host_data["metrics"].items()
                         }))
         return list(itertools.chain(*points))
 

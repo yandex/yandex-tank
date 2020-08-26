@@ -45,7 +45,7 @@ class BfgReader(object):
                 else:
                     break
 
-    def next(self):
+    def __next__(self):
         if self.closed.is_set():
             self.thread.join()
             raise StopIteration

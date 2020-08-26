@@ -110,15 +110,12 @@ def setup_module(module):
      {'plugin_telegraf', 'plugin_phantom', 'plugin_lunapark',
       'plugin_rcheck', 'plugin_shellexec', 'plugin_autostop',
       'plugin_console', 'plugin_rcassert', 'plugin_json_report',
-      'plugin_offline_report',
       }),
     (CFG2,
      {'plugin_phantom', 'plugin_lunapark', 'plugin_rcheck',
       'plugin_autostop', 'plugin_console',
       'plugin_rcassert', 'plugin_json_report',
-      'plugin_offline_report',
-      }
-     )
+      })
 ])
 def test_core_load_plugins(config, expected):
     core = TankCore([load_yaml(os.path.join(PATH, '../config'), '00-base.yaml'), config],
@@ -204,7 +201,7 @@ def sort_schema_alphabetically(filename):
     with open(filename, 'r') as f:
         schema = yaml.load(f, Loader=yaml.FullLoader)
     with open(filename, 'w') as f:
-        for key in sorted(schema.keys()):
+        for key, value in sorted(schema.items()):
             f.write(key + ':\n')
-            for attr in schema[key].keys():
-                f.write('  ' + attr + ': ' + str(schema[key][attr]).lower() + '\n')
+            for k, v in sorted(value.items()):
+                f.write('  ' + k + ': ' + str(v).lower() + '\n')

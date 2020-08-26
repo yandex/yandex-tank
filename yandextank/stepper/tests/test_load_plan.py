@@ -1,6 +1,22 @@
+import io
+import os
+import threading
+
 import pytest
+
+from yandextank.common.util import read_resource
+from yandextank.common.interfaces import TankInfo
+from yandextank.core import TankCore
+from yandextank.stepper import Stepper
 from yandextank.stepper.load_plan import create, Const, Line, Composite, Stairway, StepFactory
 from yandextank.stepper.util import take
+
+
+try:
+    from yatest import common
+    PATH = common.source_path('load/projects/yandex-tank')
+except ImportError:
+    PATH = os.path.dirname(__file__)
 
 
 class TestLine(object):
@@ -157,3 +173,26 @@ class TestCreate(object):
 def test_step_factory(step_config, expected_duration):
     steps = StepFactory.produce(step_config)
     assert steps.duration == expected_duration
+
+
+def test_ammo():
+    AMMO_FILE = os.path.join(PATH, 'yandextank/stepper/tests/test-ammo.txt')
+    stepper = Stepper(
+        TankCore([{}], threading.Event(), TankInfo({})),
+        rps_schedule=["const(10,30s)"],
+        http_ver="1.1",
+        ammo_file=AMMO_FILE,
+        instances_schedule=None,
+        instances=10,
+        loop_limit=1000,
+        ammo_limit=1000,
+        ammo_type='phantom',
+        autocases=0,
+        enum_ammo=False,
+    )
+    stepper_output = io.StringIO()
+    stepper.write(stepper_output)
+    stepper_output.seek(0)
+    expected_lines = read_resource(os.path.join(PATH, 'yandextank/stepper/tests/expected.stpd')).split('\n')
+    for i, (result, expected) in enumerate(zip(stepper_output, expected_lines)):
+        assert result.strip() == expected.strip(), 'Line {} mismatch'.format(i)

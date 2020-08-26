@@ -126,7 +126,7 @@ class PhantomConfig:
         filename = self.core.mkstemp(".conf", "phantom_")
         self.core.add_artifact_file(filename)
         logger.debug("Generating phantom config: %s", filename)
-        template_str = resource_string(__name__, "config/phantom.conf.tpl")
+        template_str = resource_string(__name__, "config/phantom.conf.tpl").decode('utf8')
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
 
@@ -157,7 +157,7 @@ class PhantomConfig:
             sec_no = 0
             logger.debug("Steps: %s", stream.stepper_wrapper.steps)
             for item in stream.stepper_wrapper.steps:
-                for x in range(0, item[1]):
+                for x in range(0, int(item[1])):
                     if len(result.steps) > sec_no:
                         result.steps[sec_no][0] += item[0]
                     else:
@@ -177,7 +177,7 @@ class PhantomConfig:
                 result.loadscheme = ''
 
             if result.loop_count:
-                result.loop_count = u'0'
+                result.loop_count = '0'
             else:
                 result.loop_count = stream.stepper_wrapper.loop_count
 
@@ -356,7 +356,7 @@ class StreamConfig:
         else:
             fname = 'phantom_benchmark_additional.tpl'
         template_str = resource_string(
-            __name__, "config/" + fname)
+            __name__, "config/" + fname).decode('utf8')
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
 

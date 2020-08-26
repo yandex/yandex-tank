@@ -1,39 +1,36 @@
 from threading import Thread, Event
-
 import requests
 import time
 import logging
-
 logger = logging.getLogger(__name__)
 
 
-class PandoraStatsPoller(Thread):
+class BfgStatsPoller(Thread):
     def __init__(self, port):
-        super(PandoraStatsPoller, self).__init__()
-        self._stop_run = Event()
+        super(BfgStatsPoller, self).__init__()
+        self.stopped = Event()
         self.buffer = []
         self.port = port
 
     def run(self):
         last_ts = int(time.time() - 1)
-
-        while not self._stop_run.is_set():
+        while not self.stopped.is_set():
             curr_ts = int(time.time())
             if curr_ts > last_ts:
                 last_ts = curr_ts
                 try:
-                    pandora_stat = requests.get(
-                        "http://localhost:{port}/debug/vars".format(port=self.port), timeout=0.9
+                    bfg_stat = requests.get(
+                        "http://localhost:{port}/stats".format(port=self.port), timeout=0.9
                     ).json()
                     data = {
                         'ts': last_ts - 1,
                         'metrics': {
-                            'instances': pandora_stat.get("engine_ActiveRequests"),
-                            'reqps': pandora_stat.get("engine_ReqPS"),
+                            'instances': bfg_stat.get('instances'),
+                            'reqps': bfg_stat.get('reqps')
                         }
                     }
                 except (requests.ConnectionError, requests.HTTPError, requests.exceptions.Timeout):
-                    logger.debug("Pandora expvar http interface is unavailable", exc_info=True)
+                    logger.debug("Bfg http stat server interface is unavailable", exc_info=True)
                     data = {
                         'ts': last_ts - 1,
                         'metrics': {
@@ -46,40 +43,27 @@ class PandoraStatsPoller(Thread):
                 time.sleep(0.2)
 
     def stop(self):
-        self._stop_run.set()
+        self.stopped.set()
 
     def get_data(self):
         result, self.buffer = self.buffer, []
         return result
 
 
-class PandoraStatsReader(object):
-    # TODO: maybe make stats collection asyncronous
-    def __init__(self, expvar, port):
+class BfgStatsReader(object):
+    def __init__(self, port):
         self.closed = False
-        self.expvar = expvar
         self.port = port
-        self.poller = PandoraStatsPoller(port)
+        self.poller = BfgStatsPoller(port)
         self.started = False
 
     def __next__(self):
-        if not self.expvar:
-            if self.closed:
-                raise StopIteration
-            return [{
-                'ts': int(time.time() - 1),
-                'metrics': {
-                    'instances': 0,
-                    'reqps': 0
-                }
-            }]
-        else:
-            if self.closed:
-                raise StopIteration()
-            elif not self.started:
-                self.poller.start()
-                self.started = True
-            return self.poller.get_data()
+        if self.closed:
+            raise StopIteration()
+        elif not self.started:
+            self.poller.start()
+            self.started = True
+        return self.poller.get_data()
 
     def close(self):
         self.closed = True

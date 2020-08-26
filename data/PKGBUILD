@@ -7,7 +7,7 @@ pkgdesc='Performance measurement tool'
 arch=('any')
 url='https://github.com/yandex/yandex-tank'
 license=('GPL')
-depends=('python2' 'python2-psutil' 'python2-ipaddr' 'phantom-engine-git')
+depends=('python3' 'python3-psutil' 'python3-ipaddr' 'phantom-engine-git')
 source=("http://ppa.launchpad.net/yandex-load/main/ubuntu/pool/main/y/yandextank/yandextank_${pkgver}.tar.gz")
 sha256sums=("5c2d9d948e1583183a623f430bf0b5327baca4fcbc9d7893f230b364a7aedc70")
 

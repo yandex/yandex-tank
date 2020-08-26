@@ -128,7 +128,8 @@ def main():
                                [cli_kwargs],
                                options.no_rc,
                                ammo_file=ammofile if ammofile else None,
-                               log_handlers=handlers
+                               log_handlers=handlers,
+                               debug=options.verbose
                                )
     except (ValidationError, LockError) as e:
         logging.error('Config validation error:\n{}'.format(e.message))
@@ -148,7 +149,7 @@ def main():
 def init_logging(events_log_fname, verbose, quiet):
     """ Set up logging, as it is very important for console tool """
     logger = logging.getLogger('')
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     # create file handler which logs error messages
 

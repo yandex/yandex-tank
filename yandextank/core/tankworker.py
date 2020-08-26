@@ -4,15 +4,15 @@ import os
 import shutil
 import stat
 import time
-from ConfigParser import ConfigParser, MissingSectionHeaderError
-from multiprocessing import Manager, Event as ProcessEvent
+from configparser import RawConfigParser, MissingSectionHeaderError
+from multiprocessing import Event as ProcessEvent
 from threading import Event as ThreadEvent
 
 import yaml
 from pkg_resources import resource_filename
 
 from yandextank.common.interfaces import TankInfo
-from yandextank.common.util import get_resource, TankapiLogFilter
+from yandextank.common.util import read_resource, TankapiLogFilter
 from yandextank.config_converter.converter import convert_ini, convert_single_option
 from yandextank.core import TankCore
 from yandextank.core.tankcore import LockError, Lock
@@ -27,18 +27,20 @@ class TankWorker():
     DEFAULT_CONFIG = 'load.yaml'
 
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
-                 log_handlers=None, wait_lock=False, files=None, ammo_file=None, api_start=False):
+                 log_handlers=None, wait_lock=False, files=None, ammo_file=None, api_start=False, manager=None,
+                 debug=False):
         self.api_start = api_start
         self.wait_lock = wait_lock
         self.log_handlers = log_handlers if log_handlers is not None else []
         self.files = [] if files is None else files
         self.ammo_file = ammo_file
+        self.config_paths = configs
         self.interrupted = ProcessEvent() if api_start else ThreadEvent()
-        self.info = TankInfo(Manager().dict()) if api_start else TankInfo(dict())
+        self.info = TankInfo(manager.dict()) if api_start else TankInfo(dict())
         self.config_list = self._combine_configs(configs, cli_options, cfg_patches, cli_args, no_local)
         self.core = TankCore(self.config_list, self.interrupted, self.info)
         self.folder = self.init_folder()
-        self.init_logging(debug=True)
+        self.init_logging(debug or self.core.get_option(self.core.SECTION, 'debug'))
 
         is_locked = Lock.is_locked(self.core.lock_dir)
         if is_locked and not self.core.config.get_option(self.SECTION, 'ignore_lock'):
@@ -71,6 +73,8 @@ class TankWorker():
     def init_folder(self):
         folder = self.core.artifacts_dir
         if self.api_start > 0:
+            for cfg in self.config_paths:
+                shutil.move(cfg, folder)
             for f in self.files:
                 shutil.move(f, folder)
             if self.ammo_file:
@@ -151,7 +155,7 @@ def load_cfg(cfg_filename):
     if is_ini(cfg_filename):
         return convert_ini(cfg_filename)
     else:
-        return yaml.load(get_resource(cfg_filename), Loader=yaml.FullLoader)
+        return yaml.load(read_resource(cfg_filename), Loader=yaml.FullLoader)
 
 
 def load_core_base_cfg():
@@ -197,7 +201,7 @@ def is_ini(cfg_file):
     if cfg_file.endswith('.yaml') or cfg_file.endswith('.json'):
         return False
     try:
-        ConfigParser().read(cfg_file)
+        RawConfigParser().read(cfg_file)
         return True
     except MissingSectionHeaderError:
         return False

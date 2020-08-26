@@ -1,9 +1,11 @@
 from threading import Event
 import os
+
 import pandas as pd
 
 from yandextank.common.util import FileMultiReader
 from yandextank.plugins.Phantom.reader import PhantomReader, PhantomStatsReader, string_to_df_microsec
+from functools import reduce
 try:
     from yatest import common
     PATH = common.source_path('load/projects/yandex-tank/yandextank/plugins/Phantom/tests')

@@ -1,8 +1,6 @@
 import logging
-try:
-    from urlparse import urljoin
-except ImportError:
-    from urllib.parse import urljoin
+
+from urllib.parse import urljoin
 
 import re
 import pandas

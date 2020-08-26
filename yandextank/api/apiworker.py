@@ -2,8 +2,7 @@
 """ Provides class to run TankCore from python """
 import ctypes
 import logging
-from multiprocessing import Value
-from multiprocessing.process import Process
+from multiprocessing import Value, Process
 
 from yandextank.common.util import Cleanup, Finish, Status
 from yandextank.core.tankworker import TankWorker
@@ -15,24 +14,24 @@ class ApiWorker(Process, TankWorker):
     SECTION = 'core'
     FINISH_FILENAME = 'finish_status.yaml'
 
-    def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
+    def __init__(self, manager, config_paths, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
                  log_handlers=None, wait_lock=False, files=None, ammo_file=None):
         Process.__init__(self)
-        TankWorker.__init__(self, configs=configs, cli_options=cli_options, cfg_patches=cfg_patches,
+        TankWorker.__init__(self, configs=config_paths, cli_options=cli_options, cfg_patches=cfg_patches,
                             cli_args=cli_args, no_local=no_local, log_handlers=log_handlers,
-                            wait_lock=wait_lock, files=files, ammo_file=ammo_file, api_start=True)
+                            wait_lock=wait_lock, files=files, ammo_file=ammo_file, api_start=True, manager=manager)
         self._status = Value(ctypes.c_char_p, Status.TEST_INITIATED)
-        self._test_id = Value(ctypes.c_char_p, self.core.test_id)
-        self._retcode = None
-        self._msg = Value(ctypes.c_char_p, '')
+        self._test_id = Value(ctypes.c_char_p, self.core.test_id.encode('utf8'))
+        self._retcode = Value(ctypes.c_int, 0)
+        self._msg = Value(ctypes.c_char_p, b'')
 
     @property
     def test_id(self):
-        return self._test_id.value
+        return self._test_id.value.decode('utf8')
 
     @property
     def status(self):
-        return self._status.value
+        return self._status.value.decode('utf8')
 
     @status.setter
     def status(self, val):
@@ -40,21 +39,19 @@ class ApiWorker(Process, TankWorker):
 
     @property
     def retcode(self):
-        return self._retcode.value if self._retcode is not None else None
+        return self._retcode.value
 
     @retcode.setter
     def retcode(self, val):
-        if self._retcode is None:
-            self._retcode = Value(ctypes.c_int, val)
-        else:
-            self._retcode.value = val
+        self._retcode.value = val
 
     @property
     def msg(self):
-        return self._msg.value
+        return self._msg.value.decode('utf8')
 
     @msg.setter
     def msg(self, val):
+        val = val.encode('utf8')
         self._msg.value = val
 
     def run(self):

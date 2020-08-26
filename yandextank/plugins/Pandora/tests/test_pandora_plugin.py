@@ -1,29 +1,22 @@
+from http.server import SimpleHTTPRequestHandler, HTTPServer
+
 import pytest
 from mock import MagicMock
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
 
 from yandextank.plugins.Pandora import Plugin
 # https://raw.githubusercontent.com/yandex/yandex-tank/develop/README.md
 
 
-class RequestHandler(BaseHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        self.handlers = {
-            '/ammo': self._ammo,
-        }
-        BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
-
-    def _ammo(self):
-        return 'application/json', '{"test": "ammo"}'
+class RequestHandler(SimpleHTTPRequestHandler):
 
     def _do_handle(self):
-        reply = self.handlers[self.path]()
+        content = '{"test": "ammo"}'.encode('utf-8')
         self.send_response(200)
-        self.send_header('Content-Type', reply[0])
-        self.send_header('Content-Length', len(reply[1]))
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', len(content))
         self.end_headers()
-        self.wfile.write(reply[1])
+        self.wfile.write(content)
 
     def do_GET(self):
         self._do_handle()
@@ -31,17 +24,8 @@ class RequestHandler(BaseHTTPRequestHandler):
     def do_HEAD(self):
         self._do_handle()
 
-    def log_message(self, format, *args):
-        pass
 
-
-class StatHTTPServer(HTTPServer):
-
-    def __init__(self, *args, **kwargs):
-        HTTPServer.__init__(self, *args, **kwargs)
-
-
-SERVER = StatHTTPServer(('localhost', 1234), RequestHandler)
+SERVER = HTTPServer(('localhost', 1234), RequestHandler)
 THREAD = Thread(target=SERVER.serve_forever, name="StatServer")
 
 

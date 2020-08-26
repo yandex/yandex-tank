@@ -65,7 +65,7 @@ class Plugin(GeneratorPlugin):
         self.resources = self.get_option("resources")
 
         # if we use custom pandora binary, we can download it and make it executable
-        self.pandora_cmd = self.get_resource(self.get_option("pandora_cmd"), "./pandora", permissions=0755)
+        self.pandora_cmd = self.get_resource(self.get_option("pandora_cmd"), "./pandora", permissions=0o755)
 
         # download all resources from self.get_options("resources")
         if len(self.resources) > 0:
@@ -197,7 +197,7 @@ class Plugin(GeneratorPlugin):
             self.stats_reader = PandoraStatsReader(self.expvar_enabled, self.expvar_port)
         return self.stats_reader
 
-    def get_resource(self, resource, dst, permissions=0644):
+    def get_resource(self, resource, dst, permissions=0o644):
         opener = resource_manager.get_opener(resource)
         if isinstance(opener, HttpOpener):
             tmp_path = opener.download_file(True, try_ungzip=True)
@@ -205,11 +205,8 @@ class Plugin(GeneratorPlugin):
             logger.info('Successfully moved resource %s', dst)
         else:
             dst = opener.get_filename
-        try:
-            os.chmod(dst, permissions)
-            logger.info('Permissions on %s have changed %d', dst, permissions)
-        except OSError:
-            logger.warning('Cannot change permissions to %s', dst)
+        os.chmod(dst, permissions)
+        logger.info('Permissions on %s have changed %d', dst, permissions)
         return dst
 
     def prepare_test(self):
@@ -295,10 +292,10 @@ class PandoraInfoWidget(AbstractInfoWidget):
         self.active = stats["metrics"]["instances"]
 
     def render(self, screen):
-        text = " Pandora Test %s" % self.krutilka.next()
+        text = " Pandora Test %s" % next(self.krutilka)
         space = screen.right_panel_width - len(text) - 1
-        left_spaces = space / 2
-        right_spaces = space / 2
+        left_spaces = space // 2
+        right_spaces = space // 2
 
         dur_seconds = int(time.time()) - int(self.owner.start_time)
         duration = str(datetime.timedelta(seconds=dur_seconds))

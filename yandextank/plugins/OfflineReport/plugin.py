@@ -84,15 +84,15 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         try:
             self.data_and_stats_stream = io.open(os.path.join(self.core.artifacts_dir,
                                                               self.get_option('offline_data_log')),
-                                                 mode='wb')
+                                                 mode='w')
             self.add_cleanup(lambda: self.data_and_stats_stream.close())
             self.overall_json_stream = io.open(os.path.join(self.core.artifacts_dir,
                                                             self.get_option('offline_json_report')),
-                                                 mode='wb')
+                                                 mode='w')
             self.add_cleanup(lambda: self.overall_json_stream.close())
             self.overall_text_stream = io.open(os.path.join(self.core.artifacts_dir,
                                                             self.get_option('offline_text_report')),
-                                                 mode='wb')
+                                                 mode='w')
             self.add_cleanup(lambda: self.overall_text_stream.close())
         except Exception:
             logging.exception('Failed to open file', exc_info=True)

@@ -10,7 +10,7 @@ import sys
 import time
 import datetime
 import yaml
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from queue import Empty, Queue
 from builtins import str
@@ -227,8 +227,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         port = info.port
         instances = info.instances
         if info.ammo_file is not None:
-            if info.ammo_file.startswith(
-                    "http://") or info.ammo_file.startswith("https://"):
+            if info.ammo_file.startswith("http://") or info.ammo_file.startswith("https://"):
                 ammo_path = info.ammo_file
             else:
                 ammo_path = os.path.realpath(info.ammo_file)
@@ -251,7 +250,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 self.make_symlink(lp_job.number)
             self.publish('job_no', lp_job.number)
         except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError) as e:
-            logger.error(e.message)
+            logger.error(e)
             logger.error(
                 'Failed to connect to Lunapark, disabling DataUploader')
             self.start_test = lambda *a, **kw: None
@@ -298,7 +297,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.web_link = urljoin(self.lp_job.api_client.base_url, str(self.lp_job.number))
         logger.info("Web link: %s", self.web_link)
 
-        self.publish("job_no", self.lp_job.number)
+        self.publish("jobno", self.lp_job.number)
         self.publish("web_link", self.web_link)
 
         jobno_file = self.get_option("jobno_file", '')
@@ -393,7 +392,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 time.sleep(self.get_option('send_status_period'))
             except (APIClient.NetworkError, APIClient.NotAvailable) as e:
                 logger.warn('Failed to send status')
-                logger.debug(e.message)
+                logger.debug(e)
                 break
             except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
@@ -419,7 +418,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 break
             except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
                 logger.warn('Failed to push {} data'.format(name))
-                logger.warn(e.message)
+                logger.warn(e)
                 self.lp_job.interrupted.set()
             except Exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -554,7 +553,6 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self.core.publish(self.SECTION, 'version', self._lp_job.version)
             self.core.publish(self.SECTION, 'component', self.get_option('component'))
             self.core.publish(self.SECTION, 'meta', self.cfg.get('meta', {}))
-
         return self._lp_job
 
     def __get_lp_job(self):
@@ -669,26 +667,27 @@ class JobInfoWidget(AbstractInfoWidget):
 
 class LPJob(object):
     def __init__(
-            self,
-            client,
-            target_host,
-            target_port,
-            person,
-            task,
-            name,
-            description,
-            tank,
-            log_data_requests=False,
-            log_other_requests=False,
-            log_status_requests=False,
-            log_monitoring_requests=False,
-            number=None,
-            token=None,
-            notify_list=None,
-            version=None,
-            detailed_time=None,
-            load_scheme=None,
-            add_cleanup=lambda: None):
+        self,
+        client,
+        target_host,
+        target_port,
+        person,
+        task,
+        name,
+        description,
+        tank,
+        log_data_requests=False,
+        log_other_requests=False,
+        log_status_requests=False,
+        log_monitoring_requests=False,
+        number=None,
+        token=None,
+        notify_list=None,
+        version=None,
+        detailed_time=None,
+        load_scheme=None,
+        add_cleanup=lambda: None
+    ):
         """
         :param client: APIClient
         :param log_data_requests: bool
@@ -731,14 +730,15 @@ class LPJob(object):
                 self.interrupted.set()
 
     def edit_metainfo(
-            self,
-            instances=0,
-            ammo_path=None,
-            loop_count=None,
-            regression_component=None,
-            cmdline=None,
-            is_starred=False,
-            tank_type=1):
+        self,
+        instances=0,
+        ammo_path=None,
+        loop_count=None,
+        regression_component=None,
+        cmdline=None,
+        is_starred=False,
+        tank_type=1
+    ):
         try:
             self.api_client.edit_job_metainfo(jobno=self.number,
                                               job_name=self.name,
@@ -755,7 +755,7 @@ class LPJob(object):
         except (APIClient.NotAvailable, APIClient.StoppedFromOnline, APIClient.NetworkError,
                 APIClient.UnderMaintenance) as e:
             logger.warn('Failed to edit job metainfo on Lunapark')
-            logger.warn(e.message)
+            logger.warn(e)
 
     @property
     def number(self):
@@ -828,7 +828,7 @@ class LPJob(object):
                                             ))
                 return True
             except (APIClient.NotAvailable, APIClient.StoppedFromOnline) as e:
-                logger.info('Target is not locked due to %s', e.message)
+                logger.info('Target is not locked due to %s', e)
                 if ignore:
                     logger.info('ignore_target_locks = 1')
                     return False

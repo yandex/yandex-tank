@@ -1,16 +1,12 @@
 from yandextank.plugins.Telegraf.config import ConfigManager, AgentConfig
 import os
-import sys
 try:
     from yatest import common
     PATH = common.source_path('load/projects/yandex-tank/yandextank/plugins/Telegraf/tests')
 except ImportError:
     PATH = os.path.dirname(__file__)
 
-if sys.version_info[0] < 3:
-    from ConfigParser import ConfigParser
-else:
-    from configparser import ConfigParser
+from configparser import RawConfigParser
 
 
 class TestConfigManager(object):
@@ -65,7 +61,7 @@ class TestAgentConfig(object):
             'sometargethint')
         agent_config = AgentConfig(telegraf_configs[0], False)
         startup = agent_config.create_startup_config()
-        cfg_parser = ConfigParser()
+        cfg_parser = RawConfigParser(strict=False)
         cfg_parser.read(startup)
         assert cfg_parser.has_section('startup')
 
@@ -78,7 +74,7 @@ class TestAgentConfig(object):
         agent_config = AgentConfig(telegraf_configs[0], False)
         remote_workdir = '/path/to/workdir/temp'
         collector_config = agent_config.create_collector_config(remote_workdir)
-        cfg_parser = ConfigParser()
+        cfg_parser = RawConfigParser(strict=False)
         cfg_parser.read(collector_config)
         assert (
             cfg_parser.has_section('agent')

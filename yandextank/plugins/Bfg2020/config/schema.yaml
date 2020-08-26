@@ -1,3 +1,15 @@
+bfg_cmd:
+  type: string
+  description: Path to Bfg2020 binary
+  default: '/usr/bin/bfg2020'
+report_file:
+  type: string
+  description: Report file name. Bfg2020 writes statistic in phout format
+  default: 'phout.log'
+log_level:
+  type: string
+  description: Log level for bfg2020 logger. Can be INFO, DEBUG, ERROR
+  default: 'INFO'
 address:
   type: string
   description: 'Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port. Port is optional. Tank checks each test if port is available'

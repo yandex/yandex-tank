@@ -1,5 +1,4 @@
 ''' Module to check system resources at load generator'''
-
 import logging
 import time
 
@@ -71,7 +70,7 @@ class Plugin(AbstractPlugin):
 
     def __check_mem(self):
         ''' raise exception on RAM exceeded '''
-        mem_free = psutil.virtual_memory().available / 2**20
+        mem_free = psutil.virtual_memory().available / 2 ** 20
         self.log.debug("Memory free: %s/%s", mem_free, self.mem_limit)
         if mem_free < self.mem_limit:
             raise RuntimeError(

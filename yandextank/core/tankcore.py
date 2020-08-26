@@ -30,10 +30,7 @@ from netort.resource import manager as resource
 from netort.process import execute
 from yandextank.version import VERSION
 
-if sys.version_info[0] < 3:
-    import ConfigParser
-else:
-    import configparser as ConfigParser
+import configparser
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +194,8 @@ class TankCore(object):
                     "Correcting to 'yandextank.plugins.DataUploader overload'")
                 plugin_path = "yandextank.plugins.DataUploader overload"
             try:
+                logger.error("Trying to import module: {}".format(plugin_name))
+                logger.error("Path: {}".format(plugin_path))
                 plugin = il.import_module(plugin_path)
             except ImportError:
                 logger.warning('Plugin name %s path %s import error', plugin_name, plugin_path)
@@ -261,11 +260,11 @@ class TankCore(object):
             logger.info("Starting test...")
             self.publish("core", "stage", "start")
             self.job.aggregator.start_test()
-            for plugin in self.plugins.values():
+            for plugin_name, plugin in self.plugins.items():
                 logger.debug("Starting %s", plugin)
                 start_time = time.time()
                 plugin.start_test()
-                logger.info("Plugin {0:s} required {1:f} seconds to start".format(plugin,
+                logger.info("Plugin {0:s} required {1:f} seconds to start".format(plugin_name,
                                                                                   time.time() - start_time))
             self.publish('generator', 'test_start', self.job.generator_plugin.start_time)
 
@@ -507,7 +506,7 @@ class TankCore(object):
             except Exception as ex:
                 logger.error("Failed closing plugin %s: %s", plugin, ex)
                 logger.debug(
-                    "Failed closing plugin: %s", traceback.format_exc(ex))
+                    "Failed closing plugin: %s", traceback.format_exc())
 
     @property
     def artifacts_dir(self):
@@ -633,7 +632,7 @@ class ConfigManager(object):
 
     def __init__(self):
         self.file = None
-        self.config = ConfigParser.ConfigParser()
+        self.config = configparser.RawConfigParser(strict=False)
 
     def load_files(self, configs):
         """         Read configs set into storage        """
@@ -662,7 +661,7 @@ class ConfigManager(object):
                 if not prefix or option.find(prefix) == 0:
                     res += [(
                         option[len(prefix):], self.config.get(section, option))]
-        except ConfigParser.NoSectionError as ex:
+        except configparser.NoSectionError as ex:
             logger.warning("No section: %s", ex)
 
         logger.debug(

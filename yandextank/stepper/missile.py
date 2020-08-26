@@ -107,6 +107,8 @@ class AmmoFileReader(Reader):
             chunk_header = ''
             while chunk_header == '':
                 line = ammo_file.readline()
+                if isinstance(line, bytes):
+                    line = line.decode('utf-8')
                 if line == '':
                     return line
                 chunk_header = line.strip('\r\n')
@@ -132,7 +134,7 @@ class AmmoFileReader(Reader):
                             chunk_header = read_chunk_header(ammo_file)
                             continue
                         marker = fields[1] if len(fields) > 1 else None
-                        missile = ammo_file.read(chunk_size)
+                        missile = ammo_file.read(chunk_size).decode('utf8')
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
                                 "Unexpected end of file: read %s bytes instead of %s"
@@ -160,6 +162,8 @@ class SlowLogReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
+                    if isinstance(line, bytes):
+                        line = line.decode('utf-8')
                     if line.startswith('#'):
                         if request != "":
                             yield (request, None)
@@ -181,6 +185,8 @@ class LineReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
+                    if isinstance(line, bytes):
+                        line = line.decode('utf-8')
                     yield (line.rstrip('\r\n'), None)
                 ammo_file.seek(0)
                 info.status.af_position = 0
@@ -197,6 +203,8 @@ class CaseLineReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
+                    if isinstance(line, bytes):
+                        line = line.decode('utf-8')
                     parts = line.rstrip('\r\n').split('\t', 1)
                     if len(parts) == 2:
                         yield (parts[1], parts[0])
@@ -232,6 +240,8 @@ class AccessLogReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
+                    if isinstance(line, bytes):
+                        line = line.decode('utf-8')
                     try:
                         request = line.split('"')[1]
                         method, uri, proto = request.split()
@@ -272,6 +282,8 @@ class UriReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
+                    if isinstance(line, bytes):
+                        line = line.decode('utf-8')
                     if line.startswith('['):
                         self.headers.update(
                             _parse_header(line.strip('\r\n[]\t ')))
@@ -314,6 +326,8 @@ class UriPostReader(Reader):
             chunk_header = ''
             while chunk_header == '':
                 line = ammo_file.readline()
+                if isinstance(line, bytes):
+                    line = line.decode('utf-8')
                 if line.startswith('['):
                     self.headers.update(_parse_header(line.strip('\r\n[]\t ')))
                 elif line == '':

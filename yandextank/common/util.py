@@ -1,4 +1,4 @@
-import collections
+import collections.abc
 import inspect
 import os
 import pwd
@@ -9,7 +9,6 @@ import traceback
 import http.client
 import logging
 import errno
-import itertools
 import re
 import select
 import psutil
@@ -27,7 +26,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-def get_resource(path, file_open_mode='r'):
+def read_resource(path, file_open_mode='r'):
     if not pip and path in rs.iterkeys(prefix='resfs/file/load/projects/yandex-tank/'):
         return rs.find(path)
     else:
@@ -476,7 +475,7 @@ def pairs(lst):
     """
     Iterate over pairs in the list
     """
-    return itertools.izip(lst[::2], lst[1::2])
+    return zip(lst[::2], lst[1::2])
 
 
 class AddressWizard:
@@ -577,10 +576,10 @@ class AddressWizard:
         try:
             test_sock.settimeout(5)
             test_sock.connect(sa)
-        except Exception as exc:
+        except Exception:
             logger.debug(
                 "Exception on connect attempt [%s]:%s : %s", sa[0], sa[1],
-                traceback.format_exc(exc))
+                traceback.format_exc())
             msg = "TCP Connection test failed for [%s]:%s, use phantom.connection_test=0 to disable it"
             raise RuntimeError(msg % (sa[0], sa[1]))
         finally:
@@ -589,7 +588,7 @@ class AddressWizard:
 
 def recursive_dict_update(d1, d2):
     for k, v in d2.items():
-        if isinstance(v, collections.Mapping):
+        if isinstance(v, collections.abc.Mapping):
             r = recursive_dict_update(d1.get(k, {}), v)
             d1[k] = r
         else:
@@ -635,6 +634,8 @@ class FileScanner(object):
 
 def tail_lines(filepath, lines_num, bufsize=8192):
     fsize = os.stat(filepath).st_size
+    logging.warning('Filepath={}, lines_num={}, buf_size={}, fsize={}'
+                    .format(filepath, lines_num, bufsize, fsize))
     iter_ = 0
     with open(filepath) as f:
         if bufsize > fsize:
@@ -643,7 +644,8 @@ def tail_lines(filepath, lines_num, bufsize=8192):
         try:
             while True:
                 iter_ += 1
-                f.seek(fsize - bufsize * iter_)
+                line_start_pos = max(0, fsize - bufsize * iter_)
+                f.seek(line_start_pos)
                 data.extend(f.readlines())
                 if len(data) >= lines_num or f.tell() == 0:
                     return data[-lines_num:]
@@ -793,6 +795,7 @@ class Cleanup:
         msgs = []
         if exc_type:
             msg = 'Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
+            self.tankworker.retcode = 1
             msgs.append(msg)
             logger.error(msg)
         logger.info('Trying to clean up')
@@ -839,10 +842,10 @@ class TankapiLogFilter(logging.Filter):
 
 
 class Status():
-    TEST_POST_PROCESS = 'POST_PROCESS'
-    TEST_INITIATED = 'INITIATED'
-    TEST_PREPARING = "PREPARING"
-    TEST_NOT_FOUND = "NOT_FOUND"
-    TEST_RUNNING = "RUNNING"
-    TEST_FINISHING = "FINISHING"
-    TEST_FINISHED = "FINISHED"
+    TEST_POST_PROCESS = b'POST_PROCESS'
+    TEST_INITIATED = b'INITIATED'
+    TEST_PREPARING = b'PREPARING'
+    TEST_NOT_FOUND = b'NOT_FOUND'
+    TEST_RUNNING = b'RUNNING'
+    TEST_FINISHING = b'FINISHING'
+    TEST_FINISHED = b'FINISHED'

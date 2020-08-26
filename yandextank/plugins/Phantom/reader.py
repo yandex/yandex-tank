@@ -15,10 +15,7 @@ from pandas.io.common import CParserError
 
 from yandextank.common.interfaces import StatsReader
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +60,7 @@ def string_to_df(data):
 def string_to_df_microsec(data):
     # start_time = time.time()
     try:
-        df = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, na_values='',
-                         dtype=dtypes, quoting=QUOTE_NONE, keep_default_na=False)
+        df = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, na_values='', dtype=dtypes, quoting=QUOTE_NONE)
     except CParserError as e:
         logger.error(e.message)
         logger.error('Incorrect phout data: {}'.format(data))
@@ -86,7 +82,7 @@ class PhantomReader(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         data = self.phout.read(self.cache_size)
         if data is None:
             raise StopIteration
@@ -115,15 +111,15 @@ class PhantomStatsReader(StatsReader):
         """
         Return all items found in this chunk
         """
-        for date_str, statistics in chunk.iteritems():
+        for date_str, statistics in chunk.items():
             date_obj = datetime.datetime.strptime(
                 date_str.split(".")[0], '%Y-%m-%d %H:%M:%S')
             chunk_date = int(time.mktime(date_obj.timetuple()))
             instances = 0
-            for benchmark_name, benchmark in statistics.iteritems():
+            for benchmark_name, benchmark in statistics.items():
                 if not benchmark_name.startswith("benchmark_io"):
                     continue
-                for method, meth_obj in benchmark.iteritems():
+                for method, meth_obj in benchmark.items():
                     if "mmtasks" in meth_obj:
                         instances += meth_obj["mmtasks"][2]
 

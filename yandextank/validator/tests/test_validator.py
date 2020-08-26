@@ -1,4 +1,3 @@
-
 import pytest
 
 from yandextank.validator.validator import TankConfig, ValidationError, PatchedValidator
@@ -99,7 +98,8 @@ PHANTOM_SCHEMA_V_G = {
          'lock_dir': '/var/lock/',
          'taskset_path': 'taskset',
          'affinity': '',
-         'ignore_lock': False
+         'ignore_lock': False,
+         'debug': False
      },
      'telegraf': {
          'package': 'yandextank.plugins.Telegraf',
@@ -222,7 +222,8 @@ PHANTOM_SCHEMA_V_G = {
           'lock_dir': '/var/lock/',
           'taskset_path': 'taskset',
           'affinity': '',
-          'ignore_lock': False}}
+          'ignore_lock': False,
+          'debug': False}}
      )
 ])
 def test_validate_core(config, expected):
@@ -382,7 +383,8 @@ def test_load_multiple(configs, expected):
                 'lock_dir': '/var/lock/',
                 'taskset_path': 'taskset',
                 'affinity': '',
-                'ignore_lock': False
+                'ignore_lock': False,
+                'debug': False
             },
             'telegraf': {
                 'package': 'yandextank.plugins.Telegraf',

@@ -90,7 +90,6 @@ class Plugin(GeneratorPlugin):
 
     def start_test(self):
         _LOGGER.info("Starting shooting process: '%s'", self.__cmd)
-        self.start_time = time.time()
         self.__process = subprocess.Popen(
             self.__cmd,
             shell=True,

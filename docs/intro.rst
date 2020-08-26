@@ -38,10 +38,6 @@ See also
 Evgeniy Mamchits' `phantom <https://github.com/mamchits/phantom>`_ -
 Phantom scalable IO Engine
 
-Phantom `Documentation <https://phantom-doc-ru.readthedocs.io/en/latest/>`_ 
-(sorry, russian only).
-Most useful docs are `result's data format <https://phantom-doc-ru.readthedocs.io/en/latest/analyzing_result_data.html#id1>`_ and `stpd format <https://phantom-doc-ru.readthedocs.io/en/latest/writing-a-phantom-conf.html#ammo-stpd>`_
-
 Alexey Lavrenuke's `pandora <https://github.com/yandex/pandora>`_ -
 A load generator in Go language
 

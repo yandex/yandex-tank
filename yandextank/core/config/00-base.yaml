@@ -17,7 +17,7 @@ json_report:
   enabled: true
   package: yandextank.plugins.JsonReport
 offline_report:
-  enabled: true
+  enabled: false
   package: yandextank.plugins.OfflineReport
 phantom:
   enabled: true

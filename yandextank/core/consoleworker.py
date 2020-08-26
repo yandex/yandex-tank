@@ -4,7 +4,7 @@ import logging
 import os
 import signal
 import sys
-from ConfigParser import ConfigParser, NoOptionError, NoSectionError
+from configparser import RawConfigParser, NoOptionError, NoSectionError
 from threading import Thread
 
 from netort.resource import manager as resource_manager
@@ -23,7 +23,7 @@ class RealConsoleMarkup(object):
     WHITE_ON_BLACK = '\033[37;40m'
     TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
-    new_line = u"\n"
+    new_line = "\n"
 
     YELLOW = '\033[1;33m'
     RED = '\033[1;31m'
@@ -80,7 +80,7 @@ def apply_shorthand_options(config, options, default_section='DEFAULT'):
 
 def load_ini_cfgs(config_files):
     config_filenames = [resource_manager.resource_filename(config) for config in config_files]
-    cfg = ConfigParser()
+    cfg = RawConfigParser()
     cfg.read(config_filenames)
 
     dotted_options = []
@@ -170,13 +170,12 @@ def get_depr_cfg(config_files, no_rc, cmd_options, depr_options):
 
 
 class ConsoleWorker(Thread, TankWorker):
-
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
-                 log_handlers=None, wait_lock=False, files=None, ammo_file=None):
+                 log_handlers=None, wait_lock=False, files=None, ammo_file=None, debug=False):
         Thread.__init__(self)
         TankWorker.__init__(self, configs=configs, cli_options=cli_options, cfg_patches=cfg_patches,
                             cli_args=cli_args, no_local=no_local, log_handlers=log_handlers,
-                            wait_lock=wait_lock, files=files, ammo_file=ammo_file)
+                            wait_lock=wait_lock, files=files, ammo_file=ammo_file, debug=debug)
         self.daemon = True
         self.status = Status.TEST_INITIATED
         self.test_id = self.core.test_id
@@ -189,7 +188,6 @@ class ConsoleWorker(Thread, TankWorker):
             add_cleanup('release lock', lock.release)
             self.status = Status.TEST_PREPARING
             logger.info('Created a folder for the test. %s' % self.folder)
-
             self.core.plugins_configure()
             add_cleanup('plugins cleanup', self.core.plugins_cleanup)
             self.core.plugins_prepare_test()

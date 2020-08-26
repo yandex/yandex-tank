@@ -98,7 +98,7 @@ class AbstractPlugin(object):
     def publish(self, key, value):
         """publish value to status"""
         self.log.debug(
-            "Publishing status: %s/%s: %s", self.__class__.__name__, key, value)
+            "Publishing status: %s/%s: %s", self.__class__.SECTION, key, value)
         self.core.publish(self.__class__.SECTION, key, value)
 
     def close(self):
@@ -304,9 +304,9 @@ class TankInfo(object):
         return value or default
 
     @classmethod
-    def _update_dict(cls, plugin_status_dict, keys, value):
+    def _update_dict(cls, status_dict, keys, value):
         if len(keys) > 1:
-            cls._update_dict(plugin_status_dict.setdefault(keys[0], {}), keys[1:], value)
+            cls._update_dict(status_dict.setdefault(keys[0], {}), keys[1:], value)
         else:
-            plugin_status_dict[keys[0]] = value
-        return plugin_status_dict
+            status_dict[keys[0]] = value
+        return status_dict
