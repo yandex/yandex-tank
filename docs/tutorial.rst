@@ -80,7 +80,7 @@ have following lines:
       - /uri2
     load_profile:
       load_type: rps # schedule load by defining requests per second
-      schedule: const(10, 10m) # starting from 1rps growing linearly to 10rps during 10 minutes
+      schedule: const(10, 10m) # constant load at 10 rps for 10 minutes
   console:
     enabled: true # enable console output
   telegraf:
