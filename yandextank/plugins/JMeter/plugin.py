@@ -220,7 +220,7 @@ class Plugin(GeneratorPlugin):
         except Exception as exc:
             raise RuntimeError("Failed to find the end of JMX XML: %s" % exc)
 
-        udv_tpl = resource_string(__name__, 'config/jmeter_var_template.xml')
+        udv_tpl = resource_string(__name__, 'config/jmeter_var_template.xml').decode('utf8')
         udv_set = []
         for var_name, var_value in variables.items():
             udv_set.append(udv_tpl % (var_name, var_name, var_value))
@@ -249,7 +249,7 @@ class Plugin(GeneratorPlugin):
                 'save_connect': save_connect
             }
 
-        tpl = resource_string(__name__, 'config/' + tpl_resource)
+        tpl = resource_string(__name__, 'config/' + tpl_resource).decode('utf8')
 
         try:
             new_jmx = self.core.mkstemp(
@@ -258,7 +258,7 @@ class Plugin(GeneratorPlugin):
             logger.debug("Can't create modified jmx near original: %s", exc)
             new_jmx = self.core.mkstemp('.jmx', 'modified_')
         logger.debug("Modified JMX: %s", new_jmx)
-        with open(new_jmx, "wb") as fh:
+        with open(new_jmx, "w") as fh:
             fh.write(''.join(source_lines))
             fh.write(tpl % tpl_args)
             fh.write(closing)
@@ -283,12 +283,12 @@ class Plugin(GeneratorPlugin):
                 return True
             else:
                 time.sleep(1)
-        self.log.info('Graceful stop failed after %s' % time.time() - stop_test_started)
+        self.log.info('Graceful stop failed after {}'.format(time.time() - stop_test_started))
         return False
 
     def __send_udp_message(self, message):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.sendto(message, ('localhost', self.jmeter_udp_port))
+        sock.sendto(message.encode('utf8'), ('localhost', self.jmeter_udp_port))
 
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
