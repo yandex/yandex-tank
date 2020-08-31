@@ -13,10 +13,10 @@ def random_split(df):
     while True:
         step = np.random.randint(500, 1200)
         if i + step < len(df):
-            yield df.ix[i:i + step - 1]
+            yield df.loc[i:i + step - 1]
             i += step
         else:
-            yield df.ix[i:]
+            yield df.loc[i:]
             break
 
 

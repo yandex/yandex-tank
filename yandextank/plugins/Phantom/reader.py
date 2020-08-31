@@ -11,7 +11,7 @@ import time
 import datetime
 import itertools as itt
 
-from pandas.io.common import CParserError
+from pandas.io.common import ParserError
 
 from yandextank.common.interfaces import StatsReader
 
@@ -44,7 +44,7 @@ dtypes = {
 def string_to_df(data):
     try:
         chunk = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
-    except CParserError as e:
+    except ParserError as e:
         logger.error(e.message)
         logger.error('Incorrect phout data: {}'.format(data))
         return
@@ -61,7 +61,7 @@ def string_to_df_microsec(data):
     # start_time = time.time()
     try:
         df = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, na_values='', dtype=dtypes, quoting=QUOTE_NONE)
-    except CParserError as e:
+    except ParserError as e:
         logger.error(e.message)
         logger.error('Incorrect phout data: {}'.format(data))
         return
