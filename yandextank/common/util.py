@@ -86,8 +86,8 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
         logger.info("Execute on %s: %s", self.host, cmd)
         with self.connect() as client:
             _, stdout, stderr = client.exec_command(cmd, get_pty=True)
-            output = stdout.read()
-            errors = stderr.read()
+            output = stdout.read().decode('utf8')
+            errors = stderr.read().decode('utf8')
             err_code = stdout.channel.recv_exit_status()
         return output, errors, err_code
 
@@ -184,13 +184,13 @@ class AsyncSession(object):
 
     def read_maybe(self):
         if self.session.recv_ready():
-            return self.session.recv(4096)
+            return self.session.recv(4096).decode('utf8')
         else:
             return None
 
     def read_err_maybe(self):
         if self.session.recv_stderr_ready():
-            return self.session.recv_stderr(4096)
+            return self.session.recv_stderr(4096).decode('utf8')
         else:
             return None
 
@@ -849,3 +849,11 @@ class Status():
     TEST_RUNNING = b'RUNNING'
     TEST_FINISHING = b'FINISHING'
     TEST_FINISHED = b'FINISHED'
+
+
+def get_test_path():
+    try:
+        from yatest import common
+        return common.source_path('load/projects/yandex-tank')
+    except ImportError:
+        return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))

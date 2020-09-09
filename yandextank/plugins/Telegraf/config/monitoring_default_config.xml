@@ -1,3 +1,4 @@
 <Monitoring>
 	<Host address="[target]" />
+<!--      telegraf="/usr/local/bin/telegraf"-->
 </Monitoring>

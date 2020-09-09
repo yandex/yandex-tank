@@ -31,10 +31,11 @@ def calc_duration(first_ts, last_ts):
     return str(last_time - first_time + timedelta(seconds=1))
 
 
-def make_resp_json(overall_times, overall_proto_code, overall_net_code, duration, loadscheme, time_start, autostop_info):
+def make_resp_json(overall_times, overall_proto_code, overall_net_code, duration, loadscheme, time_start,
+                   autostop_info):
     quant = {}
     for q, t in overall_times:
-        quant['q'+str(q)] = t
+        quant['q' + str(q)] = t
     res = {
         "duration": duration,
         "time_start": time_start,
@@ -56,7 +57,8 @@ def make_resp_json(overall_times, overall_proto_code, overall_net_code, duration
     return response
 
 
-def make_resp_text(overall_times, overall_proto_code, overall_net_code, duration, loadscheme, time_start, autostop_info):
+def make_resp_text(overall_times, overall_proto_code, overall_net_code, duration, loadscheme, time_start,
+                   autostop_info):
     res = ['Duration: {:>8}\n'.format(duration)]
     res.append('Loadscheme: {}\n'.format(loadscheme))
     if autostop_info:
@@ -88,11 +90,11 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             self.add_cleanup(lambda: self.data_and_stats_stream.close())
             self.overall_json_stream = io.open(os.path.join(self.core.artifacts_dir,
                                                             self.get_option('offline_json_report')),
-                                                 mode='w')
+                                               mode='w')
             self.add_cleanup(lambda: self.overall_json_stream.close())
             self.overall_text_stream = io.open(os.path.join(self.core.artifacts_dir,
                                                             self.get_option('offline_text_report')),
-                                                 mode='w')
+                                               mode='w')
             self.add_cleanup(lambda: self.overall_text_stream.close())
         except Exception:
             logging.exception('Failed to open file', exc_info=True)

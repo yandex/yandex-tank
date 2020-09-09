@@ -194,8 +194,8 @@ class TankCore(object):
                     "Correcting to 'yandextank.plugins.DataUploader overload'")
                 plugin_path = "yandextank.plugins.DataUploader overload"
             try:
-                logger.error("Trying to import module: {}".format(plugin_name))
-                logger.error("Path: {}".format(plugin_path))
+                logger.info("Trying to import module: {}".format(plugin_name))
+                logger.info("Path: {}".format(plugin_path))
                 plugin = il.import_module(plugin_path)
             except ImportError:
                 logger.warning('Plugin name %s path %s import error', plugin_name, plugin_path)

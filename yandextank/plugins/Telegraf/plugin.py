@@ -6,22 +6,19 @@ import datetime
 import fnmatch
 import json
 import logging
-import os
 import time
 
 from copy import deepcopy
 
-from netort.resource import manager as resource
-
+import pkg_resources
 from yandextank.plugins.DataUploader.client import LPRequisites
 from ...common.interfaces import MonitoringDataListener, AbstractInfoWidget, MonitoringPlugin
-from ...common.util import expand_to_seconds
+from ...common.util import expand_to_seconds, read_resource
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 from ..Console import Plugin as ConsolePlugin
 from ..Telegraf.collector import MonitoringCollector
 
 from configparser import NoOptionError
-
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +32,8 @@ class Plugin(MonitoringPlugin):
         super(Plugin, self).__init__(core, cfg, name)
         self.jobno = None
         self.default_target = None
-        self.default_config = "{path}/config/monitoring_default_config.xml".format(
-            path=os.path.dirname(__file__))
+        self.default_config_path = pkg_resources.resource_filename('yandextank.plugins.Telegraf',
+                                                                   "config/monitoring_default_config.xml")
         self.process = None
         self.monitoring = MonitoringCollector(
             disguise_hostnames=self.get_option('disguise_hostnames'),
@@ -129,18 +126,16 @@ class Plugin(MonitoringPlugin):
                     config_contents = value
                 elif value.lower() == "auto":
                     self.die_on_fail = False
-                    with open(resource.resource_filename(self.default_config), 'rb') as def_config:
-                        config_contents = def_config.read()
+                    config_contents = read_resource(self.default_config_path)
                 else:
-                    with open(resource.resource_filename(value), 'rb') as config:
-                        config_contents = config.read()
+                    config_contents = read_resource(value)
                 self._config = self._save_config_contents(config_contents)
         return self._config
 
     def _save_config_contents(self, contents):
         xmlfile = self.core.mkstemp(".xml", "monitoring_")
         self.core.add_artifact_file(xmlfile)
-        with open(xmlfile, "wb") as f:  # output file should be in binary mode to support py3
+        with open(xmlfile, "w") as f:
             f.write(contents)
         return xmlfile
 

@@ -675,7 +675,7 @@ class PercentilesBlock(AbstractBlock):
                 last_1m = last_1m.add(data, fill_value=0)
         last_1m_times = hist_to_quant(last_1m, self.quantiles)
         quant_times = reversed(
-            zip(self.quantiles, all_times, last_1m_times, last_times)
+            list(zip(self.quantiles, all_times, last_1m_times, last_times))
         )
         data = []
         for q, all_time, last_1m, last_time in quant_times:
@@ -1015,7 +1015,7 @@ class CasesBlock(AbstractBlock):
 
     def __reorder_cases(self):
         sorted_cases = sorted(self.cumulative_cases.items(),
-                              key=lambda k, v: (-1 * v[self.cases_sort_by], k))
+                              key=lambda item: (-1 * item[1][self.cases_sort_by], str(item[0])))
         new_order = [case for (case, data) in sorted_cases]
         now = time.time()
         if now - self.reorder_delay > self.last_reordered:

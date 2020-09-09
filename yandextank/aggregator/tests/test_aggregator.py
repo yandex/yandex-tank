@@ -3,15 +3,10 @@ from threading import Event
 
 import pytest as pytest
 
+from yandextank.common.util import get_test_path
 from yandextank.aggregator import TankAggregator
 from yandextank.common.util import FileMultiReader
 from yandextank.plugins.Phantom.reader import PhantomReader
-
-try:
-    from yatest import common
-    PATH = common.source_path('load/projects/yandex-tank/yandextank/aggregator/tests')
-except ImportError:
-    PATH = os.path.dirname(__file__)
 
 
 class PhantomMock(object):
@@ -45,10 +40,10 @@ class ListenerMock(object):
 
 
 @pytest.mark.parametrize('phout, expected_rps', [
-    ('phout1', 300)
+    ('yandextank/aggregator/tests/phout1', 300)
 ])
 def test_agregator(phout, expected_rps):
-    generator = PhantomMock(os.path.join(PATH, phout))
+    generator = PhantomMock(os.path.join(get_test_path(), phout))
     aggregator = TankAggregator(generator)
     listener = ListenerMock(expected_rps)
     aggregator.add_result_listener(listener)

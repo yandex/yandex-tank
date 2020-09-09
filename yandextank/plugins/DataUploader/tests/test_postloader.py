@@ -1,16 +1,13 @@
 import pytest
 import os
+
+from yandextank.common.util import get_test_path
 from yandextank.plugins.DataUploader.cli import from_tank_config, get_logger
-try:
-    from yatest import common
-    PATH = common.source_path('load/projects/yandex-tank/yandextank/plugins/DataUploader/tests/')
-except ImportError:
-    PATH = os.path.dirname(__file__)
 
 
 @pytest.mark.parametrize('test_dir, expected', [
-    (os.path.join(PATH, 'test_postloader/test_empty'), (None, {})),
-    (os.path.join(PATH, 'test_postloader/test_full'),
+    (os.path.join(get_test_path(), 'yandextank/plugins/DataUploader/tests/test_postloader/test_empty'), (None, {})),
+    (os.path.join(get_test_path(), 'yandextank/plugins/DataUploader/tests/test_postloader/test_full'),
      ('uploader',
       {'api_address': 'https://lunapark.yandex-team.ru/',
        'api_attempts': 2,
@@ -26,7 +23,7 @@ except ImportError:
        'package': 'yandextank.plugins.DataUploader',
        'task': 'LOAD-204'})
      ),
-    (os.path.join(PATH, 'test_postloader/test_disabled'),
+    (os.path.join(get_test_path(), 'yandextank/plugins/DataUploader/tests/test_postloader/test_disabled'),
      ('uploader', {'enabled': False, 'package': 'yandextank.plugins.DataUploader'})),
 ])
 def test_from_tank_config(test_dir, expected):

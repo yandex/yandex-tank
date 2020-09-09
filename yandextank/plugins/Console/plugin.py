@@ -72,7 +72,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
                 if not self.short_only:
                     self.log.debug("Writing console view to STDOUT")
                     sys.stdout.write(self.console_markup.clear)
-                    sys.stdout.write(self.__console_view)
+                    sys.stdout.write(self.__console_view.decode('utf8'))
                     sys.stdout.write(self.console_markup.TOTAL_RESET)
 
     def is_test_finished(self):

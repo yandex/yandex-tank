@@ -56,9 +56,9 @@ class DataReader(object):
 
         if not self.pipe:
             try:
-                self.monout = open(filename, 'r')
-            except Exception as ex:
-                logger.error("Can't open source file %s: %s", filename, ex)
+                self.monout = open(filename, 'rb')
+            except Exception:
+                logger.error("Can't open source file %s: %s", filename, exc_info=True)
                 self.broken = True
         else:
             self.monout = filename
@@ -68,7 +68,7 @@ class DataReader(object):
             if self.broken:
                 data = ''
             else:
-                data = self.monout.readline()
+                data = self.monout.readline().decode('utf8')
             if data:
                 parts = data.rsplit('\n', 1)
                 if len(parts) > 1:
@@ -198,6 +198,7 @@ class AgentWorker(threading.Thread):
 
     @staticmethod
     def __popen(cmnd, shell=False):
+        logger.info('Starting telegraf binary:\n{}'.format(' '.join(cmnd)))
         return subprocess.Popen(
             cmnd,
             bufsize=0,
@@ -211,8 +212,8 @@ class AgentWorker(threading.Thread):
     def read_startup_config(self, cfg_file='agent_startup.cfg'):
         try:
             config = configparser.RawConfigParser(strict=False)
-            with open(os.path.join(self.working_dir, cfg_file), 'rb') as f:
-                config.readfp(f)
+            with open(os.path.join(self.working_dir, cfg_file), 'r') as f:
+                config.read_file(f)
 
             if config.has_section('startup'):
                 for option in config.options('startup'):
