@@ -7,10 +7,9 @@ import tempfile
 import threading
 import time
 from shutil import copyfile, rmtree
-
 from ...common.util import SecuredShell
 
-from ..Telegraf.config import AgentConfig
+from ..Telegraf.config import AgentConfig, create_agent_py
 from ..Telegraf.reader import MonitoringReader
 
 logger = logging.getLogger(__name__)
@@ -48,9 +47,7 @@ class LocalhostClient(object):
         self.reader = MonitoringReader(self.incoming_queue)
 
         self.path = {
-            'AGENT_LOCAL_FOLDER': os.path.join(
-                os.path.dirname(__file__),
-                'agent'),
+            'AGENT_LOCAL_PATH': create_agent_py(self.AGENT_FILENAME),
             'TELEGRAF_LOCAL_PATH': self.telegraf,
         }
 
@@ -62,9 +59,7 @@ class LocalhostClient(object):
         customs_script = self.config.create_custom_exec_script()
         try:
             copyfile(
-                os.path.join(
-                    self.path['AGENT_LOCAL_FOLDER'],
-                    self.AGENT_FILENAME),
+                self.path['AGENT_LOCAL_PATH'],
                 os.path.join(
                     self.workdir,
                     self.AGENT_FILENAME))
@@ -123,7 +118,7 @@ class LocalhostClient(object):
     def read_buffer(self):
         while self.session:
             try:
-                chunk = self.session.stdout.read(4096)
+                chunk = self.session.stdout.read(4096).decode('utf8')
                 if chunk:
                     parts = chunk.rsplit('\n', 1)
                     if len(parts) > 1:
@@ -194,7 +189,7 @@ class SSHClient(object):
             # Destination path on remote host
             'AGENT_REMOTE_FOLDER': '/tmp/',
             # Source path on tank
-            'AGENT_LOCAL_FOLDER': os.path.dirname(__file__) + '/agent',
+            'AGENT_LOCAL_PATH': create_agent_py(self.AGENT_FILENAME),
             'TELEGRAF_REMOTE_PATH': '/tmp/telegraf',
             'TELEGRAF_LOCAL_PATH': self.telegraf,
         }
@@ -284,9 +279,7 @@ class SSHClient(object):
                     return None, None, None
 
             self.ssh.send_file(
-                os.path.join(
-                    self.path['AGENT_LOCAL_FOLDER'],
-                    self.AGENT_FILENAME),
+                self.path['AGENT_LOCAL_PATH'],
                 os.path.join(
                     self.path['AGENT_REMOTE_FOLDER'],
                     self.AGENT_FILENAME))

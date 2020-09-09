@@ -3,6 +3,7 @@ import os.path
 import getpass
 import logging
 import tempfile
+import pkg_resources
 from ..Telegraf.decoder import decoder
 from yandextank.common.util import read_resource
 import configparser
@@ -361,3 +362,11 @@ class AgentConfig(object):
                 exc,
                 exc_info=True)
         return cfg_path
+
+
+def create_agent_py(agent_filename):
+    if not os.path.isfile(agent_filename):
+        with open(agent_filename, 'w') as f:
+            f.write(read_resource(pkg_resources.resource_filename('yandextank.plugins.Telegraf', 'agent/agent.py')))
+        os.chmod(agent_filename, 0o775)
+    return os.path.abspath(agent_filename)
