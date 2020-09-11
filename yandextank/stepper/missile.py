@@ -43,7 +43,7 @@ class HttpAmmo(object):
 
     def to_s(self):
         if self.headers:
-            headers = '\r\n'.join(self.headers) + '\r\n'
+            headers = '\r\n'.join(sorted(list(self.headers))) + '\r\n'
         else:
             headers = ''
         return "%s %s %s\r\n%s\r\n%s" % (
@@ -351,7 +351,7 @@ class UriPostReader(Reader):
                         if chunk_size == 0:
                             missile = ""
                         else:
-                            missile = ammo_file.read(chunk_size)
+                            missile = ammo_file.read(chunk_size).decode('utf8')
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
                                 "Unexpected end of file: read %s bytes instead of %s"

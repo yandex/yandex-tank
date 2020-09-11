@@ -168,24 +168,28 @@ def test_step_factory(step_config, expected_duration):
     assert steps.duration == expected_duration
 
 
-def test_ammo():
-    AMMO_FILE = os.path.join(get_test_path(), 'yandextank/stepper/tests/test-ammo.txt')
+@pytest.mark.parametrize('ammo_type, ammo_file, expected_stpd', [
+    ('phantom', 'yandextank/stepper/tests/test-ammo.txt', 'yandextank/stepper/tests/expected.stpd'),
+    ('uripost', 'yandextank/stepper/tests/test-uripost.txt', 'yandextank/stepper/tests/uripost-expected.stpd')
+])
+def test_ammo(ammo_type, ammo_file, expected_stpd):
+    AMMO_FILE = os.path.join(get_test_path(), ammo_file)
     stepper = Stepper(
         TankCore([{}], threading.Event(), TankInfo({})),
-        rps_schedule=["const(10,30s)"],
+        rps_schedule=["const(10,10s)"],
         http_ver="1.1",
         ammo_file=AMMO_FILE,
         instances_schedule=None,
         instances=10,
         loop_limit=1000,
         ammo_limit=1000,
-        ammo_type='phantom',
+        ammo_type=ammo_type,
         autocases=0,
         enum_ammo=False,
     )
     stepper_output = io.StringIO()
     stepper.write(stepper_output)
     stepper_output.seek(0)
-    expected_lines = read_resource(os.path.join(get_test_path(), 'yandextank/stepper/tests/expected.stpd')).split('\n')
+    expected_lines = read_resource(os.path.join(get_test_path(), expected_stpd)).split('\n')
     for i, (result, expected) in enumerate(zip(stepper_output, expected_lines)):
         assert result.strip() == expected.strip(), 'Line {} mismatch'.format(i)
