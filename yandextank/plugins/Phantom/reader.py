@@ -11,7 +11,7 @@ import time
 import datetime
 import itertools as itt
 
-from pandas.io.common import ParserError
+from pandas.errors import ParserError
 
 from yandextank.common.interfaces import StatsReader
 
