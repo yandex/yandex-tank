@@ -48,7 +48,7 @@ class ComponentFactory():
         self.uris = uris
         if self.uris and loop_limit:
             info.status.ammo_limit = len(self.uris) * loop_limit
-        self.headers = headers
+        self.headers = headers if headers is not None else []
         self.marker = get_marker(autocases, enum_ammo)
         self.chosen_cases = chosen_cases or []
         self.use_cache = use_cache

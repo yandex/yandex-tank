@@ -3,6 +3,8 @@ import os
 import threading
 
 import pytest
+
+from yandextank.stepper.main import LoadProfile
 from yandextank.common.util import get_test_path
 from yandextank.common.util import read_resource
 from yandextank.common.interfaces import TankInfo
@@ -68,10 +70,8 @@ class TestLineNew(object):
             (10, 0, 30 * 1000, 9, (1, 3)),
             (10, 0, 30 * 1000, 10, (0, 2)),
         ])
-    def test_get_rps_list(
-            self, min_rps, max_rps, duration, check_point, expected):
-        assert Line(min_rps, max_rps,
-                    duration).get_rps_list()[check_point] == expected
+    def test_get_rps_list(self, min_rps, max_rps, duration, check_point, expected):
+        assert Line(min_rps, max_rps, duration).get_rps_list()[check_point] == expected
 
     @pytest.mark.parametrize(
         "min_rps, max_rps, duration, expected_len, threshold, len_above_threshold",
@@ -86,9 +86,7 @@ class TestLineNew(object):
             (10, 0, 25000, 125, 10000, 45),
             (10, 0, 25000, 125, 15000, 20),
         ])
-    def test_iter(
-            self, min_rps, max_rps, duration, expected_len, threshold,
-            len_above_threshold):
+    def test_iter(self, min_rps, max_rps, duration, expected_len, threshold, len_above_threshold):
         load_plan = Line(min_rps, max_rps, duration)
         assert len(load_plan) == expected_len
         assert len(
@@ -119,9 +117,7 @@ class TestStairway(object):
         [(0, 1000, 50, 3000, 31500, 9000, 31050),
          (0, 1000, 50, 3000, 31500, 15000, 30000),
          (0, 1000, 50, 3000, 31500, 45000, 15750)])
-    def test_iter(
-            self, min_rps, max_rps, increment, step_duration, expected_len,
-            threshold, len_above_threshold):
+    def test_iter(self, min_rps, max_rps, increment, step_duration, expected_len, threshold, len_above_threshold):
         load_plan = Stairway(min_rps, max_rps, increment, step_duration)
         assert len(load_plan) == expected_len
         assert len(
@@ -168,28 +164,44 @@ def test_step_factory(step_config, expected_duration):
     assert steps.duration == expected_duration
 
 
-@pytest.mark.parametrize('ammo_type, ammo_file, expected_stpd', [
-    ('phantom', 'yandextank/stepper/tests/test-ammo.txt', 'yandextank/stepper/tests/expected.stpd'),
-    ('uripost', 'yandextank/stepper/tests/test-uripost.txt', 'yandextank/stepper/tests/uripost-expected.stpd')
+@pytest.mark.parametrize('stepper_kwargs, expected_stpd', [
+    ({'ammo_file': os.path.join(get_test_path(), 'yandextank/stepper/tests/test-ammo.txt')},
+     'yandextank/stepper/tests/expected.stpd'),
+    ({'ammo_type': 'uripost',
+      'ammo_file': os.path.join(get_test_path(), 'yandextank/stepper/tests/test-uripost.txt')},
+     'yandextank/stepper/tests/uripost-expected.stpd'),
+    ({'uris': ['/case1?sleep=1000', '/case2?sleep=100', '/case3?sleep=10'],
+      'headers': ['[Connection: close]']},
+     'yandextank/stepper/tests/uris-expected.stpd'),
+    ({'ammo_file': os.path.join(get_test_path(), 'yandextank/stepper/tests/test-unicode.txt'),
+      'headers': ['Connection: close', 'Host: web-load03f.yandex.ru']},
+     'yandextank/stepper/tests/unicode-expected.stpd')
 ])
-def test_ammo(ammo_type, ammo_file, expected_stpd):
-    AMMO_FILE = os.path.join(get_test_path(), ammo_file)
+def test_ammo(stepper_kwargs, expected_stpd):
     stepper = Stepper(
         TankCore([{}], threading.Event(), TankInfo({})),
         rps_schedule=["const(10,10s)"],
         http_ver="1.1",
-        ammo_file=AMMO_FILE,
         instances_schedule=None,
         instances=10,
         loop_limit=1000,
         ammo_limit=1000,
-        ammo_type=ammo_type,
         autocases=0,
         enum_ammo=False,
+        **stepper_kwargs
     )
-    stepper_output = io.StringIO()
+    stepper_output = io.BytesIO()
     stepper.write(stepper_output)
     stepper_output.seek(0)
-    expected_lines = read_resource(os.path.join(get_test_path(), expected_stpd)).split('\n')
+    expected_lines = read_resource(os.path.join(get_test_path(), expected_stpd), 'rb').split(b'\n')
     for i, (result, expected) in enumerate(zip(stepper_output, expected_lines)):
         assert result.strip() == expected.strip(), 'Line {} mismatch'.format(i)
+
+
+@pytest.mark.parametrize('load_type, schedule, expected', [
+    ('rps', 'const(10,10s)', ['const(10,10s)']),
+    ('rps', 'line(1,12,30s)const(12,15m)line(12,10,15m)', ['line(1,12,30s)', 'const(12,15m)', 'line(12,10,15m)'])
+])
+def test_load_profile(load_type, schedule, expected):
+    schedule = LoadProfile(load_type, schedule).schedule
+    assert schedule == expected

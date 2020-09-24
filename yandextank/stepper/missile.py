@@ -32,7 +32,7 @@ class HttpAmmo(object):
     hello!
     '''
 
-    def __init__(self, uri, headers, method='GET', http_ver='1.1', body=''):
+    def __init__(self, uri, headers, method='GET', http_ver='1.1', body=b''):
         self.method = method
         self.uri = uri
         self.proto = 'HTTP/%s' % http_ver
@@ -43,11 +43,15 @@ class HttpAmmo(object):
 
     def to_s(self):
         if self.headers:
-            headers = '\r\n'.join(sorted(list(self.headers))) + '\r\n'
+            headers = b'\r\n'.join(sorted([h.encode('utf8') for h in self.headers])) + b'\r\n'
         else:
-            headers = ''
-        return "%s %s %s\r\n%s\r\n%s" % (
-            self.method, self.uri, self.proto, headers, self.body)
+            headers = b''
+        return b"%s %s %s\r\n%s\r\n%s" % (
+            self.method.encode('utf8'),
+            self.uri.encode('utf8'),
+            self.proto.encode('utf8'),
+            headers,
+            self.body)
 
 
 class SimpleGenerator(object):
@@ -134,7 +138,7 @@ class AmmoFileReader(Reader):
                             chunk_header = read_chunk_header(ammo_file)
                             continue
                         marker = fields[1] if len(fields) > 1 else None
-                        missile = ammo_file.read(chunk_size).decode('utf8')
+                        missile = ammo_file.read(chunk_size)
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
                                 "Unexpected end of file: read %s bytes instead of %s"
@@ -349,9 +353,9 @@ class UriPostReader(Reader):
                         uri = fields[1]
                         marker = fields[2] if len(fields) > 2 else None
                         if chunk_size == 0:
-                            missile = ""
+                            missile = b""
                         else:
-                            missile = ammo_file.read(chunk_size).decode('utf8')
+                            missile = ammo_file.read(chunk_size)
                         if len(missile) < chunk_size:
                             raise AmmoFileError(
                                 "Unexpected end of file: read %s bytes instead of %s"

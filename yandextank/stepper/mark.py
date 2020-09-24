@@ -13,7 +13,7 @@ param1=50&param2=0&param3=hello
 
 def __mark_by_uri(missile):
     return '_'.join(
-        missile.split('\n', 1)[0].split(' ', 2)[1].split('?')[0].split('/'))
+        missile.decode('utf8').split('\n', 1)[0].split(' ', 2)[1].split('?')[0].split('/'))
 
 
 class __UriMarker(object):
@@ -30,7 +30,7 @@ class __UriMarker(object):
 
     def __call__(self, missile):
         return '_'.join(
-            missile.split('\n', 1)[0].split(' ', 2)[1].split('?')[0].split('/')[
+            missile.decode('utf8').split('\n', 1)[0].split(' ', 2)[1].split('?')[0].split('/')[
                 0:self.limit + 1])
 
 
