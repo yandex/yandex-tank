@@ -165,7 +165,8 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             self.last_ts = stats['ts']
 
     def post_process(self, retcode):
-        self.data_and_stats_stream.write('{}]')
+        self.data_and_stats_stream.seek(self.data_and_stats_stream.tell()-2, os.SEEK_SET)
+        self.data_and_stats_stream.write(']')
         overall_times = calc_overall_times(self.overall, self.quantiles)
         stepper_info = self.core.info.get_value(['stepper'])
 
