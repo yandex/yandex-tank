@@ -719,6 +719,8 @@ class LPJob(object):
         self.is_finished = False
         self.web_link = ''
         self.add_cleanup = add_cleanup
+        if self._number:
+            self.add_cleanup()
 
     def push_test_data(self, data, stats):
         if not self.interrupted.is_set():
