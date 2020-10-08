@@ -31,11 +31,16 @@ class ApiWorker(Process, TankWorker):
 
     @property
     def status(self):
-        return self._status.value.decode('utf8')
+        self._status.acquire()
+        res = self._status.value
+        self._status.release()
+        return res
 
     @status.setter
     def status(self, val):
+        self._status.acquire()
         self._status.value = val
+        self._status.release()
 
     @property
     def retcode(self):
@@ -47,12 +52,17 @@ class ApiWorker(Process, TankWorker):
 
     @property
     def msg(self):
-        return self._msg.value.decode('utf8')
+        self._msg.acquire()
+        res = self._msg.value.decode('utf8')
+        self._msg.release()
+        return res
 
     @msg.setter
     def msg(self, val):
-        val = val.encode('utf8')
-        self._msg.value = val
+        value = val.encode('utf8')
+        self._msg.acquire()
+        self._msg.value = value
+        self._msg.release()
 
     def run(self):
         with Cleanup(self) as add_cleanup:

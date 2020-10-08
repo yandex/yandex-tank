@@ -87,7 +87,7 @@ class TankWorker():
         logger.warning('Interrupting')
 
     def get_status(self):
-        return {'status_code': self.status,
+        return {'status_code': self.status.decode('utf8'),
                 'left_time': None,
                 'exit_code': self.retcode,
                 'lunapark_id': self.get_info('uploader', 'job_no'),
