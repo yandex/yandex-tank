@@ -165,31 +165,39 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             self.last_ts = stats['ts']
 
     def post_process(self, retcode):
-        self.data_and_stats_stream.seek(self.data_and_stats_stream.tell()-2, os.SEEK_SET)
-        self.data_and_stats_stream.write(']')
+        try:
+            self.data_and_stats_stream.seek(self.data_and_stats_stream.tell()-2, os.SEEK_SET)
+            self.data_and_stats_stream.write(']')
+        except ValueError as e:
+            logger.error('Can\'t write offline report %s', e)
+
         overall_times = calc_overall_times(self.overall, self.quantiles)
         stepper_info = self.core.info.get_value(['stepper'])
 
         try:
             duration = str(timedelta(seconds=stepper_info['duration']))
-        except KeyError as e:
+        except (KeyError, TypeError) as e:
             logger.error('Can\'t get test duration %s', e)
             duration = calc_duration(self.first_ts, self.last_ts)
 
         try:
             loadscheme = ' '.join(stepper_info['loadscheme'])
-        except KeyError as e:
+        except (KeyError, TypeError) as e:
             logger.error('Can\'t get test loadscheme %s', e)
             loadscheme = None
 
         generator_info = self.core.info.get_value(['generator'])
         try:
             time_start = datetime.fromtimestamp(generator_info['time_start']).strftime("%Y-%m-%d %H:%M:%S")
-        except KeyError as e:
+        except (KeyError, TypeError) as e:
             logger.error('Can\'t get test start time %s', e)
             time_start = datetime.fromtimestamp(self.first_ts).strftime("%Y-%m-%d %H:%M:%S")
 
-        autostop_info = self.core.info.get_value(['autostop'])
+        try:
+            autostop_info = self.core.info.get_value(['autostop'])
+        except (KeyError, TypeError) as e:
+            logger.error('Can\'t get autostop info %s', e)
+            autostop_info = None
 
         resp_json = make_resp_json(
             overall_times,
