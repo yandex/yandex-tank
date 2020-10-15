@@ -175,7 +175,11 @@ def test_step_factory(step_config, expected_duration):
      'yandextank/stepper/tests/uris-expected.stpd'),
     ({'ammo_file': os.path.join(get_test_path(), 'yandextank/stepper/tests/test-unicode.txt'),
       'headers': ['Connection: close', 'Host: web-load03f.yandex.ru']},
-     'yandextank/stepper/tests/unicode-expected.stpd')
+     'yandextank/stepper/tests/unicode-expected.stpd'),
+    ({'ammo_type': 'caseline',
+      'ammo_file': os.path.join(get_test_path(), 'yandextank/stepper/tests/test-caseline.txt')},
+     'yandextank/stepper/tests/caseline-expected.stpd')
+
 ])
 def test_ammo(stepper_kwargs, expected_stpd):
     stepper = Stepper(

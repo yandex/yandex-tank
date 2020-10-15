@@ -189,9 +189,7 @@ class LineReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
-                    if isinstance(line, bytes):
-                        line = line.decode('utf-8')
-                    yield (line.rstrip('\r\n'), None)
+                    yield (line.rstrip(b'\r\n'), None) if isinstance(line, bytes) else (line.rstrip('\r\n').encode('utf8'), None)
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()
@@ -211,9 +209,9 @@ class CaseLineReader(Reader):
                         line = line.decode('utf-8')
                     parts = line.rstrip('\r\n').split('\t', 1)
                     if len(parts) == 2:
-                        yield (parts[1], parts[0])
+                        yield (parts[1].encode('utf8'), parts[0])
                     elif len(parts) == 1:
-                        yield (parts[0], None)
+                        yield (parts[0].encode('utf8'), None)
                     else:
                         raise RuntimeError("Unreachable branch")
                 ammo_file.seek(0)
