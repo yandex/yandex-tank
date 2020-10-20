@@ -1,4 +1,3 @@
-.arcignore
 tmp
 dlls
 .idea
@@ -6,3 +5,5 @@ dlls
 *.iws
 *.ipr
 *.pyc
+logs/
+.pytest_cache/

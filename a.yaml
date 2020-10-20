@@ -1,0 +1,36 @@
+service: load
+title: Yandex-Tank
+ci:
+  releases:
+    my-app-release:
+      title: Yandex-tank release
+      flow: yandextank-release-flow
+      stages:
+        single:
+          title: Single
+  secret: sec-01d29tnxhn45y1vytr190qzy41
+  runtime:
+    sandbox-owner: LOAD
+  flows:
+    yandextank-release-flow:
+      title: Yandextank release flow
+      jobs:
+        build:
+          title: Build
+          task: common/arcadia/ya_package
+          stage: single
+          input:
+            packages: load/projects/yandex-tank-internal-pkg/docker_pkg.json
+            resource_type: YA_PACKAGE
+            package_type: docker
+        deploy_onto_testing:
+          needs: build
+          title: Deploy onto testing
+          task: common/deploy/release
+          input:
+            config:
+              sandboxResourceType: YA_PACKAGE
+              commonReleaseData:
+                releaseStage: testing
+                releaseNotes: Release from ci
+              stageName: Yandextank_testing-acceptance
