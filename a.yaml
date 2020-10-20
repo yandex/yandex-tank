@@ -23,6 +23,7 @@ ci:
             packages: load/projects/yandex-tank-internal-pkg/docker_pkg.json
             resource_type: YA_PACKAGE
             package_type: docker
+            docker_push_image: true
         deploy_onto_testing:
           needs: build
           title: Deploy onto testing
