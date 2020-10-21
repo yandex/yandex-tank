@@ -27,6 +27,17 @@ ci:
             docker_token_vault_name: robot-lunapark-token
             docker_image_repository: load/test
             custom_version: "${context.targetRevision.hash}"
+            compress_package_archive: True
+            docker_user: robot-lunapark
+            release_to_ya_deploy: True
+            ignore_recurses: True
+            publish_package: True
+            release_per_resource: True
+            multiple_publish: True
+            multiple_publish_to: LOAD
+            key_user: robot-lunapark
+
+            
         deploy_onto_testing:
           needs: build
           title: Deploy onto testing
