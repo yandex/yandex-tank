@@ -8,6 +8,7 @@ ci:
       stages:
         single:
           title: Single
+      auto: true
   secret: sec-01d29tnxhn45y1vytr190qzy41
   runtime:
     sandbox-owner: LOAD
