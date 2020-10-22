@@ -22,7 +22,7 @@ ci:
           stage: single
           input:
             packages: load/projects/yandex-tank-internal-pkg/docker_pkg.json
-            resource_type: YA_PACKAGE
+            resource_type: TANK_PACKAGE
             package_type: docker
             docker_push_image: true
             docker_token_vault_name: robot-lunapark-token
@@ -30,10 +30,8 @@ ci:
             custom_version: "${context.targetRevision.hash}"
             compress_package_archive: True
             docker_user: robot-lunapark
-            release_to_ya_deploy: True
             ignore_recurses: True
             publish_package: True
-            release_per_resource: True
             multiple_publish: True
             multiple_publish_to: LOAD
             key_user: robot-lunapark
@@ -45,7 +43,7 @@ ci:
           task: common/deploy/release
           input:
             config:
-              sandboxResourceType: YA_PACKAGE
+              sandboxResourceType: TANK_PACKAGE
               commonReleaseData:
                 releaseStage: testing
                 releaseNotes: Release from ci
