@@ -164,7 +164,7 @@ class BFGMultiprocessing(BFGBase):
                 try:
                     with self.instance_counter.get_lock():
                         self.instance_counter.value += 1
-                    self.gun.shoot(missile, marker)
+                    self.gun.shoot(missile.decode('utf8'), marker)
                 finally:
                     with self.instance_counter.get_lock():
                         self.instance_counter.value -= 1
@@ -260,7 +260,7 @@ class BFGGreen(BFGBase):
                     with self.instance_counter.get_lock():
                         self.instance_counter.value += 1
 
-                    self.gun.shoot(missile, marker)
+                    self.gun.shoot(missile.decode('utf8'), marker)
                 finally:
                     with self.instance_counter.get_lock():
                         self.instance_counter.value -= 1
