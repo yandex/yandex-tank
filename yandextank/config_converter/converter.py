@@ -462,10 +462,6 @@ def enable_sections(sections, core_opts):
     return sections
 
 
-def partition(l, predicate):
-    return reduce(lambda x, y: (x[0] + [y], x[1]) if predicate(y) else (x[0], x[1] + [y]), l, ([], []))
-
-
 def combine_sections(sections):
     """
     :type sections: list of Section

@@ -166,7 +166,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
 
     def post_process(self, retcode):
         try:
-            self.data_and_stats_stream.seek(self.data_and_stats_stream.tell()-2, os.SEEK_SET)
+            self.data_and_stats_stream.seek(self.data_and_stats_stream.tell() - 2, os.SEEK_SET)
             self.data_and_stats_stream.write(']')
         except ValueError as e:
             logger.error('Can\'t write offline report %s', e)
