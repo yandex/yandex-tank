@@ -183,11 +183,13 @@ class TestFileMultiReader(object):
         mr.close()
         return errors
 
+    @pytest.mark.skip('no module in arcadia')
     @pytest.mark.benchmark(min_rounds=10)
     def test_read(self, benchmark):
         errors = benchmark(self.phout_multi_read)
         assert len(errors) == 0
 
+    @pytest.mark.skip('no module in arcadia')
     @pytest.mark.benchmark(min_rounds=5)
     def test_readline(self, benchmark):
         errors = benchmark(self.phout_multi_readline)

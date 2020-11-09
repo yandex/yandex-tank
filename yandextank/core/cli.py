@@ -2,11 +2,11 @@ import logging
 import sys
 from optparse import OptionParser
 
-import pkg_resources
 from netort.resource import manager as resource_manager
-from yandextank.core.consoleworker import TankWorker
+from yandextank.core.consoleworker import ConsoleWorker
 from yandextank.core.tankcore import LockError
 from yandextank.validator.validator import ValidationError
+from yandextank.version import VERSION
 
 
 def main():
@@ -104,7 +104,7 @@ def main():
 
     options, ammofiles = parser.parse_args()
     if options.version:
-        print('YandexTank/{}'.format(pkg_resources.require('yandextank')[0].version))
+        print('YandexTank/{}'.format(VERSION))
         return
 
     ammofile = ammofiles[0] if len(ammofiles) > 0 else None
@@ -122,14 +122,15 @@ def main():
             'ammofile': ammofile
         }
     try:
-        worker = TankWorker([resource_manager.resource_filename(cfg) for cfg in options.config],
-                            options.option,
-                            options.patches,
-                            [cli_kwargs],
-                            options.no_rc,
-                            ammo_file=ammofile if ammofile else None,
-                            log_handlers=handlers
-                            )
+        worker = ConsoleWorker([resource_manager.resource_filename(cfg) for cfg in options.config],
+                               options.option,
+                               options.patches,
+                               [cli_kwargs],
+                               options.no_rc,
+                               ammo_file=ammofile if ammofile else None,
+                               log_handlers=handlers,
+                               debug=options.verbose
+                               )
     except (ValidationError, LockError) as e:
         logging.error('Config validation error:\n{}'.format(e.message))
         return
@@ -148,7 +149,7 @@ def main():
 def init_logging(events_log_fname, verbose, quiet):
     """ Set up logging, as it is very important for console tool """
     logger = logging.getLogger('')
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG if verbose else logging.INFO)
 
     # create file handler which logs error messages
 

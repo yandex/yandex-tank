@@ -1,0 +1,500 @@
+55 0 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 100 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 200 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 300 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 400 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 500 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 600 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 700 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 800 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 900 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 1000 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 1100 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 1200 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 1300 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 1400 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 1500 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 1600 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 1700 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 1800 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 1900 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 2000 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 2100 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 2200 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 2300 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 2400 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 2500 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 2600 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 2700 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 2800 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 2900 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 3000 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 3100 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 3200 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 3300 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 3400 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 3500 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 3600 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 3700 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 3800 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 3900 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 4000 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 4100 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 4200 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 4300 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 4400 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 4500 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 4600 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 4700 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 4800 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 4900 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 5000 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 5100 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 5200 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 5300 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 5400 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 5500 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 5600 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 5700 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 5800 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 5900 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 6000 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 6100 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 6200 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 6300 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 6400 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 6500 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 6600 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 6700 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 6800 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 6900 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 7000 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 7100 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 7200 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 7300 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 7400 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 7500 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 7600 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 7700 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 7800 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 7900 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 8000 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 8100 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 8200 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 8300 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 8400 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 8500 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 8600 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 8700 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 8800 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 8900 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 9000 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 9100 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 9200 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 9300 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 9400 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 9500 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 9600 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+
+54 9700 
+GET /case2?sleep=100 HTTP/1.1
+[Connection: close]
+
+
+53 9800 
+GET /case3?sleep=10 HTTP/1.1
+[Connection: close]
+
+
+55 9900 
+GET /case1?sleep=1000 HTTP/1.1
+[Connection: close]
+
+

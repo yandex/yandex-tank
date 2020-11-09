@@ -98,8 +98,8 @@ class AbstractPlugin(object):
     def publish(self, key, value):
         """publish value to status"""
         self.log.debug(
-            "Publishing status: %s/%s: %s", self.__class__.__name__, key, value)
-        self.core.publish(self.__class__.__name__, key, value)
+            "Publishing status: %s/%s: %s", self.__class__.SECTION, key, value)
+        self.core.publish(self.__class__.SECTION, key, value)
 
     def close(self):
         """
@@ -279,3 +279,34 @@ class MonitoringPlugin(AbstractPlugin):
 
     def add_listener(self, plugin):
         self.listeners.add(plugin)
+
+
+class TankInfo(object):
+    def __init__(self, info):
+        self._info = info
+
+    def get_info_dict(self):
+        return self._info.copy()
+
+    def _set_info(self, new_info_dict):
+        raise NotImplementedError
+
+    def update(self, keys, value):
+        if len(keys) > 1:
+            self._info[keys[0]] = self._update_dict(self.get_value([keys[0]], {}), keys[1:], value)
+        else:
+            self._info[keys[0]] = value
+
+    def get_value(self, keys, default=None):
+        value = self.get_info_dict()
+        for key in keys:
+            value = value.get(key, {})
+        return value or default
+
+    @classmethod
+    def _update_dict(cls, status_dict, keys, value):
+        if len(keys) > 1:
+            cls._update_dict(status_dict.setdefault(keys[0], {}), keys[1:], value)
+        else:
+            status_dict[keys[0]] = value
+        return status_dict

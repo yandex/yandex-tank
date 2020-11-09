@@ -32,7 +32,7 @@ class HttpAmmo(object):
     hello!
     '''
 
-    def __init__(self, uri, headers, method='GET', http_ver='1.1', body=''):
+    def __init__(self, uri, headers, method='GET', http_ver='1.1', body=b''):
         self.method = method
         self.uri = uri
         self.proto = 'HTTP/%s' % http_ver
@@ -43,11 +43,15 @@ class HttpAmmo(object):
 
     def to_s(self):
         if self.headers:
-            headers = '\r\n'.join(self.headers) + '\r\n'
+            headers = b'\r\n'.join(sorted([h.encode('utf8') for h in self.headers])) + b'\r\n'
         else:
-            headers = ''
-        return "%s %s %s\r\n%s\r\n%s" % (
-            self.method, self.uri, self.proto, headers, self.body)
+            headers = b''
+        return b"%s %s %s\r\n%s\r\n%s" % (
+            self.method.encode('utf8'),
+            self.uri.encode('utf8'),
+            self.proto.encode('utf8'),
+            headers,
+            self.body)
 
 
 class SimpleGenerator(object):
@@ -107,6 +111,8 @@ class AmmoFileReader(Reader):
             chunk_header = ''
             while chunk_header == '':
                 line = ammo_file.readline()
+                if isinstance(line, bytes):
+                    line = line.decode('utf-8')
                 if line == '':
                     return line
                 chunk_header = line.strip('\r\n')
@@ -160,6 +166,8 @@ class SlowLogReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
+                    if isinstance(line, bytes):
+                        line = line.decode('utf-8')
                     if line.startswith('#'):
                         if request != "":
                             yield (request, None)
@@ -181,7 +189,7 @@ class LineReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
-                    yield (line.rstrip('\r\n'), None)
+                    yield (line.rstrip(b'\r\n'), None) if isinstance(line, bytes) else (line.rstrip('\r\n').encode('utf8'), None)
                 ammo_file.seek(0)
                 info.status.af_position = 0
                 info.status.inc_loop_count()
@@ -197,11 +205,13 @@ class CaseLineReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
+                    if isinstance(line, bytes):
+                        line = line.decode('utf-8')
                     parts = line.rstrip('\r\n').split('\t', 1)
                     if len(parts) == 2:
-                        yield (parts[1], parts[0])
+                        yield (parts[1].encode('utf8'), parts[0])
                     elif len(parts) == 1:
-                        yield (parts[0], None)
+                        yield (parts[0].encode('utf8'), None)
                     else:
                         raise RuntimeError("Unreachable branch")
                 ammo_file.seek(0)
@@ -232,6 +242,8 @@ class AccessLogReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
+                    if isinstance(line, bytes):
+                        line = line.decode('utf-8')
                     try:
                         request = line.split('"')[1]
                         method, uri, proto = request.split()
@@ -272,6 +284,8 @@ class UriReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
+                    if isinstance(line, bytes):
+                        line = line.decode('utf-8')
                     if line.startswith('['):
                         self.headers.update(
                             _parse_header(line.strip('\r\n[]\t ')))
@@ -314,6 +328,8 @@ class UriPostReader(Reader):
             chunk_header = ''
             while chunk_header == '':
                 line = ammo_file.readline()
+                if isinstance(line, bytes):
+                    line = line.decode('utf-8')
                 if line.startswith('['):
                     self.headers.update(_parse_header(line.strip('\r\n[]\t ')))
                 elif line == '':
@@ -335,7 +351,7 @@ class UriPostReader(Reader):
                         uri = fields[1]
                         marker = fields[2] if len(fields) > 2 else None
                         if chunk_size == 0:
-                            missile = ""
+                            missile = b""
                         else:
                             missile = ammo_file.read(chunk_size)
                         if len(missile) < chunk_size:

@@ -1,1 +1,1 @@
-from .client import OpenTSDBClient  # noqa:F401
+from .client import OpenTSDBClient  # noqa

@@ -17,6 +17,9 @@ jmeter:
 jsonreport:
   enabled: true
   package: yandextank.plugins.JsonReport
+offlinereport:
+  enabled: true
+  package: yandextank.plugins.OfflineReport
 phantom:
   enabled: true
   package: yandextank.plugins.Phantom

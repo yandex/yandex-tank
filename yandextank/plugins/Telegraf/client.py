@@ -7,10 +7,9 @@ import tempfile
 import threading
 import time
 from shutil import copyfile, rmtree
-
 from ...common.util import SecuredShell
 
-from ..Telegraf.config import AgentConfig
+from ..Telegraf.config import AgentConfig, create_agent_py
 from ..Telegraf.reader import MonitoringReader
 
 logger = logging.getLogger(__name__)
@@ -48,9 +47,7 @@ class LocalhostClient(object):
         self.reader = MonitoringReader(self.incoming_queue)
 
         self.path = {
-            'AGENT_LOCAL_FOLDER': os.path.join(
-                os.path.dirname(__file__),
-                'agent'),
+            'AGENT_LOCAL_PATH': create_agent_py(self.AGENT_FILENAME),
             'TELEGRAF_LOCAL_PATH': self.telegraf,
         }
 
@@ -62,9 +59,7 @@ class LocalhostClient(object):
         customs_script = self.config.create_custom_exec_script()
         try:
             copyfile(
-                os.path.join(
-                    self.path['AGENT_LOCAL_FOLDER'],
-                    self.AGENT_FILENAME),
+                self.path['AGENT_LOCAL_PATH'],
                 os.path.join(
                     self.workdir,
                     self.AGENT_FILENAME))
@@ -80,7 +75,7 @@ class LocalhostClient(object):
             if not os.path.isfile(self.path['TELEGRAF_LOCAL_PATH']):
                 logger.error(
                     'Telegraf binary not found at specified path: %s\n'
-                    'You can download telegraf binaries here: https://github.com/influxdata/telegraf\n'
+                    'You can find telegraf binaries here: https://github.com/influxdata/telegraf\n'
                     'or install debian package: `telegraf`',
                     self.path['TELEGRAF_LOCAL_PATH'])
                 return None, None, None
@@ -104,7 +99,6 @@ class LocalhostClient(object):
 
     def start(self):
         """Start local agent"""
-        logger.info('Starting agent on localhost')
         args = self.python.split() + [
             os.path.join(
                 self.workdir,
@@ -115,6 +109,7 @@ class LocalhostClient(object):
             self.host]
         if self.kill_old:
             args.append(self.kill_old)
+        logger.info('Starting agent on localhost: {}'.format(args))
         self.session = self.popen(args)
         self.reader_thread = threading.Thread(target=self.read_buffer)
         self.reader_thread.setDaemon(True)
@@ -123,7 +118,7 @@ class LocalhostClient(object):
     def read_buffer(self):
         while self.session:
             try:
-                chunk = self.session.stdout.read(4096)
+                chunk = self.session.stdout.read(4096).decode('utf8')
                 if chunk:
                     parts = chunk.rsplit('\n', 1)
                     if len(parts) > 1:
@@ -153,7 +148,7 @@ class LocalhostClient(object):
         log_filename = "agent_{host}.log".format(host="localhost")
         data_filename = "agent_{host}.rawdata".format(host="localhost")
         try:
-            logger.info('Saving monitoring artefacts from localhost')
+            logger.info('Saving monitoring artifacts from localhost')
             copyfile(self.workdir + "/_agent.log", log_filename)
             copyfile(self.workdir + "/monitoring.rawdata", data_filename)
             logger.info('Deleting temp directory: %s', self.workdir)
@@ -194,7 +189,7 @@ class SSHClient(object):
             # Destination path on remote host
             'AGENT_REMOTE_FOLDER': '/tmp/',
             # Source path on tank
-            'AGENT_LOCAL_FOLDER': os.path.dirname(__file__) + '/agent',
+            'AGENT_LOCAL_PATH': create_agent_py(self.AGENT_FILENAME),
             'TELEGRAF_REMOTE_PATH': '/tmp/telegraf',
             'TELEGRAF_LOCAL_PATH': self.telegraf,
         }
@@ -208,7 +203,7 @@ class SSHClient(object):
             self.host)
 
         # create remote temp dir
-        cmd = self.python + ' -c "import tempfile; print tempfile.mkdtemp();"'
+        cmd = self.python + ' -c "import tempfile; print(tempfile.mkdtemp());"'
         logger.info("Creating temp dir on %s", self.host)
         try:
             out, errors, err_code = self.ssh.execute(cmd)
@@ -279,14 +274,12 @@ class SSHClient(object):
                 else:
                     logger.error(
                         'Telegraf binary not found neither on %s nor on localhost at specified path: %s\n'
-                        'You can download telegraf binaries here: https://github.com/influxdata/telegraf\n'
+                        'You can find telegraf binaries here: https://github.com/influxdata/telegraf\n'
                         'or install debian package: `telegraf`', self.host, self.path['TELEGRAF_LOCAL_PATH'])
                     return None, None, None
 
             self.ssh.send_file(
-                os.path.join(
-                    self.path['AGENT_LOCAL_FOLDER'],
-                    self.AGENT_FILENAME),
+                self.path['AGENT_LOCAL_PATH'],
                 os.path.join(
                     self.path['AGENT_REMOTE_FOLDER'],
                     self.AGENT_FILENAME))
@@ -377,21 +370,20 @@ class SSHClient(object):
                 'Unable to correctly stop monitoring agent - session is broken. Pay attention to agent log (%s).',
                 log_filename,
                 exc_info=True)
-        else:
-            try:
-                self.ssh.get_file(
-                    os.path.join(
-                        self.path['AGENT_REMOTE_FOLDER'],
-                        "_agent.log"),
-                    log_filename)
-                self.ssh.get_file(
-                    os.path.join(
-                        self.path['AGENT_REMOTE_FOLDER'],
-                        "monitoring.rawdata"),
-                    data_filename)
-                self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
-            except Exception:
-                logger.error("Unable to get agent artefacts", exc_info=True)
+        try:
+            self.ssh.get_file(
+                os.path.join(
+                    self.path['AGENT_REMOTE_FOLDER'],
+                    "_agent.log"),
+                log_filename)
+            self.ssh.get_file(
+                os.path.join(
+                    self.path['AGENT_REMOTE_FOLDER'],
+                    "monitoring.rawdata"),
+                data_filename)
+            self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
+        except Exception:
+            logger.error("Unable to get agent artefacts", exc_info=True)
         if not self.successfull_stop:
             self._kill_agent()
         return log_filename, data_filename

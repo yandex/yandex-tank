@@ -28,7 +28,7 @@ class LoadPlanBuilder(object):
     def wait(self, duration):
         self.log.debug("Wait for %sms from %sms" % (duration, self.duration))
         self.duration += duration
-        self.steps.append((self.instances, int(duration) / 1000))
+        self.steps.append((self.instances, int(duration) // 1000))
         return self
 
     def ramp(self, count, duration):

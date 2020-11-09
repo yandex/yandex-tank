@@ -15,9 +15,10 @@ class Stpd(object):
         self.af = ammo_factory
 
     def __iter__(self):
-        return (
-            "%s %s %s\n%s\n" % (len(missile), timestamp, marker, missile)
-            for timestamp, marker, missile in self.af)
+        for timestamp, marker, missile in self.af:
+            yield b"%s %s %s\n%s\n" % (str(len(missile)).encode('utf8'),
+                                       str(timestamp).encode('utf8'),
+                                       marker.encode('utf8'), missile)
 
 
 class StpdReader(object):

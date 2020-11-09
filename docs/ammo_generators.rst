@@ -4,13 +4,13 @@ Ammo generators
 
 **sample req-style ammo generator (python):**
 
-``usage: cat data | python make_ammo.py``
+``usage: cat data | python3 make_ammo.py``
 For each line of 'data' file this script will generate phantom ammo.
 Line format: ``GET||/url||case_tag||body(optional)``
 
 .. code-block:: python
 
-    #!/usr/bin/python
+    #!/usr/bin/env python3
     # -*- coding: utf-8 -*-
   
     import sys
@@ -74,7 +74,7 @@ Line format: ``GET||/url||case_tag||body(optional)``
 
 .. code-block:: python
 
-  #!/usr/bin/python
+  #!/usr/bin/python3
   # -*- coding: utf-8 -*-
   import requests
   

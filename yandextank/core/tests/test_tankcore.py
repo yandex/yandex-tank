@@ -10,7 +10,15 @@ import shutil
 import yaml
 
 from yandextank.core import TankCore
-from yandextank.core.consoleworker import parse_options
+from yandextank.core.tankworker import parse_options, TankInfo
+
+try:
+    from yatest import common
+    PATH = common.source_path('load/projects/yandex-tank/yandextank/core/tests')
+    TMPDIR = os.path.join(os.getcwd(), 'artifacts_dir')
+except ImportError:
+    PATH = os.path.dirname(__file__)
+    TMPDIR = './'
 
 logger = logging.getLogger('')
 logger.setLevel(logging.DEBUG)
@@ -30,8 +38,8 @@ CFG1 = {
     "version": "1.8.36",
     "core": {
         'operator': 'fomars',
-        'artifacts_base_dir': './',
-        'artifacts_dir': './'
+        'artifacts_base_dir': TMPDIR,
+        'artifacts_dir': TMPDIR
     },
     'telegraf': {
         'package': 'yandextank.plugins.Telegraf',
@@ -42,7 +50,7 @@ CFG1 = {
     'phantom': {
         'package': 'yandextank.plugins.Phantom',
         'enabled': True,
-        'address': 'lunapark.yandex-team.ru',
+        'address': 'localhost',
         'header_http': '1.1',
         'uris': ['/'],
         'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
@@ -62,8 +70,8 @@ CFG2 = {
     "version": "1.8.36",
     "core": {
         'operator': 'fomars',
-        'artifacts_base_dir': './',
-        'artifacts_dir': './'
+        'artifacts_base_dir': TMPDIR,
+        'artifacts_dir': TMPDIR
     },
     'telegraf': {
         'enabled': False,
@@ -89,12 +97,12 @@ CFG2 = {
     }
 }
 
-CFG_MULTI = load_yaml(os.path.dirname(__file__), 'test_multi_cfg.yaml')
+CFG_MULTI = load_yaml(PATH, 'test_multi_cfg.yaml')
 original_working_dir = os.getcwd()
 
 
 def setup_module(module):
-    os.chdir(os.path.dirname(__file__))
+    os.chdir(PATH)
 
 
 @pytest.mark.parametrize('config, expected', [
@@ -107,12 +115,11 @@ def setup_module(module):
      {'plugin_phantom', 'plugin_lunapark', 'plugin_rcheck',
       'plugin_autostop', 'plugin_console',
       'plugin_rcassert', 'plugin_json_report',
-      }
-     )
+      })
 ])
 def test_core_load_plugins(config, expected):
-    core = TankCore([load_yaml(os.path.join(os.path.dirname(__file__), '../config'), '00-base.yaml'), config],
-                    threading.Event())
+    core = TankCore([load_yaml(os.path.join(PATH, '../config'), '00-base.yaml'), config],
+                    threading.Event(), TankInfo({}))
     core.load_plugins()
     assert set(core.plugins.keys()) == expected
 
@@ -121,7 +128,7 @@ def test_core_load_plugins(config, expected):
     (CFG1, None)
 ])
 def test_core_plugins_configure(config, expected):
-    core = TankCore([config], threading.Event())
+    core = TankCore([config], threading.Event(), TankInfo({}))
     core.plugins_configure()
 
 
@@ -194,7 +201,7 @@ def sort_schema_alphabetically(filename):
     with open(filename, 'r') as f:
         schema = yaml.load(f, Loader=yaml.FullLoader)
     with open(filename, 'w') as f:
-        for key in sorted(schema.keys()):
+        for key, value in sorted(schema.items()):
             f.write(key + ':\n')
-            for attr in schema[key].keys():
-                f.write('  ' + attr + ': ' + str(schema[key][attr]).lower() + '\n')
+            for k, v in sorted(value.items()):
+                f.write('  ' + k + ': ' + str(v).lower() + '\n')

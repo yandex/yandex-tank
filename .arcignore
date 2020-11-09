@@ -1,0 +1,9 @@
+tmp
+dlls
+.idea
+*.egg-info
+*.iws
+*.ipr
+*.pyc
+logs/
+.pytest_cache/

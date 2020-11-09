@@ -314,5 +314,5 @@ class StepperWrapper(object):
             ammo_type=self.ammo_type,
             chosen_cases=self.chosen_cases,
             use_cache=self.use_caching)
-        with open(self.stpd, 'w', self.file_cache) as os:
+        with open(self.stpd, 'wb', self.file_cache) as os:
             stepper.write(os)

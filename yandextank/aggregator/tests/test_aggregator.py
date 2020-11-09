@@ -1,7 +1,9 @@
+import os
 from threading import Event
 
 import pytest as pytest
 
+from yandextank.common.util import get_test_path
 from yandextank.aggregator import TankAggregator
 from yandextank.common.util import FileMultiReader
 from yandextank.plugins.Phantom.reader import PhantomReader
@@ -41,7 +43,7 @@ class ListenerMock(object):
     ('yandextank/aggregator/tests/phout1', 300)
 ])
 def test_agregator(phout, expected_rps):
-    generator = PhantomMock(phout)
+    generator = PhantomMock(os.path.join(get_test_path(), phout))
     aggregator = TankAggregator(generator)
     listener = ListenerMock(expected_rps)
     aggregator.add_result_listener(listener)

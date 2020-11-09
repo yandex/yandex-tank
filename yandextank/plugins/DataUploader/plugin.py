@@ -10,7 +10,7 @@ import sys
 import time
 import datetime
 import yaml
-from future.moves.urllib.parse import urljoin
+from urllib.parse import urljoin
 
 from queue import Empty, Queue
 from builtins import str
@@ -161,7 +161,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return opts
 
     def configure(self):
-        pass
+        self.core.publish(self.SECTION, 'component', self.get_option('component'))
+        self.core.publish(self.SECTION, 'task', self.get_option('task'))
+        self.core.publish(self.SECTION, 'job_name', self.get_option('job_name'))
 
     def check_task_is_open(self):
         if self.backend_type == BackendTypes.OVERLOAD:
@@ -225,8 +227,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         port = info.port
         instances = info.instances
         if info.ammo_file is not None:
-            if info.ammo_file.startswith(
-                    "http://") or info.ammo_file.startswith("https://"):
+            if info.ammo_file.startswith("http://") or info.ammo_file.startswith("https://"):
                 ammo_path = info.ammo_file
             else:
                 ammo_path = os.path.realpath(info.ammo_file)
@@ -249,7 +250,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 self.make_symlink(lp_job.number)
             self.publish('job_no', lp_job.number)
         except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError) as e:
-            logger.error(e.message)
+            logger.error(e)
             logger.error(
                 'Failed to connect to Lunapark, disabling DataUploader')
             self.start_test = lambda *a, **kw: None
@@ -387,11 +388,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         lp_job = self.lp_job
         while not lp_job.interrupted.is_set():
             try:
-                self.lp_job.send_status(self.core.status)
+                self.lp_job.send_status(self.core.info.get_info_dict())
                 time.sleep(self.get_option('send_status_period'))
             except (APIClient.NetworkError, APIClient.NotAvailable) as e:
                 logger.warn('Failed to send status')
-                logger.debug(e.message)
+                logger.debug(e)
                 break
             except APIClient.StoppedFromOnline:
                 logger.info("Test stopped from Lunapark")
@@ -417,7 +418,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 break
             except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
                 logger.warn('Failed to push {} data'.format(name))
-                logger.warn(e.message)
+                logger.warn(e)
                 self.lp_job.interrupted.set()
             except Exception:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -550,8 +551,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self.core.publish(self.SECTION, 'person', self._lp_job.person)
             self.core.publish(self.SECTION, 'task', self._lp_job.task)
             self.core.publish(self.SECTION, 'version', self._lp_job.version)
+            self.core.publish(self.SECTION, 'component', self.get_option('component'))
             self.core.publish(self.SECTION, 'meta', self.cfg.get('meta', {}))
-
         return self._lp_job
 
     def __get_lp_job(self):
@@ -666,26 +667,27 @@ class JobInfoWidget(AbstractInfoWidget):
 
 class LPJob(object):
     def __init__(
-            self,
-            client,
-            target_host,
-            target_port,
-            person,
-            task,
-            name,
-            description,
-            tank,
-            log_data_requests=False,
-            log_other_requests=False,
-            log_status_requests=False,
-            log_monitoring_requests=False,
-            number=None,
-            token=None,
-            notify_list=None,
-            version=None,
-            detailed_time=None,
-            load_scheme=None,
-            add_cleanup=lambda: None):
+        self,
+        client,
+        target_host,
+        target_port,
+        person,
+        task,
+        name,
+        description,
+        tank,
+        log_data_requests=False,
+        log_other_requests=False,
+        log_status_requests=False,
+        log_monitoring_requests=False,
+        number=None,
+        token=None,
+        notify_list=None,
+        version=None,
+        detailed_time=None,
+        load_scheme=None,
+        add_cleanup=lambda: None
+    ):
         """
         :param client: APIClient
         :param log_data_requests: bool
@@ -717,6 +719,8 @@ class LPJob(object):
         self.is_finished = False
         self.web_link = ''
         self.add_cleanup = add_cleanup
+        if self._number:
+            self.add_cleanup()
 
     def push_test_data(self, data, stats):
         if not self.interrupted.is_set():
@@ -728,14 +732,15 @@ class LPJob(object):
                 self.interrupted.set()
 
     def edit_metainfo(
-            self,
-            instances=0,
-            ammo_path=None,
-            loop_count=None,
-            regression_component=None,
-            cmdline=None,
-            is_starred=False,
-            tank_type=1):
+        self,
+        instances=0,
+        ammo_path=None,
+        loop_count=None,
+        regression_component=None,
+        cmdline=None,
+        is_starred=False,
+        tank_type=1
+    ):
         try:
             self.api_client.edit_job_metainfo(jobno=self.number,
                                               job_name=self.name,
@@ -752,7 +757,7 @@ class LPJob(object):
         except (APIClient.NotAvailable, APIClient.StoppedFromOnline, APIClient.NetworkError,
                 APIClient.UnderMaintenance) as e:
             logger.warn('Failed to edit job metainfo on Lunapark')
-            logger.warn(e.message)
+            logger.warn(e)
 
     @property
     def number(self):
@@ -819,13 +824,13 @@ class LPJob(object):
                                             lock_target_duration,
                                             trace=self.log_other_requests,
                                             maintenance_timeouts=maintenance_timeouts,
-                                            maintenance_msg="Target is locked.\nManual unlock link: %s%s" % (
+                                            maintenance_msg="Target is locked.\nManual unlock link: %s/%s" % (
                                                 self.api_client.base_url,
                                                 self.api_client.get_manual_unlock_link(lock_target)
                                             ))
                 return True
             except (APIClient.NotAvailable, APIClient.StoppedFromOnline) as e:
-                logger.info('Target is not locked due to %s', e.message)
+                logger.info('Target is not locked due to %s', e)
                 if ignore:
                     logger.info('ignore_target_locks = 1')
                     return False
@@ -839,7 +844,7 @@ class LPJob(object):
                 if ignore:
                     logger.info('ignore_target_locks = 1')
                     return False
-                logger.info("Manual unlock link: %s%s",
+                logger.info("Manual unlock link: %s/%s",
                             self.api_client.base_url,
                             self.api_client.get_manual_unlock_link(lock_target))
                 continue

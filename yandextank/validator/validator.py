@@ -1,4 +1,4 @@
-import imp
+import importlib
 import os
 import re
 import sys
@@ -9,7 +9,7 @@ import pkg_resources
 import yaml
 from cerberus.validator import Validator
 
-from yandextank.common.util import recursive_dict_update
+from yandextank.common.util import recursive_dict_update, read_resource
 logger = logging.getLogger(__name__)
 
 
@@ -26,12 +26,12 @@ class ValidationError(Exception):
 
 def load_yaml_schema(path):
     # DEFAULT_FILENAME = 'schema.yaml'
-    with open(path, 'r') as f:
-        return yaml.load(f, Loader=yaml.FullLoader)
+    file_content = read_resource(path)
+    return yaml.safe_load(file_content)
 
 
-def load_py_schema(path):
-    schema_module = imp.load_source('schema', path)
+def load_py_schema(package):
+    schema_module = importlib.import_module(package + '.config.schema')
     return schema_module.SCHEMA
 
 
@@ -42,9 +42,7 @@ def load_plugin_schema(package):
                 package, 'config/schema.yaml'))
     except IOError:
         try:
-            return load_py_schema(
-                pkg_resources.resource_filename(
-                    package, 'config/schema.py'))
+            return load_py_schema(package)
         except ImportError:
             logger.error(
                 "Could not find schema for %s (should be located in config/ directory of a plugin)",
@@ -214,6 +212,7 @@ class TankConfig(object):
             yaml.dump(self.raw_config_dict, f)
 
     def __load_multiple(self, configs):
+        logger.info('Configs: {}'.format(configs))
         configs_count = len(configs)
         if configs_count == 0:
             return {}
@@ -236,7 +235,7 @@ class TankConfig(object):
                 plugin['package'],
                 plugin) for plugin_name,
             plugin in self.raw_config_dict.items() if (
-                plugin_name not in self.BASE_SCHEMA.keys()) and isinstance(
+                plugin_name not in self.BASE_SCHEMA) and isinstance(
                 plugin,
                 dict) and plugin.get('enabled')]
 
@@ -264,7 +263,7 @@ class TankConfig(object):
         result = v.validate(self.raw_config_dict, self.BASE_SCHEMA)
         if not result:
             errors = v.errors
-            for key, value in v.errors.items():
+            for key, value in tuple(errors.items()):
                 if 'must be of dict type' in value:
                     errors[key] = ['unknown field']
             raise ValidationError(errors)
@@ -314,7 +313,7 @@ class ValidatedConfig(object):
                 (plugin_name,
                  plugin_cfg['package'],
                  plugin_cfg) for plugin_name, plugin_cfg in self.validated.items() if (
-                    plugin_name not in self.base_schema.keys()) and plugin_cfg['enabled']]
+                    plugin_name not in self.base_schema) and plugin_cfg['enabled']]
         return self._plugins
 
     def get_option(self, section, option, default=None):
@@ -325,11 +324,8 @@ class ValidatedConfig(object):
                 return default
             raise
 
-    def __nonzero__(self):
-        return len(self.validated) > 0
-
     def __bool__(self):
-        return self.__nonzero__()
+        return len(self.validated) > 0
 
     def dump(self, path):
         with open(path, 'w') as f:

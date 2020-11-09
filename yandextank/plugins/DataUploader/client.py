@@ -1,11 +1,8 @@
 import json
 import time
 import traceback
-import urllib
+import urllib.parse
 import uuid
-
-from future.moves.urllib.parse import urljoin
-from builtins import range
 
 import requests
 import logging
@@ -144,12 +141,13 @@ class APIClient(object):
             return resp
 
     def format_request_info(self, request, request_id):
+        utf8_body = request.body.decode('utf-8') if isinstance(request.body, bytes) else request.body
         request_info = {
             'id': request_id,
             'method': request.method,
             'url': request.url,
             'headers': str(self.filter_headers(request.headers)),
-            'body': request.body.replace('\n', '\\n') if isinstance(request.body, str) else request.body
+            'body': utf8_body.replace('\n', '\\n') if isinstance(utf8_body, str) else utf8_body
         }
         return """Request: {}""".format(json.dumps(request_info))
 
@@ -160,7 +158,7 @@ class APIClient(object):
             'reason': resp.reason,
             'http code': resp.status_code,
             'headers': str(self.filter_headers(resp.headers)),
-            'content': resp.content.replace('\n', '\\n') if isinstance(resp.content, str) else resp.content
+            'content': resp.text.replace('\n', '\\n') if isinstance(resp.text, str) else resp.text
         }
         return """Response: {}""".format(json.dumps(response_info))
 
@@ -176,7 +174,7 @@ class APIClient(object):
             json=None,
             maintenance_timeouts=None,
             maintenance_msg=None):
-        url = urljoin(self.base_url, path)
+        url = urllib.parse.urljoin(self.base_url, path)
         ids = id_gen(str(uuid.uuid4()))
         if json:
             request = requests.Request(
@@ -189,7 +187,7 @@ class APIClient(object):
         maintenance_msg = maintenance_msg or "%s is under maintenance" % (self._base_url)
         while interrupted_event is None or not interrupted_event.is_set():
             try:
-                response = self.__send_single_request(request, ids.next(), trace=trace)
+                response = self.__send_single_request(request, next(ids), trace=trace)
                 return response_callback(response)
             except (Timeout, ConnectionError, ProtocolError):
                 logger.warn(traceback.format_exc())
@@ -239,7 +237,7 @@ class APIClient(object):
         maintenance_timeouts = self.maintenance_timeouts()
         while True:
             try:
-                response = self.__send_single_request(request, ids.next(), trace=trace)
+                response = self.__send_single_request(request, next(ids), trace=trace)
                 return response
             except (Timeout, ConnectionError, ProtocolError):
                 logger.warn(traceback.format_exc())
@@ -365,7 +363,7 @@ class APIClient(object):
         params = {'exitcode': str(retcode)}
 
         result = self.__get('api/job/' + str(jobno) + '/close.json?'
-                            + urllib.urlencode(params), trace=trace)
+                            + urllib.parse.urlencode(params), trace=trace)
         return result[0]['success']
 
     def edit_job_metainfo(
@@ -641,7 +639,7 @@ class APIClient(object):
         endpoint, field_name = lp_requisites
         logger.debug("Sending {} config".format(field_name))
         addr = "/api/job/%s/%s" % (jobno, endpoint)
-        self.__post_raw(addr, {field_name: unicode(config_content)}, trace=trace)
+        self.__post_raw(addr, {field_name: config_content}, trace=trace)
 
     def link_mobile_job(self, lp_key, mobile_key):
         addr = "/api/job/{jobno}/edit.json".format(jobno=lp_key)

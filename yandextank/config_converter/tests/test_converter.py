@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 import os
 
 import yaml
@@ -6,7 +6,7 @@ import pytest
 
 from yandextank.config_converter.converter import convert_ini, parse_package_name, parse_sections, combine_sections, \
     convert_single_option, OptionsConflict
-from yandextank.core.consoleworker import load_core_base_cfg, cfg_folder_loader, load_cfg
+from yandextank.core.tankworker import load_cfg, load_core_base_cfg, cfg_folder_loader
 from yandextank.validator.validator import TankConfig
 
 
@@ -18,7 +18,7 @@ from yandextank.validator.validator import TankConfig
       'meta': 'DataUploader', 'autostop': 'Autostop'}),
 ])
 def test_parse_sections(ini_file, expected):
-    cfg_ini = ConfigParser.ConfigParser()
+    cfg_ini = configparser.RawConfigParser()
     cfg_ini.read(os.path.join(os.path.dirname(__file__), ini_file))
     assert {section.name: section.plugin for section in parse_sections(cfg_ini)} == expected
 
@@ -55,7 +55,7 @@ def test_parse_sections(ini_file, expected):
             }
         })])
 def test_combine_sections(ini_file, expected):
-    cfg_ini = ConfigParser.ConfigParser()
+    cfg_ini = configparser.RawConfigParser()
     cfg_ini.read(os.path.join(os.path.dirname(__file__), ini_file))
     assert {section.name: section.merged_options for section in combine_sections(parse_sections(cfg_ini))} == expected
 
@@ -75,11 +75,8 @@ def test_parse_package(package_path, expected):
 @pytest.mark.parametrize('ini_file, yaml_file', [
     ('test_config1.ini', 'test_config1.yaml'),
     ('test_config2.ini', 'test_config2.yaml'),
-    ('test_config3.ini', 'test_config3.yaml'),
-    ('test_config4.ini', 'test_config4.yaml'),
     ('test_config5.ini', 'test_config5.yaml'),
     ('test_config5.1.ini', 'test_config5.1.yaml'),
-    ('test_config6.ini', 'test_config6.yaml'),
     ('test_config7.ini', 'test_config7.yaml'),
     ('test_config8.ini', 'test_config8.yaml'),
     ('test_config9.ini', 'test_config9.yaml'),
@@ -105,10 +102,7 @@ def test_conflict_opts(ini_file, msgs):
 @pytest.mark.parametrize('ini_file', [
     'test_config1.ini',
     'test_config2.ini',
-    'test_config3.ini',
-    'test_config4.ini',
     'test_config5.ini',
-    'test_config6.ini',
     'test_config7.ini',
     'test_config10.yaml',
     'test_config11.yaml',

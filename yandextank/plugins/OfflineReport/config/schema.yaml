@@ -1,0 +1,16 @@
+offline_data_log:
+  description: file name for offline data log
+  type: string
+  default: offline_data.log
+offline_json_report:
+  description: file name for offline json report
+  type: string
+  default: offline_report.json
+offline_text_report:
+  description: file name for offline text report
+  type: string
+  default: offline_report.txt
+print_report:
+  description: print offline text report at the end
+  type: boolean
+  default: false
