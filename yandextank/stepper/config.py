@@ -22,7 +22,7 @@ class ComponentFactory():
             ammo_limit=-1,
             uris=None,
             headers=None,
-            autocases=None,
+            autocases=0,
             enum_ammo=False,
             ammo_type='phantom',
             chosen_cases=None,

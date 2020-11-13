@@ -34,7 +34,7 @@ class HttpAmmo(object):
 
     def __init__(self, uri, headers, method='GET', http_ver='1.1', body=b''):
         self.method = method
-        self.uri = uri
+        self.uri = uri.encode('utf8') if isinstance(uri, str) else uri
         self.proto = 'HTTP/%s' % http_ver
         self.headers = set(headers)
         self.body = body
@@ -48,7 +48,7 @@ class HttpAmmo(object):
             headers = b''
         return b"%s %s %s\r\n%s\r\n%s" % (
             self.method.encode('utf8'),
-            self.uri.encode('utf8'),
+            self.uri,
             self.proto.encode('utf8'),
             headers,
             self.body)
@@ -108,14 +108,12 @@ class AmmoFileReader(Reader):
 
     def __iter__(self):
         def read_chunk_header(ammo_file):
-            chunk_header = ''
-            while chunk_header == '':
+            chunk_header = b''
+            while chunk_header == b'':
                 line = ammo_file.readline()
-                if isinstance(line, bytes):
-                    line = line.decode('utf-8')
-                if line == '':
+                if line == b'':
                     return line
-                chunk_header = line.strip('\r\n')
+                chunk_header = line.strip(b'\r\n')
             return chunk_header
 
         opener = resource.get_opener(self.filename)
@@ -124,7 +122,7 @@ class AmmoFileReader(Reader):
             # if we got StopIteration here, the file is empty
             chunk_header = read_chunk_header(ammo_file)
             while chunk_header:
-                if chunk_header != '':
+                if chunk_header != b'':
                     try:
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])
@@ -149,7 +147,7 @@ class AmmoFileReader(Reader):
                             "Error while reading ammo file. Position: %s, header: '%s', original exception: %s"
                             % (ammo_file.tell(), chunk_header, e))
                 chunk_header = read_chunk_header(ammo_file)
-                if chunk_header == '':
+                if chunk_header == b'':
                     ammo_file.seek(0)
                     info.status.inc_loop_count()
                     chunk_header = read_chunk_header(ammo_file)
@@ -205,13 +203,11 @@ class CaseLineReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
-                    if isinstance(line, bytes):
-                        line = line.decode('utf-8')
-                    parts = line.rstrip('\r\n').split('\t', 1)
+                    parts = line.rstrip(b'\r\n').split(b'\t', 1)
                     if len(parts) == 2:
-                        yield (parts[1].encode('utf8'), parts[0])
+                        yield (parts[1], parts[0])
                     elif len(parts) == 1:
-                        yield (parts[0].encode('utf8'), None)
+                        yield (parts[0], None)
                     else:
                         raise RuntimeError("Unreachable branch")
                 ammo_file.seek(0)
@@ -265,7 +261,7 @@ class AccessLogReader(Reader):
 
 
 def _parse_header(header):
-    return dict([(h.strip() for h in header.split(':', 1))])
+    return dict([(h.strip().decode('utf8') for h in header.split(b':', 1))])
 
 
 class UriReader(Reader):
@@ -284,12 +280,12 @@ class UriReader(Reader):
             while True:
                 for line in ammo_file:
                     info.status.af_position = ammo_file.tell()
-                    if isinstance(line, bytes):
-                        line = line.decode('utf-8')
-                    if line.startswith('['):
+                    # if isinstance(line, bytes):
+                    #     line = line.decode('utf-8')
+                    if line.startswith(b'['):
                         self.headers.update(
-                            _parse_header(line.strip('\r\n[]\t ')))
-                    elif len(line.rstrip('\r\n')):
+                            _parse_header(line.strip(b'\r\n[]\t ')))
+                    elif len(line.rstrip(b'\r\n')):
                         fields = line.split()
                         uri = fields[0]
                         if len(fields) > 1:
@@ -325,17 +321,15 @@ class UriPostReader(Reader):
 
     def __iter__(self):
         def read_chunk_header(ammo_file):
-            chunk_header = ''
-            while chunk_header == '':
+            chunk_header = b''
+            while chunk_header == b'':
                 line = ammo_file.readline()
-                if isinstance(line, bytes):
-                    line = line.decode('utf-8')
-                if line.startswith('['):
-                    self.headers.update(_parse_header(line.strip('\r\n[]\t ')))
-                elif line == '':
+                if line.startswith(b'['):
+                    self.headers.update(_parse_header(line.strip(b'\r\n[]\t ')))
+                elif line == b'':
                     return line
                 else:
-                    chunk_header = line.strip('\r\n')
+                    chunk_header = line.strip(b'\r\n')
             return chunk_header
 
         opener = resource.get_opener(self.filename)
@@ -344,7 +338,7 @@ class UriPostReader(Reader):
             # if we got StopIteration here, the file is empty
             chunk_header = read_chunk_header(ammo_file)
             while chunk_header:
-                if chunk_header != '':
+                if chunk_header != b'':
                     try:
                         fields = chunk_header.split()
                         chunk_size = int(fields[0])

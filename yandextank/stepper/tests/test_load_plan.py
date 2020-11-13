@@ -178,8 +178,10 @@ def test_step_factory(step_config, expected_duration):
      'yandextank/stepper/tests/unicode-expected.stpd'),
     ({'ammo_type': 'caseline',
       'ammo_file': os.path.join(get_test_path(), 'yandextank/stepper/tests/test-caseline.txt')},
-     'yandextank/stepper/tests/caseline-expected.stpd')
-
+     'yandextank/stepper/tests/caseline-expected.stpd'),
+    ({'ammo_file': os.path.join(get_test_path(), 'yandextank/stepper/tests/test-protobuf-autocases.txt'),
+      'autocases': 2},
+     'yandextank/stepper/tests/protobuf-expected.stpd')
 ])
 def test_ammo(stepper_kwargs, expected_stpd):
     stepper = Stepper(
@@ -190,7 +192,6 @@ def test_ammo(stepper_kwargs, expected_stpd):
         instances=10,
         loop_limit=1000,
         ammo_limit=1000,
-        autocases=0,
         enum_ammo=False,
         **stepper_kwargs
     )
