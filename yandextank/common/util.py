@@ -19,8 +19,6 @@ import pandas as pd
 import numpy as np
 import time
 
-from pandas.io.common import CParserError
-
 try:
     from io import StringIO
 except ImportError:
@@ -687,7 +685,7 @@ def string_to_df(data):
     start_time = time.time()
     try:
         chunk = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
-    except CParserError as e:
+    except Exception as e:
         logger.error(e.message)
         logger.error('Incorrect phout data: {}'.format(data))
         return
