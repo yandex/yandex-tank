@@ -141,7 +141,7 @@ class MonitoringCollector(object):
 
     def hash_hostname(self, host):
         if self.disguise_hostnames and host:
-            return hashlib.md5(host).hexdigest()
+            return hashlib.md5(host.encode()).hexdigest()
         else:
             return host
 
