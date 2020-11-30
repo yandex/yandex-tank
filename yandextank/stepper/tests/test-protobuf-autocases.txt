@@ -1,6 +1,6 @@
 292
 POST /v1/create_story HTTP/1.1
-Host: stories-int-stress.tst.c.maps.yandex.net
+Host: stsmogs-tfd-stress.tst.c.akmg.yandex.net
 Accept: */*
 Content-Length: 138
 Content-Type: application/x-protobuf
