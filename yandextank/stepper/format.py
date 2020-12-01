@@ -18,7 +18,7 @@ class Stpd(object):
         for timestamp, marker, missile in self.af:
             yield b"%s %s %s\n%s\n" % (str(len(missile)).encode('utf8'),
                                        str(timestamp).encode('utf8'),
-                                       marker.encode('utf8'), missile)
+                                       marker, missile)
 
 
 class StpdReader(object):
