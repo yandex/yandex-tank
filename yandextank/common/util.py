@@ -1,13 +1,14 @@
-import collections
+import collections.abc
+import inspect
 import os
 import pwd
 import socket
+import time
 import traceback
 
 import http.client
 import logging
 import errno
-import itertools
 import re
 import select
 import psutil
@@ -16,7 +17,21 @@ import argparse
 from paramiko import SSHClient, AutoAddPolicy
 from retrying import retry
 
+try:
+    from library.python import resource as rs
+    pip = False
+except ImportError:
+    pip = True
+
 logger = logging.getLogger(__name__)
+
+
+def read_resource(path, file_open_mode='r'):
+    if not pip and path in rs.iterkeys(prefix='resfs/file/load/projects/yandex-tank/'):
+        return rs.find(path).decode('utf8')
+    else:
+        with open(path, file_open_mode) as f:
+            return f.read()
 
 
 class SecuredShell(object):
@@ -71,8 +86,8 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
         logger.info("Execute on %s: %s", self.host, cmd)
         with self.connect() as client:
             _, stdout, stderr = client.exec_command(cmd, get_pty=True)
-            output = stdout.read()
-            errors = stderr.read()
+            output = stdout.read().decode('utf8')
+            errors = stderr.read().decode('utf8')
             err_code = stdout.channel.recv_exit_status()
         return output, errors, err_code
 
@@ -169,13 +184,13 @@ class AsyncSession(object):
 
     def read_maybe(self):
         if self.session.recv_ready():
-            return self.session.recv(4096)
+            return self.session.recv(4096).decode('utf8')
         else:
             return None
 
     def read_err_maybe(self):
         if self.session.recv_stderr_ready():
-            return self.session.recv_stderr(4096)
+            return self.session.recv_stderr(4096).decode('utf8')
         else:
             return None
 
@@ -460,14 +475,7 @@ def pairs(lst):
     """
     Iterate over pairs in the list
     """
-    return itertools.izip(lst[::2], lst[1::2])
-
-
-def update_status(status, multi_key, value):
-    if len(multi_key) > 1:
-        update_status(status.setdefault(multi_key[0], {}), multi_key[1:], value)
-    else:
-        status[multi_key[0]] = value
+    return zip(lst[::2], lst[1::2])
 
 
 class AddressWizard:
@@ -568,10 +576,10 @@ class AddressWizard:
         try:
             test_sock.settimeout(5)
             test_sock.connect(sa)
-        except Exception as exc:
+        except Exception:
             logger.debug(
                 "Exception on connect attempt [%s]:%s : %s", sa[0], sa[1],
-                traceback.format_exc(exc))
+                traceback.format_exc())
             msg = "TCP Connection test failed for [%s]:%s, use phantom.connection_test=0 to disable it"
             raise RuntimeError(msg % (sa[0], sa[1]))
         finally:
@@ -580,7 +588,7 @@ class AddressWizard:
 
 def recursive_dict_update(d1, d2):
     for k, v in d2.items():
-        if isinstance(v, collections.Mapping):
+        if isinstance(v, collections.abc.Mapping):
             r = recursive_dict_update(d1.get(k, {}), v)
             d1[k] = r
         else:
@@ -626,6 +634,8 @@ class FileScanner(object):
 
 def tail_lines(filepath, lines_num, bufsize=8192):
     fsize = os.stat(filepath).st_size
+    logging.warning('Filepath={}, lines_num={}, buf_size={}, fsize={}'
+                    .format(filepath, lines_num, bufsize, fsize))
     iter_ = 0
     with open(filepath) as f:
         if bufsize > fsize:
@@ -634,7 +644,8 @@ def tail_lines(filepath, lines_num, bufsize=8192):
         try:
             while True:
                 iter_ += 1
-                f.seek(fsize - bufsize * iter_)
+                line_start_pos = max(0, fsize - bufsize * iter_)
+                f.seek(line_start_pos)
                 data.extend(f.readlines())
                 if len(data) >= lines_num or f.tell() == 0:
                     return data[-lines_num:]
@@ -718,3 +729,131 @@ class FileLike(object):
     def readline(self):
         result, self._cursor = self.multireader.read_with_lock(self._cursor)
         return result
+
+
+def get_callstack():
+    """
+        Get call stack, clean wrapper functions from it and present
+        in dotted notation form
+    """
+    stack = inspect.stack(context=0)
+    cleaned = [frame[3] for frame in stack if frame[3] != 'wrapper']
+    return '.'.join(cleaned[1:])
+
+
+def timeit(min_duration_sec):
+    def timeit_fixed(func):
+        def wrapper(*args, **kwargs):
+            start_time = time.time()
+            result = func(*args, **kwargs)
+            stack = get_callstack()
+            duration = time.time() - start_time
+            if duration > min_duration_sec:
+                logger.warn('Slow call of %s (stack: %s), duration %s', func.__name__, stack, duration)
+            return result
+        return wrapper
+    return timeit_fixed
+
+
+def for_all_methods(decorator, exclude=None):
+    if exclude is None:
+        exclude = []
+    """
+        Decorator for all methods in a class,
+        shamelessly stolen from https://stackoverflow.com/questions/6307761
+    """
+    def decorate(cls):
+        for attr in cls.__dict__:  # there's propably a better way to do this
+            if callable(getattr(cls, attr)) and attr not in exclude:
+                setattr(cls, attr, decorator(getattr(cls, attr)))
+        return cls
+    return decorate
+
+
+class Cleanup:
+    def __init__(self, tankworker):
+        """
+
+        :type tankworker: TankWorker
+        """
+        self._actions = []
+        self.tankworker = tankworker
+
+    def add_action(self, name, fn):
+        """
+
+        :type fn: function
+        :type name: str
+        """
+        assert callable(fn)
+        self._actions.append((name, fn))
+
+    def __enter__(self):
+        return self.add_action
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        msgs = []
+        if exc_type:
+            msg = 'Exception occurred:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
+            self.tankworker.retcode = 1
+            msgs.append(msg)
+            logger.error(msg)
+        logger.info('Trying to clean up')
+        for name, action in reversed(self._actions):
+            try:
+                action()
+            except Exception:
+                msg = 'Exception occurred during cleanup action {}'.format(name)
+                msgs.append(msg)
+                logger.error(msg, exc_info=True)
+        self.tankworker.upd_msg('\n'.join(msgs))
+        self.tankworker.status = Status.TEST_FINISHED
+        self.tankworker.save_finish_status()
+        self.tankworker.core._collect_artifacts()
+        return False  # re-raise exception
+
+
+class Finish:
+    def __init__(self, tankworker):
+        """
+        :type tankworker: TankWorker
+        """
+        self.worker = tankworker
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.worker.status = Status.TEST_FINISHING
+        retcode = self.worker.retcode
+        if exc_type:
+            msg = 'Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
+            logger.error(msg)
+            self.worker.upd_msg(msg)
+            retcode = 1
+        retcode = self.worker.core.plugins_end_test(retcode)
+        self.worker.retcode = retcode
+        return True  # swallow exception & proceed to post-processing
+
+
+class TankapiLogFilter(logging.Filter):
+    def filter(self, record):
+        return record.name != 'tankapi'
+
+
+class Status():
+    TEST_POST_PROCESS = b'POST_PROCESS'
+    TEST_INITIATED = b'INITIATED'
+    TEST_PREPARING = b'PREPARING'
+    TEST_NOT_FOUND = b'NOT_FOUND'
+    TEST_RUNNING = b'RUNNING'
+    TEST_FINISHING = b'FINISHING'
+    TEST_FINISHED = b'FINISHED'
+
+
+def get_test_path():
+    try:
+        from yatest import common
+        return common.source_path('load/projects/yandex-tank')
+    except ImportError:
+        return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))

@@ -7,8 +7,8 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
     ({'report_file': {
         'description': 'path to file to store autostop report',
         'type': 'string',
-        'default': 'autostop_report.txt'}
-     }, ur"""``report_file`` (string)
+        'default': 'autostop_report.txt'}},
+     r"""``report_file`` (string)
 ------------------------
 *\- path to file to store autostop report. Default:* ``autostop_report.txt``"""),
     ({'gun_type': {
@@ -18,8 +18,8 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
         # 'values_description': {
         #     'custom': 'custom gun', 'http': 'http gun', 'scenario': 'scenario gun', 'ultimate': 'ultimate gun'
         # },
-        'required': 'true'}
-     }, ur"""``gun_type`` (string)
+        'required': 'true'}},
+     r"""``gun_type`` (string)
 ---------------------
 *\- gun type.* **Required.**
 
@@ -31,8 +31,8 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
         'values_description': {
             'custom': 'custom gun', 'http': 'http gun', 'scenario': 'scenario gun', 'ultimate': 'ultimate gun'
         },
-        'required': 'true'}
-     }, ur"""``gun_type`` (string)
+        'required': 'true'}},
+     r"""``gun_type`` (string)
 ---------------------
 *\- gun type.* **Required.**
 
@@ -65,8 +65,8 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
                     'test_dir/test_backend.stpd': 'path to ready schedule file'}
             }
         },
-        'required': True}
-     }, ur"""``load_profile`` (dict)
+        'required': True}},
+     r"""``load_profile`` (dict)
 -----------------------
 *\- specify parameters of your load.* **Required.**
 
@@ -98,8 +98,8 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
             {'type': 'list'},
             {'type': 'string', 'allowed': ['auto']}
         ],
-        'tutorial_link': 'http://yandextank.readthedocs.io'}
-     }, ur"""``lock_targets`` (list or string)
+        'tutorial_link': 'http://yandextank.readthedocs.io'}},
+     r"""``lock_targets`` (list or string)
 ---------------------------------
 *\- targets to lock. Default:* ``auto``
 
@@ -117,8 +117,8 @@ from yandextank.validator.docs_gen import RSTRenderer, format_option
             'description': 'autostop constraint',
             'examples': {'http(4xx,50%,5)': 'stop when rate of 4xx http codes is 50% or more during 5 seconds'}
         },
-        'default': []}
-     }, ur"""``autostop`` (list of string)
+        'default': []}},
+     r"""``autostop`` (list of string)
 -----------------------------
 *\- list of autostop constraints. Default:* ``[]``
 

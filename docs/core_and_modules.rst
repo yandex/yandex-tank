@@ -669,7 +669,7 @@ yaml file section: **bfg**
   Default: ``caseline``.
 
 :pip:
-  Install python modules with ``pip install --user`` before the test. If you need multiple modules use multiline options, i.e.:
+  Install python modules with ``pip3 install --user`` before the test. If you need multiple modules use multiline options, i.e.:
 
 ::
 
@@ -1128,7 +1128,7 @@ Example:
             <Memory fielddrop='["active", "inactive", "total", "used_per*", "avail*"]'></Memory>
             <Disk devices='["vda1","sda1","sda2","sda3"]'></Disk>
             <Netstat />
-            <Custom diff="1" measure="call" label="test">curl -s -H 'Host: host.tld' 'http://localhost:6100/stat'  | python -c 'import sys, json; j = json.load(sys.stdin); print "\n".join(`c["values"]["accept"]` for c in j["charts"] if c["name"] == "localqueue_wait_time")'</Custom>
+            <Custom diff="1" measure="call" label="test">curl -s -H 'Host: host.tld' 'http://localhost:6100/stat'  | python3 -c 'import sys, json; j = json.load(sys.stdin); print("\n".join(`c["values"]["accept"]` for c in j["charts"] if c["name"] == "localqueue_wait_time"))'</Custom>
             <Source>/path/to/file</Source>
             <TelegrafRaw>
                 [[inputs.ping]]

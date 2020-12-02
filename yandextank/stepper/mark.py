@@ -13,7 +13,7 @@ param1=50&param2=0&param3=hello
 
 def __mark_by_uri(missile):
     return '_'.join(
-        missile.split('\n', 1)[0].split(' ', 2)[1].split('?')[0].split('/'))
+        missile.decode('utf8').split('\n', 1)[0].split(' ', 2)[1].split('?')[0].split('/'))
 
 
 class __UriMarker(object):
@@ -29,8 +29,8 @@ class __UriMarker(object):
         self.limit = limit
 
     def __call__(self, missile):
-        return '_'.join(
-            missile.split('\n', 1)[0].split(' ', 2)[1].split('?')[0].split('/')[
+        return b'_'.join(
+            missile.split(b'\n', 1)[0].split(b' ', 2)[1].split(b'?')[0].split(b'/')[
                 0:self.limit + 1])
 
 
@@ -46,7 +46,7 @@ class __Enumerator(object):
         self.number = int(0)
 
     def __call__(self, missile):
-        marker = "%s#%d" % (self.marker(missile), self.number)
+        marker = b"%s#%d" % (self.marker(missile), self.number)
         self.number += 1
         return marker
 
@@ -85,7 +85,7 @@ def get_marker(marker_type, enum_ammo=False):
         else:
 
             def marker(m):
-                return ''
+                return b''
     except ValueError:
         if marker_type in __markers:
             marker = __markers[marker_type]

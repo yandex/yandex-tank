@@ -2,31 +2,23 @@
 metrics collector - influxdata's `telegraf` - https://github.com/influxdata/telegraf/
 backward compatibility with yandextank's Monitoring module configuration and tools.
 """
-
 import datetime
 import fnmatch
 import json
 import logging
-import os
 import time
-import sys
 
 from copy import deepcopy
 
-from netort.resource import manager as resource
-
+import pkg_resources
 from yandextank.plugins.DataUploader.client import LPRequisites
 from ...common.interfaces import MonitoringDataListener, AbstractInfoWidget, MonitoringPlugin
-from ...common.util import expand_to_seconds
+from ...common.util import expand_to_seconds, read_resource
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
 from ..Console import Plugin as ConsolePlugin
 from ..Telegraf.collector import MonitoringCollector
 
-if sys.version_info[0] < 3:
-    from ConfigParser import NoOptionError
-else:
-    from configparser import NoOptionError
-
+from configparser import NoOptionError
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +32,8 @@ class Plugin(MonitoringPlugin):
         super(Plugin, self).__init__(core, cfg, name)
         self.jobno = None
         self.default_target = None
-        self.default_config = "{path}/config/monitoring_default_config.xml".format(
-            path=os.path.dirname(__file__))
+        self.default_config_path = pkg_resources.resource_filename('yandextank.plugins.Telegraf',
+                                                                   "config/monitoring_default_config.xml")
         self.process = None
         self.monitoring = MonitoringCollector(
             disguise_hostnames=self.get_option('disguise_hostnames'),
@@ -134,18 +126,16 @@ class Plugin(MonitoringPlugin):
                     config_contents = value
                 elif value.lower() == "auto":
                     self.die_on_fail = False
-                    with open(resource.resource_filename(self.default_config), 'rb') as def_config:
-                        config_contents = def_config.read()
+                    config_contents = read_resource(self.default_config_path)
                 else:
-                    with open(resource.resource_filename(value), 'rb') as config:
-                        config_contents = config.read()
+                    config_contents = read_resource(value)
                 self._config = self._save_config_contents(config_contents)
         return self._config
 
     def _save_config_contents(self, contents):
         xmlfile = self.core.mkstemp(".xml", "monitoring_")
         self.core.add_artifact_file(xmlfile)
-        with open(xmlfile, "wb") as f:  # output file should be in binary mode to support py3
+        with open(xmlfile, "w") as f:
             f.write(contents)
         return xmlfile
 
@@ -162,7 +152,7 @@ class Plugin(MonitoringPlugin):
             return
 
         with open(self.config) as f:
-            self.core.add_artifact_to_send(LPRequisites.MONITORING, unicode(f.read()))
+            self.core.add_artifact_to_send(LPRequisites.MONITORING, str(f.read()))
 
         # FIXME [legacy] backward compatibility with Monitoring module
         # configuration below.
@@ -290,7 +280,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         sign > 1 is YELLOW, means metric value is higher then prevoius,
         sign == 0 is WHITE, means initial or equal metric value
         """
-        for metric, value in data.iteritems():
+        for metric, value in data.items():
             if value == '':
                 self.sign[host][metric] = -1
                 self.data[host][metric] = value
@@ -322,14 +312,14 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         #   ...
         # }]
         for chunk in block:
-            host = chunk['data'].keys()[0]
+            host = next(iter(chunk['data'].keys()))
             self.time[host] = chunk['timestamp']
             # if initial call, we create dicts w/ data and `signs`
             # `signs` used later to paint metrics w/ different colors
             if not self.data.get(host, None):
                 self.data[host] = {}
                 self.sign[host] = {}
-                for key, value in chunk['data'][host]['metrics'].iteritems():
+                for key, value in chunk['data'][host]['metrics'].items():
                     self.sign[host][key] = 0
                     self.data[host][key] = value
             else:
@@ -345,7 +335,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                 tm_stamp = datetime.datetime.fromtimestamp(
                     float(self.time[hostname])).strftime('%H:%M:%S')
                 res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
-                for metric, value in sorted(metrics.iteritems()):
+                for metric, value in sorted(metrics.items()):
                     if self.sign[hostname][metric] > 0:
                         value = screen.markup.YELLOW + value + screen.markup.RESET
                     elif self.sign[hostname][metric] < 0:
@@ -384,7 +374,7 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
 
         block = deepcopy(_block)
         for chunk in block:
-            host = chunk['data'].keys()[0]
+            host = next(iter(chunk['data'].keys()))
             data = chunk['data'][host]['metrics']
 
             if not fnmatch.fnmatch(host, self.host):
@@ -392,12 +382,12 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
 
             # some magic, converting custom metric names into names that was in
             # config
-            for metric_name in data.keys():
+            for metric_name in tuple(data.keys()):
                 if metric_name.startswith('custom:'):
                     config_metric_name = metric_name.replace('custom:', '')
                     data[config_metric_name] = data.pop(metric_name)
 
-            if self.metric not in data.keys() or not data[self.metric]:
+            if self.metric not in data or not data[self.metric]:
                 data[self.metric] = 0
             logger.debug(
                 "Compare %s %s/%s=%s to %s",

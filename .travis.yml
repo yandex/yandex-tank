@@ -1,7 +1,6 @@
 language: python
 python:
-  - "2.7.15"
-  - "2.7"
+  - "3.7"
 install:
   - "pip install --upgrade setuptools"
   - "pip install flake8"

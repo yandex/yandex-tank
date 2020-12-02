@@ -23,7 +23,7 @@ class Plugin(AbstractPlugin):
         self.device = None
         try:
             self.cfg = cfg['volta_options']
-            for key, value in self.cfg.iteritems():
+            for key, value in self.cfg.items():
                 if not isinstance(value, dict):
                     logger.debug('Malformed VoltaConfig key: %s value %s', key, value)
                     raise RuntimeError('Malformed VoltaConfig passed, key: %s. Should by dict' % key)

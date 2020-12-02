@@ -245,7 +245,7 @@ class NetCodesCriterion(AbstractCriterion):
                 total_responses = data["tagged"][self.tag]["interval_real"]["len"]
                 code_count = data["tagged"][self.tag]["net_code"]["count"]
                 codes = copy.deepcopy(code_count)
-                if '0' in codes.keys():
+                if '0' in codes:
                     codes.pop('0')
                 matched_responses = self.count_matched_codes(self.codes_regex, codes)
             # matched_responses=0 if current tag differs from selected one
@@ -257,7 +257,7 @@ class NetCodesCriterion(AbstractCriterion):
             code_count = data["overall"]["net_code"]["count"]
             total_responses = data["overall"]["interval_real"]["len"]
             codes = copy.deepcopy(code_count)
-            if '0' in codes.keys():
+            if '0' in codes:
                 codes.pop('0')
             matched_responses = self.count_matched_codes(self.codes_regex, codes)
         return matched_responses, total_responses
@@ -317,15 +317,15 @@ class QuantileCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         quantiles = self.parse_data(data)
+        logger.debug('Autostop quantiles for ts %s: %s', data['ts'], quantiles)
         if self.quantile not in quantiles.keys():
             logger.warning("No quantile %s in %s", self.quantile, quantiles)
         if self.quantile in quantiles.keys() and quantiles[self.quantile] / 1000.0 > self.rt_limit:
             if not self.seconds_count:
                 self.cause_second = (data, stat)
 
-            logger.debug(self.explain())
-
             self.seconds_count += 1
+            logger.debug(self.explain())
             self.autostop.add_counting(self)
             if self.seconds_count >= self.seconds_limit:
                 return True

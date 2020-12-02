@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 class PandoraStatsPoller(Thread):
     def __init__(self, port):
         super(PandoraStatsPoller, self).__init__()
-        self._stop = Event()
+        self._stop_run = Event()
         self.buffer = []
         self.port = port
 
     def run(self):
         last_ts = int(time.time() - 1)
 
-        while not self._stop.is_set():
+        while not self._stop_run.is_set():
             curr_ts = int(time.time())
             if curr_ts > last_ts:
                 last_ts = curr_ts
@@ -46,7 +46,7 @@ class PandoraStatsPoller(Thread):
                 time.sleep(0.2)
 
     def stop(self):
-        self._stop.set()
+        self._stop_run.set()
 
     def get_data(self):
         result, self.buffer = self.buffer, []
@@ -62,7 +62,7 @@ class PandoraStatsReader(object):
         self.poller = PandoraStatsPoller(port)
         self.started = False
 
-    def next(self):
+    def __next__(self):
         if not self.expvar:
             if self.closed:
                 raise StopIteration

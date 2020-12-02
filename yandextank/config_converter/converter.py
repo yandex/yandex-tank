@@ -1,6 +1,6 @@
 import logging
 import re
-from ConfigParser import ConfigParser, ParsingError
+from configparser import RawConfigParser, ParsingError
 from functools import reduce
 
 import pkg_resources
@@ -203,7 +203,7 @@ class Option(object):
             'exclude_markers': lambda key, value: {key: value.strip().split(' ')}
         },
         'Pandora': {
-            'config_content': lambda key, value: {key: yaml.load(value)}  # works for json as well
+            'config_content': lambda key, value: {key: yaml.load(value, Loader=yaml.FullLoader)}  # works for json as well
         },
         'Autostop': {
             'autostop': lambda k, v: {k: re.findall(r'\w+\(.+?\)', v)}
@@ -264,7 +264,7 @@ class Option(object):
         :rtype: (str, object)
         """
         if self._as_tuple is None:
-            self._as_tuple = self.converted.items()[0]
+            self._as_tuple = next(iter(self.converted.items()))
         return self._as_tuple
 
     @property
@@ -339,8 +339,8 @@ class Section(object):
         if len(sections) == 1:
             return sections[0]
         if parent_name:
-            master_section = filter(lambda section: section.name == parent_name, sections)[0]
-            rest = filter(lambda section: section.name != parent_name, sections)
+            master_section = next(filter(lambda section: section.name == parent_name, sections))
+            rest = filter(lambda section: section is not master_section, sections)
         else:
             master_section = sections[0]
             parent_name = master_section.name
@@ -358,7 +358,7 @@ class Section(object):
         MAP = {
             'bfg': lambda section: section.name == '{}_gun'.format(master_section.get_cfg_dict()['gun_type'])
         }
-        return filter(MAP.get(master_section.name, lambda x: True), rest)[0]
+        return next(filter(MAP.get(master_section.name, lambda x: True), rest))
         # return filter(lambda section: section.name == MAP.get(master_section.name, ), rest)[0]
 
 
@@ -370,7 +370,7 @@ def without_defaults(cfg_ini, section):
     """
     defaults = cfg_ini.defaults()
     options = cfg_ini.items(section) if cfg_ini.has_section(section) else []
-    return [(key, value) for key, value in options if key not in defaults.keys()]
+    return [(key, value) for key, value in options if key not in defaults]
 
 
 PLUGIN_PREFIX = 'plugin_'
@@ -448,21 +448,18 @@ def enable_sections(sections, core_opts):
     disabled_instances = {instance.section_name: instance for instance in plugin_instances if not instance.enabled}
 
     for section in sections:
-        if section.name in enabled_instances.keys():
+        if enabled_instances.pop(section.name, None) is not None:
             section.enabled = True
-            enabled_instances.pop(section.name)
-        elif section.name in disabled_instances.keys():
+        elif disabled_instances.pop(section.name, None) is not None:
             section.enabled = False
-            disabled_instances.pop(section.name)
     # add leftovers
-    for plugin_instance in [i for i in plugin_instances if
-                            i.section_name in enabled_instances.keys() + disabled_instances.keys()]:
+    leftovers = set(enabled_instances.keys()) | set(disabled_instances.keys())
+    for plugin_instance in filter(
+        lambda lo: lo.section_name in leftovers,
+        plugin_instances,
+    ):
         sections.append(Section(plugin_instance.section_name, plugin_instance.plugin_name, [], plugin_instance.enabled))
     return sections
-
-
-def partition(l, predicate):
-    return reduce(lambda x, y: (x[0] + [y], x[1]) if predicate(y) else (x[0], x[1] + [y]), l, ([], []))
 
 
 def combine_sections(sections):
@@ -477,7 +474,7 @@ def combine_sections(sections):
     plugins = {}
     ready_sections = []
     for section in sections:
-        if section.plugin in PLUGINS_TO_COMBINE.keys():
+        if section.plugin in PLUGINS_TO_COMBINE:
             try:
                 plugins[section.plugin].append(section)
             except KeyError:
@@ -497,12 +494,12 @@ def core_options(cfg_ini):
 
 
 def convert_ini(ini_file):
-    cfg_ini = ConfigParser()
+    cfg_ini = RawConfigParser(strict=False)
     try:
         if isinstance(ini_file, str):
             cfg_ini.read(ini_file)
         else:
-            cfg_ini.readfp(ini_file)
+            cfg_ini.read_file(ini_file)
     except ParsingError as e:
         raise ConversionError(e.message)
 

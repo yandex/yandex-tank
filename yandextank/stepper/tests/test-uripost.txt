@@ -1,0 +1,6 @@
+[host: qwertyuiop.test.tst.yandex.net]
+[Content-Type: application/json]
+[My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA]
+[Connection: Keep-Alive]
+347 /v1/payment/check
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}

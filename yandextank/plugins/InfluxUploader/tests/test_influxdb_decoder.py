@@ -56,7 +56,7 @@ class TestDecoder(object):
         assert (r_point['tags']['uuid'] == test_uuid)
         # check metric cast
         assert (len(r_point['fields']) == len(expected_metrics))
-        for metric, value in r_point['fields'].iteritems():
+        for metric, value in r_point['fields'].items():
             if metric not in expected_metrics:
                 assert False
             if not isinstance(value, type(expected_metrics[metric])):

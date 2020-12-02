@@ -43,5 +43,8 @@ core:
     taskset_path:
       type: string
       default: taskset
+    debug:
+      type: boolean
+      default: false
 version:
   type: string

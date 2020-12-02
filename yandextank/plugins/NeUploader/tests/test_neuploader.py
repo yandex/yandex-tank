@@ -1,16 +1,22 @@
 import pandas as pd
 import pytest
 import json
+import os
 
 from numpy.testing import assert_array_equal
 
 from yandextank.plugins.NeUploader.plugin import Plugin
+try:
+    from yatest import common
+    PATH = common.source_path('load/projects/yandex-tank/yandextank/plugins/NeUploader/tests')
+except ImportError:
+    PATH = os.path.dirname(__file__)
 
 
 class TestMonitoringData(object):
 
     @pytest.mark.parametrize('mon_data, length', [
-        ('yandextank/plugins/NeUploader/tests/monitoring_data/monitoring1.json', 54),
+        (os.path.join(PATH, 'monitoring_data/monitoring1.json'), 54),
     ])
     def test_df_num_and_cols(self, mon_data, length):
         with open(mon_data) as f:
@@ -20,7 +26,7 @@ class TestMonitoringData(object):
         assert all([list(df.columns) == ['ts', 'value'] for df in dfs.values()])
 
     @pytest.mark.parametrize('mon_data, names', [
-        ('yandextank/plugins/NeUploader/tests/monitoring_data/monitoring1.json',
+        (os.path.join(PATH, 'monitoring_data/monitoring1.json'),
          ()),
     ])
     def test_metrics_names(self, mon_data, names):

@@ -1,0 +1,900 @@
+837 0 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 100 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 200 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 300 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 400 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 500 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 600 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 700 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 800 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 900 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 1000 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 1100 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 1200 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 1300 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 1400 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 1500 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 1600 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 1700 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 1800 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 1900 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 2000 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 2100 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 2200 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 2300 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 2400 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 2500 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 2600 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 2700 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 2800 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 2900 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 3000 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 3100 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 3200 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 3300 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 3400 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 3500 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 3600 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 3700 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 3800 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 3900 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 4000 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 4100 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 4200 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 4300 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 4400 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 4500 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 4600 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 4700 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 4800 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 4900 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 5000 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 5100 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 5200 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 5300 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 5400 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 5500 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 5600 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 5700 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 5800 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 5900 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 6000 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 6100 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 6200 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 6300 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 6400 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 6500 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 6600 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 6700 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 6800 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 6900 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 7000 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 7100 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 7200 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 7300 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 7400 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 7500 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 7600 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 7700 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 7800 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 7900 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 8000 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 8100 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 8200 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 8300 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 8400 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 8500 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 8600 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 8700 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 8800 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 8900 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 9000 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 9100 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 9200 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 9300 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 9400 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 9500 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 9600 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 9700 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 9800 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}
+837 9900 
+POST /v1/payment/check HTTP/1.1
+Connection: Keep-Alive
+Content-Length: 347
+Content-Type: application/json
+My--Awesome--Header: 3:serv:CN9vEOeIxPN6EJ2IeyDKgJuRpAQ:HrSX7P7MgItUFi3SbEJF5jQqPMyeiFWiM9PO7eVfilz44dVl7tftz_YovVfeH-RdrVH2JVBverB1KVa_Y6fjD0CS_3PVO4Ie2D3_DsU0asViYcOM_kQcC2HtnKqL1hhlPg44Nhuc-TBeoyidfGw-uhebmMB2ImdlK0LwbA-r2bHzehH7ZyQZMyDM-QCBcU0fhbPIo7aRGmMWXtn8JBdHVBplCfsEQbWWhv-MJ9CGZv4hH3wh3XgVn0n5_BADL0HRKy0qrY63eN2y-8U_Jy50Y8Q4pA
+host: qwertyuiop.test.tst.yandex.net
+
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"method": "payment_method", "type": "card"}, "platform": "android", "request_id": "request_id", "service_id": "service_id", "user_agent": "user_agent", "transaction": {"amount": "500.100", "currency": "RUB"}, "user": {"id": "user_id", "ip": "127.0.0.1", "passport_uid": "passport_uid"}}

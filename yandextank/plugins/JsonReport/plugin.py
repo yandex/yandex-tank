@@ -3,6 +3,7 @@
 # pylint: disable=missing-docstring
 import json
 import logging
+import numpy as np
 import os
 
 import io
@@ -11,6 +12,16 @@ from ...common.interfaces import AbstractPlugin,\
     MonitoringDataListener, AggregateResultListener
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
+
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.generic):
+            return obj.item()
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(NumpyEncoder, self).default(obj)
 
 
 class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
@@ -38,18 +49,19 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         @data: aggregated data
         @stats: stats about gun
         """
-        self.data_and_stats_stream.write(
-            '%s\n' % json.dumps({
-                'data': data,
-                'stats': stats
-            }))
+        json_string = json.dumps({
+            'data': data,
+            'stats': stats
+        }, cls=NumpyEncoder)
+        self.data_and_stats_stream.write('{}\n'.format(json_string).encode('utf-8'))
 
     def monitoring_data(self, data_list):
         if self.is_telegraf:
-            self.monitoring_stream.write('%s\n' % json.dumps(data_list))
+            monitoring_data = '{}\n'.format(json.dumps(data_list)).encode('utf-8')
+            self.monitoring_stream.write(monitoring_data)
         else:
             [
-                self.monitoring_stream.write('%s\n' % data.strip()) for data in data_list
+                self.monitoring_stream.write('{}\n'.format(data.strip()).encode('utf-8')) for data in data_list
                 if data
             ]
 

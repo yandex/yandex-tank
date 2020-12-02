@@ -12,7 +12,6 @@ import tempfile
 import time
 import traceback
 import copy
-import pkg_resources
 import sys
 import platform
 
@@ -25,15 +24,13 @@ from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin, Moni
 from yandextank.plugins.DataUploader.client import LPRequisites
 from yandextank.validator.validator import TankConfig, ValidationError
 from yandextank.aggregator import TankAggregator
-from ..common.util import update_status, pid_exists
+from yandextank.common.util import pid_exists
 
 from netort.resource import manager as resource
 from netort.process import execute
+from yandextank.version import VERSION
 
-if sys.version_info[0] < 3:
-    import ConfigParser
-else:
-    import configparser as ConfigParser
+import configparser
 
 logger = logging.getLogger(__name__)
 
@@ -88,9 +85,6 @@ class LockError(Exception):
 
 
 class TankCore(object):
-    """
-    JMeter + dstat inspired :)
-    """
     SECTION = 'core'
     SECTION_META = 'meta'
     PLUGIN_PREFIX = 'plugin_'
@@ -98,15 +92,16 @@ class TankCore(object):
     UUID_OPTION = 'uuid'
     API_JOBNO = 'api_jobno'
 
-    def __init__(self, configs, interrupted_event, artifacts_base_dir=None, artifacts_dir_name=None):
+    def __init__(self, configs, interrupted_event, info):
         """
 
         :param configs: list of dict
         :param interrupted_event: threading.Event
+        :type info: yandextank.common.interfaces.TankInfo
         """
         self.output = {}
         self.raw_configs = configs
-        self.status = {}
+        self.info = info
         self._plugins = None
         self._artifacts_dir = None
         self.artifact_files = {}
@@ -199,6 +194,8 @@ class TankCore(object):
                     "Correcting to 'yandextank.plugins.DataUploader overload'")
                 plugin_path = "yandextank.plugins.DataUploader overload"
             try:
+                logger.info("Trying to import module: {}".format(plugin_name))
+                logger.info("Path: {}".format(plugin_path))
                 plugin = il.import_module(plugin_path)
             except ImportError:
                 logger.warning('Plugin name %s path %s import error', plugin_name, plugin_path)
@@ -263,11 +260,11 @@ class TankCore(object):
             logger.info("Starting test...")
             self.publish("core", "stage", "start")
             self.job.aggregator.start_test()
-            for plugin in self.plugins.values():
+            for plugin_name, plugin in self.plugins.items():
                 logger.debug("Starting %s", plugin)
                 start_time = time.time()
                 plugin.start_test()
-                logger.info("Plugin {0:s} required {1:f} seconds to start".format(plugin,
+                logger.info("Plugin {0:s} required {1:f} seconds to start".format(plugin_name,
                                                                                   time.time() - start_time))
             self.publish('generator', 'test_start', self.job.generator_plugin.start_time)
 
@@ -303,7 +300,7 @@ class TankCore(object):
             end_time = time.time()
             diff = end_time - begin_time
             logger.debug("Polling took %s", diff)
-            logger.debug("Tank status: %s", json.dumps(self.status))
+            logger.debug("Tank status: %s", json.dumps(self.info.get_info_dict()))
             # screen refresh every 0.5 s
             if diff < 0.5:
                 time.sleep(0.5 - diff)
@@ -495,7 +492,7 @@ class TankCore(object):
         return fname
 
     def publish(self, publisher, key, value):
-        update_status(self.status, [publisher] + key.split('.'), value)
+        self.info.update([publisher] + key.split('.'), value)
 
     def close(self):
         """
@@ -509,7 +506,7 @@ class TankCore(object):
             except Exception as ex:
                 logger.error("Failed closing plugin %s: %s", plugin, ex)
                 logger.debug(
-                    "Failed closing plugin: %s", traceback.format_exc(ex))
+                    "Failed closing plugin: %s", traceback.format_exc())
 
     @property
     def artifacts_dir(self):
@@ -523,8 +520,7 @@ class TankCore(object):
 
     @staticmethod
     def get_user_agent():
-        tank_agent = 'YandexTank/{}'.format(
-            pkg_resources.require('yandextank')[0].version)
+        tank_agent = 'YandexTank/{}'.format(VERSION)
         py_info = sys.version_info
         python_agent = 'Python/{}.{}.{}'.format(
             py_info[0], py_info[1], py_info[2])
@@ -636,7 +632,7 @@ class ConfigManager(object):
 
     def __init__(self):
         self.file = None
-        self.config = ConfigParser.ConfigParser()
+        self.config = configparser.RawConfigParser(strict=False)
 
     def load_files(self, configs):
         """         Read configs set into storage        """
@@ -665,7 +661,7 @@ class ConfigManager(object):
                 if not prefix or option.find(prefix) == 0:
                     res += [(
                         option[len(prefix):], self.config.get(section, option))]
-        except ConfigParser.NoSectionError as ex:
+        except configparser.NoSectionError as ex:
             logger.warning("No section: %s", ex)
 
         logger.debug(

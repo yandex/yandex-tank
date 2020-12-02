@@ -11,14 +11,11 @@ import time
 import datetime
 import itertools as itt
 
-from pandas.io.common import CParserError
+from pandas.errors import ParserError
 
 from yandextank.common.interfaces import StatsReader
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +44,7 @@ dtypes = {
 def string_to_df(data):
     try:
         chunk = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
-    except CParserError as e:
+    except ParserError as e:
         logger.error(e.message)
         logger.error('Incorrect phout data: {}'.format(data))
         return
@@ -64,7 +61,7 @@ def string_to_df_microsec(data):
     # start_time = time.time()
     try:
         df = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, na_values='', dtype=dtypes, quoting=QUOTE_NONE)
-    except CParserError as e:
+    except ParserError as e:
         logger.error(e.message)
         logger.error('Incorrect phout data: {}'.format(data))
         return
@@ -85,7 +82,7 @@ class PhantomReader(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         data = self.phout.read(self.cache_size)
         if data is None:
             raise StopIteration
@@ -114,15 +111,15 @@ class PhantomStatsReader(StatsReader):
         """
         Return all items found in this chunk
         """
-        for date_str, statistics in chunk.iteritems():
+        for date_str, statistics in chunk.items():
             date_obj = datetime.datetime.strptime(
                 date_str.split(".")[0], '%Y-%m-%d %H:%M:%S')
             chunk_date = int(time.mktime(date_obj.timetuple()))
             instances = 0
-            for benchmark_name, benchmark in statistics.iteritems():
+            for benchmark_name, benchmark in statistics.items():
                 if not benchmark_name.startswith("benchmark_io"):
                     continue
-                for method, meth_obj in benchmark.iteritems():
+                for method, meth_obj in benchmark.items():
                     if "mmtasks" in meth_obj:
                         instances += meth_obj["mmtasks"][2]
 
