@@ -1384,7 +1384,7 @@ YASM
 
 ``timeout`` (integer)
 ---------------------
-*\- (no description). Default:* ``120``
+*\- max length of sparkline for fractions of request time, 0 to disable. Default:* ``120``
 
 ``verbose_logging`` (boolean)
 -----------------------------

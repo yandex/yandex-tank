@@ -32,7 +32,7 @@ class PandoraStatsPoller(Thread):
                             'reqps': pandora_stat.get("engine_ReqPS"),
                         }
                     }
-                except (requests.ConnectionError, requests.HTTPError, requests.exceptions.Timeout):
+                except (requests.ConnectionError, requests.HTTPError, requests.exceptions.Timeout, ValueError):
                     logger.debug("Pandora expvar http interface is unavailable", exc_info=True)
                     data = {
                         'ts': last_ts - 1,
