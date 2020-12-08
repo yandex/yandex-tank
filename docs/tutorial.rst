@@ -105,7 +105,7 @@ There are several ways to set up requests:
 To specify external ammo file use ``ammofile`` option. 
 
 .. note::
-  You can specify URL to ammofile, http(s). Small ammofiles (~<100MB) will be downloaded as is,
+  You can specify URL of the ammofile, http(s). Small ammofiles (~<100MB) will be downloaded as is,
   to directory ``/tmp/<hash>``, large files will be read from stream.
 
 .. note::
@@ -338,7 +338,7 @@ distribution, progressbar and other interesting data. At the same time
 file ``phout.txt`` is being written, which could be analyzed later.
 
 If you need more human-readable report, you can try Report plugin,
-You can found it `here <https://github.com/yandex-load/yatank-online>`_
+You can find it `here <https://github.com/yandex-load/yatank-online>`_
 
 If you need to upload results to an external storage, such as Graphite or InfluxDB, you can use one of existing artifacts uploading modules :doc:`core_and_modules`
 
