@@ -48,7 +48,7 @@ class TotalFracTimeCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.autostop = autostop
-        params = param_str.split(',')
+        params = param_str.split(',', 3)
         self.rt_limit = expand_to_milliseconds(params[0]) * 1000
         self.fail_ratio_limit = float(params[1][:-1]) / 100.0
         self.window_size = expand_to_seconds(params[2])
@@ -139,7 +139,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        params = param_str.split(',')
+        params = param_str.split(',', 3)
         self.codes_mask = params[0].lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
         self.autostop = autostop
@@ -245,7 +245,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        params = param_str.split(',')
+        params = param_str.split(',', 3)
         self.codes_mask = params[0].lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
         self.autostop = autostop
@@ -362,7 +362,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        params = param_str.split(',')
+        params = param_str.split(',', 3)
         self.codes_mask = params[0].lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
         self.autostop = autostop
@@ -476,7 +476,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        params = param_str.split(',')
+        params = param_str.split(',', 3)
         self.codes_mask = params[0].lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
         self.autostop = autostop
@@ -595,7 +595,7 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        params = param_str.split(',')
+        params = param_str.split(',', 3)
         self.codes_mask = params[0].lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
         self.autostop = autostop
@@ -705,7 +705,7 @@ class QuantileOfSaturationCriterion(AbstractCriterion):
     #     self.data = deque()
     #     self.second_window = deque()
 
-    #     params = param_str.split(',')
+    #     params = param_str.split(',', 3)
     #     # qunatile in ms
     #     self.timing = expand_to_milliseconds(params[0])
     #     # width of time in seconds

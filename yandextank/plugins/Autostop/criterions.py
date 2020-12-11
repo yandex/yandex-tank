@@ -20,7 +20,7 @@ class AvgTimeCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        params = param_str.split(',')
+        params = param_str.split(',', 2)
         self.rt_limit = expand_to_milliseconds(params[0])
         self.seconds_limit = expand_to_seconds(params[1])
         self.autostop = autostop
@@ -96,7 +96,7 @@ class HTTPCodesCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        params = param_str.split(',')
+        params = param_str.split(',', 3)
         self.codes_mask = params[0].lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
         self.autostop = autostop
@@ -198,7 +198,7 @@ class NetCodesCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        params = param_str.split(',')
+        params = param_str.split(',', 3)
         self.codes_mask = params[0].lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
         self.autostop = autostop
@@ -308,7 +308,7 @@ class QuantileCriterion(AbstractCriterion):
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
-        params = param_str.split(',')
+        params = param_str.split(',', 3)
         self.quantile = float(params[0])
         self.rt_limit = expand_to_milliseconds(params[1])
         self.seconds_limit = expand_to_seconds(params[2])
