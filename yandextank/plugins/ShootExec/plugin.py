@@ -34,7 +34,7 @@ class Plugin(GeneratorPlugin):
         self.__process = None
         self.__stderr_file = None
         self.__processed_ammo_count = 0
-        self.__start_time = 0
+        self.start_time = 0
         self.opened_file = None
 
     @staticmethod
@@ -74,7 +74,7 @@ class Plugin(GeneratorPlugin):
 
         _LOGGER.debug("Linking sample reader to aggregator. Reading samples from %s", self.__output_path)
 
-        self.__start_time = time.time()
+        self.start_time = time.time()
         self.core.job.aggregator.add_result_listener(self)
 
         try:
@@ -145,7 +145,7 @@ class Plugin(GeneratorPlugin):
             "0",
             "0",
             "0",
-            time.time() - self.__start_time,
+            time.time() - self.start_time,
             None,
             "",
             "",
