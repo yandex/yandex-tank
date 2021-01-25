@@ -367,7 +367,7 @@ class UriPostReader(Reader):
                             "Error while reading ammo file. Position: %s, header: '%s', original exception: %s"
                             % (ammo_file.tell(), chunk_header, e))
                 chunk_header = read_chunk_header(ammo_file)
-                if chunk_header == '':
+                if chunk_header == b'':
                     self.log.debug(
                         'Reached the end of ammo file. Starting over.')
                     ammo_file.seek(0)
