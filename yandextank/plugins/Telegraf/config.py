@@ -365,8 +365,7 @@ class AgentConfig(object):
 
 
 def create_agent_py(agent_filename):
-    if not os.path.isfile(agent_filename):
-        with open(agent_filename, 'w') as f:
-            f.write(read_resource(pkg_resources.resource_filename('yandextank.plugins.Telegraf', 'agent/agent.py')))
-        os.chmod(agent_filename, 0o775)
+    with open(agent_filename, 'w') as f:
+        f.write(read_resource(pkg_resources.resource_filename('yandextank.plugins.Telegraf', 'agent/agent.py')))
+    os.chmod(agent_filename, 0o775)
     return os.path.abspath(agent_filename)
