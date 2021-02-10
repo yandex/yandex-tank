@@ -205,8 +205,10 @@ class Plugin(GeneratorPlugin):
             logger.info('Successfully moved resource %s', dst)
         else:
             dst = opener.get_filename
-        os.chmod(dst, permissions)
-        logger.info('Permissions on %s have changed %d', dst, permissions)
+        try:
+            os.chmod(dst, permissions)
+        except OSError:
+            logger.warning('Cannot change permissions to %s', dst)
         return dst
 
     def prepare_test(self):
