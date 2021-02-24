@@ -1,4 +1,13 @@
+import io
+import os
+import threading
+
 import pytest
+
+from yandextank.common.interfaces import TankInfo
+from yandextank.common.util import get_test_path, read_resource
+from yandextank.core import TankCore
+from yandextank.stepper import Stepper
 from yandextank.stepper.instance_plan import LoadPlanBuilder, create
 
 from yandextank.stepper.util import take
@@ -50,3 +59,27 @@ class TestCreate(object):
          (LoadPlanBuilder().line(1, 100, 60000), 100)])
     def test_instances(self, loadplan, expected):
         assert loadplan.instances == expected
+
+
+@pytest.mark.parametrize('stepper_kwargs, expected_stpd', [
+    ({'uris': ['/'],
+      'instances_schedule': ['line(1,11,5s)'],
+      'instances': 11,
+      },
+     'yandextank/stepper/tests/instances1.stpd'),
+])
+def test_plan(stepper_kwargs, expected_stpd):
+    stepper = Stepper(
+        TankCore([{}], threading.Event(), TankInfo({})),
+        http_ver="1.1",
+        loop_limit=15,
+        ammo_limit=1000,
+        enum_ammo=False,
+        **stepper_kwargs
+    )
+    stepper_output = io.BytesIO()
+    stepper.write(stepper_output)
+    stepper_output.seek(0)
+    expected_lines = read_resource(os.path.join(get_test_path(), expected_stpd), 'rb').split(b'\n')
+    for i, (result, expected) in enumerate(zip(stepper_output, expected_lines)):
+        assert result.strip() == expected.strip(), 'Line {} mismatch'.format(i)

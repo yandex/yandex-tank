@@ -9,6 +9,10 @@ StepperInfo = namedtuple(
     'StepperInfo', 'loop_count,steps,loadscheme,duration,ammo_count,instances')
 
 
+class LoopCountLimit(Exception):
+    pass
+
+
 class StepperStatus(object):
     '''
     Raises StopIteration when limits are reached.
@@ -77,8 +81,8 @@ class StepperStatus(object):
         self._loop_count = value
         if self.loop_limit and value >= self.loop_limit:
             print()  # do not overwrite status (go to new line)
-            log.info("Loop limit reached: %s", self.loop_limit)
-            raise StopIteration
+            log.warning("Ammo loop limit reached: %s", self.loop_limit)
+            raise LoopCountLimit
 
     def inc_loop_count(self):
         self.loop_count += 1

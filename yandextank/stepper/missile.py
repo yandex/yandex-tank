@@ -9,6 +9,7 @@ from itertools import cycle
 from netort.resource import manager as resource
 
 from . import info
+from .info import LoopCountLimit
 from .module_exceptions import AmmoFileError
 
 
@@ -54,42 +55,29 @@ class HttpAmmo(object):
             self.body)
 
 
-class SimpleGenerator(object):
-    '''
-    Generates ammo based on a given sample.
-    '''
-
-    def __init__(self, missile_sample):
-        '''
-        Missile sample is any object that has to_s method which
-        returns its string representation.
-        '''
-        self.missiles = cycle([(missile_sample.to_s(), None)])
-
-    def __iter__(self):
-        for m in self.missiles:
-            info.status.inc_loop_count()
-            yield m
-
-
 class UriStyleGenerator(object):
-    '''
+    """
     Generates GET ammo based on given URI list.
-    '''
+    """
 
     def __init__(self, uris, headers, http_ver='1.1'):
-        '''
+        """
         uris - a list of URIs as strings.
-        '''
-        self.uri_count = len(uris)
-        self.missiles = cycle([(
-            HttpAmmo(
-                uri, headers, http_ver=http_ver).to_s(), None) for uri in uris])
+        """
+        super().__init__()
+        self.missiles = cycle(
+            [(HttpAmmo(uri, headers, http_ver=http_ver).to_s(), None) for uri in uris] + [None]  # None marks loop end
+        )
 
     def __iter__(self):
         for m in self.missiles:
-            yield m
-            info.status.loop_count = info.status.ammo_count / self.uri_count
+            if m is not None:
+                yield m
+            else:
+                try:
+                    info.status.inc_loop_count()
+                except LoopCountLimit:
+                    break
 
 
 class Reader(object):
@@ -99,28 +87,28 @@ class Reader(object):
 
 
 class AmmoFileReader(Reader):
-    '''Read missiles from ammo file'''
+    """Read missiles from ammo file"""
 
     def __init__(self, filename, use_cache=True, **kwargs):
         super(AmmoFileReader, self).__init__(filename, use_cache)
         self.log = logging.getLogger(__name__)
         self.log.info("Loading ammo from '%s'" % filename)
 
-    def __iter__(self):
-        def read_chunk_header(ammo_file):
-            chunk_header = b''
-            while chunk_header == b'':
-                line = ammo_file.readline()
-                if line == b'':
-                    return line
-                chunk_header = line.strip(b'\r\n')
-            return chunk_header
+    @staticmethod
+    def read_chunk_header(ammo_file):
+        chunk_header = b''
+        while chunk_header == b'':
+            line = ammo_file.readline()
+            if line == b'':
+                return line
+            chunk_header = line.strip(b'\r\n')
+        return chunk_header
 
+    def __iter__(self):
         opener = resource.get_opener(self.filename)
         with opener(self.use_cache) as ammo_file:
             info.status.af_size = opener.data_length
-            # if we got StopIteration here, the file is empty
-            chunk_header = read_chunk_header(ammo_file)
+            chunk_header = self.read_chunk_header(ammo_file)
             while chunk_header:
                 if chunk_header != b'':
                     try:
@@ -132,8 +120,11 @@ class AmmoFileReader(Reader):
                                     'Zero-sized chunk in ammo file at %s. Starting over.'
                                     % ammo_file.tell())
                             ammo_file.seek(0)
-                            info.status.inc_loop_count()
-                            chunk_header = read_chunk_header(ammo_file)
+                            try:
+                                info.status.inc_loop_count()
+                            except LoopCountLimit:
+                                break
+                            chunk_header = self.read_chunk_header(ammo_file)
                             continue
                         marker = fields[1] if len(fields) > 1 else None
                         missile = ammo_file.read(chunk_size)
@@ -146,11 +137,14 @@ class AmmoFileReader(Reader):
                         raise AmmoFileError(
                             "Error while reading ammo file. Position: %s, header: '%s', original exception: %s"
                             % (ammo_file.tell(), chunk_header, e))
-                chunk_header = read_chunk_header(ammo_file)
+                chunk_header = self.read_chunk_header(ammo_file)
                 if chunk_header == b'':
                     ammo_file.seek(0)
-                    info.status.inc_loop_count()
-                    chunk_header = read_chunk_header(ammo_file)
+                    try:
+                        info.status.inc_loop_count()
+                    except LoopCountLimit:
+                        break
+                    chunk_header = self.read_chunk_header(ammo_file)
                 info.status.af_position = ammo_file.tell()
 
 
@@ -174,7 +168,10 @@ class SlowLogReader(Reader):
                         request += line
                 ammo_file.seek(0)
                 info.status.af_position = 0
-                info.status.inc_loop_count()
+                try:
+                    info.status.inc_loop_count()
+                except LoopCountLimit:
+                    break
 
 
 class LineReader(Reader):
@@ -190,7 +187,10 @@ class LineReader(Reader):
                     yield (line.rstrip(b'\r\n'), None) if isinstance(line, bytes) else (line.rstrip('\r\n').encode('utf8'), None)
                 ammo_file.seek(0)
                 info.status.af_position = 0
-                info.status.inc_loop_count()
+                try:
+                    info.status.inc_loop_count()
+                except LoopCountLimit:
+                    break
 
 
 class CaseLineReader(Reader):
@@ -212,7 +212,10 @@ class CaseLineReader(Reader):
                         raise RuntimeError("Unreachable branch")
                 ammo_file.seek(0)
                 info.status.af_position = 0
-                info.status.inc_loop_count()
+                try:
+                    info.status.inc_loop_count()
+                except LoopCountLimit:
+                    break
 
 
 class AccessLogReader(Reader):
@@ -257,7 +260,10 @@ class AccessLogReader(Reader):
                         self.warn("Skipped line: %s (%s)" % (line, e))
                 ammo_file.seek(0)
                 info.status.af_position = 0
-                info.status.inc_loop_count()
+                try:
+                    info.status.inc_loop_count()
+                except LoopCountLimit:
+                    break
 
 
 def _parse_header(header):
@@ -305,7 +311,10 @@ class UriReader(Reader):
                     raise AmmoFileError("No ammo! Cover me!")
                 ammo_file.seek(0)
                 info.status.af_position = 0
-                info.status.inc_loop_count()
+                try:
+                    info.status.inc_loop_count()
+                except LoopCountLimit:
+                    break
 
 
 class UriPostReader(Reader):
@@ -371,6 +380,9 @@ class UriPostReader(Reader):
                     self.log.debug(
                         'Reached the end of ammo file. Starting over.')
                     ammo_file.seek(0)
-                    info.status.inc_loop_count()
+                    try:
+                        info.status.inc_loop_count()
+                    except LoopCountLimit:
+                        break
                     chunk_header = read_chunk_header(ammo_file)
                 info.status.af_position = ammo_file.tell()

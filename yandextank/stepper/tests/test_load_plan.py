@@ -181,7 +181,7 @@ def test_step_factory(step_config, expected_duration):
      'yandextank/stepper/tests/caseline-expected.stpd'),
     ({'ammo_file': os.path.join(get_test_path(), 'yandextank/stepper/tests/test-protobuf-autocases.txt'),
       'autocases': 2},
-     'yandextank/stepper/tests/protobuf-expected.stpd')
+     'yandextank/stepper/tests/protobuf-expected.stpd'),
 ])
 def test_ammo(stepper_kwargs, expected_stpd):
     stepper = Stepper(
@@ -191,6 +191,30 @@ def test_ammo(stepper_kwargs, expected_stpd):
         instances_schedule=None,
         instances=10,
         loop_limit=1000,
+        ammo_limit=1000,
+        enum_ammo=False,
+        **stepper_kwargs
+    )
+    stepper_output = io.BytesIO()
+    stepper.write(stepper_output)
+    stepper_output.seek(0)
+    expected_lines = read_resource(os.path.join(get_test_path(), expected_stpd), 'rb').split(b'\n')
+    for i, (result, expected) in enumerate(zip(stepper_output, expected_lines)):
+        assert result.strip() == expected.strip(), 'Line {} mismatch'.format(i)
+
+
+@pytest.mark.parametrize('stepper_kwargs, expected_stpd', [
+    ({'uris': ['/', '/foo']},
+     'yandextank/stepper/tests/loop1.stpd')
+])
+def test_loop_limit(stepper_kwargs, expected_stpd):
+    stepper = Stepper(
+        TankCore([{}], threading.Event(), TankInfo({})),
+        rps_schedule=["const(1,10s)"],
+        http_ver="1.1",
+        instances_schedule=None,
+        instances=1,
+        loop_limit=3,
         ammo_limit=1000,
         enum_ammo=False,
         **stepper_kwargs
