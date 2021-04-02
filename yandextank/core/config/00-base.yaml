@@ -1,6 +1,3 @@
-android:
-  enabled: false
-  package: yandextank.plugins.Android
 autostop:
   enabled: true
   package: yandextank.plugins.Autostop
