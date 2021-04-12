@@ -52,7 +52,7 @@ class Plugin(AbstractPlugin):
         ''' raise exception on disk space exceeded '''
         cmd = "sh -c \"df --no-sync -m -P -x fuse -x tmpfs -x devtmpfs -x davfs -x nfs "
         cmd += self.core.artifacts_base_dir
-        cmd += r" | tail -n 1 | awk '{print \$4}' \""
+        cmd += " | tail -n 1 | awk '{print \\$4}' \""
         res = execute(cmd, True, 0.1, True)
         logging.debug("Result: %s", res)
         if not len(res[1]):

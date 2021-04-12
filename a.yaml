@@ -1,0 +1,64 @@
+service: load
+title: Yandex-Tank
+ci:
+  secret: sec-01d29tnxhn45y1vytr190qzy41
+  releases:
+    yandextank-release:
+      title: yandex-tank release
+      flow: yandextank-tests-flow
+      stages:
+        build:
+          title: Build stage
+        deploy:
+          title: Deploy stage
+        test_tank:
+          title: Test stage
+  runtime:
+    sandbox-owner: LOAD
+  flows:
+    yandextank-tests-flow:
+      title: Yandextank testing flow
+      jobs:
+        build:
+          title: Build
+          task: common/arcadia/ya_package
+          stage: build
+          input:
+            docker_push_image: True
+            release_to_ya_deploy: True
+            yp_token_vault: yp-token
+            publish_to: robot-lunapark
+            packages: load/projects/yandex-tank-internal-pkg/docker_pkg.json
+            resource_type: TANK_PACKAGE
+            package_type: docker
+            docker_token_vault_name: robot-lunapark-token
+            docker_image_repository: load/test
+            custom_version: "${context.target_revision.hash}"
+            compress_package_archive: True
+            docker_user: robot-lunapark
+            ignore_recurses: True
+            publish_package: True
+            multiple_publish: True
+            multiple_publish_to: LOAD
+            key_user: robot-lunapark
+        deploy:
+          needs: build
+          title: Deploy
+          stage: deploy
+          task: common/deploy/release
+          input:
+            config:
+              sandbox_resource_type: TANK_PACKAGE
+              release_stage: testing
+              release_notes: Release to testing
+              release_subject: Release to testing
+              stage_name: Yandextank_testing-acceptance
+              release_artifact_type: DOCKER_IMAGE
+        test_tank:
+          needs: deploy
+          title: Test
+          stage: test_tank
+          task: common/load/yandex-tank/test_tank_config
+  triggers:
+    - on: pr
+      flow: yandextank-tests-flow

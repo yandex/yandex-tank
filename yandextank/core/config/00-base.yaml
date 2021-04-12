@@ -43,4 +43,6 @@ influx:
 opentsdb:
   enabled: false
   package: yandextank.plugins.OpenTSDBUploader
-
+metaconf:
+  enabled: false
+  package: yandextank.plugins.MetaConf

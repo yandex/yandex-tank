@@ -1,0 +1,10 @@
+firestarter:
+  type: dict
+  default: {}
+  required: false
+  description: options for firestarter configuration
+sandbox_ci:
+  type: dict
+  default: {}
+  required: false
+  description: options sandbox CI tasklets
