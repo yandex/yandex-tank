@@ -92,6 +92,7 @@ class TankWorker():
                 'exit_code': self.retcode,
                 'lunapark_id': self.get_info('uploader', 'job_no'),
                 'tank_msg': self.msg,
+                'test_id': self.test_id,
                 'lunapark_url': self.get_info('uploader', 'web_link'),
                 'luna_id': self.get_info('neuploader', 'job_no'),
                 'luna_url': self.get_info('neuploader', 'web_link')}
