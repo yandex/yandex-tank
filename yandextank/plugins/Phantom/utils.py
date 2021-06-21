@@ -58,7 +58,7 @@ class PhantomConfig:
 
     def read_config(self):
         """        Read phantom tool specific options        """
-        self.threads = self.cfg["threads"] or str(int(multiprocessing.cpu_count() / 2) + 1)
+        self.threads = self.cfg["threads"] or str(min(int(multiprocessing.cpu_count() / 2) + 1, 128))
         self.phantom_modules_path = self.cfg["phantom_modules_path"]
         self.additional_libs = ' '.join(self.cfg["additional_libs"])
         self.answ_log_level = self.cfg["writelog"]
