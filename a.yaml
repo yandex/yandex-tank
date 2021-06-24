@@ -14,7 +14,7 @@ ci:
         test_tank:
           title: Test stage
   runtime:
-    sandbox-owner: LOAD
+    sandbox-owner: LOAD-ROBOT
   flows:
     yandextank-tests-flow:
       title: Yandextank testing flow
