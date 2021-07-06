@@ -1,12 +1,17 @@
 import socket
 from threading import Thread, Event
 
+import mock
+import paramiko
 import pytest
 from queue import Queue
 from yandextank.common.util import FileScanner, FileMultiReader
-from yandextank.common.util import AddressWizard
+from yandextank.common.util import AddressWizard, SecuredShell
+from yandextank.common.tests.ssh_client import SSHClientWithBanner, SSHClientWithoutBanner
 
 from netort.data_processing import Drain, Chopper
+
+banner = '###Hellow user!####\n'
 
 
 class TestDrain(object):
@@ -194,3 +199,20 @@ class TestFileMultiReader(object):
     def test_readline(self, benchmark):
         errors = benchmark(self.phout_multi_readline)
         assert len(errors) == 0
+
+
+class TestSecuredShell(object):
+
+    def test_check_empty_banner(self):
+        with mock.patch.object(SecuredShell, 'connect', SSHClientWithoutBanner):
+            with mock.patch.object(paramiko.SSHClient, 'exec_command', SSHClientWithoutBanner.exec_command):
+                output, _, _ = SecuredShell(None, None, None).execute('pwd')
+                assert SecuredShell(None, None, None).check_banner() == ''
+                assert output == '/var/tmp'
+
+    def test_check_banner(self):
+        with mock.patch.object(SecuredShell, 'connect', SSHClientWithBanner):
+            with mock.patch.object(paramiko.SSHClient, 'exec_command', SSHClientWithBanner.exec_command):
+                output, _, _ = SecuredShell(None, None, None).execute('pwd')
+                assert SecuredShell(None, None, None).check_banner() == banner
+                assert output == '/var/tmp'
