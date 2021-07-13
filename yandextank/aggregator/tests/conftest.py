@@ -10,14 +10,13 @@ MAX_TS = 1000
 
 def random_split(df):
     i = 0
-    while True:
-        step = np.random.randint(500, 1200)
-        if i + step < len(df):
+    while i < max(df.index):
+        step = np.random.randint(100, 200)
+        if i + step < max(df.index):
             yield df.loc[i:i + step - 1]
-            i += step
         else:
             yield df.loc[i:]
-            break
+        i += step
 
 
 @pytest.fixture

@@ -28,7 +28,7 @@ class PhantomMock(object):
 
 
 class ListenerMock(object):
-    def __init__(self, expected):
+    def __init__(self):
         self.collected_data = []
         self.cnt = 0
         self.avg = 0
@@ -45,9 +45,9 @@ class ListenerMock(object):
 def test_agregator(phout, expected_rps):
     generator = PhantomMock(os.path.join(get_test_path(), phout))
     aggregator = TankAggregator(generator)
-    listener = ListenerMock(expected_rps)
+    listener = ListenerMock()
     aggregator.add_result_listener(listener)
-    aggregator.start_test(poll_period=0)
+    aggregator.start_test(poll_period=0.1)
     generator.finished.set()
     while not aggregator.is_aggr_finished():
         aggregator.is_test_finished()

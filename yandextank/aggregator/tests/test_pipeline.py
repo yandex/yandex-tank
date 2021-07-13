@@ -10,7 +10,7 @@ from yandextank.common.util import get_test_path
 from conftest import MAX_TS, random_split
 
 from yandextank.aggregator import TankAggregator
-from yandextank.aggregator.aggregator import Aggregator, DataPoller
+from yandextank.aggregator.aggregator import Aggregator, data_poller
 from yandextank.aggregator.chopper import TimeChopper
 from yandextank.plugins.Phantom.reader import string_to_df
 from netort.data_processing import Drain
@@ -26,8 +26,8 @@ class TestPipeline(object):
 
         pipeline = Aggregator(
             TimeChopper(
-                DataPoller(
-                    source=chunks, poll_period=0.1), cache_size=3),
+                [data_poller(
+                    source=chunks, poll_period=0.1)]),
             AGGR_CONFIG,
             False)
         drain = Drain(pipeline, results_queue)
@@ -37,7 +37,7 @@ class TestPipeline(object):
     def test_slow_producer(self, data):
         results_queue = Queue()
         chunks = list(random_split(data))
-        chunks[5], chunks[6] = chunks[6], chunks[5]
+        chunks[2], chunks[3] = chunks[3], chunks[2]
 
         def producer():
             for chunk in chunks:
@@ -47,8 +47,7 @@ class TestPipeline(object):
 
         pipeline = Aggregator(
             TimeChopper(
-                DataPoller(
-                    source=producer(), poll_period=0.1), cache_size=3),
+                [data_poller(source=producer(), poll_period=0.1)]),
             AGGR_CONFIG,
             False)
         drain = Drain(pipeline, results_queue)
@@ -62,9 +61,7 @@ class TestPipeline(object):
         with open(os.path.join(get_test_path(), phout)) as fp:
             reader = [string_to_df(line) for line in fp.readlines()]
         pipeline = Aggregator(
-            TimeChopper(
-                DataPoller(source=reader, poll_period=0),
-                cache_size=3),
+            TimeChopper([data_poller(source=reader, poll_period=0.01)]),
             AGGR_CONFIG,
             True)
         with open(os.path.join(get_test_path(), expected_results)) as fp:

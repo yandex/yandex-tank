@@ -4,8 +4,9 @@ import logging
 import queue as q
 
 from pkg_resources import resource_string
+from typing import Collection
 
-from .aggregator import Aggregator, DataPoller
+from .aggregator import Aggregator, data_poller
 from .chopper import TimeChopper
 from yandextank.common.interfaces import AggregateResultListener, StatsReader
 
@@ -54,7 +55,7 @@ class TankAggregator(object):
     def load_config():
         return json.loads(resource_string(__name__, 'config/phout.json').decode('utf8'))
 
-    def start_test(self, poll_period=1):
+    def start_test(self, poll_period=0.5):
         self.reader = self.generator.get_reader()
         self.stats_reader = self.generator.get_stats_reader()
         aggregator_config = self.load_config()
@@ -62,16 +63,18 @@ class TankAggregator(object):
         if verbose_histogram:
             logger.info("using verbose histogram")
         if self.reader and self.stats_reader:
-            pipeline = Aggregator(
-                TimeChopper(
-                    DataPoller(source=self.reader, poll_period=poll_period),
-                    cache_size=3),
-                aggregator_config,
-                verbose_histogram)
+            pipeline =\
+                Aggregator(TimeChopper([data_poller(source=r, poll_period=poll_period) for r in self.reader]),
+                           aggregator_config,
+                           verbose_histogram) \
+                if isinstance(self.reader, Collection) else \
+                Aggregator(TimeChopper([data_poller(source=self.reader, poll_period=poll_period)]),
+                           aggregator_config,
+                           verbose_histogram)
             self.drain = Drain(pipeline, self.results)
             self.drain.start()
             self.stats_drain = Drain(
-                Chopper(DataPoller(
+                Chopper(data_poller(
                     source=self.stats_reader, poll_period=poll_period)),
                 self.stats_results)
             self.stats_drain.start()

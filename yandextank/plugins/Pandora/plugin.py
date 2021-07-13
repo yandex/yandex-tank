@@ -40,7 +40,7 @@ class Plugin(GeneratorPlugin):
         self.expvar = self.get_option('expvar')
         self.expvar_enabled = self.expvar
         self.expvar_port = self.DEFAULT_EXPVAR_PORT
-        self.report_file = None
+        self.report_files = None
         self.__address = None
         self.__schedule = None
         self.ammofile = None
@@ -59,7 +59,7 @@ class Plugin(GeneratorPlugin):
         return opts
 
     def configure(self):
-        self.report_file = self.get_option("report_file")
+        self.report_files = [self.get_option("report_file")]
         self.buffered_seconds = self.get_option("buffered_seconds")
         self.affinity = self.get_option("affinity", "")
         self.resources = self.get_option("resources")
@@ -87,10 +87,11 @@ class Plugin(GeneratorPlugin):
         logger.debug('Config after parsing for patching: %s', self.config_contents)
 
         # find report filename and add to artifacts
-        self.report_file = self.__find_report_filename()
-        with open(self.report_file, 'w'):
-            pass
-        self.core.add_artifact_file(self.report_file)
+        self.report_files = [pool['result']['destination'] for pool in self.config_contents['pools']]
+        for f in self.report_files:
+            with open(f, 'w'):
+                pass
+            self.core.add_artifact_file(f)
 
     def __patch_raw_config_and_dump(self, cfg_dict):
         if not cfg_dict:
@@ -127,7 +128,7 @@ class Plugin(GeneratorPlugin):
 
         # FIXME this is broken for custom ammo providers due to interface incompatibility
         # FIXME refactor pandora plx
-        for pool in config['pools']:
+        for n, pool in enumerate(config['pools']):
             if pool.get('ammo', {}).get('file', ''):
                 self.ammofile = pool['ammo']['file']
                 opener = resource_manager.get_opener(self.ammofile)
@@ -139,7 +140,7 @@ class Plugin(GeneratorPlugin):
             if not pool.get('result') or 'phout' not in pool.get('result', {}).get('type', ''):
                 logger.warning('Seems like pandora result file not specified... adding defaults')
                 pool['result'] = dict(
-                    destination=self.DEFAULT_REPORT_FILE,
+                    destination=f"{n}_{self.DEFAULT_REPORT_FILE}",
                     type='phout',
                 )
         return config
@@ -177,20 +178,10 @@ class Plugin(GeneratorPlugin):
             rps_schedule=self.schedule
         )
 
-    def __find_report_filename(self):
-        for pool in self.config_contents['pools']:
-            if self.report_file:
-                return self.report_file
-            if pool.get('result', {}).get('destination', None):
-                report_filename = pool.get('result').get('destination')
-                logger.info('Found report file in pandora config: %s', report_filename)
-                return report_filename
-        return self.DEFAULT_REPORT_FILE
-
     def get_reader(self, parser=string_to_df):
         if self.reader is None:
-            self.reader = FileMultiReader(self.report_file, self.output_finished)
-        return PhantomReader(self.reader.get_file(), parser=parser)
+            self.reader = [FileMultiReader(f, self.output_finished) for f in self.report_files]
+        return [PhantomReader(reader.get_file(), parser=parser) for reader in self.reader]
 
     def get_stats_reader(self):
         if self.stats_reader is None:
