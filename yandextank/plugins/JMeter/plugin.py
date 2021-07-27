@@ -311,8 +311,8 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
     def render(self, screen):
         jmeter = " JMeter Test %s" % next(self.krutilka)
         space = screen.right_panel_width - len(jmeter) - 1
-        left_spaces = space / 2
-        right_spaces = space / 2
+        left_spaces = space // 2
+        right_spaces = space // 2
 
         dur_seconds = int(time.time()) - int(self.jmeter.start_time)
         duration = str(datetime.timedelta(seconds=dur_seconds))
