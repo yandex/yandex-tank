@@ -11,7 +11,7 @@ It uses other load generators such as JMeter, ab or phantom inside of it for
 load generation and provides a common configuration system for them and
 analytic tools for the results they produce.
 ''',
-    python_requires='==3.7.*, 3.8.*',
+    python_requires='==3.*',
     maintainer='Yandex Load Team',
     maintainer_email='load@yandex-team.ru',
     url='http://yandex.github.io/yandex-tank/',
@@ -20,7 +20,7 @@ analytic tools for the results they produce.
     install_requires=[
         'cryptography>=2.2.1', 'pyopenssl==18.0.0',
         'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
-        'pandas==0.24.2', 'numpy==1.15.4',
+        'pandas<=1.2.5', 'numpy<=1.19.5',
         'pip>=8.1.2',
         'pyyaml>=4.2b1', 'cerberus==1.3.1', 'influxdb>=5.0.0', 'netort>=0.8.0',
         'retrying>=1.3.3', 'pytest-runner', 'typing'
