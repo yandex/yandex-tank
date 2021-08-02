@@ -155,7 +155,10 @@ def load_cfg(cfg_filename):
     if is_ini(cfg_filename):
         return convert_ini(cfg_filename)
     else:
-        return yaml.load(read_resource(cfg_filename), Loader=yaml.FullLoader)
+        cfg_yaml = yaml.load(read_resource(cfg_filename), Loader=yaml.FullLoader)
+        if not isinstance(cfg_yaml, dict):
+            raise ValidationError('Wrong config format, should be a yaml')
+        return cfg_yaml
 
 
 def load_core_base_cfg():
