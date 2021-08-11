@@ -65,7 +65,7 @@ class TankAggregator(object):
             pipeline = Aggregator(
                 TimeChopper(
                     DataPoller(source=self.reader, poll_period=poll_period),
-                    cache_size=3),
+                    cache_size=10),
                 aggregator_config,
                 verbose_histogram)
             self.drain = Drain(pipeline, self.results)
