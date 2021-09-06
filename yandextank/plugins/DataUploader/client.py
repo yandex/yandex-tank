@@ -3,12 +3,16 @@ import time
 import traceback
 import urllib.parse
 import uuid
+import grpc
+import random
 
 import requests
 import logging
 
 from requests.exceptions import ConnectionError, Timeout
 from urllib3.exceptions import ProtocolError
+from load.projects.cloud.cloud_helper import iam
+from load.projects.cloud.api import trail_service_pb2, trail_service_pb2_grpc, greeter_service_pb2, greeter_service_pb2_grpc
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
@@ -456,7 +460,8 @@ class APIClient(object):
             "hist"])
         return api_data
 
-    def convert_hist(self, hist):
+    @staticmethod
+    def convert_hist(hist):
         data = hist['data']
         bins = hist['bins']
         return [
@@ -675,3 +680,127 @@ class OverloadClient(APIClient):
 
     def set_imbalance_and_dsc(self, **kwargs):
         return
+
+
+class CloudGRPCClient(APIClient):
+
+    class NotAvailable(Exception):
+        pass
+
+    def __init__(
+            self,
+            core_interrupted,
+            base_url=None,
+            api_attempts=10,
+            api_timeout=0.5,
+            connection_timeout=100.0):
+        super().__init__(core_interrupted)
+        self.core_interrupted = core_interrupted
+        self._base_url = base_url
+        self.api_attempts = api_attempts
+        self.connection_timeout = connection_timeout
+        self.max_api_timeout = 120
+        self.channel = grpc.insecure_channel(self._base_url)
+        self._set_connection(self.token)
+
+    def _get_call_creds(self, token):
+        return grpc.access_token_call_credentials(token)
+
+    # TODO retry
+    def _set_connection(self, token):
+        try:
+            stub_greeter = greeter_service_pb2_grpc.GreeterServiceStub(self.channel)
+            response = stub_greeter.SayHello(
+                greeter_service_pb2.SayHelloRequest(tank_id='123'),  # FIXME
+                timeout=self.connection_timeout,
+                credentials=self._get_call_creds(token)
+            )
+            if response.code == 0:
+                self.stub = trail_service_pb2_grpc.TrailServiceStub(self.channel)
+                logger.info('Init connection to cloud load testing is succeeded')
+        except Exception as e:
+            raise self.NotAvailable(f"Couldn't connect to to cloud load testing: {e}")
+
+    @property
+    def token(self):
+        return iam.get_token()
+
+    def api_timeouts(self):
+        for attempt in range(self.api_attempts - 1):
+            multiplier = random.uniform(1, 1.5)
+            yield min(2**attempt * multiplier, self.max_api_timeout)
+
+    def convert_to_proto_message(self, items):
+        trails = []
+        for item in items:
+            trail = trail_service_pb2.Trail(
+                overall=item["overall"],
+                case=item["case"],
+                time=item["trail"]["time"],
+                reqps=item["trail"]["reqps"],
+                resps=item["trail"]["resps"],
+                expect=item["trail"]["expect"],
+                input=item["trail"]["input"],
+                output=item["trail"]["output"],
+                connect_time=item["trail"]["connect_time"],
+                send_time=item["trail"]["send_time"],
+                latency=item["trail"]["latency"],
+                receive_time=item["trail"]["receive_time"],
+                threads=item["trail"]["threads"])
+            trails.append(trail)
+        return trails
+
+    def send_trails(self, instance_id, trails):
+        try:
+            request = trail_service_pb2.CreateTrailRequest(
+                compute_instance_id=str(instance_id),
+                data=trails
+            )
+            result = self.stub.Create(
+                request,
+                timeout=self.connection_timeout,
+                credentials=self._get_call_creds(self.token)
+            )
+            logger.debug(f'Send trails: {trails}')
+            return result.code
+        except grpc._channel._InactiveRpcError as err:
+            if err.code() == grpc.StatusCode.UNAVAILABLE:
+                raise self.NotAvailable('Connection is closed. Try to set it again.')
+            raise err
+        except Exception as err:
+            raise err
+
+    def push_test_data(
+            self,
+            instance_id,
+            data_item,
+            stat_item,
+            interrupted_event):
+        items = []
+        ts = data_item["ts"]
+        for case_name, case_data in data_item["tagged"].items():
+            if case_name == "":
+                case_name = "__NOTAG__"
+            push_item = self.second_data_to_push_item(case_data, stat_item, ts,
+                                                      0, case_name)
+            items.append(push_item)
+        overall = self.second_data_to_push_item(data_item["overall"],
+                                                stat_item, ts, 1, '')
+        items.append(overall)
+
+        api_timeouts = self.api_timeouts()
+        while not interrupted_event.is_set():
+            try:
+                self.send_trails(instance_id, self.convert_to_proto_message(items))
+            except self.NotAvailable as err:
+                if not self.core_interrupted.is_set():
+                    try:
+                        timeout = next(api_timeouts)
+                        self._set_connection(self.token)
+                        logger.warn("GRPC error, will retry in %ss...", timeout)
+                        time.sleep(timeout)
+                        continue
+                    except StopIteration:
+                        raise err
+                else:
+                    break
