@@ -673,5 +673,5 @@ class OverloadClient(APIClient):
     def push_events_data(self, number, token, data):
         return
 
-    def set_imbalance_and_dsc(self, **kwargs):
+    def set_imbalance_and_dsc(self, jobno, rps, comment):
         return
