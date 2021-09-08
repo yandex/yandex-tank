@@ -23,7 +23,7 @@ analytic tools for the results they produce.
         'pandas<=1.2.5', 'numpy<=1.19.5',
         'pip>=8.1.2',
         'pyyaml>=4.2b1', 'cerberus==1.3.1', 'influxdb>=5.0.0', 'netort>=0.8.0',
-        'retrying>=1.3.3', 'pytest-runner', 'typing'
+        'retrying>=1.3.3', 'pytest-runner', 'typing', 'grpcio', 'grpcio-tools'
     ],
     setup_requires=[
     ],
@@ -60,6 +60,7 @@ analytic tools for the results they produce.
         'yandextank.plugins.Android': ['binary/*', 'config/*'],
         'yandextank.plugins.Autostop': ['config/*'],
         'yandextank.plugins.Bfg': ['config/*'],
+        'yandextank.plugins.CloudUploader': ['config/*'],
         'yandextank.plugins.Console': ['config/*'],
         'yandextank.plugins.DataUploader': ['config/*'],
         'yandextank.plugins.InfluxUploader': ['config/*'],
