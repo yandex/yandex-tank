@@ -114,30 +114,20 @@ class Worker(object):
         }
 
 
-class DataPoller(object):
-    def __init__(self, source, poll_period, max_wait=31):
-        """
-
-        :param source: generator, should raise StopIteration at some point otherwise tank will be hanging
-        :param poll_period:
-        """
-        self.poll_period = poll_period or 0.01
-        self.source = source
-        self.wait_cntr_max = max_wait // self.poll_period or 1
-        self.wait_counter = 0
-
-    def __iter__(self):
-        for chunk in self.source:
-            if chunk is not None:
-                self.wait_counter = 0
-                yield chunk
-            elif self.wait_counter < self.wait_cntr_max:
-                self.wait_counter += 1
-            else:
-                logger.warning('Data poller has been receiving no data for {} seconds.\n'
-                               'Closing data poller'.format(self.wait_cntr_max * self.poll_period))
-                break
-            time.sleep(self.poll_period)
+def data_poller(source, poll_period=0.01, max_wait=31):
+    wait_cntr_max = max_wait // poll_period or 1
+    wait_counter = 0
+    for chunk in source:
+        if chunk is not None:
+            wait_counter = 0
+            yield chunk
+        elif wait_counter < wait_cntr_max:
+            wait_counter += 1
+        else:
+            logger.warning('Data poller has been receiving no data for {} seconds.\n'
+                           'Closing data poller'.format(wait_cntr_max * poll_period))
+            break
+        time.sleep(poll_period)
 
 
 def to_utc(ts):

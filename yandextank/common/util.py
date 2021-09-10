@@ -11,6 +11,7 @@ import logging
 import errno
 import re
 import select
+
 import psutil
 import argparse
 
@@ -82,11 +83,21 @@ http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-paramete
                 timeout=self.timeout)
         return client
 
+    def check_banner(self):
+        with self.connect() as client:
+            _, banner_stdout, _ = client.exec_command("\n", get_pty=True)
+            banner = banner_stdout.read().decode('utf-8')
+        return banner
+
     def execute(self, cmd):
         logger.info("Execute on %s: %s", self.host, cmd)
         with self.connect() as client:
             _, stdout, stderr = client.exec_command(cmd, get_pty=True)
             output = stdout.read().decode('utf8')
+            banner = self.check_banner()
+            if banner:
+                output = output.replace(banner, '')
+                logger.debug("Banner: [{}]".format(banner))
             errors = stderr.read().decode('utf8')
             err_code = stdout.channel.recv_exit_status()
         return output, errors, err_code

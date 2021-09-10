@@ -92,9 +92,9 @@ class TankWorker():
                 'exit_code': self.retcode,
                 'lunapark_id': self.get_info('uploader', 'job_no'),
                 'tank_msg': self.msg,
-                'lunapark_url': self.get_info('uploader', 'web_link'),
-                'luna_id': self.get_info('neuploader', 'job_no'),
-                'luna_url': self.get_info('neuploader', 'web_link')}
+                'test_id': self.test_id,
+                'lunapark_url': self.get_info('uploader', 'web_link')
+                }
 
     def save_finish_status(self):
         with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:
@@ -155,7 +155,10 @@ def load_cfg(cfg_filename):
     if is_ini(cfg_filename):
         return convert_ini(cfg_filename)
     else:
-        return yaml.load(read_resource(cfg_filename), Loader=yaml.FullLoader)
+        cfg_yaml = yaml.load(read_resource(cfg_filename), Loader=yaml.FullLoader)
+        if not isinstance(cfg_yaml, dict):
+            raise ValidationError('Wrong config format, should be a yaml')
+        return cfg_yaml
 
 
 def load_core_base_cfg():

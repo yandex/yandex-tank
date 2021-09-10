@@ -1,0 +1,24 @@
+18 0 
+GET / HTTP/1.1
+
+
+21 1000 
+GET /foo HTTP/1.1
+
+
+18 2000 
+GET / HTTP/1.1
+
+
+21 3000 
+GET /foo HTTP/1.1
+
+
+18 4000 
+GET / HTTP/1.1
+
+
+21 5000 
+GET /foo HTTP/1.1
+
+

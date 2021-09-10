@@ -438,12 +438,12 @@ class TankCore(object):
         dest = self.artifacts_dir + '/' + os.path.basename(filename)
         logger.debug("Collecting file: %s to %s", filename, dest)
         if not filename or not os.path.exists(filename):
-            logger.warning("File not found to collect: %s", filename)
+            logger.info("File not found to collect: %s", filename)
             return
 
         if os.path.exists(dest):
             # FIXME: 3 find a way to store artifacts anyway
-            logger.warning("File already exists: %s", dest)
+            logger.info("File already exists: %s", dest)
             return
 
         if keep_original:

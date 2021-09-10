@@ -186,7 +186,7 @@ class StepperWrapper(object):
         if self.get_option(self.OPTION_LOAD)[self.OPTION_LOAD_TYPE] == 'stpd_file':
             self.stpd = self.get_option(self.OPTION_LOAD)[self.OPTION_SCHEDULE]
 
-        self.chosen_cases = self.get_option("chosen_cases").split()
+        self.chosen_cases = self.get_option("chosen_cases").encode('utf8').split()
         if self.chosen_cases:
             self.log.info("chosen_cases LIMITS: %s", self.chosen_cases)
 
@@ -253,8 +253,8 @@ class StepperWrapper(object):
             hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(
                 self.load_profile.schedule) + sep + str(self.autocases)
             hashed_str += sep + ";".join(self.uris) + sep + ";".join(
-                self.headers) + sep + self.http_ver + sep + ";".join(
-                    self.chosen_cases)
+                self.headers) + sep + self.http_ver + sep + b';'.join(
+                    self.chosen_cases).decode('utf8')
             hashed_str += sep + str(self.enum_ammo) + sep + str(self.ammo_type)
             if self.load_profile.is_instances():
                 hashed_str += sep + str(self.instances)
