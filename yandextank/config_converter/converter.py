@@ -501,7 +501,7 @@ def convert_ini(ini_file):
         else:
             cfg_ini.read_file(ini_file)
     except ParsingError as e:
-        raise ConversionError(e.message)
+        raise ConversionError(str(e))
 
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 

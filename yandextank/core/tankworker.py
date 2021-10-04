@@ -132,7 +132,7 @@ class TankWorker():
                                                                self.core.config.get_option(self.SECTION, 'ignore_lock'))
                 break
             except LockError as e:
-                self.upd_msg(e.message)
+                self.upd_msg(str(e))
                 if not self.wait_lock:
                     raise RuntimeError("Lock file present, cannot continue")
                 logger.warning(
