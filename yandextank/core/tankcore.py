@@ -414,7 +414,7 @@ class TankCore(object):
                     plugin_class)
             return matches[-1]
         else:
-            raise KeyError("Requested plugin type not found: %s" % plugin_class)
+            raise KeyError("Requested plugin type not found: %s", plugin_class)
 
     def get_plugins_of_type(self, plugin_class):
         """

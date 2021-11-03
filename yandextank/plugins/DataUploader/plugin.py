@@ -272,8 +272,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
-        except KeyError:
-            logger.debug("Console plugin not found", exc_info=True)
+        except KeyError as ex:
+            logger.debug(ex)
             console = None
 
         if console:
@@ -358,8 +358,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         autostop = None
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
-        except KeyError:
-            logger.debug("No autostop plugin loaded", exc_info=True)
+        except KeyError as ex:
+            logger.debug(ex)
 
         if autostop and autostop.cause_criterion:
             self.lp_job.set_imbalance_and_dsc(
