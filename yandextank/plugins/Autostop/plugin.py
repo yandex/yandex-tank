@@ -6,18 +6,19 @@ import os.path
 from . import criterions as cr
 from . import cumulative_criterions as cum_cr
 from ..Console import Plugin as ConsolePlugin
-from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget
+from ...common.interfaces import AbstractPlugin, AggregateResultListener, AbstractInfoWidget, MonitoringDataListener
 
 logger = logging.getLogger(__name__)
 
 
-class Plugin(AbstractPlugin, AggregateResultListener):
+class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     """ Plugin that accepts criterion classes and triggers autostop """
     SECTION = 'autostop'
 
     def __init__(self, core, cfg, name):
         AbstractPlugin.__init__(self, core, cfg, name)
         AggregateResultListener.__init__(self)
+        MonitoringDataListener.__init__(self)
 
         self.cause_criterion = None
         self.imbalance_rps = 0
@@ -125,6 +126,11 @@ class Plugin(AbstractPlugin, AggregateResultListener):
                         "Autostop criterion requested test stop on %d rps: %s", self.imbalance_rps, criterion_text)
                     open(self._stop_report_path, 'w').write(criterion_text)
                     self.core.add_artifact_file(self._stop_report_path)
+
+    def monitoring_data(self, data):
+        for _, criterion in self._criterions.items():
+            if isinstance(criterion, MonitoringDataListener):
+                criterion.monitoring_data(data)
 
 
 class AutostopWidget(AbstractInfoWidget):
