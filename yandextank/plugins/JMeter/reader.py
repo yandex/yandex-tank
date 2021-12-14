@@ -164,7 +164,7 @@ class JMeterReader(object):
         self.closed = False
         self.stat_queue = q.Queue()
         self.stats_reader = JMeterStatAggregator(
-            TimeChopper(self._read_stat_queue(), 3))
+            TimeChopper([agg.data_poller(source=self._read_stat_queue(), poll_period=0.5)]))
 
     def _read_stat_queue(self):
         while not self.closed:
