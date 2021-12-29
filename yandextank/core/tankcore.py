@@ -1,5 +1,7 @@
 """ The central part of the tool: Core """
 import datetime
+from functools import cached_property
+
 import fnmatch
 import glob
 import importlib as il
@@ -24,6 +26,7 @@ from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin, Moni
 from yandextank.plugins.DataUploader.client import LPRequisites
 from yandextank.validator.validator import TankConfig, ValidationError
 from yandextank.aggregator import TankAggregator
+from yandextank.aggregator.aggregator import DataPoller
 from yandextank.common.util import pid_exists
 
 from netort.resource import manager as resource
@@ -180,6 +183,13 @@ class TankCore(object):
             self._artifacts_base_dir = artifacts_base_dir
         return self._artifacts_base_dir
 
+    @cached_property
+    def data_poller(self):
+        return DataPoller(
+            poll_period=0.5,
+            max_wait=self.get_option(self.SECTION, "aggregator_max_wait", 31)
+        )
+
     def load_plugins(self):
         """
         Tells core to take plugin options and instantiate plugin classes
@@ -222,7 +232,7 @@ class TankCore(object):
                 logger.warning("Load generator not found")
                 gen = GeneratorPlugin(self, {}, 'generator dummy')
             # aggregator
-            aggregator = TankAggregator(gen)
+            aggregator = TankAggregator(gen, self.data_poller)
             self._job = Job(monitoring_plugins=monitorings,
                             generator_plugin=gen,
                             aggregator=aggregator,

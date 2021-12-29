@@ -84,7 +84,7 @@ class Plugin(GeneratorPlugin):
 
     def get_reader(self):
         if self.reader is None:
-            self.reader = JMeterReader(self.jtl_file)
+            self.reader = JMeterReader(self.jtl_file, self.core.data_poller)
         return self.reader
 
     def get_stats_reader(self):

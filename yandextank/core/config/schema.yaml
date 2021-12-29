@@ -46,5 +46,7 @@ core:
     debug:
       type: boolean
       default: false
+    aggregator_max_wait:
+      type: integer
 version:
   type: string
