@@ -143,6 +143,19 @@ class Plugin(GeneratorPlugin):
                     destination=f"{n}_{self.DEFAULT_REPORT_FILE}",
                     type='phout',
                 )
+
+            if pool.get('gun').get('answlog'):
+                answ = pool.get('gun').get('answlog')
+                if answ.get('enabled') is True:
+                    if not answ.get('path'):
+                        answ_path = self.core.mkstemp(".log", "answ_")
+                        logger.warning('Seems like pandora answer log file not specified... adding default path: %s', answ_path)
+                        self.core.add_artifact_file(answ_path)
+                        config['pools'][n]['gun']['answlog']['path'] = answ_path
+                    else:
+                        answ_path = answ.get('path')
+                        self.core.add_artifact_file(answ_path)
+
         return config
 
     @property
