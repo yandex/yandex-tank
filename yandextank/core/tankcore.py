@@ -187,7 +187,7 @@ class TankCore(object):
     def data_poller(self):
         return DataPoller(
             poll_period=0.5,
-            max_wait=self.get_option(self.SECTION, "aggregator_max_wait", 31)
+            max_wait=self.get_option(self.SECTION, "aggregator_max_wait"),
         )
 
     def load_plugins(self):

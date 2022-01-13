@@ -48,5 +48,6 @@ core:
       default: false
     aggregator_max_wait:
       type: integer
+      default: 31
 version:
   type: string
