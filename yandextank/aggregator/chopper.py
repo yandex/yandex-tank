@@ -17,7 +17,7 @@ class TimeChopper(object):
         # self.cache_size = cache_size
         self.sources = sources
         self.cache = {}
-        self.recent_ts = [0] * len([i for i in self.sources])
+        self.recent_ts = []
 
     def __iter__(self):
         try:
