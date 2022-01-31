@@ -11,6 +11,7 @@ import time
 import datetime
 import yaml
 from urllib.parse import urljoin
+from abc import ABC, abstractmethod
 
 from queue import Empty, Queue
 from builtins import str
@@ -22,10 +23,15 @@ from ...common.interfaces import AbstractPlugin, \
 from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
-from .client import APIClient, OverloadClient, LPRequisites
+from .client import APIClient, OverloadClient, LPRequisites, CloudGRPCClient
 from ...common.util import FileScanner
 
 from netort.data_processing import Drain
+
+try:
+    from yandex.cloud.loadtesting.agent.v1 import test_service_pb2
+except ImportError:
+    import test_service_pb2
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
@@ -33,12 +39,14 @@ logger = logging.getLogger(__name__)  # pylint: disable=C0103
 class BackendTypes(object):
     OVERLOAD = 'OVERLOAD'
     LUNAPARK = 'LUNAPARK'
+    CLOUD = 'CLOUD'
 
     @classmethod
     def identify_backend(cls, api_address, cfg_section_name):
         clues = [
             ('overload', cls.OVERLOAD),
             ('lunapark', cls.LUNAPARK),
+            ('loadtesting', cls.CLOUD),
         ]
         for clue, backend_type in clues:
             if clue in api_address:
@@ -51,6 +59,61 @@ class BackendTypes(object):
                 raise KeyError(
                     'Can not identify backend: neither api address nor section name match any of the patterns:\n%s' %
                     '\n'.join(['*%s*' % ptrn[0] for ptrn in clues]))
+
+
+class Job(ABC):
+
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def push_test_data(self):
+        """method for pushing test data to server"""
+
+    @abstractmethod
+    def edit_metainfo(self):
+        """method for sending job metainfo to server"""
+
+    @property
+    @abstractmethod
+    def number(self):
+        """property with job number"""
+
+    @abstractmethod
+    def close(self):
+        """method for closing job"""
+
+    @abstractmethod
+    def create(self):
+        """method for creating job"""
+
+    @abstractmethod
+    def send_status(self):
+        """method for sending status to server"""
+
+    @abstractmethod
+    def send_config(self):
+        """method for sending test config to server"""
+
+    @abstractmethod
+    def push_monitoring_data(self):
+        """method for pushing monitoring data"""
+
+    @abstractmethod
+    def push_events_data(self):
+        """method for pushing event data"""
+
+    @abstractmethod
+    def lock_target(self):
+        """method for locking target during..."""
+
+    @abstractmethod
+    def set_imbalance_and_dsc(self):
+        """method for imbalance detection"""
+
+    @abstractmethod
+    def is_target_locked(self):
+        """method for checking target lock"""
 
 
 def chop(data_list, chunk_size):
@@ -166,7 +229,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self.core.publish(self.SECTION, 'job_name', self.get_option('job_name'))
 
     def check_task_is_open(self):
-        if self.backend_type == BackendTypes.OVERLOAD:
+        if self.backend_type != BackendTypes.LUNAPARK:
             return
         TASK_TIP = 'The task should be connected to Lunapark.' \
                    'Open startrek task page, click "actions" -> "load testing".'
@@ -514,12 +577,17 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
     def __get_api_client(self):
         logging.info('Using {} backend'.format(self.backend_type))
+        self._api_token = None
         if self.backend_type == BackendTypes.LUNAPARK:
             client = APIClient
-            self._api_token = None
         elif self.backend_type == BackendTypes.OVERLOAD:
             client = OverloadClient
             self._api_token = self.read_token(self.get_option("token_file"))
+        elif self.backend_type == BackendTypes.CLOUD:
+            return CloudGRPCClient(core_interrupted=self.interrupted,
+                                   base_url=self.get_option('api_address'),
+                                   api_attempts=self.get_option('api_attempts'),
+                                   connection_timeout=self.get_option('connection_timeout'))
         else:
             raise RuntimeError("Backend type doesn't match any of the expected")
 
@@ -566,25 +634,35 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         port = info.port
         loadscheme = [] if isinstance(info.rps_schedule, (str, dict)) else info.rps_schedule
 
-        lp_job = LPJob(client=api_client,
-                       target_host=self.target,
-                       target_port=port,
-                       number=self.cfg.get('jobno', None),
-                       token=self.get_option('upload_token'),
-                       person=self.__get_operator(),
-                       task=self.task,
-                       name=self.get_option('job_name', 'untitled'),
-                       description=self.get_option('job_dsc'),
-                       tank=self.core.job.tank,
-                       notify_list=self.get_option("notify"),
-                       load_scheme=loadscheme,
-                       version=self.get_option('ver'),
-                       log_data_requests=self.get_option('log_data_requests'),
-                       log_monitoring_requests=self.get_option('log_monitoring_requests'),
-                       log_status_requests=self.get_option('log_status_requests'),
-                       log_other_requests=self.get_option('log_other_requests'),
-                       add_cleanup=lambda: self.add_cleanup(self.close_job))
-        lp_job.send_config(LPRequisites.CONFIGINITIAL, yaml.dump(self.core.configinitial))
+        if self.backend_type == BackendTypes.CLOUD:
+            lp_job = CloudLoadTestingJob(client=api_client,
+                                         target_host=self.target,
+                                         target_port=port,
+                                         tank_job_id=self.core.test_id,
+                                         storage=self.core.storage,
+                                         name=self.get_option('job_name', 'untitled'),
+                                         description=self.get_option('job_dsc'),
+                                         load_scheme=loadscheme)
+        else:
+            lp_job = LPJob(client=api_client,
+                           target_host=self.target,
+                           target_port=port,
+                           number=self.cfg.get('jobno'),
+                           token=self.get_option('upload_token'),
+                           person=self.__get_operator(),
+                           task=self.task,
+                           name=self.get_option('job_name', 'untitled'),
+                           description=self.get_option('job_dsc'),
+                           tank=self.core.job.tank,
+                           notify_list=self.get_option("notify"),
+                           load_scheme=loadscheme,
+                           version=self.get_option('ver'),
+                           log_data_requests=self.get_option('log_data_requests'),
+                           log_monitoring_requests=self.get_option('log_monitoring_requests'),
+                           log_status_requests=self.get_option('log_status_requests'),
+                           log_other_requests=self.get_option('log_other_requests'),
+                           add_cleanup=lambda: self.add_cleanup(self.close_job))
+            lp_job.send_config(LPRequisites.CONFIGINITIAL, yaml.dump(self.core.configinitial))
         return lp_job
 
     @property
@@ -599,7 +677,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     @property
     def api_token(self):
         if self._api_token == '':
-            if self.backend_type == BackendTypes.LUNAPARK:
+            if self.backend_type in [BackendTypes.LUNAPARK, BackendTypes.CLOUD]:
                 self._api_token = None
             elif self.backend_type == BackendTypes.OVERLOAD:
                 self._api_token = self.read_token(self.get_option("token_file", ""))
@@ -665,7 +743,7 @@ class JobInfoWidget(AbstractInfoWidget):
         return template % data
 
 
-class LPJob(object):
+class LPJob(Job):
     def __init__(
         self,
         client,
@@ -868,6 +946,88 @@ class LPJob(object):
                 else:
                     logger.warn('strict_lock is False, proceeding')
                     return {'status': 'ok'}
+
+
+class CloudLoadTestingJob(Job):
+
+    def __init__(
+        self,
+        client,
+        target_host,
+        target_port,
+        name,
+        description,
+        tank_job_id,
+        storage,
+        load_scheme=None,
+    ):
+        self.target_host = target_host
+        self.target_port = target_port
+        self.tank_job_id = tank_job_id
+        self.name = name
+        self.description = description
+        self._number = None  # cloud job id
+        self.api_client = client
+        self.load_scheme = load_scheme
+        self.interrupted = threading.Event()
+        self.storage = storage
+
+        # self.create()  # FIXME check it out, maybe it is useless
+
+    def push_test_data(self, data, stats):
+        if not self.interrupted.is_set():
+            try:
+                self.api_client.push_test_data(
+                    self.number, data, stats, self.interrupted)
+            except (CloudGRPCClient.NotAvailable, CloudGRPCClient.AgentIdNotFound, RuntimeError):
+                logger.warn('Failed to push test data')
+                self.interrupted.set()
+
+    def edit_metainfo(self, *args, **kwargs):
+        logger.info('Cloud service has already set metainfo')
+
+    # cloud job id
+    @property
+    def number(self):
+        if not self._number:
+            raise self.UnknownJobNumber('Job number is unknown')
+        return self._number
+
+    def close(self, *args, **kwargs):
+        logger.debug('Cannot close job in the cloud mode')
+
+    def create(self):
+        cloud_job_id = self.storage.get_cloud_job_id(self.tank_job_id)
+        if cloud_job_id is None:
+            response = self.api_client.create_test(self.target_host, self.target_port, self.name, self.description, self.load_scheme)
+            self.storage.push_job(cloud_job_id, self.core.test_id)
+            metadata = test_service_pb2.CreateTestMetadata()
+            response.metadata.Unpack(metadata)
+            self._number = metadata.id
+            logger.info('Job was created: {}'.format(self._number))
+        else:
+            self._number = cloud_job_id
+
+    def send_status(self, *args, **kwargs):
+        logger.debug('Tank client is sending the status')
+
+    def send_config(self, *args, **kwargs):
+        logger.debug('Do not send config to the cloud service')
+
+    def push_monitoring_data(self, *args, **kwargs):
+        logger.debug('Do not push monitoring data for cloud service')
+
+    def push_events_data(self, *args, **kwargs):
+        logger.debug('Do not push event data for cloud service')
+
+    def lock_target(self, *args, **kwargs):
+        logger.debug('Target locking is not implemented for cloud')
+
+    def set_imbalance_and_dsc(self, *args, **kwargs):
+        logger.debug('Imbalance detection is not implemented for cloud')
+
+    def is_target_locked(self, *args, **kwargs):
+        logger.debug('Target locking is not implemented for cloud')
 
 
 class EventsReader(FileScanner):
