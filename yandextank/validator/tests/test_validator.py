@@ -99,7 +99,8 @@ PHANTOM_SCHEMA_V_G = {
          'taskset_path': 'taskset',
          'affinity': '',
          'ignore_lock': False,
-         'debug': False
+         'debug': False,
+         'aggregator_max_wait': 31,
      },
      'telegraf': {
          'package': 'yandextank.plugins.Telegraf',
@@ -223,12 +224,14 @@ PHANTOM_SCHEMA_V_G = {
           'taskset_path': 'taskset',
           'affinity': '',
           'ignore_lock': False,
-          'debug': False}}
+          'debug': False,
+          'aggregator_max_wait': 31}}
      )
 ])
 def test_validate_core(config, expected):
     validated, errors, initial = TankConfig(config, False).validate()
-    assert validated.validated == expected, errors == errors
+    assert not errors
+    assert validated.validated == expected
 
 
 @pytest.mark.parametrize('config, expected', [
@@ -384,7 +387,8 @@ def test_load_multiple(configs, expected):
                 'taskset_path': 'taskset',
                 'affinity': '',
                 'ignore_lock': False,
-                'debug': False
+                'debug': False,
+                'aggregator_max_wait': 31,
             },
             'telegraf': {
                 'package': 'yandextank.plugins.Telegraf',

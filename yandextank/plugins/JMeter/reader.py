@@ -8,6 +8,7 @@ import queue as q
 
 from yandextank.aggregator import TimeChopper
 from yandextank.aggregator import aggregator as agg
+from yandextank.aggregator.aggregator import DataPoller
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +156,7 @@ class JMeterStatAggregator(object):
 
 
 class JMeterReader(object):
-    def __init__(self, filename):
+    def __init__(self, filename, poller: DataPoller):
         self.buffer = ""
         self.stat_buffer = ""
         self.jtl_file = filename
@@ -164,7 +165,7 @@ class JMeterReader(object):
         self.closed = False
         self.stat_queue = q.Queue()
         self.stats_reader = JMeterStatAggregator(
-            TimeChopper(self._read_stat_queue(), 3))
+            TimeChopper([poller.poll(self._read_stat_queue())]))
 
     def _read_stat_queue(self):
         while not self.closed:

@@ -132,7 +132,7 @@ def main():
                                debug=options.verbose
                                )
     except (ValidationError, LockError) as e:
-        logging.error('Config validation error:\n{}'.format(e.message))
+        logging.error(f'Config validation error:\n{e}')
         return
     worker.start()
     try:

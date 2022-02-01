@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package yandex.cloud.priv.loadtesting.agent.v1;
+
+option go_package = "agent";
+
+
+service AgentRegistrationService {
+
+  rpc Register (RegisterRequest) returns (RegisterResponse);
+
+}
+
+message RegisterRequest {
+  string compute_instance_id = 1;
+}
+
+message RegisterResponse {
+  string agent_instance_id = 1;
+}
