@@ -45,7 +45,7 @@ def string_to_df(data):
     try:
         chunk = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, dtype=dtypes, quoting=QUOTE_NONE)
     except ParserError as e:
-        logger.error(e.message)
+        logger.error(str(e))
         logger.error('Incorrect phout data: {}'.format(data))
         return
 
@@ -62,7 +62,7 @@ def string_to_df_microsec(data):
     try:
         df = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, na_values='', dtype=dtypes, quoting=QUOTE_NONE, float_precision="legacy")
     except ParserError as e:
-        logger.error(e.message)
+        logger.error(str(e))
         logger.error('Incorrect phout data: {}'.format(data))
         return
 
@@ -127,7 +127,7 @@ class PhantomStatsReader(StatsReader):
             reqps = 0
             if 0 <= offset < len(self.phantom_info.steps):
                 reqps = self.phantom_info.steps[offset][0]
-            yield self.stats_item(chunk_date - 1, instances, reqps)
+            yield self.stats_item(chunk_date - 1, instances, int(reqps))
 
     def _read_stat_data(self, stat_file):
         chunk = stat_file.read(self.cache_size)

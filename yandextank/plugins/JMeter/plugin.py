@@ -84,7 +84,7 @@ class Plugin(GeneratorPlugin):
 
     def get_reader(self):
         if self.reader is None:
-            self.reader = JMeterReader(self.jtl_file)
+            self.reader = JMeterReader(self.jtl_file, self.core.data_poller)
         return self.reader
 
     def get_stats_reader(self):
@@ -105,8 +105,8 @@ class Plugin(GeneratorPlugin):
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
-        except Exception as ex:
-            logger.debug("Console not found: %s", ex)
+        except KeyError as ex:
+            logger.debug(ex)
             console = None
 
         if console:

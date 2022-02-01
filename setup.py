@@ -1,7 +1,52 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Command
 from yandextank.version import VERSION
+import os
+from setuptools.command.build_py import build_py
+from setuptools.command.develop import develop
+from setuptools.command.install import install
+
+
+class RunProtoBuildBefore:
+    def run(self):
+        self.run_command("build_package_protos")
+        return super().run()
+
+
+class CustomDevelop(RunProtoBuildBefore, develop):
+    ...
+
+
+class CustomInstall(RunProtoBuildBefore, install):
+    ...
+
+
+class CustomBuild(RunProtoBuildBefore, build_py):
+    ...
+
+
+class build_package_protos(Command):
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        from grpc.tools import command
+        command.build_package_protos(
+            os.path.join(self.distribution.package_dir[''], 'yandextank', 'plugins', 'DataUploader', 'proto'))
+
 
 setup(
+    cmdclass={
+        'build_package_protos': build_package_protos,
+        'build_py': CustomBuild,
+        'develop': CustomDevelop,
+        'install': CustomInstall
+    },
+    package_dir={"": "."},
     name='yandextank',
     version=VERSION,
     description='a performance measurement tool',
@@ -26,6 +71,7 @@ analytic tools for the results they produce.
         'retrying>=1.3.3', 'pytest-runner', 'typing', 'grpcio', 'grpcio-tools'
     ],
     setup_requires=[
+        'grpcio-tools'
     ],
     tests_require=[
         'pytest==4.6.3', 'flake8', 'pytest-benchmark', 'zipp==0.5.1', 'mock'
@@ -62,7 +108,7 @@ analytic tools for the results they produce.
         'yandextank.plugins.Bfg': ['config/*'],
         'yandextank.plugins.CloudUploader': ['config/*'],
         'yandextank.plugins.Console': ['config/*'],
-        'yandextank.plugins.DataUploader': ['config/*'],
+        'yandextank.plugins.DataUploader': ['config/*', 'proto/*'],
         'yandextank.plugins.InfluxUploader': ['config/*'],
         'yandextank.plugins.OpenTSDBUploader': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],

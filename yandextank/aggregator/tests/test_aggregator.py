@@ -5,6 +5,7 @@ import pytest as pytest
 
 from yandextank.common.util import get_test_path
 from yandextank.aggregator import TankAggregator
+from yandextank.aggregator.aggregator import DataPoller
 from yandextank.common.util import FileMultiReader
 from yandextank.plugins.Phantom.reader import PhantomReader
 
@@ -44,10 +45,11 @@ class ListenerMock(object):
 ])
 def test_agregator(phout, expected_rps):
     generator = PhantomMock(os.path.join(get_test_path(), phout))
-    aggregator = TankAggregator(generator)
+    poller = DataPoller(poll_period=0.1, max_wait=31)
+    aggregator = TankAggregator(generator, poller)
     listener = ListenerMock()
     aggregator.add_result_listener(listener)
-    aggregator.start_test(poll_period=0.1)
+    aggregator.start_test()
     generator.finished.set()
     while not aggregator.is_aggr_finished():
         aggregator.is_test_finished()

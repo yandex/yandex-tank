@@ -185,8 +185,8 @@ class Plugin(MonitoringPlugin):
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
-        except Exception as ex:
-            logger.debug("Console not found: %s", ex)
+        except KeyError as ex:
+            logger.debug(ex)
             console = None
         if console:
             widget = MonitoringWidget(self)

@@ -128,8 +128,8 @@ class Plugin(GeneratorPlugin):
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
-        except KeyError:
-            logger.debug("Console not found: %s", exc_info=True)
+        except KeyError as ex:
+            logger.debug(ex)
         else:
             widget1 = PhantomProgressBarWidget(self)
             console.add_info_widget(widget1)

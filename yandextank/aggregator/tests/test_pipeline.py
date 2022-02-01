@@ -10,7 +10,7 @@ from yandextank.common.util import get_test_path
 from conftest import MAX_TS, random_split
 
 from yandextank.aggregator import TankAggregator
-from yandextank.aggregator.aggregator import Aggregator, data_poller
+from yandextank.aggregator.aggregator import Aggregator, DataPoller
 from yandextank.aggregator.chopper import TimeChopper
 from yandextank.plugins.Phantom.reader import string_to_df
 from netort.data_processing import Drain
@@ -26,8 +26,7 @@ class TestPipeline(object):
 
         pipeline = Aggregator(
             TimeChopper(
-                [data_poller(
-                    source=chunks, poll_period=0.1)]),
+                [DataPoller(poll_period=0.1, max_wait=31).poll(chunks)]),
             AGGR_CONFIG,
             False)
         drain = Drain(pipeline, results_queue)
@@ -47,7 +46,7 @@ class TestPipeline(object):
 
         pipeline = Aggregator(
             TimeChopper(
-                [data_poller(source=producer(), poll_period=0.1)]),
+                [DataPoller(poll_period=0.1, max_wait=31).poll(producer())]),
             AGGR_CONFIG,
             False)
         drain = Drain(pipeline, results_queue)
@@ -61,7 +60,7 @@ class TestPipeline(object):
         with open(os.path.join(get_test_path(), phout)) as fp:
             reader = [string_to_df(line) for line in fp.readlines()]
         pipeline = Aggregator(
-            TimeChopper([data_poller(source=reader, poll_period=0.01)]),
+            TimeChopper([DataPoller(poll_period=0.01, max_wait=31).poll(reader)]),
             AGGR_CONFIG,
             True)
         with open(os.path.join(get_test_path(), expected_results)) as fp:

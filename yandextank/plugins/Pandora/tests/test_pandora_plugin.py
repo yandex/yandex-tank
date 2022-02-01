@@ -40,13 +40,23 @@ def setup_module(module):
                 'ammo': {'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
                          'type': 'uri',
                          'file': 'http://localhost:1234/ammo'
-                         }
+                         },
+                'gun': {'answlog': {'enabled': 'true',
+                                    'path': 'answ.log',
+                                    'filter': 'error'
+                                    }
+                        }
             }]},
         {'pools': [
             {
                 'ammo': {'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
                          'type': 'uri',
-                         'file': 'some local file'}
+                         'file': 'some local file'},
+                'gun': {'answlog': {'enabled': 'false',
+                                    'path': 'answ.log',
+                                    'filter': 'error'
+                                    }
+                        }
             }]}
     )
 ])
