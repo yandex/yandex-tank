@@ -252,7 +252,7 @@ class Plugin(GeneratorPlugin):
         udv_tpl = resource_string(__name__, 'config/jmeter_var_template.xml')
         udv_set = []
         for var_name, var_value in variables.items():
-            udv_set.append(udv_tpl % (var_name, var_name, var_value))
+            udv_set.append(udv_tpl.decode('utf-8') % (var_name, var_name, var_value))
         udv = "\n".join(udv_set)
 
         if self.jmeter_ver >= 2.13:

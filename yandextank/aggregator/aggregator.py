@@ -61,6 +61,7 @@ class Worker(object):
         self.bins = bins
         self.percentiles = np.array([50, 75, 80, 85, 90, 95, 98, 99, 100])
         self.config = config
+        self.protoConfig = "interval_real"
         self.aggregators = {
             "hist": self._histogram,
             "q": self._quantiles,
@@ -78,6 +79,14 @@ class Worker(object):
         return {
             "data": [e.item() for e in data[mask]],
             "bins": [e.item() for e in bins[1:][mask]],
+        }
+
+    def _histogram_for_json(self, series):
+        data, bins = np.histogram(series, bins=self.bins)
+        mask = data > 0
+        return {
+            "data": [int(e.item()) for e in data[mask]],
+            "bins": [int(e.item()) for e in bins[1:][mask]],
         }
 
     def _mean(self, series):
@@ -113,6 +122,9 @@ class Worker(object):
             for key in self.config
         }
 
+    def aggregate_proto_code(self, data):
+        return self._histogram_for_json(data[self.protoConfig])
+
 
 class DataPoller(object):
     def __init__(self, source, poll_period):
@@ -135,11 +147,13 @@ def to_utc(ts):
     return ts + offset
 
 
+
 class Aggregator(object):
     def __init__(self, source, config, verbose_histogram):
         self.worker = Worker(config, verbose_histogram)
         self.source = source
         self.groupby = 'tag'
+        self.groupbyprotocode = 'proto_code'
 
     def __iter__(self):
         for ts, chunk, rps in self.source:
@@ -151,7 +165,11 @@ class Aggregator(object):
                 {tag: self.worker.aggregate(data)
                  for tag, data in by_tag},
                 "overall": self.worker.aggregate(chunk),
-                "counted_rps": rps
+                "counted_rps": rps,
+                "hist_by_proto-code":
+                {tag: {str(code): self.worker.aggregate_proto_code(data)
+                       for code, data in data.groupby([self.groupbyprotocode])}
+                    for tag, data in by_tag}
             }
             logger.debug(
                 "Aggregation time: %.2fms", (time.time() - start_time) * 1000)
