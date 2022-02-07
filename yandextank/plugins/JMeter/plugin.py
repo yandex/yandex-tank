@@ -114,7 +114,7 @@ class Plugin(GeneratorPlugin):
                 # Подразумевается, что зависимости будут скачиваться с удаленного ресурса.
                 # Если надо поддержать что-то еще, например локальные файлы, welcome
                 if isinstance(opener, HttpOpener):
-                    downloaded_file = opener.download_file(use_cache=True)
+                    downloaded_file = opener.download_file(use_cache=True, try_ungzip=True)
                     shutil.move(downloaded_file, filepath)
                 self.jmeter_dependencies_paths.append(filepath)
         self.args = [
