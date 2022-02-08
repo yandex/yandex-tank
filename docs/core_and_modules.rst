@@ -857,12 +857,6 @@ Options
   (Optional) InfluxDB address. (Default: 'localhost')
 :port:
   (Optional) InfluxDB port. (Default: 8086)
-:ssl:
-  (Optional) Use https instead of http to connect to InfluxDB. (Default: false)
-:verify_ssl:
-  (Optional) Verify SSL certificates for HTTPS requests. (Default: false)
-:path:
-  (Optional) Path of InfluxDB on the server to connect. (Default: '')
 :database:
   (Optional) InfluxDB database. (Default: 'mydb')
 :username:

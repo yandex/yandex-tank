@@ -74,7 +74,7 @@ class Plugin(AbstractPlugin):
                         info.address)
                     self.hosts.append(info.address)
         except KeyError as ex:
-            logger.debug("Phantom plugin not found: %s", ex)
+            logger.debug(ex)
         for host in self.hosts:
             self.ssh = SecuredShell(
                 host, self.port, self.username, self.timeout)

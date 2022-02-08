@@ -49,11 +49,15 @@ class SecuredShell(object):
         client = SSHClient()
         client.load_system_host_keys()
         client.set_missing_host_key_policy(AutoAddPolicy())
+        passphrase = os.getenv('TANK_SSH_PASSPHRASE')
+        if passphrase == '':
+            passphrase = None
 
         try:
             client.connect(
                 self.host,
                 port=self.port,
+                passphrase=passphrase,
                 username=self.username,
                 timeout=self.timeout, )
         except ValueError as e:

@@ -1,5 +1,6 @@
 """ The central part of the tool: Core """
 import datetime
+
 import fnmatch
 import glob
 import importlib as il
@@ -24,6 +25,7 @@ from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin, Moni
 from yandextank.plugins.DataUploader.client import LPRequisites
 from yandextank.validator.validator import TankConfig, ValidationError
 from yandextank.aggregator import TankAggregator
+from yandextank.aggregator.aggregator import DataPoller
 from yandextank.common.util import pid_exists
 
 from netort.resource import manager as resource
@@ -36,6 +38,11 @@ logger = logging.getLogger(__name__)
 
 CONFIGINITIAL = 'configinitial.yaml'
 VALIDATED_CONF = 'validated_conf.yaml'
+
+CLOUD_KEY = 'cloud_job_id'
+TANK_KEY = 'tank_job_id'
+JOBS_STORAGE_FILE_ENV = 'JOBS_STORAGE_FILE'
+DEFAULT_JOBS_STORAGE_FILE = '/tmp/yandex-tank/storage.data'
 
 
 class Job(object):
@@ -113,6 +120,7 @@ class TankCore(object):
         self.taskset_affinity = None
         self._job = None
         self._cfg_snapshot = None
+        self._data_poller = None
 
         self.interrupted = interrupted_event
 
@@ -140,6 +148,7 @@ class TankCore(object):
         with open(os.path.join(self.artifacts_dir, VALIDATED_CONF), 'w') as f:
             yaml.dump(configinfo, f)
         logger.info('New test id %s' % self.test_id)
+        self.storage = JobsStorage()
 
     @property
     def cfg_snapshot(self):
@@ -179,6 +188,15 @@ class TankCore(object):
                 os.chmod(self.artifacts_base_dir, 0o755)
             self._artifacts_base_dir = artifacts_base_dir
         return self._artifacts_base_dir
+
+    @property
+    def data_poller(self):
+        if self._data_poller is None:
+            self._data_poller = DataPoller(
+                poll_period=0.5,
+                max_wait=self.get_option(self.SECTION, "aggregator_max_wait"),
+            )
+        return self._data_poller
 
     def load_plugins(self):
         """
@@ -222,7 +240,7 @@ class TankCore(object):
                 logger.warning("Load generator not found")
                 gen = GeneratorPlugin(self, {}, 'generator dummy')
             # aggregator
-            aggregator = TankAggregator(gen)
+            aggregator = TankAggregator(gen, self.data_poller)
             self._job = Job(monitoring_plugins=monitorings,
                             generator_plugin=gen,
                             aggregator=aggregator,
@@ -414,7 +432,7 @@ class TankCore(object):
                     plugin_class)
             return matches[-1]
         else:
-            raise KeyError("Requested plugin type not found: %s" % plugin_class)
+            raise KeyError("Requested plugin type not found: %s", plugin_class)
 
     def get_plugins_of_type(self, plugin_class):
         """
@@ -541,6 +559,29 @@ class TankCore(object):
         for plugin_name, plugin in self.plugins.items():
             logger.info('Cleaning up plugin {}'.format(plugin_name))
             plugin.cleanup()
+
+
+class JobsStorage:
+
+    def __init__(self, file_name=None):
+        self.storage_file = file_name or os.getenv(JOBS_STORAGE_FILE_ENV, DEFAULT_JOBS_STORAGE_FILE)
+
+    def push_job(self, cloud_job_id, tank_job_id=None):
+        with open(self.storage_file, 'a') as f:
+            job_data = {CLOUD_KEY: cloud_job_id, TANK_KEY: tank_job_id}
+            logger.info(f"Push job to storage {self.storage_file}: {job_data}")
+            yaml.dump([job_data], f)
+
+    def get_cloud_job_id(self, tank_job_id):
+        try:
+            with open(self.storage_file) as f:
+                data = yaml.safe_load(f)
+            for job in data:
+                if job[TANK_KEY] == tank_job_id:
+                    return job[CLOUD_KEY]
+        except FileNotFoundError:
+            return
+        return
 
 
 class Lock(object):

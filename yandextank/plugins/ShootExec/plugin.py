@@ -79,8 +79,8 @@ class Plugin(GeneratorPlugin):
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
-        except Exception as ex:
-            _LOGGER.debug("Console not found: %s", ex)
+        except KeyError as ex:
+            _LOGGER.debug(ex)
             console = None
 
         if console:

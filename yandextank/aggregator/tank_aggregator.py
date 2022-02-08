@@ -6,7 +6,7 @@ import queue as q
 from pkg_resources import resource_string
 from typing import Collection
 
-from .aggregator import Aggregator, data_poller
+from .aggregator import Aggregator, DataPoller
 from .chopper import TimeChopper
 from yandextank.common.interfaces import AggregateResultListener, StatsReader
 
@@ -34,7 +34,7 @@ class TankAggregator(object):
     def get_key():
         return __file__
 
-    def __init__(self, generator):
+    def __init__(self, generator, poller: DataPoller):
         # AbstractPlugin.__init__(self, core, cfg)
         """
 
@@ -50,12 +50,13 @@ class TankAggregator(object):
         self.stats_reader = None
         self.drain = None
         self.stats_drain = None
+        self.poller = poller
 
     @staticmethod
     def load_config():
         return json.loads(resource_string(__name__, 'config/phout.json').decode('utf8'))
 
-    def start_test(self, poll_period=0.5):
+    def start_test(self):
         self.reader = self.generator.get_reader()
         self.stats_reader = self.generator.get_stats_reader()
         aggregator_config = self.load_config()
@@ -64,18 +65,17 @@ class TankAggregator(object):
             logger.info("using verbose histogram")
         if self.reader and self.stats_reader:
             pipeline =\
-                Aggregator(TimeChopper([data_poller(source=r, poll_period=poll_period) for r in self.reader]),
+                Aggregator(TimeChopper([self.poller.poll(r) for r in self.reader]),
                            aggregator_config,
                            verbose_histogram) \
                 if isinstance(self.reader, Collection) else \
-                Aggregator(TimeChopper([data_poller(source=self.reader, poll_period=poll_period)]),
+                Aggregator(TimeChopper([self.poller.poll(self.reader)]),
                            aggregator_config,
                            verbose_histogram)
             self.drain = Drain(pipeline, self.results)
             self.drain.start()
             self.stats_drain = Drain(
-                Chopper(data_poller(
-                    source=self.stats_reader, poll_period=poll_period)),
+                Chopper(self.poller.poll(self.stats_reader)),
                 self.stats_results)
             self.stats_drain.start()
         else:

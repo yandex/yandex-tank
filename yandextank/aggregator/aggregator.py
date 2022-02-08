@@ -114,7 +114,20 @@ class Worker(object):
         }
 
 
-def data_poller(source, poll_period=0.01, max_wait=31):
+class DataPoller:
+    def __init__(self, *, poll_period=0.5, max_wait):
+        self._pool_period = poll_period
+        self._max_wait = max_wait
+
+    def poll(self, source):
+        return _data_poller(
+            source,
+            self._pool_period,
+            self._max_wait
+        )
+
+
+def _data_poller(source, poll_period, max_wait):
     wait_cntr_max = max_wait // poll_period or 1
     wait_counter = 0
     for chunk in source:

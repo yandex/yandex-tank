@@ -3,12 +3,37 @@ import time
 import traceback
 import urllib.parse
 import uuid
-
+import grpc
+import random
+import ssl
 import requests
 import logging
 
+from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError, Timeout
 from urllib3.exceptions import ProtocolError
+
+# add path with proto
+import os
+import sys
+_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
+sys.path.append(os.path.join(_PACKAGE_PATH, 'proto'))
+
+try:
+    from yandex.cloud.loadtesting.agent.v1 import trail_service_pb2, trail_service_pb2_grpc, \
+        agent_registration_service_pb2, agent_registration_service_pb2_grpc
+except ImportError:
+    import trail_service_pb2
+    import trail_service_pb2_grpc
+    import agent_registration_service_pb2
+    import agent_registration_service_pb2_grpc
+
+try:
+    from yandex.cloud.loadtesting.agent.v1 import test_service_pb2_grpc, test_service_pb2, test_pb2
+except ImportError:
+    import test_service_pb2_grpc
+    import test_service_pb2
+    import test_pb2
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
@@ -347,7 +372,7 @@ class APIClient(object):
                     continue
                 except StopIteration:
                     logger.warn('Failed to create job on lunapark')
-                    raise self.JobNotCreated(e.message)
+                    raise self.JobNotCreated() from e
             except requests.HTTPError as e:
                 raise self.JobNotCreated('Failed to create job on lunapark\n{}'.format(e.response.content))
             except Exception as e:
@@ -456,7 +481,8 @@ class APIClient(object):
             "hist"])
         return api_data
 
-    def convert_hist(self, hist):
+    @staticmethod
+    def convert_hist(hist):
         data = hist['data']
         bins = hist['bins']
         return [
@@ -675,3 +701,242 @@ class OverloadClient(APIClient):
 
     def set_imbalance_and_dsc(self, jobno, rps, comment):
         return
+
+
+class CloudGRPCClient(APIClient):
+
+    class NotAvailable(Exception):
+        pass
+
+    class AgentIdNotFound(Exception):
+        pass
+
+    def __init__(
+            self,
+            core_interrupted,
+            base_url=None,
+            api_attempts=10,
+            connection_timeout=100.0):
+        super().__init__(core_interrupted)
+        self.core_interrupted = core_interrupted
+        self._base_url = base_url
+        self.api_attempts = api_attempts
+        self.connection_timeout = connection_timeout
+        self.max_api_timeout = 120
+        creds = self._get_creds(self._base_url)
+        self.channel = grpc.secure_channel(self._base_url, creds)
+        self._compute_instance_id = None
+        self.agent_instance_id = None
+        self._token = None
+        self._set_connection(self.token, self.compute_instance_id)
+
+    @staticmethod
+    def _get_creds(url):
+        cert = ssl.get_server_certificate(tuple(url.split(':')))
+        creds = grpc.ssl_channel_credentials(cert.encode('utf-8'))
+        return creds
+
+    @staticmethod
+    def _get_call_creds(token):
+        return grpc.access_token_call_credentials(token)
+
+    # TODO retry
+    def _set_connection(self, token, compute_instance_id):
+        try:
+            stub_register = agent_registration_service_pb2_grpc.AgentRegistrationServiceStub(self.channel)
+            response = stub_register.Register(
+                agent_registration_service_pb2.RegisterRequest(compute_instance_id=compute_instance_id),
+                timeout=self.connection_timeout,
+                metadata=[('authorization', f'Bearer {token}')]
+                # credentials=self._get_call_creds(token)
+            )
+            if response.agent_instance_id:
+                self.agent_instance_id = response.agent_instance_id
+                self.trail_stub = trail_service_pb2_grpc.TrailServiceStub(self.channel)
+                self.test_stub = test_service_pb2_grpc.TestServiceStub(self.channel)
+                logger.info('Init connection to cloud load testing is succeeded')
+            else:
+                raise self.AgentIdNotFound("Couldn't get agent cloud id")
+        except Exception as e:
+            raise self.NotAvailable(f"Couldn't connect to cloud load testing: {e}")
+
+    @property
+    def token(self):
+        if self._token is None:
+            self._token = get_iam_token()
+        return self._token
+
+    @property
+    def compute_instance_id(self):
+        if self._compute_instance_id is None:
+            self._compute_instance_id = get_current_instance_id()
+        return self._compute_instance_id
+
+    def api_timeouts(self):
+        for attempt in range(self.api_attempts - 1):
+            multiplier = random.uniform(1, 1.5)
+            yield min(2**attempt * multiplier, self.max_api_timeout)
+
+    @staticmethod
+    def build_codes(codes_data):
+        codes = []
+        for code in codes_data:
+            codes.append(trail_service_pb2.Trail.Codes(code=int(code['code']), count=int(code['count'])))
+        return codes
+
+    @staticmethod
+    def build_intervals(intervals_data):
+        intervals = []
+        for interval in intervals_data:
+            intervals.append(trail_service_pb2.Trail.Intervals(to=interval['to'], count=int(interval['count'])))
+        return intervals
+
+    def convert_to_proto_message(self, items):
+        trails = []
+        for item in items:
+            trail_data = item["trail"]
+            trail = trail_service_pb2.Trail(
+                overall=int(item["overall"]),
+                case_id=item["case"],
+                time=trail_data["time"],
+                reqps=int(trail_data["reqps"]),
+                resps=int(trail_data["resps"]),
+                expect=trail_data["expect"],
+                input=int(trail_data["input"]),
+                output=int(trail_data["output"]),
+                connect_time=trail_data["connect_time"],
+                send_time=trail_data["send_time"],
+                latency=trail_data["latency"],
+                receive_time=trail_data["receive_time"],
+                threads=int(trail_data["threads"]),
+                q50=trail_data.get('q50'),
+                q75=trail_data.get('q75'),
+                q80=trail_data.get('q80'),
+                q85=trail_data.get('q85'),
+                q90=trail_data.get('q90'),
+                q95=trail_data.get('q95'),
+                q98=trail_data.get('q98'),
+                q99=trail_data.get('99'),
+                q100=trail_data.get('q100'),
+                http_codes=self.build_codes(item['http_codes']),
+                net_codes=self.build_codes(item['net_codes']),
+                time_intervals=self.build_intervals(item['time_intervals']),
+            )
+            trails.append(trail)
+        return trails
+
+    def send_trails(self, instance_id, cloud_job_id, trails):
+        try:
+            request = trail_service_pb2.CreateTrailRequest(
+                compute_instance_id=str(instance_id),
+                job_id=str(cloud_job_id),
+                data=trails
+            )
+            result = self.trail_stub.Create(
+                request,
+                timeout=self.connection_timeout,
+                metadata=[('authorization', f'Bearer {self.token}')]
+                # credentials=self._get_call_creds(self.token)
+            )
+            logger.debug(f'Send trails: {trails}')
+            return result.code
+        except grpc.RpcError as err:
+            if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
+                raise self.NotAvailable('Connection is closed. Try to set it again.')
+            raise err
+        except Exception as err:
+            raise err
+
+    def push_test_data(
+            self,
+            cloud_job_id,
+            data_item,
+            stat_item,
+            interrupted_event):
+        items = []
+        ts = data_item["ts"]
+        for case_name, case_data in data_item["tagged"].items():
+            if case_name == "":
+                case_name = "__NOTAG__"
+            push_item = self.second_data_to_push_item(case_data, stat_item, ts,
+                                                      0, case_name)
+            items.append(push_item)
+        overall = self.second_data_to_push_item(data_item["overall"],
+                                                stat_item, ts, 1, '')
+        items.append(overall)
+
+        api_timeouts = self.api_timeouts()
+        while not interrupted_event.is_set():
+            try:
+                code = self.send_trails(self.compute_instance_id, cloud_job_id, self.convert_to_proto_message(items))
+                if code == 0:
+                    break
+            except self.NotAvailable as err:
+                if not self.core_interrupted.is_set():
+                    try:
+                        timeout = next(api_timeouts)
+                    except StopIteration:
+                        raise err
+                    self._set_connection(self.token)
+                    logger.warn("GRPC error, will retry in %ss...", timeout)
+                    time.sleep(timeout)
+                    continue
+                else:
+                    break
+
+    def create_test(self, target_address, target_port, name, description, load_schedule):
+        schedule = test_pb2.Schedule(load_profile=load_schedule, load_type=1)
+        request = test_service_pb2.CreateTestRequest(
+            agent_instance_id=self.agent_instance_id,
+            target_address=target_address,
+            target_port=target_port,
+            name=name,
+            description=description)
+        request.load_schedule.CopyFrom(schedule)
+        return self.test_stub.Create(
+            request,
+            timeout=self.connection_timeout,
+            metadata=[('authorization', f'Bearer {self.token}')])
+
+    def unlock_target(self, *args):
+        return
+
+
+# ====== HELPER ======
+COMPUTE_INSTANCE_METADATA_URL = 'http://169.254.169.254/computeMetadata/v1/instance/?recursive=true'
+COMPUTE_INSTANCE_SA_TOKEN_URL = 'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token'
+
+
+def get_instance_metadata():
+    url = COMPUTE_INSTANCE_METADATA_URL
+    try:
+        session = requests.Session()
+        session.mount(url, HTTPAdapter(max_retries=5))
+        response = session.get(url, headers={"Metadata-Flavor": "Google"}).json()
+        logger.debug(f"Instance metadata {response}")
+        return response
+    except Exception as e:
+        logger.error(f"Couldn't get instance metadata of current vm: {e}")
+        raise RuntimeError("Couldn't get instance metadata of current vm: {e}")
+
+
+def get_current_instance_id():
+    response = get_instance_metadata()
+    if response:
+        return response.get('id')
+    raise RuntimeError("Metadata is empty")
+
+
+def get_iam_token():
+    url = COMPUTE_INSTANCE_SA_TOKEN_URL
+    try:
+        session = requests.Session()
+        session.mount(url, HTTPAdapter(max_retries=5))
+        raw_response = session.get(url, headers={"Metadata-Flavor": "Google"})
+        response = raw_response.json()
+        iam_token = response.get('access_token')
+        logger.debug("Get IAM token")
+        return iam_token
+    except Exception as e:
+        logger.error(f"Couldn't get iam token for instance service account: {e}")
+        raise RuntimeError("Couldn't get iam token for instance service account: {e}")
