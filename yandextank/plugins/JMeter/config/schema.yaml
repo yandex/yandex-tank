@@ -57,6 +57,10 @@ variables:
   description: variables for jmx testplan
   type: dict
   default: {}
+properties:
+  description: properties for user.properties file
+  type: dict
+  default: {}
 dependencies:
   type: list
   schema:
