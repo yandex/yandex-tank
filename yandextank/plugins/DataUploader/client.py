@@ -884,14 +884,15 @@ class CloudGRPCClient(APIClient):
                 else:
                     break
 
-    def create_test(self, target_address, target_port, name, description, load_schedule):
+    def create_test(self, target_address, target_port, name, description, load_schedule, config):
         schedule = test_pb2.Schedule(load_profile=load_schedule, load_type=1)
         request = test_service_pb2.CreateTestRequest(
             agent_instance_id=self.agent_instance_id,
             target_address=target_address,
             target_port=target_port,
             name=name,
-            description=description)
+            description=description,
+            config=config)
         request.load_schedule.CopyFrom(schedule)
         return self.test_stub.Create(
             request,
