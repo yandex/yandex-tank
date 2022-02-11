@@ -162,6 +162,15 @@ class AbstractCriterion(object):
     RC_TIME = 21
     RC_HTTP = 22
     RC_NET = 23
+    RC_INSTANCE = 24
+    RC_TOTAL_TIME = 25
+    RC_TOTAL_HTTP = 26
+    RC_TOTAL_NET = 27
+    RC_TOTAL_NEGATIVE_HTTP = 28
+    RC_TOTAL_NEGATIVE_NET = 29
+    RC_TOTAL_HTTP_TREND = 30
+    RC_METRIC_HIGHER = 31
+    RC_METRIC_LOWER = 32
     RC_STEADY = 33
 
     def __init__(self):

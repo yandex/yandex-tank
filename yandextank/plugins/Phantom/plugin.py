@@ -208,7 +208,6 @@ class UsedInstancesCriterion(AbstractCriterion):
     """
     Autostop criterion, based on active instances count
     """
-    RC_INST = 24
 
     @staticmethod
     def get_type_string():
@@ -261,7 +260,7 @@ class UsedInstancesCriterion(AbstractCriterion):
         return False
 
     def get_rc(self):
-        return self.RC_INST
+        return self.RC_INSTANCE
 
     def get_level_str(self):
         """

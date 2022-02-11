@@ -426,7 +426,7 @@ class MetricHigherCriterion(AbstractMetricCriterion):
         AbstractMetricCriterion.__init__(self, autostop, param_str)
 
     def get_rc(self):
-        return 31
+        return self.RC_METRIC_HIGHER
 
     @staticmethod
     def get_type_string():
@@ -454,7 +454,7 @@ class MetricLowerCriterion(AbstractMetricCriterion):
         AbstractMetricCriterion.__init__(self, autostop, param_str)
 
     def get_rc(self):
-        return 32
+        return self.RC_METRIC_LOWER
 
     @staticmethod
     def get_type_string():

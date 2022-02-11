@@ -6,7 +6,7 @@ Modules
 TankCore
 ********
 
-Core class. Represents basic steps of test execution. Simplifies plugin configuration, 
+Core class. Represents basic steps of test execution. Simplifies plugin configuration,
 configs reading, artifacts storing. Represents parent class for modules/plugins.
 
 yaml file section: **core**
@@ -64,15 +64,15 @@ consoleworker
 =============
 Consoleworker is a cmd-line interface for Yandex.Tank.
 
-Worker class that runs and configures TankCore accepting cmdline parameters. 
-Human-friendly unix-way interface for yandex-tank. 
+Worker class that runs and configures TankCore accepting cmdline parameters.
+Human-friendly unix-way interface for yandex-tank.
 Command-line options described above.
 
 apiworker
 =========
  apiworker is a python interface for Yandex.Tank.
 
-Worker class for python. Runs and configures TankCore accepting ``dict()``. 
+Worker class for python. Runs and configures TankCore accepting ``dict()``.
 Python-frinedly interface for yandex-tank.
 
 Example:
@@ -160,7 +160,7 @@ How it works
 Options
 -------
 
-Basic options 
+Basic options
 ^^^^^^^^^^^^^
 
 :ammofile:
@@ -225,7 +225,7 @@ Additional options
   Response timeout.
 
   Default: ``11s``.
-  
+
 .. note::
   Default multiplier is ``seconds``. If you specify ``10``, timeout will be 10 seconds.
   Currently we support here multipliers: 'd' for days, 'h' for hours, 'm' for minutes, 's' for seconds
@@ -238,10 +238,10 @@ Additional options
 
   Default: ``127.0.0.1``.
 
-  Format: ``[host]:port``, ``[ipv4]:port``, ``[ipv6]:port``. Tank checks each test if port is available. 
+  Format: ``[host]:port``, ``[ipv4]:port``, ``[ipv6]:port``. Tank checks each test if port is available.
 
 :gatling_ip:
-  Use multiple source addresses. List, divided by spaces. 
+  Use multiple source addresses. List, divided by spaces.
 
 :tank_type:
   Available options: ``http`` and ``none`` (raw TCP).
@@ -392,9 +392,9 @@ Phantom http-module tuning options
 
 :phantom_http_entity:
   Answer ``size``.
-  
+
   Default: ``8M``.
- 
+
 .. note::
   Please, keep in mind, especially if your service has large answers, that phantom doesn't read more than defined in ``phantom_http_entity``.
 
@@ -554,8 +554,8 @@ current working directory ``./``), or a package:
 
   import logging
   log = logging.getLogger(__name__)
-  
-  
+
+
   class LoadTest(object):
       def __init__(self, gun):
 
@@ -564,7 +564,7 @@ current working directory ``./``), or a package:
 
           # for example, you can get something from the 'ultimate' section of a config file:
           my_var = self.gun.get_option("my_var", "hello")
-  
+
       def case1(self, missile):
           # we use gun's measuring context to measure time.
           # The results will be aggregated automatically:
@@ -578,15 +578,15 @@ current working directory ``./``), or a package:
               sample["proto_code"] = 500
 
               # the list of available fields is below
-  
+
       def case2(self, missile):
           with self.gun.measure("case2"):
               log.info("Shoot case 2: %s", missile)
-  
+
       def setup(self, param):
           ''' this will be executed in each worker before the test starts '''
           log.info("Setting up LoadTest: %s", param)
-  
+
       def teardown(self):
           ''' this will be executed in each worker after the end of the test '''
           log.info("Tearing down LoadTest")
@@ -927,21 +927,23 @@ Basic criteria types
 
   Exit code - 23
 
-:quantile: 
+:quantile:
   Stop the test if the specified percentile is larger then specified level for as long as the time period specified.
 
   Available percentile values: 25, 50, 75, 80, 90, 95, 98, 99, 100.
 
   Example: ``quantile (95,100ms,10s)``
 
-:instances: 
-  Available when phantom module is included. Stop the test if instance count is larger then specified value. 
+  Exit code - 21
 
-  Example: ``instances(80%, 30) instances(50,1m)``. 
+:instances:
+  Available when phantom module is included. Stop the test if instance count is larger then specified value.
+
+  Example: ``instances(80%, 30) instances(50,1m)``.
 
   Exit code - 24
 
-:metric_lower and metric_higher: 
+:metric_lower and metric_higher:
   Stop test if monitored metrics are lower/higher than specified for time period.
 
   Example: metric_lower(127.0.0.1,Memory_free,500,10).
@@ -950,18 +952,22 @@ Basic criteria types
 
   **Note**: metric names (except customs) are written with underline. For hostnames masks are allowed (i.e target-\*.load.net)
 
-:steady_cumulative:
+..
+  :steady_cumulative:
+..
   Stops the test if cumulative percentiles does not change for specified interval.
-
+..
   Example: ``steady_cumulative(1m)``.
-
+..
   Exit code - 33
+..
 
 :limit:
   Will stop test after specified period of time.
 
   Example: ``limit(1m)``.
 
+  Exit code - 21
 
 Basic criteria aren't aggregated, they are tested for each second in specified period. For example autostop=time(50,15) means "stop if average responce time for every second in 15s interval is higher than 50ms"
 
@@ -972,39 +978,39 @@ Advanced criteria types
 :total_time:
   Like ``time``, but accumulate for all time period (responses that fit may not be one-after-another, but only lay into specified time period).
 
-  Example: ``total_time(300ms, 70%, 3s)``. 
+  Example: ``total_time(300ms, 70%, 3s)``.
 
   Exit code - 25
 
-:total_http: 
+:total_http:
   Like ``http``, but accumulated. See ``total_time``.
 
   Example: ``total_http(5xx,10%,10s) total_http(3xx,40%,10s)``.
 
   Exit code - 26
 
-:total_net: 
+:total_net:
   Like ``net``, but accumulated. See ``total_time``.
 
   Example: ``total_net(79,10%,10s) total_net(11x,50%,15s)``
 
   Exit code - 27
 
-:negative_http: 
+:negative_http:
   Inversed ``total_http``. Stop if there are not enough responses that fit the specified mask. Use to be shure that server responds 200.
 
-  Example: ``negative_http(2xx,10%,10s)``. 
+  Example: ``negative_http(2xx,10%,10s)``.
 
   Exit code - 28
 
-:negative_net: 
+:negative_net:
   Inversed ``total_net``. Stop if there are not enough responses that fit the specified mask.
 
-  Example: ``negative_net(0,10%,10s)``. 
+  Example: ``negative_net(0,10%,10s)``.
 
   Exit code - 29
 
-:http_trend: 
+:http_trend:
   Stop if trend for defined http codes is negative on defined period.
   Trend is a sum of an average coefficient for linear functions calculated for each pair points in last
   n seconds and standart deviation for it
@@ -1305,7 +1311,7 @@ Options
 Resource Check
 ==============
 
-Module checks free memory and disk space amount before and during test. Test stops if minimum values are reached. 
+Module checks free memory and disk space amount before and during test. Test stops if minimum values are reached.
 
 yaml file section: **rcheck**
 
@@ -1322,7 +1328,7 @@ Options
 
   Default: ``2GB``
 
-:mem_limit: 
+:mem_limit:
   Minimum free memory amount in MB.
 
   Default: ``512MB``
