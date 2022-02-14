@@ -54,6 +54,8 @@ message CreateTestRequest {
   repeated string ammo_headers = 15;
   AmmoType ammo_type = 16;
   bool ssl = 17;
+
+  string logging_log_group_id = 20;
 }
 
 message CreateTestMetadata {
