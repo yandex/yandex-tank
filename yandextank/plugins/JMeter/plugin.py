@@ -129,7 +129,7 @@ class Plugin(GeneratorPlugin):
             filepath = self.core.artifacts_dir + '/user.properties'
             with open(filepath, 'w') as user_props_file:
                 for key, value in self.properties.items():
-                    user_props_file.write(key + "=" + value + '\n')
+                    user_props_file.write(key + "=" + str(value) + '\n')
             self.args.append('-p')
             self.args.append(filepath)
             self.jmeter_dependencies_paths.append(filepath)
