@@ -567,6 +567,8 @@ class JobsStorage:
         self.storage_file = file_name or os.getenv(JOBS_STORAGE_FILE_ENV, DEFAULT_JOBS_STORAGE_FILE)
 
     def push_job(self, cloud_job_id, tank_job_id=None):
+        directory, _ = os.path.split(self.storage_file)
+        os.makedirs(directory, exist_ok=True)
         with open(self.storage_file, 'a') as f:
             job_data = {CLOUD_KEY: cloud_job_id, TANK_KEY: tank_job_id}
             logger.info(f"Push job to storage {self.storage_file}: {job_data}")
@@ -576,6 +578,8 @@ class JobsStorage:
         try:
             with open(self.storage_file) as f:
                 data = yaml.safe_load(f)
+            if data is None:
+                return
             for job in data:
                 if job[TANK_KEY] == tank_job_id:
                     return job[CLOUD_KEY]
