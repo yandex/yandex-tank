@@ -889,7 +889,7 @@ class CloudGRPCClient(APIClient):
         request = test_service_pb2.CreateTestRequest(
             agent_instance_id=self.agent_instance_id,
             target_address=target_address,
-            target_port=target_port,
+            target_port=int(target_port),
             name=name,
             description=description,
             config=config)
