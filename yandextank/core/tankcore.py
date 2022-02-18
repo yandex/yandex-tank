@@ -565,10 +565,16 @@ class JobsStorage:
 
     def __init__(self, file_name=None):
         self.storage_file = file_name or os.getenv(JOBS_STORAGE_FILE_ENV, DEFAULT_JOBS_STORAGE_FILE)
+        if not os.path.exists(self.storage_file):
+            self._create_storage_file()
 
-    def push_job(self, cloud_job_id, tank_job_id=None):
+    def _create_storage_file(self):
         directory, _ = os.path.split(self.storage_file)
         os.makedirs(directory, exist_ok=True)
+        os.mknod(self.storage_file)
+        os.chmod(self.storage_file, 0o766)
+
+    def push_job(self, cloud_job_id, tank_job_id=None):
         with open(self.storage_file, 'a') as f:
             job_data = {CLOUD_KEY: cloud_job_id, TANK_KEY: tank_job_id}
             logger.info(f"Push job to storage {self.storage_file}: {job_data}")
