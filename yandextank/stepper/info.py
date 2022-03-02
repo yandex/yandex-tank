@@ -126,18 +126,19 @@ class StepperStatus(object):
             self.af_progress = progress
             self.update_view()
 
+    @property
+    def max_ammo(self):
+        if self.ammo_limit is not None and self.lp_len is not None:
+            return min(self.ammo_limit, self.lp_len)
+        return self.ammo_limit or self.lp_len
+
+    def calculate_lp_progress(self):
+        if self.max_ammo is None:
+            return 1.
+        return float(self.ammo_count) / float(self.max_ammo)
+
     def update_lp_progress(self):
-        if self.ammo_limit or self.lp_len:
-            if self.ammo_limit:
-                if self.lp_len:
-                    max_ammo = min(self.ammo_limit, self.lp_len)
-                else:
-                    max_ammo = self.ammo_limit
-            else:
-                max_ammo = self.lp_len
-            progress = int(float(self.ammo_count) / float(max_ammo) * 100.0)
-        else:
-            progress = 100
+        progress = int(self.calculate_lp_progress() * 100.0)
         if self.lp_progress != progress:
             self.lp_progress = progress
             self.update_view()

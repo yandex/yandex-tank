@@ -11,6 +11,8 @@ import yaml
 
 from yandextank.core import TankCore
 from yandextank.core.tankworker import parse_options, TankInfo
+from yandextank.stepper.module_exceptions import DiskLimitError
+
 
 try:
     from yatest import common
@@ -97,6 +99,44 @@ CFG2 = {
     }
 }
 
+CFG_LARGE_STEPPER = {
+    "version": "1.8.36",
+    "core": {
+        'operator': 'fomars',
+        'artifacts_base_dir': TMPDIR,
+        'artifacts_dir': TMPDIR
+    },
+    'phantom': {
+        'package': 'yandextank.plugins.Phantom',
+        'enabled': True,
+        'address': 'localhost',
+        'header_http': '1.1',
+        'uris': ['/'],
+        'load_profile': {'load_type': 'rps', 'schedule': 'const(9,999999999h)'},
+        'phantom_path': './phantom_mock.sh',
+        'connection_test': False
+    }
+}
+
+CFG_SMALL_STEPPER = {
+    "version": "1.8.36",
+    "core": {
+        'operator': 'fomars',
+        'artifacts_base_dir': TMPDIR,
+        'artifacts_dir': TMPDIR
+    },
+    'phantom': {
+        'package': 'yandextank.plugins.Phantom',
+        'enabled': True,
+        'address': 'localhost',
+        'header_http': '1.1',
+        'uris': ['/'],
+        'load_profile': {'load_type': 'rps', 'schedule': 'const(1,1m)'},
+        'phantom_path': './phantom_mock.sh',
+        'connection_test': False
+    }
+}
+
 CFG_MULTI = load_yaml(PATH, 'test_multi_cfg.yaml')
 original_working_dir = os.getcwd()
 
@@ -124,12 +164,20 @@ def test_core_load_plugins(config, expected):
     assert set(core.plugins.keys()) == expected
 
 
-@pytest.mark.parametrize('config, expected', [
-    (CFG1, None)
-])
-def test_core_plugins_configure(config, expected):
-    core = TankCore([config], threading.Event(), TankInfo({}))
+def test_core_plugins_configure():
+    core = TankCore([CFG1], threading.Event(), TankInfo({}))
     core.plugins_configure()
+
+
+def test_small_stepper_file():
+    core = TankCore([CFG_SMALL_STEPPER], threading.Event(), TankInfo({}))
+    core.plugins_configure()
+
+
+def test_large_stepper_file():
+    core = TankCore([CFG_LARGE_STEPPER], threading.Event(), TankInfo({}))
+    with pytest.raises(DiskLimitError):
+        core.plugins_configure()
 
 
 @pytest.mark.skip('disabled for travis')
