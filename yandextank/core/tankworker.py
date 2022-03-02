@@ -17,6 +17,7 @@ from yandextank.config_converter.converter import convert_ini, convert_single_op
 from yandextank.core import TankCore
 from yandextank.core.tankcore import LockError, Lock
 from yandextank.validator.validator import ValidationError
+from yandextank.common.util import Cleanup, Finish, Status
 
 logger = logging.getLogger()
 
@@ -41,10 +42,28 @@ class TankWorker():
         self.core = TankCore(self.config_list, self.interrupted, self.info)
         self.folder = self.init_folder()
         self.init_logging(debug or self.core.get_option(self.core.SECTION, 'debug'))
+        self._msgs = []
 
         is_locked = Lock.is_locked(self.core.lock_dir)
         if is_locked and not self.core.config.get_option(self.SECTION, 'ignore_lock'):
             raise LockError(is_locked)
+
+    def _run(self):
+        with Cleanup(self) as add_cleanup:
+            lock = self.get_lock()
+            add_cleanup('release lock', lock.release)
+            self.status = Status.TEST_PREPARING
+            logger.info('Created a folder for the test. %s' % self.folder)
+            self.core.plugins_configure()
+            add_cleanup('plugins cleanup', self.core.plugins_cleanup)
+            self.core.plugins_prepare_test()
+            with Finish(self):
+                self.status = Status.TEST_RUNNING
+                self.core.plugins_start_test()
+                self.retcode = self.core.wait_for_finish()
+                self._msgs.extend(self.core.errors)
+            self.status = Status.TEST_POST_PROCESS
+            self.retcode = self.core.plugins_post_process(self.retcode)
 
     @staticmethod
     def _combine_configs(run_cfgs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False):
@@ -132,7 +151,7 @@ class TankWorker():
                                                                self.core.config.get_option(self.SECTION, 'ignore_lock'))
                 break
             except LockError as e:
-                self.upd_msg(str(e))
+                self.add_msgs(str(e))
                 if not self.wait_lock:
                     raise RuntimeError("Lock file present, cannot continue")
                 logger.warning(
@@ -142,9 +161,12 @@ class TankWorker():
             raise KeyboardInterrupt
         return lock
 
-    def upd_msg(self, msg):
-        if msg:
-            self.msg = self.msg + '\n' + msg
+    @property
+    def msg(self):
+        return '\n'.join(self._msgs)
+
+    def add_msgs(self, *msgs):
+        self._msgs.extend(msgs)
 
 
 def load_cfg(cfg_filename):

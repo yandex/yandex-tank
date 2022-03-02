@@ -229,8 +229,7 @@ PHANTOM_SCHEMA_V_G = {
      )
 ])
 def test_validate_core(config, expected):
-    validated, errors, initial = TankConfig(config, False).validate()
-    assert not errors
+    validated, initial = TankConfig(config, False).validate()
     assert validated.validated == expected
 
 
@@ -567,7 +566,7 @@ def test_validate_all_error(config, expected):
     )
 ])
 def test_get_plugins(config, expected):
-    validated, errors, raw = TankConfig(config).validate()
+    validated, raw = TankConfig(config).validate()
     assert {(name, pack) for name, pack, cfg in validated.plugins} == expected
 
 

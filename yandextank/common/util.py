@@ -821,7 +821,7 @@ class Cleanup:
                 msg = 'Exception occurred during cleanup action {}'.format(name)
                 msgs.append(msg)
                 logger.error(msg, exc_info=True)
-        self.tankworker.upd_msg('\n'.join(msgs))
+        self.tankworker.add_msgs(*msgs)
         self.tankworker.status = Status.TEST_FINISHED
         self.tankworker.save_finish_status()
         self.tankworker.core._collect_artifacts()
@@ -844,7 +844,7 @@ class Finish:
         if exc_type:
             msg = 'Test interrupted:\n{}: {}\n{}'.format(exc_type, exc_val, '\n'.join(traceback.format_tb(exc_tb)))
             logger.error(msg)
-            self.worker.upd_msg(msg)
+            self.worker.add_msgs(msg)
             retcode = 1
         retcode = self.worker.core.plugins_end_test(retcode)
         self.worker.retcode = retcode

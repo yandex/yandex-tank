@@ -128,12 +128,11 @@ class TankCore(object):
         self.monitoring_data_listeners = []
 
         error_output = 'validation_error.yaml'
-        self.config, self.errors, self.configinitial = TankConfig(self.raw_configs,
-                                                                  with_dynamic_options=True,
-                                                                  core_section=self.SECTION,
-                                                                  error_output=error_output).validate()
-        if not self.config:
-            raise ValidationError(self.errors)
+        self.config, self.configinitial = TankConfig(self.raw_configs,
+                                                     with_dynamic_options=True,
+                                                     core_section=self.SECTION,
+                                                     error_output=error_output).validate()
+
         self.test_id = self.get_option(self.SECTION, 'artifacts_dir',
                                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f"))
         self.lock_dir = self.get_option(self.SECTION, 'lock_dir')
@@ -149,6 +148,7 @@ class TankCore(object):
             yaml.dump(configinfo, f)
         logger.info('New test id %s' % self.test_id)
         self.storage = JobsStorage()
+        self.errors = []
 
     @property
     def cfg_snapshot(self):
@@ -307,6 +307,8 @@ class TankCore(object):
                 try:
                     retcode = plugin.is_test_finished()
                     if retcode >= 0:
+                        for e in plugin.errors:
+                            self.errors.append(f'{plugin_name}: {e}')
                         return retcode
                 except Exception:
                     logger.warning('Plugin {} failed:'.format(plugin_name), exc_info=True)

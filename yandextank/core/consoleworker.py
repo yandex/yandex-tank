@@ -1,5 +1,4 @@
 """ Provides classes to run TankCore from console environment """
-import fnmatch
 import logging
 import os
 import signal
@@ -7,10 +6,11 @@ import sys
 from configparser import RawConfigParser, NoOptionError, NoSectionError
 from threading import Thread
 
+import fnmatch
 from netort.resource import manager as resource_manager
 from pkg_resources import resource_filename
 
-from yandextank.common.util import Cleanup, Finish, Status
+from yandextank.common.util import Status
 from yandextank.core.tankworker import TankWorker, is_ini
 
 logger = logging.getLogger()
@@ -180,23 +180,9 @@ class ConsoleWorker(Thread, TankWorker):
         self.status = Status.TEST_INITIATED
         self.test_id = self.core.test_id
         self.retcode = None
-        self.msg = ''
 
     def run(self):
-        with Cleanup(self) as add_cleanup:
-            lock = self.get_lock()
-            add_cleanup('release lock', lock.release)
-            self.status = Status.TEST_PREPARING
-            logger.info('Created a folder for the test. %s' % self.folder)
-            self.core.plugins_configure()
-            add_cleanup('plugins cleanup', self.core.plugins_cleanup)
-            self.core.plugins_prepare_test()
-            with Finish(self):
-                self.status = Status.TEST_RUNNING
-                self.core.plugins_start_test()
-                self.retcode = self.core.wait_for_finish()
-            self.status = Status.TEST_POST_PROCESS
-            self.retcode = self.core.plugins_post_process(self.retcode)
+        return self._run()
 
 
 class DevNullOpts:
