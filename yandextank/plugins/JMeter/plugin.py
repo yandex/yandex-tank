@@ -122,7 +122,9 @@ class Plugin(GeneratorPlugin):
             self.jmeter_path, "-n", "-t", self.jmx, '-j', self.jmeter_log,
             '-J', 'JMETER_HOME=%s' % self.core.artifacts_dir,
             '-J', 'jmeter.save.saveservice.default_delimiter=\\t',
-            '-J', 'jmeter.save.saveservice.connect_time=true'
+            '-J', 'jmeter.save.saveservice.connect_time=true',
+            '-J', 'sampleresult.timestamp.start=true',
+            '-J', 'jmeter.save.saveservice.autoflush=true'
         ]
 
         if self.properties is not None:

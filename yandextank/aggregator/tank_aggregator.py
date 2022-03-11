@@ -1,6 +1,7 @@
 """ Core module to calculate aggregate data """
 import json
 import logging
+import time
 import queue as q
 
 from pkg_resources import resource_string
@@ -94,6 +95,9 @@ class TankAggregator(object):
                 stat_item = self.stat_cache.pop(ts)
                 self.__notify_listeners(data_item, stat_item)
             else:
+                if ts in self.data_cache:
+                    logger.info("Duplicated ts from aggregator %d %1.5f seconds from now, lost %s",
+                            ts, time.time()-ts, self.data_cache[ts]['overall']['interval_real']['len'])
                 self.data_cache[ts] = item
         for item in stats:
             ts = item['ts']
@@ -105,9 +109,9 @@ class TankAggregator(object):
             else:
                 self.stat_cache[ts] = item
         if end and len(self.data_cache) > 0:
-            logger.info('Timestamps without stats:')
-            for ts, data_item in sorted(list(self.data_cache.items()), key=lambda i: i[0]):
-                logger.info(ts)
+            leftover = sorted(list(self.data_cache.items()), key=lambda i: i[0])
+            logger.info('Timestamps without stats: %s', [ts for ts, data in leftover])
+            for ts, data_item in leftover:
                 self.__notify_listeners(data_item, StatsReader.stats_item(ts, 0, 0))
 
     def is_aggr_finished(self):
