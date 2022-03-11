@@ -60,6 +60,8 @@ def _exc_to_net(param1, success):
 
 def _exc_to_http(param1):
     """ translate exception str to http code"""
+    if len(param1) == 0:
+        return 0
     if len(param1) <= 3:
         try:
             int(param1)

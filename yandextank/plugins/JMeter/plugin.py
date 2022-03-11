@@ -48,6 +48,7 @@ class Plugin(GeneratorPlugin):
         self.jmeter_dependencies = None
         self.jmeter_dependencies_paths = []
         self.shutdown_timeout = None
+        self.properties = None
 
     @staticmethod
     def get_key():
@@ -80,7 +81,7 @@ class Plugin(GeneratorPlugin):
         self.jmx = self.__add_jmeter_components(
             self.original_jmx, self.jtl_file, self.get_option('variables'))
         self.core.add_artifact_file(self.jmx)
-
+        self.properties = self.get_option('properties')
         jmeter_stderr_file = self.core.mkstemp(".log", "jmeter_stdout_stderr_")
         self.core.add_artifact_file(jmeter_stderr_file)
         self.process_stderr = open(jmeter_stderr_file, 'w')
@@ -114,7 +115,7 @@ class Plugin(GeneratorPlugin):
                 # Подразумевается, что зависимости будут скачиваться с удаленного ресурса.
                 # Если надо поддержать что-то еще, например локальные файлы, welcome
                 if isinstance(opener, HttpOpener):
-                    downloaded_file = opener.download_file(use_cache=True)
+                    downloaded_file = opener.download_file(use_cache=True, try_ungzip=True)
                     shutil.move(downloaded_file, filepath)
                 self.jmeter_dependencies_paths.append(filepath)
         self.args = [
@@ -123,6 +124,17 @@ class Plugin(GeneratorPlugin):
             '-J', 'jmeter.save.saveservice.default_delimiter=\\t',
             '-J', 'jmeter.save.saveservice.connect_time=true'
         ]
+
+        if self.properties is not None:
+            filepath = self.core.artifacts_dir + '/user.properties'
+            with open(filepath, 'w') as user_props_file:
+                for key, value in self.properties.items():
+                    user_props_file.write(key + "=" + str(value) + '\n')
+            self.args.append('-p')
+            self.args.append(filepath)
+            self.jmeter_dependencies_paths.append(filepath)
+
+
         self.args += shlex.split(self.user_args)
 
         if self.affinity:
