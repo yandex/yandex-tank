@@ -676,7 +676,7 @@ class APIClient(object):
         return response
 
 
-class LPRequisites():
+class LPRequisites:
     CONFIGINFO = ('configinfo.txt', 'configinfo')
     MONITORING = ('jobmonitoringconfig.txt', 'monitoringconfig')
     CONFIGINITIAL = ('configinitial.txt', 'configinitial')
@@ -844,8 +844,6 @@ class CloudGRPCClient(APIClient):
             if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
                 raise self.NotAvailable('Connection is closed. Try to set it again.')
             raise err
-        except Exception as err:
-            raise err
 
     def push_test_data(
             self,
@@ -901,6 +899,27 @@ class CloudGRPCClient(APIClient):
 
     def unlock_target(self, *args):
         return
+
+    def set_imbalance_and_dsc(self, cloud_job_id, rps, comment, timestamp):
+
+        try:
+            request = test_service_pb2.UpdateTestRequest(
+                id=str(cloud_job_id),
+                imbalance_point=rps,
+                imbalanse_ts=timestamp,
+                imbalance_comment=comment
+            )
+            result = self.test_stub.Update(
+                request,
+                timeout=self.connection_timeout,
+                metadata=[('authorization', f'Bearer {self.token}')]
+            )
+            logger.debug(f'Set imbalance {rps} at {timestamp}. Comment: {comment}')
+            return result.code
+        except grpc.RpcError as err:
+            if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
+                raise self.NotAvailable('Connection is closed. Try to set it again.')
+            raise err
 
 
 # ====== HELPER ======

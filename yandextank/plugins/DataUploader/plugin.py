@@ -425,8 +425,15 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             logger.debug(ex)
 
         if autostop and autostop.cause_criterion:
+            timestamp = 0
+            if autostop.cause_criterion.cause_second:
+                timestamp = autostop.cause_criterion.cause_second[0].get("ts", 0)
+
             self.lp_job.set_imbalance_and_dsc(
-                autostop.imbalance_rps, autostop.cause_criterion.explain())
+                autostop.imbalance_rps,
+                autostop.cause_criterion.explain(),
+                timestamp
+            )
 
         else:
             logger.debug("No autostop cause detected")
@@ -929,8 +936,8 @@ class LPJob(Job):
                             self.api_client.get_manual_unlock_link(lock_target))
                 continue
 
-    def set_imbalance_and_dsc(self, rps, comment):
-        return self.api_client.set_imbalance_and_dsc(self.number, rps, comment)
+    def set_imbalance_and_dsc(self, rps, comment, timestamp):
+        return self.api_client.set_imbalance_and_dsc(self.number, rps, comment, timestamp)
 
     def is_target_locked(self, host, strict):
         while True:
@@ -1034,8 +1041,8 @@ class CloudLoadTestingJob(Job):
     def lock_target(self, *args, **kwargs):
         logger.debug('Target locking is not implemented for cloud')
 
-    def set_imbalance_and_dsc(self, *args, **kwargs):
-        logger.debug('Imbalance detection is not implemented for cloud')
+    def set_imbalance_and_dsc(self, rps, comment, timestamp):
+        return self.api_client.set_imbalance_and_dsc(self.number, rps, comment, timestamp)
 
     def is_target_locked(self, *args, **kwargs):
         logger.debug('Target locking is not implemented for cloud')

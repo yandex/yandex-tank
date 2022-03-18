@@ -62,7 +62,39 @@ message Test {
   Status status = 19;
   repeated string errors = 20;
   bool favorite = 21;
+
+  int64 imbalance_point = 22;
+  int64 imbalance_ts = 23;
+
+  repeated Autostop autostops = 24;
 }
+
+message Autostop {
+  enum AutostopType {
+    AUTOSTOP_TYPE_UNSPECIFIED = 0;
+    TIME = 1;
+    HTTP = 2;
+    NET = 3;
+    QUANTILE = 4;
+    INSTANCES = 5;
+    METRIC_LOWER = 6;
+    METRIC_HIGHER = 7;
+    STEADY_CUMULATIVE = 8;
+    LIMIT = 9;
+    TOTAL_TIME = 10;
+    TOTAL_HTTP = 11;
+    TOTAL_NET = 12;
+    NEGATIVE_HTTP = 13;
+    NEGATIVE_NET = 14;
+    HTTP_TREND = 15;
+  }
+
+  AutostopType autostop_type = 1;
+  string autostop_criteria = 2;
+  string autostop_case = 3;
+
+}
+
 
 // Ammo type for generators: phantom.ammo_type,
 // ammo.type in pandora.config_content.pool
@@ -116,3 +148,4 @@ message Schedule {
   repeated LoadSchedule load_schedule = 2;
   repeated string load_profile = 3;
 }
+

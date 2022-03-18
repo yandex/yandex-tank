@@ -5,6 +5,8 @@ package yandex.cloud.loadtesting.agent.v1;
 import "operation.proto";
 import "test.proto";
 import "google/protobuf/descriptor.proto";
+import "google/protobuf/field_mask.proto";
+
 
 option go_package = "agent";
 
@@ -17,6 +19,13 @@ service TestService {
       response: "Test"
     };
   };
+  rpc Update (UpdateTestRequest) returns (operation.Operation) {
+    option (operation) = {
+      metadata: "UpdateTestMetadata"
+      response: "Test"
+    };
+  };
+
 }
 
 message Operation {
@@ -55,9 +64,32 @@ message CreateTestRequest {
   AmmoType ammo_type = 16;
   bool ssl = 17;
 
+  int64 imbalance_point = 18;
+  int64 imbalance_ts = 19;
+
   string logging_log_group_id = 20;
+
+  repeated Autostop autostops = 21;
+
 }
 
 message CreateTestMetadata {
+  string test_id = 1;
+}
+
+message UpdateTestRequest {
+  string id = 1;
+  google.protobuf.FieldMask update_mask = 2;
+  string name = 3;
+  string description = 4;
+  map<string, string> labels = 5;
+  bool favorite = 6;
+  string target_version = 7;
+  int64 imbalance_point = 8;
+  int64 imbalance_ts = 9;
+  string imbalance_comment = 10;
+}
+
+message UpdateTestMetadata {
   string test_id = 1;
 }
