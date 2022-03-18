@@ -67,6 +67,23 @@ def test_patch_config(cfg, expected):
     assert filename.endswith('.downloaded_resource')
 
 
+@pytest.mark.parametrize('line', [
+    'panic: short description',
+    'today ERROR shit happens',
+    'again\tFATAL oops i did it again'
+])
+def test_log_line_contains_error(line):
+    assert Plugin.check_log_line_contains_error(line)
+
+
+@pytest.mark.parametrize('line', [
+    'not a panic: actually',
+    'just string',
+])
+def test_log_line_contains_no_error(line):
+    assert not Plugin.check_log_line_contains_error(line)
+
+
 def teardown_module(module):
     SERVER.shutdown()
     SERVER.socket.close()

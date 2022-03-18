@@ -266,11 +266,15 @@ class Plugin(GeneratorPlugin):
                 logger.info(logline.strip('\n'))
             with open(self.process_stderr_file) as stderr:
                 for line in stderr:
-                    if re.match('^panic:|ERROR|FATAL', line):
+                    if self.check_log_line_contains_error(line):
                         self.errors.append(line.strip())
             return abs(retcode)
         else:
             return -1
+
+    @staticmethod
+    def check_log_line_contains_error(line):
+        return re.search('^panic:|ERROR|FATAL', line) is not None
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
