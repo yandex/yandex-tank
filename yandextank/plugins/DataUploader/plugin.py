@@ -243,15 +243,14 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                     logger.info("Task %s is ok", self.task)
                     self.task_name = str(task_data['name'])
                 else:
-                    logger.info("Task %s:" % self.task)
+                    logger.info("Task %s:", self.task)
                     logger.info(task_data)
                     raise RuntimeError("Task is not open")
             except KeyError:
                 try:
                     error = task_data['error']
                     raise RuntimeError(
-                        "Task %s error: %s\n%s" %
-                        (self.task, error, TASK_TIP))
+                        "Task %s error: %s\n%s", self.task, error, TASK_TIP)
                 except KeyError:
                     raise RuntimeError(
                         'Unknown task data format:\n{}'.format(task_data))
@@ -1021,7 +1020,7 @@ class CloudLoadTestingJob(Job):
             metadata = test_service_pb2.CreateTestMetadata()
             response.metadata.Unpack(metadata)
             self._number = metadata.test_id
-            logger.info('Job was created: {}'.format(self.number))
+            logger.info('Job was created: %s', self.number)
             self.storage.push_job(self.number, self.tank_job_id)
         else:
             self._number = cloud_job_id

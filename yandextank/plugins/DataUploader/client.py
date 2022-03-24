@@ -906,7 +906,7 @@ class CloudGRPCClient(APIClient):
             request = test_service_pb2.UpdateTestRequest(
                 id=str(cloud_job_id),
                 imbalance_point=rps,
-                imbalanse_ts=timestamp,
+                imbalance_ts=timestamp,
                 imbalance_comment=comment
             )
             result = self.test_stub.Update(
