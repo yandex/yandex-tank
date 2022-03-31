@@ -424,7 +424,7 @@ class APIClient(object):
             trace=trace)
         return response
 
-    def set_imbalance_and_dsc(self, jobno, rps, comment):
+    def set_imbalance_and_dsc(self, jobno, rps, comment, ts=0):
         data = {}
         if rps:
             data['imbalance'] = rps
@@ -699,7 +699,7 @@ class OverloadClient(APIClient):
     def push_events_data(self, number, token, data):
         return
 
-    def set_imbalance_and_dsc(self, jobno, rps, comment):
+    def set_imbalance_and_dsc(self, jobno, rps, comment, ts=0):
         return
 
 
