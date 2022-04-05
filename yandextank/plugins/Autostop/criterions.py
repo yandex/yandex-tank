@@ -6,6 +6,8 @@ import time
 
 from yandextank.common.util import expand_to_seconds, expand_to_milliseconds
 from ...common.interfaces import AbstractCriterion
+from ..Phantom import Plugin as PhantomPlugin
+from ..Pandora import Plugin as PandoraPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -462,3 +464,96 @@ class TimeLimitCriterion(AbstractCriterion):
 
     def widget_explain(self):
         return "Time limit: %(limit)ss, actual time: %(actual)ss" % self.get_criterion_parameters()
+
+
+class UsedInstancesCriterion(AbstractCriterion):
+    """
+    Autostop criterion, based on active instances count
+    """
+
+    @staticmethod
+    def get_type_string():
+        return 'instances'
+
+    def __init__(self, autostop, param_str):
+        AbstractCriterion.__init__(self)
+        self.seconds_count = 0
+        self.autostop = autostop
+        self.threads_limit = 0
+
+        level_str = param_str.split(',')[0].strip()
+        if level_str[-1:] == '%':
+            self.level = float(level_str[:-1]) / 100
+            self.is_relative = True
+        else:
+            self.level = int(level_str)
+            self.is_relative = False
+        self.seconds_limit = expand_to_seconds(param_str.split(',')[1])
+
+        if self.autostop.core.get_option('phantom', 'enabled'):
+            phantom = autostop.core.get_plugin_of_type(PhantomPlugin)
+            info = phantom.get_info()
+            if info:
+                self.threads_limit = info.instances
+            if not self.threads_limit:
+                raise ValueError(
+                    "Cannot create 'instances' criterion"
+                    " with zero instances limit")
+        elif self.autostop.core.get_option('pandora', 'enabled'):
+            config = autostop.core.get_plugin_of_type(PandoraPlugin).config_contents
+            for pool in config["pools"]:
+                if pool["startup"]["type"] == "once":
+                    self.threads_limit += pool["startup"]["times"]
+                else:
+                    raise ValueError(
+                        "Cannot create 'instances' criterion"
+                        " startup type must be 'once'")
+        else:
+            raise ValueError(
+                "Cannot create relative 'instances' criterion"
+                " either phantom or pandora must be enabled")
+
+    def notify(self, data, stat):
+        threads = stat["metrics"]["instances"]
+        if self.is_relative:
+            threads = float(threads) / self.threads_limit
+        if threads > self.level:
+            if not self.seconds_count:
+                self.cause_second = (data, stat)
+
+            logger.debug(self.explain())
+
+            self.seconds_count += 1
+            self.autostop.add_counting(self)
+            if self.seconds_count >= self.seconds_limit:
+                return True
+        else:
+            self.seconds_count = 0
+
+        return False
+
+    def get_rc(self):
+        return self.RC_INSTANCE
+
+    def get_level_str(self):
+        """
+        String value for instances level
+        """
+        if self.is_relative:
+            level_str = str(100 * self.level) + "%"
+        else:
+            level_str = self.level
+        return level_str
+
+    def explain(self):
+        items = (
+            self.get_level_str(), self.seconds_count,
+            self.cause_second[0].get('ts'))
+        return (
+            "Testing threads (instances) utilization"
+            " higher than %s for %ss, since %s" % items)
+
+    def widget_explain(self):
+        items = (self.get_level_str(), self.seconds_count, self.seconds_limit)
+        return "Instances >%s for %s/%ss" % items, float(
+            self.seconds_count) / self.seconds_limit
