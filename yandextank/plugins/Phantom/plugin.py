@@ -12,6 +12,7 @@ from .widget import PhantomInfoWidget, PhantomProgressBarWidget
 from ..Console import Plugin as ConsolePlugin
 from ...common.interfaces import GeneratorPlugin
 from ...common.util import FileMultiReader
+from .log_analyzer import LogAnalyzer
 
 from netort.process import execute
 
@@ -153,6 +154,11 @@ class Plugin(GeneratorPlugin):
         if retcode is not None:
             logger.info("Phantom done its work with exit code: %s", retcode)
             self.phout_finished.set()
+            if retcode != 0:
+                errors = LogAnalyzer(self.phantom.phantom_log).get_most_recent_errors()
+                if not errors:
+                    logger.error('Phantom exited with code %s but without errors in log.')
+                self.errors.extend(errors)
             return abs(retcode)
         else:
             info = self.get_info()
