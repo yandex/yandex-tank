@@ -2,28 +2,45 @@
 """ Provides class to run TankCore from python """
 import ctypes
 import logging
-from multiprocessing import Value, Process
+import os
+import shutil
+from multiprocessing import Value, Process, Event
 
 from yandextank.common.util import Status
 from yandextank.core.tankworker import TankWorker
-
-logger = logging.getLogger()
+from yandextank.common.interfaces import TankInfo
 
 
 class ApiWorker(Process, TankWorker):
-    SECTION = 'core'
-    FINISH_FILENAME = 'finish_status.yaml'
 
     def __init__(self, manager, config_paths, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
                  log_handlers=None, wait_lock=False, files=None, ammo_file=None):
         Process.__init__(self)
+        self._manager = manager
         TankWorker.__init__(self, configs=config_paths, cli_options=cli_options, cfg_patches=cfg_patches,
                             cli_args=cli_args, no_local=no_local, log_handlers=log_handlers,
-                            wait_lock=wait_lock, files=files, ammo_file=ammo_file, api_start=True, manager=manager)
+                            wait_lock=wait_lock, files=files, ammo_file=ammo_file)
         self._status = Value(ctypes.c_char_p, Status.TEST_INITIATED)
         self._test_id = Value(ctypes.c_char_p, self.core.test_id.encode('utf8'))
         self._retcode = Value(ctypes.c_int, 0)
         self._msgs = manager.list()
+
+    def _create_interrupted_event(self):
+        return Event()
+
+    def _create_tank_info(self):
+        return TankInfo(self._manager.dict())
+
+    def init_folder(self):
+        folder = super().init_folder()
+        for cfg in self.config_paths:
+            shutil.move(cfg, folder)
+        for f in self.files:
+            shutil.move(f, folder)
+        if self.ammo_file:
+            shutil.move(self.ammo_file, folder)
+        os.chdir(folder)
+        return folder
 
     def run(self):
         return self._run()

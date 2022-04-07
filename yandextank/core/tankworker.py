@@ -1,12 +1,10 @@
 import glob
 import logging
 import os
-import shutil
 import stat
 import time
 from configparser import RawConfigParser, MissingSectionHeaderError
-from multiprocessing import Event as ProcessEvent
-from threading import Event as ThreadEvent
+from threading import Event
 
 import yaml
 from pkg_resources import resource_filename
@@ -28,16 +26,15 @@ class TankWorker():
     DEFAULT_CONFIG = 'load.yaml'
 
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
-                 log_handlers=None, wait_lock=False, files=None, ammo_file=None, api_start=False, manager=None,
+                 log_handlers=None, wait_lock=False, files=None, ammo_file=None,
                  debug=False):
-        self.api_start = api_start
         self.wait_lock = wait_lock
         self.log_handlers = log_handlers if log_handlers is not None else []
         self.files = [] if files is None else files
         self.ammo_file = ammo_file
         self.config_paths = configs
-        self.interrupted = ProcessEvent() if api_start else ThreadEvent()
-        self.info = TankInfo(manager.dict()) if api_start else TankInfo(dict())
+        self.interrupted = self._create_interrupted_event()
+        self.info = self._create_tank_info()
         self.config_list = self._combine_configs(configs, cli_options, cfg_patches, cli_args, no_local)
         self.core = TankCore(self.config_list, self.interrupted, self.info)
         self.folder = self.init_folder()
@@ -47,6 +44,12 @@ class TankWorker():
         is_locked = Lock.is_locked(self.core.lock_dir)
         if is_locked and not self.core.config.get_option(self.SECTION, 'ignore_lock'):
             raise LockError(is_locked)
+
+    def _create_interrupted_event(self):
+        return Event()
+
+    def _create_tank_info(self):
+        return TankInfo(dict())
 
     def _run(self):
         with Cleanup(self) as add_cleanup:
@@ -90,16 +93,7 @@ class TankWorker():
         return configs
 
     def init_folder(self):
-        folder = self.core.artifacts_dir
-        if self.api_start > 0:
-            for cfg in self.config_paths:
-                shutil.move(cfg, folder)
-            for f in self.files:
-                shutil.move(f, folder)
-            if self.ammo_file:
-                shutil.move(self.ammo_file, folder)
-            os.chdir(folder)
-        return folder
+        return self.core.artifacts_dir
 
     def stop(self):
         self.interrupted.set()
