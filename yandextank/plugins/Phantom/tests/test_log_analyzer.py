@@ -41,9 +41,6 @@ def test_empty_errors():
     assert [] == errors
 
 
-
-
-
 @pytest.mark.parametrize(('line', 'level', 'message'), [
     ('2022-03-18 19:08:11.525 +0300 [error] [benchmark_io 4639] socket: Too many open files',
      'error',
