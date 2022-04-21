@@ -3,7 +3,7 @@ import sys
 from optparse import OptionParser
 
 from netort.resource import manager as resource_manager
-from yandextank.core.consoleworker import ConsoleWorker
+from yandextank.core.tankworker import TankWorker
 from yandextank.core.tankcore import LockError
 from yandextank.validator.validator import ValidationError
 from yandextank.version import VERSION
@@ -122,15 +122,15 @@ def main():
             'ammofile': ammofile
         }
     try:
-        worker = ConsoleWorker([resource_manager.resource_filename(cfg) for cfg in options.config],
-                               options.option,
-                               options.patches,
-                               [cli_kwargs],
-                               options.no_rc,
-                               ammo_file=ammofile if ammofile else None,
-                               log_handlers=handlers,
-                               debug=options.verbose
-                               )
+        worker = TankWorker([resource_manager.resource_filename(cfg) for cfg in options.config],
+                            options.option,
+                            options.patches,
+                            [cli_kwargs],
+                            options.no_rc,
+                            ammo_file=ammofile if ammofile else None,
+                            log_handlers=handlers,
+                            debug=options.verbose,
+                            )
     except (ValidationError, LockError) as e:
         logging.error(f'Config validation error:\n{e}')
         return

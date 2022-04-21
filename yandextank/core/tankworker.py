@@ -1,26 +1,28 @@
-import glob
+import ctypes
 import logging
 import os
-import stat
+import shutil
 import time
 from configparser import RawConfigParser, MissingSectionHeaderError
-from threading import Event
+from multiprocessing import Manager, Event, Value, Process
 
+import glob
+import stat
 import yaml
 from pkg_resources import resource_filename
 
 from yandextank.common.interfaces import TankInfo
+from yandextank.common.util import Cleanup, Finish, Status
 from yandextank.common.util import read_resource, TankapiLogFilter
 from yandextank.config_converter.converter import convert_ini, convert_single_option
 from yandextank.core import TankCore
 from yandextank.core.tankcore import LockError, Lock
 from yandextank.validator.validator import ValidationError
-from yandextank.common.util import Cleanup, Finish, Status
 
 logger = logging.getLogger()
 
 
-class TankWorker():
+class TankWorker(Process):
     SECTION = 'core'
     FINISH_FILENAME = 'finish_status.yaml'
     DEFAULT_CONFIG = 'load.yaml'
@@ -28,30 +30,31 @@ class TankWorker():
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
                  log_handlers=None, wait_lock=False, files=None, ammo_file=None,
                  debug=False):
-        self.wait_lock = wait_lock
-        self.log_handlers = log_handlers if log_handlers is not None else []
-        self.files = [] if files is None else files
-        self.ammo_file = ammo_file
-        self.config_paths = configs
-        self.interrupted = self._create_interrupted_event()
-        self.info = self._create_tank_info()
+        super().__init__()
+        self.interrupted = Event()
+        manager = Manager()
+        self.info = TankInfo(manager.dict())
         self.config_list = self._combine_configs(configs, cli_options, cfg_patches, cli_args, no_local)
         self.core = TankCore(self.config_list, self.interrupted, self.info)
-        self.folder = self.init_folder()
-        self.init_logging(debug or self.core.get_option(self.core.SECTION, 'debug'))
-        self._msgs = []
 
         is_locked = Lock.is_locked(self.core.lock_dir)
         if is_locked and not self.core.config.get_option(self.SECTION, 'ignore_lock'):
             raise LockError(is_locked)
 
-    def _create_interrupted_event(self):
-        return Event()
+        self.wait_lock = wait_lock
+        self.log_handlers = log_handlers if log_handlers is not None else []
+        self.files = [] if files is None else files
+        self.ammo_file = ammo_file
+        self.config_paths = configs
+        self.folder = self.core.artifacts_dir
+        self.init_logging(debug or self.core.get_option(self.core.SECTION, 'debug'))
 
-    def _create_tank_info(self):
-        return TankInfo(dict())
+        self._status = Value(ctypes.c_char_p, Status.TEST_INITIATED)
+        self._test_id = Value(ctypes.c_char_p, self.core.test_id.encode('utf8'))
+        self._retcode = Value(ctypes.c_int, 0)
+        self._msgs = manager.list()
 
-    def _run(self):
+    def run(self):
         with Cleanup(self) as add_cleanup:
             lock = self.get_lock()
             add_cleanup('release lock', lock.release)
@@ -91,9 +94,6 @@ class TankWorker():
                 parse_and_check_patches(cfg_patches) + \
                 cli_args
         return configs
-
-    def init_folder(self):
-        return self.core.artifacts_dir
 
     def stop(self):
         self.interrupted.set()
@@ -161,6 +161,42 @@ class TankWorker():
 
     def add_msgs(self, *msgs):
         self._msgs.extend(msgs)
+
+    @property
+    def test_id(self):
+        with self._test_id.get_lock():
+            return self._test_id.value.decode('utf8')
+
+    @property
+    def status(self):
+        with self._status.get_lock():
+            return self._status.value
+
+    @status.setter
+    def status(self, val):
+        with self._status.get_lock():
+            self._status.value = val
+
+    @property
+    def retcode(self):
+        with self._retcode.get_lock():
+            return self._retcode.value
+
+    @retcode.setter
+    def retcode(self, val):
+        with self._retcode.get_lock():
+            self._retcode.value = val
+
+    def collect_files(self):
+        for cfg in self.config_paths:
+            shutil.move(cfg, self.folder)
+        for f in self.files:
+            shutil.move(f, self.folder)
+        if self.ammo_file:
+            shutil.move(self.ammo_file, self.folder)
+
+    def go_to_test_folder(self):
+        os.chdir(self.folder)
 
 
 def load_cfg(cfg_filename):
