@@ -75,8 +75,8 @@ class TestAgentConfig(object):
         assert (
             cfg_parser.has_section('agent')
             and cfg_parser.get('agent', 'interval') == "'1s'"
-            and cfg_parser.has_section('[outputs.file')
-            and cfg_parser.get('[outputs.file', 'files')
+            and cfg_parser.has_section('[outputs.file]')
+            and cfg_parser.get('[outputs.file]', 'files')
             == "['{rmt}/monitoring.rawdata']".format(rmt=remote_workdir))
 
     def test_create_custom_exec_script(self):
