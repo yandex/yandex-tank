@@ -856,11 +856,12 @@ class TankapiLogFilter(logging.Filter):
         return record.name != 'tankapi'
 
 
-class Status():
+class Status:
     TEST_POST_PROCESS = b'POST_PROCESS'
     TEST_INITIATED = b'INITIATED'
     TEST_PREPARING = b'PREPARING'
     TEST_NOT_FOUND = b'NOT_FOUND'
+    TEST_WAITING_FOR_A_COMMAND_TO_SHOOT = b'WAITING_FOR_A_COMMAND_TO_SHOOT'
     TEST_RUNNING = b'RUNNING'
     TEST_FINISHING = b'FINISHING'
     TEST_FINISHED = b'FINISHED'

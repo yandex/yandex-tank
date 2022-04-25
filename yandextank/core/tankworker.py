@@ -29,7 +29,7 @@ class TankWorker(Process):
 
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
                  log_handlers=None, wait_lock=False, files=None, ammo_file=None,
-                 debug=False):
+                 debug=False, run_shooting_event=None):
         super().__init__()
         self.interrupted = Event()
         manager = Manager()
@@ -53,6 +53,13 @@ class TankWorker(Process):
         self._test_id = Value(ctypes.c_char_p, self.core.test_id.encode('utf8'))
         self._retcode = Value(ctypes.c_int, 0)
         self._msgs = manager.list()
+        self._run_shooting_event = run_shooting_event or self._dummy_event()
+
+    @staticmethod
+    def _dummy_event():
+        event = Event()
+        event.set()
+        return event
 
     def run(self):
         with Cleanup(self) as add_cleanup:
@@ -64,12 +71,23 @@ class TankWorker(Process):
             add_cleanup('plugins cleanup', self.core.plugins_cleanup)
             self.core.plugins_prepare_test()
             with Finish(self):
+                if not self._run_shooting_event.is_set():
+                    self.status = Status.TEST_WAITING_FOR_A_COMMAND_TO_SHOOT
+                    self._wait_for_a_command_to_start_shooting()
                 self.status = Status.TEST_RUNNING
                 self.core.plugins_start_test()
                 self.retcode = self.core.wait_for_finish()
                 self._msgs.extend(self.core.errors)
             self.status = Status.TEST_POST_PROCESS
             self.retcode = self.core.plugins_post_process(self.retcode)
+
+    def _wait_for_a_command_to_start_shooting(self):
+        pool_timeout = 0.01
+        while True:
+            if self.core.interrupted.is_set():
+                raise RuntimeError('Test stopped before shooting started.')
+            if self._run_shooting_event.wait(pool_timeout):
+                return
 
     @staticmethod
     def _combine_configs(run_cfgs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False):

@@ -1,5 +1,7 @@
 import logging
 import sys
+import multiprocessing
+import threading
 from optparse import OptionParser
 
 from netort.resource import manager as resource_manager
@@ -121,6 +123,9 @@ def main():
             'use_caching': False,
             'ammofile': ammofile
         }
+
+    run_shooting_event = multiprocessing.Event() if options.manual_start else None
+
     try:
         worker = TankWorker([resource_manager.resource_filename(cfg) for cfg in options.config],
                             options.option,
@@ -130,12 +135,23 @@ def main():
                             ammo_file=ammofile if ammofile else None,
                             log_handlers=handlers,
                             debug=options.verbose,
+                            run_shooting_event=run_shooting_event,
                             )
     except (ValidationError, LockError) as e:
         logging.error(f'Config validation error:\n{e}')
         return
     worker.start()
     try:
+        if run_shooting_event is not None:
+            # Parallel process(TankWorker) is logging.
+            # So, prompt should be repeated.
+            # Otherwise prompt will be lost among parallel logging.
+            def wait_blocking():
+                input()
+                run_shooting_event.set()
+            threading.Thread(target=wait_blocking).start()
+            while not run_shooting_event.wait(3):
+                logging.warning('Press Enter to start shooting')
         while True:
             worker.join(timeout=2)
             if not worker.is_alive():

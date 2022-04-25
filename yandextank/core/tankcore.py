@@ -103,7 +103,7 @@ class TankCore(object):
         """
 
         :param configs: list of dict
-        :param interrupted_event: threading.Event
+        :param interrupted_event: multiprocessing.Event
         :type info: yandextank.common.interfaces.TankInfo
         """
         self.output = {}
