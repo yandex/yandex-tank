@@ -573,8 +573,8 @@ class JobsStorage:
     def _create_storage_file(self):
         directory, _ = os.path.split(self.storage_file)
         os.makedirs(directory, exist_ok=True)
-        os.mknod(self.storage_file)
-        os.chmod(self.storage_file, 0o766)
+        with open(self.storage_file, 'x'):
+            os.chmod(self.storage_file, 0o766)
 
     def push_job(self, cloud_job_id, tank_job_id=None):
         with open(self.storage_file, 'a') as f:
