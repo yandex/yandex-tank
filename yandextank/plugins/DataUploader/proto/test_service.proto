@@ -13,6 +13,7 @@ option go_package = "agent";
 extend google.protobuf.MethodOptions { Operation operation = 87334; }
 
 service TestService {
+  rpc Get (GetTestRequest) returns (Test);
   rpc Create (CreateTestRequest) returns (operation.Operation) {
     option (operation) = {
       metadata: "CreateTestMetadata"
@@ -36,6 +37,10 @@ message Operation {
   // Required. rpc returns operation, in case of success response will contains message of
   // specified field.
   string response = 2; // Required.
+}
+
+message GetTestRequest {
+  string test_id = 1;
 }
 
 message CreateTestRequest {
@@ -78,7 +83,7 @@ message CreateTestMetadata {
 }
 
 message UpdateTestRequest {
-  string id = 1;
+  string test_id = 1;
   google.protobuf.FieldMask update_mask = 2;
   string name = 3;
   string description = 4;

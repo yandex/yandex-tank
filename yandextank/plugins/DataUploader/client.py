@@ -897,24 +897,44 @@ class CloudGRPCClient(APIClient):
             timeout=self.connection_timeout,
             metadata=[('authorization', f'Bearer {self.token}')])
 
+    def get_test(self, cloud_job_id):
+        return self.test_stub.Get(
+            test_service_pb2.GetTestRequest(test_id=cloud_job_id),
+            timeout=self.connection_timeout,
+            metadata=[('authorization', f'Bearer {self.token}')]
+        )
+
     def unlock_target(self, *args):
         return
 
     def set_imbalance_and_dsc(self, cloud_job_id, rps, comment, timestamp):
 
+        request = test_service_pb2.UpdateTestRequest(
+            test_id=str(cloud_job_id),
+            imbalance_point=rps,
+            imbalance_ts=timestamp,
+            imbalance_comment=comment,
+        )
+
+        # TODO: update test with update_mask, not rewriting fields https://st.yandex-team.ru/CLOUDLOAD-346
         try:
-            request = test_service_pb2.UpdateTestRequest(
-                id=str(cloud_job_id),
-                imbalance_point=rps,
-                imbalance_ts=timestamp,
-                imbalance_comment=comment
-            )
+            test = self.get_test(cloud_job_id)
+            request.name = test.name
+            request.description = test.description + '/n' + comment
+            request.labels = test.labels
+            request.favorite = test.favorite
+        except grpc.RpcError as err:
+            if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
+                raise self.NotAvailable('Connection is closed. Try to set it again.')
+            logger.warning('Failed to get test details: %s', err)
+
+        try:
             result = self.test_stub.Update(
                 request,
                 timeout=self.connection_timeout,
                 metadata=[('authorization', f'Bearer {self.token}')]
             )
-            logger.debug(f'Set imbalance {rps} at {timestamp}. Comment: {comment}')
+            logger.debug('Set imbalance %s at %s. Comment: %s', rps, timestamp, comment)
             return result.code
         except grpc.RpcError as err:
             if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
