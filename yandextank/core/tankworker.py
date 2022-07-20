@@ -72,7 +72,7 @@ class TankWorker(Process):
             self.core.plugins_prepare_test()
             with Finish(self):
                 if not self._run_shooting_event.is_set():
-                    self.status = Status.TEST_WAITING_FOR_A_COMMAND_TO_SHOOT
+                    self.status = Status.TEST_WAITING_FOR_A_COMMAND_TO_RUN
                     self._wait_for_a_command_to_start_shooting()
                 self.status = Status.TEST_RUNNING
                 self.core.plugins_start_test()
