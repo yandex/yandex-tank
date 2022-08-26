@@ -60,6 +60,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.add_criterion_class(cr.QuantileCriterion)
         self.add_criterion_class(cr.SteadyCumulativeQuantilesCriterion)
         self.add_criterion_class(cr.TimeLimitCriterion)
+        self.add_criterion_class(cr.UsedInstancesCriterion)
         self.add_criterion_class(cum_cr.TotalFracTimeCriterion)
         self.add_criterion_class(cum_cr.TotalHTTPCodesCriterion)
         self.add_criterion_class(cum_cr.TotalNetCodesCriterion)

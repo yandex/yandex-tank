@@ -2,8 +2,8 @@
 #
 # VERSION 0.0.3
 
-FROM ubuntu:xenial
-MAINTAINER Alexey Lavrenuke <direvius@yandex-team.ru>
+FROM ubuntu:focal
+MAINTAINER Yandex Load Team <load-public@yandex-team.ru>
 # Version for desription
 ARG VERSION
 # You may specify tag instead of branch to build for specific tag
@@ -29,6 +29,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         atop     \
         openssh-client \
         git            \
+        gpg-agent      \
         python3-pip  && \
     add-apt-repository ppa:yandex-load/main -y && \
     apt-get update -q && \
@@ -51,11 +52,15 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -yq --no-install-recommends ${BUILD_DEPS} && \
     pip3 install --upgrade setuptools && \
-    pip3 install --upgrade pip==19.2.3 && \
+    pip3 install --upgrade pip && \
     pip3 install https://api.github.com/repos/yandex/yandex-tank/tarball/${BRANCH} && \
     apt-get autoremove -y ${BUILD_DEPS} && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/* /root/.cache/*
+
+RUN curl -L -v -o pandora https://github.com/yandex/pandora/releases/latest/download/pandora_0.3.8_linux_amd64 && \
+    chmod +x ./pandora && \
+    mv ./pandora /usr/local/bin/
 
 COPY files/bashrc /root/.bashrc
 COPY files/inputrc /root/.inputrc

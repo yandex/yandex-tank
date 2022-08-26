@@ -5,14 +5,16 @@ import hashlib
 import json
 import logging
 import os
-
+import shutil
 from builtins import zip
+from pathlib import Path
 
 from netort.resource import manager as resource
 
 from . import format as fmt
 from . import info
 from .config import ComponentFactory
+from .module_exceptions import DiskLimitError, StepperConfigurationError
 
 
 class AmmoFactory(object):
@@ -56,6 +58,7 @@ class Stepper(object):
         info.status.core = core
         self.af = AmmoFactory(ComponentFactory(**kwargs))
         self.ammo = fmt.Stpd(self.af)
+        self.first_loop_done = False
 
     def write(self, f):
         for missile in self.ammo:
@@ -64,6 +67,39 @@ class Stepper(object):
                 info.status.inc_ammo_count()
             except StopIteration:
                 break
+
+            # check the whole file can be written
+            if not self.first_loop_done:
+                if info.status.loop_count == 1:
+                    # то, что только что закончился цикл чтения фала с патронам,
+                    # позволяет нам не заботиться о том, что одни патроны могут быть тяжелее других.
+                    self.first_loop_done = True
+                    if info.status.max_ammo is None:
+                        # Ограничение было задано через опцию loop
+                        # Надо выставить ammo_limit вручную,
+                        # ибо до прочтения файла непонятно сколько в нём было патронов.
+                        if info.status.loop_limit is None:
+                            raise StepperConfigurationError('Ammo limit should be specified by '
+                                                            'load_type, ammo_limit or loop option. '
+                                                            'See https://yandextank.readthedocs.io/en/latest/core_and_modules.html#basic-options')
+                        info.status.ammo_limit = info.status.loop_limit * info.status.ammo_count
+                        assert info.status.max_ammo is not None
+                    self._check_whole_file_can_be_written(f)
+
+    @staticmethod
+    def _check_whole_file_can_be_written(file_descriptor):
+        if not hasattr(file_descriptor, 'name'):
+            # Скорее всего - это IO stream для тестов.
+            return
+        written_bytes = file_descriptor.tell()
+        expected_file_size = (1. / info.status.calculate_lp_progress()) * written_bytes
+        need_to_write_more_bytes = expected_file_size - written_bytes
+        available_bytes = shutil.disk_usage(Path(file_descriptor.name).parent).free
+
+        reserve = 10 * 000 * 000  # 10 мегабайт
+        if available_bytes < need_to_write_more_bytes + reserve:
+            raise DiskLimitError('File system has not enough free space for ammo file. '
+                                 f'Ammo file expected file size is {expected_file_size} bytes.')
 
 
 class LoadProfile(object):

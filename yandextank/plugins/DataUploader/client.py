@@ -424,7 +424,7 @@ class APIClient(object):
             trace=trace)
         return response
 
-    def set_imbalance_and_dsc(self, jobno, rps, comment):
+    def set_imbalance_and_dsc(self, jobno, rps, comment, ts=0):
         data = {}
         if rps:
             data['imbalance'] = rps
@@ -676,7 +676,7 @@ class APIClient(object):
         return response
 
 
-class LPRequisites():
+class LPRequisites:
     CONFIGINFO = ('configinfo.txt', 'configinfo')
     MONITORING = ('jobmonitoringconfig.txt', 'monitoringconfig')
     CONFIGINITIAL = ('configinitial.txt', 'configinitial')
@@ -699,7 +699,7 @@ class OverloadClient(APIClient):
     def push_events_data(self, number, token, data):
         return
 
-    def set_imbalance_and_dsc(self, jobno, rps, comment):
+    def set_imbalance_and_dsc(self, jobno, rps, comment, ts=0):
         return
 
 
@@ -844,8 +844,6 @@ class CloudGRPCClient(APIClient):
             if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
                 raise self.NotAvailable('Connection is closed. Try to set it again.')
             raise err
-        except Exception as err:
-            raise err
 
     def push_test_data(
             self,
@@ -884,23 +882,64 @@ class CloudGRPCClient(APIClient):
                 else:
                     break
 
-    def create_test(self, target_address, target_port, name, description, load_schedule, generator):
-        schedule = test_pb2.Schedule(load_profile=load_schedule, load_type=1)
+    def create_test(self, target_address, target_port, name, description, load_schedule, config):
+        schedule = test_pb2.Schedule(load_profile=str(load_schedule), load_type=1)
         request = test_service_pb2.CreateTestRequest(
             agent_instance_id=self.agent_instance_id,
             target_address=target_address,
-            target_port=target_port,
+            target_port=int(target_port),
             name=name,
             description=description,
-            generator=generator)
+            config=config)
         request.load_schedule.CopyFrom(schedule)
         return self.test_stub.Create(
             request,
             timeout=self.connection_timeout,
             metadata=[('authorization', f'Bearer {self.token}')])
 
+    def get_test(self, cloud_job_id):
+        return self.test_stub.Get(
+            test_service_pb2.GetTestRequest(test_id=cloud_job_id),
+            timeout=self.connection_timeout,
+            metadata=[('authorization', f'Bearer {self.token}')]
+        )
+
     def unlock_target(self, *args):
         return
+
+    def set_imbalance_and_dsc(self, cloud_job_id, rps, comment, timestamp):
+
+        request = test_service_pb2.UpdateTestRequest(
+            test_id=str(cloud_job_id),
+            imbalance_point=rps,
+            imbalance_ts=timestamp,
+            imbalance_comment=comment,
+        )
+
+        # TODO: update test with update_mask, not rewriting fields https://st.yandex-team.ru/CLOUDLOAD-346
+        try:
+            test = self.get_test(cloud_job_id)
+            request.name = test.name
+            request.description = test.description + '/n' + comment
+            request.labels = test.labels
+            request.favorite = test.favorite
+        except grpc.RpcError as err:
+            if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
+                raise self.NotAvailable('Connection is closed. Try to set it again.')
+            logger.warning('Failed to get test details: %s', err)
+
+        try:
+            result = self.test_stub.Update(
+                request,
+                timeout=self.connection_timeout,
+                metadata=[('authorization', f'Bearer {self.token}')]
+            )
+            logger.debug('Set imbalance %s at %s. Comment: %s', rps, timestamp, comment)
+            return result.code
+        except grpc.RpcError as err:
+            if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
+                raise self.NotAvailable('Connection is closed. Try to set it again.')
+            raise err
 
 
 # ====== HELPER ======

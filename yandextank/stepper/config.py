@@ -29,7 +29,7 @@ class ComponentFactory():
             use_cache=True):
         self.log = logging.getLogger(__name__)
         self.ammo_file = ammo_file
-        self.ammo_type = ammo_type
+        self._ammo_type_unchecked = ammo_type
         self.rps_schedule = rps_schedule
         self.http_ver = http_ver
         self.instances_schedule = instances_schedule
@@ -53,6 +53,31 @@ class ComponentFactory():
         self.chosen_cases = chosen_cases or []
         self.use_cache = use_cache
 
+    @property
+    def ammo_type(self):
+        if self._ammo_type_unchecked != 'phantom':
+            return self._ammo_type_unchecked
+
+        opener = resource.get_opener(self.ammo_file)
+        with opener(self.use_cache) as ammo:
+            try:
+                ammo_str = next(ammo).decode('utf-8')
+            except StopIteration:
+                self.log.exception(
+                    "Couldn't read first line of ammo file")
+                raise AmmoFileError(
+                    "Couldn't read first line of ammo file")
+
+            if not ammo_str[0].isdigit():
+                self.log.info(
+                    "Setting ammo_type 'uri' because ammo is not started with digit and you did not specify ammo format"
+                )
+                return 'uri'
+            self.log.info(
+                "Default ammo type ('phantom') used, use 'phantom.ammo_type' option to override it"
+            )
+            return self._ammo_type_unchecked
+
     def get_load_plan(self):
         """
         return load plan (timestamps generator)
@@ -72,55 +97,32 @@ class ComponentFactory():
             info.status.publish('loadscheme', self.instances_schedule)
             return ip.create(self.instances_schedule)
 
-    def get_ammo_generator(self):
-        """
-        return ammo generator
-        """
-        af_readers = {
-            'phantom': missile.AmmoFileReader,
-            'slowlog': missile.SlowLogReader,
-            'line': missile.LineReader,
-            'uri': missile.UriReader,
-            'uripost': missile.UriPostReader,
-            'access': missile.AccessLogReader,
-            'caseline': missile.CaseLineReader,
+    def _check_exactly_one_source_specified(self):
+        sources = {
+            'uris': self.uris,
+            'ammo_file': self.ammo_file
         }
-        if self.uris and self.ammo_file:
+        active_sources = {k: v for k, v in sources.items() if v}
+        if len(active_sources) != 1:
+            self.log.error('active sources: %s', active_sources)
             raise StepperConfigurationError(
-                'Both uris and ammo file specified. You must specify only one of them'
-            )
-        elif self.uris:
-            ammo_gen = missile.UriStyleGenerator(
-                self.uris, self.headers, http_ver=self.http_ver)
-        elif self.ammo_file:
-            if self.ammo_type in af_readers:
-                if self.ammo_type == 'phantom':
-                    opener = resource.get_opener(self.ammo_file)
-                    with opener(self.use_cache) as ammo:
-                        try:
-                            ammo_str = next(ammo).decode('utf-8')
-                            if not ammo_str[0].isdigit():
-                                self.ammo_type = 'uri'
-                                self.log.info(
-                                    "Setting ammo_type 'uri' because ammo is not started with digit and you did not specify ammo format"
-                                )
-                            else:
-                                self.log.info(
-                                    "Default ammo type ('phantom') used, use 'phantom.ammo_type' option to override it"
-                                )
-                        except StopIteration:
-                            self.log.exception(
-                                "Couldn't read first line of ammo file")
-                            raise AmmoFileError(
-                                "Couldn't read first line of ammo file")
-            else:
-                raise NotImplementedError(
-                    'No such ammo type implemented: "%s"' % self.ammo_type)
-            ammo_gen = af_readers[self.ammo_type](
-                self.ammo_file, headers=self.headers, http_ver=self.http_ver, use_cache=self.use_cache)
-        else:
-            raise StepperConfigurationError(
-                'Ammo not found. Specify uris or ammo file')
+                f'Exactly one of sources {list(sources.keys())} should be specified, '
+                f'but found {list(active_sources.keys())} in config.')
+
+    def _get_ammo_generator(self):
+        self._check_exactly_one_source_specified()
+        if self.uris:
+            return missile.UriStyleGenerator(self.uris, self.headers, http_ver=self.http_ver)
+
+        if self.ammo_type not in missile.FILE_READERS:
+            raise NotImplementedError(
+                'No such ammo type implemented: "%s"' % self.ammo_type)
+
+        return missile.FILE_READERS[self.ammo_type](
+            self.ammo_file, headers=self.headers, http_ver=self.http_ver, use_cache=self.use_cache)
+
+    def get_ammo_generator(self):
+        ammo_gen = self._get_ammo_generator()
         self.log.info("Using %s ammo reader" % type(ammo_gen).__name__)
         return ammo_gen
 

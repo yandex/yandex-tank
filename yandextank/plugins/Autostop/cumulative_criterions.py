@@ -104,7 +104,7 @@ class TotalFracTimeCriterion(AbstractCriterion):
         return total_responses
 
     def get_rc(self):
-        return 25
+        return self.RC_TOTAL_TIME
 
     def explain(self):
         items = self.get_criterion_parameters()
@@ -200,7 +200,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
         return matched_responses, total_responses
 
     def get_rc(self):
-        return 26
+        return self.RC_TOTAL_HTTP
 
     def get_level_str(self):
         ''' format level str '''
@@ -316,7 +316,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
         return matched_responses, total_responses
 
     def get_rc(self):
-        return 27
+        return self.RC_TOTAL_NET
 
     def get_level_str(self):
         ''' format level str '''
@@ -431,7 +431,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         return matched_responses, total_responses
 
     def get_rc(self):
-        return 28
+        return self.RC_TOTAL_NEGATIVE_HTTP
 
     def get_level_str(self):
         ''' format level str'''
@@ -549,7 +549,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         return matched_responses, total_responses
 
     def get_rc(self):
-        return 29
+        return self.RC_TOTAL_NEGATIVE_NET
 
     def get_level_str(self):
         ''' format level str'''
@@ -666,7 +666,7 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
         return math.sqrt(numerator / len(tangents) / (len(tangents) - 1))
 
     def get_rc(self):
-        return 30
+        return self.RC_TOTAL_HTTP_TREND
 
     def explain(self):
         items = self.get_criterion_parameters()
@@ -747,7 +747,7 @@ class QuantileOfSaturationCriterion(AbstractCriterion):
     #     return False
 
     # def get_rc(self):
-    #     return 33
+    #     return self.RC_STEADY
 
     # def explain(self):
     #     items = (self.timing, self.width, self.deviation, self.height)

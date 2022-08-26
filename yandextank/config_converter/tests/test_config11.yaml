@@ -1,9 +1,0 @@
-core: {}
-pandora:
-  config_file: pandora_cfg.json
-  package: yandextank.plugins.Pandora
-  enabled: true
-uploader:
-  enabled: false
-phantom:
-  enabled: false

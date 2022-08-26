@@ -14,3 +14,7 @@ class StpdFileError(Exception):
     '''
     Raised when failed to read stpd file properly.
     '''
+
+
+class DiskLimitError(Exception):
+    pass

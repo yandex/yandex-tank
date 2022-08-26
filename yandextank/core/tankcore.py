@@ -103,7 +103,7 @@ class TankCore(object):
         """
 
         :param configs: list of dict
-        :param interrupted_event: threading.Event
+        :param interrupted_event: multiprocessing.Event
         :type info: yandextank.common.interfaces.TankInfo
         """
         self.output = {}
@@ -128,12 +128,11 @@ class TankCore(object):
         self.monitoring_data_listeners = []
 
         error_output = 'validation_error.yaml'
-        self.config, self.errors, self.configinitial = TankConfig(self.raw_configs,
-                                                                  with_dynamic_options=True,
-                                                                  core_section=self.SECTION,
-                                                                  error_output=error_output).validate()
-        if not self.config:
-            raise ValidationError(self.errors)
+        self.config, self.configinitial = TankConfig(self.raw_configs,
+                                                     with_dynamic_options=True,
+                                                     core_section=self.SECTION,
+                                                     error_output=error_output).validate()
+
         self.test_id = self.get_option(self.SECTION, 'artifacts_dir',
                                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f"))
         self.lock_dir = self.get_option(self.SECTION, 'lock_dir')
@@ -149,6 +148,7 @@ class TankCore(object):
             yaml.dump(configinfo, f)
         logger.info('New test id %s' % self.test_id)
         self.storage = JobsStorage()
+        self.errors = []
 
     @property
     def cfg_snapshot(self):
@@ -307,6 +307,8 @@ class TankCore(object):
                 try:
                     retcode = plugin.is_test_finished()
                     if retcode >= 0:
+                        for e in plugin.errors:
+                            self.errors.append(f'{plugin_name}: {e}')
                         return retcode
                 except Exception:
                     logger.warning('Plugin {} failed:'.format(plugin_name), exc_info=True)
@@ -565,6 +567,14 @@ class JobsStorage:
 
     def __init__(self, file_name=None):
         self.storage_file = file_name or os.getenv(JOBS_STORAGE_FILE_ENV, DEFAULT_JOBS_STORAGE_FILE)
+        if not os.path.exists(self.storage_file):
+            self._create_storage_file()
+
+    def _create_storage_file(self):
+        directory, _ = os.path.split(self.storage_file)
+        os.makedirs(directory, exist_ok=True)
+        with open(self.storage_file, 'x'):
+            os.chmod(self.storage_file, 0o766)
 
     def push_job(self, cloud_job_id, tank_job_id=None):
         with open(self.storage_file, 'a') as f:
@@ -576,6 +586,8 @@ class JobsStorage:
         try:
             with open(self.storage_file) as f:
                 data = yaml.safe_load(f)
+            if data is None:
+                return
             for job in data:
                 if job[TANK_KEY] == tank_job_id:
                     return job[CLOUD_KEY]

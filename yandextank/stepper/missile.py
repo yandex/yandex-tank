@@ -386,3 +386,14 @@ class UriPostReader(Reader):
                         break
                     chunk_header = read_chunk_header(ammo_file)
                 info.status.af_position = ammo_file.tell()
+
+
+FILE_READERS = {
+    'phantom': AmmoFileReader,
+    'slowlog': SlowLogReader,
+    'line': LineReader,
+    'uri': UriReader,
+    'uripost': UriPostReader,
+    'access': AccessLogReader,
+    'caseline': CaseLineReader,
+}

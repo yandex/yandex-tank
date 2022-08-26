@@ -243,15 +243,14 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                     logger.info("Task %s is ok", self.task)
                     self.task_name = str(task_data['name'])
                 else:
-                    logger.info("Task %s:" % self.task)
+                    logger.info("Task %s:", self.task)
                     logger.info(task_data)
                     raise RuntimeError("Task is not open")
             except KeyError:
                 try:
                     error = task_data['error']
                     raise RuntimeError(
-                        "Task %s error: %s\n%s" %
-                        (self.task, error, TASK_TIP))
+                        "Task %s error: %s\n%s", self.task, error, TASK_TIP)
                 except KeyError:
                     raise RuntimeError(
                         'Unknown task data format:\n{}'.format(task_data))
@@ -425,8 +424,15 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             logger.debug(ex)
 
         if autostop and autostop.cause_criterion:
+            timestamp = 0
+            if autostop.cause_criterion.cause_second:
+                timestamp = autostop.cause_criterion.cause_second[0].get("ts", 0)
+
             self.lp_job.set_imbalance_and_dsc(
-                autostop.imbalance_rps, autostop.cause_criterion.explain())
+                autostop.imbalance_rps,
+                autostop.cause_criterion.explain(),
+                timestamp
+            )
 
         else:
             logger.debug("No autostop cause detected")
@@ -612,15 +618,16 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         """
         if self._lp_job is None:
             self._lp_job = self.__get_lp_job()
-            self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
-            self.core.publish(self.SECTION, 'web_link', self._lp_job.web_link)
-            self.core.publish(self.SECTION, 'job_name', self._lp_job.name)
-            self.core.publish(self.SECTION, 'job_dsc', self._lp_job.description)
-            self.core.publish(self.SECTION, 'person', self._lp_job.person)
-            self.core.publish(self.SECTION, 'task', self._lp_job.task)
-            self.core.publish(self.SECTION, 'version', self._lp_job.version)
-            self.core.publish(self.SECTION, 'component', self.get_option('component'))
-            self.core.publish(self.SECTION, 'meta', self.cfg.get('meta', {}))
+            if isinstance(self._lp_job, LPJob):
+                self.core.publish(self.SECTION, 'job_no', self._lp_job.number)
+                self.core.publish(self.SECTION, 'web_link', self._lp_job.web_link)
+                self.core.publish(self.SECTION, 'job_name', self._lp_job.name)
+                self.core.publish(self.SECTION, 'job_dsc', self._lp_job.description)
+                self.core.publish(self.SECTION, 'person', self._lp_job.person)
+                self.core.publish(self.SECTION, 'task', self._lp_job.task)
+                self.core.publish(self.SECTION, 'version', self._lp_job.version)
+                self.core.publish(self.SECTION, 'component', self.get_option('component'))
+                self.core.publish(self.SECTION, 'meta', self.cfg.get('meta', {}))
         return self._lp_job
 
     def __get_lp_job(self):
@@ -642,6 +649,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                                          storage=self.core.storage,
                                          name=self.get_option('job_name', 'untitled'),
                                          description=self.get_option('job_dsc'),
+                                         config=self.core.configinitial,
                                          load_scheme=loadscheme)
         else:
             lp_job = LPJob(client=api_client,
@@ -927,8 +935,8 @@ class LPJob(Job):
                             self.api_client.get_manual_unlock_link(lock_target))
                 continue
 
-    def set_imbalance_and_dsc(self, rps, comment):
-        return self.api_client.set_imbalance_and_dsc(self.number, rps, comment)
+    def set_imbalance_and_dsc(self, rps, comment, timestamp):
+        return self.api_client.set_imbalance_and_dsc(self.number, rps, comment, timestamp)
 
     def is_target_locked(self, host, strict):
         while True:
@@ -959,6 +967,7 @@ class CloudLoadTestingJob(Job):
         description,
         tank_job_id,
         storage,
+        config,
         load_scheme=None,
     ):
         self.target_host = target_host
@@ -971,8 +980,10 @@ class CloudLoadTestingJob(Job):
         self.load_scheme = load_scheme
         self.interrupted = threading.Event()
         self.storage = storage
+        self._raw_config = config
+        self._config = None
 
-        # self.create()  # FIXME check it out, maybe it is useless
+        self.create()  # FIXME check it out, maybe it is useless
 
     def push_test_data(self, data, stats):
         if not self.interrupted.is_set():
@@ -993,18 +1004,24 @@ class CloudLoadTestingJob(Job):
             raise self.UnknownJobNumber('Job number is unknown')
         return self._number
 
+    @property
+    def config(self):
+        if self._config is None and self._raw_config is not None:
+            self._config = yaml.dump(self._raw_config)
+        return self._config
+
     def close(self, *args, **kwargs):
         logger.debug('Cannot close job in the cloud mode')
 
     def create(self):
         cloud_job_id = self.storage.get_cloud_job_id(self.tank_job_id)
         if cloud_job_id is None:
-            response = self.api_client.create_test(self.target_host, self.target_port, self.name, self.description, self.load_scheme)
-            self.storage.push_job(cloud_job_id, self.core.test_id)
+            response = self.api_client.create_test(self.target_host, self.target_port, self.name, self.description, self.load_scheme, self.config)
             metadata = test_service_pb2.CreateTestMetadata()
             response.metadata.Unpack(metadata)
-            self._number = metadata.id
-            logger.info('Job was created: {}'.format(self._number))
+            self._number = metadata.test_id
+            logger.info('Job was created: %s', self.number)
+            self.storage.push_job(self.number, self.tank_job_id)
         else:
             self._number = cloud_job_id
 
@@ -1023,8 +1040,8 @@ class CloudLoadTestingJob(Job):
     def lock_target(self, *args, **kwargs):
         logger.debug('Target locking is not implemented for cloud')
 
-    def set_imbalance_and_dsc(self, *args, **kwargs):
-        logger.debug('Imbalance detection is not implemented for cloud')
+    def set_imbalance_and_dsc(self, rps, comment, timestamp):
+        return self.api_client.set_imbalance_and_dsc(self.number, rps, comment, timestamp)
 
     def is_target_locked(self, *args, **kwargs):
         logger.debug('Target locking is not implemented for cloud')

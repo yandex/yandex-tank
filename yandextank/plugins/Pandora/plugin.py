@@ -3,6 +3,7 @@ import logging
 import subprocess
 import time
 import os
+import re
 import shutil
 from threading import Event
 
@@ -263,9 +264,17 @@ class Plugin(GeneratorPlugin):
             last_log_contents = tail_lines(self.process_stderr_file, lines_amount)
             for logline in last_log_contents:
                 logger.info(logline.strip('\n'))
+            with open(self.process_stderr_file) as stderr:
+                for line in stderr:
+                    if self.check_log_line_contains_error(line):
+                        self.errors.append(line.strip())
             return abs(retcode)
         else:
             return -1
+
+    @staticmethod
+    def check_log_line_contains_error(line):
+        return re.search('^panic:|ERROR|FATAL', line) is not None
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:

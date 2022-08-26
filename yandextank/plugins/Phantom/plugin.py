@@ -9,10 +9,10 @@ from threading import Event
 from .reader import PhantomReader, PhantomStatsReader, string_to_df
 from .utils import PhantomConfig
 from .widget import PhantomInfoWidget, PhantomProgressBarWidget
-from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
-from ...common.interfaces import AbstractCriterion, GeneratorPlugin
-from ...common.util import expand_to_seconds, FileMultiReader
+from ...common.interfaces import GeneratorPlugin
+from ...common.util import FileMultiReader
+from .log_analyzer import LogAnalyzer
 
 from netort.process import execute
 
@@ -60,13 +60,6 @@ class Plugin(GeneratorPlugin):
         self.enum_ammo = self.get_option("enum_ammo", False)
         self.buffered_seconds = int(
             self.get_option("buffered_seconds", self.buffered_seconds))
-
-        try:
-            autostop = self.core.get_plugin_of_type(AutostopPlugin)
-            autostop.add_criterion_class(UsedInstancesCriterion)
-        except KeyError:
-            logger.debug(
-                "No autostop plugin found, not adding instances criterion")
 
         self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
         if not self.get_option(self.OPTION_CONFIG, '') and self.predefined_phout:
@@ -161,6 +154,11 @@ class Plugin(GeneratorPlugin):
         if retcode is not None:
             logger.info("Phantom done its work with exit code: %s", retcode)
             self.phout_finished.set()
+            if retcode != 0:
+                errors = LogAnalyzer(self.phantom.phantom_log).get_most_recent_errors()
+                if not errors:
+                    logger.error('Phantom exited with code %s but without errors in log.')
+                self.errors.extend(errors)
             return abs(retcode)
         else:
             info = self.get_info()
@@ -202,86 +200,3 @@ class Plugin(GeneratorPlugin):
                 return None
             self.cached_info = self.phantom.get_info()
         return self.cached_info
-
-
-class UsedInstancesCriterion(AbstractCriterion):
-    """
-    Autostop criterion, based on active instances count
-    """
-    RC_INST = 24
-
-    @staticmethod
-    def get_type_string():
-        return 'instances'
-
-    def __init__(self, autostop, param_str):
-        AbstractCriterion.__init__(self)
-        self.seconds_count = 0
-        self.autostop = autostop
-        self.threads_limit = 1
-
-        level_str = param_str.split(',')[0].strip()
-        if level_str[-1:] == '%':
-            self.level = float(level_str[:-1]) / 100
-            self.is_relative = True
-        else:
-            self.level = int(level_str)
-            self.is_relative = False
-        self.seconds_limit = expand_to_seconds(param_str.split(',')[1])
-
-        try:
-            phantom = autostop.core.get_plugin_of_type(Plugin)
-            info = phantom.get_info()
-            if info:
-                self.threads_limit = info.instances
-            if not self.threads_limit:
-                raise ValueError(
-                    "Cannot create 'instances' criterion"
-                    " with zero instances limit")
-        except KeyError:
-            logger.warning("No phantom module, 'instances' autostop disabled")
-
-    def notify(self, data, stat):
-        threads = stat["metrics"]["instances"]
-        if self.is_relative:
-            threads = float(threads) / self.threads_limit
-        if threads > self.level:
-            if not self.seconds_count:
-                self.cause_second = (data, stat)
-
-            logger.debug(self.explain())
-
-            self.seconds_count += 1
-            self.autostop.add_counting(self)
-            if self.seconds_count >= self.seconds_limit:
-                return True
-        else:
-            self.seconds_count = 0
-
-        return False
-
-    def get_rc(self):
-        return self.RC_INST
-
-    def get_level_str(self):
-        """
-        String value for instances level
-        """
-        if self.is_relative:
-            level_str = str(100 * self.level) + "%"
-        else:
-            level_str = self.level
-        return level_str
-
-    def explain(self):
-        items = (
-            self.get_level_str(), self.seconds_count,
-            self.cause_second[0].get('ts'))
-        return (
-            "Testing threads (instances) utilization"
-            " higher than %s for %ss, since %s" % items)
-
-    def widget_explain(self):
-        items = (self.get_level_str(), self.seconds_count, self.seconds_limit)
-        return "Instances >%s for %s/%ss" % items, float(
-            self.seconds_count) / self.seconds_limit

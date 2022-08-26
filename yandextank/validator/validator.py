@@ -5,6 +5,7 @@ import sys
 import uuid
 
 import logging
+
 import pkg_resources
 import yaml
 from cerberus.validator import Validator
@@ -166,7 +167,6 @@ class TankConfig(object):
         :param core_section: name of core section in config
         :param error_output: file to output error messages
         """
-        self._errors = None
         if not isinstance(configs, list):
             configs = [configs]
         self.raw_config_dict = self.__load_multiple(
@@ -186,13 +186,8 @@ class TankConfig(object):
 
     def validate(self):
         if not self._validated:
-            try:
-                self._validated = ValidatedConfig(self.__validate(), self.BASE_SCHEMA)
-                self._errors = {}
-            except ValidationError as e:
-                self._validated = None
-                self._errors = e.errors
-        return self._validated, self._errors, self.raw_config_dict
+            self._validated = ValidatedConfig(self.__validate(), self.BASE_SCHEMA)
+        return self._validated, self.raw_config_dict
 
     @property
     def validated(self):
@@ -200,7 +195,6 @@ class TankConfig(object):
             try:
                 self._validated = self.__validate()
             except ValidationError as e:
-                self._errors = e.errors
                 if self.ERROR_OUTPUT:
                     with open(self.ERROR_OUTPUT, 'w') as f:
                         yaml.dump(e.errors, f)
@@ -252,7 +246,7 @@ class TankConfig(object):
             except ValidationError as e:
                 errors[plugin_name] = e.errors
         if len(errors) > 0:
-            raise ValidationError((dict(errors)))
+            raise ValidationError(dict(errors))
 
         for plugin_name, plugin_conf in results.items():
             core_validated[plugin_name] = plugin_conf
