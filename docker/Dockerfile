@@ -1,6 +1,6 @@
 # Yandex.Tank
 #
-# VERSION 0.0.3
+# VERSION 0.0.4
 
 FROM ubuntu:focal
 MAINTAINER Yandex Load Team <load-public@yandex-team.ru>
