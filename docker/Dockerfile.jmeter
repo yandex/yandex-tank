@@ -1,11 +1,11 @@
 # Yandex.Tank with jmeter and some plugins
 
 ARG VERSION=latest
-FROM direvius/yandex-tank:"${VERSION}"
+FROM yandex/yandex-tank:"${VERSION}"
 ARG VERSION
 ARG JMETER_VERSION=3.3
 
-MAINTAINER Alexey Lavrenuke <direvius@yandex-team.ru>
+MAINTAINER Yandex Load Team <load-public@yandex-team.ru>
 
 LABEL Description="Yandex.Tank with Apache jmeter" \
     Vendor="Yandex" \
