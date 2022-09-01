@@ -3,5 +3,5 @@ printf "================\nConfig reference\n================\n" > config_referen
 tank-docs-gen -o config_reference.rst --title "Core" -a "../yandextank/core/config/schema.yaml"
 for p in `find ../yandextank/plugins/ \( -name "schema.py" -o -name "schema.yaml" \)`
 do
-tank-docs-gen -o config_reference.rst --title `echo $p | awk '{split($0,a,"\/"); print a[5]}'` -a $p
+tank-docs-gen -o config_reference.rst --title `echo $p | awk '{split($0,a,"\/"); print a[4]}'` -a $p
 done
