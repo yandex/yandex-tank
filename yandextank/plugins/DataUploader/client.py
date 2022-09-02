@@ -816,7 +816,7 @@ class CloudGRPCClient(APIClient):
                 q90=trail_data.get('q90'),
                 q95=trail_data.get('q95'),
                 q98=trail_data.get('q98'),
-                q99=trail_data.get('99'),
+                q99=trail_data.get('q99'),
                 q100=trail_data.get('q100'),
                 http_codes=self.build_codes(item['http_codes']),
                 net_codes=self.build_codes(item['net_codes']),
