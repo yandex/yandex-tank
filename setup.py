@@ -63,11 +63,11 @@ analytic tools for the results they produce.
     namespace_packages=["yandextank", "yandextank.plugins"],
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
-        'cryptography>=2.2.1', 'pyopenssl==18.0.0',
+        'cryptography>=2.2.1', 'pyopenssl==22.0.0',
         'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
         'pandas<=1.2.5', 'numpy<=1.19.5',
         'pip>=8.1.2',
-        'pyyaml>=4.2b1', 'cerberus==1.3.1', 'influxdb>=5.0.0', 'netort>=0.8.0',
+        'pyyaml>=4.2b1', 'cerberus==1.3.1', 'influxdb-client<=1.26.0', 'netort>=0.8.0',
         'retrying>=1.3.3', 'pytest-runner', 'typing', 'grpcio', 'grpcio-tools'
     ],
     setup_requires=[

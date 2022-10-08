@@ -3,17 +3,6 @@
 # VERSION 0.0.4
 
 FROM ubuntu:focal
-MAINTAINER Yandex Load Team <load-public@yandex-team.ru>
-# Version for desription
-ARG VERSION
-# You may specify tag instead of branch to build for specific tag
-ARG BRANCH=master
-
-LABEL Description="Fresh Yandex.Tank from github master branch with phantom" \
-    Vendor="Yandex" \
-    maintainer="direvius@yandex-team.ru" \
-    YandexTank.version="${VERSION}" \
-    Telegraf.version="${TELEGRAF_VERSION}"
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update -q && \
@@ -53,7 +42,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -yq --no-install-recommends ${BUILD_DEPS} && \
     pip3 install --upgrade setuptools && \
     pip3 install --upgrade pip && \
-    pip3 install https://api.github.com/repos/yandex/yandex-tank/tarball/${BRANCH} && \
+    pip3 install pyOpenSSL --upgrade && \
+    pip3 install git+https://github.com/olgoncharov/yandex-tank.git && \
     apt-get autoremove -y ${BUILD_DEPS} && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/* /root/.cache/*

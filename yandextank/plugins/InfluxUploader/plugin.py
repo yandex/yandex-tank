@@ -8,7 +8,7 @@ import sys
 from uuid import uuid4
 
 from builtins import str
-from influxdb import InfluxDBClient
+from influxdb_client import InfluxDBClient, WriteOptions, WritePrecision
 
 from .decoder import Decoder
 from ...common.interfaces import AbstractPlugin, \
@@ -39,6 +39,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         self._client = None
         self.start_time = None
         self.end_time = None
+        self.bucket = self.get_option("bucket")
+        self.organization = self.get_option("organization")
         self.decoder = Decoder(
             self.tank_tag,
             str(uuid4()),
@@ -51,11 +53,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def client(self):
         if not self._client:
             self._client = InfluxDBClient(
-                self.get_option("address"),
-                self.get_option("port"),
-                username=self.get_option("username"),
-                password=self.get_option("password"),
-                database=self.get_option("database"),
+                url=self.get_option("address"),
+                token=self.get_option("token"),
+                org=self.organization
             )
         return self._client
 
@@ -70,10 +70,13 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return retcode
 
     def on_aggregated_data(self, data, stats):
-        self.client.write_points(
-            self.decoder.decode_aggregates(data, stats, self.prefix_measurement),
-            's'
-        )
+        with self.client.write_api(write_options=WriteOptions(batch_size=5000)) as write_client:
+            write_client.write(
+                self.bucket, 
+                self.organization,
+                self.decoder.decode_aggregates(data, stats, self.prefix_measurement),
+                WritePrecision.S
+            )
 
     def monitoring_data(self, data_list):
         if len(data_list) > 0:
@@ -83,10 +86,13 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             ]
 
     def _send_monitoring(self, data):
-        self.client.write_points(
-            self.decoder.decode_monitoring(data),
-            's'
-        )
+        with self.client.write_api(write_options=WriteOptions(batch_size=5000)) as write_client:
+            write_client.write(
+                self.bucket, 
+                self.organization,
+                self.decoder.decode_monitoring(data),
+                WritePrecision.S
+            )
 
     def set_uuid(self, id_):
         self.decoder.tags['uuid'] = id_

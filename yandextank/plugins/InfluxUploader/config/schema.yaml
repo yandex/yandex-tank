@@ -2,19 +2,16 @@ tank_tag:
   default: unknown
   type: string
 address:
-  default: localhost
+  default: http://localhost:8086
   type: string
-port:
-  default: 8086
-  type: integer
-database:
-  default: mydb
+bucket:
+  default: ""
   type: string
-username:
-  default: root
+organization:
+  default: ""
   type: string
-password:
-  default: root
+token:
+  default: ""
   type: string
 chunk_size:
   default: 500000
