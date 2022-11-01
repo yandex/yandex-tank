@@ -497,7 +497,7 @@ def test_validate_all(config, expected):
 
         },
         {'phantom': {'address': ['required field'], 'load_profile': ['required field']},
-         'telegraf': {'config': ['must be of string type']}}),
+         'telegraf': {'config': ['must be of [\'string\', \'dict\'] type']}}),
     (
         {
             "core": {},
