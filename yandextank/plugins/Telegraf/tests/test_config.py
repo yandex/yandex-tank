@@ -1,4 +1,3 @@
-from xmlrpc.client import Boolean
 from yandextank.common.util import get_test_path
 from yandextank.plugins.Telegraf.config import ConfigManager, AgentConfig
 import os
@@ -93,5 +92,5 @@ class TestAgentConfig(object):
         assert data.find("-0) curl -s 'http://localhost:6100/stat'") != -1
 
 
-def string_arrays_equal(expected, actual) -> Boolean:
+def string_arrays_equal(expected, actual) -> bool:
     return json.loads(expected.replace("'", '"')) == json.loads(actual.replace("'", '"'))
