@@ -1,4 +1,4 @@
-agents:
+hosts:
   "[target]": 
     metrics:
       cpu: 

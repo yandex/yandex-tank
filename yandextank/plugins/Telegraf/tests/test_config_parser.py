@@ -18,7 +18,7 @@ class TestConfigParsers(object):
     def test_raw_yaml_parse(self):
         """ raw yaml read from string """
         config = """
-        agents:
+        hosts:
           localhost:
             metrics:
               cpu:
@@ -32,7 +32,7 @@ class TestConfigParsers(object):
 
     def test_raw_yaml_parse_agent_config_is_none(self):
         config = """
-        agents:
+        hosts:
           localhost:
         metrics:
           cpu:

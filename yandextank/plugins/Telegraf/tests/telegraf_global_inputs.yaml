@@ -1,4 +1,4 @@
-agents:
+hosts:
   somehost.yandex.tld:
     interval: 1 
     username: netort

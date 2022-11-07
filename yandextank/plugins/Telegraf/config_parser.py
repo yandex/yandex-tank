@@ -6,7 +6,7 @@ from requests.structures import CaseInsensitiveDict
 from typing import List
 
 TARGET_HINT_PLACEHOLDER = '[target]'
-YAML_AGENTS_SECTION = 'agents'
+YAML_HOSTS_SECTION = 'hosts'
 YAML_METRICS_SECTION = 'metrics'
 YAML_CUSTOM_METRIC = 'custom'
 YAML_CUSTOM_METRIC_CMD = 'cmd'
@@ -71,7 +71,7 @@ def parse_yaml(config) -> List[Host]:
     yaml_content = yaml_content or {}
 
     global_inputs = yaml_content.get(YAML_METRICS_SECTION, {})
-    agents = yaml_content.get(YAML_AGENTS_SECTION, {})
+    agents = yaml_content.get(YAML_HOSTS_SECTION, {})
 
     # if no "agents:" provided use default host
     if len(agents) == 0:
