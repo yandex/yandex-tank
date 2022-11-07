@@ -490,8 +490,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 logger.warn(e)
                 self.lp_job.interrupted.set()
             except Exception:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                logger.error("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
+                logger.error("Mysterious exception", exc_info=sys.exc_info())
                 break
         # purge queue
         while not queue.empty():
@@ -969,6 +968,7 @@ class CloudLoadTestingJob(Job):
         storage,
         config,
         load_scheme=None,
+        log_monitoring_requests=False,
     ):
         self.target_host = target_host
         self.target_port = target_port
@@ -982,6 +982,7 @@ class CloudLoadTestingJob(Job):
         self.storage = storage
         self._raw_config = config
         self._config = None
+        self.log_monitoring_requests = log_monitoring_requests
 
         self.create()  # FIXME check it out, maybe it is useless
 
@@ -1031,8 +1032,10 @@ class CloudLoadTestingJob(Job):
     def send_config(self, *args, **kwargs):
         logger.debug('Do not send config to the cloud service')
 
-    def push_monitoring_data(self, *args, **kwargs):
-        logger.debug('Do not push monitoring data for cloud service')
+    def push_monitoring_data(self, data):
+        if not self.interrupted.is_set():
+            self.api_client.push_monitoring_data(
+                self.number, data, self.interrupted, trace=self.log_monitoring_requests)
 
     def push_events_data(self, *args, **kwargs):
         logger.debug('Do not push event data for cloud service')

@@ -1,3 +1,4 @@
+from collections import defaultdict
 import json
 import time
 import traceback
@@ -34,6 +35,12 @@ except ImportError:
     import test_service_pb2_grpc
     import test_service_pb2
     import test_pb2
+
+try:
+    from yandex.cloud.loadtesting.agent.v1 import monitoring_service_pb2_grpc, monitoring_service_pb2
+except ImportError:
+    import monitoring_service_pb2_grpc
+    import monitoring_service_pb2
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
@@ -753,6 +760,7 @@ class CloudGRPCClient(APIClient):
             if response.agent_instance_id:
                 self.agent_instance_id = response.agent_instance_id
                 self.trail_stub = trail_service_pb2_grpc.TrailServiceStub(self.channel)
+                self.monitoring_stub = monitoring_service_pb2_grpc.MonitoringServiceStub(self.channel)
                 self.test_stub = test_service_pb2_grpc.TestServiceStub(self.channel)
                 logger.info('Init connection to cloud load testing is succeeded')
             else:
@@ -825,6 +833,28 @@ class CloudGRPCClient(APIClient):
             trails.append(trail)
         return trails
 
+    def _send_data(self, func, interrupted_event, cloud_job_id, message, instance_id=None):
+        api_timeouts = self.api_timeouts()
+        if instance_id is None:
+            instance_id = self.compute_instance_id
+        while not interrupted_event.is_set():
+            try:
+                code = func(instance_id, cloud_job_id, message)
+                if code == 0:
+                    break
+            except self.NotAvailable:
+                if not self.core_interrupted.is_set():
+                    try:
+                        timeout = next(api_timeouts)
+                    except StopIteration:
+                        raise self.NotAvailable
+                    self._set_connection(self.token, instance_id)
+                    logger.warning("GRPC error, will retry in %ss...", timeout)
+                    time.sleep(timeout)
+                    continue
+                else:
+                    break
+
     def send_trails(self, instance_id, cloud_job_id, trails):
         try:
             request = trail_service_pb2.CreateTrailRequest(
@@ -845,12 +875,25 @@ class CloudGRPCClient(APIClient):
                 raise self.NotAvailable('Connection is closed. Try to set it again.')
             raise err
 
-    def push_test_data(
-            self,
-            cloud_job_id,
-            data_item,
-            stat_item,
-            interrupted_event):
+    def _send_monitoring(self, instance_id, cloud_job_id, chunks):
+        try:
+            request = monitoring_service_pb2.AddMetricRequest(
+                compute_instance_id=str(instance_id),
+                job_id=str(cloud_job_id),
+                chunks=chunks
+            )
+            result = self.monitoring_stub.AddMetric(
+                request,
+                timeout=self.connection_timeout,
+                metadata=[('authorization', f'Bearer {self.token}')]
+            )
+            return result.code
+        except grpc.RpcError as err:
+            if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
+                raise self.NotAvailable('Connection is closed. Try to set it again.')
+            raise err
+
+    def push_test_data(self, cloud_job_id, data_item, stat_item, interrupted_event):
         items = []
         ts = data_item["ts"]
         for case_name, case_data in data_item["tagged"].items():
@@ -862,25 +905,52 @@ class CloudGRPCClient(APIClient):
         overall = self.second_data_to_push_item(data_item["overall"],
                                                 stat_item, ts, 1, '')
         items.append(overall)
+        message = self.convert_to_proto_message(items)
+        self._send_data(self.send_trails, interrupted_event, cloud_job_id, message)
 
-        api_timeouts = self.api_timeouts()
-        while not interrupted_event.is_set():
+    @staticmethod
+    def _json_metric_to_proto_message(json_metrics):
+        def is_float(value):
             try:
-                code = self.send_trails(self.compute_instance_id, cloud_job_id, self.convert_to_proto_message(items))
-                if code == 0:
-                    break
-            except self.NotAvailable as err:
-                if not self.core_interrupted.is_set():
-                    try:
-                        timeout = next(api_timeouts)
-                    except StopIteration:
-                        raise err
-                    self._set_connection(self.token)
-                    logger.warn("GRPC error, will retry in %ss...", timeout)
-                    time.sleep(timeout)
-                    continue
-                else:
-                    break
+                value = float(value)
+                return True
+            except ValueError:
+                return False
+
+        result = []
+        for metric in json_metrics:
+            # handle metric as 'custom:cpu-cpu0_idle_time', using 'cpu-cpu0' as metric type, 'idle_time' as metric_name
+            parts = metric.split(':')[-1].split('_')
+            result.append(monitoring_service_pb2.Metric(
+                metric_type=parts[0],
+                metric_name='_'.join(parts[1:]),
+                metric_value=float(json_metrics[metric]) if is_float(json_metrics[metric]) else 0.0,
+            ))
+        return result
+
+    @staticmethod
+    def _json_monitoring_data_item_to_proto_metric_chunks(monitoring_data_item):
+        metrics = defaultdict(list)
+        for di in monitoring_data_item:
+            ts = int(di['timestamp'])
+            for host_name, data in di["data"].items():
+                metrics[(host_name, ts, data['comment'])].extend(
+                    CloudGRPCClient._json_metric_to_proto_message(data['metrics'])
+                )
+
+        return [monitoring_service_pb2.MetricChunk(
+            instance_host=key[0],
+            timestamp=key[1],
+            comment=key[2],
+            data=chunk,
+        ) for key, chunk in metrics.items()]
+
+    def push_monitoring_data(self, cloud_job_id, monitoring_data_item, interrupted_event, trace=False):
+        chunks = CloudGRPCClient._json_monitoring_data_item_to_proto_metric_chunks(monitoring_data_item)
+        if trace:
+            logger.debug(f'CloudGRPCClient: Send monitoring data for job ({cloud_job_id}): {chunks}')
+
+        self._send_data(self._send_monitoring, interrupted_event, cloud_job_id, chunks)
 
     def create_test(self, target_address, target_port, name, description, load_schedule, config):
         schedule = test_pb2.Schedule(load_profile=str(load_schedule), load_type=1)
