@@ -68,18 +68,26 @@ def parse_yaml(config) -> List[Host]:
 
     result = []
 
+    yaml_content = yaml_content or {}
+
     global_inputs = yaml_content.get(YAML_METRICS_SECTION, {})
     agents = yaml_content.get(YAML_AGENTS_SECTION, {})
 
     # if no "agents:" provided use default host
     if len(agents) == 0:
-        agents[TARGET_HINT_PLACEHOLDER] = {}
+        agents[TARGET_HINT_PLACEHOLDER] = None
     for hostname, hostdata in agents.items():
         metrics = []
         local_inputs = global_inputs.copy()
+        hostdata = hostdata or {}
+
         local_inputs.update(hostdata.get(YAML_METRICS_SECTION, {}))
+
         for mname, mdata in local_inputs.items():
-            if mname.lower() == YAML_CUSTOM_METRIC:
+            if mdata is None:
+                mdata = ''
+
+            if mname.lower() == YAML_CUSTOM_METRIC and isinstance(mdata, dict):
                 mtext = mdata.get(YAML_CUSTOM_METRIC_CMD, '') or str(mdata)
             else:
                 mtext = str(mdata)
