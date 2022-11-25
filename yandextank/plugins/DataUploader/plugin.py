@@ -2,6 +2,7 @@
 # TODO: make the next two lines unnecessary
 # pylint: disable=line-too-long
 # pylint: disable=missing-docstring
+# pylint: disable=method-hidden
 import logging
 import os
 import pwd

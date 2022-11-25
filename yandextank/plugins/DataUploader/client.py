@@ -6,13 +6,12 @@ import urllib.parse
 import uuid
 import grpc
 import random
-import ssl
 import requests
 import logging
 
-from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError, Timeout
 from urllib3.exceptions import ProtocolError
+from .ycloud import get_current_instance_id, AuthTokenProvider
 
 # add path with proto
 import os
@@ -721,7 +720,7 @@ class CloudGRPCClient(APIClient):
     def __init__(
             self,
             core_interrupted,
-            base_url=None,
+            base_url,
             api_attempts=10,
             connection_timeout=100.0):
         super().__init__(core_interrupted)
@@ -730,32 +729,23 @@ class CloudGRPCClient(APIClient):
         self.api_attempts = api_attempts
         self.connection_timeout = connection_timeout
         self.max_api_timeout = 120
-        creds = self._get_creds(self._base_url)
-        self.channel = grpc.secure_channel(self._base_url, creds)
+        self._token_provider = AuthTokenProvider()
+        self.channel = grpc.secure_channel(self._base_url, grpc.ssl_channel_credentials())
         self._compute_instance_id = None
         self.agent_instance_id = None
-        self._token = None
-        self._set_connection(self.token, self.compute_instance_id)
+        self._set_connection()
 
-    @staticmethod
-    def _get_creds(url):
-        cert = ssl.get_server_certificate(tuple(url.split(':')))
-        creds = grpc.ssl_channel_credentials(cert.encode('utf-8'))
-        return creds
-
-    @staticmethod
-    def _get_call_creds(token):
-        return grpc.access_token_call_credentials(token)
+    def _request_metadata(self):
+        return self._token_provider.get_auth_metadata()
 
     # TODO retry
-    def _set_connection(self, token, compute_instance_id):
+    def _set_connection(self):
         try:
             stub_register = agent_registration_service_pb2_grpc.AgentRegistrationServiceStub(self.channel)
             response = stub_register.Register(
-                agent_registration_service_pb2.RegisterRequest(compute_instance_id=compute_instance_id),
+                agent_registration_service_pb2.RegisterRequest(compute_instance_id=self.compute_instance_id),
                 timeout=self.connection_timeout,
-                metadata=[('authorization', f'Bearer {token}')]
-                # credentials=self._get_call_creds(token)
+                metadata=self._request_metadata(),
             )
             if response.agent_instance_id:
                 self.agent_instance_id = response.agent_instance_id
@@ -767,12 +757,6 @@ class CloudGRPCClient(APIClient):
                 raise self.AgentIdNotFound("Couldn't get agent cloud id")
         except Exception as e:
             raise self.NotAvailable(f"Couldn't connect to cloud load testing: {e}")
-
-    @property
-    def token(self):
-        if self._token is None:
-            self._token = get_iam_token()
-        return self._token
 
     @property
     def compute_instance_id(self):
@@ -848,7 +832,6 @@ class CloudGRPCClient(APIClient):
                         timeout = next(api_timeouts)
                     except StopIteration:
                         raise self.NotAvailable
-                    self._set_connection(self.token, instance_id)
                     logger.warning("GRPC error, will retry in %ss...", timeout)
                     time.sleep(timeout)
                     continue
@@ -865,8 +848,7 @@ class CloudGRPCClient(APIClient):
             result = self.trail_stub.Create(
                 request,
                 timeout=self.connection_timeout,
-                metadata=[('authorization', f'Bearer {self.token}')]
-                # credentials=self._get_call_creds(self.token)
+                metadata=self._request_metadata(),
             )
             logger.debug(f'Send trails: {trails}')
             return result.code
@@ -885,7 +867,7 @@ class CloudGRPCClient(APIClient):
             result = self.monitoring_stub.AddMetric(
                 request,
                 timeout=self.connection_timeout,
-                metadata=[('authorization', f'Bearer {self.token}')]
+                metadata=self._request_metadata(),
             )
             return result.code
         except grpc.RpcError as err:
@@ -965,13 +947,13 @@ class CloudGRPCClient(APIClient):
         return self.test_stub.Create(
             request,
             timeout=self.connection_timeout,
-            metadata=[('authorization', f'Bearer {self.token}')])
+            metadata=self._request_metadata(),)
 
     def get_test(self, cloud_job_id):
         return self.test_stub.Get(
             test_service_pb2.GetTestRequest(test_id=cloud_job_id),
             timeout=self.connection_timeout,
-            metadata=[('authorization', f'Bearer {self.token}')]
+            metadata=self._request_metadata()
         )
 
     def unlock_target(self, *args):
@@ -1002,7 +984,7 @@ class CloudGRPCClient(APIClient):
             result = self.test_stub.Update(
                 request,
                 timeout=self.connection_timeout,
-                metadata=[('authorization', f'Bearer {self.token}')]
+                metadata=self._request_metadata()
             )
             logger.debug('Set imbalance %s at %s. Comment: %s', rps, timestamp, comment)
             return result.code
@@ -1010,43 +992,3 @@ class CloudGRPCClient(APIClient):
             if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
                 raise self.NotAvailable('Connection is closed. Try to set it again.')
             raise err
-
-
-# ====== HELPER ======
-COMPUTE_INSTANCE_METADATA_URL = 'http://169.254.169.254/computeMetadata/v1/instance/?recursive=true'
-COMPUTE_INSTANCE_SA_TOKEN_URL = 'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token'
-
-
-def get_instance_metadata():
-    url = COMPUTE_INSTANCE_METADATA_URL
-    try:
-        session = requests.Session()
-        session.mount(url, HTTPAdapter(max_retries=5))
-        response = session.get(url, headers={"Metadata-Flavor": "Google"}).json()
-        logger.debug(f"Instance metadata {response}")
-        return response
-    except Exception as e:
-        logger.error(f"Couldn't get instance metadata of current vm: {e}")
-        raise RuntimeError("Couldn't get instance metadata of current vm: {e}")
-
-
-def get_current_instance_id():
-    response = get_instance_metadata()
-    if response:
-        return response.get('id')
-    raise RuntimeError("Metadata is empty")
-
-
-def get_iam_token():
-    url = COMPUTE_INSTANCE_SA_TOKEN_URL
-    try:
-        session = requests.Session()
-        session.mount(url, HTTPAdapter(max_retries=5))
-        raw_response = session.get(url, headers={"Metadata-Flavor": "Google"})
-        response = raw_response.json()
-        iam_token = response.get('access_token')
-        logger.debug("Get IAM token")
-        return iam_token
-    except Exception as e:
-        logger.error(f"Couldn't get iam token for instance service account: {e}")
-        raise RuntimeError("Couldn't get iam token for instance service account: {e}")

@@ -68,7 +68,8 @@ analytic tools for the results they produce.
         'pandas<=1.2.5', 'numpy<=1.19.5',
         'pip>=8.1.2',
         'pyyaml>=4.2b1', 'cerberus==1.3.1', 'influxdb>=5.0.0', 'netort>=0.8.0',
-        'retrying>=1.3.3', 'pytest-runner', 'typing', 'grpcio', 'grpcio-tools'
+        'retrying>=1.3.3', 'pytest-runner', 'typing', 'grpcio', 'grpcio-tools',
+        'PyJWT',
     ],
     setup_requires=[
         'grpcio-tools'
