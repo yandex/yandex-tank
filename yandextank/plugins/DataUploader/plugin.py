@@ -26,6 +26,7 @@ from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
 from .client import APIClient, OverloadClient, LPRequisites, CloudGRPCClient
 from ...common.util import FileScanner
+from .loadtesting_agent import create_loadtesting_agent
 
 from netort.data_processing import Drain
 
@@ -590,8 +591,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             client = OverloadClient
             self._api_token = self.read_token(self.get_option("token_file"))
         elif self.backend_type == BackendTypes.CLOUD:
+            loadtesting_agent = create_loadtesting_agent(backend_url=self.get_option('api_address'),
+                                                         config=os.getenv('LOADTESTING_AGENT_CONFIG'))
             return CloudGRPCClient(core_interrupted=self.interrupted,
-                                   base_url=self.get_option('api_address'),
+                                   loadtesting_agent=loadtesting_agent,
                                    api_attempts=self.get_option('api_attempts'),
                                    connection_timeout=self.get_option('connection_timeout'))
         else:

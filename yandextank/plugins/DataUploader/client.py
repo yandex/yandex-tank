@@ -11,7 +11,7 @@ import logging
 
 from requests.exceptions import ConnectionError, Timeout
 from urllib3.exceptions import ProtocolError
-from .ycloud import get_current_instance_id, AuthTokenProvider
+from .loadtesting_agent import LoadtestingAgent
 
 # add path with proto
 import os
@@ -20,13 +20,10 @@ _PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
 sys.path.append(os.path.join(_PACKAGE_PATH, 'proto'))
 
 try:
-    from yandex.cloud.loadtesting.agent.v1 import trail_service_pb2, trail_service_pb2_grpc, \
-        agent_registration_service_pb2, agent_registration_service_pb2_grpc
+    from yandex.cloud.loadtesting.agent.v1 import trail_service_pb2, trail_service_pb2_grpc
 except ImportError:
     import trail_service_pb2
     import trail_service_pb2_grpc
-    import agent_registration_service_pb2
-    import agent_registration_service_pb2_grpc
 
 try:
     from yandex.cloud.loadtesting.agent.v1 import test_service_pb2_grpc, test_service_pb2, test_pb2
@@ -720,49 +717,26 @@ class CloudGRPCClient(APIClient):
     def __init__(
             self,
             core_interrupted,
-            base_url,
+            loadtesting_agent: LoadtestingAgent,
             api_attempts=10,
             connection_timeout=100.0):
         super().__init__(core_interrupted)
         self.core_interrupted = core_interrupted
-        self._base_url = base_url
+        self._base_url = loadtesting_agent.backend_url
         self.api_attempts = api_attempts
         self.connection_timeout = connection_timeout
         self.max_api_timeout = 120
-        self._token_provider = AuthTokenProvider()
-        self.channel = grpc.secure_channel(self._base_url, grpc.ssl_channel_credentials())
-        self._compute_instance_id = None
-        self.agent_instance_id = None
-        self._set_connection()
+        grpc_channel = loadtesting_agent.cloud_channel
+        self.token_provider = loadtesting_agent.token_provider
+
+        self.compute_instance_id = loadtesting_agent.compute_instance_id
+        self.agent_instance_id = loadtesting_agent.agent_id
+        self.trail_stub = trail_service_pb2_grpc.TrailServiceStub(grpc_channel)
+        self.monitoring_stub = monitoring_service_pb2_grpc.MonitoringServiceStub(grpc_channel)
+        self.test_stub = test_service_pb2_grpc.TestServiceStub(grpc_channel)
 
     def _request_metadata(self):
-        return self._token_provider.get_auth_metadata()
-
-    # TODO retry
-    def _set_connection(self):
-        try:
-            stub_register = agent_registration_service_pb2_grpc.AgentRegistrationServiceStub(self.channel)
-            response = stub_register.Register(
-                agent_registration_service_pb2.RegisterRequest(compute_instance_id=self.compute_instance_id),
-                timeout=self.connection_timeout,
-                metadata=self._request_metadata(),
-            )
-            if response.agent_instance_id:
-                self.agent_instance_id = response.agent_instance_id
-                self.trail_stub = trail_service_pb2_grpc.TrailServiceStub(self.channel)
-                self.monitoring_stub = monitoring_service_pb2_grpc.MonitoringServiceStub(self.channel)
-                self.test_stub = test_service_pb2_grpc.TestServiceStub(self.channel)
-                logger.info('Init connection to cloud load testing is succeeded')
-            else:
-                raise self.AgentIdNotFound("Couldn't get agent cloud id")
-        except Exception as e:
-            raise self.NotAvailable(f"Couldn't connect to cloud load testing: {e}")
-
-    @property
-    def compute_instance_id(self):
-        if self._compute_instance_id is None:
-            self._compute_instance_id = get_current_instance_id()
-        return self._compute_instance_id
+        return self.token_provider.get_auth_metadata()
 
     def api_timeouts(self):
         for attempt in range(self.api_attempts - 1):

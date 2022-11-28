@@ -34,6 +34,9 @@ def get_instance_metadata():
         response = session.get(url, headers={"Metadata-Flavor": "Google"}).json()
         LOGGER.debug(f"Instance metadata {response}")
         return response
+    except requests.exceptions.ConnectionError:
+        LOGGER.warning('Compute metadata service is unavailable')
+        return
     except Exception as e:
         LOGGER.error(f"Couldn't get instance metadata of current vm: {e}")
         raise
@@ -43,7 +46,7 @@ def get_current_instance_id():
     response = get_instance_metadata()
     if response:
         return response.get('id')
-    raise RuntimeError("Metadata is empty")
+    return
 
 
 class JWTError(Exception):

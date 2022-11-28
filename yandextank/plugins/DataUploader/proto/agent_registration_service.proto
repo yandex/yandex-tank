@@ -2,12 +2,20 @@ syntax = "proto3";
 
 package yandex.cloud.loadtesting.agent.v1;
 
+import "operation.proto";
+
 option go_package = "agent";
 
 
 service AgentRegistrationService {
 
   rpc Register (RegisterRequest) returns (RegisterResponse);
+  rpc ExternalAgentRegister (ExternalAgentRegisterRequest) returns (operation.Operation) {
+    option (operation) = {
+      metadata: "ExternalAgentRegisterMetadata"
+      response: "AgentInstance"
+    };
+  };
 
 }
 
@@ -16,5 +24,16 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
+  string agent_instance_id = 1;
+}
+
+message ExternalAgentRegisterRequest {
+  string folder_id = 1;
+  string compute_instance_id = 2;
+  string name = 3;
+  string agent_version = 4;
+}
+
+message ExternalAgentRegisterMetadata {
   string agent_instance_id = 1;
 }
