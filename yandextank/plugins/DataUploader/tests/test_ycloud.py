@@ -1,7 +1,8 @@
 import pytest
 import os
-from unittest.mock import patch
-from yandextank.plugins.DataUploader.ycloud import load_sa_key, build_sa_key, SAKey, JWTError, AuthTokenProvider
+from unittest.mock import patch, MagicMock
+from yandextank.plugins.DataUploader.ycloud import JwtTokenRequester, load_sa_key, build_sa_key, SAKey, \
+    JWTError, AuthTokenProvider, _get_host_port_from_url
 from yandextank.common.util import get_test_path
 
 RAW_KEY_FILE_PATH = os.path.join(get_test_path(), 'yandextank/plugins/DataUploader/tests/test_ycloud/raw_key.txt')
@@ -78,3 +79,31 @@ def test_build_sa_key(args, expected):
     assert actual.sa_id == expected.sa_id
     assert actual.key_id == expected.key_id
     assert actual.key == expected.key
+
+
+@pytest.mark.parametrize('url, expected_host, expected_port', [
+    ('localhost:443', 'localhost', 443),
+    ('loadtesting.api.cloud.yandex.net:443', 'loadtesting.api.cloud.yandex.net', 443),
+    ('https://api.cloud.yandex.net:1000', 'api.cloud.yandex.net', 1000),
+    ('https://api.cloud.yandex.net/iam/v1/tokens', 'api.cloud.yandex.net', None),
+    ('https://128.13.14.65:100', '128.13.14.65', 100),
+    ('128.13.14.65:100', '128.13.14.65', 100),
+])
+def test_urlparser(url, expected_host, expected_port):
+    host, port = _get_host_port_from_url(url)
+
+    assert host == expected_host
+    assert port == expected_port
+
+
+@pytest.mark.parametrize('url, expected', [
+    ('localhost:443', 'https://localhost/iam/v1/tokens'),
+    ('loadtesting.api.cloud.yandex.net:443', 'https://loadtesting.api.cloud.yandex.net/iam/v1/tokens'),
+    ('https://api.cloud.yandex.net:1000', 'https://api.cloud.yandex.net/iam/v1/tokens'),
+    ('https://api.cloud.yandex.net/iam/v1/tokens', 'https://api.cloud.yandex.net/iam/v1/tokens'),
+    ('https://128.13.14.65:100', 'https://128.13.14.65/iam/v1/tokens'),
+    ('128.13.14.65:100', 'https://128.13.14.65/iam/v1/tokens'),
+    (None, 'https://iam.api.cloud.yandex.net/iam/v1/tokens'),
+])
+def test_audience_url(url, expected):
+    assert expected == JwtTokenRequester(url, MagicMock(), MagicMock()).audience_url

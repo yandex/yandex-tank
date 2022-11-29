@@ -4,7 +4,7 @@ import logging
 import yaml
 from pathlib import Path
 
-from yandextank.plugins.DataUploader.ycloud import get_instance_metadata, AuthTokenProvider, build_sa_key
+from yandextank.plugins.DataUploader.ycloud import get_instance_metadata, AuthTokenProvider, build_sa_key, create_cloud_channel
 
 try:
     from yandex.cloud.loadtesting.agent.v1 import agent_registration_service_pb2, agent_registration_service_pb2_grpc
@@ -148,21 +148,12 @@ def create_loadtesting_agent(backend_url, config=None, insecure_connection=False
         sa_key_id=config.get('key_id'),
         sa_id=config.get('service_account_id'),
     )
-    cloud_channel, token_provider = create_cloud_channel(config, backend_url, insecure_connection, sa_key, channel_options)
-    return LoadtestingAgent(backend_url, cloud_channel, token_provider,
-                            agent_id_file=config.get('agent_id_file'),
-                            agent_name=config.get('agent_name'),
-                            folder_id=config.get('folder_id'))
-
-
-def create_cloud_channel(config, backend_url, insecure_connection, sa_key=None, channel_options=None):
     token_provider = AuthTokenProvider(
         iam_endpoint=config.get("iam_token_service_url"),
         sa_key=sa_key
     )
-    channel_options = channel_options or ()
-    if insecure_connection:
-        channel = grpc.insecure_channel(backend_url, channel_options + (('grpc.enable_http_proxy', 0),))
-    else:
-        channel = grpc.secure_channel(backend_url, grpc.ssl_channel_credentials(), channel_options)
-    return channel, token_provider
+    cloud_channel = create_cloud_channel(backend_url, insecure_connection=insecure_connection, channel_options=channel_options)
+    return LoadtestingAgent(backend_url, cloud_channel, token_provider,
+                            agent_id_file=config.get('agent_id_file'),
+                            agent_name=config.get('agent_name'),
+                            folder_id=config.get('folder_id'))

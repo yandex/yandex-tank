@@ -104,7 +104,7 @@ class AuthTokenProvider(object):
                 Key ID for JWT auth"""
 
         self._iam_endpoint = iam_endpoint or IAM_TOKEN_SERVICE_URL
-        self._token_requester = self.get_auth_token_requester(self.get_iam_auth_channel, **kwargs)
+        self._token_requester = self.get_auth_token_requester(iam_endpoint=self._iam_endpoint, lazy_channel=self.get_iam_auth_channel, **kwargs)
         self._cached_iam_token = None
         self._expire_at = None
 
@@ -184,11 +184,11 @@ class JwtTokenRequester(object):
 
         channel = channel or grpc.secure_channel(self.iam_endpoint, grpc.ssl_channel_credentials())
         self.iam_stub = IamTokenServiceStub(channel)
-        parsed_url = urlparse(self.iam_endpoint)
-        if not parsed_url.hostname:
+        parsed_host, _ = _get_host_port_from_url(self.iam_endpoint)
+        if not parsed_host:
             raise JWTError(f'{self.iam_endpoint} is incorrect host for JWT audience. Use "iam.api.cloud.yandex.net:443"')
 
-        self.audience_url = f'https://{parsed_url.hostname}/iam/v1/tokens'
+        self.audience_url = f'https://{parsed_host}/iam/v1/tokens'
 
     def get_token(self) -> Tuple[str, float]:
         """Get an IAM token by generating and sending a JWT token to the IAM service.
@@ -259,3 +259,20 @@ def _load_sa_key_from_pem(file_path: str) -> SAKey:
         sa_id='',
         key=Path(file_path).read_text()
     )
+
+
+def _get_host_port_from_url(url: str) -> Tuple[str, str]:
+    """Parse well-formed URLs and host:port pairs as well. Doesn't support ipv6 hosts."""
+    result = urlparse(url)
+    if not result.netloc and not url.startswith('//'):
+        result = urlparse(f'//{url}')
+    return result.hostname, result.port
+
+
+def create_cloud_channel(backend_url, insecure_connection=False, channel_options=None) -> grpc.Channel:
+    channel_options = channel_options or ()
+    if insecure_connection:
+        channel = grpc.insecure_channel(backend_url, channel_options + (('grpc.enable_http_proxy', 0),))
+    else:
+        channel = grpc.secure_channel(backend_url, grpc.ssl_channel_credentials(), channel_options)
+    return channel

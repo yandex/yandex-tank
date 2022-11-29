@@ -3,6 +3,7 @@ syntax = "proto3";
 package yandex.cloud.loadtesting.agent.v1;
 
 import "operation.proto";
+import "test_service.proto";
 
 option go_package = "agent";
 
