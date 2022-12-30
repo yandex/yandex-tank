@@ -815,7 +815,8 @@ class CloudGRPCClient(APIClient):
     def send_trails(self, instance_id, cloud_job_id, trails):
         try:
             request = trail_service_pb2.CreateTrailRequest(
-                compute_instance_id=str(instance_id),
+                compute_instance_id=instance_id,
+                agent_instance_id=self.agent_instance_id,
                 job_id=str(cloud_job_id),
                 data=trails
             )
@@ -834,7 +835,8 @@ class CloudGRPCClient(APIClient):
     def _send_monitoring(self, instance_id, cloud_job_id, chunks):
         try:
             request = monitoring_service_pb2.AddMetricRequest(
-                compute_instance_id=str(instance_id),
+                compute_instance_id=instance_id,
+                agent_instance_id=self.agent_instance_id,
                 job_id=str(cloud_job_id),
                 chunks=chunks
             )

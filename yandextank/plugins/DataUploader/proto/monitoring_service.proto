@@ -14,6 +14,7 @@ message AddMetricRequest {
   string compute_instance_id = 1;
   string job_id = 3;
   repeated MetricChunk chunks = 4;
+  string agent_instance_id = 5;
 }
 
 message MetricChunk {
