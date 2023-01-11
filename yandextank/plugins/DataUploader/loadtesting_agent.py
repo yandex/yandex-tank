@@ -2,6 +2,7 @@ from enum import Enum
 import grpc
 import logging
 import yaml
+import os
 from pathlib import Path
 
 from yandextank.plugins.DataUploader.ycloud import get_instance_metadata, AuthTokenProvider, build_sa_key, create_cloud_channel
@@ -143,10 +144,18 @@ def create_loadtesting_agent(backend_url, config=None, insecure_connection=False
     if not config:
         config = {}
 
+    agent_name = os.getenv('LOADTESTING_AGENT_NAME', config.get('agent_name'))
+    folder_id = os.getenv('LOADTESTING_FOLDER_ID', config.get('folder_id'))
+    service_account_id = os.getenv('LOADTESTING_SA_ID', config.get('service_account_id'))
+    key_id = os.getenv('LOADTESTING_SA_KEY_ID', config.get('key_id'))
+    private_key_file = os.getenv('LOADTESTING_SA_KEY_FILE', config.get('private_key'))
+    private_key_payload = os.getenv('LOADTESTING_SA_KEY_PAYLOAD', None)
+
     sa_key = build_sa_key(
-        sa_key_file=config.get('private_key'),
-        sa_key_id=config.get('key_id'),
-        sa_id=config.get('service_account_id'),
+        sa_key=private_key_payload,
+        sa_key_file=private_key_file,
+        sa_key_id=key_id,
+        sa_id=service_account_id,
     )
     token_provider = AuthTokenProvider(
         iam_endpoint=config.get("iam_token_service_url"),
@@ -155,5 +164,5 @@ def create_loadtesting_agent(backend_url, config=None, insecure_connection=False
     cloud_channel = create_cloud_channel(backend_url, insecure_connection=insecure_connection, channel_options=channel_options)
     return LoadtestingAgent(backend_url, cloud_channel, token_provider,
                             agent_id_file=config.get('agent_id_file'),
-                            agent_name=config.get('agent_name'),
-                            folder_id=config.get('folder_id'))
+                            agent_name=agent_name,
+                            folder_id=folder_id)
