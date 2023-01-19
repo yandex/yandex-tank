@@ -160,7 +160,7 @@ class Aggregator(object):
 
     def __iter__(self):
         for ts, chunk, rps in self.source:
-            by_tag = list(chunk.groupby([self.groupby]))
+            by_tag = list(chunk.groupby(self.groupby))
             start_time = time.time()
             result = {
                 "ts": ts,
