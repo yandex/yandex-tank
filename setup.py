@@ -63,7 +63,7 @@ analytic tools for the results they produce.
     namespace_packages=["yandextank", "yandextank.plugins"],
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
-        'cryptography>=2.2.1', 'pyopenssl>=22.0.0',
+        'cryptography>=38.0.0', 'pyopenssl>=22.0.0',
         'psutil>=1.2.1', 'requests>=2.5.1', 'paramiko>=1.16.0',
         'pandas<=1.2.5', 'numpy<=1.19.5',
         'pip>=8.1.2',
