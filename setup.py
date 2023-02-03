@@ -107,7 +107,6 @@ analytic tools for the results they produce.
         'yandextank.plugins.Android': ['binary/*', 'config/*'],
         'yandextank.plugins.Autostop': ['config/*'],
         'yandextank.plugins.Bfg': ['config/*'],
-        'yandextank.plugins.CloudUploader': ['config/*'],
         'yandextank.plugins.Console': ['config/*'],
         'yandextank.plugins.DataUploader': ['config/*', 'proto/*'],
         'yandextank.plugins.InfluxUploader': ['config/*'],
