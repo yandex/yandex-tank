@@ -492,8 +492,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 logger.warn(e)
                 self.lp_job.interrupted.set()
             except Exception:
-                logger.error("Mysterious exception", exc_info=sys.exc_info())
-                break
+                logger.exception("Unhandled exception occured. Skipping data chunk...")
         # purge queue
         while not queue.empty():
             if queue.get_nowait() is None:
