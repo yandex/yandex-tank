@@ -17,6 +17,7 @@ LOGGER = logging.getLogger(__name__)  # pylint: disable=C0103
 
 METADATA_LT_CREATED_ATTR = 'loadtesting-created'
 METADATA_AGENT_VERSION_ATTR = 'agent-version'
+ANONYMOUS_AGENT_ID = None
 
 
 class AgentOrigin(Enum):
@@ -57,7 +58,7 @@ class LoadtestingAgent(object):
 
         self._try_identify_compute_metadata()
         self.agent_origin = agent_origin or self._identify_agent_origin()
-        self.agent_id = agent_id or self._load_agent_id() or self._identify_agent_id()
+        self.agent_id = agent_id or self._identify_agent_id()
 
     def _identify_agent_origin(self) -> AgentOrigin:
         if not self.compute_instance_id:
@@ -89,16 +90,18 @@ class LoadtestingAgent(object):
             LOGGER.info(f'The agent has been registered with id={response.agent_instance_id}')
             return response.agent_instance_id
 
-        if self.agent_origin == AgentOrigin.COMPUTE_EXTERNAL:
-            args = dict(compute_instance_id=self.compute_instance_id)
-        elif self.agent_origin == AgentOrigin.EXTERNAL and self._can_register_external_agent():
-            args = dict(name=self.agent_name,
-                        folder_id=self.folder_id,)
-        elif agent_id := self._load_agent_id():
+        if agent_id := self._load_agent_id():
             LOGGER.info(f'Load agent_id from file {agent_id}')
             return agent_id
+        elif self.is_persistent_external_agent():
+            args = dict(name=self.agent_name, folder_id=self.folder_id)
+            if self.agent_origin == AgentOrigin.COMPUTE_EXTERNAL:
+                args.update(dict(compute_instance_id=self.compute_instance_id))
+        elif self.is_anonymous_external_agent():
+            return ANONYMOUS_AGENT_ID
         else:
-            raise RuntimeError('Unable to identify agent id. If you running external agent ensure "agent_name" and "folder_id" are provided')
+            raise AgentOriginError('Unable to identify agent id. If you running external agent ensure "agent_name" and "folder_id" are provided')
+
         response = self._register_stub.ExternalAgentRegister(
             agent_registration_service_pb2.ExternalAgentRegisterRequest(
                 **args
@@ -117,10 +120,18 @@ class LoadtestingAgent(object):
             meta.extend(additional_meta)
         return meta
 
-    def _can_register_external_agent(self) -> bool:
-        return self.agent_name and self.folder_id
+    def is_external(self) -> bool:
+        return self.agent_origin in [AgentOrigin.EXTERNAL, AgentOrigin.COMPUTE_EXTERNAL]
+
+    def is_anonymous_external_agent(self) -> bool:
+        return self.is_external() and not bool(self.agent_name)
+
+    def is_persistent_external_agent(self) -> bool:
+        return bool(self.is_external() and self.agent_name and self.folder_id)
 
     def store_agent_id(self):
+        if not self.agent_id:
+            return
         if not self.agent_id_file:
             raise ValueError('agent_id_file parameter must be set for store_agent_id')
         with open(self.agent_id_file, 'w') as f:

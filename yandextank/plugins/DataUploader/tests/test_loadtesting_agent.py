@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock
 from google.protobuf.any_pb2 import Any
 
 from yandextank.plugins.DataUploader.loadtesting_agent import agent_registration_service_pb2, \
-    LoadtestingAgent, AgentOrigin, METADATA_LT_CREATED_ATTR, METADATA_AGENT_VERSION_ATTR
+    LoadtestingAgent, AgentOrigin, METADATA_LT_CREATED_ATTR, METADATA_AGENT_VERSION_ATTR, AgentOriginError
 from yandex.cloud.operation import operation_pb2
 
 
@@ -58,7 +58,7 @@ def test_agent_send_version_on_greet(patch_agent_registration_stub_register):
 
 @pytest.mark.usefixtures('patch_agent_registration_stub', 'patch_loadtesting_agent_get_instance_metadata')
 @pytest.mark.parametrize('agent_origin, agent_name, folder_id', [
-    (AgentOrigin.COMPUTE_EXTERNAL, '', ''),
+    (AgentOrigin.COMPUTE_EXTERNAL, 'agent name', 'folder id'),
     (AgentOrigin.EXTERNAL, 'agent name', 'folder id')
 ])
 def test_external_agent_registration(agent_origin, agent_name, folder_id, patch_agent_registration_stub_external_register):
@@ -85,8 +85,10 @@ def test_external_agent_registration(agent_origin, agent_name, folder_id, patch_
     (AgentOrigin.EXTERNAL, AgentOrigin.COMPUTE_EXTERNAL)
 ])
 def test_external_agent_registration_fail(agent_origin):
-    with pytest.raises(RuntimeError):
-        LoadtestingAgent('backend_url', MagicMock(), MagicMock(), agent_origin=agent_origin)
+    with patch.object(LoadtestingAgent, '_load_agent_id') as load_agent_id:
+        load_agent_id.return_value = None
+        with pytest.raises(AgentOriginError):
+            LoadtestingAgent('backend_url', MagicMock(), MagicMock(), agent_origin=agent_origin, agent_name='persistent')
 
 
 @pytest.mark.usefixtures('patch_agent_registration_stub', 'patch_agent_registration_stub_register')
