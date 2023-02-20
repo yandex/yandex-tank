@@ -1,10 +1,12 @@
 import uuid
+import os
 import pytest
 from unittest.mock import patch, MagicMock
 from google.protobuf.any_pb2 import Any
 
 from yandextank.plugins.DataUploader.loadtesting_agent import agent_registration_service_pb2, \
-    LoadtestingAgent, AgentOrigin, METADATA_LT_CREATED_ATTR, METADATA_AGENT_VERSION_ATTR, AgentOriginError
+    LoadtestingAgent, AgentOrigin, METADATA_LT_CREATED_ATTR, METADATA_AGENT_VERSION_ATTR, AgentOriginError, \
+    use_yandex_compute_metadata, RUN_IN_ENVIRONMENT_ENV, try_identify_compute_metadata, KnownEnvironment
 from yandex.cloud.operation import operation_pb2
 
 
@@ -93,6 +95,7 @@ def test_external_agent_registration_fail(agent_origin):
 
 @pytest.mark.usefixtures('patch_agent_registration_stub', 'patch_agent_registration_stub_register')
 def test_identify_compute_metadata(patch_loadtesting_agent_get_instance_metadata):
+    os.environ[RUN_IN_ENVIRONMENT_ENV] = KnownEnvironment.YANDEX_COMPUTE.value
     version = str(uuid.uuid4())
     patch_loadtesting_agent_get_instance_metadata.return_value = {
         'id': 'some_id',
@@ -101,9 +104,21 @@ def test_identify_compute_metadata(patch_loadtesting_agent_get_instance_metadata
             METADATA_LT_CREATED_ATTR: True
         }
     }
+    compute_instance_id, agent_version, instance_lt_created = try_identify_compute_metadata()
 
-    lt = LoadtestingAgent('backend_url', MagicMock(), MagicMock())
+    assert compute_instance_id == 'some_id'
+    assert agent_version == version
+    assert instance_lt_created is True
 
-    assert lt.compute_instance_id == 'some_id'
-    assert lt.agent_version == version
-    assert lt.agent_origin == AgentOrigin.COMPUTE_LT_CREATED
+
+@pytest.mark.parametrize('env_value, expected', [
+    ('', False),
+    ('bajsdh', False),
+    ('YANDEX_CLOUD_COMPUTE', True),
+])
+def test_use_yandex_compute_metadata(env_value, expected):
+    try:
+        os.environ[RUN_IN_ENVIRONMENT_ENV] = env_value
+        assert use_yandex_compute_metadata() == expected
+    finally:
+        os.unsetenv(RUN_IN_ENVIRONMENT_ENV)

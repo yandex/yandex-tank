@@ -18,6 +18,7 @@ LOGGER = logging.getLogger(__name__)  # pylint: disable=C0103
 METADATA_LT_CREATED_ATTR = 'loadtesting-created'
 METADATA_AGENT_VERSION_ATTR = 'agent-version'
 ANONYMOUS_AGENT_ID = None
+RUN_IN_ENVIRONMENT_ENV = 'LOADTESTING_ENVIRONMENT'
 
 
 class AgentOrigin(Enum):
@@ -25,6 +26,10 @@ class AgentOrigin(Enum):
     COMPUTE_LT_CREATED = 1
     COMPUTE_EXTERNAL = 2
     EXTERNAL = 3
+
+
+class KnownEnvironment(Enum):
+    YANDEX_COMPUTE = 'YANDEX_CLOUD_COMPUTE'
 
 
 class AgentOriginError(Exception):
@@ -43,12 +48,14 @@ class LoadtestingAgent(object):
         agent_name: str = None,
         agent_version: str = None,
         folder_id: str = None,
+        compute_instance_id: str = None,
+        instance_lt_created: bool = False,
     ):
         self.backend_url = backend_url
         self.cloud_channel = grpc_channel
         self.token_provider = token_provider
-        self.compute_instance_id = None
-        self.instance_lt_created = False
+        self.compute_instance_id = compute_instance_id
+        self.instance_lt_created = bool(instance_lt_created)
         self.timeout = 30.0
         self._register_stub = agent_registration_service_pb2_grpc.AgentRegistrationServiceStub(grpc_channel)
         self.agent_id_file = agent_id_file
@@ -56,7 +63,6 @@ class LoadtestingAgent(object):
         self.agent_name = agent_name
         self.agent_version = agent_version
 
-        self._try_identify_compute_metadata()
         self.agent_origin = agent_origin or self._identify_agent_origin()
         self.agent_id = agent_id or self._identify_agent_id()
 
@@ -68,16 +74,6 @@ class LoadtestingAgent(object):
             return AgentOrigin.COMPUTE_LT_CREATED
 
         return AgentOrigin.COMPUTE_EXTERNAL
-
-    def _try_identify_compute_metadata(self):
-        metadata = get_instance_metadata()
-        if metadata:
-            self.compute_instance_id = metadata.get('id')
-
-            attrs = metadata.get('attributes')
-            self.agent_version = self.agent_version or attrs.get(METADATA_AGENT_VERSION_ATTR, '')
-            self.instance_lt_created = attrs.get(METADATA_LT_CREATED_ATTR, False)
-            LOGGER.info(f'identified compute instance id "{self.compute_instance_id}", agent version "{self.agent_version}", lt created "{self.instance_lt_created}"')
 
     def _identify_agent_id(self) -> str:
         if self.agent_origin == AgentOrigin.COMPUTE_LT_CREATED:
@@ -161,6 +157,7 @@ def create_loadtesting_agent(backend_url, config=None, insecure_connection=False
     key_id = os.getenv('LOADTESTING_SA_KEY_ID', config.get('key_id'))
     private_key_file = os.getenv('LOADTESTING_SA_KEY_FILE', config.get('private_key'))
     private_key_payload = os.getenv('LOADTESTING_SA_KEY_PAYLOAD', None)
+    compute_instance_id, agent_version, instance_lt_created = try_identify_compute_metadata()
 
     sa_key = build_sa_key(
         sa_key=private_key_payload,
@@ -176,4 +173,27 @@ def create_loadtesting_agent(backend_url, config=None, insecure_connection=False
     return LoadtestingAgent(backend_url, cloud_channel, token_provider,
                             agent_id_file=config.get('agent_id_file'),
                             agent_name=agent_name,
-                            folder_id=folder_id)
+                            folder_id=folder_id,
+                            compute_instance_id=compute_instance_id,
+                            agent_version=agent_version,
+                            instance_lt_created=instance_lt_created)
+
+
+def use_yandex_compute_metadata():
+    return os.getenv(RUN_IN_ENVIRONMENT_ENV, '') == KnownEnvironment.YANDEX_COMPUTE.value
+
+
+def try_identify_compute_metadata():
+    if not use_yandex_compute_metadata():
+        return None, None, None
+
+    metadata = get_instance_metadata()
+    if not metadata:
+        return None, None, None
+
+    compute_instance_id = metadata.get('id')
+    attrs = metadata.get('attributes')
+    agent_version = attrs.get(METADATA_AGENT_VERSION_ATTR, '')
+    instance_lt_created = attrs.get(METADATA_LT_CREATED_ATTR, False)
+    LOGGER.info(f'identified compute instance id "{compute_instance_id}", agent version "{agent_version}", lt created "{instance_lt_created}"')
+    return compute_instance_id, agent_version, instance_lt_created
