@@ -85,7 +85,7 @@ Line format: ``GET||/url||case_tag||body(optional)``
           headers = ''.join('{0}: {1}\r\n'.format(k, v) for k, v in request.headers.items()),
           body = request.body or "",
       )
-      return "{req_size}\n{req}\r\n".format(req_size = len(req), req = req)
+      return "{req_size} {url}\n{req}\r\n".format(req_size = len(req), url = request.url, req = req)
     
   #POST multipart form data
   def post_multipart(host, port, namespace, files, headers, payload):
