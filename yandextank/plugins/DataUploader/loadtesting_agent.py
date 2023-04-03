@@ -96,7 +96,7 @@ class LoadtestingAgent(object):
         elif self.is_anonymous_external_agent():
             return ANONYMOUS_AGENT_ID
         else:
-            raise AgentOriginError('Unable to identify agent id. If you running external agent ensure "agent_name" and "folder_id" are provided')
+            raise AgentOriginError('Unable to identify agent id. If you running external agent ensure folder id and service account key are provided')
 
         response = self._register_stub.ExternalAgentRegister(
             agent_registration_service_pb2.ExternalAgentRegisterRequest(
@@ -120,7 +120,7 @@ class LoadtestingAgent(object):
         return self.agent_origin in [AgentOrigin.EXTERNAL, AgentOrigin.COMPUTE_EXTERNAL]
 
     def is_anonymous_external_agent(self) -> bool:
-        return self.is_external() and not bool(self.agent_name)
+        return self.is_external() and not bool(self.agent_name) and self.folder_id
 
     def is_persistent_external_agent(self) -> bool:
         return bool(self.is_external() and self.agent_name and self.folder_id)
@@ -156,7 +156,7 @@ def create_loadtesting_agent(backend_url, config=None, insecure_connection=False
     service_account_id = os.getenv('LOADTESTING_SA_ID', config.get('service_account_id'))
     key_id = os.getenv('LOADTESTING_SA_KEY_ID', config.get('key_id'))
     private_key_file = os.getenv('LOADTESTING_SA_KEY_FILE', config.get('private_key'))
-    private_key_payload = os.getenv('LOADTESTING_SA_KEY_PAYLOAD', None)
+    private_key_payload = os.getenv('LOADTESTING_SA_KEY_PAYLOAD', config.get('service_account_private_key'))
     compute_instance_id, agent_version, instance_lt_created = try_identify_compute_metadata()
 
     sa_key = build_sa_key(

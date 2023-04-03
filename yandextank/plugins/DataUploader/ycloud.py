@@ -37,8 +37,8 @@ def get_instance_metadata():
     except requests.exceptions.ConnectionError:
         LOGGER.warning('Compute metadata service is unavailable')
         return
-    except Exception as e:
-        LOGGER.error(f"Couldn't get instance metadata of current vm: {e}")
+    except Exception:
+        LOGGER.exception("Couldn't get instance metadata of current vm")
         raise
 
 
@@ -49,7 +49,11 @@ def get_current_instance_id():
     return
 
 
-class JWTError(Exception):
+class AuthError(Exception):
+    pass
+
+
+class JWTError(AuthError):
     pass
 
 
@@ -119,7 +123,7 @@ class AuthTokenProvider(object):
         return (("authorization", "Bearer " + self.get_token()),)
 
     def get_iam_auth_channel(self, options=None) -> grpc.Channel:
-        return grpc.secure_channel(self._iam_endpoint, grpc.ssl_channel_credentials(), options=options)
+        return create_cloud_channel(self._iam_endpoint, channel_options=options)
 
     def _fresh(self):
         if self._cached_iam_token is None:
@@ -162,7 +166,7 @@ def get_iam_token_from_metadata() -> Tuple[str, float]:
     url = COMPUTE_INSTANCE_SA_TOKEN_URL
     try:
         session = requests.Session()
-        session.mount(url, HTTPAdapter(max_retries=5))
+        session.mount(url, HTTPAdapter(max_retries=2))
         token_request_time = time.time()
         raw_response = session.get(url, headers={"Metadata-Flavor": "Google"})
         response = raw_response.json()
@@ -171,8 +175,9 @@ def get_iam_token_from_metadata() -> Tuple[str, float]:
         LOGGER.debug("Get IAM token")
         return iam_token, expire_at
     except Exception as e:
-        LOGGER.error(f"Couldn't get iam token for instance service account: {e}")
-        raise
+        msg = "Couldn't get iam token for instance service account"
+        LOGGER.exception(msg)
+        raise AuthError(msg) from e
 
 
 class JwtTokenRequester(object):
@@ -182,7 +187,7 @@ class JwtTokenRequester(object):
         if not sa_key or not self.sa_key.validate():
             raise JWTError('Service account key is mandatory for JWT auth')
 
-        channel = channel or grpc.secure_channel(self.iam_endpoint, grpc.ssl_channel_credentials())
+        channel = channel or create_cloud_channel(self.iam_endpoint)
         self.iam_stub = IamTokenServiceStub(channel)
         parsed_host, _ = _get_host_port_from_url(self.iam_endpoint)
         if not parsed_host:
@@ -199,7 +204,7 @@ class JwtTokenRequester(object):
             response = self.iam_stub.Create(CreateIamTokenRequest(jwt=self.create_jwt()))
             return response.iam_token, response.expires_at.ToSeconds()
         except Exception as e:
-            raise JWTError(f"Couldn't get iam token from jwt: {e}.") from e
+            raise JWTError("Couldn't get iam token from jwt.") from e
 
     def create_jwt(self) -> str:
         now = int(time.time())

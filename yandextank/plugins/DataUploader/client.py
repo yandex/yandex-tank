@@ -438,7 +438,8 @@ class APIClient(object):
         response = self.__post('api/job/' + str(jobno) + '/edit.json', data)
         return response
 
-    def second_data_to_push_item(self, data, stat, timestamp, overall, case):
+    @staticmethod
+    def second_data_to_push_item(data, stat, timestamp, overall, case):
         """
         @data: SecondAggregateDataItem
         """
@@ -480,7 +481,7 @@ class APIClient(object):
             api_data['http_codes'].append({'code': int(code),
                                            'count': int(cnt)})
 
-        api_data['time_intervals'] = self.convert_hist(data["interval_real"][
+        api_data['time_intervals'] = APIClient.convert_hist(data["interval_real"][
             "hist"])
         return api_data
 
@@ -757,7 +758,8 @@ class CloudGRPCClient(APIClient):
             intervals.append(trail_service_pb2.Trail.Intervals(to=interval['to'], count=int(interval['count'])))
         return intervals
 
-    def convert_to_proto_message(self, items):
+    @staticmethod
+    def convert_to_proto_message(items):
         trails = []
         for item in items:
             trail_data = item["trail"]
@@ -784,9 +786,9 @@ class CloudGRPCClient(APIClient):
                 q98=trail_data.get('q98'),
                 q99=trail_data.get('q99'),
                 q100=trail_data.get('q100'),
-                http_codes=self.build_codes(item['http_codes']),
-                net_codes=self.build_codes(item['net_codes']),
-                time_intervals=self.build_intervals(item['time_intervals']),
+                http_codes=CloudGRPCClient.build_codes(item['http_codes']),
+                net_codes=CloudGRPCClient.build_codes(item['net_codes']),
+                time_intervals=CloudGRPCClient.build_intervals(item['time_intervals']),
             )
             trails.append(trail)
         return trails
@@ -852,19 +854,21 @@ class CloudGRPCClient(APIClient):
             raise err
 
     def push_test_data(self, cloud_job_id, data_item, stat_item, interrupted_event):
+        message = self.prepare_test_data()
+        self._send_data(self.send_trails, interrupted_event, cloud_job_id, message)
+
+    @staticmethod
+    def prepare_test_data(data_item, stat_item):
         items = []
         ts = data_item["ts"]
         for case_name, case_data in data_item["tagged"].items():
             if case_name == "":
                 case_name = "__NOTAG__"
-            push_item = self.second_data_to_push_item(case_data, stat_item, ts,
-                                                      0, case_name)
+            push_item = CloudGRPCClient.second_data_to_push_item(case_data, stat_item, ts, 0, case_name)
             items.append(push_item)
-        overall = self.second_data_to_push_item(data_item["overall"],
-                                                stat_item, ts, 1, '')
+        overall = CloudGRPCClient.second_data_to_push_item(data_item["overall"], stat_item, ts, 1, '')
         items.append(overall)
-        message = self.convert_to_proto_message(items)
-        self._send_data(self.send_trails, interrupted_event, cloud_job_id, message)
+        return CloudGRPCClient.convert_to_proto_message(items)
 
     @staticmethod
     def _json_metric_to_proto_message(json_metrics):

@@ -125,7 +125,7 @@ def chop(data_list, chunk_size):
         logger.info("Too large piece of Telegraf data. Might experience upload problems.")
         return [data_list]
     else:
-        mid = len(data_list) / 2
+        mid = int(len(data_list) / 2)
         return chop(data_list[:mid], chunk_size) + chop(data_list[mid:], chunk_size)
 
 
@@ -727,7 +727,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def target(self):
         if self._target is None:
             self._target = self.get_generator_info().address
-            logger.info("Detected target: %s", self.target)
+            logger.info("Detected target: %s", self._target)
         return self._target
 
 
