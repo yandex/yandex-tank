@@ -27,7 +27,7 @@ phout_columns = [
 
 dtypes = {
     'time': np.float64,
-    'tag': np.str,
+    'tag': np.str_,
     'interval_real': np.int64,
     'connect_time': np.int64,
     'send_time': np.int64,
