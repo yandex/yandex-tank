@@ -65,11 +65,11 @@ analytic tools for the results they produce.
     install_requires=[
         'cryptography>=3.2.1,<4.0.0', 'pyopenssl==21.0.0',
         'psutil>=5.8.0', 'requests>=2.5.1', 'paramiko>=2.8.0',
-        'pandas<=1.2.5', 'numpy<=1.19.5',
+        'pandas<=1.5.3', 'numpy<=1.23.5',
         'pip>=8.1.2',
-        'pyyaml>=5.4', 'cerberus>=1.3.1', 'influxdb>=5.0.0', 'netort>=0.8.0',
+        'pyyaml>=5.4', 'cerberus>=1.3.1', 'influxdb>=5.0.0',
         'retrying>=1.3.3', 'pytest-runner', 'typing', 'grpcio==1.44.0', 'grpcio-tools',
-        'PyJWT',
+        'PyJWT', f'netort @ file://{os.getcwd()}/netort'
     ],
     setup_requires=[
         'grpcio-tools'
