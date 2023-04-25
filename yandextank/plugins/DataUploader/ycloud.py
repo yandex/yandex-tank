@@ -9,12 +9,8 @@ import jwt
 from urllib.parse import urlparse
 from pathlib import Path
 
-try:
-    from yandex.cloud.iam.v1.iam_token_service_pb2 import CreateIamTokenRequest
-    from yandex.cloud.iam.v1.iam_token_service_pb2_grpc import IamTokenServiceStub
-except ImportError:
-    from iam_token_service_pb2 import CreateIamTokenRequest
-    from iam_token_service_pb2_grpc import IamTokenServiceStub
+from yandex.cloud.iam.v1.iam_token_service_pb2 import CreateIamTokenRequest
+from yandex.cloud.iam.v1.iam_token_service_pb2_grpc import IamTokenServiceStub
 
 # ====== HELPER ======
 COMPUTE_INSTANCE_METADATA_URL = 'http://169.254.169.254/computeMetadata/v1/instance/?recursive=true'

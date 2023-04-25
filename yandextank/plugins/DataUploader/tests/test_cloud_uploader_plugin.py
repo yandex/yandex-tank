@@ -1,9 +1,5 @@
 from yandextank.plugins.DataUploader.client import CloudGRPCClient
-
-try:
-    from yandex.cloud.loadtesting.agent.v1 import monitoring_service_pb2
-except ImportError:
-    import monitoring_service_pb2
+from yandex.cloud.loadtesting.agent.v1 import monitoring_service_pb2
 
 
 SAMPLE_MONITORING_METRICS_JSON = {

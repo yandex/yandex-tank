@@ -12,31 +12,10 @@ import logging
 from requests.exceptions import ConnectionError, Timeout
 from urllib3.exceptions import ProtocolError
 from .loadtesting_agent import LoadtestingAgent
+from yandex.cloud.loadtesting.agent.v1 import trail_service_pb2, trail_service_pb2_grpc
+from yandex.cloud.loadtesting.agent.v1 import test_service_pb2_grpc, test_service_pb2, test_pb2
+from yandex.cloud.loadtesting.agent.v1 import monitoring_service_pb2_grpc, monitoring_service_pb2
 
-# add path with proto
-import os
-import sys
-_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
-sys.path.append(os.path.join(_PACKAGE_PATH, 'proto'))
-
-try:
-    from yandex.cloud.loadtesting.agent.v1 import trail_service_pb2, trail_service_pb2_grpc
-except ImportError:
-    import trail_service_pb2
-    import trail_service_pb2_grpc
-
-try:
-    from yandex.cloud.loadtesting.agent.v1 import test_service_pb2_grpc, test_service_pb2, test_pb2
-except ImportError:
-    import test_service_pb2_grpc
-    import test_service_pb2
-    import test_pb2
-
-try:
-    from yandex.cloud.loadtesting.agent.v1 import monitoring_service_pb2_grpc, monitoring_service_pb2
-except ImportError:
-    import monitoring_service_pb2_grpc
-    import monitoring_service_pb2
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
@@ -854,7 +833,7 @@ class CloudGRPCClient(APIClient):
             raise err
 
     def push_test_data(self, cloud_job_id, data_item, stat_item, interrupted_event):
-        message = self.prepare_test_data()
+        message = self.prepare_test_data(data_item, stat_item)
         self._send_data(self.send_trails, interrupted_event, cloud_job_id, message)
 
     @staticmethod

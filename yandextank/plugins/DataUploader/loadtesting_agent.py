@@ -6,12 +6,8 @@ import os
 from pathlib import Path
 
 from yandextank.plugins.DataUploader.ycloud import get_instance_metadata, AuthTokenProvider, build_sa_key, create_cloud_channel
+from yandex.cloud.loadtesting.agent.v1 import agent_registration_service_pb2, agent_registration_service_pb2_grpc
 
-try:
-    from yandex.cloud.loadtesting.agent.v1 import agent_registration_service_pb2, agent_registration_service_pb2_grpc
-except ImportError:
-    import agent_registration_service_pb2
-    import agent_registration_service_pb2_grpc
 
 LOGGER = logging.getLogger(__name__)  # pylint: disable=C0103
 
