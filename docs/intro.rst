@@ -44,6 +44,3 @@ A load generator in Go language
 Gregory Komissarov's
 `firebat <https://github.com/greggyNapalm/firebat-console>`_ - test tool
 based on Phantom
-
-BlazeMeter's `Sense <http://sense.blazemeter.com/>`_ - service for
-storing and analysing performance test results
