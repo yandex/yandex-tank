@@ -130,7 +130,7 @@ class ComponentFactory():
         return self.marker
 
     def get_filter(self):
-        if len(self.chosen_cases):
+        if self.chosen_cases:
 
             def is_chosen_case(ammo_tuple):
                 return ammo_tuple[1] in self.chosen_cases

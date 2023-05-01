@@ -349,9 +349,7 @@ class AgentConfig(object):
                 fds.write(inputs)
 
             # telegraf raw configuration into xml
-            telegraf_raw = ""
-            for element in self.telegrafraw:
-                telegraf_raw += element
+            telegraf_raw = ''.join(self.telegrafraw)
 
             with open(cfg_path, 'a') as fds:
                 fds.write(telegraf_raw)
