@@ -7,6 +7,7 @@ import fnmatch
 import json
 import logging
 import time
+import yaml
 
 from copy import deepcopy
 
@@ -116,7 +117,9 @@ class Plugin(MonitoringPlugin):
         if self._config is None:
             value = self.get_option('config')
 
-            if value.lower() == "none":
+            if isinstance(value, dict):
+                self._config = self._save_config_contents(yaml.dump(value), 'yaml')
+            elif value.lower() == "none":
                 self.monitoring = None
                 self.die_on_fail = False
                 self._config = value
@@ -130,14 +133,15 @@ class Plugin(MonitoringPlugin):
                 else:
                     config_contents = read_resource(value)
                 self._config = self._save_config_contents(config_contents)
+
         return self._config
 
-    def _save_config_contents(self, contents):
-        xmlfile = self.core.mkstemp(".xml", "monitoring_")
-        self.core.add_artifact_file(xmlfile)
-        with open(xmlfile, "w") as f:
+    def _save_config_contents(self, contents, type='xml'):
+        outfile = self.core.mkstemp("." + type, "monitoring_")
+        self.core.add_artifact_file(outfile)
+        with open(outfile, "w") as f:
             f.write(contents)
-        return xmlfile
+        return outfile
 
     def configure(self):
         self.detected_conf = self.__detect_configuration()

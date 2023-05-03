@@ -811,7 +811,7 @@ Artifact uploaders
 
 .. note::
 
-  Graphite uploader and BlazeMeter Sense are not currently supported in the last Yandex.Tank version.
+  Graphite uploader are not currently supported in the last Yandex.Tank version.
   If you want one of them, use 1.7 branch.
 
 Yandex.Overload

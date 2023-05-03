@@ -2,6 +2,7 @@
 # TODO: make the next two lines unnecessary
 # pylint: disable=line-too-long
 # pylint: disable=missing-docstring
+# pylint: disable=method-hidden
 import logging
 import os
 import pwd
@@ -25,13 +26,10 @@ from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
 from .client import APIClient, OverloadClient, LPRequisites, CloudGRPCClient
 from ...common.util import FileScanner
+from .loadtesting_agent import create_loadtesting_agent
 
 from netort.data_processing import Drain
-
-try:
-    from yandex.cloud.loadtesting.agent.v1 import test_service_pb2
-except ImportError:
-    import test_service_pb2
+from yandex.cloud.loadtesting.agent.v1 import test_service_pb2
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
@@ -123,7 +121,7 @@ def chop(data_list, chunk_size):
         logger.info("Too large piece of Telegraf data. Might experience upload problems.")
         return [data_list]
     else:
-        mid = len(data_list) / 2
+        mid = int(len(data_list) / 2)
         return chop(data_list[:mid], chunk_size) + chop(data_list[mid:], chunk_size)
 
 
@@ -490,9 +488,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 logger.warn(e)
                 self.lp_job.interrupted.set()
             except Exception:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                logger.error("Mysterious exception:\n%s\n%s\n%s", (exc_type, exc_value, exc_traceback))
-                break
+                logger.exception("Unhandled exception occured. Skipping data chunk...")
         # purge queue
         while not queue.empty():
             if queue.get_nowait() is None:
@@ -590,8 +586,10 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             client = OverloadClient
             self._api_token = self.read_token(self.get_option("token_file"))
         elif self.backend_type == BackendTypes.CLOUD:
+            loadtesting_agent = create_loadtesting_agent(backend_url=self.get_option('api_address'),
+                                                         config=os.getenv('LOADTESTING_AGENT_CONFIG'))
             return CloudGRPCClient(core_interrupted=self.interrupted,
-                                   base_url=self.get_option('api_address'),
+                                   loadtesting_agent=loadtesting_agent,
                                    api_attempts=self.get_option('api_attempts'),
                                    connection_timeout=self.get_option('connection_timeout'))
         else:
@@ -725,7 +723,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def target(self):
         if self._target is None:
             self._target = self.get_generator_info().address
-            logger.info("Detected target: %s", self.target)
+            logger.info("Detected target: %s", self._target)
         return self._target
 
 
@@ -969,6 +967,7 @@ class CloudLoadTestingJob(Job):
         storage,
         config,
         load_scheme=None,
+        log_monitoring_requests=False,
     ):
         self.target_host = target_host
         self.target_port = target_port
@@ -982,6 +981,7 @@ class CloudLoadTestingJob(Job):
         self.storage = storage
         self._raw_config = config
         self._config = None
+        self.log_monitoring_requests = log_monitoring_requests
 
         self.create()  # FIXME check it out, maybe it is useless
 
@@ -1031,8 +1031,10 @@ class CloudLoadTestingJob(Job):
     def send_config(self, *args, **kwargs):
         logger.debug('Do not send config to the cloud service')
 
-    def push_monitoring_data(self, *args, **kwargs):
-        logger.debug('Do not push monitoring data for cloud service')
+    def push_monitoring_data(self, data):
+        if not self.interrupted.is_set():
+            self.api_client.push_monitoring_data(
+                self.number, data, self.interrupted, trace=self.log_monitoring_requests)
 
     def push_events_data(self, *args, **kwargs):
         logger.debug('Do not push event data for cloud service')

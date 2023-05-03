@@ -1,10 +1,10 @@
 config:
-  type: string
+  type: ['string', 'dict']
   default: auto
-  description: Path to monitoring config file.
+  description: config or path to monitoring config file.
   values_description:
     auto: collect default metrics from default_target host
-    <path/to/file.xml>: path to telegraf configuration file
+    <path/to/file>: path to telegraf configuration file - yaml or xml
     none: disable monitoring
 config_contents:
   type: string

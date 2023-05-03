@@ -490,7 +490,7 @@ class UsedInstancesCriterion(AbstractCriterion):
             self.is_relative = False
         self.seconds_limit = expand_to_seconds(param_str.split(',')[1])
 
-        if self.autostop.core.get_option('phantom', 'enabled'):
+        if self.autostop.core.get_option('phantom', 'enabled', False):
             phantom = autostop.core.get_plugin_of_type(PhantomPlugin)
             info = phantom.get_info()
             if info:
@@ -499,7 +499,7 @@ class UsedInstancesCriterion(AbstractCriterion):
                 raise ValueError(
                     "Cannot create 'instances' criterion"
                     " with zero instances limit")
-        elif self.autostop.core.get_option('pandora', 'enabled'):
+        elif self.autostop.core.get_option('pandora', 'enabled', False):
             config = autostop.core.get_plugin_of_type(PandoraPlugin).config_contents
             for pool in config["pools"]:
                 if pool["startup"]["type"] == "once":

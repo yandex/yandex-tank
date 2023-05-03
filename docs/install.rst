@@ -6,7 +6,7 @@ Installation
 Docker container
 ****************
 
-`Install <https://www.docker.com/products/overview>`_ docker and use ``direvius/yandex-tank`` (or, if you need jmeter, try ``direvius/yandex-tank:jmeter-latest``) container.
+`Install <https://www.docker.com/products/overview>`_ docker and use ``yandex/yandex-tank`` (or, if you need jmeter, try ``yandex/yandex-tank:jmeter-latest``) container.
 Default entrypoint is ``/usr/local/bin/yandex-tank`` so you may just run it to start test:
 
 .. code-block:: bash
@@ -15,7 +15,7 @@ Default entrypoint is ``/usr/local/bin/yandex-tank`` so you may just run it to s
         -v $(pwd):/var/loadtest \
         -v $SSH_AUTH_SOCK:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent \
         --net host \
-        -it direvius/yandex-tank
+        -it yandex/yandex-tank
 
 
 * ``$(pwd):/var/loadtest`` - current directory mounted to /var/loadtest in container to pass data for test
@@ -38,7 +38,7 @@ If you want to do something in the container before running tank, you will need 
         --net host \
         -it \
         --entrypoint /bin/bash \
-        direvius/yandex-tank
+        yandex/yandex-tank
 
 Start test Within container with yandex-tank command:
 

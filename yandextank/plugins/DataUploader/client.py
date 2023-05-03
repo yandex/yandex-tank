@@ -1,3 +1,4 @@
+from collections import defaultdict
 import json
 import time
 import traceback
@@ -5,35 +6,16 @@ import urllib.parse
 import uuid
 import grpc
 import random
-import ssl
 import requests
 import logging
 
-from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError, Timeout
 from urllib3.exceptions import ProtocolError
+from .loadtesting_agent import LoadtestingAgent
+from yandex.cloud.loadtesting.agent.v1 import trail_service_pb2, trail_service_pb2_grpc
+from yandex.cloud.loadtesting.agent.v1 import test_service_pb2_grpc, test_service_pb2, test_pb2
+from yandex.cloud.loadtesting.agent.v1 import monitoring_service_pb2_grpc, monitoring_service_pb2
 
-# add path with proto
-import os
-import sys
-_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
-sys.path.append(os.path.join(_PACKAGE_PATH, 'proto'))
-
-try:
-    from yandex.cloud.loadtesting.agent.v1 import trail_service_pb2, trail_service_pb2_grpc, \
-        agent_registration_service_pb2, agent_registration_service_pb2_grpc
-except ImportError:
-    import trail_service_pb2
-    import trail_service_pb2_grpc
-    import agent_registration_service_pb2
-    import agent_registration_service_pb2_grpc
-
-try:
-    from yandex.cloud.loadtesting.agent.v1 import test_service_pb2_grpc, test_service_pb2, test_pb2
-except ImportError:
-    import test_service_pb2_grpc
-    import test_service_pb2
-    import test_pb2
 
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
@@ -435,7 +417,8 @@ class APIClient(object):
         response = self.__post('api/job/' + str(jobno) + '/edit.json', data)
         return response
 
-    def second_data_to_push_item(self, data, stat, timestamp, overall, case):
+    @staticmethod
+    def second_data_to_push_item(data, stat, timestamp, overall, case):
         """
         @data: SecondAggregateDataItem
         """
@@ -477,7 +460,7 @@ class APIClient(object):
             api_data['http_codes'].append({'code': int(code),
                                            'count': int(cnt)})
 
-        api_data['time_intervals'] = self.convert_hist(data["interval_real"][
+        api_data['time_intervals'] = APIClient.convert_hist(data["interval_real"][
             "hist"])
         return api_data
 
@@ -714,63 +697,26 @@ class CloudGRPCClient(APIClient):
     def __init__(
             self,
             core_interrupted,
-            base_url=None,
+            loadtesting_agent: LoadtestingAgent,
             api_attempts=10,
             connection_timeout=100.0):
         super().__init__(core_interrupted)
         self.core_interrupted = core_interrupted
-        self._base_url = base_url
+        self._base_url = loadtesting_agent.backend_url
         self.api_attempts = api_attempts
         self.connection_timeout = connection_timeout
         self.max_api_timeout = 120
-        creds = self._get_creds(self._base_url)
-        self.channel = grpc.secure_channel(self._base_url, creds)
-        self._compute_instance_id = None
-        self.agent_instance_id = None
-        self._token = None
-        self._set_connection(self.token, self.compute_instance_id)
+        grpc_channel = loadtesting_agent.cloud_channel
+        self.token_provider = loadtesting_agent.token_provider
 
-    @staticmethod
-    def _get_creds(url):
-        cert = ssl.get_server_certificate(tuple(url.split(':')))
-        creds = grpc.ssl_channel_credentials(cert.encode('utf-8'))
-        return creds
+        self.compute_instance_id = loadtesting_agent.compute_instance_id
+        self.agent_instance_id = loadtesting_agent.agent_id
+        self.trail_stub = trail_service_pb2_grpc.TrailServiceStub(grpc_channel)
+        self.monitoring_stub = monitoring_service_pb2_grpc.MonitoringServiceStub(grpc_channel)
+        self.test_stub = test_service_pb2_grpc.TestServiceStub(grpc_channel)
 
-    @staticmethod
-    def _get_call_creds(token):
-        return grpc.access_token_call_credentials(token)
-
-    # TODO retry
-    def _set_connection(self, token, compute_instance_id):
-        try:
-            stub_register = agent_registration_service_pb2_grpc.AgentRegistrationServiceStub(self.channel)
-            response = stub_register.Register(
-                agent_registration_service_pb2.RegisterRequest(compute_instance_id=compute_instance_id),
-                timeout=self.connection_timeout,
-                metadata=[('authorization', f'Bearer {token}')]
-                # credentials=self._get_call_creds(token)
-            )
-            if response.agent_instance_id:
-                self.agent_instance_id = response.agent_instance_id
-                self.trail_stub = trail_service_pb2_grpc.TrailServiceStub(self.channel)
-                self.test_stub = test_service_pb2_grpc.TestServiceStub(self.channel)
-                logger.info('Init connection to cloud load testing is succeeded')
-            else:
-                raise self.AgentIdNotFound("Couldn't get agent cloud id")
-        except Exception as e:
-            raise self.NotAvailable(f"Couldn't connect to cloud load testing: {e}")
-
-    @property
-    def token(self):
-        if self._token is None:
-            self._token = get_iam_token()
-        return self._token
-
-    @property
-    def compute_instance_id(self):
-        if self._compute_instance_id is None:
-            self._compute_instance_id = get_current_instance_id()
-        return self._compute_instance_id
+    def _request_metadata(self):
+        return self.token_provider.get_auth_metadata()
 
     def api_timeouts(self):
         for attempt in range(self.api_attempts - 1):
@@ -791,7 +737,8 @@ class CloudGRPCClient(APIClient):
             intervals.append(trail_service_pb2.Trail.Intervals(to=interval['to'], count=int(interval['count'])))
         return intervals
 
-    def convert_to_proto_message(self, items):
+    @staticmethod
+    def convert_to_proto_message(items):
         trails = []
         for item in items:
             trail_data = item["trail"]
@@ -816,27 +763,48 @@ class CloudGRPCClient(APIClient):
                 q90=trail_data.get('q90'),
                 q95=trail_data.get('q95'),
                 q98=trail_data.get('q98'),
-                q99=trail_data.get('99'),
+                q99=trail_data.get('q99'),
                 q100=trail_data.get('q100'),
-                http_codes=self.build_codes(item['http_codes']),
-                net_codes=self.build_codes(item['net_codes']),
-                time_intervals=self.build_intervals(item['time_intervals']),
+                http_codes=CloudGRPCClient.build_codes(item['http_codes']),
+                net_codes=CloudGRPCClient.build_codes(item['net_codes']),
+                time_intervals=CloudGRPCClient.build_intervals(item['time_intervals']),
             )
             trails.append(trail)
         return trails
 
+    def _send_data(self, func, interrupted_event, cloud_job_id, message, instance_id=None):
+        api_timeouts = self.api_timeouts()
+        if instance_id is None:
+            instance_id = self.compute_instance_id
+        while not interrupted_event.is_set():
+            try:
+                code = func(instance_id, cloud_job_id, message)
+                if code == 0:
+                    break
+            except self.NotAvailable:
+                if not self.core_interrupted.is_set():
+                    try:
+                        timeout = next(api_timeouts)
+                    except StopIteration:
+                        raise self.NotAvailable
+                    logger.warning("GRPC error, will retry in %ss...", timeout)
+                    time.sleep(timeout)
+                    continue
+                else:
+                    break
+
     def send_trails(self, instance_id, cloud_job_id, trails):
         try:
             request = trail_service_pb2.CreateTrailRequest(
-                compute_instance_id=str(instance_id),
+                compute_instance_id=instance_id,
+                agent_instance_id=self.agent_instance_id,
                 job_id=str(cloud_job_id),
                 data=trails
             )
             result = self.trail_stub.Create(
                 request,
                 timeout=self.connection_timeout,
-                metadata=[('authorization', f'Bearer {self.token}')]
-                # credentials=self._get_call_creds(self.token)
+                metadata=self._request_metadata(),
             )
             logger.debug(f'Send trails: {trails}')
             return result.code
@@ -845,42 +813,85 @@ class CloudGRPCClient(APIClient):
                 raise self.NotAvailable('Connection is closed. Try to set it again.')
             raise err
 
-    def push_test_data(
-            self,
-            cloud_job_id,
-            data_item,
-            stat_item,
-            interrupted_event):
+    def _send_monitoring(self, instance_id, cloud_job_id, chunks):
+        try:
+            request = monitoring_service_pb2.AddMetricRequest(
+                compute_instance_id=instance_id,
+                agent_instance_id=self.agent_instance_id,
+                job_id=str(cloud_job_id),
+                chunks=chunks
+            )
+            result = self.monitoring_stub.AddMetric(
+                request,
+                timeout=self.connection_timeout,
+                metadata=self._request_metadata(),
+            )
+            return result.code
+        except grpc.RpcError as err:
+            if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
+                raise self.NotAvailable('Connection is closed. Try to set it again.')
+            raise err
+
+    def push_test_data(self, cloud_job_id, data_item, stat_item, interrupted_event):
+        message = self.prepare_test_data(data_item, stat_item)
+        self._send_data(self.send_trails, interrupted_event, cloud_job_id, message)
+
+    @staticmethod
+    def prepare_test_data(data_item, stat_item):
         items = []
         ts = data_item["ts"]
         for case_name, case_data in data_item["tagged"].items():
             if case_name == "":
                 case_name = "__NOTAG__"
-            push_item = self.second_data_to_push_item(case_data, stat_item, ts,
-                                                      0, case_name)
+            push_item = CloudGRPCClient.second_data_to_push_item(case_data, stat_item, ts, 0, case_name)
             items.append(push_item)
-        overall = self.second_data_to_push_item(data_item["overall"],
-                                                stat_item, ts, 1, '')
+        overall = CloudGRPCClient.second_data_to_push_item(data_item["overall"], stat_item, ts, 1, '')
         items.append(overall)
+        return CloudGRPCClient.convert_to_proto_message(items)
 
-        api_timeouts = self.api_timeouts()
-        while not interrupted_event.is_set():
+    @staticmethod
+    def _json_metric_to_proto_message(json_metrics):
+        def is_float(value):
             try:
-                code = self.send_trails(self.compute_instance_id, cloud_job_id, self.convert_to_proto_message(items))
-                if code == 0:
-                    break
-            except self.NotAvailable as err:
-                if not self.core_interrupted.is_set():
-                    try:
-                        timeout = next(api_timeouts)
-                    except StopIteration:
-                        raise err
-                    self._set_connection(self.token)
-                    logger.warn("GRPC error, will retry in %ss...", timeout)
-                    time.sleep(timeout)
-                    continue
-                else:
-                    break
+                value = float(value)
+                return True
+            except ValueError:
+                return False
+
+        result = []
+        for metric in json_metrics:
+            # handle metric as 'custom:cpu-cpu0_idle_time', using 'cpu-cpu0' as metric type, 'idle_time' as metric_name
+            parts = metric.split(':')[-1].split('_')
+            result.append(monitoring_service_pb2.Metric(
+                metric_type=parts[0],
+                metric_name='_'.join(parts[1:]),
+                metric_value=float(json_metrics[metric]) if is_float(json_metrics[metric]) else 0.0,
+            ))
+        return result
+
+    @staticmethod
+    def _json_monitoring_data_item_to_proto_metric_chunks(monitoring_data_item):
+        metrics = defaultdict(list)
+        for di in monitoring_data_item:
+            ts = int(di['timestamp'])
+            for host_name, data in di["data"].items():
+                metrics[(host_name, ts, data['comment'])].extend(
+                    CloudGRPCClient._json_metric_to_proto_message(data['metrics'])
+                )
+
+        return [monitoring_service_pb2.MetricChunk(
+            instance_host=key[0],
+            timestamp=key[1],
+            comment=key[2],
+            data=chunk,
+        ) for key, chunk in metrics.items()]
+
+    def push_monitoring_data(self, cloud_job_id, monitoring_data_item, interrupted_event, trace=False):
+        chunks = CloudGRPCClient._json_monitoring_data_item_to_proto_metric_chunks(monitoring_data_item)
+        if trace:
+            logger.debug(f'CloudGRPCClient: Send monitoring data for job ({cloud_job_id}): {chunks}')
+
+        self._send_data(self._send_monitoring, interrupted_event, cloud_job_id, chunks)
 
     def create_test(self, target_address, target_port, name, description, load_schedule, config):
         schedule = test_pb2.Schedule(load_profile=str(load_schedule), load_type=1)
@@ -895,13 +906,13 @@ class CloudGRPCClient(APIClient):
         return self.test_stub.Create(
             request,
             timeout=self.connection_timeout,
-            metadata=[('authorization', f'Bearer {self.token}')])
+            metadata=self._request_metadata(),)
 
     def get_test(self, cloud_job_id):
         return self.test_stub.Get(
             test_service_pb2.GetTestRequest(test_id=cloud_job_id),
             timeout=self.connection_timeout,
-            metadata=[('authorization', f'Bearer {self.token}')]
+            metadata=self._request_metadata()
         )
 
     def unlock_target(self, *args):
@@ -932,7 +943,7 @@ class CloudGRPCClient(APIClient):
             result = self.test_stub.Update(
                 request,
                 timeout=self.connection_timeout,
-                metadata=[('authorization', f'Bearer {self.token}')]
+                metadata=self._request_metadata()
             )
             logger.debug('Set imbalance %s at %s. Comment: %s', rps, timestamp, comment)
             return result.code
@@ -940,43 +951,3 @@ class CloudGRPCClient(APIClient):
             if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
                 raise self.NotAvailable('Connection is closed. Try to set it again.')
             raise err
-
-
-# ====== HELPER ======
-COMPUTE_INSTANCE_METADATA_URL = 'http://169.254.169.254/computeMetadata/v1/instance/?recursive=true'
-COMPUTE_INSTANCE_SA_TOKEN_URL = 'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token'
-
-
-def get_instance_metadata():
-    url = COMPUTE_INSTANCE_METADATA_URL
-    try:
-        session = requests.Session()
-        session.mount(url, HTTPAdapter(max_retries=5))
-        response = session.get(url, headers={"Metadata-Flavor": "Google"}).json()
-        logger.debug(f"Instance metadata {response}")
-        return response
-    except Exception as e:
-        logger.error(f"Couldn't get instance metadata of current vm: {e}")
-        raise RuntimeError("Couldn't get instance metadata of current vm: {e}")
-
-
-def get_current_instance_id():
-    response = get_instance_metadata()
-    if response:
-        return response.get('id')
-    raise RuntimeError("Metadata is empty")
-
-
-def get_iam_token():
-    url = COMPUTE_INSTANCE_SA_TOKEN_URL
-    try:
-        session = requests.Session()
-        session.mount(url, HTTPAdapter(max_retries=5))
-        raw_response = session.get(url, headers={"Metadata-Flavor": "Google"})
-        response = raw_response.json()
-        iam_token = response.get('access_token')
-        logger.debug("Get IAM token")
-        return iam_token
-    except Exception as e:
-        logger.error(f"Couldn't get iam token for instance service account: {e}")
-        raise RuntimeError("Couldn't get iam token for instance service account: {e}")

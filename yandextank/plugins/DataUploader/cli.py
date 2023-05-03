@@ -29,7 +29,8 @@ SECTION = 'meta'
 
 
 def get_logger():
-    global logger
+    # TODO: remove global
+    global logger   # pylint: disable=global-variable-undefined
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler(stream=sys.stdout)

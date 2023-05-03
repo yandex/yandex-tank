@@ -99,7 +99,7 @@ class TankCore(object):
     UUID_OPTION = 'uuid'
     API_JOBNO = 'api_jobno'
 
-    def __init__(self, configs, interrupted_event, info):
+    def __init__(self, configs, interrupted_event, info, storage=None):
         """
 
         :param configs: list of dict
@@ -121,6 +121,7 @@ class TankCore(object):
         self._job = None
         self._cfg_snapshot = None
         self._data_poller = None
+        self._extra_plugins = []
 
         self.interrupted = interrupted_event
 
@@ -147,7 +148,7 @@ class TankCore(object):
         with open(os.path.join(self.artifacts_dir, VALIDATED_CONF), 'w') as f:
             yaml.dump(configinfo, f)
         logger.info('New test id %s' % self.test_id)
-        self.storage = JobsStorage()
+        self.storage = storage or JobsStorage()
         self.errors = []
 
     @property
@@ -226,6 +227,8 @@ class TankCore(object):
                 raise
             else:
                 self.register_plugin(self.PLUGIN_PREFIX + plugin_name, instance)
+        for plugin_name, factory in self._extra_plugins:
+            self.register_plugin(self.PLUGIN_PREFIX + plugin_name, factory(self))
         logger.debug("Plugin instances: %s", self._plugins)
 
     @property
@@ -262,6 +265,9 @@ class TankCore(object):
                 plugin.configure()
                 if isinstance(plugin, MonitoringDataListener):
                     self.monitoring_data_listeners.append(plugin)
+
+    def register_external_plugin(self, name: str, factory):
+        self._extra_plugins.append((name, factory))
 
     def plugins_prepare_test(self):
         """ Call prepare_test() on all plugins        """

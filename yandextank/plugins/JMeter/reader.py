@@ -89,9 +89,9 @@ jtl_columns = [
 jtl_types = {
     'send_ts': np.int64,
     'interval_real': np.int64,
-    'tag': np.str,
-    'retcode': np.str,
-    'success': np.bool,
+    'tag': np.str_,
+    'retcode': np.str_,
+    'success': np.bool_,
     'size_in': np.int64,
     'grpThreads': np.int64,
     'allThreads': np.int64,

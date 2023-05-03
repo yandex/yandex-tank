@@ -29,13 +29,13 @@ class TankWorker(Process):
 
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
                  log_handlers=None, wait_lock=False, files=None, ammo_file=None,
-                 debug=False, run_shooting_event=None):
+                 debug=False, run_shooting_event=None, storage=None):
         super().__init__()
         self.interrupted = Event()
         manager = Manager()
         self.info = TankInfo(manager.dict())
         self.config_list = self._combine_configs(configs, cli_options, cfg_patches, cli_args, no_local)
-        self.core = TankCore(self.config_list, self.interrupted, self.info)
+        self.core = TankCore(self.config_list, self.interrupted, self.info, storage=storage)
 
         is_locked = Lock.is_locked(self.core.lock_dir)
         if is_locked and not self.core.config.get_option(self.SECTION, 'ignore_lock'):

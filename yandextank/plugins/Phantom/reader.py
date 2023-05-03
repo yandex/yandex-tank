@@ -27,7 +27,7 @@ phout_columns = [
 
 dtypes = {
     'time': np.float64,
-    'tag': np.str,
+    'tag': np.str_,
     'interval_real': np.int64,
     'connect_time': np.int64,
     'send_time': np.int64,
@@ -52,7 +52,7 @@ def string_to_df(data):
     chunk['receive_ts'] = chunk.send_ts + chunk.interval_real / 1e6
     chunk['receive_sec'] = chunk.receive_ts.astype(np.int64)
     # TODO: consider configuration for the following:
-    chunk['tag'] = chunk.tag.str.rsplit('#', 1, expand=True)[0]
+    chunk['tag'] = chunk.tag.str.rsplit('#', n=1, expand=True)[0]
     chunk.set_index(['receive_sec'], inplace=True)
     return chunk
 
