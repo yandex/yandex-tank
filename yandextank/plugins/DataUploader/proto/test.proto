@@ -148,3 +148,4 @@ message Schedule {
   repeated LoadSchedule load_schedule = 2;
   repeated string load_profile = 3;
 }
+
