@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package yandex.cloud.loadtesting.agent.v1;
 
-
 import "operation.proto";
 import "test.proto";
 import "google/protobuf/descriptor.proto";
