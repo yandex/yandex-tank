@@ -4,8 +4,10 @@ import logging
 import yaml
 import os
 from pathlib import Path
+from dataclasses import dataclass
+from typing import Optional
 
-from yandextank.plugins.DataUploader.ycloud import get_instance_metadata, AuthTokenProvider, build_sa_key, create_cloud_channel
+from yandextank.plugins.DataUploader.ycloud import get_instance_metadata, get_instance_yandex_metadata, AuthTokenProvider, build_sa_key, create_cloud_channel
 from yandex.cloud.loadtesting.agent.v1 import agent_registration_service_pb2, agent_registration_service_pb2_grpc
 
 
@@ -13,6 +15,9 @@ LOGGER = logging.getLogger(__name__)  # pylint: disable=C0103
 
 METADATA_LT_CREATED_ATTR = 'loadtesting-created'
 METADATA_AGENT_VERSION_ATTR = 'agent-version'
+METADATA_AGENT_NAME_ATTR = 'agent-name'
+METADATA_FOLDER_ID_ATTR = 'folder-id'
+YANDEX_METADATA_FOLDER_ID_ATTR = 'folderId'
 ANONYMOUS_AGENT_ID = None
 RUN_IN_ENVIRONMENT_ENV = 'LOADTESTING_ENVIRONMENT'
 
@@ -20,8 +25,7 @@ RUN_IN_ENVIRONMENT_ENV = 'LOADTESTING_ENVIRONMENT'
 class AgentOrigin(Enum):
     UNKNOWN = 0
     COMPUTE_LT_CREATED = 1
-    COMPUTE_EXTERNAL = 2
-    EXTERNAL = 3
+    EXTERNAL = 2
 
 
 class KnownEnvironment(Enum):
@@ -63,13 +67,9 @@ class LoadtestingAgent(object):
         self.agent_id = agent_id or self._identify_agent_id()
 
     def _identify_agent_origin(self) -> AgentOrigin:
-        if not self.compute_instance_id:
-            return AgentOrigin.EXTERNAL
-
-        if self.instance_lt_created:
+        if self.instance_lt_created and self.compute_instance_id:
             return AgentOrigin.COMPUTE_LT_CREATED
-
-        return AgentOrigin.COMPUTE_EXTERNAL
+        return AgentOrigin.EXTERNAL
 
     def _identify_agent_id(self) -> str:
         if self.agent_origin == AgentOrigin.COMPUTE_LT_CREATED:
@@ -87,8 +87,6 @@ class LoadtestingAgent(object):
             return agent_id
         elif self.is_persistent_external_agent():
             args = dict(name=self.agent_name, folder_id=self.folder_id)
-            if self.agent_origin == AgentOrigin.COMPUTE_EXTERNAL:
-                args.update(dict(compute_instance_id=self.compute_instance_id))
         elif self.is_anonymous_external_agent():
             return ANONYMOUS_AGENT_ID
         else:
@@ -113,7 +111,7 @@ class LoadtestingAgent(object):
         return meta
 
     def is_external(self) -> bool:
-        return self.agent_origin in [AgentOrigin.EXTERNAL, AgentOrigin.COMPUTE_EXTERNAL]
+        return self.agent_origin == AgentOrigin.EXTERNAL
 
     def is_anonymous_external_agent(self) -> bool:
         return self.is_external() and not bool(self.agent_name) and self.folder_id
@@ -147,13 +145,13 @@ def create_loadtesting_agent(backend_url, config=None, insecure_connection=False
     if not config:
         config = {}
 
-    agent_name = os.getenv('LOADTESTING_AGENT_NAME', config.get('agent_name'))
-    folder_id = os.getenv('LOADTESTING_FOLDER_ID', config.get('folder_id'))
+    compute_agent_settings = try_identify_compute_metadata()
+    agent_name = compute_agent_settings.agent_name or os.getenv('LOADTESTING_AGENT_NAME', config.get('agent_name'))
+    folder_id = compute_agent_settings.folder_id or os.getenv('LOADTESTING_FOLDER_ID', config.get('folder_id'))
     service_account_id = os.getenv('LOADTESTING_SA_ID', config.get('service_account_id'))
     key_id = os.getenv('LOADTESTING_SA_KEY_ID', config.get('key_id'))
     private_key_file = os.getenv('LOADTESTING_SA_KEY_FILE', config.get('private_key'))
     private_key_payload = os.getenv('LOADTESTING_SA_KEY_PAYLOAD', config.get('service_account_private_key'))
-    compute_instance_id, agent_version, instance_lt_created = try_identify_compute_metadata()
 
     sa_key = build_sa_key(
         sa_key=private_key_payload,
@@ -170,26 +168,45 @@ def create_loadtesting_agent(backend_url, config=None, insecure_connection=False
                             agent_id_file=config.get('agent_id_file'),
                             agent_name=agent_name,
                             folder_id=folder_id,
-                            compute_instance_id=compute_instance_id,
-                            agent_version=agent_version,
-                            instance_lt_created=instance_lt_created)
+                            compute_instance_id=compute_agent_settings.compute_instance_id,
+                            agent_version=compute_agent_settings.agent_version,
+                            instance_lt_created=compute_agent_settings.instance_lt_created)
 
 
 def use_yandex_compute_metadata():
     return os.getenv(RUN_IN_ENVIRONMENT_ENV, '') == KnownEnvironment.YANDEX_COMPUTE.value
 
 
-def try_identify_compute_metadata():
+@dataclass
+class _AgentComputeMetadata():
+    compute_instance_id: Optional[str] = None
+    agent_version: Optional[str] = None
+    agent_name: Optional[str] = None
+    folder_id: Optional[str] = None
+    instance_lt_created: Optional[bool] = False
+
+
+def try_identify_compute_metadata() -> _AgentComputeMetadata:
     if not use_yandex_compute_metadata():
-        return None, None, None
+        return _AgentComputeMetadata()
 
     metadata = get_instance_metadata()
     if not metadata:
-        return None, None, None
+        return _AgentComputeMetadata()
 
-    compute_instance_id = metadata.get('id')
     attrs = metadata.get('attributes')
-    agent_version = attrs.get(METADATA_AGENT_VERSION_ATTR, '')
-    instance_lt_created = attrs.get(METADATA_LT_CREATED_ATTR, False)
-    LOGGER.info(f'identified compute instance id "{compute_instance_id}", agent version "{agent_version}", lt created "{instance_lt_created}"')
-    return compute_instance_id, agent_version, instance_lt_created
+    yandex_meta = get_instance_yandex_metadata()
+    agent_settings = _AgentComputeMetadata(
+        compute_instance_id=metadata.get('id'),
+        agent_version=attrs.get(METADATA_AGENT_VERSION_ATTR, ''),
+        agent_name=attrs.get(METADATA_AGENT_NAME_ATTR, ''),
+        folder_id=attrs.get(METADATA_FOLDER_ID_ATTR, yandex_meta.get(YANDEX_METADATA_FOLDER_ID_ATTR, '')),
+        instance_lt_created=attrs.get(METADATA_LT_CREATED_ATTR, False),
+    )
+    LOGGER.info(
+        'identified compute instance id "%s", agent version "%s", lt created "%s"',
+        agent_settings.compute_instance_id,
+        agent_settings.agent_version,
+        agent_settings.instance_lt_created
+    )
+    return agent_settings

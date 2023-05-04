@@ -33,6 +33,9 @@ from yandex.cloud.loadtesting.agent.v1 import test_service_pb2
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
+LOADTESTING_CONFIG_PATH = '/etc/tank_client/config.yaml'
+LOADTESTING_CONFIG_PATH_ENV = 'LOADTESTING_AGENT_CONFIG'
+
 
 class BackendTypes(object):
     OVERLOAD = 'OVERLOAD'
@@ -587,7 +590,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._api_token = self.read_token(self.get_option("token_file"))
         elif self.backend_type == BackendTypes.CLOUD:
             loadtesting_agent = create_loadtesting_agent(backend_url=self.get_option('api_address'),
-                                                         config=os.getenv('LOADTESTING_AGENT_CONFIG'))
+                                                         config=os.getenv(LOADTESTING_CONFIG_PATH_ENV, LOADTESTING_CONFIG_PATH))
             return CloudGRPCClient(core_interrupted=self.interrupted,
                                    loadtesting_agent=loadtesting_agent,
                                    api_attempts=self.get_option('api_attempts'),
