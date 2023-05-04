@@ -4,7 +4,7 @@ import time
 import os
 import getpass
 import six
-from netort.data_manager.common.util import thread_safe_property
+from yandextank.contrib.netort.netort.data_manager.common.util import thread_safe_property
 from typing import Callable, Dict, Optional, Set, Any
 
 from .metrics import Metric, Event

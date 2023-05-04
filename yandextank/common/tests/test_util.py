@@ -9,7 +9,7 @@ from yandextank.common.util import FileScanner, FileMultiReader
 from yandextank.common.util import AddressWizard, SecuredShell
 from yandextank.common.tests.ssh_client import SSHClientWithBanner, SSHClientWithoutBanner
 
-from netort.data_processing import Drain, Chopper
+from yandextank.contrib.netort.netort.data_processing import Drain, Chopper
 
 banner = '###Hellow user!####\n'
 

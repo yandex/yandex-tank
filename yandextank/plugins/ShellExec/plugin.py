@@ -1,7 +1,7 @@
 '''
 Contains shellexec plugin
 '''
-from netort.process import execute
+from yandextank.contrib.netort.netort.process import execute
 from ...common.interfaces import AbstractPlugin
 
 

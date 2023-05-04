@@ -9,7 +9,7 @@ import shutil
 from builtins import zip
 from pathlib import Path
 
-from netort.resource import manager as resource
+from yandextank.contrib.netort.netort.resource import manager as resource
 
 from . import format as fmt
 from . import info

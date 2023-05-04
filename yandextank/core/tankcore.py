@@ -28,8 +28,8 @@ from yandextank.aggregator import TankAggregator
 from yandextank.aggregator.aggregator import DataPoller
 from yandextank.common.util import pid_exists
 
-from netort.resource import manager as resource
-from netort.process import execute
+from yandextank.contrib.netort.netort.resource import manager as resource
+from yandextank.contrib.netort.netort.process import execute
 from yandextank.version import VERSION
 
 import configparser

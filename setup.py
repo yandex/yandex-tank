@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 from yandextank.version import VERSION
-import os
+
 
 setup(
     package_dir={"": "."},
@@ -17,7 +17,6 @@ analytic tools for the results they produce.
     maintainer='Yandex Load Team',
     maintainer_email='load@yandex-team.ru',
     url='http://yandex.github.io/yandex-tank/',
-    namespace_packages=["yandextank", "yandextank.plugins"],
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
         'cryptography>=3.2.1,<4.0.0', 'pyopenssl==21.0.0',
@@ -25,8 +24,8 @@ analytic tools for the results they produce.
         'pandas<=1.5.3', 'numpy<=1.23.5',
         'pip>=8.1.2',
         'pyyaml>=5.4', 'cerberus>=1.3.1', 'influxdb>=5.0.0',
-        'retrying>=1.3.3', 'pytest-runner', 'typing', 'grpcio>=1.44.0', 'grpcio-tools',
-        'PyJWT', f'netort @ file://{os.getcwd()}/netort', 'yandexcloud>=0.209.0', 'protobuf<3.21'
+        'retrying>=1.3.3', 'pytest-runner', 'typing', 'grpcio==1.44.0', 'grpcio-tools==1.44.0',
+        'PyJWT', 'yandexcloud>=0.209.0', 'protobuf<3.21', 'pyserial', 'retrying', 'six>=1.12.0'
     ],
     setup_requires=[
         'grpcio-tools'

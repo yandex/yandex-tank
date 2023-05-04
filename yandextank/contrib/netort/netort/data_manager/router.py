@@ -3,7 +3,7 @@ import time
 import six
 import pandas as pd
 import logging
-from netort.data_manager.common.interfaces import Aggregated
+from yandextank.contrib.netort.netort.data_manager.common.interfaces import Aggregated
 
 
 if six.PY3:
@@ -26,7 +26,7 @@ class MetricsRouter(threading.Thread):
         """
         :param aggregator_buffer_size: seconds
         :type aggregator_buffer_size: int
-        :type manager: netort.data_manager.DataManager
+        :type manager: yandextank.contrib.netort.netort.data_manager.DataManager
         """
         super(MetricsRouter, self).__init__()
         self.aggregator_buffer_size = aggregator_buffer_size
@@ -50,7 +50,7 @@ class MetricsRouter(threading.Thread):
 
     def _from_buffer(self, metric_data, last_piece):
         """
-        :type metric_data: netort.data_manager.common.interfaces.MetricData
+        :type metric_data: yandextank.contrib.netort.netort.data_manager.common.interfaces.MetricData
         :rtype: pd.DataFrame
         """
         buffered = self.__buffer.pop(metric_data.local_id, None)

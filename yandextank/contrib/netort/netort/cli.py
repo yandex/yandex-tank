@@ -5,7 +5,7 @@ import argparse
 from datetime import datetime
 
 import signal
-from netort.data_manager import DataSession
+from yandextank.contrib.netort.netort.data_manager import DataSession
 import pandas as pd
 import logging
 

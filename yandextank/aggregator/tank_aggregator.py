@@ -10,7 +10,7 @@ from .aggregator import Aggregator, DataPoller
 from .chopper import TimeChopper
 from yandextank.common.interfaces import AggregateResultListener, StatsReader
 
-from netort.data_processing import Drain, Chopper, get_nowait_from_queue
+from yandextank.contrib.netort.netort.data_processing import Drain, Chopper, get_nowait_from_queue
 
 logger = logging.getLogger(__name__)
 

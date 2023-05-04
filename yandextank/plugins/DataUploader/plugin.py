@@ -28,7 +28,7 @@ from .client import APIClient, OverloadClient, LPRequisites, CloudGRPCClient
 from ...common.util import FileScanner
 from .loadtesting_agent import create_loadtesting_agent
 
-from netort.data_processing import Drain
+from yandextank.contrib.netort.netort.data_processing import Drain
 from yandex.cloud.loadtesting.agent.v1 import test_service_pb2
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103

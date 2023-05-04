@@ -14,7 +14,7 @@ from ...common.interfaces import GeneratorPlugin
 from ...common.util import FileMultiReader
 from .log_analyzer import LogAnalyzer
 
-from netort.process import execute
+from yandextank.contrib.netort.netort.process import execute
 
 logger = logging.getLogger(__name__)
 

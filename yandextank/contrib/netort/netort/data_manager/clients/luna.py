@@ -118,7 +118,7 @@ class LunaClient(AbstractClient):
         """
         my_user_agent = None
         try:
-            my_user_agent = pkg_resources.require('netort')[0].version
+            my_user_agent = pkg_resources.require('yandextank.contrib.netort.netort')[0].version
         except pkg_resources.DistributionNotFound:
             my_user_agent = 'DistributionNotFound'
         finally:

@@ -10,7 +10,7 @@ import serial
 import yaml
 import socket
 import six
-from netort.data_manager.common.util import thread_safe_property
+from yandextank.contrib.netort.netort.data_manager.common.util import thread_safe_property
 from six.moves.urllib.parse import urlparse
 from contextlib import closing
 
