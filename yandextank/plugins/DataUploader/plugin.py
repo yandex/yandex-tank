@@ -424,15 +424,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         except KeyError as ex:
             logger.debug(ex)
 
-        if autostop and autostop.cause_criterion:
-            timestamp = 0
-            if autostop.cause_criterion.cause_second:
-                timestamp = autostop.cause_criterion.cause_second[0].get("ts", 0)
-
+        if autostop and autostop.cause_criterion and autostop.imbalance_timestamp:
             self.lp_job.set_imbalance_and_dsc(
                 autostop.imbalance_rps,
                 autostop.cause_criterion.explain(),
-                timestamp
+                autostop.imbalance_timestamp
             )
 
         else:

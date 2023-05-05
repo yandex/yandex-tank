@@ -2,6 +2,7 @@
 # pylint: disable=C0301
 import logging
 import os.path
+from datetime import datetime
 
 from . import criterions as cr
 from . import cumulative_criterions as cum_cr
@@ -22,6 +23,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
         self.cause_criterion = None
         self.imbalance_rps = 0
+        self.imbalance_timestamp = 0
         self._criterions = {}
         self.custom_criterions = []
         self.counting = []
@@ -121,6 +123,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                         if not self.imbalance_rps:
                             self.imbalance_rps = int(
                                 self.cause_criterion.cause_second[0]["overall"]["interval_real"]["len"])
+                        self.imbalance_timestamp = int(self.cause_criterion.cause_second[0]).get('ts', datetime.utcnow().timestamp())
                     self.core.publish('autostop', 'rps', self.imbalance_rps)
                     self.core.publish('autostop', 'reason', criterion.explain())
                     self.log.warning(
