@@ -123,7 +123,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                         if not self.imbalance_rps:
                             self.imbalance_rps = int(
                                 self.cause_criterion.cause_second[0]["overall"]["interval_real"]["len"])
-                        self.imbalance_timestamp = int(self.cause_criterion.cause_second[0]).get('ts', datetime.utcnow().timestamp())
+                        self.imbalance_timestamp = int(self.cause_criterion.cause_second[0].get('ts', datetime.utcnow().timestamp()))
                     self.core.publish('autostop', 'rps', self.imbalance_rps)
                     self.core.publish('autostop', 'reason', criterion.explain())
                     self.log.warning(
