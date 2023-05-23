@@ -86,7 +86,7 @@ class LoadtestingAgent(object):
             LOGGER.info(f'Load agent_id from file {agent_id}')
             return agent_id
         elif self.is_persistent_external_agent():
-            args = dict(name=self.agent_name, folder_id=self.folder_id)
+            args = dict(name=self.agent_name, folder_id=self.folder_id, agent_version=self.agent_version)
         elif self.is_anonymous_external_agent():
             return ANONYMOUS_AGENT_ID
         else:
