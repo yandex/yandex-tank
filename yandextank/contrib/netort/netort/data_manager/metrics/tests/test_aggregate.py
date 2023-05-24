@@ -3,13 +3,9 @@ import os
 
 from pandas.util.testing import assert_frame_equal
 
-from netort.data_manager.common.interfaces import TypeQuantiles, TypeHistogram, TypeDistribution
+from yandextank.contrib.netort.netort.data_manager.common.interfaces import TypeQuantiles, TypeHistogram, TypeDistribution
 import pytest
-try:
-    from yatest import common
-    PATH = common.source_path('load/projects/yandex-tank/netort/netort/data_manager/metrics/tests/')
-except ImportError:
-    PATH = 'netort/data_manager/metrics/tests/'
+PATH = 'netort/data_manager/metrics/tests/'
 
 
 @pytest.mark.xfail

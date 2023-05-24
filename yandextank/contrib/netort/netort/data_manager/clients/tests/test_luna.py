@@ -1,5 +1,5 @@
-from netort.data_manager.clients import LunaClient
-from netort.data_manager.common.interfaces import TypeEvents
+from yandextank.contrib.netort.netort.data_manager.clients import LunaClient
+from yandextank.contrib.netort.netort.data_manager.common.interfaces import TypeEvents
 import pandas as pd
 import pytest
 

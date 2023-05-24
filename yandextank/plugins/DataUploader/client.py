@@ -772,13 +772,11 @@ class CloudGRPCClient(APIClient):
             trails.append(trail)
         return trails
 
-    def _send_data(self, func, interrupted_event, cloud_job_id, message, instance_id=None):
+    def _send_data(self, func, interrupted_event, cloud_job_id, message):
         api_timeouts = self.api_timeouts()
-        if instance_id is None:
-            instance_id = self.compute_instance_id
         while not interrupted_event.is_set():
             try:
-                code = func(instance_id, cloud_job_id, message)
+                code = func(cloud_job_id, message)
                 if code == 0:
                     break
             except self.NotAvailable:
@@ -793,10 +791,9 @@ class CloudGRPCClient(APIClient):
                 else:
                     break
 
-    def send_trails(self, instance_id, cloud_job_id, trails):
+    def send_trails(self, cloud_job_id, trails):
         try:
             request = trail_service_pb2.CreateTrailRequest(
-                compute_instance_id=instance_id,
                 agent_instance_id=self.agent_instance_id,
                 job_id=str(cloud_job_id),
                 data=trails
@@ -813,10 +810,9 @@ class CloudGRPCClient(APIClient):
                 raise self.NotAvailable('Connection is closed. Try to set it again.')
             raise err
 
-    def _send_monitoring(self, instance_id, cloud_job_id, chunks):
+    def _send_monitoring(self, cloud_job_id, chunks):
         try:
             request = monitoring_service_pb2.AddMetricRequest(
-                compute_instance_id=instance_id,
                 agent_instance_id=self.agent_instance_id,
                 job_id=str(cloud_job_id),
                 chunks=chunks

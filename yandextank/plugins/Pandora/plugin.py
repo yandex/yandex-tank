@@ -9,8 +9,8 @@ from threading import Event
 
 import yaml
 
-from netort.resource import manager as resource_manager
-from netort.resource import HttpOpener
+from yandextank.contrib.netort.netort.resource import manager as resource_manager
+from yandextank.contrib.netort.netort.resource import HttpOpener
 
 from .reader import PandoraStatsReader
 from ..Console import Plugin as ConsolePlugin

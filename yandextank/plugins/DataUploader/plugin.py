@@ -28,10 +28,13 @@ from .client import APIClient, OverloadClient, LPRequisites, CloudGRPCClient
 from ...common.util import FileScanner
 from .loadtesting_agent import create_loadtesting_agent
 
-from netort.data_processing import Drain
+from yandextank.contrib.netort.netort.data_processing import Drain
 from yandex.cloud.loadtesting.agent.v1 import test_service_pb2
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
+
+LOADTESTING_CONFIG_PATH = '/etc/tank_client/config.yaml'
+LOADTESTING_CONFIG_PATH_ENV = 'LOADTESTING_AGENT_CONFIG'
 
 
 class BackendTypes(object):
@@ -421,15 +424,11 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         except KeyError as ex:
             logger.debug(ex)
 
-        if autostop and autostop.cause_criterion:
-            timestamp = 0
-            if autostop.cause_criterion.cause_second:
-                timestamp = autostop.cause_criterion.cause_second[0].get("ts", 0)
-
+        if autostop and autostop.cause_criterion and autostop.imbalance_timestamp:
             self.lp_job.set_imbalance_and_dsc(
                 autostop.imbalance_rps,
                 autostop.cause_criterion.explain(),
-                timestamp
+                autostop.imbalance_timestamp
             )
 
         else:
@@ -587,7 +586,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             self._api_token = self.read_token(self.get_option("token_file"))
         elif self.backend_type == BackendTypes.CLOUD:
             loadtesting_agent = create_loadtesting_agent(backend_url=self.get_option('api_address'),
-                                                         config=os.getenv('LOADTESTING_AGENT_CONFIG'))
+                                                         config=os.getenv(LOADTESTING_CONFIG_PATH_ENV, LOADTESTING_CONFIG_PATH))
             return CloudGRPCClient(core_interrupted=self.interrupted,
                                    loadtesting_agent=loadtesting_agent,
                                    api_attempts=self.get_option('api_attempts'),

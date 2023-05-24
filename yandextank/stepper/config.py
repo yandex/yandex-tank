@@ -1,6 +1,6 @@
 import logging
 
-from netort.resource import manager as resource
+from yandextank.contrib.netort.netort.resource import manager as resource
 
 from . import info
 from . import instance_plan as ip

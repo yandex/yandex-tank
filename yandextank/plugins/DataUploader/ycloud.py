@@ -15,6 +15,7 @@ from yandex.cloud.iam.v1.iam_token_service_pb2_grpc import IamTokenServiceStub
 # ====== HELPER ======
 COMPUTE_INSTANCE_METADATA_URL = 'http://169.254.169.254/computeMetadata/v1/instance/?recursive=true'
 COMPUTE_INSTANCE_SA_TOKEN_URL = 'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token'
+COMPUTE_INSTANCE_YANDEX_META_URL = 'http://169.254.169.254/computeMetadata/v1/yandex/?recursive=true'
 IAM_TOKEN_SERVICE_URL = "iam.api.cloud.yandex.net:443"
 TOKEN_TIMEOUT_SECONDS = 5 * 60
 INFINITE_TIMEOUT_SECONDS = 5 * 365 * 24 * 60 * 60
@@ -35,6 +36,22 @@ def get_instance_metadata():
         return
     except Exception:
         LOGGER.exception("Couldn't get instance metadata of current vm")
+        raise
+
+
+def get_instance_yandex_metadata():
+    url = COMPUTE_INSTANCE_YANDEX_META_URL
+    try:
+        session = requests.Session()
+        session.mount(url, HTTPAdapter(max_retries=2))
+        response = session.get(url, headers={"Metadata-Flavor": "Google"}).json()
+        LOGGER.debug(f"Instance yandex metadata {response}")
+        return response
+    except requests.exceptions.ConnectionError:
+        LOGGER.warning('Compute metadata service is unavailable')
+        return
+    except Exception:
+        LOGGER.exception("Couldn't get yandex metadata of current vm")
         raise
 
 

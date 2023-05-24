@@ -4,9 +4,21 @@ import pytest
 from unittest.mock import patch, MagicMock
 from google.protobuf.any_pb2 import Any
 
-from yandextank.plugins.DataUploader.loadtesting_agent import agent_registration_service_pb2, \
-    LoadtestingAgent, AgentOrigin, METADATA_LT_CREATED_ATTR, METADATA_AGENT_VERSION_ATTR, AgentOriginError, \
-    use_yandex_compute_metadata, RUN_IN_ENVIRONMENT_ENV, try_identify_compute_metadata, KnownEnvironment
+from yandextank.plugins.DataUploader.loadtesting_agent import (
+    agent_registration_service_pb2,
+    LoadtestingAgent,
+    AgentOrigin,
+    METADATA_LT_CREATED_ATTR,
+    METADATA_AGENT_VERSION_ATTR,
+    METADATA_AGENT_NAME_ATTR,
+    METADATA_FOLDER_ID_ATTR,
+    AgentOriginError,
+    use_yandex_compute_metadata,
+    RUN_IN_ENVIRONMENT_ENV,
+    try_identify_compute_metadata,
+    KnownEnvironment,
+    _AgentComputeMetadata,
+)
 from yandex.cloud.operation import operation_pb2
 
 
@@ -41,7 +53,18 @@ def patch_loadtesting_agent_get_instance_metadata():
         yield p
 
 
-@pytest.mark.usefixtures('patch_agent_registration_stub', 'patch_loadtesting_agent_get_instance_metadata')
+@pytest.fixture()
+def patch_loadtesting_agent_get_instance_yandex_metadata():
+    with patch('yandextank.plugins.DataUploader.loadtesting_agent.get_instance_yandex_metadata') as p:
+        p.return_value = {}
+        yield p
+
+
+@pytest.mark.usefixtures(
+    'patch_agent_registration_stub',
+    'patch_loadtesting_agent_get_instance_metadata',
+    'patch_loadtesting_agent_get_instance_yandex_metadata',
+)
 def test_agent_send_version_on_greet(patch_agent_registration_stub_register):
     version = str(uuid.uuid4())
     patch_agent_registration_stub_register.return_value = agent_registration_service_pb2.RegisterResponse(
@@ -58,12 +81,12 @@ def test_agent_send_version_on_greet(patch_agent_registration_stub_register):
     assert (METADATA_AGENT_VERSION_ATTR, version) in kwargs['metadata']
 
 
-@pytest.mark.usefixtures('patch_agent_registration_stub', 'patch_loadtesting_agent_get_instance_metadata')
-@pytest.mark.parametrize('agent_origin, agent_name, folder_id', [
-    (AgentOrigin.COMPUTE_EXTERNAL, 'agent name', 'folder id'),
-    (AgentOrigin.EXTERNAL, 'agent name', 'folder id')
-])
-def test_external_agent_registration(agent_origin, agent_name, folder_id, patch_agent_registration_stub_external_register):
+@pytest.mark.usefixtures(
+    'patch_agent_registration_stub',
+    'patch_loadtesting_agent_get_instance_metadata',
+    'patch_loadtesting_agent_get_instance_yandex_metadata',
+)
+def test_external_agent_registration(patch_agent_registration_stub_external_register):
     version = str(uuid.uuid4())
     metadata = Any()
     metadata.Pack(
@@ -73,8 +96,8 @@ def test_external_agent_registration(agent_origin, agent_name, folder_id, patch_
     )
     patch_agent_registration_stub_external_register.return_value = operation_pb2.Operation(metadata=metadata)
 
-    lt = LoadtestingAgent('backend_url', MagicMock(), MagicMock(), agent_origin=agent_origin, agent_name=agent_name,
-                          folder_id=folder_id, agent_version=version)
+    lt = LoadtestingAgent('backend_url', MagicMock(), MagicMock(), agent_origin=AgentOrigin.EXTERNAL, agent_name='agent_name',
+                          folder_id='folder_id', agent_version=version)
     assert lt.agent_id == 'abc-ext'
     patch_agent_registration_stub_external_register.assert_called_once()
     _, kwargs = patch_agent_registration_stub_external_register.call_args
@@ -82,33 +105,57 @@ def test_external_agent_registration(agent_origin, agent_name, folder_id, patch_
     assert (METADATA_AGENT_VERSION_ATTR, version) in kwargs['metadata']
 
 
-@pytest.mark.usefixtures('patch_agent_registration_stub', 'patch_loadtesting_agent_get_instance_metadata')
-@pytest.mark.parametrize('agent_origin', [
-    (AgentOrigin.EXTERNAL, AgentOrigin.COMPUTE_EXTERNAL)
-])
-def test_external_agent_registration_fail(agent_origin):
+@pytest.mark.usefixtures(
+    'patch_agent_registration_stub',
+    'patch_loadtesting_agent_get_instance_metadata',
+    'patch_loadtesting_agent_get_instance_yandex_metadata',
+)
+def test_external_agent_registration_fail():
     with patch.object(LoadtestingAgent, '_load_agent_id') as load_agent_id:
         load_agent_id.return_value = None
         with pytest.raises(AgentOriginError):
-            LoadtestingAgent('backend_url', MagicMock(), MagicMock(), agent_origin=agent_origin, agent_name='persistent')
+            LoadtestingAgent('backend_url', MagicMock(), MagicMock(), agent_origin=AgentOrigin.EXTERNAL, agent_name='persistent')
 
 
 @pytest.mark.usefixtures('patch_agent_registration_stub', 'patch_agent_registration_stub_register')
-def test_identify_compute_metadata(patch_loadtesting_agent_get_instance_metadata):
+@pytest.mark.parametrize(
+    'compute_id, compute_attrs, expected_meta',
+    [
+        (
+            'some_id',
+            {
+                METADATA_AGENT_VERSION_ATTR: 'some_version',
+                METADATA_LT_CREATED_ATTR: True,
+                METADATA_AGENT_NAME_ATTR: 'some_agent',
+                METADATA_FOLDER_ID_ATTR: 'user_folder',
+            },
+            _AgentComputeMetadata('some_id', 'some_version', 'some_agent', 'user_folder', True),
+        ),
+        (
+            'some_id',
+            {
+                METADATA_AGENT_VERSION_ATTR: 'some_version',
+                METADATA_LT_CREATED_ATTR: False,
+                METADATA_AGENT_NAME_ATTR: 'some_agent',
+            },
+            _AgentComputeMetadata('some_id', 'some_version', 'some_agent', 'other_folder', False),
+        ),
+    ],
+)
+def test_identify_compute_metadata(
+    patch_loadtesting_agent_get_instance_metadata,
+    patch_loadtesting_agent_get_instance_yandex_metadata,
+    compute_id,
+    compute_attrs,
+    expected_meta,
+):
     os.environ[RUN_IN_ENVIRONMENT_ENV] = KnownEnvironment.YANDEX_COMPUTE.value
-    version = str(uuid.uuid4())
     patch_loadtesting_agent_get_instance_metadata.return_value = {
-        'id': 'some_id',
-        'attributes': {
-            METADATA_AGENT_VERSION_ATTR: version,
-            METADATA_LT_CREATED_ATTR: True
-        }
+        'id': compute_id,
+        'attributes': compute_attrs,
     }
-    compute_instance_id, agent_version, instance_lt_created = try_identify_compute_metadata()
-
-    assert compute_instance_id == 'some_id'
-    assert agent_version == version
-    assert instance_lt_created is True
+    patch_loadtesting_agent_get_instance_yandex_metadata.return_value = {'folderId': 'other_folder'}
+    assert try_identify_compute_metadata() == expected_meta
 
 
 @pytest.mark.parametrize('env_value, expected', [

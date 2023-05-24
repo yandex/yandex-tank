@@ -6,7 +6,7 @@ import psutil
 from ...common.util import expand_to_seconds
 from ...common.interfaces import AbstractPlugin
 
-from netort.process import execute
+from yandextank.contrib.netort.netort.process import execute
 
 
 class Plugin(AbstractPlugin):

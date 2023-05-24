@@ -5,7 +5,7 @@ import pkg_resources
 import logging
 
 from cerberus import Validator
-from netort.data_manager.common.util import recursive_dict_update
+from yandextank.contrib.netort.netort.data_manager.common.util import recursive_dict_update
 
 
 logger = logging.getLogger(__name__)

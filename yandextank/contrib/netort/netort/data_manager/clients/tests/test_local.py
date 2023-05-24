@@ -9,7 +9,7 @@ import pandas as pd
 import time
 import logging
 import pytest
-from netort.data_manager import DataSession
+from yandextank.contrib.netort.netort.data_manager import DataSession
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 

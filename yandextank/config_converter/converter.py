@@ -293,7 +293,9 @@ class Option(object):
         if _type is None:
             logger.warning('Option {}:{}: no type specified in schema'.format(self.plugin, self.name))
             return self.dummy_converter
-
+        if not isinstance(_type, str):
+            # schemas 'type' field is not limited to string values
+            return self.dummy_converter
         return self.TYPE_CASTERS.get(_type, self.dummy_converter)
 
 

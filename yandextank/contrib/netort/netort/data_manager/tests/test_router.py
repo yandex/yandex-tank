@@ -1,7 +1,7 @@
 import pytest
 from mock import Mock
-from netort.data_manager import MetricsRouter, DataManager, MetricData
-from netort.data_manager.common.interfaces import TypeDistribution, TypeQuantiles
+from yandextank.contrib.netort.netort.data_manager import MetricsRouter, DataManager, MetricData
+from yandextank.contrib.netort.netort.data_manager.common.interfaces import TypeDistribution, TypeQuantiles
 import pandas as pd
 
 
