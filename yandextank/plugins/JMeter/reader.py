@@ -116,7 +116,8 @@ def string_to_df(data):
     chunk = pd.read_csv(StringIO(data),
                         sep='\t',
                         names=jtl_columns, dtype=jtl_types,
-                        keep_default_na=False)
+                        keep_default_na=False,
+                        on_bad_lines='warn')
     chunk["receive_ts"] = (chunk["send_ts"] + chunk['interval_real']) / 1000.0
     chunk['receive_sec'] = chunk["receive_ts"].astype(np.int64)
     chunk['interval_real'] = chunk["interval_real"] * 1000  # convert to µs
