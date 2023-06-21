@@ -13,6 +13,7 @@ import six
 from yandextank.contrib.netort.netort.data_manager.common.util import thread_safe_property
 from six.moves.urllib.parse import urlparse
 from contextlib import closing
+from functools import partial
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,18 @@ try:
     pip = False
 except ImportError:
     pip = True
+
+_TMP_PATH_PREFIX = os.getenv('NETORT_TMP_PATH', '/tmp')
+
+
+class PathProvider(object):
+    def __init__(self, prefix) -> None:
+        self.prefix = prefix
+
+    def tmpfile_path(self, hash):
+        hasher = hashlib.md5()
+        hasher.update(six.ensure_binary(hash))
+        return '%s_%s.downloaded_resource' % (self.prefix, hasher.hexdigest())
 
 
 class FormatDetector(object):
@@ -51,12 +64,14 @@ class ResourceManager(object):
         Use resource_filename and resource_string methods.
     """
 
-    def __init__(self):
+    def __init__(self, tmp_path_prefix: str = '/tmp'):
         self.path = None
+        http_opener = partial(HttpOpener, path_provider=PathProvider(os.path.join(tmp_path_prefix, 'http')))
+        s3_opener = partial(S3Opener, path_provider=PathProvider(os.path.join(tmp_path_prefix, 's3')))
         self.openers = {
-            'http': ('http://', HttpOpener),
-            'https': ('https://', HttpOpener),
-            's3': ('s3://', S3Opener),
+            'http': ('http://', http_opener),
+            'https': ('https://', http_opener),
+            's3': ('s3://', s3_opener),
             'serial': ('/dev/', SerialOpener),
         }
 
@@ -188,7 +203,7 @@ class HttpOpener(object):
         For large files returns wrapped http stream.
     """
 
-    def __init__(self, url, timeout=5, attempts=5):
+    def __init__(self, url, timeout=5, attempts=5, path_provider=None):
         self._filename = None
         self.url = url
         self.fmt_detector = FormatDetector()
@@ -196,6 +211,7 @@ class HttpOpener(object):
         self.data_info = None
         self.timeout = timeout
         self.attempts = attempts
+        self.path_provider = path_provider or PathProvider(os.path.join(_TMP_PATH_PREFIX, 'http'))
         self.get_request_info()
 
     def __call__(self, use_cache=True, *args, **kwargs):
@@ -260,9 +276,7 @@ class HttpOpener(object):
         return tmpfile_path
 
     def tmpfile_path(self):
-        hasher = hashlib.md5()
-        hasher.update(six.ensure_binary(self.hash))
-        return "/tmp/http_%s.downloaded_resource" % hasher.hexdigest()
+        return self.path_provider.tmpfile_path(self.hash)
 
     @retry
     def get_request_info(self):
@@ -458,7 +472,7 @@ class S3Opener(object):
         }
     """
 
-    def __init__(self, uri, credentials_path='/etc/yandex-tank/s3credentials.json'):
+    def __init__(self, uri, credentials_path='/etc/yandex-tank/s3credentials.json', path_provider=None):
         # read s3 credentials
         # FIXME move to default config? which section and how securely store the keys?
         with open(credentials_path) as fname:
@@ -472,6 +486,7 @@ class S3Opener(object):
         urlparsed = urlparse(self.uri)
         self.bucket_key = urlparsed.netloc
         self.object_key = urlparsed.path.strip('/')
+        self.path_provider = path_provider or PathProvider(os.path.join(_TMP_PATH_PREFIX, 's3'))
         self._filename = None
         self._conn = None
 
@@ -504,9 +519,7 @@ class S3Opener(object):
         return self.get_file()
 
     def tmpfile_path(self):
-        hasher = hashlib.md5()
-        hasher.update(self.hash)
-        return "/tmp/s3_%s.downloaded_resource" % hasher.hexdigest()
+        return self.path_provider.tmpfile_path(self.hash)
 
     def get_file(self):
         if not self.conn:
@@ -560,4 +573,4 @@ class S3Opener(object):
         return os.path.getsize(self.get_filename)
 
 
-manager = ResourceManager()
+manager = ResourceManager(tmp_path_prefix=_TMP_PATH_PREFIX)
