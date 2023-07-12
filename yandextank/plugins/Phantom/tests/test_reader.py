@@ -22,7 +22,7 @@ class TestPhantomReader(object):
             self.multireader.get_file(), cache_size=1024)
         df = pd.DataFrame()
         for chunk in reader:
-            df = df.append(chunk)
+            df = pd.concat([df, pd.DataFrame.from_records(chunk)])
         assert (len(df) == 200)
         assert (df['interval_real'].mean() == 11000714.0)
 

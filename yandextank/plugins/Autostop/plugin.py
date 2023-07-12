@@ -128,7 +128,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                     self.core.publish('autostop', 'reason', criterion.explain())
                     self.log.warning(
                         "Autostop criterion requested test stop on %d rps: %s", self.imbalance_rps, criterion_text)
-                    open(self._stop_report_path, 'w').write(criterion_text)
+                    with open(self._stop_report_path, 'w') as f:
+                        f.write(criterion_text)
                     self.core.add_artifact_file(self._stop_report_path)
 
     def monitoring_data(self, data):

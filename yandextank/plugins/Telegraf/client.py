@@ -112,7 +112,7 @@ class LocalhostClient(object):
         logger.info('Starting agent on localhost: {}'.format(args))
         self.session = self.popen(args)
         self.reader_thread = threading.Thread(target=self.read_buffer)
-        self.reader_thread.setDaemon(True)
+        self.reader_thread.daemon = True
         return self.session
 
     def read_buffer(self):
@@ -320,7 +320,7 @@ class SSHClient(object):
         logger.debug('Command to start agent: %s', command)
         self.session = self.ssh.async_session(command)
         self.reader_thread = threading.Thread(target=self.read_buffer)
-        self.reader_thread.setDaemon(True)
+        self.reader_thread.daemon = True
         return self.session
 
     def read_buffer(self):

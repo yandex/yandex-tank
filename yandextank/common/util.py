@@ -825,6 +825,7 @@ class Cleanup:
         self.tankworker.status = Status.TEST_FINISHED
         self.tankworker.save_finish_status()
         self.tankworker.core._collect_artifacts()
+        self.tankworker.core.close()
         return False  # re-raise exception
 
 

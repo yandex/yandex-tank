@@ -581,7 +581,7 @@ def test_get_plugins(config, expected):
     'line(10, 120, 300s)',
 ])
 def test_load_scheme_validator(value):
-    validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'validator': 'load_scheme'}})
+    validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'check_with': 'load_scheme'}})
     cfg = {'load_type': 'rps', 'schedule': value}
     assert validator.validate(cfg)
 
@@ -594,6 +594,6 @@ def test_load_scheme_validator(value):
     'const(10,1.5h)',
 ])
 def test_negative_load_scheme_validator(value):
-    validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'validator': 'load_scheme'}})
+    validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'check_with': 'load_scheme'}})
     cfg = {'load_type': 'rps', 'schedule': value}
     assert not validator.validate(cfg)

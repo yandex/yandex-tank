@@ -160,8 +160,11 @@ def setup_module(module):
 def test_core_load_plugins(config, expected):
     core = TankCore([load_yaml(os.path.join(PATH, '../config'), '00-base.yaml'), config],
                     threading.Event(), TankInfo({}))
-    core.load_plugins()
-    assert set(core.plugins.keys()) == expected
+    try:
+        core.load_plugins()
+        assert set(core.plugins.keys()) == expected
+    finally:
+        core.close()
 
 
 def test_core_plugins_configure():

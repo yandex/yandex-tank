@@ -107,7 +107,7 @@ class PatchedValidator(Validator):
         if not re.match(DURATION_RE, duration):
             self._error(field, 'Load duration examples: 2h30m; 5m15; 180')
 
-    def _validator_load_scheme(self, field, value):
+    def _check_with_load_scheme(self, field, value):
         '''
         step(10,200,5,180)
         step(5,50,2.5,5m)

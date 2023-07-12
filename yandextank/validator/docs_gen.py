@@ -1,8 +1,8 @@
 import argparse
 
-import imp
 import yaml
 from yaml.scanner import ScannerError
+from importlib.machinery import SourceFileLoader
 
 TYPE = 'type'
 LIST = 'list'
@@ -16,7 +16,7 @@ SCHEMA = 'schema'
 EXAMPLES = 'examples'
 ANYOF = 'anyof'
 NO_DSC = '(no description)'
-VALIDATOR = 'validator'
+VALIDATOR = 'check_with'
 
 NoneType = type(None)
 
@@ -418,7 +418,7 @@ def main():
         with open(schema_path) as f:
             schema = yaml.load(f, Loader=yaml.FullLoader)
     except ScannerError:
-        schema_module = imp.load_source('schema', schema_path)
+        schema_module = SourceFileLoader('schema', schema_path).load_module()
         schema = schema_module.OPTIONS
     document = format_schema(schema, RSTRenderer(), title)
 
