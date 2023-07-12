@@ -148,7 +148,7 @@ class JMeterStatAggregator(object):
                 'ts': ts,
                 'metrics': {
                     'instances': stats['allThreads']['max'],
-                    'reqps': 0
+                    'reqps': rps
                 }
             }]
 
