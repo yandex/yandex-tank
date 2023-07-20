@@ -166,17 +166,20 @@ class JMeterReader(object):
         self.closed = False
         self.stat_queue = q.Queue()
         self.stats_reader = JMeterStatAggregator(
-            TimeChopper([poller.poll(self._read_stat_queue())]))
+            TimeChopper([self._notify_poller_finished(poller.poll(self._read_stat_queue()))]))
+
+    def _notify_poller_finished(self, poller):
+        for item in poller:
+            yield item
+        self.agg_finished = True
 
     def _read_stat_queue(self):
         while not self.closed:
             # for _ in range(self.stat_queue.qsize()):
             try:
-                si = self.stat_queue.get_nowait()
-                if si is not None:
-                    yield si
+                yield self.stat_queue.get_nowait()
             except q.Empty:
-                pass
+                yield None
 
     def _read_jtl_chunk(self, jtl):
         data = jtl.read(1024 * 1024 * 10)

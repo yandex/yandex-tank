@@ -89,7 +89,7 @@ class Plugin(GeneratorPlugin):
 
     def get_stats_reader(self):
         if self.stats_reader is None:
-            self.stats_reader = self.reader.stats_reader
+            self.stats_reader = self.get_reader().stats_reader
         return self.stats_reader
 
     def prepare_test(self):
