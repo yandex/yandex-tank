@@ -10,6 +10,8 @@ import re
 import shlex
 
 from pkg_resources import resource_string
+from yandextank.contrib.netort.netort.resource import manager as resource_manager
+from yandextank.contrib.netort.netort.resource import HttpOpener
 
 from .reader import JMeterReader
 from ..Console import Plugin as ConsolePlugin
@@ -55,7 +57,11 @@ class Plugin(GeneratorPlugin):
         ]
 
     def configure(self):
-        self.original_jmx = self.get_option("jmx")
+        opener = resource_manager.get_opener(self.get_option("jmx"))
+        if isinstance(opener, HttpOpener):
+            self.original_jmx = opener.download_file(True, try_ungzip=True)
+        else:
+            self.original_jmx = opener.get_filename
         self.core.add_artifact_file(self.original_jmx, True)
         self.jtl_file = self.core.mkstemp('.jtl', 'jmeter_')
         self.core.add_artifact_file(self.jtl_file)
