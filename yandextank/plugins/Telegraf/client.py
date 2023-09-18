@@ -240,8 +240,8 @@ class SSHClient(object):
         # trying to detect os version/architecture and get information about telegraf client
         # DO NOT DELETE indices in string format below. Python 2.6 does not
         # support string formatting without indices
-        remote_cmd = 'import os; print os.path.isfile("' + self.path[
-            'TELEGRAF_REMOTE_PATH'] + '")'
+        remote_cmd = 'import os; print(os.path.isfile("' + self.path[
+            'TELEGRAF_REMOTE_PATH'] + '"))'
         cmd = self.python + ' -c \'{cmd}\''.format(cmd=remote_cmd)
         remote_telegraf_exists = "False"
         try:
