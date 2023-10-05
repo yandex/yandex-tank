@@ -170,13 +170,14 @@ class SSHClient(object):
         self.host = config['host']
         self.username = config['username']
         self.python = config['python']
+        self.ssh_key_path = config['ssh_key_path']
         self.port = config['port']
         self.telegraf = config['telegraf']
         self.config = AgentConfig(config, old_style_configs)
 
         # connection
         self.session = None
-        self.ssh = SecuredShell(self.host, self.port, self.username, timeout)
+        self.ssh = SecuredShell(self.host, self.port, self.username, timeout, self.ssh_key_path)
         self.incoming_queue = queue.Queue()
         self.buffer = ""
         self.stop_sent = None

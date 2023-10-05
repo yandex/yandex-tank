@@ -171,6 +171,7 @@ class ConfigManager(object):
             'username': host.get('username', getpass.getuser()),
             'telegraf': host.get('telegraf', '/usr/bin/telegraf'),
             'comment': host.get('comment', ''),
+            'ssh_key_path': host.ssh_key_path,
             'custom': custom,
             'host': hostname,
             'startup': startups,

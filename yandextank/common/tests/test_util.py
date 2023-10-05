@@ -203,6 +203,10 @@ class TestFileMultiReader(object):
 
 class TestSecuredShell(object):
 
+    def test_ssh_path(self):
+        s = SecuredShell(None, None, None, 10, ".")
+        assert s.key_filename is not None
+
     def test_check_empty_banner(self):
         with mock.patch.object(SecuredShell, 'connect', SSHClientWithoutBanner):
             with mock.patch.object(paramiko.SSHClient, 'exec_command', SSHClientWithoutBanner.exec_command):
