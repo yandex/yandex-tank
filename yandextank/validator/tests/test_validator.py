@@ -101,6 +101,7 @@ PHANTOM_SCHEMA_V_G = {
          'ignore_lock': False,
          'debug': False,
          'aggregator_max_wait': 31,
+         'skip_generator_check': False
      },
      'telegraf': {
          'package': 'yandextank.plugins.Telegraf',
@@ -225,7 +226,8 @@ PHANTOM_SCHEMA_V_G = {
           'affinity': '',
           'ignore_lock': False,
           'debug': False,
-          'aggregator_max_wait': 31}}
+          'aggregator_max_wait': 31,
+          'skip_generator_check': False}}
      )
 ])
 def test_validate_core(config, expected):
@@ -388,6 +390,7 @@ def test_load_multiple(configs, expected):
                 'ignore_lock': False,
                 'debug': False,
                 'aggregator_max_wait': 31,
+                'skip_generator_check': False,
             },
             'telegraf': {
                 'package': 'yandextank.plugins.Telegraf',

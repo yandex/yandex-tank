@@ -11,7 +11,7 @@ class TestTelegrafPlugin(object):
     def test_plugin_configuration(self):
         """ testing telegraf plugin configuration """
         cfg = {
-            'core': {},
+            'core': {'skip_generator_check': True},
             'telegraf': {
                 'package': 'yandextank.plugins.Telegraf',
                 'enabled': True,
@@ -26,7 +26,7 @@ class TestTelegrafPlugin(object):
     def test_legacy_plugin_configuration(self):
         """ testing legacy plugin configuration, old-style monitoring """
         cfg = {
-            'core': {},
+            'core': {'skip_generator_check': True},
             'monitoring': {
                 'package': 'yandextank.plugins.Telegraf',
                 'enabled': True,

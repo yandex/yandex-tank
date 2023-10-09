@@ -9,6 +9,7 @@ import sys
 import shutil
 import yaml
 
+from yandextank.common.exceptions import GeneratorNotFound
 from yandextank.core import TankCore
 from yandextank.core.tankworker import parse_options, TankInfo
 from yandextank.stepper.module_exceptions import DiskLimitError
@@ -137,6 +138,26 @@ CFG_SMALL_STEPPER = {
     }
 }
 
+CFG_WITHOUT_GEN = {
+    "version": "1.8.36",
+    "core": {
+        'operator': 'fomars',
+        'artifacts_base_dir': TMPDIR,
+        'artifacts_dir': TMPDIR
+    },
+    'phantom': {
+        'package': 'yandextank.plugins.Phantom',
+        'enabled': False
+    },
+    'lunapark': {
+        'package': 'yandextank.plugins.DataUploader',
+        'enabled': True,
+        'api_address': 'https://lunapark.test.yandex-team.ru/',
+        'task': 'LOAD-204',
+        'ignore_target_lock': True,
+    }
+}
+
 CFG_MULTI = load_yaml(PATH, 'test_multi_cfg.yaml')
 original_working_dir = os.getcwd()
 
@@ -165,6 +186,12 @@ def test_core_load_plugins(config, expected):
         assert set(core.plugins.keys()) == expected
     finally:
         core.close()
+
+
+def test_core_load_plugins_without_gen():
+    core = TankCore([CFG_WITHOUT_GEN], threading.Event(), TankInfo({}))
+    with pytest.raises(GeneratorNotFound):
+        core.load_plugins()
 
 
 def test_core_plugins_configure():

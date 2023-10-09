@@ -51,5 +51,9 @@ core:
       description: maximum data waiting time from aggregator
       type: integer
       default: 31
+    skip_generator_check:
+      description: enable tank running without load generator
+      type: boolean
+      default: false
 version:
   type: string
