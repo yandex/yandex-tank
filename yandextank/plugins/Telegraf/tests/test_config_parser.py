@@ -6,8 +6,7 @@ class TestConfigParsers(object):
         """ raw xml read from string """
         config = """
         <Monitoring>
-            <SshKeyPath>/tmp</SshKeyPath>
-            <Host>
+            <Host ssh_key_path="/tmp">
                 <CPU feature="passed"/>
             </Host>
         </Monitoring>
@@ -15,7 +14,7 @@ class TestConfigParsers(object):
 
         host = parse_xml(config)[0]
         assert host.metrics[0].name == 'CPU'
-        assert host.ssh_key_path == '/tmp'
+        assert host.get('ssh_key_path') == '/tmp'
 
     def test_rawxml_parse_without_key_path(self):
         """ raw xml read from string """
@@ -29,14 +28,14 @@ class TestConfigParsers(object):
 
         host = parse_xml(config)[0]
         assert host.metrics[0].name == 'CPU'
-        assert host.ssh_key_path is None
+        assert host.get('ssh_key_path') is None
 
     def test_raw_yaml_parse(self):
         """ raw yaml read from string """
         config = """
-        ssh_key_path: /tmp
         hosts:
           localhost:
+            ssh_key_path: /tmp
             metrics:
               cpu:
               nstat:
@@ -46,7 +45,7 @@ class TestConfigParsers(object):
         host = agents[0]
         assert host.metrics[0].name == 'cpu'
         assert host.metrics[1].name == 'nstat'
-        assert host.ssh_key_path == '/tmp'
+        assert host.get('ssh_key_path') == '/tmp'
 
     def test_raw_yaml_parse_agent_config_is_none(self):
         config = """
@@ -61,7 +60,7 @@ class TestConfigParsers(object):
         host = agents[0]
         assert host.metrics[0].name == 'cpu'
         assert host.metrics[1].name == 'nstat'
-        assert host.ssh_key_path is None
+        assert host.get('ssh_key_path') is None
 
     def test_raw_yaml_parse_empty_config(self):
         config = ''

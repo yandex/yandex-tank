@@ -36,6 +36,18 @@ class TestConfigManager(object):
             'somehost.yandex.tld')
         assert configs[0]['host'] == 'somehost.yandex.tld'
 
+    @pytest.mark.parametrize('test_file', ['target_hint.xml', 'target_hint.yaml', 'target_hint_no_hosts.yaml'])
+    def test_defaults(self, test_file):
+        """ test target hint (special address=[target] option) """
+        manager = ConfigManager()
+        configs = manager.getconfig(
+            os.path.join(get_test_path(), 'yandextank/plugins/Telegraf/tests/', test_file),
+            'somehost.yandex.tld',
+            defaults={'ssh_key_file': '/tmp', 'other_setting': 'val'})
+        assert configs[0]['host'] == 'somehost.yandex.tld'
+        assert configs[0]['ssh_key_file'] == '/tmp'
+        assert configs[0]['other_setting'] == 'val'
+
 
 class TestAgentConfig(object):
     @pytest.mark.parametrize('test_file', ['telegraf_mon.xml', 'telegraf_mon.yaml', 'telegraf_global_inputs.yaml'])

@@ -59,6 +59,7 @@ class Plugin(MonitoringPlugin):
             "config",
             "default_target",
             "ssh_timeout",
+            "ssh_key_path",
             "disguise_hostnames"
         ]
 
@@ -162,6 +163,7 @@ class Plugin(MonitoringPlugin):
         # configuration below.
         self.monitoring.ssh_timeout = expand_to_seconds(
             self.get_option("ssh_timeout", "5s"))
+        self.monitoring.ssh_key_path = self.get_option('ssh_key_path', '')
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
             autostop.add_criterion_class(MetricHigherCriterion)

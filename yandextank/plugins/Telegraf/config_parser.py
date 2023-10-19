@@ -7,12 +7,10 @@ from typing import List
 
 TARGET_HINT_PLACEHOLDER = '[target]'
 YAML_HOSTS_SECTION = 'hosts'
-YAML_SSH_KEY_PATH_SECTION = 'ssh_key_path'
 YAML_METRICS_SECTION = 'metrics'
 YAML_CUSTOM_METRIC = 'custom'
 YAML_CUSTOM_METRIC_CMD = 'cmd'
 XML_HOST_TAG_NAME = 'Host'
-XML_SSH_KEY_PATH_TAG_NAME = 'SshKeyPath'
 XML_HOST_ADDRESS_ATTR = 'address'
 
 
@@ -33,13 +31,11 @@ class Metric(CaseInsensitiveDict):
 class Host(CaseInsensitiveDict):
     address: str
     metrics: List[Metric]
-    ssh_key_path: str
 
-    def __init__(self, address, metrics, data, ssh_key_path):
+    def __init__(self, address, metrics, data):
         super().__init__(data)
         self.address = address
         self.metrics = metrics
-        self.ssh_key_path = ssh_key_path
 
 
 def parse_xml(config) -> List[Host]:
@@ -53,14 +49,10 @@ def parse_xml(config) -> List[Host]:
 
     result = []
     hosts = tree.findall(XML_HOST_TAG_NAME)
-    ssh_key_path = None
-    ssh_tag = tree.find(XML_SSH_KEY_PATH_TAG_NAME)
-    if ssh_tag is not None:
-        ssh_key_path = ssh_tag.text
     for host in hosts:
         hostname = host.get(XML_HOST_ADDRESS_ATTR, '').lower()
         metrics = [Metric(m.tag, m.text, m.attrib) for m in host]
-        result.append(Host(hostname, metrics, host.attrib, ssh_key_path))
+        result.append(Host(hostname, metrics, host.attrib))
     return result
 
 
@@ -80,7 +72,6 @@ def parse_yaml(config) -> List[Host]:
 
     global_inputs = yaml_content.get(YAML_METRICS_SECTION, {})
     agents = yaml_content.get(YAML_HOSTS_SECTION, {})
-    ssh_key_path = yaml_content.get(YAML_SSH_KEY_PATH_SECTION, None)
 
     # if no "agents:" provided use default host
     if len(agents) == 0:
@@ -102,5 +93,5 @@ def parse_yaml(config) -> List[Host]:
                 mtext = str(mdata)
             metrics.append(Metric(mname, mtext, mdata if isinstance(mdata, dict) else {}))
 
-        result.append(Host(hostname, metrics, hostdata if isinstance(hostdata, dict) else {}, ssh_key_path))
+        result.append(Host(hostname, metrics, hostdata if isinstance(hostdata, dict) else {}))
     return result
