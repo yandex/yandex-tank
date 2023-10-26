@@ -252,15 +252,19 @@ class HttpOpener(object):
             logger.info("Downloading resource %s to %s", self.url, tmpfile_path)
             try:
                 data = requests.get(self.url, verify=False, timeout=self.timeout)
+                data.raise_for_status()
             except requests.exceptions.Timeout:
                 logger.info('Connection timeout reached trying to download resource via HttpOpener: %s',
                             self.url, exc_info=True)
+                raise
+            except requests.exceptions.HTTPError:
+                logger.error('Bad http code during resource downloading. Http code: %s, resource: %s', data.status_code, self.url)
                 raise
             else:
                 f = open(tmpfile_path, "wb")
                 f.write(data.content)
                 f.close()
-                logger.info("Successfully downloaded resource %s to %s", self.url, tmpfile_path)
+                logger.info("Successfully downloaded resource %s to %s, http status code: %s", self.url, tmpfile_path, data.status_code)
         if try_ungzip:
             try:
                 if tmpfile_path.endswith('.gz'):
