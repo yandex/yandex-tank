@@ -4,10 +4,11 @@ import logging
 import os.path
 import subprocess
 import time
+import re
 
 from ...common.interfaces import AbstractPlugin, GeneratorPlugin, AggregateResultListener, AbstractInfoWidget, \
     StatsReader
-from ...common.util import FileScanner
+from ...common.util import FileScanner, tail_lines
 from ..Console import Plugin as ConsolePlugin
 from ..Phantom import PhantomReader
 
@@ -31,6 +32,7 @@ class Plugin(GeneratorPlugin):
         AbstractPlugin.__init__(self, core, cfg, name)
         self.stats_reader = None
         self.reader = None
+        self._stderr_path = None
         self.__process = None
         self.__stderr_file = None
         self.__processed_ammo_count = 0
@@ -69,8 +71,8 @@ class Plugin(GeneratorPlugin):
         return self.stats_reader
 
     def prepare_test(self):
-        stderr_path = self.core.mkstemp(".log", "shootexec_stdout_stderr_")
-        self.__stderr_file = open(stderr_path, 'w')
+        self._stderr_path = self.core.mkstemp(".log", "shootexec_stdout_stderr_")
+        self.__stderr_file = open(self._stderr_path, 'w')
 
         _LOGGER.debug("Linking sample reader to aggregator. Reading samples from %s", self.__output_path)
 
@@ -118,9 +120,34 @@ class Plugin(GeneratorPlugin):
         retcode = self.__process.poll()
         if retcode is not None:
             _LOGGER.info("Shooting process done its work with exit code: %s", retcode)
+            if retcode is not None and retcode != 0:
+                lines_amount = 20
+                error, lines = self.extract_error_from_log(lines_amount)
+                if len(lines) > 0:
+                    if error is None:
+                        error = 'Last {} of ShootExec generator log: {}'.format(lines_amount, '\n'.join(lines))
+                    _LOGGER.info("Last %s logs of ShootExec generator log: %s", lines_amount, '\n'.join(lines))
+                if error is None:
+                    error = 'Unknown generator error'
+                self.errors.append(error)
             return abs(retcode)
         else:
             return -1
+
+    def extract_error_from_log(self, lines_amount=20):
+        last_log_contents = tail_lines(self._stderr_path, lines_amount)
+        lines = []
+        error = None
+        for logline in last_log_contents:
+            line = logline.strip('\n')
+            lines.append(line)
+            if self.check_log_line_contains_error(line):
+                error = line
+        return error, lines
+
+    @staticmethod
+    def check_log_line_contains_error(line):
+        return re.search('^panic:|ERROR|FATAL', line) is not None
 
     def end_test(self, retcode):
         if self.__process and self.__process.poll() is None:
