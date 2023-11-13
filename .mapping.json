@@ -234,6 +234,8 @@
   "yandextank/plugins/ShootExec/__init__.py":"load/projects/yandex-tank/yandextank/plugins/ShootExec/__init__.py",
   "yandextank/plugins/ShootExec/config/schema.yaml":"load/projects/yandex-tank/yandextank/plugins/ShootExec/config/schema.yaml",
   "yandextank/plugins/ShootExec/plugin.py":"load/projects/yandex-tank/yandextank/plugins/ShootExec/plugin.py",
+  "yandextank/plugins/ShootExec/tests/phout.dat":"load/projects/yandex-tank/yandextank/plugins/ShootExec/tests/phout.dat",
+  "yandextank/plugins/ShootExec/tests/test_reader.py":"load/projects/yandex-tank/yandextank/plugins/ShootExec/tests/test_reader.py",
   "yandextank/plugins/Telegraf/__init__.py":"load/projects/yandex-tank/yandextank/plugins/Telegraf/__init__.py",
   "yandextank/plugins/Telegraf/agent/__init__.py":"load/projects/yandex-tank/yandextank/plugins/Telegraf/agent/__init__.py",
   "yandextank/plugins/Telegraf/agent/agent.py":"load/projects/yandex-tank/yandextank/plugins/Telegraf/agent/agent.py",
