@@ -65,9 +65,9 @@ class ResourceManager(object):
     """
 
     def __init__(self, tmp_path_prefix: str = '/tmp'):
-        self.path = None
         http_opener = partial(HttpOpener, path_provider=PathProvider(os.path.join(tmp_path_prefix, 'http')))
         s3_opener = partial(S3Opener, path_provider=PathProvider(os.path.join(tmp_path_prefix, 's3')))
+        self.tmp_path_prefix = tmp_path_prefix
         self.openers = {
             'http': ('http://', http_opener),
             'https': ('https://', http_opener),
@@ -115,17 +115,22 @@ class ResourceManager(object):
         Returns:
             file object
         """
-        self.path = rs.find(path) if not pip and path in rs.iterkeys(prefix='resfs/file/load/projects/yandex-tank/')\
+        path = rs.find(path) if not pip and path in rs.iterkeys(prefix='resfs/file/load/projects/yandex-tank/')\
             else path
         opener = None
         # FIXME this parser/matcher should use `urlparse` stdlib
         for opener_name, signature in self.openers.items():
-            if self.path.startswith(signature[0]):
-                opener = signature[1](self.path)
+            if path.startswith(signature[0]):
+                opener = signature[1](path)
+                self._ensure_tmp_path_prefix_exists()
                 break
         if not opener:
-            opener = FileOpener(self.path)
+            opener = FileOpener(path)
         return opener
+
+    def _ensure_tmp_path_prefix_exists(self):
+        if not os.path.exists(self.tmp_path_prefix):
+            os.makedirs(self.tmp_path_prefix, exist_ok=True)
 
 
 class SerialOpener(object):
