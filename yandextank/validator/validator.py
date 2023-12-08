@@ -6,11 +6,13 @@ import uuid
 
 import logging
 
+import glob
 import pkg_resources
 import yaml
 from cerberus.validator import Validator
+from functools import reduce
 
-from yandextank.common.util import recursive_dict_update, read_resource
+from yandextank.common.util import read_resource, recursive_dict_update
 logger = logging.getLogger(__name__)
 
 
@@ -159,9 +161,10 @@ class TankConfig(object):
             configs,
             with_dynamic_options=True,
             core_section='core',
-            error_output=None):
+            error_output=None,
+            skip_base_cfgs=True,
+    ):
         """
-
         :param configs: list of configs dicts
         :param with_dynamic_options: insert uuid, pid, and other DYNAMIC_OPTIONS
         :param core_section: name of core section in config
@@ -169,8 +172,7 @@ class TankConfig(object):
         """
         if not isinstance(configs, list):
             configs = [configs]
-        self.raw_config_dict = self.__load_multiple(
-            [config for config in configs if config is not None])
+        self.raw_config_dict = self.__construct_config(configs, skip_base_cfgs)
         if self.raw_config_dict.get(core_section) is None:
             self.raw_config_dict[core_section] = {}
         self.with_dynamic_options = with_dynamic_options
@@ -205,18 +207,31 @@ class TankConfig(object):
         with open(filename, 'w') as f:
             yaml.dump(self.raw_config_dict, f)
 
-    def __load_multiple(self, configs):
+    def __construct_config(self, user_configs, skip_base_cfgs):
+        user_config = self.__merge_configs(user_configs)
+        if skip_base_cfgs:
+            return user_config
+
+        # YANDEXTANK-715: for backward compatibility purposes
+        user_config = self.__patch_phantom_implicit_enabled_true(user_config)
+        configs = [load_core_base_cfg()] + load_local_base_cfgs() + [user_config]
+        config = self.__merge_configs(configs)
+        return config
+
+    @staticmethod
+    def __merge_configs(configs):
         logger.info('Configs: {}'.format(configs))
-        configs_count = len(configs)
-        if configs_count == 0:
-            return {}
-        elif configs_count == 1:
-            return configs[0]
-        elif configs_count == 2:
-            return recursive_dict_update(configs[0], configs[1])
-        else:
-            return self.__load_multiple(
-                [recursive_dict_update(configs[0], configs[1])] + configs[2:])
+        configs = list(filter(None, configs))
+        return reduce(recursive_dict_update, configs, {})
+
+    @staticmethod
+    def __patch_phantom_implicit_enabled_true(user_cfg):
+        if not (phantom_section := user_cfg.get('phantom', {})):
+            return user_cfg
+        if not phantom_section.get('enabled', True):
+            return user_cfg
+        user_cfg['phantom']['enabled'] = True
+        return user_cfg
 
     def __parse_enabled_plugins(self):
         """
@@ -327,3 +342,29 @@ class ValidatedConfig(object):
 
     def __str__(self):
         return yaml.dump(self.validated)
+
+
+def load_core_base_cfg():
+    return load_yaml_cfg(pkg_resources.resource_filename('yandextank.core', 'config/00-base.yaml'))
+
+
+def load_local_base_cfgs():
+    return cfg_folder_loader('/etc/yandex-tank')
+
+
+def cfg_folder_loader(path):
+    """
+    :type path: str
+    """
+    CFG_WILDCARD = '*.yaml'
+    return [load_yaml_cfg(filename) for filename in sorted(glob.glob(os.path.join(path, CFG_WILDCARD)))]
+
+
+def load_yaml_cfg(cfg_filename):
+    """
+    :type cfg_filename: str
+    """
+    cfg_yaml = yaml.load(read_resource(cfg_filename), Loader=yaml.FullLoader)
+    if not isinstance(cfg_yaml, dict):
+        raise ValidationError('Wrong config format, should be a yaml')
+    return cfg_yaml

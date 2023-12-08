@@ -99,9 +99,8 @@ class TankCore(object):
     UUID_OPTION = 'uuid'
     API_JOBNO = 'api_jobno'
 
-    def __init__(self, configs, interrupted_event, info, storage=None):
+    def __init__(self, configs, interrupted_event, info, storage=None, skip_base_cfgs=True):
         """
-
         :param configs: list of dict
         :param interrupted_event: multiprocessing.Event
         :type info: yandextank.common.interfaces.TankInfo
@@ -132,7 +131,8 @@ class TankCore(object):
         self.config, self.configinitial = TankConfig(self.raw_configs,
                                                      with_dynamic_options=True,
                                                      core_section=self.SECTION,
-                                                     error_output=error_output).validate()
+                                                     error_output=error_output,
+                                                     skip_base_cfgs=skip_base_cfgs).validate()
 
         self.test_id = self.get_option(self.SECTION, 'artifacts_dir',
                                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f"))

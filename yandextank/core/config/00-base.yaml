@@ -17,7 +17,7 @@ offline_report:
   enabled: false
   package: yandextank.plugins.OfflineReport
 phantom:
-  enabled: true
+  enabled: false
   package: yandextank.plugins.Phantom
 pandora:
   enabled: false
