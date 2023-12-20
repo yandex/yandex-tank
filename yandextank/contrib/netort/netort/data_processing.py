@@ -32,7 +32,7 @@ class Drain(threading.Thread):
         self.destination = destination
         self._finished = threading.Event()
         self._interrupted = threading.Event()
-        self.setDaemon(True)  # bdk+ytank stuck w/o this at join of this thread
+        self.daemon = True  # bdk+ytank stuck w/o this at join of this thread
 
     def run(self):
         try:
@@ -74,7 +74,7 @@ class Tee(threading.Thread):
         self.type = type
         self._finished = threading.Event()
         self._interrupted = threading.Event()
-        self.setDaemon(True)  # just in case, bdk+ytank stuck w/o this at join of Drain thread
+        self.daemon = True  # just in case, bdk+ytank stuck w/o this at join of Drain thread
 
     def run(self):
         while not self._interrupted.is_set():

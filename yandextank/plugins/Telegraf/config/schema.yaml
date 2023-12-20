@@ -24,6 +24,9 @@ ssh_timeout:
   examples:
     10s: 10 seconds
     2m: 2 minutes
+ssh_key_path:
+  type: string
+  description: path to ssh key file or folder with keys
 kill_old:
   type: boolean
   default: false

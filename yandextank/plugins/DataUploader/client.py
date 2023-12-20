@@ -923,26 +923,13 @@ class CloudGRPCClient(APIClient):
             imbalance_comment=comment,
         )
 
-        # TODO: update test with update_mask, not rewriting fields https://st.yandex-team.ru/CLOUDLOAD-346
         try:
-            test = self.get_test(cloud_job_id)
-            request.name = test.name
-            request.description = test.description + '/n' + comment
-            request.labels = test.labels
-            request.favorite = test.favorite
-        except grpc.RpcError as err:
-            if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
-                raise self.NotAvailable('Connection is closed. Try to set it again.')
-            logger.warning('Failed to get test details: %s', err)
-
-        try:
-            result = self.test_stub.Update(
+            _ = self.test_stub.Update(
                 request,
                 timeout=self.connection_timeout,
                 metadata=self._request_metadata()
             )
             logger.debug('Set imbalance %s at %s. Comment: %s', rps, timestamp, comment)
-            return result.code
         except grpc.RpcError as err:
             if err.code() in (grpc.StatusCode.UNAVAILABLE, grpc.StatusCode.DEADLINE_EXCEEDED):
                 raise self.NotAvailable('Connection is closed. Try to set it again.')

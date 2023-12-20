@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from yandextank.contrib.netort.netort.data_manager.common.interfaces import TypeQuantiles, TypeHistogram, TypeDistribution
 import pytest

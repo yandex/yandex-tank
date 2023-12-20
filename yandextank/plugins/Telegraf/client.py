@@ -112,7 +112,7 @@ class LocalhostClient(object):
         logger.info('Starting agent on localhost: {}'.format(args))
         self.session = self.popen(args)
         self.reader_thread = threading.Thread(target=self.read_buffer)
-        self.reader_thread.setDaemon(True)
+        self.reader_thread.daemon = True
         return self.session
 
     def read_buffer(self):
@@ -170,13 +170,14 @@ class SSHClient(object):
         self.host = config['host']
         self.username = config['username']
         self.python = config['python']
+        self.ssh_key_path = config['ssh_key_path']
         self.port = config['port']
         self.telegraf = config['telegraf']
         self.config = AgentConfig(config, old_style_configs)
 
         # connection
         self.session = None
-        self.ssh = SecuredShell(self.host, self.port, self.username, timeout)
+        self.ssh = SecuredShell(self.host, self.port, self.username, timeout, self.ssh_key_path)
         self.incoming_queue = queue.Queue()
         self.buffer = ""
         self.stop_sent = None
@@ -240,8 +241,8 @@ class SSHClient(object):
         # trying to detect os version/architecture and get information about telegraf client
         # DO NOT DELETE indices in string format below. Python 2.6 does not
         # support string formatting without indices
-        remote_cmd = 'import os; print os.path.isfile("' + self.path[
-            'TELEGRAF_REMOTE_PATH'] + '")'
+        remote_cmd = 'import os; print(os.path.isfile("' + self.path[
+            'TELEGRAF_REMOTE_PATH'] + '"))'
         cmd = self.python + ' -c \'{cmd}\''.format(cmd=remote_cmd)
         remote_telegraf_exists = "False"
         try:
@@ -320,7 +321,7 @@ class SSHClient(object):
         logger.debug('Command to start agent: %s', command)
         self.session = self.ssh.async_session(command)
         self.reader_thread = threading.Thread(target=self.read_buffer)
-        self.reader_thread.setDaemon(True)
+        self.reader_thread.daemon = True
         return self.session
 
     def read_buffer(self):

@@ -34,7 +34,7 @@ class MetricsRouter(threading.Thread):
         self._finished = threading.Event()
         self._stopped = threading.Event()
         self._interrupted = threading.Event()
-        self.setDaemon(True)  # just in case, bdk+ytank stuck w/o this at join of Drain thread
+        self.daemon = True  # just in case, bdk+ytank stuck w/o this at join of Drain thread
         self.__buffer = {}
 
     def run(self):

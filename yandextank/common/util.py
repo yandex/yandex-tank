@@ -14,6 +14,10 @@ import select
 
 import psutil
 import argparse
+try:
+    import pathlib
+except ImportError:
+    import pathlib2 as pathlib
 
 from paramiko import SSHClient, AutoAddPolicy
 from retrying import retry
@@ -36,16 +40,21 @@ def read_resource(path, file_open_mode='r'):
 
 
 class SecuredShell(object):
-    def __init__(self, host, port, username, timeout=10):
+    def __init__(self, host, port, username, timeout=10, ssh_key_path=None):
         self.host = host
         self.port = port
         self.username = username
         self.timeout = timeout
+        key_filename = None
+        if ssh_key_path:
+            path = pathlib.Path(ssh_key_path)
+            key_filename = [str(f) for f in path.iterdir() if f.is_file()]
+        self.key_filename = key_filename
 
     def connect(self):
-        logger.debug(
-            "Opening SSH connection to {host}:{port}".format(
-                host=self.host, port=self.port))
+        logger.debug("Opening SSH connection to %s:%s", self.host, self.port)
+        if self.key_filename is not None:
+            logger.debug("Trying find ssh keys in %s", self.key_filename)
         client = SSHClient()
         client.load_system_host_keys()
         client.set_missing_host_key_policy(AutoAddPolicy())
@@ -59,6 +68,7 @@ class SecuredShell(object):
                 port=self.port,
                 passphrase=passphrase,
                 username=self.username,
+                key_filename=self.key_filename,
                 timeout=self.timeout, )
         except ValueError as e:
             logger.error(e)
@@ -157,10 +167,12 @@ def check_ssh_connection():
         '-u', '--username', default=pwd.getpwuid(os.getuid())[0], help='SSH username')
 
     parser.add_argument('-p', '--port', default=22, type=int, help='SSH port')
+    parser.add_argument('-k', '--ssh-key-path', default=None, help='Path to SSH key')
     args = parser.parse_args()
-    logging.info(
-        "Checking SSH to %s@%s:%d", args.username, args.endpoint, args.port)
-    ssh = SecuredShell(args.endpoint, args.port, args.username, 10)
+    logging.info("Checking SSH to %s@%s:%d", args.username, args.endpoint, args.port)
+    if args.ssh_key_path:
+        logging.info("use custom ssh_key_path: %s", args.ssh_key_path)
+    ssh = SecuredShell(args.endpoint, args.port, args.username, 10, args.ssh_key_path)
     data = ssh.execute("ls -l")
     logging.info('Output data of ssh.execute("ls -l"): %s', data[0])
     logging.info('Output errors of ssh.execute("ls -l"): %s', data[1])
@@ -825,6 +837,7 @@ class Cleanup:
         self.tankworker.status = Status.TEST_FINISHED
         self.tankworker.save_finish_status()
         self.tankworker.core._collect_artifacts()
+        self.tankworker.core.close()
         return False  # re-raise exception
 
 

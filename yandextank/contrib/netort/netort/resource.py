@@ -13,6 +13,7 @@ import six
 from yandextank.contrib.netort.netort.data_manager.common.util import thread_safe_property
 from six.moves.urllib.parse import urlparse
 from contextlib import closing
+from functools import partial
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,18 @@ try:
     pip = False
 except ImportError:
     pip = True
+
+_TMP_PATH_PREFIX = os.getenv('NETORT_TMP_PATH', '/tmp')
+
+
+class PathProvider(object):
+    def __init__(self, prefix) -> None:
+        self.prefix = prefix
+
+    def tmpfile_path(self, hash):
+        hasher = hashlib.md5()
+        hasher.update(six.ensure_binary(hash))
+        return '%s_%s.downloaded_resource' % (self.prefix, hasher.hexdigest())
 
 
 class FormatDetector(object):
@@ -51,12 +64,14 @@ class ResourceManager(object):
         Use resource_filename and resource_string methods.
     """
 
-    def __init__(self):
-        self.path = None
+    def __init__(self, tmp_path_prefix: str = '/tmp'):
+        http_opener = partial(HttpOpener, path_provider=PathProvider(os.path.join(tmp_path_prefix, 'http')))
+        s3_opener = partial(S3Opener, path_provider=PathProvider(os.path.join(tmp_path_prefix, 's3')))
+        self.tmp_path_prefix = tmp_path_prefix
         self.openers = {
-            'http': ('http://', HttpOpener),
-            'https': ('https://', HttpOpener),
-            's3': ('s3://', S3Opener),
+            'http': ('http://', http_opener),
+            'https': ('https://', http_opener),
+            's3': ('s3://', s3_opener),
             'serial': ('/dev/', SerialOpener),
         }
 
@@ -100,17 +115,22 @@ class ResourceManager(object):
         Returns:
             file object
         """
-        self.path = rs.find(path) if not pip and path in rs.iterkeys(prefix='resfs/file/load/projects/yandex-tank/')\
+        path = rs.find(path) if not pip and path in rs.iterkeys(prefix='resfs/file/load/projects/yandex-tank/')\
             else path
         opener = None
         # FIXME this parser/matcher should use `urlparse` stdlib
         for opener_name, signature in self.openers.items():
-            if self.path.startswith(signature[0]):
-                opener = signature[1](self.path)
+            if path.startswith(signature[0]):
+                opener = signature[1](path)
+                self._ensure_tmp_path_prefix_exists()
                 break
         if not opener:
-            opener = FileOpener(self.path)
+            opener = FileOpener(path)
         return opener
+
+    def _ensure_tmp_path_prefix_exists(self):
+        if not os.path.exists(self.tmp_path_prefix):
+            os.makedirs(self.tmp_path_prefix, exist_ok=True)
 
 
 class SerialOpener(object):
@@ -188,7 +208,7 @@ class HttpOpener(object):
         For large files returns wrapped http stream.
     """
 
-    def __init__(self, url, timeout=5, attempts=5):
+    def __init__(self, url, timeout=5, attempts=5, path_provider=None):
         self._filename = None
         self.url = url
         self.fmt_detector = FormatDetector()
@@ -196,6 +216,7 @@ class HttpOpener(object):
         self.data_info = None
         self.timeout = timeout
         self.attempts = attempts
+        self.path_provider = path_provider or PathProvider(os.path.join(_TMP_PATH_PREFIX, 'http'))
         self.get_request_info()
 
     def __call__(self, use_cache=True, *args, **kwargs):
@@ -236,15 +257,19 @@ class HttpOpener(object):
             logger.info("Downloading resource %s to %s", self.url, tmpfile_path)
             try:
                 data = requests.get(self.url, verify=False, timeout=self.timeout)
+                data.raise_for_status()
             except requests.exceptions.Timeout:
                 logger.info('Connection timeout reached trying to download resource via HttpOpener: %s',
                             self.url, exc_info=True)
+                raise
+            except requests.exceptions.HTTPError:
+                logger.error('Bad http code during resource downloading. Http code: %s, resource: %s', data.status_code, self.url)
                 raise
             else:
                 f = open(tmpfile_path, "wb")
                 f.write(data.content)
                 f.close()
-                logger.info("Successfully downloaded resource %s to %s", self.url, tmpfile_path)
+                logger.info("Successfully downloaded resource %s to %s, http status code: %s", self.url, tmpfile_path, data.status_code)
         if try_ungzip:
             try:
                 if tmpfile_path.endswith('.gz'):
@@ -260,9 +285,7 @@ class HttpOpener(object):
         return tmpfile_path
 
     def tmpfile_path(self):
-        hasher = hashlib.md5()
-        hasher.update(six.ensure_binary(self.hash))
-        return "/tmp/http_%s.downloaded_resource" % hasher.hexdigest()
+        return self.path_provider.tmpfile_path(self.hash)
 
     @retry
     def get_request_info(self):
@@ -458,7 +481,7 @@ class S3Opener(object):
         }
     """
 
-    def __init__(self, uri, credentials_path='/etc/yandex-tank/s3credentials.json'):
+    def __init__(self, uri, credentials_path='/etc/yandex-tank/s3credentials.json', path_provider=None):
         # read s3 credentials
         # FIXME move to default config? which section and how securely store the keys?
         with open(credentials_path) as fname:
@@ -472,6 +495,7 @@ class S3Opener(object):
         urlparsed = urlparse(self.uri)
         self.bucket_key = urlparsed.netloc
         self.object_key = urlparsed.path.strip('/')
+        self.path_provider = path_provider or PathProvider(os.path.join(_TMP_PATH_PREFIX, 's3'))
         self._filename = None
         self._conn = None
 
@@ -504,9 +528,7 @@ class S3Opener(object):
         return self.get_file()
 
     def tmpfile_path(self):
-        hasher = hashlib.md5()
-        hasher.update(self.hash)
-        return "/tmp/s3_%s.downloaded_resource" % hasher.hexdigest()
+        return self.path_provider.tmpfile_path(self.hash)
 
     def get_file(self):
         if not self.conn:
@@ -560,4 +582,4 @@ class S3Opener(object):
         return os.path.getsize(self.get_filename)
 
 
-manager = ResourceManager()
+manager = ResourceManager(tmp_path_prefix=_TMP_PATH_PREFIX)

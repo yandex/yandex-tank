@@ -3,6 +3,7 @@ import getpass
 import logging
 import tempfile
 import pkg_resources
+from copy import deepcopy
 from ..Telegraf.decoder import decoder
 from .config_parser import parse_xml, parse_yaml, ParseError, TARGET_HINT_PLACEHOLDER
 from yandextank.common.util import read_resource
@@ -33,8 +34,21 @@ class ConfigManager(object):
         logger.warning("Couldn't parse monitoring config at %s. Using default config", config)
         return []
 
-    def getconfig(self, filename, target_hint):
+    @staticmethod
+    def _apply_defaults(host_config, defaults: dict):
+        if not defaults:
+            return
+
+        for k, v in defaults.items():
+            if hasattr(host_config, k):
+                if getattr(host_config, k) is None:
+                    setattr(host_config, k, deepcopy(v))
+            elif not host_config.get(k):
+                host_config[k] = deepcopy(v)
+
+    def getconfig(self, filename, target_hint, defaults: dict = None):
         """Prepare config data."""
+        defaults = defaults or {}
         try:
             config = read_resource(filename)
         except IOError as exc:
@@ -45,6 +59,7 @@ class ConfigManager(object):
         config = []
         for host in hosts:
             host_config = self.get_host_config(host, target_hint)
+            self._apply_defaults(host_config, defaults)
             config.append(host_config)
         return config
 
@@ -171,6 +186,7 @@ class ConfigManager(object):
             'username': host.get('username', getpass.getuser()),
             'telegraf': host.get('telegraf', '/usr/bin/telegraf'),
             'comment': host.get('comment', ''),
+            'ssh_key_path': host.get('ssh_key_path'),
             'custom': custom,
             'host': hostname,
             'startup': startups,

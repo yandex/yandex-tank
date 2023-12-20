@@ -40,6 +40,7 @@ class MonitoringCollector(object):
         self.load_start_time = None
         self.config_manager = ConfigManager()
         self.old_style_configs = False
+        self.ssh_key_path = None
         self.clients = {'localhost': LocalhostClient, 'ssh': SSHClient}
 
     def add_listener(self, obj):
@@ -52,7 +53,7 @@ class MonitoringCollector(object):
         agent_configs = []
         if self.config:
             agent_configs = self.config_manager.getconfig(
-                self.config, self.default_target)
+                self.config, self.default_target, defaults={'ssh_key_path': self.ssh_key_path})
 
         # Creating agent for hosts
         for config in agent_configs:

@@ -101,6 +101,7 @@ PHANTOM_SCHEMA_V_G = {
          'ignore_lock': False,
          'debug': False,
          'aggregator_max_wait': 31,
+         'skip_generator_check': False
      },
      'telegraf': {
          'package': 'yandextank.plugins.Telegraf',
@@ -225,7 +226,8 @@ PHANTOM_SCHEMA_V_G = {
           'affinity': '',
           'ignore_lock': False,
           'debug': False,
-          'aggregator_max_wait': 31}}
+          'aggregator_max_wait': 31,
+          'skip_generator_check': False}}
      )
 ])
 def test_validate_core(config, expected):
@@ -388,6 +390,7 @@ def test_load_multiple(configs, expected):
                 'ignore_lock': False,
                 'debug': False,
                 'aggregator_max_wait': 31,
+                'skip_generator_check': False,
             },
             'telegraf': {
                 'package': 'yandextank.plugins.Telegraf',
@@ -581,7 +584,7 @@ def test_get_plugins(config, expected):
     'line(10, 120, 300s)',
 ])
 def test_load_scheme_validator(value):
-    validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'validator': 'load_scheme'}})
+    validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'check_with': 'load_scheme'}})
     cfg = {'load_type': 'rps', 'schedule': value}
     assert validator.validate(cfg)
 
@@ -594,6 +597,6 @@ def test_load_scheme_validator(value):
     'const(10,1.5h)',
 ])
 def test_negative_load_scheme_validator(value):
-    validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'validator': 'load_scheme'}})
+    validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'check_with': 'load_scheme'}})
     cfg = {'load_type': 'rps', 'schedule': value}
     assert not validator.validate(cfg)

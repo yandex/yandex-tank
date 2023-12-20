@@ -25,12 +25,17 @@ class RequestHandler(SimpleHTTPRequestHandler):
         self._do_handle()
 
 
-SERVER = HTTPServer(('localhost', 1234), RequestHandler)
-THREAD = Thread(target=SERVER.serve_forever, name="StatServer")
-
-
-def setup_module(module):
-    THREAD.start()
+@pytest.fixture(scope='module')
+def pandora_server():
+    server = HTTPServer(('localhost', 1234), RequestHandler)
+    t = Thread(target=server.serve_forever, name="StatServer")
+    try:
+        t.start()
+        yield
+    finally:
+        server.shutdown()
+        server.socket.close()
+        t.join()
 
 
 @pytest.mark.parametrize('cfg, expected', [
@@ -60,7 +65,7 @@ def setup_module(module):
             }]}
     )
 ])
-def test_patch_config(cfg, expected):
+def test_patch_config(cfg, expected, pandora_server):
     plugin = Plugin(MagicMock(), {}, 'pandora')
     # '/tmp/9b73d966bcbf27467d4c4190cfe58c2a.downloaded_resource'
     filename = plugin.patch_config(cfg)['pools'][0]['ammo']['file']
@@ -82,9 +87,3 @@ def test_log_line_contains_error(line):
 ])
 def test_log_line_contains_no_error(line):
     assert not Plugin.check_log_line_contains_error(line)
-
-
-def teardown_module(module):
-    SERVER.shutdown()
-    SERVER.socket.close()
-    THREAD.join()

@@ -5,13 +5,14 @@ from six import string_types
 
 
 # FIXME poll_period is not used anywhere
-def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
+def execute(cmd, shell=False, poll_period=1.0, catch_out=False, executable=None):
     """Execute UNIX command and wait for its completion
 
     Args:
         cmd (str or list): command to execute
         shell (bool): invoke inside shell environment
         catch_out (bool): collect process' output
+        executable: custom executable for popen
 
     Returns:
         returncode (int): process return code
@@ -27,6 +28,8 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
 
     if not shell and isinstance(cmd, string_types):
         cmd = shlex.split(cmd)
+    if not executable:
+        executable = None
 
     if catch_out:
         process = subprocess.Popen(
@@ -34,9 +37,10 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False):
             shell=shell,
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            close_fds=True)
+            close_fds=True,
+            executable=executable)
     else:
-        process = subprocess.Popen(cmd, shell=shell, close_fds=True)
+        process = subprocess.Popen(cmd, shell=shell, close_fds=True, executable=executable)
 
     stdout, stderr = process.communicate()
     if stderr:

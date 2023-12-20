@@ -11,10 +11,11 @@ class TestTelegrafPlugin(object):
     def test_plugin_configuration(self):
         """ testing telegraf plugin configuration """
         cfg = {
-            'core': {},
+            'core': {'skip_generator_check': True},
             'telegraf': {
                 'package': 'yandextank.plugins.Telegraf',
                 'enabled': True,
+                'ssh_key_path': '/some/path',
                 'config': os.path.join(get_test_path(), 'yandextank/plugins/Telegraf/tests/telegraf_mon.xml')
             }
         }
@@ -22,11 +23,12 @@ class TestTelegrafPlugin(object):
         telegraf_plugin = core.get_plugin_of_type(TelegrafPlugin)
         telegraf_plugin.configure()
         assert telegraf_plugin.detected_conf == 'telegraf'
+        assert telegraf_plugin.monitoring.ssh_key_path == '/some/path'
 
     def test_legacy_plugin_configuration(self):
         """ testing legacy plugin configuration, old-style monitoring """
         cfg = {
-            'core': {},
+            'core': {'skip_generator_check': True},
             'monitoring': {
                 'package': 'yandextank.plugins.Telegraf',
                 'enabled': True,

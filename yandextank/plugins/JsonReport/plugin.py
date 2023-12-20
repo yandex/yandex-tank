@@ -66,9 +66,14 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             ]
 
     def post_process(self, retcode):
-        self.data_and_stats_stream.close()
-        self.monitoring_stream.close()
+        self.close()
         return retcode
+
+    def close(self):
+        if self.data_and_stats_stream:
+            self.data_and_stats_stream.close()
+        if self.monitoring_stream:
+            self.monitoring_stream.close()
 
     @property
     def is_telegraf(self):

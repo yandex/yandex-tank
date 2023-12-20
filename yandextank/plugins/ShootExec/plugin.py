@@ -2,14 +2,20 @@ import errno
 import collections
 import logging
 import os.path
+import queue
 import subprocess
 import time
+import re
+import pandas as pd
+from typing import Optional
 
 from ...common.interfaces import AbstractPlugin, GeneratorPlugin, AggregateResultListener, AbstractInfoWidget, \
     StatsReader
-from ...common.util import FileScanner
+from ...common.util import FileScanner, tail_lines
 from ..Console import Plugin as ConsolePlugin
 from ..Phantom import PhantomReader
+from yandextank.aggregator import TimeChopper
+from yandextank.aggregator.aggregator import DataPoller
 
 
 _INFO = collections.namedtuple(
@@ -31,6 +37,7 @@ class Plugin(GeneratorPlugin):
         AbstractPlugin.__init__(self, core, cfg, name)
         self.stats_reader = None
         self.reader = None
+        self._stderr_path = None
         self.__process = None
         self.__stderr_file = None
         self.__processed_ammo_count = 0
@@ -61,16 +68,25 @@ class Plugin(GeneratorPlugin):
             self.opened_file = open(self.__output_path, 'r')
             self.add_cleanup(lambda: self.opened_file.close())
             self.reader = PhantomReader(self.opened_file)
+            if not self.__stats_path:
+                self.reader = _ShootExecReader(self.reader, self.core.data_poller)
         return self.reader
 
     def get_stats_reader(self):
         if self.stats_reader is None:
-            self.stats_reader = _FileStatsReader(self.__stats_path) if self.__stats_path else _DummyStatsReader()
+            if self.__stats_path:
+                self.stats_reader = _FileStatsReader(self.__stats_path)
+            else:
+                reader = self.get_reader()
+                if hasattr(reader, 'stats_reader'):
+                    self.stats_reader = reader.stats_reader
+                else:
+                    self.stats_reader = _DummyStatsReader()
         return self.stats_reader
 
     def prepare_test(self):
-        stderr_path = self.core.mkstemp(".log", "shootexec_stdout_stderr_")
-        self.__stderr_file = open(stderr_path, 'w')
+        self._stderr_path = self.core.mkstemp(".log", "shootexec_stdout_stderr_")
+        self.__stderr_file = open(self._stderr_path, 'w')
 
         _LOGGER.debug("Linking sample reader to aggregator. Reading samples from %s", self.__output_path)
 
@@ -118,9 +134,34 @@ class Plugin(GeneratorPlugin):
         retcode = self.__process.poll()
         if retcode is not None:
             _LOGGER.info("Shooting process done its work with exit code: %s", retcode)
+            if retcode is not None and retcode != 0:
+                lines_amount = 20
+                error, lines = self.extract_error_from_log(lines_amount)
+                if len(lines) > 0:
+                    if error is None:
+                        error = 'Last {} of ShootExec generator log: {}'.format(lines_amount, '\n'.join(lines))
+                    _LOGGER.info("Last %s logs of ShootExec generator log: %s", lines_amount, '\n'.join(lines))
+                if error is None:
+                    error = 'Unknown generator error'
+                self.errors.append(error)
             return abs(retcode)
         else:
             return -1
+
+    def extract_error_from_log(self, lines_amount=20):
+        last_log_contents = tail_lines(self._stderr_path, lines_amount)
+        lines = []
+        error = None
+        for logline in last_log_contents:
+            line = logline.strip('\n')
+            lines.append(line)
+            if self.check_log_line_contains_error(line):
+                error = line
+        return error, lines
+
+    @staticmethod
+    def check_log_line_contains_error(line):
+        return re.search('^panic:|ERROR|FATAL', line) is not None
 
     def end_test(self, retcode):
         if self.__process and self.__process.poll() is None:
@@ -222,6 +263,67 @@ class _FileStatsReader(FileScanner, StatsReader):
                 self.__last_ts = curr_ts
                 results.append(self.stats_item(self.__last_ts, float(rps), float(instances)))
         return results
+
+
+class _ShootExecReader(object):
+    def __init__(self, phout_reader: PhantomReader, poller: DataPoller):
+        self._inner_reader = phout_reader
+        self.closed = False
+        self.stat_queue = queue.Queue()
+        self.stats_reader = _ShootExecStatAggregator(
+            TimeChopper([poller.poll(self._read_stat_queue())]))
+
+    @property
+    def buffer(self):
+        return self._inner_reader.buffer
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            res = self._inner_reader.__next__()
+            if res is not None:
+                self.stat_queue.put(res)
+            return res
+        except StopIteration:
+            self.closed = True
+            raise
+
+    def _read_stat_queue(self):
+        while True:
+            try:
+                yield self._prepare_stat_item(self.stat_queue.get_nowait())
+            except queue.Empty:
+                if self.closed:
+                    return None
+                yield None
+
+    def _prepare_stat_item(self, item: Optional[pd.DataFrame]):
+        if item is None:
+            return None
+        item = item.copy(deep=True)
+        item['send_ts'] = item['send_ts'].astype(int)
+        item.set_index(['send_ts'], inplace=True)
+        return item
+
+
+class _ShootExecStatAggregator(object):
+    def __init__(self, source):
+        self.source = source
+
+    def __iter__(self):
+        for ts, _, rps in self.source:
+            yield [{
+                'ts': ts,
+                'metrics': {
+                    'instances': 0,
+                    'reqps': rps
+                }
+            }]
+
+    def close(self):
+        pass
 
 
 class _DummyStatsReader(StatsReader):

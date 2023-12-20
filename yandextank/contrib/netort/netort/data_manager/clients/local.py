@@ -60,7 +60,7 @@ class LocalStorageClient(AbstractClient):
         self.registered_meta = {}
 
         self.processing_thread = ProcessingThread(self)
-        self.processing_thread.setDaemon(True)
+        self.processing_thread.daemon = True
         self.processing_thread.start()
 
     def put(self, data_type, df):

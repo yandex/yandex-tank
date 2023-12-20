@@ -20,7 +20,7 @@ import yaml
 from builtins import str
 
 from yandextank.common.const import RetCode
-from yandextank.common.exceptions import PluginNotPrepared
+from yandextank.common.exceptions import GeneratorNotFound, PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin, MonitoringDataListener
 from yandextank.plugins.DataUploader.client import LPRequisites
 from yandextank.validator.validator import TankConfig, ValidationError
@@ -99,9 +99,8 @@ class TankCore(object):
     UUID_OPTION = 'uuid'
     API_JOBNO = 'api_jobno'
 
-    def __init__(self, configs, interrupted_event, info, storage=None):
+    def __init__(self, configs, interrupted_event, info, storage=None, skip_base_cfgs=True):
         """
-
         :param configs: list of dict
         :param interrupted_event: multiprocessing.Event
         :type info: yandextank.common.interfaces.TankInfo
@@ -132,11 +131,13 @@ class TankCore(object):
         self.config, self.configinitial = TankConfig(self.raw_configs,
                                                      with_dynamic_options=True,
                                                      core_section=self.SECTION,
-                                                     error_output=error_output).validate()
+                                                     error_output=error_output,
+                                                     skip_base_cfgs=skip_base_cfgs).validate()
 
         self.test_id = self.get_option(self.SECTION, 'artifacts_dir',
                                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f"))
         self.lock_dir = self.get_option(self.SECTION, 'lock_dir')
+        self.skip_generator_check = self.get_option(self.SECTION, 'skip_generator_check', False)
         with open(os.path.join(self.artifacts_dir, CONFIGINITIAL), 'w') as f:
             yaml.dump(self.configinitial, f)
         self.add_artifact_file(error_output)
@@ -204,6 +205,7 @@ class TankCore(object):
         Tells core to take plugin options and instantiate plugin classes
         """
         logger.info("Loading plugins...")
+        generators_counter = 0
         for (plugin_name, plugin_path, plugin_cfg) in self.config.plugins:
             logger.debug("Loading plugin %s from %s", plugin_name, plugin_path)
             if plugin_path == "yandextank.plugins.Overload":
@@ -222,6 +224,8 @@ class TankCore(object):
                 raise
             try:
                 instance = getattr(plugin, 'Plugin')(self, cfg=plugin_cfg, name=plugin_name)
+                if isinstance(instance, GeneratorPlugin):
+                    generators_counter += 1
             except AttributeError:
                 logger.warning('Plugin %s classname should be `Plugin`', plugin_name)
                 raise
@@ -229,6 +233,10 @@ class TankCore(object):
                 self.register_plugin(self.PLUGIN_PREFIX + plugin_name, instance)
         for plugin_name, factory in self._extra_plugins:
             self.register_plugin(self.PLUGIN_PREFIX + plugin_name, factory(self))
+        if not generators_counter and not self.skip_generator_check:
+            raise GeneratorNotFound('Generator plugin is missing in test config. '
+                                    'Enable load generator plugin or use "skip_generator_check" '
+                                    'core option to run without load generator')
         logger.debug("Plugin instances: %s", self._plugins)
 
     @property
