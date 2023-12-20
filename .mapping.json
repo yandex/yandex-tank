@@ -85,6 +85,7 @@
   "yandextank/config_converter/converter.py":"load/projects/yandex-tank/yandextank/config_converter/converter.py",
   "yandextank/contrib/__init__.py":"load/projects/yandex-tank/yandextank/contrib/__init__.py",
   "yandextank/contrib/netort/README.md":"load/projects/yandex-tank/yandextank/contrib/netort/README.md",
+  "yandextank/contrib/netort/__init__.py":"load/projects/yandex-tank/yandextank/contrib/netort/__init__.py",
   "yandextank/contrib/netort/netort/__init__.py":"load/projects/yandex-tank/yandextank/contrib/netort/netort/__init__.py",
   "yandextank/contrib/netort/netort/cli.py":"load/projects/yandex-tank/yandextank/contrib/netort/netort/cli.py",
   "yandextank/contrib/netort/netort/data_manager/__init__.py":"load/projects/yandex-tank/yandextank/contrib/netort/netort/data_manager/__init__.py",
