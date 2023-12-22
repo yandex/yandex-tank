@@ -166,11 +166,8 @@ class CustomGun(AbstractGun):
         module_path = cfg["module_path"].split()
         module_name = cfg["module_name"]
         spec = importlib.util.spec_from_file_location(module_name, module_path)
-        try:
-            self.module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(self.module)
-        except Exception:
-            self.module = None
+        self.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.module)
 
     def shoot(self, missile, marker):
         try:
@@ -199,11 +196,8 @@ class ScenarioGun(AbstractGun):
             module_path = None
         module_name = cfg["module_name"]
         spec = importlib.util.spec_from_file_location(module_name, module_path)
-        try:
-            self.module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(self.module)
-        except Exception:
-            self.module = None
+        self.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.module)
         self.scenarios = self.module.SCENARIOS
 
     def shoot(self, missile, marker):
@@ -245,11 +239,8 @@ class UltimateGun(AbstractGun):
         #
         hack_module_name = "%s_%d" % (module_name, time.time())
         spec = importlib.util.spec_from_file_location(hack_module_name, module_path)
-        try:
-            self.module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(self.module)
-        except Exception:
-            self.module = None
+        self.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.module)
         test_class = getattr(self.module, class_name, None)
         if not isinstance(test_class, type):
             raise NotImplementedError(
