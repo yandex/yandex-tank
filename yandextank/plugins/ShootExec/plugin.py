@@ -75,6 +75,7 @@ class Plugin(GeneratorPlugin):
     def get_stats_reader(self):
         if self.stats_reader is None:
             if self.__stats_path:
+                open(self.__stats_path, 'w').close()
                 self.stats_reader = _FileStatsReader(self.__stats_path)
             else:
                 reader = self.get_reader()
