@@ -3,7 +3,6 @@ import yaml
 import pkg_resources
 import logging
 import importlib.util
-import importlib.machinery
 
 from cerberus import Validator
 from yandextank.contrib.netort.netort.data_manager.common.util import recursive_dict_update
@@ -22,10 +21,9 @@ def load_yaml_schema(path):
 
 
 def load_py_schema(path):
-    loader = importlib.machinery.SourceFileLoader('schema', path)
-    spec = importlib.util.spec_from_file_location('schema', path, loader=loader)
+    spec = importlib.util.spec_from_file_location('schema', path)
     schema_module = importlib.util.module_from_spec(spec)
-    loader.exec_module(schema_module)
+    spec.loader.exec_module(schema_module)
     return schema_module.SCHEMA
 
 
