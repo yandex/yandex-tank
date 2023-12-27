@@ -1,6 +1,7 @@
 {
   ".flake8":"load/projects/yandex-tank/.flake8",
   ".gitchangelog.rc":"load/projects/yandex-tank/.gitchangelog.rc",
+  ".readthedocs.yaml":"load/projects/yandex-tank/.readthedocs.yaml",
   ".style.yapf":"load/projects/yandex-tank/.style.yapf",
   ".travis.yml":"load/projects/yandex-tank/.travis.yml",
   "AUTHORS.md":"load/projects/yandex-tank/AUTHORS.md",
