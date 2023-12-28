@@ -112,7 +112,6 @@ class ResourceManager(object):
         self.config = config
         logger.warning('loading rm config from %s', config.openers_config_path)
         self.openers_config = self.load_config_safe(config.openers_config_path)
-        logger.warning('loaded rm config %s', self.openers_config)
 
         self.tmp_path_prefix = config.tmp_path
         self.openers = openers or self._default_openers(config.tmp_path)
