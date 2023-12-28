@@ -1,6 +1,9 @@
 import collections
 import time
 import logging
+import os
+import re
+import yaml
 
 # TODO: rename to format_http_request
 from threading import Lock
@@ -62,3 +65,29 @@ class thread_safe_property(object):
         # by now, attribute is guaranteed to be set,
         # either by this thread or another
         return obj.__dict__[self.__name__]
+
+
+def expandvars(path, default=None):
+    if default is None:
+        return os.path.expandvars(path)
+
+    # matches expressions like ${VALUE} where VALUE is parsed to group 1
+    reVar = r'\$\{([^}]*)\}'
+
+    def replace_var(m: re.Match):
+        return os.environ.get(m.group(1), default)
+
+    return re.sub(reVar, replace_var, path)
+
+
+def env_constructor(loader, node):
+    return expandvars(node.value, default='')
+
+
+class YamlEnvSubstConfigLoader(yaml.SafeLoader):
+    pass
+
+
+env_matcher = re.compile(r'.*\$\{([^}^{]+)\}.*')
+YamlEnvSubstConfigLoader.add_implicit_resolver('!env', env_matcher, None)
+YamlEnvSubstConfigLoader.add_constructor('!env', constructor=env_constructor)

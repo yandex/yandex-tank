@@ -28,11 +28,9 @@ from yandextank.aggregator import TankAggregator
 from yandextank.aggregator.aggregator import DataPoller
 from yandextank.common.util import pid_exists
 
-from yandextank.contrib.netort.netort.resource import manager as resource
+from yandextank.contrib.netort.netort.resource import manager as default_resource_manager
 from yandextank.contrib.netort.netort.process import execute
 from yandextank.version import VERSION
-
-import configparser
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +97,7 @@ class TankCore(object):
     UUID_OPTION = 'uuid'
     API_JOBNO = 'api_jobno'
 
-    def __init__(self, configs, interrupted_event, info, storage=None, skip_base_cfgs=True):
+    def __init__(self, configs, interrupted_event, info, storage=None, skip_base_cfgs=True, resource_manager=None):
         """
         :param configs: list of dict
         :param interrupted_event: multiprocessing.Event
@@ -123,6 +121,7 @@ class TankCore(object):
         self._extra_plugins = []
 
         self.interrupted = interrupted_event
+        self.resource_manager = resource_manager or default_resource_manager
 
         self.error_log = None
         self.monitoring_data_listeners = []
@@ -692,53 +691,3 @@ class Lock(object):
     @classmethod
     def running_ids(cls, lock_dir='/var/lock'):
         return [Lock.load(fname).test_id for fname in glob.glob(os.path.join(lock_dir, cls.LOCK_FILE_WILDCARD))]
-
-
-class ConfigManager(object):
-    """ Option storage class """
-
-    def __init__(self):
-        self.file = None
-        self.config = configparser.RawConfigParser(strict=False)
-
-    def load_files(self, configs):
-        """         Read configs set into storage        """
-        logger.debug("Reading configs: %s", configs)
-        config_filenames = [resource.resource_filename(config) for config in configs]
-        try:
-            self.config.read(config_filenames)
-        except Exception as ex:
-            logger.error("Can't load configs: %s", ex)
-            raise ex
-
-    def flush(self, filename=None):
-        """        Flush current stat to file        """
-        if not filename:
-            filename = self.file
-
-        if filename:
-            with open(filename, 'w') as handle:
-                self.config.write(handle)
-
-    def get_options(self, section, prefix=''):
-        """ Get options list with requested prefix """
-        res = []
-        try:
-            for option in self.config.options(section):
-                if not prefix or option.find(prefix) == 0:
-                    res += [(
-                        option[len(prefix):], self.config.get(section, option))]
-        except configparser.NoSectionError as ex:
-            logger.warning("No section: %s", ex)
-
-        logger.debug(
-            "Section: [%s] prefix: '%s' options:\n%s", section, prefix, res)
-        return res
-
-    def find_sections(self, prefix):
-        """ return sections with specified prefix """
-        res = []
-        for section in self.config.sections():
-            if section.startswith(prefix):
-                res.append(section)
-        return res

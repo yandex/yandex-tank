@@ -10,9 +10,13 @@ import serial
 import yaml
 import socket
 import six
-from yandextank.contrib.netort.netort.data_manager.common.util import thread_safe_property
-from six.moves.urllib.parse import urlparse
+import typing
+import environ
+from yandextank.contrib.netort.netort.data_manager.common.util import thread_safe_property, YamlEnvSubstConfigLoader
+from yandextank.contrib.netort.netort.data_manager.common.condition import uri_like, path_like, Condition
+from urllib.parse import urlparse
 from contextlib import closing
+from dataclasses import dataclass
 from functools import partial
 
 logger = logging.getLogger(__name__)
@@ -59,21 +63,88 @@ class FormatDetector(object):
                 return fmt
 
 
+class OpenerProtocol(typing.Protocol):
+    def __init__(self, path: str):
+        pass
+
+    def __call__(self):
+        pass
+
+    @property
+    def get_filename(self):
+        pass
+
+
+class TempDownloaderOpenerProtocol(OpenerProtocol):
+    def __call__(self, use_cache=True):
+        pass
+
+    def download_file(self, use_cache, try_ungzip=False):
+        pass
+
+
+@dataclass
+class OpenerItem(object):
+    condition: Condition
+    factory: typing.Callable[[str], object]
+    order: int = 0
+
+
+OpenersConfig = typing.Collection[OpenerItem]
+
+
+@environ.config(prefix='NETORT')
+class ResourceManagerConfig(object):
+    tmp_path = environ.var('/tmp')
+    openers_config_path = environ.var('/etc/yandex-tank/netort_openers.config')
+
+
 class ResourceManager(object):
     """ Resource opener manager.
         Use resource_filename and resource_string methods.
     """
 
-    def __init__(self, tmp_path_prefix: str = '/tmp'):
-        http_opener = partial(HttpOpener, path_provider=PathProvider(os.path.join(tmp_path_prefix, 'http')))
-        s3_opener = partial(S3Opener, path_provider=PathProvider(os.path.join(tmp_path_prefix, 's3')))
-        self.tmp_path_prefix = tmp_path_prefix
-        self.openers = {
-            'http': ('http://', http_opener),
-            'https': ('https://', http_opener),
-            's3': ('s3://', s3_opener),
-            'serial': ('/dev/', SerialOpener),
-        }
+    def __init__(
+        self,
+        config: ResourceManagerConfig,
+        openers: typing.Optional[OpenersConfig] = None,
+    ):
+        self.config = config
+        logger.warning('loading rm config from %s', config.openers_config_path)
+        self.openers_config = self.load_config_safe(config.openers_config_path)
+        logger.warning('loaded rm config %s', self.openers_config)
+
+        self.tmp_path_prefix = config.tmp_path
+        self.openers = openers or self._default_openers(config.tmp_path)
+
+    def make_path_provider(self, subfolder: str) -> PathProvider:
+        return PathProvider(os.path.join(self.tmp_path_prefix, subfolder))
+
+    def _default_openers(self, tmp_path_prefix: str) -> OpenersConfig:
+        http_opener = partial(HttpOpener, config=self.openers_config, path_provider=self.make_path_provider('http'))
+        s3_opener = partial(S3Opener, config=self.openers_config, path_provider=self.make_path_provider('s3'))
+
+        return [
+            OpenerItem(uri_like(scheme='http'), http_opener),
+            OpenerItem(uri_like(scheme='https'), http_opener),
+            OpenerItem(uri_like(scheme='s3'), s3_opener),
+            OpenerItem(uri_like(scheme='file'), FileOpener),
+            OpenerItem(path_like('/dev/'), SerialOpener),
+        ]
+
+    def load_config_safe(self, path) -> dict[str, typing.Any] | None:
+        logger.debug('loading ResourceManager config from %s', path)
+        if not path:
+            return None
+        if not os.path.exists(path):
+            logger.warning(f'Netort ResourceManager config file {path} not exists.')
+            return None
+        try:
+            with open(path, 'r') as f:
+                return yaml.load(f, Loader=YamlEnvSubstConfigLoader)
+        except Exception as e:
+            logger.warning(f'Failed to load openers config file at {path}: {str(e)}')
+            return None
 
     def resource_filename(self, path):
         """
@@ -117,23 +188,26 @@ class ResourceManager(object):
         """
         path = rs.find(path) if not pip and path in rs.iterkeys(prefix='resfs/file/load/projects/yandex-tank/')\
             else path
-        opener = None
-        # FIXME this parser/matcher should use `urlparse` stdlib
-        for opener_name, signature in self.openers.items():
-            if path.startswith(signature[0]):
-                opener = signature[1](path)
-                self._ensure_tmp_path_prefix_exists()
-                break
-        if not opener:
-            opener = FileOpener(path)
-        return opener
+
+        self._ensure_tmp_path_prefix_exists()
+        openers = [o for o in self.openers if o.condition(path)]
+        if not openers:
+            return FileOpener(path)
+        if len(openers) == 1:
+            return openers[0].factory(path)
+
+        explanation = '\n'.join([repr(o.condition) for o in openers])
+        logger.info(f'multiple openers meets "{path}": {explanation}')
+        opener = sorted(openers, key=lambda o: o.order, reverse=True)[0]
+        logger.info(f'highest priority: {repr(opener.condition)}')
+        return opener.factory(path)
 
     def _ensure_tmp_path_prefix_exists(self):
         if not os.path.exists(self.tmp_path_prefix):
             os.makedirs(self.tmp_path_prefix, exist_ok=True)
 
 
-class SerialOpener(object):
+class SerialOpener(OpenerProtocol):
     """ Serial device opener.
     """
 
@@ -150,7 +224,7 @@ class SerialOpener(object):
         return self.device
 
 
-class FileOpener(object):
+class FileOpener(OpenerProtocol):
     """ File opener.
     """
 
@@ -202,13 +276,13 @@ def retry(func):
     return with_retry
 
 
-class HttpOpener(object):
+class HttpOpener(TempDownloaderOpenerProtocol):
     """ Http url opener.
         Downloads small files.
         For large files returns wrapped http stream.
     """
 
-    def __init__(self, url, timeout=5, attempts=5, path_provider=None):
+    def __init__(self, url, timeout=5, attempts=5, path_provider=None, config=None):
         self._filename = None
         self.url = url
         self.fmt_detector = FormatDetector()
@@ -217,16 +291,29 @@ class HttpOpener(object):
         self.timeout = timeout
         self.attempts = attempts
         self.path_provider = path_provider or PathProvider(os.path.join(_TMP_PATH_PREFIX, 'http'))
+        self._use_config(url, config)
         self.get_request_info()
 
     def __call__(self, use_cache=True, *args, **kwargs):
         return self.open(use_cache, *args, **kwargs)
 
+    def _use_config(self, url: str, config: dict[str, typing.Any] | None):
+        self._default_headers = None
+        if not config:
+            return
+        config = config.get('http_opener')
+        if not config:
+            return
+        parsed = urlparse(self.url)
+        host = parsed.netloc.rsplit(':')[0]
+        config = config.get(host, {})
+        self._default_headers = config.get('headers')
+
     @retry
     def open(self, use_cache, *args, **kwargs):
         with closing(
                 requests.get(
-                    self.url, stream=True, verify=False,
+                    self.url, stream=True, verify=False, headers=self._default_headers,
                     timeout=self.timeout)) as stream:
             stream_iterator = stream.raw.stream(100, decode_content=True)
             header = next(stream_iterator)
@@ -238,7 +325,7 @@ class HttpOpener(object):
             logger.info(
                 "Resource data is not gzipped and larger than 100MB. Reading from stream.."
             )
-            return HttpBytesStreamWrapper(self.url)
+            return HttpBytesStreamWrapper(self.url, headers=self._default_headers)
         else:
             downloaded_f_path = self.download_file(use_cache)
             if fmt == 'gzip':
@@ -256,7 +343,7 @@ class HttpOpener(object):
         else:
             logger.info("Downloading resource %s to %s", self.url, tmpfile_path)
             try:
-                data = requests.get(self.url, verify=False, timeout=self.timeout)
+                data = requests.get(self.url, verify=False, headers=self._default_headers, timeout=self.timeout)
                 data.raise_for_status()
             except requests.exceptions.Timeout:
                 logger.info('Connection timeout reached trying to download resource via HttpOpener: %s',
@@ -271,27 +358,33 @@ class HttpOpener(object):
                 f.close()
                 logger.info("Successfully downloaded resource %s to %s, http status code: %s", self.url, tmpfile_path, data.status_code)
         if try_ungzip:
-            try:
-                if tmpfile_path.endswith('.gz'):
-                    ungzippedfile_path = tmpfile_path[:-3]
-                else:
-                    ungzippedfile_path = tmpfile_path + '_ungzipped'
-                with gzip.open(tmpfile_path) as gzf, open(ungzippedfile_path, 'wb') as f:
-                    f.write(gzf.read())
-                tmpfile_path = ungzippedfile_path
-            except IOError as ioe:
-                logger.error('Failed trying to unzip downloaded resource %s' % repr(ioe))
+            tmpfile_path = self.try_ungzip(tmpfile_path)
         self._filename = tmpfile_path
         return tmpfile_path
 
     def tmpfile_path(self):
         return self.path_provider.tmpfile_path(self.hash)
 
+    def try_ungzip(self, file_path: str) -> str:
+        try:
+            if file_path.endswith('.gz'):
+                ungzippedfile_path = file_path[:-3]
+            else:
+                ungzippedfile_path = file_path + '_ungzipped'
+            with gzip.open(file_path) as gzf, open(ungzippedfile_path, 'wb') as f:
+                f.write(gzf.read())
+            return ungzippedfile_path
+        except IOError as ioe:
+            logger.error('Failed trying to unzip downloaded resource %s' % repr(ioe))
+        return file_path
+
     @retry
     def get_request_info(self):
         logger.debug('Trying to get info about resource %s', self.url)
+        headers = self._default_headers or {}
+        headers.update({'Accept-Encoding': 'identity'})
         req = requests.Request(
-            'HEAD', self.url, headers={'Accept-Encoding': 'identity'})
+            'HEAD', self.url, headers=headers)
         session = requests.Session()
         prepared = session.prepare_request(req)
         try:
@@ -349,9 +442,10 @@ class HttpBytesStreamWrapper:
     makes http stream to look like file object
     """
 
-    def __init__(self, url):
+    def __init__(self, url, headers=None):
         self.next = self.__next__
         self.url = url
+        self.headers = headers
         self.buffer = b''
         self.pointer = 0
         self.stream_iterator = None
@@ -359,7 +453,7 @@ class HttpBytesStreamWrapper:
         self.chunk_size = 10**3
         try:
             self.stream = requests.get(
-                self.url, stream=True, verify=False, timeout=10)
+                self.url, stream=True, verify=False, timeout=10, headers=headers)
             self.stream_iterator = self.stream.iter_content(self.chunk_size)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.warning(
@@ -385,7 +479,7 @@ class HttpBytesStreamWrapper:
         self.stream.connection.close()
         try:
             self.stream = requests.get(
-                self.url, stream=True, verify=False, timeout=30)
+                self.url, stream=True, verify=False, timeout=30, headers=self.headers)
             self.stream_iterator = self.stream.iter_content(self.chunk_size)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.warning(
@@ -467,7 +561,7 @@ class HttpBytesStreamWrapper:
             return b''
 
 
-class S3Opener(object):
+class S3Opener(OpenerProtocol):
     """ Simple Storage Service opener
         Downloads files.
 
@@ -481,11 +575,13 @@ class S3Opener(object):
         }
     """
 
-    def __init__(self, uri, credentials_path='/etc/yandex-tank/s3credentials.json', path_provider=None):
+    def __init__(self, uri, credentials_path='/etc/yandex-tank/s3credentials.json', path_provider=None, config=None):
         # read s3 credentials
         # FIXME move to default config? which section and how securely store the keys?
-        with open(credentials_path) as fname:
-            s3_credentials = yaml.load(fname.read())
+        s3_credentials = config.get('s3_opener') if config else None
+        if not s3_credentials:
+            with open(credentials_path) as fname:
+                s3_credentials = yaml.load(fname.read())
         self.host = s3_credentials.get('host')
         self.port = s3_credentials.get('port')
         self.is_secure = s3_credentials.get('is_secure', False)
@@ -582,4 +678,4 @@ class S3Opener(object):
         return os.path.getsize(self.get_filename)
 
 
-manager = ResourceManager(tmp_path_prefix=_TMP_PATH_PREFIX)
+manager = ResourceManager(environ.to_config(ResourceManagerConfig))

@@ -29,6 +29,7 @@ class AbstractPlugin(object):
         self.cfg_section_name = name
         self.interrupted = self.core.interrupted
         self.errors = []
+        self.resource_manager = self.core.resource_manager
 
     def set_option(self, option, value):
         self.cfg[option] = value
