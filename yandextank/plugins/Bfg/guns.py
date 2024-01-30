@@ -163,7 +163,7 @@ class CustomGun(AbstractGun):
     def __init__(self, core, cfg):
         super(CustomGun, self).__init__(core, cfg)
         logger.warning("Custom gun is deprecated. Use Ultimate gun instead")
-        module_path = cfg["module_path"].split()
+        module_path = cfg["module_path"].strip()
         module_name = cfg["module_name"]
         spec = importlib.util.spec_from_file_location(module_name, module_path)
         self.module = importlib.util.module_from_spec(spec)
@@ -191,7 +191,7 @@ class ScenarioGun(AbstractGun):
         logger.warning("Scenario gun is deprecated. Use Ultimate gun instead")
         module_path = cfg["module_path"]
         if module_path:
-            module_path = module_path.split()
+            module_path = module_path.strip()
         else:
             module_path = None
         module_name = cfg["module_name"]
@@ -226,7 +226,7 @@ class UltimateGun(AbstractGun):
         class_name = self.get_option("class_name")
         module_path = self.get_option("module_path")
         if module_path:
-            module_path = module_path.split()
+            module_path = module_path.strip()
         else:
             module_path = None
         module_name = self.get_option("module_name")
