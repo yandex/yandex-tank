@@ -1,4 +1,5 @@
 import logging
+import typing
 
 
 class AbstractPlugin(object):
@@ -29,6 +30,7 @@ class AbstractPlugin(object):
         self.cfg_section_name = name
         self.interrupted = self.core.interrupted
         self.errors = []
+        self.resource_manager = self.core.resource_manager
 
     def set_option(self, option, value):
         self.cfg[option] = value
@@ -282,13 +284,57 @@ class StatsReader(object):
 
 
 class MonitoringPlugin(AbstractPlugin):
-
     def __init__(self, core, cfg, name):
         super(MonitoringPlugin, self).__init__(core, cfg, name)
         self.listeners = set()
+        self.collector = None
 
     def add_listener(self, plugin):
         self.listeners.add(plugin)
+
+    def start_test(self):   # noqa: PLE0202
+        if self.collector is None:
+            self.collector: MonitoringCollectorProtocol = DummyCollector()
+        self.collector.start()
+
+    def end_test(self, retcode):   # noqa: PLE0202
+        self.collector.stop()
+        self.poll()
+        return retcode
+
+    def is_test_finished(self):   # noqa: PLE0202
+        self.poll()
+        return -1
+
+    def poll(self):
+        data = self.collector.poll()
+        if len(data) > 0:
+            self.core.publish_monitoring_data(data)
+
+
+MonitoringChunk = typing.Collection
+
+
+class MonitoringCollectorProtocol(typing.Protocol):
+    def start(self):
+        ...
+
+    def stop(self):
+        ...
+
+    def poll(self) -> MonitoringChunk:
+        ...
+
+
+class DummyCollector(MonitoringCollectorProtocol):
+    def start(self):
+        return
+
+    def stop(self):
+        return
+
+    def poll(self) -> MonitoringChunk:
+        return []
 
 
 class TankInfo(object):

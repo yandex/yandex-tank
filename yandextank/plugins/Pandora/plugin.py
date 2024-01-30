@@ -9,8 +9,7 @@ from threading import Event
 
 import yaml
 
-from yandextank.contrib.netort.netort.resource import manager as resource_manager
-from yandextank.contrib.netort.netort.resource import HttpOpener
+from yandextank.contrib.netort.netort.resource import TempDownloaderOpenerProtocol
 
 from .reader import PandoraStatsReader
 from ..Console import Plugin as ConsolePlugin
@@ -132,8 +131,8 @@ class Plugin(GeneratorPlugin):
         for n, pool in enumerate(config['pools']):
             if pool.get('ammo', {}).get('file', ''):
                 self.ammofile = pool['ammo']['file']
-                opener = resource_manager.get_opener(self.ammofile)
-                if isinstance(opener, HttpOpener):
+                opener = self.core.resource_manager.get_opener(self.ammofile)
+                if isinstance(opener, TempDownloaderOpenerProtocol):
                     pool['ammo']['file'] = opener.download_file(True, try_ungzip=True)
                 else:
                     pool['ammo']['file'] = opener.get_filename
@@ -203,8 +202,8 @@ class Plugin(GeneratorPlugin):
         return self.stats_reader
 
     def get_resource(self, resource, dst, permissions=0o644):
-        opener = resource_manager.get_opener(resource)
-        if isinstance(opener, HttpOpener):
+        opener = self.core.resource_manager.get_opener(resource)
+        if isinstance(opener, TempDownloaderOpenerProtocol):
             tmp_path = opener.download_file(True, try_ungzip=True)
             shutil.copy(tmp_path, dst)
             logger.info('Successfully moved resource %s', dst)

@@ -1,4 +1,5 @@
 import collections.abc
+import functools
 import inspect
 import os
 import pwd
@@ -766,6 +767,25 @@ def get_callstack():
     stack = inspect.stack(context=0)
     cleaned = [frame[3] for frame in stack if frame[3] != 'wrapper']
     return '.'.join(cleaned[1:])
+
+
+def observetime(name=None, log=None):
+    log = log or logger
+    name_ = name
+
+    def observetime_fixed(func):
+        name = name_ or func.__name__
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            start_time = time.time()
+            result = func(*args, **kwargs)
+            duration = time.time() - start_time
+            log.debug('%s completed in %s seconds', name, duration)
+            return result
+        return wrapper
+
+    return observetime_fixed
 
 
 def timeit(min_duration_sec):

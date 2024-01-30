@@ -81,16 +81,17 @@ class UriStyleGenerator(object):
 
 
 class Reader(object):
-    def __init__(self, filename, use_cache=True, **kwargs):
+    def __init__(self, filename, use_cache=True, resource_manager=None, **kwargs):
         self.filename = filename
         self.use_cache = use_cache
+        self.resource_manager = resource_manager or resource
 
 
 class AmmoFileReader(Reader):
     """Read missiles from ammo file"""
 
-    def __init__(self, filename, use_cache=True, **kwargs):
-        super(AmmoFileReader, self).__init__(filename, use_cache)
+    def __init__(self, filename, use_cache=True, resource_manager=None, **kwargs):
+        super(AmmoFileReader, self).__init__(filename, use_cache, resource_manager)
         self.log = logging.getLogger(__name__)
         self.log.info("Loading ammo from '%s'" % filename)
 
@@ -105,7 +106,7 @@ class AmmoFileReader(Reader):
         return chunk_header
 
     def __iter__(self):
-        opener = resource.get_opener(self.filename)
+        opener = self.resource_manager.get_opener(self.filename)
         with opener(self.use_cache) as ammo_file:
             info.status.af_size = opener.data_length
             chunk_header = self.read_chunk_header(ammo_file)
@@ -151,7 +152,7 @@ class AmmoFileReader(Reader):
 class SlowLogReader(Reader):
     """Read missiles from SQL slow log. Not usable with Phantom"""
     def __iter__(self):
-        opener = resource.get_opener(self.filename)
+        opener = self.resource_manager.get_opener(self.filename)
         with opener(self.use_cache) as ammo_file:
             info.status.af_size = opener.data_length
             request = ""
@@ -178,7 +179,7 @@ class LineReader(Reader):
     """One line -- one missile"""
 
     def __iter__(self):
-        opener = resource.get_opener(self.filename)
+        opener = self.resource_manager.get_opener(self.filename)
         with opener(self.use_cache) as ammo_file:
             info.status.af_size = opener.data_length
             while True:
@@ -197,7 +198,7 @@ class CaseLineReader(Reader):
     """One line -- one missile with case, tab separated"""
 
     def __iter__(self):
-        opener = resource.get_opener(self.filename)
+        opener = self.resource_manager.get_opener(self.filename)
         with opener(self.use_cache) as ammo_file:
             info.status.af_size = opener.data_length
             while True:
@@ -221,8 +222,8 @@ class CaseLineReader(Reader):
 class AccessLogReader(Reader):
     """Missiles from access log"""
 
-    def __init__(self, filename, headers=None, http_ver='1.1', use_cache=True, **kwargs):
-        super(AccessLogReader, self).__init__(filename, use_cache)
+    def __init__(self, filename, headers=None, http_ver='1.1', use_cache=True, resource_manager=None, **kwargs):
+        super(AccessLogReader, self).__init__(filename, use_cache, resource_manager)
         self.warned = False
         self.headers = set(headers) if headers else set()
         self.log = logging.getLogger(__name__)
@@ -235,7 +236,7 @@ class AccessLogReader(Reader):
         self.log.debug(message)
 
     def __iter__(self):
-        opener = resource.get_opener(self.filename)
+        opener = self.resource_manager.get_opener(self.filename)
         with opener(self.use_cache) as ammo_file:
             info.status.af_size = opener.data_length
             while True:
@@ -271,8 +272,8 @@ def _parse_header(header):
 
 
 class UriReader(Reader):
-    def __init__(self, filename, headers=None, http_ver='1.1', use_cache=True, **kwargs):
-        super(UriReader, self).__init__(filename, use_cache)
+    def __init__(self, filename, headers=None, http_ver='1.1', use_cache=True, resource_manager=None, **kwargs):
+        super(UriReader, self).__init__(filename, use_cache, resource_manager)
         self.headers = {pair[0].strip(): pair[1].strip() for pair in [h.split(':', 1) for h in headers]} \
             if headers else {}
         self.http_ver = http_ver
@@ -280,7 +281,7 @@ class UriReader(Reader):
         self.log.info("Loading ammo from '%s' using URI format." % filename)
 
     def __iter__(self):
-        opener = resource.get_opener(self.filename)
+        opener = self.resource_manager.get_opener(self.filename)
         with opener(self.use_cache) as ammo_file:
             info.status.af_size = opener.data_length
             while True:
@@ -341,7 +342,7 @@ class UriPostReader(Reader):
                     chunk_header = line.strip(b'\r\n')
             return chunk_header
 
-        opener = resource.get_opener(self.filename)
+        opener = self.resource_manager.get_opener(self.filename)
         with opener(self.use_cache) as ammo_file:
             info.status.af_size = opener.data_length
             # if we got StopIteration here, the file is empty
