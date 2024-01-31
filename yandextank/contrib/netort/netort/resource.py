@@ -131,7 +131,7 @@ class ResourceManager(object):
             OpenerItem(path_like('/dev/'), SerialOpener),
         ]
 
-    def load_config_safe(self, path) -> dict[str, typing.Any] | None:
+    def load_config_safe(self, path) -> typing.Optional[typing.Dict[str, typing.Any]]:
         logger.debug('loading ResourceManager config from %s', path)
         if not path:
             return None
@@ -296,7 +296,7 @@ class HttpOpener(TempDownloaderOpenerProtocol):
     def __call__(self, use_cache=True, *args, **kwargs):
         return self.open(use_cache, *args, **kwargs)
 
-    def _use_config(self, url: str, config: dict[str, typing.Any] | None):
+    def _use_config(self, url: str, config: typing.Optional[typing.Dict[str, typing.Any]]):
         self._default_headers = None
         if not config:
             return
