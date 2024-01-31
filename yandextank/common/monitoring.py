@@ -7,8 +7,8 @@ from re import match, findall
 from threading import Thread, Event, Lock
 from queue import Queue
 
-Metric = dict[str, typing.Any]
-Buffer = dict[float, dict[str, typing.Any]]
+Metric = typing.Dict[str, typing.Any]
+Buffer = typing.Dict[float, typing.Dict[str, typing.Any]]
 Composer = typing.Callable[[Metric, Buffer], None]
 
 LOGGER = logging.getLogger(__name__)
@@ -99,8 +99,8 @@ class DefaultCollector(MonitoringCollectorProtocol):
         self.stop_event = Event()
         self.delivery_interval = timeout
         self.poll_interval = poll_interval
-        self.sensors: list[Thread] = []
-        self.panels: list[Thread] = []
+        self.sensors: typing.List[Thread] = []
+        self.panels: typing.List[Thread] = []
         self._data_buffer = []
         self._buffer_lock = Lock()
 
