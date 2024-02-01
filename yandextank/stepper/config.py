@@ -1,5 +1,5 @@
 import logging
-
+from typing import Optional
 from yandextank.contrib.netort.netort.resource import ResourceManager, manager
 
 from . import info
@@ -27,7 +27,7 @@ class ComponentFactory():
             ammo_type='phantom',
             chosen_cases=None,
             use_cache=True,
-            resource_manager: ResourceManager | None = None,
+            resource_manager: Optional[ResourceManager] = None,
     ):
         self.log = logging.getLogger(__name__)
         self.ammo_file = ammo_file
