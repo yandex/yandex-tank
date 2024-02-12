@@ -19,8 +19,7 @@ analytic tools for the results they produce.
     url='http://yandex.github.io/yandex-tank/',
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
-        'cryptography>=3.2.1,<4.0.0', 'pyopenssl==21.0.0',
-        'psutil>=5.8.0', 'requests>=2.5.1', 'paramiko>=2.8.0',
+        'psutil>=5.8.0', 'requests>=2.5.1',
         'pandas<=1.5.3', 'numpy<=1.23.5',
         'pip>=8.1.2',
         'pyyaml>=5.4', 'cerberus>=1.3.1', 'influxdb>=5.0.0',
@@ -52,7 +51,6 @@ analytic tools for the results they produce.
     entry_points={
         'console_scripts': [
             'yandex-tank = yandextank.core.cli:main',
-            'yandex-tank-check-ssh = yandextank.common.util:check_ssh_connection',
             'tank-postloader = yandextank.plugins.DataUploader.cli:post_loader',
             'tank-docs-gen = yandextank.validator.docs_gen:main'
         ],

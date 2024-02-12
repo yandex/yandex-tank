@@ -80,7 +80,6 @@
   "yandextank/common/monitoring.py":"load/projects/yandex-tank/yandextank/common/monitoring.py",
   "yandextank/common/tests/__init__.py":"load/projects/yandex-tank/yandextank/common/tests/__init__.py",
   "yandextank/common/tests/ph.out":"load/projects/yandex-tank/yandextank/common/tests/ph.out",
-  "yandextank/common/tests/ssh_client.py":"load/projects/yandex-tank/yandextank/common/tests/ssh_client.py",
   "yandextank/common/tests/test_interfaces.py":"load/projects/yandex-tank/yandextank/common/tests/test_interfaces.py",
   "yandextank/common/tests/test_monitoring.py":"load/projects/yandex-tank/yandextank/common/tests/test_monitoring.py",
   "yandextank/common/tests/test_util.py":"load/projects/yandex-tank/yandextank/common/tests/test_util.py",
