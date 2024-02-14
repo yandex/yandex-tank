@@ -69,6 +69,8 @@ class SecuredShell(object):
                     filename,
                     '-o',
                     'StrictHostKeyChecking=no',
+                    '-o',
+                    'BatchMode=yes',
                     '-p',
                     str(self.port),
                 ])
@@ -108,7 +110,9 @@ class SecuredShell(object):
             '-o',
             f'ConnectTimeout={self.timeout}',
             '-o',
-            '"StrictHostKeyChecking=no"'
+            'StrictHostKeyChecking=no',
+            '-o',
+            'BatchMode=yes',
         ]
         if self.valid_key is not None:
             ssh_opts = ['-i', self.valid_key] + ssh_opts
