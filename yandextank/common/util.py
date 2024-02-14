@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import time
 import traceback
+from typing import List, Optional
 
 import http.client
 import logging
@@ -146,7 +147,7 @@ class SecuredShell(object):
         process.communicate()
 
     @check_executable_present('ssh')
-    def execute(self, cmd: str, ssh_opts: list[str] | None = None):
+    def execute(self, cmd: str, ssh_opts: Optional[List[str]] = None):
         ssh_opts = ssh_opts or self._make_ssh_opts()
         ssh_cmd = ['ssh'] + ssh_opts + [self.connection_address, cmd]
         logger.info('Executing: %s', ssh_cmd)
