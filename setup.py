@@ -23,15 +23,12 @@ analytic tools for the results they produce.
         'pandas<=1.5.3', 'numpy<=1.23.5',
         'pip>=8.1.2',
         'pyyaml>=5.4', 'cerberus>=1.3.1', 'influxdb>=5.0.0',
-        'retrying>=1.3.3', 'pytest-runner', 'typing', 'grpcio==1.44.0', 'grpcio-tools==1.44.0',
-        'PyJWT', 'yandexcloud>=0.209.0', 'protobuf<3.21', 'pyserial', 'retrying', 'six>=1.12.0',
+        'retrying>=1.3.3', 'pytest-runner', 'typing', 'pyserial', 'retrying', 'six>=1.12.0',
         'environ-config>=20.0.0',
     ],
-    setup_requires=[
-        'grpcio-tools'
-    ],
+    setup_requires=[],
     tests_require=[
-        'pytest>=4.6.3', 'flake8', 'pytest-benchmark', 'zipp==0.5.1', 'mock', 'yandexcloud>=0.209.0'
+        'pytest>=4.6.3', 'flake8', 'pytest-benchmark', 'zipp==0.5.1', 'mock'
     ],
     license='LGPLv2',
     classifiers=[
