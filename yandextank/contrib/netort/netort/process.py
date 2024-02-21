@@ -5,7 +5,7 @@ from six import string_types
 
 
 # FIXME poll_period is not used anywhere
-def execute(cmd, shell=False, poll_period=1.0, catch_out=False, executable=None):
+def execute(cmd, shell=False, poll_period=1.0, catch_out=False, executable=None, env=None):
     """Execute UNIX command and wait for its completion
 
     Args:
@@ -38,9 +38,10 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False, executable=None)
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE,
             close_fds=True,
+            env=env,
             executable=executable)
     else:
-        process = subprocess.Popen(cmd, shell=shell, close_fds=True, executable=executable)
+        process = subprocess.Popen(cmd, shell=shell, close_fds=True, env=env, executable=executable)
 
     stdout, stderr = process.communicate()
     if stderr:
