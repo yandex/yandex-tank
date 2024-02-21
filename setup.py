@@ -19,20 +19,16 @@ analytic tools for the results they produce.
     url='http://yandex.github.io/yandex-tank/',
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
-        'cryptography>=3.2.1,<4.0.0', 'pyopenssl==21.0.0',
-        'psutil>=5.8.0', 'requests>=2.5.1', 'paramiko>=2.8.0',
+        'psutil>=5.8.0', 'requests>=2.5.1',
         'pandas<=1.5.3', 'numpy<=1.23.5',
         'pip>=8.1.2',
         'pyyaml>=5.4', 'cerberus>=1.3.1', 'influxdb>=5.0.0',
-        'retrying>=1.3.3', 'pytest-runner', 'typing', 'grpcio==1.44.0', 'grpcio-tools==1.44.0',
-        'PyJWT', 'yandexcloud>=0.209.0', 'protobuf<3.21', 'pyserial', 'retrying', 'six>=1.12.0',
+        'retrying>=1.3.3', 'pytest-runner', 'typing', 'pyserial', 'retrying', 'six>=1.12.0',
         'environ-config>=20.0.0',
     ],
-    setup_requires=[
-        'grpcio-tools'
-    ],
+    setup_requires=[],
     tests_require=[
-        'pytest>=4.6.3', 'flake8', 'pytest-benchmark', 'zipp==0.5.1', 'mock', 'yandexcloud>=0.209.0'
+        'pytest>=4.6.3', 'flake8', 'pytest-benchmark', 'zipp==0.5.1', 'mock'
     ],
     license='LGPLv2',
     classifiers=[
@@ -52,7 +48,6 @@ analytic tools for the results they produce.
     entry_points={
         'console_scripts': [
             'yandex-tank = yandextank.core.cli:main',
-            'yandex-tank-check-ssh = yandextank.common.util:check_ssh_connection',
             'tank-postloader = yandextank.plugins.DataUploader.cli:post_loader',
             'tank-docs-gen = yandextank.validator.docs_gen:main'
         ],

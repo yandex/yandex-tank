@@ -447,10 +447,10 @@ def main():
     agent_finished = False
     while not agent_finished:
         try:
-            if worker.isAlive():
+            if worker.is_alive():
                 logger.debug("Join the worker thread, waiting for cleanup")
                 worker.join(10)
-            if worker.isAlive():
+            if worker.is_alive():
                 logger.error(
                     "Worker have not finished shutdown in 10 seconds, going to exit anyway"
                 )

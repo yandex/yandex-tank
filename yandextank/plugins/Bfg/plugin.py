@@ -2,8 +2,6 @@ import logging
 import time
 from threading import Event, Thread
 
-import pip
-
 from .guns import LogGun, SqlGun, CustomGun, HttpGun, ScenarioGun, UltimateGun
 from .reader import BfgReader, BfgStatsReader
 from .widgets import BfgInfoWidget
@@ -95,6 +93,7 @@ class Plugin(GeneratorPlugin):
         pip_deps = self.get_option("pip", "").splitlines()
         self.log.info("Installing with PIP: %s", pip_deps)
         if pip_deps:
+            import pip
             retcode = pip.main(["install", "--user"] + pip_deps)
             if retcode != 0:
                 raise RuntimeError("Could not install required deps")

@@ -2,10 +2,13 @@ import collections.abc
 import functools
 import inspect
 import os
-import pwd
 import socket
+import shutil
+
+import subprocess
 import time
 import traceback
+from typing import List, Optional
 
 import http.client
 import logging
@@ -14,13 +17,11 @@ import re
 import select
 
 import psutil
-import argparse
 try:
     import pathlib
 except ImportError:
     import pathlib2 as pathlib
 
-from paramiko import SSHClient, AutoAddPolicy
 from retrying import retry
 
 try:
@@ -42,185 +43,166 @@ def read_resource(path, file_open_mode='r'):
 
 class SecuredShell(object):
     def __init__(self, host, port, username, timeout=10, ssh_key_path=None):
-        self.host = host
+        self.connection_address = f'{username}@{host}'
         self.port = port
-        self.username = username
         self.timeout = timeout
         key_filename = None
         if ssh_key_path:
             path = pathlib.Path(ssh_key_path)
             key_filename = [str(f) for f in path.iterdir() if f.is_file()]
         self.key_filename = key_filename
+        default_ssh_key_path = pathlib.Path(os.path.expanduser('~/.ssh/'))
+        default_key_filename = []
+        if os.path.exists(default_ssh_key_path):
+            default_key_filename = [str(f) for f in default_ssh_key_path.iterdir() if f.is_file()]
+        self.default_key_filename = default_key_filename
+        self.valid_key = self._pick_ssh_key()
 
-    def connect(self):
-        logger.debug("Opening SSH connection to %s:%s", self.host, self.port)
+    def _pick_ssh_key(self):
+        key_filename = self.default_key_filename
         if self.key_filename is not None:
-            logger.debug("Trying find ssh keys in %s", self.key_filename)
-        client = SSHClient()
-        client.load_system_host_keys()
-        client.set_missing_host_key_policy(AutoAddPolicy())
-        passphrase = os.getenv('TANK_SSH_PASSPHRASE')
-        if passphrase == '':
-            passphrase = None
-
-        try:
-            client.connect(
-                self.host,
-                port=self.port,
-                passphrase=passphrase,
-                username=self.username,
-                key_filename=self.key_filename,
-                timeout=self.timeout, )
-        except ValueError as e:
-            logger.error(e)
-            logger.warning(
-                """
-Patching Crypto.Cipher.AES.new and making another attempt.
-
-See here for the details:
-http://uucode.com/blog/2015/02/20/workaround-for-ctr-mode-needs-counter-parameter-not-iv/
-            """)
-            client.close()
-            import Crypto.Cipher.AES
-            orig_new = Crypto.Cipher.AES.new
-
-            def fixed_AES_new(key, *ls):
-                if Crypto.Cipher.AES.MODE_CTR == ls[0]:
-                    ls = list(ls)
-                    ls[1] = ''
-                return orig_new(key, *ls)
-
-            Crypto.Cipher.AES.new = fixed_AES_new
-            client.connect(
-                self.host,
-                port=self.port,
-                username=self.username,
-                timeout=self.timeout)
-        return client
-
-    def check_banner(self):
-        with self.connect() as client:
-            _, banner_stdout, _ = client.exec_command("\n", get_pty=True)
-            banner = banner_stdout.read().decode('utf-8')
-        return banner
-
-    def execute(self, cmd):
-        logger.info("Execute on %s: %s", self.host, cmd)
-        with self.connect() as client:
-            _, stdout, stderr = client.exec_command(cmd, get_pty=True)
-            output = stdout.read().decode('utf8')
-            banner = self.check_banner()
-            if banner:
-                output = output.replace(banner, '')
-                logger.debug("Banner: [{}]".format(banner))
-            errors = stderr.read().decode('utf8')
-            err_code = stdout.channel.recv_exit_status()
-        return output, errors, err_code
-
-    def rm(self, path):
-        return self.execute("rm -f %s" % path)
-
-    def rm_r(self, path):
-        return self.execute("rm -rf %s" % path)
-
-    def mkdir(self, path):
-        return self.execute("mkdir -p %s" % path)
-
-    def send_file(self, local_path, remote_path):
-        logger.info(
-            "Sending [{local}] to {host}:[{remote}]".format(
-                local=local_path, host=self.host, remote=remote_path))
-
-        with self.connect() as client, client.open_sftp() as sftp:
-            result = sftp.put(local_path, remote_path, self.get_progress_logger(local_path))
-        return result
+            key_filename = self.key_filename
+        for filename in key_filename:
+            _, _, exit_code = self.execute(
+                cmd='exit',
+                ssh_opts=[
+                    '-i',
+                    filename,
+                    '-o',
+                    'StrictHostKeyChecking=no',
+                    '-o',
+                    'BatchMode=yes',
+                    '-p',
+                    str(self.port),
+                ])
+            if not exit_code:
+                return filename
+        logger.info('Could not find appropriate file with ssh key')
+        return None
 
     @staticmethod
-    def get_progress_logger(name):
+    def popen(cmd):
+        env = os.environ.copy()
+        return subprocess.Popen(
+            cmd,
+            shell=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+        )
 
-        def print_progress(done, total):
-            logger.info("Transferring {}: {}%".format(name, done * 100 / total))
-        return print_progress
+    @staticmethod
+    def check_executable_present(util: str):
+        def wrapper(func):
+            def inner_wrapper(*args, **kwargs):
+                executable_exists = shutil.which(util)
+                if executable_exists is None:
+                    raise FileNotFoundError(f'{util} executable should be installed to call {func.__name__} on SecureShell')
+                return func(*args, **kwargs)
+            return inner_wrapper
+        return wrapper
 
-    def get_file(self, remote_path, local_path):
-        logger.info(
-            "Receiving from {host}:[{remote}] to [{local}]".format(
-                local=local_path, host=self.host, remote=remote_path))
-        with self.connect() as client, client.open_sftp() as sftp:
-            result = sftp.get(remote_path, local_path, self.get_progress_logger(remote_path))
-        return result
+    def _make_ssh_opts(self, util: str = 'ssh'):
+        port_flag = '-p' if util == 'ssh' else '-P'
+        ssh_opts = [
+            port_flag,
+            str(self.port),
+            '-o',
+            f'ConnectTimeout={self.timeout}',
+            '-o',
+            'StrictHostKeyChecking=no',
+            '-o',
+            'BatchMode=yes',
+        ]
+        if self.valid_key is not None:
+            ssh_opts = ['-i', self.valid_key] + ssh_opts
+        return ssh_opts
 
-    def async_session(self, cmd):
-        return AsyncSession(self, cmd)
+    def ensure_connection(self):
+        _, stderr, exit_code = self.execute(cmd='exit')
+        if exit_code:
+            if not stderr:
+                stderr = 'Unhandled error.'
+            raise ConnectionError(f'Some error occurred in attempt to establish SSH connection: {stderr}')
+
+    @check_executable_present('scp')
+    def send_file(self, local_path: str, remote_path: str):
+        ssh_opts = self._make_ssh_opts(util='scp')
+        full_remote_path = f'{self.connection_address}:{remote_path}'
+
+        cmd = ['scp'] + ssh_opts + [local_path, full_remote_path]
+        logger.info('Sending from [%s] to %s:[%s]', local_path, self.connection_address, remote_path)
+        process = self.popen(' '.join(cmd))
+        process.communicate()
+
+    @check_executable_present('scp')
+    def get_file(self, remote_path: str, local_path: str):
+        ssh_opts = self._make_ssh_opts(util='scp')
+        full_remote_path = f'{self.connection_address}:{remote_path}'
+
+        cmd = ['scp'] + ssh_opts + [full_remote_path, local_path]
+        logger.info('Receiving from %s:[%s] to [%s]', self.connection_address, remote_path, local_path)
+        process = self.popen(' '.join(cmd))
+        process.communicate()
+
+    @check_executable_present('ssh')
+    def execute(self, cmd: str, ssh_opts: Optional[List[str]] = None):
+        ssh_opts = ssh_opts or self._make_ssh_opts()
+        ssh_cmd = ['ssh'] + ssh_opts + [self.connection_address, cmd]
+        logger.info('Executing: %s', ssh_cmd)
+        process = self.popen(' '.join(ssh_cmd))
+
+        stdout, stderr = process.communicate()
+        exit_code = process.poll()
+        stdout = stdout.decode('utf-8')
+        stderr = stderr.decode('utf-8')
+        return stdout, stderr, exit_code
+
+    @check_executable_present('ssh')
+    def execute_without_communicate(self, cmd: str):
+        ssh_opts = self._make_ssh_opts()
+        ssh_cmd = ['ssh'] + ssh_opts + [self.connection_address, cmd]
+        return self.popen(' '.join(ssh_cmd))
+
+    def rm_r(self, path: str):
+        return self.execute(f'rm -rf {path}')
+
+    def async_session(self, cmd: str):
+        return Session(self, cmd)
 
 
-def check_ssh_connection():
-    logging.basicConfig(
-        level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
-    logging.getLogger("paramiko.transport").setLevel(logging.DEBUG)
-
-    parser = argparse.ArgumentParser(
-        description='Test SSH connection for monitoring.')
-    parser.add_argument(
-        '-e', '--endpoint', default='example.org', help='which host to try')
-
-    parser.add_argument(
-        '-u', '--username', default=pwd.getpwuid(os.getuid())[0], help='SSH username')
-
-    parser.add_argument('-p', '--port', default=22, type=int, help='SSH port')
-    parser.add_argument('-k', '--ssh-key-path', default=None, help='Path to SSH key')
-    args = parser.parse_args()
-    logging.info("Checking SSH to %s@%s:%d", args.username, args.endpoint, args.port)
-    if args.ssh_key_path:
-        logging.info("use custom ssh_key_path: %s", args.ssh_key_path)
-    ssh = SecuredShell(args.endpoint, args.port, args.username, 10, args.ssh_key_path)
-    data = ssh.execute("ls -l")
-    logging.info('Output data of ssh.execute("ls -l"): %s', data[0])
-    logging.info('Output errors of ssh.execute("ls -l"): %s', data[1])
-    logging.info('Output code of ssh.execute("ls -l"): %s', data[2])
-
-    logging.info('Trying to create paramiko ssh connection client')
-    client = ssh.connect()
-    logging.info('Created paramiko ssh connection client: %s', client)
-    logging.info('Trying to open sftp')
-    sftp = client.open_sftp()
-    logging.info('Opened sftp: %s', sftp)
-    logging.info('Trying to send test file to /tmp')
-    res = sftp.put('/usr/lib/yandex/yandex-tank/bin/tank.log', '/opt')
-    logging.info('Result of sending test file: %s', res)
-
-
-class AsyncSession(object):
-    def __init__(self, ssh, cmd):
-        self.client = ssh.connect()
-        self.session = self.client.get_transport().open_session()
-        self.session.get_pty()
-        self.session.exec_command(cmd)
+class Session:
+    def __init__(self, client: SecuredShell, cmd: str):
+        self.client = client
+        self.process = self.client.execute_without_communicate(cmd)
+        self.stdout = self.process.stdout
+        os.set_blocking(self.stdout.fileno(), False)
 
     def send(self, data):
-        self.session.send(data)
-
-    def close(self):
-        self.session.close()
-        self.client.close()
-
-    def finished(self):
-        return self.session.exit_status_ready()
-
-    def exit_status(self):
-        return self.session.recv_exit_status()
+        if not self.is_finished() and self.process.stdin:
+            self.process.stdin.write(data)
+            self.process.stdin.flush()
 
     def read_maybe(self):
-        if self.session.recv_ready():
-            return self.session.recv(4096).decode('utf8')
-        else:
-            return None
+        output = self.stdout.read(4096)
+        if output:
+            return output.decode('utf-8')
+        return None
 
-    def read_err_maybe(self):
-        if self.session.recv_stderr_ready():
-            return self.session.recv_stderr(4096).decode('utf8')
-        else:
-            return None
+    def is_finished(self):
+        return self.exit_status() is not None
+
+    def exit_status(self):
+        return self.process.poll()
+
+    def close(self):
+        try:
+            self.process.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            logger.warning('Process has not been ended until timeout expired')
+            self.process.kill()
+            self.process.communicate()
 
 
 # HTTP codes

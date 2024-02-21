@@ -203,11 +203,12 @@ class Plugin(MonitoringPlugin):
             self.monitoring.prepare()
             self.monitoring.start()
             self.add_cleanup(self.monitoring.stop)
-            count = 0
-            while not self.monitoring.first_data_received and count < 15 * 5:
-                time.sleep(0.2)
-                self.monitoring.poll()
-                count += 1
+            if self.monitoring.agents:
+                count = 0
+                while not self.monitoring.first_data_received and count < 15 * 5:
+                    time.sleep(0.2)
+                    self.monitoring.poll()
+                    count += 1
         except BaseException:
             logger.error("Could not start monitoring", exc_info=True)
             if self.die_on_fail:

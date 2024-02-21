@@ -79,6 +79,7 @@ class Plugin(AbstractPlugin):
         for host in self.hosts:
             self.ssh = SecuredShell(host, self.port, self.username, self.timeout, self.ssh_key_path)
             try:
+                self.ssh.ensure_connection()
                 out, errors, err_code = self.ssh.execute(self.cmd)
             except Exception:
                 logger.warning(
