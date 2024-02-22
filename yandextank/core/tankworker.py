@@ -26,14 +26,22 @@ class TankWorker(Process):
     DEFAULT_CONFIG = 'load.yaml'
 
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
-                 log_handlers=None, wait_lock=False, files=None, ammo_file=None,
-                 debug=False, run_shooting_event=None, storage=None, resource_manager=None):
+                 log_handlers=None, wait_lock=False, files=None, ammo_file=None, debug=False,
+                 run_shooting_event=None, storage=None, resource_manager=None, plugins_implicit_enabling=False):
         super().__init__()
         self.interrupted = Event()
         manager = Manager()
         self.info = TankInfo(manager.dict())
         user_configs = self._combine_configs(configs, cli_options, cfg_patches, cli_args)
-        self.core = TankCore(user_configs, self.interrupted, self.info, storage=storage, skip_base_cfgs=no_local, resource_manager=resource_manager)
+        self.core = TankCore(
+            user_configs,
+            self.interrupted,
+            self.info,
+            storage=storage,
+            skip_base_cfgs=no_local,
+            resource_manager=resource_manager,
+            plugins_implicit_enabling=plugins_implicit_enabling,
+        )
 
         is_locked = Lock.is_locked(self.core.lock_dir)
         if is_locked and not self.core.config.get_option(self.SECTION, 'ignore_lock'):
