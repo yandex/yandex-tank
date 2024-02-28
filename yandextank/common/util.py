@@ -53,8 +53,10 @@ class SecuredShell(object):
         self.key_filename = key_filename
         default_ssh_key_path = pathlib.Path(os.path.expanduser('~/.ssh/'))
         default_key_filename = []
-        if os.path.exists(default_ssh_key_path):
+        try:
             default_key_filename = [str(f) for f in default_ssh_key_path.iterdir() if f.is_file()]
+        except Exception as err:
+            logger.warning('Could not access keys with default ~/.ssh/ path : %s', err)
         self.default_key_filename = default_key_filename
         self.valid_key = self._pick_ssh_key()
 
