@@ -163,16 +163,19 @@ class TankConfig(object):
             core_section='core',
             error_output=None,
             skip_base_cfgs=True,
+            plugins_implicit_enabling=False,
     ):
         """
         :param configs: list of configs dicts
         :param with_dynamic_options: insert uuid, pid, and other DYNAMIC_OPTIONS
         :param core_section: name of core section in config
         :param error_output: file to output error messages
+        :param skip_base_cfgs: not merge input configs with base configs
+        :param plugins_implicit_enabling: enable plugin if it`s declared in config without "enabled: false" explicitly
         """
         if not isinstance(configs, list):
             configs = [configs]
-        self.raw_config_dict = self.__construct_config(configs, skip_base_cfgs)
+        self.raw_config_dict = self.__construct_config(configs, skip_base_cfgs, plugins_implicit_enabling)
         if self.raw_config_dict.get(core_section) is None:
             self.raw_config_dict[core_section] = {}
         self.with_dynamic_options = with_dynamic_options
@@ -207,15 +210,22 @@ class TankConfig(object):
         with open(filename, 'w') as f:
             yaml.dump(self.raw_config_dict, f)
 
-    def __construct_config(self, user_configs, skip_base_cfgs):
+    def __construct_config(self, user_configs, skip_base_cfgs, plugins_implicit_enabling):
         user_config = self.__merge_configs(user_configs)
+
+        core_base_config = load_core_base_cfg()
+        local_base_configs = load_local_base_cfgs()
+        base_config = self.__merge_configs([core_base_config] + local_base_configs)
+
+        # YANDEXTANK-764
+        if plugins_implicit_enabling:
+            user_config = self.__patch_plugins_implicit_enabled_true(user_config, plugins=base_config.keys())
         if skip_base_cfgs:
             return user_config
 
         # YANDEXTANK-715: for backward compatibility purposes
         user_config = self.__patch_phantom_implicit_enabled_true(user_config)
-        configs = [load_core_base_cfg()] + load_local_base_cfgs() + [user_config]
-        config = self.__merge_configs(configs)
+        config = self.__merge_configs([base_config, user_config])
         return config
 
     @staticmethod
@@ -224,14 +234,20 @@ class TankConfig(object):
         configs = list(filter(None, configs))
         return reduce(recursive_dict_update, configs, {})
 
+    def __patch_plugins_implicit_enabled_true(self, config, plugins):
+        for section in config:
+            if section in plugins and self.__is_option_patch_required(config, section, option='enabled'):
+                config[section]['enabled'] = True
+        return config
+
+    def __patch_phantom_implicit_enabled_true(self, config):
+        if 'phantom' in config and self.__is_option_patch_required(config, 'phantom', 'enabled'):
+            config['phantom']['enabled'] = True
+        return config
+
     @staticmethod
-    def __patch_phantom_implicit_enabled_true(user_cfg):
-        if not (phantom_section := user_cfg.get('phantom', {})):
-            return user_cfg
-        if not phantom_section.get('enabled', True):
-            return user_cfg
-        user_cfg['phantom']['enabled'] = True
-        return user_cfg
+    def __is_option_patch_required(config, section, option):
+        return option not in config[section]
 
     def __parse_enabled_plugins(self):
         """

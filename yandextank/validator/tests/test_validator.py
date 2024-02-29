@@ -600,3 +600,48 @@ def test_negative_load_scheme_validator(value):
     validator = PatchedValidator({'load_type': {'type': 'string'}, 'schedule': {'check_with': 'load_scheme'}})
     cfg = {'load_type': 'rps', 'schedule': value}
     assert not validator.validate(cfg)
+
+
+@pytest.mark.parametrize(
+    'user_config, expected',
+    [
+        (
+            {
+                'core': {
+                    'operator': 'bugrovegor',
+                },
+                'phantom': {
+                    'package': 'yandextank.plugins.Phantom',
+                },
+                'pandora': {
+                    'package': 'yandextank.plugins.Pandora',
+                    'enabled': False,
+                },
+                'telegraf': {
+                    'package': 'yandextank/plugins/Telegraf',
+                    'enabled': True,
+                },
+            },
+            {
+                'core': {
+                    'operator': 'bugrovegor',
+                },
+                'phantom': {
+                    'package': 'yandextank.plugins.Phantom',
+                    'enabled': True,
+                },
+                'pandora': {
+                    'package': 'yandextank.plugins.Pandora',
+                    'enabled': False,
+                },
+                'telegraf': {
+                    'package': 'yandextank/plugins/Telegraf',
+                    'enabled': True,
+                },
+            },
+        ),
+    ],
+)
+def test_implicit_plugins_enabling(user_config, expected):
+    config = TankConfig([user_config], plugins_implicit_enabling=True).raw_config_dict
+    assert config == expected

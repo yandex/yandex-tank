@@ -7,6 +7,9 @@ bfg:
 console:
   enabled: true
   package: yandextank.plugins.Console
+influx:
+  enabled: false
+  package: yandextank.plugins.InfluxUploader
 jmeter:
   enabled: false
   package: yandextank.plugins.JMeter
@@ -16,33 +19,33 @@ json_report:
 offline_report:
   enabled: false
   package: yandextank.plugins.OfflineReport
-phantom:
+opentsdb:
   enabled: false
-  package: yandextank.plugins.Phantom
+  package: yandextank.plugins.OpenTSDBUploader
+overload:
+  enabled: false
+  package: yandextank.plugins.DataUploader
 pandora:
   enabled: false
   package: yandextank.plugins.Pandora
+phantom:
+  enabled: false
+  package: yandextank.plugins.Phantom
+platform:
+  enabled: false
+  package: yandextank.plugins.Platform
+rcassert:
+  enabled: true
+  package: yandextank.plugins.RCAssert
 rcheck:
   enabled: true
   package: yandextank.plugins.ResourceCheck
 shellexec:
   enabled: true
   package: yandextank.plugins.ShellExec
+shootexec:
+  enabled: false
+  package: yandextank.plugins.ShootExec
 telegraf:
   enabled: true
   package: yandextank.plugins.Telegraf
-rcassert:
-  enabled: true
-  package: yandextank.plugins.RCAssert
-overload:
-  enabled: false
-  package: yandextank.plugins.DataUploader
-influx:
-  enabled: false
-  package: yandextank.plugins.InfluxUploader
-opentsdb:
-  enabled: false
-  package: yandextank.plugins.OpenTSDBUploader
-metaconf:
-  enabled: false
-  package: yandextank.plugins.MetaConf

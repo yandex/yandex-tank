@@ -97,7 +97,16 @@ class TankCore(object):
     UUID_OPTION = 'uuid'
     API_JOBNO = 'api_jobno'
 
-    def __init__(self, configs, interrupted_event, info, storage=None, skip_base_cfgs=True, resource_manager=None):
+    def __init__(
+        self,
+        configs,
+        interrupted_event,
+        info,
+        storage=None,
+        skip_base_cfgs=True,
+        resource_manager=None,
+        plugins_implicit_enabling=False,
+    ):
         """
         :param configs: list of dict
         :param interrupted_event: multiprocessing.Event
@@ -131,7 +140,8 @@ class TankCore(object):
                                                      with_dynamic_options=True,
                                                      core_section=self.SECTION,
                                                      error_output=error_output,
-                                                     skip_base_cfgs=skip_base_cfgs).validate()
+                                                     skip_base_cfgs=skip_base_cfgs,
+                                                     plugins_implicit_enabling=plugins_implicit_enabling).validate()
 
         self.test_id = self.get_option(self.SECTION, 'artifacts_dir',
                                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f"))
