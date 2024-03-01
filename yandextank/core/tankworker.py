@@ -127,7 +127,9 @@ class TankWorker(Process):
 
     def save_finish_status(self):
         with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:
-            yaml.safe_dump(self.get_status(), f, encoding='utf-8', allow_unicode=True)
+            status_data = self.get_status()
+            status_data['status_code'] = Status.TEST_FINISHED.decode('utf8')
+            yaml.safe_dump(status_data, f, encoding='utf-8', allow_unicode=True)
 
     def get_info(self, section_name, key_name):
         return self.info.get_value([section_name, key_name])

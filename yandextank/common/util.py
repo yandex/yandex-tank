@@ -838,9 +838,9 @@ class Cleanup:
                 msgs.append(msg)
                 logger.error(msg, exc_info=True)
         self.tankworker.add_msgs(*msgs)
-        self.tankworker.status = Status.TEST_FINISHED
         self.tankworker.save_finish_status()
         self.tankworker.core._collect_artifacts()
+        self.tankworker.status = Status.TEST_FINISHED
         self.tankworker.core.close()
         return False  # re-raise exception
 
