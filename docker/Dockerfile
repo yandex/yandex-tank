@@ -63,6 +63,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 RUN curl -L -v -o pandora https://github.com/yandex/pandora/releases/latest/download/pandora_0.3.8_linux_amd64 && \
     chmod +x ./pandora && \
     mv ./pandora /usr/local/bin/
+    
+RUN pip install pip --upgrade && pip install pyopenssl --upgrade
 
 COPY files/bashrc /root/.bashrc
 COPY files/inputrc /root/.inputrc
