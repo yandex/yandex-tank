@@ -599,6 +599,9 @@ class AddressWizard:
 
 
 def recursive_dict_update(d1, d2):
+    # the actual field may be of union type, as in telegraf and pandora plugins: [dict, string]
+    if not isinstance(d1, collections.abc.MutableMapping):
+        return d2 if d2 is not None else d1
     for k, v in d2.items():
         if isinstance(v, collections.abc.Mapping):
             r = recursive_dict_update(d1.get(k, {}), v)
