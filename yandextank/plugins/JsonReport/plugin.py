@@ -8,7 +8,7 @@ import os
 
 import io
 
-from ...common.interfaces import AbstractPlugin,\
+from ...common.interfaces import AbstractPlugin, \
     MonitoringDataListener, AggregateResultListener
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
