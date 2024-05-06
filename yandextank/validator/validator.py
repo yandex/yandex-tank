@@ -223,7 +223,7 @@ class TankConfig(object):
 
         # YANDEXTANK-764
         if plugins_implicit_enabling:
-            user_config = self.__patch_plugins_implicit_enabled_true(user_config, plugins=base_config.keys())
+            user_config = self.__enable_plugins_implicitly(user_config, plugins=base_config)
         if skip_base_cfgs:
             return user_config
 
@@ -238,20 +238,26 @@ class TankConfig(object):
         configs = list(filter(None, configs))
         return reduce(recursive_dict_update, configs, {})
 
-    def __patch_plugins_implicit_enabled_true(self, config, plugins):
-        for section in config:
-            if section in plugins and self.__is_option_patch_required(config, section, option='enabled'):
-                config[section]['enabled'] = True
-        return config
-
-    def __patch_phantom_implicit_enabled_true(self, config):
-        if 'phantom' in config and self.__is_option_patch_required(config, 'phantom', 'enabled'):
-            config['phantom']['enabled'] = True
+    @staticmethod
+    def __enable_plugins_implicitly(config, plugins):
+        for name, content in config.items():
+            if name not in plugins:
+                continue
+            content = content or {}
+            content['enabled'] = content.get('enabled', True)
+            default_content = plugins.get(name) or {}
+            if plugin_package := default_content.get('package'):
+                content['package'] = content.get('package', plugin_package)
+            config[name] = content
         return config
 
     @staticmethod
-    def __is_option_patch_required(config, section, option):
-        return option not in config[section]
+    def __patch_phantom_implicit_enabled_true(config):
+        if 'phantom' in config:
+            content = config.get('phantom') or {}
+            content['enabled'] = content.get('enabled', True)
+            config['phantom'] = content
+        return config
 
     def __parse_enabled_plugins(self):
         """
