@@ -1,0 +1,35 @@
+panels:
+  required: true
+  type: dict
+  valueschema:
+    type: dict
+    schema:
+      queries:
+        required: true
+        type: list
+        schema:
+          type: string
+      folder_id:
+        type: string
+api_host:
+  type: string
+  default: monitoring.api.cloud.yandex.net:443
+token:
+  type: string
+  default: LOADTESTING_YC_TOKEN
+  description: path to file with Monitoring API token, or LOADTESTING_YC_TOKEN to retrieve token from env variable
+timeout:
+  type: string
+  default: 5s
+request_timeout:
+  type: string
+  default: 10s
+poll_interval:
+  type: string
+  default: 60s
+ignore_labels:
+  type: ['string', 'list']
+  default: ['service', 'resource_type', 'device', 'interface_number', 'source_metric', 'subcluster_name', 'shard', 'dc']
+priority_labels:
+  type: ['string', 'list']
+  default: ['cpu_name', 'label']
