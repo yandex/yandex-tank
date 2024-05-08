@@ -3,7 +3,7 @@ import json
 import os
 
 from yandextank.common.util import get_test_path
-from yandextank.plugins.YCMonitoring.sensor import YCMonitoringSensor
+from yandextank.plugins.YCMonitoring.sensor import YCMonitoringSensor, parse_yc_monitoring_query
 
 
 SENSOR = YCMonitoringSensor(
@@ -60,3 +60,31 @@ def test_format_sensors(json_file_name: str, formated_sensors: set):
         for idx, metric in enumerate(data['metrics']):
             sensors.add(SENSOR.format_sensor(metric['labels'], idx))
     assert sensors == formated_sensors
+
+
+@pytest.mark.parametrize(
+    'query, expected_query, folder_id',
+    [
+        ('"objects_count"{service="storage"}', '"objects_count"{service="storage"}', ''),
+        (
+            '"objects_count"{folderId=\'hahahaha\' , service="storage"}',
+            '"objects_count"{service="storage"}',
+            'hahahaha',
+        ),
+        ('"objects_count"{folderId=hahahaha  , service="storage"}', '"objects_count"{service="storage"}', 'hahahaha'),
+        (
+            'cpu_utilization{folderId="hahahaha", service=\'compute\', resource_type=\'vm\', resource_id=\'resource-rc1b-1\'}',
+            'cpu_utilization{service=\'compute\', resource_type=\'vm\', resource_id=\'resource-rc1b-1\'}',
+            'hahahaha',
+        ),
+        (
+            'alias(series_sum("instance", "app.request_latency_ms_count"{folderId="asldkfjh123", service="custom", handle="/path"}), "{{instance}}")',
+            'alias(series_sum("instance", "app.request_latency_ms_count"{service="custom", handle="/path"}), "{{instance}}")',
+            'asldkfjh123',
+        ),
+    ],
+)
+def test_parse_yc_monitoring_query(query, expected_query, folder_id):
+    actual_query, actual_folder_id = parse_yc_monitoring_query(query)
+    assert actual_query == expected_query
+    assert actual_folder_id == folder_id

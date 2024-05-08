@@ -31,6 +31,9 @@ class YCMonitoringSensor(MonitoringSensorProtocol):
         priority_labels: list[str],
         ignore_labels: list[str],
     ):
+        query, query_folder_id = parse_yc_monitoring_query(query)
+        folder_id = folder_id or query_folder_id
+
         self.panel_name = panel_name
         self.headers = {'Content-type': 'application/json', 'Authorization': f'Bearer {token}'}
         self.params = {'folderId': folder_id}
@@ -160,3 +163,14 @@ class YCMonitoringSensor(MonitoringSensorProtocol):
             line_name = ''.join(['p', self.vector_params[index]])
 
         return self.panel_name.replace('_', '-') + '_' + line_name
+
+
+def parse_yc_monitoring_query(query: str) -> tuple[str, str]:
+    quote = '("|\')?'
+    folderId = '([a-zA-Z0-9._-]+)'
+    tail = '\\s*,?\\s*'
+    m = re.search(f'folderId={quote}{folderId}{quote}{tail}', query)
+    if not m:
+        return query, ''
+
+    return query.replace(m.group(0), ''), m.group(2)
