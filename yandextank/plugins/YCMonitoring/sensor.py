@@ -39,6 +39,9 @@ class YCMonitoringSensor(MonitoringSensorProtocol):
         self.params = {'folderId': folder_id}
         self.endpoint = f'https://{host}/monitoring/v2/data/read'
 
+        # for some reason YC Monitoring API returns empty response if query contains `folderId=""` param
+        # returns no data:    query='"objects_count"{folderId="correctFolderId", service="storage"}'
+        # returns valid data: query='"objects_count"{service="storage"}'
         self.data = {
             'query': query,
             'fromTime': datetime.fromtimestamp(time(), tz=UTC).isoformat(),
