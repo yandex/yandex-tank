@@ -38,7 +38,7 @@ def load_py_schema(package):
     return schema_module.SCHEMA
 
 
-def load_plugin_schema(package):
+def load_plugin_schema(package, ignore_import_error=False):
     try:
         return load_yaml_schema(
             pkg_resources.resource_filename(
@@ -54,6 +54,8 @@ def load_plugin_schema(package):
     except ImportError:
         if 'aggregator' in package.lower():
             logger.exception('Plugin Aggregator is now deprecated, please remove this section from your config.')
+        if ignore_import_error:
+            return None
         raise ValidationError({'package': ['No module named {}'.format(package)]})
 
 
@@ -164,6 +166,7 @@ class TankConfig(object):
             error_output=None,
             skip_base_cfgs=True,
             plugins_implicit_enabling=False,
+            skip_unknown_plugins=False,
     ):
         """
         :param configs: list of configs dicts
@@ -179,6 +182,7 @@ class TankConfig(object):
         if self.raw_config_dict.get(core_section) is None:
             self.raw_config_dict[core_section] = {}
         self.with_dynamic_options = with_dynamic_options
+        self.skip_unknown_plugins = skip_unknown_plugins
         self.CORE_SECTION = core_section
         self._validated = None
         self._plugins = None
@@ -219,7 +223,7 @@ class TankConfig(object):
 
         # YANDEXTANK-764
         if plugins_implicit_enabling:
-            user_config = self.__patch_plugins_implicit_enabled_true(user_config, plugins=base_config.keys())
+            user_config = self.__enable_plugins_implicitly(user_config, plugins=base_config)
         if skip_base_cfgs:
             return user_config
 
@@ -234,20 +238,26 @@ class TankConfig(object):
         configs = list(filter(None, configs))
         return reduce(recursive_dict_update, configs, {})
 
-    def __patch_plugins_implicit_enabled_true(self, config, plugins):
-        for section in config:
-            if section in plugins and self.__is_option_patch_required(config, section, option='enabled'):
-                config[section]['enabled'] = True
-        return config
-
-    def __patch_phantom_implicit_enabled_true(self, config):
-        if 'phantom' in config and self.__is_option_patch_required(config, 'phantom', 'enabled'):
-            config['phantom']['enabled'] = True
+    @staticmethod
+    def __enable_plugins_implicitly(config, plugins):
+        for name, content in config.items():
+            if name not in plugins:
+                continue
+            content = content or {}
+            content['enabled'] = content.get('enabled', True)
+            default_content = plugins.get(name) or {}
+            if plugin_package := default_content.get('package'):
+                content['package'] = content.get('package', plugin_package)
+            config[name] = content
         return config
 
     @staticmethod
-    def __is_option_patch_required(config, section, option):
-        return option not in config[section]
+    def __patch_phantom_implicit_enabled_true(config):
+        if 'phantom' in config:
+            content = config.get('phantom') or {}
+            content['enabled'] = content.get('enabled', True)
+            config['phantom'] = content
+        return config
 
     def __parse_enabled_plugins(self):
         """
@@ -271,9 +281,8 @@ class TankConfig(object):
         results = {}
         for plugin_name, package, config in self.__parse_enabled_plugins():
             try:
-                results[plugin_name] = \
-                    self.__validate_plugin(config,
-                                           load_plugin_schema(package))
+                schema = load_plugin_schema(package, self.skip_unknown_plugins)
+                results[plugin_name] = self.__validate_unknown(config) if schema is None else self.__validate_plugin(config, schema)
             except ValidationError as e:
                 errors[plugin_name] = e.errors
         if len(errors) > 0:
@@ -295,6 +304,13 @@ class TankConfig(object):
         normalized = v.normalized(self.raw_config_dict)
         return self.__set_core_dynamic_options(
             normalized) if self.with_dynamic_options else normalized
+
+    def __validate_unknown(self, config):
+        v = PatchedValidator(self.PLUGINS_SCHEMA['schema'], allow_unknown=True)
+        # .validate() makes .errors as side effect if there's any
+        if not v.validate(config):
+            raise ValidationError(v.errors)
+        return config
 
     def __validate_plugin(self, config, schema):
         schema.update(self.PLUGINS_SCHEMA['schema'])

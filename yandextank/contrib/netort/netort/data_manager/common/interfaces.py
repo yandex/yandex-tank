@@ -25,7 +25,6 @@ class Aggregated(object):
 class DataType(object):
     table_name = ''
     columns = []
-    is_aggregated = False
 
     @classmethod
     def processor(cls, df):

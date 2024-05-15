@@ -49,3 +49,6 @@ shootexec:
 telegraf:
   enabled: true
   package: yandextank.plugins.Telegraf
+uploader:
+  enabled: false
+  package: yandextank.plugins.DataUploader

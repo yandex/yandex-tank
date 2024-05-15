@@ -19,16 +19,16 @@ analytic tools for the results they produce.
     url='http://yandex.github.io/yandex-tank/',
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
-        'psutil>=5.8.0', 'requests>=2.5.1',
-        'pandas<=1.5.3', 'numpy<=1.23.5',
-        'pip>=8.1.2',
-        'pyyaml>=5.4', 'cerberus>=1.3.1', 'influxdb>=5.0.0',
-        'retrying>=1.3.3', 'pytest-runner', 'pyserial', 'retrying', 'six>=1.12.0',
-        'environ-config>=20.0.0',
+        'psutil>=5.9.8', 'requests>=2.31.0',
+        'pandas<=2.0.3', 'numpy<=1.26.4',
+        'pip>=24.0',
+        'pyyaml>=5.4', 'cerberus>=1.3.5', 'influxdb>=5.3.1',
+        'retrying>=1.3.4', 'pytest-runner', 'pyserial', 'retrying', 'six>=1.16.0',
+        'environ-config>=23.2.0',
     ],
     setup_requires=[],
     tests_require=[
-        'pytest>=4.6.3', 'flake8', 'pytest-benchmark', 'zipp==0.5.1', 'mock'
+        'pytest>=7.4.4', 'flake8', 'pytest-benchmark', 'zipp==0.5.1', 'mock'
     ],
     license='LGPLv2',
     classifiers=[
@@ -43,7 +43,7 @@ analytic tools for the results they produce.
         'Topic :: Software Development :: Quality Assurance',
         'Topic :: Software Development :: Testing',
         'Topic :: Software Development :: Testing :: Traffic Generation',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
     entry_points={
         'console_scripts': [

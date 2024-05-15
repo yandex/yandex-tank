@@ -611,16 +611,13 @@ def test_negative_load_scheme_validator(value):
                     'operator': 'bugrovegor',
                 },
                 'phantom': {
-                    'package': 'yandextank.plugins.Phantom',
+                    'enabled': True,
                 },
                 'pandora': {
                     'package': 'yandextank.plugins.Pandora',
                     'enabled': False,
                 },
-                'telegraf': {
-                    'package': 'yandextank/plugins/Telegraf',
-                    'enabled': True,
-                },
+                'telegraf': {},
             },
             {
                 'core': {
@@ -635,7 +632,7 @@ def test_negative_load_scheme_validator(value):
                     'enabled': False,
                 },
                 'telegraf': {
-                    'package': 'yandextank/plugins/Telegraf',
+                    'package': 'yandextank.plugins.Telegraf',
                     'enabled': True,
                 },
             },

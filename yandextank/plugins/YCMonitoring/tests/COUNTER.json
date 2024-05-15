@@ -1,0 +1,26 @@
+{
+    "metrics": [
+        {
+            "name": "pod.network.sent_bytes_count",
+            "labels": {
+                "cluster_id": "load-mock-kuber",
+                "pod": "kube-proxy-bb6kp",
+                "service": "managed-kubernetes",
+                "namespace": "kube-system"
+            },
+            "type": "COUNTER",
+            "timeseries": {
+                "timestamps": [
+                    1713801680000,
+                    1713801690000,
+                    1713801700000
+                ],
+                "int64Values": [
+                    581884083,
+                    582131973,
+                    582131973
+                ]
+            }
+        }
+    ]
+}
