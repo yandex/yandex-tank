@@ -55,6 +55,7 @@ class Plugin(AbstractPlugin):
                 self.hosts = hosts.split(" ")
             self.port = int(self.get_option("port", 22))
             self.username = self.get_option("username", getpass.getuser())
+            self.ssh_key_path = self.get_option("ssh_key_path", None)
             self.timeout = int(self.get_option("timeout", 3))
         except BaseException:
             logger.error(
@@ -76,9 +77,9 @@ class Plugin(AbstractPlugin):
         except KeyError as ex:
             logger.debug(ex)
         for host in self.hosts:
-            self.ssh = SecuredShell(
-                host, self.port, self.username, self.timeout)
+            self.ssh = SecuredShell(host, self.port, self.username, self.timeout, self.ssh_key_path)
             try:
+                self.ssh.ensure_connection()
                 out, errors, err_code = self.ssh.execute(self.cmd)
             except Exception:
                 logger.warning(

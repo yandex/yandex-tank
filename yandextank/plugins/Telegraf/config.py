@@ -1,12 +1,14 @@
-from xml.etree import ElementTree as etree
 import os.path
 import getpass
 import logging
 import tempfile
 import pkg_resources
+from copy import deepcopy
 from ..Telegraf.decoder import decoder
+from .config_parser import parse_xml, parse_yaml, ParseError, TARGET_HINT_PLACEHOLDER
 from yandextank.common.util import read_resource
 import configparser
+from requests.structures import CaseInsensitiveDict
 
 logger = logging.getLogger(__name__)
 
@@ -18,46 +20,68 @@ class ConfigManager(object):
     """
 
     @staticmethod
-    def parse_xml(config):
-        if os.path.exists(config):
-            return etree.parse(config)
-        else:
-            return etree.fromstring(config)
+    def parse_config(config):
+        parsers = [
+            ('xml', parse_xml),
+            ('yaml', parse_yaml)
+        ]
+        for name, parser in parsers:
+            try:
+                return parser(config)
+            except ParseError as exc:
+                logger.warning("%s config parsing error: %s", name, exc)
 
-    def getconfig(self, filename, target_hint):
+        logger.warning("Couldn't parse monitoring config at %s. Using default config", config)
+        return []
+
+    @staticmethod
+    def _apply_defaults(host_config, defaults: dict):
+        if not defaults:
+            return
+
+        for k, v in defaults.items():
+            if hasattr(host_config, k):
+                if getattr(host_config, k) is None:
+                    setattr(host_config, k, deepcopy(v))
+            elif not host_config.get(k):
+                host_config[k] = deepcopy(v)
+
+    def getconfig(self, filename, target_hint, defaults: dict = None):
         """Prepare config data."""
+        defaults = defaults or {}
         try:
             config = read_resource(filename)
-            tree = self.parse_xml(config)
         except IOError as exc:
             logger.error("Error loading config: %s", exc)
             raise RuntimeError("Can't read monitoring config %s" % filename)
-        hosts = tree.findall('Host')
+
+        hosts = self.parse_config(config)
         config = []
         for host in hosts:
             host_config = self.get_host_config(host, target_hint)
+            self._apply_defaults(host_config, defaults)
             config.append(host_config)
         return config
 
     def get_host_config(self, host, target_hint):
         defaults = {
-            "CPU": {
+            "cpu": {
                 "name": '[inputs.cpu]',
                 "percpu": 'false',
                 "fielddrop": '["time_*", "usage_guest_nice"]'
             },
-            "Memory": {
+            "memory": {
                 "name": '[inputs.mem]',
                 "fielddrop":
                 '["active", "inactive", "total", "used_per*", "avail*"]',
             },
-            "Disk": {
+            "disk": {
                 "name": '[inputs.diskio]',
                 "devices": '[{devices}]'.format(
                     devices=",".join(
                         ['"vda%s","sda%s"' % (num, num) for num in range(6)])),
             },
-            "Net": {
+            "net": {
                 "name": '[inputs.net]',
                 "interfaces": '[{interfaces}]'.format(
                     interfaces=",".join(
@@ -65,42 +89,49 @@ class ConfigManager(object):
                 "fielddrop":
                 '["icmp*", "ip*", "udplite*", "tcp*", "udp*", "drop*", "err*"]',
             },
-            "Nstat": {
+            "nstat": {
                 "name": '[inputs.nstat]',
                 "fieldpass": '["TcpRetransSegs"]',
             },
-            "Netstat": {
+            "netstat": {
                 "name": '[inputs.netstat]',
             },
-            "NetResponse": {
+            "netresponse": {
                 "name": '[inputs.net_response]',
                 "protocol": '"tcp"',
                 "address": '":80"',
                 "timeout": '"1s"'
             },
-            "System": {
+            "system": {
                 "name": '[inputs.system]',
                 "fielddrop": '["n_users", "n_cpus", "uptime*"]',
             },
-            "Kernel": {
+            "kernel": {
                 "name": '[inputs.kernel]',
                 "fielddrop": '["boot_time"]',
             },
-            "KernelVmstat": {
+            "kernelvmstat": {
                 "name": '[inputs.kernel_vmstat]',
                 "fieldpass": '["pgfault", "pgmajfault"]',
             }
         }
-        defaults_enabled = ['CPU', 'Memory', 'Disk', 'Net', 'System', 'Kernel']
+
+        # compatibility with native telegraf metric names
+        defaults['mem'] = defaults['memory']
+        defaults['diskio'] = defaults['disk']
+        defaults['net_response'] = defaults['netresponse']
+        defaults['kernel_vmstat'] = defaults['kernelvmstat']
+
+        defaults_enabled = ['cpu', 'memory', 'disk', 'net', 'system', 'kernel']
         defaults_boolean = [
             'percpu', 'round_interval', 'fielddrop', 'fieldpass', 'interfaces',
             'devices'
         ]
-        hostname = host.get('address').lower()
-        if hostname == '[target]':
+        hostname = host.address.lower()
+        if hostname == TARGET_HINT_PLACEHOLDER:
             if not target_hint:
                 raise ValueError(
-                    "Can't use `[target]` keyword with no target parameter specified"
+                    f"Can't use `{TARGET_HINT_PLACEHOLDER}` keyword with no target parameter specified"
                 )
             logger.debug("Using target hint: %s", target_hint)
             hostname = target_hint.lower()
@@ -110,23 +141,24 @@ class ConfigManager(object):
         sources = []
         telegrafraw = []
         # agent defaults
-        host_config = {}
-        for metric in host:
-            if str(metric.tag) in defaults:
-                for key in tuple(defaults[metric.tag].keys()):
+        host_config = CaseInsensitiveDict()
+        for metric in host.metrics:
+            metric_name = str(metric.name).lower()
+            if metric_name in defaults:
+                for key in tuple(defaults[metric_name].keys()):
                     if key != 'name' and key not in defaults_boolean:
                         value = metric.get(key, None)
                         if value:
-                            defaults[metric.tag][key] = "'{value}'".format(
+                            defaults[metric_name][key] = "'{value}'".format(
                                 value=value)
                     elif key in defaults_boolean:
                         value = metric.get(key, None)
                         if value:
-                            defaults[metric.tag][key] = "{value}".format(
+                            defaults[metric_name][key] = "{value}".format(
                                 value=value)
-                host_config[metric.tag] = defaults[metric.tag]
+                host_config[metric_name] = defaults[metric_name]
             # custom metrics
-            if (str(metric.tag)).lower() == 'custom':
+            if metric_name == 'custom':
                 isdiff = metric.get('diff', 0)
                 cmd = {
                     'cmd': metric.text,
@@ -134,13 +166,13 @@ class ConfigManager(object):
                     'diff': isdiff
                 }
                 custom.append(cmd)
-            elif (str(metric.tag)).lower() == 'startup':
+            elif metric_name == 'startup':
                 startups.append(metric.text)
-            elif (str(metric.tag)).lower() == 'shutdown':
+            elif metric_name == 'shutdown':
                 shutdowns.append(metric.text)
-            elif (str(metric.tag)).lower() == 'source':
+            elif metric_name == 'source':
                 sources.append(metric.text)
-            elif (str(metric.tag)).lower() == 'telegrafraw':
+            elif metric_name == 'telegrafraw':
                 telegrafraw.append(metric.text)
         if len(host_config) == 0:
             logger.info('Empty host config, using defaults')
@@ -154,6 +186,7 @@ class ConfigManager(object):
             'username': host.get('username', getpass.getuser()),
             'telegraf': host.get('telegraf', '/usr/bin/telegraf'),
             'comment': host.get('comment', ''),
+            'ssh_key_path': host.get('ssh_key_path'),
             'custom': custom,
             'host': hostname,
             'startup': startups,
@@ -272,7 +305,7 @@ class AgentConfig(object):
         self.monitoring_data_output = "{remote_folder}/monitoring.rawdata".format(
             remote_folder=workdir)
 
-        defaults_old_enabled = ['CPU', 'Memory', 'Disk', 'Net', 'System']
+        defaults_old_enabled = ['cpu', 'memory', 'disk', 'net', 'system']
 
         try:
             config = configparser.RawConfigParser(strict=False)
@@ -349,7 +382,7 @@ class AgentConfig(object):
                 fds.write(inputs)
 
             # telegraf raw configuration into xml
-            telegraf_raw = ''.join(self.telegrafraw)
+            telegraf_raw = "".join(self.telegrafraw)
 
             with open(cfg_path, 'a') as fds:
                 fds.write(telegraf_raw)

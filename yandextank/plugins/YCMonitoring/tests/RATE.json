@@ -1,0 +1,40 @@
+{
+    "metrics": [
+        {
+            "name": "disk.read_latency",
+            "labels": {
+                "disk": "dqtcr5464dbkv1s1rtrt",
+                "instance": "instance_example",
+                "bin": "2",
+                "service": "compute"
+            },
+            "type": "RATE",
+            "timeseries": {
+                "timestamps": [
+                    1714226079000
+                ],
+                "doubleValues": [
+                    0
+                ]
+            }
+        },
+        {
+            "name": "disk.read_latency",
+            "labels": {
+                "disk": "dqtcr5464dbkv1s1rtrt",
+                "instance": "instance_example",
+                "bin": "5",
+                "service": "compute"
+            },
+            "type": "RATE",
+            "timeseries": {
+                "timestamps": [
+                    1714226079000
+                ],
+                "doubleValues": [
+                    0
+                ]
+            }
+        }
+    ]
+}

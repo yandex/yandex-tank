@@ -1,7 +1,7 @@
 '''
 Contains shellexec plugin
 '''
-from netort.process import execute
+from yandextank.contrib.netort.netort.process import execute
 from ...common.interfaces import AbstractPlugin
 
 
@@ -20,13 +20,14 @@ class Plugin(AbstractPlugin):
         self.prepare = None
         self.start = None
         self.postprocess = None
+        self.executable = None
 
     @staticmethod
     def get_key():
         return __file__
 
     def get_available_options(self):
-        return ["prepare", "start", "end", "poll", "post_process", "catch_out"]
+        return ['prepare', 'start', 'end', 'poll', 'post_process', 'catch_out', 'shell']
 
     def configure(self):
         self.catch_out = True if self.get_option("catch_out", False) else False
@@ -35,6 +36,7 @@ class Plugin(AbstractPlugin):
         self.end = self.get_option("end", '')
         self.poll = self.get_option("poll", '')
         self.postprocess = self.get_option("post_process", '')
+        self.executable = self.get_option('shell', '')
 
     def prepare_test(self):
         if self.prepare:
@@ -51,7 +53,8 @@ class Plugin(AbstractPlugin):
                 self.poll,
                 shell=True,
                 poll_period=0.1,
-                catch_out=self.catch_out)[0]
+                catch_out=self.catch_out,
+                executable=self.executable)[0]
             if retcode:
                 self.log.warn(
                     "Non-zero exit code, interrupting test: %s", retcode)
@@ -74,7 +77,7 @@ class Plugin(AbstractPlugin):
         """
         self.log.info("Executing: %s", cmd)
         retcode = execute(
-            cmd, shell=True, poll_period=0.1, catch_out=self.catch_out)[0]
+            cmd, shell=True, poll_period=0.1, catch_out=self.catch_out, executable=self.executable)[0]
         if retcode:
             raise RuntimeError("Subprocess returned %s" % retcode)
         return retcode

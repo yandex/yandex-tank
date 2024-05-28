@@ -9,8 +9,6 @@ import shutil
 from builtins import zip
 from pathlib import Path
 
-from netort.resource import manager as resource
-
 from . import format as fmt
 from . import info
 from .config import ComponentFactory
@@ -295,7 +293,7 @@ class StepperWrapper(object):
             if self.load_profile.is_instances():
                 hashed_str += sep + str(self.instances)
             if self.ammo_file:
-                opener = resource.get_opener(self.ammo_file)
+                opener = self.core.resource_manager.get_opener(self.ammo_file)
                 hashed_str += sep + opener.hash
             else:
                 if not self.uris:
@@ -349,6 +347,7 @@ class StepperWrapper(object):
             enum_ammo=self.enum_ammo,
             ammo_type=self.ammo_type,
             chosen_cases=self.chosen_cases,
-            use_cache=self.use_caching)
+            use_cache=self.use_caching,
+            resource_manager=self.core.resource_manager,)
         with open(self.stpd, 'wb', self.file_cache) as os:
             stepper.write(os)

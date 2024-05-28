@@ -14,7 +14,7 @@ from ...common.interfaces import GeneratorPlugin
 from ...common.util import FileMultiReader
 from .log_analyzer import LogAnalyzer
 
-from netort.process import execute
+from yandextank.contrib.netort.netort.process import execute
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,9 @@ class Plugin(GeneratorPlugin):
     def prepare_test(self):
         try:
             retcode, stdout, stderr = execute(
-                [self.get_option("phantom_path"), 'check', self.phantom.config_file], catch_out=True
+                [self.get_option("phantom_path"), 'check', self.phantom.config_file],
+                catch_out=True,
+                env=dict(OPENSSL_CONF="/dev/null")
             )
         except OSError:
             logger.debug("Phantom I/O engine is not installed!", exc_info=True)
@@ -147,7 +149,8 @@ class Plugin(GeneratorPlugin):
             args,
             stderr=self.process_stderr,
             stdout=self.process_stderr,
-            close_fds=True)
+            close_fds=True,
+            env=dict(OPENSSL_CONF="/dev/null"))
 
     def is_test_finished(self):
         retcode = self.process.poll()

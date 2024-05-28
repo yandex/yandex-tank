@@ -1,0 +1,52 @@
+{
+    "metrics": [
+        {
+            "name": "io.disk0.utilization",
+            "labels": {
+                "node": "replica",
+                "service": "managed-postgresql",
+                "subcluster_name": "postgresql930",
+                "host": "test_host.net",
+                "resource_type": "cluster",
+                "resource_id": "postgresql_loadtesting",
+                "shard": "yc.loadtesting.service-folder",
+                "dc": "nodc"
+            },
+            "type": "DGAUGE",
+            "timeseries": {
+                "timestamps": [
+                    1714218465000,
+                    1714218480000
+                ],
+                "doubleValues": [
+                    40.86666666666667,
+                    4.220292886953635
+                ]
+            }
+        },
+        {
+            "name": "io.disk0.utilization",
+            "labels": {
+                "node": "primary",
+                "service": "managed-postgresql",
+                "subcluster_name": "postgresql930",
+                "host": "test_host_2.net",
+                "resource_type": "cluster",
+                "resource_id": "postgresql_loadtesting",
+                "shard": "yc.loadtesting.service-folder",
+                "dc": "nodc"
+            },
+            "type": "DGAUGE",
+            "timeseries": {
+                "timestamps": [
+                    1714218465000,
+                    1714218480000
+                ],
+                "doubleValues": [
+                    61.86666666666667,
+                    5.166224436732864
+                ]
+            }
+        }
+    ]
+}

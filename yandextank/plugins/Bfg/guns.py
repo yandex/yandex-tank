@@ -1,4 +1,4 @@
-import imp
+import importlib.util
 import logging
 import time
 from contextlib import contextmanager
@@ -163,15 +163,11 @@ class CustomGun(AbstractGun):
     def __init__(self, core, cfg):
         super(CustomGun, self).__init__(core, cfg)
         logger.warning("Custom gun is deprecated. Use Ultimate gun instead")
-        module_path = cfg["module_path"].split()
+        module_path = cfg["module_path"].strip()
         module_name = cfg["module_name"]
-        fp, pathname, description = imp.find_module(module_name, module_path)
-        try:
-            self.module = imp.load_module(
-                module_name, fp, pathname, description)
-        finally:
-            if fp:
-                fp.close()
+        spec = importlib.util.spec_from_file_location(module_name, module_path)
+        self.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.module)
 
     def shoot(self, missile, marker):
         try:
@@ -195,17 +191,13 @@ class ScenarioGun(AbstractGun):
         logger.warning("Scenario gun is deprecated. Use Ultimate gun instead")
         module_path = cfg["module_path"]
         if module_path:
-            module_path = module_path.split()
+            module_path = module_path.strip()
         else:
             module_path = None
         module_name = cfg["module_name"]
-        fp, pathname, description = imp.find_module(module_name, module_path)
-        try:
-            self.module = imp.load_module(
-                module_name, fp, pathname, description)
-        finally:
-            if fp:
-                fp.close()
+        spec = importlib.util.spec_from_file_location(module_name, module_path)
+        self.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.module)
         self.scenarios = self.module.SCENARIOS
 
     def shoot(self, missile, marker):
@@ -234,24 +226,21 @@ class UltimateGun(AbstractGun):
         class_name = self.get_option("class_name")
         module_path = self.get_option("module_path")
         if module_path:
-            module_path = module_path.split()
+            module_path = module_path.strip()
         else:
             module_path = None
         module_name = self.get_option("module_name")
         self.init_param = self.get_option("init_param")
-        fp, pathname, description = imp.find_module(module_name, module_path)
         #
         # Dirty Hack
         #
         # we will add current unix timestamp to the name of a module each time
         # it is imported to be sure Python won't be able to cache it
         #
-        try:
-            self.module = imp.load_module(
-                "%s_%d" % (module_name, time.time()), fp, pathname, description)
-        finally:
-            if fp:
-                fp.close()
+        hack_module_name = "%s_%d" % (module_name, time.time())
+        spec = importlib.util.spec_from_file_location(hack_module_name, module_path)
+        self.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.module)
         test_class = getattr(self.module, class_name, None)
         if not isinstance(test_class, type):
             raise NotImplementedError(

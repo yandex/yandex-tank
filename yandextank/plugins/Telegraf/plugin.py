@@ -7,6 +7,7 @@ import fnmatch
 import json
 import logging
 import time
+import yaml
 
 from copy import deepcopy
 
@@ -58,6 +59,7 @@ class Plugin(MonitoringPlugin):
             "config",
             "default_target",
             "ssh_timeout",
+            "ssh_key_path",
             "disguise_hostnames"
         ]
 
@@ -116,7 +118,9 @@ class Plugin(MonitoringPlugin):
         if self._config is None:
             value = self.get_option('config')
 
-            if value.lower() == "none":
+            if isinstance(value, dict):
+                self._config = self._save_config_contents(yaml.dump(value), 'yaml')
+            elif value.lower() == "none":
                 self.monitoring = None
                 self.die_on_fail = False
                 self._config = value
@@ -130,14 +134,15 @@ class Plugin(MonitoringPlugin):
                 else:
                     config_contents = read_resource(value)
                 self._config = self._save_config_contents(config_contents)
+
         return self._config
 
-    def _save_config_contents(self, contents):
-        xmlfile = self.core.mkstemp(".xml", "monitoring_")
-        self.core.add_artifact_file(xmlfile)
-        with open(xmlfile, "w") as f:
+    def _save_config_contents(self, contents, type='xml'):
+        outfile = self.core.mkstemp("." + type, "monitoring_")
+        self.core.add_artifact_file(outfile)
+        with open(outfile, "w") as f:
             f.write(contents)
-        return xmlfile
+        return outfile
 
     def configure(self):
         self.detected_conf = self.__detect_configuration()
@@ -158,6 +163,7 @@ class Plugin(MonitoringPlugin):
         # configuration below.
         self.monitoring.ssh_timeout = expand_to_seconds(
             self.get_option("ssh_timeout", "5s"))
+        self.monitoring.ssh_key_path = self.get_option('ssh_key_path', '')
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
             autostop.add_criterion_class(MetricHigherCriterion)
@@ -197,11 +203,12 @@ class Plugin(MonitoringPlugin):
             self.monitoring.prepare()
             self.monitoring.start()
             self.add_cleanup(self.monitoring.stop)
-            count = 0
-            while not self.monitoring.first_data_received and count < 15 * 5:
-                time.sleep(0.2)
-                self.monitoring.poll()
-                count += 1
+            if self.monitoring.agents:
+                count = 0
+                while not self.monitoring.first_data_received and count < 15 * 5:
+                    time.sleep(0.2)
+                    self.monitoring.poll()
+                    count += 1
         except BaseException:
             logger.error("Could not start monitoring", exc_info=True)
             if self.die_on_fail:

@@ -6,10 +6,8 @@ import time
 from configparser import RawConfigParser, MissingSectionHeaderError
 from multiprocessing import Manager, Event, Value, Process
 
-import glob
 import stat
 import yaml
-from pkg_resources import resource_filename
 
 from yandextank.common.interfaces import TankInfo
 from yandextank.common.util import Cleanup, Finish, Status
@@ -28,14 +26,22 @@ class TankWorker(Process):
     DEFAULT_CONFIG = 'load.yaml'
 
     def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
-                 log_handlers=None, wait_lock=False, files=None, ammo_file=None,
-                 debug=False, run_shooting_event=None):
+                 log_handlers=None, wait_lock=False, files=None, ammo_file=None, debug=False,
+                 run_shooting_event=None, storage=None, resource_manager=None, plugins_implicit_enabling=False):
         super().__init__()
         self.interrupted = Event()
         manager = Manager()
         self.info = TankInfo(manager.dict())
-        self.config_list = self._combine_configs(configs, cli_options, cfg_patches, cli_args, no_local)
-        self.core = TankCore(self.config_list, self.interrupted, self.info)
+        user_configs = self._combine_configs(configs, cli_options, cfg_patches, cli_args)
+        self.core = TankCore(
+            user_configs,
+            self.interrupted,
+            self.info,
+            storage=storage,
+            skip_base_cfgs=no_local,
+            resource_manager=resource_manager,
+            plugins_implicit_enabling=plugins_implicit_enabling,
+        )
 
         is_locked = Lock.is_locked(self.core.lock_dir)
         if is_locked and not self.core.config.get_option(self.SECTION, 'ignore_lock'):
@@ -90,7 +96,7 @@ class TankWorker(Process):
                 return
 
     @staticmethod
-    def _combine_configs(run_cfgs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False):
+    def _combine_configs(run_cfgs, cli_options, cfg_patches, cli_args):
         if cli_options is None:
             cli_options = []
         if cfg_patches is None:
@@ -98,20 +104,12 @@ class TankWorker(Process):
         if cli_args is None:
             cli_args = []
         run_cfgs = run_cfgs if len(run_cfgs) > 0 else [TankWorker.DEFAULT_CONFIG]
-
-        if no_local:
-            configs = [load_cfg(cfg) for cfg in run_cfgs] + \
-                parse_options(cli_options) + \
-                parse_and_check_patches(cfg_patches) + \
-                cli_args
-        else:
-            configs = [load_core_base_cfg()] + \
-                load_local_base_cfgs() + \
-                [load_cfg(cfg) for cfg in run_cfgs] + \
-                parse_options(cli_options) + \
-                parse_and_check_patches(cfg_patches) + \
-                cli_args
-        return configs
+        return (
+            [load_cfg(cfg) for cfg in run_cfgs] +
+            parse_options(cli_options) +
+            parse_and_check_patches(cfg_patches) +
+            cli_args
+        )
 
     def stop(self):
         self.interrupted.set()
@@ -129,7 +127,9 @@ class TankWorker(Process):
 
     def save_finish_status(self):
         with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:
-            yaml.safe_dump(self.get_status(), f, encoding='utf-8', allow_unicode=True)
+            status_data = self.get_status()
+            status_data['status_code'] = Status.TEST_FINISHED.decode('utf8')
+            yaml.safe_dump(status_data, f, encoding='utf-8', allow_unicode=True)
 
     def get_info(self, section_name, key_name):
         return self.info.get_value([section_name, key_name])
@@ -219,7 +219,6 @@ class TankWorker(Process):
 
 def load_cfg(cfg_filename):
     """
-
     :type cfg_filename: str
     """
     if is_ini(cfg_filename):
@@ -229,14 +228,6 @@ def load_cfg(cfg_filename):
         if not isinstance(cfg_yaml, dict):
             raise ValidationError('Wrong config format, should be a yaml')
         return cfg_yaml
-
-
-def load_core_base_cfg():
-    return load_cfg(resource_filename(__name__, 'config/00-base.yaml'))
-
-
-def load_local_base_cfgs():
-    return cfg_folder_loader('/etc/yandex-tank')
 
 
 def parse_options(options):
@@ -260,14 +251,6 @@ def parse_and_check_patches(patches):
         if not isinstance(patch, dict):
             raise ValidationError('Config patch "{}" should be a dict'.format(patch))
     return parsed
-
-
-def cfg_folder_loader(path):
-    """
-    :type path: str
-    """
-    CFG_WILDCARD = '*.yaml'
-    return [load_cfg(filename) for filename in sorted(glob.glob(os.path.join(path, CFG_WILDCARD)))]
 
 
 def is_ini(cfg_file):

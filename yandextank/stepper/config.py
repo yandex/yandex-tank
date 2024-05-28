@@ -1,6 +1,6 @@
 import logging
-
-from netort.resource import manager as resource
+from typing import Optional
+from yandextank.contrib.netort.netort.resource import ResourceManager, manager
 
 from . import info
 from . import instance_plan as ip
@@ -26,7 +26,9 @@ class ComponentFactory():
             enum_ammo=False,
             ammo_type='phantom',
             chosen_cases=None,
-            use_cache=True):
+            use_cache=True,
+            resource_manager: Optional[ResourceManager] = None,
+    ):
         self.log = logging.getLogger(__name__)
         self.ammo_file = ammo_file
         self._ammo_type_unchecked = ammo_type
@@ -52,13 +54,14 @@ class ComponentFactory():
         self.marker = get_marker(autocases, enum_ammo)
         self.chosen_cases = chosen_cases or []
         self.use_cache = use_cache
+        self.resource_manager = resource_manager or manager
 
     @property
     def ammo_type(self):
         if self._ammo_type_unchecked != 'phantom':
             return self._ammo_type_unchecked
 
-        opener = resource.get_opener(self.ammo_file)
+        opener = self.resource_manager.get_opener(self.ammo_file)
         with opener(self.use_cache) as ammo:
             try:
                 ammo_str = next(ammo).decode('utf-8')
@@ -119,7 +122,7 @@ class ComponentFactory():
                 'No such ammo type implemented: "%s"' % self.ammo_type)
 
         return missile.FILE_READERS[self.ammo_type](
-            self.ammo_file, headers=self.headers, http_ver=self.http_ver, use_cache=self.use_cache)
+            self.ammo_file, headers=self.headers, http_ver=self.http_ver, use_cache=self.use_cache, resource_manager=self.resource_manager)
 
     def get_ammo_generator(self):
         ammo_gen = self._get_ammo_generator()

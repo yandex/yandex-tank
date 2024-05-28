@@ -1,10 +1,10 @@
-# Yandex Tank [![Build Status](https://travis-ci.org/yandex/yandex-tank.svg?branch=master)](https://travis-ci.org/yandex/yandex-tank) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# Yandex Tank [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/yandex/yandex-tank?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ### Yandextank has been moved to Python 3.
 ####[Latest stable release for Python 2 here](https://github.com/yandex/yandex-tank/releases/tag/Python2).
 Yandex.Tank is an extensible open source load testing tool for advanced linux users which is especially good as a part of an automated load testing suite
 
-![Quantiles chart example](/logos/screen.png)
+![Quantiles chart example](https://raw.githubusercontent.com/yandex/yandex-tank/master/logos/screen.png)
 
 ## Main features
 * different load generators supported:
@@ -33,5 +33,3 @@ Chat with authors and other performance specialists: [![Gitter](https://badges.g
 - Evgeniy Mamchits' [phantom](https://github.com/yandex-load/phantom) – phantom scalable IO engine
 
 - [Vagrant environment](https://github.com/c3037/yandex-tank) with Yandex.Tank by Dmitry Porozhnyakov
-
-- [BlazeMeter Sense](https://sense.blazemeter.com) – performance testing analytics by [BlazeMeter](https://www.blazemeter.com/). Currently only with [1.7](https://github.com/yandex/yandex-tank/tree/v1.7.32) branch

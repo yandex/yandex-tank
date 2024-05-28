@@ -1,17 +1,12 @@
 import socket
 from threading import Thread, Event
 
-import mock
-import paramiko
 import pytest
 from queue import Queue
 from yandextank.common.util import FileScanner, FileMultiReader
 from yandextank.common.util import AddressWizard, SecuredShell
-from yandextank.common.tests.ssh_client import SSHClientWithBanner, SSHClientWithoutBanner
 
-from netort.data_processing import Drain, Chopper
-
-banner = '###Hellow user!####\n'
+from yandextank.contrib.netort.netort.data_processing import Drain, Chopper
 
 
 class TestDrain(object):
@@ -203,16 +198,6 @@ class TestFileMultiReader(object):
 
 class TestSecuredShell(object):
 
-    def test_check_empty_banner(self):
-        with mock.patch.object(SecuredShell, 'connect', SSHClientWithoutBanner):
-            with mock.patch.object(paramiko.SSHClient, 'exec_command', SSHClientWithoutBanner.exec_command):
-                output, _, _ = SecuredShell(None, None, None).execute('pwd')
-                assert SecuredShell(None, None, None).check_banner() == ''
-                assert output == '/var/tmp'
-
-    def test_check_banner(self):
-        with mock.patch.object(SecuredShell, 'connect', SSHClientWithBanner):
-            with mock.patch.object(paramiko.SSHClient, 'exec_command', SSHClientWithBanner.exec_command):
-                output, _, _ = SecuredShell(None, None, None).execute('pwd')
-                assert SecuredShell(None, None, None).check_banner() == banner
-                assert output == '/var/tmp'
+    def test_ssh_path(self):
+        s = SecuredShell(None, None, None, 10, ".")
+        assert s.key_filename is not None

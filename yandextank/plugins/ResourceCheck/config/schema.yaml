@@ -1,9 +1,12 @@
 interval:
+  description: Frequency of checking free resources
   type: string
   default: 10s
 disk_limit:
+  description: Run if there is more disk space than (MB)
   type: integer
   default: 2048
 mem_limit:
+  description: Run if there is more free memory than (MB)
   type: integer
   default: 512

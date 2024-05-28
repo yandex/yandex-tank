@@ -11,7 +11,6 @@ class TestBackendTypes(object):
         ('lunapark.test.foo-bar.ru', 'overload', BackendTypes.LUNAPARK),
         ('overload.yandex.net', 'uploade', BackendTypes.OVERLOAD),
         ('localhost', 'lunapark', BackendTypes.LUNAPARK),
-        ('loadtesting.cloud.yandex.net', 'uploader', BackendTypes.CLOUD)
     ])
     def test_identify(self, api_address, section_name, expected_type):
         assert BackendTypes.identify_backend(api_address, section_name) == expected_type

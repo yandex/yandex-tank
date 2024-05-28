@@ -22,3 +22,7 @@ post_process:
   description: shell command to execute on post process stage
   type: string
   default: ''
+shell:
+  description: shell binary to use
+  type: string
+  default: '/bin/bash'

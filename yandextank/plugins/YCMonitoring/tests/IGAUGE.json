@@ -1,0 +1,42 @@
+{
+    "metrics": [
+        {
+            "name": "instances_count",
+            "labels": {
+                "resource_type": "instance_group",
+                "resource_id": "test1-instance-group",
+                "service": "compute"
+            },
+            "type": "IGAUGE",
+            "timeseries": {
+                "timestamps": [
+                    1714227414000,
+                    1714227435000
+                ],
+                "int64Values": [
+                    1,
+                    1
+                ]
+            }
+        },
+        {
+            "name": "instances_count",
+            "labels": {
+                "resource_type": "instance_group",
+                "resource_id": "test2-instance-group",
+                "service": "compute"
+            },
+            "type": "IGAUGE",
+            "timeseries": {
+                "timestamps": [
+                    1714227414000,
+                    1714227435000
+                ],
+                "int64Values": [
+                    1,
+                    1
+                ]
+            }
+        }
+    ]
+}

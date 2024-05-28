@@ -13,7 +13,6 @@ from ..Telegraf.config import AgentConfig, create_agent_py
 from ..Telegraf.reader import MonitoringReader
 
 logger = logging.getLogger(__name__)
-logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
 
 
 def generate_file_md5(filename, blocksize=2 ** 20):
@@ -112,7 +111,7 @@ class LocalhostClient(object):
         logger.info('Starting agent on localhost: {}'.format(args))
         self.session = self.popen(args)
         self.reader_thread = threading.Thread(target=self.read_buffer)
-        self.reader_thread.setDaemon(True)
+        self.reader_thread.daemon = True
         return self.session
 
     def read_buffer(self):
@@ -170,13 +169,14 @@ class SSHClient(object):
         self.host = config['host']
         self.username = config['username']
         self.python = config['python']
+        self.ssh_key_path = config['ssh_key_path']
         self.port = config['port']
         self.telegraf = config['telegraf']
         self.config = AgentConfig(config, old_style_configs)
 
         # connection
         self.session = None
-        self.ssh = SecuredShell(self.host, self.port, self.username, timeout)
+        self.ssh = SecuredShell(self.host, self.port, self.username, timeout, self.ssh_key_path)
         self.incoming_queue = queue.Queue()
         self.buffer = ""
         self.stop_sent = None
@@ -197,13 +197,20 @@ class SSHClient(object):
 
     def install(self):
         """Create folder and copy agent and metrics scripts to remote host"""
+        logger.info('Trying to establish SSH connection with %s', self.host)
+        try:
+            self.ssh.ensure_connection()
+        except Exception:
+            logger.error('Failed to establish SSH connection with %s', self.host)
+            return None, None, None
+
         logger.info(
             "Installing monitoring agent at %s@%s...",
             self.username,
             self.host)
 
         # create remote temp dir
-        cmd = self.python + ' -c "import tempfile; print(tempfile.mkdtemp());"'
+        cmd = 'mktemp -d'
         logger.info("Creating temp dir on %s", self.host)
         try:
             out, errors, err_code = self.ssh.execute(cmd)
@@ -213,22 +220,20 @@ class SSHClient(object):
                 self.host,
                 exc_info=True)
             return None, None, None
-        if errors:
-            logger.error("[%s] error: '%s'", self.host, errors)
-            logger.error("Cancelling agent installation on %s", self.host)
-            return None, None, None
 
         if err_code:
             logger.error(
                 "Failed to create remote dir via SSH at %s@%s, code %s: %s" %
                 (self.username, self.host, err_code, out.strip()))
+            logger.error("[%s] error: '%s'", self.host, errors)
+            logger.error("Cancelling agent installation on %s", self.host)
             return None, None, None
 
         remote_dir = out.strip()
         if remote_dir:
             self.path['AGENT_REMOTE_FOLDER'] = remote_dir
             self.agent_remote_folder = remote_dir
-        logger.debug(
+        logger.info(
             "Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
 
         # create collector config
@@ -237,13 +242,9 @@ class SSHClient(object):
         startup_config = self.config.create_startup_config()
         customs_script = self.config.create_custom_exec_script()
 
-        # trying to detect os version/architecture and get information about telegraf client
-        # DO NOT DELETE indices in string format below. Python 2.6 does not
-        # support string formatting without indices
-        remote_cmd = 'import os; print os.path.isfile("' + self.path[
-            'TELEGRAF_REMOTE_PATH'] + '")'
-        cmd = self.python + ' -c \'{cmd}\''.format(cmd=remote_cmd)
-        remote_telegraf_exists = "False"
+        # trying to detect get information about telegraf client
+        cmd = 'stat {path}'.format(path=self.path['TELEGRAF_REMOTE_PATH'])
+        remote_telegraf_exists = False
         try:
             out, err, err_code = self.ssh.execute(cmd)
         except Exception:
@@ -252,14 +253,12 @@ class SSHClient(object):
                 self.host,
                 exc_info=True)
         else:
-            if err:
-                logger.error("[%s] error: '%s'", self.host, errors)
-            if out.strip():
-                remote_telegraf_exists = out.strip()
+            if not err_code:
+                remote_telegraf_exists = True
 
         try:
-            if remote_telegraf_exists in "True":
-                logger.debug('Found telegraf client on %s..', self.host)
+            if remote_telegraf_exists:
+                logger.info('Found telegraf client on %s..', self.host)
             else:
                 logger.debug(
                     'Not found telegraf client on %s, trying to install from tank. Copying..',
@@ -320,7 +319,7 @@ class SSHClient(object):
         logger.debug('Command to start agent: %s', command)
         self.session = self.ssh.async_session(command)
         self.reader_thread = threading.Thread(target=self.read_buffer)
-        self.reader_thread.setDaemon(True)
+        self.reader_thread.daemon = True
         return self.session
 
     def read_buffer(self):
@@ -345,7 +344,7 @@ class SSHClient(object):
 
         try:
             if self.session:
-                self.session.send("stop\n")
+                self.session.send(b"stop\n")
                 self.stop_sent = time.time()
         except BaseException:
             logger.warning(
@@ -400,15 +399,11 @@ class SSHClient(object):
                             agent_stop_timeout,
                             self.host)
                 break
-            if self.session.finished():
+            if self.session.is_finished():
                 logger.debug('Session ended with status %s with %s',
                              self.session.exit_status(),
                              self.host)
                 self.successfull_stop = True
-                done = True
-            agent_stderr = self.session.read_err_maybe()
-            if agent_stderr and 'stopped' in agent_stderr:
-                logger.debug('Got stopped message from %s', self.host)
                 done = True
 
     def _kill_agent(self):

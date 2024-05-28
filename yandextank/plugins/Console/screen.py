@@ -667,7 +667,7 @@ class PercentilesBlock(AbstractBlock):
         for position in reversed(range(1, len(last_times))):
             if last_times[position - 1] > last_times[position]:
                 last_times[position - 1] = last_times[position]
-        last_1m = pd.Series()
+        last_1m = pd.Series(dtype='int64')
         for ts, data in self.last_min.items():
             if last_1m.empty:
                 last_1m = data

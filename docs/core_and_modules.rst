@@ -802,7 +802,7 @@ Schedules
 
 Custom_guns
 -----------
-You can create you own Golang-based gun with `pandora`. Feel free to find examples at [pandora documentation](https://yandexpandora.readthedocs.io/en/develop/)
+You can create your own Golang-based gun with `pandora`. Feel free to find examples at `pandora documentation <https://yandex.github.io/pandora/>`_.
 
 
 ******************
@@ -811,7 +811,7 @@ Artifact uploaders
 
 .. note::
 
-  Graphite uploader and BlazeMeter Sense are not currently supported in the last Yandex.Tank version.
+  Graphite uploader are not currently supported in the last Yandex.Tank version.
   If you want one of them, use 1.7 branch.
 
 Yandex.Overload
