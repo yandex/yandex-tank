@@ -146,6 +146,7 @@ class TankCore(object):
         self.test_id = self.get_option(self.SECTION, 'artifacts_dir',
                                        datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f"))
         self.lock_dir = self.get_option(self.SECTION, 'lock_dir')
+        self.aggregator_max_termination_timeout = self.get_option(self.SECTION, 'aggregator_max_termination_timeout', 60)
         self.skip_generator_check = self.get_option(self.SECTION, 'skip_generator_check', False)
         with open(os.path.join(self.artifacts_dir, CONFIGINITIAL), 'w') as f:
             yaml.dump(self.configinitial, f)
@@ -260,7 +261,7 @@ class TankCore(object):
                 logger.warning("Load generator not found")
                 gen = GeneratorPlugin(self, {}, 'generator dummy')
             # aggregator
-            aggregator = TankAggregator(gen, self.data_poller)
+            aggregator = TankAggregator(gen, self.data_poller, termination_timeout=self.aggregator_max_termination_timeout)
             self._job = Job(monitoring_plugins=monitorings,
                             generator_plugin=gen,
                             aggregator=aggregator,
