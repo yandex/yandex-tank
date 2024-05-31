@@ -22,7 +22,7 @@ class YCMonitoringSensor(MonitoringSensorProtocol):
     def __init__(
         self,
         panel_name: str,
-        host: str,
+        api_host: str,
         token: str,
         query: str,
         folder_id: str,
@@ -37,7 +37,7 @@ class YCMonitoringSensor(MonitoringSensorProtocol):
         self.panel_name = panel_name
         self.headers = {'Content-type': 'application/json', 'Authorization': f'Bearer {token}'}
         self.params = {'folderId': folder_id}
-        self.endpoint = f'https://{host}/monitoring/v2/data/read'
+        self.endpoint = f'https://{api_host}/monitoring/v2/data/read'
 
         # for some reason YC Monitoring API returns empty response if query contains `folderId=""` param
         # returns no data:    query='"objects_count"{folderId="correctFolderId", service="storage"}'
