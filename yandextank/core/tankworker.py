@@ -4,14 +4,13 @@ import os
 import shutil
 import time
 from configparser import RawConfigParser, MissingSectionHeaderError
-from multiprocessing import Manager, Event, Value, Process
+from multiprocessing import Event, Value, Process
 
 import stat
 import yaml
 
 from yandextank.common.interfaces import TankInfo
-from yandextank.common.util import Cleanup, Finish, Status
-from yandextank.common.util import read_resource, TankapiLogFilter
+from yandextank.common.util import Cleanup, Finish, Status, TankapiLogFilter, read_resource
 from yandextank.config_converter.converter import convert_ini, convert_single_option
 from yandextank.core import TankCore
 from yandextank.core.tankcore import LockError, Lock
@@ -30,8 +29,7 @@ class TankWorker(Process):
                  run_shooting_event=None, storage=None, resource_manager=None, plugins_implicit_enabling=False):
         super().__init__()
         self.interrupted = Event()
-        manager = Manager()
-        self.info = TankInfo(manager.dict())
+        self.info = TankInfo(dict())
         user_configs = self._combine_configs(configs, cli_options, cfg_patches, cli_args)
         self.core = TankCore(
             user_configs,
@@ -58,7 +56,7 @@ class TankWorker(Process):
         self._status = Value(ctypes.c_char_p, Status.TEST_INITIATED)
         self._test_id = Value(ctypes.c_char_p, self.core.test_id.encode('utf8'))
         self._retcode = Value(ctypes.c_int, 0)
-        self._msgs = manager.list()
+        self._msgs = []
         self._run_shooting_event = run_shooting_event or self._dummy_event()
 
     @staticmethod
