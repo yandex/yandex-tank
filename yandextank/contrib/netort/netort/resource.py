@@ -22,14 +22,16 @@ from functools import partial
 logger = logging.getLogger(__name__)
 
 try:
-    import boto
-    import boto.s3.connection
+    import boto3
+    import boto3.exceptions
+    import boto3.s3
+    import boto3.session
 except ImportError:
-    logger.warning(
-        'Failed to import `boto` package. Install `boto`, otherwise S3 file paths opener wont work',
+    logger.debug(
+        'Failed to import `boto3` package. Install `boto3`, otherwise S3 file paths opener wont work',
         exc_info=False
     )
-    boto = None
+    boto3 = None
 
 try:
     from library.python import resource as rs
@@ -97,6 +99,9 @@ OpenersConfig = typing.Collection[OpenerItem]
 class ResourceManagerConfig(object):
     tmp_path = environ.var('/tmp')
     openers_config_path = environ.var('/etc/yandex-tank/netort_openers.config')
+    s3_endpoint_url = environ.var('')
+    aws_access_key_id = environ.var('')
+    aws_secret_access_key = environ.var('')
 
 
 class ResourceManager(object):
@@ -110,8 +115,8 @@ class ResourceManager(object):
         openers: typing.Optional[OpenersConfig] = None,
     ):
         self.config = config
-        logger.warning('loading rm config from %s', config.openers_config_path)
-        self.openers_config = self.load_config_safe(config.openers_config_path)
+        logger.debug('loading  config from %s', config.openers_config_path)
+        self.openers_config = self.make_openers_config(config, self.load_config_safe(config.openers_config_path))
 
         self.tmp_path_prefix = config.tmp_path
         self.openers = openers or self._default_openers(config.tmp_path)
@@ -120,8 +125,8 @@ class ResourceManager(object):
         return PathProvider(os.path.join(self.tmp_path_prefix, subfolder))
 
     def _default_openers(self, tmp_path_prefix: str) -> OpenersConfig:
-        http_opener = partial(HttpOpener, config=self.openers_config, path_provider=self.make_path_provider('http'))
-        s3_opener = partial(S3Opener, config=self.openers_config, path_provider=self.make_path_provider('s3'))
+        http_opener = partial(HttpOpener, config=self.openers_config.get('http_opener'), path_provider=self.make_path_provider('http'))
+        s3_opener = partial(S3Opener, config=self.openers_config.get('s3_opener'), path_provider=self.make_path_provider('s3'))
 
         return [
             OpenerItem(uri_like(scheme='http'), http_opener),
@@ -130,6 +135,16 @@ class ResourceManager(object):
             OpenerItem(uri_like(scheme='file'), FileOpener),
             OpenerItem(path_like('/dev/'), SerialOpener),
         ]
+
+    def make_openers_config(self, rm_config: ResourceManagerConfig, openers_config: typing.Optional[typing.Dict[str, typing.Any]]) -> typing.Dict[str, typing.Any]:
+        openers_config = openers_config or {}
+        if rm_config.aws_access_key_id and rm_config.aws_secret_access_key and rm_config.s3_endpoint_url:
+            openers_config['s3_opener'] = {
+                'aws_access_key_id': rm_config.aws_access_key_id,
+                'aws_secret_access_key': rm_config.aws_secret_access_key,
+                'endpoint_url': rm_config.s3_endpoint_url,
+            }
+        return openers_config
 
     def load_config_safe(self, path) -> typing.Optional[typing.Dict[str, typing.Any]]:
         logger.debug('loading ResourceManager config from %s', path)
@@ -298,9 +313,6 @@ class HttpOpener(TempDownloaderOpenerProtocol):
 
     def _use_config(self, url: str, config: typing.Optional[typing.Dict[str, typing.Any]]):
         self._default_headers = None
-        if not config:
-            return
-        config = config.get('http_opener')
         if not config:
             return
         parsed = urlparse(self.url)
@@ -575,15 +587,11 @@ class S3Opener(OpenerProtocol):
     """
 
     def __init__(self, uri, credentials_path='/etc/yandex-tank/s3credentials.json', path_provider=None, config=None):
-        # read s3 credentials
-        # FIXME move to default config? which section and how securely store the keys?
-        s3_credentials = config.get('s3_opener') if config else None
+        s3_credentials = config
         if not s3_credentials:
             with open(credentials_path) as fname:
                 s3_credentials = yaml.load(fname.read())
-        self.host = s3_credentials.get('host')
-        self.port = s3_credentials.get('port')
-        self.is_secure = s3_credentials.get('is_secure', False)
+        self.endpoint_url = s3_credentials.get('endpoint_url')
         self.aws_access_key_id = s3_credentials.get('aws_access_key_id')
         self.aws_secret_access_key = s3_credentials.get('aws_secret_access_key')
         self.uri = uri
@@ -597,16 +605,15 @@ class S3Opener(OpenerProtocol):
     @thread_safe_property
     def conn(self):
         if self._conn is None:
-            if not boto:
-                raise RuntimeError("Install 'boto' python package manually please")
-            logger.debug('Opening connection to s3 %s:%s', self.host, self.port)
-            self._conn = boto.connect_s3(
-                host=self.host,
-                port=self.port,
-                is_secure=self.is_secure,
+            if not boto3:
+                raise RuntimeError("Install 'boto3' python package manually please")
+            logger.debug('Opening connection to s3 %s', self.endpoint_url)
+            session = boto3.session.Session()
+            self._conn = session.client(
+                service_name='s3',
+                endpoint_url=self.endpoint_url,
                 aws_access_key_id=self.aws_access_key_id,
                 aws_secret_access_key=self.aws_secret_access_key,
-                calling_format=boto.s3.connection.OrdinaryCallingFormat(),
             )
         return self._conn
 
@@ -631,38 +638,21 @@ class S3Opener(OpenerProtocol):
         tmpfile_path = self.tmpfile_path()
         logger.info("Downloading resource %s to %s", self.uri, tmpfile_path)
         try:
-            bucket = self.conn.get_bucket(self.bucket_key)
+            self.conn.download_file(self.bucket_key, self.object_key, tmpfile_path)
         except socket.gaierror:
-            logger.warning('Failed to connect to s3 host %s:%s', self.host, self.port)
+            logger.error('Failed to connect to s3 host %s', self.endpoint_url)
             raise
-        except boto.exception.S3ResponseError:
-            logger.warning('S3 error trying to get bucket: %s', self.bucket_key)
-            logger.debug('S3 error trying to get bucket: %s', self.bucket_key, exc_info=True)
+        except boto3.exceptions.Boto3Error as e:
+            logger.error('S3 error trying to download file from bucket: %s/%s  %s', self.bucket_key, self.object_key, str(e))
+            logger.debug('S3 error trying to download file from bucket: %s/%s', self.bucket_key, self.object_key, exc_info=True)
             raise
-        except Exception:
+        except Exception as e:
             logger.debug('Failed to get s3 resource: %s', self.uri, exc_info=True)
-            raise RuntimeError('Failed to get s3 resource %s' % self.uri)
+            raise RuntimeError('Failed to get s3 resource %s' % self.uri) from e
         else:
-            try:
-                key = bucket.get_key(self.object_key)
-                if not key:
-                    raise RuntimeError('No such object %s at bucket %s', self.object_key, self.bucket_key)
-                else:
-                    key.get_contents_to_filename(tmpfile_path)
-            except boto.exception.S3ResponseError:
-                logger.warning(
-                    'S3 error trying to get key %s from bucket: %s',
-                    self.object_key, self.bucket_key
-                )
-                logger.debug(
-                    'S3 error trying to get key %s from bucket: %s',
-                    self.object_key, self.bucket_key, exc_info=True
-                )
-                raise
-            else:
-                logger.info("Successfully downloaded resource %s to %s", self.uri, tmpfile_path)
-                self._filename = tmpfile_path
-                return tmpfile_path
+            logger.info("Successfully downloaded resource %s to %s", self.uri, tmpfile_path)
+            self._filename = tmpfile_path
+            return tmpfile_path
 
     @property
     def hash(self):
