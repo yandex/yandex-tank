@@ -51,6 +51,10 @@ core:
       description: maximum data waiting time from aggregator
       type: integer
       default: 31
+    aggregator_max_termination_timeout:
+      description: maximum timeout for aggregator to finish after test end in seconds
+      type: integer
+      default: 60
     skip_generator_check:
       description: enable tank running without load generator
       type: boolean

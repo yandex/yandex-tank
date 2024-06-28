@@ -72,5 +72,6 @@ analytic tools for the results they produce.
         'yandextank.plugins.ShellExec': ['config/*'],
         'yandextank.plugins.ShootExec': ['config/*'],
         'yandextank.plugins.Telegraf': ['config/*', 'agent/*'],
-        'yandextank.plugins.NeUploader': ['config/*']
+        'yandextank.plugins.NeUploader': ['config/*'],
+        'yandextank.plugins.YCMonitoring': ['config/*'],
     },)

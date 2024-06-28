@@ -4,6 +4,9 @@ panels:
   valueschema:
     type: dict
     schema:
+      group_name:
+        type: string
+        description: Optional grouping name for backend to group panels on same page
       queries:
         required: true
         type: list

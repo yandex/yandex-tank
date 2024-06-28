@@ -1,6 +1,6 @@
 import re
 import json
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from time import time
 from queue import Queue
 
@@ -22,7 +22,7 @@ class YCMonitoringSensor(MonitoringSensorProtocol):
     def __init__(
         self,
         panel_name: str,
-        host: str,
+        api_host: str,
         token: str,
         query: str,
         folder_id: str,
@@ -37,15 +37,15 @@ class YCMonitoringSensor(MonitoringSensorProtocol):
         self.panel_name = panel_name
         self.headers = {'Content-type': 'application/json', 'Authorization': f'Bearer {token}'}
         self.params = {'folderId': folder_id}
-        self.endpoint = f'https://{host}/monitoring/v2/data/read'
+        self.endpoint = f'https://{api_host}/monitoring/v2/data/read'
 
         # for some reason YC Monitoring API returns empty response if query contains `folderId=""` param
         # returns no data:    query='"objects_count"{folderId="correctFolderId", service="storage"}'
         # returns valid data: query='"objects_count"{service="storage"}'
         self.data = {
             'query': query,
-            'fromTime': datetime.fromtimestamp(time(), tz=UTC).isoformat(),
-            'toTime': (datetime.fromtimestamp(time() + 1, tz=UTC)).isoformat(),
+            'fromTime': datetime.fromtimestamp(time(), tz=timezone.utc).isoformat(),
+            'toTime': (datetime.fromtimestamp(time() + 1, tz=timezone.utc)).isoformat(),
             'downsampling': {'gridInterval': 1500},
         }
         self.queue = queue
@@ -64,7 +64,7 @@ class YCMonitoringSensor(MonitoringSensorProtocol):
         if self.is_got_some_data_after_parsing:
             self.data['fromTime'] = self.data['toTime']
             self.is_got_some_data_after_parsing = False
-        self.data['toTime'] = datetime.fromtimestamp(time() + 1, tz=UTC).isoformat()
+        self.data['toTime'] = datetime.fromtimestamp(time() + 1, tz=timezone.utc).isoformat()
         self.prepare_data(self.get_data())
 
     @observetime('YCMonitoringSensor.prepare_data', LOGGER)

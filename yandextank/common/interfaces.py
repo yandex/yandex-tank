@@ -184,7 +184,7 @@ class AbstractCriterion(object):
         """ helper to aggregate codes by mask """
         total = 0
         for code, count in codes_dict.items():
-            if codes_regex.match(str(code)):
+            if codes_regex.fullmatch(str(code)):
                 total += count
         return total
 

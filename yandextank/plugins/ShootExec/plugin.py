@@ -6,11 +6,12 @@ import subprocess
 import time
 import re
 import pandas as pd
+from threading import Event
 from typing import Optional
 
 from ...common.interfaces import AbstractPlugin, GeneratorPlugin, AggregateResultListener, AbstractInfoWidget, \
     StatsReader
-from ...common.util import FileScanner, tail_lines
+from ...common.util import FileMultiReader, FileScanner, tail_lines
 from ..Console import Plugin as ConsolePlugin
 from ..Phantom import PhantomReader
 from yandextank.aggregator import TimeChopper
@@ -33,6 +34,7 @@ class Plugin(GeneratorPlugin):
 
     def __init__(self, core, cfg, name):
         AbstractPlugin.__init__(self, core, cfg, name)
+        self.output_finished = Event()
         self.stats_reader = None
         self.reader = None
         self._stderr_path = None
@@ -63,9 +65,9 @@ class Plugin(GeneratorPlugin):
         if self.reader is None:
             # Touch output_path to clear it
             open(self.__output_path, "w").close()
-            self.opened_file = open(self.__output_path, 'r')
-            self.add_cleanup(lambda: self.opened_file.close())
-            self.reader = PhantomReader(self.opened_file)
+            self.file_reader = FileMultiReader(self.__output_path, self.output_finished)
+            self.add_cleanup(lambda: self.file_reader.close)
+            self.reader = PhantomReader(self.file_reader.get_file())
             if not self.__stats_path:
                 self.reader = _ShootExecReader(self.reader, self.core.data_poller)
         return self.reader
@@ -119,7 +121,7 @@ class Plugin(GeneratorPlugin):
         retcode = self.__process.poll()
         if retcode is not None:
             _LOGGER.info("Shooting process done its work with exit code: %s", retcode)
-            if retcode is not None and retcode != 0:
+            if retcode != 0:
                 lines_amount = 20
                 error, lines = self.extract_error_from_log(lines_amount)
                 if len(lines) > 0:
@@ -129,6 +131,7 @@ class Plugin(GeneratorPlugin):
                 if error is None:
                     error = 'Unknown generator error'
                 self.errors.append(error)
+            self.output_finished.set()
             return abs(retcode)
         else:
             return -1
@@ -154,6 +157,7 @@ class Plugin(GeneratorPlugin):
             self.__terminate()
         else:
             _LOGGER.debug("Seems shooting process finished OK")
+        self.output_finished.set()
         return retcode
 
     def post_process(self, retcode):

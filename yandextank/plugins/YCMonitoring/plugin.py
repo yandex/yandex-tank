@@ -41,7 +41,8 @@ class Plugin(MonitoringPlugin):
             api_host = self.get_option('api_host')
             for panel_name, query_data in self.get_option('panels').items():
                 queue = Queue()
-                panel = MonitoringPanel(api_host, self.timeout, queue)
+                group_name = query_data.get('group_name') or api_host
+                panel = MonitoringPanel(group_name, self.timeout, queue)
                 senset = set()
                 for query in query_data.get('queries'):
                     sensor = YCMonitoringSensor(

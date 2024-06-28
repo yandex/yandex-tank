@@ -530,10 +530,8 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         # Count data for specific tag if it's present
         if self.tag:
             if data["tagged"].get(self.tag):
-                codes = data["tagged"][self.tag]["net_code"]["count"].copy()
-                if '0' in codes:
-                    codes.pop('0')
-                matched_responses = self.count_matched_codes(self.codes_regex, codes)
+                matched_responses = self.count_matched_codes(self.codes_regex,
+                                                             data["tagged"][self.tag]["net_code"]["count"])
                 total_responses = data["tagged"][self.tag]["interval_real"]["len"]
             # matched_responses=0 if current tag differs from selected one
             else:
@@ -541,10 +539,8 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
                 total_responses = data["overall"]["interval_real"]["len"]
         # Count data for overall
         else:
-            codes = data["overall"]["net_code"]["count"].copy()
-            if '0' in codes:
-                codes.pop('0')
-            matched_responses = self.count_matched_codes(self.codes_regex, codes)
+            matched_responses = self.count_matched_codes(self.codes_regex,
+                                                         data["overall"]["net_code"]["count"])
             total_responses = data["overall"]["interval_real"]["len"]
         return matched_responses, total_responses
 

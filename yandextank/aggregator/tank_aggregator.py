@@ -2,6 +2,7 @@
 import json
 import logging
 import queue as q
+from datetime import datetime
 
 from pkg_resources import resource_string
 from typing import Collection
@@ -34,7 +35,7 @@ class TankAggregator(object):
     def get_key():
         return __file__
 
-    def __init__(self, generator, poller: DataPoller):
+    def __init__(self, generator, poller: DataPoller, termination_timeout: float = 60):
         # AbstractPlugin.__init__(self, core, cfg)
         """
 
@@ -50,6 +51,7 @@ class TankAggregator(object):
         self.stats_reader = None
         self.drain = None
         self.stats_drain = None
+        self.termination_timeout = termination_timeout
         self.poller = poller
 
     @staticmethod
@@ -121,15 +123,25 @@ class TankAggregator(object):
         return -1
 
     def end_test(self, retcode):
+        timeouter = _Timeouter(self.termination_timeout)
         retcode = self.generator.end_test(retcode)
         if self.stats_reader:
             logger.info('Closing stats reader')
             self.stats_reader.close()
         if self.drain:
-            logger.info('Waiting for gun drain to finish')
-            self.drain.join()
-            logger.info('Waiting for stats drain to finish')
-            self.stats_drain.join()
+            timeout = timeouter.get_remaining_timeout()
+            logger.info('Waiting for gun drain to finish for %f seconds', timeout)
+            self.drain.join(timeout)
+            if self.drain.is_alive():
+                logger.warning('The gun drain didn\'t finish in time. Some data might be lost.')
+            self.drain.close()
+
+            timeout = timeouter.get_remaining_timeout()
+            logger.info('Waiting for stats drain to finish for %f seconds', timeout)
+            self.stats_drain.join(timeout)
+            if self.drain.is_alive():
+                logger.warning('The stats drain didn\'t finish in time. Some data might be lost.')
+            self.stats_drain.close()
         logger.info('Collecting remaining data')
         self._collect_data(end=True)
         return retcode
@@ -141,3 +153,12 @@ class TankAggregator(object):
         """ notify all listeners about aggregate data and stats """
         for listener in self.listeners:
             listener.on_aggregated_data(data, stats)
+
+
+class _Timeouter:
+    def __init__(self, total_timeout: float):
+        self.total_timeout = total_timeout
+        self.started = datetime.now()
+
+    def get_remaining_timeout(self) -> float:
+        return max(0.1, self.total_timeout - (datetime.now() - self.started).seconds)

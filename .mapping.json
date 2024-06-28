@@ -146,6 +146,7 @@
   "yandextank/plugins/Autostop/criterions.py":"load/projects/yandex-tank/yandextank/plugins/Autostop/criterions.py",
   "yandextank/plugins/Autostop/cumulative_criterions.py":"load/projects/yandex-tank/yandextank/plugins/Autostop/cumulative_criterions.py",
   "yandextank/plugins/Autostop/plugin.py":"load/projects/yandex-tank/yandextank/plugins/Autostop/plugin.py",
+  "yandextank/plugins/Autostop/tests/test_cumulative_criterions.py":"load/projects/yandex-tank/yandextank/plugins/Autostop/tests/test_cumulative_criterions.py",
   "yandextank/plugins/Bfg/__init__.py":"load/projects/yandex-tank/yandextank/plugins/Bfg/__init__.py",
   "yandextank/plugins/Bfg/config/schema.yaml":"load/projects/yandex-tank/yandextank/plugins/Bfg/config/schema.yaml",
   "yandextank/plugins/Bfg/example/scenario_gun.py":"load/projects/yandex-tank/yandextank/plugins/Bfg/example/scenario_gun.py",

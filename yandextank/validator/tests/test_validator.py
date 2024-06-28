@@ -100,6 +100,7 @@ PHANTOM_SCHEMA_V_G = {
          'affinity': '',
          'ignore_lock': False,
          'debug': False,
+         'aggregator_max_termination_timeout': 60,
          'aggregator_max_wait': 31,
          'skip_generator_check': False
      },
@@ -226,6 +227,7 @@ PHANTOM_SCHEMA_V_G = {
           'affinity': '',
           'ignore_lock': False,
           'debug': False,
+          'aggregator_max_termination_timeout': 60,
           'aggregator_max_wait': 31,
           'skip_generator_check': False}}
      )
@@ -389,6 +391,7 @@ def test_load_multiple(configs, expected):
                 'affinity': '',
                 'ignore_lock': False,
                 'debug': False,
+                'aggregator_max_termination_timeout': 60,
                 'aggregator_max_wait': 31,
                 'skip_generator_check': False,
             },
