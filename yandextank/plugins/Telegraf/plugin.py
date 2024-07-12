@@ -161,8 +161,7 @@ class Plugin(MonitoringPlugin):
 
         # FIXME [legacy] backward compatibility with Monitoring module
         # configuration below.
-        self.monitoring.ssh_timeout = expand_to_seconds(
-            self.get_option("ssh_timeout", "5s"))
+        self.monitoring.ssh_timeout = expand_to_seconds(self.get_option("ssh_timeout", "30s"))
         self.monitoring.ssh_key_path = self.get_option('ssh_key_path', '')
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)

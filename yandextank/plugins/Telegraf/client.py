@@ -176,7 +176,9 @@ class SSHClient(object):
 
         # connection
         self.session = None
-        self.ssh = SecuredShell(self.host, self.port, self.username, timeout, self.ssh_key_path)
+        self.ssh = SecuredShell(
+            self.host, self.port, self.username, command_timeout=timeout, ssh_key_path=self.ssh_key_path
+        )
         self.incoming_queue = queue.Queue()
         self.buffer = ""
         self.stop_sent = None
