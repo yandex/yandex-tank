@@ -42,10 +42,14 @@ def read_resource(path, file_open_mode='r'):
 
 
 class SecuredShell(object):
-    def __init__(self, host, port, username, timeout=10, ssh_key_path=None):
+    valid_key: str | None = None
+
+    def __init__(self, host, port, username, command_timeout=30, file_timeout=300, protocol_timeout=15, ssh_key_path=None):
         self.connection_address = f'{username}@{host}'
         self.port = port
-        self.timeout = timeout
+        self._command_timeout = command_timeout
+        self._file_timeout = file_timeout
+        self._protocol_timeout = protocol_timeout
         key_filename = None
         if ssh_key_path:
             path = pathlib.Path(ssh_key_path)
@@ -70,12 +74,7 @@ class SecuredShell(object):
                 ssh_opts=[
                     '-i',
                     filename,
-                    '-o',
-                    'StrictHostKeyChecking=no',
-                    '-o',
-                    'BatchMode=yes',
-                    '-p',
-                    str(self.port),
+                    *self._make_ssh_opts(),
                 ])
             if not exit_code:
                 return filename
@@ -111,7 +110,11 @@ class SecuredShell(object):
             port_flag,
             str(self.port),
             '-o',
-            f'ConnectTimeout={self.timeout}',
+            f'ConnectTimeout={self._protocol_timeout}',
+            '-o',
+            f'ServerAliveInterval={(self._protocol_timeout + 2) // 3}',
+            '-o',
+            'ServerAliveCountMax=3',
             '-o',
             'StrictHostKeyChecking=no',
             '-o',
@@ -120,6 +123,15 @@ class SecuredShell(object):
         if self.valid_key is not None:
             ssh_opts = ['-i', self.valid_key] + ssh_opts
         return ssh_opts
+
+    def _safe_communicate(self, process: subprocess.Popen, timeout: float, error_message: str) -> tuple[bytes, bytes]:
+        try:
+            outs, errs = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            logger.error(error_message)
+            raise ConnectionError(error_message)
+        return outs, errs
 
     def ensure_connection(self):
         _, stderr, exit_code = self.execute(cmd='exit')
@@ -136,7 +148,11 @@ class SecuredShell(object):
         cmd = ['scp'] + ssh_opts + [local_path, full_remote_path]
         logger.info('Sending from [%s] to %s:[%s]', local_path, self.connection_address, remote_path)
         process = self.popen(' '.join(cmd))
-        process.communicate()
+        self._safe_communicate(
+            process,
+            self._file_timeout,
+            f'Timeout while trying to send file from {local_path} to {self.connection_address}:{remote_path}',
+        )
 
     @check_executable_present('scp')
     def get_file(self, remote_path: str, local_path: str):
@@ -146,7 +162,11 @@ class SecuredShell(object):
         cmd = ['scp'] + ssh_opts + [full_remote_path, local_path]
         logger.info('Receiving from %s:[%s] to [%s]', self.connection_address, remote_path, local_path)
         process = self.popen(' '.join(cmd))
-        process.communicate()
+        self._safe_communicate(
+            process,
+            self._file_timeout,
+            f'Timeout while trying to get file from {self.connection_address}:{remote_path} to {local_path}',
+        )
 
     @check_executable_present('ssh')
     def execute(self, cmd: str, ssh_opts: Optional[List[str]] = None):
@@ -154,11 +174,14 @@ class SecuredShell(object):
         ssh_cmd = ['ssh'] + ssh_opts + [self.connection_address, cmd]
         logger.info('Executing: %s', ssh_cmd)
         process = self.popen(' '.join(ssh_cmd))
-
-        stdout, stderr = process.communicate()
+        stdout, stderr = self._safe_communicate(
+            process, self._command_timeout, f'Timeout while trying to execute command {ssh_cmd}'
+        )
         exit_code = process.poll()
         stdout = stdout.decode('utf-8')
         stderr = stderr.decode('utf-8')
+        if exit_code:
+            logger.error(f'Failed to execute command with exit code {exit_code}\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}')
         return stdout, stderr, exit_code
 
     @check_executable_present('ssh')
@@ -168,6 +191,8 @@ class SecuredShell(object):
         return self.popen(' '.join(ssh_cmd))
 
     def rm_r(self, path: str):
+        if not path or path == '/':
+            raise ValueError('Directory is empty or root directory')
         return self.execute(f'rm -rf {path}')
 
     def async_session(self, cmd: str):
@@ -178,6 +203,7 @@ class Session:
     def __init__(self, client: SecuredShell, cmd: str):
         self.client = client
         self.process = self.client.execute_without_communicate(cmd)
+        self._exit_status: int | None = None
         self.stdout = self.process.stdout
         os.set_blocking(self.stdout.fileno(), False)
 
@@ -196,15 +222,17 @@ class Session:
         return self.exit_status() is not None
 
     def exit_status(self):
-        return self.process.poll()
+        if self._exit_status is None:
+            self._exit_status = self.process.poll()
+        return self._exit_status
 
-    def close(self):
+    def close(self, timeout=10):
         try:
-            self.process.communicate(timeout=10)
+            self.process.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
             logger.warning('Process has not been ended until timeout expired')
             self.process.kill()
-            self.process.communicate()
+        self.exit_status()
 
 
 # HTTP codes

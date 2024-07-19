@@ -77,7 +77,9 @@ class Plugin(AbstractPlugin):
         except KeyError as ex:
             logger.debug(ex)
         for host in self.hosts:
-            self.ssh = SecuredShell(host, self.port, self.username, self.timeout, self.ssh_key_path)
+            self.ssh = SecuredShell(
+                host, self.port, self.username, command_timeout=self.timeout, ssh_key_path=self.ssh_key_path
+            )
             try:
                 self.ssh.ensure_connection()
                 out, errors, err_code = self.ssh.execute(self.cmd)

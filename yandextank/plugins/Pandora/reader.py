@@ -25,10 +25,11 @@ class PandoraStatsPoller(Thread):
                     pandora_stat = requests.get(
                         "http://localhost:{port}/debug/vars".format(port=self.port), timeout=0.9
                     ).json()
+                    instances_metric = pandora_stat.get("engine_LastMaxActiveRequests", pandora_stat.get("engine_ActiveRequests"))
                     data = {
                         'ts': last_ts - 1,
                         'metrics': {
-                            'instances': pandora_stat.get("engine_ActiveRequests"),
+                            'instances': instances_metric,
                             'reqps': pandora_stat.get("engine_ReqPS"),
                         }
                     }
