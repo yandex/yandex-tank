@@ -667,4 +667,8 @@ class S3Opener(OpenerProtocol):
         return os.path.getsize(self.get_filename)
 
 
-manager = ResourceManager(environ.to_config(ResourceManagerConfig))
+def make_resource_manager():
+    return ResourceManager(environ.to_config(ResourceManagerConfig))
+
+
+manager = make_resource_manager()
