@@ -206,10 +206,7 @@ class SSHClient(object):
             logger.error('Failed to establish SSH connection with %s', self.host)
             return None, None, None
 
-        logger.info(
-            "Installing monitoring agent at %s@%s...",
-            self.username,
-            self.host)
+        logger.info("Installing monitoring agent at %s@%s...", self.username, self.host)
 
         # create remote temp dir
         cmd = 'mktemp -d'
@@ -217,10 +214,7 @@ class SSHClient(object):
         try:
             out, errors, err_code = self.ssh.execute(cmd)
         except Exception:
-            logger.error(
-                "Failed to install monitoring agent to %s",
-                self.host,
-                exc_info=True)
+            logger.exception("Failed to install monitoring agent to %s", self.host)
             return None, None, None
 
         if err_code:
@@ -235,12 +229,10 @@ class SSHClient(object):
         if remote_dir:
             self.path['AGENT_REMOTE_FOLDER'] = remote_dir
             self.agent_remote_folder = remote_dir
-        logger.info(
-            "Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
+        logger.info("Remote dir at %s:%s", self.host, self.path['AGENT_REMOTE_FOLDER'])
 
         # create collector config
-        agent_config = self.config.create_collector_config(
-            self.path['AGENT_REMOTE_FOLDER'])
+        agent_config = self.config.create_collector_config(self.path['AGENT_REMOTE_FOLDER'])
         startup_config = self.config.create_startup_config()
         customs_script = self.config.create_custom_exec_script()
 
@@ -250,10 +242,7 @@ class SSHClient(object):
         try:
             out, err, err_code = self.ssh.execute(cmd)
         except Exception:
-            logger.error(
-                "SSH execute error trying to check telegraf availability on host %s",
-                self.host,
-                exc_info=True)
+            logger.exception("SSH execute error trying to check telegraf availability on host %s", self.host)
         else:
             if not err_code:
                 remote_telegraf_exists = True
@@ -262,16 +251,11 @@ class SSHClient(object):
             if remote_telegraf_exists:
                 logger.info('Found telegraf client on %s..', self.host)
             else:
-                logger.debug(
-                    'Not found telegraf client on %s, trying to install from tank. Copying..',
-                    self.host)
+                logger.debug('Not found telegraf client on %s, trying to install from tank. Copying..', self.host)
                 if os.path.isfile(self.path['TELEGRAF_LOCAL_PATH']):
-                    self.ssh.send_file(
-                        self.path['TELEGRAF_LOCAL_PATH'],
-                        self.path['TELEGRAF_REMOTE_PATH'])
+                    self.ssh.send_file(self.path['TELEGRAF_LOCAL_PATH'], self.path['TELEGRAF_REMOTE_PATH'])
                 elif os.path.isfile("/usr/bin/telegraf"):
-                    self.ssh.send_file(
-                        '/usr/bin/telegraf', self.path['TELEGRAF_REMOTE_PATH'])
+                    self.ssh.send_file('/usr/bin/telegraf', self.path['TELEGRAF_REMOTE_PATH'])
                 else:
                     logger.error(
                         'Telegraf binary not found neither on %s nor on localhost at specified path: %s\n'
@@ -281,28 +265,19 @@ class SSHClient(object):
 
             self.ssh.send_file(
                 self.path['AGENT_LOCAL_PATH'],
-                os.path.join(
-                    self.path['AGENT_REMOTE_FOLDER'],
-                    self.AGENT_FILENAME))
+                os.path.join(self.path['AGENT_REMOTE_FOLDER'], self.AGENT_FILENAME))
             self.ssh.send_file(
                 agent_config,
-                os.path.join(
-                    self.path['AGENT_REMOTE_FOLDER'],
-                    'agent.cfg'))
+                os.path.join(self.path['AGENT_REMOTE_FOLDER'], 'agent.cfg'))
             self.ssh.send_file(
                 startup_config,
-                os.path.join(
-                    self.path['AGENT_REMOTE_FOLDER'],
-                    'agent_startup.cfg'))
+                os.path.join(self.path['AGENT_REMOTE_FOLDER'], 'agent_startup.cfg'))
             self.ssh.send_file(
                 customs_script,
-                os.path.join(
-                    self.path['AGENT_REMOTE_FOLDER'],
-                    'agent_customs.sh'))
+                os.path.join(self.path['AGENT_REMOTE_FOLDER'], 'agent_customs.sh'))
 
         except Exception:
-            logger.error(
-                "Failed to install agent on %s", self.host, exc_info=True)
+            logger.exception("Failed to install agent on %s", self.host)
             return None, None, None
 
         return agent_config, startup_config, customs_script

@@ -50,19 +50,8 @@ class SecuredShell(object):
         self._command_timeout = command_timeout
         self._file_timeout = file_timeout
         self._protocol_timeout = protocol_timeout
-        key_filename = None
-        if ssh_key_path:
-            path = pathlib.Path(ssh_key_path)
-            key_filename = [str(f) for f in path.iterdir() if f.is_file()]
-        self.key_filename = key_filename
-        default_ssh_key_path = pathlib.Path(os.path.expanduser('~/.ssh/'))
-        default_key_filename = []
-        try:
-            default_key_filename = [str(f) for f in default_ssh_key_path.iterdir() if f.is_file()]
-        except Exception as err:
-            logger.warning('Could not access keys with default ~/.ssh/ path : %s', err)
-        self.default_key_filename = default_key_filename
-        self.valid_key = self._pick_ssh_key()
+        self.key_filename = get_ssh_key_filenames(ssh_key_path=ssh_key_path) or None
+        self.default_key_filename = get_ssh_key_filenames(ssh_key_path='~/.ssh/') or []
 
     def _pick_ssh_key(self):
         key_filename = self.default_key_filename
@@ -124,20 +113,27 @@ class SecuredShell(object):
             ssh_opts = ['-i', self.valid_key] + ssh_opts
         return ssh_opts
 
-    def _safe_communicate(self, process: subprocess.Popen, timeout: float, error_message: str) -> tuple[bytes, bytes]:
+    def _safe_communicate(
+        self,
+        process: subprocess.Popen,
+        timeout: float,
+        error_message: str,
+    ) -> tuple[bytes, bytes, int]:
+        outs, errs, exit_code = b'', b'', 0
         try:
             outs, errs = process.communicate(timeout=timeout)
+            exit_code = process.returncode
         except subprocess.TimeoutExpired:
             process.kill()
             logger.error(error_message)
-            raise ConnectionError(error_message)
-        return outs, errs
+            exit_code = 1
+        return outs, errs, exit_code
 
     def ensure_connection(self):
+        self.valid_key = self._pick_ssh_key()
         _, stderr, exit_code = self.execute(cmd='exit')
         if exit_code:
-            if not stderr:
-                stderr = 'Unhandled error.'
+            stderr = stderr or 'Unhandled error.'
             raise ConnectionError(f'Some error occurred in attempt to establish SSH connection: {stderr}')
 
     @check_executable_present('scp')
@@ -148,11 +144,13 @@ class SecuredShell(object):
         cmd = ['scp'] + ssh_opts + [local_path, full_remote_path]
         logger.info('Sending from [%s] to %s:[%s]', local_path, self.connection_address, remote_path)
         process = self.popen(' '.join(cmd))
-        self._safe_communicate(
+        _, stderr, exit_code = self._safe_communicate(
             process,
             self._file_timeout,
             f'Timeout while trying to send file from {local_path} to {self.connection_address}:{remote_path}',
         )
+        if exit_code:
+            raise ConnectionError(f'Some error occurred in attempt to send file: {stderr}')
 
     @check_executable_present('scp')
     def get_file(self, remote_path: str, local_path: str):
@@ -162,24 +160,28 @@ class SecuredShell(object):
         cmd = ['scp'] + ssh_opts + [full_remote_path, local_path]
         logger.info('Receiving from %s:[%s] to [%s]', self.connection_address, remote_path, local_path)
         process = self.popen(' '.join(cmd))
-        self._safe_communicate(
+        _, stderr, exit_code = self._safe_communicate(
             process,
             self._file_timeout,
             f'Timeout while trying to get file from {self.connection_address}:{remote_path} to {local_path}',
         )
+        if exit_code:
+            raise ConnectionError(f'Some error occurred in attempt to get file: {stderr}')
 
     @check_executable_present('ssh')
     def execute(self, cmd: str, ssh_opts: Optional[List[str]] = None):
         ssh_opts = ssh_opts or self._make_ssh_opts()
         ssh_cmd = ['ssh'] + ssh_opts + [self.connection_address, cmd]
+
         logger.info('Executing: %s', ssh_cmd)
         process = self.popen(' '.join(ssh_cmd))
-        stdout, stderr = self._safe_communicate(
+        stdout, stderr, exit_code = self._safe_communicate(
             process, self._command_timeout, f'Timeout while trying to execute command {ssh_cmd}'
         )
-        exit_code = process.poll()
+
         stdout = stdout.decode('utf-8')
         stderr = stderr.decode('utf-8')
+
         if exit_code:
             logger.error(f'Failed to execute command with exit code {exit_code}\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}')
         return stdout, stderr, exit_code
@@ -921,3 +923,15 @@ def get_test_path():
         return common.source_path('load/projects/yandex-tank')
     except ImportError:
         return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+
+def get_ssh_key_filenames(ssh_key_path: str) -> list[str]:
+    if not ssh_key_path:
+        return []
+    absolute_key_path = pathlib.Path(os.path.expanduser(ssh_key_path))
+    try:
+        key_filenames = [str(f) for f in absolute_key_path.iterdir() if f.is_file()]
+    except Exception as err:
+        logger.warning('Could not access keys with %s path : %s', absolute_key_path, err)
+        return []
+    return key_filenames

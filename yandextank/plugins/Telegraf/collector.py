@@ -42,7 +42,6 @@ class MonitoringCollector(object):
         self.old_style_configs = False
         self.ssh_key_path = None
         self.ssh_timeout = 30
-        self.clients = {'localhost': LocalhostClient, 'ssh': SSHClient}
 
     def add_listener(self, obj):
         self.listeners.append(obj)
@@ -59,11 +58,10 @@ class MonitoringCollector(object):
         # Creating agent for hosts
         for config in agent_configs:
             if config['host'] in ['localhost', '127.0.0.1', '::1']:
-                client = self.clients['localhost'](
-                    config, self.old_style_configs, kill_old=self.kill_old)
+                client = LocalhostClient(config, self.old_style_configs, kill_old=self.kill_old)
             else:
-                client = self.clients['ssh'](
-                    config, self.old_style_configs, timeout=self.ssh_timeout, kill_old=self.kill_old)
+                client = SSHClient(config, self.old_style_configs, timeout=self.ssh_timeout, kill_old=self.kill_old)
+
             logger.debug('Installing monitoring agent. Host: %s', client.host)
             agent_config, startup_config, customs_script = client.install()
             if agent_config:
