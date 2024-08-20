@@ -2,6 +2,7 @@
 # pylint: disable=C0301
 import logging
 import os.path
+import time
 from datetime import datetime
 
 from . import criterions as cr
@@ -90,6 +91,11 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
         if console:
             console.add_info_widget(AutostopWidget(self))
+
+    def start_test(self):
+        for criterion in self._criterions.values():
+            if isinstance(criterion, cr.TimeLimitCriterion):
+                criterion.start_time = time.time()
 
     def is_test_finished(self):
         if self.cause_criterion:
