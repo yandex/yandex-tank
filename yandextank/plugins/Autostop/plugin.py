@@ -70,7 +70,6 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.add_criterion_class(cum_cr.TotalNegativeHTTPCodesCriterion)
         self.add_criterion_class(cum_cr.TotalNegativeNetCodesCriterion)
         self.add_criterion_class(cum_cr.TotalHTTPTrendCriterion)
-        self.add_criterion_class(cum_cr.QuantileOfSaturationCriterion)
 
     def prepare_test(self):
         criterions = self.get_option("autostop")

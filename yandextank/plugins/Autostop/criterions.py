@@ -67,7 +67,7 @@ class AvgTimeCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
-        explanation = "Average response time higher than %(limit)sms for %(seconds_count)ss, since %(since_time)s" % items
+        explanation = "Average response time higher than %(limit)sms for %(seconds_count)ss" % items
         if self.tag:
             explanation = explanation + " for tag %(tag)s" % items
         return explanation
@@ -77,7 +77,6 @@ class AvgTimeCriterion(AbstractCriterion):
             'limit': self.rt_limit,
             'seconds_count': self.seconds_count,
             'seconds_limit': self.seconds_limit,
-            'since_time': self.cause_second[0]["ts"],
             'tag': self.tag
         }
         return parameters
@@ -168,7 +167,7 @@ class HTTPCodesCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
-        explanation = "%(code)s codes count higher than %(level)s for %(seconds_count)ss, since %(since_time)s" % items
+        explanation = "%(code)s codes count higher than %(level)s for %(seconds_count)ss" % items
         if self.tag:
             explanation = explanation + " for tag %(tag)s" % items
         return explanation
@@ -179,7 +178,6 @@ class HTTPCodesCriterion(AbstractCriterion):
             'level': self.get_level_str(),
             'seconds_count': self.seconds_count,
             'seconds_limit': self.seconds_limit,
-            'since_time': self.cause_second[0].get('ts'),
             'tag': self.tag
         }
         return parameters
@@ -277,8 +275,7 @@ class NetCodesCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
-        explanation = "%(code)s net codes count higher than %(level)s for %(seconds_count)ss, since %(since_time)s" \
-                      % items
+        explanation = "%(code)s net codes count higher than %(level)s for %(seconds_count)ss" % items
         if self.tag:
             explanation = explanation + " for tag %(tag)s" % items
         return explanation
@@ -289,7 +286,6 @@ class NetCodesCriterion(AbstractCriterion):
             'level': self.get_level_str(),
             'seconds_count': self.seconds_count,
             'seconds_limit': self.seconds_limit,
-            'since_time': self.cause_second[0].get("ts"),
             'tag': self.tag
         }
         return parameters
@@ -355,8 +351,7 @@ class QuantileCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
-        explanation = "Percentile %(percentile)s higher than %(limit)sms for %(seconds_count)ss, since %(since_time)s" \
-            % items
+        explanation = "Percentile %(percentile)s higher than %(limit)sms for %(seconds_count)ss" % items
         if self.tag:
             explanation = explanation + " for tag %(tag)s" % items
         return explanation
@@ -367,7 +362,6 @@ class QuantileCriterion(AbstractCriterion):
             'limit': self.rt_limit,
             'seconds_count': self.seconds_count,
             'seconds_limit': self.seconds_limit,
-            'since_time': self.cause_second[0].get("ts"),
             'tag': self.tag
         }
         return parameters
@@ -418,13 +412,7 @@ class SteadyCumulativeQuantilesCriterion(AbstractCriterion):
         return self.RC_STEADY
 
     def explain(self):
-        items = self.get_criterion_parameters()
-        return "Cumulative percentiles are steady for %ss, since %s" % items
-
-    def get_criterion_parameters(self):
-        parameters = (
-            self.seconds_count, self.cause_second[0]["ts"])
-        return parameters
+        return "Cumulative percentiles are steady for %ss" % self.seconds_count
 
     def widget_explain(self):
         items = (self.seconds_count, self.seconds_limit)
@@ -546,12 +534,8 @@ class UsedInstancesCriterion(AbstractCriterion):
         return level_str
 
     def explain(self):
-        items = (
-            self.get_level_str(), self.seconds_count,
-            self.cause_second[0].get('ts'))
-        return (
-            "Testing threads (instances) utilization"
-            " higher than %s for %ss, since %s" % items)
+        items = (self.get_level_str(), self.seconds_count)
+        return "Testing threads (instances) utilization higher than %s for %ss" % items
 
     def widget_explain(self):
         items = (self.get_level_str(), self.seconds_count, self.seconds_limit)
