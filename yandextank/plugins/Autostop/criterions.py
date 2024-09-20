@@ -441,7 +441,7 @@ class TimeLimitCriterion(AbstractCriterion):
         return self.RC_TIME
 
     def explain(self):
-        return "Test time elapsed. Limit: %(limit)ss, actual time: %(actual)ss" % self.get_criterion_parameters()
+        return "Test time elapsed. Limit: %(limit)ss" % self.get_criterion_parameters()
 
     def get_criterion_parameters(self):
         parameters = {
