@@ -64,8 +64,7 @@ class AbstractGun(AbstractPlugin):
         pass
 
     def shoot(self, missile, marker):
-        raise NotImplementedError(
-            "Gun should implement 'shoot(self, missile, marker)' method")
+        raise NotImplementedError("Gun should implement 'shoot(self, missile, marker)' method")
 
     def teardown(self):
         pass
@@ -265,8 +264,6 @@ class UltimateGun(AbstractGun):
             try:
                 scenario(missile)
             except Exception as e:
-                logger.warning(
-                    "Scenario %s failed with %s",
-                    marker, e, exc_info=True)
+                logger.warning("Scenario %s failed with %s", marker, e, exc_info=True)
         else:
             logger.warning("Scenario not found: %s", marker)

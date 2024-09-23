@@ -71,7 +71,7 @@ class TankWorker(Process):
             lock = self.get_lock()
             add_cleanup('release lock', lock.release)
             self.status = Status.TEST_PREPARING
-            logger.info('Created a folder for the test. %s' % self.folder)
+            logger.info('Created a folder for the test. %s', self.folder)
             self.core.plugins_configure()
             add_cleanup('plugins cleanup', self.core.plugins_cleanup)
             self.core.plugins_prepare_test()
@@ -156,7 +156,7 @@ class TankWorker(Process):
         for handler in self.log_handlers:
             handlers.append(handler)
             logger.addHandler(handler)
-            logger.info("Logging handler {} added".format(handler))
+            logger.info("Logging handler %s added", handler)
         return old_loglevel, handlers
 
     def cleanup_logging(self):
@@ -176,8 +176,7 @@ class TankWorker(Process):
                 self.add_msgs(str(e))
                 if not self.wait_lock:
                     raise RuntimeError("Lock file present, cannot continue")
-                logger.warning(
-                    "Couldn't get lock. Will retry in 5 seconds...")
+                logger.warning("Couldn't get lock. Will retry in 5 seconds...")
                 time.sleep(5)
         else:
             raise KeyboardInterrupt

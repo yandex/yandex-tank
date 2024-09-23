@@ -20,7 +20,7 @@ def string_to_df_microsec(data):
         )
     except CParserError as e:  # noqa
         logger.error(e.message)  # noqa
-        logger.error('Incorrect phout data: {}'.format(data))  # noqa
+        logger.error('Incorrect phout data: %s', data)  # noqa
         return
 
     df['ts'] = (df['send_ts'] * 1e6 + df['interval_real']).astype(int)

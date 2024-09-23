@@ -27,10 +27,7 @@ try:
     import boto3.s3
     import boto3.session
 except ImportError:
-    logger.debug(
-        'Failed to import `boto3` package. Install `boto3`, otherwise S3 file paths opener wont work',
-        exc_info=False
-    )
+    logger.debug('Failed to import `boto3` package. Install `boto3`, otherwise S3 file paths opener wont work')
     boto3 = None
 
 try:
@@ -115,7 +112,7 @@ class ResourceManager(object):
         openers: typing.Optional[OpenersConfig] = None,
     ):
         self.config = config
-        logger.debug('loading  config from %s', config.openers_config_path)
+        logger.debug('loading ResourceManager config from %s', config.openers_config_path)
         self.openers_config = self.make_openers_config(config, self.load_config_safe(config.openers_config_path))
 
         self.tmp_path_prefix = config.tmp_path
@@ -147,17 +144,16 @@ class ResourceManager(object):
         return openers_config
 
     def load_config_safe(self, path) -> typing.Optional[typing.Dict[str, typing.Any]]:
-        logger.debug('loading ResourceManager config from %s', path)
         if not path:
             return None
         if not os.path.exists(path):
-            logger.warning(f'Netort ResourceManager config file {path} not exists.')
+            logger.info('Netort ResourceManager config file %s not exists.', path)
             return None
         try:
             with open(path, 'r') as f:
                 return yaml.load(f, Loader=YamlEnvSubstConfigLoader)
         except Exception as e:
-            logger.warning(f'Failed to load openers config file at {path}: {str(e)}')
+            logger.warning('Failed to load openers config file at %s: %s', path, str(e))
             return None
 
     def resource_filename(self, path):
@@ -183,9 +179,7 @@ class ResourceManager(object):
         try:
             size = os.path.getsize(filename)
             if size > 50 * 1024 * 1024:
-                logger.warning(
-                    'Reading large resource to memory: %s. Size: %s bytes',
-                    filename, size)
+                logger.warning('Reading large resource to memory: %s. Size: %s bytes', filename, size)
         except Exception as exc:
             logger.debug('Unable to check resource size %s. %s', filename, exc)
         with opener(filename, 'r') as resource:
@@ -284,7 +278,7 @@ def retry(func):
             try:
                 return func(self, *args, **kwargs)
             except Exception:
-                logger.error('{} failed. Retrying.'.format(func), exc_info=True)
+                logger.exception('%s failed. Retrying.', func)
                 continue
         return func(self, *args, **kwargs)
     return with_retry
@@ -332,10 +326,9 @@ class HttpOpener(TempDownloaderOpenerProtocol):
                 header += next(stream_iterator)
             fmt = self.fmt_detector.detect_format(header)
             logger.debug('Resource %s format detected: %s.', self.url, fmt)
+
         if not self.force_download and fmt != 'gzip' and self.data_length > 10**8:
-            logger.info(
-                "Resource data is not gzipped and larger than 100MB. Reading from stream.."
-            )
+            logger.info("Resource data is not gzipped and larger than 100MB. Reading from stream..")
             return HttpBytesStreamWrapper(self.url, headers=self._default_headers)
         else:
             downloaded_f_path = self.download_file(use_cache)
@@ -348,9 +341,7 @@ class HttpOpener(TempDownloaderOpenerProtocol):
     def download_file(self, use_cache, try_ungzip=False):
         tmpfile_path = self.tmpfile_path()
         if os.path.exists(tmpfile_path) and use_cache:
-            logger.info(
-                "Resource %s has already been downloaded to %s . Using it..",
-                self.url, tmpfile_path)
+            logger.info("Resource %s has already been downloaded to %s . Using it..", self.url, tmpfile_path)
         else:
             logger.info("Downloading resource %s to %s", self.url, tmpfile_path)
             try:

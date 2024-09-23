@@ -153,7 +153,7 @@ def to_utc(ts):
 
 
 class Aggregator(object):
-    def __init__(self, source, config, verbose_histogram):
+    def __init__(self, source, config, verbose_histogram=True):
         self.worker = Worker(config, verbose_histogram)
         self.source = source
         self.groupby = 'tag'

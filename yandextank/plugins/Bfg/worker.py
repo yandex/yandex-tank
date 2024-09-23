@@ -101,8 +101,7 @@ Gun: {gun.__class__.__name__}
                     else:
                         continue
         workers_count = self.instances
-        logger.info(
-            "Feeded all data. Publishing %d killer tasks" % (workers_count))
+        logger.info("Feded all data. Publishing %d killer tasks" % workers_count)
         retry_delay = 1
         for _ in range(5):
             try:

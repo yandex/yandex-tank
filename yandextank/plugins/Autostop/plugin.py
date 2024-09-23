@@ -98,9 +98,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
     def is_test_finished(self):
         if self.cause_criterion:
-            self.log.warning(
-                "Autostop criterion requested test stop: %s",
-                self.cause_criterion.explain())
+            self.log.warning("Autostop criterion requested test stop: %s", self.cause_criterion.explain())
             return self.cause_criterion.get_rc()
         else:
             return -1
@@ -114,8 +112,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         for criterion_class in self.custom_criterions:
             if criterion_class.get_type_string() == type_str:
                 return criterion_class(self, parsed[1])
-        raise ValueError(
-            "Unsupported autostop criterion type: %s" % criterion_str)
+        raise ValueError("Unsupported autostop criterion type: %s" % criterion_str)
 
     def on_aggregated_data(self, data, stat):
         self.counting = []

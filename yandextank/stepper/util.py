@@ -41,8 +41,7 @@ def parse_duration(duration):
             if multiplier in multipliers:
                 return int(float(time) * multipliers[multiplier] * 1000)
             else:
-                raise StepperConfigurationError(
-                    'Failed to parse duration: %s' % duration)
+                raise StepperConfigurationError('Failed to parse duration: %s' % duration)
         else:
             return int(float(time) * 1000)
 

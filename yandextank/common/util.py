@@ -14,7 +14,6 @@ import http.client
 import logging
 import errno
 import re
-import select
 
 import psutil
 try:
@@ -407,32 +406,6 @@ NET = {
 }
 
 
-def log_stdout_stderr(log, stdout, stderr, comment=""):
-    """
-    This function polls stdout and stderr streams and writes their contents
-    to log
-    """
-    readable = select.select([stdout], [], [], 0)[0]
-    if stderr:
-        exceptional = select.select([stderr], [], [], 0)[0]
-    else:
-        exceptional = []
-
-    log.debug("Selected: %s, %s", readable, exceptional)
-
-    for handle in readable:
-        line = handle.read()
-        readable.remove(handle)
-        if line:
-            log.debug("%s stdout: %s", comment, line.strip())
-
-    for handle in exceptional:
-        line = handle.read()
-        exceptional.remove(handle)
-        if line:
-            log.warn("%s stderr: %s", comment, line.strip())
-
-
 def expand_to_milliseconds(str_time):
     """
     converts 1d2s into milliseconds
@@ -479,8 +452,7 @@ def expand_time(str_time, default_unit='s', multiplier=1):
             result += value * 60 * 60 * 24 * 7
             continue
         else:
-            raise ValueError(
-                "String contains unsupported unit %s: %s" % (unit, str_time))
+            raise ValueError("String contains unsupported unit %s: %s" % (unit, str_time))
     return int(result * multiplier)
 
 
@@ -496,21 +468,6 @@ def pid_exists(pid):
     else:
         p = psutil.Process(pid)
         return p.status != psutil.STATUS_ZOMBIE
-
-
-def splitstring(string):
-    """
-    >>> string = 'apple orange "banana tree" green'
-    >>> splitstring(string)
-    ['apple', 'orange', 'green', '"banana tree"']
-    """
-    patt = re.compile(r'"[\w ]+"')
-    if patt.search(string):
-        quoted_item = patt.search(string).group()
-        newstring = patt.sub('', string)
-        return newstring.split() + [quoted_item]
-    else:
-        return string.split()
 
 
 def pairs(lst):
@@ -593,9 +550,7 @@ class AddressWizard:
             parsed_ip, port = sockaddr[0], sockaddr[1]
 
             if explicit_port:
-                logger.warn(
-                    "Using phantom.port option is deprecated. Use phantom.address=[address]:port instead"
-                )
+                logger.warning("Using phantom.port option is deprecated. Use phantom.address=[address]:port instead")
                 port = int(explicit_port)
             elif not port:
                 port = 80
@@ -679,8 +634,8 @@ class FileScanner(object):
 
 def tail_lines(filepath, lines_num, bufsize=8192):
     fsize = os.stat(filepath).st_size
-    logging.warning('Filepath={}, lines_num={}, buf_size={}, fsize={}'
-                    .format(filepath, lines_num, bufsize, fsize))
+    logging.warning('Filepath=%s, lines_num=%s, buf_size=%s, fsize=%s', filepath, lines_num, bufsize, fsize)
+
     iter_ = 0
     with open(filepath) as f:
         if bufsize > fsize:
@@ -813,7 +768,7 @@ def timeit(min_duration_sec):
             stack = get_callstack()
             duration = time.time() - start_time
             if duration > min_duration_sec:
-                logger.warn('Slow call of %s (stack: %s), duration %s', func.__name__, stack, duration)
+                logger.warning('Slow call of %s (stack: %s), duration %s', func.__name__, stack, duration)
             return result
         return wrapper
     return timeit_fixed
@@ -869,7 +824,7 @@ class Cleanup:
             except Exception:
                 msg = 'Exception occurred during cleanup action {}'.format(name)
                 msgs.append(msg)
-                logger.error(msg, exc_info=True)
+                logger.exception(msg)
         self.tankworker.add_msgs(*msgs)
         self.tankworker.save_finish_status()
         self.tankworker.core._collect_artifacts()
@@ -896,6 +851,7 @@ class Finish:
             logger.error(msg)
             self.worker.add_msgs(msg)
             retcode = 1
+        logger.info('TankWorker RC: %s', retcode)
         retcode = self.worker.core.plugins_end_test(retcode)
         self.worker.retcode = retcode
         return True  # swallow exception & proceed to post-processing

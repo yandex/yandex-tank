@@ -66,7 +66,7 @@ class AbstractPlugin(object):
             try:
                 action()
             except Exception:
-                logging.error('Exception occurred during plugin cleanup {}'.format(self.__module__), exc_info=True)
+                logging.exception('Exception occurred during %s plugin cleanup', self.__module__)
 
     def end_test(self, retcode):
         """

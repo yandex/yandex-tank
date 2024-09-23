@@ -246,11 +246,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             except KeyError:
                 try:
                     error = task_data['error']
-                    raise RuntimeError(
-                        "Task %s error: %s\n%s", self.task, error, TASK_TIP)
+                    raise RuntimeError("Task %s error: %s\n%s", self.task, error, TASK_TIP)
                 except KeyError:
-                    raise RuntimeError(
-                        'Unknown task data format:\n{}'.format(task_data))
+                    raise RuntimeError('Unknown task data format:\n{}'.format(task_data))
         except requests.exceptions.HTTPError as ex:
             logger.error(
                 "Failed to check task status for '%s': %s", self.task, ex)
@@ -277,9 +275,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             else:
                 cwd = newdir
 
-        raise RuntimeError(
-            "task=dir requested, but no JIRA issue name in cwd: %s" %
-            os.getcwd())
+        raise RuntimeError("task=dir requested, but no JIRA issue name in cwd: %s" % os.getcwd())
 
     def prepare_test(self):
         info = self.get_generator_info()
@@ -308,10 +304,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 lp_job.create()
                 self.make_symlink(lp_job.number)
             self.publish('job_no', lp_job.number)
-        except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError) as e:
-            logger.error(e)
-            logger.error(
-                'Failed to connect to Lunapark, disabling DataUploader')
+        except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError):
+            logger.exception('Failed to connect to Lunapark, disabling DataUploader')
             self.start_test = lambda *a, **kw: None
             self.post_process = lambda *a, **kw: None
             self.on_aggregated_data = lambda *a, **kw: None
@@ -412,8 +406,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         if self.upload.is_alive():
             self.upload.join()
         self.finished = True
-        logger.info(
-            "Web link: %s", self.web_link)
+        logger.info("Web link: %s", self.web_link)
         autostop = None
         try:
             autostop = self.core.get_plugin_of_type(AutostopPlugin)
@@ -453,7 +446,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 self.lp_job.send_status(self.core.info.get_info_dict())
                 time.sleep(self.get_option('send_status_period'))
             except (APIClient.NetworkError, APIClient.NotAvailable) as e:
-                logger.warn('Failed to send status')
+                logger.warning('Failed to send status')
                 logger.debug(e)
                 break
             except APIClient.StoppedFromOnline:
@@ -478,9 +471,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             except APIClient.StoppedFromOnline:
                 logger.warning("Lunapark is rejecting {} data".format(name))
                 break
-            except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance) as e:
-                logger.warn('Failed to push {} data'.format(name))
-                logger.warn(e)
+            except (APIClient.NetworkError, APIClient.NotAvailable, APIClient.UnderMaintenance):
+                logger.exception('Failed to push {} data'.format(name))
                 self.lp_job.interrupted.set()
             except Exception:
                 logger.exception("Unhandled exception occured. Skipping data chunk...")
@@ -679,8 +671,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                         "Read authentication token from %s, "
                         "token length is %d bytes", filename, len(str(data)))
             except IOError:
-                logger.error(
-                    "Failed to read Overload API token from %s", filename)
+                logger.error("Failed to read Overload API token from %s", filename)
                 logger.info(
                     "Get your Overload API token from https://overload.yandex.net and provide it via 'overload.token_file' parameter"
                 )
@@ -789,7 +780,7 @@ class LPJob(Job):
                 self.api_client.push_test_data(
                     self.number, self.token, data, stats, self.interrupted, trace=self.log_data_requests)
             except (APIClient.NotAvailable, APIClient.NetworkError, APIClient.UnderMaintenance):
-                logger.warn('Failed to push test data')
+                logger.warning('Failed to push test data')
                 self.interrupted.set()
 
     def edit_metainfo(
@@ -816,9 +807,8 @@ class LPJob(Job):
                                               tank_type=tank_type,
                                               trace=self.log_other_requests)
         except (APIClient.NotAvailable, APIClient.StoppedFromOnline, APIClient.NetworkError,
-                APIClient.UnderMaintenance) as e:
-            logger.warn('Failed to edit job metainfo on Lunapark')
-            logger.warn(e)
+                APIClient.UnderMaintenance):
+            logger.exception('Failed to edit job metainfo on Lunapark')
 
     @property
     def number(self):
@@ -924,10 +914,10 @@ class LPJob(Job):
             except (APIClient.StoppedFromOnline, APIClient.NotAvailable, APIClient.NetworkError):
                 logger.info('Can\'t check whether target is locked\n')
                 if strict:
-                    logger.warn('Stopping test due to strict_lock')
+                    logger.warning('Stopping test due to strict_lock')
                     raise
                 else:
-                    logger.warn('strict_lock is False, proceeding')
+                    logger.warning('strict_lock is False, proceeding')
                     return {'status': 'ok'}
 
 

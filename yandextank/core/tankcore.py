@@ -11,7 +11,6 @@ import shutil
 import socket
 import tempfile
 import time
-import traceback
 import copy
 import sys
 import platform
@@ -225,12 +224,10 @@ class TankCore(object):
                     "Correcting to 'yandextank.plugins.DataUploader overload'")
                 plugin_path = "yandextank.plugins.DataUploader overload"
             try:
-                logger.info("Trying to import module: {}".format(plugin_name))
-                logger.info("Path: {}".format(plugin_path))
+                logger.info("Trying to import plugin %s from path %s", plugin_name, plugin_path)
                 plugin = il.import_module(plugin_path)
             except ImportError:
-                logger.warning('Plugin name %s path %s import error', plugin_name, plugin_path)
-                logger.debug('Plugin name %s path %s import error', plugin_name, plugin_path, exc_info=True)
+                logger.exception('Plugin name %s path %s import error', plugin_name, plugin_path)
                 raise
             try:
                 instance = getattr(plugin, 'Plugin')(self, cfg=plugin_cfg, name=plugin_name)
@@ -352,46 +349,45 @@ class TankCore(object):
 
     def plugins_end_test(self, retcode):
         """        Call end_test() on all plugins        """
-        logger.info("Finishing test...")
+        logger.info("Finishing test with received RC: %s", retcode)
         self.publish("core", "stage", "end")
         self.publish('generator', 'test_end', time.time())
+
         logger.info("Stopping load generator and aggregator")
         retcode = self.job.aggregator.end_test(retcode)
-        logger.debug("RC after: %s", retcode)
+        logger.info("RC after generator plugin and aggregator finish: %s", retcode)
 
-        logger.info('Stopping monitoring')
         for plugin in self.job.monitoring_plugins:
-            logger.info('Stopping %s', plugin)
+            logger.info('Stopping monitoring plugin %s', plugin)
             retcode = plugin.end_test(retcode) or retcode
-            logger.info('RC after: %s', retcode)
+            logger.info('RC after monitoring plugin finish: %s', retcode)
 
         for plugin in [p for p in self.plugins.values() if
                        p is not self.job.generator_plugin and p not in self.job.monitoring_plugins]:
-            logger.debug("Finalize %s", plugin)
+            logger.info("Stopping %s plugin", plugin)
             try:
-                logger.debug("RC before: %s", retcode)
                 retcode = plugin.end_test(retcode)
-                logger.debug("RC after: %s", retcode)
             except Exception:  # FIXME too broad exception clause
-                logger.error("Failed finishing plugin %s", plugin, exc_info=True)
+                logger.exception("Failed stopping plugin %s", plugin)
                 if not retcode:
                     retcode = 1
+            logger.info("RC after %s plugin finish: %s", plugin, retcode)
         return retcode
 
     def plugins_post_process(self, retcode):
         """
         Call post_process() on all plugins
         """
-        logger.info("Post-processing test...")
+        logger.info("Post-processing test with received RC: %s", retcode)
         self.publish("core", "stage", "post_process")
+
         for plugin in self.plugins.values():
-            logger.debug("Post-process %s", plugin)
+            logger.info("Post-process %s plugin", plugin)
             try:
-                logger.debug("RC before: %s", retcode)
                 retcode = plugin.post_process(retcode)
-                logger.debug("RC after: %s", retcode)
+                logger.info("RC after %s plugin post-processing: %s", plugin, retcode)
             except Exception:  # FIXME too broad exception clause
-                logger.error("Failed post-processing plugin %s", plugin, exc_info=True)
+                logger.exception("Failed post-processing plugin %s", plugin)
                 if not retcode:
                     retcode = 1
         return retcode
@@ -403,7 +399,7 @@ class TankCore(object):
             try:
                 plugin.monitoring_data(copy.deepcopy(data))
             except Exception:
-                logger.error("Plugin failed to process monitoring data", exc_info=True)
+                logger.exception("Plugin %s failed to process monitoring data", plugin)
 
     def __setup_taskset(self, affinity, pid=None, args=None):
         """ if pid specified: set process w/ pid `pid` CPU affinity to specified `affinity` core(s)
@@ -425,13 +421,12 @@ class TankCore(object):
                 raise KeyError(stderr)
 
     def _collect_artifacts(self, validation_failed=False):
-        logger.debug("Collecting artifacts")
-        logger.info("Artifacts dir: %s", self.artifacts_dir)
+        logger.info("Artifacts dir: %s. Collecting artifacts", self.artifacts_dir)
         for filename, keep in self.artifact_files.items():
             try:
                 self.__collect_file(filename, keep)
             except Exception as ex:
-                logger.warn("Failed to collect file %s: %s", filename, ex)
+                logger.warning("Failed to collect file %s: %s", filename, ex)
 
     def get_option(self, section, option, default=None):
         return self.config.get_option(section, option, default)
@@ -453,10 +448,11 @@ class TankCore(object):
         matches = [plugin for plugin in self.plugins.values() if isinstance(plugin, plugin_class)]
         if matches:
             if len(matches) > 1:
-                logger.debug(
-                    "More then one plugin of type %s found. Using first one.",
-                    plugin_class)
-            return matches[-1]
+                plugins = [type(p) for p in matches]
+                logger.warning(
+                    "More then one plugin of type %s found. Found plugins: %s. Using first one.", plugin_class, plugins,
+                )
+            return matches[0]
         else:
             raise KeyError("Requested plugin type not found: %s", plugin_class)
 
@@ -480,7 +476,7 @@ class TankCore(object):
         Move or copy single file to artifacts dir
         """
         dest = self.artifacts_dir + '/' + os.path.basename(filename)
-        logger.debug("Collecting file: %s to %s", filename, dest)
+        logger.info("Collecting file: %s to %s", filename, dest)
         if not filename or not os.path.exists(filename):
             logger.info("File not found to collect: %s", filename)
             return
@@ -502,9 +498,7 @@ class TankCore(object):
         Add file to be stored as result artifact on post-process phase
         """
         if filename:
-            logger.debug(
-                "Adding artifact file to collect (keep=%s): %s", keep_original,
-                filename)
+            logger.debug("Adding artifact file to collect (keep=%s): %s", keep_original, filename)
             self.artifact_files[filename] = keep_original
 
     def add_artifact_to_send(self, lp_requisites, content):
@@ -518,9 +512,7 @@ class TankCore(object):
             except ValueError:
                 section = default_section
                 option = key
-            logger.debug(
-                "Override option: %s => [%s] %s=%s", option_str, section,
-                option, value)
+            logger.debug("Override option: %s => [%s] %s=%s", option_str, section, option, value)
             self.set_option(section, option, value)
 
     def mkstemp(self, suffix, prefix, directory=None):
@@ -547,10 +539,8 @@ class TankCore(object):
             logger.debug("Close %s", plugin)
             try:
                 plugin.close()
-            except Exception as ex:
-                logger.error("Failed closing plugin %s: %s", plugin, ex)
-                logger.debug(
-                    "Failed closing plugin: %s", traceback.format_exc())
+            except Exception:
+                logger.exception("Failed closing plugin %s", plugin)
 
     @property
     def artifacts_dir(self):
@@ -575,7 +565,7 @@ class TankCore(object):
         if self._plugins is None:
             self._plugins = {}
         if self._plugins.get(plugin_name, None) is not None:
-            logger.exception('Plugins\' names should diverse')
+            logger.error('Plugin with name %s has been already registered', plugin_name)
         self._plugins[plugin_name] = instance
 
     def save_cfg(self, path):
@@ -583,8 +573,11 @@ class TankCore(object):
 
     def plugins_cleanup(self):
         for plugin_name, plugin in self.plugins.items():
-            logger.info('Cleaning up plugin {}'.format(plugin_name))
-            plugin.cleanup()
+            logger.info('Cleaning up plugin %s', plugin_name)
+            try:
+                plugin.cleanup()
+            except Exception:
+                logger.exception('Error trying to cleanup plugin %s', plugin_name)
 
 
 class JobsStorage:
@@ -603,7 +596,7 @@ class JobsStorage:
     def push_job(self, cloud_job_id, tank_job_id=None):
         with open(self.storage_file, 'a') as f:
             job_data = {CLOUD_KEY: cloud_job_id, TANK_KEY: tank_job_id}
-            logger.info(f"Push job to storage {self.storage_file}: {job_data}")
+            logger.info("Push job to storage %s: %s", self.storage_file, job_data)
             yaml.dump([job_data], f)
 
     def get_cloud_job_id(self, tank_job_id):
@@ -679,8 +672,7 @@ class Lock(object):
                 try:
                     running_lock = cls.load(full_name)
                     if not running_lock.pid:
-                        msg = 'Failed to get {} from lock file {}.'.format(cls.PID,
-                                                                           full_name)
+                        msg = 'Failed to get {} from lock file {}.'.format(cls.PID, full_name)
                         logger.warning(msg)
                         return msg
                     else:
@@ -695,7 +687,7 @@ class Lock(object):
                             return "Another test is running: {}".format(running_lock)
                 except Exception:
                     msg = "Failed to load info from lock %s" % full_name
-                    logger.warn(msg, exc_info=True)
+                    logger.warning(msg, exc_info=True)
                     return msg
         return False
 

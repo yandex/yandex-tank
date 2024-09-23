@@ -258,7 +258,7 @@ class Plugin(GeneratorPlugin):
             return retcode
         elif retcode is not None and retcode != 0:
             lines_amount = 20
-            logger.info("Pandora finished with non-zero retcode. Last %s logs of Pandora log:", lines_amount)
+            logger.info("Pandora finished with retcode %s. Last %s logs of Pandora log:", retcode, lines_amount)
             self.output_finished.set()
             last_log_contents = tail_lines(self.process_stderr_file, lines_amount)
             for logline in last_log_contents:
@@ -277,13 +277,12 @@ class Plugin(GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            logger.warning(
-                "Terminating worker process with PID %s", self.process.pid)
+            logger.warning("Terminating worker process with PID %s", self.process.pid)
             self.process.terminate()
             if self.process_stderr:
                 self.process_stderr.close()
         else:
-            logger.debug("Seems subprocess finished OK")
+            logger.info("Seems Pandora subprocess finished")
         self.output_finished.set()
         return retcode
 

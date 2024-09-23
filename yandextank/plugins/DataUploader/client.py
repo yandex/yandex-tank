@@ -194,9 +194,7 @@ class APIClient(object):
                 if not self.core_interrupted.is_set():
                     try:
                         timeout = next(network_timeouts)
-                        logger.warn(
-                            "Network error, will retry in %ss..." %
-                            timeout)
+                        logger.warning("Network error, will retry in %ss..." % timeout)
                         time.sleep(timeout)
                         continue
                     except StopIteration:
@@ -207,8 +205,8 @@ class APIClient(object):
                 if not self.core_interrupted.is_set():
                     try:
                         timeout = next(maintenance_timeouts)
-                        logger.warn(maintenance_msg)
-                        logger.warn("Retrying in %ss..." % timeout)
+                        logger.warning(maintenance_msg)
+                        logger.warning("Retrying in %ss..." % timeout)
                         time.sleep(timeout)
                         continue
                     except StopIteration:
@@ -240,12 +238,10 @@ class APIClient(object):
                 response = self.__send_single_request(request, next(ids), trace=trace)
                 return response
             except (Timeout, ConnectionError, ProtocolError):
-                logger.warn(traceback.format_exc())
+                logger.warning(traceback.format_exc())
                 try:
                     timeout = next(network_timeouts)
-                    logger.warn(
-                        "Network error, will retry in %ss..." %
-                        timeout)
+                    logger.warning("Network error, will retry in %ss..." % timeout)
                     time.sleep(timeout)
                     continue
                 except StopIteration:
@@ -253,9 +249,7 @@ class APIClient(object):
             except self.UnderMaintenance as e:
                 try:
                     timeout = next(maintenance_timeouts)
-                    logger.warn(
-                        "Writer is under maintenance, will retry in %ss..." %
-                        timeout)
+                    logger.warning("Writer is under maintenance, will retry in %ss..." % timeout)
                     time.sleep(timeout)
                     continue
                 except StopIteration:
@@ -342,17 +336,16 @@ class APIClient(object):
             except (self.NotAvailable, self.StoppedFromOnline) as e:
                 try:
                     timeout = next(api_timeouts)
-                    logger.warn("API error, will retry in %ss..." % timeout)
+                    logger.warning("API error, will retry in %ss..." % timeout)
                     time.sleep(timeout)
                     continue
                 except StopIteration:
-                    logger.warn('Failed to create job on lunapark')
+                    logger.warning('Failed to create job on lunapark')
                     raise self.JobNotCreated() from e
             except requests.HTTPError as e:
                 raise self.JobNotCreated('Failed to create job on lunapark\n{}'.format(e.response.content))
-            except Exception as e:
-                logger.warn('Failed to create job on lunapark')
-                logger.warn(repr(e), )
+            except Exception:
+                logger.exception('Failed to create job on lunapark')
                 raise self.JobNotCreated()
 
     def get_job_summary(self, jobno):
@@ -514,7 +507,7 @@ class APIClient(object):
             except self.NotAvailable as e:
                 try:
                     timeout = next(api_timeouts)
-                    logger.warn("API error, will retry in %ss...", timeout)
+                    logger.warning("API error, will retry in %ss...", timeout)
                     time.sleep(timeout)
                     continue
                 except StopIteration:
@@ -554,7 +547,7 @@ class APIClient(object):
                 except self.NotAvailable as e:
                     try:
                         timeout = next(api_timeouts)
-                        logger.warn("API error, will retry in %ss...", timeout)
+                        logger.warning("API error, will retry in %ss...", timeout)
                         time.sleep(timeout)
                         continue
                     except StopIteration:
@@ -583,7 +576,7 @@ class APIClient(object):
                     except self.NotAvailable as e:
                         try:
                             timeout = next(api_timeouts)
-                            logger.warn("API error, will retry in %ss...", timeout)
+                            logger.warning("API error, will retry in %ss...", timeout)
                             time.sleep(timeout)
                             continue
                         except StopIteration:
@@ -602,7 +595,7 @@ class APIClient(object):
             except self.NotAvailable as e:
                 try:
                     timeout = next(api_timeouts)
-                    logger.warn("API error, will retry in %ss...", timeout)
+                    logger.warning("API error, will retry in %ss...", timeout)
                     time.sleep(timeout)
                     continue
                 except StopIteration:

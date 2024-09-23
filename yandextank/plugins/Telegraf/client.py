@@ -251,7 +251,7 @@ class SSHClient(object):
             if remote_telegraf_exists:
                 logger.info('Found telegraf client on %s..', self.host)
             else:
-                logger.debug('Not found telegraf client on %s, trying to install from tank. Copying..', self.host)
+                logger.info('Not found telegraf client on %s, trying to install from tank. Copying..', self.host)
                 if os.path.isfile(self.path['TELEGRAF_LOCAL_PATH']):
                     self.ssh.send_file(self.path['TELEGRAF_LOCAL_PATH'], self.path['TELEGRAF_REMOTE_PATH'])
                 elif os.path.isfile("/usr/bin/telegraf"):

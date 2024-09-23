@@ -231,8 +231,7 @@ class AccessLogReader(Reader):
     def warn(self, message):
         if not self.warned:
             self.warned = True
-            self.log.warning(
-                "There are some skipped lines. See full log for details.")
+            self.log.warning("There are some skipped lines. See full log for details.")
         self.log.debug(message)
 
     def __iter__(self):
@@ -255,8 +254,7 @@ class AccessLogReader(Reader):
                                     headers=self.headers,
                                     http_ver=http_ver, ).to_s(), None)
                         else:
-                            self.warn(
-                                "Skipped line: %s (unsupported method)" % line)
+                            self.warn("Skipped line: %s (unsupported method)" % line)
                     except (ValueError, IndexError) as e:
                         self.warn("Skipped line: %s (%s)" % (line, e))
                 ammo_file.seek(0)

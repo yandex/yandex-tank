@@ -21,7 +21,7 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False, executable=None,
     """
     # FIXME: move to module level
     log = logging.getLogger(__name__)
-    log.debug("Starting: %s", cmd)
+    log.info("Starting: %s", cmd)
 
     stdout = ""
     stderr = ""
@@ -50,7 +50,7 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False, executable=None,
     if stdout:
         log.debug("Process output:\n%s", stdout)
     returncode = process.returncode
-    log.debug("Process exit code: %s", returncode)
+    log.info("Process cmd: %s – exit code: %s", cmd, returncode)
     return returncode, stdout, stderr
 
 

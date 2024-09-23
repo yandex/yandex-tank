@@ -86,8 +86,7 @@ class OpenTSDBClient(object):
 
         if cert:
             if not ssl:
-                raise ValueError(
-                    "Client certificate provided but ssl is disabled.")
+                raise ValueError("Client certificate provided but ssl is disabled.")
             else:
                 self._session.cert = cert
 

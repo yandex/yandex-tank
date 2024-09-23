@@ -5,8 +5,7 @@ from sys import stdout
 
 log = logging.getLogger(__name__)
 
-StepperInfo = namedtuple(
-    'StepperInfo', 'loop_count,steps,loadscheme,duration,ammo_count,instances')
+StepperInfo = namedtuple('StepperInfo', 'loop_count,steps,loadscheme,duration,ammo_count,instances')
 
 
 class LoopCountLimit(Exception):
@@ -42,8 +41,7 @@ class StepperStatus(object):
 
     def publish(self, key, value):
         if key not in self.info:
-            raise RuntimeError(
-                "Tried to publish to a non-existent key: %s" % key)
+            raise RuntimeError("Tried to publish to a non-existent key: %s" % key)
         log.debug('Published %s to %s', value, key)
         self.info[key] = value
 
@@ -92,8 +90,7 @@ class StepperStatus(object):
         self.info['loop_count'] = self._loop_count
         for key in self.info:
             if self.info[key] is None:
-                raise RuntimeError(
-                    "Information for %s is not published yet." % key)
+                raise RuntimeError("Information for %s is not published yet." % key)
         return StepperInfo(**self.info)
 
     def update_view(self):

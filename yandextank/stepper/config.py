@@ -66,19 +66,15 @@ class ComponentFactory():
             try:
                 ammo_str = next(ammo).decode('utf-8')
             except StopIteration:
-                self.log.exception(
-                    "Couldn't read first line of ammo file")
-                raise AmmoFileError(
-                    "Couldn't read first line of ammo file")
+                self.log.exception("Couldn't read first line of ammo file")
+                raise AmmoFileError("Couldn't read first line of ammo file")
 
             if not ammo_str[0].isdigit():
                 self.log.info(
                     "Setting ammo_type 'uri' because ammo is not started with digit and you did not specify ammo format"
                 )
                 return 'uri'
-            self.log.info(
-                "Default ammo type ('phantom') used, use 'phantom.ammo_type' option to override it"
-            )
+            self.log.info("Default ammo type ('phantom') used, use 'phantom.ammo_type' option to override it")
             return self._ammo_type_unchecked
 
     def get_load_plan(self):
@@ -118,8 +114,7 @@ class ComponentFactory():
             return missile.UriStyleGenerator(self.uris, self.headers, http_ver=self.http_ver)
 
         if self.ammo_type not in missile.FILE_READERS:
-            raise NotImplementedError(
-                'No such ammo type implemented: "%s"' % self.ammo_type)
+            raise NotImplementedError('No such ammo type implemented: "%s"' % self.ammo_type)
 
         return missile.FILE_READERS[self.ammo_type](
             self.ammo_file, headers=self.headers, http_ver=self.http_ver, use_cache=self.use_cache, resource_manager=self.resource_manager)

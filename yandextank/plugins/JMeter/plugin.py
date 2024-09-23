@@ -120,8 +120,7 @@ class Plugin(GeneratorPlugin):
             self.core.job.aggregator.add_result_listener(widget)
 
     def start_test(self):
-        logger.info(
-            "Starting %s with arguments: %s", self.jmeter_path, self.args)
+        logger.info("Starting %s with arguments: %s", self.jmeter_path, self.args)
         try:
             self.process = subprocess.Popen(
                 self.args,
@@ -146,9 +145,7 @@ class Plugin(GeneratorPlugin):
         retcode = self.process.poll()
         aggregator = self.core.job.aggregator
         if not aggregator.reader.jmeter_finished and retcode is not None:
-            logger.info(
-                "JMeter process finished with exit code: %s, waiting for aggregator",
-                retcode)
+            logger.info("JMeter process finished with exit code: %s, waiting for aggregator", retcode)
             self.retries = 0
             aggregator.reader.jmeter_finished = True
             return -1
@@ -166,6 +163,7 @@ class Plugin(GeneratorPlugin):
         if self.process:
             gracefully_shutdown = self.__graceful_shutdown()
             if not gracefully_shutdown:
+                logger.info('JMeter process will be killed')
                 self.__kill_jmeter()
         if self.process_stderr:
             self.process_stderr.close()
@@ -194,13 +192,11 @@ class Plugin(GeneratorPlugin):
                 return None
 
     def __kill_jmeter(self):
-        logger.info(
-            "Terminating jmeter process group with PID %s",
-            self.process.pid)
+        logger.info("Terminating jmeter process group with PID %s", self.process.pid)
         try:
             os.killpg(self.process.pid, signal.SIGTERM)
         except OSError as exc:
-            logger.debug("Seems JMeter exited itself: %s", exc)
+            logger.info("Seems JMeter exited itself: %s", exc)
             # Utils.log_stdout_stderr(logger, self.process.stdout, self.process.stderr, "jmeter")
 
     def __add_jmeter_components(self, jmx, jtl, variables):
@@ -257,8 +253,7 @@ class Plugin(GeneratorPlugin):
         tpl = resource_string(__name__, 'config/' + tpl_resource).decode('utf8')
 
         try:
-            new_jmx = self.core.mkstemp(
-                '.jmx', 'modified_', os.path.dirname(os.path.realpath(jmx)))
+            new_jmx = self.core.mkstemp('.jmx', 'modified_', os.path.dirname(os.path.realpath(jmx)))
         except OSError as exc:
             logger.debug("Can't create modified jmx near original: %s", exc)
             new_jmx = self.core.mkstemp('.jmx', 'modified_')

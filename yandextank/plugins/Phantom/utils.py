@@ -274,8 +274,7 @@ class StreamConfig:
         self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(
             self.address, do_test_connect, explicit_port)
 
-        logger.info(
-            "Resolved %s into %s:%s", self.address, self.resolved_ip, self.port)
+        logger.info("Resolved %s into %s:%s", self.address, self.resolved_ip, self.port)
 
         self.client_cipher_suites = self.get_option("client_cipher_suites", "")
         self.client_certificate = self.get_option("client_certificate", "")

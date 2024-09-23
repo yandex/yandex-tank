@@ -116,7 +116,7 @@ def is_option_deprecated(plugin, option_name):
         ]
     }
     if option_name in DEPRECATED.get(plugin, []):
-        logger.warning('Deprecated option {} in plugin {}, omitting'.format(option_name, plugin))
+        logger.warning('Deprecated option %s in plugin %s, omitting', option_name, plugin)
         return True
     else:
         return False
@@ -286,12 +286,12 @@ class Option(object):
         if self.name == 'enabled':
             return self.TYPE_CASTERS['boolean']
         if self.schema.get(self.name) is None:
-            logger.warning('Unknown option {}:{}'.format(self.plugin, self.name))
+            logger.warning('Unknown plugin option %s:%s', self.plugin, self.name)
             raise UnknownOption('{}:{}'.format(self.plugin, self.name))
 
         _type = self.schema[self.name].get('type', None)
         if _type is None:
-            logger.warning('Option {}:{}: no type specified in schema'.format(self.plugin, self.name))
+            logger.warning('Option %s:%s: no type specified in schema', self.plugin, self.name)
             return self.dummy_converter
         if not isinstance(_type, str):
             # schemas 'type' field is not limited to string values
@@ -514,7 +514,7 @@ def convert_ini(ini_file):
                       for key, value in without_defaults(cfg_ini, CORE_SECTION_OLD)
                       if not key.startswith(PLUGIN_PREFIX)])
     })
-    logger.info('Converted config:\n{}'.format(yaml.dump(plugins_cfg_dict)))
+    logger.info('Converted config:\n%s', yaml.dump(plugins_cfg_dict))
     return plugins_cfg_dict
 
 

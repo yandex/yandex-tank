@@ -10,7 +10,7 @@ from yandextank.plugins.YCMonitoring.sensor import YCMonitoringSensor
 LOGGER = logging.getLogger(__name__)
 
 
-def as_list(value) -> list:
+def as_list(value) -> list | None:
     if value is None or isinstance(value, list):
         return value
     return [value]

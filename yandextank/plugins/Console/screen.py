@@ -25,8 +25,7 @@ def get_terminal_size():
         Helper to get console size
         '''
         try:
-            sizes = struct.unpack(
-                'hh', fcntl.ioctl(file_d, termios.TIOCGWINSZ, '1234'))
+            sizes = struct.unpack('hh', fcntl.ioctl(file_d, termios.TIOCGWINSZ, '1234'))
         except Exception:
             sizes = default_size
         return sizes

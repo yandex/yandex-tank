@@ -56,8 +56,7 @@ class Plugin(AbstractPlugin):
                 catch_out=self.catch_out,
                 executable=self.executable)[0]
             if retcode:
-                self.log.warn(
-                    "Non-zero exit code, interrupting test: %s", retcode)
+                self.log.warning("Non-zero exit code, interrupting test: %s", retcode)
                 return retcode
         return -1
 

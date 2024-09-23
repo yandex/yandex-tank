@@ -129,12 +129,11 @@ class MonitoringCollector(object):
                 logger.warning("Error while uninstalling agent %s", exc, exc_info=True)
         for agent in self.agents:
             try:
-                logger.debug(
-                    'Waiting for agent %s reader thread to finish.', agent)
+                logger.debug('Waiting for agent %s reader thread to finish.', agent)
                 agent.reader_thread.join(10)
                 self.agents.remove(agent)
             except BaseException:
-                logger.error('Monitoring reader thread stuck!', exc_info=True)
+                logger.exception('Monitoring reader thread stuck!')
 
     def get_rest_data(self):
         return self.__collected_data

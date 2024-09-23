@@ -19,8 +19,7 @@ class LoadPlanBuilder(object):
     def start(self, count):
         self.log.debug("Start %s instances at %sms" % (count, self.duration))
         if count < 0:
-            raise StepperConfigurationError(
-                "Can not stop instances in instances_schedule.")
+            raise StepperConfigurationError("Can not stop instances in instances_schedule.")
         self.generators.append(repeat(int(self.duration), count))
         self.instances += count
         return self
@@ -32,12 +31,9 @@ class LoadPlanBuilder(object):
         return self
 
     def ramp(self, count, duration):
-        self.log.debug(
-            "Ramp %s instances in %sms from %sms" %
-            (count, duration, self.duration))
+        self.log.debug("Ramp %s instances in %sms from %sms" % (count, duration, self.duration))
         if count < 0:
-            raise StepperConfigurationError(
-                "Can not stop instances in instances_schedule.")
+            raise StepperConfigurationError("Can not stop instances in instances_schedule.")
         interval = float(duration) / (count - 1)
         start_time = self.duration
         self.generators.append(
@@ -78,11 +74,8 @@ class LoadPlanBuilder(object):
                 instances, interval = s_res.groups()
                 self.ramp(int(instances), parse_duration(interval))
             else:
-                self.log.info(
-                    "Ramp step format: 'ramp(<instances_to_start>, <step_duration>)'"
-                )
-                raise StepperConfigurationError(
-                    "Error in step configuration: 'ramp(%s'" % params)
+                self.log.info("Ramp step format: 'ramp(<instances_to_start>, <step_duration>)'")
+                raise StepperConfigurationError("Error in step configuration: 'ramp(%s'" % params)
 
         def parse_const(params):
             template = re.compile(r'(\d+),\s*([0-9.]+[dhms]?)+\)')
@@ -91,11 +84,8 @@ class LoadPlanBuilder(object):
                 instances, interval = s_res.groups()
                 self.const(int(instances), parse_duration(interval))
             else:
-                self.log.info(
-                    "Const step format: 'const(<instances_count>, <step_duration>)'"
-                )
-                raise StepperConfigurationError(
-                    "Error in step configuration: 'const(%s'" % params)
+                self.log.info("Const step format: 'const(<instances_count>, <step_duration>)'")
+                raise StepperConfigurationError("Error in step configuration: 'const(%s'" % params)
 
         def parse_start(params):
             template = re.compile(r'(\d+)\)')
@@ -105,8 +95,7 @@ class LoadPlanBuilder(object):
                 self.start(int(instances))
             else:
                 self.log.info("Start step format: 'start(<instances_count>)'")
-                raise StepperConfigurationError(
-                    "Error in step configuration: 'start(%s'" % params)
+                raise StepperConfigurationError("Error in step configuration: 'start(%s'" % params)
 
         def parse_line(params):
             template = re.compile(r'(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
@@ -117,11 +106,8 @@ class LoadPlanBuilder(object):
                     int(initial_instances),
                     int(final_instances), parse_duration(interval))
             else:
-                self.log.info(
-                    "Line step format: 'line(<initial_instances>, <final_instances>, <step_duration>)'"
-                )
-                raise StepperConfigurationError(
-                    "Error in step configuration: 'line(%s'" % params)
+                self.log.info("Line step format: 'line(<initial_instances>, <final_instances>, <step_duration>)'")
+                raise StepperConfigurationError("Error in step configuration: 'line(%s'" % params)
 
         def parse_wait(params):
             template = re.compile(r'([0-9.]+[dhms]?)+\)')
@@ -131,16 +117,14 @@ class LoadPlanBuilder(object):
                 self.wait(parse_duration(duration))
             else:
                 self.log.info("Wait step format: 'wait(<step_duration>)'")
-                raise StepperConfigurationError(
-                    "Error in step configuration: 'wait(%s'" % params)
+                raise StepperConfigurationError("Error in step configuration: 'wait(%s'" % params)
 
         def parse_stairway(params):
             template = re.compile(
                 r'(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
             s_res = template.search(params)
             if s_res:
-                initial_instances, final_instances, step_size, step_duration = s_res.groups(
-                )
+                initial_instances, final_instances, step_size, step_duration = s_res.groups()
                 self.stairway(
                     int(initial_instances),
                     int(final_instances),
@@ -149,8 +133,7 @@ class LoadPlanBuilder(object):
                 self.log.info(
                     "Stairway step format: 'step(<initial_instances>, <final_instances>, <step_size>, <step_duration>)'"
                 )
-                raise StepperConfigurationError(
-                    "Error in step configuration: 'step(%s'" % params)
+                raise StepperConfigurationError("Error in step configuration: 'step(%s'" % params)
 
         _plans = {
             'line': parse_line,
@@ -165,9 +148,7 @@ class LoadPlanBuilder(object):
         if step_type in _plans:
             _plans[step_type](params)
         else:
-            raise NotImplementedError(
-                'No such load type implemented for instances_schedule: "%s"' %
-                step_type)
+            raise NotImplementedError('No such load type implemented for instances_schedule: "%s"' % step_type)
 
     def add_all_steps(self, steps):
         for step in steps:

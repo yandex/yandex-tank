@@ -29,8 +29,7 @@ class Plugin(AbstractPlugin):
         return ["interval", "disk_limit", "mem_limit"]
 
     def configure(self):
-        self.interval = expand_to_seconds(
-            self.get_option("interval", self.interval))
+        self.interval = expand_to_seconds(self.get_option("interval", self.interval))
         self.disk_limit = int(self.get_option("disk_limit", self.disk_limit))
         self.mem_limit = int(self.get_option("mem_limit", self.mem_limit))
 
@@ -59,8 +58,7 @@ class Plugin(AbstractPlugin):
             self.log.debug("No disk usage info: %s", res[2])
             return
         disk_free = res[1]
-        self.log.debug(
-            "Disk free space: %s/%s", disk_free.strip(), self.disk_limit)
+        self.log.debug("Disk free space: %s/%s", disk_free.strip(), self.disk_limit)
         if int(disk_free.strip()) < self.disk_limit:
             raise RuntimeError(
                 "Not enough local resources: disk space less than %sMB in %s: %sMB"

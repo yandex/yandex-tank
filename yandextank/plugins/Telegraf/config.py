@@ -51,8 +51,8 @@ class ConfigManager(object):
         defaults = defaults or {}
         try:
             config = read_resource(filename)
-        except IOError as exc:
-            logger.error("Error loading config: %s", exc)
+        except IOError:
+            logger.exception("Error loading config")
             raise RuntimeError("Can't read monitoring config %s" % filename)
 
         hosts = self.parse_config(config)
@@ -130,9 +130,7 @@ class ConfigManager(object):
         hostname = host.address.lower()
         if hostname == TARGET_HINT_PLACEHOLDER:
             if not target_hint:
-                raise ValueError(
-                    f"Can't use `{TARGET_HINT_PLACEHOLDER}` keyword with no target parameter specified"
-                )
+                raise ValueError(f"Can't use `{TARGET_HINT_PLACEHOLDER}` keyword with no target parameter specified")
             logger.debug("Using target hint: %s", target_hint)
             hostname = target_hint.lower()
         custom = []
@@ -248,11 +246,8 @@ class AgentConfig(object):
             with open(cfg_path, 'w') as fds:
                 config.write(fds)
 
-        except Exception as exc:
-            logger.error(
-                'Error trying to create monitoring startups config. Malformed? %s',
-                exc,
-                exc_info=True)
+        except Exception:
+            logger.exception('Error trying to create monitoring startups config. Malformed?')
         return cfg_path
 
     def create_custom_exec_script(self):
@@ -387,11 +382,8 @@ class AgentConfig(object):
             with open(cfg_path, 'a') as fds:
                 fds.write(telegraf_raw)
 
-        except Exception as exc:
-            logger.error(
-                'Error trying to create monitoring config. Malformed? %s',
-                exc,
-                exc_info=True)
+        except Exception:
+            logger.exception('Error trying to create monitoring config. Malformed?')
         return cfg_path
 
 

@@ -62,23 +62,19 @@ class TankAggregator(object):
         self.reader = self.generator.get_reader()
         self.stats_reader = self.generator.get_stats_reader()
         aggregator_config = self.load_config()
-        verbose_histogram = True
-        if verbose_histogram:
-            logger.info("using verbose histogram")
+
         if self.reader and self.stats_reader:
-            pipeline =\
-                Aggregator(TimeChopper([self.poller.poll(r) for r in self.reader]),
-                           aggregator_config,
-                           verbose_histogram) \
-                if isinstance(self.reader, Collection) else \
-                Aggregator(TimeChopper([self.poller.poll(self.reader)]),
-                           aggregator_config,
-                           verbose_histogram)
+            readers = self.reader
+            if not isinstance(readers, Collection):
+                readers = [readers]
+
+            sources = [self.poller.poll(r) for r in readers]
+            pipeline = Aggregator(TimeChopper(sources), aggregator_config)
             self.drain = Drain(pipeline, self.results)
             self.drain.start()
-            self.stats_drain = Drain(
-                Chopper(self.poller.poll(self.stats_reader)),
-                self.stats_results)
+
+            stats_drain_source = Chopper(self.poller.poll(self.stats_reader))
+            self.stats_drain = Drain(stats_drain_source, self.stats_results)
             self.stats_drain.start()
         else:
             logger.warning("Generator not found. Generator must provide a reader and a stats_reader interface")
