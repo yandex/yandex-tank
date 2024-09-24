@@ -126,9 +126,7 @@ class Consolidator(object):
                     chunk,
                     exc_info=True)
             except BaseException:
-                logger.error(
-                    'Something nasty happend in consolidator work',
-                    exc_info=True)
+                logger.exception('Something nasty happend in consolidator work')
 
     def __iter__(self):
         while True:
@@ -140,10 +138,8 @@ class Consolidator(object):
                     self.append_chunk(s, chunk)
                     chunk = next(s)
                 if len(self.results) > 2:
-                    logger.debug(
-                        'Now in buffer: %s', list(self.results.keys()))
-                    dump_seconds = sorted(
-                        list(self.results.keys()))[:-2]
+                    logger.debug('Now in buffer: %s', list(self.results.keys()))
+                    dump_seconds = sorted(list(self.results.keys()))[:-2]
                     for ready_second in dump_seconds:
                         yield json.dumps({
                             ready_second: self.results.pop(ready_second, None)
@@ -235,8 +231,7 @@ class AgentWorker(threading.Thread):
                 'Startups: %s\n'
                 'Shutdowns: %s\n', self.startups, self.shutdowns)
         except BaseException:
-            logger.error(
-                'Error trying to read agent startup config', exc_info=True)
+            logger.exception('Error trying to read agent startup config')
 
     def run(self):
         logger.info("Running startup commands")
@@ -263,9 +258,7 @@ class AgentWorker(threading.Thread):
             if not self.collector.returncode:
                 logger.info("Waiting for telegraf...")
             else:
-                logger.info(
-                    "Telegraf with pid %d ended with code %d",
-                    self.collector.pid, self.collector.returncode)
+                logger.info("Telegraf with pid %d ended with code %d", self.collector.pid, self.collector.returncode)
             if os.path.isfile(telegraf_output):
                 break
             time.sleep(1)
@@ -288,16 +281,13 @@ class AgentWorker(threading.Thread):
             for _ in range(self.results.qsize()):
                 try:
                     data = self.results.get_nowait()
-                    logger.debug(
-                        'send %s bytes of data to collector', len(data))
+                    logger.debug('send %s bytes of data to collector', len(data))
                     sys.stdout.write(str(data) + '\n')
                     sys.stdout.flush()
                 except q.Empty:
                     break
                 except BaseException:
-                    logger.error(
-                        'Something nasty happend trying to send data',
-                        exc_info=True)
+                    logger.exception('Something nasty happend trying to send data')
             for _ in range(self.results_stdout.qsize()):
                 try:
                     data = self.results_stdout.get_nowait()
@@ -328,11 +318,10 @@ class AgentWorker(threading.Thread):
                     logger.info("Killing PID %s", proc.pid)
                     os.killpg(proc.pid, signal.SIGKILL)
                 else:
-                    logger.debug("Terminating: %s", proc.pid)
+                    logger.info("Terminating: %s", proc.pid)
                     os.killpg(proc.pid, signal.SIGTERM)
                     proc.wait()
-                    logger.info(
-                        'Retcode for PID %s %s', proc.pid, proc.returncode)
+                    logger.info('Retcode for PID %s %s', proc.pid, proc.returncode)
             except OSError as ex:
                 if ex.errno == 3:
                     logger.info("PID %s already died", proc.pid)
@@ -407,8 +396,7 @@ def main():
         kill_old_agents(options.telegraf_path)
 
     try:
-        logger.info(
-            'Trying to make telegraf executable: %s', options.telegraf_path)
+        logger.info('Trying to make telegraf executable: %s', options.telegraf_path)
         # 0o755 compatible with old python versions. 744 is NOT enough
         os.chmod(options.telegraf_path, 493)
     except OSError:
@@ -417,8 +405,7 @@ def main():
             options.telegraf_path,
             exc_info=True)
     try:
-        logger.info(
-            'Trying to make customs script executable: %s', customs_script)
+        logger.info('Trying to make customs script executable: %s', customs_script)
         # 0o755 compatible with old python versions. 744 is NOT enough
         os.chmod(customs_script, 493)
     except OSError:
@@ -441,8 +428,7 @@ def main():
     except KeyboardInterrupt:
         logger.debug("Interrupted")
     except BaseException:
-        logger.error(
-            "Something nasty happened while waiting for stop", exc_info=True)
+        logger.exception("Something nasty happened while waiting for stop")
     worker.finished = True
     agent_finished = False
     while not agent_finished:
@@ -451,17 +437,13 @@ def main():
                 logger.debug("Join the worker thread, waiting for cleanup")
                 worker.join(10)
             if worker.is_alive():
-                logger.error(
-                    "Worker have not finished shutdown in 10 seconds, going to exit anyway"
-                )
+                logger.error("Worker have not finished shutdown in 10 seconds, going to exit anyway")
                 worker.kill()
                 agent_finished = True
             else:
                 agent_finished = True
         except BaseException:
-            logger.info(
-                "Something nasty happened while waiting for worker shutdown",
-                exc_info=True)
+            logger.exception("Something nasty happened while waiting for worker shutdown")
 
 
 if __name__ == '__main__':

@@ -42,8 +42,7 @@ class Plugin(AbstractPlugin):
             "sysctl": "cat /etc/sysctl.conf",
             "lsmod": "lsmod"
         }
-        self.cmd = "%s" % ";\n".join(
-            [_echo_wrapper(cmd) for key, cmd in cmds.items()])
+        self.cmd = "%s" % ";\n".join([_echo_wrapper(cmd) for key, cmd in cmds.items()])
 
     def get_available_options(self):
         return ["hosts", "port", "username", "timeout"]
@@ -58,8 +57,7 @@ class Plugin(AbstractPlugin):
             self.ssh_key_path = self.get_option("ssh_key_path", None)
             self.timeout = int(self.get_option("timeout", 3))
         except BaseException:
-            logger.error(
-                'Exception trying to configure Platform plugin', exc_info=True)
+            logger.exception('Exception trying to configure Platform plugin')
 
         self.logfile = self.core.mkstemp(".log", "platform_")
         self.core.add_artifact_file(self.logfile)
@@ -70,9 +68,7 @@ class Plugin(AbstractPlugin):
             info = phantom.get_info()
             if info:
                 if info.address and info.address not in self.hosts:
-                    logger.debug(
-                        "Adding platform check of default_target %s",
-                        info.address)
+                    logger.debug("Adding platform check of default_target %s", info.address)
                     self.hosts.append(info.address)
         except KeyError as ex:
             logger.debug(ex)

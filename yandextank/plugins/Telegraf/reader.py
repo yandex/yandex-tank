@@ -69,17 +69,10 @@ class MonitoringReader(object):
                             self.prev_check = jsn[ts]
                             collect.append((ts, prepared_results))
                 except ValueError:
-                    logger.error(
-                        'Telegraf agent send trash to output: %s', chunk)
-                    logger.debug(
-                        'Telegraf agent data block w/ trash: %s',
-                        exc_info=True)
+                    logger.exception('Telegraf agent send trash to output: %s', chunk)
                     return []
                 except BaseException:
-                    logger.error(
-                        'Exception trying to parse agent data: %s',
-                        chunk,
-                        exc_info=True)
+                    logger.exception('Exception trying to parse agent data: %s', chunk)
                     return []
             if collect:
                 return collect

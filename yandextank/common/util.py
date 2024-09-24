@@ -14,7 +14,6 @@ import http.client
 import logging
 import errno
 import re
-import select
 
 import psutil
 try:
@@ -50,19 +49,8 @@ class SecuredShell(object):
         self._command_timeout = command_timeout
         self._file_timeout = file_timeout
         self._protocol_timeout = protocol_timeout
-        key_filename = None
-        if ssh_key_path:
-            path = pathlib.Path(ssh_key_path)
-            key_filename = [str(f) for f in path.iterdir() if f.is_file()]
-        self.key_filename = key_filename
-        default_ssh_key_path = pathlib.Path(os.path.expanduser('~/.ssh/'))
-        default_key_filename = []
-        try:
-            default_key_filename = [str(f) for f in default_ssh_key_path.iterdir() if f.is_file()]
-        except Exception as err:
-            logger.warning('Could not access keys with default ~/.ssh/ path : %s', err)
-        self.default_key_filename = default_key_filename
-        self.valid_key = self._pick_ssh_key()
+        self.key_filename = get_ssh_key_filenames(ssh_key_path=ssh_key_path) or None
+        self.default_key_filename = get_ssh_key_filenames(ssh_key_path='~/.ssh/') or []
 
     def _pick_ssh_key(self):
         key_filename = self.default_key_filename
@@ -124,20 +112,27 @@ class SecuredShell(object):
             ssh_opts = ['-i', self.valid_key] + ssh_opts
         return ssh_opts
 
-    def _safe_communicate(self, process: subprocess.Popen, timeout: float, error_message: str) -> tuple[bytes, bytes]:
+    def _safe_communicate(
+        self,
+        process: subprocess.Popen,
+        timeout: float,
+        error_message: str,
+    ) -> tuple[bytes, bytes, int]:
+        outs, errs, exit_code = b'', b'', 0
         try:
             outs, errs = process.communicate(timeout=timeout)
+            exit_code = process.returncode
         except subprocess.TimeoutExpired:
             process.kill()
             logger.error(error_message)
-            raise ConnectionError(error_message)
-        return outs, errs
+            exit_code = 1
+        return outs, errs, exit_code
 
     def ensure_connection(self):
+        self.valid_key = self._pick_ssh_key()
         _, stderr, exit_code = self.execute(cmd='exit')
         if exit_code:
-            if not stderr:
-                stderr = 'Unhandled error.'
+            stderr = stderr or 'Unhandled error.'
             raise ConnectionError(f'Some error occurred in attempt to establish SSH connection: {stderr}')
 
     @check_executable_present('scp')
@@ -148,11 +143,13 @@ class SecuredShell(object):
         cmd = ['scp'] + ssh_opts + [local_path, full_remote_path]
         logger.info('Sending from [%s] to %s:[%s]', local_path, self.connection_address, remote_path)
         process = self.popen(' '.join(cmd))
-        self._safe_communicate(
+        _, stderr, exit_code = self._safe_communicate(
             process,
             self._file_timeout,
             f'Timeout while trying to send file from {local_path} to {self.connection_address}:{remote_path}',
         )
+        if exit_code:
+            raise ConnectionError(f'Some error occurred in attempt to send file: {stderr}')
 
     @check_executable_present('scp')
     def get_file(self, remote_path: str, local_path: str):
@@ -162,24 +159,28 @@ class SecuredShell(object):
         cmd = ['scp'] + ssh_opts + [full_remote_path, local_path]
         logger.info('Receiving from %s:[%s] to [%s]', self.connection_address, remote_path, local_path)
         process = self.popen(' '.join(cmd))
-        self._safe_communicate(
+        _, stderr, exit_code = self._safe_communicate(
             process,
             self._file_timeout,
             f'Timeout while trying to get file from {self.connection_address}:{remote_path} to {local_path}',
         )
+        if exit_code:
+            raise ConnectionError(f'Some error occurred in attempt to get file: {stderr}')
 
     @check_executable_present('ssh')
     def execute(self, cmd: str, ssh_opts: Optional[List[str]] = None):
         ssh_opts = ssh_opts or self._make_ssh_opts()
         ssh_cmd = ['ssh'] + ssh_opts + [self.connection_address, cmd]
+
         logger.info('Executing: %s', ssh_cmd)
         process = self.popen(' '.join(ssh_cmd))
-        stdout, stderr = self._safe_communicate(
+        stdout, stderr, exit_code = self._safe_communicate(
             process, self._command_timeout, f'Timeout while trying to execute command {ssh_cmd}'
         )
-        exit_code = process.poll()
+
         stdout = stdout.decode('utf-8')
         stderr = stderr.decode('utf-8')
+
         if exit_code:
             logger.error(f'Failed to execute command with exit code {exit_code}\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}')
         return stdout, stderr, exit_code
@@ -405,32 +406,6 @@ NET = {
 }
 
 
-def log_stdout_stderr(log, stdout, stderr, comment=""):
-    """
-    This function polls stdout and stderr streams and writes their contents
-    to log
-    """
-    readable = select.select([stdout], [], [], 0)[0]
-    if stderr:
-        exceptional = select.select([stderr], [], [], 0)[0]
-    else:
-        exceptional = []
-
-    log.debug("Selected: %s, %s", readable, exceptional)
-
-    for handle in readable:
-        line = handle.read()
-        readable.remove(handle)
-        if line:
-            log.debug("%s stdout: %s", comment, line.strip())
-
-    for handle in exceptional:
-        line = handle.read()
-        exceptional.remove(handle)
-        if line:
-            log.warn("%s stderr: %s", comment, line.strip())
-
-
 def expand_to_milliseconds(str_time):
     """
     converts 1d2s into milliseconds
@@ -477,8 +452,7 @@ def expand_time(str_time, default_unit='s', multiplier=1):
             result += value * 60 * 60 * 24 * 7
             continue
         else:
-            raise ValueError(
-                "String contains unsupported unit %s: %s" % (unit, str_time))
+            raise ValueError("String contains unsupported unit %s: %s" % (unit, str_time))
     return int(result * multiplier)
 
 
@@ -494,21 +468,6 @@ def pid_exists(pid):
     else:
         p = psutil.Process(pid)
         return p.status != psutil.STATUS_ZOMBIE
-
-
-def splitstring(string):
-    """
-    >>> string = 'apple orange "banana tree" green'
-    >>> splitstring(string)
-    ['apple', 'orange', 'green', '"banana tree"']
-    """
-    patt = re.compile(r'"[\w ]+"')
-    if patt.search(string):
-        quoted_item = patt.search(string).group()
-        newstring = patt.sub('', string)
-        return newstring.split() + [quoted_item]
-    else:
-        return string.split()
 
 
 def pairs(lst):
@@ -591,9 +550,7 @@ class AddressWizard:
             parsed_ip, port = sockaddr[0], sockaddr[1]
 
             if explicit_port:
-                logger.warn(
-                    "Using phantom.port option is deprecated. Use phantom.address=[address]:port instead"
-                )
+                logger.warning("Using phantom.port option is deprecated. Use phantom.address=[address]:port instead")
                 port = int(explicit_port)
             elif not port:
                 port = 80
@@ -677,8 +634,8 @@ class FileScanner(object):
 
 def tail_lines(filepath, lines_num, bufsize=8192):
     fsize = os.stat(filepath).st_size
-    logging.warning('Filepath={}, lines_num={}, buf_size={}, fsize={}'
-                    .format(filepath, lines_num, bufsize, fsize))
+    logging.warning('Filepath=%s, lines_num=%s, buf_size=%s, fsize=%s', filepath, lines_num, bufsize, fsize)
+
     iter_ = 0
     with open(filepath) as f:
         if bufsize > fsize:
@@ -811,7 +768,7 @@ def timeit(min_duration_sec):
             stack = get_callstack()
             duration = time.time() - start_time
             if duration > min_duration_sec:
-                logger.warn('Slow call of %s (stack: %s), duration %s', func.__name__, stack, duration)
+                logger.warning('Slow call of %s (stack: %s), duration %s', func.__name__, stack, duration)
             return result
         return wrapper
     return timeit_fixed
@@ -867,7 +824,7 @@ class Cleanup:
             except Exception:
                 msg = 'Exception occurred during cleanup action {}'.format(name)
                 msgs.append(msg)
-                logger.error(msg, exc_info=True)
+                logger.exception(msg)
         self.tankworker.add_msgs(*msgs)
         self.tankworker.save_finish_status()
         self.tankworker.core._collect_artifacts()
@@ -894,6 +851,7 @@ class Finish:
             logger.error(msg)
             self.worker.add_msgs(msg)
             retcode = 1
+        logger.info('TankWorker RC: %s', retcode)
         retcode = self.worker.core.plugins_end_test(retcode)
         self.worker.retcode = retcode
         return True  # swallow exception & proceed to post-processing
@@ -921,3 +879,15 @@ def get_test_path():
         return common.source_path('load/projects/yandex-tank')
     except ImportError:
         return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+
+def get_ssh_key_filenames(ssh_key_path: str) -> list[str]:
+    if not ssh_key_path:
+        return []
+    absolute_key_path = pathlib.Path(os.path.expanduser(ssh_key_path))
+    try:
+        key_filenames = [str(f) for f in absolute_key_path.iterdir() if f.is_file()]
+    except Exception as err:
+        logger.warning('Could not access keys with %s path : %s', absolute_key_path, err)
+        return []
+    return key_filenames

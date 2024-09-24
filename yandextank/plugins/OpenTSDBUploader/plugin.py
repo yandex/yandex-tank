@@ -20,9 +20,7 @@ def chop(data_list, chunk_size):
     if sys.getsizeof(str(data_list)) <= chunk_size:
         return [data_list]
     elif len(data_list) == 1:
-        logger.warning(
-            "Too large piece of Telegraf data. Might experience upload problems."
-        )
+        logger.warning("Too large piece of Telegraf data. Might experience upload problems.")
         return [data_list]
     else:
         mid = len(data_list) / 2

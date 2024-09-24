@@ -48,9 +48,7 @@ def _exc_to_net(param1, success):
     if exc in KNOWN_EXC:
         return KNOWN_EXC[exc]
     else:
-        logger.warning(
-            "Unknown Java exception, consider adding it to dictionary: %s",
-            param1)
+        logger.warning("Unknown Java exception, consider adding it to dictionary: %s", param1)
         return 41
 
 
@@ -60,8 +58,7 @@ def _exc_to_http(param1):
         try:
             int(param1)
         except BaseException:
-            logger.error(
-                "JMeter wrote some strange data into codes column: %s", param1)
+            logger.error("JMeter wrote some strange data into codes column: %s", param1)
         else:
             return int(param1)
 

@@ -53,8 +53,7 @@ def parse_schedule(schedule):
     if schedule_type in step_producers:
         return step_producers[schedule_type](*params)
     else:
-        raise NotImplementedError(
-            "Step of type %s is not implemented" % schedule_type)
+        raise NotImplementedError("Step of type %s is not implemented" % schedule_type)
 
 
 class PandoraConfig(object):

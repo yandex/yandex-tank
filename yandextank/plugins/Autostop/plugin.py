@@ -2,6 +2,7 @@
 # pylint: disable=C0301
 import logging
 import os.path
+import time
 from datetime import datetime
 
 from . import criterions as cr
@@ -69,7 +70,6 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.add_criterion_class(cum_cr.TotalNegativeHTTPCodesCriterion)
         self.add_criterion_class(cum_cr.TotalNegativeNetCodesCriterion)
         self.add_criterion_class(cum_cr.TotalHTTPTrendCriterion)
-        self.add_criterion_class(cum_cr.QuantileOfSaturationCriterion)
 
     def prepare_test(self):
         criterions = self.get_option("autostop")
@@ -91,11 +91,14 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         if console:
             console.add_info_widget(AutostopWidget(self))
 
+    def start_test(self):
+        for criterion in self._criterions.values():
+            if isinstance(criterion, cr.TimeLimitCriterion):
+                criterion.start_time = time.time()
+
     def is_test_finished(self):
         if self.cause_criterion:
-            self.log.warning(
-                "Autostop criterion requested test stop: %s",
-                self.cause_criterion.explain())
+            self.log.warning("Autostop criterion requested test stop: %s", self.cause_criterion.explain())
             return self.cause_criterion.get_rc()
         else:
             return -1
@@ -109,8 +112,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         for criterion_class in self.custom_criterions:
             if criterion_class.get_type_string() == type_str:
                 return criterion_class(self, parsed[1])
-        raise ValueError(
-            "Unsupported autostop criterion type: %s" % criterion_str)
+        raise ValueError("Unsupported autostop criterion type: %s" % criterion_str)
 
     def on_aggregated_data(self, data, stat):
         self.counting = []

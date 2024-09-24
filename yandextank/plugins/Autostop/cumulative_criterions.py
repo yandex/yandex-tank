@@ -108,8 +108,7 @@ class TotalFracTimeCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
-        explanation = "%(ratio).2f%% responses times higher than %(limit)sms for %(seconds_count)ss " \
-            "since: %(since_time)s" % items
+        explanation = "%(ratio).2f%% responses times higher than %(limit)sms for %(seconds_count)ss " % items
         if self.tag:
             explanation = explanation + " for tag %(tag)s" % items
         return explanation
@@ -119,7 +118,6 @@ class TotalFracTimeCriterion(AbstractCriterion):
             'ratio': self.total_fail_ratio * 100,
             'limit': self.rt_limit / 1000,
             'seconds_count': self.window_size,
-            'since_time': self.cause_second[0]["ts"],
             'tag': self.tag
         }
         return parameters
@@ -212,7 +210,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
-        explanation = "%(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
+        explanation = "%(code)s codes count higher than %(level)s for %(seconds_limit)ss" % items
         if self.tag:
             explanation = explanation + " for tag %(tag)s" % items
         return explanation
@@ -222,7 +220,6 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
             'code': self.codes_mask,
             'level': self.get_level_str(),
             'seconds_limit': self.seconds_limit,
-            'since_time': self.cause_second[0]["ts"],
             'tag': self.tag
         }
         return parameters
@@ -328,8 +325,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
-        explanation = "%(code)s net codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" \
-            % items
+        explanation = "%(code)s net codes count higher than %(level)s for %(seconds_limit)ss" % items
         if self.tag:
             explanation = explanation + " for tag %(tag)s" % items
         return explanation
@@ -339,7 +335,6 @@ class TotalNetCodesCriterion(AbstractCriterion):
             'code': self.codes_mask,
             'level': self.get_level_str(),
             'seconds_limit': self.seconds_limit,
-            'since_time': self.cause_second[0]["ts"],
             'tag': self.tag
         }
         return parameters
@@ -443,7 +438,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
-        explanation = "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s" % items
+        explanation = "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss" % items
         if self.tag:
             explanation = explanation + " for tag %(tag)s" % items
         return explanation
@@ -453,7 +448,6 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
             'code': self.codes_mask,
             'level': self.get_level_str(),
             'seconds_limit': self.seconds_limit,
-            'since_time': self.cause_second[0]["ts"],
             'tag': self.tag
         }
         return parameters
@@ -557,8 +551,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
-        explanation = "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss, since %(since_time)s"\
-            % items
+        explanation = "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss" % items
         if self.tag:
             explanation = explanation + " for tag %(tag)s" % items
         return explanation
@@ -568,7 +561,6 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
             'code': self.codes_mask,
             'level': self.get_level_str(),
             'seconds_limit': self.seconds_limit,
-            'since_time': self.cause_second[0]["ts"],
             'tag': self.tag
         }
         return parameters
@@ -667,7 +659,7 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
     def explain(self):
         items = self.get_criterion_parameters()
         return "Last trend for %(code)s http codes " \
-            "is %(total_tan).2f +/- %(measurement_err).2f for %(seconds_limit)ss, since %(since_time)s" % items
+            "is %(total_tan).2f +/- %(measurement_err).2f for %(seconds_limit)ss" % items
 
     def get_criterion_parameters(self):
         parameters = {
@@ -675,7 +667,6 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
             'total_tan': self.total_tan,
             'measurement_err': self.measurement_error,
             'seconds_limit': self.seconds_limit,
-            'since_time': self.cause_second[0]["ts"],
             'tag': self.tag
         }
         return parameters
@@ -683,73 +674,3 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
     def widget_explain(self):
         items = self.get_criterion_parameters()
         return "HTTP(%(code)s) trend is %(total_tan).2f +/- %(measurement_err).2f < 0 for %(seconds_limit)ss" % items, 1.0
-
-
-class QuantileOfSaturationCriterion(AbstractCriterion):
-    ''' Quantile of Saturation Criterion
-        example: qsat(50ms, 3m, 10%) '''
-
-    @staticmethod
-    def get_type_string():
-        return 'qsat'
-
-    def __init__(self, autostop, param_str):
-        AbstractCriterion.__init__(self)
-        raise NotImplementedError
-
-    #     self.autostop = autostop
-    #     self.data = deque()
-    #     self.second_window = deque()
-
-    #     params = param_str.split(',')
-    #     # qunatile in ms
-    #     self.timing = expand_to_milliseconds(params[0])
-    #     # width of time in seconds
-    #     self.width = expand_to_seconds(params[1])
-    #     # max height of deviations in percents
-    #     self.height = float(params[2].split('%')[0])
-    #     # last deviation in percents
-    #     self.deviation = float()
-
-    # def __get_timing_quantile(self, data):
-    #     ''' get quantile level for criterion timing '''
-    #     quan = 0.0
-    #     for timing in sorted(aggr_data.cumulative.times_dist.keys()):
-    #         timing_item = aggr_data.cumulative.times_dist[timing]
-    #         quan += float(timing_item[
-    #             'count']) / aggr_data.cumulative.total_count
-    #         logger.debug("tt: %s %s", self.timing, timing_item['to'])
-    #         if self.timing <= timing_item['to']:
-    #             return quan
-    #     return quan
-
-    # def notify(self, data, stat):
-    #     quan = 100 * self.__get_timing_quantile(data)
-    #     logger.debug("Quantile for %s: %s", self.timing, quan)
-
-    #     self.data.append(quan)
-    #     self.second_window.append((data, stat))
-
-    #     if len(self.data) > self.width:
-    #         self.autostop.add_counting(self)
-    #         self.data.popleft()
-    #         self.second_window.popleft()
-
-    #         self.deviation = max(self.data) - min(self.data)
-    #         logger.debug(self.explain())
-
-    #         if self.deviation < self.height:
-    #             return True
-    #     return False
-
-    # def get_rc(self):
-    #     return self.RC_STEADY
-
-    # def explain(self):
-    #     items = (self.timing, self.width, self.deviation, self.height)
-    #     return "%sms variance for %ss: %.3f%% (<%s%%)" % items
-
-    # def widget_explain(self):
-    #     level = self.height / self.deviation
-    #     items = (self.timing, self.width, self.deviation, self.height)
-    #     return ("%sms variance for %ss: %.3f%% (<%s%%)" % items, level)

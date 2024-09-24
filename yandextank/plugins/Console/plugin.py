@@ -86,7 +86,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         try:
             self.__console_view = self.screen.render_screen().encode('utf-8')
         except Exception as ex:
-            self.log.warn("Exception inside render: %s", traceback.format_exc())
+            self.log.warning("Exception inside render: %s", traceback.format_exc())
             self.render_exception = ex
             self.__console_view = ""
 

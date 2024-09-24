@@ -234,7 +234,7 @@ class TankConfig(object):
 
     @staticmethod
     def __merge_configs(configs):
-        logger.info('Configs: {}'.format(configs))
+        logger.debug('Configs: {}'.format(configs))
         configs = list(filter(None, configs))
         return reduce(recursive_dict_update, configs, {})
 

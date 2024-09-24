@@ -97,7 +97,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
                                                mode='w')
             self.add_cleanup(lambda: self.overall_text_stream.close())
         except Exception:
-            logging.exception('Failed to open file', exc_info=True)
+            logging.exception('Failed to open file')
             raise OSError('Error opening OfflineReport log file')
 
         self.overall = None

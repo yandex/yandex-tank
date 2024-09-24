@@ -105,8 +105,7 @@ class Plugin(GeneratorPlugin):
         if gun_type in self.gun_classes:
             self.gun = self.gun_classes[gun_type](self.core, self.get_option('gun_config'))
         else:
-            raise NotImplementedError(
-                'No such gun type implemented: "%s"' % gun_type)
+            raise NotImplementedError('No such gun type implemented: "%s"' % gun_type)
 
         self.results_listener = Thread(target=self._write_results_into_file, name="ResultsQueueListener")
 

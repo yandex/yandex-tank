@@ -153,10 +153,10 @@ class Plugin(GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.__process and self.__process.poll() is None:
-            _LOGGER.warn("Terminating shooting process with PID %s", self.__process.pid)
+            _LOGGER.warning("Terminating shooting process with PID %s", self.__process.pid)
             self.__terminate()
         else:
-            _LOGGER.debug("Seems shooting process finished OK")
+            _LOGGER.info("Seems shooting process finished OK")
         self.output_finished.set()
         return retcode
 

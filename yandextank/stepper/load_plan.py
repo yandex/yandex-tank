@@ -200,8 +200,7 @@ class StepFactory(object):
         if load_type in _plans:
             return _plans[load_type](params)
         else:
-            raise NotImplementedError(
-                'No such load type implemented: "%s"' % load_type)
+            raise NotImplementedError('No such load type implemented: "%s"' % load_type)
 
 
 def create(rps_schedule):

@@ -51,7 +51,7 @@ class TankWorker(Process):
         self.ammo_file = ammo_file
         self.config_paths = configs
         self.folder = self.core.artifacts_dir
-        self.init_logging(debug or self.core.get_option(self.core.SECTION, 'debug'))
+        self._logger_old_loglevel, self._logger_tank_handlers = self.init_logging(debug or self.core.get_option(self.core.SECTION, 'debug'))
 
         self._status = Value(ctypes.c_char_p, Status.TEST_INITIATED)
         self._test_id = Value(ctypes.c_char_p, self.core.test_id.encode('utf8'))
@@ -67,10 +67,11 @@ class TankWorker(Process):
 
     def run(self):
         with Cleanup(self) as add_cleanup:
+            add_cleanup('cleanup log handlers', self.cleanup_logging)
             lock = self.get_lock()
             add_cleanup('release lock', lock.release)
             self.status = Status.TEST_PREPARING
-            logger.info('Created a folder for the test. %s' % self.folder)
+            logger.info('Created a folder for the test. %s', self.folder)
             self.core.plugins_configure()
             add_cleanup('plugins cleanup', self.core.plugins_cleanup)
             self.core.plugins_prepare_test()
@@ -139,7 +140,8 @@ class TankWorker(Process):
         current_file_mode = os.stat(filename).st_mode
         os.chmod(filename, current_file_mode | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
-        logger.handlers = []
+        handlers = []
+        old_loglevel = logger.level
         logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
         file_handler = logging.FileHandler(filename)
@@ -147,12 +149,22 @@ class TankWorker(Process):
         file_handler.setFormatter(logging.Formatter(
             "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"))
         file_handler.addFilter(TankapiLogFilter())
+        handlers.append(file_handler)
         logger.addHandler(file_handler)
         logger.info("Log file created")
 
         for handler in self.log_handlers:
+            handlers.append(handler)
             logger.addHandler(handler)
-            logger.info("Logging handler {} added".format(handler))
+            logger.info("Logging handler %s added", handler)
+        return old_loglevel, handlers
+
+    def cleanup_logging(self):
+        if self._logger_tank_handlers is not None:
+            for h in self._logger_tank_handlers:
+                logger.removeHandler(h)
+        if self._logger_old_loglevel is not None:
+            logger.setLevel(self._logger_old_loglevel)
 
     def get_lock(self):
         while not self.interrupted.is_set():
@@ -164,8 +176,7 @@ class TankWorker(Process):
                 self.add_msgs(str(e))
                 if not self.wait_lock:
                     raise RuntimeError("Lock file present, cannot continue")
-                logger.warning(
-                    "Couldn't get lock. Will retry in 5 seconds...")
+                logger.warning("Couldn't get lock. Will retry in 5 seconds...")
                 time.sleep(5)
         else:
             raise KeyboardInterrupt

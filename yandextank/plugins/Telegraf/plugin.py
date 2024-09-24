@@ -51,8 +51,7 @@ class Plugin(MonitoringPlugin):
     def start_test(self):
         if self.monitoring:
             self.monitoring.load_start_time = time.time()
-            logger.debug(
-                "load_start_time = %s", self.monitoring.load_start_time)
+            logger.debug("load_start_time = %s", self.monitoring.load_start_time)
 
     def get_available_options(self):
         return [
@@ -147,8 +146,7 @@ class Plugin(MonitoringPlugin):
     def configure(self):
         self.detected_conf = self.__detect_configuration()
         if self.detected_conf:
-            logger.info(
-                'Detected monitoring configuration: %s', self.detected_conf)
+            logger.info('Detected monitoring configuration: %s', self.detected_conf)
             self.SECTION = self.detected_conf
         self.default_target = self.get_option("default_target", "localhost")
         if self.config.lower() == "none":
@@ -168,8 +166,7 @@ class Plugin(MonitoringPlugin):
             autostop.add_criterion_class(MetricHigherCriterion)
             autostop.add_criterion_class(MetricLowerCriterion)
         except KeyError:
-            logger.debug(
-                "No autostop plugin found, not adding instances criterion")
+            logger.debug("No autostop plugin found, not adding metric criterion")
 
     def prepare_test(self):
         if not self.config or self.config.lower() == 'none':
@@ -181,8 +178,7 @@ class Plugin(MonitoringPlugin):
             info = phantom.get_info()
             if info:
                 self.default_target = info.address
-                logger.debug(
-                    "Changed monitoring target to %s", self.default_target)
+                logger.info("Changed monitoring target to %s", self.default_target)
 
         self.monitoring.config = self.config
         if self.default_target:
@@ -209,7 +205,7 @@ class Plugin(MonitoringPlugin):
                     self.monitoring.poll()
                     count += 1
         except BaseException:
-            logger.error("Could not start monitoring", exc_info=True)
+            logger.exception("Could not start monitoring")
             if self.die_on_fail:
                 raise
             else:

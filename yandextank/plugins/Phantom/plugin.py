@@ -140,8 +140,7 @@ class Plugin(GeneratorPlugin):
             logger.info('Enabled cpu affinity %s for phantom', self.affinity)
             args = self.core.__setup_affinity(self.affinity, args=args)
         logger.debug("Starting %s with arguments: %s", self.get_option("phantom_path"), args)
-        phantom_stderr_file = self.core.mkstemp(
-            ".log", "phantom_stdout_stderr_")
+        phantom_stderr_file = self.core.mkstemp(".log", "phantom_stdout_stderr_")
         self.core.add_artifact_file(phantom_stderr_file)
         self.process_stderr = open(phantom_stderr_file, 'w')
         self.start_time = time.time()
@@ -177,7 +176,7 @@ class Plugin(GeneratorPlugin):
             if self.process:
                 self.process.communicate()
         else:
-            logger.debug("Seems phantom finished OK")
+            logger.info("Seems phantom finished")
         self.phout_finished.set()
         if self.process_stderr:
             self.process_stderr.close()
