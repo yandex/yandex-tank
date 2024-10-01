@@ -328,15 +328,18 @@ class TankCore(object):
                 try:
                     retcode = plugin.is_test_finished()
                     if retcode >= 0:
-                        for e in plugin.errors:
-                            self.errors.append(f'{plugin_name}: {e}')
+                        if plugin.errors:
+                            for e in plugin.errors:
+                                self.errors.append(f'{plugin_name}: {e}')
+                        elif retcode > 0:
+                            self.errors.append(f'{plugin_name} exited with return code {retcode}.')
                         return retcode
                 except Exception:
-                    logger.warning('Plugin {} failed:'.format(plugin_name), exc_info=True)
+                    logger.warning('Plugin %s failed:', plugin_name, exc_info=True)
                     if isinstance(plugin, GeneratorPlugin):
                         return RetCode.ERROR
                     else:
-                        logger.warning('Disabling plugin {}'.format(plugin_name))
+                        logger.warning('Disabling plugin %s', plugin_name)
                         plugin.is_test_finished = lambda: RetCode.CONTINUE
             end_time = time.time()
             diff = end_time - begin_time
