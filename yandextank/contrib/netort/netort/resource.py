@@ -569,7 +569,7 @@ class S3Opener(TempDownloaderOpenerProtocol):
         s3_credentials = config
         if not s3_credentials:
             with open(credentials_path) as fname:
-                s3_credentials = yaml.full_load(fname.read())
+                s3_credentials = yaml.safe_load(fname.read())
         self.endpoint_url = s3_credentials.get('endpoint_url')
         self.aws_access_key_id = s3_credentials.get('aws_access_key_id')
         self.aws_secret_access_key = s3_credentials.get('aws_secret_access_key')
