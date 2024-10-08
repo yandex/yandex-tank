@@ -33,7 +33,6 @@ class Plugin(AbstractPlugin):
         self.disk_limit = int(self.get_option("disk_limit", self.disk_limit))
         self.mem_limit = int(self.get_option("mem_limit", self.mem_limit))
 
-    def prepare_test(self):
         self.log.info("Checking tank resources...")
         self.__check_disk()
         self.__check_mem()

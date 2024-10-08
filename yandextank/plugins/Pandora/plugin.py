@@ -64,6 +64,7 @@ class Plugin(GeneratorPlugin):
         self.affinity = self.get_option("affinity", "")
         self.resources = self.get_option("resources")
 
+    def prepare_resources(self):
         # if we use custom pandora binary, we can download it and make it executable
         self.pandora_cmd = self.get_resource(self.get_option("pandora_cmd"), "./pandora", permissions=0o755)
 
@@ -216,6 +217,8 @@ class Plugin(GeneratorPlugin):
         return dst
 
     def prepare_test(self):
+        self.prepare_resources()
+
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
         except KeyError as ex:
