@@ -1,4 +1,5 @@
 ''' Module to check system resources at load generator'''
+
 import logging
 import time
 
@@ -11,6 +12,7 @@ from yandextank.contrib.netort.netort.process import execute
 
 class Plugin(AbstractPlugin):
     '''Plugin to check system resources'''
+
     SECTION = "rcheck"
 
     @staticmethod
@@ -18,7 +20,7 @@ class Plugin(AbstractPlugin):
         return __file__
 
     def __init__(self, core, cfg, name):
-        '''         Constructor        '''
+        '''Constructor'''
         AbstractPlugin.__init__(self, core, cfg, name)
         self.interval = "10s"
         self.disk_limit = 2048  # 2 GB
@@ -33,6 +35,7 @@ class Plugin(AbstractPlugin):
         self.disk_limit = int(self.get_option("disk_limit", self.disk_limit))
         self.mem_limit = int(self.get_option("mem_limit", self.mem_limit))
 
+    def prepare_test(self):
         self.log.info("Checking tank resources...")
         self.__check_disk()
         self.__check_mem()
@@ -47,7 +50,7 @@ class Plugin(AbstractPlugin):
         return -1
 
     def __check_disk(self):
-        ''' raise exception on disk space exceeded '''
+        '''raise exception on disk space exceeded'''
         cmd = "sh -c \"df --no-sync -m -P -x fuse -x tmpfs -x devtmpfs -x davfs -x nfs "
         cmd += self.core.artifacts_base_dir
         cmd += " | tail -n 1 | awk '{print \\$4}' \""
@@ -61,15 +64,12 @@ class Plugin(AbstractPlugin):
         if int(disk_free.strip()) < self.disk_limit:
             raise RuntimeError(
                 "Not enough local resources: disk space less than %sMB in %s: %sMB"
-                % (
-                    self.disk_limit, self.core.artifacts_base_dir,
-                    int(disk_free.strip())))
+                % (self.disk_limit, self.core.artifacts_base_dir, int(disk_free.strip()))
+            )
 
     def __check_mem(self):
-        ''' raise exception on RAM exceeded '''
-        mem_free = psutil.virtual_memory().available / 2 ** 20
+        '''raise exception on RAM exceeded'''
+        mem_free = psutil.virtual_memory().available / 2**20
         self.log.debug("Memory free: %s/%s", mem_free, self.mem_limit)
         if mem_free < self.mem_limit:
-            raise RuntimeError(
-                "Not enough resources: free memory less "
-                "than %sMB: %sMB" % (self.mem_limit, mem_free))
+            raise RuntimeError("Not enough resources: free memory less " "than %sMB: %sMB" % (self.mem_limit, mem_free))

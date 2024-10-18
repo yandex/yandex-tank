@@ -1,6 +1,7 @@
-autostop:
+# WARNING: order of plugins is matter
+rcheck:
   enabled: true
-  package: yandextank.plugins.Autostop
+  package: yandextank.plugins.ResourceCheck
 bfg:
   enabled: false
   package: yandextank.plugins.Bfg
@@ -34,12 +35,6 @@ phantom:
 platform:
   enabled: false
   package: yandextank.plugins.Platform
-rcassert:
-  enabled: true
-  package: yandextank.plugins.RCAssert
-rcheck:
-  enabled: true
-  package: yandextank.plugins.ResourceCheck
 shellexec:
   enabled: true
   package: yandextank.plugins.ShellExec
@@ -49,6 +44,12 @@ shootexec:
 telegraf:
   enabled: true
   package: yandextank.plugins.Telegraf
+autostop:
+  enabled: true
+  package: yandextank.plugins.Autostop
 uploader:
   enabled: false
   package: yandextank.plugins.DataUploader
+rcassert:
+  enabled: true
+  package: yandextank.plugins.RCAssert
