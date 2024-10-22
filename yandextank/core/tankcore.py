@@ -331,7 +331,7 @@ class TankCore(object):
                         if plugin.errors:
                             for e in plugin.errors:
                                 self.errors.append(f'{plugin_name}: {e}')
-                        elif retcode > 0:
+                        elif retcode > 0 and isinstance(plugin, GeneratorPlugin):
                             self.errors.append(f'{plugin_name} exited with return code {retcode}.')
                         return retcode
                 except Exception:
