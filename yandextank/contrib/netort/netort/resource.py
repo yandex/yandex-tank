@@ -62,30 +62,28 @@ class FormatDetector(object):
                 return fmt
 
 
+@typing.runtime_checkable
 class OpenerProtocol(typing.Protocol):
-    def __init__(self, path: str):
-        pass
-
-    def __call__(self):
-        pass
+    def open(self) -> object: ...
 
     @property
-    def get_filename(self):
-        pass
+    def filename(self) -> str: ...
 
 
-class TempDownloaderOpenerProtocol(OpenerProtocol):
-    def __call__(self, use_cache=True):
-        pass
+@typing.runtime_checkable
+class TempDownloaderOpenerProtocol(typing.Protocol):
+    def open(self, use_cache: bool) -> object: ...
 
-    def download_file(self, use_cache, try_ungzip=False):
-        pass
+    def download_file(self, use_cache: bool, try_ungzip: bool) -> str: ...
+
+    @thread_safe_property
+    def filename(self) -> str: ...
 
 
 @dataclass
 class OpenerItem(object):
     condition: Condition
-    factory: typing.Callable[[str], object]
+    factory: typing.Callable[[str], OpenerProtocol | TempDownloaderOpenerProtocol]
     order: int = 0
 
 
@@ -109,19 +107,19 @@ class ResourceManager(object):
     def __init__(
         self,
         config: ResourceManagerConfig,
-        openers: typing.Optional[OpenersConfig] = None,
+        openers: OpenersConfig | None = None,
     ):
         self.config = config
         logger.debug('loading ResourceManager config from %s', config.openers_config_path)
         self.openers_config = self.make_openers_config(config, self.load_config_safe(config.openers_config_path))
 
         self.tmp_path_prefix = config.tmp_path
-        self.openers = openers or self._default_openers(config.tmp_path)
+        self.openers = openers or self._default_openers()
 
     def make_path_provider(self, subfolder: str) -> PathProvider:
         return PathProvider(os.path.join(self.tmp_path_prefix, subfolder))
 
-    def _default_openers(self, tmp_path_prefix: str) -> OpenersConfig:
+    def _default_openers(self) -> OpenersConfig:
         http_opener = partial(HttpOpener, config=self.openers_config.get('http_opener'), path_provider=self.make_path_provider('http'))
         s3_opener = partial(S3Opener, config=self.openers_config.get('s3_opener'), path_provider=self.make_path_provider('s3'))
 
@@ -133,7 +131,11 @@ class ResourceManager(object):
             OpenerItem(path_like('/dev/'), SerialOpener),
         ]
 
-    def make_openers_config(self, rm_config: ResourceManagerConfig, openers_config: typing.Optional[typing.Dict[str, typing.Any]]) -> typing.Dict[str, typing.Any]:
+    def make_openers_config(
+        self,
+        rm_config: ResourceManagerConfig,
+        openers_config: dict[str, typing.Any] | None,
+    ) -> dict[str, typing.Any]:
         openers_config = openers_config or {}
         if rm_config.aws_access_key_id and rm_config.aws_secret_access_key and rm_config.s3_endpoint_url:
             openers_config['s3_opener'] = {
@@ -143,7 +145,7 @@ class ResourceManager(object):
             }
         return openers_config
 
-    def load_config_safe(self, path) -> typing.Optional[typing.Dict[str, typing.Any]]:
+    def load_config_safe(self, path) -> dict[str, typing.Any] | None:
         if not path:
             return None
         if not os.path.exists(path):
@@ -164,7 +166,7 @@ class ResourceManager(object):
         Returns:
             string, resource absolute path (downloads the url to /tmp)
         """
-        return self.get_opener(path).get_filename
+        return self.get_opener(path).filename
 
     def resource_string(self, path):
         """
@@ -175,18 +177,18 @@ class ResourceManager(object):
             string, file content
         """
         opener = self.get_opener(path)
-        filename = opener.get_filename
+        filename = opener.filename
         try:
             size = os.path.getsize(filename)
             if size > 50 * 1024 * 1024:
                 logger.warning('Reading large resource to memory: %s. Size: %s bytes', filename, size)
         except Exception as exc:
             logger.debug('Unable to check resource size %s. %s', filename, exc)
-        with opener(filename, 'r') as resource:
+        with open_file(opener, use_cache=True) as resource:
             content = resource.read()
         return content
 
-    def get_opener(self, path):
+    def get_opener(self, path) -> OpenerProtocol | TempDownloaderOpenerProtocol:
         """
         Args:
             path: str, resource file url or resource file absolute/relative path.
@@ -224,11 +226,11 @@ class SerialOpener(OpenerProtocol):
         self.device = device
         self.read_timeout = read_timeout
 
-    def __call__(self, *args, **kwargs):
+    def open(self):
         return serial.Serial(self.device, self.baud_rate, timeout=self.read_timeout)
 
     @property
-    def get_filename(self):
+    def filename(self):
         return self.device
 
 
@@ -240,7 +242,7 @@ class FileOpener(OpenerProtocol):
         self.f_path = f_path
         self.fmt_detector = FormatDetector()
 
-    def __call__(self, *args, **kwargs):
+    def open(self):
         with open(self.f_path, 'rb') as resource:
             header = resource.read(300)
         fmt = self.fmt_detector.detect_format(header)
@@ -251,7 +253,7 @@ class FileOpener(OpenerProtocol):
             return open(self.f_path, 'rb')
 
     @property
-    def get_filename(self):
+    def filename(self):
         return self.f_path
 
     @property
@@ -299,23 +301,18 @@ class HttpOpener(TempDownloaderOpenerProtocol):
         self.timeout = timeout
         self.attempts = attempts
         self.path_provider = path_provider or PathProvider(os.path.join(_TMP_PATH_PREFIX, 'http'))
-        self._use_config(url, config)
+        self._default_headers = None or self._parse_headers_from_config(config)
         self.get_request_info()
 
-    def __call__(self, use_cache=True, *args, **kwargs):
-        return self.open(use_cache, *args, **kwargs)
-
-    def _use_config(self, url: str, config: typing.Optional[typing.Dict[str, typing.Any]]):
-        self._default_headers = None
+    def _parse_headers_from_config(self, config: dict[str, typing.Any] | None):
         if not config:
-            return
+            return None
         parsed = urlparse(self.url)
         host = parsed.netloc.rsplit(':')[0]
-        config = config.get(host, {})
-        self._default_headers = config.get('headers')
+        return config.get(host, {}).get('headers')
 
     @retry
-    def open(self, use_cache, *args, **kwargs):
+    def open(self, use_cache=True):
         with closing(
                 requests.get(
                     self.url, stream=True, verify=False, headers=self._default_headers,
@@ -338,7 +335,7 @@ class HttpOpener(TempDownloaderOpenerProtocol):
                 return open(downloaded_f_path, 'rb')
 
     @retry
-    def download_file(self, use_cache, try_ungzip=False):
+    def download_file(self, use_cache, try_ungzip=False) -> str:
         tmpfile_path = self.tmpfile_path()
         if os.path.exists(tmpfile_path) and use_cache:
             logger.info("Resource %s has already been downloaded to %s . Using it..", self.url, tmpfile_path)
@@ -372,8 +369,7 @@ class HttpOpener(TempDownloaderOpenerProtocol):
         logger.debug('Trying to get info about resource %s', self.url)
         headers = self._default_headers or {}
         headers.update({'Accept-Encoding': 'identity'})
-        req = requests.Request(
-            'HEAD', self.url, headers=headers)
+        req = requests.Request('HEAD', self.url, headers=headers)
         session = requests.Session()
         prepared = session.prepare_request(req)
         try:
@@ -381,7 +377,8 @@ class HttpOpener(TempDownloaderOpenerProtocol):
                 prepared,
                 verify=False,
                 allow_redirects=True,
-                timeout=self.timeout)
+                timeout=self.timeout,
+            )
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.warning('Connection error trying to get info for resource %s. Retrying...', self.url, exc_info=True)
             try:
@@ -389,11 +386,13 @@ class HttpOpener(TempDownloaderOpenerProtocol):
                     prepared,
                     verify=False,
                     allow_redirects=True,
-                    timeout=self.timeout)
+                    timeout=self.timeout,
+                )
             except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
                 logger.warning(
                     'Connection error trying to get info for resource %s. Retrying...',
-                    self.url, exc_info=True)
+                    self.url, exc_info=True,
+                )
                 raise
         finally:
             session.close()
@@ -402,7 +401,7 @@ class HttpOpener(TempDownloaderOpenerProtocol):
         except requests.exceptions.HTTPError as exc:
             if exc.response.status_code == 405:
                 logger.info(
-                    "Resource storage does not support HEAD method. Ignore proto error and force download file."
+                    "Resource storage does not support HEAD method. Ignore proto error and force download file.",
                 )
                 self.force_download = True
             else:
@@ -410,15 +409,17 @@ class HttpOpener(TempDownloaderOpenerProtocol):
                 raise
 
     @thread_safe_property
-    def get_filename(self):
-        return self.download_file(use_cache=True)
+    def filename(self):
+        if self._filename is None:
+            self._filename = self.download_file(use_cache=True)
+        return self._filename
 
     @property
     def hash(self):
         last_modified = self.data_info.headers.get("Last-Modified", '')
-        hash = self.url + "|" + last_modified
-        logger.info('Hash: {}'.format(hash))
-        return self.url + "|" + last_modified
+        hashed_str = self.url + "|" + last_modified
+        logger.info('Hash: {}'.format(hashed_str))
+        return hashed_str
 
     @property
     def data_length(self):
@@ -564,11 +565,11 @@ class S3Opener(TempDownloaderOpenerProtocol):
         }
     """
 
-    def __init__(self, uri, credentials_path='/etc/yandex-tank/s3credentials.json', path_provider=None, config=None):
+    def __init__(self, uri, credentials_path='/etc/yandex-tank/s3credentials.json', path_provider=None, config=None, attempts=5):
         s3_credentials = config
         if not s3_credentials:
             with open(credentials_path) as fname:
-                s3_credentials = yaml.load(fname.read())
+                s3_credentials = yaml.safe_load(fname.read())
         self.endpoint_url = s3_credentials.get('endpoint_url')
         self.aws_access_key_id = s3_credentials.get('aws_access_key_id')
         self.aws_secret_access_key = s3_credentials.get('aws_secret_access_key')
@@ -579,6 +580,7 @@ class S3Opener(TempDownloaderOpenerProtocol):
         self.path_provider = path_provider or PathProvider(os.path.join(_TMP_PATH_PREFIX, 's3'))
         self._filename = None
         self._conn = None
+        self.attempts = attempts
 
     @thread_safe_property
     def conn(self):
@@ -595,17 +597,15 @@ class S3Opener(TempDownloaderOpenerProtocol):
             )
         return self._conn
 
-    def __call__(self, *args, **kwargs):
-        return self.open(*args, **kwargs)
-
-    def open(self):
+    def open(self, use_cache=True):
         if not self._filename:
-            self._filename = self.download_file(True, try_ungzip=False)
+            self._filename = self.download_file(use_cache, try_ungzip=False)
         return open(self._filename, 'rb')
 
     def tmpfile_path(self):
         return self.path_provider.tmpfile_path(self.hash)
 
+    @retry
     def download_file(self, use_cache, try_ungzip=False):
         tmpfile_path = self.tmpfile_path()
         if os.path.exists(tmpfile_path) and use_cache:
@@ -637,6 +637,12 @@ class S3Opener(TempDownloaderOpenerProtocol):
         self._filename = tmpfile_path
         return tmpfile_path
 
+    @thread_safe_property
+    def filename(self) -> str:
+        if self._filename is None:
+            self._filename = self.download_file(use_cache=True)
+        return self._filename
+
     @property
     def hash(self):
         hashed_str = "{bucket_key}_{object_key}".format(
@@ -647,7 +653,7 @@ class S3Opener(TempDownloaderOpenerProtocol):
 
     @property
     def data_length(self):
-        return os.path.getsize(self.get_filename)
+        return os.path.getsize(self.filename)
 
 
 def make_resource_manager():
@@ -667,5 +673,11 @@ def try_ungzip_file(file_path: str) -> str:
             f.write(gzf.read())
         return ungzippedfile_path
     except IOError as ioe:
-        logger.error('Failed trying to unzip downloaded resource %s' % repr(ioe))
+        logger.info('Failed trying to ungzip downloaded resource %s' % repr(ioe))
     return file_path
+
+
+def open_file(opener: OpenerProtocol | TempDownloaderOpenerProtocol, use_cache: bool) -> object:
+    if isinstance(opener, TempDownloaderOpenerProtocol):
+        return opener.open(use_cache)
+    return opener.open()

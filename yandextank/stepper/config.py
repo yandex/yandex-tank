@@ -1,6 +1,6 @@
 import logging
 from typing import Optional
-from yandextank.contrib.netort.netort.resource import ResourceManager, manager
+from yandextank.contrib.netort.netort.resource import ResourceManager, manager, open_file
 
 from . import info
 from . import instance_plan as ip
@@ -62,7 +62,7 @@ class ComponentFactory():
             return self._ammo_type_unchecked
 
         opener = self.resource_manager.get_opener(self.ammo_file)
-        with opener(self.use_cache) as ammo:
+        with open_file(opener, self.use_cache) as ammo:
             try:
                 ammo_str = next(ammo).decode('utf-8')
             except StopIteration:

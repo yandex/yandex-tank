@@ -60,7 +60,7 @@ class Plugin(GeneratorPlugin):
         if isinstance(opener, TempDownloaderOpenerProtocol):
             self.original_jmx = opener.download_file(True, try_ungzip=True)
         else:
-            self.original_jmx = opener.get_filename
+            self.original_jmx = opener.filename
         self.core.add_artifact_file(self.original_jmx, True)
         self.jtl_file = self.core.mkstemp('.jtl', 'jmeter_')
         self.core.add_artifact_file(self.jtl_file)

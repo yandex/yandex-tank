@@ -127,6 +127,8 @@
   "yandextank/contrib/netort/netort/process.py":"load/projects/yandex-tank/yandextank/contrib/netort/netort/process.py",
   "yandextank/contrib/netort/netort/resource.py":"load/projects/yandex-tank/yandextank/contrib/netort/netort/resource.py",
   "yandextank/contrib/netort/netort/validated_config.py":"load/projects/yandex-tank/yandextank/contrib/netort/netort/validated_config.py",
+  "yandextank/contrib/netort/tests/conftest.py":"load/projects/yandex-tank/yandextank/contrib/netort/tests/conftest.py",
+  "yandextank/contrib/netort/tests/test_openers.py":"load/projects/yandex-tank/yandextank/contrib/netort/tests/test_openers.py",
   "yandextank/core/__init__.py":"load/projects/yandex-tank/yandextank/core/__init__.py",
   "yandextank/core/cli.py":"load/projects/yandex-tank/yandextank/core/cli.py",
   "yandextank/core/config/00-base.ini":"load/projects/yandex-tank/yandextank/core/config/00-base.ini",
