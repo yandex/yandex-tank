@@ -3,7 +3,9 @@ import logging
 import os
 import shutil
 import time
+import typing
 from configparser import RawConfigParser, MissingSectionHeaderError
+from dataclasses import dataclass
 from multiprocessing import Event, Value, Process
 
 import stat
@@ -17,6 +19,12 @@ from yandextank.core.tankcore import LockError, Lock
 from yandextank.validator.validator import ValidationError
 
 logger = logging.getLogger()
+
+
+@dataclass
+class CleanupHandler:
+    name: str
+    handler: typing.Callable[[], None]
 
 
 class TankWorker(Process):
@@ -51,7 +59,7 @@ class TankWorker(Process):
         self.ammo_file = ammo_file
         self.config_paths = configs
         self.folder = self.core.artifacts_dir
-        self._logger_old_loglevel, self._logger_tank_handlers = self.init_logging(debug or self.core.get_option(self.core.SECTION, 'debug'))
+        self._cleanups = [self.init_logging(debug or self.core.get_option(self.core.SECTION, 'debug'))]
 
         self._status = Value(ctypes.c_char_p, Status.TEST_INITIATED)
         self._test_id = Value(ctypes.c_char_p, self.core.test_id.encode('utf8'))
@@ -65,9 +73,26 @@ class TankWorker(Process):
         event.set()
         return event
 
+    def __del__(self):
+        try:
+            self.cleanup()
+        except Exception:
+            pass
+
+    # utility method to cleanup resource that were created during pre-run phases
+    def cleanup(self) -> typing.List[Exception]:
+        errors = []
+        for cleanup in self._cleanups:
+            try:
+                cleanup.handler()
+            except Exception as e:
+                errors.append(e)
+        return errors
+
     def run(self):
         with Cleanup(self) as add_cleanup:
-            add_cleanup('cleanup log handlers', self.cleanup_logging)
+            for cleanup in self._cleanups:
+                add_cleanup(cleanup.name, cleanup.handler)
             lock = self.get_lock()
             add_cleanup('release lock', lock.release)
             self.status = Status.TEST_PREPARING
@@ -133,7 +158,7 @@ class TankWorker(Process):
     def get_info(self, section_name, key_name):
         return self.info.get_value([section_name, key_name])
 
-    def init_logging(self, debug=False):
+    def init_logging(self, debug=False) -> CleanupHandler:
 
         filename = os.path.join(self.core.artifacts_dir, 'tank.log')
         open(filename, 'a').close()
@@ -157,14 +182,14 @@ class TankWorker(Process):
             handlers.append(handler)
             logger.addHandler(handler)
             logger.info("Logging handler %s added", handler)
-        return old_loglevel, handlers
 
-    def cleanup_logging(self):
-        if self._logger_tank_handlers is not None:
-            for h in self._logger_tank_handlers:
+        def cleanup():
+            for h in handlers:
                 logger.removeHandler(h)
-        if self._logger_old_loglevel is not None:
-            logger.setLevel(self._logger_old_loglevel)
+            logger.setLevel(old_loglevel)
+            file_handler.close()
+
+        return CleanupHandler('cleanup log handlers', cleanup)
 
     def get_lock(self):
         while not self.interrupted.is_set():
