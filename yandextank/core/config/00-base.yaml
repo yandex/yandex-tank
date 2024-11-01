@@ -47,9 +47,9 @@ telegraf:
 autostop:
   enabled: true
   package: yandextank.plugins.Autostop
-uploader:
-  enabled: false
-  package: yandextank.plugins.DataUploader
 rcassert:
   enabled: true
   package: yandextank.plugins.RCAssert
+uploader:
+  enabled: false
+  package: yandextank.plugins.DataUploader
