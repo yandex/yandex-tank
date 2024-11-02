@@ -15,7 +15,7 @@ import environ
 from yandextank.contrib.netort.netort.data_manager.common.util import thread_safe_property, YamlEnvSubstConfigLoader
 from yandextank.contrib.netort.netort.data_manager.common.condition import uri_like, path_like, Condition
 from urllib.parse import urlparse
-from contextlib import closing
+from contextlib import AbstractContextManager, closing
 from dataclasses import dataclass
 from functools import partial
 
@@ -64,7 +64,7 @@ class FormatDetector(object):
 
 @typing.runtime_checkable
 class OpenerProtocol(typing.Protocol):
-    def open(self) -> object: ...
+    def open(self) -> AbstractContextManager: ...
 
     @property
     def filename(self) -> str: ...
@@ -72,7 +72,7 @@ class OpenerProtocol(typing.Protocol):
 
 @typing.runtime_checkable
 class TempDownloaderOpenerProtocol(typing.Protocol):
-    def open(self, use_cache: bool) -> object: ...
+    def open(self, use_cache: bool) -> AbstractContextManager: ...
 
     def download_file(self, use_cache: bool, try_ungzip: bool) -> str: ...
 
@@ -677,7 +677,7 @@ def try_ungzip_file(file_path: str) -> str:
     return file_path
 
 
-def open_file(opener: OpenerProtocol | TempDownloaderOpenerProtocol, use_cache: bool) -> object:
+def open_file(opener: OpenerProtocol | TempDownloaderOpenerProtocol, use_cache: bool) -> AbstractContextManager:
     if isinstance(opener, TempDownloaderOpenerProtocol):
         return opener.open(use_cache)
     return opener.open()

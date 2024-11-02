@@ -95,6 +95,7 @@ PHANTOM_SCHEMA_V_G = {
      "core": {
          'operator': 'fomars',
          'artifacts_base_dir': './',
+         'ammo_validation': 'inform',
          'lock_dir': '/var/lock/',
          'taskset_path': 'taskset',
          'affinity': '',
@@ -222,6 +223,7 @@ PHANTOM_SCHEMA_V_G = {
          'multi': []},
       'core': {
           'artifacts_base_dir': './logs',
+          'ammo_validation': 'inform',
           'lock_dir': '/var/lock/',
           'taskset_path': 'taskset',
           'affinity': '',
@@ -386,6 +388,7 @@ def test_load_multiple(configs, expected):
             "core": {
                 'operator': 'fomars',
                 'artifacts_base_dir': './',
+                'ammo_validation': 'inform',
                 'lock_dir': '/var/lock/',
                 'taskset_path': 'taskset',
                 'affinity': '',

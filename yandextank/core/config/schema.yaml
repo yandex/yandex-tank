@@ -6,6 +6,10 @@ core:
       description: specify cpu core(s) to bind tank process to,  http://linuxhowtos.org/manpages/1/taskset.htm
       type: string
       default: ''
+    ammo_validation:
+      description: ammo validate level. On of fail_on_error, inform, skip.
+      type: string
+      default: inform
     api_jobno:
       description: tankapi job id, also used as test\'s directory name - determined by tank
       type: string

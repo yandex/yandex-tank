@@ -1,0 +1,43 @@
+console: {enabled: false, package: yandextank.plugins.Console}
+telegraf: {enabled: false, package: yandextank.plugins.Telegraf}
+phantom: {enabled: false, package: yandextank.plugins.Phantom}
+pandora:
+  package: yandextank.plugins.Pandora
+  enabled: true
+  config_content:
+    pools:
+      - id: HTTP pool
+        gun:
+          type: http
+          target: localhost:443
+          ssl: true
+        ammo:
+          headers:
+            - '[Host: localhost]'
+            - '[Connection: close]'
+          type: uri
+          uris:
+            - /test
+        result:
+          type: phout
+          destination: phout.log
+        rps:
+          - {duration: 2s, type: step, from: 1, to: 1000, step: 2}
+        startup:
+          type: once
+          times: 100
+    log:
+      level: error
+    monitoring:
+      expvar:
+        enabled: true
+        port: 1234
+autostop:
+  enabled: true
+  package: yandextank.plugins.Autostop
+  autostop:
+    - instances(50%,10s)
+rcassert:
+  enabled: true
+  package: yandextank.plugins.RCAssert
+  pass: '24'

@@ -1,0 +1,20 @@
+601 case1
+POST /case1?sleep=10  HTTP/1.1
+Host: localhost
+Accept: */*
+Connection: keep-alive
+Content-Length: 490
+
+F5SnJeqM23XfFG6mrTFmIMF7EBf9wUm9enPDtqRoIemHjWzfIYHyOU8XGOw7banXy9IJ9Of0j0prI6gmLAWtpW6mbxfk0ZR5QxqNyrR1JZ2auzfQQhfco0AH3eASObrSGOsbqaKaAcemhTzSRAY3M53Wwy4IevGdxOzALsDa91KsiBFX9R8hZy8I40VG80LiE6PGBMIrS5I1UqYQ7UeTrcFwZLe7yZEmVOtnpvU8v0qxbfJYxsQXS1mQA3SY5eDdD9l5IAcnTNQbTsWTYN5SdZjmAIRskGRl6iPo2bmihFnmXTZvRPHfLPtJGfpJ2O4ZYGLDPSiTZUK8fSGJQZO864ZHfcOJsLBVXaNfe1XEfUauCtjjqogZ2JWu43sy8Q3j5zXti3Pfd62q6ycoqjJ7SVSwTGYTCSpwZoWDbul0NGd9URRWAc4Bzi3bX9U944HF2pUUh9BWagE4rQqTUfzvLUXjoSS9IWtej4ydAnW9az
+88 case2
+GET /case2?sleep=100  HTTP/1.1
+Host: localhost
+Accept: */*
+Connection: keep-alive
+
+88 case3
+GET /case3?sleep=150  HTTP/1.1
+Host: localhost
+Accept: */*
+Connection: keep-alive
+

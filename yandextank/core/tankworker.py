@@ -11,6 +11,7 @@ from multiprocessing import Event, Value, Process
 import stat
 import yaml
 
+from yandextank.ammo_validator import validate as validate_ammo
 from yandextank.common.interfaces import TankInfo
 from yandextank.common.util import Cleanup, Finish, Status, TankapiLogFilter, read_resource
 from yandextank.config_converter.converter import convert_ini, convert_single_option
@@ -32,9 +33,23 @@ class TankWorker(Process):
     FINISH_FILENAME = 'finish_status.yaml'
     DEFAULT_CONFIG = 'load.yaml'
 
-    def __init__(self, configs, cli_options=None, cfg_patches=None, cli_args=None, no_local=False,
-                 log_handlers=None, wait_lock=False, files=None, ammo_file=None, debug=False,
-                 run_shooting_event=None, storage=None, resource_manager=None, plugins_implicit_enabling=False):
+    def __init__(
+        self,
+        configs,
+        cli_options=None,
+        cfg_patches=None,
+        cli_args=None,
+        no_local=False,
+        log_handlers=None,
+        wait_lock=False,
+        files=None,
+        ammo_file=None,
+        debug=False,
+        run_shooting_event=None,
+        storage=None,
+        resource_manager=None,
+        plugins_implicit_enabling=False,
+    ):
         super().__init__()
         self.interrupted = Event()
         self.info = TankInfo(dict())
@@ -100,6 +115,7 @@ class TankWorker(Process):
             self.core.plugins_configure()
             add_cleanup('plugins cleanup', self.core.plugins_cleanup)
             self.core.plugins_prepare_test()
+            self._validate_ammo()
             with Finish(self):
                 if not self._run_shooting_event.is_set():
                     self.status = Status.TEST_WAITING_FOR_A_COMMAND_TO_RUN
@@ -110,6 +126,28 @@ class TankWorker(Process):
                 self._msgs.extend(self.core.errors)
             self.status = Status.TEST_POST_PROCESS
             self.retcode = self.core.plugins_post_process(self.retcode)
+
+    def _validate_ammo(self):
+        ammo_validation = self.core.config.get_option(self.SECTION, 'ammo_validation')
+        match ammo_validation.lower():
+            case 'fail_on_error':
+                messages = validate_ammo(self.core.resource_manager, self.core)
+                messages.summarize(logger)
+                if messages.errors:
+                    raise ValidationError('Ammo validation failed.')
+
+            case 'inform':
+                try:
+                    messages = validate_ammo(self.core.resource_manager, self.core)
+                    messages.summarize(logger)
+                except Exception:
+                    logger.exception('Error at validate ammo')
+
+            case 'skip':
+                return
+
+            case _:
+                raise ValidationError(f'Unknown ammo_validation value: {ammo_validation}')
 
     def _wait_for_a_command_to_start_shooting(self):
         pool_timeout = 0.01
@@ -129,10 +167,10 @@ class TankWorker(Process):
             cli_args = []
         run_cfgs = run_cfgs if len(run_cfgs) > 0 else [TankWorker.DEFAULT_CONFIG]
         return (
-            [load_cfg(cfg) for cfg in run_cfgs] +
-            parse_options(cli_options) +
-            parse_and_check_patches(cfg_patches) +
-            cli_args
+            [load_cfg(cfg) for cfg in run_cfgs]
+            + parse_options(cli_options)
+            + parse_and_check_patches(cfg_patches)
+            + cli_args
         )
 
     def stop(self):
@@ -140,14 +178,15 @@ class TankWorker(Process):
         logger.warning('Interrupting')
 
     def get_status(self):
-        return {'status_code': self.status.decode('utf8'),
-                'left_time': None,
-                'exit_code': self.retcode,
-                'lunapark_id': self.get_info('uploader', 'job_no'),
-                'tank_msg': self.msg,
-                'test_id': self.test_id,
-                'lunapark_url': self.get_info('uploader', 'web_link')
-                }
+        return {
+            'status_code': self.status.decode('utf8'),
+            'left_time': None,
+            'exit_code': self.retcode,
+            'lunapark_id': self.get_info('uploader', 'job_no'),
+            'tank_msg': self.msg,
+            'test_id': self.test_id,
+            'lunapark_url': self.get_info('uploader', 'web_link'),
+        }
 
     def save_finish_status(self):
         with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:
@@ -171,8 +210,9 @@ class TankWorker(Process):
 
         file_handler = logging.FileHandler(filename)
         file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"))
+        file_handler.setFormatter(
+            logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s")
+        )
         file_handler.addFilter(TankapiLogFilter())
         handlers.append(file_handler)
         logger.addHandler(file_handler)
@@ -194,8 +234,9 @@ class TankWorker(Process):
     def get_lock(self):
         while not self.interrupted.is_set():
             try:
-                lock = Lock(self.test_id, self.folder).acquire(self.core.lock_dir,
-                                                               self.core.config.get_option(self.SECTION, 'ignore_lock'))
+                lock = Lock(self.test_id, self.folder).acquire(
+                    self.core.lock_dir, self.core.config.get_option(self.SECTION, 'ignore_lock')
+                )
                 break
             except LockError as e:
                 self.add_msgs(str(e))
@@ -274,8 +315,7 @@ def parse_options(options):
     else:
         return [
             convert_single_option(key.strip(), value.strip())
-            for key, value
-            in [option.split('=', 1) for option in options]
+            for key, value in [option.split('=', 1) for option in options]
         ]
 
 

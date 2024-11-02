@@ -1,0 +1,4 @@
+[Http-Header: value1]
+[Cookie: value2]
+/apiSome?discount=true&filter=name=Элеганс
+/someApi?discount=true&filter=name=français tag

@@ -1,0 +1,8 @@
+[host: qwertyuiop.test.tst.yandex.net]
+[Content-Type: application/json]
+[Connection: Keep-Alive]
+77 /v1/payment/check
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"type": "card"}}
+[Cookie: somecookie]
+77 /v1/payment/check tag
+{"card": {"bin": "bin"}, "order_id": "order_id", "payment": {"type": "card"}}
