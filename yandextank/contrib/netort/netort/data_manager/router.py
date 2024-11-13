@@ -40,8 +40,9 @@ class MetricsRouter(threading.Thread):
     def run(self):
         while not self._stopped.is_set():
             self.__route()
-        logger.info('Router received interrupt signal, routing rest of the data. Qsize: %s',
-                    self.manager.routing_queue.qsize())
+        logger.info(
+            'Router received interrupt signal, routing rest of the data. Qsize: %s', self.manager.routing_queue.qsize()
+        )
         while self.manager.routing_queue.qsize() > 1 and not self._interrupted.is_set():
             self.__route()
         self.__route(last_piece=True)
@@ -56,8 +57,10 @@ class MetricsRouter(threading.Thread):
         buffered = self.__buffer.pop(metric_data.local_id, None)
         df = pd.concat([buffered, metric_data.df]) if buffered is not None else metric_data.df
         if not last_piece:
-            cut, new_buf = df[df.second < df.second.max() - Aggregated.buffer_size], \
-                df[df.second >= df.second.max() - Aggregated.buffer_size]
+            cut, new_buf = (
+                df[df.second < df.second.max() - Aggregated.buffer_size],
+                df[df.second >= df.second.max() - Aggregated.buffer_size],
+            )
             self.__buffer[metric_data.local_id] = new_buf
             return cut
         else:

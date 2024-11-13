@@ -7,9 +7,18 @@ from collections import Counter
 logger = logging.getLogger(__name__)
 
 phout_columns = [
-    'time', 'tag', 'interval_real', 'connect_time', 'send_time', 'latency',
-    'receive_time', 'interval_event', 'size_out', 'size_in', 'net_code',
-    'proto_code'
+    'time',
+    'tag',
+    'interval_real',
+    'connect_time',
+    'send_time',
+    'latency',
+    'receive_time',
+    'interval_event',
+    'size_out',
+    'size_in',
+    'net_code',
+    'proto_code',
 ]
 
 phantom_config = {
@@ -34,12 +43,9 @@ class Worker(object):
     def __init__(self, config, verbose_histogram):
         if verbose_histogram:
             bins = np.linspace(0, 4990, 500)  # 10µs accuracy
-            bins = np.append(bins,
-                             np.linspace(5000, 9900, 50))  # 100µs accuracy
-            bins = np.append(bins,
-                             np.linspace(10, 499, 490) * 1000)  # 1ms accuracy
-            bins = np.append(bins,
-                             np.linspace(500, 2995, 500) * 1000)  # 5ms accuracy
+            bins = np.append(bins, np.linspace(5000, 9900, 50))  # 100µs accuracy
+            bins = np.append(bins, np.linspace(10, 499, 490) * 1000)  # 1ms accuracy
+            bins = np.append(bins, np.linspace(500, 2995, 500) * 1000)  # 5ms accuracy
             bins = np.append(bins, np.linspace(3000, 9990, 700) * 1000)  # 10ms accuracy
             bins = np.append(bins, np.linspace(10000, 29950, 400) * 1000)  # 50ms accuracy
             bins = np.append(bins, np.linspace(30000, 119900, 900) * 1000)  # 100ms accuracy
@@ -106,10 +112,7 @@ class Worker(object):
 
     def aggregate(self, data):
         return {
-            key: {
-                aggregate: self.aggregators.get(aggregate)(data[key])
-                for aggregate in self.config[key]
-            }
+            key: {aggregate: self.aggregators.get(aggregate)(data[key]) for aggregate in self.config[key]}
             for key in self.config
         }
 
@@ -120,11 +123,7 @@ class DataPoller:
         self._max_wait = max_wait
 
     def poll(self, source):
-        return _data_poller(
-            source,
-            self._pool_period,
-            self._max_wait
-        )
+        return _data_poller(source, self._pool_period, self._max_wait)
 
 
 def _data_poller(source, poll_period, max_wait):
@@ -137,8 +136,10 @@ def _data_poller(source, poll_period, max_wait):
         elif wait_counter < wait_cntr_max:
             wait_counter += 1
         else:
-            logger.warning('Data poller has been receiving no data for {} seconds.\n'
-                           'Closing data poller'.format(wait_cntr_max * poll_period))
+            logger.warning(
+                'Data poller has been receiving no data for {} seconds.\n'
+                'Closing data poller'.format(wait_cntr_max * poll_period)
+            )
             break
         time.sleep(poll_period)
 
@@ -146,8 +147,9 @@ def _data_poller(source, poll_period, max_wait):
 def to_utc(ts):
     # dst = daylight saving time
     is_dst = time.daylight and time.localtime().tm_isdst > 0
-    offset = (time.altzone if is_dst else time.timezone)
+    offset = time.altzone if is_dst else time.timezone
     import pdb
+
     pdb.set_trace()
     return ts + offset
 
@@ -164,12 +166,9 @@ class Aggregator(object):
             start_time = time.time()
             result = {
                 "ts": ts,
-                "tagged":
-                {tag: self.worker.aggregate(data)
-                 for tag, data in by_tag},
+                "tagged": {tag: self.worker.aggregate(data) for tag, data in by_tag},
                 "overall": self.worker.aggregate(chunk),
-                "counted_rps": rps
+                "counted_rps": rps,
             }
-            logger.debug(
-                "Aggregation time: %.2fms", (time.time() - start_time) * 1000)
+            logger.debug("Aggregation time: %.2fms", (time.time() - start_time) * 1000)
             yield result

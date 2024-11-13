@@ -3,7 +3,7 @@ from yandextank.plugins.Telegraf.config_parser import parse_xml, parse_yaml, TAR
 
 class TestConfigParsers(object):
     def test_rawxml_parse(self):
-        """ raw xml read from string """
+        """raw xml read from string"""
         config = """
         <Monitoring>
             <Host ssh_key_path="/tmp">
@@ -17,7 +17,7 @@ class TestConfigParsers(object):
         assert host.get('ssh_key_path') == '/tmp'
 
     def test_rawxml_parse_without_key_path(self):
-        """ raw xml read from string """
+        """raw xml read from string"""
         config = """
         <Monitoring>
             <Host>
@@ -31,7 +31,7 @@ class TestConfigParsers(object):
         assert host.get('ssh_key_path') is None
 
     def test_raw_yaml_parse(self):
-        """ raw yaml read from string """
+        """raw yaml read from string"""
         config = """
         hosts:
           localhost:

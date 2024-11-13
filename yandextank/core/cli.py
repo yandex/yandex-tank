@@ -18,88 +18,63 @@ def main():
         '--config',
         action='append',
         help="Path to INI file containing run options, multiple options accepted",
-        default=[]
+        default=[],
     )
     parser.add_option(
         '-f',
         '--fail-lock',
         action='store_true',
         dest='lock_fail',
-        help="Don't wait for lock to release, fail test instead")
+        help="Don't wait for lock to release, fail test instead",
+    )
     parser.add_option(
         '-i',
         '--ignore-lock',
         action='store_true',
         dest='ignore_lock',
-        help="Ignore lock files from concurrent instances, has precedence before --lock-fail"
+        help="Ignore lock files from concurrent instances, has precedence before --lock-fail",
     )
     parser.add_option(
-        '-k',
-        '--lock-dir',
-        action='store',
-        dest='lock_dir',
-        type="string",
-        help="Directory for lock file")
+        '-k', '--lock-dir', action='store', dest='lock_dir', type="string", help="Directory for lock file"
+    )
+    parser.add_option('-l', '--log', action='store', default="tank.log", help="Tank log file location")
     parser.add_option(
-        '-l',
-        '--log',
-        action='store',
-        default="tank.log",
-        help="Tank log file location")
+        '--error_log', action='store', dest='error_log', default="tank_errors.log", help="Tank errors log file location"
+    )
     parser.add_option(
-        '--error_log',
-        action='store',
-        dest='error_log',
-        default="tank_errors.log",
-        help="Tank errors log file location")
-    parser.add_option(
-        '-m',
-        '--manual-start',
-        action='store_true',
-        dest='manual_start',
-        help="Wait for Enter key to start the test")
+        '-m', '--manual-start', action='store_true', dest='manual_start', help="Wait for Enter key to start the test"
+    )
     parser.add_option(
         '-n',
         '--no-rc',
         action='store_true',
         dest='no_rc',
-        help="Don't load config files from /etc/yandex-tank and ~/.yandex-tank")
+        help="Don't load config files from /etc/yandex-tank and ~/.yandex-tank",
+    )
     parser.add_option(
         '-o',
         '--option',
         action='append',
-        help="Set config option, multiple options accepted, example: -o 'shellexec.start=pwd'"
+        help="Set config option, multiple options accepted, example: -o 'shellexec.start=pwd'",
     )
-    parser.add_option(
-        '-q',
-        '--quiet',
-        action='store_true',
-        help="Less console output, only errors and warnings")
+    parser.add_option('-q', '--quiet', action='store_true', help="Less console output, only errors and warnings")
     parser.add_option(
         '-s',
         '--scheduled-start',
         action='store',
         dest='scheduled_start',
-        help="Start test at specified time, format 'YYYY-MM-DD hh:mm:ss', date part is optional"
+        help="Start test at specified time, format 'YYYY-MM-DD hh:mm:ss', date part is optional",
     )
-    parser.add_option(
-        '-v',
-        '--verbose',
-        action='store_true',
-        help="More console output, +debug messages")
+    parser.add_option('-v', '--verbose', action='store_true', help="More console output, +debug messages")
     parser.add_option(
         '-p',
         '--patch-cfg',
         action='append',
         help='Patch config with yaml snippet (similar to -o, but has full compatibility to\
         and the exact scheme of yaml format config)',
-        dest='patches'
+        dest='patches',
     )
-    parser.add_option(
-        '--version',
-        action='store_true',
-        dest='version'
-    )
+    parser.add_option('--version', action='store_true', dest='version')
     # FIXME: restore completion helper
     # completion_helper = CompletionHelperOptionParser()
     # completion_helper.handle_request(parser)
@@ -119,24 +94,22 @@ def main():
 
     if ammofile:
         logging.debug("Ammofile: %s", ammofile)
-        cli_kwargs['phantom'] = {
-            'use_caching': False,
-            'ammofile': ammofile
-        }
+        cli_kwargs['phantom'] = {'use_caching': False, 'ammofile': ammofile}
 
     run_shooting_event = multiprocessing.Event() if options.manual_start else None
 
     try:
-        worker = TankWorker([resource_manager.resource_filename(cfg) for cfg in options.config],
-                            options.option,
-                            options.patches,
-                            [cli_kwargs],
-                            options.no_rc,
-                            ammo_file=ammofile if ammofile else None,
-                            log_handlers=handlers,
-                            debug=options.verbose,
-                            run_shooting_event=run_shooting_event,
-                            )
+        worker = TankWorker(
+            [resource_manager.resource_filename(cfg) for cfg in options.config],
+            options.option,
+            options.patches,
+            [cli_kwargs],
+            options.no_rc,
+            ammo_file=ammofile if ammofile else None,
+            log_handlers=handlers,
+            debug=options.verbose,
+            run_shooting_event=run_shooting_event,
+        )
     except (ValidationError, LockError) as e:
         logging.error(f'Config validation error:\n{e}')
         return
@@ -149,6 +122,7 @@ def main():
             def wait_blocking():
                 input()
                 run_shooting_event.set()
+
             threading.Thread(target=wait_blocking).start()
             while not run_shooting_event.wait(3):
                 logging.warning('Press Enter to start shooting')
@@ -163,7 +137,7 @@ def main():
 
 
 def init_logging(events_log_fname, verbose, quiet):
-    """ Set up logging, as it is very important for console tool """
+    """Set up logging, as it is very important for console tool"""
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
 
@@ -173,11 +147,8 @@ def init_logging(events_log_fname, verbose, quiet):
     console_handler = logging.StreamHandler(sys.stdout)
     stderr_hdl = logging.StreamHandler(sys.stderr)
 
-    fmt_verbose = logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"
-    )
-    fmt_regular = logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(message)s", "%H:%M:%S")
+    fmt_verbose = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s")
+    fmt_regular = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", "%H:%M:%S")
 
     if verbose:
         console_handler.setLevel(logging.DEBUG)
@@ -209,10 +180,7 @@ def init_logging(events_log_fname, verbose, quiet):
     if events_log_fname:
         err_file_handler = logging.FileHandler(events_log_fname)
         err_file_handler.setLevel(logging.WARNING)
-        err_file_handler.setFormatter(
-            logging.Formatter(
-                "%(asctime)s\t%(message)s"
-            ))
+        err_file_handler.setFormatter(logging.Formatter("%(asctime)s\t%(message)s"))
         return [err_file_handler, console_handler, stderr_hdl]
     else:
         return [console_handler, stderr_hdl]
@@ -220,7 +188,7 @@ def init_logging(events_log_fname, verbose, quiet):
 
 
 class SingleLevelFilter(logging.Filter):
-    """Exclude or approve one msg type at a time.    """
+    """Exclude or approve one msg type at a time."""
 
     def __init__(self, passlevel, reject):
         logging.Filter.__init__(self)

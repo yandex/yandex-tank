@@ -1,4 +1,5 @@
 """ The central part of the tool: Core """
+
 import datetime
 
 import fnmatch
@@ -43,12 +44,7 @@ DEFAULT_JOBS_STORAGE_FILE = '/tmp/yandex-tank/storage.data'
 
 
 class Job(object):
-    def __init__(
-            self,
-            monitoring_plugins,
-            aggregator,
-            tank,
-            generator_plugin=None):
+    def __init__(self, monitoring_plugins, aggregator, tank, generator_plugin=None):
         """
 
         :type aggregator: TankAggregator
@@ -135,17 +131,22 @@ class TankCore(object):
         self.monitoring_data_listeners = []
 
         error_output = 'validation_error.yaml'
-        self.config, self.configinitial = TankConfig(self.raw_configs,
-                                                     with_dynamic_options=True,
-                                                     core_section=self.SECTION,
-                                                     error_output=error_output,
-                                                     skip_base_cfgs=skip_base_cfgs,
-                                                     plugins_implicit_enabling=plugins_implicit_enabling).validate()
+        self.config, self.configinitial = TankConfig(
+            self.raw_configs,
+            with_dynamic_options=True,
+            core_section=self.SECTION,
+            error_output=error_output,
+            skip_base_cfgs=skip_base_cfgs,
+            plugins_implicit_enabling=plugins_implicit_enabling,
+        ).validate()
 
-        self.test_id = self.get_option(self.SECTION, 'artifacts_dir',
-                                       datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f"))
+        self.test_id = self.get_option(
+            self.SECTION, 'artifacts_dir', datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f")
+        )
         self.lock_dir = self.get_option(self.SECTION, 'lock_dir')
-        self.aggregator_max_termination_timeout = self.get_option(self.SECTION, 'aggregator_max_termination_timeout', 60)
+        self.aggregator_max_termination_timeout = self.get_option(
+            self.SECTION, 'aggregator_max_termination_timeout', 60
+        )
         self.skip_generator_check = self.get_option(self.SECTION, 'skip_generator_check', False)
         with open(os.path.join(self.artifacts_dir, CONFIGINITIAL), 'w') as f:
             yaml.dump(self.configinitial, f)
@@ -170,10 +171,7 @@ class TankCore(object):
     @staticmethod
     def get_available_options():
         # todo: should take this from schema
-        return [
-            "artifacts_base_dir", "artifacts_dir",
-            "taskset_path", "affinity"
-        ]
+        return ["artifacts_base_dir", "artifacts_dir", "taskset_path", "affinity"]
 
     @property
     def plugins(self):
@@ -215,13 +213,14 @@ class TankCore(object):
         """
         logger.info("Loading plugins...")
         generators_counter = 0
-        for (plugin_name, plugin_path, plugin_cfg) in self.config.plugins:
+        for plugin_name, plugin_path, plugin_cfg in self.config.plugins:
             logger.debug("Loading plugin %s from %s", plugin_name, plugin_path)
             if plugin_path == "yandextank.plugins.Overload":
                 logger.warning(
                     "Deprecated plugin name: 'yandextank.plugins.Overload'\n"
                     "There is a new generic plugin now.\n"
-                    "Correcting to 'yandextank.plugins.DataUploader overload'")
+                    "Correcting to 'yandextank.plugins.DataUploader overload'"
+                )
                 plugin_path = "yandextank.plugins.DataUploader overload"
             try:
                 logger.info("Trying to import plugin %s from path %s", plugin_name, plugin_path)
@@ -241,9 +240,11 @@ class TankCore(object):
         for plugin_name, factory in self._extra_plugins:
             self.register_plugin(self.PLUGIN_PREFIX + plugin_name, factory(self))
         if not generators_counter and not self.skip_generator_check:
-            raise GeneratorNotFound('Generator plugin is missing in test config. '
-                                    'Enable load generator plugin or use "skip_generator_check" '
-                                    'core option to run without load generator')
+            raise GeneratorNotFound(
+                'Generator plugin is missing in test config. '
+                'Enable load generator plugin or use "skip_generator_check" '
+                'core option to run without load generator'
+            )
         logger.debug("Plugin instances: %s", self._plugins)
 
     @property
@@ -258,15 +259,16 @@ class TankCore(object):
                 logger.warning("Load generator not found")
                 gen = GeneratorPlugin(self, {}, 'generator dummy')
             # aggregator
-            aggregator = TankAggregator(gen, self.data_poller, termination_timeout=self.aggregator_max_termination_timeout)
-            self._job = Job(monitoring_plugins=monitorings,
-                            generator_plugin=gen,
-                            aggregator=aggregator,
-                            tank=socket.getfqdn())
+            aggregator = TankAggregator(
+                gen, self.data_poller, termination_timeout=self.aggregator_max_termination_timeout
+            )
+            self._job = Job(
+                monitoring_plugins=monitorings, generator_plugin=gen, aggregator=aggregator, tank=socket.getfqdn()
+            )
         return self._job
 
     def plugins_configure(self):
-        """        Call configure() on all plugins        """
+        """Call configure() on all plugins"""
         self.publish("core", "stage", "configure")
 
         logger.info("Configuring plugins...")
@@ -285,7 +287,7 @@ class TankCore(object):
         self._extra_plugins.append((name, factory))
 
     def plugins_prepare_test(self):
-        """ Call prepare_test() on all plugins        """
+        """Call prepare_test() on all plugins"""
         logger.info("Preparing test...")
         self.publish("core", "stage", "prepare")
         for plugin in self.plugins.values():
@@ -294,7 +296,7 @@ class TankCore(object):
                 plugin.prepare_test()
 
     def plugins_start_test(self):
-        """        Call start_test() on all plugins        """
+        """Call start_test() on all plugins"""
         if not self.interrupted.is_set():
             logger.info("Starting test...")
             self.publish("core", "stage", "start")
@@ -303,8 +305,9 @@ class TankCore(object):
                 logger.debug("Starting %s", plugin)
                 start_time = time.time()
                 plugin.start_test()
-                logger.info("Plugin {0:s} required {1:f} seconds to start".format(plugin_name,
-                                                                                  time.time() - start_time))
+                logger.info(
+                    "Plugin {0:s} required {1:f} seconds to start".format(plugin_name, time.time() - start_time)
+                )
             self.publish('generator', 'test_start', self.job.generator_plugin.start_time)
 
     def wait_for_finish(self):
@@ -351,7 +354,7 @@ class TankCore(object):
         return 1
 
     def plugins_end_test(self, retcode):
-        """        Call end_test() on all plugins        """
+        """Call end_test() on all plugins"""
         logger.info("Finishing test with received RC: %s", retcode)
         self.publish("core", "stage", "end")
         self.publish('generator', 'test_end', time.time())
@@ -365,8 +368,11 @@ class TankCore(object):
             retcode = plugin.end_test(retcode) or retcode
             logger.info('RC after monitoring plugin finish: %s', retcode)
 
-        for plugin in [p for p in self.plugins.values() if
-                       p is not self.job.generator_plugin and p not in self.job.monitoring_plugins]:
+        for plugin in [
+            p
+            for p in self.plugins.values()
+            if p is not self.job.generator_plugin and p not in self.job.monitoring_plugins
+        ]:
             logger.info("Stopping %s plugin", plugin)
             try:
                 retcode = plugin.end_test(retcode)
@@ -405,8 +411,8 @@ class TankCore(object):
                 logger.exception("Plugin %s failed to process monitoring data", plugin)
 
     def __setup_taskset(self, affinity, pid=None, args=None):
-        """ if pid specified: set process w/ pid `pid` CPU affinity to specified `affinity` core(s)
-            if args specified: modify list of args for Popen to start w/ taskset w/ affinity `affinity`
+        """if pid specified: set process w/ pid `pid` CPU affinity to specified `affinity` core(s)
+        if args specified: modify list of args for Popen to start w/ taskset w/ affinity `affinity`
         """
         self.taskset_path = self.get_option(self.SECTION, 'taskset_path')
 
@@ -453,7 +459,9 @@ class TankCore(object):
             if len(matches) > 1:
                 plugins = [type(p) for p in matches]
                 logger.warning(
-                    "More then one plugin of type %s found. Found plugins: %s. Using first one.", plugin_class, plugins,
+                    "More then one plugin of type %s found. Found plugins: %s. Using first one.",
+                    plugin_class,
+                    plugins,
                 )
             return matches[0]
         else:
@@ -559,8 +567,7 @@ class TankCore(object):
     def get_user_agent():
         tank_agent = 'YandexTank/{}'.format(VERSION)
         py_info = sys.version_info
-        python_agent = 'Python/{}.{}.{}'.format(
-            py_info[0], py_info[1], py_info[2])
+        python_agent = 'Python/{}.{}.{}'.format(py_info[0], py_info[1], py_info[2])
         os_agent = 'OS/{}'.format(platform.platform())
         return ' '.join((tank_agent, python_agent, os_agent))
 
@@ -626,11 +633,7 @@ class Lock(object):
         self.test_id = test_id
         self.test_dir = test_dir
         self.pid = pid if pid is not None else os.getpid()
-        self.info = {
-            self.PID: self.pid,
-            self.TEST_ID: self.test_id,
-            self.TEST_DIR: self.test_dir
-        }
+        self.info = {self.PID: self.pid, self.TEST_ID: self.test_id, self.TEST_DIR: self.test_dir}
         self.lock_file = None
 
     def acquire(self, lock_dir, ignore=False):

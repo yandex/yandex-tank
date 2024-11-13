@@ -5,6 +5,7 @@ import os
 import logging
 import json
 import threading
+
 try:
     import queue
 except ImportError:
@@ -75,7 +76,8 @@ class LocalStorageClient(AbstractClient):
 
 
 class ProcessingThread(threading.Thread):
-    """ Process data """
+    """Process data"""
+
     def __init__(self, client):
         super(ProcessingThread, self).__init__()
         self._finished = threading.Event()
@@ -85,10 +87,7 @@ class ProcessingThread(threading.Thread):
 
     def __create_artifact(self, metric_full_name):
         self.file_streams[metric_full_name] = io.open(
-            os.path.join(
-                self.client.data_session.artifacts_dir, "{}.data".format(metric_full_name)
-            ),
-            mode='w'
+            os.path.join(self.client.data_session.artifacts_dir, "{}.data".format(metric_full_name)), mode='w'
         )
 
     def run(self):
@@ -96,7 +95,7 @@ class ProcessingThread(threading.Thread):
             self.__process_pending_queue()
         logger.info(
             'File writer thread interrupted, finishing work and trying to write the rest of data, qsize: %s',
-            self.client.pending_queue.qsize()
+            self.client.pending_queue.qsize(),
         )
         self.__process_pending_queue()
         self.__close_files_and_dump_meta()
@@ -122,7 +121,7 @@ class ProcessingThread(threading.Thread):
                         'type': data_type.__name__,
                         'names': data_type.columns,
                         'dtypes': df.dtypes.apply(lambda x: x.name).to_dict(),
-                        'meta': metric.meta
+                        'meta': metric.meta,
                     }
                     self.client.registered_meta[metric_full_name] = this_metric_meta
                     artifact_file_header = json.dumps(this_metric_meta)
@@ -135,9 +134,7 @@ class ProcessingThread(threading.Thread):
                     columns=data_type.columns,
                 )
                 try:
-                    self.file_streams[metric_full_name].write(
-                        str(csv_data)
-                    )
+                    self.file_streams[metric_full_name].write(str(csv_data))
                     self.file_streams[metric_full_name].flush()
                 except ValueError:
                     logger.warning('Failed to write metrics to file, maybe file is already closed?', exc_info=True)
@@ -149,10 +146,7 @@ class ProcessingThread(threading.Thread):
         [self.file_streams[file_].close() for file_ in self.file_streams]
         with open(os.path.join(self.client.data_session.artifacts_dir, self.client.metrics_meta_fname), 'w') as meta_f:
             json.dump(
-                {"metrics": self.client.registered_meta, "job_meta": self.client.meta},
-                meta_f,
-                indent=4,
-                sort_keys=True
+                {"metrics": self.client.registered_meta, "job_meta": self.client.meta}, meta_f, indent=4, sort_keys=True
             )
 
     def stop(self):

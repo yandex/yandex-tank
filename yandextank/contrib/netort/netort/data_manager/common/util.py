@@ -15,7 +15,7 @@ def pretty_print(req):
         query=req.method + ' ' + req.url,
         http_headers='\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
         body=req.body,
-        footer='-----------QUERY END-----------'
+        footer='-----------QUERY END-----------',
     )
 
 
@@ -35,6 +35,7 @@ def log_time_decorator(func):
     :param func:
     :return:
     """
+
     def timed(*args, **kwargs):
         start = time.time()
         res = func(*args, **kwargs)

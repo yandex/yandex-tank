@@ -17,6 +17,7 @@ from yandextank.stepper.module_exceptions import DiskLimitError
 
 try:
     from yatest import common
+
     PATH = common.source_path('load/projects/yandex-tank/yandextank/core/tests')
     TMPDIR = os.path.join(os.getcwd(), 'artifacts_dir')
 except ImportError:
@@ -39,16 +40,12 @@ def load_yaml(directory, filename):
 
 CFG1 = {
     "version": "1.8.36",
-    "core": {
-        'operator': 'fomars',
-        'artifacts_base_dir': TMPDIR,
-        'artifacts_dir': TMPDIR
-    },
+    "core": {'operator': 'fomars', 'artifacts_base_dir': TMPDIR, 'artifacts_dir': TMPDIR},
     'telegraf': {
         'package': 'yandextank.plugins.Telegraf',
         'enabled': True,
         'config': 'test_monitoring.xml',
-        'disguise_hostnames': True
+        'disguise_hostnames': True,
     },
     'phantom': {
         'package': 'yandextank.plugins.Phantom',
@@ -58,7 +55,7 @@ CFG1 = {
         'uris': ['/'],
         'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
         'phantom_path': './phantom_mock.sh',
-        'connection_test': False
+        'connection_test': False,
     },
     'lunapark': {
         'package': 'yandextank.plugins.DataUploader',
@@ -66,16 +63,12 @@ CFG1 = {
         'api_address': 'https://lunapark.test.yandex-team.ru/',
         'task': 'LOAD-204',
         'ignore_target_lock': True,
-    }
+    },
 }
 
 CFG2 = {
     "version": "1.8.36",
-    "core": {
-        'operator': 'fomars',
-        'artifacts_base_dir': TMPDIR,
-        'artifacts_dir': TMPDIR
-    },
+    "core": {'operator': 'fomars', 'artifacts_base_dir': TMPDIR, 'artifacts_dir': TMPDIR},
     'telegraf': {
         'enabled': False,
     },
@@ -86,7 +79,7 @@ CFG2 = {
         'header_http': '1.1',
         'uris': ['/'],
         'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
-        'connection_test': False
+        'connection_test': False,
     },
     'lunapark': {
         'package': 'yandextank.plugins.DataUploader',
@@ -95,18 +88,12 @@ CFG2 = {
         'task': 'LOAD-204',
         'ignore_target_lock': True,
     },
-    'shellexec': {
-        'enabled': False
-    }
+    'shellexec': {'enabled': False},
 }
 
 CFG_LARGE_STEPPER = {
     "version": "1.8.36",
-    "core": {
-        'operator': 'fomars',
-        'artifacts_base_dir': TMPDIR,
-        'artifacts_dir': TMPDIR
-    },
+    "core": {'operator': 'fomars', 'artifacts_base_dir': TMPDIR, 'artifacts_dir': TMPDIR},
     'phantom': {
         'package': 'yandextank.plugins.Phantom',
         'enabled': True,
@@ -115,17 +102,13 @@ CFG_LARGE_STEPPER = {
         'uris': ['/'],
         'load_profile': {'load_type': 'rps', 'schedule': 'const(9,999999999h)'},
         'phantom_path': './phantom_mock.sh',
-        'connection_test': False
-    }
+        'connection_test': False,
+    },
 }
 
 CFG_SMALL_STEPPER = {
     "version": "1.8.36",
-    "core": {
-        'operator': 'fomars',
-        'artifacts_base_dir': TMPDIR,
-        'artifacts_dir': TMPDIR
-    },
+    "core": {'operator': 'fomars', 'artifacts_base_dir': TMPDIR, 'artifacts_dir': TMPDIR},
     'phantom': {
         'package': 'yandextank.plugins.Phantom',
         'enabled': True,
@@ -134,28 +117,21 @@ CFG_SMALL_STEPPER = {
         'uris': ['/'],
         'load_profile': {'load_type': 'rps', 'schedule': 'const(1,1m)'},
         'phantom_path': './phantom_mock.sh',
-        'connection_test': False
-    }
+        'connection_test': False,
+    },
 }
 
 CFG_WITHOUT_GEN = {
     "version": "1.8.36",
-    "core": {
-        'operator': 'fomars',
-        'artifacts_base_dir': TMPDIR,
-        'artifacts_dir': TMPDIR
-    },
-    'phantom': {
-        'package': 'yandextank.plugins.Phantom',
-        'enabled': False
-    },
+    "core": {'operator': 'fomars', 'artifacts_base_dir': TMPDIR, 'artifacts_dir': TMPDIR},
+    'phantom': {'package': 'yandextank.plugins.Phantom', 'enabled': False},
     'lunapark': {
         'package': 'yandextank.plugins.DataUploader',
         'enabled': True,
         'api_address': 'https://lunapark.test.yandex-team.ru/',
         'task': 'LOAD-204',
         'ignore_target_lock': True,
-    }
+    },
 }
 
 CFG_MULTI = load_yaml(PATH, 'test_multi_cfg.yaml')
@@ -166,21 +142,41 @@ def setup_module(module):
     os.chdir(PATH)
 
 
-@pytest.mark.parametrize('config, expected', [
-    (CFG1,
-     {'plugin_telegraf', 'plugin_phantom', 'plugin_lunapark',
-      'plugin_rcheck', 'plugin_shellexec', 'plugin_autostop',
-      'plugin_console', 'plugin_rcassert', 'plugin_json_report',
-      }),
-    (CFG2,
-     {'plugin_phantom', 'plugin_lunapark', 'plugin_rcheck',
-      'plugin_autostop', 'plugin_console',
-      'plugin_rcassert', 'plugin_json_report',
-      })
-])
+@pytest.mark.parametrize(
+    'config, expected',
+    [
+        (
+            CFG1,
+            {
+                'plugin_telegraf',
+                'plugin_phantom',
+                'plugin_lunapark',
+                'plugin_rcheck',
+                'plugin_shellexec',
+                'plugin_autostop',
+                'plugin_console',
+                'plugin_rcassert',
+                'plugin_json_report',
+            },
+        ),
+        (
+            CFG2,
+            {
+                'plugin_phantom',
+                'plugin_lunapark',
+                'plugin_rcheck',
+                'plugin_autostop',
+                'plugin_console',
+                'plugin_rcassert',
+                'plugin_json_report',
+            },
+        ),
+    ],
+)
 def test_core_load_plugins(config, expected):
-    core = TankCore([load_yaml(os.path.join(PATH, '../config'), '00-base.yaml'), config],
-                    threading.Event(), TankInfo({}))
+    core = TankCore(
+        [load_yaml(os.path.join(PATH, '../config'), '00-base.yaml'), config], threading.Event(), TankInfo({})
+    )
     try:
         core.load_plugins()
         assert set(core.plugins.keys()) == expected
@@ -211,10 +207,7 @@ def test_large_stepper_file():
 
 
 @pytest.mark.skip('disabled for travis')
-@pytest.mark.parametrize('config, expected', [
-    (CFG1, None),
-    (CFG_MULTI, None)
-])
+@pytest.mark.parametrize('config, expected', [(CFG1, None), (CFG_MULTI, None)])
 def test_plugins_prepare_test(config, expected):
     core = TankCore([config], threading.Event())
     core.plugins_prepare_test()
@@ -226,9 +219,12 @@ def test_stpd_file():
 
 
 @pytest.mark.skip('disabled for travis')
-@pytest.mark.parametrize('config', [
-    CFG_MULTI,
-])
+@pytest.mark.parametrize(
+    'config',
+    [
+        CFG_MULTI,
+    ],
+)
 def test_start_test(config):
     core = TankCore(configs=[config])
     core.plugins_prepare_test()
@@ -236,28 +232,49 @@ def test_start_test(config):
     core.plugins_end_test(1)
 
 
-@pytest.mark.parametrize('options, expected', [
-    (
-        ['meta.task=LOAD-204',
-         'phantom.ammofile = air-tickets-search-ammo.log',
-         'meta.component = air_tickets_search [imbalance]',
-         'meta.jenkinsjob = https://jenkins-load.yandex-team.ru/job/air_tickets_search/'],
-        [{'uploader': {'package': 'yandextank.plugins.DataUploader', 'task': 'LOAD-204'}},
-         {'phantom': {'package': 'yandextank.plugins.Phantom', 'ammofile': 'air-tickets-search-ammo.log'}},
-         {'uploader': {'package': 'yandextank.plugins.DataUploader', 'component': 'air_tickets_search [imbalance]'}},
-         {'uploader': {'package': 'yandextank.plugins.DataUploader',
-                       'meta': {'jenkinsjob': 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/'}}}]
-    ),
-    #     with converting/type-casting
-    (
-        ['phantom.rps_schedule = line(10,100,10m)',
-         'phantom.instances=200',
-         'phantom.connection_test=0'],
-        [{'phantom': {'package': 'yandextank.plugins.Phantom', 'load_profile': {'load_type': 'rps', 'schedule': 'line(10,100,10m)'}}},
-         {'phantom': {'package': 'yandextank.plugins.Phantom', 'instances': 200}},
-         {'phantom': {'package': 'yandextank.plugins.Phantom', 'connection_test': 0}}]
-    )
-])
+@pytest.mark.parametrize(
+    'options, expected',
+    [
+        (
+            [
+                'meta.task=LOAD-204',
+                'phantom.ammofile = air-tickets-search-ammo.log',
+                'meta.component = air_tickets_search [imbalance]',
+                'meta.jenkinsjob = https://jenkins-load.yandex-team.ru/job/air_tickets_search/',
+            ],
+            [
+                {'uploader': {'package': 'yandextank.plugins.DataUploader', 'task': 'LOAD-204'}},
+                {'phantom': {'package': 'yandextank.plugins.Phantom', 'ammofile': 'air-tickets-search-ammo.log'}},
+                {
+                    'uploader': {
+                        'package': 'yandextank.plugins.DataUploader',
+                        'component': 'air_tickets_search [imbalance]',
+                    }
+                },
+                {
+                    'uploader': {
+                        'package': 'yandextank.plugins.DataUploader',
+                        'meta': {'jenkinsjob': 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/'},
+                    }
+                },
+            ],
+        ),
+        #     with converting/type-casting
+        (
+            ['phantom.rps_schedule = line(10,100,10m)', 'phantom.instances=200', 'phantom.connection_test=0'],
+            [
+                {
+                    'phantom': {
+                        'package': 'yandextank.plugins.Phantom',
+                        'load_profile': {'load_type': 'rps', 'schedule': 'line(10,100,10m)'},
+                    }
+                },
+                {'phantom': {'package': 'yandextank.plugins.Phantom', 'instances': 200}},
+                {'phantom': {'package': 'yandextank.plugins.Phantom', 'connection_test': 0}},
+            ],
+        ),
+    ],
+)
 def test_parse_options(options, expected):
     assert parse_options(options) == expected
 

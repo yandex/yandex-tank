@@ -1,4 +1,5 @@
 """ Contains Phantom Plugin, Console widgets, result reader classes """
+
 # FIXME: 3 there is no graceful way to interrupt the process of phout import
 # TODO: phout import
 import logging
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin(GeneratorPlugin):
-    """     Plugin for running phantom tool    """
+    """Plugin for running phantom tool"""
 
     OPTION_CONFIG = "config"
     SECTION = "phantom"
@@ -46,9 +47,7 @@ class Plugin(GeneratorPlugin):
         return __file__
 
     def get_available_options(self):
-        opts = [
-            "phantom_path", "buffered_seconds", "exclude_markers", "affinity"
-        ]
+        opts = ["phantom_path", "buffered_seconds", "exclude_markers", "affinity"]
         opts += [PhantomConfig.OPTION_PHOUT, self.OPTION_CONFIG]
         opts += PhantomConfig.get_available_options()
         return opts
@@ -58,8 +57,7 @@ class Plugin(GeneratorPlugin):
         self.config = self.get_option(self.OPTION_CONFIG, '')
         self.affinity = self.get_option('affinity', '')
         self.enum_ammo = self.get_option("enum_ammo", False)
-        self.buffered_seconds = int(
-            self.get_option("buffered_seconds", self.buffered_seconds))
+        self.buffered_seconds = int(self.get_option("buffered_seconds", self.buffered_seconds))
 
         self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
         if not self.get_option(self.OPTION_CONFIG, '') and self.predefined_phout:
@@ -97,24 +95,22 @@ class Plugin(GeneratorPlugin):
             retcode, stdout, stderr = execute(
                 [self.get_option("phantom_path"), 'check', self.phantom.config_file],
                 catch_out=True,
-                env=dict(OPENSSL_CONF="/dev/null")
+                env=dict(OPENSSL_CONF="/dev/null"),
             )
         except OSError:
             logger.debug("Phantom I/O engine is not installed!", exc_info=True)
-            raise OSError("Phantom I/O engine not found. \nMore information: {doc_url}".format(
-                doc_url='http://yandextank.readthedocs.io/en/latest/install.html')
+            raise OSError(
+                "Phantom I/O engine not found. \nMore information: {doc_url}".format(
+                    doc_url='http://yandextank.readthedocs.io/en/latest/install.html'
+                )
             )
         else:
             if retcode or stderr:
                 raise RuntimeError("Config check failed. Subprocess returned code %s. Stderr: %s" % (retcode, stderr))
 
-        logger.debug(
-            "Linking sample reader to aggregator."
-            " Reading samples from %s", self.phantom.phout_file)
+        logger.debug("Linking sample reader to aggregator." " Reading samples from %s", self.phantom.phout_file)
 
-        logger.debug(
-            "Linking stats reader to aggregator."
-            " Reading stats from %s", self.phantom.stat_log)
+        logger.debug("Linking stats reader to aggregator." " Reading stats from %s", self.phantom.stat_log)
 
         self.core.job.aggregator.add_result_listener(self)
 
@@ -149,7 +145,8 @@ class Plugin(GeneratorPlugin):
             stderr=self.process_stderr,
             stdout=self.process_stderr,
             close_fds=True,
-            env=dict(OPENSSL_CONF="/dev/null"))
+            env=dict(OPENSSL_CONF="/dev/null"),
+        )
 
     def is_test_finished(self):
         retcode = self.process.poll()
@@ -187,8 +184,8 @@ class Plugin(GeneratorPlugin):
             info = self.get_info()
             if info and info.ammo_count != self.processed_ammo_count:
                 logger.warning(
-                    "Planned ammo count %s differs from processed %s",
-                    info.ammo_count, self.processed_ammo_count)
+                    "Planned ammo count %s differs from processed %s", info.ammo_count, self.processed_ammo_count
+                )
         return retcode
 
     def on_aggregated_data(self, data, stat):
@@ -196,7 +193,7 @@ class Plugin(GeneratorPlugin):
         logger.debug("Processed ammo count: %s/", self.processed_ammo_count)
 
     def get_info(self):
-        """ returns info object """
+        """returns info object"""
         if not self.cached_info:
             if not self.phantom:
                 return None

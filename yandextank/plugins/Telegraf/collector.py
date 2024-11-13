@@ -1,4 +1,5 @@
 """Monitoring collector """
+
 import hashlib
 import logging
 import sys
@@ -53,7 +54,8 @@ class MonitoringCollector(object):
         agent_configs = []
         if self.config:
             agent_configs = self.config_manager.getconfig(
-                self.config, self.default_target, defaults={'ssh_key_path': self.ssh_key_path})
+                self.config, self.default_target, defaults={'ssh_key_path': self.ssh_key_path}
+            )
 
         # Creating agent for hosts
         for config in agent_configs:
@@ -73,7 +75,7 @@ class MonitoringCollector(object):
                 self.artifact_files.append(customs_script)
 
     def start(self):
-        """ Start agents
+        """Start agents
 
         execute popen of agent.py on target and start output reader thread.
         """
@@ -81,8 +83,7 @@ class MonitoringCollector(object):
         [agent.reader_thread.start() for agent in self.agents]
 
     def poll(self):
-        """ Poll agents for data
-        """
+        """Poll agents for data"""
         start_time = time.time()
         for agent in self.agents:
             for collect in agent.reader:
@@ -94,22 +95,19 @@ class MonitoringCollector(object):
                     if not self.first_data_received and prepared_results:
                         self.first_data_received = True
                         logger.info("Monitoring received first data.")
-                    if self.load_start_time and int(
-                            ts) >= self.load_start_time:
+                    if self.load_start_time and int(ts) >= self.load_start_time:
                         ready_to_send = {
                             "timestamp": int(ts),
                             "data": {
                                 self.hash_hostname(agent.host): {
                                     "comment": agent.config.comment,
-                                    "metrics": prepared_results
+                                    "metrics": prepared_results,
                                 }
-                            }
+                            },
                         }
                         self.__collected_data.append(ready_to_send)
 
-        logger.debug(
-            'Polling/decoding agents data took: %.2fms',
-            (time.time() - start_time) * 1000)
+        logger.debug('Polling/decoding agents data took: %.2fms', (time.time() - start_time) * 1000)
 
         data = self.__collected_data
         self.__collected_data = []

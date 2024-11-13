@@ -15,7 +15,7 @@ from ..Telegraf.reader import MonitoringReader
 logger = logging.getLogger(__name__)
 
 
-def generate_file_md5(filename, blocksize=2 ** 20):
+def generate_file_md5(filename, blocksize=2**20):
     m = hashlib.md5()
     with open(filename, "rb") as f:
         while True:
@@ -27,7 +27,8 @@ def generate_file_md5(filename, blocksize=2 ** 20):
 
 
 class LocalhostClient(object):
-    """ localhost client setup """
+    """localhost client setup"""
+
     AGENT_FILENAME = 'agent.py'
 
     def __init__(self, config, old_style_configs, kill_old):
@@ -57,26 +58,17 @@ class LocalhostClient(object):
         startup_config = self.config.create_startup_config()
         customs_script = self.config.create_custom_exec_script()
         try:
-            copyfile(
-                self.path['AGENT_LOCAL_PATH'],
-                os.path.join(
-                    self.workdir,
-                    self.AGENT_FILENAME))
+            copyfile(self.path['AGENT_LOCAL_PATH'], os.path.join(self.workdir, self.AGENT_FILENAME))
             copyfile(agent_config, os.path.join(self.workdir, 'agent.cfg'))
-            copyfile(startup_config, os.path.join(
-                self.workdir,
-                'agent_startup.cfg'))
-            copyfile(
-                customs_script,
-                os.path.join(
-                    self.workdir,
-                    'agent_customs.sh'))
+            copyfile(startup_config, os.path.join(self.workdir, 'agent_startup.cfg'))
+            copyfile(customs_script, os.path.join(self.workdir, 'agent_customs.sh'))
             if not os.path.isfile(self.path['TELEGRAF_LOCAL_PATH']):
                 logger.error(
                     'Telegraf binary not found at specified path: %s\n'
                     'You can find telegraf binaries here: https://github.com/influxdata/telegraf\n'
                     'or install debian package: `telegraf`',
-                    self.path['TELEGRAF_LOCAL_PATH'])
+                    self.path['TELEGRAF_LOCAL_PATH'],
+                )
                 return None, None, None
         except Exception:
             logger.error("Failed to copy agent to %s on localhost", self.workdir)
@@ -94,18 +86,18 @@ class LocalhostClient(object):
             shell=False,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            stdin=subprocess.PIPE, )
+            stdin=subprocess.PIPE,
+        )
 
     def start(self):
         """Start local agent"""
         args = self.python.split() + [
-            os.path.join(
-                self.workdir,
-                self.AGENT_FILENAME),
+            os.path.join(self.workdir, self.AGENT_FILENAME),
             '--telegraf',
             self.path['TELEGRAF_LOCAL_PATH'],
             '--host',
-            self.host]
+            self.host,
+        ]
         if self.kill_old:
             args.append(self.kill_old)
         logger.info('Starting agent on localhost: {}'.format(args))
@@ -130,7 +122,8 @@ class LocalhostClient(object):
                 logger.debug(
                     'this exc most likely raised during interpreter shutdown\n'
                     'otherwise something really nasty happend',
-                    exc_info=True)
+                    exc_info=True,
+                )
 
     def _stop_agent(self):
         if self.session:
@@ -160,7 +153,8 @@ class LocalhostClient(object):
 
 
 class SSHClient(object):
-    """remote agent client setup """
+    """remote agent client setup"""
+
     AGENT_FILENAME = 'agent.py'
 
     def __init__(self, config, old_style_configs, timeout, kill_old):
@@ -219,8 +213,9 @@ class SSHClient(object):
 
         if err_code:
             logger.error(
-                "Failed to create remote dir via SSH at %s@%s, code %s: %s" %
-                (self.username, self.host, err_code, out.strip()))
+                "Failed to create remote dir via SSH at %s@%s, code %s: %s"
+                % (self.username, self.host, err_code, out.strip())
+            )
             logger.error("[%s] error: '%s'", self.host, errors)
             logger.error("Cancelling agent installation on %s", self.host)
             return None, None, None
@@ -260,21 +255,18 @@ class SSHClient(object):
                     logger.error(
                         'Telegraf binary not found neither on %s nor on localhost at specified path: %s\n'
                         'You can find telegraf binaries here: https://github.com/influxdata/telegraf\n'
-                        'or install debian package: `telegraf`', self.host, self.path['TELEGRAF_LOCAL_PATH'])
+                        'or install debian package: `telegraf`',
+                        self.host,
+                        self.path['TELEGRAF_LOCAL_PATH'],
+                    )
                     return None, None, None
 
             self.ssh.send_file(
-                self.path['AGENT_LOCAL_PATH'],
-                os.path.join(self.path['AGENT_REMOTE_FOLDER'], self.AGENT_FILENAME))
-            self.ssh.send_file(
-                agent_config,
-                os.path.join(self.path['AGENT_REMOTE_FOLDER'], 'agent.cfg'))
-            self.ssh.send_file(
-                startup_config,
-                os.path.join(self.path['AGENT_REMOTE_FOLDER'], 'agent_startup.cfg'))
-            self.ssh.send_file(
-                customs_script,
-                os.path.join(self.path['AGENT_REMOTE_FOLDER'], 'agent_customs.sh'))
+                self.path['AGENT_LOCAL_PATH'], os.path.join(self.path['AGENT_REMOTE_FOLDER'], self.AGENT_FILENAME)
+            )
+            self.ssh.send_file(agent_config, os.path.join(self.path['AGENT_REMOTE_FOLDER'], 'agent.cfg'))
+            self.ssh.send_file(startup_config, os.path.join(self.path['AGENT_REMOTE_FOLDER'], 'agent_startup.cfg'))
+            self.ssh.send_file(customs_script, os.path.join(self.path['AGENT_REMOTE_FOLDER'], 'agent_customs.sh'))
 
         except Exception:
             logger.exception("Failed to install agent on %s", self.host)
@@ -287,12 +279,11 @@ class SSHClient(object):
         logger.info('Starting agent: %s', self.host)
         command = "{python} {agent_path} --telegraf {telegraf_path} --host {host} {kill_old}".format(
             python=self.python,
-            agent_path=os.path.join(
-                self.path['AGENT_REMOTE_FOLDER'],
-                self.AGENT_FILENAME),
+            agent_path=os.path.join(self.path['AGENT_REMOTE_FOLDER'], self.AGENT_FILENAME),
             telegraf_path=self.path['TELEGRAF_REMOTE_PATH'],
             host=self.host,
-            kill_old=self.kill_old)
+            kill_old=self.kill_old,
+        )
         logger.debug('Command to start agent: %s', command)
         self.session = self.ssh.async_session(command)
         self.reader_thread = threading.Thread(target=self.read_buffer)
@@ -325,9 +316,8 @@ class SSHClient(object):
                 self.stop_sent = time.time()
         except BaseException:
             logger.warning(
-                'Unable to correctly stop monitoring agent - session is broken on %s.',
-                self.host,
-                exc_info=True)
+                'Unable to correctly stop monitoring agent - session is broken on %s.', self.host, exc_info=True
+            )
 
     def uninstall(self):
         """
@@ -345,18 +335,11 @@ class SSHClient(object):
             logger.warning(
                 'Unable to correctly stop monitoring agent - session is broken. Pay attention to agent log (%s).',
                 log_filename,
-                exc_info=True)
+                exc_info=True,
+            )
         try:
-            self.ssh.get_file(
-                os.path.join(
-                    self.path['AGENT_REMOTE_FOLDER'],
-                    "_agent.log"),
-                log_filename)
-            self.ssh.get_file(
-                os.path.join(
-                    self.path['AGENT_REMOTE_FOLDER'],
-                    "monitoring.rawdata"),
-                data_filename)
+            self.ssh.get_file(os.path.join(self.path['AGENT_REMOTE_FOLDER'], "_agent.log"), log_filename)
+            self.ssh.get_file(os.path.join(self.path['AGENT_REMOTE_FOLDER'], "monitoring.rawdata"), data_filename)
             self.ssh.rm_r(self.path['AGENT_REMOTE_FOLDER'])
         except Exception:
             logger.error("Unable to get agent artefacts", exc_info=True)
@@ -372,31 +355,26 @@ class SSHClient(object):
                 logger.info('Session was broken on %s, switch to kill', self.host)
                 break
             if (self.stop_sent + agent_stop_timeout) < time.time():
-                logger.info("Agent hasn't finished in %s sec, force quit on %s",
-                            agent_stop_timeout,
-                            self.host)
+                logger.info("Agent hasn't finished in %s sec, force quit on %s", agent_stop_timeout, self.host)
                 break
             if self.session.is_finished():
-                logger.debug('Session ended with status %s with %s',
-                             self.session.exit_status(),
-                             self.host)
+                logger.debug('Session ended with status %s with %s', self.session.exit_status(), self.host)
                 self.successfull_stop = True
                 done = True
 
     def _kill_agent(self):
         if self.agent_remote_folder:
-            tpl = ('main_p=$(pgrep -f "[p]ython.*{folder}");'
-                   'tlgrf_p=$(pgrep -f "[t]elegraf.*{folder}");'
-                   'descendent_pids(){{ if [ "x$1" != "x" ]; then '
-                   'pids=$(pgrep -P $1); echo $pids;'
-                   'for p in $pids; do descendent_pids $p; done; fi }};'
-                   'all_p=$(descendent_pids ${{main_p}});'
-                   'if [ "x${{main_p}}${{tlgrf_p}}${{all_p}}" != "x" ] ; then '
-                   ' kill -9 ${{main_p}} ${{tlgrf_p}} ${{all_p}}; fi')
+            tpl = (
+                'main_p=$(pgrep -f "[p]ython.*{folder}");'
+                'tlgrf_p=$(pgrep -f "[t]elegraf.*{folder}");'
+                'descendent_pids(){{ if [ "x$1" != "x" ]; then '
+                'pids=$(pgrep -P $1); echo $pids;'
+                'for p in $pids; do descendent_pids $p; done; fi }};'
+                'all_p=$(descendent_pids ${{main_p}});'
+                'if [ "x${{main_p}}${{tlgrf_p}}${{all_p}}" != "x" ] ; then '
+                ' kill -9 ${{main_p}} ${{tlgrf_p}} ${{all_p}}; fi'
+            )
             cmd = tpl.format(folder=self.agent_remote_folder)
             out, errors, err_code = self.ssh.execute(cmd)
             if errors:
-                logger.error(
-                    "[%s] error while killing agent: '%s'",
-                    self.host,
-                    errors)
+                logger.error("[%s] error while killing agent: '%s'", self.host, errors)

@@ -2,6 +2,7 @@ class PluginImplementationError(RuntimeError):
     """
     Error in plugin implementation
     """
+
     pass
 
 
@@ -18,4 +19,5 @@ class GeneratorNotFound(Exception):
     """
     Can't find generator in config
     """
+
     pass

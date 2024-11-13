@@ -9,8 +9,13 @@ import pandas as pd
 from threading import Event
 from typing import Optional
 
-from ...common.interfaces import AbstractPlugin, GeneratorPlugin, AggregateResultListener, AbstractInfoWidget, \
-    StatsReader
+from ...common.interfaces import (
+    AbstractPlugin,
+    GeneratorPlugin,
+    AggregateResultListener,
+    AbstractInfoWidget,
+    StatsReader,
+)
 from ...common.util import FileMultiReader, FileScanner, tail_lines
 from ..Console import Plugin as ConsolePlugin
 from ..Phantom import PhantomReader
@@ -19,8 +24,7 @@ from yandextank.aggregator.aggregator import DataPoller
 
 
 _INFO = collections.namedtuple(
-    "Info",
-    "address, port, instances, ammo_count, loop_count, duration, steps, stat_log, rps_schedule, ammo_file"
+    "Info", "address, port, instances, ammo_count, loop_count, duration, steps, stat_log, rps_schedule, ammo_file"
 )
 _LOGGER = logging.getLogger(__name__)
 
@@ -108,11 +112,7 @@ class Plugin(GeneratorPlugin):
     def start_test(self):
         _LOGGER.info("Starting shooting process: '%s'", self.__cmd)
         self.__process = subprocess.Popen(
-            self.__cmd,
-            shell=True,
-            stderr=self.__stderr_file,
-            stdout=self.__stderr_file,
-            close_fds=True
+            self.__cmd, shell=True, stderr=self.__stderr_file, stdout=self.__stderr_file, close_fds=True
         )
 
         _LOGGER.info("Shooting proces is ready to use")
@@ -168,19 +168,8 @@ class Plugin(GeneratorPlugin):
         _LOGGER.debug("Processed ammo count: %s", self.__processed_ammo_count)
 
     def get_info(self):
-        """ returns info object """
-        return _INFO(
-            "",
-            "",
-            "0",
-            "0",
-            "0",
-            time.time() - self.start_time,
-            None,
-            "",
-            "",
-            ""
-        )
+        """returns info object"""
+        return _INFO("", "", "0", "0", "0", time.time() - self.start_time, None, "", "", "")
 
     def __terminate(self):
         """Gracefull termination of running process"""
@@ -259,8 +248,7 @@ class _ShootExecReader(object):
         self._inner_reader = phout_reader
         self.closed = False
         self.stat_queue = queue.Queue()
-        self.stats_reader = _ShootExecStatAggregator(
-            TimeChopper([poller.poll(self._read_stat_queue())]))
+        self.stats_reader = _ShootExecStatAggregator(TimeChopper([poller.poll(self._read_stat_queue())]))
 
     @property
     def buffer(self):
@@ -303,13 +291,7 @@ class _ShootExecStatAggregator(object):
 
     def __iter__(self):
         for ts, _, rps in self.source:
-            yield [{
-                'ts': ts,
-                'metrics': {
-                    'instances': 0,
-                    'reqps': rps
-                }
-            }]
+            yield [{'ts': ts, 'metrics': {'instances': 0, 'reqps': rps}}]
 
     def close(self):
         pass

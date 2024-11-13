@@ -18,6 +18,7 @@ import six
 import pandas as pd
 import datetime
 import os
+
 if six.PY2:
     import Queue as queue
 else:
@@ -29,11 +30,7 @@ requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)
 
 
-RETRY_ARGS = dict(
-    stop_max_delay=30000,
-    wait_fixed=3000,
-    stop_max_attempt_number=10
-)
+RETRY_ARGS = dict(stop_max_delay=30000, wait_fixed=3000, stop_max_attempt_number=10)
 
 SLEEP_ON_EMPTY = 0.2  # pause in seconds before checking empty queue on new items
 MAX_DF_LENGTH = 10000  # Size of chunk is 10k rows, it's approximately 0.5Mb in csv
@@ -53,6 +50,7 @@ def if_not_failed(func):
             return
         else:
             return func(self, *a, **kw)
+
     return wrapped
 
 
@@ -103,7 +101,7 @@ class LunaClient(AbstractClient):
             else:
                 return _job_number
 
-    def put(self, data_type, df):   # noqa: PLE0202
+    def put(self, data_type, df):  # noqa: PLE0202
         if not self.failed.is_set():
             self.pending_queue.put((data_type, df))
         else:
@@ -111,7 +109,7 @@ class LunaClient(AbstractClient):
 
     @if_not_failed
     def create_job(self):
-        """ Create public Luna job
+        """Create public Luna job
 
         Returns:
             job_id (str): Luna job id
@@ -124,25 +122,21 @@ class LunaClient(AbstractClient):
         finally:
             headers = {
                 "User-Agent": "Uploader/{uploader_ua}, {upward_ua}".format(
-                    upward_ua=self.meta.get('user_agent', ''),
-                    uploader_ua=my_user_agent
+                    upward_ua=self.meta.get('user_agent', ''), uploader_ua=my_user_agent
                 )
             }
         request_data = dict(
             self.data_session.tankapi_info,
             test_start=int(self.data_session.test_start),
-            configs=self._get_encoded_configs_content()
+            configs=self._get_encoded_configs_content(),
         )
         if request_data['host'] is None or request_data['port'] is None:
             logger.warning('Tankapi host and/or port are unspecified. Artifacts & configs would be unavailable in Luna')
         req = requests.Request(
             'POST',
-            "{api_address}{path}".format(
-                api_address=self.api_address,
-                path=self.create_job_path
-            ),
+            "{api_address}{path}".format(api_address=self.api_address, path=self.create_job_path),
             headers=headers,
-            data=request_data
+            data=request_data,
         )
         prepared_req = req.prepare()
         logger.debug('Prepared create_job request:\n%s', pretty_print(prepared_req))
@@ -176,11 +170,9 @@ class LunaClient(AbstractClient):
         req = requests.Request(
             'POST',
             "{api_address}{path}?job={job}".format(
-                api_address=self.api_address,
-                path=self.update_job_path,
-                job=self.job_number
+                api_address=self.api_address, path=self.update_job_path, job=self.job_number
             ),
-            json=meta
+            json=meta,
         )
         prepared_req = req.prepare()
         logger.debug('Prepared update_job request:\n%s', pretty_print(prepared_req))
@@ -197,9 +189,7 @@ class LunaClient(AbstractClient):
             req = requests.Request(
                 'POST',
                 "{api_address}{path}?tag={tag}".format(
-                    api_address=self.api_address,
-                    path=self.update_metric_path,
-                    tag=metric_obj.tag
+                    api_address=self.api_address, path=self.update_metric_path, tag=metric_obj.tag
                 ),
             )
             req.data = meta
@@ -222,8 +212,7 @@ class LunaClient(AbstractClient):
                 api_address=self.api_address,
                 path=self.close_job_path,
             ),
-            params={'job': self.job_number,
-                    'duration': int(duration)}
+            params={'job': self.job_number, 'duration': int(duration)},
         )
         prepared_req = req.prepare()
         logger.debug('Prepared close_job request:\n%s', pretty_print(prepared_req))
@@ -231,7 +220,7 @@ class LunaClient(AbstractClient):
         logger.debug('Update job status: %s', response.status_code)
 
     def __test_id_link_to_jobno(self, jobno):
-        """  create symlink local_id <-> public_id  """
+        """create symlink local_id <-> public_id"""
         # TODO: fix symlink to local_id <-> luna_id
         link_dir = os.path.join(self.data_session.artifacts_base_dir, self.symlink_artifacts_path)
         if not jobno:
@@ -241,20 +230,19 @@ class LunaClient(AbstractClient):
             os.makedirs(link_dir)
         try:
             os.symlink(
-                os.path.join(
-                    os.path.relpath(self.data_session.artifacts_base_dir, link_dir), self.data_session.job_id
-                ),
-                os.path.join(link_dir, str(jobno))
+                os.path.join(os.path.relpath(self.data_session.artifacts_base_dir, link_dir), self.data_session.job_id),
+                os.path.join(link_dir, str(jobno)),
             )
         except OSError:
             logger.warning(
                 'Unable to create %s/%s symlink for test: %s',
-                self.symlink_artifacts_path, jobno, self.data_session.job_id
+                self.symlink_artifacts_path,
+                jobno,
+                self.data_session.job_id,
             )
         else:
             logger.debug(
-                'Symlink %s/%s created for job: %s',
-                self.symlink_artifacts_path, jobno, self.data_session.job_id
+                'Symlink %s/%s created for job: %s', self.symlink_artifacts_path, jobno, self.data_session.job_id
             )
 
     def close(self, test_end):
@@ -269,7 +257,7 @@ class LunaClient(AbstractClient):
         logger.info('Joining luna client metric registration thread...')
         self.register_worker.stop()
         self.register_worker.join()
-        self._close_job(duration=test_end-self.data_session.test_start)
+        self._close_job(duration=test_end - self.data_session.test_start)
         # FIXME hardcoded host
         # FIXME we dont know front hostname, because api address now is clickhouse address
         logger.info('Luna job url: %s%s', 'https://luna.yandex-team.ru/tests/', self.job_number)
@@ -283,7 +271,8 @@ class LunaClient(AbstractClient):
 
 
 class RegisterWorkerThread(threading.Thread):
-    """ Register metrics metadata, get public_id from luna and create map local_id <-> public_id """
+    """Register metrics metadata, get public_id from luna and create map local_id <-> public_id"""
+
     def __init__(self, client):
         """
         :type client: LunaClient
@@ -333,14 +322,21 @@ class RegisterWorkerThread(threading.Thread):
             self.lock.release()
             if local_id not in self.client.public_ids:
                 if metric.parent is not None and metric.parent.local_id not in self.client.public_ids:
-                    logger.debug('Metric {} waiting for parent metric {} to be registered'.format(metric.local_id,
-                                                                                                  metric.parent.local_id))
+                    logger.debug(
+                        'Metric {} waiting for parent metric {} to be registered'.format(
+                            metric.local_id, metric.parent.local_id
+                        )
+                    )
                     self.register(metric.parent)
                     self.register(metric)
                 else:
                     metric.tag = self._register_metric(metric)
-                    logger.debug('Successfully received tag %s for metric.local_id: %s (%s)',
-                                 metric.tag, metric.local_id, metric.meta)
+                    logger.debug(
+                        'Successfully received tag %s for metric.local_id: %s (%s)',
+                        metric.tag,
+                        metric.local_id,
+                        metric.meta,
+                    )
                     self.client.public_ids[metric.local_id] = metric.tag
         except (HTTPError, ConnectionError, Timeout, TooManyRedirects):
             self.lock.release()
@@ -358,15 +354,12 @@ class RegisterWorkerThread(threading.Thread):
             'local_id': metric.local_id,
             'meta': metric.meta,
             'parent': self.client.public_ids[metric.parent.local_id] if metric.parent is not None else None,
-            'case': metric.case
+            'case': metric.case,
         }
         req = requests.Request(
             'POST',
-            "{api_address}{path}".format(
-                api_address=self.client.api_address,
-                path=self.client.create_metric_path
-            ),
-            json=json
+            "{api_address}{path}".format(api_address=self.client.api_address, path=self.client.create_metric_path),
+            json=json,
         )
         prepared_req = req.prepare()
         logger.debug('Prepared create_metric request:\n%s', pretty_print(prepared_req))
@@ -380,7 +373,8 @@ class RegisterWorkerThread(threading.Thread):
 
 # noinspection PyTypeChecker
 class WorkerThread(QueueWorker):
-    """ Process data """
+    """Process data"""
+
     def __init__(self, client):
         """
         :type client: LunaClient
@@ -455,18 +449,18 @@ class WorkerThread(QueueWorker):
                     self.__send_upload(table_name, data['dataframe'], data['columns'])
 
                 except ConnectionError:
-                    logger.warning('Failed to upload data to luna backend after consecutive retries. '
-                                   'Attempt to send data in two halves')
+                    logger.warning(
+                        'Failed to upload data to luna backend after consecutive retries. '
+                        'Attempt to send data in two halves'
+                    )
                     try:
                         self.__send_upload(
-                            table_name,
-                            data['dataframe'].head(len(data['dataframe']) // 2),
-                            data['columns']
+                            table_name, data['dataframe'].head(len(data['dataframe']) // 2), data['columns']
                         )
                         self.__send_upload(
                             table_name,
                             data['dataframe'].tail(len(data['dataframe']) - len(data['dataframe']) // 2),
-                            data['columns']
+                            data['columns'],
                         )
                     except ConnectionError:
                         logger.warning('Failed to upload data to luna backend after consecutive retries. Sorry.')
@@ -476,20 +470,16 @@ class WorkerThread(QueueWorker):
                 self.data['max_length'] = 0
 
     def __send_upload(self, table_name, df, columns):
-        body = df.to_csv(
-            sep='\t',
-            header=False,
-            index=False,
-            na_rep='',
-            columns=columns
-        )
+        body = df.to_csv(sep='\t', header=False, index=False, na_rep='', columns=columns)
         req = requests.Request(
-            'POST', "{api}{data_upload_handler}{query}".format(
+            'POST',
+            "{api}{data_upload_handler}{query}".format(
                 api=self.client.api_address,  # production proxy
                 data_upload_handler=self.client.upload_metric_path,
-                query="INSERT INTO {db}.{table} FORMAT TSV".format(db=self.client.dbname,
-                                                                   table=table_name)  # production
-            )
+                query="INSERT INTO {db}.{table} FORMAT TSV".format(
+                    db=self.client.dbname, table=table_name
+                ),  # production
+            ),
         )
         req.data = body
         prepared_req = req.prepare()
@@ -503,10 +493,14 @@ class WorkerThread(QueueWorker):
             raise
         except (HTTPError, Timeout, TooManyRedirects) as e:
             # noinspection PyUnboundLocalVariable
-            logger.warning('Failed to upload data to luna. Dropped some data.\n{}'.
-                           format(resp.content if isinstance(e, HTTPError) else 'no response'))
+            logger.warning(
+                'Failed to upload data to luna. Dropped some data.\n{}'.format(
+                    resp.content if isinstance(e, HTTPError) else 'no response'
+                )
+            )
             logger.debug(
-                'Failed to upload data to luna backend after consecutive retries.\n'
-                'Dropped data head: \n%s', df.head(), exc_info=True
+                'Failed to upload data to luna backend after consecutive retries.\n' 'Dropped data head: \n%s',
+                df.head(),
+                exc_info=True,
             )
             self.client.interrupt()

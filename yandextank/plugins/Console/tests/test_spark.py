@@ -12,12 +12,12 @@ class TestSparkline(object):
         for num, val in enumerate(data):
             sparkline.add(start + num, 'data', val)
         spark = ''.join(sparkline.get_sparkline('data'))
-        assert (len(spark) == len(data))
-        assert (spark == expected)
+        assert len(spark) == len(data)
+        assert spark == expected
         zero = sparkline.get_sparkline('continous', spark_len=0)
-        assert (len(zero) == 0)
+        assert len(zero) == 0
         negative = sparkline.get_sparkline('continous', spark_len=-1)
-        assert (len(negative) == 0)
+        assert len(negative) == 0
 
     def test_non_continuos(self):
         data = range(20)
@@ -31,11 +31,11 @@ class TestSparkline(object):
             if val <= 8 or val > 12:
                 sparkline.add(start + num, 'data', val % 9)
         spark = ''.join(sparkline.get_sparkline('data', spark_len=len(data)))
-        assert (spark == expected)
+        assert spark == expected
         short_spark = ''.join(sparkline.get_sparkline('data', spark_len=4))
-        assert (short_spark == expected_short)
+        assert short_spark == expected_short
         long_spark = ''.join(sparkline.get_sparkline('data'))
-        assert (long_spark == expected_long)
+        assert long_spark == expected_long
 
     def test_multi_graphs(self):
         expected_continous = '__▁▁▂▂▃▃▄▄▅▅▆▆▇▇'
@@ -49,5 +49,5 @@ class TestSparkline(object):
                 sparkline.add(start + val, 'spotty', val)
         continous = ''.join(sparkline.get_sparkline('continous'))
         spotty = ''.join(sparkline.get_sparkline('spotty'))
-        assert (continous == expected_continous)
-        assert (spotty == expected_spotty)
+        assert continous == expected_continous
+        assert spotty == expected_spotty

@@ -1,4 +1,5 @@
 """ Core module to calculate aggregate data """
+
 import json
 import logging
 import queue as q
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class LoggingListener(AggregateResultListener):
-    """ Log aggregated results """
+    """Log aggregated results"""
 
     def on_aggregated_data(self, data, stats):
         logger.info("Got aggregated sample:\n%s", json.dumps(data, indent=2))
@@ -146,7 +147,7 @@ class TankAggregator(object):
         self.listeners.append(listener)
 
     def __notify_listeners(self, data, stats):
-        """ notify all listeners about aggregate data and stats """
+        """notify all listeners about aggregate data and stats"""
         for listener in self.listeners:
             listener.on_aggregated_data(data, stats)
 

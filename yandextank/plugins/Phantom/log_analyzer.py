@@ -5,8 +5,7 @@ import logging
 LOGGER = logging.getLogger(__file__)
 
 
-class LogFormatError(Exception):
-    ...
+class LogFormatError(Exception): ...
 
 
 LINE_FORMAT = r'(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d.\d\d\d [+-]\d\d\d\d) \[([^\]]+)\] \[([^\]]*)\] (.*)'
@@ -37,5 +36,4 @@ class LogAnalyzer:
                 if parsed.level not in ['error', 'fatal']:
                     continue
                 counter[parsed.message] += 1
-            return [err for (err, count) in
-                    sorted(counter.items(), key=lambda item: -item[1])[:limit]]
+            return [err for (err, count) in sorted(counter.items(), key=lambda item: -item[1])[:limit]]

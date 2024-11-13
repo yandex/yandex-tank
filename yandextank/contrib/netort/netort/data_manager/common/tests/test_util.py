@@ -5,12 +5,15 @@ from yandextank.contrib.netort.netort.data_manager.common.util import expandvars
 from unittest.mock import patch
 
 
-@pytest.mark.parametrize('in_, default, expected', [
-    ('STR_${ENV}', None, 'STR_${ENV}'),
-    ('STR_${ENV}', '', 'STR_'),
-    ('STR_${ENV3}_${ENV2}', 'aa', 'STR_aa_env2_value'),
-    ('STR_${SOME_OTHER}_$ENV2', '', 'STR_some other value_$ENV2'),
-])
+@pytest.mark.parametrize(
+    'in_, default, expected',
+    [
+        ('STR_${ENV}', None, 'STR_${ENV}'),
+        ('STR_${ENV}', '', 'STR_'),
+        ('STR_${ENV3}_${ENV2}', 'aa', 'STR_aa_env2_value'),
+        ('STR_${SOME_OTHER}_$ENV2', '', 'STR_some other value_$ENV2'),
+    ],
+)
 def test_expandvars(in_, default, expected):
     with patch.dict(os.environ, ENV1='env1_value', ENV2='env2_value', SOME_OTHER='some other value'):
         assert expandvars(in_, default) == expected

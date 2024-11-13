@@ -1,4 +1,5 @@
 """ Utility classes for phantom module """
+
 # TODO: use separate answ log per benchmark
 import copy
 import logging
@@ -15,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class PhantomConfig:
-    """ config file generator """
+    """config file generator"""
+
     OPTION_PHOUT = "phout_file"
 
     def __init__(self, core, cfg, stat_log):
@@ -57,7 +59,7 @@ class PhantomConfig:
         return self._phout_file
 
     def read_config(self):
-        """        Read phantom tool specific options        """
+        """Read phantom tool specific options"""
         self.threads = self.cfg["threads"] or str(min(int(multiprocessing.cpu_count() / 2) + 1, 128))
         self.phantom_modules_path = self.cfg["phantom_modules_path"]
         self.additional_libs = ' '.join(self.cfg["additional_libs"])
@@ -68,9 +70,7 @@ class PhantomConfig:
             self.answ_log_level = 'all'
         self.timeout = parse_duration(self.cfg["timeout"])
         if self.timeout > 120000:
-            logger.warning(
-                "You've set timeout over 2 minutes."
-                " Are you a functional tester?")
+            logger.warning("You've set timeout over 2 minutes." " Are you a functional tester?")
         self.answ_log = self.core.mkstemp(".log", "answ_")
         self.core.add_artifact_file(self.answ_log)
         self.core.add_artifact_file(self.phout_file)
@@ -80,16 +80,28 @@ class PhantomConfig:
 
         main_stream = StreamConfig(
             self.core,
-            len(self.streams), self.phout_file, self.answ_log,
-            self.answ_log_level, self.timeout, self.cfg, True)
+            len(self.streams),
+            self.phout_file,
+            self.answ_log,
+            self.answ_log_level,
+            self.timeout,
+            self.cfg,
+            True,
+        )
         self.streams.append(main_stream)
 
         for section in self.multi():
             self.streams.append(
                 StreamConfig(
                     self.core,
-                    len(self.streams), self.phout_file, self.answ_log,
-                    self.answ_log_level, self.timeout, section))
+                    len(self.streams),
+                    self.phout_file,
+                    self.answ_log,
+                    self.answ_log_level,
+                    self.timeout,
+                    section,
+                )
+            )
 
         for stream in self.streams:
             stream.read_config()
@@ -107,7 +119,7 @@ class PhantomConfig:
         return self._config_file
 
     def compose_config(self):
-        """        Generate phantom tool run config        """
+        """Generate phantom tool run config"""
         streams_config = ''
         stat_benchmarks = ''
         for stream in self.streams:
@@ -135,12 +147,12 @@ class PhantomConfig:
         return filename
 
     def set_timeout(self, timeout):
-        """ pass timeout to all streams """
+        """pass timeout to all streams"""
         for stream in self.streams:
             stream.timeout = timeout
 
     def get_info(self):
-        """ get merged info about phantom conf """
+        """get merged info about phantom conf"""
         result = copy.copy(self.streams[0])
         result.stat_log = self.stat_log
         result.steps = []
@@ -183,8 +195,7 @@ class PhantomConfig:
 
             result.ammo_file += '{} '.format(stream.stepper_wrapper.ammo_file)
             result.ammo_count += stream.stepper_wrapper.ammo_count
-            result.duration = max(
-                result.duration, stream.stepper_wrapper.duration)
+            result.duration = max(result.duration, stream.stepper_wrapper.duration)
             result.instances += stream.instances
 
         if not result.ammo_count:
@@ -193,7 +204,7 @@ class PhantomConfig:
 
 
 class StreamConfig:
-    """ each test stream's config """
+    """each test stream's config"""
 
     OPTION_INSTANCES_LIMIT = 'instances'
 
@@ -232,26 +243,20 @@ class StreamConfig:
         self.client_key = None
 
     def get_option(self, option, default=None):
-        """ get option wrapper """
+        """get option wrapper"""
         return self.cfg[option]
 
     @staticmethod
     def get_available_options():
-        opts = [
-            "ssl", "tank_type", 'gatling_ip', "method_prefix",
-            "source_log_prefix"
-        ]
-        opts += [
-            "phantom_http_line", "phantom_http_field_num", "phantom_http_field",
-            "phantom_http_entity"
-        ]
+        opts = ["ssl", "tank_type", 'gatling_ip', "method_prefix", "source_log_prefix"]
+        opts += ["phantom_http_line", "phantom_http_field_num", "phantom_http_field", "phantom_http_entity"]
         opts += ['address', "port", StreamConfig.OPTION_INSTANCES_LIMIT]
         opts += StepperWrapper.get_available_options()
         opts += ["connection_test"]
         return opts
 
     def read_config(self):
-        """ reads config """
+        """reads config"""
         # multi-options
         self.ssl = self.get_option("ssl")
         self.tank_type = self.get_option("tank_type")
@@ -272,7 +277,8 @@ class StreamConfig:
         do_test_connect = self.get_option("connection_test")
         explicit_port = self.get_option('port', '')
         self.ipv6, self.resolved_ip, self.port, self.address = self.address_wizard.resolve(
-            self.address, do_test_connect, explicit_port)
+            self.address, do_test_connect, explicit_port
+        )
 
         logger.info("Resolved %s into %s:%s", self.address, self.resolved_ip, self.port)
 
@@ -282,7 +288,7 @@ class StreamConfig:
         self.stepper_wrapper.read_config()
 
     def compose_config(self):
-        """ compose benchmark block """
+        """compose benchmark block"""
         # step file
         self.stepper_wrapper.prepare_stepper()
         self.stpd = self.stepper_wrapper.stpd
@@ -297,22 +303,25 @@ class StreamConfig:
         if self.ssl:
             _auth_section = ''
             _ciphers = ''
-            ssl_template = "transport_t ssl_transport = transport_ssl_t {\n" \
-                           "                timeout = 1s\n" \
-                           "                %s\n" \
-                           "                %s}\n" \
-                           "                transport = ssl_transport"
+            ssl_template = (
+                "transport_t ssl_transport = transport_ssl_t {\n"
+                "                timeout = 1s\n"
+                "                %s\n"
+                "                %s}\n"
+                "                transport = ssl_transport"
+            )
 
             if self.client_certificate or self.client_key:
-                _auth_section = 'auth_t def_auth = auth_t { key = "%s" cert = "%s"} auth = def_auth' \
-                                % (self.client_key, self.client_certificate)
+                _auth_section = 'auth_t def_auth = auth_t { key = "%s" cert = "%s"} auth = def_auth' % (
+                    self.client_key,
+                    self.client_certificate,
+                )
             if self.client_cipher_suites:
                 _ciphers = 'ciphers = "%s"' % self.client_cipher_suites
             kwargs['ssl_transport'] = ssl_template % (_auth_section, _ciphers)
         else:
             kwargs['ssl_transport'] = ""
-        kwargs['method_stream'] = self.method_prefix + \
-            "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"
+        kwargs['method_stream'] = self.method_prefix + "_ipv6_t" if self.ipv6 else self.method_prefix + "_ipv4_t"
         kwargs['phout'] = self.phout_file
         kwargs['answ_log'] = self.answ_log
         kwargs['answ_log_level'] = self.answ_log_level
@@ -321,8 +330,9 @@ class StreamConfig:
         kwargs['source_log_prefix'] = self.source_log_prefix
         kwargs['method_options'] = self.method_options
         if self.tank_type:
-            kwargs[
-                'proto'] = "proto=http_proto%s" % self.sequence_no if self.tank_type == 'http' else "proto=none_proto"
+            kwargs['proto'] = (
+                "proto=http_proto%s" % self.sequence_no if self.tank_type == 'http' else "proto=none_proto"
+            )
             kwargs['comment_proto'] = ""
         else:
             kwargs['proto'] = ""
@@ -354,8 +364,7 @@ class StreamConfig:
             fname = 'phantom_benchmark_main.tpl'
         else:
             fname = 'phantom_benchmark_additional.tpl'
-        template_str = resource_string(
-            __name__, "config/" + fname).decode('utf8')
+        template_str = resource_string(__name__, "config/" + fname).decode('utf8')
         tpl = string.Template(template_str)
         config = tpl.substitute(kwargs)
 

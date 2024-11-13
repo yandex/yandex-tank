@@ -10,7 +10,9 @@ from yandextank.common.util import recursive_dict_update
 from yandextank.validator.validator import load_plugin_schema, load_yaml_schema
 
 logger = logging.getLogger(__name__)
-CORE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core']['schema']
+CORE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))['core'][
+    'schema'
+]
 
 DEPRECATED_SECTIONS = ['lunaport', 'aggregator']
 
@@ -50,7 +52,6 @@ SECTIONS_PATTERNS = {
     'Pandora': 'pandora',
     'InfluxUploader': 'influx',
     'OpenTSDBUploader': 'opentsdb',
-
 }
 
 
@@ -78,24 +79,15 @@ def guess_plugin(section):
 
 
 def convert_rps_schedule(key, value):
-    return {'load_profile': {
-        'load_type': 'rps',
-        'schedule': value
-    }}
+    return {'load_profile': {'load_type': 'rps', 'schedule': value}}
 
 
 def convert_instances_schedule(key, value):
-    return {'load_profile': {
-        'load_type': 'instances',
-        'schedule': value
-    }}
+    return {'load_profile': {'load_type': 'instances', 'schedule': value}}
 
 
 def convert_stpd_schedule(key, value):
-    return {'load_profile': {
-        'load_type': 'stpd_file',
-        'schedule': value
-    }}
+    return {'load_profile': {'load_type': 'stpd_file', 'schedule': value}}
 
 
 def to_bool(value):
@@ -106,15 +98,7 @@ def to_bool(value):
 
 
 def is_option_deprecated(plugin, option_name):
-    DEPRECATED = {
-        'Aggregator': [
-            'time_periods',
-            'precise_cumulative'
-        ],
-        'DataUploader': [
-            'copy_config_to'
-        ]
-    }
+    DEPRECATED = {'Aggregator': ['time_periods', 'precise_cumulative'], 'DataUploader': ['copy_config_to']}
     if option_name in DEPRECATED.get(plugin, []):
         logger.warning('Deprecated option %s in plugin %s, omitting', option_name, plugin)
         return True
@@ -123,9 +107,7 @@ def is_option_deprecated(plugin, option_name):
 
 
 def check_options(plugin, options):
-    CONFLICT_OPTS = {
-        'Phantom': [{'rps_schedule', 'instances_schedule', 'stpd_file'}]
-    }
+    CONFLICT_OPTS = {'Phantom': [{'rps_schedule', 'instances_schedule', 'stpd_file'}]}
     for conflict_options in CONFLICT_OPTS.get(plugin, []):
         intersect = {option[0] for option in options} & conflict_options
         if len(intersect) > 1:
@@ -148,9 +130,7 @@ def old_section_name_mapper(name):
 
 
 def rename(name):
-    MAP = {
-        'meta': 'uploader'
-    }
+    MAP = {'meta': 'uploader'}
     return MAP.get(name, name)
 
 
@@ -175,6 +155,7 @@ def empty_to_none(func):
             return {k: None}
         else:
             return func(k, v)
+
     return new_func
 
 
@@ -183,7 +164,7 @@ class Option(object):
         'boolean': empty_to_none(lambda k, v: {k: to_bool(v)}),
         'integer': empty_to_none(lambda k, v: {k: int(v)}),
         'list': empty_to_none(lambda k, v: {k: [_.strip() for _ in v.strip().split()]}),
-        'float': empty_to_none(lambda k, v: {k: float(v)})
+        'float': empty_to_none(lambda k, v: {k: float(v)}),
     }
 
     SPECIAL_CONVERTERS = {
@@ -192,32 +173,26 @@ class Option(object):
             'instances_schedule': convert_instances_schedule,
             'stpd_file': convert_stpd_schedule,
             'autocases': TYPE_CASTERS['integer'],
-            'headers': lambda key, value: {key: re.compile(r'\[(.*?)\]').findall(value)}
+            'headers': lambda key, value: {key: re.compile(r'\[(.*?)\]').findall(value)},
         },
         'Bfg': {
             'rps_schedule': convert_rps_schedule,
             'instances_schedule': convert_instances_schedule,
-            'headers': lambda key, value: {key: re.compile(r'\[(.*?)\]').findall(value)}
+            'headers': lambda key, value: {key: re.compile(r'\[(.*?)\]').findall(value)},
         },
-        'JMeter': {
-            'exclude_markers': lambda key, value: {key: value.strip().split(' ')}
-        },
+        'JMeter': {'exclude_markers': lambda key, value: {key: value.strip().split(' ')}},
         'Pandora': {
-            'config_content': lambda key, value: {key: yaml.load(value, Loader=yaml.FullLoader)}  # works for json as well
+            'config_content': lambda key, value: {
+                key: yaml.load(value, Loader=yaml.FullLoader)
+            }  # works for json as well
         },
-        'Autostop': {
-            'autostop': lambda k, v: {k: re.findall(r'\w+\(.+?\)', v)}
-        },
-        'DataUploader': {
-            'lock_targets': lambda k, v: {k: v.strip().split() if v != 'auto' else v}
-        },
-        'core': {
-            'ignore_locks': lambda k, v: {'ignore_lock': to_bool(v)}
-        }
+        'Autostop': {'autostop': lambda k, v: {k: re.findall(r'\w+\(.+?\)', v)}},
+        'DataUploader': {'lock_targets': lambda k, v: {k: v.strip().split() if v != 'auto' else v}},
+        'core': {'ignore_locks': lambda k, v: {'ignore_lock': to_bool(v)}},
     }
     CONVERTERS_FOR_UNKNOWN = {
         'DataUploader': lambda k, v: {'meta': {k: v}},
-        'JMeter': lambda k, v: {'variables': {k: v}}
+        'JMeter': lambda k, v: {'variables': {k: v}},
     }
 
     def __init__(self, plugin_name, key, value, schema=None):
@@ -239,9 +214,7 @@ class Option(object):
     @property
     def schema(self):
         if self._schema is None:
-            module_paths = {
-                'tank': 'yandextank.core'
-            }
+            module_paths = {'tank': 'yandextank.core'}
 
             def default_path(plugin):
                 'yandextank.plugins.{}'.format(plugin)
@@ -305,7 +278,10 @@ class Section(object):
         self.new_name = rename(self.name)
         self.plugin = plugin
         self._schema = None
-        self.options = [Option(plugin, *option, schema=self.schema) for option in without_deprecated(*check_options(plugin, options))]
+        self.options = [
+            Option(plugin, *option, schema=self.schema)
+            for option in without_deprecated(*check_options(plugin, options))
+        ]
         self.enabled = enabled
         self._merged_options = None
 
@@ -327,9 +303,9 @@ class Section(object):
     @property
     def merged_options(self):
         if self._merged_options is None:
-            self._merged_options = reduce(lambda acc, upd: recursive_dict_update(acc, upd),
-                                          [opt.converted for opt in self.options],
-                                          {})
+            self._merged_options = reduce(
+                lambda acc, upd: recursive_dict_update(acc, upd), [opt.converted for opt in self.options], {}
+            )
         return self._merged_options
 
     @classmethod
@@ -347,8 +323,11 @@ class Section(object):
             master_section = sections[0]
             parent_name = master_section.name
             rest = sections[1:]
-        child = {'multi': [section.get_cfg_dict(with_meta=False) for section in rest]} if is_list \
+        child = (
+            {'multi': [section.get_cfg_dict(with_meta=False) for section in rest]}
+            if is_list
             else {child_name: cls._select_one(master_section, rest).get_cfg_dict(with_meta=False)}
+        )
         master_section.merged_options.update(child)
         return master_section
 
@@ -357,9 +336,7 @@ class Section(object):
 
     @classmethod
     def _select_one(cls, master_section, rest):
-        MAP = {
-            'bfg': lambda section: section.name == '{}_gun'.format(master_section.get_cfg_dict()['gun_type'])
-        }
+        MAP = {'bfg': lambda section: section.name == '{}_gun'.format(master_section.get_cfg_dict()['gun_type'])}
         return next(filter(MAP.get(master_section.name, lambda x: True), rest))
         # return filter(lambda section: section.name == MAP.get(master_section.name, ), rest)[0]
 
@@ -385,11 +362,11 @@ def parse_sections(cfg_ini):
     """
     :type cfg_ini: ConfigParser
     """
-    return [Section(section.lower(),
-                    guess_plugin(section.lower()),
-                    without_defaults(cfg_ini, section))
-            for section in cfg_ini.sections()
-            if not re.match(CORE_SECTION_PATTERN, section.lower()) and section.lower() not in DEPRECATED_SECTIONS]
+    return [
+        Section(section.lower(), guess_plugin(section.lower()), without_defaults(cfg_ini, section))
+        for section in cfg_ini.sections()
+        if not re.match(CORE_SECTION_PATTERN, section.lower()) and section.lower() not in DEPRECATED_SECTIONS
+    ]
 
 
 class PluginInstance(object):
@@ -427,13 +404,9 @@ class PluginInstance(object):
             'ShootExec': 'shootexec',
             'SvgReport': 'svgreport',
             'Telegraf': 'telegraf',
-            'TipsAndTricks': 'tips'
+            'TipsAndTricks': 'tips',
         }
-        name_map = {
-            'aggregate': 'aggregator',
-            'overload': 'overload',
-            'jsonreport': 'json_report'
-        }
+        name_map = {'aggregate': 'aggregator', 'overload': 'overload', 'jsonreport': 'json_report'}
         return name_map.get(self.name, package_map.get(self.package.plugin_name, self.name))
 
 
@@ -444,8 +417,11 @@ def enable_sections(sections, core_opts):
     """
     DEPRECATED_PLUGINS = ['yandextank.plugins.Aggregator', 'Tank/Plugins/Aggregator.py']
 
-    plugin_instances = [PluginInstance(key.split('_')[1], value) for key, value in core_opts if
-                        key.startswith(PLUGIN_PREFIX) and value not in DEPRECATED_PLUGINS]
+    plugin_instances = [
+        PluginInstance(key.split('_')[1], value)
+        for key, value in core_opts
+        if key.startswith(PLUGIN_PREFIX) and value not in DEPRECATED_PLUGINS
+    ]
     enabled_instances = {instance.section_name: instance for instance in plugin_instances if instance.enabled}
     disabled_instances = {instance.section_name: instance for instance in plugin_instances if not instance.enabled}
 
@@ -469,10 +445,7 @@ def combine_sections(sections):
     :type sections: list of Section
     :rtype: list of Section
     """
-    PLUGINS_TO_COMBINE = {
-        'Phantom': ('phantom', 'multi', True),
-        'Bfg': ('bfg', 'gun_config', False)
-    }
+    PLUGINS_TO_COMBINE = {'Phantom': ('phantom', 'multi', True), 'Bfg': ('bfg', 'gun_config', False)}
     plugins = {}
     ready_sections = []
     for section in sections:
@@ -509,11 +482,17 @@ def convert_ini(ini_file):
 
     plugins_cfg_dict = {section.new_name: section.get_cfg_dict() for section in ready_sections}
 
-    plugins_cfg_dict.update({
-        'core': dict([Option('core', key, value, CORE_SCHEMA).as_tuple
-                      for key, value in without_defaults(cfg_ini, CORE_SECTION_OLD)
-                      if not key.startswith(PLUGIN_PREFIX)])
-    })
+    plugins_cfg_dict.update(
+        {
+            'core': dict(
+                [
+                    Option('core', key, value, CORE_SCHEMA).as_tuple
+                    for key, value in without_defaults(cfg_ini, CORE_SECTION_OLD)
+                    if not key.startswith(PLUGIN_PREFIX)
+                ]
+            )
+        }
+    )
     logger.info('Converted config:\n%s', yaml.dump(plugins_cfg_dict))
     return plugins_cfg_dict
 
@@ -527,9 +506,7 @@ def convert_single_option(key, value):
     """
     section_name, option_name = key.strip().split('.', 1)
     if not re.match(CORE_SECTION_PATTERN, section_name):
-        section = Section(section_name,
-                          guess_plugin(section_name),
-                          [(option_name, value)])
+        section = Section(section_name, guess_plugin(section_name), [(option_name, value)])
         return {section.new_name: section.get_cfg_dict()}
     else:
         if option_name.startswith(PLUGIN_PREFIX):

@@ -5,6 +5,7 @@ import time
 import datetime
 import os
 import pkg_resources
+
 try:
     import queue
 except ImportError:
@@ -16,17 +17,13 @@ from ..common.interfaces import AbstractClient
 from ..common.util import pretty_print, thread_safe_property
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 logger = logging.getLogger(__name__)
 
-RETRY_ARGS = dict(
-    wrap_exception=True,
-    stop_max_delay=10000,
-    wait_fixed=1000,
-    stop_max_attempt_number=5
-)
+RETRY_ARGS = dict(wrap_exception=True, stop_max_delay=10000, wait_fixed=1000, stop_max_attempt_number=5)
 
 
 @retry(**RETRY_ARGS)
@@ -50,7 +47,7 @@ class LunaparkVoltaClient(AbstractClient):
         'events': 'events',
         'metrics': 'metrics',
         'fragments': 'fragments',
-        'unknown': 'logentries'
+        'unknown': 'logentries',
     }
     # aliases
     data_types_to_tables.update(
@@ -60,7 +57,7 @@ class LunaparkVoltaClient(AbstractClient):
             'event': data_types_to_tables['events'],
             'metric': data_types_to_tables['metrics'],
             'fragment': data_types_to_tables['fragments'],
-            'logentries': data_types_to_tables['unknown']
+            'logentries': data_types_to_tables['unknown'],
         }
     )
     clickhouse_output_fmt = {
@@ -69,7 +66,7 @@ class LunaparkVoltaClient(AbstractClient):
         'events': ['ts', 'log_uts', 'app', 'tag', 'value'],
         'metrics': ['ts', 'log_uts', 'app', 'tag', 'value'],
         'fragments': ['ts', 'log_uts', 'app', 'tag', 'message'],
-        'unknown': ['ts', 'value']
+        'unknown': ['ts', 'value'],
     }
     # aliases
     clickhouse_output_fmt.update(
@@ -79,7 +76,7 @@ class LunaparkVoltaClient(AbstractClient):
             'event': clickhouse_output_fmt['events'],
             'metric': clickhouse_output_fmt['metrics'],
             'fragment': clickhouse_output_fmt['fragments'],
-            'logentries': clickhouse_output_fmt['unknown']
+            'logentries': clickhouse_output_fmt['unknown'],
         }
     )
 
@@ -117,7 +114,7 @@ class LunaparkVoltaClient(AbstractClient):
             return self._job_number
 
     def __test_id_link_to_jobno(self):
-        """  create symlink local_id <-> public_id  """
+        """create symlink local_id <-> public_id"""
         link_dir = os.path.join(self.data_session.artifacts_base_dir, self.symlink_artifacts_path)
         if not self._job_number:
             logger.info('Public test id not available, skipped symlink creation for %s', self.symlink_artifacts_path)
@@ -126,19 +123,22 @@ class LunaparkVoltaClient(AbstractClient):
             os.makedirs(link_dir)
         try:
             os.symlink(
-                os.path.join(
-                    os.path.relpath(self.data_session.artifacts_base_dir, link_dir), self.data_session.job_id
-                ),
-                os.path.join(link_dir, str(self.job_number))
+                os.path.join(os.path.relpath(self.data_session.artifacts_base_dir, link_dir), self.data_session.job_id),
+                os.path.join(link_dir, str(self.job_number)),
             )
         except OSError:
             logger.warning(
                 'Unable to create %s/%s symlink for test: %s',
-                self.symlink_artifacts_path, self.job_number, self.data_session.job_id
+                self.symlink_artifacts_path,
+                self.job_number,
+                self.data_session.job_id,
             )
         else:
             logger.debug(
-                'Symlink %s/%s created for job: %s', self.symlink_artifacts_path, self.job_number, self.data_session.job_id
+                'Symlink %s/%s created for job: %s',
+                self.symlink_artifacts_path,
+                self.job_number,
+                self.data_session.job_id,
             )
 
     def put(self, data_type, df):
@@ -156,26 +156,21 @@ class LunaparkVoltaClient(AbstractClient):
         finally:
             headers = {
                 "User-Agent": "Uploader/{uploader_ua}, {upward_ua}".format(
-                    upward_ua=self.meta.get('user_agent', ''),
-                    uploader_ua=my_user_agent
+                    upward_ua=self.meta.get('user_agent', ''), uploader_ua=my_user_agent
                 )
             }
         req = requests.Request(
             'POST',
-            "{api_address}{path}".format(
-                api_address=self.api_address,
-                path=self.create_job_path
-            ),
-            headers=headers
+            "{api_address}{path}".format(api_address=self.api_address, path=self.create_job_path),
+            headers=headers,
         )
         req.data = {
             'key_date': self.key_date,
             'test_id': "{key_date}_{local_job_id}".format(
-                key_date=self.key_date,
-                local_job_id=self.data_session.job_id
+                key_date=self.key_date, local_job_id=self.data_session.job_id
             ),
             'task': self.task,
-            'version': "2"
+            'version': "2",
         }
         prepared_req = req.prepare()
         logger.debug('Prepared lunapark_volta create_job request:\n%s', pretty_print(prepared_req))
@@ -195,17 +190,13 @@ class LunaparkVoltaClient(AbstractClient):
     def update_job(self, meta):
         req = requests.Request(
             'POST',
-            "{api_address}{path}".format(
-                api_address=self.api_address,
-                path=self.update_job_path
-            ),
+            "{api_address}{path}".format(api_address=self.api_address, path=self.update_job_path),
         )
         req.data = meta
         req.data['test_start'] = self.data_session.test_start
-        req.data['test_id'] = "{key_date}_{local_job_id}".format(
-            key_date=self.key_date,
-            local_job_id=self.data_session.job_id
-        ),
+        req.data['test_id'] = (
+            "{key_date}_{local_job_id}".format(key_date=self.key_date, local_job_id=self.data_session.job_id),
+        )
         prepared_req = req.prepare()
         logger.debug('Prepared update_job request:\n%s', pretty_print(prepared_req))
         response = send_chunk(self.session, prepared_req)
@@ -213,7 +204,7 @@ class LunaparkVoltaClient(AbstractClient):
         logger.debug('Answ data: %s', response.content)
 
     def get_info(self):
-        """ mock """
+        """mock"""
         pass
 
     def close(self, test_end):
@@ -225,7 +216,8 @@ class LunaparkVoltaClient(AbstractClient):
 
 
 class WorkerThread(threading.Thread):
-    """ Process data """
+    """Process data"""
+
     def __init__(self, client):
         super(WorkerThread, self).__init__()
         self._finished = threading.Event()
@@ -236,9 +228,11 @@ class WorkerThread(threading.Thread):
     def run(self):
         while not self._interrupted.is_set():
             self.__process_pending_queue()
-        logger.info('Lunapark volta uploader thread main loop interrupted, '
-                    'finishing work and trying to send the rest of data, qsize: %s',
-                    self.client.pending_queue.qsize())
+        logger.info(
+            'Lunapark volta uploader thread main loop interrupted, '
+            'finishing work and trying to send the rest of data, qsize: %s',
+            self.client.pending_queue.qsize(),
+        )
         self.__process_pending_queue()
         self._finished.set()
 
@@ -253,8 +247,7 @@ class WorkerThread(threading.Thread):
             for metric_local_id, df_grouped_by_id in df.groupby(level=0, sort=False):
                 df_grouped_by_id['key_date'] = self.client.key_date
                 df_grouped_by_id['test_id'] = "{key_date}_{local_job_id}".format(
-                    key_date=self.client.key_date,
-                    local_job_id=self.client.data_session.job_id
+                    key_date=self.client.key_date, local_job_id=self.client.data_session.job_id
                 )
                 metric = self.client.data_session.manager.get_metric_by_id(metric_local_id)
                 if metric.type == 'events':
@@ -268,8 +261,11 @@ class WorkerThread(threading.Thread):
                 elif metric.type == 'metrics' and metric.meta.get('name') == 'current':
                     self.__send_this_type(df_grouped_by_id, 'current')
                 else:
-                    logger.debug('Dropped data of type %s, %s probably monitoring or other user custom metrics...',
-                                 metric.type, metric.meta.get('name'))
+                    logger.debug(
+                        'Dropped data of type %s, %s probably monitoring or other user custom metrics...',
+                        metric.type,
+                        metric.meta.get('name'),
+                    )
         logger.debug('Lunapark volta client processing took %.2f ms', (time.time() - exec_time_start) * 1000)
 
     def __send_this_type(self, df, metric_type):
@@ -279,33 +275,29 @@ class WorkerThread(threading.Thread):
                 header=False,
                 index=False,
                 na_rep="",
-                columns=self.client.clickhouse_cols + self.client.clickhouse_output_fmt[metric_type]
+                columns=self.client.clickhouse_cols + self.client.clickhouse_output_fmt[metric_type],
             )
         except Exception:
             logger.info('Exc: %s', exc_info=True)
         req = requests.Request(
-            'POST', "{api}{data_upload_handler}{query}".format(
+            'POST',
+            "{api}{data_upload_handler}{query}".format(
                 api=self.client.api_address,
                 data_upload_handler=self.client.metric_upload,
                 query="INSERT INTO {table} FORMAT TSV".format(
                     table="{db}.{type}".format(
-                        db=self.client.dbname,
-                        type=self.client.data_types_to_tables[metric_type]
+                        db=self.client.dbname, type=self.client.data_types_to_tables[metric_type]
                     )
-                )
-            )
+                ),
+            ),
         )
         req.data = body
         prepared_req = req.prepare()
         try:
             send_chunk(self.session, prepared_req)
         except RetryError:
-            logger.warning(
-                'Failed to upload data to lunapark backend. Dropped some data.'
-            )
-            logger.debug(
-                'Failed to upload data to luna, dropped data: %s', df, exc_info=True
-            )
+            logger.warning('Failed to upload data to lunapark backend. Dropped some data.')
+            logger.debug('Failed to upload data to luna, dropped data: %s', df, exc_info=True)
             return
 
     def is_finished(self):

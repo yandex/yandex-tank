@@ -4,6 +4,7 @@ Logging initialization AND signals (but why?!)
 TODO:
     * move signals to another module
 """
+
 import logging
 import sys
 import signal
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class SingleLevelFilter(logging.Filter):
-    """Reject or approve one exact debug level. """
+    """Reject or approve one exact debug level."""
 
     def __init__(self, levelno, reject):
         """
@@ -52,9 +53,8 @@ def init_logging(log_filename, verbose, quiet):
         file_handler.setLevel(logging.DEBUG)
         # TODO: initialize all formatters in the beginning of this function
         file_handler.setFormatter(
-            logging.Formatter(
-                fmt="%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s"
-            ))
+            logging.Formatter(fmt="%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s")
+        )
         logger.addHandler(file_handler)
 
     # console stdout and stderr handlers
@@ -63,11 +63,9 @@ def init_logging(log_filename, verbose, quiet):
 
     # formatters
     fmt_verbose = logging.Formatter(
-        fmt="%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s",
-        datefmt='%Y-%m-%d,%H:%M:%S.%f'
+        fmt="%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d\t%(message)s", datefmt='%Y-%m-%d,%H:%M:%S.%f'
     )
-    fmt_regular = logging.Formatter(
-        "%(asctime)s [%(levelname).4s] [%(filename).8s] %(message)s", "%H:%M:%S")
+    fmt_regular = logging.Formatter("%(asctime)s [%(levelname).4s] [%(filename).8s] %(message)s", "%H:%M:%S")
 
     # set formatters and log levels
     if verbose:
@@ -102,7 +100,7 @@ def init_logging(log_filename, verbose, quiet):
 
 # TODO: describe what are these for, how to use
 def signal_handler(sig, frame):
-    """ required for non-tty python runs to interrupt """
+    """required for non-tty python runs to interrupt"""
     logger.warning("Got signal %s, going to stop", sig)
     raise KeyboardInterrupt()
 

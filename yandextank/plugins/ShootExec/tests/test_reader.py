@@ -10,16 +10,17 @@ from yandextank.plugins.ShootExec.plugin import _ShootExecReader, PhantomReader,
 class TestPhantomReader(object):
     def setup_class(self):
         stop = Event()
-        self.multireader = FileMultiReader(os.path.join(get_test_path(), 'yandextank/plugins/ShootExec/tests/phout.dat'), stop)
+        self.multireader = FileMultiReader(
+            os.path.join(get_test_path(), 'yandextank/plugins/ShootExec/tests/phout.dat'), stop
+        )
         stop.set()
 
     def teardown_class(self):
         self.multireader.close()
 
     def test_read_all(self):
-        phantom_reader = PhantomReader(
-            self.multireader.get_file(), cache_size=1024)
-        reader = _ShootExecReader(phantom_reader, DataPoller(poll_period=.1, max_wait=2))
+        phantom_reader = PhantomReader(self.multireader.get_file(), cache_size=1024)
+        reader = _ShootExecReader(phantom_reader, DataPoller(poll_period=0.1, max_wait=2))
         df = pd.DataFrame()
         sdf = pd.DataFrame()
         for chunk in reader:

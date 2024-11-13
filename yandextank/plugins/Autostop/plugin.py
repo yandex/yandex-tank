@@ -1,4 +1,5 @@
 """ Autostop facility """
+
 # pylint: disable=C0301
 import logging
 import os.path
@@ -14,7 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
-    """ Plugin that accepts criterion classes and triggers autostop """
+    """Plugin that accepts criterion classes and triggers autostop"""
+
     SECTION = 'autostop'
 
     def __init__(self, core, cfg, name):
@@ -35,15 +37,15 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         return __file__
 
     def get_counting(self):
-        """ get criterions that are activated """
+        """get criterions that are activated"""
         return self.counting
 
     def add_counting(self, obj):
-        """ add criterion that activated """
+        """add criterion that activated"""
         self.counting += [obj]
 
     def add_criterion_class(self, criterion_class):
-        """ add new criterion class """
+        """add new criterion class"""
         self.custom_criterions += [criterion_class]
 
     def get_available_options(self):
@@ -54,8 +56,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         aggregator.add_result_listener(self)
 
         self._stop_report_path = os.path.join(
-            self.core.artifacts_dir,
-            self.get_option("report_file", 'autostop_report.txt'))
+            self.core.artifacts_dir, self.get_option("report_file", 'autostop_report.txt')
+        )
 
         self.add_criterion_class(cr.AvgTimeCriterion)
         self.add_criterion_class(cr.NetCodesCriterion)
@@ -77,8 +79,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             if not criterion_str:
                 continue
             self.log.debug("Criterion string: %s", criterion_str)
-            self._criterions[criterion_str] = self.__create_criterion(
-                criterion_str)
+            self._criterions[criterion_str] = self.__create_criterion(criterion_str)
 
         self.log.debug("Criterion objects: %s", self._criterions)
 
@@ -104,7 +105,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             return -1
 
     def __create_criterion(self, criterion_str):
-        """ instantiate criterion from config string """
+        """instantiate criterion from config string"""
         parsed = criterion_str.split("(")
         type_str = parsed[0].strip().lower()
         parsed[1] = parsed[1].split(")")[0].strip()
@@ -124,12 +125,16 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                         self.imbalance_rps = int(self.cause_criterion.cause_second[1]["metrics"]["reqps"])
                         if not self.imbalance_rps:
                             self.imbalance_rps = int(
-                                self.cause_criterion.cause_second[0]["overall"]["interval_real"]["len"])
-                        self.imbalance_timestamp = int(self.cause_criterion.cause_second[0].get('ts', datetime.utcnow().timestamp()))
+                                self.cause_criterion.cause_second[0]["overall"]["interval_real"]["len"]
+                            )
+                        self.imbalance_timestamp = int(
+                            self.cause_criterion.cause_second[0].get('ts', datetime.utcnow().timestamp())
+                        )
                     self.core.publish('autostop', 'rps', self.imbalance_rps)
                     self.core.publish('autostop', 'reason', criterion.explain())
                     self.log.warning(
-                        "Autostop criterion requested test stop on %d rps: %s", self.imbalance_rps, criterion_text)
+                        "Autostop criterion requested test stop on %d rps: %s", self.imbalance_rps, criterion_text
+                    )
                     with open(self._stop_report_path, 'w') as f:
                         f.write(criterion_text)
                     self.core.add_artifact_file(self._stop_report_path)
@@ -141,7 +146,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
 
 class AutostopWidget(AbstractInfoWidget):
-    """ widget that displays counting criterions """
+    """widget that displays counting criterions"""
 
     def __init__(self, sender):
         AbstractInfoWidget.__init__(self)

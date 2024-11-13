@@ -13,6 +13,7 @@ from cerberus.validator import Validator
 from functools import reduce
 
 from yandextank.common.util import read_resource, recursive_dict_update
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,16 +41,12 @@ def load_py_schema(package):
 
 def load_plugin_schema(package, ignore_import_error=False):
     try:
-        return load_yaml_schema(
-            pkg_resources.resource_filename(
-                package, 'config/schema.yaml'))
+        return load_yaml_schema(pkg_resources.resource_filename(package, 'config/schema.yaml'))
     except IOError:
         try:
             return load_py_schema(package)
         except ImportError:
-            logger.error(
-                "Could not find schema for %s (should be located in config/ directory of a plugin)",
-                package)
+            logger.error("Could not find schema for %s (should be located in config/ directory of a plugin)", package)
             raise IOError('No schema found for plugin %s' % package)
     except ImportError:
         if 'aggregator' in package.lower():
@@ -66,27 +63,25 @@ def load_schema(directory, filename=None):
         try:
             return load_py_schema(directory)
         except ImportError:
-            raise IOError(
-                'Neither .yaml nor .py schema found in %s' %
-                directory)
+            raise IOError('Neither .yaml nor .py schema found in %s' % directory)
 
 
 class PatchedValidator(Validator):
 
     def _validate_description(self, description, field, value):
-        """ {'type': 'string'} """
+        """{'type': 'string'}"""
         pass
 
     def _validate_values_description(self, values_description, field, value):
-        """ {'type': 'dict'} """
+        """{'type': 'dict'}"""
         pass
 
     def _validate_tutorial_link(self, tutorial_link, field, value):
-        """ {'type': 'string'} """
+        """{'type': 'string'}"""
         pass
 
     def _validate_examples(self, examples, field, value):
-        """ {'type': 'dict'} """
+        """{'type': 'dict'}"""
         pass
 
     @staticmethod
@@ -141,9 +136,10 @@ class PatchedValidator(Validator):
                 params = [v.strip() for v in params_str.split(',')]
                 # check number of arguments
                 if not len(params) == N_OF_ARGS[curve]:
-                    self._error(field, '{} load scheme: expected {} arguments, found {}'.format(curve,
-                                                                                                N_OF_ARGS[curve],
-                                                                                                len(params)))
+                    self._error(
+                        field,
+                        '{} load scheme: expected {} arguments, found {}'.format(curve, N_OF_ARGS[curve], len(params)),
+                    )
                 # check arguments' types
                 for param in params[:-1]:
                     if not self.is_number(param):
@@ -155,18 +151,18 @@ class TankConfig(object):
     DYNAMIC_OPTIONS = {
         'uuid': lambda: str(uuid.uuid4()),
         'pid': lambda: os.getpid(),
-        'cmdline': lambda: ' '.join(sys.argv)
+        'cmdline': lambda: ' '.join(sys.argv),
     }
 
     def __init__(
-            self,
-            configs,
-            with_dynamic_options=True,
-            core_section='core',
-            error_output=None,
-            skip_base_cfgs=True,
-            plugins_implicit_enabling=False,
-            skip_unknown_plugins=False,
+        self,
+        configs,
+        with_dynamic_options=True,
+        core_section='core',
+        error_output=None,
+        skip_base_cfgs=True,
+        plugins_implicit_enabling=False,
+        skip_unknown_plugins=False,
     ):
         """
         :param configs: list of configs dicts
@@ -188,7 +184,9 @@ class TankConfig(object):
         self._plugins = None
         self.ERROR_OUTPUT = error_output
         self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/schema.yaml'))
-        self.PLUGINS_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml'))
+        self.PLUGINS_SCHEMA = load_yaml_schema(
+            pkg_resources.resource_filename('yandextank.core', 'config/plugins_schema.yaml')
+        )
 
     def get_configinitial(self):
         return self.raw_config_dict
@@ -265,14 +263,10 @@ class TankConfig(object):
         :rtype: list of tuple
         """
         return [
-            (
-                plugin_name,
-                plugin['package'],
-                plugin) for plugin_name,
-            plugin in self.raw_config_dict.items() if (
-                plugin_name not in self.BASE_SCHEMA) and isinstance(
-                plugin,
-                dict) and plugin.get('enabled')]
+            (plugin_name, plugin['package'], plugin)
+            for plugin_name, plugin in self.raw_config_dict.items()
+            if (plugin_name not in self.BASE_SCHEMA) and isinstance(plugin, dict) and plugin.get('enabled')
+        ]
 
     def __validate(self):
         core_validated = self.__validate_core()
@@ -282,7 +276,9 @@ class TankConfig(object):
         for plugin_name, package, config in self.__parse_enabled_plugins():
             try:
                 schema = load_plugin_schema(package, self.skip_unknown_plugins)
-                results[plugin_name] = self.__validate_unknown(config) if schema is None else self.__validate_plugin(config, schema)
+                results[plugin_name] = (
+                    self.__validate_unknown(config) if schema is None else self.__validate_plugin(config, schema)
+                )
             except ValidationError as e:
                 errors[plugin_name] = e.errors
         if len(errors) > 0:
@@ -302,8 +298,7 @@ class TankConfig(object):
                     errors[key] = ['unknown field']
             raise ValidationError(errors)
         normalized = v.normalized(self.raw_config_dict)
-        return self.__set_core_dynamic_options(
-            normalized) if self.with_dynamic_options else normalized
+        return self.__set_core_dynamic_options(normalized) if self.with_dynamic_options else normalized
 
     def __validate_unknown(self, config):
         v = PatchedValidator(self.PLUGINS_SCHEMA['schema'], allow_unknown=True)
@@ -346,15 +341,15 @@ class ValidatedConfig(object):
     @property
     def plugins(self):
         """
-            :returns: [(plugin_name, plugin_package, plugin_config), ...]
-            :rtype: list of tuple
+        :returns: [(plugin_name, plugin_package, plugin_config), ...]
+        :rtype: list of tuple
         """
         if not self._plugins:
             self._plugins = [
-                (plugin_name,
-                 plugin_cfg['package'],
-                 plugin_cfg) for plugin_name, plugin_cfg in self.validated.items() if (
-                    plugin_name not in self.base_schema) and plugin_cfg['enabled']]
+                (plugin_name, plugin_cfg['package'], plugin_cfg)
+                for plugin_name, plugin_cfg in self.validated.items()
+                if (plugin_name not in self.base_schema) and plugin_cfg['enabled']
+            ]
         return self._plugins
 
     def get_option(self, section, option, default=None):

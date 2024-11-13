@@ -87,12 +87,9 @@ class RSTRenderer(object):
 
         header = '|{}|'.format(HEADER.center(width - 2))
         body = '\n'.join(
-            ['| {} |'.format(' | '.join([c.get_line_justified(i) for c in blocks])) for i in range(height)])
-        return '\n'.join([top_bar,
-                          header,
-                          header_bar,
-                          body,
-                          bottom_bar])
+            ['| {} |'.format(' | '.join([c.get_line_justified(i) for c in blocks])) for i in range(height)]
+        )
+        return '\n'.join([top_bar, header, header_bar, body, bottom_bar])
 
     @staticmethod
     def preserve_indents(block):
@@ -181,9 +178,14 @@ class RSTRenderer(object):
 
         sort = sorted if sort else lambda x: x
         template = '{}\n {}' if newlines else ':{}: {}'
-        return '\n' + '\n'.join([template.format(k.replace('\n', ' '),
-                                                 format_value(v).strip())
-                                 for k, v in sort(items.items())]) if items else ''
+        return (
+            '\n'
+            + '\n'.join(
+                [template.format(k.replace('\n', ' '), format_value(v).strip()) for k, v in sort(items.items())]
+            )
+            if items
+            else ''
+        )
 
     @staticmethod
     def field_list(items, sort=True, newlines=True):
@@ -199,21 +201,28 @@ class RSTRenderer(object):
             if isinstance(value, (int, bool, NoneType)):
                 return format_value(str(value))
             if isinstance(value, str):
-                return '\n '.join(value.splitlines())
+                lines = value.splitlines()
             elif isinstance(value, TextBlock):
-                return '\n '.join(value.lines)
+                lines = value.lines
             elif isinstance(value, dict):
-                return '\n '.join(RSTRenderer.field_list(value, sort, newlines).splitlines())
+                lines = RSTRenderer.field_list(value, sort, newlines).splitlines()
             elif isinstance(value, list):
-                return '\n '.join(RSTRenderer.bullet_list([TextBlock(item) for item in value]).lines)
+                lines = RSTRenderer.bullet_list([TextBlock(item) for item in value]).lines
             else:
                 raise ValueError('Unsupported value type: {}\n{}'.format(type(value), value))
 
+            return '\n'.join(line if idx == 0 or not line else f' {line}' for idx, line in enumerate(lines))
+
         sort = sorted if sort else lambda x: x
         template = ':{}:\n {}' if newlines else ':{}: {}'
-        return '\n' + '\n'.join([template.format(k.replace('\n', ' '),
-                                                 format_value(v).strip())
-                                 for k, v in sort(items.items())]) if items else ''
+        return (
+            '\n'
+            + '\n'.join(
+                [template.format(k.replace('\n', ' '), format_value(v).strip()) for k, v in sort(items.items())]
+            )
+            if items
+            else ''
+        )
 
     @staticmethod
     def dict_list_structure(items, sort_dict=True):
@@ -244,43 +253,46 @@ def render_body(renderer, option_kwargs, exclude_keys, special_keys=None):
     :type special_keys: dict
     """
     common_formatters = {
-        EXAMPLES: lambda examples: renderer.def_list({renderer.mono(example): annotation for example, annotation in examples.items()})
+        EXAMPLES: lambda examples: renderer.def_list(
+            {renderer.mono(example): annotation for example, annotation in examples.items()}
+        )
     }
 
     def default_fmt(x):
         return x
 
     special_keys = special_keys or {}
-    special_part = '\n'.join([special_handler(renderer, option_kwargs[special_key])
-                              for special_key, special_handler in special_keys.items()
-                              if special_key in option_kwargs])
+    special_part = '\n'.join(
+        [
+            special_handler(renderer, option_kwargs[special_key])
+            for special_key, special_handler in special_keys.items()
+            if special_key in option_kwargs
+        ]
+    )
     uncommon_keys = set(exclude_keys) | set(special_keys.keys())
-    common_part = renderer.field_list({
-        k: common_formatters.get(k, default_fmt)(v)
-        for k, v in option_kwargs.items()
-        if k not in uncommon_keys
-    })
+    common_part = renderer.field_list(
+        {k: common_formatters.get(k, default_fmt)(v) for k, v in option_kwargs.items() if k not in uncommon_keys}
+    )
 
     return '\n'.join([_ for _ in [common_part, special_part] if _])
 
 
 def render_values_description(renderer, option_kwargs):
-    values_description_dict = {
-        value: option_kwargs[VALUES_DSC].get(value, '') for value in option_kwargs[ALLOWED]
-    } \
-        if ALLOWED in option_kwargs \
-        else \
-        option_kwargs[VALUES_DSC]
+    values_description_dict = (
+        {value: option_kwargs[VALUES_DSC].get(value, '') for value in option_kwargs[ALLOWED]}
+        if ALLOWED in option_kwargs
+        else option_kwargs[VALUES_DSC]
+    )
     values_description = renderer.field_list(
-        {renderer.mono(value): dsc for value, dsc in values_description_dict.items()},
-        newlines=False
+        {renderer.mono(value): dsc for value, dsc in values_description_dict.items()}, newlines=False
     )
     return renderer.field_list({ONE_OF: values_description})
 
 
 def allowed(renderer, values):
-    return renderer.field_list({ONE_OF: '[{}]'.format(', '.join([renderer.mono(value) for value in values]))},
-                               newlines=False)
+    return renderer.field_list(
+        {ONE_OF: '[{}]'.format(', '.join([renderer.mono(value) for value in values]))}, newlines=False
+    )
 
 
 class OptionFormatter(object):
@@ -299,65 +311,92 @@ class OptionFormatter(object):
             default_value = self.option_kwargs.get(DEFAULT)
             if default_value == '':
                 default_value = '""'
-            return ' '.join([renderer.italic('- {}. Default:'.format(dsc)),
-                             renderer.mono(default_value)])
+            return ' '.join([renderer.italic('- {}. Default:'.format(dsc)), renderer.mono(default_value)])
         elif REQUIRED in self.option_kwargs:
-            return renderer.italic('- {}.'.format(dsc)) +\
-                ' ' +\
-                renderer.bold('Required.')
+            return renderer.italic('- {}.'.format(dsc)) + ' ' + renderer.bold('Required.')
         else:
             return renderer.italic('- {}.'.format(dsc))
 
     def scalar_formatter(self, renderer, header=True):
-        hdr = renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \
-            if header else ''
+        hdr = (
+            renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE)))
+            if header
+            else ''
+        )
         dsc = self.format_dsc(renderer)
-        body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED], {'allowed': allowed})
+        body = render_body(
+            renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED], {'allowed': allowed}
+        )
         return '\n'.join([_ for _ in [hdr, dsc, body] if _])
 
     def scalar_with_values_description(self, renderer, header=True):
-        hdr = renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \
-            if header else ''
+        hdr = (
+            renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE)))
+            if header
+            else ''
+        )
         dsc = self.format_dsc(renderer)
-        body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED, ALLOWED, VALUES_DSC])
+        body = render_body(
+            renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED, ALLOWED, VALUES_DSC]
+        )
         values_description_block = render_values_description(renderer, self.option_kwargs)
         return '\n'.join([_ for _ in [hdr, dsc, body, values_description_block] if _])
 
     def dict_formatter(self, renderer, header=True):
-        hdr = renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE))) \
-            if header else ''
+        hdr = (
+            renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(self.option_kwargs.get(TYPE)))
+            if header
+            else ''
+        )
         dsc = self.format_dsc(renderer)
 
         dict_schema = self.option_kwargs[SCHEMA]
 
-        schema_block = renderer.field_list({
-            '{} ({})'.format(renderer.mono(key), dict_schema[key].get(TYPE, 'anyof')): get_formatter({key: value})(renderer, header=False)
-            for key, value in dict_schema.items()})
+        schema_block = renderer.field_list(
+            {
+                '{} ({})'.format(renderer.mono(key), dict_schema[key].get(TYPE, 'anyof')): get_formatter({key: value})(
+                    renderer, header=False
+                )
+                for key, value in dict_schema.items()
+            }
+        )
         body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED, SCHEMA])
         return '\n'.join([_ for _ in [hdr, dsc, schema_block, body] if _])
 
     def anyof_formatter(self, renderer, header=True):
         types = [case[TYPE] for case in self.option_kwargs[ANYOF] if TYPE in case]
-        hdr = renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(' or '.join(types))) \
-            if header else ''
+        hdr = (
+            renderer.subtitle(renderer.mono(self.option_name) + ' ' + '({})'.format(' or '.join(types)))
+            if header
+            else ''
+        )
         dsc = self.format_dsc(renderer)
-        values_description_block = render_values_description(renderer, self.option_kwargs) \
-            if VALUES_DSC in self.option_kwargs else ''
-        body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED, ANYOF, VALUES_DSC])
+        values_description_block = (
+            render_values_description(renderer, self.option_kwargs) if VALUES_DSC in self.option_kwargs else ''
+        )
+        body = render_body(
+            renderer, self.option_kwargs, [VALIDATOR, TYPE, DESCRIPTION, DEFAULT, REQUIRED, ANYOF, VALUES_DSC]
+        )
 
         return '\n'.join([_ for _ in [hdr, dsc, values_description_block, body] if _])
 
     def list_formatter(self, renderer, header=True):
         schema = self.option_kwargs[SCHEMA]
-        hdr = renderer.subtitle(renderer.mono(self.option_name) + ' '
-                                + '({} of {})'.format(self.option_kwargs.get(TYPE, LIST), schema.get(TYPE, '')))
+        hdr = renderer.subtitle(
+            renderer.mono(self.option_name)
+            + ' '
+            + '({} of {})'.format(self.option_kwargs.get(TYPE, LIST), schema.get(TYPE, ''))
+        )
         dsc = self.format_dsc(renderer)
         body = render_body(renderer, self.option_kwargs, [VALIDATOR, TYPE, DEFAULT, REQUIRED, DESCRIPTION, SCHEMA])
         if set(schema.keys()) - {TYPE}:
-            schema_block = renderer.field_list({
-                '[list_element] ({})'.format(schema.get(TYPE, '')):
-                    get_formatter({'list_element': schema})(renderer, header=False)
-            })
+            schema_block = renderer.field_list(
+                {
+                    '[list_element] ({})'.format(schema.get(TYPE, '')): get_formatter({'list_element': schema})(
+                        renderer, header=False
+                    )
+                }
+            )
             return '\n'.join([_ for _ in [hdr, dsc, schema_block, body] if _])
         else:
             return '\n'.join([_ for _ in [hdr, dsc, body] if _])
@@ -392,7 +431,8 @@ def format_schema(schema, renderer, title=None):
     :type renderer: RSTRenderer
     """
     body = '\n\n'.join(
-        sorted([format_option({option_name: option_schema}, renderer) for option_name, option_schema in schema.items()]))
+        sorted([format_option({option_name: option_schema}, renderer) for option_name, option_schema in schema.items()])
+    )
 
     if title:
         title = renderer.title(title)

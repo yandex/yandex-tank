@@ -10,8 +10,7 @@ from uuid import uuid4
 
 from .client import OpenTSDBClient
 from .decoder import Decoder
-from ...common.interfaces import AbstractPlugin, \
-    MonitoringDataListener, AggregateResultListener
+from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
@@ -24,8 +23,7 @@ def chop(data_list, chunk_size):
         return [data_list]
     else:
         mid = len(data_list) / 2
-        return chop(data_list[:mid], chunk_size) + chop(
-            data_list[mid:], chunk_size)
+        return chop(data_list[:mid], chunk_size) + chop(data_list[mid:], chunk_size)
 
 
 class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
@@ -56,7 +54,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                 username=self.get_option("username"),
                 password=self.get_option("password"),
                 ssl=self.get_option("ssl"),
-                verify_ssl=self.get_option("verify_ssl"))
+                verify_ssl=self.get_option("verify_ssl"),
+            )
         return self._client
 
     def prepare_test(self):
@@ -70,15 +69,11 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         return retcode
 
     def on_aggregated_data(self, data, stats):
-        self.client.write(
-            self.decoder.decode_aggregates(data, stats, self.prefix_metric))
+        self.client.write(self.decoder.decode_aggregates(data, stats, self.prefix_metric))
 
     def monitoring_data(self, data_list):
         if len(data_list) > 0:
-            [
-                self._send_monitoring(chunk)
-                for chunk in chop(data_list, self.get_option("chunk_size"))
-            ]
+            [self._send_monitoring(chunk) for chunk in chop(data_list, self.get_option("chunk_size"))]
 
     def _send_monitoring(self, data):
         self.client.write(self.decoder.decode_monitoring(data))

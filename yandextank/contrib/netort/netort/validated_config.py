@@ -39,25 +39,20 @@ def load_schema(directory):
 
 class ValidatedConfig(object):
     def __init__(
-            self,
-            configs,
-            dynamic_options,
-            package_schema_path,
-            package_schema_file='config/schema.yaml',
-            with_dynamic_options=True,
-            core_section='core'
+        self,
+        configs,
+        dynamic_options,
+        package_schema_path,
+        package_schema_file='config/schema.yaml',
+        with_dynamic_options=True,
+        core_section='core',
     ):
         if not isinstance(configs, list):
             configs = [configs]
-        self.__raw_config_dict = self.__load_multiple(
-            [config for config in configs if config is not None])
+        self.__raw_config_dict = self.__load_multiple([config for config in configs if config is not None])
         if self.__raw_config_dict.get(core_section) is None:
             self.__raw_config_dict[core_section] = {}
-        self.BASE_SCHEMA = load_yaml_schema(
-            pkg_resources.resource_filename(
-                package_schema_path, package_schema_file
-            )
-        )
+        self.BASE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename(package_schema_path, package_schema_file))
         self.DYNAMIC_OPTIONS = dynamic_options
         self.CORE_SECTION = core_section
         self._validated = None
@@ -73,8 +68,7 @@ class ValidatedConfig(object):
         elif configs_count == 2:
             return recursive_dict_update(configs[0], configs[1])
         else:
-            return self.__load_multiple(
-                [recursive_dict_update(configs[0], configs[1])] + configs[2:])
+            return self.__load_multiple([recursive_dict_update(configs[0], configs[1])] + configs[2:])
 
     def get_option(self, section, option, default=None):
         try:
@@ -88,7 +82,8 @@ class ValidatedConfig(object):
 
     def get_enabled_sections(self):
         return [
-            section_name for section_name, section_config in self.__raw_config_dict.items()
+            section_name
+            for section_name, section_config in self.__raw_config_dict.items()
             if section_config.get('enabled', False)
         ]
 

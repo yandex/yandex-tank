@@ -77,9 +77,7 @@ def krutilka():
 
 
 def try_color(old, new, markup):
-    order = [
-        markup.WHITE, markup.GREEN, markup.CYAN,
-        markup.YELLOW, markup.MAGENTA, markup.RED]
+    order = [markup.WHITE, markup.GREEN, markup.CYAN, markup.YELLOW, markup.MAGENTA, markup.RED]
     if not old:
         return new
     else:
@@ -157,6 +155,7 @@ class TableFormatter(object):
         def change_shape():
             self.last_reshaped = time.time()
             self.old_shape = shape
+
         if set(shape.keys()) != set(self.old_shape.keys()):
             change_shape()
             return shape
@@ -194,11 +193,9 @@ class TableFormatter(object):
                 row_tpl += next(delimiter_gen)
         result = []
         if has_headers:
-            result.append(
-                (row_tpl.format(**headers),))
+            result.append((row_tpl.format(**headers),))
         for line in prepared:
-            result.append(
-                (row_tpl.format(**line),))
+            result.append((row_tpl.format(**line),))
         return result
 
 
@@ -284,7 +281,8 @@ class Sparkline(object):
 
 
 class Screen(object):
-    '''     Console screen renderer class    '''
+    '''Console screen renderer class'''
+
     RIGHT_PANEL_SEPARATOR = ' . '
 
     def __init__(self, info_panel_width, markup_provider, **kwargs):
@@ -295,12 +293,9 @@ class Screen(object):
         self.term_height = 60
         self.term_width = 120
         self.right_panel_width = 10
-        self.left_panel_width = self.term_width - self.right_panel_width - len(
-            self.RIGHT_PANEL_SEPARATOR)
+        self.left_panel_width = self.term_width - self.right_panel_width - len(self.RIGHT_PANEL_SEPARATOR)
         cases_args = dict(
-            [(k, v)
-                for k, v in kwargs.items()
-                if k in ['cases_sort_by', 'cases_max_spark', 'max_case_len']]
+            [(k, v) for k, v in kwargs.items() if k in ['cases_sort_by', 'cases_max_spark', 'max_case_len']]
         )
         times_args = {'times_max_spark': kwargs['times_max_spark']}
         sizes_args = {'sizes_max_spark': kwargs['sizes_max_spark']}
@@ -315,18 +310,19 @@ class Screen(object):
         self.left_panel = final_block
 
     def __get_right_line(self, widget_output):
-        '''        Gets next line for right panel        '''
+        '''Gets next line for right panel'''
         right_line = ''
         if widget_output:
             right_line = widget_output.pop(0)
             if len(right_line) > self.right_panel_width:
                 right_line_plain = self.markup.clean_markup(right_line)
                 if len(right_line_plain) > self.right_panel_width:
-                    right_line = right_line[:self.right_panel_width] + self.markup.RESET
+                    right_line = right_line[: self.right_panel_width] + self.markup.RESET
         return right_line
 
     def __truncate(self, line_arr, max_width):
-        '''  Cut tuple of line chunks according to it's wisible lenght  '''
+        '''Cut tuple of line chunks according to it's wisible lenght'''
+
         def is_space(chunk):
             return all([True if i == ' ' else False for i in chunk])
 
@@ -340,6 +336,7 @@ class Screen(object):
                 else:
                     result.append(False)
             return all(result)
+
         left = max_width
         result = ''
         markups = self.markup.get_markup_vars()
@@ -352,17 +349,17 @@ class Screen(object):
                         result += chunk
                         left -= len(chunk)
                     else:
-                        leftover = (chunk[left:],) + line_arr[num + 1:]
+                        leftover = (chunk[left:],) + line_arr[num + 1 :]
                         was_cut = not is_empty(leftover, markups)
                         if was_cut:
-                            result += chunk[:left - 1] + self.markup.RESET + '…'
+                            result += chunk[: left - 1] + self.markup.RESET + '…'
                         else:
                             result += chunk[:left]
                         left = 0
         return result
 
     def __render_left_panel(self):
-        ''' Render left blocks '''
+        '''Render left blocks'''
         self.log.debug("Rendering left blocks")
         left_block = self.left_panel
         left_block.render()
@@ -382,30 +379,24 @@ class Screen(object):
         return lines
 
     def render_screen(self):
-        '''        Main method to render screen view        '''
+        '''Main method to render screen view'''
         self.term_width, self.term_height = get_terminal_size()
-        self.log.debug(
-            "Terminal size: %sx%s", self.term_width, self.term_height)
-        self.right_panel_width = int(
-            (self.term_width - len(self.RIGHT_PANEL_SEPARATOR))
-            * (float(self.info_panel_percent) / 100)) - 1
+        self.log.debug("Terminal size: %sx%s", self.term_width, self.term_height)
+        self.right_panel_width = (
+            int((self.term_width - len(self.RIGHT_PANEL_SEPARATOR)) * (float(self.info_panel_percent) / 100)) - 1
+        )
         if self.right_panel_width > 0:
-            self.left_panel_width = self.term_width - \
-                self.right_panel_width - len(self.RIGHT_PANEL_SEPARATOR) - 2
+            self.left_panel_width = self.term_width - self.right_panel_width - len(self.RIGHT_PANEL_SEPARATOR) - 2
         else:
             self.right_panel_width = 0
             self.left_panel_width = self.term_width - 1
-        self.log.debug(
-            "Left/right panels width: %s/%s", self.left_panel_width,
-            self.right_panel_width)
+        self.log.debug("Left/right panels width: %s/%s", self.left_panel_width, self.right_panel_width)
 
         widget_output = []
         if self.right_panel_width:
             widget_output = []
             self.log.debug("There are %d info widgets" % len(self.info_widgets))
-            for index, widget in sorted(
-                    self.info_widgets.items(),
-                    key=lambda item: (item[1].get_index(), item[0])):
+            for index, widget in sorted(self.info_widgets.items(), key=lambda item: (item[1].get_index(), item[0])):
                 self.log.debug("Rendering info widget #%s: %s", index, widget)
                 widget_out = widget.render(self).strip()
                 if widget_out:
@@ -423,8 +414,7 @@ class Screen(object):
                 left_line = left_lines.pop(0)
                 left_line_plain = self.markup.clean_markup(left_line)
 
-                left_line += (
-                    ' ' * (self.left_panel_width - len(left_line_plain)))
+                left_line += ' ' * (self.left_panel_width - len(left_line_plain))
                 line += left_line
             else:
                 line += ' ' * self.left_panel_width
@@ -473,7 +463,7 @@ class AbstractBlock:
         pass
 
     def fill_rectangle(self, prepared):
-        '''  Right-pad lines of block to equal width  '''
+        '''Right-pad lines of block to equal width'''
         result = []
         width = max([self.clean_len(line) for line in prepared])
         for line in prepared:
@@ -482,7 +472,7 @@ class AbstractBlock:
         return (width, result)
 
     def clean_len(self, line):
-        '''  Calculate wisible length of string  '''
+        '''Calculate wisible length of string'''
         if isinstance(line, str):
             return len(self.screen.markup.clean_markup(line))
         elif isinstance(line, tuple) or isinstance(line, list):
@@ -522,6 +512,7 @@ class HorizontalBlock(AbstractBlock):
                 source_line = source.lines[n]
                 spacer = ' ' * (source.width - self.clean_len(source_line))
                 return source_line + (spacer,)
+
         self.left.render(expected_width=expected_width)
         right_width_limit = expected_width - self.left.width - len(self.separator)
         self.right.render(expected_width=right_width_limit)
@@ -531,9 +522,7 @@ class HorizontalBlock(AbstractBlock):
         self.lines = []
 
         for n in range(self.height):
-            self.lines.append(
-                get_line(self.left, n) + (self.separator,) + get_line(self.right, n)
-            )
+            self.lines.append(get_line(self.left, n) + (self.separator,) + get_line(self.right, n))
         self.lines.append((' ' * self.width,))
 
     def add_second(self, data):
@@ -578,7 +567,7 @@ class VerticalBlock(AbstractBlock):
 
 
 class RPSBlock(AbstractBlock):
-    ''' Actual RPS sparkline '''
+    '''Actual RPS sparkline'''
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -608,7 +597,7 @@ class RPSBlock(AbstractBlock):
 
 
 class PercentilesBlock(AbstractBlock):
-    ''' Aggregated percentiles '''
+    '''Aggregated percentiles'''
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -620,9 +609,9 @@ class PercentilesBlock(AbstractBlock):
         self.quantiles = [10, 20, 30, 40, 50, 60, 70, 75, 80, 85, 90, 95, 99, 99.5, 100]
         template = {
             'quantile': {'tpl': '{:>.1f}%'},
-            'all':      {'tpl': '{:>,.1f}'},  # noqa: E241
-            'last_1m':  {'tpl': '{:>,.1f}'},  # noqa: E241
-            'last':     {'tpl': '{:>,.1f}'}   # noqa: E241
+            'all': {'tpl': '{:>,.1f}'},  # noqa: E241
+            'last_1m': {'tpl': '{:>,.1f}'},  # noqa: E241
+            'last': {'tpl': '{:>,.1f}'},  # noqa: E241
         }
         delimiters = [' <  ', '  ']
         self.formatter = TableFormatter(template, delimiters)
@@ -632,9 +621,7 @@ class PercentilesBlock(AbstractBlock):
         ts = data['ts']
         self.precise_quantiles = {
             q: float(v) / 1000
-            for q, v in zip(
-                data["overall"]["interval_real"]["q"]["q"],
-                data["overall"]["interval_real"]["q"]["value"])
+            for q, v in zip(data["overall"]["interval_real"]["q"]["q"], data["overall"]["interval_real"]["q"]["value"])
         }
         dist = pd.Series(incoming_hist['data'], index=incoming_hist['bins'])
         if self.overall is None:
@@ -651,7 +638,7 @@ class PercentilesBlock(AbstractBlock):
             cumulative = histogram.cumsum()
             total = cumulative.max()
             positions = cumulative.searchsorted([float(i) / 100 * total for i in quant])
-            quant_times = [cumulative.index[i] / 1000. for i in positions]
+            quant_times = [cumulative.index[i] / 1000.0 for i in positions]
             return quant_times
 
         all_times = hist_to_quant(self.overall, self.quantiles)
@@ -673,17 +660,10 @@ class PercentilesBlock(AbstractBlock):
             else:
                 last_1m = last_1m.add(data, fill_value=0)
         last_1m_times = hist_to_quant(last_1m, self.quantiles)
-        quant_times = reversed(
-            list(zip(self.quantiles, all_times, last_1m_times, last_times))
-        )
+        quant_times = reversed(list(zip(self.quantiles, all_times, last_1m_times, last_times)))
         data = []
         for q, all_time, last_1m, last_time in quant_times:
-            data.append({
-                'quantile': q,
-                'all': all_time,
-                'last_1m': last_1m,
-                'last': last_time
-            })
+            data.append({'quantile': q, 'all': all_time, 'last_1m': last_1m, 'last': last_time})
         return data
 
     def render(self, expected_width=None):
@@ -697,7 +677,7 @@ class PercentilesBlock(AbstractBlock):
 
 
 class CurrentHTTPBlock(AbstractBlock):
-    ''' Http codes with highlight'''
+    '''Http codes with highlight'''
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -705,11 +685,11 @@ class CurrentHTTPBlock(AbstractBlock):
         self.title = 'HTTP codes: '
         self.total_count = 0
         template = {
-            'count':       {'tpl': '{:>,}'},  # noqa: E241
-            'last':        {'tpl': '+{:>,}'},  # noqa: E241
-            'percent':     {'tpl': '{:>.2f}%'},  # noqa: E241
-            'code':        {'tpl': '{:>3}', 'final': '{{{:}:<{len}}}'},  # noqa: E241
-            'description': {'tpl': '{:<10}', 'final': '{{{:}:<{len}}}'}
+            'count': {'tpl': '{:>,}'},  # noqa: E241
+            'last': {'tpl': '+{:>,}'},  # noqa: E241
+            'percent': {'tpl': '{:>.2f}%'},  # noqa: E241
+            'code': {'tpl': '{:>3}', 'final': '{{{:}:<{len}}}'},  # noqa: E241
+            'description': {'tpl': '{:<10}', 'final': '{{{:}:<{len}}}'},
         }
         delimiters = [' ', '  ', ' : ', ' ']
         self.formatter = TableFormatter(template, delimiters)
@@ -721,10 +701,12 @@ class CurrentHTTPBlock(AbstractBlock):
             self.overall_dist[code] += count
 
     def __code_color(self, code):
-        colors = {(200, 299): self.screen.markup.GREEN,
-                  (300, 399): self.screen.markup.CYAN,
-                  (400, 499): self.screen.markup.YELLOW,
-                  (500, 599): self.screen.markup.RED}
+        colors = {
+            (200, 299): self.screen.markup.GREEN,
+            (300, 399): self.screen.markup.CYAN,
+            (400, 499): self.screen.markup.YELLOW,
+            (500, 599): self.screen.markup.RED,
+        }
         if code in self.last_dist:
             for left, right in colors:
                 if left <= int(code) <= right:
@@ -750,13 +732,15 @@ class CurrentHTTPBlock(AbstractBlock):
                     last_count = self.last_dist[code]
                 else:
                     last_count = 0
-                data.append({
-                    'count': count,
-                    'last': last_count,
-                    'percent': 100 * safe_div(count, self.total_count),
-                    'code': code,
-                    'description': self.__code_descr(code)
-                })
+                data.append(
+                    {
+                        'count': count,
+                        'last': last_count,
+                        'percent': 100 * safe_div(count, self.total_count),
+                        'code': code,
+                        'description': self.__code_descr(code),
+                    }
+                )
             table = self.formatter.render_table(data, ['count', 'last', 'percent', 'code', 'description'])
             for num, line in enumerate(data):
                 color = self.__code_color(line['code'])
@@ -765,7 +749,7 @@ class CurrentHTTPBlock(AbstractBlock):
 
 
 class CurrentNetBlock(AbstractBlock):
-    ''' NET codes with highlight'''
+    '''NET codes with highlight'''
 
     def __init__(self, screen):
         AbstractBlock.__init__(self, screen)
@@ -773,11 +757,11 @@ class CurrentNetBlock(AbstractBlock):
         self.title = 'Net codes:'
         self.total_count = 0
         template = {
-            'count':       {'tpl': '{:>,}'},  # noqa: E241
-            'last':        {'tpl': '+{:>,}'},  # noqa: E241
-            'percent':     {'tpl': '{:>.2f}%'},  # noqa: E241
-            'code':        {'tpl': '{:>2}', 'final': '{{{:}:<{len}}}'},  # noqa: E241
-            'description': {'tpl': '{:<10}', 'final': '{{{:}:<{len}}}'}
+            'count': {'tpl': '{:>,}'},  # noqa: E241
+            'last': {'tpl': '+{:>,}'},  # noqa: E241
+            'percent': {'tpl': '{:>.2f}%'},  # noqa: E241
+            'code': {'tpl': '{:>2}', 'final': '{{{:}:<{len}}}'},  # noqa: E241
+            'description': {'tpl': '{:<10}', 'final': '{{{:}:<{len}}}'},
         }
         delimiters = [' ', '  ', ' : ', ' ']
         self.formatter = TableFormatter(template, delimiters)
@@ -817,13 +801,15 @@ class CurrentNetBlock(AbstractBlock):
                     last_count = self.last_dist[code]
                 else:
                     last_count = 0
-                data.append({
-                    'count': count,
-                    'last': last_count,
-                    'percent': 100 * safe_div(count, self.total_count),
-                    'code': code,
-                    'description': self.__code_descr(code)
-                })
+                data.append(
+                    {
+                        'count': count,
+                        'last': last_count,
+                        'percent': 100 * safe_div(count, self.total_count),
+                        'code': code,
+                        'description': self.__code_descr(code),
+                    }
+                )
             table = self.formatter.render_table(data, ['count', 'last', 'percent', 'code', 'description'])
             for num, line in enumerate(data):
                 color = self.__code_color(line['code'])
@@ -832,7 +818,7 @@ class CurrentNetBlock(AbstractBlock):
 
 
 class AnswSizesBlock(AbstractBlock):
-    ''' Answer and response sizes, if available '''
+    '''Answer and response sizes, if available'''
 
     def __init__(self, screen, sizes_max_spark=120):
         AbstractBlock.__init__(self, screen)
@@ -840,11 +826,7 @@ class AnswSizesBlock(AbstractBlock):
         self.overall = {'count': 0, 'Response': 0, 'Request': 0}
         self.last = {'count': 0, 'Response': 0, 'Request': 0}
         self.title = 'Average Sizes (all/last), bytes:'
-        template = {
-            'name': {'tpl': '{:>}'},
-            'avg': {'tpl': '{:>,.1f}'},
-            'last_avg': {'tpl': '{:>,.1f}'}
-        }
+        template = {'name': {'tpl': '{:>}'}, 'avg': {'tpl': '{:>,.1f}'}, 'last_avg': {'tpl': '{:>,.1f}'}}
         delimiters = [': ', ' / ']
         self.formatter = TableFormatter(template, delimiters)
 
@@ -867,11 +849,7 @@ class AnswSizesBlock(AbstractBlock):
             last_avg = avg_from_dict(self.last)
             data = []
             for direction in ['Request', 'Response']:
-                data.append({
-                    'name': direction,
-                    'avg': overall_avg[direction],
-                    'last_avg': last_avg[direction]
-                })
+                data.append({'name': direction, 'avg': overall_avg[direction], 'last_avg': last_avg[direction]})
             table = self.formatter.render_table(data, ['name', 'avg', 'last_avg'])
             for num, direction in enumerate(['Request', 'Response']):
                 spark_len = expected_width - self.clean_len(table[0]) - 3
@@ -884,29 +862,25 @@ class AnswSizesBlock(AbstractBlock):
 
 
 class AvgTimesBlock(AbstractBlock):
-    ''' Average times breakdown '''
+    '''Average times breakdown'''
 
     def __init__(self, screen, times_max_spark=120):
         AbstractBlock.__init__(self, screen)
         self.sparkline = Sparkline(times_max_spark)
-        self.fraction_keys = [
-            'interval_real', 'connect_time', 'send_time', 'latency', 'receive_time']
+        self.fraction_keys = ['interval_real', 'connect_time', 'send_time', 'latency', 'receive_time']
         self.fraction_names = {
             'interval_real': 'Overall',
-            'connect_time':  'Connect',  # noqa: E241
-            'send_time':     'Send',  # noqa: E241
-            'latency':       'Latency',  # noqa: E241
-            'receive_time':  'Receive'}  # noqa: E241
+            'connect_time': 'Connect',  # noqa: E241
+            'send_time': 'Send',  # noqa: E241
+            'latency': 'Latency',  # noqa: E241
+            'receive_time': 'Receive',
+        }  # noqa: E241
         self.overall = dict([(k, 0) for k in self.fraction_keys])
         self.overall['count'] = 0
         self.last = dict([(k, 0) for k in self.fraction_keys])
         self.last['count'] = 0
         self.title = 'Average Times (all/last), ms:'
-        template = {
-            'name': {'tpl': '{:>}'},
-            'avg': {'tpl': '{:>,.2f}'},
-            'last_avg': {'tpl': '{:>,.2f}'}
-        }
+        template = {'name': {'tpl': '{:>}'}, 'avg': {'tpl': '{:>,.2f}'}, 'last_avg': {'tpl': '{:>,.2f}'}}
         delimiters = [': ', ' / ']
         self.formatter = TableFormatter(template, delimiters)
 
@@ -927,11 +901,13 @@ class AvgTimesBlock(AbstractBlock):
             last_avg = avg_from_dict(self.last)
             data = []
             for fraction in self.fraction_keys:
-                data.append({
-                    'name': self.fraction_names[fraction],
-                    'avg': overall_avg[fraction],
-                    'last_avg': last_avg[fraction]
-                })
+                data.append(
+                    {
+                        'name': self.fraction_names[fraction],
+                        'avg': overall_avg[fraction],
+                        'last_avg': last_avg[fraction],
+                    }
+                )
             table = self.formatter.render_table(data, ['name', 'avg', 'last_avg'])
             for num, fraction in enumerate(self.fraction_keys):
                 spark_len = expected_width - self.clean_len(table[0]) - 3
@@ -944,7 +920,7 @@ class AvgTimesBlock(AbstractBlock):
 
 
 class CasesBlock(AbstractBlock):
-    '''     Cases info    '''
+    '''Cases info'''
 
     def __init__(self, screen, cases_sort_by='http_err', cases_max_spark=60, reorder_delay=5, max_case_len=32):
         AbstractBlock.__init__(self, screen)
@@ -960,14 +936,14 @@ class CasesBlock(AbstractBlock):
         self.field_order = ['name', 'count', 'percent', 'last', 'net_err', 'http_err', 'avg', 'last_avg']
 
         template = {
-            'name':     {'tpl': '{:>}:',    'header': 'name', 'final': '{{{:}:>{len}}}'},  # noqa: E241
-            'count':    {'tpl': '{:>,}',    'header': 'count'},   # noqa: E241
-            'last':     {'tpl': '+{:>,}',   'header': 'last'},    # noqa: E241
-            'percent':  {'tpl': '{:>.2f}%', 'header': '%'},       # noqa: E241
-            'net_err':  {'tpl': '{:>,}',    'header': 'net_e'},   # noqa: E241
-            'http_err': {'tpl': '{:>,}',    'header': 'http_e'},  # noqa: E241
-            'avg':      {'tpl': '{:>,.1f}', 'header': 'avg ms'},  # noqa: E241
-            'last_avg': {'tpl': '{:>,.1f}', 'header': 'last ms'}
+            'name': {'tpl': '{:>}:', 'header': 'name', 'final': '{{{:}:>{len}}}'},  # noqa: E241
+            'count': {'tpl': '{:>,}', 'header': 'count'},  # noqa: E241
+            'last': {'tpl': '+{:>,}', 'header': 'last'},  # noqa: E241
+            'percent': {'tpl': '{:>.2f}%', 'header': '%'},  # noqa: E241
+            'net_err': {'tpl': '{:>,}', 'header': 'net_e'},  # noqa: E241
+            'http_err': {'tpl': '{:>,}', 'header': 'http_e'},  # noqa: E241
+            'avg': {'tpl': '{:>,.1f}', 'header': 'avg ms'},  # noqa: E241
+            'last_avg': {'tpl': '{:>,.1f}', 'header': 'last ms'},
         }
         delimiters = [' ']
         self.formatter = TableFormatter(template, delimiters)
@@ -981,9 +957,17 @@ class CasesBlock(AbstractBlock):
                 text_color = self.screen.markup.WHITE
             else:
                 text_color = spark_color
-            return (spark_color, {
-                'count': count, 'net_err': net_err, 'http_err': http_err,
-                'time': time, 'color': text_color, 'display_name': display_name})
+            return (
+                spark_color,
+                {
+                    'count': count,
+                    'net_err': net_err,
+                    'http_err': http_err,
+                    'time': time,
+                    'color': text_color,
+                    'display_name': display_name,
+                },
+            )
 
         ts = data["ts"]
         overall = data["overall"]
@@ -1008,13 +992,14 @@ class CasesBlock(AbstractBlock):
 
     def __cut_name(self, name):
         if len(name) > self.max_case_len:
-            return name[:self.max_case_len - 1] + '…'
+            return name[: self.max_case_len - 1] + '…'
         else:
             return name
 
     def __reorder_cases(self):
-        sorted_cases = sorted(self.cumulative_cases.items(),
-                              key=lambda item: (-1 * item[1][self.cases_sort_by], str(item[0])))
+        sorted_cases = sorted(
+            self.cumulative_cases.items(), key=lambda item: (-1 * item[1][self.cases_sort_by], str(item[0]))
+        )
         new_order = [case for (case, data) in sorted_cases]
         now = time.time()
         if now - self.reorder_delay > self.last_reordered:
@@ -1040,17 +1025,19 @@ class CasesBlock(AbstractBlock):
                     last = self.last_cases[name]
                 else:
                     last = {'count': 0, 'net_err': 0, 'http_err': 0, 'time': 0, 'color': '', 'display_name': name}
-                data.append({
-                    'full_name': name,
-                    'name': self.__cut_name(case_data['display_name']),
-                    'count': case_data['count'],
-                    'percent': 100 * safe_div(case_data['count'], total_count),
-                    'last': last['count'],
-                    'net_err': case_data['net_err'],
-                    'http_err': case_data['http_err'],
-                    'avg': safe_div(case_data['time'], case_data['count']),
-                    'last_avg': safe_div(last['time'], last['count'])
-                })
+                data.append(
+                    {
+                        'full_name': name,
+                        'name': self.__cut_name(case_data['display_name']),
+                        'count': case_data['count'],
+                        'percent': 100 * safe_div(case_data['count'], total_count),
+                        'last': last['count'],
+                        'net_err': case_data['net_err'],
+                        'http_err': case_data['http_err'],
+                        'avg': safe_div(case_data['time'], case_data['count']),
+                        'last_avg': safe_div(last['time'], last['count']),
+                    }
+                )
             table = self.formatter.render_table(data, self.field_order)
             prepared.append(table[0])  # first line is table header
             for num, line in enumerate(data):

@@ -1,4 +1,5 @@
 ''' Plugin provides fullscreen console '''
+
 import logging
 import sys
 import threading
@@ -9,7 +10,8 @@ from ...common.interfaces import AbstractPlugin, AggregateResultListener
 
 
 class Plugin(AbstractPlugin, AggregateResultListener):
-    ''' Console plugin '''
+    '''Console plugin'''
+
     SECTION = 'console'
 
     def __init__(self, core, cfg, name):
@@ -35,10 +37,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         return __file__
 
     def get_available_options(self):
-        return [
-            "info_panel_width", "short_only", "disable_all_colors",
-            "disable_colors"
-        ]
+        return ["info_panel_width", "short_only", "disable_all_colors", "disable_colors"]
 
     def configure(self):
         if not self.get_option("disable_all_colors"):
@@ -48,12 +47,13 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         for color in self.get_option("disable_colors").split(' '):
             self.console_markup.__dict__[color] = ''
         self.screen = Screen(
-            self.info_panel_width, self.console_markup,
+            self.info_panel_width,
+            self.console_markup,
             cases_sort_by=self.cases_sort_by,
             cases_max_spark=self.cases_max_spark,
             max_case_len=self.max_case_len,
             times_max_spark=self.times_max_spark,
-            sizes_max_spark=self.sizes_max_spark
+            sizes_max_spark=self.sizes_max_spark,
         )
         try:
             aggregator = self.core.job.aggregator
@@ -78,8 +78,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
     def is_test_finished(self):
         if not self.__writer_thread:
             self.__writer_event = threading.Event()
-            self.__writer_thread = threading.Thread(
-                target=self.__console_writer)
+            self.__writer_thread = threading.Thread(target=self.__console_writer)
             self.__writer_thread.daemon = True
             self.__writer_thread.start()
 
@@ -98,26 +97,21 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         if self.short_only:
             overall = data.get('overall')
 
-            quantiles = dict(
-                zip(
-                    overall['interval_real']['q']['q'],
-                    overall['interval_real']['q']['value']))
-            info = (
-                "ts:{ts}\tRPS:{rps}\tavg:{avg_rt:.2f}\t"
-                "min:{min:.2f}\tmax:{q100:.2f}\tq95:{q95:.2f}\t").format(
-                    ts=data.get('ts'),
-                    rps=overall['interval_real']['len'],
-                    avg_rt=float(overall['interval_real']['total'])
-                    / overall['interval_real']['len'] / 1000.0,
-                    min=overall['interval_real']['min'] / 1000.0,
-                    q100=quantiles[100] / 1000,
-                    q95=quantiles[95] / 1000)
+            quantiles = dict(zip(overall['interval_real']['q']['q'], overall['interval_real']['q']['value']))
+            info = ("ts:{ts}\tRPS:{rps}\tavg:{avg_rt:.2f}\t" "min:{min:.2f}\tmax:{q100:.2f}\tq95:{q95:.2f}\t").format(
+                ts=data.get('ts'),
+                rps=overall['interval_real']['len'],
+                avg_rt=float(overall['interval_real']['total']) / overall['interval_real']['len'] / 1000.0,
+                min=overall['interval_real']['min'] / 1000.0,
+                q100=quantiles[100] / 1000,
+                q95=quantiles[95] / 1000,
+            )
             self.log.info(info)
         else:
             self.screen.add_second_data(data)
 
     def add_info_widget(self, widget):
-        ''' add right panel widget '''
+        '''add right panel widget'''
         if not self.screen:
             self.log.debug("No screen instance to add widget")
         else:
@@ -131,6 +125,7 @@ class RealConsoleMarkup(object):
     '''
     Took colors from here: https://www.siafoo.net/snippet/88
     '''
+
     WHITE_ON_BLACK = '\033[37;40m'
     TOTAL_RESET = '\033[0m'
     clear = "\x1b[2J\x1b[H"
@@ -151,13 +146,22 @@ class RealConsoleMarkup(object):
 
     def get_markup_vars(self):
         return [
-            self.YELLOW, self.RED, self.RESET, self.CYAN, self.BG_MAGENTA,
-            self.WHITE, self.BG_GREEN, self.GREEN, self.BG_BROWN,
-            self.RED_DARK, self.MAGENTA, self.BG_CYAN
+            self.YELLOW,
+            self.RED,
+            self.RESET,
+            self.CYAN,
+            self.BG_MAGENTA,
+            self.WHITE,
+            self.BG_GREEN,
+            self.GREEN,
+            self.BG_BROWN,
+            self.RED_DARK,
+            self.MAGENTA,
+            self.BG_CYAN,
         ]
 
     def clean_markup(self, orig_str):
-        ''' clean markup from string '''
+        '''clean markup from string'''
         for val in self.get_markup_vars():
             orig_str = orig_str.replace(val, '')
         return orig_str
@@ -168,7 +172,8 @@ class RealConsoleMarkup(object):
 
 
 class NoConsoleMarkup(RealConsoleMarkup):
-    ''' all colors are disabled '''
+    '''all colors are disabled'''
+
     WHITE_ON_BLACK = ''
     TOTAL_RESET = ''
     clear = ""

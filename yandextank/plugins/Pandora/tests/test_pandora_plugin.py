@@ -5,6 +5,7 @@ from mock import MagicMock
 from threading import Thread
 
 from yandextank.plugins.Pandora import Plugin
+
 # https://raw.githubusercontent.com/yandex/yandex-tank/develop/README.md
 
 
@@ -38,33 +39,37 @@ def pandora_server():
         t.join()
 
 
-@pytest.mark.parametrize('cfg, expected', [
-    (
-        {'pools': [
+@pytest.mark.parametrize(
+    'cfg, expected',
+    [
+        (
             {
-                'ammo': {'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
-                         'type': 'uri',
-                         'file': 'http://localhost:1234/ammo'
-                         },
-                'gun': {'answlog': {'enabled': 'true',
-                                    'path': 'answ.log',
-                                    'filter': 'error'
-                                    }
-                        }
-            }]},
-        {'pools': [
+                'pools': [
+                    {
+                        'ammo': {
+                            'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
+                            'type': 'uri',
+                            'file': 'http://localhost:1234/ammo',
+                        },
+                        'gun': {'answlog': {'enabled': 'true', 'path': 'answ.log', 'filter': 'error'}},
+                    }
+                ]
+            },
             {
-                'ammo': {'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
-                         'type': 'uri',
-                         'file': 'some local file'},
-                'gun': {'answlog': {'enabled': 'false',
-                                    'path': 'answ.log',
-                                    'filter': 'error'
-                                    }
-                        }
-            }]}
-    )
-])
+                'pools': [
+                    {
+                        'ammo': {
+                            'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
+                            'type': 'uri',
+                            'file': 'some local file',
+                        },
+                        'gun': {'answlog': {'enabled': 'false', 'path': 'answ.log', 'filter': 'error'}},
+                    }
+                ]
+            },
+        )
+    ],
+)
 def test_patch_config(cfg, expected, pandora_server):
     plugin = Plugin(MagicMock(), {}, 'pandora')
     # '/tmp/9b73d966bcbf27467d4c4190cfe58c2a.downloaded_resource'
@@ -72,18 +77,19 @@ def test_patch_config(cfg, expected, pandora_server):
     assert filename.endswith('.downloaded_resource')
 
 
-@pytest.mark.parametrize('line', [
-    'panic: short description',
-    'today ERROR shit happens',
-    'again\tFATAL oops i did it again'
-])
+@pytest.mark.parametrize(
+    'line', ['panic: short description', 'today ERROR shit happens', 'again\tFATAL oops i did it again']
+)
 def test_log_line_contains_error(line):
     assert Plugin.check_log_line_contains_error(line)
 
 
-@pytest.mark.parametrize('line', [
-    'not a panic: actually',
-    'just string',
-])
+@pytest.mark.parametrize(
+    'line',
+    [
+        'not a panic: actually',
+        'just string',
+    ],
+)
 def test_log_line_contains_no_error(line):
     assert not Plugin.check_log_line_contains_error(line)

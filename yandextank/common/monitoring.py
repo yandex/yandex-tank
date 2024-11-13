@@ -39,7 +39,6 @@ def monitoring_data(pname, metrics, comment=''):
 
 
 class MonitoringPanel(object):
-
     '''
     The class Panel is used for initializing and managing structural levels for collecting monitoring data passed through the configuration file.
     '''
@@ -89,8 +88,7 @@ class MonitoringPanel(object):
 
 
 class MonitoringSensorProtocol(typing.Protocol):
-    def fetch_metrics(self):
-        ...
+    def fetch_metrics(self): ...
 
 
 class DefaultCollector(MonitoringCollectorProtocol):

@@ -1,4 +1,5 @@
 ''' Pandora config generator '''
+
 import json
 from pkg_resources import resource_string
 
@@ -42,10 +43,7 @@ step_producers = {
 
 
 def parse_schedule(schedule):
-    steps = [
-        step.strip() for step in " ".join(schedule.split("\n")).split(')')
-        if step.strip()
-    ]
+    steps = [step.strip() for step in " ".join(schedule.split("\n")).split(')') if step.strip()]
     if len(steps) > 1:
         raise NotImplementedError("Composite schedules not implemented yet")
     schedule_type, params = steps[0].split('(')
@@ -72,8 +70,7 @@ class PandoraConfig(object):
 
 class PoolConfig(object):
     def __init__(self):
-        self.config = json.loads(
-            resource_string(__name__, 'config/pandora_pool_default.json'))
+        self.config = json.loads(resource_string(__name__, 'config/pandora_pool_default.json'))
 
     def set_ammo(self, ammo):
         self.config["AmmoProvider"]["AmmoSource"] = ammo

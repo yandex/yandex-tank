@@ -3,15 +3,15 @@ import typing
 
 
 class AbstractPlugin(object):
-    """ Plugin interface
-    Parent class for all plugins """
+    """Plugin interface
+    Parent class for all plugins"""
 
     SECTION = 'DEFAULT'
 
     @staticmethod
     def get_key():
-        """ Get dictionary key for plugin,
-        should point to __file__ magic constant """
+        """Get dictionary key for plugin,
+        should point to __file__ magic constant"""
         raise TypeError("Abstract method needs to be overridden")
 
     # TODO: do we realy need cfg_updater here?
@@ -36,15 +36,15 @@ class AbstractPlugin(object):
         self.cfg[option] = value
 
     def configure(self):
-        """ A stage to read config values and instantiate objects """
+        """A stage to read config values and instantiate objects"""
         pass
 
     def prepare_test(self):
-        """        Test preparation tasks        """
+        """Test preparation tasks"""
         pass
 
     def start_test(self):
-        """        Launch test process        """
+        """Launch test process"""
         pass
 
     def is_test_finished(self):
@@ -76,15 +76,15 @@ class AbstractPlugin(object):
         return retcode
 
     def post_process(self, retcode):
-        """ Post-process test data """
+        """Post-process test data"""
         return retcode
 
     def get_option(self, option_name, default_value=None):
-        """ Wrapper to get option from plugins' section """
+        """Wrapper to get option from plugins' section"""
         return self.cfg.get(option_name, default_value)
 
     def get_available_options(self):
-        """ returns array containing known options for plugin """
+        """returns array containing known options for plugin"""
         return []
 
     def get_multiline_option(self, option_name, default_value=None):
@@ -100,8 +100,7 @@ class AbstractPlugin(object):
 
     def publish(self, key, value):
         """publish value to status"""
-        self.log.debug(
-            "Publishing status: %s/%s: %s", self.__class__.SECTION, key, value)
+        self.log.debug("Publishing status: %s/%s: %s", self.__class__.SECTION, key, value)
         self.core.publish(self.__class__.SECTION, key, value)
 
     def close(self):
@@ -113,7 +112,7 @@ class AbstractPlugin(object):
 
 
 class MonitoringDataListener(object):
-    """ Monitoring listener interface
+    """Monitoring listener interface
     parent class for Monitoring data listeners"""
 
     def __init__(self):
@@ -125,7 +124,7 @@ class MonitoringDataListener(object):
 
 
 class AggregateResultListener(object):
-    """ Listener interface
+    """Listener interface
     parent class for Aggregate results listeners"""
 
     def on_aggregated_data(self, data, stats):
@@ -142,7 +141,7 @@ class AggregateResultListener(object):
 
 
 class AbstractInfoWidget(object):
-    """ InfoWidgets interface
+    """InfoWidgets interface
     parent class for all InfoWidgets"""
 
     def __init__(self):
@@ -155,13 +154,14 @@ class AbstractInfoWidget(object):
         raise NotImplementedError("Abstract method should be overridden")
 
     def get_index(self):
-        """ get vertical priority index """
+        """get vertical priority index"""
         return 0
 
 
 class AbstractCriterion(object):
-    """ Criterions interface,
-    parent class for all criterions """
+    """Criterions interface,
+    parent class for all criterions"""
+
     RC_TIME = 21
     RC_HTTP = 22
     RC_NET = 23
@@ -181,7 +181,7 @@ class AbstractCriterion(object):
 
     @staticmethod
     def count_matched_codes(codes_regex, codes_dict):
-        """ helper to aggregate codes by mask """
+        """helper to aggregate codes by mask"""
         total = 0
         for code, count in codes_dict.items():
             if codes_regex.fullmatch(str(code)):
@@ -189,28 +189,28 @@ class AbstractCriterion(object):
         return total
 
     def notify(self, data, stat):
-        """ notification about aggregate data goes here """
+        """notification about aggregate data goes here"""
         raise NotImplementedError("Abstract methods requires overriding")
 
     def get_rc(self):
-        """ get return code for test """
+        """get return code for test"""
         raise NotImplementedError("Abstract methods requires overriding")
 
     def explain(self):
-        """ long explanation to show after test stop """
+        """long explanation to show after test stop"""
         raise NotImplementedError("Abstract methods requires overriding")
 
     def get_criterion_parameters(self):
-        """ returns dict with all criterion parameters """
+        """returns dict with all criterion parameters"""
         raise NotImplementedError("Abstract methods requires overriding")
 
     def widget_explain(self):
-        """ short explanation to display in right panel """
+        """short explanation to display in right panel"""
         return self.explain(), 0
 
     @staticmethod
     def get_type_string():
-        """ returns string that used as config name for criterion """
+        """returns string that used as config name for criterion"""
         raise NotImplementedError("Abstract methods requires overriding")
 
 
@@ -222,7 +222,7 @@ class GeneratorPlugin(AbstractPlugin):
         'ammo_file': '',
         'rps_schedule': [],
         'duration': 0,
-        'loop_count': 0
+        'loop_count': 0,
     }
 
     def __init__(self, core, cfg, name):
@@ -236,9 +236,7 @@ class GeneratorPlugin(AbstractPlugin):
         self.buffered_seconds = 2
 
     class Info(object):
-        def __init__(
-                self, address, port, instances, ammo_file, rps_schedule,
-                duration, loop_count):
+        def __init__(self, address, port, instances, ammo_file, rps_schedule, duration, loop_count):
             self.address = address
             self.port = port
             self.instances = instances
@@ -274,13 +272,7 @@ class GeneratorPlugin(AbstractPlugin):
 class StatsReader(object):
     @staticmethod
     def stats_item(ts, instances, rps):
-        return {
-            'ts': ts,
-            'metrics': {
-                'instances': instances,
-                'reqps': rps
-            }
-        }
+        return {'ts': ts, 'metrics': {'instances': instances, 'reqps': rps}}
 
 
 class MonitoringPlugin(AbstractPlugin):
@@ -292,17 +284,17 @@ class MonitoringPlugin(AbstractPlugin):
     def add_listener(self, plugin):
         self.listeners.add(plugin)
 
-    def start_test(self):   # noqa: PLE0202
+    def start_test(self):  # noqa: PLE0202
         if self.collector is None:
             self.collector: MonitoringCollectorProtocol = DummyCollector()
         self.collector.start()
 
-    def end_test(self, retcode):   # noqa: PLE0202
+    def end_test(self, retcode):  # noqa: PLE0202
         self.collector.stop()
         self.poll()
         return retcode
 
-    def is_test_finished(self):   # noqa: PLE0202
+    def is_test_finished(self):  # noqa: PLE0202
         self.poll()
         return -1
 
@@ -316,14 +308,11 @@ MonitoringChunk = typing.Collection
 
 
 class MonitoringCollectorProtocol(typing.Protocol):
-    def start(self):
-        ...
+    def start(self): ...
 
-    def stop(self):
-        ...
+    def stop(self): ...
 
-    def poll(self) -> MonitoringChunk:
-        ...
+    def poll(self) -> MonitoringChunk: ...
 
 
 class DummyCollector(MonitoringCollectorProtocol):

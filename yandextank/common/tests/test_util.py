@@ -139,7 +139,7 @@ class TestFileMultiReader(object):
 
     @staticmethod
     def mock_consumer(f, expected, step, errors):
-        for line in [expected[i: i + step] for i in range(0, len(expected), step)]:
+        for line in [expected[i : i + step] for i in range(0, len(expected), step)]:
             res = f.read(step)
             if line not in res:
                 errors.append("Expected: {}\nGot: {}".format(expected, res))
@@ -158,9 +158,10 @@ class TestFileMultiReader(object):
         errors = []
         stop = Event()
         mr = FileMultiReader(self.filename, stop)
-        threads = [Thread(target=self.mock_consumer,
-                          args=(mr.get_file(i), exp, i, errors),
-                          name='Thread-%d' % i) for i in [1000, 4000, 8000]]
+        threads = [
+            Thread(target=self.mock_consumer, args=(mr.get_file(i), exp, i, errors), name='Thread-%d' % i)
+            for i in [1000, 4000, 8000]
+        ]
         [th.start() for th in threads]
         stop.set()
         [th.join() for th in threads]
@@ -171,12 +172,14 @@ class TestFileMultiReader(object):
         errors = []
         stop = Event()
         mr = FileMultiReader(self.filename, stop)
-        threads = [Thread(target=self.mock_complex_consumer,
-                          args=(mr.get_file(i), exp, 10, errors),
-                          name='Thread-%d' % i) for i, exp in
-                   [(1000, '\n1543699431'),
-                    (4000, '815\t0\t200\n1543699487'),
-                    (8000, '10968\t3633\t16\t7283\t36\t7387\t1066\t328\t0\t405\n1543699534')]]
+        threads = [
+            Thread(target=self.mock_complex_consumer, args=(mr.get_file(i), exp, 10, errors), name='Thread-%d' % i)
+            for i, exp in [
+                (1000, '\n1543699431'),
+                (4000, '815\t0\t200\n1543699487'),
+                (8000, '10968\t3633\t16\t7283\t36\t7387\t1066\t328\t0\t405\n1543699534'),
+            ]
+        ]
         [th.start() for th in threads]
         stop.set()
         [th.join() for th in threads]

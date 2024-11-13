@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin(GeneratorPlugin):
-    """    Pandora load generator plugin    """
+    """Pandora load generator plugin"""
 
     OPTION_CONFIG = "config"
     SECTION = "pandora"
@@ -52,10 +52,7 @@ class Plugin(GeneratorPlugin):
         return __file__
 
     def get_available_options(self):
-        opts = [
-            "pandora_cmd", "buffered_seconds",
-            "config_content", "config_file"
-        ]
+        opts = ["pandora_cmd", "buffered_seconds", "config_content", "config_file"]
         return opts
 
     def configure(self):
@@ -150,7 +147,9 @@ class Plugin(GeneratorPlugin):
                 if answ.get('enabled') is True:
                     if not answ.get('path'):
                         answ_path = self.core.mkstemp(".log", "answ_")
-                        logger.warning('Seems like pandora answer log file not specified... adding default path: %s', answ_path)
+                        logger.warning(
+                            'Seems like pandora answer log file not specified... adding default path: %s', answ_path
+                        )
                         self.core.add_artifact_file(answ_path)
                         config['pools'][n]['gun']['answlog']['path'] = answ_path
                     else:
@@ -189,7 +188,7 @@ class Plugin(GeneratorPlugin):
             instances=0,
             loop_count=0,
             port=self.address.split(':')[-1],
-            rps_schedule=self.schedule
+            rps_schedule=self.schedule,
         )
 
     def get_reader(self, parser=string_to_df):
@@ -231,9 +230,7 @@ class Plugin(GeneratorPlugin):
             self.core.job.aggregator.add_result_listener(widget)
 
     def start_test(self):
-        args = [self.pandora_cmd] +\
-            (['-expvar'] if self.expvar else []) +\
-            [self.pandora_config_file]
+        args = [self.pandora_cmd] + (['-expvar'] if self.expvar else []) + [self.pandora_config_file]
         if self.affinity:
             self.core.__setup_affinity(self.affinity, args=args)
         logger.info("Starting: %s", args)
@@ -243,15 +240,11 @@ class Plugin(GeneratorPlugin):
         self.process_stderr = open(self.process_stderr_file, 'w')
         try:
             self.process = subprocess.Popen(
-                args,
-                stderr=self.process_stderr,
-                stdout=self.process_stderr,
-                close_fds=True)
+                args, stderr=self.process_stderr, stdout=self.process_stderr, close_fds=True
+            )
         except OSError:
-            logger.debug(
-                "Unable to start Pandora binary. Args: %s", args, exc_info=True)
-            raise RuntimeError(
-                "Unable to start Pandora binary and/or file does not exist: %s" % args)
+            logger.debug("Unable to start Pandora binary. Args: %s", args, exc_info=True)
+            raise RuntimeError("Unable to start Pandora binary and/or file does not exist: %s" % args)
 
     def is_test_finished(self):
         retcode = self.process.poll()
@@ -291,7 +284,7 @@ class Plugin(GeneratorPlugin):
 
 
 class PandoraInfoWidget(AbstractInfoWidget):
-    ''' Right panel widget '''
+    '''Right panel widget'''
 
     def __init__(self, pandora):
         AbstractInfoWidget.__init__(self)
@@ -316,8 +309,9 @@ class PandoraInfoWidget(AbstractInfoWidget):
         dur_seconds = int(time.time()) - int(self.owner.start_time)
         duration = str(datetime.timedelta(seconds=dur_seconds))
 
-        template = screen.markup.BG_BROWN + '~' * left_spaces + \
-            text + ' ' + '~' * right_spaces + screen.markup.RESET + "\n"
+        template = (
+            screen.markup.BG_BROWN + '~' * left_spaces + text + ' ' + '~' * right_spaces + screen.markup.RESET + "\n"
+        )
         template += "Command Line: %s\n"
         template += "    Duration: %s\n"
         template += "  Requests/s: %s\n"
@@ -330,7 +324,7 @@ class PandoraInfoWidget(AbstractInfoWidget):
             self.reqps,
             self.active,
             self.owner.address,
-            yaml.dump(self.owner.schedule)
+            yaml.dump(self.owner.schedule),
         )
 
         return template % data

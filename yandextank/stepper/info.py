@@ -101,16 +101,14 @@ class StepperStatus(object):
         self._timer = cur_time
         if time_delta > 0:
             stdout.write(
-                "AF: %3s%%, LP: %3s%%, loops: %10s, speed: %5s Krps\r" % (
-                    self.af_progress, self.lp_progress, self.loop_count,
-                    int(ammo_generated / time_delta / 1000.0)))
+                "AF: %3s%%, LP: %3s%%, loops: %10s, speed: %5s Krps\r"
+                % (self.af_progress, self.lp_progress, self.loop_count, int(ammo_generated / time_delta / 1000.0))
+            )
             stdout.flush()
             if self.core:
                 self.core.publish("stepper", "progress", self.lp_progress)
                 self.core.publish("stepper", "loop_count", self.loop_count)
-                self.core.publish(
-                    "stepper", "speed",
-                    "%s Krps" % int(ammo_generated / time_delta / 1000.0))
+                self.core.publish("stepper", "speed", "%s Krps" % int(ammo_generated / time_delta / 1000.0))
 
     def update_af_progress(self):
         if self.af_size and self.loop_limit and self.af_position is not None:
@@ -131,7 +129,7 @@ class StepperStatus(object):
 
     def calculate_lp_progress(self):
         if self.max_ammo is None:
-            return 1.
+            return 1.0
         return float(self.ammo_count) / float(self.max_ammo)
 
     def update_lp_progress(self):

@@ -1,4 +1,5 @@
 ''' Cummulative Autostops '''
+
 import logging
 import math
 import re
@@ -80,10 +81,8 @@ class TotalFracTimeCriterion(AbstractCriterion):
         self.seconds.append((data, stat))
         self.fail_counter.push(self.__fail_count(data))
         self.total_counter.push(total_responses)
-        self.total_fail_ratio = (
-            self.fail_counter.value / self.total_counter.value)
-        if self.total_fail_ratio >= self.fail_ratio_limit and len(
-                self.fail_counter) >= self.window_size:
+        self.total_fail_ratio = self.fail_counter.value / self.total_counter.value
+        if self.total_fail_ratio >= self.fail_ratio_limit and len(self.fail_counter) >= self.window_size:
             self.cause_second = self.seconds[0]
             logger.debug(self.explain())
             return True
@@ -118,7 +117,7 @@ class TotalFracTimeCriterion(AbstractCriterion):
             'ratio': self.total_fail_ratio * 100,
             'limit': self.rt_limit / 1000,
             'seconds_count': self.window_size,
-            'tag': self.tag
+            'tag': self.tag,
         }
         return parameters
 
@@ -128,7 +127,7 @@ class TotalFracTimeCriterion(AbstractCriterion):
 
 
 class TotalHTTPCodesCriterion(AbstractCriterion):
-    ''' Cummulative HTTP Criterion '''
+    '''Cummulative HTTP Criterion'''
 
     @staticmethod
     def get_type_string():
@@ -161,9 +160,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
                 matched_responses = float(matched_responses) / total_responses * 100
             else:
                 matched_responses = 1
-        logger.debug(
-            "HTTP codes matching mask %s: %s/%s", self.codes_mask,
-            matched_responses, self.level)
+        logger.debug("HTTP codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.level)
         self.data.append(matched_responses)
         self.second_window.append((data, stat))
         if len(self.data) > self.seconds_limit:
@@ -172,8 +169,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
         queue_len = 1
         if self.is_relative:
             queue_len = len(self.data)
-        if (sum(self.data) / queue_len) >= self.level\
-                and len(self.data) >= self.seconds_limit:  # yapf:disable
+        if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:  # yapf:disable
             self.cause_second = self.second_window[0]
             logger.debug(self.explain())
             return True
@@ -184,7 +180,8 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
         if self.tag:
             if data["tagged"].get(self.tag):
                 matched_responses = self.count_matched_codes(
-                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"])
+                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"]
+                )
                 total_responses = data["tagged"][self.tag]["interval_real"]["len"]
             # matched_responses=0 if current tag differs from selected one
             else:
@@ -192,8 +189,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
                 total_responses = data["overall"]["interval_real"]["len"]
         # Parse data for overall
         else:
-            matched_responses = self.count_matched_codes(
-                self.codes_regex, data["overall"]["proto_code"]["count"])
+            matched_responses = self.count_matched_codes(self.codes_regex, data["overall"]["proto_code"]["count"])
             total_responses = data["overall"]["interval_real"]["len"]
         return matched_responses, total_responses
 
@@ -201,7 +197,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
         return self.RC_TOTAL_HTTP
 
     def get_level_str(self):
-        ''' format level str '''
+        '''format level str'''
         if self.is_relative:
             level_str = str(self.level) + "%"
         else:
@@ -220,7 +216,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
             'code': self.codes_mask,
             'level': self.get_level_str(),
             'seconds_limit': self.seconds_limit,
-            'tag': self.tag
+            'tag': self.tag,
         }
         return parameters
 
@@ -233,7 +229,7 @@ class TotalHTTPCodesCriterion(AbstractCriterion):
 
 
 class TotalNetCodesCriterion(AbstractCriterion):
-    ''' Cummulative Net Criterion '''
+    '''Cummulative Net Criterion'''
 
     @staticmethod
     def get_type_string():
@@ -265,14 +261,15 @@ class TotalNetCodesCriterion(AbstractCriterion):
             if total_responses:
                 matched_responses = float(matched_responses) / total_responses * 100
                 logger.debug(
-                    "Net codes matching mask %s: %s%%/%s", self.codes_mask,
-                    round(matched_responses, 2), self.get_level_str())
+                    "Net codes matching mask %s: %s%%/%s",
+                    self.codes_mask,
+                    round(matched_responses, 2),
+                    self.get_level_str(),
+                )
             else:
                 matched_responses = 1
         else:
-            logger.debug(
-                "Net codes matching mask %s: %s/%s", self.codes_mask,
-                matched_responses, self.get_level_str())
+            logger.debug("Net codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.get_level_str())
 
         self.data.append(matched_responses)
         self.second_window.append((data, stat))
@@ -283,8 +280,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
         queue_len = 1
         if self.is_relative:
             queue_len = len(self.data)
-        if (sum(self.data) / queue_len) >= self.level\
-                and len(self.data) >= self.seconds_limit:  # yapf:disable
+        if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:  # yapf:disable
             self.cause_second = self.second_window[0]
             logger.debug(self.explain())
             return True
@@ -316,7 +312,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
         return self.RC_TOTAL_NET
 
     def get_level_str(self):
-        ''' format level str '''
+        '''format level str'''
         if self.is_relative:
             level_str = str(self.level) + "%"
         else:
@@ -335,7 +331,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
             'code': self.codes_mask,
             'level': self.get_level_str(),
             'seconds_limit': self.seconds_limit,
-            'tag': self.tag
+            'tag': self.tag,
         }
         return parameters
 
@@ -348,7 +344,7 @@ class TotalNetCodesCriterion(AbstractCriterion):
 
 
 class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
-    ''' Reversed HTTP Criterion '''
+    '''Reversed HTTP Criterion'''
 
     @staticmethod
     def get_type_string():
@@ -383,14 +379,11 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
             else:
                 matched_responses = 1
             logger.debug(
-                "HTTP codes matching mask not %s: %s/%s", self.codes_mask,
-                round(matched_responses, 1), self.level)
+                "HTTP codes matching mask not %s: %s/%s", self.codes_mask, round(matched_responses, 1), self.level
+            )
         else:
-            matched_responses = (
-                total_responses - matched_responses)
-            logger.debug(
-                "HTTP codes matching mask not %s: %s/%s", self.codes_mask,
-                matched_responses, self.level)
+            matched_responses = total_responses - matched_responses
+            logger.debug("HTTP codes matching mask not %s: %s/%s", self.codes_mask, matched_responses, self.level)
         self.data.append(matched_responses)
         self.second_window.append((data, stat))
         if len(self.data) > self.seconds_limit:
@@ -400,8 +393,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         queue_len = 1
         if self.is_relative:
             queue_len = len(self.data)
-        if (sum(self.data) / queue_len) >= self.level\
-                and len(self.data) >= self.seconds_limit:  # yapf:disable
+        if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:  # yapf:disable
             self.cause_second = self.second_window[0]
             logger.debug(self.explain())
             return True
@@ -412,7 +404,8 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         if self.tag:
             if data["tagged"].get(self.tag):
                 matched_responses = self.count_matched_codes(
-                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"])
+                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"]
+                )
                 total_responses = data["tagged"][self.tag]["interval_real"]["len"]
             # matched_responses=0 if current tag differs from selected one
             else:
@@ -420,8 +413,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
                 total_responses = data["overall"]["interval_real"]["len"]
         # Parse data for overall
         else:
-            matched_responses = self.count_matched_codes(
-                self.codes_regex, data["overall"]["proto_code"]["count"])
+            matched_responses = self.count_matched_codes(self.codes_regex, data["overall"]["proto_code"]["count"])
             total_responses = data["overall"]["interval_real"]["len"]
         return matched_responses, total_responses
 
@@ -429,7 +421,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
         return self.RC_TOTAL_NEGATIVE_HTTP
 
     def get_level_str(self):
-        ''' format level str'''
+        '''format level str'''
         if self.is_relative:
             level_str = str(self.level) + "%"
         else:
@@ -448,7 +440,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
             'code': self.codes_mask,
             'level': self.get_level_str(),
             'seconds_limit': self.seconds_limit,
-            'tag': self.tag
+            'tag': self.tag,
         }
         return parameters
 
@@ -461,7 +453,7 @@ class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
 
 
 class TotalNegativeNetCodesCriterion(AbstractCriterion):
-    ''' Reversed NET Criterion '''
+    '''Reversed NET Criterion'''
 
     @staticmethod
     def get_type_string():
@@ -496,14 +488,11 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
             else:
                 matched_responses = 1
             logger.debug(
-                "Net codes matching mask not %s: %s/%s", self.codes_mask,
-                round(matched_responses, 1), self.level)
+                "Net codes matching mask not %s: %s/%s", self.codes_mask, round(matched_responses, 1), self.level
+            )
         else:
-            matched_responses = (
-                total_responses - matched_responses)
-            logger.debug(
-                "Net codes matching mask not %s: %s/%s", self.codes_mask,
-                matched_responses, self.level)
+            matched_responses = total_responses - matched_responses
+            logger.debug("Net codes matching mask not %s: %s/%s", self.codes_mask, matched_responses, self.level)
         self.data.append(matched_responses)
         self.second_window.append((data, stat))
         if len(self.data) > self.seconds_limit:
@@ -513,8 +502,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         queue_len = 1
         if self.is_relative:
             queue_len = len(self.data)
-        if (sum(self.data) / queue_len) >= self.level \
-                and len(self.data) >= self.seconds_limit:  # yapf:disable
+        if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:  # yapf:disable
             self.cause_second = self.second_window[0]
             logger.debug(self.explain())
             return True
@@ -524,8 +512,9 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         # Count data for specific tag if it's present
         if self.tag:
             if data["tagged"].get(self.tag):
-                matched_responses = self.count_matched_codes(self.codes_regex,
-                                                             data["tagged"][self.tag]["net_code"]["count"])
+                matched_responses = self.count_matched_codes(
+                    self.codes_regex, data["tagged"][self.tag]["net_code"]["count"]
+                )
                 total_responses = data["tagged"][self.tag]["interval_real"]["len"]
             # matched_responses=0 if current tag differs from selected one
             else:
@@ -533,8 +522,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
                 total_responses = data["overall"]["interval_real"]["len"]
         # Count data for overall
         else:
-            matched_responses = self.count_matched_codes(self.codes_regex,
-                                                         data["overall"]["net_code"]["count"])
+            matched_responses = self.count_matched_codes(self.codes_regex, data["overall"]["net_code"]["count"])
             total_responses = data["overall"]["interval_real"]["len"]
         return matched_responses, total_responses
 
@@ -542,7 +530,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
         return self.RC_TOTAL_NEGATIVE_NET
 
     def get_level_str(self):
-        ''' format level str'''
+        '''format level str'''
         if self.is_relative:
             level_str = str(self.level) + "%"
         else:
@@ -561,7 +549,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
             'code': self.codes_mask,
             'level': self.get_level_str(),
             'seconds_limit': self.seconds_limit,
-            'tag': self.tag
+            'tag': self.tag,
         }
         return parameters
 
@@ -574,7 +562,7 @@ class TotalNegativeNetCodesCriterion(AbstractCriterion):
 
 
 class TotalHTTPTrendCriterion(AbstractCriterion):
-    ''' HTTP Trend Criterion '''
+    '''HTTP Trend Criterion'''
 
     @staticmethod
     def get_type_string():
@@ -612,8 +600,8 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
 
         self.total_tan = float(sum(self.tangents) / len(self.tangents))
         logger.debug(
-            "Last trend for http codes %s: %.2f +/- %.2f", self.codes_mask,
-            self.total_tan, self.measurement_error)
+            "Last trend for http codes %s: %.2f +/- %.2f", self.codes_mask, self.total_tan, self.measurement_error
+        )
 
         if self.total_tan + self.measurement_error < 0:
             self.cause_second = self.second_window[0]
@@ -627,14 +615,14 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
         if self.tag:
             if data["tagged"].get(self.tag):
                 matched_responses = self.count_matched_codes(
-                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"])
+                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"]
+                )
             # matched_responses=0 if current tag differs from selected one
             else:
                 matched_responses = 0
         # Count data for overall if it's present
         else:
-            matched_responses = self.count_matched_codes(
-                self.codes_regex, data["overall"]["proto_code"]["count"])
+            matched_responses = self.count_matched_codes(self.codes_regex, data["overall"]["proto_code"]["count"])
         return matched_responses
 
     def calc_measurement_error(self, tangents):
@@ -658,8 +646,10 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
 
     def explain(self):
         items = self.get_criterion_parameters()
-        return "Last trend for %(code)s http codes " \
+        return (
+            "Last trend for %(code)s http codes "
             "is %(total_tan).2f +/- %(measurement_err).2f for %(seconds_limit)ss" % items
+        )
 
     def get_criterion_parameters(self):
         parameters = {
@@ -667,10 +657,13 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
             'total_tan': self.total_tan,
             'measurement_err': self.measurement_error,
             'seconds_limit': self.seconds_limit,
-            'tag': self.tag
+            'tag': self.tag,
         }
         return parameters
 
     def widget_explain(self):
         items = self.get_criterion_parameters()
-        return "HTTP(%(code)s) trend is %(total_tan).2f +/- %(measurement_err).2f < 0 for %(seconds_limit)ss" % items, 1.0
+        return (
+            "HTTP(%(code)s) trend is %(total_tan).2f +/- %(measurement_err).2f < 0 for %(seconds_limit)ss" % items,
+            1.0,
+        )

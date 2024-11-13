@@ -8,8 +8,7 @@ import os
 
 import io
 
-from ...common.interfaces import AbstractPlugin, \
-    MonitoringDataListener, AggregateResultListener
+from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
@@ -30,12 +29,12 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
-        self.monitoring_stream = io.open(os.path.join(self.core.artifacts_dir,
-                                                      self.get_option('monitoring_log')),
-                                         mode='wb')
-        self.data_and_stats_stream = io.open(os.path.join(self.core.artifacts_dir,
-                                                          self.get_option('test_data_log')),
-                                             mode='wb')
+        self.monitoring_stream = io.open(
+            os.path.join(self.core.artifacts_dir, self.get_option('monitoring_log')), mode='wb'
+        )
+        self.data_and_stats_stream = io.open(
+            os.path.join(self.core.artifacts_dir, self.get_option('test_data_log')), mode='wb'
+        )
         self._is_telegraf = None
 
     def get_available_options(self):
@@ -49,10 +48,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         @data: aggregated data
         @stats: stats about gun
         """
-        json_string = json.dumps({
-            'data': data,
-            'stats': stats
-        }, cls=NumpyEncoder)
+        json_string = json.dumps({'data': data, 'stats': stats}, cls=NumpyEncoder)
         self.data_and_stats_stream.write('{}\n'.format(json_string).encode('utf-8'))
 
     def monitoring_data(self, data_list):
@@ -60,10 +56,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             monitoring_data = '{}\n'.format(json.dumps(data_list)).encode('utf-8')
             self.monitoring_stream.write(monitoring_data)
         else:
-            [
-                self.monitoring_stream.write('{}\n'.format(data.strip()).encode('utf-8')) for data in data_list
-                if data
-            ]
+            [self.monitoring_stream.write('{}\n'.format(data.strip()).encode('utf-8')) for data in data_list if data]
 
     def post_process(self, retcode):
         self.close()

@@ -13,7 +13,7 @@ def random_split(df):
     while i < max(df.index):
         step = np.random.randint(100, 200)
         if i + step < max(df.index):
-            yield df.loc[i:i + step - 1]
+            yield df.loc[i : i + step - 1]
         else:
             yield df.loc[i:]
         i += step

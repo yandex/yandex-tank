@@ -19,8 +19,7 @@ from builtins import str
 import requests
 import threading
 
-from ...common.interfaces import AbstractPlugin, \
-    MonitoringDataListener, AggregateResultListener, AbstractInfoWidget
+from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener, AbstractInfoWidget
 from ...common.util import expand_to_seconds
 from ..Autostop import Plugin as AutostopPlugin
 from ..Console import Plugin as ConsolePlugin
@@ -54,8 +53,9 @@ class BackendTypes(object):
                     return backend_type
             else:
                 raise KeyError(
-                    'Can not identify backend: neither api address nor section name match any of the patterns:\n%s' %
-                    '\n'.join(['*%s*' % ptrn[0] for ptrn in clues]))
+                    'Can not identify backend: neither api address nor section name match any of the patterns:\n%s'
+                    % '\n'.join(['*%s*' % ptrn[0] for ptrn in clues])
+                )
 
 
 class Job(ABC):
@@ -124,8 +124,7 @@ def chop(data_list, chunk_size):
         return chop(data_list[:mid], chunk_size) + chop(data_list[mid:], chunk_size)
 
 
-class Plugin(AbstractPlugin, AggregateResultListener,
-             MonitoringDataListener):
+class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     RC_STOP_FROM_WEB = 8
     VERSION = '3.0'
     SECTION = 'uploader'
@@ -182,8 +181,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def lock_duration(self):
         if self._lock_duration is None:
             info = self.get_generator_info()
-            self._lock_duration = info.duration if info.duration else \
-                expand_to_seconds(self.get_option("target_lock_duration"))
+            self._lock_duration = (
+                info.duration if info.duration else expand_to_seconds(self.get_option("target_lock_duration"))
+            )
         return self._lock_duration
 
     def get_available_options(self):
@@ -194,7 +194,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             "job_name",
             "job_dsc",
             "notify",
-            "ver", "component",
+            "ver",
+            "component",
             "operator",
             "jobno_file",
             "ignore_target_lock",
@@ -216,7 +217,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
             'log_status_requests',
             'log_other_requests',
             'threads_timeout',
-            'chunk_size'
+            'chunk_size',
         ]
         return opts
 
@@ -228,8 +229,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
     def check_task_is_open(self):
         if self.backend_type != BackendTypes.LUNAPARK:
             return
-        TASK_TIP = 'The task should be connected to Lunapark.' \
-                   'Open startrek task page, click "actions" -> "load testing".'
+        TASK_TIP = (
+            'The task should be connected to Lunapark.' 'Open startrek task page, click "actions" -> "load testing".'
+        )
 
         logger.debug("Check if task %s is open", self.task)
         try:
@@ -250,14 +252,13 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 except KeyError:
                     raise RuntimeError('Unknown task data format:\n{}'.format(task_data))
         except requests.exceptions.HTTPError as ex:
-            logger.error(
-                "Failed to check task status for '%s': %s", self.task, ex)
+            logger.error("Failed to check task status for '%s': %s", self.task, ex)
             if ex.response.status_code == 404:
                 raise RuntimeError("Task not found: %s\n%s" % (self.task, TASK_TIP))
             elif ex.response.status_code == 500 or ex.response.status_code == 400:
                 raise RuntimeError(
-                    "Unable to check task staus, id: %s, error code: %s" %
-                    (self.task, ex.response.status_code))
+                    "Unable to check task staus, id: %s, error code: %s" % (self.task, ex.response.status_code)
+                )
             raise ex
 
     @staticmethod
@@ -294,8 +295,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         try:
             lp_job = self.lp_job
             self.add_cleanup(self.unlock_targets)
-            self.locked_targets = self.check_and_lock_targets(strict=self.get_option('strict_lock'),
-                                                              ignore=self.get_option('ignore_target_lock'))
+            self.locked_targets = self.check_and_lock_targets(
+                strict=self.get_option('strict_lock'), ignore=self.get_option('ignore_target_lock')
+            )
             if lp_job._number:
                 self.make_symlink(lp_job._number)
                 self.check_task_is_open()
@@ -415,9 +417,7 @@ class Plugin(AbstractPlugin, AggregateResultListener,
 
         if autostop and autostop.cause_criterion and autostop.imbalance_timestamp:
             self.lp_job.set_imbalance_and_dsc(
-                autostop.imbalance_rps,
-                autostop.cause_criterion.explain(),
-                autostop.imbalance_timestamp
+                autostop.imbalance_rps, autostop.cause_criterion.explain(), autostop.imbalance_timestamp
             )
 
         else:
@@ -483,19 +483,13 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         logger.info("Closing {} thread".format(name))
 
     def __data_uploader(self):
-        self.__uploader(self.data_queue,
-                        lambda entry: self.lp_job.push_test_data(*entry),
-                        'Data Uploader')
+        self.__uploader(self.data_queue, lambda entry: self.lp_job.push_test_data(*entry), 'Data Uploader')
 
     def __monitoring_uploader(self):
-        self.__uploader(self.monitoring_queue,
-                        self.lp_job.push_monitoring_data,
-                        'Monitoring Uploader')
+        self.__uploader(self.monitoring_queue, self.lp_job.push_monitoring_data, 'Monitoring Uploader')
 
     def __events_uploader(self):
-        self.__uploader(self.events_queue,
-                        self.lp_job.push_events_data,
-                        'Events Uploader')
+        self.__uploader(self.events_queue, self.lp_job.push_events_data, 'Events Uploader')
 
     # TODO: why we do it here? should be in core
     def __save_conf(self):
@@ -515,8 +509,9 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return targets_to_lock
 
     def lock_targets(self, targets_to_lock, ignore, strict):
-        locked_targets = [target for target in targets_to_lock
-                          if self.lp_job.lock_target(target, self.lock_duration, ignore, strict)]
+        locked_targets = [
+            target for target in targets_to_lock if self.lp_job.lock_target(target, self.lock_duration, ignore, strict)
+        ]
         return locked_targets
 
     def unlock_targets(self):
@@ -537,31 +532,23 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         if not os.path.exists(PLUGIN_DIR):
             os.makedirs(PLUGIN_DIR)
         try:
-            os.symlink(
-                os.path.relpath(
-                    self.core.artifacts_dir,
-                    PLUGIN_DIR),
-                os.path.join(
-                    PLUGIN_DIR,
-                    str(name)))
+            os.symlink(os.path.relpath(self.core.artifacts_dir, PLUGIN_DIR), os.path.join(PLUGIN_DIR, str(name)))
         # this exception catch for filesystems w/o symlinks
         except OSError:
             logger.warning('Unable to create symlink for artifact: %s', name)
 
     def _get_user_agent(self):
         plugin_agent = 'Uploader/{}'.format(self.VERSION)
-        return ' '.join((plugin_agent,
-                         self.core.get_user_agent()))
+        return ' '.join((plugin_agent, self.core.get_user_agent()))
 
     def __get_operator(self):
         try:
-            return self.get_option(
-                'operator') or pwd.getpwuid(
-                os.geteuid())[0]
+            return self.get_option('operator') or pwd.getpwuid(os.geteuid())[0]
         except:  # noqa: E722
             logger.error(
                 "Couldn't get username from the OS. Please, set the 'meta.operator' option explicitly in your config "
-                "file.")
+                "file."
+            )
             raise
 
     def __get_api_client(self):
@@ -575,18 +562,20 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         else:
             raise RuntimeError("Backend type doesn't match any of the expected")
 
-        return client(base_url=self.get_option('api_address'),
-                      writer_url=self.get_option('writer_endpoint'),
-                      network_attempts=self.get_option('network_attempts'),
-                      api_attempts=self.get_option('api_attempts'),
-                      maintenance_attempts=self.get_option('maintenance_attempts'),
-                      network_timeout=self.get_option('network_timeout'),
-                      api_timeout=self.get_option('api_timeout'),
-                      maintenance_timeout=self.get_option('maintenance_timeout'),
-                      connection_timeout=self.get_option('connection_timeout'),
-                      user_agent=self._get_user_agent(),
-                      api_token=self.api_token,
-                      core_interrupted=self.interrupted)
+        return client(
+            base_url=self.get_option('api_address'),
+            writer_url=self.get_option('writer_endpoint'),
+            network_attempts=self.get_option('network_attempts'),
+            api_attempts=self.get_option('api_attempts'),
+            maintenance_attempts=self.get_option('maintenance_attempts'),
+            network_timeout=self.get_option('network_timeout'),
+            api_timeout=self.get_option('api_timeout'),
+            maintenance_timeout=self.get_option('maintenance_timeout'),
+            connection_timeout=self.get_option('connection_timeout'),
+            user_agent=self._get_user_agent(),
+            api_token=self.api_token,
+            core_interrupted=self.interrupted,
+        )
 
     @property
     def lp_job(self):
@@ -619,24 +608,26 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         port = info.port
         loadscheme = [] if isinstance(info.rps_schedule, (str, dict)) else info.rps_schedule
 
-        lp_job = LPJob(client=api_client,
-                       target_host=self.target,
-                       target_port=port,
-                       number=self.cfg.get('jobno'),
-                       token=self.get_option('upload_token'),
-                       person=self.__get_operator(),
-                       task=self.task,
-                       name=self.get_option('job_name', 'untitled'),
-                       description=self.get_option('job_dsc'),
-                       tank=self.core.job.tank,
-                       notify_list=self.get_option("notify"),
-                       load_scheme=loadscheme,
-                       version=self.get_option('ver'),
-                       log_data_requests=self.get_option('log_data_requests'),
-                       log_monitoring_requests=self.get_option('log_monitoring_requests'),
-                       log_status_requests=self.get_option('log_status_requests'),
-                       log_other_requests=self.get_option('log_other_requests'),
-                       add_cleanup=lambda: self.add_cleanup(self.close_job))
+        lp_job = LPJob(
+            client=api_client,
+            target_host=self.target,
+            target_port=port,
+            number=self.cfg.get('jobno'),
+            token=self.get_option('upload_token'),
+            person=self.__get_operator(),
+            task=self.task,
+            name=self.get_option('job_name', 'untitled'),
+            description=self.get_option('job_dsc'),
+            tank=self.core.job.tank,
+            notify_list=self.get_option("notify"),
+            load_scheme=loadscheme,
+            version=self.get_option('ver'),
+            log_data_requests=self.get_option('log_data_requests'),
+            log_monitoring_requests=self.get_option('log_monitoring_requests'),
+            log_status_requests=self.get_option('log_status_requests'),
+            log_other_requests=self.get_option('log_other_requests'),
+            add_cleanup=lambda: self.add_cleanup(self.close_job),
+        )
         lp_job.send_config(LPRequisites.CONFIGINITIAL, yaml.dump(self.core.configinitial))
         return lp_job
 
@@ -668,8 +659,8 @@ class Plugin(AbstractPlugin, AggregateResultListener,
                 with open(filename, 'r') as handle:
                     data = handle.read().strip()
                     logger.info(
-                        "Read authentication token from %s, "
-                        "token length is %d bytes", filename, len(str(data)))
+                        "Read authentication token from %s, " "token length is %d bytes", filename, len(str(data))
+                    )
             except IOError:
                 logger.error("Failed to read Overload API token from %s", filename)
                 logger.info(
@@ -705,14 +696,24 @@ class JobInfoWidget(AbstractInfoWidget):
         return 1
 
     def render(self, screen):
-        template = "Author: " + screen.markup.RED + "%s" + \
-                   screen.markup.RESET + \
-                   "%s\n   Job: %s %s\n  Task: %s %s\n   Web: %s%s"
-        data = (self.owner.lp_job.person[:1], self.owner.lp_job.person[1:],
-                self.owner.lp_job.number, self.owner.lp_job.name, self.owner.lp_job.task,
-                # todo: task_name from api_client.get_task_data()
-                self.owner.lp_job.task, self.owner.lp_job.api_client.base_url,
-                self.owner.lp_job.number)
+        template = (
+            "Author: "
+            + screen.markup.RED
+            + "%s"
+            + screen.markup.RESET
+            + "%s\n   Job: %s %s\n  Task: %s %s\n   Web: %s%s"
+        )
+        data = (
+            self.owner.lp_job.person[:1],
+            self.owner.lp_job.person[1:],
+            self.owner.lp_job.number,
+            self.owner.lp_job.name,
+            self.owner.lp_job.task,
+            # todo: task_name from api_client.get_task_data()
+            self.owner.lp_job.task,
+            self.owner.lp_job.api_client.base_url,
+            self.owner.lp_job.number,
+        )
 
         return template % data
 
@@ -738,7 +739,7 @@ class LPJob(Job):
         version=None,
         detailed_time=None,
         load_scheme=None,
-        add_cleanup=lambda: None
+        add_cleanup=lambda: None,
     ):
         """
         :param client: APIClient
@@ -747,8 +748,7 @@ class LPJob(Job):
         :param log_status_requests: bool
         :param log_monitoring_requests: bool
         """
-        assert bool(number) == bool(
-            token), 'Job number and upload token should come together'
+        assert bool(number) == bool(token), 'Job number and upload token should come together'
         self.log_other_requests = log_other_requests
         self.log_data_requests = log_data_requests
         self.log_status_requests = log_status_requests
@@ -778,7 +778,8 @@ class LPJob(Job):
         if not self.interrupted.is_set():
             try:
                 self.api_client.push_test_data(
-                    self.number, self.token, data, stats, self.interrupted, trace=self.log_data_requests)
+                    self.number, self.token, data, stats, self.interrupted, trace=self.log_data_requests
+                )
             except (APIClient.NotAvailable, APIClient.NetworkError, APIClient.UnderMaintenance):
                 logger.warning('Failed to push test data')
                 self.interrupted.set()
@@ -791,23 +792,29 @@ class LPJob(Job):
         regression_component=None,
         cmdline=None,
         is_starred=False,
-        tank_type=1
+        tank_type=1,
     ):
         try:
-            self.api_client.edit_job_metainfo(jobno=self.number,
-                                              job_name=self.name,
-                                              job_dsc=self.description,
-                                              instances=instances,
-                                              ammo_path=ammo_path,
-                                              loop_count=loop_count,
-                                              version_tested=self.version,
-                                              component=regression_component,
-                                              cmdline=cmdline,
-                                              is_starred=is_starred,
-                                              tank_type=tank_type,
-                                              trace=self.log_other_requests)
-        except (APIClient.NotAvailable, APIClient.StoppedFromOnline, APIClient.NetworkError,
-                APIClient.UnderMaintenance):
+            self.api_client.edit_job_metainfo(
+                jobno=self.number,
+                job_name=self.name,
+                job_dsc=self.description,
+                instances=instances,
+                ammo_path=ammo_path,
+                loop_count=loop_count,
+                version_tested=self.version,
+                component=regression_component,
+                cmdline=cmdline,
+                is_starred=is_starred,
+                tank_type=tank_type,
+                trace=self.log_other_requests,
+            )
+        except (
+            APIClient.NotAvailable,
+            APIClient.StoppedFromOnline,
+            APIClient.NetworkError,
+            APIClient.UnderMaintenance,
+        ):
             logger.exception('Failed to edit job metainfo on Lunapark')
 
     @property
@@ -829,30 +836,27 @@ class LPJob(Job):
             return True
 
     def create(self):
-        self._number, self._token = self.api_client.new_job(task=self.task,
-                                                            person=self.person,
-                                                            tank=self.tank,
-                                                            loadscheme=self.load_scheme,
-                                                            target_host=self.target_host,
-                                                            target_port=self.target_port,
-                                                            detailed_time=self.detailed_time,
-                                                            notify_list=self.notify_list,
-                                                            trace=self.log_other_requests)
+        self._number, self._token = self.api_client.new_job(
+            task=self.task,
+            person=self.person,
+            tank=self.tank,
+            loadscheme=self.load_scheme,
+            target_host=self.target_host,
+            target_port=self.target_port,
+            detailed_time=self.detailed_time,
+            notify_list=self.notify_list,
+            trace=self.log_other_requests,
+        )
         self.add_cleanup()
         logger.info('Job created: {}'.format(self._number))
         self.web_link = urljoin(self.api_client.base_url, str(self._number))
 
     def send_status(self, status):
         if self._number and not self.interrupted.is_set():
-            self.api_client.send_status(
-                self.number,
-                self.token,
-                status,
-                trace=self.log_status_requests)
+            self.api_client.send_status(self.number, self.token, status, trace=self.log_status_requests)
 
     def get_task_data(self, task):
-        return self.api_client.get_task_data(
-            task, trace=self.log_other_requests)
+        return self.api_client.get_task_data(task, trace=self.log_other_requests)
 
     def send_config(self, lp_requisites, content):
         self.api_client.send_config(self.number, lp_requisites, content, trace=self.log_other_requests)
@@ -860,7 +864,8 @@ class LPJob(Job):
     def push_monitoring_data(self, data):
         if not self.interrupted.is_set():
             self.api_client.push_monitoring_data(
-                self.number, self.token, data, self.interrupted, trace=self.log_monitoring_requests)
+                self.number, self.token, data, self.interrupted, trace=self.log_monitoring_requests
+            )
 
     def push_events_data(self, data):
         if not self.interrupted.is_set():
@@ -871,14 +876,14 @@ class LPJob(Job):
         maintenance_timeouts = iter([0]) if ignore else iter(lambda: lock_wait_timeout, 0)
         while True:
             try:
-                self.api_client.lock_target(lock_target,
-                                            lock_target_duration,
-                                            trace=self.log_other_requests,
-                                            maintenance_timeouts=maintenance_timeouts,
-                                            maintenance_msg="Target is locked.\nManual unlock link: %s/%s" % (
-                                                self.api_client.base_url,
-                                                self.api_client.get_manual_unlock_link(lock_target)
-                                            ))
+                self.api_client.lock_target(
+                    lock_target,
+                    lock_target_duration,
+                    trace=self.log_other_requests,
+                    maintenance_timeouts=maintenance_timeouts,
+                    maintenance_msg="Target is locked.\nManual unlock link: %s/%s"
+                    % (self.api_client.base_url, self.api_client.get_manual_unlock_link(lock_target)),
+                )
                 return True
             except (APIClient.NotAvailable, APIClient.StoppedFromOnline) as e:
                 logger.info('Target is not locked due to %s', e)
@@ -895,9 +900,11 @@ class LPJob(Job):
                 if ignore:
                     logger.info('ignore_target_locks = 1')
                     return False
-                logger.info("Manual unlock link: %s/%s",
-                            self.api_client.base_url,
-                            self.api_client.get_manual_unlock_link(lock_target))
+                logger.info(
+                    "Manual unlock link: %s/%s",
+                    self.api_client.base_url,
+                    self.api_client.get_manual_unlock_link(lock_target),
+                )
                 continue
 
     def set_imbalance_and_dsc(self, rps, comment, timestamp):
@@ -906,8 +913,7 @@ class LPJob(Job):
     def is_target_locked(self, host, strict):
         while True:
             try:
-                return self.api_client.is_target_locked(
-                    host, trace=self.log_other_requests)
+                return self.api_client.is_target_locked(host, trace=self.log_other_requests)
             except APIClient.UnderMaintenance:
                 logger.info('Target is locked, retrying...')
                 continue

@@ -8,4 +8,4 @@
 
 # TODO: import only specific things that we really need to export
 from .manager import *  # noqa
-from .common.interfaces import MetricData   # noqa
+from .common.interfaces import MetricData  # noqa
