@@ -52,9 +52,23 @@ class TypeEvents(DataType):
 class TypeQuantiles(Aggregated, DataType):
     perc_list = [0, 10, 25, 50, 75, 80, 85, 90, 95, 98, 99, 100]
     qlist = ['q%d' % n for n in perc_list]
-    rename = {'count': 'cnt', 'mean': 'average', 'std': 'stddev', '0%': 'q0', '10%': 'q10', '25%': 'q25',
-              '50%': 'q50', '75%': 'q75', '80%': 'q80', '85%': 'q85', '90%': 'q90',
-              '95%': 'q95', '98%': 'q98', '99%': 'q99', '100%': 'q100', }
+    rename = {
+        'count': 'cnt',
+        'mean': 'average',
+        'std': 'stddev',
+        '0%': 'q0',
+        '10%': 'q10',
+        '25%': 'q25',
+        '50%': 'q50',
+        '75%': 'q75',
+        '80%': 'q80',
+        '85%': 'q85',
+        '90%': 'q90',
+        '95%': 'q95',
+        '98%': 'q98',
+        '99%': 'q99',
+        '100%': 'q100',
+    }
 
     table_name = 'aggregates'
     columns = ['ts'] + qlist + ['average', 'stddev', 'sum', 'cnt']
@@ -70,9 +84,11 @@ class TypeQuantiles(Aggregated, DataType):
             return pd.DataFrame()
         df = df.set_index(groupby)
         series = df.loc[:, AbstractMetric.VALUE_COL]
-        res = series.groupby(series.index). \
-            describe(percentiles=[i / 100. for i in cls.perc_list]). \
-            rename(columns=cls.rename)
+        res = (
+            series.groupby(series.index)
+            .describe(percentiles=[i / 100.0 for i in cls.perc_list])
+            .rename(columns=cls.rename)
+        )
         res['ts'] = res.index
         res['cnt'] = res['cnt'].astype(int)
         res['sum'] = res['average'] * res['cnt']
@@ -82,16 +98,18 @@ class TypeQuantiles(Aggregated, DataType):
 class TypeDistribution(Aggregated, DataType):
     table_name = 'distributions'
     columns = ['ts', 'l', 'r', 'cnt']
-    DEFAULT_BINS = np.concatenate((
-        np.linspace(0, 4990, 500, dtype=int),  # 10µs accuracy
-        np.linspace(5000, 9900, 50, dtype=int),  # 100µs accuracy
-        np.linspace(10, 499, 490, dtype=int) * 1000,  # 1ms accuracy
-        np.linspace(500, 2995, 500, dtype=int) * 1000,  # 5ms accuracy
-        np.linspace(3000, 9990, 700, dtype=int) * 1000,  # 10ms accuracy
-        np.linspace(10000, 29950, 400, dtype=int) * 1000,  # 50ms accuracy
-        np.linspace(30000, 119900, 900, dtype=int) * 1000,  # 100ms accuracy
-        np.linspace(120, 300, 181, dtype=int) * 1000000  # 1s accuracy
-    ))
+    DEFAULT_BINS = np.concatenate(
+        (
+            np.linspace(0, 4990, 500, dtype=int),  # 10µs accuracy
+            np.linspace(5000, 9900, 50, dtype=int),  # 100µs accuracy
+            np.linspace(10, 499, 490, dtype=int) * 1000,  # 1ms accuracy
+            np.linspace(500, 2995, 500, dtype=int) * 1000,  # 5ms accuracy
+            np.linspace(3000, 9990, 700, dtype=int) * 1000,  # 10ms accuracy
+            np.linspace(10000, 29950, 400, dtype=int) * 1000,  # 50ms accuracy
+            np.linspace(30000, 119900, 900, dtype=int) * 1000,  # 100ms accuracy
+            np.linspace(120, 300, 181, dtype=int) * 1000000,  # 1s accuracy
+        )
+    )
 
     @classmethod
     def processor(cls, df, bins=DEFAULT_BINS, groupby='second'):
@@ -103,12 +121,12 @@ class TypeDistribution(Aggregated, DataType):
         data = {ts: np.histogram(s, bins=bins) for ts, s in series.groupby(series.index)}
         # data, bins = np.histogram(series, bins=bins)
         result = pd.concat(
-            [pd.DataFrame({'l': bins[:-1],
-                           'r': bins[1:],
-                           'cnt': cnt,
-                           'ts': ts},
-                          columns=['l', 'r', 'cnt', 'ts']
-                          ).query('cnt > 0') for ts, (cnt, bins) in data.items()]
+            [
+                pd.DataFrame(
+                    {'l': bins[:-1], 'r': bins[1:], 'cnt': cnt, 'ts': ts}, columns=['l', 'r', 'cnt', 'ts']
+                ).query('cnt > 0')
+                for ts, (cnt, bins) in data.items()
+            ]
         )
         return result
 
@@ -124,8 +142,12 @@ class TypeHistogram(Aggregated, DataType):
             return pd.DataFrame()
         df = df.set_index(groupby)
         series = df.loc[:, AbstractMetric.VALUE_COL]
-        data = series.groupby([series.index, series.values]).size().reset_index(). \
-            rename(columns={'second': 'ts', 'level_1': 'category', 'value': 'cnt'})
+        data = (
+            series.groupby([series.index, series.values])
+            .size()
+            .reset_index()
+            .rename(columns={'second': 'ts', 'level_1': 'category', 'value': 'cnt'})
+        )
         return data
 
 
@@ -173,9 +195,7 @@ class MetricData(object):
 
     def __repr__(self):
         return "MetricData: aggregated={}, data types={}\n{}".format(
-            'yes' if self.is_aggregated else 'no',
-            self.data_types.__repr__(),
-            self.df.__repr__()
+            'yes' if self.is_aggregated else 'no', self.data_types.__repr__(), self.df.__repr__()
         )
 
 
@@ -223,7 +243,7 @@ class AbstractMetric(object):
 
 
 class QueueWorker(threading.Thread):
-    """ Process data """
+    """Process data"""
 
     def __init__(self, _queue):
         """

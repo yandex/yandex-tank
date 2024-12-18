@@ -32,6 +32,7 @@ def string_to_df_microsec(data):
 def get_handler(data_session):
     def handler(signum, frame):
         data_session.interrupt()
+
     return handler
 
 
@@ -41,14 +42,19 @@ def get_uploader(data_session, column_mapping, overall_only=False):
     """
     _router = {}
     _overall = {
-        'interval_real': data_session.new_true_metric('interval_real overall', raw=False, aggregate=True, source='tank'),
+        'interval_real': data_session.new_true_metric(
+            'interval_real overall', raw=False, aggregate=True, source='tank'
+        ),
         'connect_time': data_session.new_true_metric('connect_time overall', raw=False, aggregate=True, source='tank'),
         'send_time': data_session.new_true_metric('send_time overall', raw=False, aggregate=True, source='tank'),
         'latency': data_session.new_true_metric('latency overall', raw=False, aggregate=True, source='tank'),
         'receive_time': data_session.new_true_metric('receive_time overall', raw=False, aggregate=True, source='tank'),
-        'interval_event': data_session.new_true_metric('interval_event overall', raw=False, aggregate=True, source='tank'),
+        'interval_event': data_session.new_true_metric(
+            'interval_event overall', raw=False, aggregate=True, source='tank'
+        ),
         'net_code': data_session.new_event_metric('net_code overall', raw=False, aggregate=True, source='tank'),
-        'proto_code': data_session.new_event_metric('proto_code overall', raw=False, aggregate=True, source='tank')}
+        'proto_code': data_session.new_event_metric('proto_code overall', raw=False, aggregate=True, source='tank'),
+    }
 
     def get_router(tags):
         """
@@ -56,13 +62,20 @@ def get_uploader(data_session, column_mapping, overall_only=False):
         :return: {'%tag': {'%column_name': metric_object(name, group)}}
         """
         if set(tags) - set(_router.keys()):
-            [_router.setdefault(tag,
-                                {col_name: data_session.new_true_metric(name + '-' + tag,
-                                                                        raw=False,
-                                                                        aggregate=True)
-                                 for col_name, name in column_mapping.items()} if not overall_only else {}
-                                )
-             for tag in tags]
+            [
+                _router.setdefault(
+                    tag,
+                    (
+                        {
+                            col_name: data_session.new_true_metric(name + '-' + tag, raw=False, aggregate=True)
+                            for col_name, name in column_mapping.items()
+                        }
+                        if not overall_only
+                        else {}
+                    ),
+                )
+                for tag in tags
+            ]
         return _router
 
     def upload_overall(df):
@@ -90,17 +103,15 @@ def main():
     parser.add_argument('--db_name', type=str, help='ClickHouse database name', default='luna_test')
     args = parser.parse_args()
 
-    clients = [
-        {'type': 'luna', 'api_address': args.url, 'db_name': args.db_name},
-        {'type': 'local_storage'}
-    ]
+    clients = [{'type': 'luna', 'api_address': args.url, 'db_name': args.db_name}, {'type': 'local_storage'}]
     data_session = DataSession({'clients': clients})
     data_session.update_job({'name': args.name})
     print('Test name: %s' % args.name)
 
-    col_map_aggr = {name: 'metric %s' % name for name in
-                    ['interval_real', 'connect_time', 'send_time', 'latency',
-                     'receive_time', 'interval_event']}
+    col_map_aggr = {
+        name: 'metric %s' % name
+        for name in ['interval_real', 'connect_time', 'send_time', 'latency', 'receive_time', 'interval_event']
+    }
     uploader = get_uploader(data_session, col_map_aggr, True)
 
     signal.signal(signal.SIGINT, get_handler(data_session))
@@ -108,7 +119,7 @@ def main():
     with open(args.phout) as f:
         buffer = ''
         while True:
-            parts = f.read(128*1024)
+            parts = f.read(128 * 1024)
             try:
                 chunk, new_buffer = parts.rsplit('\n', 1)
                 chunk = buffer + chunk + '\n'

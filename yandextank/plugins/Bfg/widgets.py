@@ -4,7 +4,7 @@ from ...common.interfaces import AbstractInfoWidget
 
 
 class BfgInfoWidget(AbstractInfoWidget):
-    ''' Console widget '''
+    '''Console widget'''
 
     def __init__(self):
         AbstractInfoWidget.__init__(self)
@@ -33,7 +33,9 @@ class BfgInfoWidget(AbstractInfoWidget):
         res += str(self.instances)
 
         res += "\nPlanned requests: %s for %s\nActual responses: " % (
-            self.planned, datetime.timedelta(seconds=self.planned_rps_duration))
+            self.planned,
+            datetime.timedelta(seconds=self.planned_rps_duration),
+        )
         if self.planned != self.RPS:
             res += screen.markup.YELLOW + str(self.RPS) + screen.markup.RESET
         else:
@@ -41,13 +43,11 @@ class BfgInfoWidget(AbstractInfoWidget):
 
         res += "\n        Accuracy: "
         if self.selfload < 80:
-            res += screen.markup.RED + \
-                ('%.2f' % self.selfload) + screen.markup.RESET
+            res += screen.markup.RED + ('%.2f' % self.selfload) + screen.markup.RESET
         elif self.selfload < 95:
-            res += screen.markup.YELLOW + \
-                ('%.2f' % self.selfload) + screen.markup.RESET
+            res += screen.markup.YELLOW + ('%.2f' % self.selfload) + screen.markup.RESET
         else:
-            res += ('%.2f' % self.selfload)
+            res += '%.2f' % self.selfload
 
         res += "%\n        Time lag: "
         res += str(datetime.timedelta(seconds=self.time_lag))

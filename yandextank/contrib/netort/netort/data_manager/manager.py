@@ -42,7 +42,15 @@ class DataSession(object):
         * move config parameters to kwargs, describe them here
         * fight performance issues (probably caused by poor pandas write_csv performance)
     """
-    def __init__(self, config: Dict, tankapi_info: Dict = None, config_filenames: Set = None, artifacts_dir: str = None, test_start: float = None):
+
+    def __init__(
+        self,
+        config: Dict,
+        tankapi_info: Dict = None,
+        config_filenames: Set = None,
+        artifacts_dir: str = None,
+        test_start: float = None,
+    ):
         self.start_ts = time.time()
         self.config = config
         self.operator = self.__get_operator()
@@ -73,17 +81,19 @@ class DataSession(object):
             else:
                 raise NotImplementedError('Unknown client type: %s' % type_)
 
-    def new_true_metric(self, meta: Dict, raw=True, aggregate=False, parent: str = None, case: str = None) -> AbstractMetric:
-        return self.manager.new_true_metric(meta=meta,
-                                            test_start=self.test_start,
-                                            raw=raw, aggregate=aggregate,
-                                            parent=parent, case=case)
+    def new_true_metric(
+        self, meta: Dict, raw=True, aggregate=False, parent: str = None, case: str = None
+    ) -> AbstractMetric:
+        return self.manager.new_true_metric(
+            meta=meta, test_start=self.test_start, raw=raw, aggregate=aggregate, parent=parent, case=case
+        )
 
-    def new_event_metric(self, meta: Dict, raw=True, aggregate=False, parent: str = None, case: str = None) -> AbstractMetric:
-        return self.manager.new_event_metric(meta=meta,
-                                             test_start=self.test_start,
-                                             raw=raw, aggregate=aggregate,
-                                             parent=parent, case=case)
+    def new_event_metric(
+        self, meta: Dict, raw=True, aggregate=False, parent: str = None, case: str = None
+    ) -> AbstractMetric:
+        return self.manager.new_event_metric(
+            meta=meta, test_start=self.test_start, raw=raw, aggregate=aggregate, parent=parent, case=case
+        )
 
     def subscribe(self, callback: Callable) -> Any:
         return self.manager.subscribe(callback)
@@ -128,7 +138,8 @@ class DataSession(object):
         except:  # noqa: E722
             logger.error(
                 "Couldn't get username from the OS. Please, set the 'operator' option explicitly in your config "
-                "file.")
+                "file."
+            )
             raise
 
     def close(self, test_end: float):
@@ -175,6 +186,7 @@ class DataManager(object):
         router (MetricsRouter object): Router thread. Read routing queue, concat incoming messages by metrics.type,
             left join by callback and call callback w/ resulting dataframe
     """
+
     def __init__(self):
         self.metrics = {}
         self.metrics_meta = {}
@@ -184,7 +196,9 @@ class DataManager(object):
         self.router = MetricsRouter(self)
         self.router.start()
 
-    def new_true_metric(self, meta: Dict, test_start: float, raw=True, aggregate=False, parent: str = None, case: str = None) -> AbstractMetric:
+    def new_true_metric(
+        self, meta: Dict, test_start: float, raw=True, aggregate=False, parent: str = None, case: str = None
+    ) -> AbstractMetric:
         """
         Create and register metric,
         find subscribers for this metric (using meta as filter) and subscribe
@@ -194,16 +208,24 @@ class DataManager(object):
         """
         return self._new_metric(Metric, meta, test_start, raw, aggregate, parent=parent, case=case)
 
-    def new_event_metric(self, meta: Dict, test_start: float, raw=True, aggregate=False, parent: str = None, case: str = None) -> AbstractMetric:
+    def new_event_metric(
+        self, meta: Dict, test_start: float, raw=True, aggregate=False, parent: str = None, case: str = None
+    ) -> AbstractMetric:
         # type: (dict, float, bool, bool, str, str) -> AbstractMetric
         return self._new_metric(Event, meta, test_start, raw, aggregate, parent=parent, case=case)
 
-    def _new_metric(self, dtype, meta: Dict, test_start: float, raw=True, aggregate=False, parent: str = None, case: str = None) -> AbstractMetric:
-        metric_obj = dtype(meta=meta,
-                           _queue=self.routing_queue,
-                           test_start=test_start,
-                           raw=raw, aggregate=aggregate,
-                           parent=parent, case=case)  # create metric object
+    def _new_metric(
+        self, dtype, meta: Dict, test_start: float, raw=True, aggregate=False, parent: str = None, case: str = None
+    ) -> AbstractMetric:
+        metric_obj = dtype(
+            meta=meta,
+            _queue=self.routing_queue,
+            test_start=test_start,
+            raw=raw,
+            aggregate=aggregate,
+            parent=parent,
+            case=case,
+        )  # create metric object
         self.metrics_meta = meta  # register metric meta
         self.metrics[metric_obj.local_id] = metric_obj  # register metric object
         for callback in self.callbacks:

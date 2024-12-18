@@ -53,8 +53,7 @@ class AbstractGun(AbstractPlugin):
             raise
         finally:
             if data_item.get("interval_real") is None:
-                data_item["interval_real"] = int(
-                    (time.time() - start_time) * 1e6)
+                data_item["interval_real"] = int((time.time() - start_time) * 1e6)
             try:
                 self.results.put(data_item, block=False)
             except Full:
@@ -122,6 +121,7 @@ class SqlGun(AbstractGun):
 
         from sqlalchemy import create_engine
         from sqlalchemy import exc
+
         self.exc = exc
 
         self.engine = create_engine(self.get_option("db"))
@@ -157,6 +157,7 @@ class CustomGun(AbstractGun):
     """
     This gun is deprecated! Use UltimateGun
     """
+
     SECTION = 'custom_gun'
 
     def __init__(self, core, cfg):
@@ -183,6 +184,7 @@ class ScenarioGun(AbstractGun):
     """
     This gun is deprecated! Use UltimateGun
     """
+
     SECTION = 'scenario_gun'
 
     def __init__(self, core, cfg):
@@ -243,8 +245,8 @@ class UltimateGun(AbstractGun):
         test_class = getattr(self.module, class_name, None)
         if not isinstance(test_class, type):
             raise NotImplementedError(
-                "Class definition for '%s' was not found in '%s' module" %
-                (class_name, module_name))
+                "Class definition for '%s' was not found in '%s' module" % (class_name, module_name)
+            )
         self.load_test = test_class(self)
 
     def setup(self):

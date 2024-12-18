@@ -30,8 +30,7 @@ class TimeChopper(object):
                             grouped = chunk.groupby(level=0)
                             for ts, group_data in list(grouped):
                                 if ts in self.cache:
-                                    self.cache[ts] = pd.concat(
-                                        [self.cache[ts], group_data])
+                                    self.cache[ts] = pd.concat([self.cache[ts], group_data])
                                 else:
                                     self.cache[ts] = group_data
                     last_ready_ts = min(self.recent_ts.values()) - 1

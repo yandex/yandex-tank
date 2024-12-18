@@ -2,6 +2,7 @@
 metrics collector - influxdata's `telegraf` - https://github.com/influxdata/telegraf/
 backward compatibility with yandextank's Monitoring module configuration and tools.
 """
+
 import datetime
 import fnmatch
 import json
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin(MonitoringPlugin):
-    """  resource mon plugin  """
+    """resource mon plugin"""
 
     SECTION = 'telegraf'  # may be redefined to 'monitoring' sometimes.
 
@@ -33,12 +34,13 @@ class Plugin(MonitoringPlugin):
         super(Plugin, self).__init__(core, cfg, name)
         self.jobno = None
         self.default_target = None
-        self.default_config_path = pkg_resources.resource_filename('yandextank.plugins.Telegraf',
-                                                                   "config/monitoring_default_config.xml")
+        self.default_config_path = pkg_resources.resource_filename(
+            'yandextank.plugins.Telegraf', "config/monitoring_default_config.xml"
+        )
         self.process = None
         self.monitoring = MonitoringCollector(
-            disguise_hostnames=self.get_option('disguise_hostnames'),
-            kill_old=self.get_option('kill_old'))
+            disguise_hostnames=self.get_option('disguise_hostnames'), kill_old=self.get_option('kill_old')
+        )
         self.die_on_fail = True
         self.data_file = None
         self.mon_saver = None
@@ -54,13 +56,7 @@ class Plugin(MonitoringPlugin):
             logger.debug("load_start_time = %s", self.monitoring.load_start_time)
 
     def get_available_options(self):
-        return [
-            "config",
-            "default_target",
-            "ssh_timeout",
-            "ssh_key_path",
-            "disguise_hostnames"
-        ]
+        return ["config", "default_target", "ssh_timeout", "ssh_key_path", "disguise_hostnames"]
 
     def __detect_configuration(self):
         """
@@ -80,8 +76,8 @@ class Plugin(MonitoringPlugin):
 
         if is_telegraf and is_monitoring:
             raise ValueError(
-                'Both telegraf and monitoring configs specified. '
-                'Clean up your config and delete one of them')
+                'Both telegraf and monitoring configs specified. ' 'Clean up your config and delete one of them'
+            )
         if is_telegraf and not is_monitoring:
             return 'telegraf'
         if not is_telegraf and is_monitoring:
@@ -99,12 +95,12 @@ class Plugin(MonitoringPlugin):
             if is_telegraf_dt and is_monitoring_dt:
                 raise ValueError(
                     'Both telegraf and monitoring default targets specified. '
-                    'Clean up your config and delete one of them')
+                    'Clean up your config and delete one of them'
+                )
             if is_telegraf_dt and not is_monitoring_dt:
                 return
             if not is_telegraf_dt and is_monitoring_dt:
-                self.core.set_option(
-                    "telegraf", "default_target", is_monitoring_dt)
+                self.core.set_option("telegraf", "default_target", is_monitoring_dt)
             if not is_telegraf_dt and not is_monitoring_dt:
                 return
 
@@ -253,7 +249,7 @@ class SaveMonToFile(MonitoringDataListener):
         self.store.flush()
 
     def close(self):
-        """ close open files """
+        """close open files"""
         logger.debug("Closing monitoring file")
         if self.store:
             self.store.close()
@@ -276,7 +272,7 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         return 50
 
     def __handle_data_items(self, host, data):
-        """ store metric in data tree and calc offset signs
+        """store metric in data tree and calc offset signs
 
         sign < 0 is CYAN, means metric value is lower then previous,
         sign > 1 is YELLOW, means metric value is higher then prevoius,
@@ -331,11 +327,9 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
         if not self.owner.monitoring:
             return "Monitoring is " + screen.markup.RED + "offline" + screen.markup.RESET
         else:
-            res = "Monitoring is " + screen.markup.GREEN + \
-                  "online" + screen.markup.RESET + ":\n"
+            res = "Monitoring is " + screen.markup.GREEN + "online" + screen.markup.RESET + ":\n"
             for hostname, metrics in self.data.items():
-                tm_stamp = datetime.datetime.fromtimestamp(
-                    float(self.time[hostname])).strftime('%H:%M:%S')
+                tm_stamp = datetime.datetime.fromtimestamp(float(self.time[hostname])).strftime('%H:%M:%S')
                 res += ("   " + screen.markup.CYAN + "%s" + screen.markup.RESET + " at %s:\n") % (hostname, tm_stamp)
                 for metric, value in sorted(metrics.items()):
                     if self.sign[hostname][metric] > 0:
@@ -344,13 +338,15 @@ class MonitoringWidget(AbstractInfoWidget, MonitoringDataListener):
                         value = screen.markup.CYAN + value + screen.markup.RESET
                     res += "      %s%s: %s\n" % (
                         ' ' * (self.max_metric_len - len(metric)),
-                        metric.replace('custom:', '').replace('_', ' '), value)
+                        metric.replace('custom:', '').replace('_', ' '),
+                        value,
+                    )
 
             return res.strip()
 
 
 class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
-    """ Parent class for metric criterion """
+    """Parent class for metric criterion"""
 
     def __init__(self, autostop, param_str):
         AbstractCriterion.__init__(self)
@@ -393,8 +389,12 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
                 data[self.metric] = 0
             logger.debug(
                 "Compare %s %s/%s=%s to %s",
-                self.get_type_string(), host, self.metric, data[self.metric],
-                self.value_limit)
+                self.get_type_string(),
+                host,
+                self.metric,
+                data[self.metric],
+                self.value_limit,
+            )
             if self.comparison_fn(float(data[self.metric]), self.value_limit):
                 if not self.seconds_count:
                     self.cause_second = self.last_second
@@ -417,12 +417,12 @@ class AbstractMetricCriterion(AbstractCriterion, MonitoringDataListener):
         return self.triggered
 
     def comparison_fn(self, arg1, arg2):
-        """ comparison function """
+        """comparison function"""
         raise NotImplementedError()
 
 
 class MetricHigherCriterion(AbstractMetricCriterion):
-    """ trigger if metric is higher than limit """
+    """trigger if metric is higher than limit"""
 
     def __init__(self, autostop, param_str):
         AbstractMetricCriterion.__init__(self, autostop, param_str)
@@ -439,18 +439,15 @@ class MetricHigherCriterion(AbstractMetricCriterion):
         return "%s/%s metric value is higher than %s for %s seconds" % items
 
     def widget_explain(self):
-        items = (
-            self.host, self.metric, self.value_limit, self.seconds_count,
-            self.seconds_limit)
-        return "%s/%s > %s for %s/%ss" % items, float(
-            self.seconds_count) / self.seconds_limit
+        items = (self.host, self.metric, self.value_limit, self.seconds_count, self.seconds_limit)
+        return "%s/%s > %s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
 
     def comparison_fn(self, arg1, arg2):
         return arg1 > arg2
 
 
 class MetricLowerCriterion(AbstractMetricCriterion):
-    """ trigger if metric is lower than limit """
+    """trigger if metric is lower than limit"""
 
     def __init__(self, autostop, param_str):
         AbstractMetricCriterion.__init__(self, autostop, param_str)
@@ -467,11 +464,8 @@ class MetricLowerCriterion(AbstractMetricCriterion):
         return "%s/%s metric value is lower than %s for %s seconds" % items
 
     def widget_explain(self):
-        items = (
-            self.host, self.metric, self.value_limit, self.seconds_count,
-            self.seconds_limit)
-        return "%s/%s < %s for %s/%ss" % items, float(
-            self.seconds_count) / self.seconds_limit
+        items = (self.host, self.metric, self.value_limit, self.seconds_count, self.seconds_limit)
+        return "%s/%s < %s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
 
     def comparison_fn(self, arg1, arg2):
         return arg1 < arg2

@@ -24,11 +24,7 @@ class TestPipeline(object):
         chunks = list(random_split(data))
         chunks[5], chunks[6] = chunks[6], chunks[5]
 
-        pipeline = Aggregator(
-            TimeChopper(
-                [DataPoller(poll_period=0.1, max_wait=31).poll(chunks)]),
-            AGGR_CONFIG,
-            False)
+        pipeline = Aggregator(TimeChopper([DataPoller(poll_period=0.1, max_wait=31).poll(chunks)]), AGGR_CONFIG, False)
         drain = Drain(pipeline, results_queue)
         drain.run()
         assert results_queue.qsize() == MAX_TS
@@ -45,24 +41,20 @@ class TestPipeline(object):
                 yield chunk
 
         pipeline = Aggregator(
-            TimeChopper(
-                [DataPoller(poll_period=0.1, max_wait=31).poll(producer())]),
-            AGGR_CONFIG,
-            False)
+            TimeChopper([DataPoller(poll_period=0.1, max_wait=31).poll(producer())]), AGGR_CONFIG, False
+        )
         drain = Drain(pipeline, results_queue)
         drain.run()
         assert results_queue.qsize() == MAX_TS
 
-    @pytest.mark.parametrize('phout, expected_results', [
-        ('yandextank/aggregator/tests/phout2927', 'yandextank/aggregator/tests/phout2927res.jsonl')
-    ])
+    @pytest.mark.parametrize(
+        'phout, expected_results',
+        [('yandextank/aggregator/tests/phout2927', 'yandextank/aggregator/tests/phout2927res.jsonl')],
+    )
     def test_invalid_ammo(self, phout, expected_results):
         with open(os.path.join(get_test_path(), phout)) as fp:
             reader = [string_to_df(line) for line in fp.readlines()]
-        pipeline = Aggregator(
-            TimeChopper([DataPoller(poll_period=0.01, max_wait=31).poll(reader)]),
-            AGGR_CONFIG,
-            True)
+        pipeline = Aggregator(TimeChopper([DataPoller(poll_period=0.01, max_wait=31).poll(reader)]), AGGR_CONFIG, True)
         with open(os.path.join(get_test_path(), expected_results)) as fp:
             expected_results_parsed = json.load(fp)
         for item, expected_result in zip(pipeline, expected_results_parsed):

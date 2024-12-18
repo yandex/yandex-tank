@@ -34,7 +34,7 @@ KNOWN_EXC = {
 
 
 def _exc_to_net(param1, success):
-    """ translate http code to net code. if accertion failed, set net code to 314 """
+    """translate http code to net code. if accertion failed, set net code to 314"""
     if len(param1) <= 3:
         # FIXME: we're unable to use better logic here, because we should support non-http codes
         # but, we should look for core.util.HTTP or some other common logic
@@ -53,7 +53,7 @@ def _exc_to_net(param1, success):
 
 
 def _exc_to_http(param1):
-    """ translate exception str to http code"""
+    """translate exception str to http code"""
     if len(param1) <= 3:
         try:
             int(param1)
@@ -80,8 +80,16 @@ exc_to_http = np.vectorize(_exc_to_http)
 # ]
 
 jtl_columns = [
-    'send_ts', 'interval_real', 'tag', 'retcode', 'success', 'size_in',
-    'grpThreads', 'allThreads', 'latency', 'connect_time'
+    'send_ts',
+    'interval_real',
+    'tag',
+    'retcode',
+    'success',
+    'size_in',
+    'grpThreads',
+    'allThreads',
+    'latency',
+    'connect_time',
 ]
 jtl_types = {
     'send_ts': np.int64,
@@ -110,11 +118,9 @@ def fix_latency(row):
 
 # timeStamp,elapsed,label,responseCode,success,bytes,grpThreads,allThreads,Latency
 def string_to_df(data):
-    chunk = pd.read_csv(StringIO(data),
-                        sep='\t',
-                        names=jtl_columns, dtype=jtl_types,
-                        keep_default_na=False,
-                        on_bad_lines='warn')
+    chunk = pd.read_csv(
+        StringIO(data), sep='\t', names=jtl_columns, dtype=jtl_types, keep_default_na=False, on_bad_lines='warn'
+    )
     chunk["receive_ts"] = (chunk["send_ts"] + chunk['interval_real']) / 1000.0
     chunk['receive_sec'] = chunk["receive_ts"].astype(np.int64)
     chunk['interval_real'] = chunk["interval_real"] * 1000  # convert to µs
@@ -124,8 +130,7 @@ def string_to_df(data):
     chunk['latency'] = chunk['latency'] * 1000
     chunk['latency'] = chunk.apply(fix_latency, axis=1)
     chunk['send_time'] = np.zeros(chunk_length)
-    chunk['receive_time'] = chunk['interval_real'] - \
-        chunk['latency'] - chunk['connect_time']
+    chunk['receive_time'] = chunk['interval_real'] - chunk['latency'] - chunk['connect_time']
     chunk['interval_event'] = np.zeros(chunk_length)
     chunk['size_out'] = np.zeros(chunk_length).astype(int)
     chunk['net_code'] = exc_to_net(chunk['retcode'], chunk['success'])
@@ -141,13 +146,7 @@ class JMeterStatAggregator(object):
     def __iter__(self):
         for ts, chunk, rps in self.source:
             stats = self.worker.aggregate(chunk)
-            yield [{
-                'ts': ts,
-                'metrics': {
-                    'instances': stats['allThreads']['max'],
-                    'reqps': rps
-                }
-            }]
+            yield [{'ts': ts, 'metrics': {'instances': stats['allThreads']['max'], 'reqps': rps}}]
 
     def close(self):
         pass
@@ -163,7 +162,8 @@ class JMeterReader(object):
         self.closed = False
         self.stat_queue = q.Queue()
         self.stats_reader = JMeterStatAggregator(
-            TimeChopper([self._notify_poller_finished(poller.poll(self._read_stat_queue()))]))
+            TimeChopper([self._notify_poller_finished(poller.poll(self._read_stat_queue()))])
+        )
 
     def _notify_poller_finished(self, poller):
         for item in poller:

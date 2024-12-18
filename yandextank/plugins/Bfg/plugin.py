@@ -14,7 +14,8 @@ from ...stepper import StepperWrapper
 
 
 class Plugin(GeneratorPlugin):
-    """ Big Fucking Gun plugin """
+    """Big Fucking Gun plugin"""
+
     SECTION = 'bfg'
 
     def __init__(self, core, cfg, name):
@@ -42,9 +43,7 @@ class Plugin(GeneratorPlugin):
         return __file__
 
     def get_available_options(self):
-        return [
-            "gun_type", "instances", "cached_stpd", "pip"
-        ]
+        return ["gun_type", "instances", "cached_stpd", "pip"]
 
     def configure(self):
         self.log.info("Configuring BFG...")
@@ -55,10 +54,22 @@ class Plugin(GeneratorPlugin):
         self.core.add_artifact_file(self.report_filename)
 
     def _write_results_into_file(self):
-        """listens for messages on the q, writes to file. """
+        """listens for messages on the q, writes to file."""
         reader = BfgReader(self.bfg.results, self.close_event)
-        columns = ['receive_ts', 'tag', 'interval_real', 'connect_time', 'send_time', 'latency', 'receive_time',
-                   'interval_event', 'size_out', 'size_in', 'net_code', 'proto_code']
+        columns = [
+            'receive_ts',
+            'tag',
+            'interval_real',
+            'connect_time',
+            'send_time',
+            'latency',
+            'receive_time',
+            'interval_event',
+            'size_out',
+            'size_in',
+            'net_code',
+            'proto_code',
+        ]
         for entry in reader:
             if entry is not None:
                 entry.receive_ts = entry.receive_ts.round(3)
@@ -94,11 +105,13 @@ class Plugin(GeneratorPlugin):
         self.log.info("Installing with PIP: %s", pip_deps)
         if pip_deps:
             import pip
+
             retcode = pip.main(["install", "--user"] + pip_deps)
             if retcode != 0:
                 raise RuntimeError("Could not install required deps")
             import site
             from importlib import reload
+
             reload(site)
         self.log.info("BFG using ammo type %s", self.get_option("ammo_type"))
         gun_type = self.get_option("gun_type")

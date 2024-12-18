@@ -25,17 +25,13 @@ def main():
             int(1024 * random.random()),
             int(1024 * random.random()),
             0,
-            random.choice([200, 404, 503])
+            random.choice([200, 404, 503]),
         ]
         stdout.write("\t".join([str(x) for x in output]) + "\n")
         stdout.flush()
 
         # shooter stats
-        stats = [
-            time.time(),
-            fake_rps,
-            1
-        ]
+        stats = [time.time(), fake_rps, 1]
         stderr.write("\t".join([str(x) for x in stats]) + "\n")
         stderr.flush()
         fake_rps += 100

@@ -1,4 +1,5 @@
 ''' Tank exit code check plugin '''
+
 from ...common.interfaces import AbstractPlugin
 
 

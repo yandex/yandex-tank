@@ -39,7 +39,8 @@ def execute(cmd, shell=False, poll_period=1.0, catch_out=False, executable=None,
             stdout=subprocess.PIPE,
             close_fds=True,
             env=env,
-            executable=executable)
+            executable=executable,
+        )
     else:
         process = subprocess.Popen(cmd, shell=shell, close_fds=True, env=env, executable=executable)
 
@@ -63,5 +64,5 @@ def popen(cmnd):
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        stdin=subprocess.PIPE
+        stdin=subprocess.PIPE,
     )

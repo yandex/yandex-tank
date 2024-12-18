@@ -1,6 +1,7 @@
 '''
 Ammo formatters
 '''
+
 import logging
 
 from .module_exceptions import StpdFileError
@@ -16,9 +17,7 @@ class Stpd(object):
 
     def __iter__(self):
         for timestamp, marker, missile in self.af:
-            yield b"%s %s %s\n%s\n" % (str(len(missile)).encode('utf8'),
-                                       str(timestamp).encode('utf8'),
-                                       marker, missile)
+            yield b"%s %s %s\n%s\n" % (str(len(missile)).encode('utf8'), str(timestamp).encode('utf8'), marker, missile)
 
 
 class StpdReader(object):
@@ -50,12 +49,13 @@ class StpdReader(object):
                     missile = ammo_file.read(chunk_size)
                     if len(missile) < chunk_size:
                         raise StpdFileError(
-                            "Unexpected end of file: read %s bytes instead of %s"
-                            % (len(missile), chunk_size))
+                            "Unexpected end of file: read %s bytes instead of %s" % (len(missile), chunk_size)
+                        )
                     yield (timestamp, missile, marker)
                 except (IndexError, ValueError) as e:
                     raise StpdFileError(
                         "Error while reading ammo file. Position: %s, header: '%s', original exception: %s"
-                        % (ammo_file.tell(), chunk_header, e))
+                        % (ammo_file.tell(), chunk_header, e)
+                    )
                 chunk_header = read_chunk_header(ammo_file)
         self.log.info("Reached the end of stpd file")

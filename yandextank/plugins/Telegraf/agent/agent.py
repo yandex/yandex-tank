@@ -18,7 +18,7 @@ collector_logger = logging.getLogger("telegraf")
 
 
 def signal_handler(sig, frame):
-    """ required for non-tty python runs to interrupt """
+    """required for non-tty python runs to interrupt"""
     logger.warning("Got signal %s, going to stop", sig)
     raise KeyboardInterrupt()
 
@@ -105,26 +105,22 @@ class Consolidator(object):
                 for key, value in data['fields'].items():
                     if data['name'] == 'diskio':
                         data['name'] = "{metric_name}-{disk_id}".format(
-                            metric_name=data['name'],
-                            disk_id=data['tags']['name'])
+                            metric_name=data['name'], disk_id=data['tags']['name']
+                        )
                     elif data['name'] == 'net':
                         data['name'] = "{metric_name}-{interface}".format(
-                            metric_name=data['name'],
-                            interface=data['tags']['interface'])
+                            metric_name=data['name'], interface=data['tags']['interface']
+                        )
                     elif data['name'] == 'cpu':
                         data['name'] = "{metric_name}-{cpu_id}".format(
-                            metric_name=data['name'],
-                            cpu_id=data['tags']['cpu'])
+                            metric_name=data['name'], cpu_id=data['tags']['cpu']
+                        )
                     key = data['name'] + "_" + key
                     if key.endswith('_exec_value'):
                         key = key.replace('_exec_value', '')
                     self.results[ts][key] = value
             except KeyError:
-                logger.error(
-                    'Malformed json from source %s: %s',
-                    source,
-                    chunk,
-                    exc_info=True)
+                logger.error('Malformed json from source %s: %s', source, chunk, exc_info=True)
             except BaseException:
                 logger.exception('Something nasty happend in consolidator work')
 
@@ -141,9 +137,7 @@ class Consolidator(object):
                     logger.debug('Now in buffer: %s', list(self.results.keys()))
                     dump_seconds = sorted(list(self.results.keys()))[:-2]
                     for ready_second in dump_seconds:
-                        yield json.dumps({
-                            ready_second: self.results.pop(ready_second, None)
-                        })
+                        yield json.dumps({ready_second: self.results.pop(ready_second, None)})
                 time.sleep(0.5)
 
 
@@ -203,7 +197,8 @@ class AgentWorker(threading.Thread):
             shell=shell,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            stdin=subprocess.PIPE, )
+            stdin=subprocess.PIPE,
+        )
 
     def read_startup_config(self, cfg_file='agent_startup.cfg'):
         try:
@@ -224,12 +219,12 @@ class AgentWorker(threading.Thread):
             if config.has_section('source'):
                 for option in config.options('source'):
                     if option.startswith('file'):
-                        self.custom_sources.append(
-                            config.get('source', option))
+                        self.custom_sources.append(config.get('source', option))
             logger.info(
-                'Successfully loaded startup config.\n'
-                'Startups: %s\n'
-                'Shutdowns: %s\n', self.startups, self.shutdowns)
+                'Successfully loaded startup config.\n' 'Startups: %s\n' 'Shutdowns: %s\n',
+                self.startups,
+                self.shutdowns,
+            )
         except BaseException:
             logger.exception('Error trying to read agent startup config')
 
@@ -245,8 +240,7 @@ class AgentWorker(threading.Thread):
 
         logger.info('Starting metrics collector..')
         # todo: add identificators into {} for python 2.6
-        args = [self.telegraf_path, '-config',
-                '{0}/agent.cfg'.format(self.working_dir)]
+        args = [self.telegraf_path, '-config', '{0}/agent.cfg'.format(self.working_dir)]
         self.collector = self.__popen(cmnd=args)
         logger.info('Started with pid %d', self.collector.pid)
 
@@ -263,18 +257,13 @@ class AgentWorker(threading.Thread):
                 break
             time.sleep(1)
 
-        self.drain = Drain(
-            Consolidator([iter(DataReader(f)) for f in sources]), self.results)
+        self.drain = Drain(Consolidator([iter(DataReader(f)) for f in sources]), self.results)
         self.drain.start()
 
-        self.drain_stdout = Drain(
-            DataReader(
-                self.collector.stdout, pipe=True), self.results_stdout)
+        self.drain_stdout = Drain(DataReader(self.collector.stdout, pipe=True), self.results_stdout)
         self.drain_stdout.start()
 
-        self.drain_err = Drain(
-            DataReader(
-                self.collector.stderr, pipe=True), self.results_err)
+        self.drain_err = Drain(DataReader(self.collector.stderr, pipe=True), self.results_err)
         self.drain_err.start()
 
         while not self.finished:
@@ -367,26 +356,13 @@ def kill_old_agents(telegraf_path):
 def main():
     fname = os.path.dirname(__file__) + "/_agent.log"
     logging.basicConfig(
-        level=logging.DEBUG,
-        filename=fname,
-        format='%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(message)s')
+        level=logging.DEBUG, filename=fname, format='%(asctime)s [%(levelname)s] %(name)s:%(lineno)d %(message)s'
+    )
 
     parser = ArgumentParser()
-    parser.add_argument(
-        "--telegraf",
-        dest="telegraf_path",
-        help="telegraf_path",
-        default="/tmp/telegraf")
-    parser.add_argument(
-        "--host",
-        dest="hostname_path",
-        help="telegraf_path",
-        default="/usr/bin/telegraf")
-    parser.add_argument(
-        "-k", "--kill-old",
-        action="store_true",
-        dest="kill_old"
-    )
+    parser.add_argument("--telegraf", dest="telegraf_path", help="telegraf_path", default="/tmp/telegraf")
+    parser.add_argument("--host", dest="hostname_path", help="telegraf_path", default="/usr/bin/telegraf")
+    parser.add_argument("-k", "--kill-old", action="store_true", dest="kill_old")
     options = parser.parse_args()
 
     logger.info('Init')
@@ -400,19 +376,13 @@ def main():
         # 0o755 compatible with old python versions. 744 is NOT enough
         os.chmod(options.telegraf_path, 493)
     except OSError:
-        logger.warning(
-            'Unable to set %s access rights to execute.',
-            options.telegraf_path,
-            exc_info=True)
+        logger.warning('Unable to set %s access rights to execute.', options.telegraf_path, exc_info=True)
     try:
         logger.info('Trying to make customs script executable: %s', customs_script)
         # 0o755 compatible with old python versions. 744 is NOT enough
         os.chmod(customs_script, 493)
     except OSError:
-        logger.warning(
-            'Unable to set %s access rights to execute.',
-            customs_script,
-            exc_info=True)
+        logger.warning('Unable to set %s access rights to execute.', customs_script, exc_info=True)
 
     worker = AgentWorker(options.telegraf_path)
     worker.read_startup_config()

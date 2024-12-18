@@ -25,23 +25,19 @@ class PandoraStatsPoller(Thread):
                     pandora_stat = requests.get(
                         "http://localhost:{port}/debug/vars".format(port=self.port), timeout=0.9
                     ).json()
-                    instances_metric = pandora_stat.get("engine_LastMaxActiveRequests", pandora_stat.get("engine_ActiveRequests"))
+                    instances_metric = pandora_stat.get(
+                        "engine_LastMaxActiveRequests", pandora_stat.get("engine_ActiveRequests")
+                    )
                     data = {
                         'ts': last_ts - 1,
                         'metrics': {
                             'instances': instances_metric,
                             'reqps': pandora_stat.get("engine_ReqPS"),
-                        }
+                        },
                     }
                 except (requests.ConnectionError, requests.HTTPError, requests.exceptions.Timeout):
                     logger.debug("Pandora expvar http interface is unavailable", exc_info=True)
-                    data = {
-                        'ts': last_ts - 1,
-                        'metrics': {
-                            'instances': 0,
-                            'reqps': 0
-                        }
-                    }
+                    data = {'ts': last_ts - 1, 'metrics': {'instances': 0, 'reqps': 0}}
                 self.buffer.append(data)
             else:
                 time.sleep(0.2)
@@ -67,13 +63,7 @@ class PandoraStatsReader(object):
         if not self.expvar:
             if self.closed:
                 raise StopIteration
-            return [{
-                'ts': int(time.time() - 1),
-                'metrics': {
-                    'instances': 0,
-                    'reqps': 0
-                }
-            }]
+            return [{'ts': int(time.time() - 1), 'metrics': {'instances': 0, 'reqps': 0}}]
         else:
             if self.closed:
                 raise StopIteration()

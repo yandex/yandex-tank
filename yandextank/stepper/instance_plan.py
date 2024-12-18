@@ -36,10 +36,8 @@ class LoadPlanBuilder(object):
             raise StepperConfigurationError("Can not stop instances in instances_schedule.")
         interval = float(duration) / (count - 1)
         start_time = self.duration
-        self.generators.append(
-            int(start_time + i * interval) for i in range(0, count))
-        self.steps += [(self.instances + i + 1, int(interval / 1000.0))
-                       for i in range(0, count)]
+        self.generators.append(int(start_time + i * interval) for i in range(0, count))
+        self.steps += [(self.instances + i + 1, int(interval / 1000.0)) for i in range(0, count)]
         self.instances += count
         self.duration += duration
         return self
@@ -54,8 +52,7 @@ class LoadPlanBuilder(object):
         self.ramp(final_instances - initial_instances + 1, duration)
         return self
 
-    def stairway(
-            self, initial_instances, final_instances, step_size, step_duration):
+    def stairway(self, initial_instances, final_instances, step_size, step_duration):
         step_count = (final_instances - initial_instances) // step_size
         self.log.debug("Making a stairway: %s steps" % step_count)
         self.start(initial_instances - self.instances)
@@ -102,9 +99,7 @@ class LoadPlanBuilder(object):
             s_res = template.search(params)
             if s_res:
                 initial_instances, final_instances, interval = s_res.groups()
-                self.line(
-                    int(initial_instances),
-                    int(final_instances), parse_duration(interval))
+                self.line(int(initial_instances), int(final_instances), parse_duration(interval))
             else:
                 self.log.info("Line step format: 'line(<initial_instances>, <final_instances>, <step_duration>)'")
                 raise StepperConfigurationError("Error in step configuration: 'line(%s'" % params)
@@ -120,15 +115,13 @@ class LoadPlanBuilder(object):
                 raise StepperConfigurationError("Error in step configuration: 'wait(%s'" % params)
 
         def parse_stairway(params):
-            template = re.compile(
-                r'(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
+            template = re.compile(r'(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
             s_res = template.search(params)
             if s_res:
                 initial_instances, final_instances, step_size, step_duration = s_res.groups()
                 self.stairway(
-                    int(initial_instances),
-                    int(final_instances),
-                    int(step_size), parse_duration(step_duration))
+                    int(initial_instances), int(final_instances), int(step_size), parse_duration(step_duration)
+                )
             else:
                 self.log.info(
                     "Stairway step format: 'step(<initial_instances>, <final_instances>, <step_size>, <step_duration>)'"

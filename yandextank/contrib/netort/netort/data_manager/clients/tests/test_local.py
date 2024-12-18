@@ -1,5 +1,6 @@
 import os
 import json
+
 try:
     import pathlib
 except ImportError:
@@ -59,7 +60,7 @@ def data_session(tmp_path):
                 'type': 'local_storage',
             }
         ],
-        'test_start': int(time.time()*1e6)
+        'test_start': int(time.time() * 1e6),
     }
     data_session = DataSession(config=config, artifacts_dir=str(artifacts_base_dir))
     return data_session
@@ -74,7 +75,7 @@ def test_dir_created(tmp_path):
                 'type': 'local_storage',
             }
         ],
-        'test_start': int(time.time()*1e6)
+        'test_start': int(time.time() * 1e6),
     }
     data_session = DataSession(config=config, artifacts_dir=str(artifacts_base_dir))
     # TODO: make this pass. Datasession dir and meta.json should be created as soon as possible
@@ -83,7 +84,9 @@ def test_dir_created(tmp_path):
     data_session.close()
     assert os.path.isdir(artifacts_base_dir), "Artifacts base dir should exist after datasession have ended"
     assert os.path.isdir(data_session.artifacts_dir), "Artifacts dir should exist after datasession have ended"
-    assert os.path.isfile(pathlib.Path(data_session.artifacts_dir) / 'meta.json'), "Metadata file should have been created"
+    assert os.path.isfile(
+        pathlib.Path(data_session.artifacts_dir) / 'meta.json'
+    ), "Metadata file should have been created"
 
     with open(pathlib.Path(data_session.artifacts_dir) / 'meta.json') as meta_file:
         meta = json.load(meta_file)
@@ -94,11 +97,7 @@ def test_dir_created(tmp_path):
 @pytest.mark.xfail
 def test_raw_metric(sin_data_frame, data_session):
     metric = data_session.new_true_metric(
-        "My Raw Metric",
-        raw=True, aggregate=False,
-        hostname='localhost',
-        source='PyTest',
-        group='None'
+        "My Raw Metric", raw=True, aggregate=False, hostname='localhost', source='PyTest', group='None'
     )
     metric.put(sin_data_frame)
     # TODO: make this pass. Metric should be created as soon as possible after it was created
@@ -132,18 +131,14 @@ def test_raw_metric(sin_data_frame, data_session):
 @pytest.mark.xfail
 def test_quantiles_metric(sin_data_frame, data_session):
     metric = data_session.new_true_metric(
-        "My Aggregated Metric",
-        raw=False, aggregate=True,
-        hostname='localhost',
-        source='PyTest',
-        group='None'
+        "My Aggregated Metric", raw=False, aggregate=True, hostname='localhost', source='PyTest', group='None'
     )
     metric.put(sin_data_frame)
 
     # TODO: make this line unnecessary
     # data will stuck in internal buffers without this line
     # MAGIC VALUE of 12*1e6 chosen empirically. Some asserts below depend on it in some magical way
-    metric.put(pd.DataFrame([[12*1e6, 0]], columns=['ts', 'value']))
+    metric.put(pd.DataFrame([[12 * 1e6, 0]], columns=['ts', 'value']))
 
     # TODO: make this pass. Metric should be created as soon as possible after it was created
     # assert os.path.isdir(metric_path), "Artifacts base dir should exist after datasession have been created"
@@ -157,7 +152,9 @@ def test_quantiles_metric(sin_data_frame, data_session):
         meta = json.load(meta_file)
 
     assert 'metrics' in meta, "Metrics should have been written to meta.json"
-    assert len(meta['metrics']) == 2, "Exactly two metrics should have been written to meta.json (aggregates and distibutions)"
+    assert (
+        len(meta['metrics']) == 2
+    ), "Exactly two metrics should have been written to meta.json (aggregates and distibutions)"
 
     metric_types = set(m['type'] for m in meta['metrics'].values())
     assert metric_types == {'TypeQuantiles', 'TypeDistribution'}, "Metric types should be Quantiles and Distribution"
@@ -206,11 +203,7 @@ def test_quantiles_metric(sin_data_frame, data_session):
 @pytest.mark.xfail
 def test_raw_events(data_session, event_data_frame):
     metric = data_session.new_event_metric(
-        "My Event Metric",
-        raw=True, aggregate=False,
-        hostname='localhost',
-        source='PyTest',
-        group='None'
+        "My Event Metric", raw=True, aggregate=False, hostname='localhost', source='PyTest', group='None'
     )
     metric.put(event_data_frame)
     # TODO: make this pass. Metric should be created as soon as possible after it was created
@@ -244,15 +237,11 @@ def test_raw_events(data_session, event_data_frame):
 @pytest.mark.xfail
 def test_aggregated_events(data_session, event_data_frame):
     metric = data_session.new_event_metric(
-        "My Event Metric",
-        raw=False, aggregate=True,
-        hostname='localhost',
-        source='PyTest',
-        group='None'
+        "My Event Metric", raw=False, aggregate=True, hostname='localhost', source='PyTest', group='None'
     )
     metric.put(event_data_frame)
     # TODO: get rid of following line with MAGIC VALUE:
-    metric.put(pd.DataFrame([[12*1e6, 'fox']], columns=['ts', 'value']))
+    metric.put(pd.DataFrame([[12 * 1e6, 'fox']], columns=['ts', 'value']))
     # TODO: make this pass. Metric should be created as soon as possible after it was created
     # assert os.path.isdir(metric_path), "Artifacts base dir should exist after datasession have been created"
     time.sleep(1)

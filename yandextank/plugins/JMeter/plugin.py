@@ -1,4 +1,5 @@
 """ jmeter load generator support """
+
 import datetime
 import logging
 import os
@@ -21,7 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin(GeneratorPlugin):
-    """ JMeter tank plugin """
+    """JMeter tank plugin"""
+
     SECTION = 'jmeter'
     SHUTDOWN_TEST = 'Shutdown'
     STOP_TEST_NOW = 'Stop Test'
@@ -50,10 +52,7 @@ class Plugin(GeneratorPlugin):
         return __file__
 
     def get_available_options(self):
-        return [
-            "jmx", "args", "jmeter_path", "buffer_size", "buffered_seconds",
-            "exclude_markers", "shutdown_timeout"
-        ]
+        return ["jmx", "args", "jmeter_path", "buffer_size", "buffered_seconds", "exclude_markers", "shutdown_timeout"]
 
     def configure(self):
         opener = self.core.resource_manager.get_opener(self.get_option("jmx"))
@@ -76,8 +75,7 @@ class Plugin(GeneratorPlugin):
 
         self.core.add_artifact_file(self.jmeter_log, True)
         self.exclude_markers = set(self.get_option('exclude_markers', []))
-        self.jmx = self.__add_jmeter_components(
-            self.original_jmx, self.jtl_file, self.get_option('variables'))
+        self.jmx = self.__add_jmeter_components(self.original_jmx, self.jtl_file, self.get_option('variables'))
         self.core.add_artifact_file(self.jmx)
 
         jmeter_stderr_file = self.core.mkstemp(".log", "jmeter_stdout_stderr_")
@@ -99,9 +97,14 @@ class Plugin(GeneratorPlugin):
 
     def prepare_test(self):
         self.args = [
-            self.jmeter_path, "-n", "-t", self.jmx, '-j', self.jmeter_log,
+            self.jmeter_path,
+            "-n",
+            "-t",
+            self.jmx,
+            '-j',
+            self.jmeter_log,
             '-Jjmeter.save.saveservice.default_delimiter=\\t',
-            '-Jjmeter.save.saveservice.connect_time=true'
+            '-Jjmeter.save.saveservice.connect_time=true',
         ]
         self.args += shlex.split(self.user_args)
 
@@ -128,16 +131,13 @@ class Plugin(GeneratorPlugin):
                 preexec_fn=os.setsid,
                 close_fds=True,
                 stdout=self.process_stderr,
-                stderr=self.process_stderr)
+                stderr=self.process_stderr,
+            )
         except OSError:
             logger.debug(
-                "Unable to start JMeter process. Args: %s, Executable: %s",
-                self.args,
-                self.jmeter_path,
-                exc_info=True)
-            raise RuntimeError(
-                "Unable to access to JMeter executable file or it does not exist: %s"
-                % self.jmeter_path)
+                "Unable to start JMeter process. Args: %s, Executable: %s", self.args, self.jmeter_path, exc_info=True
+            )
+            raise RuntimeError("Unable to access to JMeter executable file or it does not exist: %s" % self.jmeter_path)
         self.start_time = time.time()
         self.jmeter_udp_port = self.__discover_jmeter_udp_port()
 
@@ -200,7 +200,7 @@ class Plugin(GeneratorPlugin):
             # Utils.log_stdout_stderr(logger, self.process.stdout, self.process.stderr, "jmeter")
 
     def __add_jmeter_components(self, jmx, jtl, variables):
-        """ Genius idea by Alexey Lavrenyuk """
+        """Genius idea by Alexey Lavrenyuk"""
         logger.debug("Original JMX: %s", os.path.realpath(jmx))
         with open(jmx, 'r') as src_jmx:
             source_lines = src_jmx.readlines()
@@ -240,15 +240,11 @@ class Plugin(GeneratorPlugin):
                 'udv': udv,
                 'ext_log': self.ext_log_file,
                 'ext_level': level_map[self.ext_log],
-                'save_connect': save_connect
+                'save_connect': save_connect,
             }
         else:
             tpl_resource = 'jmeter_writer.xml'
-            tpl_args = {
-                'jtl': self.jtl_file,
-                'udv': udv,
-                'save_connect': save_connect
-            }
+            tpl_args = {'jtl': self.jtl_file, 'udv': udv, 'save_connect': save_connect}
 
         tpl = resource_string(__name__, 'config/' + tpl_resource).decode('utf8')
 
@@ -292,7 +288,7 @@ class Plugin(GeneratorPlugin):
 
 
 class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
-    """ Right panel widget with JMeter test info """
+    """Right panel widget with JMeter test info"""
 
     def __init__(self, jmeter):
         AbstractInfoWidget.__init__(self)
@@ -323,8 +319,6 @@ class JMeterInfoWidget(AbstractInfoWidget, AggregateResultListener):
         template += "      Duration: %s\n"
         template += "Active Threads: %s\n"
         template += "   Responses/s: %s"
-        data = (
-            os.path.basename(self.jmeter.original_jmx), duration,
-            self.active_threads, self.RPS)
+        data = (os.path.basename(self.jmeter.original_jmx), duration, self.active_threads, self.RPS)
 
         return template % data

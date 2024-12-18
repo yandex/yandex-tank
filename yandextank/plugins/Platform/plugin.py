@@ -1,4 +1,5 @@
 ''' Module that collects remote system information '''
+
 import getpass
 import logging
 
@@ -11,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 class Plugin(AbstractPlugin):
     '''Plugin that collects remote system information'''
+
     SECTION = "platform"
 
     @staticmethod
@@ -40,7 +42,7 @@ class Plugin(AbstractPlugin):
             "df": "df -h",
             "ifconfig": "ifconfig -a",
             "sysctl": "cat /etc/sysctl.conf",
-            "lsmod": "lsmod"
+            "lsmod": "lsmod",
         }
         self.cmd = "%s" % ";\n".join([_echo_wrapper(cmd) for key, cmd in cmds.items()])
 
@@ -80,14 +82,8 @@ class Plugin(AbstractPlugin):
                 self.ssh.ensure_connection()
                 out, errors, err_code = self.ssh.execute(self.cmd)
             except Exception:
-                logger.warning(
-                    "Failed to check remote system information at %s:%s", host,
-                    self.port)
-                logger.debug(
-                    "Failed to check remote system information at %s:%s",
-                    host,
-                    self.port,
-                    exc_info=True)
+                logger.warning("Failed to check remote system information at %s:%s", host, self.port)
+                logger.debug("Failed to check remote system information at %s:%s", host, self.port, exc_info=True)
             else:
                 # logger.info('Remote system `%s` information: %s', host, out)
                 with open(self.logfile, 'w') as f:

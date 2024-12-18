@@ -1,4 +1,5 @@
 """ Resource Opener tool """
+
 from __future__ import print_function
 
 import logging
@@ -15,7 +16,7 @@ import environ
 from yandextank.contrib.netort.netort.data_manager.common.util import thread_safe_property, YamlEnvSubstConfigLoader
 from yandextank.contrib.netort.netort.data_manager.common.condition import uri_like, path_like, Condition
 from urllib.parse import urlparse
-from contextlib import closing
+from contextlib import AbstractContextManager, closing
 from dataclasses import dataclass
 from functools import partial
 
@@ -32,6 +33,7 @@ except ImportError:
 
 try:
     from library.python import resource as rs
+
     pip = False
 except ImportError:
     pip = True
@@ -50,21 +52,20 @@ class PathProvider(object):
 
 
 class FormatDetector(object):
-    """ Format Detector
-    """
+    """Format Detector"""
 
     def __init__(self):
         self.formats = {'gzip': (0, b'\x1f\x8b'), 'tar': (257, b'ustar\x0000')}
 
     def detect_format(self, header):
         for fmt, signature in self.formats.items():
-            if signature[1] == header[signature[0]:len(signature[1])]:
+            if signature[1] == header[signature[0] : len(signature[1])]:
                 return fmt
 
 
 @typing.runtime_checkable
 class OpenerProtocol(typing.Protocol):
-    def open(self) -> object: ...
+    def open(self) -> AbstractContextManager: ...
 
     @property
     def filename(self) -> str: ...
@@ -72,7 +73,7 @@ class OpenerProtocol(typing.Protocol):
 
 @typing.runtime_checkable
 class TempDownloaderOpenerProtocol(typing.Protocol):
-    def open(self, use_cache: bool) -> object: ...
+    def open(self, use_cache: bool) -> AbstractContextManager: ...
 
     def download_file(self, use_cache: bool, try_ungzip: bool) -> str: ...
 
@@ -100,8 +101,8 @@ class ResourceManagerConfig(object):
 
 
 class ResourceManager(object):
-    """ Resource opener manager.
-        Use resource_filename and resource_string methods.
+    """Resource opener manager.
+    Use resource_filename and resource_string methods.
     """
 
     def __init__(
@@ -120,8 +121,12 @@ class ResourceManager(object):
         return PathProvider(os.path.join(self.tmp_path_prefix, subfolder))
 
     def _default_openers(self) -> OpenersConfig:
-        http_opener = partial(HttpOpener, config=self.openers_config.get('http_opener'), path_provider=self.make_path_provider('http'))
-        s3_opener = partial(S3Opener, config=self.openers_config.get('s3_opener'), path_provider=self.make_path_provider('s3'))
+        http_opener = partial(
+            HttpOpener, config=self.openers_config.get('http_opener'), path_provider=self.make_path_provider('http')
+        )
+        s3_opener = partial(
+            S3Opener, config=self.openers_config.get('s3_opener'), path_provider=self.make_path_provider('s3')
+        )
 
         return [
             OpenerItem(uri_like(scheme='http'), http_opener),
@@ -196,8 +201,9 @@ class ResourceManager(object):
         Returns:
             file object
         """
-        path = rs.find(path) if not pip and path in rs.iterkeys(prefix='resfs/file/load/projects/yandex-tank/')\
-            else path
+        path = (
+            rs.find(path) if not pip and path in rs.iterkeys(prefix='resfs/file/load/projects/yandex-tank/') else path
+        )
 
         self._ensure_tmp_path_prefix_exists()
         openers = [o for o in self.openers if o.condition(path)]
@@ -218,8 +224,7 @@ class ResourceManager(object):
 
 
 class SerialOpener(OpenerProtocol):
-    """ Serial device opener.
-    """
+    """Serial device opener."""
 
     def __init__(self, device, baud_rate=230400, read_timeout=1):
         self.baud_rate = baud_rate
@@ -235,8 +240,7 @@ class SerialOpener(OpenerProtocol):
 
 
 class FileOpener(OpenerProtocol):
-    """ File opener.
-    """
+    """File opener."""
 
     def __init__(self, f_path):
         self.f_path = f_path
@@ -283,13 +287,14 @@ def retry(func):
                 logger.exception('%s failed. Retrying.', func)
                 continue
         return func(self, *args, **kwargs)
+
     return with_retry
 
 
 class HttpOpener(TempDownloaderOpenerProtocol):
-    """ Http url opener.
-        Downloads small files.
-        For large files returns wrapped http stream.
+    """Http url opener.
+    Downloads small files.
+    For large files returns wrapped http stream.
     """
 
     def __init__(self, url, timeout=5, attempts=5, path_provider=None, config=None):
@@ -314,9 +319,8 @@ class HttpOpener(TempDownloaderOpenerProtocol):
     @retry
     def open(self, use_cache=True):
         with closing(
-                requests.get(
-                    self.url, stream=True, verify=False, headers=self._default_headers,
-                    timeout=self.timeout)) as stream:
+            requests.get(self.url, stream=True, verify=False, headers=self._default_headers, timeout=self.timeout)
+        ) as stream:
             stream_iterator = stream.raw.stream(100, decode_content=True)
             header = next(stream_iterator)
             while len(header) < 10:
@@ -345,17 +349,25 @@ class HttpOpener(TempDownloaderOpenerProtocol):
                 data = requests.get(self.url, verify=False, headers=self._default_headers, timeout=self.timeout)
                 data.raise_for_status()
             except requests.exceptions.Timeout:
-                logger.info('Connection timeout reached trying to download resource via HttpOpener: %s',
-                            self.url, exc_info=True)
+                logger.info(
+                    'Connection timeout reached trying to download resource via HttpOpener: %s', self.url, exc_info=True
+                )
                 raise
             except requests.exceptions.HTTPError:
-                logger.error('Bad http code during resource downloading. Http code: %s, resource: %s', data.status_code, self.url)
+                logger.error(
+                    'Bad http code during resource downloading. Http code: %s, resource: %s', data.status_code, self.url
+                )
                 raise
             else:
                 f = open(tmpfile_path, "wb")
                 f.write(data.content)
                 f.close()
-                logger.info("Successfully downloaded resource %s to %s, http status code: %s", self.url, tmpfile_path, data.status_code)
+                logger.info(
+                    "Successfully downloaded resource %s to %s, http status code: %s",
+                    self.url,
+                    tmpfile_path,
+                    data.status_code,
+                )
         if try_ungzip:
             tmpfile_path = try_ungzip_file(tmpfile_path)
         self._filename = tmpfile_path
@@ -391,7 +403,8 @@ class HttpOpener(TempDownloaderOpenerProtocol):
             except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
                 logger.warning(
                     'Connection error trying to get info for resource %s. Retrying...',
-                    self.url, exc_info=True,
+                    self.url,
+                    exc_info=True,
                 )
                 raise
         finally:
@@ -442,8 +455,7 @@ class HttpBytesStreamWrapper:
         self._content_consumed = False
         self.chunk_size = 10**3
         try:
-            self.stream = requests.get(
-                self.url, stream=True, verify=False, timeout=10, headers=headers)
+            self.stream = requests.get(self.url, stream=True, verify=False, timeout=10, headers=headers)
             self.stream_iterator = self.stream.iter_content(self.chunk_size)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.warning(
@@ -468,22 +480,19 @@ class HttpBytesStreamWrapper:
     def _reopen_stream(self):
         self.stream.connection.close()
         try:
-            self.stream = requests.get(
-                self.url, stream=True, verify=False, timeout=30, headers=self.headers)
+            self.stream = requests.get(self.url, stream=True, verify=False, timeout=30, headers=self.headers)
             self.stream_iterator = self.stream.iter_content(self.chunk_size)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             logger.warning(
                 'Connection errors or timeout reached trying to reopen stream while downloading resource: %s',
-                self.url, exc_info=True
+                self.url,
+                exc_info=True,
             )
             raise
         try:
             self.stream.raise_for_status()
         except requests.exceptions.HTTPError:
-            logger.warning(
-                'Invalid HTTP response trying to reopen stream for resource: %s',
-                self.url, exc_info=True
-            )
+            logger.warning('Invalid HTTP response trying to reopen stream for resource: %s', self.url, exc_info=True)
             raise
         self._content_consumed = False
 
@@ -507,18 +516,16 @@ class HttpBytesStreamWrapper:
         while b'\n' not in self.buffer:
             try:
                 self._enhance_buffer()
-            except (
-                    StopIteration, TypeError,
-                    requests.exceptions.StreamConsumedError):
+            except (StopIteration, TypeError, requests.exceptions.StreamConsumedError):
                 self._content_consumed = True
                 break
         if not self._content_consumed or self.buffer:
             try:
-                line = self.buffer[:self.buffer.index(b'\n') + 1]
+                line = self.buffer[: self.buffer.index(b'\n') + 1]
             except ValueError:
                 line = self.buffer
             self.pointer += len(line)
-            self.buffer = self.buffer[len(line):]
+            self.buffer = self.buffer[len(line) :]
             return line
         raise StopIteration
 
@@ -526,16 +533,14 @@ class HttpBytesStreamWrapper:
         while len(self.buffer) < chunk_size:
             try:
                 self._enhance_buffer()
-            except (
-                    StopIteration, TypeError,
-                    requests.exceptions.StreamConsumedError):
+            except (StopIteration, TypeError, requests.exceptions.StreamConsumedError):
                 break
         if len(self.buffer) > chunk_size:
             chunk = self.buffer[:chunk_size]
         else:
             chunk = self.buffer
         self.pointer += len(chunk)
-        self.buffer = self.buffer[len(chunk):]
+        self.buffer = self.buffer[len(chunk) :]
         return chunk
 
     def readline(self):
@@ -552,20 +557,22 @@ class HttpBytesStreamWrapper:
 
 
 class S3Opener(TempDownloaderOpenerProtocol):
-    """ Simple Storage Service opener
-        Downloads files.
+    """Simple Storage Service opener
+    Downloads files.
 
-        s3credentials.json fmt:
-        {
-            "aws_access_key_id": "key-id",
-            "aws_secret_access_key": "secret-id",
-            "host": "hostname.tld",
-            "port": 7480,
-            "is_secure": false
-        }
+    s3credentials.json fmt:
+    {
+        "aws_access_key_id": "key-id",
+        "aws_secret_access_key": "secret-id",
+        "host": "hostname.tld",
+        "port": 7480,
+        "is_secure": false
+    }
     """
 
-    def __init__(self, uri, credentials_path='/etc/yandex-tank/s3credentials.json', path_provider=None, config=None, attempts=5):
+    def __init__(
+        self, uri, credentials_path='/etc/yandex-tank/s3credentials.json', path_provider=None, config=None, attempts=5
+    ):
         s3_credentials = config
         if not s3_credentials:
             with open(credentials_path) as fname:
@@ -621,10 +628,15 @@ class S3Opener(TempDownloaderOpenerProtocol):
                 logger.error('Failed to connect to s3 host %s', self.endpoint_url)
                 raise
             except boto3.exceptions.Boto3Error as e:
-                logger.error('S3 error trying to download file from bucket: %s/%s  %s', self.bucket_key,
-                             self.object_key, str(e))
-                logger.debug('S3 error trying to download file from bucket: %s/%s', self.bucket_key, self.object_key,
-                             exc_info=True)
+                logger.error(
+                    'S3 error trying to download file from bucket: %s/%s  %s', self.bucket_key, self.object_key, str(e)
+                )
+                logger.debug(
+                    'S3 error trying to download file from bucket: %s/%s',
+                    self.bucket_key,
+                    self.object_key,
+                    exc_info=True,
+                )
                 raise
             except Exception as e:
                 logger.debug('Failed to get s3 resource: %s', self.uri, exc_info=True)
@@ -677,7 +689,7 @@ def try_ungzip_file(file_path: str) -> str:
     return file_path
 
 
-def open_file(opener: OpenerProtocol | TempDownloaderOpenerProtocol, use_cache: bool) -> object:
+def open_file(opener: OpenerProtocol | TempDownloaderOpenerProtocol, use_cache: bool) -> AbstractContextManager:
     if isinstance(opener, TempDownloaderOpenerProtocol):
         return opener.open(use_cache)
     return opener.open()

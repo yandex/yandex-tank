@@ -1,6 +1,7 @@
 '''
 Contains shellexec plugin
 '''
+
 from yandextank.contrib.netort.netort.process import execute
 from ...common.interfaces import AbstractPlugin
 
@@ -10,6 +11,7 @@ class Plugin(AbstractPlugin):
     ShellExec plugin
     allows executing shell scripts before/after test
     """
+
     SECTION = 'shellexec'
 
     def __init__(self, core, cfg, name):
@@ -50,11 +52,8 @@ class Plugin(AbstractPlugin):
         if self.poll:
             self.log.info("Executing: %s", self.poll)
             retcode = execute(
-                self.poll,
-                shell=True,
-                poll_period=0.1,
-                catch_out=self.catch_out,
-                executable=self.executable)[0]
+                self.poll, shell=True, poll_period=0.1, catch_out=self.catch_out, executable=self.executable
+            )[0]
             if retcode:
                 self.log.warning("Non-zero exit code, interrupting test: %s", retcode)
                 return retcode
@@ -75,8 +74,7 @@ class Plugin(AbstractPlugin):
         Execute and check exit code
         """
         self.log.info("Executing: %s", cmd)
-        retcode = execute(
-            cmd, shell=True, poll_period=0.1, catch_out=self.catch_out, executable=self.executable)[0]
+        retcode = execute(cmd, shell=True, poll_period=0.1, catch_out=self.catch_out, executable=self.executable)[0]
         if retcode:
             raise RuntimeError("Subprocess returned %s" % retcode)
         return retcode

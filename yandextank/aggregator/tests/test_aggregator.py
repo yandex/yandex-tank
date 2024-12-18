@@ -41,9 +41,7 @@ class ListenerMock(object):
         self.avg = (self.avg * (self.cnt - 1) + rps) / self.cnt
 
 
-@pytest.mark.parametrize('phout, expected_rps', [
-    ('yandextank/aggregator/tests/phout1', 300)
-])
+@pytest.mark.parametrize('phout, expected_rps', [('yandextank/aggregator/tests/phout1', 300)])
 def test_agregator(phout, expected_rps):
     generator = PhantomMock(os.path.join(get_test_path(), phout))
     poller = DataPoller(poll_period=0.1, max_wait=31)
@@ -58,9 +56,7 @@ def test_agregator(phout, expected_rps):
     assert abs(listener.avg - expected_rps) < 0.1 * expected_rps
 
 
-@pytest.mark.parametrize('phout', [
-    'yandextank/aggregator/tests/phout1'
-])
+@pytest.mark.parametrize('phout', ['yandextank/aggregator/tests/phout1'])
 def test_aggregator_max_timeout(phout):
     generator = PhantomMock(os.path.join(get_test_path(), phout))
     poller = DataPoller(poll_period=0.1, max_wait=31)

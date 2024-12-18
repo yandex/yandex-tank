@@ -16,6 +16,7 @@ import errno
 import re
 
 import psutil
+
 try:
     import pathlib
 except ImportError:
@@ -25,6 +26,7 @@ from retrying import retry
 
 try:
     from library.python import resource as rs
+
     pip = False
 except ImportError:
     pip = True
@@ -43,7 +45,9 @@ def read_resource(path, file_open_mode='r'):
 class SecuredShell(object):
     valid_key: str | None = None
 
-    def __init__(self, host, port, username, command_timeout=30, file_timeout=300, protocol_timeout=15, ssh_key_path=None):
+    def __init__(
+        self, host, port, username, command_timeout=30, file_timeout=300, protocol_timeout=15, ssh_key_path=None
+    ):
         self.connection_address = f'{username}@{host}'
         self.port = port
         self._command_timeout = command_timeout
@@ -63,7 +67,8 @@ class SecuredShell(object):
                     '-i',
                     filename,
                     *self._make_ssh_opts(),
-                ])
+                ],
+            )
             if not exit_code:
                 return filename
         logger.info('Could not find appropriate file with ssh key')
@@ -87,9 +92,13 @@ class SecuredShell(object):
             def inner_wrapper(*args, **kwargs):
                 executable_exists = shutil.which(util)
                 if executable_exists is None:
-                    raise FileNotFoundError(f'{util} executable should be installed to call {func.__name__} on SecureShell')
+                    raise FileNotFoundError(
+                        f'{util} executable should be installed to call {func.__name__} on SecureShell'
+                    )
                 return func(*args, **kwargs)
+
             return inner_wrapper
+
         return wrapper
 
     def _make_ssh_opts(self, util: str = 'ssh'):
@@ -496,7 +505,8 @@ class AddressWizard:
 
         port = None
 
-        braceport_re = re.compile(r"""
+        braceport_re = re.compile(
+            r"""
             ^
             \[           # opening brace
             \s?          # space sym?
@@ -507,8 +517,11 @@ class AddressWizard:
             \s?          # space sym?
             (\d+)        # port
             $
-        """, re.X)
-        braceonly_re = re.compile(r"""
+        """,
+            re.X,
+        )
+        braceonly_re = re.compile(
+            r"""
             ^
             \[           # opening brace
             \s?          # space sym?
@@ -516,7 +529,9 @@ class AddressWizard:
             \s?          # space sym?
             \]           # closing brace
             $
-        """, re.X)
+        """,
+            re.X,
+        )
 
         if braceport_re.match(address_str):
             logger.debug("Braces and port present")
@@ -545,7 +560,7 @@ class AddressWizard:
             logger.debug("Exception trying to resolve hostname %s :", address_str, exc_info=True)
             raise
 
-        for (family, socktype, proto, canonname, sockaddr) in resolved:
+        for family, socktype, proto, canonname, sockaddr in resolved:
             is_v6 = family == socket.AF_INET6
             parsed_ip, port = sockaddr[0], sockaddr[1]
 
@@ -574,9 +589,7 @@ class AddressWizard:
             test_sock.settimeout(5)
             test_sock.connect(sa)
         except Exception:
-            logger.debug(
-                "Exception on connect attempt [%s]:%s : %s", sa[0], sa[1],
-                traceback.format_exc())
+            logger.debug("Exception on connect attempt [%s]:%s : %s", sa[0], sa[1], traceback.format_exc())
             msg = "TCP Connection test failed for [%s]:%s, use phantom.connection_test=0 to disable it"
             raise RuntimeError(msg % (sa[0], sa[1]))
         finally:
@@ -699,8 +712,13 @@ class FileMultiReader(object):
             result = None
         return result, stop_pos
 
-    @retry(wait_random_min=5, wait_random_max=20, stop_max_delay=10000,
-           retry_on_exception=FileLockedError.retry, wrap_exception=True)
+    @retry(
+        wait_random_min=5,
+        wait_random_max=20,
+        stop_max_delay=10000,
+        retry_on_exception=FileLockedError.retry,
+        wrap_exception=True,
+    )
     def wait_lock(self):
         if self._is_locked:
             raise FileLockedError('Generator output file {} is locked'.format(self.filename))
@@ -733,8 +751,8 @@ class FileLike(object):
 
 def get_callstack():
     """
-        Get call stack, clean wrapper functions from it and present
-        in dotted notation form
+    Get call stack, clean wrapper functions from it and present
+    in dotted notation form
     """
     stack = inspect.stack(context=0)
     cleaned = [frame[3] for frame in stack if frame[3] != 'wrapper']
@@ -755,6 +773,7 @@ def observetime(name=None, log=None):
             duration = time.time() - start_time
             log.debug('%s completed in %s seconds', name, duration)
             return result
+
         return wrapper
 
     return observetime_fixed
@@ -770,7 +789,9 @@ def timeit(min_duration_sec):
             if duration > min_duration_sec:
                 logger.warning('Slow call of %s (stack: %s), duration %s', func.__name__, stack, duration)
             return result
+
         return wrapper
+
     return timeit_fixed
 
 
@@ -781,11 +802,13 @@ def for_all_methods(decorator, exclude=None):
         Decorator for all methods in a class,
         shamelessly stolen from https://stackoverflow.com/questions/6307761
     """
+
     def decorate(cls):
         for attr in cls.__dict__:  # there's propably a better way to do this
             if callable(getattr(cls, attr)) and attr not in exclude:
                 setattr(cls, attr, decorator(getattr(cls, attr)))
         return cls
+
     return decorate
 
 
@@ -876,6 +899,7 @@ class Status:
 def get_test_path():
     try:
         from yatest import common
+
         return common.source_path('load/projects/yandex-tank')
     except ImportError:
         return os.path.dirname(os.path.dirname(os.path.dirname(__file__)))

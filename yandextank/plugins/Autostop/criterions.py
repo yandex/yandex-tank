@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class AvgTimeCriterion(AbstractCriterion):
-    """ average response time criterion """
+    """average response time criterion"""
 
     @staticmethod
     def get_type_string():
@@ -77,18 +77,20 @@ class AvgTimeCriterion(AbstractCriterion):
             'limit': self.rt_limit,
             'seconds_count': self.seconds_count,
             'seconds_limit': self.seconds_limit,
-            'tag': self.tag
+            'tag': self.tag,
         }
         return parameters
 
     def widget_explain(self):
         items = self.get_criterion_parameters()
-        return "Avg Time >%(limit)sms for %(seconds_count)s/%(seconds_limit)ss" % items, \
-            float(self.seconds_count) / self.seconds_limit
+        return (
+            "Avg Time >%(limit)sms for %(seconds_count)s/%(seconds_limit)ss" % items,
+            float(self.seconds_count) / self.seconds_limit,
+        )
 
 
 class HTTPCodesCriterion(AbstractCriterion):
-    """ HTTP codes criterion """
+    """HTTP codes criterion"""
 
     @staticmethod
     def get_type_string():
@@ -143,7 +145,8 @@ class HTTPCodesCriterion(AbstractCriterion):
             if data["tagged"].get(self.tag):
                 total_responses = data["tagged"][self.tag]["interval_real"]["len"]
                 matched_responses = self.count_matched_codes(
-                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"])
+                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"]
+                )
             # matched_responses=0 if current tag differs from selected one
             else:
                 matched_responses = 0
@@ -158,7 +161,7 @@ class HTTPCodesCriterion(AbstractCriterion):
         return self.RC_HTTP
 
     def get_level_str(self):
-        """ format level str """
+        """format level str"""
         if self.is_relative:
             level_str = str(100 * self.level) + "%"
         else:
@@ -178,18 +181,20 @@ class HTTPCodesCriterion(AbstractCriterion):
             'level': self.get_level_str(),
             'seconds_count': self.seconds_count,
             'seconds_limit': self.seconds_limit,
-            'tag': self.tag
+            'tag': self.tag,
         }
         return parameters
 
     def widget_explain(self):
         items = self.get_criterion_parameters()
-        return "HTTP %(code)s>%(level)s for %(seconds_count)s/%(seconds_limit)ss" % items, \
-            float(self.seconds_count) / self.seconds_limit
+        return (
+            "HTTP %(code)s>%(level)s for %(seconds_count)s/%(seconds_limit)ss" % items,
+            float(self.seconds_count) / self.seconds_limit,
+        )
 
 
 class NetCodesCriterion(AbstractCriterion):
-    """ Net codes criterion """
+    """Net codes criterion"""
 
     @staticmethod
     def get_type_string():
@@ -266,7 +271,7 @@ class NetCodesCriterion(AbstractCriterion):
         return self.RC_NET
 
     def get_level_str(self):
-        """ format level str """
+        """format level str"""
         if self.is_relative:
             level_str = str(100 * self.level) + "%"
         else:
@@ -286,18 +291,20 @@ class NetCodesCriterion(AbstractCriterion):
             'level': self.get_level_str(),
             'seconds_count': self.seconds_count,
             'seconds_limit': self.seconds_limit,
-            'tag': self.tag
+            'tag': self.tag,
         }
         return parameters
 
     def widget_explain(self):
         items = self.get_criterion_parameters()
-        return "Net %(code)s>%(level)s for %(seconds_count)s/%(seconds_limit)ss" % items, \
-            float(self.seconds_count) / self.seconds_limit
+        return (
+            "Net %(code)s>%(level)s for %(seconds_count)s/%(seconds_limit)ss" % items,
+            float(self.seconds_count) / self.seconds_limit,
+        )
 
 
 class QuantileCriterion(AbstractCriterion):
-    """ quantile criterion """
+    """quantile criterion"""
 
     @staticmethod
     def get_type_string():
@@ -362,18 +369,20 @@ class QuantileCriterion(AbstractCriterion):
             'limit': self.rt_limit,
             'seconds_count': self.seconds_count,
             'seconds_limit': self.seconds_limit,
-            'tag': self.tag
+            'tag': self.tag,
         }
         return parameters
 
     def widget_explain(self):
         items = self.get_criterion_parameters()
-        return "%(percentile)s%% >%(limit)sms for %(seconds_count)s/%(seconds_limit)ss" % items, \
-            float(self.seconds_count) / self.seconds_limit
+        return (
+            "%(percentile)s%% >%(limit)sms for %(seconds_count)s/%(seconds_limit)ss" % items,
+            float(self.seconds_count) / self.seconds_limit,
+        )
 
 
 class SteadyCumulativeQuantilesCriterion(AbstractCriterion):
-    """ quantile criterion """
+    """quantile criterion"""
 
     @staticmethod
     def get_type_string():
@@ -388,8 +397,7 @@ class SteadyCumulativeQuantilesCriterion(AbstractCriterion):
         self.autostop = autostop
 
     def notify(self, data, stat):
-        quantiles = dict(
-            zip(data["overall"]["q"]["q"], data["overall"]["q"]["values"]))
+        quantiles = dict(zip(data["overall"]["q"]["q"], data["overall"]["q"]["values"]))
         quantile_hash = json.dumps(quantiles)
         logging.debug("Cumulative quantiles hash: %s", quantile_hash)
         if self.quantile_hash == quantile_hash:
@@ -416,12 +424,11 @@ class SteadyCumulativeQuantilesCriterion(AbstractCriterion):
 
     def widget_explain(self):
         items = (self.seconds_count, self.seconds_limit)
-        return "Steady for %s/%ss" % items, float(
-            self.seconds_count) / self.seconds_limit
+        return "Steady for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit
 
 
 class TimeLimitCriterion(AbstractCriterion):
-    """ time limit criterion """
+    """time limit criterion"""
 
     @staticmethod
     def get_type_string():
@@ -444,10 +451,7 @@ class TimeLimitCriterion(AbstractCriterion):
         return "Test time elapsed. Limit: %(limit)ss" % self.get_criterion_parameters()
 
     def get_criterion_parameters(self):
-        parameters = {
-            'limit': self.time_limit,
-            'actual': self.end_time - self.start_time
-        }
+        parameters = {'limit': self.time_limit, 'actual': self.end_time - self.start_time}
         return parameters
 
     def widget_explain(self):
@@ -484,22 +488,18 @@ class UsedInstancesCriterion(AbstractCriterion):
             if info:
                 self.threads_limit = info.instances
             if not self.threads_limit:
-                raise ValueError(
-                    "Cannot create 'instances' criterion"
-                    " with zero instances limit")
+                raise ValueError("Cannot create 'instances' criterion" " with zero instances limit")
         elif self.autostop.core.get_option('pandora', 'enabled', False):
             config = autostop.core.get_plugin_of_type(PandoraPlugin).config_contents
             for pool in config["pools"]:
                 if pool["startup"]["type"] == "once":
                     self.threads_limit += pool["startup"]["times"]
                 else:
-                    raise ValueError(
-                        "Cannot create 'instances' criterion"
-                        " startup type must be 'once'")
+                    raise ValueError("Cannot create 'instances' criterion" " startup type must be 'once'")
         else:
             raise ValueError(
-                "Cannot create relative 'instances' criterion"
-                " either phantom or pandora must be enabled")
+                "Cannot create relative 'instances' criterion" " either phantom or pandora must be enabled"
+            )
 
     def notify(self, data, stat):
         threads = stat["metrics"]["instances"]
@@ -539,5 +539,4 @@ class UsedInstancesCriterion(AbstractCriterion):
 
     def widget_explain(self):
         items = (self.get_level_str(), self.seconds_count, self.seconds_limit)
-        return "Instances >%s for %s/%ss" % items, float(
-            self.seconds_count) / self.seconds_limit
+        return "Instances >%s for %s/%ss" % items, float(self.seconds_count) / self.seconds_limit

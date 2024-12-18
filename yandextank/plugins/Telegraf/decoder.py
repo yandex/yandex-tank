@@ -1,4 +1,5 @@
 """Known metrics decoder"""
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -53,11 +54,8 @@ class MetricsDecoder(object):
             'nstat': ['TcpRetransSegs'],
             'net_response': [],
             'kernel': ['context_switches', 'interrupts', 'processes_forked', 'vmstat_pgfault', 'vmstat_pgmajfault'],
-            'diskio': [
-                'read_bytes', 'write_bytes', 'io_time', 'read_time', 'reads',
-                'write_time', 'writes'
-            ],
-            'custom': []
+            'diskio': ['read_bytes', 'write_bytes', 'io_time', 'read_time', 'reads', 'write_time', 'writes'],
+            'custom': [],
         }
 
     def find_common_names(self, key):

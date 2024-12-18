@@ -10,24 +10,24 @@ from .mark import get_marker
 from .module_exceptions import StepperConfigurationError, AmmoFileError
 
 
-class ComponentFactory():
+class ComponentFactory:
     def __init__(
-            self,
-            rps_schedule=None,
-            http_ver='1.1',
-            ammo_file=None,
-            instances_schedule=None,
-            instances=1000,
-            loop_limit=-1,
-            ammo_limit=-1,
-            uris=None,
-            headers=None,
-            autocases=0,
-            enum_ammo=False,
-            ammo_type='phantom',
-            chosen_cases=None,
-            use_cache=True,
-            resource_manager: Optional[ResourceManager] = None,
+        self,
+        rps_schedule=None,
+        http_ver='1.1',
+        ammo_file=None,
+        instances_schedule=None,
+        instances=1000,
+        loop_limit=-1,
+        ammo_limit=-1,
+        uris=None,
+        headers=None,
+        autocases=0,
+        enum_ammo=False,
+        ammo_type='phantom',
+        chosen_cases=None,
+        use_cache=True,
+        resource_manager: Optional[ResourceManager] = None,
     ):
         self.log = logging.getLogger(__name__)
         self.ammo_file = ammo_file
@@ -97,16 +97,14 @@ class ComponentFactory():
             return ip.create(self.instances_schedule)
 
     def _check_exactly_one_source_specified(self):
-        sources = {
-            'uris': self.uris,
-            'ammo_file': self.ammo_file
-        }
+        sources = {'uris': self.uris, 'ammo_file': self.ammo_file}
         active_sources = {k: v for k, v in sources.items() if v}
         if len(active_sources) != 1:
             self.log.error('active sources: %s', active_sources)
             raise StepperConfigurationError(
                 f'Exactly one of sources {list(sources.keys())} should be specified, '
-                f'but found {list(active_sources.keys())} in config.')
+                f'but found {list(active_sources.keys())} in config.'
+            )
 
     def _get_ammo_generator(self):
         self._check_exactly_one_source_specified()
@@ -117,7 +115,12 @@ class ComponentFactory():
             raise NotImplementedError('No such ammo type implemented: "%s"' % self.ammo_type)
 
         return missile.FILE_READERS[self.ammo_type](
-            self.ammo_file, headers=self.headers, http_ver=self.http_ver, use_cache=self.use_cache, resource_manager=self.resource_manager)
+            self.ammo_file,
+            headers=self.headers,
+            http_ver=self.http_ver,
+            use_cache=self.use_cache,
+            resource_manager=self.resource_manager,
+        )
 
     def get_ammo_generator(self):
         ammo_gen = self._get_ammo_generator()

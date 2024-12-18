@@ -1,6 +1,7 @@
 '''
 Module contains top-level generators.
 '''
+
 import hashlib
 import json
 import logging
@@ -41,13 +42,14 @@ class AmmoFactory(object):
         '''
         ammo_stream = (
             ammo
-            for ammo in ((missile, marker or self.marker(missile))
-                         for missile, marker in self.ammo_generator)
-            if self.filter(ammo))
+            for ammo in ((missile, marker or self.marker(missile)) for missile, marker in self.ammo_generator)
+            if self.filter(ammo)
+        )
 
-        return ((timestamp, marker or self.marker(missile), missile)
-                for timestamp, (missile, marker
-                                ) in zip(self.load_plan, ammo_stream))
+        return (
+            (timestamp, marker or self.marker(missile), missile)
+            for timestamp, (missile, marker) in zip(self.load_plan, ammo_stream)
+        )
 
 
 class Stepper(object):
@@ -77,9 +79,11 @@ class Stepper(object):
                         # Надо выставить ammo_limit вручную,
                         # ибо до прочтения файла непонятно сколько в нём было патронов.
                         if info.status.loop_limit is None:
-                            raise StepperConfigurationError('Ammo limit should be specified by '
-                                                            'load_type, ammo_limit or loop option. '
-                                                            'See https://yandextank.readthedocs.io/en/latest/core_and_modules.html#basic-options')
+                            raise StepperConfigurationError(
+                                'Ammo limit should be specified by '
+                                'load_type, ammo_limit or loop option. '
+                                'See https://yandextank.readthedocs.io/en/latest/core_and_modules.html#basic-options'
+                            )
                         info.status.ammo_limit = info.status.loop_limit * info.status.ammo_count
                         assert info.status.max_ammo is not None
                     self._check_whole_file_can_be_written(f)
@@ -90,14 +94,16 @@ class Stepper(object):
             # Скорее всего - это IO stream для тестов.
             return
         written_bytes = file_descriptor.tell()
-        expected_file_size = (1. / info.status.calculate_lp_progress()) * written_bytes
+        expected_file_size = (1.0 / info.status.calculate_lp_progress()) * written_bytes
         need_to_write_more_bytes = expected_file_size - written_bytes
         available_bytes = shutil.disk_usage(Path(file_descriptor.name).parent).free
 
         reserve = 10 * 000 * 000  # 10 мегабайт
         if available_bytes < need_to_write_more_bytes + reserve:
-            raise DiskLimitError('File system has not enough free space for ammo file. '
-                                 f'Ammo file expected file size is {expected_file_size} bytes.')
+            raise DiskLimitError(
+                'File system has not enough free space for ammo file. '
+                f'Ammo file expected file size is {expected_file_size} bytes.'
+            )
 
 
 class LoadProfile(object):
@@ -168,30 +174,34 @@ class StepperWrapper(object):
         self.file_cache = 8192
 
     def get_option(self, option, param2=None):
-        ''' get_option wrapper'''
+        '''get_option wrapper'''
         result = self.cfg[option]
-        self.log.debug(
-            "Option %s = %s", option, result)
+        self.log.debug("Option %s = %s", option, result)
         return result
 
     @staticmethod
     def get_available_options():
         opts = [
-            StepperWrapper.OPTION_AMMOFILE, StepperWrapper.OPTION_LOOP,
-            StepperWrapper.OPTION_SCHEDULE, StepperWrapper.OPTION_INSTANCES_LIMIT
+            StepperWrapper.OPTION_AMMOFILE,
+            StepperWrapper.OPTION_LOOP,
+            StepperWrapper.OPTION_SCHEDULE,
+            StepperWrapper.OPTION_INSTANCES_LIMIT,
         ]
         opts += [
-            "instances_schedule", "uris", "headers", "header_http", "autocases",
-            "enum_ammo", "ammo_type", "ammo_limit"
+            "instances_schedule",
+            "uris",
+            "headers",
+            "header_http",
+            "autocases",
+            "enum_ammo",
+            "ammo_type",
+            "ammo_limit",
         ]
-        opts += [
-            "use_caching", "cache_dir", "force_stepping", "file_cache",
-            "chosen_cases"
-        ]
+        opts += ["use_caching", "cache_dir", "force_stepping", "file_cache", "chosen_cases"]
         return opts
 
     def read_config(self):
-        ''' stepper part of reading options '''
+        '''stepper part of reading options'''
         self.log.info("Configuring StepperWrapper...")
         self.ammo_file = self.get_option(self.OPTION_AMMOFILE)
         self.ammo_type = self.get_option('ammo_type')
@@ -202,8 +212,7 @@ class StepperWrapper(object):
 
         self.load_profile = LoadProfile(**self.get_option('load_profile'))
 
-        self.instances = int(
-            self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
+        self.instances = int(self.get_option(self.OPTION_INSTANCES_LIMIT, '1000'))
         self.uris = self.get_option("uris", [])
         while '' in self.uris:
             self.uris.remove('')
@@ -225,7 +234,7 @@ class StepperWrapper(object):
             self.log.info("chosen_cases LIMITS: %s", self.chosen_cases)
 
     def prepare_stepper(self):
-        ''' Generate test data if necessary '''
+        '''Generate test data if necessary'''
 
         def publish_info(stepper_info):
             info.status.publish('loadscheme', stepper_info.loadscheme)
@@ -244,20 +253,22 @@ class StepperWrapper(object):
 
         if not self.stpd:
             self.stpd = self.__get_stpd_filename()
-            if self.use_caching and not self.force_stepping and os.path.exists(
-                    self.stpd) and os.path.exists(self.__si_filename()):
+            if (
+                self.use_caching
+                and not self.force_stepping
+                and os.path.exists(self.stpd)
+                and os.path.exists(self.__si_filename())
+            ):
                 self.log.info("Using cached stpd-file: %s", self.stpd)
                 stepper_info = self.__read_cached_options()
                 if self.instances and self.load_profile.is_rps():
                     self.log.info(
-                        "rps_schedule is set. Overriding cached instances param from config: %s",
-                        self.instances)
-                    stepper_info = stepper_info._replace(
-                        instances=self.instances)
+                        "rps_schedule is set. Overriding cached instances param from config: %s", self.instances
+                    )
+                    stepper_info = stepper_info._replace(instances=self.instances)
                 publish_info(stepper_info)
             else:
-                if (
-                        self.force_stepping and os.path.exists(self.__si_filename())):
+                if self.force_stepping and os.path.exists(self.__si_filename()):
                     os.remove(self.__si_filename())
                 self.__make_stpd_file()
                 stepper_info = info.status.get_info()
@@ -278,17 +289,24 @@ class StepperWrapper(object):
         return "%s_si.json" % self.stpd
 
     def __get_stpd_filename(self):
-        ''' Choose the name for stepped data file '''
+        '''Choose the name for stepped data file'''
         if self.use_caching:
             sep = "|"
             hasher = hashlib.md5()
-            hashed_str = "cache version 6" + sep + \
-                ';'.join(self.load_profile.schedule) + sep + str(self.loop_limit)
-            hashed_str += sep + str(self.ammo_limit) + sep + ';'.join(
-                self.load_profile.schedule) + sep + str(self.autocases)
-            hashed_str += sep + ";".join(self.uris) + sep + ";".join(
-                self.headers) + sep + self.http_ver + sep + b';'.join(
-                    self.chosen_cases).decode('utf8')
+            hashed_str = "cache version 6" + sep + ';'.join(self.load_profile.schedule) + sep + str(self.loop_limit)
+            hashed_str += (
+                sep + str(self.ammo_limit) + sep + ';'.join(self.load_profile.schedule) + sep + str(self.autocases)
+            )
+            hashed_str += (
+                sep
+                + ";".join(self.uris)
+                + sep
+                + ";".join(self.headers)
+                + sep
+                + self.http_ver
+                + sep
+                + b';'.join(self.chosen_cases).decode('utf8')
+            )
             hashed_str += sep + str(self.enum_ammo) + sep + str(self.ammo_type)
             if self.load_profile.is_instances():
                 hashed_str += sep + str(self.instances)
@@ -298,15 +316,12 @@ class StepperWrapper(object):
             else:
                 if not self.uris:
                     raise RuntimeError("Neither ammofile nor uris specified")
-                hashed_str += sep + \
-                    ';'.join(self.uris) + sep + ';'.join(self.headers)
+                hashed_str += sep + ';'.join(self.uris) + sep + ';'.join(self.headers)
             self.log.debug("stpd-hash source: %s", hashed_str)
             hasher.update(hashed_str.encode('utf8'))
             if not os.path.exists(self.cache_dir):
                 os.makedirs(self.cache_dir)
-            stpd = self.cache_dir + '/' + \
-                os.path.basename(self.ammo_file) + \
-                "_" + hasher.hexdigest() + ".stpd"
+            stpd = self.cache_dir + '/' + os.path.basename(self.ammo_file) + "_" + hasher.hexdigest() + ".stpd"
         else:
             stpd = os.path.realpath("ammo.stpd")
         self.log.debug("Generated cache file name: %s", stpd)
@@ -330,7 +345,7 @@ class StepperWrapper(object):
             json.dump(si._asdict(), si_file, indent=4)
 
     def __make_stpd_file(self):
-        ''' stpd generation using Stepper class '''
+        '''stpd generation using Stepper class'''
         self.log.info("Making stpd-file: %s", self.stpd)
         stepper = Stepper(
             self.core,
@@ -348,6 +363,7 @@ class StepperWrapper(object):
             ammo_type=self.ammo_type,
             chosen_cases=self.chosen_cases,
             use_cache=self.use_caching,
-            resource_manager=self.core.resource_manager,)
+            resource_manager=self.core.resource_manager,
+        )
         with open(self.stpd, 'wb', self.file_cache) as os:
             stepper.write(os)

@@ -1,0 +1,7 @@
+{"tag": "/Add", "call": "api.Adder.Add", "metadata": {"Authorization": "Bearer $YC_TOKEN"}, "payload": {"x": 21, "y": 12}}
+{"tag": "/Add", "call": "api.Adder.Add", "metadata": {"Authorization": "Bearer $YC_TOKEN"}, "payload": {"x": 22, "y": 13}}
+{"tag": "/Add", "call": "api.Adder.Add", "metadata": {"Authorization": "Bearer $YC_TOKEN"}, "payload": {"x": 23, "y": 14}}
+
+{"tag": "bad requests", "payload": {"x": 23, "y": 14}}
+{"tag": "bad requests", "call": "api.Adder.Add"  ,  }
+{}

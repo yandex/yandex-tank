@@ -5,6 +5,7 @@ from queue import Empty
 from threading import Lock
 import threading as th
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,8 +20,7 @@ def records_to_df(records):
 
 
 def _expand_steps(steps):
-    return list(itt.chain(
-        * [[rps] * int(duration) for rps, duration in steps]))
+    return list(itt.chain(*[[rps] * int(duration) for rps, duration in steps]))
 
 
 class BfgReader(object):
@@ -37,8 +37,7 @@ class BfgReader(object):
     def _cacher(self):
         while True:
             try:
-                self.records.append(
-                    self.results.get(block=False))
+                self.records.append(self.results.get(block=False))
             except Empty:
                 if not self.closed.is_set():
                     time.sleep(0.1)
@@ -76,13 +75,7 @@ class BfgStatsReader(object):
                 reqps = 0
                 if offset >= 0 and offset < len(self.steps):
                     reqps = self.steps[offset]
-                yield [{
-                    'ts': cur_ts,
-                    'metrics': {
-                        'instances': self.instance_counter.value,
-                        'reqps': reqps
-                    }
-                }]
+                yield [{'ts': cur_ts, 'metrics': {'instances': self.instance_counter.value, 'reqps': reqps}}]
                 self.last_ts = cur_ts
             else:
                 yield []

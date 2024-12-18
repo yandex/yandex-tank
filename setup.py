@@ -13,23 +13,29 @@ It uses other load generators such as JMeter, ab or phantom inside of it for
 load generation and provides a common configuration system for them and
 analytic tools for the results they produce.
 ''',
-    python_requires='>=3.8',
+    python_requires='>=3.12',
     maintainer='Yandex Load Team',
     maintainer_email='load@yandex-team.ru',
     url='http://yandex.github.io/yandex-tank/',
     packages=find_packages(exclude=["tests", "tmp", "docs", "data"]),
     install_requires=[
-        'psutil>=5.9.8', 'requests>=2.31.0',
-        'pandas<=2.0.3', 'numpy<=1.26.4',
+        'psutil>=5.9.8',
+        'requests>=2.31.0',
+        'pandas<=2.0.3',
+        'numpy<=1.26.4',
         'pip>=24.0',
-        'pyyaml>=5.4', 'cerberus>=1.3.5', 'influxdb>=5.3.1',
-        'retrying>=1.3.4', 'pytest-runner', 'pyserial', 'retrying', 'six>=1.16.0',
+        'pyyaml>=5.4',
+        'cerberus>=1.3.5',
+        'influxdb>=5.3.1',
+        'retrying>=1.3.4',
+        'pytest-runner',
+        'pyserial',
+        'retrying',
+        'six>=1.16.0',
         'environ-config>=23.2.0',
     ],
     setup_requires=[],
-    tests_require=[
-        'pytest>=7.4.4', 'flake8', 'pytest-benchmark', 'zipp==0.5.1', 'mock'
-    ],
+    tests_require=['pytest>=7.4.4', 'flake8', 'pytest-benchmark', 'zipp==0.5.1', 'mock'],
     license='LGPLv2',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -49,7 +55,7 @@ analytic tools for the results they produce.
         'console_scripts': [
             'yandex-tank = yandextank.core.cli:main',
             'tank-postloader = yandextank.plugins.DataUploader.cli:post_loader',
-            'tank-docs-gen = yandextank.validator.docs_gen:main'
+            'tank-docs-gen = yandextank.validator.docs_gen:main',
         ],
     },
     package_data={
@@ -74,4 +80,5 @@ analytic tools for the results they produce.
         'yandextank.plugins.Telegraf': ['config/*', 'agent/*'],
         'yandextank.plugins.NeUploader': ['config/*'],
         'yandextank.plugins.YCMonitoring': ['config/*'],
-    },)
+    },
+)

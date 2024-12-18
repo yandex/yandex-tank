@@ -11,8 +11,7 @@ from builtins import str
 from influxdb import InfluxDBClient
 
 from .decoder import Decoder
-from ...common.interfaces import AbstractPlugin, \
-    MonitoringDataListener, AggregateResultListener
+from ...common.interfaces import AbstractPlugin, MonitoringDataListener, AggregateResultListener
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 
@@ -28,8 +27,7 @@ def chop(data_list, chunk_size):
         return chop(data_list[:mid], chunk_size) + chop(data_list[mid:], chunk_size)
 
 
-class Plugin(AbstractPlugin, AggregateResultListener,
-             MonitoringDataListener):
+class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     SECTION = 'influx'
 
     def __init__(self, core, cfg, name):
@@ -70,23 +68,14 @@ class Plugin(AbstractPlugin, AggregateResultListener,
         return retcode
 
     def on_aggregated_data(self, data, stats):
-        self.client.write_points(
-            self.decoder.decode_aggregates(data, stats, self.prefix_measurement),
-            's'
-        )
+        self.client.write_points(self.decoder.decode_aggregates(data, stats, self.prefix_measurement), 's')
 
     def monitoring_data(self, data_list):
         if len(data_list) > 0:
-            [
-                self._send_monitoring(chunk)
-                for chunk in chop(data_list, self.get_option("chunk_size"))
-            ]
+            [self._send_monitoring(chunk) for chunk in chop(data_list, self.get_option("chunk_size"))]
 
     def _send_monitoring(self, data):
-        self.client.write_points(
-            self.decoder.decode_monitoring(data),
-            's'
-        )
+        self.client.write_points(self.decoder.decode_monitoring(data), 's')
 
     def set_uuid(self, id_):
         self.decoder.tags['uuid'] = id_

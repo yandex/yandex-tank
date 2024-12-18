@@ -44,19 +44,20 @@ class OpenTSDBClient(object):
     :type cert: str
     :raises ValueError: if cert is provided but ssl is disabled (set to False)
     """
+
     def __init__(
-            self,
-            host='localhost',
-            port=4242,
-            username='root',
-            password='root',
-            ssl=False,
-            verify_ssl=False,
-            timeout=None,
-            retries=3,
-            proxies=None,
-            pool_size=10,
-            cert=None,
+        self,
+        host='localhost',
+        port=4242,
+        username='root',
+        password='root',
+        ssl=False,
+        verify_ssl=False,
+        timeout=None,
+        retries=3,
+        proxies=None,
+        pool_size=10,
+        cert=None,
     ):
         """Construct a new OpenTSDBClient object."""
         self._host = host
@@ -69,8 +70,7 @@ class OpenTSDBClient(object):
         self._verify_ssl = verify_ssl
 
         self._session = requests.Session()
-        adapter = requests.adapters.HTTPAdapter(
-            pool_connections=int(pool_size), pool_maxsize=int(pool_size))
+        adapter = requests.adapters.HTTPAdapter(pool_connections=int(pool_size), pool_maxsize=int(pool_size))
 
         self._scheme = "http"
 
@@ -90,13 +90,9 @@ class OpenTSDBClient(object):
             else:
                 self._session.cert = cert
 
-        self._baseurl = "{0}://{1}:{2}".format(
-            self._scheme, self._host, self._port)
+        self._baseurl = "{0}://{1}:{2}".format(self._scheme, self._host, self._port)
 
-        self._headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        }
+        self._headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
     def write(self, data, expected_response_code=204):
         """Write data to OpenTSDB.
@@ -111,21 +107,11 @@ class OpenTSDBClient(object):
         headers['Content-Type'] = 'application/json'
 
         self.request(
-            url="api/put",
-            method='POST',
-            data=data,
-            expected_response_code=expected_response_code,
-            headers=headers)
+            url="api/put", method='POST', data=data, expected_response_code=expected_response_code, headers=headers
+        )
         return True
 
-    def request(
-            self,
-            url,
-            method='GET',
-            params=None,
-            data=None,
-            expected_response_code=200,
-            headers=None):
+    def request(self, url, method='GET', params=None, data=None, expected_response_code=200, headers=None):
         """Make a HTTP request to the OpenTSDB API.
         :param url: the path of the HTTP request
         :type url: str
@@ -172,10 +158,10 @@ class OpenTSDBClient(object):
                     headers=headers,
                     proxies=self._proxies,
                     verify=self._verify_ssl,
-                    timeout=self._timeout)
+                    timeout=self._timeout,
+                )
                 break
-            except (requests.exceptions.ConnectionError,
-                    requests.exceptions.HTTPError, requests.exceptions.Timeout):
+            except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError, requests.exceptions.Timeout):
                 _try += 1
                 if self._retries != 0:
                     retry = _try < self._retries

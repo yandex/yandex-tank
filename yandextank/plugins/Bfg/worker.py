@@ -15,8 +15,7 @@ class BFGBase(object):
     threads in each of them and feeds them with tasks
     """
 
-    def __init__(self, gun, instances, stpd_filename, cached_stpd=False,
-                 green_threads_per_instance=None):
+    def __init__(self, gun, instances, stpd_filename, cached_stpd=False, green_threads_per_instance=None):
         logger.info(
             """
 BFG using stpd from {stpd_filename}
@@ -25,7 +24,9 @@ Gun: {gun.__class__.__name__}
 """.format(
                 stpd_filename=stpd_filename,
                 instances=instances,
-                gun=gun, ))
+                gun=gun,
+            )
+        )
         self.instances = int(instances)
         self.instance_counter = mp.Value('i')
         self.results = mp.Queue(16384)
@@ -35,9 +36,7 @@ Gun: {gun.__class__.__name__}
         self.task_queue = mp.Queue(1024)
         self.cached_stpd = cached_stpd
         self.stpd_filename = stpd_filename
-        self.pool = [
-            mp.Process(target=self._worker) for _ in range(self.instances)
-        ]
+        self.pool = [mp.Process(target=self._worker) for _ in range(self.instances)]
         self.feeder = th.Thread(target=self._feed, name="Feeder")
         self.feeder.daemon = True
         self.workers_finished = False
@@ -65,9 +64,7 @@ Gun: {gun.__class__.__name__}
         """
         self.quit.set()
         # yapf:disable
-        while sorted([
-                self.pool[i].is_alive()
-                for i in range(len(self.pool))])[-1]:
+        while sorted([self.pool[i].is_alive() for i in range(len(self.pool))])[-1]:
             time.sleep(1)
         # yapf:enable
         try:
@@ -105,15 +102,10 @@ Gun: {gun.__class__.__name__}
         retry_delay = 1
         for _ in range(5):
             try:
-                [
-                    self.task_queue.put(None, timeout=1)
-                    for _ in range(0, workers_count)
-                ]
+                [self.task_queue.put(None, timeout=1) for _ in range(0, workers_count)]
                 break
             except Full:
-                logger.debug(
-                    "Couldn't post killer tasks"
-                    " because queue is full. Retrying in %ss", retry_delay)
+                logger.debug("Couldn't post killer tasks" " because queue is full. Retrying in %ss", retry_delay)
                 time.sleep(retry_delay)
                 retry_delay *= 2
 
@@ -138,6 +130,7 @@ class BFGMultiprocessing(BFGBase):
     Default worker type, creates process per worker,
     every process executes requests synchronously inside.
     """
+
     def _worker(self):
         """
         A worker that does actual jobs
@@ -192,9 +185,11 @@ class BFGGreen(BFGBase):
     Green version of the worker. Starts `self.instances` processes,
     each of process has a pool of `self.green_threads_per_instance` green threads.
     """
+
     def _worker(self):
         from gevent import monkey, spawn
         from gevent.queue import Queue as GreenQueue
+
         # NOTE: Patching everything will conflict with multiprocessing
         monkey.patch_all(thread=False, select=False)
 

@@ -3,8 +3,13 @@ import os
 
 from pandas.testing import assert_frame_equal
 
-from yandextank.contrib.netort.netort.data_manager.common.interfaces import TypeQuantiles, TypeHistogram, TypeDistribution
+from yandextank.contrib.netort.netort.data_manager.common.interfaces import (
+    TypeQuantiles,
+    TypeHistogram,
+    TypeDistribution,
+)
 import pytest
+
 PATH = 'netort/data_manager/metrics/tests/'
 
 

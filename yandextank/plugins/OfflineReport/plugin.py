@@ -20,7 +20,7 @@ def calc_overall_times(overall, quantiles):
     cumulative = overall.cumsum()
     total = cumulative.max()
     positions = cumulative.searchsorted([float(i) / 100 * total for i in quantiles])
-    all_times = [cumulative.index[i] / 1000. for i in positions]
+    all_times = [cumulative.index[i] / 1000.0 for i in positions]
     overall_times = zip(quantiles, all_times)
     return overall_times
 
@@ -31,8 +31,9 @@ def calc_duration(first_ts, last_ts):
     return str(last_time - first_time + timedelta(seconds=1))
 
 
-def make_resp_json(overall_times, overall_proto_code, overall_net_code, duration, loadscheme, time_start,
-                   autostop_info):
+def make_resp_json(
+    overall_times, overall_proto_code, overall_net_code, duration, loadscheme, time_start, autostop_info
+):
     quant = {}
     for q, t in overall_times:
         quant['q' + str(q)] = t
@@ -42,7 +43,7 @@ def make_resp_json(overall_times, overall_proto_code, overall_net_code, duration
         "loadscheme": loadscheme,
         "quantiles": quant,
         "proto_code": overall_proto_code,
-        "net_code": overall_net_code
+        "net_code": overall_net_code,
     }
 
     if autostop_info:
@@ -57,8 +58,9 @@ def make_resp_json(overall_times, overall_proto_code, overall_net_code, duration
     return response
 
 
-def make_resp_text(overall_times, overall_proto_code, overall_net_code, duration, loadscheme, time_start,
-                   autostop_info):
+def make_resp_text(
+    overall_times, overall_proto_code, overall_net_code, duration, loadscheme, time_start, autostop_info
+):
     res = ['Duration: {:>8}\n'.format(duration)]
     res.append('Loadscheme: {}\n'.format(loadscheme))
     if autostop_info:
@@ -84,17 +86,17 @@ class Plugin(AbstractPlugin, AggregateResultListener):
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
         try:
-            self.data_and_stats_stream = io.open(os.path.join(self.core.artifacts_dir,
-                                                              self.get_option('offline_data_log')),
-                                                 mode='w')
+            self.data_and_stats_stream = io.open(
+                os.path.join(self.core.artifacts_dir, self.get_option('offline_data_log')), mode='w'
+            )
             self.add_cleanup(lambda: self.data_and_stats_stream.close())
-            self.overall_json_stream = io.open(os.path.join(self.core.artifacts_dir,
-                                                            self.get_option('offline_json_report')),
-                                               mode='w')
+            self.overall_json_stream = io.open(
+                os.path.join(self.core.artifacts_dir, self.get_option('offline_json_report')), mode='w'
+            )
             self.add_cleanup(lambda: self.overall_json_stream.close())
-            self.overall_text_stream = io.open(os.path.join(self.core.artifacts_dir,
-                                                            self.get_option('offline_text_report')),
-                                               mode='w')
+            self.overall_text_stream = io.open(
+                os.path.join(self.core.artifacts_dir, self.get_option('offline_text_report')), mode='w'
+            )
             self.add_cleanup(lambda: self.overall_text_stream.close())
         except Exception:
             logging.exception('Failed to open file')
@@ -133,24 +135,28 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             self.overall_net_code[code] += count
 
         self.data_and_stats_stream.write(
-            '%s,\n' % json.dumps({
-                'ts': stats['ts'],
-                'instances': stats['metrics']['instances'],
-                'reqps': stats['metrics']['reqps'],
-                'quantiles': {
-                    "q50": int(data['overall']['interval_real']['q']['value'][0]),
-                    "q75": int(data['overall']['interval_real']['q']['value'][1]),
-                    "q80": int(data['overall']['interval_real']['q']['value'][2]),
-                    "q85": int(data['overall']['interval_real']['q']['value'][3]),
-                    "q90": int(data['overall']['interval_real']['q']['value'][4]),
-                    "q95": int(data['overall']['interval_real']['q']['value'][5]),
-                    "q98": int(data['overall']['interval_real']['q']['value'][6]),
-                    "q99": int(data['overall']['interval_real']['q']['value'][7]),
-                    "q100": int(data['overall']['interval_real']['q']['value'][8]),
-                },
-                'proto_code': last_proto_code,
-                'net_code': data['overall']['net_code']['count']
-            }))
+            '%s,\n'
+            % json.dumps(
+                {
+                    'ts': stats['ts'],
+                    'instances': stats['metrics']['instances'],
+                    'reqps': stats['metrics']['reqps'],
+                    'quantiles': {
+                        "q50": int(data['overall']['interval_real']['q']['value'][0]),
+                        "q75": int(data['overall']['interval_real']['q']['value'][1]),
+                        "q80": int(data['overall']['interval_real']['q']['value'][2]),
+                        "q85": int(data['overall']['interval_real']['q']['value'][3]),
+                        "q90": int(data['overall']['interval_real']['q']['value'][4]),
+                        "q95": int(data['overall']['interval_real']['q']['value'][5]),
+                        "q98": int(data['overall']['interval_real']['q']['value'][6]),
+                        "q99": int(data['overall']['interval_real']['q']['value'][7]),
+                        "q100": int(data['overall']['interval_real']['q']['value'][8]),
+                    },
+                    'proto_code': last_proto_code,
+                    'net_code': data['overall']['net_code']['count'],
+                }
+            )
+        )
 
         incoming_hist = data['overall']['interval_real']['hist']
         dist = pd.Series(incoming_hist['data'], index=incoming_hist['bins'])
@@ -206,7 +212,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             duration,
             loadscheme,
             time_start,
-            autostop_info
+            autostop_info,
         )
         if resp_json is not None:
             self.overall_json_stream.write('%s' % resp_json)
@@ -218,7 +224,7 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             duration,
             loadscheme,
             time_start,
-            autostop_info
+            autostop_info,
         )
         self.overall_text_stream.write('%s' % resp_text)
 

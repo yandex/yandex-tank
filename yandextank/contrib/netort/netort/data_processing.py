@@ -1,4 +1,5 @@
 import logging
+
 try:
     import queue as q
 except ImportError:
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_nowait_from_queue(queue):
-    """ Collect all immediately available items from a queue """
+    """Collect all immediately available items from a queue"""
     data = []
     for _ in range(queue.qsize()):
         try:

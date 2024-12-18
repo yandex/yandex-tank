@@ -38,11 +38,16 @@ def uri_like(
             meet = meet and fnmatch.fnmatch(parsed.path.lower(), path.lower())
         return meet
 
-    explanation = '/'.join(filter(None, [
-        f'{scheme}:/' if scheme is not None else 'scheme:/',
-        host if host is not None else '*',
-        path,
-    ]))
+    explanation = '/'.join(
+        filter(
+            None,
+            [
+                f'{scheme}:/' if scheme is not None else 'scheme:/',
+                host if host is not None else '*',
+                path,
+            ],
+        )
+    )
     return Condition(condition, f'uri like {explanation}')
 
 
@@ -54,6 +59,7 @@ def and_(*conditions) -> Condition:
 def path_like(pattern: str) -> Condition:
     def condition(path: str, *args, **kwargs):
         return fnmatch.fnmatchcase(path, pattern)
+
     return Condition(condition, f'path_like "{pattern}"')
 
 

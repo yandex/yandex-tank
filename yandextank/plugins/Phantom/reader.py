@@ -1,6 +1,7 @@
 """
 Phantom phout format reader. Read chunks from phout and produce data frames
 """
+
 from _csv import QUOTE_NONE
 
 import pandas as pd
@@ -20,9 +21,18 @@ from io import StringIO
 logger = logging.getLogger(__name__)
 
 phout_columns = [
-    'send_ts', 'tag', 'interval_real', 'connect_time', 'send_time', 'latency',
-    'receive_time', 'interval_event', 'size_out', 'size_in', 'net_code',
-    'proto_code'
+    'send_ts',
+    'tag',
+    'interval_real',
+    'connect_time',
+    'send_time',
+    'latency',
+    'receive_time',
+    'interval_event',
+    'size_out',
+    'size_in',
+    'net_code',
+    'proto_code',
 ]
 
 dtypes = {
@@ -60,7 +70,15 @@ def string_to_df(data):
 def string_to_df_microsec(data):
     # start_time = time.time()
     try:
-        df = pd.read_csv(StringIO(data), sep='\t', names=phout_columns, na_values='', dtype=dtypes, quoting=QUOTE_NONE, float_precision="legacy")
+        df = pd.read_csv(
+            StringIO(data),
+            sep='\t',
+            names=phout_columns,
+            na_values='',
+            dtype=dtypes,
+            quoting=QUOTE_NONE,
+            float_precision="legacy",
+        )
     except ParserError as e:
         logger.error(str(e))
         logger.error('Incorrect phout data: {}'.format(data))
@@ -112,8 +130,7 @@ class PhantomStatsReader(StatsReader):
         Return all items found in this chunk
         """
         for date_str, statistics in chunk.items():
-            date_obj = datetime.datetime.strptime(
-                date_str.split(".")[0], '%Y-%m-%d %H:%M:%S')
+            date_obj = datetime.datetime.strptime(date_str.split(".")[0], '%Y-%m-%d %H:%M:%S')
             chunk_date = int(time.mktime(date_obj.timetuple()))
             instances = 0
             for benchmark_name, benchmark in statistics.items():

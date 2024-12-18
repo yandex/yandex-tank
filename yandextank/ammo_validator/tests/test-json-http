@@ -1,0 +1,10 @@
+{"host": "example.com", "method": "GET", "uri": "/api/url1", "tag": "url1", "headers": {"User-agent": "Tank", "Connection": "close"}}
+{"host": "example.com", "method": "POST", "uri": "/api/url2", "tag": "url2", "headers": {"User-agent": "Tank", "Connection": "close"}, "body": "body_data"}
+{"host": "example.com", "method": "POST", "uri": "/api/url2", "tag": "url2", "headers": {"User-agent": "Tank", "Connection": "close"}, "body": "{\"data\": \"some_data\"}"}
+
+{"tag": "bad requests", "host": "example.com", "method": "GET",  "uri": "/api/url1"                     }
+{"tag": "bad requests", "host": "example.com", "method": "POST"                      "body": "body_data"}
+{"tag": "bad requests", "host": "example.com",                   "uri": "/api/url2", "body": "body_data"}
+{"tag": "bad requests",                        "method": "POST", "uri": "/api/url2", "body": "body_data"}
+{"tag": "bad requests", "host": "example.com", "method": "GET",  "uri": "/api/url1", "body": "body_data"  ,  }
+{}

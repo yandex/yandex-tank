@@ -1,6 +1,7 @@
 '''
 Load Plan generators
 '''
+
 import re
 from itertools import chain, groupby
 from builtins import range
@@ -21,9 +22,7 @@ class Const(object):
         if self.rps == 0:
             return iter([])
         interval = 1000.0 / self.rps
-        return (
-            int(i * interval)
-            for i in range(0, int(self.rps * self.duration / 1000)))
+        return (int(i * interval) for i in range(0, int(self.rps * self.duration / 1000)))
 
     def rps_at(self, t):
         '''Return rps for second t'''
@@ -83,8 +82,7 @@ class Line(object):
     def rps_at(self, t):
         '''Return rps for second t'''
         if 0 <= t <= self.duration:
-            return self.minrps + \
-                float(self.maxrps - self.minrps) * t / self.duration
+            return self.minrps + float(self.maxrps - self.minrps) * t / self.duration
         else:
             return 0
 
@@ -113,8 +111,7 @@ class Line(object):
         :rtype: list
         """
         seconds = range(0, int(self.duration) + 1)
-        rps_groups = groupby([proper_round(self.rps_at(t)) for t in seconds],
-                             lambda x: x)
+        rps_groups = groupby([proper_round(self.rps_at(t)) for t in seconds], lambda x: x)
         rps_list = [(rps, len(list(rpl))) for rps, rpl in rps_groups]
         return rps_list
 
@@ -141,8 +138,7 @@ class Composite(object):
         return int(sum(step.__len__() for step in self.steps))
 
     def get_rps_list(self):
-        return list(
-            chain.from_iterable(step.get_rps_list() for step in self.steps))
+        return list(chain.from_iterable(step.get_rps_list() for step in self.steps))
 
 
 class Stairway(Composite):
@@ -151,10 +147,7 @@ class Stairway(Composite):
         if maxrps < minrps:
             increment = -increment
         n_steps = int((maxrps - minrps) / increment)
-        steps = [
-            Const(minrps + i * increment, step_duration)
-            for i in range(0, n_steps + 1)
-        ]
+        steps = [Const(minrps + i * increment, step_duration) for i in range(0, n_steps + 1)]
         if increment > 0:
             if (minrps + n_steps * increment) < maxrps:
                 steps.append(Const(maxrps, step_duration))
@@ -181,12 +174,9 @@ class StepFactory(object):
 
     @classmethod
     def stairway(cls, params):
-        template = re.compile(
-            r'([0-9.]+),\s*([0-9.]+),\s*([0-9.]+),\s*({})\)'.format(cls.DURATION_RE))
+        template = re.compile(r'([0-9.]+),\s*([0-9.]+),\s*([0-9.]+),\s*({})\)'.format(cls.DURATION_RE))
         minrps, maxrps, increment, duration = template.search(params).groups()[:4]
-        return Stairway(
-            float(minrps),
-            float(maxrps), float(increment), parse_duration(duration))
+        return Stairway(float(minrps), float(maxrps), float(increment), parse_duration(duration))
 
     @staticmethod
     def produce(step_config):
@@ -208,8 +198,7 @@ def create(rps_schedule):
     Create Load Plan as defined in schedule. Publish info about its duration.
     """
     if len(rps_schedule) > 1:
-        lp = Composite(
-            [StepFactory.produce(step_config) for step_config in rps_schedule])
+        lp = Composite([StepFactory.produce(step_config) for step_config in rps_schedule])
     else:
         lp = StepFactory.produce(rps_schedule[0])
     info.status.publish('duration', lp.get_duration() / 1000)
