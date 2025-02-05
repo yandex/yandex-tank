@@ -84,6 +84,8 @@
   "yandextank/ammo_validator/tests/test-phantom":"load/projects/yandex-tank/yandextank/ammo_validator/tests/test-phantom",
   "yandextank/ammo_validator/tests/test-phantom-binary":"load/projects/yandex-tank/yandextank/ammo_validator/tests/test-phantom-binary",
   "yandextank/ammo_validator/tests/test-uri":"load/projects/yandex-tank/yandextank/ammo_validator/tests/test-uri",
+  "yandextank/ammo_validator/tests/test-uri-2":"load/projects/yandex-tank/yandextank/ammo_validator/tests/test-uri-2",
+  "yandextank/ammo_validator/tests/test-uri-bad":"load/projects/yandex-tank/yandextank/ammo_validator/tests/test-uri-bad",
   "yandextank/ammo_validator/tests/test-uripost":"load/projects/yandex-tank/yandextank/ammo_validator/tests/test-uripost",
   "yandextank/ammo_validator/tests/test-uripost-bad-1":"load/projects/yandex-tank/yandextank/ammo_validator/tests/test-uripost-bad-1",
   "yandextank/ammo_validator/tests/test-uripost-bad-2":"load/projects/yandex-tank/yandextank/ammo_validator/tests/test-uripost-bad-2",

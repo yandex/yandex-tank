@@ -79,6 +79,14 @@ def squash_messages(messages: list[Message]) -> dict[str, int]:
         ),
         ('phantom', 'test-phantom-binary', {'1 packets read (1 successes)': 1}, {}, {}),
         ('uri', 'test-uri', {'4 non empty lines read (2 uris)': 1}, {}, {}),
+        ('uri', 'test-uri-2', {'2 non empty lines read (2 uris)': 1}, {}, {}),
+        (
+            'uri',
+            'test-uri-bad',
+            {'3 non empty lines read (1 uris)': 1},
+            {'Too many tags. Only one tag is allowed': 1},
+            {'Header line does not end with "]"': 1},
+        ),
         ('uripost', 'test-uripost', {'2 packets read (2 successes)': 1}, {}, {}),
         (
             'uripost',
@@ -120,6 +128,7 @@ def test_validate(resource_manager, generator, ammotype, ammofile, expected_info
     core = generate_config(
         generator, ammotype, os.path.join(get_test_path(), f'yandextank/ammo_validator/tests/{ammofile}')
     )
+
     msgs = validate(resource_manager, core)  # type: ignore
     assert squash_messages(msgs.errors) == expected_error
     assert squash_messages(msgs.warnings) == expected_warning

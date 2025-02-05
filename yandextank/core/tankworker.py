@@ -134,7 +134,7 @@ class TankWorker(Process):
                 messages = validate_ammo(self.core.resource_manager, self.core)
                 messages.summarize(logger)
                 if messages.errors:
-                    raise ValidationError('Ammo validation failed.')
+                    raise ValidationError('Ammo validation failed.\n' + messages.brief())
 
             case 'inform':
                 try:

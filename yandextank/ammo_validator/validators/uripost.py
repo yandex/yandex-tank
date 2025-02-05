@@ -1,8 +1,10 @@
 from typing import BinaryIO
-from ..common import AmmoType, Decision, FileFormatValidator, Features, Messages, Message
+from ..common import AmmoType, Decision, FileFormatValidator, Features, Messages
 
 
 class UriPostValidator(FileFormatValidator):
+    AMMO_TYPES = {AmmoType.URIPOST}
+
     def __init__(self):
         self._msgs = Messages()
 
@@ -19,7 +21,7 @@ class UriPostValidator(FileFormatValidator):
 
     def _check_header(self, start_offset: int, header: str):
         if ':' not in header:
-            self._msgs.error(Message('Header line does not contain ":"', file_offset=start_offset))
+            self._msgs.error(self._msg('Header line does not contain ":"', file_offset=start_offset))
 
     def _read_packet_begin(self, stream: BinaryIO, packet_start_offset: int) -> int | None:
         headers = []
@@ -28,17 +30,17 @@ class UriPostValidator(FileFormatValidator):
             if not line_bytes:
                 return None
             if not line_bytes.endswith(b"\n"):
-                self._msgs.error(Message("Invalid packet header - too long line", file_offset=packet_start_offset))
+                self._msgs.error(self._msg("Invalid packet header - too long line", file_offset=packet_start_offset))
 
             try:
                 line_str = line_bytes.decode().strip()
             except UnicodeDecodeError:
-                self._msgs.error(Message("Invalid packet header - not in utf-8", file_offset=packet_start_offset))
+                self._msgs.error(self._msg("Invalid packet header - not in utf-8", file_offset=packet_start_offset))
                 return None
 
             if line_str.startswith('['):
                 if not line_str.endswith(']'):
-                    self._msgs.error(Message("Invalid packet header - missing ']'", file_offset=packet_start_offset))
+                    self._msgs.error(self._msg("Invalid packet header - missing ']'", file_offset=packet_start_offset))
                 line_str = line_str.strip('[]\r\n\t ')
                 self._check_header(packet_start_offset, line_str)
                 headers.append(line_str)
@@ -48,15 +50,15 @@ class UriPostValidator(FileFormatValidator):
             if len(size_tag) == 0:
                 continue
             if len(size_tag) > 3:
-                self._msgs.error(Message("Invalid packet header - too many tags", file_offset=packet_start_offset))
+                self._msgs.error(self._msg("Invalid packet header - too many tags", file_offset=packet_start_offset))
 
             try:
                 size = int(size_tag[0])
             except ValueError:
-                self._msgs.error(Message('Packet size not a number', file_offset=packet_start_offset))
+                self._msgs.error(self._msg('Packet size not a number', file_offset=packet_start_offset))
                 return None
             if size < 0:
-                self._msgs.error(Message('Packet size must be positive integer', file_offset=packet_start_offset))
+                self._msgs.error(self._msg('Packet size must be positive integer', file_offset=packet_start_offset))
                 return None
             if size > 0:
                 return size
@@ -78,12 +80,12 @@ class UriPostValidator(FileFormatValidator):
 
             packet_data = stream.read(size)
             if len(packet_data) != size:
-                self._msgs.error(Message("Invalid size of packet data", file_offset=packet_start_offset))
+                self._msgs.error(self._msg("Invalid size of packet data", file_offset=packet_start_offset))
                 continue
 
             success += 1
 
-        self._msgs.info(Message(f'{count} packets read ({success} successes)'))
+        self._msgs.info(self._msg(f'{count} packets read ({success} successes)'))
         if not success:
-            self._msgs.error(Message('No successful readed packets in ammo'))
+            self._msgs.error(self._msg('No successful readed packets in ammo'))
         return self._msgs

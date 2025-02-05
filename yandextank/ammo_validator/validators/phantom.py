@@ -1,11 +1,13 @@
 from typing import BinaryIO
-from ..common import AmmoType, Decision, FileFormatValidator, Features, Messages, Message
+from ..common import AmmoType, Decision, FileFormatValidator, Features, Messages
 
 
 KNOWN_HTTP_REQUEST_METHODS = {'GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'}
 
 
 class PhantomValidator(FileFormatValidator):
+    AMMO_TYPES = {AmmoType.PHANTOM, AmmoType.RAW}
+
     def __init__(self):
         self._has_crlf_between_packets = True
         self._msgs = Messages()
@@ -25,12 +27,12 @@ class PhantomValidator(FileFormatValidator):
             if not size_bytes:
                 return None
             if not size_bytes.endswith(b"\n"):
-                self._msgs.error(Message("Invalid packet header - too long line", file_offset=packet_start_offset))
+                self._msgs.error(self._msg("Invalid packet header - too long line", file_offset=packet_start_offset))
 
             try:
                 size_str = size_bytes.decode().strip()
             except UnicodeDecodeError:
-                self._msgs.error(Message("Invalid packet header - not in utf-8", file_offset=packet_start_offset))
+                self._msgs.error(self._msg("Invalid packet header - not in utf-8", file_offset=packet_start_offset))
                 return None
 
             size_tag = size_str.split()
@@ -38,15 +40,15 @@ class PhantomValidator(FileFormatValidator):
                 self._has_crlf_between_packets = True
                 continue
             if len(size_tag) > 2:
-                self._msgs.error(Message("Invalid packet header - too many tags", file_offset=packet_start_offset))
+                self._msgs.error(self._msg("Invalid packet header - too many tags", file_offset=packet_start_offset))
 
             try:
                 size = int(size_tag[0])
             except ValueError:
-                self._msgs.error(Message('Packet size not a number', file_offset=packet_start_offset))
+                self._msgs.error(self._msg('Packet size not a number', file_offset=packet_start_offset))
                 return None
             if size < 0:
-                self._msgs.error(Message('Packet size must be positive integer', file_offset=packet_start_offset))
+                self._msgs.error(self._msg('Packet size must be positive integer', file_offset=packet_start_offset))
                 return None
             if size > 0:
                 return size
@@ -54,7 +56,7 @@ class PhantomValidator(FileFormatValidator):
     def _split_http_packet(self, data: bytes, packet_start_offset: int) -> tuple[str, dict[str, str], bytes]:
         header_end_offset = data.find(b"\r\n\r\n")
         if header_end_offset < 0:
-            self._msgs.error(Message("Invalid HTTP header - no CRLFCRLF", file_offset=packet_start_offset))
+            self._msgs.error(self._msg("Invalid HTTP header - no CRLFCRLF", file_offset=packet_start_offset))
             return '', {}, data
 
         http_request = ''
@@ -69,7 +71,7 @@ class PhantomValidator(FileFormatValidator):
                 header_str = header_str[:-1]
             else:
                 self._msgs.warning(
-                    Message(
+                    self._msg(
                         f"Invalid HTTP header - string not ends with \\r: {header_str[:20]}",
                         file_offset=packet_start_offset,
                     )
@@ -77,7 +79,7 @@ class PhantomValidator(FileFormatValidator):
             header_parts = header_str.split(": ", maxsplit=1)
             if len(header_parts) != 2:
                 self._msgs.warning(
-                    Message(
+                    self._msg(
                         f"Invalid HTTP header - can't split to key and value: {header_str[:20]}",
                         file_offset=packet_start_offset,
                     )
@@ -88,15 +90,15 @@ class PhantomValidator(FileFormatValidator):
     def _check_http_request(self, request: str, packet_start_offset: int):
         request_items = request.split()
         if len(request_items) != 3:
-            self._msgs.warning(Message("Invalid HTTP request - not 3 parts", file_offset=packet_start_offset))
+            self._msgs.warning(self._msg("Invalid HTTP request - not 3 parts", file_offset=packet_start_offset))
         else:
             if request_items[0] not in KNOWN_HTTP_REQUEST_METHODS:
                 self._msgs.warning(
-                    Message("Invalid HTTP request - unknown request method", file_offset=packet_start_offset)
+                    self._msg("Invalid HTTP request - unknown request method", file_offset=packet_start_offset)
                 )
             if not request_items[2].startswith('HTTP/'):
                 self._msgs.warning(
-                    Message("Invalid HTTP request - protocol not starts with HTTP/", file_offset=packet_start_offset)
+                    self._msg("Invalid HTTP request - protocol not starts with HTTP/", file_offset=packet_start_offset)
                 )
 
     def _check_http_headers(self, headers: dict[str, str], body: bytes, packet_start_offset: int):
@@ -108,7 +110,7 @@ class PhantomValidator(FileFormatValidator):
                     msg = "Invalid HTTP header - body size is bigger than Content-Length"
                 else:
                     msg = "Invalid HTTP header - Content-Length is greater than real body length"
-                self._msgs.error(Message(msg, file_offset=packet_start_offset))
+                self._msgs.error(self._msg(msg, file_offset=packet_start_offset))
 
     def validate(self, stream: BinaryIO, max_scan_size: int) -> Messages:
         # <byte_length> [tag]\n<request>\r\n<request_headers>\r\n\r\n[request_body][\n[\n]]
@@ -132,7 +134,7 @@ class PhantomValidator(FileFormatValidator):
             packet_data = stream.read(size)
             if len(packet_data) != size:
                 self._msgs.error(
-                    Message(
+                    self._msg(
                         f"Invalid size (read {len(packet_data)} bytes, expected {size} bytes)",
                         file_offset=packet_start_offset,
                     )
@@ -145,9 +147,9 @@ class PhantomValidator(FileFormatValidator):
 
                 success += 1
 
-        self._msgs.info(Message(f'{count} packets read ({success} successes)'))
+        self._msgs.info(self._msg(f'{count} packets read ({success} successes)'))
         if not success:
-            self._msgs.error(Message('No successful readed packets in ammo'))
+            self._msgs.error(self._msg('No successful readed packets in ammo'))
         if not self._has_crlf_between_packets:
-            self._msgs.info(Message('It is recomended add CRLF between packets for better readibility by human'))
+            self._msgs.info(self._msg('It is recomended add CRLF between packets for better readibility by human'))
         return self._msgs
