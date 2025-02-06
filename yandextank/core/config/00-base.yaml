@@ -26,6 +26,9 @@ opentsdb:
 overload:
   enabled: false
   package: yandextank.plugins.DataUploader
+gatling:
+  enabled: false
+  package: yandextank.plugins.Gatling
 pandora:
   enabled: false
   package: yandextank.plugins.Pandora
