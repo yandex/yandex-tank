@@ -10,6 +10,7 @@
   "MANIFEST.in":"load/projects/yandex-tank/MANIFEST.in",
   "README.md":"load/projects/yandex-tank/README.md",
   "build.xml":"load/projects/yandex-tank/build.xml",
+  "contrib/gatling/gatling.conf":"load/projects/yandex-tank/contrib/gatling/gatling.conf",
   "data":"load/projects/yandex-tank/data",
   "data/PKGBUILD":"load/projects/yandex-tank/data/PKGBUILD",
   "data/load.conf.1":"load/projects/yandex-tank/data/load.conf.1",
