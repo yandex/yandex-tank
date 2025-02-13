@@ -1,4 +1,5 @@
 import logging
+import re
 import typing
 
 
@@ -180,7 +181,7 @@ class AbstractCriterion(object):
         self.cause_second = None
 
     @staticmethod
-    def count_matched_codes(codes_regex, codes_dict):
+    def count_matched_codes(codes_regex: re.Pattern, codes_dict: dict[int | str, int]):
         """helper to aggregate codes by mask"""
         total = 0
         for code, count in codes_dict.items():
@@ -192,24 +193,24 @@ class AbstractCriterion(object):
         """notification about aggregate data goes here"""
         raise NotImplementedError("Abstract methods requires overriding")
 
-    def get_rc(self):
+    def get_rc(self) -> int:
         """get return code for test"""
         raise NotImplementedError("Abstract methods requires overriding")
 
-    def explain(self):
+    def explain(self) -> str:
         """long explanation to show after test stop"""
         raise NotImplementedError("Abstract methods requires overriding")
 
-    def get_criterion_parameters(self):
+    def get_criterion_parameters(self) -> dict[str, typing.Any]:
         """returns dict with all criterion parameters"""
         raise NotImplementedError("Abstract methods requires overriding")
 
-    def widget_explain(self):
+    def widget_explain(self) -> tuple[str, float]:
         """short explanation to display in right panel"""
         return self.explain(), 0
 
     @staticmethod
-    def get_type_string():
+    def get_type_string() -> str:
         """returns string that used as config name for criterion"""
         raise NotImplementedError("Abstract methods requires overriding")
 

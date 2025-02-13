@@ -1,4 +1,4 @@
-''' Cummulative Autostops '''
+'''Cummulative Autostops'''
 
 import logging
 import math

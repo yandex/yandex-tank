@@ -178,7 +178,7 @@ class TankWorker(Process):
         logger.warning('Interrupting')
 
     def get_status(self):
-        return {
+        status = {
             'status_code': self.status.decode('utf8'),
             'left_time': None,
             'exit_code': self.retcode,
@@ -187,6 +187,12 @@ class TankWorker(Process):
             'test_id': self.test_id,
             'lunapark_url': self.get_info('uploader', 'web_link'),
         }
+        for autostop_key in ['rps', 'reason', 'type', 'rc']:
+            if self.get_info('autostop', autostop_key) is not None:
+                if 'autostop' not in status:
+                    status['autostop'] = {}
+                status['autostop'][autostop_key] = self.get_info('autostop', autostop_key)
+        return status
 
     def save_finish_status(self):
         with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:
