@@ -74,8 +74,9 @@ class PandoraStatsReader(object):
 
     def close(self):
         self.closed = True
-        self.poller.stop()
-        self.poller.join()
+        if self.poller.is_alive():
+            self.poller.stop()
+            self.poller.join()
 
     def __iter__(self):
         return self
