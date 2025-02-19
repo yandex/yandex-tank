@@ -331,10 +331,7 @@ class TankCore(object):
                 try:
                     retcode = plugin.is_test_finished()
                     if retcode >= 0:
-                        if plugin.errors:
-                            for e in plugin.errors:
-                                self.errors.append(f'{plugin_name}: {e}')
-                        elif retcode > 0 and isinstance(plugin, GeneratorPlugin):
+                        if retcode > 0 and isinstance(plugin, GeneratorPlugin):
                             self.errors.append(f'{plugin_name} exited with return code {retcode}.')
                         return retcode
                 except Exception:
@@ -368,19 +365,20 @@ class TankCore(object):
             retcode = plugin.end_test(retcode) or retcode
             logger.info('RC after monitoring plugin finish: %s', retcode)
 
-        for plugin in [
+        for plugin_name, plugin in [
             p
-            for p in self.plugins.values()
+            for p in self.plugins.items()
             if p is not self.job.generator_plugin and p not in self.job.monitoring_plugins
         ]:
-            logger.info("Stopping %s plugin", plugin)
+            logger.info("Stopping %s plugin", plugin_name)
             try:
                 retcode = plugin.end_test(retcode)
             except Exception:  # FIXME too broad exception clause
-                logger.exception("Failed stopping plugin %s", plugin)
+                logger.exception("Failed stopping plugin %s", plugin_name)
                 if not retcode:
-                    retcode = 1
-            logger.info("RC after %s plugin finish: %s", plugin, retcode)
+                    retcode = RetCode.ERROR
+            logger.info("RC after %s plugin finish: %s", plugin_name, retcode)
+
         return retcode
 
     def plugins_post_process(self, retcode):
@@ -390,15 +388,17 @@ class TankCore(object):
         logger.info("Post-processing test with received RC: %s", retcode)
         self.publish("core", "stage", "post_process")
 
-        for plugin in self.plugins.values():
-            logger.info("Post-process %s plugin", plugin)
+        for plugin_name, plugin in self.plugins.items():
+            logger.info("Post-process %s plugin", plugin_name)
             try:
                 retcode = plugin.post_process(retcode)
-                logger.info("RC after %s plugin post-processing: %s", plugin, retcode)
+                for e in plugin.errors:
+                    self.errors.append(f'{plugin_name}: {e}')
             except Exception:  # FIXME too broad exception clause
-                logger.exception("Failed post-processing plugin %s", plugin)
+                logger.exception("Failed post-processing plugin %s", plugin_name)
                 if not retcode:
-                    retcode = 1
+                    retcode = RetCode.ERROR
+            logger.info("RC after %s plugin post-processing: %s", plugin_name, retcode)
         return retcode
 
     def publish_monitoring_data(self, data):

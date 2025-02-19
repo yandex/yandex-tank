@@ -1,6 +1,6 @@
 ''' Tank exit code check plugin '''
 
-from ...common.interfaces import AbstractPlugin
+from yandextank.common.interfaces import AbstractPlugin
 
 
 class Plugin(AbstractPlugin):
@@ -23,6 +23,8 @@ class Plugin(AbstractPlugin):
         for code in codes:
             if code:
                 self.ok_codes.append(int(code))
+        if bool(self.ok_codes) and (0 not in self.ok_codes):
+            self.log.warning('RCAssert pass is missing zero exit code (0).')
         self.fail_code = int(self.get_option("fail_code", self.fail_code))
 
     def post_process(self, retcode):
@@ -36,4 +38,8 @@ class Plugin(AbstractPlugin):
                 return 0
 
         self.log.info("Changing exit code to %s because RCAssert pass list was unsatisfied", self.fail_code)
+        if self.fail_code > 0:
+            self.errors.append(
+                f'Changed exit code from {retcode} to {self.fail_code} because RCAssert pass list was unsatisfied'
+            )
         return self.fail_code

@@ -105,7 +105,12 @@ class TankWorker(Process):
         return errors
 
     def run(self):
+        def propagate_core_errors():
+            self.add_msgs(*self.core.errors)
+
         with Cleanup(self) as add_cleanup:
+            # ensure that core errors propagates to FINISH_FILENAME after post_process
+            add_cleanup('propagate_core_errors', propagate_core_errors)
             for cleanup in self._cleanups:
                 add_cleanup(cleanup.name, cleanup.handler)
             lock = self.get_lock()
@@ -123,7 +128,6 @@ class TankWorker(Process):
                 self.status = Status.TEST_RUNNING
                 self.core.plugins_start_test()
                 self.retcode = self.core.wait_for_finish()
-                self._msgs.extend(self.core.errors)
             self.status = Status.TEST_POST_PROCESS
             self.retcode = self.core.plugins_post_process(self.retcode)
 
