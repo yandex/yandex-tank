@@ -1,4 +1,4 @@
-''' Plugin provides fullscreen console '''
+'''Plugin provides fullscreen console'''
 
 import logging
 import sys

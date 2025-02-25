@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-""" The agent bundle, contains all metric classes and agent running code """
+"""The agent bundle, contains all metric classes and agent running code"""
 import subprocess
 import logging
 import os

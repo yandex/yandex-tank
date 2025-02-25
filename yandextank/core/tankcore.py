@@ -1,4 +1,4 @@
-""" The central part of the tool: Core """
+"""The central part of the tool: Core"""
 
 import datetime
 

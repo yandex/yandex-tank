@@ -1,4 +1,4 @@
-""" jmeter load generator support """
+"""jmeter load generator support"""
 
 import datetime
 import logging

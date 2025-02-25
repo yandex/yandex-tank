@@ -1,4 +1,4 @@
-"""Monitoring collector """
+"""Monitoring collector"""
 
 import hashlib
 import logging

@@ -1,4 +1,4 @@
-""" Resource Opener tool """
+"""Resource Opener tool"""
 
 from __future__ import print_function
 

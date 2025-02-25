@@ -1,4 +1,4 @@
-''' Tank exit code check plugin '''
+'''Tank exit code check plugin'''
 
 from yandextank.common.interfaces import AbstractPlugin
 
