@@ -38,7 +38,7 @@ class Plugin(GeneratorPlugin):
         self.config_contents = None
         self.custom_config = False
         self.expvar = self.get_option('expvar')
-        self.expvar_enabled = self.expvar
+        self.expvar_enabled = bool(self.expvar)
         self.expvar_port = self.DEFAULT_EXPVAR_PORT
         self.report_files = None
         self.__address = None
@@ -111,7 +111,7 @@ class Plugin(GeneratorPlugin):
         """
         # get expvar parameters
         if config.get("monitoring"):
-            if config["monitoring"].get("expvar"):
+            if isinstance(config["monitoring"].get("expvar"), dict):
                 self.expvar_enabled = config["monitoring"]["expvar"].get("enabled")
                 if config["monitoring"]["expvar"].get("port"):
                     self.expvar_port = config["monitoring"]["expvar"].get("port")
@@ -120,6 +120,7 @@ class Plugin(GeneratorPlugin):
             config["monitoring"] = {
                 "expvar": {
                     "enabled": True,
+                    "port": self.DEFAULT_EXPVAR_PORT,
                 }
             }
             self.expvar_enabled = True

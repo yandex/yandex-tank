@@ -95,34 +95,41 @@ def validate(
 ) -> Messages:
     ammos, inline_ammos, messages = collect_ammos(core)
 
+    def validate_file(v: FileFormatValidator, ammo_file: str) -> bool:
+        validated = True
+        opener = resource_manager.get_opener(ammo_file)
+        with open_file(opener, use_cache) as stream:
+            try:
+                v_msgs = v.validate(stream, max_scan_size)
+            except Exception as e:
+                v_msgs = Messages()
+                v_msgs.error(Message(f'Error while validating: {e}', validator_name=v.__class__.__name__))
+                validated = False
+        messages.update(v_msgs, ammo_file=ammo_file)
+        if v_msgs.errors:
+            validated = False
+        return validated
+
     for ammo_type, ammo_file in ammos:
-        found = False
-        found_ammo_types = Decision(set())
-        feat = Features.from_file(resource_manager, ammo_file, max_scan_size)
+        validated = False
         for Validator in FILE_VALIDATORS:
-            v = Validator()
-            decision = v.is_suitable(feat)
-            found_ammo_types |= decision
-            for d in decision:
-                if d == ammo_type:
-                    opener = resource_manager.get_opener(ammo_file)
-                    with open_file(opener, use_cache) as stream:
-                        try:
-                            v_msgs = v.validate(stream, max_scan_size)
-                        except Exception as e:
-                            v_msgs = Messages()
-                            v_msgs.warning(Message(f'Error while validating with validator {v.__qualname__}: {e}'))
-                    messages.update(v_msgs, ammo_file=ammo_file)
-                    found = True
-                    break
-        if not found:
-            messages.warning(
-                Message(
-                    f'Can\'t find validator for ammo type {ammo_type}.'
-                    f' Suggested ammo types: {", ".join(sorted(found_ammo_types))}',
-                    ammo_file,
+            if ammo_type in Validator.AMMO_TYPES:
+                validated = validate_file(Validator(), ammo_file)
+                break
+
+        if not validated:
+            feat = Features.from_file(resource_manager, ammo_file, max_scan_size)
+            suggested_ammo_types = Decision(set())
+            for Validator in FILE_VALIDATORS:
+                suggested_ammo_types = Validator().is_suitable(feat)
+            if suggested_ammo_types and suggested_ammo_types != {ammo_type}:
+                messages.error(
+                    Message(
+                        f'Ammo does not validated with ammo type {ammo_type}.'
+                        f' Suggested ammo types: {", ".join(sorted(suggested_ammo_types))}',
+                        ammo_file,
+                    )
                 )
-            )
 
     for ammo_type, ammo_inline in inline_ammos:
         found = False

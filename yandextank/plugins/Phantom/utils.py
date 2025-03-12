@@ -1,4 +1,4 @@
-""" Utility classes for phantom module """
+"""Utility classes for phantom module"""
 
 # TODO: use separate answ log per benchmark
 import copy

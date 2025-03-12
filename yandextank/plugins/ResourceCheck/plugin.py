@@ -1,4 +1,4 @@
-''' Module to check system resources at load generator'''
+'''Module to check system resources at load generator'''
 
 import logging
 import time

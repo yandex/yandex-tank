@@ -1,4 +1,4 @@
-""" Core module to calculate aggregate data """
+"""Core module to calculate aggregate data"""
 
 import json
 import logging

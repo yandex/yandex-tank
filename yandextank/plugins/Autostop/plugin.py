@@ -1,4 +1,4 @@
-""" Autostop facility """
+"""Autostop facility"""
 
 # pylint: disable=C0301
 import logging
@@ -27,7 +27,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.cause_criterion = None
         self.imbalance_rps = 0
         self.imbalance_timestamp = 0
-        self._criterions = {}
+        self._criterions: dict[str, cr.AbstractCriterion] = {}
         self.custom_criterions = []
         self.counting = []
         self._stop_report_path = ''
@@ -132,6 +132,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                         )
                     self.core.publish('autostop', 'rps', self.imbalance_rps)
                     self.core.publish('autostop', 'reason', criterion.explain())
+                    self.core.publish('autostop', 'type', criterion.get_type_string())
+                    self.core.publish('autostop', 'rc', criterion.get_rc())
                     self.log.warning(
                         "Autostop criterion requested test stop on %d rps: %s", self.imbalance_rps, criterion_text
                     )

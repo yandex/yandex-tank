@@ -1,4 +1,4 @@
-''' Module that collects remote system information '''
+'''Module that collects remote system information'''
 
 import getpass
 import logging

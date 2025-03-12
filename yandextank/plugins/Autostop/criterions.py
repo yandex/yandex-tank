@@ -455,7 +455,10 @@ class TimeLimitCriterion(AbstractCriterion):
         return parameters
 
     def widget_explain(self):
-        return "Time limit: %(limit)ss, actual time: %(actual)ss" % self.get_criterion_parameters()
+        return (
+            "Time limit: %(limit)ss, actual time: %(actual)ss" % self.get_criterion_parameters(),
+            (self.end_time - self.start_time) / self.time_limit,
+        )
 
 
 class UsedInstancesCriterion(AbstractCriterion):

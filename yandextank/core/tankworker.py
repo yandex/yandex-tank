@@ -105,7 +105,12 @@ class TankWorker(Process):
         return errors
 
     def run(self):
+        def propagate_core_errors():
+            self.add_msgs(*self.core.errors)
+
         with Cleanup(self) as add_cleanup:
+            # ensure that core errors propagates to FINISH_FILENAME after post_process
+            add_cleanup('propagate_core_errors', propagate_core_errors)
             for cleanup in self._cleanups:
                 add_cleanup(cleanup.name, cleanup.handler)
             lock = self.get_lock()
@@ -123,7 +128,6 @@ class TankWorker(Process):
                 self.status = Status.TEST_RUNNING
                 self.core.plugins_start_test()
                 self.retcode = self.core.wait_for_finish()
-                self._msgs.extend(self.core.errors)
             self.status = Status.TEST_POST_PROCESS
             self.retcode = self.core.plugins_post_process(self.retcode)
 
@@ -134,7 +138,7 @@ class TankWorker(Process):
                 messages = validate_ammo(self.core.resource_manager, self.core)
                 messages.summarize(logger)
                 if messages.errors:
-                    raise ValidationError('Ammo validation failed.')
+                    raise ValidationError('Ammo validation failed.\n' + messages.brief())
 
             case 'inform':
                 try:
@@ -178,7 +182,7 @@ class TankWorker(Process):
         logger.warning('Interrupting')
 
     def get_status(self):
-        return {
+        status = {
             'status_code': self.status.decode('utf8'),
             'left_time': None,
             'exit_code': self.retcode,
@@ -187,6 +191,12 @@ class TankWorker(Process):
             'test_id': self.test_id,
             'lunapark_url': self.get_info('uploader', 'web_link'),
         }
+        for autostop_key in ['rps', 'reason', 'type', 'rc']:
+            if self.get_info('autostop', autostop_key) is not None:
+                if 'autostop' not in status:
+                    status['autostop'] = {}
+                status['autostop'][autostop_key] = self.get_info('autostop', autostop_key)
+        return status
 
     def save_finish_status(self):
         with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:

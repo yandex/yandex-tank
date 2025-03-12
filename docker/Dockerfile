@@ -18,25 +18,27 @@ LABEL Description="Fresh Yandex.Tank from github master branch with phantom" \
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update -q && \
     apt-get install --no-install-recommends -yq \
+        software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa -y && \
+    add-apt-repository ppa:yandex-load/main -y && \
+    apt-get update -q && \        
+    apt-get install --no-install-recommends -yq \
         sudo     \
         vim      \
         wget     \
         curl     \
         less     \
         iproute2 \
-        software-properties-common \
         telnet   \
         atop     \
         openssh-client \
         git            \
         gpg-agent      \
-        python3-pip  && \
-    add-apt-repository ppa:yandex-load/main -y && \
-    apt-get update -q && \
-    apt-get install -yq \
-        phantom \
+        python3.12     \
+        phantom        \
         phantom-ssl && \
     apt-get clean && \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12 && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/*
 
 ENV TELEGRAF_VERSION=1.29.1-1
@@ -49,7 +51,7 @@ RUN echo 'deb [signed-by=/etc/apt/trusted.gpg.d/influxdata-archive_compat.gpg] h
 RUN apt-get update 
 RUN apt-get install telegraf
 
-ENV BUILD_DEPS="python3-dev build-essential gfortran libssl-dev libffi-dev"
+ENV BUILD_DEPS="python3.12-dev build-essential gfortran libssl-dev libffi-dev"
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -yq --no-install-recommends ${BUILD_DEPS} && \
