@@ -131,6 +131,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
     def __init__(self, core, cfg, name):
         AbstractPlugin.__init__(self, core, cfg, name)
+        self.plugin_disabled = False
         self.data_queue = Queue()
         self.monitoring_queue = Queue()
         if self.core.error_log:
@@ -308,10 +309,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             self.publish('job_no', lp_job.number)
         except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError):
             logger.exception('Failed to connect to Lunapark, disabling DataUploader')
-            self.start_test = lambda *a, **kw: None
-            self.post_process = lambda *a, **kw: None
-            self.on_aggregated_data = lambda *a, **kw: None
-            self.monitoring_data = lambda *a, **kw: None
+            self.plugin_disabled = True
             return
 
         cmdline = ' '.join(sys.argv)
@@ -342,6 +340,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.__save_conf()
 
     def start_test(self):
+        if self.plugin_disabled:
+            return
         self.add_cleanup(self.join_threads)
         self.status_sender.start()
         self.upload.start()
@@ -395,6 +395,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
 
     def post_process(self, rc):
         self.retcode = rc
+        if self.plugin_disabled:
+            return rc
         self.monitoring_queue.put(None)
         self.data_queue.put(None)
         if self.core.error_log:
@@ -430,10 +432,14 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         @data: aggregated data
         @stats: stats about gun
         """
+        if self.plugin_disabled:
+            return
         if not self.lp_job.interrupted.is_set():
             self.data_queue.put((data, stats))
 
     def monitoring_data(self, data_list):
+        if self.plugin_disabled:
+            return
         if not self.lp_job.interrupted.is_set():
             if len(data_list) > 0:
                 [self.monitoring_queue.put(chunk) for chunk in chop(data_list, self.get_option("chunk_size"))]

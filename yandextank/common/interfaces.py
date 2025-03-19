@@ -267,7 +267,7 @@ class GeneratorPlugin(AbstractPlugin):
         pass
 
     def end_test(self, retcode):
-        pass
+        return retcode
 
 
 class StatsReader(object):
