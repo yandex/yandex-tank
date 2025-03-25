@@ -814,35 +814,6 @@ Artifact uploaders
   Graphite uploader are not currently supported in the last Yandex.Tank version.
   If you want one of them, use 1.7 branch.
 
-Yandex.Overload
-===============
-
-Overload 𝛃 is a service for performance analytics made by Yandex. We will store your performance experiments results and show them in graphic and tabular form. Your data will be available at https://overload.yandex.net.
-
-.. image:: ./pic/overload-screen.png
-
-yaml file section: **overload**
-
-Options
--------
-
-:token_file:
-  Place your token obtained from Overload (click your profile photo) into a file and specify the path here
-:job_name:
-  (Optional) Name of a job to be displayed in Yandex.Overload
-:job_dsc:
-  (Optional) Description of a job to be displayed in Yandex.Overload
-
-Example:
-
-.. code-block:: yaml
-
-  overload:
-    token_file: token.txt
-    job_name: test
-    job_dsc: test description
-
-
 InfluxDB
 ========
 
