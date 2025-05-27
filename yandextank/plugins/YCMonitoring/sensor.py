@@ -172,7 +172,8 @@ def parse_yc_monitoring_query(query: str) -> tuple[str, str]:
     quote = '("|\')?'
     folderId = '([a-zA-Z0-9._-]+)'
     tail = '\\s*,?\\s*'
-    m = re.search(f'folderId={quote}{folderId}{quote}{tail}', query)
+    eq = '\\s*=\\s*'
+    m = re.search(f'folderId{eq}{quote}{folderId}{quote}{tail}', query)
     if not m:
         return query, ''
 

@@ -82,6 +82,16 @@ def test_format_sensors(json_file_name: str, formated_sensors: set):
             'alias(series_sum("instance", "app.request_latency_ms_count"{service="custom", handle="/path"}), "{{instance}}")',
             'asldkfjh123',
         ),
+        (
+            'alias(series_sum("instance", "app.request_latency_ms_count"{folderId = "rarara", service="custom", handle="/path"}), "{{instance}}")',
+            'alias(series_sum("instance", "app.request_latency_ms_count"{service="custom", handle="/path"}), "{{instance}}")',
+            'rarara',
+        ),
+        (
+            'alias(series_sum("instance", "app.request_latency_ms_count"{folderId =    rarara, service="custom", handle="/path"}), "{{instance}}")',
+            'alias(series_sum("instance", "app.request_latency_ms_count"{service="custom", handle="/path"}), "{{instance}}")',
+            'rarara',
+        ),
     ],
 )
 def test_parse_yc_monitoring_query(query, expected_query, folder_id):
