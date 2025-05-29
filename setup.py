@@ -33,6 +33,7 @@ analytic tools for the results they produce.
         'retrying',
         'six>=1.16.0',
         'environ-config>=23.2.0',
+        'watchdog<=6.0.0',
     ],
     setup_requires=[],
     tests_require=['pytest>=7.4.4', 'flake8', 'pytest-benchmark', 'zipp==0.5.1', 'mock'],

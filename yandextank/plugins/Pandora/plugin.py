@@ -10,6 +10,7 @@ from threading import Event
 import yaml
 
 from yandextank.contrib.netort.netort.resource import TempDownloaderOpenerProtocol
+from yandextank.plugins.Pandora.sample_reader import SampleReader, SampleWatcher
 
 from .reader import PandoraStatsReader
 from ..Console import Plugin as ConsolePlugin
@@ -46,6 +47,8 @@ class Plugin(GeneratorPlugin):
         self.ammofile = None
         self.process_stderr_file = None
         self.resources = []
+        self.sample_readers: list[SampleReader] = []
+        self.sample_watcher: SampleWatcher | None = None
 
     @staticmethod
     def get_key():
@@ -218,6 +221,7 @@ class Plugin(GeneratorPlugin):
 
     def prepare_test(self):
         self.prepare_resources()
+        self.init_sample_reading()
 
         try:
             console = self.core.get_plugin_of_type(ConsolePlugin)
@@ -229,6 +233,34 @@ class Plugin(GeneratorPlugin):
             widget = PandoraInfoWidget(self)
             console.add_info_widget(widget)
             self.core.job.aggregator.add_result_listener(widget)
+
+    def init_sample_reading(self):
+        create_default_path_watcher = False
+        for pool in self.config_contents['pools']:
+            answ = pool.get('gun').get('answlog', {})
+            if not answ.get('enabled', True):
+                continue
+            path = answ.get('path')
+            if path is not None:
+                reader = SampleReader(os.path.abspath(path))
+                self.sample_readers.append(reader)
+                reader.start()
+            else:
+                create_default_path_watcher = True
+        if create_default_path_watcher:
+            watcher = SampleWatcher(
+                os.path.curdir,
+                'answ_*.log',
+            )  # must be consistent with https://github.com/yandex/pandora/blob/3a8136874d8b0c388b88da1d9d3d483127fb8f15/lib/answlog/logger.go#L104
+            self.sample_watcher = watcher
+            watcher.start()
+
+    def finish_sample_reading(self):
+        if self.sample_watcher is not None:
+            self.sample_watcher.stop()
+        for r in self.sample_readers:
+            r.stop()
+            r.join()
 
     def start_test(self):
         args = [self.pandora_cmd] + (['-expvar'] if self.expvar else []) + [self.pandora_config_file]
@@ -281,6 +313,7 @@ class Plugin(GeneratorPlugin):
         else:
             logger.info("Seems Pandora subprocess finished")
         self.output_finished.set()
+        self.finish_sample_reading()
         return retcode
 
 

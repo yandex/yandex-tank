@@ -236,6 +236,7 @@
   "yandextank/plugins/Pandora/config/schema.yaml":"load/projects/yandex-tank/yandextank/plugins/Pandora/config/schema.yaml",
   "yandextank/plugins/Pandora/plugin.py":"load/projects/yandex-tank/yandextank/plugins/Pandora/plugin.py",
   "yandextank/plugins/Pandora/reader.py":"load/projects/yandex-tank/yandextank/plugins/Pandora/reader.py",
+  "yandextank/plugins/Pandora/sample_reader.py":"load/projects/yandex-tank/yandextank/plugins/Pandora/sample_reader.py",
   "yandextank/plugins/Pandora/tests/test_pandora_plugin.py":"load/projects/yandex-tank/yandextank/plugins/Pandora/tests/test_pandora_plugin.py",
   "yandextank/plugins/Phantom/__init__.py":"load/projects/yandex-tank/yandextank/plugins/Phantom/__init__.py",
   "yandextank/plugins/Phantom/_schema.yaml":"load/projects/yandex-tank/yandextank/plugins/Phantom/_schema.yaml",
