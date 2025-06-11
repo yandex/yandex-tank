@@ -63,5 +63,9 @@ core:
       description: enable tank running without load generator
       type: boolean
       default: false
+    ignore_aggregation_finish:
+      description: keep test running when tank aggregator stops working
+      type: boolean
+      default: false
 version:
   type: string

@@ -36,7 +36,13 @@ class TankAggregator(object):
     def get_key():
         return __file__
 
-    def __init__(self, generator, poller: DataPoller, termination_timeout: float = 60):
+    def __init__(
+        self,
+        generator,
+        poller: DataPoller,
+        termination_timeout: float = 60,
+        ignore_aggregation_finish: bool = False,
+    ):
         # AbstractPlugin.__init__(self, core, cfg)
         """
 
@@ -54,6 +60,8 @@ class TankAggregator(object):
         self.stats_drain = None
         self.termination_timeout = termination_timeout
         self.poller = poller
+        self.ignore_aggregation_finish = ignore_aggregation_finish
+        self.errors = []
 
     @staticmethod
     def load_config():
@@ -117,6 +125,9 @@ class TankAggregator(object):
 
     def is_test_finished(self):
         self._collect_data()
+        if self.is_aggr_finished() and not self.ignore_aggregation_finish:
+            self.errors.append('TankAggregator finished his work before test finish.')
+            return 1
         return -1
 
     def end_test(self, retcode):

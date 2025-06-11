@@ -148,6 +148,7 @@ class TankCore(object):
             self.SECTION, 'aggregator_max_termination_timeout', 60
         )
         self.skip_generator_check = self.get_option(self.SECTION, 'skip_generator_check', False)
+        self.ignore_aggregation_finish = self.get_option(self.SECTION, 'ignore_aggregation_finish', False)
         with open(os.path.join(self.artifacts_dir, CONFIGINITIAL), 'w') as f:
             yaml.dump(self.configinitial, f)
         self.add_artifact_file(error_output)
@@ -260,7 +261,10 @@ class TankCore(object):
                 gen = GeneratorPlugin(self, {}, 'generator dummy')
             # aggregator
             aggregator = TankAggregator(
-                gen, self.data_poller, termination_timeout=self.aggregator_max_termination_timeout
+                gen,
+                self.data_poller,
+                termination_timeout=self.aggregator_max_termination_timeout,
+                ignore_aggregation_finish=self.ignore_aggregation_finish,
             )
             self._job = Job(
                 monitoring_plugins=monitorings, generator_plugin=gen, aggregator=aggregator, tank=socket.getfqdn()
@@ -387,6 +391,9 @@ class TankCore(object):
         """
         logger.info("Post-processing test with received RC: %s", retcode)
         self.publish("core", "stage", "post_process")
+
+        for e in self.job.aggregator.errors:
+            self.errors.append(f'TankAggregator: {e}')
 
         for plugin_name, plugin in self.plugins.items():
             logger.info("Post-process %s plugin", plugin_name)

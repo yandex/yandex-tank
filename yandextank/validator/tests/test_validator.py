@@ -81,6 +81,7 @@ PHANTOM_SCHEMA_V_G = {
                     'aggregator_max_termination_timeout': 60,
                     'aggregator_max_wait': 31,
                     'skip_generator_check': False,
+                    'ignore_aggregation_finish': False,
                 },
                 'telegraf': {
                     'package': 'yandextank.plugins.Telegraf',
@@ -211,6 +212,7 @@ PHANTOM_SCHEMA_V_G = {
                     'aggregator_max_termination_timeout': 60,
                     'aggregator_max_wait': 31,
                     'skip_generator_check': False,
+                    'ignore_aggregation_finish': False,
                 },
             },
         ),
@@ -355,6 +357,7 @@ def test_load_multiple(configs, expected):
                     'aggregator_max_termination_timeout': 60,
                     'aggregator_max_wait': 31,
                     'skip_generator_check': False,
+                    'ignore_aggregation_finish': False,
                 },
                 'telegraf': {
                     'package': 'yandextank.plugins.Telegraf',
