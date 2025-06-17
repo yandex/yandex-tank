@@ -14,17 +14,17 @@ logger = logging.getLogger(__name__)
 
 
 class SampleWatcher:
-    def __init__(self, dir: str, filename_pattern: str):
-        self.dir = dir
+    def __init__(self, source_dir: str, filename_pattern: str):
+        self.source_dir = source_dir
         self.filename_pattern = filename_pattern
         self.readers: list[SampleReader] = []
         self.observer = Observer()
 
     def start(self):
         event_handler = FileHandler(self)
-        self.observer.schedule(event_handler, self.dir, recursive=False)
+        self.observer.schedule(event_handler, self.source_dir, recursive=False)
         self.observer.start()
-        logger.debug('Watching for file %s/%s', self.dir, self.filename_pattern)
+        logger.debug('Watching for file %s/%s', self.source_dir, self.filename_pattern)
 
     def stop(self):
         self._stop_observer()
@@ -34,7 +34,7 @@ class SampleWatcher:
         if self.observer.is_alive():
             self.observer.stop()
             self.observer.join()
-            logger.debug('Stop watching for file %s/%s', self.dir, self.filename_pattern)
+            logger.debug('Stop watching for file %s/%s', self.source_dir, self.filename_pattern)
 
     def _stop_readers(self):
         for r in self.readers:
@@ -44,7 +44,7 @@ class SampleWatcher:
 
     def on_file_created(self, path: str):
         if fnmatch.fnmatch(os.path.basename(path), self.filename_pattern):
-            reader = SampleReader(path)
+            reader = SampleReader(path, self.source_dir)
             self.readers.append(reader)
             reader.start()
 
@@ -59,9 +59,10 @@ class FileHandler(FileSystemEventHandler):
 
 
 class SampleReader(threading.Thread):
-    def __init__(self, logfile_path: str):
+    def __init__(self, logfile_path: str, artifacts_dir: str):
         super().__init__()
-        self.logfile_path = logfile_path
+        self.logfile_path = os.path.abspath(logfile_path)
+        self.artifacts_dir = os.path.abspath(artifacts_dir)
         self.stop_event = threading.Event()
 
     def run(self):
@@ -75,14 +76,24 @@ class SampleReader(threading.Thread):
         answlog_reader = PhantomReader(r.get_file(), parser=lambda s: s)
 
         try:
+            lookup_filepath = self._make_lookup_filepath_msg()
             for sample in answlog_reader:
                 if self.stop_event.wait(0.5):
                     break
                 if sample is None:
                     continue
-                logger.info(sample, extra={'source': 'answlog', 'filepath': self.logfile_path})
+                logger.info(
+                    sample,
+                    extra={'type': 'request/response', 'source': 'answlog', 'filepath': lookup_filepath},
+                )
         finally:
             r.close()
 
     def stop(self):
         self.stop_event.set()
+
+    def _make_lookup_filepath_msg(self) -> str:
+        if os.path.dirname(self.logfile_path) == self.artifacts_dir:
+            return self.logfile_path
+        artifacts_dir_filepath = os.path.join(self.artifacts_dir, os.path.basename(self.logfile_path))
+        return f'{artifacts_dir_filepath} or {self.logfile_path}'

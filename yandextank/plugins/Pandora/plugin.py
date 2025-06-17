@@ -242,7 +242,7 @@ class Plugin(GeneratorPlugin):
                 continue
             path = answ.get('path')
             if path is not None:
-                reader = SampleReader(os.path.abspath(path))
+                reader = SampleReader(os.path.abspath(path), self.core.artifacts_dir)
                 self.sample_readers.append(reader)
                 reader.start()
             else:
