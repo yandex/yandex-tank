@@ -228,6 +228,10 @@ class TankWorker(Process):
         logger.addHandler(file_handler)
         logger.info("Log file created")
 
+        logging.getLogger('watchdog.observers').setLevel(
+            logging.INFO,
+        )  # to hide too frequent debug msgs from watchdog lib
+
         for handler in self.log_handlers:
             handlers.append(handler)
             logger.addHandler(handler)
