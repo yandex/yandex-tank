@@ -364,9 +364,13 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         self.__save_conf()
 
     def is_test_finished(self):
+        if self.plugin_disabled:
+            return -1
         return self.retcode
 
     def end_test(self, retcode):
+        if self.plugin_disabled:
+            return retcode
         if retcode != 0:
             self.lp_job.interrupted.set()
         self.__save_conf()
