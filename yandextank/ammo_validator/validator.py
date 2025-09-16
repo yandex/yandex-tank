@@ -39,6 +39,11 @@ PHANTOM_STR_TO_AMMO_TYPE = {
     'phantom': AmmoType.PHANTOM,
 }
 
+STANDARD_PANDORA_PATHS = {
+    'pandora',
+    '/usr/local/bin/pandora',
+}
+
 
 def collect_ammos(core: TankCore) -> tuple[list[tuple[AmmoType, str]], list[tuple[AmmoType, dict]], Messages]:
     msg = Messages()
@@ -64,7 +69,8 @@ def collect_ammos(core: TankCore) -> tuple[list[tuple[AmmoType, str]], list[tupl
 
     if core.get_option('pandora', 'enabled', False):
         try:
-            config = core.get_plugin_of_type(PandoraPlugin).config_contents
+            pandora_plugin = core.get_plugin_of_type(PandoraPlugin)
+            config = pandora_plugin.config_contents
             if config:
                 for pool_idx, pool_cf in enumerate(config["pools"]):
                     ammo: dict[str, Any]
@@ -76,10 +82,13 @@ def collect_ammos(core: TankCore) -> tuple[list[tuple[AmmoType, str]], list[tupl
                         elif ammo_type == 'uri' and 'uris' in ammo:
                             ammo_inline.append((AmmoType.URI, ammo))
                         else:
-                            msg.warning(
+                            is_custom_pandora = pandora_plugin.pandora_cmd not in STANDARD_PANDORA_PATHS
+                            log_func = msg.info if is_custom_pandora else msg.warning
+                            log_func(
                                 Message(
-                                    f'Unknown pandora ammo type {ammo_type} or file does not specified'
-                                    f' in pandora section in pool #{pool_idx}',
+                                    f'Unknown pandora ammo type "{ammo_type}" or file does not specified'
+                                    f' in pandora section in pool #{pool_idx}.'
+                                    'If you are using a custom pandora, you can ignore this message.'
                                 )
                             )
             else:
