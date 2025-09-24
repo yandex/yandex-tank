@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import traceback
 import urllib.parse
@@ -49,6 +50,9 @@ class APIClient(object):
         self.session = requests.Session()
         self.session.verify = False
         self.session.headers.update({"User-Agent": "tank"})
+        oauth_token = os.environ.get('TANK_UPLOADER_OAUTH_TOKEN', '')
+        if oauth_token:
+            self.session.headers.update({"Authorization": f"OAuth {oauth_token}"})
 
         if "https" in requests.utils.getproxies():
             logger.info("Connecting via proxy %s" % requests.utils.getproxies()['https'])
