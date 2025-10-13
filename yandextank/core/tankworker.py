@@ -49,6 +49,7 @@ class TankWorker(Process):
         storage=None,
         resource_manager=None,
         plugins_implicit_enabling=False,
+        data_uploader_oauth_token='',
     ):
         super().__init__()
         self.interrupted = Event()
@@ -82,6 +83,8 @@ class TankWorker(Process):
         self._msgs = []
         self._run_shooting_event = run_shooting_event or self._dummy_event()
 
+        self._data_uploader_oauth_token = data_uploader_oauth_token
+
     @staticmethod
     def _dummy_event():
         event = Event()
@@ -107,6 +110,9 @@ class TankWorker(Process):
     def run(self):
         def propagate_core_errors():
             self.add_msgs(*self.core.errors)
+
+        if self._data_uploader_oauth_token:
+            os.environ['TANK_UPLOADER_OAUTH_TOKEN'] = self._data_uploader_oauth_token
 
         with Cleanup(self) as add_cleanup:
             # ensure that core errors propagates to FINISH_FILENAME after post_process

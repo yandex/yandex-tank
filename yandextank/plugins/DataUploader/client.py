@@ -100,6 +100,9 @@ class APIClient(object):
     class NetworkError(Exception):
         pass
 
+    class AuthorizationError(Exception):
+        pass
+
     def set_api_timeout(self, timeout):
         self.api_timeout = float(timeout)
 
@@ -126,6 +129,7 @@ class APIClient(object):
             'X-Content-Type-Options',
             'X-Download-Options',
             'Surrogate-Control',
+            'Authorization',
         ]
         for h in boring:
             if h in headers:
@@ -148,6 +152,8 @@ class APIClient(object):
             raise self.StoppedFromOnline
         elif resp.status_code == 423:
             raise self.UnderMaintenance
+        elif resp.status_code == 403:
+            raise self.AuthorizationError("Authorization error in access to lunapark.")
         else:
             resp.raise_for_status()
             return resp

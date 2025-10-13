@@ -307,7 +307,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                 lp_job.create()
                 self.make_symlink(lp_job.number)
             self.publish('job_no', lp_job.number)
-        except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError):
+        except (APIClient.JobNotCreated, APIClient.NotAvailable, APIClient.NetworkError, APIClient.AuthorizationError):
             logger.exception('Failed to connect to Lunapark, disabling DataUploader')
             self.plugin_disabled = True
             return
