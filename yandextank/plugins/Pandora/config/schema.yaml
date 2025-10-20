@@ -33,3 +33,8 @@ report_file:
   nullable: true
   default: null
   description: Pandora phout path (normally will be taken from pandora config)
+disable_sample_reader:
+  type: boolean
+  nullable: true
+  default: false
+  description: Enable or disable reading pandora answlog to tank.log

@@ -63,6 +63,7 @@ class Plugin(GeneratorPlugin):
         self.buffered_seconds = self.get_option("buffered_seconds")
         self.affinity = self.get_option("affinity", "")
         self.resources = self.get_option("resources")
+        self.disable_sample_reader = self.get_option('disable_sample_reader', False)
 
     def prepare_resources(self):
         # if we use custom pandora binary, we can download it and make it executable
@@ -235,6 +236,9 @@ class Plugin(GeneratorPlugin):
             self.core.job.aggregator.add_result_listener(widget)
 
     def init_sample_reading(self):
+        if self.disable_sample_reader:
+            return
+
         create_default_path_watcher = False
         for pool in self.config_contents['pools']:
             answ = pool.get('gun').get('answlog', {})
