@@ -53,6 +53,9 @@ class APIClient(object):
         oauth_token = os.environ.get('TANK_UPLOADER_OAUTH_TOKEN', '')
         if oauth_token:
             self.session.headers.update({"Authorization": f"OAuth {oauth_token}"})
+            logger.info("Authorization is present")
+        else:
+            logger.info("Authorization is not present")
 
         if "https" in requests.utils.getproxies():
             logger.info("Connecting via proxy %s" % requests.utils.getproxies()['https'])
