@@ -511,7 +511,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         locks_list_cfg = self.get_option('lock_targets', 'auto')
 
         def no_target():
-            logging.warn("Target lock set to 'auto', but no target info available")
+            logging.warning("Target lock set to 'auto', but no target info available")
             return {}
 
         locks_set = {self.target} or no_target() if locks_list_cfg == 'auto' else set(locks_list_cfg)
