@@ -52,8 +52,10 @@ class APIClient(object):
         self.session.headers.update({"User-Agent": "tank"})
         oauth_token = os.environ.get('TANK_UPLOADER_OAUTH_TOKEN', '')
         if oauth_token:
-            self.session.headers.update({"Authorization": f"OAuth {oauth_token}"})
-            logger.info("Authorization is present")
+            if not oauth_token.startswith("OAuth"):
+                oauth_token = f"OAuth {oauth_token}"
+            self.session.headers.update({"Authorization": oauth_token})
+            logger.info(f"Authorization is present (token length={len(oauth_token)})")
         else:
             logger.info("Authorization is not present")
 
@@ -134,10 +136,10 @@ class APIClient(object):
             'Surrogate-Control',
             'Authorization',
         ]
-        for h in boring:
-            if h in headers:
-                del headers[h]
-        return headers
+        return {
+            header: value if header not in boring else f'***MASKED*** len={len(value)}'
+            for header, value in headers.items()
+        }
 
     def __send_single_request(self, request, request_id, trace=False):
         request.headers[self.REQUEST_ID_HEADER] = request_id
@@ -199,13 +201,9 @@ class APIClient(object):
         url = urllib.parse.urljoin(self.base_url, path)
         ids = id_gen(str(uuid.uuid4()))
         if json:
-            request = requests.Request(
-                http_method, url, json=json, headers={'User-Agent': self.user_agent}, params=self.params
-            )
+            request = requests.Request(http_method, url, json=json, params=self.params)
         else:
-            request = requests.Request(
-                http_method, url, data=data, headers={'User-Agent': self.user_agent}, params=self.params
-            )
+            request = requests.Request(http_method, url, data=data, params=self.params)
         network_timeouts = self.network_timeouts()
         maintenance_timeouts = maintenance_timeouts or self.maintenance_timeouts()
         maintenance_msg = maintenance_msg or "%s is under maintenance" % (self._base_url)
@@ -214,7 +212,7 @@ class APIClient(object):
                 response = self.__send_single_request(request, next(ids), trace=trace)
                 return response_callback(response)
             except (Timeout, ConnectionError, ProtocolError):
-                logger.warn(traceback.format_exc())
+                logger.warning(traceback.format_exc())
                 if not self.core_interrupted.is_set():
                     try:
                         timeout = next(network_timeouts)
