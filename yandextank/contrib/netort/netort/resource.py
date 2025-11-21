@@ -27,6 +27,7 @@ try:
     import boto3.exceptions
     import boto3.s3
     import boto3.session
+    import botocore.exceptions
 except ImportError:
     logger.debug('Failed to import `boto3` package. Install `boto3`, otherwise S3 file paths opener wont work')
     boto3 = None
@@ -649,6 +650,31 @@ class S3Opener(TempDownloaderOpenerProtocol):
         self._filename = tmpfile_path
         return tmpfile_path
 
+    @retry
+    def fetch_object_properties(self) -> dict[str, typing.Any]:
+        if not self.conn:
+            raise Exception('Connection should be initialized first')
+
+        try:
+            res = self.conn.head_object(Bucket=self.bucket_key, Key=self.object_key)
+            if res and not isinstance(res, dict):
+                raise RuntimeError(f'Failed to parse s3 object properties {self.uri}')
+
+            return res
+
+        except botocore.exceptions.ClientError as e:
+            err = e.response['Error']
+            logger.error('s3 API call failed: %s', err)
+            raise RuntimeError(f'Failed to get s3 object properties {self.uri}: {err['Message']}')
+
+        except Exception as e:
+            logger.error('Failed to get s3 object properties: %s', self.uri, exc_info=True)
+            raise RuntimeError(f'Failed to get s3 object properties {self.uri}') from e
+
+    @thread_safe_property
+    def source_object_properties(self) -> dict[str, typing.Any]:
+        return self.fetch_object_properties()
+
     @thread_safe_property
     def filename(self) -> str:
         if self._filename is None:
@@ -657,9 +683,14 @@ class S3Opener(TempDownloaderOpenerProtocol):
 
     @property
     def hash(self):
-        hashed_str = "{bucket_key}_{object_key}".format(
+        etag = ''
+        if props := self.source_object_properties:
+            etag = props.get('ETag', '') or props.get('LastModified', '')
+
+        hashed_str = "{bucket_key}_{object_key}|{etag}".format(
             bucket_key=self.bucket_key,
             object_key=self.object_key,
+            etag=etag,
         )
         return hashed_str
 
