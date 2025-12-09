@@ -5,7 +5,9 @@ import time
 import os
 import re
 import shutil
+
 from threading import Event
+from typing import Optional
 
 import yaml
 
@@ -25,9 +27,10 @@ logger = logging.getLogger(__name__)
 class Plugin(GeneratorPlugin):
     """Pandora load generator plugin"""
 
-    OPTION_CONFIG = "config"
-    SECTION = "pandora"
-    DEFAULT_REPORT_FILE = "phout.log"
+    OPTION_CONFIG = 'config'
+    SECTION = 'pandora'
+    DEFAULT_REPORT_TYPE = 'phout'
+    DEFAULT_REPORT_FILE = 'phout.log'
     DEFAULT_EXPVAR_PORT = 1234
 
     def __init__(self, core, cfg, name):
@@ -36,6 +39,7 @@ class Plugin(GeneratorPlugin):
         self.enum_ammo = False
         self.pandora_cmd = None
         self.pandora_config_file = None
+        self.pandora_custom_phout: Optional[str] = self.get_option('pandora_custom_phout')
         self.config_contents = None
         self.custom_config = False
         self.expvar = self.get_option('expvar')
@@ -55,41 +59,56 @@ class Plugin(GeneratorPlugin):
         return __file__
 
     def get_available_options(self):
-        opts = ["pandora_cmd", "buffered_seconds", "config_content", "config_file"]
+        opts = ['pandora_cmd', 'buffered_seconds', 'config_content', 'config_file', 'pandora_custom_phout']
         return opts
 
     def configure(self):
-        self.report_files = [self.get_option("report_file")]
-        self.buffered_seconds = self.get_option("buffered_seconds")
-        self.affinity = self.get_option("affinity", "")
-        self.resources = self.get_option("resources")
+        self.report_files = [self.get_option('report_file')]
+        self.buffered_seconds = self.get_option('buffered_seconds')
+        self.affinity = self.get_option('affinity', '')
+        self.resources = self.get_option('resources')
         self.disable_sample_reader = self.get_option('disable_sample_reader', False)
 
     def prepare_resources(self):
         # if we use custom pandora binary, we can download it and make it executable
-        self.pandora_cmd = self.get_resource(self.get_option("pandora_cmd"), "./pandora", permissions=0o755)
+        self.pandora_cmd = self.get_resource(self.get_option('pandora_cmd'), './pandora', permissions=0o755)
 
-        # download all resources from self.get_options("resources")
+        # download all resources from self.get_options('resources')
         if len(self.resources) > 0:
             for resource in self.resources:
-                self.get_resource(resource["src"], resource["dst"])
+                self.get_resource(resource['src'], resource['dst'])
 
         # get config_contents and patch it: expand resources via resource manager
         # config_content option has more priority over config_file
-        if self.get_option("config_content"):
+        if self.get_option('config_content'):
             logger.info('Found config_content option configuration')
-            self.config_contents = self.__patch_raw_config_and_dump(self.get_option("config_content"))
-        elif self.get_option("config_file"):
+            self.config_contents = self.__patch_raw_config_and_dump(self.get_option('config_content'))
+        elif self.get_option('config_file'):
             logger.info('Found config_file option configuration')
-            with open(self.get_option("config_file"), 'rb') as config:
+            with open(self.get_option('config_file'), 'rb') as config:
                 external_file_config_contents = yaml.load(config.read(), Loader=yaml.FullLoader)
             self.config_contents = self.__patch_raw_config_and_dump(external_file_config_contents)
         else:
-            raise RuntimeError("Neither pandora.config_content, nor pandora.config_file specified")
+            raise RuntimeError('Neither pandora.config_content, nor pandora.config_file specified')
         logger.debug('Config after parsing for patching: %s', self.config_contents)
 
+        self._add_report_files_to_artifacts()
+
+    def _add_report_files_to_artifacts(self):
         # find report filename and add to artifacts
-        self.report_files = [pool['result']['destination'] for pool in self.config_contents['pools']]
+        result_field_name = 'destination' if not self.pandora_custom_phout else self.pandora_custom_phout
+
+        errors = []
+        self.report_files = []
+        for i, pool in enumerate(self.config_contents['pools']):
+            phout_path = pool.get('result', {}).get(result_field_name)
+            if not phout_path:
+                errors.append(i)
+                continue
+            self.report_files.append(phout_path)
+        if errors:
+            raise RuntimeError(f'result.{result_field_name} config section is missing in pandora pools: {errors}')
+
         for f in self.report_files:
             with open(f, 'w'):
                 pass
@@ -101,7 +120,7 @@ class Plugin(GeneratorPlugin):
         # patch
         config_content = self.patch_config(cfg_dict)
         # dump
-        self.pandora_config_file = self.core.mkstemp(".yaml", "pandora_config_")
+        self.pandora_config_file = self.core.mkstemp('.yaml', 'pandora_config_')
         self.core.add_artifact_file(self.pandora_config_file)
         with open(self.pandora_config_file, 'w') as config_file:
             yaml.dump(config_content, config_file)
@@ -114,17 +133,17 @@ class Plugin(GeneratorPlugin):
         :param dict config: pandora config
         """
         # get expvar parameters
-        if config.get("monitoring"):
-            if isinstance(config["monitoring"].get("expvar"), dict):
-                self.expvar_enabled = config["monitoring"]["expvar"].get("enabled")
-                if config["monitoring"]["expvar"].get("port"):
-                    self.expvar_port = config["monitoring"]["expvar"].get("port")
+        if config.get('monitoring'):
+            if isinstance(config['monitoring'].get('expvar'), dict):
+                self.expvar_enabled = config['monitoring']['expvar'].get('enabled')
+                if config['monitoring']['expvar'].get('port'):
+                    self.expvar_port = config['monitoring']['expvar'].get('port')
         # or set if expvar not exists
         elif not self.expvar:
-            config["monitoring"] = {
-                "expvar": {
-                    "enabled": True,
-                    "port": self.DEFAULT_EXPVAR_PORT,
+            config['monitoring'] = {
+                'expvar': {
+                    'enabled': True,
+                    'port': self.DEFAULT_EXPVAR_PORT,
                 }
             }
             self.expvar_enabled = True
@@ -132,6 +151,7 @@ class Plugin(GeneratorPlugin):
         # FIXME this is broken for custom ammo providers due to interface incompatibility
         # FIXME refactor pandora plx
         for n, pool in enumerate(config['pools']):
+            # Patch ammo file
             if pool.get('ammo', {}).get('file', ''):
                 self.ammofile = pool['ammo']['file']
                 opener = self.core.resource_manager.get_opener(self.ammofile)
@@ -140,18 +160,19 @@ class Plugin(GeneratorPlugin):
                 else:
                     pool['ammo']['file'] = opener.filename
 
-            if not pool.get('result') or 'phout' not in pool.get('result', {}).get('type', ''):
-                logger.warning('Seems like pandora result file not specified... adding defaults')
-                pool['result'] = dict(
-                    destination=f"{n}_{self.DEFAULT_REPORT_FILE}",
-                    type='phout',
-                )
+            # Patch phout path
+            result_config = pool.get('result', {})
+            if self.pandora_custom_phout:
+                self._validate_custom_result_section(pool_number=n, config=result_config)
+            else:
+                pool['result'] = self._ensure_phout_result_section(pool_number=n, config=result_config)
 
+            # Patch answlog path
             if pool.get('gun').get('answlog'):
                 answ = pool.get('gun').get('answlog')
                 if answ.get('enabled') is True:
                     if not answ.get('path'):
-                        answ_path = self.core.mkstemp(".log", "answ_")
+                        answ_path = self.core.mkstemp('.log', 'answ_')
                         logger.warning(
                             'Seems like pandora answer log file not specified... adding default path: %s', answ_path
                         )
@@ -162,6 +183,30 @@ class Plugin(GeneratorPlugin):
                         self.core.add_artifact_file(answ_path)
 
         return config
+
+    def _validate_custom_result_section(self, pool_number, config):
+        if not isinstance(config, dict) or self.pandora_custom_phout not in config:
+            error_message: str = 'Missing %s in pool %s'
+            error_args: tuple[str, str] = (f'result.{self.pandora_custom_phout}', f'#{pool_number}')
+            logger.error(error_message, *error_args)
+            raise RuntimeError(error_message % error_args)
+
+    def _ensure_phout_result_section(self, pool_number, config) -> dict:
+        if not isinstance(config, dict) or config.get('type') != self.DEFAULT_REPORT_TYPE:
+            logger.warning(
+                'Missing %s in pool %s - will use default',
+                f'result.type=\'{self.DEFAULT_REPORT_TYPE}\'',
+                f'#{pool_number}',
+            )
+            config = self._make_default_result_section(pool_number)
+
+        return config
+
+    def _make_default_result_section(self, n) -> dict:
+        return {
+            'type': self.DEFAULT_REPORT_TYPE,
+            'destination': f'{n}_{self.DEFAULT_REPORT_FILE}',
+        }
 
     @property
     def address(self):
@@ -270,9 +315,9 @@ class Plugin(GeneratorPlugin):
         args = [self.pandora_cmd] + (['-expvar'] if self.expvar else []) + [self.pandora_config_file]
         if self.affinity:
             self.core.__setup_affinity(self.affinity, args=args)
-        logger.info("Starting: %s", args)
+        logger.info('Starting: %s', args)
         self.start_time = time.time()
-        self.process_stderr_file = self.core.mkstemp(".log", "pandora_")
+        self.process_stderr_file = self.core.mkstemp('.log', 'pandora_')
         self.core.add_artifact_file(self.process_stderr_file)
         self.process_stderr = open(self.process_stderr_file, 'w')
         try:
@@ -280,18 +325,18 @@ class Plugin(GeneratorPlugin):
                 args, stderr=self.process_stderr, stdout=self.process_stderr, close_fds=True
             )
         except OSError:
-            logger.debug("Unable to start Pandora binary. Args: %s", args, exc_info=True)
-            raise RuntimeError("Unable to start Pandora binary and/or file does not exist: %s" % args)
+            logger.debug('Unable to start Pandora binary. Args: %s', args, exc_info=True)
+            raise RuntimeError('Unable to start Pandora binary and/or file does not exist: %s' % args)
 
     def is_test_finished(self):
         retcode = self.process.poll()
         if retcode is not None and retcode == 0:
-            logger.info("Pandora subprocess done its work successfully and finished w/ retcode 0")
+            logger.info('Pandora subprocess done its work successfully and finished w/ retcode 0')
             self.output_finished.set()
             return retcode
         elif retcode is not None and retcode != 0:
             lines_amount = 20
-            logger.info("Pandora finished with retcode %s. Last %s logs of Pandora log:", retcode, lines_amount)
+            logger.info('Pandora finished with retcode %s. Last %s logs of Pandora log:', retcode, lines_amount)
             self.output_finished.set()
             last_log_contents = tail_lines(self.process_stderr_file, lines_amount)
             for logline in last_log_contents:
@@ -310,12 +355,12 @@ class Plugin(GeneratorPlugin):
 
     def end_test(self, retcode):
         if self.process and self.process.poll() is None:
-            logger.warning("Terminating worker process with PID %s", self.process.pid)
+            logger.warning('Terminating worker process with PID %s', self.process.pid)
             self.process.terminate()
             if self.process_stderr:
                 self.process_stderr.close()
         else:
-            logger.info("Seems Pandora subprocess finished")
+            logger.info('Seems Pandora subprocess finished')
         self.output_finished.set()
         self.finish_sample_reading()
         return retcode
@@ -335,11 +380,11 @@ class PandoraInfoWidget(AbstractInfoWidget):
         return 0
 
     def on_aggregated_data(self, data, stats):
-        self.reqps = stats["metrics"]["reqps"]
-        self.active = stats["metrics"]["instances"]
+        self.reqps = stats['metrics']['reqps']
+        self.active = stats['metrics']['instances']
 
     def render(self, screen):
-        text = " Pandora Test %s" % next(self.krutilka)
+        text = ' Pandora Test %s' % next(self.krutilka)
         space = screen.right_panel_width - len(text) - 1
         left_spaces = space // 2
         right_spaces = space // 2
@@ -348,14 +393,14 @@ class PandoraInfoWidget(AbstractInfoWidget):
         duration = str(datetime.timedelta(seconds=dur_seconds))
 
         template = (
-            screen.markup.BG_BROWN + '~' * left_spaces + text + ' ' + '~' * right_spaces + screen.markup.RESET + "\n"
+            screen.markup.BG_BROWN + '~' * left_spaces + text + ' ' + '~' * right_spaces + screen.markup.RESET + '\n'
         )
-        template += "Command Line: %s\n"
-        template += "    Duration: %s\n"
-        template += "  Requests/s: %s\n"
-        template += " Active reqs: %s\n"
-        template += "      Target: %s\n"
-        template += "    Schedule: \n%s\n"
+        template += 'Command Line: %s\n'
+        template += '    Duration: %s\n'
+        template += '  Requests/s: %s\n'
+        template += ' Active reqs: %s\n'
+        template += '      Target: %s\n'
+        template += '    Schedule: \n%s\n'
         data = (
             self.owner.pandora_cmd,
             duration,

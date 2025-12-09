@@ -38,3 +38,19 @@ disable_sample_reader:
   nullable: true
   default: false
   description: Enable or disable reading pandora answlog to tank.log
+pandora_custom_phout:
+  type: string
+  nullable: true
+  default: null
+  description: |
+    Enables support for pandora custom aggregator plugins.
+    Specifies the output path config location for custom aggregators that produce phout-formatted output.
+
+    Usage example:
+
+    pandora_custom_phout: output_path
+    config_content:
+      pools:
+        - result:
+            type: my-aggregator
+            output_path: phout-file.out
