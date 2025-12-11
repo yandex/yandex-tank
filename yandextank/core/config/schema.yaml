@@ -7,7 +7,7 @@ core:
       type: string
       default: ''
     ammo_validation:
-      description: ammo validate level. On of fail_on_error, inform, skip.
+      description: ammo validate level. One of fail_on_error, inform, skip.
       type: string
       default: inform
     api_jobno:
@@ -67,5 +67,9 @@ core:
       description: keep test running when tank aggregator stops working
       type: boolean
       default: false
+    data_upload_timeout:
+      description: maximum timeout for data upload after test finished in seconds
+      type: integer
+      default: 300
 version:
   type: string
