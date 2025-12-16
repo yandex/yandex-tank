@@ -288,7 +288,6 @@ def teardown_module(module):
         shutil.rmtree('lunapark/')
     except OSError:
         pass
-    global original_working_dir
     os.chdir(original_working_dir)
 
 
