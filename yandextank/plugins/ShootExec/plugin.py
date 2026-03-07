@@ -22,7 +22,6 @@ from ..Phantom import PhantomReader
 from yandextank.aggregator import TimeChopper
 from yandextank.aggregator.aggregator import DataPoller
 
-
 _INFO = collections.namedtuple(
     "Info", "address, port, instances, ammo_count, loop_count, duration, steps, stat_log, rps_schedule, ammo_file"
 )

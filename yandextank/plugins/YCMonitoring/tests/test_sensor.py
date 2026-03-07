@@ -5,7 +5,6 @@ import os
 from yandextank.common.util import get_test_path
 from yandextank.plugins.YCMonitoring.sensor import YCMonitoringSensor, parse_yc_monitoring_query
 
-
 SENSOR = YCMonitoringSensor(
     'example',
     '',

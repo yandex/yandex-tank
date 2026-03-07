@@ -9,7 +9,6 @@ from watchdog.events import FileSystemEventHandler
 from yandextank.common.util import FileMultiReader
 from yandextank.plugins.Phantom.reader import PhantomReader
 
-
 logger = logging.getLogger(__name__)
 
 

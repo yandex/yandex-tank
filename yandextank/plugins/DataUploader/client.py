@@ -10,7 +10,6 @@ import logging
 from requests.exceptions import ConnectionError, Timeout
 from urllib3.exceptions import ProtocolError
 
-
 requests.packages.urllib3.disable_warnings()
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 

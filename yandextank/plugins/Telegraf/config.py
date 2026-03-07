@@ -248,9 +248,7 @@ class AgentConfig(object):
             esac
             shift
         done
-        """.format(
-            cmds=cmds
-        )
+        """.format(cmds=cmds)
 
         with open(cfg_path, 'w') as fds:
             fds.write(customs_script)

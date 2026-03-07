@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 '''Classes to build full console screen'''
+
 import fcntl
 import logging
 import os

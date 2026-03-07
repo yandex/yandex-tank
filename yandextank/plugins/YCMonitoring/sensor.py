@@ -10,7 +10,6 @@ from logging import getLogger
 from yandextank.common.util import observetime
 from yandextank.common.monitoring import MonitoringSensorProtocol
 
-
 LOGGER = getLogger(__name__)
 
 

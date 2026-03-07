@@ -14,7 +14,6 @@ from yandextank.core import TankCore
 from yandextank.core.tankworker import parse_options, TankInfo
 from yandextank.stepper.module_exceptions import DiskLimitError
 
-
 try:
     from yatest import common
 
