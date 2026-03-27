@@ -48,7 +48,8 @@ class SecuredShell(object):
     def __init__(
         self, host, port, username, command_timeout=30, file_timeout=300, protocol_timeout=15, ssh_key_path=None
     ):
-        self.connection_address = f'{username}@{host}'
+        self.username = username
+        self.connection_address = host
         self.port = port
         self._command_timeout = command_timeout
         self._file_timeout = file_timeout
@@ -117,6 +118,8 @@ class SecuredShell(object):
             '-o',
             'BatchMode=yes',
         ]
+        if self.username:
+            ssh_opts = ['-o', f'user="{self.username}"']
         if self.valid_key is not None:
             ssh_opts = ['-i', self.valid_key] + ssh_opts
         return ssh_opts
