@@ -1,0 +1,522 @@
+# Сгенерировано из schema.py, руками не править.
+# Перегенерация: python3 -m yandextank.plugins.Phantom.config.generate_schema_yaml
+additional_libs:
+  default: []
+  description: Libs for Phantom, to be added to phantom config file in section "module_setup"
+  schema:
+    type: string
+  type: list
+address:
+  description: 'Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port.
+    Port is optional. Tank checks each test if port is available'
+  empty: false
+  examples:
+    127.0.0.1:8080: ''
+    www.w3c.org: ''
+  required: true
+  type: string
+affinity:
+  default: ''
+  description: Use to set CPU affinity
+  examples:
+    0,1,2,16,17,18: enable 6 specified cores
+    0-3: enable first 4 cores
+  type: string
+ammo_limit:
+  default: -1
+  description: Sets the upper limit for the total number of requests
+  type: integer
+ammo_type:
+  allowed:
+  - phantom
+  - uri
+  - uripost
+  - access
+  default: phantom
+  description: Ammo format. Don't forget to change ammo_type option if you switch
+    the format of your ammo, otherwise you might get errors
+  tutorial_link: http://yandextank.readthedocs.io/en/latest/tutorial.html#preparing-requests
+  type: string
+  values_description:
+    access: Use access.log from your web server as a source of requests
+    phantom: Use Request-style file. Most versatile, HTTP as is. See tutorial for
+      details
+    uri: Use URIs listed in file with headers. Simple but allows for GET requests
+      only. See tutorial for details
+    uripost: Use URI-POST file. Allows POST requests with bodies. See tutorial for
+      details
+ammofile:
+  default: ''
+  description: Path to ammo file. Ammo file contains requests to be sent to a server.
+    Can be gzipped
+  tutorial_link: http://yandextank.readthedocs.io/en/latest/tutorial.html#preparing-requests
+  type: string
+autocases:
+  anyof:
+  - type: integer
+  - allowed:
+    - uri
+    - uniq
+    type: string
+  default: 0
+  description: Use to automatically tag requests. Requests might be grouped by tag
+    for later analysis.
+  examples:
+    2: /example/search/hello/help/us?param1=50 -> _example_search
+    3: /example/search/hello/help/us?param1=50 -> _example_search_hello
+    uri: /example/search/hello/help/us?param1=50 -> _example_search_hello_help_us
+    uniq: /example/search/hello/help/us?param1=50 -> c98b0520bb6a451c8bc924ed1fd72553
+  values_description:
+    <N>: use N first uri parts to tag request, slashes are replaced with underscores
+    uniq: tag each request with unique uid
+    uri: tag each request with its uri path, slashes are replaced with underscores
+buffered_seconds:
+  default: 2
+  description: Aggregator latency
+  type: integer
+cache_dir:
+  default: null
+  description: stpd-file cache directory
+  nullable: true
+  type: string
+chosen_cases:
+  default: ''
+  description: Use only selected cases.
+  type: string
+client_certificate:
+  default: ''
+  description: Path to client SSL certificate
+  type: string
+client_cipher_suites:
+  default: ''
+  description: Cipher list, consists of one or more cipher strings separated by colons
+    (see man ciphers)
+  type: string
+client_key:
+  default: ''
+  description: Path to client's certificate's private key
+  type: string
+config:
+  default: ''
+  description: Use ready phantom config instead of generated
+  type: string
+connection_test:
+  default: true
+  description: Test TCP socket connection before starting the test
+  type: boolean
+enum_ammo:
+  default: false
+  type: boolean
+file_cache:
+  default: 8192
+  type: integer
+force_stepping:
+  default: 0
+  description: Ignore cached stpd files, force stepping
+  type: integer
+gatling_ip:
+  default: ''
+  type: string
+header_http:
+  allowed:
+  - '1.0'
+  - '1.1'
+  default: '1.0'
+  description: HTTP version
+  type: string
+  values_description:
+    '1.0': http 1.0
+    '1.1': http 1.1
+headers:
+  default: []
+  description: HTTP headers
+  schema:
+    description: 'Format: "Header: Value"'
+    examples:
+      'accept: text/html': ''
+    type: string
+  type: list
+instances:
+  default: 1000
+  description: Max number of concurrent clients.
+  type: integer
+load_profile:
+  description: Configure your load setting the number of RPS or instances (clients)
+    as a function of time,or using a prearranged schedule
+  required: true
+  schema:
+    load_type:
+      allowed:
+      - rps
+      - instances
+      - stpd_file
+      description: Choose control parameter
+      required: true
+      type: string
+      values_description:
+        instances: control the number of instances
+        rps: control the rps rate
+        stpd_file: use prearranged schedule file
+    schedule:
+      check_with: load_scheme
+      description: load schedule or path to stpd file
+      examples:
+        const(200,90s): constant load of 200 instances/rps during 90s
+        line(100,200,10m): linear growth from 100 to 200 instances/rps during 10 minutes
+        test_dir/test_backend.stpd: path to ready schedule file
+      required: true
+      type: string
+  tutorial_link: http://yandextank.readthedocs.io/en/latest/tutorial.html#tutorials
+  type: dict
+loop:
+  default: -1
+  description: Loop over ammo file for the given amount of times.
+  type: integer
+method_options:
+  default: ''
+  description: Additional options for method objects. It is used for Elliptics etc.
+  type: string
+method_prefix:
+  default: method_stream
+  description: Object's type, that has a functionality to create test requests.
+  type: string
+multi:
+  allow_unknown: true
+  default: []
+  schema:
+    schema:
+      additional_libs:
+        description: Libs for Phantom, to be added to phantom config file in section
+          "module_setup"
+        schema:
+          type: string
+        type: list
+      address:
+        description: 'Address of target. Format: [host]:port, [ipv4]:port, [ipv6]:port.
+          Port is optional. Tank checks each test if port is available'
+        empty: false
+        examples:
+          127.0.0.1:8080: ''
+          www.w3c.org: ''
+        type: string
+      affinity:
+        description: Use to set CPU affinity
+        examples:
+          0,1,2,16,17,18: enable 6 specified cores
+          0-3: enable first 4 cores
+        type: string
+      ammo_limit:
+        description: Sets the upper limit for the total number of requests
+        type: integer
+      ammo_type:
+        allowed:
+        - phantom
+        - uri
+        - uripost
+        - access
+        description: Ammo format. Don't forget to change ammo_type option if you switch
+          the format of your ammo, otherwise you might get errors
+        tutorial_link: http://yandextank.readthedocs.io/en/latest/tutorial.html#preparing-requests
+        type: string
+        values_description:
+          access: Use access.log from your web server as a source of requests
+          phantom: Use Request-style file. Most versatile, HTTP as is. See tutorial
+            for details
+          uri: Use URIs listed in file with headers. Simple but allows for GET requests
+            only. See tutorial for details
+          uripost: Use URI-POST file. Allows POST requests with bodies. See tutorial
+            for details
+      ammofile:
+        description: Path to ammo file. Ammo file contains requests to be sent to
+          a server. Can be gzipped
+        tutorial_link: http://yandextank.readthedocs.io/en/latest/tutorial.html#preparing-requests
+        type: string
+      autocases:
+        anyof:
+        - type: integer
+        - allowed:
+          - uri
+          - uniq
+          type: string
+        description: Use to automatically tag requests. Requests might be grouped
+          by tag for later analysis.
+        examples:
+          2: /example/search/hello/help/us?param1=50 -> _example_search
+          3: /example/search/hello/help/us?param1=50 -> _example_search_hello
+          uri: /example/search/hello/help/us?param1=50 -> _example_search_hello_help_us
+          uniq: /example/search/hello/help/us?param1=50 -> c98b0520bb6a451c8bc924ed1fd72553
+        values_description:
+          <N>: use N first uri parts to tag request, slashes are replaced with underscores
+          uniq: tag each request with unique uid
+          uri: tag each request with its uri path, slashes are replaced with underscores
+      buffered_seconds:
+        description: Aggregator latency
+        type: integer
+      cache_dir:
+        description: stpd-file cache directory
+        nullable: true
+        type: string
+      chosen_cases:
+        description: Use only selected cases.
+        type: string
+      client_certificate:
+        description: Path to client SSL certificate
+        type: string
+      client_cipher_suites:
+        description: Cipher list, consists of one or more cipher strings separated
+          by colons (see man ciphers)
+        type: string
+      client_key:
+        description: Path to client's certificate's private key
+        type: string
+      config:
+        description: Use ready phantom config instead of generated
+        type: string
+      connection_test:
+        description: Test TCP socket connection before starting the test
+        type: boolean
+      enum_ammo:
+        type: boolean
+      file_cache:
+        type: integer
+      force_stepping:
+        description: Ignore cached stpd files, force stepping
+        type: integer
+      gatling_ip:
+        type: string
+      header_http:
+        allowed:
+        - '1.0'
+        - '1.1'
+        description: HTTP version
+        type: string
+        values_description:
+          '1.0': http 1.0
+          '1.1': http 1.1
+      headers:
+        description: HTTP headers
+        schema:
+          description: 'Format: "Header: Value"'
+          examples:
+            'accept: text/html': ''
+          type: string
+        type: list
+      instances:
+        description: Max number of concurrent clients.
+        type: integer
+      load_profile:
+        description: Configure your load setting the number of RPS or instances (clients)
+          as a function of time,or using a prearranged schedule
+        schema:
+          load_type:
+            allowed:
+            - rps
+            - instances
+            - stpd_file
+            description: Choose control parameter
+            required: true
+            type: string
+            values_description:
+              instances: control the number of instances
+              rps: control the rps rate
+              stpd_file: use prearranged schedule file
+          schedule:
+            check_with: load_scheme
+            description: load schedule or path to stpd file
+            examples:
+              const(200,90s): constant load of 200 instances/rps during 90s
+              line(100,200,10m): linear growth from 100 to 200 instances/rps during
+                10 minutes
+              test_dir/test_backend.stpd: path to ready schedule file
+            required: true
+            type: string
+        tutorial_link: http://yandextank.readthedocs.io/en/latest/tutorial.html#tutorials
+        type: dict
+      loop:
+        description: Loop over ammo file for the given amount of times.
+        type: integer
+      method_options:
+        description: Additional options for method objects. It is used for Elliptics
+          etc.
+        type: string
+      method_prefix:
+        description: Object's type, that has a functionality to create test requests.
+        type: string
+      multi:
+        description: List of configs for multi-test. All of the options from main
+          config supported. All of them not required and inherited from main config
+          if not specified
+        schema:
+          type: dict
+        type: list
+      name:
+        description: Name of a part in multi config
+        type: string
+      phantom_http_entity:
+        description: Limits the amount of bytes Phantom reads from response.
+        type: string
+      phantom_http_field:
+        description: Header size.
+        type: string
+      phantom_http_field_num:
+        description: Max number of headers
+        type: integer
+      phantom_http_line:
+        description: First line length
+        type: string
+      phantom_modules_path:
+        description: Phantom modules path.
+        type: string
+      phantom_path:
+        description: Path to Phantom binary
+        type: string
+      phout_file:
+        description: deprecated
+        type: string
+      port:
+        description: Explicit target port, overwrites port defined with address
+        regex: \d{0,5}
+        type: string
+      source_log_prefix:
+        description: Prefix added to class name that reads source data
+        type: string
+      ssl:
+        description: Enable ssl
+        type: boolean
+      tank_type:
+        allowed:
+        - http
+        - none
+        description: Choose between http and pure tcp guns
+        type: string
+        values_description:
+          http: HTTP gun
+          none: TCP gun
+      threads:
+        description: Phantom thread count. When not specified, defaults to <processor
+          cores count> / 2 + 1
+        nullable: true
+        type: integer
+      timeout:
+        description: Response timeout
+        type: string
+      uris:
+        description: URI list
+        examples:
+          '["/example/search", "/example/search/hello", "/example/search/hello/help"]': ''
+        schema:
+          description: URI path string
+          type: string
+        type: list
+      use_caching:
+        description: Enable stpd-file caching for similar tests. Set false to reload
+          ammo file and generate new stpd
+        type: boolean
+      writelog:
+        allowed:
+        - '0'
+        - all
+        - proto_warning
+        - proto_error
+        description: Enable verbose request/response logging.
+        type: string
+        values_description:
+          '0': disable
+          all: all messages
+          proto_error: 5xx+network errors
+          proto_warning: 4xx+5xx+network errors
+    type: dict
+  type: list
+name:
+  description: Name of a part in multi config
+  required: false
+  type: string
+phantom_http_entity:
+  default: 8M
+  description: Limits the amount of bytes Phantom reads from response.
+  type: string
+phantom_http_field:
+  default: 8K
+  description: Header size.
+  type: string
+phantom_http_field_num:
+  default: 128
+  description: Max number of headers
+  type: integer
+phantom_http_line:
+  default: 1K
+  description: First line length
+  type: string
+phantom_modules_path:
+  default: /usr/lib/phantom
+  description: Phantom modules path.
+  type: string
+phantom_path:
+  default: phantom
+  description: Path to Phantom binary
+  type: string
+phout_file:
+  default: ''
+  description: deprecated
+  type: string
+port:
+  default: ''
+  description: Explicit target port, overwrites port defined with address
+  regex: \d{0,5}
+  type: string
+source_log_prefix:
+  default: ''
+  description: Prefix added to class name that reads source data
+  type: string
+ssl:
+  default: false
+  description: Enable ssl
+  type: boolean
+tank_type:
+  allowed:
+  - http
+  - none
+  default: http
+  description: Choose between http and pure tcp guns
+  type: string
+  values_description:
+    http: HTTP gun
+    none: TCP gun
+threads:
+  default: null
+  description: Phantom thread count. When not specified, defaults to <processor cores
+    count> / 2 + 1
+  nullable: true
+  type: integer
+timeout:
+  default: 11s
+  description: Response timeout
+  type: string
+uris:
+  default: []
+  description: URI list
+  examples:
+    '["/example/search", "/example/search/hello", "/example/search/hello/help"]': ''
+  schema:
+    description: URI path string
+    type: string
+  type: list
+use_caching:
+  default: true
+  description: Enable stpd-file caching for similar tests. Set false to reload ammo
+    file and generate new stpd
+  type: boolean
+writelog:
+  allowed:
+  - '0'
+  - all
+  - proto_warning
+  - proto_error
+  default: '0'
+  description: Enable verbose request/response logging.
+  type: string
+  values_description:
+    '0': disable
+    all: all messages
+    proto_error: 5xx+network errors
+    proto_warning: 4xx+5xx+network errors
