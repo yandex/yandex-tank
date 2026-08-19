@@ -7,6 +7,7 @@ import pytest
 
 from yandextank.ammo_validator import validate
 from yandextank.ammo_validator.common import Message
+from yandextank.ammo_validator.validators.phantom import PhantomValidator
 from yandextank.common.interfaces import TankInfo
 from yandextank.common.util import get_test_path
 from yandextank.core import TankCore
@@ -146,3 +147,18 @@ def test_pandora_inline(resource_manager):
     assert squash_messages(msgs.errors) == {}
     assert squash_messages(msgs.warnings) == {}
     assert squash_messages(msgs.infos) == {'1 uris': 1}
+
+
+def test_phantom_header_without_colon_space():
+    """Заголовок без ': ' роняет разбор пакета (IndexError), см. LOAD phantom.md."""
+    validator = PhantomValidator()
+    data = b'POST / HTTP/1.0\r\nContent-Length:4\r\nGarbage\r\n\r\nbody'
+
+    request, headers, body = validator._split_http_packet(data, 0)
+
+    assert request == 'POST / HTTP/1.0'
+    assert headers == {'Content-Length': '4'}
+    assert body == b'body'
+    assert squash_messages(validator._msgs.warnings) == {
+        "Invalid HTTP header - can't split to key and value: Garbage": 1
+    }

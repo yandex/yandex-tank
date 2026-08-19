@@ -220,17 +220,16 @@ is:
 ::
 
   [size_of_request] [tag]\n
-  [request_headers]
-  [body_of_request]\r\n
+  [http_request_contents]\r\n
   [size_of_request2] [tag2]\n
-  [request2_headers]
-  [body_of_request2]\r\n
+  [http_request_contents2]\r\n
 
 
-where ``size_of_request`` – request size in bytes. '\r\n' symbols after
-``body`` are ignored and not sent anywhere, but it is required to
-include them in a file after each request. Pay attention to the sample above
-because '\r' symbols are strictly required. 
+where ``size_of_request`` – size of the whole request in bytes: start line +
+headers + '\r\n\r\n' + body. '\r\n' symbols after each request are ignored
+and not sent anywhere, but it is required to include them in a file after
+each request. Pay attention to the sample above because '\r' symbols are
+strictly required. 
 
 .. note:: 
 
@@ -242,17 +241,17 @@ because '\r' symbols are strictly required.
 
 ::
   
-  73 good
+  74 good
   GET / HTTP/1.0
   Host: xxx.tanks.example.com
   User-Agent: xxx (shell 1)
   
-  77 bad
+  78 bad
   GET /abra HTTP/1.0
   Host: xxx.tanks.example.com
   User-Agent: xxx (shell 1)
   
-  78 unknown
+  79 unknown
   GET /ab ra HTTP/1.0
   Host: xxx.tanks.example.com
   User-Agent: xxx (shell 1)
@@ -264,7 +263,7 @@ because '\r' symbols are strictly required.
 
 ::
 
-  904
+  909
   POST /upload/2 HTTP/1.0
   Content-Length: 801
   Host: xxxxxxxxx.dev.example.com
@@ -274,7 +273,7 @@ because '\r' symbols are strictly required.
   ._.[..k#L^ƨ`\RE.J.<.!,.q5.F^՚iΔĬq..^6..P..тH.`..i2
   .".uuzs^^F2...Rh.&.U.^^..J.P@.A......x..lǝy^?.u.p{4..g...m.,..R^.^.^......].^^.^J...p.ifTF0<.s.9V.o5<..%!6ļS.ƐǢ..㱋....C^&.....^.^y...v]^YT.1.#K.ibc...^.26...   ..7.
   b.$...j6.٨f...W.R7.^1.3....K`%.&^..d..{{      l0..^\..^X.g.^.r.(!.^^...4.1.$\ .%.8$(.n&..^^q.,.Q..^.D^.].^.R9.kE.^.$^.I..<..B^..^.h^^C.^E.|....3o^.@..Z.^.s.$[v.
-  527
+  532
   POST /upload/3 HTTP/1.0
   Content-Length: 424
   Host: xxxxxxxxx.dev.example.com
@@ -289,13 +288,13 @@ because '\r' symbols are strictly required.
 
 ::
 
-  533
+  534
   POST /updateShopStatus? HTTP/1.0
   User-Agent: xxx/1.2.3
   Host: xxxxxxxxx.dev.example.com
   Keep-Alive: 300
   Content-Type: multipart/form-data; boundary=AGHTUNG
-  Content-Length:334
+  Content-Length: 332
   Connection: Close
   
   --AGHTUNG
@@ -350,17 +349,17 @@ Requests could be grouped and marked by some tag.
 Example:
 ::
 
-  73 good 
+  74 good 
   GET / HTTP/1.0 
   Host: xxx.tanks.example.com 
   User-Agent: xxx (shell 1)
   
-  77 bad 
+  78 bad 
   GET /abra HTTP/1.0 
   Host: xxx.tanks.example.com 
   User-Agent: xxx (shell 1)
   
-  75 unknown 
+  76 unknown 
   GET /ab HTTP/1.0 
   Host: xxx.tanks.example.com 
   User-Agent: xxx (shell 1)

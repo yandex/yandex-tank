@@ -75,15 +75,16 @@ class PhantomValidator(FileFormatValidator):
                         file_offset=packet_start_offset,
                     )
                 )
-            header_parts = header_str.split(": ", maxsplit=1)
-            if len(header_parts) != 2:
+            header_name, separator, header_value = header_str.partition(":")
+            if not separator:
                 self._msgs.warning(
                     self._msg(
                         f"Invalid HTTP header - can't split to key and value: {header_str[:20]}",
                         file_offset=packet_start_offset,
                     )
                 )
-            packet_header[header_parts[0]] = header_parts[1]
+                continue
+            packet_header[header_name] = header_value.strip()
         return http_request, packet_header, data[header_end_offset + 4 :]
 
     def _check_http_request(self, request: str, packet_start_offset: int):
