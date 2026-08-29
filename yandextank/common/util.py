@@ -119,7 +119,7 @@ class SecuredShell(object):
             'BatchMode=yes',
         ]
         if self.username:
-            ssh_opts = ['-o', f'user="{self.username}"']
+            ssh_opts += ['-o', f'user="{self.username}"']
         if self.valid_key is not None:
             ssh_opts = ['-i', self.valid_key] + ssh_opts
         return ssh_opts

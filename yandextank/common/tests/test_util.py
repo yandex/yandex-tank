@@ -204,3 +204,10 @@ class TestSecuredShell(object):
     def test_ssh_path(self):
         s = SecuredShell(None, None, None, command_timeout=10, ssh_key_path=".")
         assert s.key_filename is not None
+
+    def test_username_keeps_default_ssh_opts(self):
+        opts = SecuredShell('somehost', 2222, 'nobody')._make_ssh_opts()
+        assert 'user="nobody"' in opts
+        assert 'StrictHostKeyChecking=no' in opts
+        assert 'BatchMode=yes' in opts
+        assert opts[opts.index('-p') + 1] == '2222'
