@@ -5,9 +5,26 @@ import pytest
 from mock import MagicMock
 from threading import Thread
 
+from library.python.port_manager import PortManager
 from yandextank.plugins.Pandora import Plugin
 
 # https://raw.githubusercontent.com/yandex/yandex-tank/develop/README.md
+
+
+# Порт тестового сервера подставляется в конфиги на лету: раньше он был зашит
+# константой 1234 и при параллельном прогоне оказывался занят соседним процессом.
+AMMO_PORT_PLACEHOLDER = '{ammo_port}'
+AMMO_URL = 'http://localhost:{ammo_port}/ammo'
+
+
+def with_ammo_port(value, port):
+    if isinstance(value, dict):
+        return {k: with_ammo_port(v, port) for k, v in value.items()}
+    if isinstance(value, list):
+        return [with_ammo_port(v, port) for v in value]
+    if isinstance(value, str):
+        return value.replace(AMMO_PORT_PLACEHOLDER, str(port))
+    return value
 
 
 class RequestHandler(SimpleHTTPRequestHandler):
@@ -29,11 +46,13 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
 @pytest.fixture(scope='module')
 def pandora_server():
-    server = HTTPServer(('localhost', 1234), RequestHandler)
+    with PortManager() as pm:
+        port = pm.get_port()
+    server = HTTPServer(('localhost', port), RequestHandler)
     t = Thread(target=server.serve_forever, name="StatServer")
     try:
         t.start()
-        yield
+        yield port
     finally:
         server.shutdown()
         server.socket.close()
@@ -50,7 +69,7 @@ def pandora_server():
                         'ammo': {
                             'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
                             'type': 'uri',
-                            'file': 'http://localhost:1234/ammo',
+                            'file': AMMO_URL,
                         },
                         'gun': {'answlog': {'enabled': 'true', 'path': 'answ.log', 'filter': 'error'}},
                     }
@@ -72,6 +91,7 @@ def pandora_server():
     ],
 )
 def test_patch_config(cfg, expected, pandora_server):
+    cfg = with_ammo_port(cfg, pandora_server)
     plugin = Plugin(MagicMock(), {}, 'pandora')
     # '/tmp/9b73d966bcbf27467d4c4190cfe58c2a.downloaded_resource'
     filename = plugin.patch_config(cfg)['pools'][0]['ammo']['file']
@@ -89,7 +109,7 @@ def test_patch_config(cfg, expected, pandora_server):
                         'ammo': {
                             'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
                             'type': 'uri',
-                            'file': 'http://localhost:1234/ammo',
+                            'file': AMMO_URL,
                         },
                         'gun': {'answlog': {'enabled': 'true', 'path': 'answ.log', 'filter': 'error'}},
                         'result': {'type': 'custom', 'custom path': 'result.phout'},
@@ -120,7 +140,7 @@ def test_patch_config(cfg, expected, pandora_server):
                         'ammo': {
                             'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
                             'type': 'uri',
-                            'file': 'http://localhost:1234/ammo',
+                            'file': AMMO_URL,
                         },
                         'gun': {'answlog': {'enabled': 'true', 'path': 'answ.log', 'filter': 'error'}},
                         'result': {'type': 'custom', 'custom path': 'result.phout'},
@@ -151,7 +171,7 @@ def test_patch_config(cfg, expected, pandora_server):
                         'ammo': {
                             'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
                             'type': 'uri',
-                            'file': 'http://localhost:1234/ammo',
+                            'file': AMMO_URL,
                         },
                         'gun': {'answlog': {'enabled': 'true', 'path': 'answ.log', 'filter': 'error'}},
                         'result': {},
@@ -169,7 +189,7 @@ def test_patch_config(cfg, expected, pandora_server):
                         'ammo': {
                             'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
                             'type': 'uri',
-                            'file': 'http://localhost:1234/ammo',
+                            'file': AMMO_URL,
                         },
                         'gun': {'answlog': {'enabled': 'true', 'path': 'answ.log', 'filter': 'error'}},
                         'result': {'type': 'custom', 'custom path': 'result.phout'},
@@ -178,7 +198,7 @@ def test_patch_config(cfg, expected, pandora_server):
                         'ammo': {
                             'uri-headers': '[User-Agent: Wget/1.13.4 (linux-gnu)] [Host: foo.ru] [Accept-Encoding: gzip,deflate,sdch]',
                             'type': 'uri',
-                            'file': 'http://localhost:1234/ammo',
+                            'file': AMMO_URL,
                         },
                         'gun': {'answlog': {'enabled': 'true', 'path': 'answ.log', 'filter': 'error'}},
                         'result': {'type': 'custom', 'destination': 'result.phout'},
@@ -198,6 +218,8 @@ def test_patch_config_with_pandora_custom_phout(
     pandora_server,
     tmp_path,
 ):
+    cfg = with_ammo_port(cfg, pandora_server)
+
     # Test that pandora_custom_phout setting working correctly
     core = MagicMock()
     file_opener = MagicMock()
