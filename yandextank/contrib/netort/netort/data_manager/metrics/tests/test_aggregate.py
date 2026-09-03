@@ -37,7 +37,6 @@ def test_quantiles_processor():
     assert aggregated.equals(expected)
 
 
-@pytest.mark.skip('broken in arcadia')
 def test_distributions_processor():
     data = pd.read_csv(os.path.join(PATH, 'metric_data_input_metric_2.csv'))
     data.loc[:, 'second'] = (data['ts'] / 1000000).astype(int)

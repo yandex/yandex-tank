@@ -205,19 +205,23 @@ def test_large_stepper_file():
         core.plugins_configure()
 
 
-@pytest.mark.skip('disabled for travis')
+@pytest.mark.skip(
+    'LOAD-3541: с CFG1 тест проходит, но идёт 590 c и не влезает в SMALL-чанк (лимит 60 c), '
+    'унося с собой соседей в NOT_LAUNCHED; с CFG_MULTI падает на валидации — конфиг ссылается '
+    'на удалённый плагин Aggregator и на разъехавшиеся поля схемы. Метка "disabled for travis" '
+    'описывала не то: Travis в Аркадии не используется.'
+)
 @pytest.mark.parametrize('config, expected', [(CFG1, None), (CFG_MULTI, None)])
 def test_plugins_prepare_test(config, expected):
-    core = TankCore([config], threading.Event())
+    core = TankCore([config], threading.Event(), TankInfo({}))
     core.plugins_prepare_test()
 
 
-@pytest.mark.skip('Not implemented')
-def test_stpd_file():
-    raise NotImplementedError
-
-
-@pytest.mark.skip('disabled for travis')
+@pytest.mark.skip(
+    'LOAD-3541: CFG_MULTI невалиден по текущей схеме — aggregator.package ссылается на '
+    'удалённый yandextank.plugins.Aggregator, lunapark.copy_config_to и phantom.uris '
+    'разъехались со схемой. Сигнатура TankCore уже поправлена, дело только в конфиге.'
+)
 @pytest.mark.parametrize(
     'config',
     [
@@ -225,7 +229,7 @@ def test_stpd_file():
     ],
 )
 def test_start_test(config):
-    core = TankCore(configs=[config])
+    core = TankCore([config], threading.Event(), TankInfo({}))
     core.plugins_prepare_test()
     core.plugins_start_test()
     core.plugins_end_test(1)
