@@ -61,6 +61,7 @@ class TestAgentConfig(object):
         )
         agent_config = AgentConfig(telegraf_configs[0], False)
         startup = agent_config.create_startup_config()
+        assert os.path.dirname(startup) == agent_config.tmpdir
         cfg_parser = RawConfigParser(strict=False)
         cfg_parser.read(startup)
         assert cfg_parser.has_section('startup')
@@ -75,6 +76,7 @@ class TestAgentConfig(object):
         agent_config = AgentConfig(telegraf_configs[0], False)
         remote_workdir = '.'
         collector_config = agent_config.create_collector_config(remote_workdir)
+        assert os.path.dirname(collector_config) == agent_config.tmpdir
         cfg_parser = RawConfigParser(strict=False)
         cfg_parser.read(collector_config)
 
@@ -105,6 +107,7 @@ class TestAgentConfig(object):
         )
         agent_config = AgentConfig(telegraf_configs[0], False)
         custom_exec_config = agent_config.create_custom_exec_script()
+        assert os.path.dirname(custom_exec_config) == agent_config.tmpdir
         with open(custom_exec_config, 'r') as custom_fname:
             data = custom_fname.read()
         assert data.find("-0) curl -s 'http://localhost:6100/stat'") != -1

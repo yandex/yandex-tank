@@ -3,12 +3,10 @@ core:
   operator: fomars
   lock_dir: "./"
 telegraf:
-  # Выключен, как в CFG2: плагин создаёт agent.py по относительному пути, то есть
-  # в cwd, а setup_module делает chdir в исходники — в песочнице автосборки они
-  # read-only, и prepare_test падает. Здесь проверяется мультиконфиг phantom,
-  # мониторинг к делу не относится (LOAD-3541).
   package: yandextank.plugins.Telegraf
-  enabled: False
+  enabled: True
+  config: test_monitoring.xml
+  disguise_hostnames: True
 phantom:
   package: yandextank.plugins.Phantom
   enabled: True

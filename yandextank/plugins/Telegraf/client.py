@@ -47,7 +47,7 @@ class LocalhostClient(object):
         self.reader = MonitoringReader(self.incoming_queue)
 
         self.path = {
-            'AGENT_LOCAL_PATH': create_agent_py(self.AGENT_FILENAME),
+            'AGENT_LOCAL_PATH': create_agent_py(os.path.join(self.config.tmpdir, self.AGENT_FILENAME)),
             'TELEGRAF_LOCAL_PATH': self.telegraf,
         }
 
@@ -179,13 +179,11 @@ class SSHClient(object):
         self.successfull_stop = None
 
         self.reader = MonitoringReader(self.incoming_queue)
-        handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
-        os.close(handle)
         self.path = {
             # Destination path on remote host
             'AGENT_REMOTE_FOLDER': '/tmp/',
             # Source path on tank
-            'AGENT_LOCAL_PATH': create_agent_py(self.AGENT_FILENAME),
+            'AGENT_LOCAL_PATH': create_agent_py(os.path.join(self.config.tmpdir, self.AGENT_FILENAME)),
             'TELEGRAF_REMOTE_PATH': '/tmp/telegraf',
             'TELEGRAF_LOCAL_PATH': self.telegraf,
         }

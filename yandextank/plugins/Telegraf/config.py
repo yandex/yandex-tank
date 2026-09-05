@@ -188,21 +188,16 @@ class AgentConfig(object):
         self.telegrafraw = config['telegrafraw']
         self.host_config = config['host_config']
         self.old_style_configs = old_style_configs
+        # Конфиги агента пишем в приватный временный каталог, а не в cwd процесса:
+        # оттуда они всё равно копируются в workdir, а cwd бывает и read-only (LOAD-3565).
+        self.tmpdir = tempfile.mkdtemp(prefix='agent_config_')
 
     def create_startup_config(self):
         """Startup and shutdown commands config
         Used by agent.py on the target
 
         """
-        cfg_path = "agent_startup_{}.cfg".format(self.host)
-        if os.path.isfile(cfg_path):
-            logger.info(
-                'Found agent startup config file in working directory with the same name as created for host %s.\n'
-                'Creating new one via tempfile. This will affect predictable filenames for agent artefacts',
-                self.host,
-            )
-            handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_')
-            os.close(handle)
+        cfg_path = os.path.join(self.tmpdir, "agent_startup_{}.cfg".format(self.host))
         try:
             config = configparser.RawConfigParser(strict=False)
             # FIXME incinerate such a string formatting inside a method call
@@ -225,15 +220,7 @@ class AgentConfig(object):
         inspired by half a night trying to avoid escaping bash special characters
 
         """
-        cfg_path = "agent_customs_{}.cfg".format(self.host)
-        if os.path.isfile(cfg_path):
-            logger.info(
-                'Found agent custom execs config file in working directory with the same name as created for host %s.\n'
-                'Creating new one via tempfile. This will affect predictable filenames for agent artefacts',
-                self.host,
-            )
-            handle, cfg_path = tempfile.mkstemp('.sh', 'agent_customs_')
-            os.close(handle)
+        cfg_path = os.path.join(self.tmpdir, "agent_customs_{}.cfg".format(self.host))
 
         cmds = ""
         for idx, cmd in enumerate(self.custom):
@@ -259,15 +246,7 @@ class AgentConfig(object):
         toml format
 
         """
-        cfg_path = "agent_collector_{}.cfg".format(self.host)
-        if os.path.isfile(cfg_path):
-            logger.info(
-                'Found agent config file in working directory with the same name as created for host %s.\n'
-                'Creating new one via tempfile. This will affect predictable filenames for agent artefacts',
-                self.host,
-            )
-            handle, cfg_path = tempfile.mkstemp('.cfg', 'agent_collector_')
-            os.close(handle)
+        cfg_path = os.path.join(self.tmpdir, "agent_collector_{}.cfg".format(self.host))
 
         self.monitoring_data_output = "{remote_folder}/monitoring.rawdata".format(remote_folder=workdir)
 

@@ -1,6 +1,5 @@
 import glob
 import logging
-from copy import deepcopy
 import os
 import threading
 
@@ -151,13 +150,6 @@ CFG_MULTI = load_yaml(PATH, 'test_multi_cfg.yaml')
 CFG_MULTI['core']['artifacts_base_dir'] = TMPDIR
 CFG_MULTI['core']['artifacts_dir'] = TMPDIR
 
-# Копия CFG1 без мониторинга — для тестов, которые доходят до plugins_prepare_test().
-# Плагин Telegraf пишет временные файлы (agent.py, agent_startup_*.cfg и другие) по
-# относительным путям, то есть в cwd, а setup_module делает chdir в каталог исходников:
-# в песочнице автосборки он read-only и prepare падает. Сам CFG1 не трогаем — на нём
-# держится проверка состава плагинов, которой telegraf нужен (LOAD-3541).
-CFG1_NO_MONITORING = deepcopy(CFG1)
-CFG1_NO_MONITORING['telegraf']['enabled'] = False
 original_working_dir = os.getcwd()
 
 
@@ -229,7 +221,7 @@ def test_large_stepper_file():
         core.plugins_configure()
 
 
-@pytest.mark.parametrize('config, expected', [(CFG1_NO_MONITORING, None), (CFG_MULTI, None)])
+@pytest.mark.parametrize('config, expected', [(CFG1, None), (CFG_MULTI, None)])
 def test_plugins_prepare_test(config, expected):
     core = TankCore([config], threading.Event(), TankInfo({}))
     core.plugins_prepare_test()
