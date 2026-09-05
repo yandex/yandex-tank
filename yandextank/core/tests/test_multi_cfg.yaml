@@ -3,17 +3,21 @@ core:
   operator: fomars
   lock_dir: "./"
 telegraf:
+  # Выключен, как в CFG2: плагин создаёт agent.py по относительному пути, то есть
+  # в cwd, а setup_module делает chdir в исходники — в песочнице автосборки они
+  # read-only, и prepare_test падает. Здесь проверяется мультиконфиг phantom,
+  # мониторинг к делу не относится (LOAD-3541).
   package: yandextank.plugins.Telegraf
-  enabled: True
-  config: test_monitoring.xml
-  disguise_hostnames: True
+  enabled: False
 phantom:
   package: yandextank.plugins.Phantom
   enabled: True
-  address: lunapark.test.yandex-team.ru
+  # localhost, как в CFG1: в сборке нет DNS, а резолв мишени падает с
+  # socket.gaierror и уносит тест. Проверяется обработка мультиконфига, не хост.
+  address: localhost
   phantom_path: "./phantom_mock.sh"
   header_http: "1.1"
-  uris: "/"
+  uris: ["/"]
   loop: 100
   load_profile: {load_type: rps, schedule: "line(1, 10, 1m)"}
   connection_test: false
@@ -25,10 +29,13 @@ lunapark:
   package: yandextank.plugins.DataUploader
   enabled: True
   api_address: "https://lunapark.test.yandex-team.ru/"
-  copy_config_to: test_config_copy.yaml
   ignore_target_lock: true
   task: LOAD-204
-aggregator:
-  package: yandextank.plugins.Aggregator
-  enabled: True
-  verbose_histogram: True
+  # см. комментарий в test_tankcore.py: без этого аплоадер ждёт недоступную сеть 600 с
+  maintenance_attempts: 1
+  maintenance_timeout: 1
+  network_attempts: 1
+  network_timeout: 1
+  api_attempts: 1
+  api_timeout: 1
+  connection_timeout: 1

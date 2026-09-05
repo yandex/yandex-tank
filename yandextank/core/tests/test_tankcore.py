@@ -1,5 +1,6 @@
 import glob
 import logging
+from copy import deepcopy
 import os
 import threading
 
@@ -62,6 +63,16 @@ CFG1 = {
         'api_address': 'https://lunapark.test.yandex-team.ru/',
         'task': 'LOAD-204',
         'ignore_target_lock': True,
+        # В сборке сети нет, а по умолчанию аплоадер ждёт её 10 попыток по 60 с
+        # (maintenance_attempts x maintenance_timeout) — это и есть те 600 с,
+        # из-за которых тест не влезал в SMALL-чанк (LOAD-3541).
+        'maintenance_attempts': 1,
+        'maintenance_timeout': 1,
+        'network_attempts': 1,
+        'network_timeout': 1,
+        'api_attempts': 1,
+        'api_timeout': 1,
+        'connection_timeout': 1,
     },
 }
 
@@ -134,6 +145,19 @@ CFG_WITHOUT_GEN = {
 }
 
 CFG_MULTI = load_yaml(PATH, 'test_multi_cfg.yaml')
+# Каталог артефактов задаём здесь, а не в yaml: TMPDIR вычисляется по окружению.
+# Без него танк создаёт каталог по умолчанию, а в песочнице автосборки это падает
+# на os.makedirs (LOAD-3541).
+CFG_MULTI['core']['artifacts_base_dir'] = TMPDIR
+CFG_MULTI['core']['artifacts_dir'] = TMPDIR
+
+# Копия CFG1 без мониторинга — для тестов, которые доходят до plugins_prepare_test().
+# Плагин Telegraf пишет временные файлы (agent.py, agent_startup_*.cfg и другие) по
+# относительным путям, то есть в cwd, а setup_module делает chdir в каталог исходников:
+# в песочнице автосборки он read-only и prepare падает. Сам CFG1 не трогаем — на нём
+# держится проверка состава плагинов, которой telegraf нужен (LOAD-3541).
+CFG1_NO_MONITORING = deepcopy(CFG1)
+CFG1_NO_MONITORING['telegraf']['enabled'] = False
 original_working_dir = os.getcwd()
 
 
@@ -205,23 +229,12 @@ def test_large_stepper_file():
         core.plugins_configure()
 
 
-@pytest.mark.skip(
-    'LOAD-3541: с CFG1 тест проходит, но идёт 590 c и не влезает в SMALL-чанк (лимит 60 c), '
-    'унося с собой соседей в NOT_LAUNCHED; с CFG_MULTI падает на валидации — конфиг ссылается '
-    'на удалённый плагин Aggregator и на разъехавшиеся поля схемы. Метка "disabled for travis" '
-    'описывала не то: Travis в Аркадии не используется.'
-)
-@pytest.mark.parametrize('config, expected', [(CFG1, None), (CFG_MULTI, None)])
+@pytest.mark.parametrize('config, expected', [(CFG1_NO_MONITORING, None), (CFG_MULTI, None)])
 def test_plugins_prepare_test(config, expected):
     core = TankCore([config], threading.Event(), TankInfo({}))
     core.plugins_prepare_test()
 
 
-@pytest.mark.skip(
-    'LOAD-3541: CFG_MULTI невалиден по текущей схеме — aggregator.package ссылается на '
-    'удалённый yandextank.plugins.Aggregator, lunapark.copy_config_to и phantom.uris '
-    'разъехались со схемой. Сигнатура TankCore уже поправлена, дело только в конфиге.'
-)
 @pytest.mark.parametrize(
     'config',
     [
