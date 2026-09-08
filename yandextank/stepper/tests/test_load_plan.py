@@ -9,8 +9,9 @@ from yandextank.common.util import get_test_path
 from yandextank.common.util import read_resource
 from yandextank.common.interfaces import TankInfo
 from yandextank.core import TankCore
-from yandextank.stepper import Stepper
+from yandextank.stepper import Stepper, info
 from yandextank.stepper.load_plan import create, Const, Line, Composite, Stairway, StepFactory
+from yandextank.stepper.module_exceptions import AmmoFileError
 from yandextank.stepper.util import take
 
 
@@ -233,6 +234,46 @@ def test_ammo(stepper_kwargs, expected_stpd):
     expected_lines = read_resource(os.path.join(get_test_path(), expected_stpd), 'rb').split(b'\n')
     for i, (result, expected) in enumerate(zip(stepper_output, expected_lines)):
         assert result.strip() == expected.strip(), 'Line {} mismatch'.format(i)
+
+
+@pytest.mark.parametrize(
+    'ammo_type, ammo',
+    [
+        ('phantom', b'1 skipped\nx\n1 present\ny\n'),
+        ('caseline', b'skipped\tx\npresent\ty\n'),
+        ('uri', b'/skipped skipped\n/present present\n'),
+        ('uripost', b'1 / skipped\nx\n1 / present\ny\n'),
+    ],
+)
+@pytest.mark.parametrize('loop_limit', [-1, 1])
+@pytest.mark.parametrize('has_matching_case', [False, True])
+def test_chosen_cases(tmp_path, monkeypatch, ammo_type, ammo, loop_limit, has_matching_case):
+    ammo_file = tmp_path / 'ammo.txt'
+    ammo_file.write_bytes(ammo)
+    stepper = Stepper(
+        None,
+        ammo_file=str(ammo_file),
+        ammo_type=ammo_type,
+        rps_schedule=['const(3,1s)'],
+        loop_limit=loop_limit,
+        chosen_cases=[b'absent', b'present'] if has_matching_case else [b'absent'],
+    )
+    output = io.BytesIO()
+    inc_loop_count = info.status.inc_loop_count
+
+    def bounded_loop_count():
+        assert output.tell() or info.status.loop_count == 0, 'Repeated an ammo loop without generating any ammo'
+        inc_loop_count()
+
+    monkeypatch.setattr(info.status, 'inc_loop_count', bounded_loop_count)
+    if has_matching_case:
+        stepper.write(output)
+        assert output.getvalue().count(b' present\n') == (1 if loop_limit == 1 else 3)
+        assert b' skipped\n' not in output.getvalue()
+    else:
+        with pytest.raises(AmmoFileError, match='No ammo.*chosen_cases'):
+            stepper.write(output)
+        assert output.getvalue() == b''
 
 
 @pytest.mark.parametrize(

@@ -3,6 +3,8 @@ import time
 from collections import namedtuple
 from sys import stdout
 
+from .module_exceptions import AmmoFileError
+
 log = logging.getLogger(__name__)
 
 StepperInfo = namedtuple('StepperInfo', 'loop_count,steps,loadscheme,duration,ammo_count,instances')
@@ -83,6 +85,8 @@ class StepperStatus(object):
             raise LoopCountLimit
 
     def inc_loop_count(self):
+        if self.ammo_count == 0:
+            raise AmmoFileError('No ammo was generated in the first loop. Check the ammo file and chosen_cases option.')
         self.loop_count += 1
 
     def get_info(self):
