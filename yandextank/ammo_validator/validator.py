@@ -1,6 +1,6 @@
 from typing import Any, Type
 
-from yandextank.contrib.netort.netort.resource import ResourceManager, open_file
+from load.contrib.netort.resource import ResourceManager, open_file
 from yandextank.core import TankCore
 from yandextank.plugins.Phantom import Plugin as PhantomPlugin
 from yandextank.plugins.Pandora import Plugin as PandoraPlugin

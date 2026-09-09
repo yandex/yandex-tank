@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 
-from yandextank.contrib.netort.netort.resource import (
+from load.contrib.netort.resource import (
     FileOpener,
     HttpOpener,
     ResourceManager,

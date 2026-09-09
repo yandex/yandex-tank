@@ -11,7 +11,7 @@ from typing import Optional
 
 import yaml
 
-from yandextank.contrib.netort.netort.resource import TempDownloaderOpenerProtocol
+from load.contrib.netort.resource import TempDownloaderOpenerProtocol
 from yandextank.plugins.Pandora.sample_reader import SampleReader, SampleWatcher
 
 from .reader import PandoraStatsReader

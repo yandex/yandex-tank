@@ -7,7 +7,7 @@ You should update Stepper.status.ammo_count and Stepper.status.loop_count in you
 import logging
 from itertools import cycle
 
-from yandextank.contrib.netort.netort.resource import manager as resource, open_file
+from load.contrib.netort.resource import manager as resource, open_file
 
 from . import info
 from .info import LoopCountLimit

@@ -11,7 +11,7 @@ from yandextank.ammo_validator.validators.phantom import PhantomValidator
 from yandextank.common.interfaces import TankInfo
 from yandextank.common.util import get_test_path
 from yandextank.core import TankCore
-from yandextank.contrib.netort.netort.resource import ResourceManager, ResourceManagerConfig
+from load.contrib.netort.resource import ResourceManager, ResourceManagerConfig
 
 
 @pytest.fixture

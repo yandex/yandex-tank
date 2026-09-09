@@ -7,7 +7,7 @@ from queue import Queue
 from yandextank.common.util import FileScanner, FileMultiReader
 from yandextank.common.util import AddressWizard, SecuredShell
 
-from yandextank.contrib.netort.netort.data_processing import Drain, Chopper
+from load.contrib.netort.data_processing import Drain, Chopper
 
 
 class TestDrain(object):

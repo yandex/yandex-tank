@@ -26,7 +26,7 @@ from ..Console import Plugin as ConsolePlugin
 from .client import APIClient, OverloadClient, LPRequisites
 from ...common.util import FileScanner
 
-from yandextank.contrib.netort.netort.data_processing import Drain
+from load.contrib.netort.data_processing import Drain
 
 logger = logging.getLogger(__name__)  # pylint: disable=C0103
 

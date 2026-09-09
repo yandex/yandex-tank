@@ -13,7 +13,7 @@ from yandextank.aggregator import TankAggregator
 from yandextank.aggregator.aggregator import Aggregator, DataPoller
 from yandextank.aggregator.chopper import TimeChopper
 from yandextank.plugins.Phantom.reader import string_to_df
-from yandextank.contrib.netort.netort.data_processing import Drain
+from load.contrib.netort.data_processing import Drain
 
 AGGR_CONFIG = TankAggregator.load_config()
 

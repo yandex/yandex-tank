@@ -11,7 +11,7 @@ import re
 import shlex
 
 from pkg_resources import resource_string
-from yandextank.contrib.netort.netort.resource import TempDownloaderOpenerProtocol
+from load.contrib.netort.resource import TempDownloaderOpenerProtocol
 
 from .reader import JMeterReader
 from ..Console import Plugin as ConsolePlugin

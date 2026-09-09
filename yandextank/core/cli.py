@@ -4,7 +4,7 @@ import multiprocessing
 import threading
 from optparse import OptionParser
 
-from yandextank.contrib.netort.netort.resource import manager as resource_manager
+from load.contrib.netort.resource import manager as resource_manager
 from yandextank.core.tankworker import TankWorker
 from yandextank.core.tankcore import LockError
 from yandextank.validator.validator import ValidationError

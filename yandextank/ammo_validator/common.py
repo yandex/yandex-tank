@@ -6,7 +6,7 @@ from enum import StrEnum, auto
 import logging
 from typing import BinaryIO, ClassVar, NewType, Protocol, runtime_checkable
 
-from yandextank.contrib.netort.netort.resource import ResourceManager, open_file
+from load.contrib.netort.resource import ResourceManager, open_file
 
 
 class AmmoType(StrEnum):

@@ -1,6 +1,6 @@
 import logging
 from typing import Optional
-from yandextank.contrib.netort.netort.resource import ResourceManager, manager, open_file
+from load.contrib.netort.resource import ResourceManager, manager, open_file
 
 from . import info
 from . import instance_plan as ip
