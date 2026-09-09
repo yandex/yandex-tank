@@ -34,6 +34,16 @@ class LoadPlanBuilder(object):
         self.log.debug("Ramp %s instances in %sms from %sms" % (count, duration, self.duration))
         if count < 0:
             raise StepperConfigurationError("Can not stop instances in instances_schedule.")
+        if count == 0:
+            # nothing to start, but the phase still takes time
+            self.duration += duration
+            return self
+        if count == 1:
+            # a single-instance ramp is degenerate: start it now and hold for the
+            # whole duration instead of dividing by zero in `interval`.
+            self.start(1)
+            self.wait(duration)
+            return self
         interval = float(duration) / (count - 1)
         start_time = self.duration
         self.generators.append(int(start_time + i * interval) for i in range(0, count))

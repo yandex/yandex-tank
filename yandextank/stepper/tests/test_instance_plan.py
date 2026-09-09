@@ -27,6 +27,13 @@ class TestCreate(object):
             (7, create(['wait(5s)', 'ramp(5, 0)']), [5000, 5000, 5000, 5000, 5000, 0, 0]),
             (7, create([]), [0, 0, 0, 0, 0, 0, 0]),
             (12, create(['line(1, 9, 4s)']), [0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 0, 0, 0]),
+            (7, create(['line(5, 5, 3s)']), [0, 0, 0, 0, 0, 0, 0]),
+            (7, create(['ramp(1, 3s)']), [0, 0, 0, 0, 0, 0, 0]),
+            (
+                12,
+                LoadPlanBuilder().line(5, 5, 3000).steps,
+                [(5, 3)],
+            ),
             (
                 12,
                 create(['const(3, 5s)', 'line(7, 11, 2s)']),
@@ -65,6 +72,7 @@ class TestCreate(object):
             (LoadPlanBuilder().stairway(100, 950, 100, 30000), 950),
             (LoadPlanBuilder().const(3, 1000).line(5, 10, 5000), 10),
             (LoadPlanBuilder().line(1, 100, 60000), 100),
+            (LoadPlanBuilder().line(5, 5, 3000), 5),
         ],
     )
     def test_instances(self, loadplan, expected):
