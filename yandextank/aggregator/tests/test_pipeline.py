@@ -24,7 +24,10 @@ class TestPipeline(object):
         chunks = list(random_split(data))
         chunks[5], chunks[6] = chunks[6], chunks[5]
 
-        pipeline = Aggregator(TimeChopper([DataPoller(poll_period=0.1, max_wait=31).poll(chunks)]), AGGR_CONFIG, False)
+        # poll_period 0.01, а не 0.1: DataPoller спит этот период на КАЖДЫЙ чанк источника
+        # (aggregator.py::_data_poller), а random_split режет data.csv примерно на 150 чанков —
+        # тест тратил 15 с на сон вместо счёта. Данные лежат в памяти, ждать нечего (LOAD-3675).
+        pipeline = Aggregator(TimeChopper([DataPoller(poll_period=0.01, max_wait=31).poll(chunks)]), AGGR_CONFIG, False)
         drain = Drain(pipeline, results_queue)
         drain.run()
         assert results_queue.qsize() == MAX_TS
@@ -40,8 +43,11 @@ class TestPipeline(object):
                     yield None
                 yield chunk
 
+        # poll_period 0.01, а не 0.1: DataPoller спит этот период на КАЖДЫЙ чанк источника
+        # (aggregator.py::_data_poller), а random_split режет data.csv примерно на 150 чанков —
+        # тест тратил 15 с на сон вместо счёта. Данные лежат в памяти, ждать нечего (LOAD-3675).
         pipeline = Aggregator(
-            TimeChopper([DataPoller(poll_period=0.1, max_wait=31).poll(producer())]), AGGR_CONFIG, False
+            TimeChopper([DataPoller(poll_period=0.01, max_wait=31).poll(producer())]), AGGR_CONFIG, False
         )
         drain = Drain(pipeline, results_queue)
         drain.run()

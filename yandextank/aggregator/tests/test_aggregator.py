@@ -44,7 +44,9 @@ class ListenerMock(object):
 @pytest.mark.parametrize('phout, expected_rps', [('yandextank/aggregator/tests/phout1', 300)])
 def test_agregator(phout, expected_rps):
     generator = PhantomMock(os.path.join(get_test_path(), phout))
-    poller = DataPoller(poll_period=0.1, max_wait=31)
+    # poll_period 0.01, а не 0.1: DataPoller спит этот период на каждый чанк, и тест тратил
+    # 10 с на сон вместо счёта rps (LOAD-3675). max_wait в секундах, смысл сохраняется.
+    poller = DataPoller(poll_period=0.01, max_wait=31)
     aggregator = TankAggregator(generator, poller)
     listener = ListenerMock()
     aggregator.add_result_listener(listener)
