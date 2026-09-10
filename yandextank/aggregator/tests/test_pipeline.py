@@ -18,11 +18,17 @@ from load.contrib.netort.data_processing import Drain
 AGGR_CONFIG = TankAggregator.load_config()
 
 
+def _swap_middle_chunks(chunks):
+    assert len(chunks) >= 2
+    middle = len(chunks) // 2
+    chunks[middle - 1], chunks[middle] = chunks[middle], chunks[middle - 1]
+
+
 class TestPipeline(object):
     def test_partially_reversed_data(self, data):
         results_queue = Queue()
         chunks = list(random_split(data))
-        chunks[5], chunks[6] = chunks[6], chunks[5]
+        _swap_middle_chunks(chunks)
 
         # poll_period 0.01, а не 0.1: DataPoller спит этот период на КАЖДЫЙ чанк источника
         # (aggregator.py::_data_poller), а random_split режет data.csv примерно на 150 чанков —
@@ -35,7 +41,7 @@ class TestPipeline(object):
     def test_slow_producer(self, data):
         results_queue = Queue()
         chunks = list(random_split(data))
-        chunks[2], chunks[3] = chunks[3], chunks[2]
+        _swap_middle_chunks(chunks)
 
         def producer():
             for chunk in chunks:
