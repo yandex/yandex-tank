@@ -99,6 +99,114 @@ def test_patch_config(cfg, expected, pandora_server):
 
 
 @pytest.mark.parametrize(
+    'has_monitoring, monitoring, expected_monitoring, expected_enabled, expected_port',
+    [
+        (False, None, {'expvar': {'enabled': True, 'port': 1234}}, True, 1234),
+        (True, None, {'expvar': {'enabled': True, 'port': 1234}}, True, 1234),
+        (True, {}, {'expvar': {'enabled': True, 'port': 1234}}, True, 1234),
+        (True, {'expvar': False}, {'expvar': False}, False, 1234),
+        (
+            True,
+            {'cpuprofile': {'enabled': True}},
+            {
+                'cpuprofile': {'enabled': True},
+                'expvar': {'enabled': True, 'port': 1234},
+            },
+            True,
+            1234,
+        ),
+        (
+            True,
+            {'expvar': {'enabled': False, 'port': 4321}},
+            {'expvar': {'enabled': False, 'port': 4321}},
+            False,
+            4321,
+        ),
+        (
+            True,
+            {'expvar': {'enabled': True, 'port': 4321}},
+            {'expvar': {'enabled': True, 'port': 4321}},
+            True,
+            4321,
+        ),
+    ],
+)
+def test_patch_config_normalizes_expvar_monitoring(
+    has_monitoring,
+    monitoring,
+    expected_monitoring,
+    expected_enabled,
+    expected_port,
+):
+    config = {
+        'pools': [
+            {
+                'ammo': {},
+                'gun': {},
+                'result': {'type': 'phout', 'destination': 'phout.log'},
+            }
+        ]
+    }
+    if has_monitoring:
+        config['monitoring'] = monitoring
+    plugin = Plugin(MagicMock(), {}, 'pandora')
+
+    result = plugin.patch_config(config)
+
+    assert result is config
+    assert result['monitoring'] == expected_monitoring
+    assert plugin.expvar_enabled is expected_enabled
+    assert plugin.expvar_port == expected_port
+
+
+@pytest.mark.parametrize('monitoring', [None, {'cpuprofile': {'enabled': True}}])
+def test_patch_config_normalizes_legacy_expvar_mode(monitoring):
+    config = {
+        'pools': [
+            {
+                'ammo': {},
+                'gun': {},
+                'result': {'type': 'phout', 'destination': 'phout.log'},
+            }
+        ]
+    }
+    if monitoring is not None:
+        config['monitoring'] = monitoring
+    plugin = Plugin(MagicMock(), {'expvar': True}, 'pandora')
+
+    result = plugin.patch_config(config)
+
+    assert result['monitoring']['expvar'] == {'enabled': True, 'port': 1234}
+    assert plugin.expvar_enabled is True
+    assert plugin.expvar_port == 1234
+
+
+def test_patch_config_resets_expvar_state_between_calls():
+    def make_config(monitoring=None):
+        config = {
+            'pools': [
+                {
+                    'ammo': {},
+                    'gun': {},
+                    'result': {'type': 'phout', 'destination': 'phout.log'},
+                }
+            ]
+        }
+        if monitoring is not None:
+            config['monitoring'] = monitoring
+        return config
+
+    plugin = Plugin(MagicMock(), {}, 'pandora')
+    plugin.patch_config(make_config({'expvar': {'enabled': True, 'port': 4321}}))
+
+    result = plugin.patch_config(make_config())
+
+    assert result['monitoring']['expvar'] == {'enabled': True, 'port': 1234}
+    assert plugin.expvar_enabled is True
+    assert plugin.expvar_port == 1234
+
+
+@pytest.mark.parametrize(
     'pandora_custom_phout, cfg, expected_value, expected_error',
     [
         (  # Test default result type

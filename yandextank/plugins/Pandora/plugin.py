@@ -132,21 +132,35 @@ class Plugin(GeneratorPlugin):
         add result file section
         :param dict config: pandora config
         """
-        # get expvar parameters
-        if config.get('monitoring'):
-            if isinstance(config['monitoring'].get('expvar'), dict):
-                self.expvar_enabled = config['monitoring']['expvar'].get('enabled')
-                if config['monitoring']['expvar'].get('port'):
-                    self.expvar_port = config['monitoring']['expvar'].get('port')
-        # or set if expvar not exists
-        elif not self.expvar:
+        # Always materialize expvar in the Pandora config. The deprecated
+        # plugin option only adds the legacy ``-expvar`` CLI flag, which is a
+        # no-op in newer Pandora versions.
+        monitoring = config.get('monitoring')
+        if isinstance(monitoring, dict):
+            if 'expvar' not in monitoring:
+                monitoring['expvar'] = {
+                    'enabled': True,
+                    'port': self.DEFAULT_EXPVAR_PORT,
+                }
+        elif not monitoring:
             config['monitoring'] = {
                 'expvar': {
                     'enabled': True,
                     'port': self.DEFAULT_EXPVAR_PORT,
                 }
             }
-            self.expvar_enabled = True
+
+        # Read the effective config after patching. Reset the values first so
+        # repeated calls cannot retain settings from a previous config.
+        self.expvar_enabled = bool(self.expvar)
+        self.expvar_port = self.DEFAULT_EXPVAR_PORT
+        monitoring = config.get('monitoring')
+        if isinstance(monitoring, dict):
+            expvar = monitoring.get('expvar')
+            if isinstance(expvar, dict):
+                self.expvar_enabled = expvar.get('enabled')
+                if expvar.get('port'):
+                    self.expvar_port = expvar.get('port')
 
         # FIXME this is broken for custom ammo providers due to interface incompatibility
         # FIXME refactor pandora plx
