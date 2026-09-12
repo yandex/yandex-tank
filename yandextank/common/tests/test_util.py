@@ -6,6 +6,7 @@ import pytest
 from queue import Queue
 from yandextank.common.util import FileScanner, FileMultiReader
 from yandextank.common.util import AddressWizard, SecuredShell
+from yandextank.common.util import expand_to_milliseconds, expand_to_seconds
 
 from load.contrib.netort.data_processing import Drain, Chopper
 
@@ -210,3 +211,86 @@ class TestSecuredShell(object):
         assert 'StrictHostKeyChecking=no' in opts
         assert 'BatchMode=yes' in opts
         assert opts[opts.index('-p') + 1] == '2222'
+
+
+class TestExpandTime:
+    """Разбор длительности из конфига.
+
+    Это число задаёт длительность стрельбы (TimeLimitCriterion), пороги автостопа,
+    таймауты и интервалы опроса агентов — больше двадцати мест. Ошибка здесь не падает,
+    а тихо меняет условия прогона, поэтому проверяется не «разобралось», а точное значение.
+    """
+
+    @pytest.mark.parametrize(
+        'value,expected',
+        [
+            ('1', 1),
+            ('60', 60),
+            ('1s', 1),
+            ('1m', 60),
+            ('1h', 3600),
+            ('1d', 86400),
+            ('1w', 604800),
+            ('1h30m', 5400),
+            ('1m30s', 90),
+            ('1M', 60),  # регистр единицы не важен: M это минуты, не месяцы
+        ],
+    )
+    def test_whole_units(self, value, expected):
+        assert expand_to_seconds(value) == expected
+
+    @pytest.mark.parametrize(
+        'value,expected',
+        [
+            ('1.5m', 90),
+            ('0.5m', 30),
+            ('2.5h', 9000),
+            ('1.5s', 1),  # результат целый, дробь секунды отбрасывается
+        ],
+    )
+    def test_fractional_values(self, value, expected):
+        """Дробь читается как часть числа.
+
+        До LOAD-3696 regex не знал точки, поэтому '1.5m' распадался на 1s и 5m и давал
+        301 секунду вместо 90 — стрельба шла впятеро дольше запрошенного.
+        """
+        assert expand_to_seconds(value) == expected
+
+    def test_subsecond_in_seconds_is_zero(self):
+        """Секундный разбор не умеет субсекунду — и это должно быть видно в тесте.
+
+        Именно отсюда берётся нулевой интервал опроса у агентов, если в конфиге указать
+        '500ms': за субсекундными значениями надо идти в expand_to_milliseconds.
+        """
+        assert expand_to_seconds('500ms') == 0
+        assert expand_to_milliseconds('500ms') == 500
+
+    def test_same_literal_means_same_time_in_both_helpers(self):
+        """Один литерал — одно и то же время, с точностью до единиц измерения.
+
+        До починки '1.5s' давал 5 секунд в одной обёртке и 5001 миллисекунду в другой:
+        расхождение в тысячу раз на ровном месте.
+        """
+        assert expand_to_milliseconds('1.5s') == 1500
+        assert expand_to_milliseconds('2m') == 120000
+        assert expand_to_milliseconds('60') == 60  # голое число здесь миллисекунды
+
+    def test_unknown_unit_raises(self):
+        with pytest.raises(ValueError):
+            expand_to_seconds('5x')
+
+    def test_garbage_without_digits_raises(self):
+        """Опечатка в конфиге обязана падать, а не превращаться в нулевой таймаут."""
+        with pytest.raises(ValueError):
+            expand_to_seconds('abc')
+
+    def test_negative_duration_raises(self):
+        """'-1' раньше разбиралось как '1': минус не попадал в regex."""
+        with pytest.raises(ValueError):
+            expand_to_seconds('-1')
+        with pytest.raises(ValueError):
+            expand_to_seconds('-1m')
+
+    def test_empty_string_is_zero(self):
+        """Пустое значение — это «не задано», исторически ноль; менять не стали."""
+        assert expand_to_seconds('') == 0

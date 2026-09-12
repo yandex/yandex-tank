@@ -428,6 +428,10 @@ def expand_to_milliseconds(str_time):
 def expand_to_seconds(str_time):
     """
     converts 1d2s into seconds
+
+    Результат целый, поэтому всё короче секунды здесь схлопывается в ноль:
+    expand_to_seconds('500ms') == 0. Для интервалов опроса и таймаутов, где
+    субсекунда осмысленна, берите expand_to_milliseconds.
     """
     return expand_time(str_time, 's', 1)
 
@@ -436,11 +440,21 @@ def expand_time(str_time, default_unit='s', multiplier=1):
     """
     helper for above functions
     """
-    parser = re.compile(r'(\d+)([a-zA-Z]*)')
+    # Дробная часть обязана попадать в число целиком: regex без точки разбирал '1.5m'
+    # как два токена, 1s и 5m, и выдавал 301 секунду вместо 90 (LOAD-3696).
+    parser = re.compile(r'(\d+(?:\.\d+)?)([a-zA-Z]*)')
     parts = parser.findall(str_time)
+    if not parts and str_time.strip():
+        # Строка есть, а чисел в ней нет: раньше тихо возвращался ноль, то есть
+        # опечатка в конфиге превращалась в нулевой таймаут.
+        raise ValueError("String contains no duration: %s" % str_time)
+    if '-' in str_time:
+        # Минус не входит в regex, поэтому '-1' разбирался как '1': отрицательная
+        # длительность молча становилась положительной.
+        raise ValueError("Negative duration is not allowed: %s" % str_time)
     result = 0.0
     for value, unit in parts:
-        value = int(value)
+        value = float(value)
         unit = unit.lower()
         if unit == '':
             unit = default_unit
