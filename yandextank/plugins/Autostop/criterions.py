@@ -30,6 +30,12 @@ class AvgTimeCriterion(AbstractCriterion):
 
     def notify(self, data, stat):
         rt_total, requests_number = self.parse_data(data)
+        if not requests_number:
+            # Секунда без запросов — штатная пауза в схеме нагрузки, а не нарушение:
+            # среднее считать не из чего, и копить счётчик нельзя. Раньше здесь было
+            # деление на ноль, и исключение уносило поток автостопа целиком (LOAD-3696).
+            self.seconds_count = 0
+            return False
         rt_actual = rt_total / 1000.0 / requests_number
 
         if rt_actual > self.rt_limit:
@@ -243,15 +249,25 @@ class NetCodesCriterion(AbstractCriterion):
 
         return False
 
+    @staticmethod
+    def without_success_code(code_count):
+        """Убирает успешный net-код 0 из счёта ошибок.
+
+        Агрегатор отдаёт коды и строкой, и числом, а отбрасывался только '0' —
+        целый ноль попадал в ошибки и мог оборвать здоровую стрельбу (LOAD-3696).
+        """
+        codes = copy.deepcopy(code_count)
+        codes.pop('0', None)
+        codes.pop(0, None)
+        return codes
+
     def parse_data(self, data):
         # Count data for specific tag if it's present
         if self.tag:
             if data["tagged"].get(self.tag):
                 total_responses = data["tagged"][self.tag]["interval_real"]["len"]
                 code_count = data["tagged"][self.tag]["net_code"]["count"]
-                codes = copy.deepcopy(code_count)
-                if '0' in codes:
-                    codes.pop('0')
+                codes = self.without_success_code(code_count)
                 matched_responses = self.count_matched_codes(self.codes_regex, codes)
             # matched_responses=0 if current tag differs from selected one
             else:
@@ -261,9 +277,7 @@ class NetCodesCriterion(AbstractCriterion):
         else:
             code_count = data["overall"]["net_code"]["count"]
             total_responses = data["overall"]["interval_real"]["len"]
-            codes = copy.deepcopy(code_count)
-            if '0' in codes:
-                codes.pop('0')
+            codes = self.without_success_code(code_count)
             matched_responses = self.count_matched_codes(self.codes_regex, codes)
         return matched_responses, total_responses
 
@@ -340,18 +354,17 @@ class QuantileCriterion(AbstractCriterion):
         return False
 
     def parse_data(self, data):
-        # Parse data for specific tag
+        # Перечень квантилей берётся из того же места, откуда значения: раньше значения
+        # читались из тега, а ключи из overall, и при разных наборах zip сдвигал их —
+        # критерий сравнивал с лимитом чужое число (LOAD-3696).
         if self.tag:
-            if data["tagged"].get(self.tag):
-                quantile_values = data["tagged"][self.tag]["interval_real"]["q"]["value"]
-            # quantile_values empty if current tag differs from selected one
-            else:
-                quantile_values = []
-        # Parse data for overall
+            # пусто, если в отсчёте нет данных по выбранному тегу
+            quantiles_data = (data["tagged"].get(self.tag) or {}).get("interval_real", {}).get("q")
         else:
-            quantile_values = data["overall"]["interval_real"]["q"]["value"]
-        quantiles = dict(zip(data["overall"]["interval_real"]["q"]["q"], quantile_values))
-        return quantiles
+            quantiles_data = data["overall"]["interval_real"].get("q")
+        if not quantiles_data:
+            return {}
+        return dict(zip(quantiles_data["q"], quantiles_data["value"]))
 
     def get_rc(self):
         return self.RC_TIME
