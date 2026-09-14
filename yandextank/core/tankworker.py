@@ -4,9 +4,10 @@ import os
 import shutil
 import time
 import typing
+import weakref
 from configparser import RawConfigParser, MissingSectionHeaderError
 from dataclasses import dataclass
-from multiprocessing import Event, Value, Process
+from multiprocessing import Event, Value, Process, current_process
 
 import stat
 import yaml
@@ -28,9 +29,23 @@ class CleanupHandler:
     handler: typing.Callable[[], None]
 
 
+class _NotifyingTankInfo(TankInfo):
+    def __init__(self, on_update):
+        super().__init__(dict())
+        # Слабая ссылка: цикл воркер <-> info откладывает __del__ воркера, а он снимает лог-хендлеры.
+        self._on_update = weakref.WeakMethod(on_update)
+
+    def update(self, keys, value):
+        super().update(keys, value)
+        on_update = self._on_update()
+        if on_update:
+            on_update()
+
+
 class TankWorker(Process):
     SECTION = 'core'
     FINISH_FILENAME = 'finish_status.yaml'
+    LIVE_STATUS_FILENAME = 'live_status.yaml'
     DEFAULT_CONFIG = 'load.yaml'
 
     def __init__(
@@ -53,7 +68,7 @@ class TankWorker(Process):
     ):
         super().__init__()
         self.interrupted = Event()
-        self.info = TankInfo(dict())
+        self.info = _NotifyingTankInfo(self._save_live_status)
         user_configs = self._combine_configs(configs, cli_options, cfg_patches, cli_args)
         self.core = TankCore(
             user_configs,
@@ -188,13 +203,20 @@ class TankWorker(Process):
         logger.warning('Interrupting')
 
     def get_status(self):
+        if self.pid is not None and current_process() is not self:
+            # run() идёт в дочернем процессе: сообщения и info живут там, сюда доходит их снимок из файла.
+            status = self._read_live_status()
+        else:
+            status = self._live_status()
+        status.update(
+            status_code=self.status.decode('utf8'), left_time=None, exit_code=self.retcode, test_id=self.test_id
+        )
+        return status
+
+    def _live_status(self):
         status = {
-            'status_code': self.status.decode('utf8'),
-            'left_time': None,
-            'exit_code': self.retcode,
             'lunapark_id': self.get_info('uploader', 'job_no'),
             'tank_msg': self.msg,
-            'test_id': self.test_id,
             'lunapark_url': self.get_info('uploader', 'web_link'),
         }
         for autostop_key in ['rps', 'reason', 'type', 'rc']:
@@ -203,6 +225,24 @@ class TankWorker(Process):
                     status['autostop'] = {}
                 status['autostop'][autostop_key] = self.get_info('autostop', autostop_key)
         return status
+
+    def _save_live_status(self):
+        if current_process() is not self:
+            return
+        path = os.path.join(self.folder, self.LIVE_STATUS_FILENAME)
+        try:
+            with open(path + '.tmp', 'w') as f:
+                yaml.safe_dump(self._live_status(), f, encoding='utf-8', allow_unicode=True)
+            os.replace(path + '.tmp', path)
+        except Exception:
+            logger.warning('Failed to save live status to %s', path, exc_info=True)
+
+    def _read_live_status(self):
+        try:
+            with open(os.path.join(self.folder, self.LIVE_STATUS_FILENAME)) as f:
+                return yaml.safe_load(f)
+        except (OSError, yaml.YAMLError):
+            return self._live_status()
 
     def save_finish_status(self):
         with open(os.path.join(self.folder, self.FINISH_FILENAME), 'w') as f:
@@ -274,6 +314,7 @@ class TankWorker(Process):
 
     def add_msgs(self, *msgs):
         self._msgs.extend(msgs)
+        self._save_live_status()
 
     @property
     def test_id(self):
@@ -330,13 +371,13 @@ def parse_options(options):
     :type options: list of str
     :rtype: list of dict
     """
-    if options is None:
-        return []
-    else:
-        return [
-            convert_single_option(key.strip(), value.strip())
-            for key, value in [option.split('=', 1) for option in options]
-        ]
+    parsed = []
+    for option in options or []:
+        key, sep, value = option.partition('=')
+        if not sep or '.' not in key:
+            raise ValidationError(f'Option "{option}" should be in format <section>.<option>=<value>')
+        parsed.append(convert_single_option(key.strip(), value.strip()))
+    return parsed
 
 
 def parse_and_check_patches(patches):

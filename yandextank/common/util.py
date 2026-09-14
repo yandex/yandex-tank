@@ -1,6 +1,7 @@
 import collections.abc
 import functools
 import inspect
+import io
 import os
 import socket
 import shutil
@@ -479,7 +480,8 @@ def expand_time(str_time, default_unit='s', multiplier=1):
             continue
         else:
             raise ValueError("String contains unsupported unit %s: %s" % (unit, str_time))
-    return int(result * multiplier)
+    # Округление до 6 знаков снимает шум float: иначе 2.01*1000 = 2009.999… и int() даёт 2009
+    return int(round(result * multiplier, 6))
 
 
 def pid_exists(pid):
@@ -492,8 +494,7 @@ def pid_exists(pid):
         logging.debug("No process[%s]: %s", exc.errno, exc)
         return exc.errno == errno.EPERM
     else:
-        p = psutil.Process(pid)
-        return p.status != psutil.STATUS_ZOMBIE
+        return psutil.Process(pid).status() != psutil.STATUS_ZOMBIE
 
 
 def pairs(lst):
@@ -663,24 +664,22 @@ class FileScanner(object):
 
 
 def tail_lines(filepath, lines_num, bufsize=8192):
-    fsize = os.stat(filepath).st_size
-    logging.warning('Filepath=%s, lines_num=%s, buf_size=%s, fsize=%s', filepath, lines_num, bufsize, fsize)
-
-    iter_ = 0
-    with open(filepath) as f:
-        if bufsize > fsize:
-            bufsize = fsize - 1
-        data = []
-        try:
-            while True:
-                iter_ += 1
-                line_start_pos = max(0, fsize - bufsize * iter_)
-                f.seek(line_start_pos)
-                data.extend(f.readlines())
-                if len(data) >= lines_num or f.tell() == 0:
-                    return data[-lines_num:]
-        except (IOError, OSError):
-            return data
+    """Последние lines_num строк файла: str с переводами строк, в порядке файла."""
+    chunks, newlines = [], 0
+    with open(filepath, 'rb') as f:
+        pos = f.seek(0, os.SEEK_END)
+        # Лишний перевод строки нужен, чтобы отбросить обрывок первой прочитанной строки
+        while pos > 0 and newlines <= lines_num:
+            step = min(bufsize, pos)
+            pos -= step
+            f.seek(pos)
+            chunks.append(f.read(step))
+            newlines += chunks[-1].count(b'\n')
+    tail = b''.join(reversed(chunks))
+    if pos > 0:
+        tail = tail[tail.index(b'\n') + 1 :]
+    # Декодируем как open() в текстовом режиме: та же кодировка и универсальные переводы строк
+    return io.TextIOWrapper(io.BytesIO(tail)).readlines()[-lines_num:]
 
 
 class FileLockedError(RuntimeError):

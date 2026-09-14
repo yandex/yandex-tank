@@ -127,6 +127,7 @@
   "yandextank/core/tests/test_monitoring.xml":"load/projects/yandex-tank/yandextank/core/tests/test_monitoring.xml",
   "yandextank/core/tests/test_multi_cfg.yaml":"load/projects/yandex-tank/yandextank/core/tests/test_multi_cfg.yaml",
   "yandextank/core/tests/test_tankcore.py":"load/projects/yandex-tank/yandextank/core/tests/test_tankcore.py",
+  "yandextank/core/tests/test_tankworker.py":"load/projects/yandex-tank/yandextank/core/tests/test_tankworker.py",
   "yandextank/plugins/Autostop/__init__.py":"load/projects/yandex-tank/yandextank/plugins/Autostop/__init__.py",
   "yandextank/plugins/Autostop/config/schema.yaml":"load/projects/yandex-tank/yandextank/plugins/Autostop/config/schema.yaml",
   "yandextank/plugins/Autostop/criterions.py":"load/projects/yandex-tank/yandextank/plugins/Autostop/criterions.py",
