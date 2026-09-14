@@ -176,6 +176,18 @@ def test_net_criterion_fires_on_real_error_code():
     assert criterion.notify(data(length=10, net={'110': 1, '0': 9}), None) is True
 
 
+@pytest.mark.parametrize(
+    'criterion, sample',
+    [
+        (HTTPCodesCriterion(FakeAutostop(), '5xx , 1, 1s'), data(length=10, proto={'500': 1, '200': 9})),
+        (NetCodesCriterion(FakeAutostop(), '110 , 1, 1s'), data(length=10, net={'110': 1, '0': 9})),
+    ],
+)
+def test_codes_mask_tolerates_space_before_comma(criterion, sample):
+    # Пробел перед запятой не должен давать маску, под которую не подходит ни один код.
+    assert criterion.notify(sample, None) is True
+
+
 def test_net_rc_is_net():
     assert NetCodesCriterion(FakeAutostop(), '110, 1, 1s').get_rc() == NetCodesCriterion.RC_NET
 

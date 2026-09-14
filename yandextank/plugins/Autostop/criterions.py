@@ -106,7 +106,7 @@ class HTTPCodesCriterion(AbstractCriterion):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
         params = param_str.split(',')
-        self.codes_mask = params[0].lower()
+        self.codes_mask = params[0].strip().lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
         self.autostop = autostop
 
@@ -210,7 +210,7 @@ class NetCodesCriterion(AbstractCriterion):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
         params = param_str.split(',')
-        self.codes_mask = params[0].lower()
+        self.codes_mask = params[0].strip().lower()
         self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
         self.autostop = autostop
 

@@ -4,6 +4,7 @@ import logging
 import math
 import re
 from collections import deque
+from fractions import Fraction
 
 import numpy as np
 from ...common.util import expand_to_milliseconds, expand_to_seconds
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 class WindowCounter(object):
     def __init__(self, window_size):
         self.window_size = window_size
-        self.value = 0.0
+        self.value = 0
         self.q = deque()
 
     def push(self, value):
@@ -27,6 +28,41 @@ class WindowCounter(object):
 
     def __len__(self):
         return len(self.q)
+
+
+def parse_codes_mask(mask_str):
+    mask = mask_str.strip().lower()
+    return mask, re.compile(mask.replace('x', '.'))
+
+
+def parse_level(level_str):
+    '''«10%» — доля от всех ответов окна, «10» — число ответов за окно'''
+    level_str = level_str.strip()
+    if level_str[-1:] == '%':
+        # Fraction, а не float: точное попадание в порог не должно теряться на округлении.
+        return Fraction(level_str[:-1]), True
+    return int(level_str), False
+
+
+def parse_window(window_str):
+    window = expand_to_seconds(window_str)
+    if window < 1:
+        # Секундный разбор схлопывает '500ms' в ноль, а с пустым окном критерий молча не работает.
+        raise ValueError("Autostop window must be at least 1s: %s" % window_str)
+    return window
+
+
+def select_tag(data, tag):
+    '''Данные секунды по тегу критерия; None — в секунде нет ответов с этим тегом, она ничего не добавляет в окно'''
+    if not tag:
+        return data["overall"]
+    return data["tagged"].get(tag) or None
+
+
+def level_reached(counted, total, level, is_relative):
+    if not is_relative:
+        return counted >= level
+    return total > 0 and counted * 100 >= level * total
 
 
 class TotalFracTimeCriterion(AbstractCriterion):
@@ -51,56 +87,44 @@ class TotalFracTimeCriterion(AbstractCriterion):
         self.autostop = autostop
         params = param_str.split(',')
         self.rt_limit = expand_to_milliseconds(params[0]) * 1000
-        self.fail_ratio_limit = float(params[1][:-1]) / 100.0
-        self.window_size = expand_to_seconds(params[2])
+        level, is_relative = parse_level(params[1])
+        if not is_relative:
+            raise ValueError("total_time ratio must be a percentage: %s" % params[1])
+        self.fail_ratio_limit = level / 100
+        self.window_size = parse_window(params[2])
         self.fail_counter = WindowCounter(self.window_size)
         self.total_counter = WindowCounter(self.window_size)
         self.total_fail_ratio = 0.0
         self.seconds = deque()
         self.tag = params[3].strip() if len(params) == 4 else None
 
-    def __fail_count(self, data):
-        ecdf = np.cumsum(data["overall"]["interval_real"]["hist"]["data"])
-        idx = np.searchsorted(data["overall"]["interval_real"]["hist"]["bins"], self.rt_limit)
-        if self.tag:
-            if data["tagged"].get(self.tag):
-                ecdf = np.cumsum(data["tagged"][self.tag]["interval_real"]["hist"]["data"])
-                idx = np.searchsorted(data["tagged"][self.tag]["interval_real"]["hist"]["bins"], self.rt_limit)
-            else:
-                idx = 0
-
-        if idx == 0:
-            return ecdf[-1]
-        elif idx == len(ecdf):
-            return 0
-        else:
-            return ecdf[-1] - ecdf[idx]
+    def __fail_count(self, part):
+        hist = part["interval_real"]["hist"]
+        # Бины агрегатора полуоткрытые [left, right): бин с правой границей на лимите целиком быстрее лимита.
+        return int(np.sum(np.asarray(hist["data"])[np.asarray(hist["bins"]) > self.rt_limit]))
 
     def notify(self, data, stat):
-        total_responses = self.parse_data(data)
+        fail_count, total_responses = self.parse_data(data)
         self.seconds.append((data, stat))
-        self.fail_counter.push(self.__fail_count(data))
+        if len(self.seconds) > self.window_size:
+            self.seconds.popleft()
+        self.fail_counter.push(fail_count)
         self.total_counter.push(total_responses)
-        self.total_fail_ratio = self.fail_counter.value / self.total_counter.value
-        if self.total_fail_ratio >= self.fail_ratio_limit and len(self.fail_counter) >= self.window_size:
+        total = self.total_counter.value
+        self.total_fail_ratio = self.fail_counter.value / total if total else 0.0
+        if len(self.fail_counter) >= self.window_size and level_reached(
+            self.fail_counter.value, total, self.fail_ratio_limit * 100, True
+        ):
             self.cause_second = self.seconds[0]
             logger.debug(self.explain())
             return True
-        if len(self.seconds) > self.window_size:
-            self.seconds.popleft()
         return False
 
     def parse_data(self, data):
-        # Parse data for specific tag if it's present
-        if self.tag:
-            if data["tagged"].get(self.tag):
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
-            else:
-                total_responses = data["overall"]["interval_real"]["len"]
-        # Parse data for overall
-        else:
-            total_responses = data["overall"]["interval_real"]["len"]
-        return total_responses
+        part = select_tag(data, self.tag)
+        if part is None:
+            return 0, 0
+        return self.__fail_count(part), part["interval_real"]["len"]
 
     def get_rc(self):
         return self.RC_TOTAL_TIME
@@ -126,439 +150,153 @@ class TotalFracTimeCriterion(AbstractCriterion):
         return "%(ratio).2f%% times >%(limit)sms for %(seconds_count)ss" % items, self.total_fail_ratio
 
 
-class TotalHTTPCodesCriterion(AbstractCriterion):
+class AbstractCodesCriterion(AbstractCriterion):
+    '''Общая часть total_http, total_net, negative_http и negative_net: сколько ответов накопилось за окно'''
+
+    explain_template = ''
+    widget_template = ''
+
+    def __init__(self, autostop, param_str):
+        AbstractCriterion.__init__(self)
+        self.seconds_count = 0
+        self.autostop = autostop
+        params = param_str.split(',')
+        self.codes_mask, self.codes_regex = parse_codes_mask(params[0])
+        self.level, self.is_relative = parse_level(params[1])
+        self.seconds_limit = parse_window(params[2])
+        self.tag = params[3].strip() if len(params) == 4 else None
+        self.counted = WindowCounter(self.seconds_limit)
+        self.total = WindowCounter(self.seconds_limit)
+        self.second_window = deque()
+
+    def count(self, part):
+        '''Сколько ответов секунды копит критерий'''
+        raise NotImplementedError("Abstract methods requires overriding")
+
+    def notify(self, data, stat):
+        part = select_tag(data, self.tag)
+        if part is None:
+            counted, total = 0, 0
+        else:
+            counted, total = self.count(part), part["interval_real"]["len"]
+        self.counted.push(counted)
+        self.total.push(total)
+        self.second_window.append((data, stat))
+        if len(self.second_window) > self.seconds_limit:
+            self.second_window.popleft()
+        logger.debug(
+            "%s %s: %s of %s responses, level %s",
+            self.get_type_string(),
+            self.codes_mask,
+            self.counted.value,
+            self.total.value,
+            self.get_level_str(),
+        )
+        if len(self.second_window) >= self.seconds_limit and level_reached(
+            self.counted.value, self.total.value, self.level, self.is_relative
+        ):
+            self.cause_second = self.second_window[0]
+            logger.debug(self.explain())
+            return True
+        return False
+
+    def get_level_str(self):
+        '''format level str'''
+        if self.is_relative:
+            return '%g%%' % self.level
+        return self.level
+
+    def explain(self):
+        items = self.get_criterion_parameters()
+        explanation = self.explain_template % items
+        if self.tag:
+            explanation = explanation + " for tag %(tag)s" % items
+        return explanation
+
+    def get_criterion_parameters(self):
+        parameters = {
+            'code': self.codes_mask,
+            'level': self.get_level_str(),
+            'seconds_limit': self.seconds_limit,
+            'tag': self.tag,
+        }
+        return parameters
+
+    def widget_explain(self):
+        explanation = self.widget_template % self.get_criterion_parameters()
+        if self.is_relative:
+            return explanation, (self.counted.value / self.total.value if self.total.value else 0.0)
+        return explanation, 1.0
+
+
+class TotalHTTPCodesCriterion(AbstractCodesCriterion):
     '''Cummulative HTTP Criterion'''
+
+    explain_template = "%(code)s codes count higher than %(level)s for %(seconds_limit)ss"
+    widget_template = "HTTP %(code)s>%(level)s for %(seconds_limit)ss"
 
     @staticmethod
     def get_type_string():
         return 'total_http'
 
-    def __init__(self, autostop, param_str):
-        AbstractCriterion.__init__(self)
-        self.seconds_count = 0
-        params = param_str.split(',')
-        self.codes_mask = params[0].lower()
-        self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
-        self.autostop = autostop
-        self.data = deque()
-        self.second_window = deque()
-
-        level_str = params[1].strip()
-        if level_str[-1:] == '%':
-            self.level = float(level_str[:-1])
-            self.is_relative = True
-        else:
-            self.level = int(level_str)
-            self.is_relative = False
-        self.seconds_limit = expand_to_seconds(params[2])
-        self.tag = params[3].strip() if len(params) == 4 else None
-
-    def notify(self, data, stat):
-        matched_responses, total_responses = self.parse_data(data)
-        if self.is_relative:
-            if total_responses > 0:
-                matched_responses = float(matched_responses) / total_responses * 100
-            else:
-                matched_responses = 1
-        logger.debug("HTTP codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.level)
-        self.data.append(matched_responses)
-        self.second_window.append((data, stat))
-        if len(self.data) > self.seconds_limit:
-            self.data.popleft()
-            self.second_window.popleft()
-        queue_len = 1
-        if self.is_relative:
-            queue_len = len(self.data)
-        if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:  # yapf:disable
-            self.cause_second = self.second_window[0]
-            logger.debug(self.explain())
-            return True
-        return False
-
-    def parse_data(self, data):
-        # Parse data for specific tag if it is present
-        if self.tag:
-            if data["tagged"].get(self.tag):
-                matched_responses = self.count_matched_codes(
-                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"]
-                )
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
-            # matched_responses=0 if current tag differs from selected one
-            else:
-                matched_responses = 0
-                total_responses = data["overall"]["interval_real"]["len"]
-        # Parse data for overall
-        else:
-            matched_responses = self.count_matched_codes(self.codes_regex, data["overall"]["proto_code"]["count"])
-            total_responses = data["overall"]["interval_real"]["len"]
-        return matched_responses, total_responses
+    def count(self, part):
+        return self.count_matched_codes(self.codes_regex, part["proto_code"]["count"])
 
     def get_rc(self):
         return self.RC_TOTAL_HTTP
 
-    def get_level_str(self):
-        '''format level str'''
-        if self.is_relative:
-            level_str = str(self.level) + "%"
-        else:
-            level_str = self.level
-        return level_str
 
-    def explain(self):
-        items = self.get_criterion_parameters()
-        explanation = "%(code)s codes count higher than %(level)s for %(seconds_limit)ss" % items
-        if self.tag:
-            explanation = explanation + " for tag %(tag)s" % items
-        return explanation
-
-    def get_criterion_parameters(self):
-        parameters = {
-            'code': self.codes_mask,
-            'level': self.get_level_str(),
-            'seconds_limit': self.seconds_limit,
-            'tag': self.tag,
-        }
-        return parameters
-
-    def widget_explain(self):
-        items = self.get_criterion_parameters()
-        explanation = "HTTP %(code)s>%(level)s for %(seconds_limit)ss" % items
-        if self.is_relative:
-            return explanation, sum(self.data)
-        return explanation, 1.0
-
-
-class TotalNetCodesCriterion(AbstractCriterion):
+class TotalNetCodesCriterion(AbstractCodesCriterion):
     '''Cummulative Net Criterion'''
+
+    explain_template = "%(code)s net codes count higher than %(level)s for %(seconds_limit)ss"
+    widget_template = "Net %(code)s>%(level)s for %(seconds_limit)ss"
 
     @staticmethod
     def get_type_string():
         return 'total_net'
 
-    def __init__(self, autostop, param_str):
-        AbstractCriterion.__init__(self)
-        self.seconds_count = 0
-        params = param_str.split(',')
-        self.codes_mask = params[0].lower()
-        self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
-        self.autostop = autostop
-        self.data = deque()
-        self.second_window = deque()
-
-        level_str = params[1].strip()
-        if level_str[-1:] == '%':
-            self.level = float(level_str[:-1])
-            self.is_relative = True
-        else:
-            self.level = int(level_str)
-            self.is_relative = False
-        self.seconds_limit = expand_to_seconds(params[2])
-        self.tag = params[3].strip() if len(params) == 4 else None
-
-    def notify(self, data, stat):
-        matched_responses, total_responses = self.parse_data(data)
-        if self.is_relative:
-            if total_responses:
-                matched_responses = float(matched_responses) / total_responses * 100
-                logger.debug(
-                    "Net codes matching mask %s: %s%%/%s",
-                    self.codes_mask,
-                    round(matched_responses, 2),
-                    self.get_level_str(),
-                )
-            else:
-                matched_responses = 1
-        else:
-            logger.debug("Net codes matching mask %s: %s/%s", self.codes_mask, matched_responses, self.get_level_str())
-
-        self.data.append(matched_responses)
-        self.second_window.append((data, stat))
-        if len(self.data) > self.seconds_limit:
-            self.data.popleft()
-            self.second_window.popleft()
-
-        queue_len = 1
-        if self.is_relative:
-            queue_len = len(self.data)
-        if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:  # yapf:disable
-            self.cause_second = self.second_window[0]
-            logger.debug(self.explain())
-            return True
-        return False
-
-    def parse_data(self, data):
-        # Count data for specific tag if it's present
-        if self.tag:
-            if data["tagged"].get(self.tag):
-                codes = data["tagged"][self.tag]["net_code"]["count"].copy()
-                if '0' in codes:
-                    codes.pop('0')
-                matched_responses = self.count_matched_codes(self.codes_regex, codes)
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
-            # matched_responses=0 if current tag differs from selected one
-            else:
-                matched_responses = 0
-                total_responses = data["overall"]["interval_real"]["len"]
-        # Count data for overall
-        else:
-            codes = data["overall"]["net_code"]["count"].copy()
-            if '0' in codes:
-                codes.pop('0')
-            matched_responses = self.count_matched_codes(self.codes_regex, codes)
-            total_responses = data["overall"]["interval_real"]["len"]
-        return matched_responses, total_responses
+    def count(self, part):
+        codes = part["net_code"]["count"].copy()
+        codes.pop('0', None)
+        return self.count_matched_codes(self.codes_regex, codes)
 
     def get_rc(self):
         return self.RC_TOTAL_NET
 
-    def get_level_str(self):
-        '''format level str'''
-        if self.is_relative:
-            level_str = str(self.level) + "%"
-        else:
-            level_str = str(self.level)
-        return level_str
 
-    def explain(self):
-        items = self.get_criterion_parameters()
-        explanation = "%(code)s net codes count higher than %(level)s for %(seconds_limit)ss" % items
-        if self.tag:
-            explanation = explanation + " for tag %(tag)s" % items
-        return explanation
-
-    def get_criterion_parameters(self):
-        parameters = {
-            'code': self.codes_mask,
-            'level': self.get_level_str(),
-            'seconds_limit': self.seconds_limit,
-            'tag': self.tag,
-        }
-        return parameters
-
-    def widget_explain(self):
-        items = self.get_criterion_parameters()
-        explanation = "Net %(code)s>%(level)s for %(seconds_limit)ss" % items
-        if self.is_relative:
-            return explanation, sum(self.data)
-        return explanation, 1.0
-
-
-class TotalNegativeHTTPCodesCriterion(AbstractCriterion):
+class TotalNegativeHTTPCodesCriterion(AbstractCodesCriterion):
     '''Reversed HTTP Criterion'''
+
+    explain_template = "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss"
+    widget_template = "HTTP not %(code)s>%(level)s for %(seconds_limit)ss"
 
     @staticmethod
     def get_type_string():
         return 'negative_http'
 
-    def __init__(self, autostop, param_str):
-        AbstractCriterion.__init__(self)
-        self.seconds_count = 0
-        params = param_str.split(',')
-        self.codes_mask = params[0].lower()
-        self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
-        self.autostop = autostop
-        self.data = deque()
-        self.second_window = deque()
-
-        level_str = params[1].strip()
-        if level_str[-1:] == '%':
-            self.level = float(level_str[:-1])
-            self.is_relative = True
-        else:
-            self.level = int(level_str)
-            self.is_relative = False
-        self.seconds_limit = expand_to_seconds(params[2])
-        self.tag = params[3].strip() if len(params) == 4 else None
-
-    def notify(self, data, stat):
-        matched_responses, total_responses = self.parse_data(data)
-        if self.is_relative:
-            if total_responses:
-                matched_responses = float(matched_responses) / total_responses * 100
-                matched_responses = 100 - matched_responses
-            else:
-                matched_responses = 1
-            logger.debug(
-                "HTTP codes matching mask not %s: %s/%s", self.codes_mask, round(matched_responses, 1), self.level
-            )
-        else:
-            matched_responses = total_responses - matched_responses
-            logger.debug("HTTP codes matching mask not %s: %s/%s", self.codes_mask, matched_responses, self.level)
-        self.data.append(matched_responses)
-        self.second_window.append((data, stat))
-        if len(self.data) > self.seconds_limit:
-            self.data.popleft()
-            self.second_window.popleft()
-
-        queue_len = 1
-        if self.is_relative:
-            queue_len = len(self.data)
-        if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:  # yapf:disable
-            self.cause_second = self.second_window[0]
-            logger.debug(self.explain())
-            return True
-        return False
-
-    def parse_data(self, data):
-        # Parse data for specific tag if it is present
-        if self.tag:
-            if data["tagged"].get(self.tag):
-                matched_responses = self.count_matched_codes(
-                    self.codes_regex, data["tagged"][self.tag]["proto_code"]["count"]
-                )
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
-            # matched_responses=0 if current tag differs from selected one
-            else:
-                matched_responses = 0
-                total_responses = data["overall"]["interval_real"]["len"]
-        # Parse data for overall
-        else:
-            matched_responses = self.count_matched_codes(self.codes_regex, data["overall"]["proto_code"]["count"])
-            total_responses = data["overall"]["interval_real"]["len"]
-        return matched_responses, total_responses
+    def count(self, part):
+        return part["interval_real"]["len"] - self.count_matched_codes(self.codes_regex, part["proto_code"]["count"])
 
     def get_rc(self):
         return self.RC_TOTAL_NEGATIVE_HTTP
 
-    def get_level_str(self):
-        '''format level str'''
-        if self.is_relative:
-            level_str = str(self.level) + "%"
-        else:
-            level_str = self.level
-        return level_str
 
-    def explain(self):
-        items = self.get_criterion_parameters()
-        explanation = "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss" % items
-        if self.tag:
-            explanation = explanation + " for tag %(tag)s" % items
-        return explanation
-
-    def get_criterion_parameters(self):
-        parameters = {
-            'code': self.codes_mask,
-            'level': self.get_level_str(),
-            'seconds_limit': self.seconds_limit,
-            'tag': self.tag,
-        }
-        return parameters
-
-    def widget_explain(self):
-        items = self.get_criterion_parameters()
-        explanation = "HTTP not %(code)s>%(level)s for %(seconds_limit)ss" % items
-        if self.is_relative:
-            return explanation, sum(self.data)
-        return explanation, 1.0
-
-
-class TotalNegativeNetCodesCriterion(AbstractCriterion):
+class TotalNegativeNetCodesCriterion(AbstractCodesCriterion):
     '''Reversed NET Criterion'''
+
+    explain_template = "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss"
+    widget_template = "Net not %(code)s>%(level)s for %(seconds_limit)ss"
 
     @staticmethod
     def get_type_string():
         return 'negative_net'
 
-    def __init__(self, autostop, param_str):
-        AbstractCriterion.__init__(self)
-        self.seconds_count = 0
-        params = param_str.split(',')
-        self.codes_mask = params[0].lower()
-        self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
-        self.autostop = autostop
-        self.data = deque()
-        self.second_window = deque()
-
-        level_str = params[1].strip()
-        if level_str[-1:] == '%':
-            self.level = float(level_str[:-1])
-            self.is_relative = True
-        else:
-            self.level = int(level_str)
-            self.is_relative = False
-        self.seconds_limit = expand_to_seconds(params[2])
-        self.tag = params[3].strip() if len(params) == 4 else None
-
-    def notify(self, data, stat):
-        matched_responses, total_responses = self.parse_data(data)
-        if self.is_relative:
-            if total_responses:
-                matched_responses = float(matched_responses) / total_responses * 100
-                matched_responses = 100 - matched_responses
-            else:
-                matched_responses = 1
-            logger.debug(
-                "Net codes matching mask not %s: %s/%s", self.codes_mask, round(matched_responses, 1), self.level
-            )
-        else:
-            matched_responses = total_responses - matched_responses
-            logger.debug("Net codes matching mask not %s: %s/%s", self.codes_mask, matched_responses, self.level)
-        self.data.append(matched_responses)
-        self.second_window.append((data, stat))
-        if len(self.data) > self.seconds_limit:
-            self.data.popleft()
-            self.second_window.popleft()
-
-        queue_len = 1
-        if self.is_relative:
-            queue_len = len(self.data)
-        if (sum(self.data) / queue_len) >= self.level and len(self.data) >= self.seconds_limit:  # yapf:disable
-            self.cause_second = self.second_window[0]
-            logger.debug(self.explain())
-            return True
-        return False
-
-    def parse_data(self, data):
-        # Count data for specific tag if it's present
-        if self.tag:
-            if data["tagged"].get(self.tag):
-                matched_responses = self.count_matched_codes(
-                    self.codes_regex, data["tagged"][self.tag]["net_code"]["count"]
-                )
-                total_responses = data["tagged"][self.tag]["interval_real"]["len"]
-            # matched_responses=0 if current tag differs from selected one
-            else:
-                matched_responses = 0
-                total_responses = data["overall"]["interval_real"]["len"]
-        # Count data for overall
-        else:
-            matched_responses = self.count_matched_codes(self.codes_regex, data["overall"]["net_code"]["count"])
-            total_responses = data["overall"]["interval_real"]["len"]
-        return matched_responses, total_responses
+    def count(self, part):
+        return part["interval_real"]["len"] - self.count_matched_codes(self.codes_regex, part["net_code"]["count"])
 
     def get_rc(self):
         return self.RC_TOTAL_NEGATIVE_NET
-
-    def get_level_str(self):
-        '''format level str'''
-        if self.is_relative:
-            level_str = str(self.level) + "%"
-        else:
-            level_str = self.level
-        return level_str
-
-    def explain(self):
-        items = self.get_criterion_parameters()
-        explanation = "Not %(code)s codes count higher than %(level)s for %(seconds_limit)ss" % items
-        if self.tag:
-            explanation = explanation + " for tag %(tag)s" % items
-        return explanation
-
-    def get_criterion_parameters(self):
-        parameters = {
-            'code': self.codes_mask,
-            'level': self.get_level_str(),
-            'seconds_limit': self.seconds_limit,
-            'tag': self.tag,
-        }
-        return parameters
-
-    def widget_explain(self):
-        items = self.get_criterion_parameters()
-        explanation = "Net not %(code)s>%(level)s for %(seconds_limit)ss" % items
-        if self.is_relative:
-            return explanation, sum(self.data)
-        return explanation, 1.0
 
 
 class TotalHTTPTrendCriterion(AbstractCriterion):
@@ -572,8 +310,7 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
         AbstractCriterion.__init__(self)
         self.seconds_count = 0
         params = param_str.split(',')
-        self.codes_mask = params[0].lower()
-        self.codes_regex = re.compile(self.codes_mask.replace("x", '.'))
+        self.codes_mask, self.codes_regex = parse_codes_mask(params[0])
         self.autostop = autostop
         self.tangents = deque()
         self.second_window = deque()
@@ -581,7 +318,7 @@ class TotalHTTPTrendCriterion(AbstractCriterion):
 
         self.tangents.append(0)
         self.last = 0
-        self.seconds_limit = expand_to_seconds(params[1])
+        self.seconds_limit = parse_window(params[1])
         self.measurement_error = float()
         self.tag = params[2].strip() if len(params) == 3 else None
 
