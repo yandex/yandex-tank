@@ -191,7 +191,10 @@ class BFGGreen(BFGBase):
         from gevent.queue import Queue as GreenQueue
 
         # NOTE: Patching everything will conflict with multiprocessing
-        monkey.patch_all(thread=False, select=False)
+        # NOTE: requests (and thus ssl) is already imported when the gun is
+        # unpickled in this subprocess, so patching ssl here would trigger a
+        # MonkeyPatchWarning and break requests. Skip it.
+        monkey.patch_all(thread=False, select=False, ssl=False)
 
         logger.debug("Init shooter process")
         try:
