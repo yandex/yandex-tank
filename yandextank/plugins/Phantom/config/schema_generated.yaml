@@ -393,8 +393,9 @@ multi:
           http: HTTP gun
           none: TCP gun
       threads:
-        description: Phantom thread count. When not specified, defaults to <processor
-          cores count> / 2 + 1
+        description: Phantom thread count. When not specified, defaults to the container
+          CPU limit (cgroup quota) or, when there is no limit, to <processor cores
+          count> / 2 + 1
         nullable: true
         type: integer
       timeout:
@@ -484,8 +485,9 @@ tank_type:
     none: TCP gun
 threads:
   default: null
-  description: Phantom thread count. When not specified, defaults to <processor cores
-    count> / 2 + 1
+  description: Phantom thread count. When not specified, defaults to the container
+    CPU limit (cgroup quota) or, when there is no limit, to <processor cores count>
+    / 2 + 1
   nullable: true
   type: integer
 timeout:

@@ -166,7 +166,10 @@ OPTIONS = {
     },
     'ssl': {'description': 'Enable ssl', 'type': 'boolean', 'default': False},
     "threads": {
-        'description': 'Phantom thread count. When not specified, defaults to <processor cores count> / 2 + 1',
+        'description': (
+            'Phantom thread count. When not specified, defaults to the container CPU limit (cgroup quota)'
+            ' or, when there is no limit, to <processor cores count> / 2 + 1'
+        ),
         "type": "integer",
         "default": None,
         "nullable": True,

@@ -3,7 +3,9 @@
 # TODO: use separate answ log per benchmark
 import copy
 import logging
+import math
 import multiprocessing
+import os
 import string
 
 from pkg_resources import resource_string
@@ -13,6 +15,38 @@ from ...stepper import StepperWrapper
 from ...stepper.util import parse_duration
 
 logger = logging.getLogger(__name__)
+
+CGROUP_ROOT = '/sys/fs/cgroup'
+
+
+def _cgroup_cpu_limit(cgroup_root):
+    """CPU limit of the container in cores, None if there is no limit."""
+    try:
+        with open(os.path.join(cgroup_root, 'cpu.max')) as f:  # cgroup v2
+            quota, period = f.read().split()
+        if quota != 'max':
+            return int(quota) / int(period)
+    except (OSError, ValueError):
+        pass
+    try:
+        with open(os.path.join(cgroup_root, 'cpu', 'cpu.cfs_quota_us')) as f:  # cgroup v1
+            quota = int(f.read())
+        with open(os.path.join(cgroup_root, 'cpu', 'cpu.cfs_period_us')) as f:
+            period = int(f.read())
+        if quota > 0 and period > 0:
+            return quota / period
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def default_threads(cgroup_root=CGROUP_ROOT):
+    """Threads must fit the cgroup quota, not the host: on a 256-core host with a
+    6.6-core quota the host-based default spends the quota on context switches (LOAD-3771)."""
+    cpus = _cgroup_cpu_limit(cgroup_root)
+    if cpus is None:
+        cpus = multiprocessing.cpu_count() / 2 + 1  # no quota (bare metal) - old default
+    return max(1, min(int(math.ceil(cpus)), 128))
 
 
 class PhantomConfig:
@@ -60,7 +94,7 @@ class PhantomConfig:
 
     def read_config(self):
         """Read phantom tool specific options"""
-        self.threads = self.cfg["threads"] or str(min(int(multiprocessing.cpu_count() / 2) + 1, 128))
+        self.threads = self.cfg["threads"] or str(default_threads())
         self.phantom_modules_path = self.cfg["phantom_modules_path"]
         self.additional_libs = ' '.join(self.cfg["additional_libs"])
         self.answ_log_level = self.cfg["writelog"]

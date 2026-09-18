@@ -213,6 +213,7 @@
   "yandextank/plugins/Phantom/tests/test_log_analyzer.py":"load/projects/yandex-tank/yandextank/plugins/Phantom/tests/test_log_analyzer.py",
   "yandextank/plugins/Phantom/tests/test_reader.py":"load/projects/yandex-tank/yandextank/plugins/Phantom/tests/test_reader.py",
   "yandextank/plugins/Phantom/tests/test_schema_generated.py":"load/projects/yandex-tank/yandextank/plugins/Phantom/tests/test_schema_generated.py",
+  "yandextank/plugins/Phantom/tests/test_utils.py":"load/projects/yandex-tank/yandextank/plugins/Phantom/tests/test_utils.py",
   "yandextank/plugins/Phantom/utils.py":"load/projects/yandex-tank/yandextank/plugins/Phantom/utils.py",
   "yandextank/plugins/Phantom/widget.py":"load/projects/yandex-tank/yandextank/plugins/Phantom/widget.py",
   "yandextank/plugins/Platform/__init__.py":"load/projects/yandex-tank/yandextank/plugins/Platform/__init__.py",
