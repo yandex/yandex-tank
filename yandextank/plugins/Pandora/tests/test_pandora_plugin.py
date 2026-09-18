@@ -1,8 +1,13 @@
 from contextlib import nullcontext
+import fcntl
 from http.server import SimpleHTTPRequestHandler, HTTPServer
+import os
+import time
 
 import pytest
-from mock import MagicMock
+import requests
+import yatest.common
+from mock import MagicMock, patch
 from threading import Thread
 
 from library.python.port_manager import PortManager
@@ -373,3 +378,219 @@ def test_log_line_contains_error(line):
 )
 def test_log_line_contains_no_error(line):
     assert not Plugin.check_log_line_contains_error(line)
+
+
+@pytest.mark.parametrize(
+    'output, expected',
+    [
+        ('{"managed_expvar_fd":1}\n', True),
+        ('{"managed_expvar_fd":2}\n', False),
+        ('{"managed_expvar_fd":true}\n', False),
+        ('not json', False),
+    ],
+)
+def test_capability_probe_requires_version_one(output, expected):
+    plugin = Plugin(MagicMock(), {}, 'pandora')
+    plugin.pandora_cmd = '/path/to/pandora'
+    probe = MagicMock(returncode=0, stdout=output)
+    with patch('yandextank.plugins.Pandora.plugin.subprocess.run', return_value=probe) as run:
+        assert plugin._supports_managed_expvar() is expected
+    run.assert_called_once_with(['/path/to/pandora', '-capabilities'], capture_output=True, text=True, timeout=2)
+
+
+def test_capability_probe_failure_falls_back_to_legacy():
+    plugin = Plugin(MagicMock(), {}, 'pandora')
+    plugin.pandora_cmd = '/path/to/old-pandora'
+    with patch('yandextank.plugins.Pandora.plugin.subprocess.run', side_effect=OSError('cannot probe')):
+        assert plugin._supports_managed_expvar() is False
+
+
+@pytest.mark.parametrize(
+    'monitoring, expected',
+    [
+        (None, True),
+        ({'cpuprofile': {'enabled': True}}, True),
+        ({'expvar': {'enabled': True, 'port': 4321}}, False),
+        ({'expvar': {'enabled': False}}, False),
+        ({'expvar': False}, False),
+    ],
+)
+def test_explicit_expvar_configuration_keeps_legacy_mode(monitoring, expected):
+    plugin = Plugin(MagicMock(), {}, 'pandora')
+    config = {'pools': [{'ammo': {}, 'gun': {}, 'result': {'type': 'phout', 'destination': 'phout.log'}}]}
+    if monitoring is not None:
+        config['monitoring'] = monitoring
+    with patch.object(plugin, '_supports_managed_expvar', return_value=True):
+        plugin._configure_expvar_mode(config)
+    assert plugin.managed_expvar is expected
+
+
+@pytest.mark.parametrize(
+    'announcement',
+    [
+        b'{"version":1,"expvar":"0.0.0.0:4321"}\n',
+        b'{"version":2,"expvar":"127.0.0.1:4321"}\n',
+        b'{"version":1,"expvar":"127.0.0.1:0"}\n',
+        b'{"version":1,"expvar":"127.0.0.1:4321"}',
+    ],
+)
+def test_invalid_managed_announcement_uses_zero_fallback(announcement, tmp_path):
+    plugin = Plugin(MagicMock(), {}, 'pandora')
+    plugin.pandora_cmd = 'pandora'
+    plugin.pandora_config_file = 'config.yaml'
+    plugin.managed_expvar = True
+    plugin.expvar_enabled = True
+    plugin.affinity = ''
+    plugin.process_stderr_file = str(tmp_path / 'pandora.log')
+    plugin.core.mkstemp.return_value = plugin.process_stderr_file
+    plugin.get_stats_reader()
+    process = MagicMock()
+
+    def announce(args, **kwargs):
+        import os
+
+        os.write(kwargs['pass_fds'][0], announcement)
+        return process
+
+    with patch('yandextank.plugins.Pandora.plugin.subprocess.Popen', side_effect=announce):
+        plugin.start_test()
+
+    process.terminate.assert_not_called()
+    assert plugin.stats_reader.expvar is False
+    assert plugin.stats_reader.port is None
+    plugin.process_stderr.close()
+    plugin.stats_reader.close()
+
+
+def test_managed_start_updates_reader_created_before_pandora(tmp_path):
+    plugin = Plugin(MagicMock(), {}, 'pandora')
+    plugin.pandora_cmd = 'pandora'
+    plugin.pandora_config_file = 'config.yaml'
+    plugin.managed_expvar = True
+    plugin.expvar_enabled = True
+    plugin.affinity = ''
+    plugin.process_stderr_file = str(tmp_path / 'pandora.log')
+    plugin.core.mkstemp.return_value = plugin.process_stderr_file
+    reader = plugin.get_stats_reader()
+    assert reader.port is None
+
+    def announce(args, **kwargs):
+        import os
+
+        assert args[0] == 'pandora'
+        assert args[-1] == 'config.yaml'
+        assert args[-2] == f'-managed-expvar-fd={kwargs["pass_fds"][0]}'
+        os.write(kwargs['pass_fds'][0], b'{"version":1,"expvar":"127.0.0.1:4321"}\n')
+        return MagicMock()
+
+    with patch('yandextank.plugins.Pandora.plugin.subprocess.Popen', side_effect=announce):
+        plugin.start_test()
+
+    assert plugin.get_stats_reader() is reader
+    assert reader.port == 4321
+    assert reader.poller.port == 4321
+    plugin.process_stderr.close()
+
+
+def test_legacy_start_keeps_existing_cli_and_port(tmp_path):
+    plugin = Plugin(MagicMock(), {'expvar': True}, 'pandora')
+    plugin.pandora_cmd = 'old-pandora'
+    plugin.pandora_config_file = 'config.yaml'
+    plugin.affinity = ''
+    plugin.process_stderr_file = str(tmp_path / 'pandora.log')
+    plugin.core.mkstemp.return_value = plugin.process_stderr_file
+    reader = plugin.get_stats_reader()
+    with patch('yandextank.plugins.Pandora.plugin.subprocess.Popen', return_value=MagicMock()) as popen:
+        plugin.start_test()
+    assert reader.port == 1234
+    popen.assert_called_once_with(
+        ['old-pandora', '-expvar', 'config.yaml'],
+        stderr=plugin.process_stderr,
+        stdout=plugin.process_stderr,
+        close_fds=True,
+    )
+    plugin.process_stderr.close()
+
+
+def test_managed_announcement_timeout_keeps_pipe_until_test_ends(tmp_path):
+    plugin = Plugin(MagicMock(), {}, 'pandora')
+    plugin.pandora_cmd = 'pandora'
+    plugin.pandora_config_file = 'config.yaml'
+    plugin.managed_expvar = True
+    plugin.expvar_enabled = True
+    plugin.affinity = ''
+    plugin.core.mkstemp.return_value = str(tmp_path / 'pandora.log')
+    process = MagicMock()
+    process.poll.return_value = 0
+    with patch('yandextank.plugins.Pandora.plugin.subprocess.Popen', return_value=process):
+        with patch.object(plugin, '_read_managed_port', side_effect=TimeoutError):
+            plugin.start_test()
+
+    assert plugin.stats_reader.expvar is False
+    assert plugin.stats_reader.port is None
+    fd = plugin._managed_control_fd
+    os.fstat(fd)
+    plugin.end_test(0)
+    with pytest.raises(OSError):
+        os.fstat(fd)
+    plugin.process_stderr.close()
+
+
+def test_managed_announcement_accepts_high_file_descriptor():
+    read_fd, write_fd = os.pipe()
+    high_fd = fcntl.fcntl(read_fd, fcntl.F_DUPFD, 1100)
+    os.close(read_fd)
+    try:
+        os.write(write_fd, b'{"version":1,"expvar":"127.0.0.1:4321"}\n')
+        assert Plugin._read_managed_port(high_fd) == 4321
+    finally:
+        os.close(high_fd)
+        os.close(write_fd)
+
+
+def test_real_pandora_managed_expvar_reports_sent_rps(pandora_server, tmp_path):
+    pandora_binary = yatest.common.binary_path('load/projects/pandora/pandora')
+    phout = tmp_path / 'phout.log'
+    config = {
+        'pools': [
+            {
+                'id': 'local-http',
+                'gun': {'type': 'http', 'target': f'127.0.0.1:{pandora_server}', 'answlog': {'enabled': False}},
+                'ammo': {'type': 'uri', 'uris': ['/']},
+                'result': {'type': 'phout', 'destination': str(phout)},
+                'rps-per-instance': False,
+                'rps': [{'type': 'const', 'ops': 10, 'duration': '6s'}],
+                'startup': [{'type': 'once', 'times': 2}],
+            }
+        ],
+        'log': {'level': 'info'},
+    }
+    core = MagicMock()
+    core.mkstemp.side_effect = lambda ext, prefix: str(tmp_path / (prefix + ext))
+    plugin = Plugin(core, {'pandora_cmd': pandora_binary, 'config_content': config}, 'pandora')
+    plugin.resources = []
+    plugin.affinity = ''
+    with patch.object(plugin, 'get_resource', return_value=pandora_binary):
+        plugin.prepare_resources()
+
+    assert plugin.managed_expvar is True
+    reader = plugin.get_stats_reader()
+    assert reader.port is None
+    next(reader)  # Aggregator starts this reader before Pandora is launched.
+    try:
+        plugin.start_test()
+        assert reader.port is not None
+        response = requests.get(f'http://127.0.0.1:{reader.port}/debug/vars', timeout=1)
+        response.raise_for_status()
+        assert 'engine_ReqPS' in response.json()
+        assert plugin.process.wait(timeout=15) == 0
+        time.sleep(0.3)
+        assert phout.stat().st_size > 0
+        assert any(item['metrics']['reqps'] > 0 for item in reader.poller.get_data())
+    finally:
+        if plugin.process and plugin.process.poll() is None:
+            plugin.process.terminate()
+            plugin.process.wait(timeout=5)
+        reader.close()
+        if plugin.process_stderr:
+            plugin.process_stderr.close()

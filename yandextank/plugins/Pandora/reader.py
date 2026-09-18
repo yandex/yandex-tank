@@ -14,6 +14,13 @@ class PandoraStatsPoller(Thread):
         self._expvar_unavailable = False
         self.buffer = []
         self.port = port
+        self._port_ready = Event()
+        if port is not None:
+            self._port_ready.set()
+
+    def set_port(self, port):
+        self.port = port
+        self._port_ready.set()
 
     def _poll(self, timestamp):
         try:
@@ -52,6 +59,8 @@ class PandoraStatsPoller(Thread):
         last_ts = int(time.time() - 1)
 
         while not self._stop_run.is_set():
+            if not self._port_ready.wait(0.2):
+                continue
             curr_ts = int(time.time())
             if curr_ts > last_ts:
                 last_ts = curr_ts
@@ -75,6 +84,13 @@ class PandoraStatsReader(object):
         self.port = port
         self.poller = PandoraStatsPoller(port)
         self.started = False
+
+    def set_port(self, port):
+        self.port = port
+        self.poller.set_port(port)
+
+    def disable_expvar(self):
+        self.expvar = False
 
     def __next__(self):
         if not self.expvar:

@@ -1,9 +1,11 @@
 import datetime
+import json
 import logging
 import subprocess
 import time
 import os
 import re
+import selectors
 import shutil
 
 from threading import Event
@@ -45,6 +47,8 @@ class Plugin(GeneratorPlugin):
         self.expvar = self.get_option('expvar')
         self.expvar_enabled = bool(self.expvar)
         self.expvar_port = self.DEFAULT_EXPVAR_PORT
+        self.managed_expvar = False
+        self._managed_control_fd = None
         self.report_files = None
         self.__address = None
         self.__schedule = None
@@ -117,6 +121,7 @@ class Plugin(GeneratorPlugin):
     def __patch_raw_config_and_dump(self, cfg_dict):
         if not cfg_dict:
             raise RuntimeError('Empty pandora config')
+        self._configure_expvar_mode(cfg_dict)
         # patch
         config_content = self.patch_config(cfg_dict)
         # dump
@@ -125,6 +130,38 @@ class Plugin(GeneratorPlugin):
         with open(self.pandora_config_file, 'w') as config_file:
             yaml.dump(config_content, config_file)
         return config_content
+
+    def _supports_managed_expvar(self):
+        try:
+            result = subprocess.run([self.pandora_cmd, '-capabilities'], capture_output=True, text=True, timeout=2)
+            capability = json.loads(result.stdout).get('managed_expvar_fd') if result.returncode == 0 else None
+            return type(capability) is int and capability == 1
+        except (OSError, subprocess.TimeoutExpired, ValueError, TypeError, AttributeError):
+            return False
+
+    def _configure_expvar_mode(self, config):
+        monitoring = config.get('monitoring')
+        explicit = isinstance(monitoring, dict) and 'expvar' in monitoring
+        self.managed_expvar = not explicit and self._supports_managed_expvar()
+
+    @staticmethod
+    def _read_managed_port(fd):
+        with selectors.DefaultSelector() as selector:
+            selector.register(fd, selectors.EVENT_READ)
+            if not selector.select(5):
+                raise TimeoutError('Pandora did not report managed expvar endpoint')
+        announcement = os.read(fd, 256)
+        try:
+            if not announcement.endswith(b'\n'):
+                raise ValueError('Incomplete managed expvar announcement')
+            message = json.loads(announcement)
+            endpoint = message['expvar']
+            match = re.fullmatch(r'127\.0\.0\.1:(\d{1,5})', endpoint)
+            if message['version'] != 1 or not match or not 1 <= int(match.group(1)) <= 65535:
+                raise ValueError('Invalid managed expvar endpoint')
+            return int(match.group(1))
+        except (ValueError, KeyError, TypeError) as exc:
+            raise RuntimeError('Invalid Pandora managed expvar announcement') from exc
 
     def patch_config(self, config):
         """
@@ -262,7 +299,9 @@ class Plugin(GeneratorPlugin):
 
     def get_stats_reader(self):
         if self.stats_reader is None:
-            self.stats_reader = PandoraStatsReader(self.expvar_enabled, self.expvar_port)
+            self.stats_reader = PandoraStatsReader(
+                self.expvar_enabled, None if self.managed_expvar else self.expvar_port
+            )
         return self.stats_reader
 
     def get_resource(self, resource, dst, permissions=0o644):
@@ -329,18 +368,46 @@ class Plugin(GeneratorPlugin):
         args = [self.pandora_cmd] + (['-expvar'] if self.expvar else []) + [self.pandora_config_file]
         if self.affinity:
             self.core.__setup_affinity(self.affinity, args=args)
-        logger.info('Starting: %s', args)
         self.start_time = time.time()
         self.process_stderr_file = self.core.mkstemp('.log', 'pandora_')
         self.core.add_artifact_file(self.process_stderr_file)
         self.process_stderr = open(self.process_stderr_file, 'w')
+        control = os.pipe() if self.managed_expvar else None
+        if control:
+            args.insert(-1, f'-managed-expvar-fd={control[1]}')
+        logger.info('Starting: %s', args)
+        popen_options = {'stderr': self.process_stderr, 'stdout': self.process_stderr, 'close_fds': True}
+        if control:
+            popen_options['pass_fds'] = (control[1],)
         try:
-            self.process = subprocess.Popen(
-                args, stderr=self.process_stderr, stdout=self.process_stderr, close_fds=True
-            )
+            self.process = subprocess.Popen(args, **popen_options)
         except OSError:
+            if control:
+                os.close(control[0])
             logger.debug('Unable to start Pandora binary. Args: %s', args, exc_info=True)
             raise RuntimeError('Unable to start Pandora binary and/or file does not exist: %s' % args)
+        finally:
+            if control:
+                os.close(control[1])
+        if control:
+            try:
+                port = self._read_managed_port(control[0])
+            except (OSError, RuntimeError, TimeoutError, ValueError) as exc:
+                logger.warning(
+                    'Pandora did not provide a usable managed expvar endpoint; expvar metrics are disabled for this test',
+                    exc_info=True,
+                )
+                port = None
+                if isinstance(exc, TimeoutError):
+                    # A late child announcement must still have a reader for its write.
+                    self._managed_control_fd = control[0]
+            finally:
+                if self._managed_control_fd != control[0]:
+                    os.close(control[0])
+            if port is None:
+                self.get_stats_reader().disable_expvar()
+            else:
+                self.get_stats_reader().set_port(port)
 
     def is_test_finished(self):
         retcode = self.process.poll()
@@ -376,6 +443,9 @@ class Plugin(GeneratorPlugin):
         else:
             logger.info('Seems Pandora subprocess finished')
         self.output_finished.set()
+        if self._managed_control_fd is not None:
+            os.close(self._managed_control_fd)
+            self._managed_control_fd = None
         self.finish_sample_reading()
         return retcode
 

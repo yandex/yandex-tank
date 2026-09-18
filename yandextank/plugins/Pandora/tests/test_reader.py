@@ -4,7 +4,7 @@ import pytest
 import requests
 from mock import MagicMock, patch
 
-from yandextank.plugins.Pandora.reader import PandoraStatsPoller
+from yandextank.plugins.Pandora.reader import PandoraStatsPoller, PandoraStatsReader
 
 
 def make_response(payload):
@@ -105,3 +105,28 @@ def test_poll_warns_once_until_expvar_recovers(caplog):
     assert len(recovery_messages) == 1
     assert 'available again' in recovery_messages[0].message
     assert result == {'ts': 102, 'metrics': {'instances': 3, 'reqps': 12}}
+
+
+def test_managed_reader_does_not_poll_default_port_before_endpoint():
+    reader = PandoraStatsReader(True, None)
+    try:
+        with patch('yandextank.plugins.Pandora.reader.requests.get') as request:
+            next(reader)
+            assert not reader.poller._port_ready.wait(0.05)
+            request.assert_not_called()
+            reader.set_port(4321)
+            assert reader.poller._port_ready.wait(0.1)
+    finally:
+        reader.close()
+
+
+def test_managed_reader_can_use_zero_fallback_without_polling_foreign_port():
+    reader = PandoraStatsReader(True, None)
+    try:
+        with patch('yandextank.plugins.Pandora.reader.requests.get') as request:
+            next(reader)
+            reader.disable_expvar()
+            assert next(reader)[0]['metrics'] == {'instances': 0, 'reqps': 0}
+            request.assert_not_called()
+    finally:
+        reader.close()
