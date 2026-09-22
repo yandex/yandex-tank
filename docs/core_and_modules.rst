@@ -782,6 +782,31 @@ Disable phantom first (unless you really want to keep it active alongside at you
 You may specify pandora config contents in tank's config file via ```config_content``` option.
 This option has more priority over config_file option.
 
+Sent RPS monitoring
+-------------------
+
+Yandex.Tank reads the sent RPS metric from Pandora's ``expvar`` endpoint. With a
+bundled Pandora that advertises managed expvar support, no monitoring settings
+are required in the user config: Tank asks Pandora to bind a loopback endpoint
+on an OS-selected port and discovers that port automatically. The regular
+``pandora load.yaml`` and ``yandex-tank -c load.yaml`` commands do not require a
+port, readiness file, or any other coordination setting.
+
+Compatibility rules:
+
+* An explicit ``monitoring.expvar`` section in ``config_content`` or
+  ``config_file`` remains authoritative, including ``enabled: false`` and a
+  custom ``port``.
+* If the Pandora binary does not advertise managed expvar support, Tank keeps
+  the legacy path. Missing ``monitoring.expvar`` is normalized to an enabled
+  endpoint on port ``1234``; the deprecated top-level ``pandora.expvar`` option
+  is still accepted for older configurations and binaries.
+* ``config_content`` continues to take precedence over ``config_file``.
+* An unavailable or invalid expvar endpoint does not stop the load test. Tank
+  reports the problem in its log and keeps the numeric zero fallback for
+  compatibility; treat such a zero as unavailable monitoring rather than a
+  measured zero sent RPS.
+
 Create ```ammo.uri``` file, put your ammo inside and start the test.
 
 .. code-block:: yaml
