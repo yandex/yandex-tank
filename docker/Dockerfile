@@ -55,9 +55,9 @@ ENV BUILD_DEPS="python3.12-dev build-essential gfortran libssl-dev libffi-dev"
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -yq --no-install-recommends ${BUILD_DEPS} && \
-    pip3 install --upgrade setuptools && \
-    pip3 install --upgrade pip && \
-    pip3 install https://api.github.com/repos/yandex/yandex-tank/tarball/${BRANCH} && \
+    python3.12 -m pip install --upgrade setuptools && \
+    python3.12 -m pip install --upgrade pip && \
+    python3.12 -m pip install https://api.github.com/repos/yandex/yandex-tank/tarball/${BRANCH} && \
     apt-get autoremove -y ${BUILD_DEPS} && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/* /var/tmp/* /root/.cache/*

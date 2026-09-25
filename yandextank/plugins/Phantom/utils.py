@@ -115,7 +115,11 @@ class PhantomConfig:
     @property
     def config_file(self):
         if self._config_file is None:
-            self._config_file = self.compose_config()
+            ready_config = self.cfg.get('config')
+            if ready_config:
+                self._config_file = ready_config
+            else:
+                self._config_file = self.compose_config()
         return self._config_file
 
     def compose_config(self):
