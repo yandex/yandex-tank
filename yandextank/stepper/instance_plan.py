@@ -53,6 +53,10 @@ class LoadPlanBuilder(object):
         return self
 
     def stairway(self, initial_instances, final_instances, step_size, step_duration):
+        if step_size <= 0:
+            raise StepperConfigurationError(
+                "step_size in stairway must be a positive integer, got %s." % step_size
+            )
         step_count = (final_instances - initial_instances) // step_size
         self.log.debug("Making a stairway: %s steps" % step_count)
         self.start(initial_instances - self.instances)
