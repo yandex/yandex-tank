@@ -11,6 +11,7 @@ from yandextank.stepper import Stepper
 from yandextank.stepper.instance_plan import LoadPlanBuilder, create
 
 from yandextank.stepper.util import take
+from yandextank.stepper.module_exceptions import StepperConfigurationError
 
 
 class TestCreate(object):
@@ -99,3 +100,9 @@ def test_plan(stepper_kwargs, expected_stpd):
     expected_lines = read_resource(os.path.join(get_test_path(), expected_stpd), 'rb').split(b'\n')
     for i, (result, expected) in enumerate(zip(stepper_output, expected_lines)):
         assert result.strip() == expected.strip(), 'Line {} mismatch'.format(i)
+
+
+@pytest.mark.parametrize('step_size', [0, -1])
+def test_stairway_rejects_non_positive_step_size(step_size):
+    with pytest.raises(StepperConfigurationError, match='step_size'):
+        LoadPlanBuilder().stairway(2, 10, step_size, 3000)
