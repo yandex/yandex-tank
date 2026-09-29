@@ -1,0 +1,16 @@
+core:
+  affinity: ''
+  aggregator_max_termination_timeout: 60
+  aggregator_max_wait: 31
+  ammo_validation: inform
+  api_jobno: 2026-09-09_14-06-23.928508
+  artifacts_base_dir: ./logs
+  cmdline: /Users/margo/oss-contrib/yandex-tank/.venv/lib/python3.12/site-packages/pytest/__main__.py
+    yandextank/stepper/tests/test_instance_plan.py -q
+  debug: false
+  ignore_lock: false
+  lock_dir: /var/lock/
+  pid: 9920
+  skip_generator_check: false
+  taskset_path: taskset
+  uuid: 95a8dc33-a664-4107-8ac2-090fe473a0f3

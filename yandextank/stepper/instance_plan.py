@@ -88,7 +88,7 @@ class LoadPlanBuilder(object):
             template = re.compile(r'(\d+)\)')
             s_res = template.search(params)
             if s_res:
-                instances = s_res.groups()
+                instances = s_res.groups()[0]
                 self.start(int(instances))
             else:
                 self.log.info("Start step format: 'start(<instances_count>)'")
