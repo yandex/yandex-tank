@@ -1,0 +1,1734 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "machine_report.v1",
+  "description": "Machine-readable report of one yandex-tank run (report.json). Written once by the MachineReport plugin in post_process and never modified afterwards; everything computed later lives in separate files next to it. Units are part of field names: *_ts is unix time in seconds (UTC), *_s seconds, *_ms milliseconds, *_us microseconds, *_rps requests per second, *_instances generator instances, *_cores CPU cores, *_pct percent (0..100); objects with a unit field (monitoring metrics, saturation signals) carry the unit there. Time windows are half-open: [start_ts, end_ts). Objects are open: consumers MUST ignore unknown fields. Within v1 an optional field may be added; a new enum value may be written only after the CLI that knows it is released, because an older CLI rejects the report. Removing, renaming or changing the type or meaning of a field requires machine_report.v2.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "provenance",
+    "statuses",
+    "phases",
+    "windows",
+    "load",
+    "artifacts",
+    "monitoring",
+    "generator",
+    "target",
+    "perforator"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "machine_report.v1"
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "plugin_version",
+        "tank_version",
+        "config_sha256",
+        "load_profile_sha256",
+        "load_profile",
+        "labels",
+        "series",
+        "test_id",
+        "tank_job_id",
+        "created_at"
+      ],
+      "properties": {
+        "plugin_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "tank_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "config_sha256": {
+          "description": "sha256 of the effective tank config with secrets removed.",
+          "$ref": "#/$defs/sha256"
+        },
+        "load_profile_sha256": {
+          "description": "sha256 of provenance.load_profile serialized as canonical JSON (RFC 8785): keys sorted, no whitespace, UTF-8. load_profile holds only integers, null and profileString strings, so this is exactly json.dumps(load_profile, sort_keys=True, separators=(',', ':')) in Python and encoding/json of the decoded map in Go; report.Validate recomputes it. Runs with different values are not comparable.",
+          "$ref": "#/$defs/sha256"
+        },
+        "load_profile": {
+          "description": "Normalized load profile: everything that decides how the target is loaded and nothing run-specific (local paths, URLs, timestamps, hosts). Closed: a new field would change the hash of every later run, so any change of this object needs machine_report.v2.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pools"
+          ],
+          "properties": {
+            "pools": {
+              "description": "One entry per generator pool in config order: pandora pools, phantom multi sections; a single-pool config has one entry.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "gun",
+                  "transport",
+                  "target_protocol",
+                  "load_type",
+                  "schedule",
+                  "startup",
+                  "instances",
+                  "ammo_type",
+                  "ammo_sha256"
+                ],
+                "properties": {
+                  "gun": {
+                    "description": "Gun of the pool as configured: the pandora gun type (http, http2, grpc, connect or a custom gun name), phantom, jmeter or bfg.",
+                    "$ref": "#/$defs/profileString"
+                  },
+                  "transport": {
+                    "description": "http1: HTTP/1.1 without TLS; http1_tls: HTTP/1.1 over TLS; h2: HTTP/2 over TLS; h2c: HTTP/2 without TLS; other.",
+                    "enum": [
+                      "http1",
+                      "http1_tls",
+                      "h2",
+                      "h2c",
+                      "other"
+                    ]
+                  },
+                  "target_protocol": {
+                    "description": "What the target speaks on top of the transport. grpc also when gRPC is shot by an HTTP/2 gun over h2c.",
+                    "enum": [
+                      "http",
+                      "grpc",
+                      "other"
+                    ]
+                  },
+                  "load_type": {
+                    "description": "What the schedule sets: rps, or busy instances (stepper load_type instances). stpd_file: a prepared stpd file, which holds both the schedule and the requests; then schedule is empty and ammo_sha256 is the sha256 of the stpd bytes.",
+                    "enum": [
+                      "rps",
+                      "instances",
+                      "stpd_file"
+                    ]
+                  },
+                  "schedule": {
+                    "description": "Schedule steps in config order, normalized: whitespace removed, numbers in the shortest decimal form without exponent and trailing zeros, durations in seconds with suffix s (const(10,1m) becomes const(10,60s), 3h2m3s becomes 10923s, 0.3s stays 0.3s); pandora schedule entries are written in the same form, e.g. line(1,10,300s).",
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/profileString"
+                    }
+                  },
+                  "startup": {
+                    "description": "Instances startup schedule (pandora startup, phantom instances), same normalization; empty when not set.",
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/profileString"
+                    }
+                  },
+                  "instances": {
+                    "description": "Instances limit of the generator pool; null when not set.",
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1
+                  },
+                  "ammo_type": {
+                    "description": "Ammo format as configured (uri, phantom, http/json, grpc/json, ...); null when the gun builds requests itself.",
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "$ref": "#/$defs/profileString"
+                      }
+                    ]
+                  },
+                  "ammo_sha256": {
+                    "description": "sha256 of the ammo bytes the gun read (after download and decompression), not of the path or URL; null when there is no ammo file.",
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^[0-9a-f]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "labels": {
+          "description": "Run labels as passed in metaconf.firestarter.labels.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "series": {
+          "description": "Copy of labels.series; null when the run belongs to no series.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "test_id": {
+          "description": "Load Testing test id when the tank knows it, otherwise null.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tank_job_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "run_id": {
+          "description": "Id of the execution that launched the tank (tank plant, CI), when known.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "description": "RFC 3339 time the report was written.",
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "statuses": {
+      "description": "What the plugin can know when it writes the report: how the shooting ended and whether the requested data was collected. Suitability, the analysis verdict and the AI status are computed later and live in analysis.json and verdict.json.",
+      "type": "object",
+      "required": [
+        "shooting",
+        "completeness"
+      ],
+      "properties": {
+        "shooting": {
+          "type": "object",
+          "required": [
+            "status",
+            "retcode"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "DONE",
+                "AUTOSTOPPED",
+                "STOPPED",
+                "FAILED"
+              ]
+            },
+            "retcode": {
+              "type": "integer"
+            },
+            "autostop_criterion": {
+              "description": "Autostop criterion that stopped the run, as written in the config; null unless status is AUTOSTOPPED.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "completeness": {
+          "description": "COMPLETE: every requested source is ok. PARTIAL: some source is not ok, but no required source is empty, error or unsupported. INCOMPLETE: a required source is empty, error or unsupported; then blocking is true and the completeness check turns the flow red.",
+          "type": "object",
+          "required": [
+            "status",
+            "blocking",
+            "blocking_sources"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "COMPLETE",
+                "PARTIAL",
+                "INCOMPLETE"
+              ]
+            },
+            "blocking": {
+              "type": "boolean"
+            },
+            "blocking_sources": {
+              "description": "Ids of required monitoring sources that made the report INCOMPLETE.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "if": {
+            "properties": {
+              "status": {
+                "const": "INCOMPLETE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "blocking": {
+                "const": true
+              },
+              "blocking_sources": {
+                "minItems": 1
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "blocking": {
+                "const": false
+              },
+              "blocking_sources": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "phases": {
+      "description": "Planned load profile, one entry per schedule step, offsets from the start of the shooting. from_rps and to_rps are set for load_type rps, from_instances and to_instances for load_type instances. Indexes are unique; a phase that started before the end of the test window has its phase-<index> window.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "index",
+          "kind",
+          "start_offset_s",
+          "duration_s"
+        ],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "kind": {
+            "enum": [
+              "line",
+              "const",
+              "step",
+              "once",
+              "unlimited",
+              "unknown"
+            ]
+          },
+          "from_rps": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "to_rps": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "from_instances": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "to_instances": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "start_offset_s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "duration_s": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "windows": {
+      "description": "Aggregates over time windows: the whole shooting (id test), every phase that started before the end of the test window (id phase-<index>) and, for const phases longer than twice the trim, the phase without its first and last trim seconds (id steady-<index>; trim from the plugin section, default 15 s). Latency, codes, monitoring and generator and target CPU are all given per window, so every consumer computes from the same windows. The test window and every steady window have an entry in generator.cpu.windows (unless its source is unavailable), in target.cpu.windows (unless target.cpu is null) and in every metric of an ok or partial monitoring source. JSON Schema cannot say this; report.Validate checks it, as well as unique ids, the number in phase-<n> and steady-<n> being equal to phase_index, a phase-<n> window for every started phase, phase_index of a window naming a phase of phases, a steady window only for a const phase, responses equal to net codes without 777, and the quantile rank rule of $defs/latencyMs. Integers are read by value: 240.0 and 2.4e2 are 240, as in JSON Schema.",
+      "type": "array",
+      "minItems": 1,
+      "contains": {
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "const": "test"
+          }
+        }
+      },
+      "items": {
+        "$ref": "#/$defs/window"
+      }
+    },
+    "load": {
+      "type": "object",
+      "required": [
+        "gun",
+        "code_kinds",
+        "autostop_criteria",
+        "per_second"
+      ],
+      "properties": {
+        "gun": {
+          "type": "object",
+          "required": [
+            "type",
+            "version",
+            "grpc_status"
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "pandora",
+                "phantom",
+                "jmeter",
+                "bfg",
+                "other"
+              ]
+            },
+            "version": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Generator version: pandora from `pandora -version` (Pandora core/<version>); null when the gun has no source yet (phantom, bfg, jmeter). Informational in comparisons until the calibration (T11)."
+            },
+            "grpc_status": {
+              "description": "How the gRPC status of a response reaches this report. grpc_codes: raw statuses in grpc_codes. http_mapped: the gun maps statuses to HTTP-like codes in http_codes (pandora grpc gun: OK to 200, Unavailable to 503, several statuses to 400), errors are visible but lossy. not_read: the target speaks gRPC, but the gun does not read grpc-status (h2c gun without trailers, LOAD-3823), so a gRPC error with HTTP 200 is invisible and the error share is unknown. not_applicable: no pool speaks gRPC. With several gRPC pools the weakest wins: not_read over http_mapped over grpc_codes, while code_kinds still lists grpc if some pool reports raw statuses. So grpc_codes requires grpc in code_kinds, http_mapped and not_read require http, and grpc in code_kinds requires a gRPC pool.",
+              "enum": [
+                "grpc_codes",
+                "http_mapped",
+                "not_read",
+                "not_applicable"
+              ]
+            }
+          },
+          "description": "Generator of the run; transport and target protocol of every pool are in provenance.load_profile."
+        },
+        "code_kinds": {
+          "description": "Which code maps the generator provides; windows and per_second carry exactly these maps. net is always present. http when responses carry an HTTP status; the pandora grpc gun reports http too: it maps gRPC statuses to HTTP-like codes (OK to 200, Unavailable to 503, several statuses to 400), so the mapping is lossy. grpc only when the generator reports raw gRPC statuses of at least one pool (h2c with grpc-status read from trailers, LOAD-3823). A kind missing here means the generator does not provide it, not that there were no such codes.",
+          "type": "array",
+          "uniqueItems": true,
+          "contains": {
+            "const": "net"
+          },
+          "items": {
+            "enum": [
+              "net",
+              "http",
+              "grpc"
+            ]
+          }
+        },
+        "autostop_criteria": {
+          "description": "Autostop criteria as written in the config, in order, e.g. quantile(99,500ms,10s); empty when autostop is off. The analysis needs every configured threshold, not only the one that fired.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "per_second": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/second"
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "description": "Files written next to report.json; paths are relative to it.",
+      "type": "object",
+      "required": [
+        "histograms"
+      ],
+      "properties": {
+        "histograms": {
+          "description": "Per-second latency histograms next to report.json, gzip-compressed JSON lines; each line matches hist.v1.schema.json.",
+          "type": "object",
+          "required": [
+            "path",
+            "format",
+            "sha256",
+            "bytes",
+            "lines"
+          ],
+          "properties": {
+            "path": {
+              "const": "hist.v1.jsonl.gz"
+            },
+            "format": {
+              "const": "hist.v1"
+            },
+            "sha256": {
+              "description": "sha256 of the compressed file.",
+              "$ref": "#/$defs/sha256"
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "lines": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "monitoring": {
+      "type": "object",
+      "required": [
+        "sources"
+      ],
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/monitoringSource"
+          }
+        }
+      }
+    },
+    "generator": {
+      "description": "The machine that generated load. Kept apart from the target: its CPU is not the target CPU.",
+      "type": "object",
+      "required": [
+        "host",
+        "dc",
+        "cpu_model",
+        "cores",
+        "cpu",
+        "saturation"
+      ],
+      "properties": {
+        "host": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "dc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cpu_model": {
+          "description": "CPU model string from /proc/cpuinfo.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cores": {
+          "description": "Logical CPUs visible to the tank process.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "cpu_limit_cores": {
+          "description": "CPU quota of the tank container; null when unlimited.",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "agent": {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "tasklet",
+                "deploy",
+                "sandbox",
+                "standalone",
+                "other"
+              ]
+            },
+            "version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "cpu": {
+          "type": "object",
+          "required": [
+            "source",
+            "windows"
+          ],
+          "properties": {
+            "source": {
+              "description": "cgroup_v1, cgroup_v2: the plugin reads the cgroup of the tank container itself (the ulta agent CPU reporter writes to its own upload queue, not to tank monitoring listeners). procfs: /proc/stat of the host. unavailable: nothing to read; saturation then relies on shots and plan.",
+              "enum": [
+                "cgroup_v1",
+                "cgroup_v2",
+                "procfs",
+                "unavailable"
+              ]
+            },
+            "windows": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "window"
+                ],
+                "properties": {
+                  "window": {
+                    "$ref": "#/$defs/windowId"
+                  },
+                  "usage_cores_mean": {
+                    "$ref": "#/$defs/nullableNumber"
+                  },
+                  "usage_cores_max": {
+                    "$ref": "#/$defs/nullableNumber"
+                  },
+                  "util_pct_mean": {
+                    "description": "Usage relative to cpu_limit_cores (or cores when unlimited).",
+                    "$ref": "#/$defs/nullableNumber"
+                  },
+                  "util_pct_max": {
+                    "$ref": "#/$defs/nullableNumber"
+                  },
+                  "throttled_periods_pct": {
+                    "description": "Share of CFS periods in which the container was throttled.",
+                    "$ref": "#/$defs/nullableNumber"
+                  },
+                  "throttled_s": {
+                    "description": "Total time the container was throttled.",
+                    "$ref": "#/$defs/nullableNumber"
+                  },
+                  "throttled_cores_mean": {
+                    "description": "Mean throttled CPU time per second of the window, in cores: the quantity ulta reports as cpu_throttled_cores.",
+                    "$ref": "#/$defs/nullableNumber"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "saturation": {
+          "description": "Whether the generator itself was the bottleneck. saturated when any signal crossed its threshold; unknown when the plugin had no data to judge.",
+          "type": "object",
+          "required": [
+            "status",
+            "signals"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "not_saturated",
+                "saturated",
+                "unknown"
+              ]
+            },
+            "signals": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "code",
+                  "value",
+                  "unit",
+                  "threshold"
+                ],
+                "properties": {
+                  "code": {
+                    "enum": [
+                      "CPU_UTIL_HIGH",
+                      "CPU_THROTTLED",
+                      "DISCARDED_SHOTS",
+                      "PLAN_NOT_MET",
+                      "INSTANCES_EXHAUSTED"
+                    ]
+                  },
+                  "window": {
+                    "$ref": "#/$defs/windowId"
+                  },
+                  "value": {
+                    "type": "number"
+                  },
+                  "unit": {
+                    "enum": [
+                      "pct",
+                      "count",
+                      "rps",
+                      "cores"
+                    ]
+                  },
+                  "threshold": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          },
+          "if": {
+            "properties": {
+              "status": {
+                "const": "saturated"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "signals": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "target": {
+      "description": "The service under load. The CPU model always names its source; Perforator data about the target is in perforator.json, not here.",
+      "type": "object",
+      "required": [
+        "address",
+        "hosts",
+        "cpu"
+      ],
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "hosts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "host",
+              "dc",
+              "cpu_model",
+              "cpu_model_source"
+            ],
+            "properties": {
+              "host": {
+                "$ref": "#/$defs/nonEmptyString"
+              },
+              "dc": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "cpu_model": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "cpu_model_source": {
+                "description": "perforator: Attributes.cpu of the target profiles, passed in the plugin section by the pre-shoot CI step (the plugin itself has no network).",
+                "enum": [
+                  "perforator",
+                  "telegraf",
+                  "monium",
+                  "config",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        "cpu": {
+          "description": "Target CPU from a monitoring source; null when no source provides it.",
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "source_id",
+                "windows"
+              ],
+              "properties": {
+                "source_id": {
+                  "description": "Id of the monitoring source the numbers come from.",
+                  "type": "string"
+                },
+                "limit_cores": {
+                  "$ref": "#/$defs/nullableNumber"
+                },
+                "windows": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "window",
+                      "usage_cores_mean",
+                      "cpu_ms_per_req"
+                    ],
+                    "properties": {
+                      "window": {
+                        "$ref": "#/$defs/windowId"
+                      },
+                      "usage_cores_mean": {
+                        "$ref": "#/$defs/nullableNumber"
+                      },
+                      "usage_cores_max": {
+                        "$ref": "#/$defs/nullableNumber"
+                      },
+                      "throttled_cores_mean": {
+                        "$ref": "#/$defs/nullableNumber"
+                      },
+                      "cpu_ms_per_req": {
+                        "description": "CPU milliseconds spent by the target per response: usage_cores_mean * 1000 / rps_mean of the window.",
+                        "$ref": "#/$defs/nullableNumber"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "perforator": {
+      "description": "Perforator profiling of the target as known when the report is written. The plugin has no network access and writes pending (a microscope was passed in the plugin section) or not_requested; the terminal status is written by a CI step into perforator.json, which takes the actual shooting window from windows[id=test].",
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "not_requested",
+            "pending"
+          ]
+        },
+        "selector": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "microscope_window": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "required": [
+            "start_ts",
+            "end_ts"
+          ],
+          "properties": {
+            "start_ts": {
+              "type": "integer"
+            },
+            "end_ts": {
+              "type": "integer"
+            }
+          },
+          "description": "Window the microscope collects profiles in, as passed in the plugin section before the shooting; profiles exist only inside it."
+        },
+        "microscope_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "process_comm": {
+          "description": "Target process name used to filter profiles (sidecars share the pod).",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "if": {
+        "properties": {
+          "status": {
+            "const": "pending"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "selector",
+          "microscope_window",
+          "microscope_id",
+          "process_comm"
+        ],
+        "properties": {
+          "selector": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "microscope_window": {
+            "type": "object"
+          },
+          "microscope_id": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "process_comm": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "monitoring"
+        ],
+        "properties": {
+          "monitoring": {
+            "required": [
+              "sources"
+            ],
+            "properties": {
+              "sources": {
+                "contains": {
+                  "required": [
+                    "required",
+                    "status"
+                  ],
+                  "properties": {
+                    "required": {
+                      "const": true
+                    },
+                    "status": {
+                      "enum": [
+                        "empty",
+                        "error",
+                        "unsupported"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "statuses": {
+            "properties": {
+              "completeness": {
+                "properties": {
+                  "status": {
+                    "const": "INCOMPLETE"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "statuses"
+        ],
+        "properties": {
+          "statuses": {
+            "properties": {
+              "completeness": {
+                "properties": {
+                  "status": {
+                    "const": "INCOMPLETE"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "monitoring"
+        ],
+        "properties": {
+          "monitoring": {
+            "required": [
+              "sources"
+            ],
+            "properties": {
+              "sources": {
+                "contains": {
+                  "required": [
+                    "required",
+                    "status"
+                  ],
+                  "properties": {
+                    "required": {
+                      "const": true
+                    },
+                    "status": {
+                      "enum": [
+                        "empty",
+                        "error",
+                        "unsupported"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "load"
+        ],
+        "properties": {
+          "load": {
+            "required": [
+              "code_kinds"
+            ],
+            "properties": {
+              "code_kinds": {
+                "contains": {
+                  "const": "http"
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "windows": {
+            "items": {
+              "required": [
+                "http_codes"
+              ]
+            }
+          },
+          "load": {
+            "properties": {
+              "per_second": {
+                "items": {
+                  "required": [
+                    "http_codes"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "windows": {
+            "items": {
+              "not": {
+                "required": [
+                  "http_codes"
+                ]
+              }
+            }
+          },
+          "load": {
+            "properties": {
+              "per_second": {
+                "items": {
+                  "not": {
+                    "required": [
+                      "http_codes"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "load"
+        ],
+        "properties": {
+          "load": {
+            "required": [
+              "code_kinds"
+            ],
+            "properties": {
+              "code_kinds": {
+                "contains": {
+                  "const": "grpc"
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "windows": {
+            "items": {
+              "required": [
+                "grpc_codes"
+              ]
+            }
+          },
+          "load": {
+            "properties": {
+              "per_second": {
+                "items": {
+                  "required": [
+                    "grpc_codes"
+                  ]
+                }
+              },
+              "gun": {
+                "properties": {
+                  "grpc_status": {
+                    "not": {
+                      "const": "not_applicable"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "windows": {
+            "items": {
+              "not": {
+                "required": [
+                  "grpc_codes"
+                ]
+              }
+            }
+          },
+          "load": {
+            "properties": {
+              "per_second": {
+                "items": {
+                  "not": {
+                    "required": [
+                      "grpc_codes"
+                    ]
+                  }
+                }
+              },
+              "gun": {
+                "properties": {
+                  "grpc_status": {
+                    "not": {
+                      "const": "grpc_codes"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "provenance"
+        ],
+        "properties": {
+          "provenance": {
+            "required": [
+              "load_profile"
+            ],
+            "properties": {
+              "load_profile": {
+                "required": [
+                  "pools"
+                ],
+                "properties": {
+                  "pools": {
+                    "contains": {
+                      "required": [
+                        "target_protocol"
+                      ],
+                      "properties": {
+                        "target_protocol": {
+                          "const": "grpc"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "load": {
+            "properties": {
+              "gun": {
+                "properties": {
+                  "grpc_status": {
+                    "not": {
+                      "const": "not_applicable"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "load": {
+            "properties": {
+              "gun": {
+                "properties": {
+                  "grpc_status": {
+                    "const": "not_applicable"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "load"
+        ],
+        "properties": {
+          "load": {
+            "required": [
+              "gun"
+            ],
+            "properties": {
+              "gun": {
+                "required": [
+                  "grpc_status"
+                ],
+                "properties": {
+                  "grpc_status": {
+                    "enum": [
+                      "http_mapped",
+                      "not_read"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "load": {
+            "properties": {
+              "code_kinds": {
+                "contains": {
+                  "const": "http"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nullableNumber": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "windowId": {
+      "type": "string",
+      "pattern": "^(test|phase-[0-9]+|steady-[0-9]+)$"
+    },
+    "codes": {
+      "description": "Count per code; keys are decimal codes. net_codes counts every shot, including shots the generator discarded without sending (net code 777). http_codes and grpc_codes count sent requests by protocol code (0: no protocol response, e.g. a network error); discarded shots are not in them, nor in responses, rps, hist.v1 and cases.",
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^-?[0-9]+$"
+      },
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "latencyMs": {
+      "description": "Response time (interval_real) quantiles in milliseconds, computed by merging the per-second histograms of the window (hist.v1) by nearest rank. Shots the generator discarded without sending (net code 777; pandora writes them to phout with tag discarded and interval_real 0) are not in the histograms, so n is responses of the window, latency_overflow included. The rank of quantile p is k = ceil(p * n / 100), computed exactly (not in floating point); the value is the upper edge of the first grid bin where the cumulative count reaches k, converted to milliseconds: upper_us / 1000 (the 1000-1010 us bin gives 1.01). When k > n - latency_overflow the rank falls into the overflow and the value is null; so p100 is null whenever latency_overflow > 0, and latency_max_ms keeps the exact maximum. report.Validate checks the rank rule for every quantile. Reference for tests: numpy.percentile(interval_real, p, method='inverted_cdf') / 1000 over the raw values of the window without net code 777; the merged value is not below it and exceeds it by at most the width of the grid bin holding it, for any n. Keys are p1 to p99.999 (at most three decimals) and p100.",
+      "type": "object",
+      "required": [
+        "p50",
+        "p90",
+        "p95",
+        "p99",
+        "p100"
+      ],
+      "propertyNames": {
+        "pattern": "^p(100|[1-9][0-9]?(\\.[0-9]{1,3})?)$"
+      },
+      "additionalProperties": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "minimum": 0
+      }
+    },
+    "window": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "start_ts",
+        "end_ts",
+        "responses",
+        "rps_mean",
+        "latency_ms",
+        "latency_max_ms",
+        "latency_overflow",
+        "net_codes"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/windowId"
+        },
+        "kind": {
+          "enum": [
+            "test",
+            "phase",
+            "steady"
+          ]
+        },
+        "phase_index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Phase of a phase or steady window; the number in its id. A test window has none."
+        },
+        "start_ts": {
+          "type": "integer"
+        },
+        "end_ts": {
+          "type": "integer"
+        },
+        "responses": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Requests sent and completed in the window: sum(net_codes) - net_codes[\"777\"]; report.Validate checks it. It is also n of the quantiles: discarded shots are not in the histograms."
+        },
+        "rps_mean": {
+          "type": "number",
+          "minimum": 0,
+          "description": "responses divided by the window length in seconds."
+        },
+        "latency_ms": {
+          "description": "null when the window has no responses.",
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/latencyMs"
+            }
+          ]
+        },
+        "latency_max_ms": {
+          "description": "Exact maximum of interval_real over the window, including responses beyond the histogram grid: the maximum of the per-second max that the tank aggregator computes from raw values. null when there are no responses.",
+          "$ref": "#/$defs/nullableNumber"
+        },
+        "latency_overflow": {
+          "description": "Responses longer than the last histogram grid edge (300 s): the sum of overflow over the hist.v1 lines of the window. They count in responses and in the quantile rank.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "net_codes": {
+          "$ref": "#/$defs/codes"
+        },
+        "http_codes": {
+          "$ref": "#/$defs/codes"
+        },
+        "grpc_codes": {
+          "$ref": "#/$defs/codes"
+        },
+        "cases": {
+          "description": "Per-case (ammo tag) aggregates of the window. Discarded shots (net code 777, tag discarded in pandora) are not a case.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "responses",
+              "latency_ms",
+              "latency_max_ms",
+              "latency_overflow"
+            ],
+            "properties": {
+              "responses": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "latency_ms": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/$defs/latencyMs"
+                  }
+                ]
+              },
+              "latency_max_ms": {
+                "description": "Exact maximum of interval_real over the window, including responses beyond the histogram grid: the maximum of the per-second max that the tank aggregator computes from raw values. null when there are no responses.",
+                "$ref": "#/$defs/nullableNumber"
+              },
+              "latency_overflow": {
+                "description": "Responses longer than the last histogram grid edge (300 s): the sum of overflow over the hist.v1 lines of the window. They count in responses and in the quantile rank.",
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "allOf": [
+              {
+                "$ref": "#/$defs/latencyOverflow"
+              }
+            ]
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "test"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "id": {
+                "const": "test"
+              }
+            },
+            "not": {
+              "required": [
+                "phase_index"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "phase"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "phase_index"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^phase-[0-9]+$"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "steady"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "phase_index"
+            ],
+            "properties": {
+              "id": {
+                "pattern": "^steady-[0-9]+$"
+              }
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/latencyOverflow"
+        }
+      ]
+    },
+    "second": {
+      "type": "object",
+      "required": [
+        "ts",
+        "rps",
+        "net_codes"
+      ],
+      "properties": {
+        "ts": {
+          "type": "integer"
+        },
+        "rps": {
+          "description": "Requests sent and completed in this second: sum(net_codes) - net_codes[\"777\"]; report.Validate checks it.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "planned_rps": {
+          "$ref": "#/$defs/nullableNumber"
+        },
+        "instances": {
+          "description": "Busy generator instances (pandora pool, phantom threads).",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "net_codes": {
+          "$ref": "#/$defs/codes"
+        },
+        "http_codes": {
+          "$ref": "#/$defs/codes"
+        },
+        "grpc_codes": {
+          "$ref": "#/$defs/codes"
+        }
+      }
+    },
+    "monitoringSource": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "entity",
+        "required",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "kind": {
+          "enum": [
+            "telegraf",
+            "monium",
+            "solomon",
+            "yasm",
+            "yc_monitoring",
+            "other"
+          ]
+        },
+        "entity": {
+          "enum": [
+            "target",
+            "generator"
+          ]
+        },
+        "host": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "required": {
+          "description": "The run is not suitable without this source; declared in the plugin section.",
+          "type": "boolean"
+        },
+        "status": {
+          "description": "ok: data for the whole test window. partial: data with gaps. empty: the source answered but gave no points. error: the source failed. pending: data may still arrive after the report was written; not allowed for a required source, which the plugin waits for within its post_process budget and then reports as empty or error. unsupported: the source cannot be read in this setup. not_requested: listed but not collected in this run; not allowed for a required source.",
+          "enum": [
+            "ok",
+            "partial",
+            "empty",
+            "error",
+            "pending",
+            "unsupported",
+            "not_requested"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "points": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expected_points": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "unit",
+              "windows"
+            ],
+            "properties": {
+              "name": {
+                "$ref": "#/$defs/nonEmptyString"
+              },
+              "unit": {
+                "enum": [
+                  "cores",
+                  "pct",
+                  "bytes",
+                  "bytes_per_s",
+                  "count",
+                  "count_per_s",
+                  "ms",
+                  "s",
+                  "none"
+                ]
+              },
+              "windows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "window",
+                    "points"
+                  ],
+                  "properties": {
+                    "window": {
+                      "$ref": "#/$defs/windowId"
+                    },
+                    "points": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "mean": {
+                      "$ref": "#/$defs/nullableNumber"
+                    },
+                    "min": {
+                      "$ref": "#/$defs/nullableNumber"
+                    },
+                    "max": {
+                      "$ref": "#/$defs/nullableNumber"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "if": {
+        "required": [
+          "required"
+        ],
+        "properties": {
+          "required": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "not": {
+              "enum": [
+                "pending",
+                "not_requested"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "profileString": {
+      "description": "String allowed in load_profile: letters, digits and _ . , : / ( ) + * - only. No JSON encoder escapes these characters, so the canonical JSON of load_profile is the same bytes in every language.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.,:/()+*-]+$"
+    },
+    "latencyOverflow": {
+      "description": "latency_overflow > 0: p100 is null and latency_max_ms is beyond the grid (over 300000 ms). Otherwise every quantile is a number and latency_max_ms is within the grid. A quantile other than p100 is null exactly when its rank is in the overflow, and latency_ms is null exactly when responses is 0; JSON Schema cannot compute the rank, report.Validate checks both.",
+      "if": {
+        "required": [
+          "latency_overflow"
+        ],
+        "properties": {
+          "latency_overflow": {
+            "minimum": 1
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "latency_ms": {
+            "type": "object",
+            "required": [
+              "p100"
+            ],
+            "properties": {
+              "p100": {
+                "type": "null"
+              }
+            }
+          },
+          "latency_max_ms": {
+            "type": "number",
+            "exclusiveMinimum": 300000
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "additionalProperties": {
+                  "type": "number"
+                }
+              }
+            ]
+          },
+          "latency_max_ms": {
+            "maximum": 300000
+          }
+        }
+      }
+    }
+  }
+}

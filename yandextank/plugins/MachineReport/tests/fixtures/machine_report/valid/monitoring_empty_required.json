@@ -1,0 +1,352 @@
+{
+  "schema_version": "machine_report.v1",
+  "provenance": {
+    "plugin_version": "1.0.0",
+    "tank_version": "1.20.0",
+    "config_sha256": "c0a1f3e5b7d9c2e4a6f8b0d2c4e6a8f0b2d4c6e8a0f2b4d6c8e0a2f4b6d8c0e2",
+    "load_profile_sha256": "56f9e1b4603afa97fd832009922f49123f8d63a09a7fd337451c994a59250946",
+    "load_profile": {
+      "pools": [
+        {
+          "gun": "http",
+          "transport": "http1",
+          "target_protocol": "http",
+          "load_type": "rps",
+          "schedule": [
+            "line(1,120,1s)",
+            "const(120,4s)"
+          ],
+          "startup": [
+            "once(2)"
+          ],
+          "instances": 2,
+          "ammo_type": "uri",
+          "ammo_sha256": "cb273883b4e53ef8c6fd47a30b49e988b7deabc3437ac83121a7106ead91fbe1"
+        }
+      ]
+    },
+    "labels": {
+      "series": "perf-target-cpu",
+      "run": "monitoring-empty"
+    },
+    "series": "perf-target-cpu",
+    "test_id": "8abtmvnxx0raxwdycd3b",
+    "tank_job_id": "8abtmvnxx0raxwdycd3b",
+    "run_id": null,
+    "created_at": "2026-09-28T06:35:21Z"
+  },
+  "statuses": {
+    "shooting": {
+      "status": "DONE",
+      "retcode": 0,
+      "autostop_criterion": null
+    },
+    "completeness": {
+      "status": "INCOMPLETE",
+      "blocking": true,
+      "blocking_sources": [
+        "monium:load/testing/yandextank-perf-target.perf-target"
+      ]
+    }
+  },
+  "phases": [
+    {
+      "index": 0,
+      "kind": "line",
+      "from_rps": 1,
+      "to_rps": 120,
+      "start_offset_s": 0,
+      "duration_s": 1
+    },
+    {
+      "index": 1,
+      "kind": "const",
+      "from_rps": 120,
+      "to_rps": 120,
+      "start_offset_s": 1,
+      "duration_s": 4
+    }
+  ],
+  "windows": [
+    {
+      "id": "test",
+      "kind": "test",
+      "start_ts": 1790577315,
+      "end_ts": 1790577320,
+      "responses": 540,
+      "rps_mean": 108.0,
+      "latency_ms": {
+        "p50": 14,
+        "p75": 15,
+        "p90": 16,
+        "p95": 17,
+        "p98": 18,
+        "p99": 20,
+        "p100": 42
+      },
+      "latency_max_ms": 41.3,
+      "latency_overflow": 0,
+      "net_codes": {
+        "0": 540
+      },
+      "http_codes": {
+        "200": 540
+      },
+      "cases": {
+        "work": {
+          "responses": 540,
+          "latency_ms": {
+            "p50": 14,
+            "p75": 15,
+            "p90": 16,
+            "p95": 17,
+            "p98": 18,
+            "p99": 20,
+            "p100": 42
+          },
+          "latency_max_ms": 41.3,
+          "latency_overflow": 0
+        }
+      }
+    },
+    {
+      "id": "phase-0",
+      "kind": "phase",
+      "phase_index": 0,
+      "start_ts": 1790577315,
+      "end_ts": 1790577316,
+      "responses": 60,
+      "rps_mean": 60,
+      "latency_ms": {
+        "p50": 14,
+        "p75": 15,
+        "p90": 15,
+        "p95": 16,
+        "p98": 17,
+        "p99": 18,
+        "p100": 23
+      },
+      "latency_max_ms": 22.4,
+      "latency_overflow": 0,
+      "net_codes": {
+        "0": 60
+      },
+      "http_codes": {
+        "200": 60
+      }
+    },
+    {
+      "id": "phase-1",
+      "kind": "phase",
+      "phase_index": 1,
+      "start_ts": 1790577316,
+      "end_ts": 1790577320,
+      "responses": 480,
+      "rps_mean": 120,
+      "latency_ms": {
+        "p50": 14,
+        "p75": 15,
+        "p90": 16,
+        "p95": 17,
+        "p98": 19,
+        "p99": 20,
+        "p100": 42
+      },
+      "latency_max_ms": 41.3,
+      "latency_overflow": 0,
+      "net_codes": {
+        "0": 480
+      },
+      "http_codes": {
+        "200": 480
+      }
+    },
+    {
+      "id": "steady-1",
+      "kind": "steady",
+      "phase_index": 1,
+      "start_ts": 1790577317,
+      "end_ts": 1790577319,
+      "responses": 240,
+      "rps_mean": 120.0,
+      "latency_ms": {
+        "p50": 14,
+        "p75": 15,
+        "p90": 16,
+        "p95": 17,
+        "p98": 19,
+        "p99": 20,
+        "p100": 42
+      },
+      "latency_max_ms": 41.3,
+      "latency_overflow": 0,
+      "net_codes": {
+        "0": 240
+      },
+      "http_codes": {
+        "200": 240
+      }
+    }
+  ],
+  "load": {
+    "gun": {
+      "type": "pandora",
+      "version": "0.5.32",
+      "grpc_status": "not_applicable"
+    },
+    "code_kinds": [
+      "net",
+      "http"
+    ],
+    "autostop_criteria": [],
+    "per_second": [
+      {
+        "ts": 1790577315,
+        "rps": 60,
+        "planned_rps": 60,
+        "instances": 2,
+        "net_codes": {
+          "0": 60
+        },
+        "http_codes": {
+          "200": 60
+        }
+      },
+      {
+        "ts": 1790577316,
+        "rps": 120,
+        "planned_rps": 120,
+        "instances": 2,
+        "net_codes": {
+          "0": 120
+        },
+        "http_codes": {
+          "200": 120
+        }
+      },
+      {
+        "ts": 1790577317,
+        "rps": 120,
+        "planned_rps": 120,
+        "instances": 2,
+        "net_codes": {
+          "0": 120
+        },
+        "http_codes": {
+          "200": 120
+        }
+      },
+      {
+        "ts": 1790577318,
+        "rps": 120,
+        "planned_rps": 120,
+        "instances": 2,
+        "net_codes": {
+          "0": 120
+        },
+        "http_codes": {
+          "200": 120
+        }
+      },
+      {
+        "ts": 1790577319,
+        "rps": 120,
+        "planned_rps": 120,
+        "instances": 2,
+        "net_codes": {
+          "0": 120
+        },
+        "http_codes": {
+          "200": 120
+        }
+      }
+    ]
+  },
+  "artifacts": {
+    "histograms": {
+      "path": "hist.v1.jsonl.gz",
+      "format": "hist.v1",
+      "sha256": "9f2c4e6a8b0d1f3e5a7c9b1d3f5e7a9c1b3d5f7e9a1c3b5d7f9e1a3c5b7d9f1e",
+      "bytes": 1874,
+      "lines": 10
+    }
+  },
+  "monitoring": {
+    "sources": [
+      {
+        "id": "monium:load/testing/yandextank-perf-target.perf-target",
+        "kind": "monium",
+        "entity": "target",
+        "host": "yandextank-perf-target-target-37.sas.yp-c.yandex.net",
+        "required": true,
+        "status": "empty",
+        "reason": "Monium returned no points for the test window",
+        "points": 0,
+        "expected_points": 5,
+        "metrics": []
+      }
+    ]
+  },
+  "generator": {
+    "host": "sas2-7704-tasklet.sas.yp-c.yandex.net",
+    "dc": "sas",
+    "cpu_model": "AMD EPYC 7702 64-Core Processor",
+    "cores": 8,
+    "cpu_limit_cores": 8,
+    "agent": {
+      "kind": "tasklet",
+      "version": "ulta 1.1.12"
+    },
+    "cpu": {
+      "source": "cgroup_v2",
+      "windows": [
+        {
+          "window": "test",
+          "usage_cores_mean": 0.42,
+          "usage_cores_max": 0.61,
+          "util_pct_mean": 5.3,
+          "util_pct_max": 7.6,
+          "throttled_periods_pct": 0,
+          "throttled_s": 0,
+          "throttled_cores_mean": 0
+        },
+        {
+          "window": "steady-1",
+          "usage_cores_mean": 0.42,
+          "usage_cores_max": 0.61,
+          "util_pct_mean": 5.3,
+          "util_pct_max": 7.6,
+          "throttled_periods_pct": 0,
+          "throttled_s": 0,
+          "throttled_cores_mean": 0
+        }
+      ]
+    },
+    "saturation": {
+      "status": "not_saturated",
+      "signals": []
+    }
+  },
+  "target": {
+    "address": "yandextank-perf-target-target-37.sas.yp-c.yandex.net:80",
+    "hosts": [
+      {
+        "host": "yandextank-perf-target-target-37.sas.yp-c.yandex.net",
+        "dc": "sas",
+        "cpu_model": null,
+        "cpu_model_source": "unknown"
+      }
+    ],
+    "cpu": null
+  },
+  "perforator": {
+    "status": "pending",
+    "selector": "{service=\"yandextank-perf-target.target\"}",
+    "microscope_window": {
+      "start_ts": 1790577015,
+      "end_ts": 1790578215
+    },
+    "microscope_id": "01a0e682-4196-75c7-8ef8-34cb164585dd",
+    "process_comm": "perf-target"
+  }
+}

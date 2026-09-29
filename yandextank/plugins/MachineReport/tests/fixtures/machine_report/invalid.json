@@ -1,0 +1,375 @@
+[
+  {
+    "name": "missing_schema_version",
+    "base": "ok.json",
+    "path": "/schema_version"
+  },
+  {
+    "name": "missing_generator_host",
+    "base": "ok.json",
+    "path": "/generator/host"
+  },
+  {
+    "name": "missing_generator_section",
+    "base": "ok.json",
+    "path": "/generator"
+  },
+  {
+    "name": "pending_perforator_without_microscope",
+    "base": "ok.json",
+    "path": "/perforator/microscope_id"
+  },
+  {
+    "name": "wrong_schema_version",
+    "base": "ok.json",
+    "path": "/schema_version",
+    "value": "machine_report.v2"
+  },
+  {
+    "name": "bad_enum_monitoring_status",
+    "base": "ok.json",
+    "path": "/monitoring/sources/0/status",
+    "value": "green"
+  },
+  {
+    "name": "bad_enum_no_report_in_report",
+    "base": "ok.json",
+    "path": "/statuses/completeness/status",
+    "value": "NO_REPORT"
+  },
+  {
+    "name": "bad_enum_saturation",
+    "base": "generator_bound.json",
+    "path": "/generator/saturation/status",
+    "value": "yes"
+  },
+  {
+    "name": "wrong_type_rps_mean",
+    "base": "ok.json",
+    "path": "/windows/0/rps_mean",
+    "value": "108"
+  },
+  {
+    "name": "wrong_type_required_flag",
+    "base": "ok.json",
+    "path": "/monitoring/sources/0/required",
+    "value": "yes"
+  },
+  {
+    "name": "negative_code_count",
+    "base": "ok.json",
+    "path": "/windows/0/net_codes/0",
+    "value": -1
+  },
+  {
+    "name": "code_kinds_without_net",
+    "base": "grpc_codes.json",
+    "path": "/load/code_kinds",
+    "value": [
+      "grpc"
+    ]
+  },
+  {
+    "name": "no_test_window",
+    "base": "ok.json",
+    "path": "/windows/0/kind",
+    "value": "phase"
+  },
+  {
+    "name": "bad_histogram_sha256",
+    "base": "ok.json",
+    "path": "/artifacts/histograms/sha256",
+    "value": "abc"
+  },
+  {
+    "name": "terminal_perforator_status_in_report",
+    "base": "ok.json",
+    "path": "/perforator/status",
+    "value": "ok"
+  },
+  {
+    "name": "pending_perforator_null_microscope",
+    "base": "ok.json",
+    "path": "/perforator/microscope_id",
+    "value": null
+  },
+  {
+    "name": "pending_perforator_without_process_comm",
+    "base": "ok.json",
+    "path": "/perforator/process_comm",
+    "value": null
+  },
+  {
+    "name": "bad_enum_metric_unit",
+    "base": "ok.json",
+    "path": "/monitoring/sources/0/metrics/0/unit",
+    "value": "millicores"
+  },
+  {
+    "name": "incomplete_not_blocking",
+    "base": "monitoring_empty_required.json",
+    "path": "/statuses/completeness/blocking",
+    "value": false
+  },
+  {
+    "name": "red_required_source_but_complete",
+    "base": "ok.json",
+    "path": "/monitoring/sources/0/status",
+    "value": "empty"
+  },
+  {
+    "name": "required_source_pending",
+    "base": "ok.json",
+    "path": "/monitoring/sources/0/status",
+    "value": "pending"
+  },
+  {
+    "name": "saturated_without_signals",
+    "base": "generator_bound.json",
+    "path": "/generator/saturation/signals",
+    "value": []
+  },
+  {
+    "name": "grpc_codes_without_kind",
+    "base": "ok.json",
+    "path": "/windows/0/grpc_codes",
+    "value": {
+      "0": 540
+    }
+  },
+  {
+    "name": "grpc_kind_without_codes",
+    "base": "grpc_codes.json",
+    "path": "/windows/0/grpc_codes"
+  },
+  {
+    "name": "bad_created_at",
+    "base": "ok.json",
+    "path": "/provenance/created_at",
+    "value": "yesterday"
+  },
+  {
+    "name": "histogram_path_escape",
+    "base": "ok.json",
+    "path": "/artifacts/histograms/path",
+    "value": "../other-test/hist.v1.jsonl.gz"
+  },
+  {
+    "name": "missing_load_profile",
+    "base": "ok.json",
+    "path": "/provenance/load_profile"
+  },
+  {
+    "name": "missing_autostop_criteria",
+    "base": "ok.json",
+    "path": "/load/autostop_criteria"
+  },
+  {
+    "name": "bad_enum_ulta_agent_source",
+    "base": "generator_bound.json",
+    "path": "/generator/cpu/source",
+    "value": "ulta_agent"
+  },
+  {
+    "name": "test_window_with_steady_id",
+    "base": "ok.json",
+    "path": "/windows/0/id",
+    "value": "steady-7"
+  },
+  {
+    "name": "steady_window_without_phase_index",
+    "base": "ok.json",
+    "path": "/windows/3/phase_index"
+  },
+  {
+    "name": "phase_window_with_steady_id",
+    "base": "ok.json",
+    "path": "/windows/1/id",
+    "value": "steady-0"
+  },
+  {
+    "name": "steady_number_not_phase_index",
+    "base": "ok.json",
+    "path": "/windows/3/phase_index",
+    "value": 0
+  },
+  {
+    "name": "duplicate_window_id",
+    "base": "ok.json",
+    "path": "/windows/2/id",
+    "value": "phase-0"
+  },
+  {
+    "name": "steady_window_without_generator_cpu",
+    "base": "ok.json",
+    "path": "/generator/cpu/windows/1/window",
+    "value": "phase-0"
+  },
+  {
+    "name": "steady_window_without_target_cpu",
+    "base": "ok.json",
+    "path": "/target/cpu/windows/2/window",
+    "value": "phase-0"
+  },
+  {
+    "name": "steady_window_without_monitoring_metric",
+    "base": "ok.json",
+    "path": "/monitoring/sources/0/metrics/1/windows/2/window",
+    "value": "phase-0"
+  },
+  {
+    "name": "overflow_with_numeric_p100",
+    "base": "ok.json",
+    "path": "/windows/0/latency_overflow",
+    "value": 1
+  },
+  {
+    "name": "null_quantile_without_overflow",
+    "base": "generator_bound.json",
+    "path": "/windows/0/latency_overflow",
+    "value": 0
+  },
+  {
+    "name": "missing_latency_max_ms",
+    "base": "ok.json",
+    "path": "/windows/0/latency_max_ms"
+  },
+  {
+    "name": "load_profile_hash_mismatch",
+    "base": "ok.json",
+    "path": "/provenance/load_profile/pools/0/instances",
+    "value": 3
+  },
+  {
+    "name": "load_profile_unknown_field",
+    "base": "ok.json",
+    "path": "/provenance/load_profile/pools/0/ammo_path",
+    "value": "ammo.txt"
+  },
+  {
+    "name": "load_profile_escaped_string",
+    "base": "ok.json",
+    "path": "/provenance/load_profile/pools/0/schedule/0",
+    "value": "line(1, 120, 1s)"
+  },
+  {
+    "name": "load_profile_without_pools",
+    "base": "ok.json",
+    "path": "/provenance/load_profile/pools",
+    "value": []
+  },
+  {
+    "name": "grpc_status_codes_without_kind",
+    "base": "h2c_not_read.json",
+    "path": "/load/gun/grpc_status",
+    "value": "grpc_codes"
+  },
+  {
+    "name": "grpc_status_on_http_pool",
+    "base": "h2c_not_read.json",
+    "path": "/provenance/load_profile/pools/0/target_protocol",
+    "value": "http"
+  },
+  {
+    "name": "grpc_pool_with_not_applicable",
+    "base": "h2c_not_read.json",
+    "path": "/load/gun/grpc_status",
+    "value": "not_applicable"
+  },
+  {
+    "name": "http_target_with_grpc_status",
+    "base": "ok.json",
+    "path": "/load/gun/grpc_status",
+    "value": "not_read"
+  },
+  {
+    "name": "missing_grpc_status",
+    "base": "ok.json",
+    "path": "/load/gun/grpc_status"
+  },
+  {
+    "name": "quantile_rank_in_overflow",
+    "base": "generator_bound.json",
+    "path": "/windows/0/latency_overflow",
+    "value": 351716
+  },
+  {
+    "name": "null_latency_with_responses",
+    "base": "ok.json",
+    "path": "/windows/0/latency_ms",
+    "value": null
+  },
+  {
+    "name": "overflow_with_max_within_grid",
+    "base": "generator_bound.json",
+    "path": "/windows/0/latency_max_ms",
+    "value": 57
+  },
+  {
+    "name": "max_beyond_grid_without_overflow",
+    "base": "ok.json",
+    "path": "/windows/0/latency_max_ms",
+    "value": 301250
+  },
+  {
+    "name": "started_phase_without_window",
+    "base": "ok.json",
+    "path": "/phases",
+    "value": [
+      {
+        "index": 0,
+        "kind": "line",
+        "from_rps": 1,
+        "to_rps": 120,
+        "start_offset_s": 0,
+        "duration_s": 1
+      },
+      {
+        "index": 1,
+        "kind": "const",
+        "from_rps": 120,
+        "to_rps": 120,
+        "start_offset_s": 1,
+        "duration_s": 4
+      },
+      {
+        "index": 2,
+        "kind": "const",
+        "from_rps": 120,
+        "to_rps": 120,
+        "start_offset_s": 3,
+        "duration_s": 1
+      }
+    ]
+  },
+  {
+    "name": "window_names_no_phase",
+    "base": "ok.json",
+    "path": "/phases/1/index",
+    "value": 2
+  },
+  {
+    "name": "steady_window_on_line_phase",
+    "base": "ok.json",
+    "path": "/phases/1/kind",
+    "value": "line"
+  },
+  {
+    "name": "responses_include_discarded",
+    "base": "generator_bound_no_cpu.json",
+    "path": "/windows/0/responses",
+    "value": 502500
+  },
+  {
+    "name": "second_rps_include_discarded",
+    "base": "generator_bound_no_cpu.json",
+    "path": "/load/per_second/0/rps",
+    "value": 20900
+  },
+  {
+    "name": "quantile_key_exotic",
+    "base": "ok.json",
+    "path": "/windows/0/latency_ms/p0.00000000000000000000000000000000000000000000000000000000000000001",
+    "value": 0
+  }
+]

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "hist.v1",
+  "description": "One line of hist.v1.jsonl.gz: the sparse response time histogram of one second for the whole run (case null) or for one case. Bins are the verbose histogram grid of the tank aggregator over interval_real, in microseconds, up to 300000000; only non-empty bins are written. counts[i] responses fell into the grid bin whose upper edge is upper_us[i]; upper_us is strictly ascending and both arrays have the same length (JSON Schema cannot express this, so the writer and report.Validate check it). Responses longer than the last grid edge are counted in overflow. Shots the generator discarded without sending (net code 777; pandora writes them with tag discarded and interval_real 0) are not counted anywhere: the line with case null is the aggregator overall without the discarded tag, and there is no discarded case. A quantile of any window, by nearest rank: sum counts per upper_us and overflow over the lines of the window, n = all counts + overflow (equal to responses of the window), k = ceil(p * n / 100); the quantile is the upper edge of the first bin where the cumulative count reaches k, or null when k > n - overflow. It is in microseconds; machine_report.v1 latency_ms holds it divided by 1000. It is not below numpy.percentile(raw interval_real, p, method='inverted_cdf') and exceeds it by at most the width of the bin holding that value (machine_report.v1 $defs/latencyMs).",
+  "type": "object",
+  "required": [
+    "ts",
+    "case",
+    "upper_us",
+    "counts",
+    "overflow"
+  ],
+  "properties": {
+    "ts": {
+      "description": "Unix time of the second, seconds (UTC).",
+      "type": "integer"
+    },
+    "case": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "upper_us": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0
+      }
+    },
+    "counts": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "overflow": {
+      "description": "Responses longer than the last grid edge; np.histogram of the tank aggregator drops them, the writer counts them here.",
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

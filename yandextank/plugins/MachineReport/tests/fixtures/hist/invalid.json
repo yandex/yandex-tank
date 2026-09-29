@@ -1,0 +1,45 @@
+[
+  {
+    "name": "missing_counts",
+    "base": "overall.json",
+    "path": "/counts"
+  },
+  {
+    "name": "wrong_type_case",
+    "base": "overall.json",
+    "path": "/case",
+    "value": 7
+  },
+  {
+    "name": "zero_count",
+    "base": "overall.json",
+    "path": "/counts/0",
+    "value": 0
+  },
+  {
+    "name": "counts_length_mismatch",
+    "base": "overall.json",
+    "path": "/counts",
+    "value": [
+      31,
+      44
+    ]
+  },
+  {
+    "name": "upper_us_not_ascending",
+    "base": "overall.json",
+    "path": "/upper_us/1",
+    "value": 13000
+  },
+  {
+    "name": "missing_overflow",
+    "base": "overall.json",
+    "path": "/overflow"
+  },
+  {
+    "name": "negative_overflow",
+    "base": "overflow.json",
+    "path": "/overflow",
+    "value": -1
+  }
+]
