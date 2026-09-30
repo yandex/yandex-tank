@@ -303,6 +303,7 @@
   "yandextank/stepper/tests/test-uripost.txt":"load/projects/yandex-tank/yandextank/stepper/tests/test-uripost.txt",
   "yandextank/stepper/tests/test_instance_plan.py":"load/projects/yandex-tank/yandextank/stepper/tests/test_instance_plan.py",
   "yandextank/stepper/tests/test_load_plan.py":"load/projects/yandex-tank/yandextank/stepper/tests/test_load_plan.py",
+  "yandextank/stepper/tests/test_missile.py":"load/projects/yandex-tank/yandextank/stepper/tests/test_missile.py",
   "yandextank/stepper/tests/unicode-expected.stpd":"load/projects/yandex-tank/yandextank/stepper/tests/unicode-expected.stpd",
   "yandextank/stepper/tests/uripost-expected.stpd":"load/projects/yandex-tank/yandextank/stepper/tests/uripost-expected.stpd",
   "yandextank/stepper/tests/uris-expected.stpd":"load/projects/yandex-tank/yandextank/stepper/tests/uris-expected.stpd",

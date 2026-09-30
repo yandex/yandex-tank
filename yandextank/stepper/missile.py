@@ -325,8 +325,8 @@ class UriReader(Reader):
 class UriPostReader(Reader):
     """Read POST missiles from ammo file"""
 
-    def __init__(self, filename, headers=None, http_ver='1.1', use_cache=True, **kwargs):
-        super(UriPostReader, self).__init__(filename, use_cache)
+    def __init__(self, filename, headers=None, http_ver='1.1', use_cache=True, resource_manager=None, **kwargs):
+        super(UriPostReader, self).__init__(filename, use_cache, resource_manager)
         self.headers = (
             {pair[0].strip(): pair[1].strip() for pair in [h.split(':', 1) for h in headers]} if headers else {}
         )
