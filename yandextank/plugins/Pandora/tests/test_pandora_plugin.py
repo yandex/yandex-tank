@@ -12,6 +12,7 @@ from threading import Thread
 
 from library.python.port_manager import PortManager
 from yandextank.plugins.Pandora import Plugin
+from yandextank.plugins.Pandora.plugin import check_idle_gaps
 
 # https://raw.githubusercontent.com/yandex/yandex-tank/develop/README.md
 
@@ -594,3 +595,42 @@ def test_real_pandora_managed_expvar_reports_sent_rps(pandora_server, tmp_path):
         reader.close()
         if plugin.process_stderr:
             plugin.process_stderr.close()
+
+
+LINE = {'type': 'line', 'from': 1000, 'to': 3000, 'duration': '1m'}
+
+
+@pytest.mark.parametrize(
+    'schedule',
+    [
+        [{'type': 'const', 'ops': 0, 'duration': '2m30s'}, LINE],
+        [LINE, {'type': 'const', 'ops': 0, 'duration': '5m'}],
+        [LINE, {'type': 'const', 'ops': 0, 'duration': '31s'}, LINE],
+        [LINE, {'type': 'const', 'ops': 5, 'duration': '5m'}, LINE],
+        None,
+    ],
+)
+def test_idle_gaps_allowed(schedule):
+    check_idle_gaps(0, schedule, 31)
+
+
+@pytest.mark.parametrize(
+    'schedule',
+    [
+        [LINE, {'type': 'const', 'ops': 0, 'duration': '2m'}, LINE],
+        [
+            LINE,
+            {'type': 'const', 'ops': 0, 'duration': '20s'},
+            {'type': 'line', 'from': 0, 'to': 0, 'duration': '20s'},
+            LINE,
+        ],
+    ],
+)
+def test_idle_gap_in_the_middle_rejected(schedule):
+    with pytest.raises(RuntimeError, match='aggregator_max_wait'):
+        check_idle_gaps(3, schedule, 31)
+
+
+def test_no_idle_gap_does_not_touch_max_wait():
+    # Без паузы max_wait не сравнивается: чужие тесты мокают core, и get_option отдаёт Mock.
+    check_idle_gaps(0, [LINE, LINE], MagicMock())

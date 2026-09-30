@@ -21,7 +21,7 @@ from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ..Phantom import PhantomReader, string_to_df
 from ...common.interfaces import AbstractInfoWidget, GeneratorPlugin
-from ...common.util import tail_lines, FileMultiReader
+from ...common.util import expand_to_seconds, tail_lines, FileMultiReader
 
 logger = logging.getLogger(__name__)
 
@@ -201,7 +201,10 @@ class Plugin(GeneratorPlugin):
 
         # FIXME this is broken for custom ammo providers due to interface incompatibility
         # FIXME refactor pandora plx
+        max_wait = self.core.get_option('core', 'aggregator_max_wait')
         for n, pool in enumerate(config['pools']):
+            check_idle_gaps(n, pool.get('rps'), max_wait)
+
             # Patch ammo file
             if pool.get('ammo', {}).get('file', ''):
                 self.ammofile = pool['ammo']['file']
@@ -448,6 +451,37 @@ class Plugin(GeneratorPlugin):
             self._managed_control_fd = None
         self.finish_sample_reading()
         return retcode
+
+
+def _is_idle_step(step):
+    if step.get('type') == 'const':
+        return not step.get('ops')
+    if step.get('type') in ('line', 'step'):
+        return not step.get('from') and not step.get('to')
+    return False
+
+
+def check_idle_gaps(pool_number, schedule, max_wait):
+    """
+    Пауза ops: 0 дольше core.aggregator_max_wait между шагами с нагрузкой закрывает phout пула
+    в агрегаторе, и всё после паузы пропадает из отчёта. Пауза в начале пула и в конце безопасна.
+    """
+    if isinstance(schedule, dict):
+        schedule = [schedule]
+    started, idle = False, 0
+    for step in schedule or []:
+        if not isinstance(step, dict):
+            continue
+        if _is_idle_step(step):
+            idle += expand_to_seconds(str(step.get('duration', 0)))
+            continue
+        if started and idle and idle > max_wait:
+            raise RuntimeError(
+                f'Pool #{pool_number}: ops 0 for {idle}s in the middle of the schedule is longer than '
+                f'core.aggregator_max_wait ({max_wait}s), data after the pause would be lost. '
+                f'Raise core.aggregator_max_wait above {idle} or shorten the pause.'
+            )
+        started, idle = True, 0
 
 
 class PandoraInfoWidget(AbstractInfoWidget):

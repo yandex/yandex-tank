@@ -129,10 +129,16 @@ class DataPoller:
 def _data_poller(source, poll_period, max_wait):
     wait_cntr_max = max_wait // poll_period or 1
     wait_counter = 0
+    started = False
     for chunk in source:
         if chunk is not None:
+            started = True
             wait_counter = 0
             yield chunk
+        elif not started:
+            # Пул pandora может начинаться с ops: 0 дольше max_wait: тишину считаем от первых данных,
+            # а None отдаём наружу, чтобы TimeChopper не ждал этот источник (конец — StopIteration ридера).
+            yield None
         elif wait_counter < wait_cntr_max:
             wait_counter += 1
         else:

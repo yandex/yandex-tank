@@ -3,7 +3,12 @@ Split incoming DataFrames into chunks, cache them, union chunks with same key
 and pass to the underlying aggregator.
 """
 
+import time
+
 import pandas as pd
+
+# Сколько секунд после receive_ts данные могут дописываться в phout (буфер генератора, опрос).
+IDLE_SOURCE_LAG = 30
 
 
 class TimeChopper(object):
@@ -25,7 +30,10 @@ class TimeChopper(object):
                 while True:
                     for n, source in self.sources.items():
                         chunk = next(source)
-                        if chunk is not None:
+                        if chunk is None:
+                            # Молчащий источник не держит остальные: данных старше now - lag он уже не пришлёт.
+                            self.recent_ts[n] = max(self.recent_ts[n], int(time.time()) - IDLE_SOURCE_LAG)
+                        else:
                             self.recent_ts[n] = chunk.index[-1]
                             grouped = chunk.groupby(level=0)
                             for ts, group_data in list(grouped):
