@@ -63,8 +63,10 @@ class PandoraStatsPoller(Thread):
                 continue
             curr_ts = int(time.time())
             if curr_ts > last_ts:
+                metrics = self._poll(curr_ts - 1)['metrics']
+                # The thread may oversleep several seconds; a second without stats waits in the aggregator until test end.
+                self.buffer.extend({'ts': ts, 'metrics': metrics} for ts in range(last_ts, curr_ts))
                 last_ts = curr_ts
-                self.buffer.append(self._poll(last_ts - 1))
             else:
                 time.sleep(0.2)
 

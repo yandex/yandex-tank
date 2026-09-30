@@ -130,3 +130,27 @@ def test_managed_reader_can_use_zero_fallback_without_polling_foreign_port():
             request.assert_not_called()
     finally:
         reader.close()
+
+
+def test_run_fills_seconds_skipped_by_stalled_poller():
+    # the poller overslept 101..103: without filling, these seconds wait for stats until test end
+    poller = PandoraStatsPoller(1234)
+    clock = iter([100.5, 100.6, 101.2, 105.3])
+
+    def fake_time():
+        now = next(clock, None)
+        if now is None:
+            poller.stop()
+            return 105.9
+        return now
+
+    def fake_poll(ts):
+        return {'ts': ts, 'metrics': {'instances': 7, 'reqps': ts}}
+
+    with patch('yandextank.plugins.Pandora.reader.time') as time_mock, patch.object(poller, '_poll', fake_poll):
+        time_mock.time.side_effect = fake_time
+        poller.run()
+
+    data = poller.get_data()
+    assert [d['ts'] for d in data] == [99, 100, 101, 102, 103, 104]
+    assert [d['metrics']['reqps'] for d in data] == [99, 100, 104, 104, 104, 104]
