@@ -106,7 +106,7 @@ class DefaultCollector(MonitoringCollectorProtocol):
         self.panels.append(Thread(target=self.run_panel, args=(panel,)))
 
     def add_sensor(self, sensor: MonitoringSensorProtocol):
-        self.sensors.append(Thread(target=self.run_sensor, args=(sensor,)))
+        self.sensors.append(Thread(target=self.run_sensor, args=(sensor,), daemon=True))
 
     def start(self):
         self.logger.debug('Starting %s panels', len(self.panels))
@@ -122,9 +122,14 @@ class DefaultCollector(MonitoringCollectorProtocol):
         self.logger.info('Stopping Monitoring Collector in %s seconds', self.poll_interval)
         time.sleep(self.poll_interval + 1)
         self.stop_event.set()
+        # Panels drain the queue for the last time delivery_interval after stop_event,
+        # so a sensor still fetching past that point would not deliver anything anyway.
+        deadline = time.monotonic() + self.delivery_interval
         for thread in self.sensors:
             if thread.is_alive():
-                thread.join()
+                thread.join(max(0, deadline - time.monotonic()))
+        if stuck := [t.name for t in self.sensors if t.is_alive()]:
+            self.logger.warning('Monitoring sensors %s are still fetching, not waiting for them', stuck)
         for thread in self.panels:
             if thread.is_alive():
                 thread.join()

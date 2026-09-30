@@ -8,9 +8,15 @@ import sys
 
 import shutil
 import yaml
+from queue import Queue
+from unittest import mock
 
+from yandextank.common import monitoring
 from yandextank.common.exceptions import GeneratorNotFound
+from yandextank.common.interfaces import MonitoringPlugin
+from yandextank.common.monitoring import DefaultCollector, MonitoringPanel
 from yandextank.core import TankCore
+from yandextank.core.tankcore import Job
 from yandextank.core.tankworker import parse_options, TankInfo
 from yandextank.stepper.module_exceptions import DiskLimitError
 
@@ -238,6 +244,70 @@ def test_start_test(config):
     core.plugins_prepare_test()
     core.plugins_start_test()
     core.plugins_end_test(1)
+
+
+class _EndTestRecorder:
+    def __init__(self, name, calls):
+        self.name, self.calls = name, calls
+
+    def end_test(self, retcode):
+        self.calls.append(self.name)
+        return retcode
+
+
+class _FakeClock:
+    """Stands in for `time` in yandextank.common.monitoring: sleep() only advances virtual time."""
+
+    def __init__(self):
+        self.sleeps = []
+
+    def sleep(self, seconds):
+        self.sleeps.append(seconds)
+
+    def time(self):
+        return sum(self.sleeps)
+
+    monotonic = time
+
+
+def _bare_core(plugins, monitorings, generator, aggregator):
+    core = TankCore.__new__(TankCore)  # no config validation, no artifacts dir
+    core.info = TankInfo({})
+    core.interrupted = threading.Event()
+    core.resource_manager = None
+    core.monitoring_data_listeners = []
+    core._plugins = plugins
+    core._job = Job(monitoring_plugins=monitorings, aggregator=aggregator, tank='tank', generator_plugin=generator)
+    return core
+
+
+def test_plugins_end_test_calls_each_plugin_once():
+    calls = []
+    gen, mon, other = (_EndTestRecorder(name, calls) for name in ('gen', 'mon', 'other'))
+    aggregator = mock.Mock(end_test=gen.end_test)  # TankAggregator.end_test stops the generator
+    core = _bare_core({'plugin_gen': gen, 'plugin_mon': mon, 'plugin_other': other}, [mon], gen, aggregator)
+
+    assert core.plugins_end_test(0) == 0
+    assert calls == ['gen', 'mon', 'other']
+
+
+def test_plugins_end_test_monitoring_stop_duration():
+    # Solomon defaults: timeout = poll_interval = 30 s. One DefaultCollector.stop is
+    # 31 s grace sleep + 30 s panel drain = 61 s; a second end_test used to add 31 s more.
+    clock = _FakeClock()
+    core = _bare_core({}, [], None, mock.Mock(end_test=lambda rc: rc))
+    mon = MonitoringPlugin(core, {}, 'solomon')
+    mon.collector = DefaultCollector(logger=logger, timeout=30, poll_interval=30)
+    mon.collector.add_sensor(mock.Mock())
+    mon.collector.add_panel(MonitoringPanel('panel', 30, Queue()))
+    core._plugins['plugin_solomon'] = mon
+    core.job.monitoring_plugins.append(mon)
+
+    with mock.patch.object(monitoring, 'time', clock):
+        mon.start_test()
+        core.plugins_end_test(0)
+
+    assert clock.time() == 61
 
 
 @pytest.mark.parametrize(

@@ -370,8 +370,8 @@ class TankCore(object):
             logger.info('RC after monitoring plugin finish: %s', retcode)
 
         for plugin_name, plugin in [
-            p
-            for p in self.plugins.items()
+            (name, p)
+            for name, p in self.plugins.items()
             if p is not self.job.generator_plugin and p not in self.job.monitoring_plugins
         ]:
             logger.info("Stopping %s plugin", plugin_name)
