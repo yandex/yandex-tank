@@ -144,16 +144,6 @@ def _data_poller(source, poll_period, max_wait):
         time.sleep(poll_period)
 
 
-def to_utc(ts):
-    # dst = daylight saving time
-    is_dst = time.daylight and time.localtime().tm_isdst > 0
-    offset = time.altzone if is_dst else time.timezone
-    import pdb
-
-    pdb.set_trace()
-    return ts + offset
-
-
 class Aggregator(object):
     def __init__(self, source, config, verbose_histogram=True):
         self.worker = Worker(config, verbose_histogram)
