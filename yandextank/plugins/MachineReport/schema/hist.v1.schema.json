@@ -12,7 +12,7 @@
   ],
   "properties": {
     "ts": {
-      "description": "Unix time of the second, seconds (UTC).",
+      "description": "Unix time of the second, seconds (UTC): the second the responses were received in, int(send_ts + interval_real / 1e6), as in the tank aggregator.",
       "type": "integer"
     },
     "case": {

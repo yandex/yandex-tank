@@ -4,13 +4,13 @@
     "plugin_version": "1.0.0",
     "tank_version": "1.20.0",
     "config_sha256": "c0a1f3e5b7d9c2e4a6f8b0d2c4e6a8f0b2d4c6e8a0f2b4d6c8e0a2f4b6d8c0e2",
-    "load_profile_sha256": "56f9e1b4603afa97fd832009922f49123f8d63a09a7fd337451c994a59250946",
+    "load_profile_sha256": "2b3348f0f54136dfba983e64519f738094d687ff9c2e1037b144cfe8c9c3a66a",
     "load_profile": {
       "pools": [
         {
-          "gun": "http",
-          "transport": "http1",
-          "target_protocol": "http",
+          "gun": "http2",
+          "transport": "h2c",
+          "target_protocol": "grpc",
           "load_type": "rps",
           "schedule": [
             "line(1,120,1s)",
@@ -20,18 +20,17 @@
             "once(2)"
           ],
           "instances": 2,
-          "ammo_type": "uri",
-          "ammo_sha256": "cb273883b4e53ef8c6fd47a30b49e988b7deabc3437ac83121a7106ead91fbe1"
+          "ammo_type": "grpc/json",
+          "ammo_sha256": "da814d4d16cbcda2ff25814b368dbbf13a523af85257646f241254a8f861231d"
         }
       ]
     },
     "labels": {
-      "series": "perf-target-cpu",
-      "run": "monitoring-empty"
+      "run": "h2c-grpc-only"
     },
-    "series": "perf-target-cpu",
-    "test_id": "8abtmvnxx0raxwdycd3b",
-    "tank_job_id": "8abtmvnxx0raxwdycd3b",
+    "series": null,
+    "test_id": null,
+    "tank_job_id": "fixture-h2c-grpc-only",
     "run_id": null,
     "created_at": "2026-09-28T06:35:21Z"
   },
@@ -42,11 +41,9 @@
       "autostop_criterion": null
     },
     "completeness": {
-      "status": "INCOMPLETE",
-      "blocking": true,
-      "blocking_sources": [
-        "monium:load/testing/yandextank-perf-target.perf-target"
-      ]
+      "status": "COMPLETE",
+      "blocking": false,
+      "blocking_sources": []
     }
   },
   "phases": [
@@ -91,9 +88,6 @@
       "net_codes": {
         "0": 540
       },
-      "http_codes": {
-        "200": 540
-      },
       "cases": {
         "work": {
           "responses": 540,
@@ -109,6 +103,10 @@
           "latency_max_ms": 41.3,
           "latency_overflow": 0
         }
+      },
+      "grpc_codes": {
+        "0": 536,
+        "14": 4
       }
     },
     {
@@ -133,8 +131,8 @@
       "net_codes": {
         "0": 60
       },
-      "http_codes": {
-        "200": 60
+      "grpc_codes": {
+        "0": 60
       }
     },
     {
@@ -159,8 +157,9 @@
       "net_codes": {
         "0": 480
       },
-      "http_codes": {
-        "200": 480
+      "grpc_codes": {
+        "0": 476,
+        "14": 4
       }
     },
     {
@@ -185,8 +184,9 @@
       "net_codes": {
         "0": 240
       },
-      "http_codes": {
-        "200": 240
+      "grpc_codes": {
+        "0": 238,
+        "14": 2
       }
     }
   ],
@@ -194,11 +194,11 @@
     "gun": {
       "type": "pandora",
       "version": "0.5.32",
-      "grpc_status": "not_applicable"
+      "grpc_status": "grpc_codes"
     },
     "code_kinds": [
       "net",
-      "http"
+      "grpc"
     ],
     "autostop_criteria": [],
     "per_second": [
@@ -210,8 +210,8 @@
         "net_codes": {
           "0": 60
         },
-        "http_codes": {
-          "200": 60
+        "grpc_codes": {
+          "0": 60
         }
       },
       {
@@ -222,8 +222,9 @@
         "net_codes": {
           "0": 120
         },
-        "http_codes": {
-          "200": 120
+        "grpc_codes": {
+          "0": 119,
+          "14": 1
         }
       },
       {
@@ -234,8 +235,9 @@
         "net_codes": {
           "0": 120
         },
-        "http_codes": {
-          "200": 120
+        "grpc_codes": {
+          "0": 119,
+          "14": 1
         }
       },
       {
@@ -246,8 +248,9 @@
         "net_codes": {
           "0": 120
         },
-        "http_codes": {
-          "200": 120
+        "grpc_codes": {
+          "0": 119,
+          "14": 1
         }
       },
       {
@@ -258,8 +261,9 @@
         "net_codes": {
           "0": 120
         },
-        "http_codes": {
-          "200": 120
+        "grpc_codes": {
+          "0": 119,
+          "14": 1
         }
       }
     ]
@@ -281,11 +285,66 @@
         "entity": "target",
         "host": "yandextank-perf-target-target-37.sas.yp-c.yandex.net",
         "required": true,
-        "status": "empty",
-        "reason": "Monium returned no points for the test window",
-        "points": 0,
+        "status": "ok",
+        "reason": null,
+        "points": 5,
         "expected_points": 5,
-        "metrics": []
+        "metrics": [
+          {
+            "name": "cpu.usage.cores",
+            "unit": "cores",
+            "windows": [
+              {
+                "window": "test",
+                "points": 5,
+                "mean": 1.5301,
+                "min": 0.8052,
+                "max": 1.6621
+              },
+              {
+                "window": "phase-1",
+                "points": 4,
+                "mean": 1.6108,
+                "min": 1.5712,
+                "max": 1.6621
+              },
+              {
+                "window": "steady-1",
+                "points": 2,
+                "mean": 1.6108,
+                "min": 1.5712,
+                "max": 1.6621
+              }
+            ]
+          },
+          {
+            "name": "cpu.throttled.cores",
+            "unit": "cores",
+            "windows": [
+              {
+                "window": "test",
+                "points": 5,
+                "mean": 0,
+                "min": 0,
+                "max": 0
+              },
+              {
+                "window": "phase-1",
+                "points": 4,
+                "mean": 0,
+                "min": 0,
+                "max": 0
+              },
+              {
+                "window": "steady-1",
+                "points": 2,
+                "mean": 0,
+                "min": 0,
+                "max": 0
+              }
+            ]
+          }
+        ]
       }
     ]
   },
@@ -339,16 +398,39 @@
         "cpu_model_source": "unknown"
       }
     ],
-    "cpu": null
+    "cpu": {
+      "source_id": "monium:load/testing/yandextank-perf-target.perf-target",
+      "limit_cores": 4,
+      "windows": [
+        {
+          "window": "test",
+          "usage_cores_mean": 1.4497,
+          "usage_cores_max": 1.6621,
+          "throttled_cores_mean": 0,
+          "cpu_ms_per_req": 13.423
+        },
+        {
+          "window": "phase-1",
+          "usage_cores_mean": 1.6108,
+          "usage_cores_max": 1.6621,
+          "throttled_cores_mean": 0,
+          "cpu_ms_per_req": 13.423
+        },
+        {
+          "window": "steady-1",
+          "usage_cores_mean": 1.6108,
+          "usage_cores_max": 1.6621,
+          "throttled_cores_mean": 0,
+          "cpu_ms_per_req": 13.423
+        }
+      ]
+    }
   },
   "perforator": {
-    "status": "pending",
-    "selector": "{service=\"yandextank-perf-target.target\"}",
-    "microscope_window": {
-      "start_ts": 1790577015,
-      "end_ts": 1790578215
-    },
-    "microscope_id": "01a0e682-4196-75c7-8ef8-34cb164585dd",
-    "process_comm": "perf-target"
+    "status": "not_requested",
+    "selector": null,
+    "microscope_window": null,
+    "microscope_id": null,
+    "process_comm": null
   }
 }

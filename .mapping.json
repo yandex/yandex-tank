@@ -187,6 +187,7 @@
   "yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/generator_bound.json":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/generator_bound.json",
   "yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/generator_bound_no_cpu.json":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/generator_bound_no_cpu.json",
   "yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/grpc_codes.json":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/grpc_codes.json",
+  "yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/grpc_only.json":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/grpc_only.json",
   "yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/h2c_not_read.json":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/h2c_not_read.json",
   "yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/monitoring_empty_required.json":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/monitoring_empty_required.json",
   "yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/ok.json":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/ok.json",

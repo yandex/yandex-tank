@@ -42,7 +42,7 @@
           "$ref": "#/$defs/nonEmptyString"
         },
         "config_sha256": {
-          "description": "sha256 of the effective tank config with secrets removed.",
+          "description": "Informational, not a comparability key (that is load_profile_sha256): the effective config also holds run-specific values (metaconf labels, the microscope of the plugin section, local ammo paths), so runs of one config usually differ here. sha256 of the effective tank config serialized as json.dumps(sort_keys=True, separators=(',', ':'), ensure_ascii=False) after masking: a value is replaced with *** for a key, a header string 'Name: value' (also in square brackets, as in pandora and phantom headers) or a URL query parameter whose name, case-insensitively, is authorization or cookie or contains token, secret, password, passwd, oauth, ticket or key. Masking goes by name only: it keeps the hash stable when a token rotates and does not guarantee that no secret is left.",
           "$ref": "#/$defs/sha256"
         },
         "load_profile_sha256": {
@@ -77,7 +77,7 @@
                 ],
                 "properties": {
                   "gun": {
-                    "description": "Gun of the pool as configured: the pandora gun type (http, http2, grpc, connect or a custom gun name), phantom, jmeter or bfg.",
+                    "description": "Gun of the pool as configured: the pandora gun type (http, http2, grpc, connect or a custom gun name), phantom or bfg. A jmeter run gets no report: a jmx plan is not expressible as load_type and schedule.",
                     "$ref": "#/$defs/profileString"
                   },
                   "transport": {
@@ -91,7 +91,7 @@
                     ]
                   },
                   "target_protocol": {
-                    "description": "What the target speaks on top of the transport. grpc also when gRPC is shot by an HTTP/2 gun over h2c.",
+                    "description": "What the target speaks on top of the transport. grpc also when gRPC is shot by an HTTP/2 gun over h2c: an HTTP/2 pool over h2c is grpc unless the plugin section overrides target_protocol of the pool to http, because a gRPC target taken for HTTP would get its error share from HTTP 200 and look clean.",
                     "enum": [
                       "http",
                       "grpc",
@@ -140,7 +140,7 @@
                     ]
                   },
                   "ammo_sha256": {
-                    "description": "sha256 of the ammo bytes the gun read (after download and decompression), not of the path or URL; null when there is no ammo file.",
+                    "description": "sha256 of the ammo of the pool, not of its path or URL. An ammo file: sha256 of the bytes the gun read (after download and decompression); for pandora, the local file of each pool from the patched pandora config (pandora_config_*.yaml). Inline ammo written in the config (pandora ammo.uris, phantom and bfg uris): sha256 of the UTF-8 bytes of json.dumps(<the list as configured>, sort_keys=True, separators=(',', ':'), ensure_ascii=False). null when the pool reads no ammo file and no inline ammo (the gun builds requests itself or takes them from a provider the plugin does not know); such pools differ in load_profile_sha256 only by the rest of the pool.",
                     "type": [
                       "string",
                       "null"
@@ -153,7 +153,7 @@
           }
         },
         "labels": {
-          "description": "Run labels as passed in metaconf.firestarter.labels.",
+          "description": "Run labels as passed in metaconf.firestarter.labels; {} when the config has none.",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -167,13 +167,14 @@
           ]
         },
         "test_id": {
-          "description": "Load Testing test id when the tank knows it, otherwise null.",
+          "description": "Load Testing test id when the tank knows it, otherwise null. The tank config does not carry it (ulta does not pass it), so the plugin writes null, and a consumer takes the id from where it fetched the files.",
           "type": [
             "string",
             "null"
           ]
         },
         "tank_job_id": {
+          "description": "core.test_id of the effective tank config.",
           "$ref": "#/$defs/nonEmptyString"
         },
         "run_id": {
@@ -283,7 +284,7 @@
       }
     },
     "phases": {
-      "description": "Planned load profile, one entry per schedule step, offsets from the start of the shooting. from_rps and to_rps are set for load_type rps, from_instances and to_instances for load_type instances. Indexes are unique; a phase that started before the end of the test window has its phase-<index> window.",
+      "description": "Planned load profile, one entry per schedule step of every pool; offsets count from the schedule start, which is start_ts of the test window. from_rps and to_rps are set for load_type rps, from_instances and to_instances for load_type instances, both of the pool of the phase. Indexes are unique and run through all pools. A phase has started when test.start_ts + start_offset_s < test.end_ts, and a started phase has its phase-<index> window.",
       "type": "array",
       "items": {
         "type": "object",
@@ -295,6 +296,11 @@
         ],
         "properties": {
           "index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pool": {
+            "description": "Index of the pool in provenance.load_profile.pools whose schedule step this is; the plugin writes it for every phase, and report.Validate checks that it names a pool.",
             "type": "integer",
             "minimum": 0
           },
@@ -344,7 +350,7 @@
       }
     },
     "windows": {
-      "description": "Aggregates over time windows: the whole shooting (id test), every phase that started before the end of the test window (id phase-<index>) and, for const phases longer than twice the trim, the phase without its first and last trim seconds (id steady-<index>; trim from the plugin section, default 15 s). Latency, codes, monitoring and generator and target CPU are all given per window, so every consumer computes from the same windows. The test window and every steady window have an entry in generator.cpu.windows (unless its source is unavailable), in target.cpu.windows (unless target.cpu is null) and in every metric of an ok or partial monitoring source. JSON Schema cannot say this; report.Validate checks it, as well as unique ids, the number in phase-<n> and steady-<n> being equal to phase_index, a phase-<n> window for every started phase, phase_index of a window naming a phase of phases, a steady window only for a const phase, responses equal to net codes without 777, and the quantile rank rule of $defs/latencyMs. Integers are read by value: 240.0 and 2.4e2 are 240, as in JSON Schema.",
+      "description": "Aggregates over time windows: the whole shooting (id test), every started phase (id phase-<index>) and, for const phases, the phase without its first and last trim seconds when at least a second is left (id steady-<index>; trim from the plugin section, default 15 s). A second is the second a response was received in, int(send_ts + interval_real / 1e6), as in the tank aggregator; load.per_second and hist.v1 use the same seconds. The test window is [S, E): E is the last second with data plus one; S, the schedule start, is the first second with data minus the zero-plan steps that open the schedule (the smallest total over pools, e.g. const(0,10s)). A phase window is [S + floor(start_offset_s), max(its start + 1, min(E, S + ceil(start_offset_s + duration_s)))), so a once phase and a phase started less than a second before E get a one-second window, where 0 responses are allowed. A steady window is [S + ceil(start_offset_s) + trim, min(E, S + floor(start_offset_s + duration_s)) - trim). Responses that arrive after the load stopped belong to the test window; a phase whose start falls only into that tail counts as started and gets a short window. With several pools a phase and steady window follows the step of its own pool, while responses, codes, latency, monitoring and CPU in it are of the whole shooting. Latency, codes, monitoring and generator and target CPU are all given per window, so every consumer computes from the same windows. The test window and every steady window have an entry in generator.cpu.windows (unless its source is unavailable), in target.cpu.windows (unless target.cpu is null) and in every metric of an ok or partial monitoring source. JSON Schema cannot say this; report.Validate checks it, as well as unique ids, every window being within the test window and at least a second long, the number in phase-<n> and steady-<n> being equal to phase_index, a phase-<n> window for every started phase, phase_index of a window naming a phase of phases, a steady window only for a const phase, responses equal to net codes without 777, and the quantile rank rule of $defs/latencyMs. Integers are read by value: 240.0 and 2.4e2 are 240, as in JSON Schema.",
       "type": "array",
       "minItems": 1,
       "contains": {
@@ -393,10 +399,10 @@
                 "string",
                 "null"
               ],
-              "description": "Generator version: pandora from `pandora -version` (Pandora core/<version>); null when the gun has no source yet (phantom, bfg, jmeter). Informational in comparisons until the calibration (T11)."
+              "description": "Generator version: pandora from `pandora -version` (Pandora core/<version>); null when the gun has no source yet (phantom, bfg). Informational in comparisons until the calibration (T11)."
             },
             "grpc_status": {
-              "description": "How the gRPC status of a response reaches this report. grpc_codes: raw statuses in grpc_codes. http_mapped: the gun maps statuses to HTTP-like codes in http_codes (pandora grpc gun: OK to 200, Unavailable to 503, several statuses to 400), errors are visible but lossy. not_read: the target speaks gRPC, but the gun does not read grpc-status (h2c gun without trailers, LOAD-3823), so a gRPC error with HTTP 200 is invisible and the error share is unknown. not_applicable: no pool speaks gRPC. With several gRPC pools the weakest wins: not_read over http_mapped over grpc_codes, while code_kinds still lists grpc if some pool reports raw statuses. So grpc_codes requires grpc in code_kinds, http_mapped and not_read require http, and grpc in code_kinds requires a gRPC pool.",
+              "description": "How the gRPC status of a response reaches this report. grpc_codes: raw statuses in grpc_codes. http_mapped: the gun maps statuses to HTTP-like codes in http_codes (pandora grpc gun: OK to 200, Unavailable to 503, several statuses to 400), errors are visible but lossy. not_read: the target speaks gRPC, but the gun does not read grpc-status (h2c gun without trailers, LOAD-3823, also an HTTP/2 pool over h2c without the target_protocol override), so a gRPC error with HTTP 200 is invisible and the error share is unknown. not_applicable: no pool speaks gRPC. With several gRPC pools the weakest wins: not_read over http_mapped over grpc_codes, while code_kinds still lists grpc if some pool reports raw statuses. So grpc_codes requires grpc in code_kinds, http_mapped and not_read require http, and grpc in code_kinds requires a gRPC pool.",
               "enum": [
                 "grpc_codes",
                 "http_mapped",
@@ -430,6 +436,7 @@
           }
         },
         "per_second": {
+          "description": "One entry per second of the test window [start_ts, end_ts), ascending and without holes; report.Validate checks it. The tank aggregator does not deliver a second without responses, and the plugin adds it: rps 0, empty code maps, planned_rps from the schedule, instances null.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/second"
@@ -736,7 +743,7 @@
           }
         },
         "cpu": {
-          "description": "Target CPU from a monitoring source; null when no source provides it.",
+          "description": "Target CPU from a monitoring source; null when no source provides it. It is the CPU of the whole target, so the source delivers one series summed over pods (for Solomon: an expression that aggregates all series into one on the Solomon side, e.g. series_sum, with explicit metric_type and metric_name; any other Solomon sensor makes the source unsupported): the tank Solomon collector keeps one point per series name and second and would silently pass a single pod of several.",
           "anyOf": [
             {
               "type": "null"
@@ -1506,10 +1513,11 @@
           "minimum": 0
         },
         "planned_rps": {
+          "description": "Planned rps of the second from the schedules, summed over pools; null when the plan of some pool is not in rps.",
           "$ref": "#/$defs/nullableNumber"
         },
         "instances": {
-          "description": "Busy generator instances (pandora pool, phantom threads).",
+          "description": "Busy generator instances (pandora pool, phantom threads) from the aggregator stats; null when unknown: for a second without responses, and instead of 0, which pandora also reports when its expvar is unavailable.",
           "type": [
             "integer",
             "null"
@@ -1566,7 +1574,7 @@
           "type": "boolean"
         },
         "status": {
-          "description": "ok: data for the whole test window. partial: data with gaps. empty: the source answered but gave no points. error: the source failed. pending: data may still arrive after the report was written; not allowed for a required source, which the plugin waits for within its post_process budget and then reports as empty or error. unsupported: the source cannot be read in this setup. not_requested: listed but not collected in this run; not allowed for a required source.",
+          "description": "ok: data for the whole test window. partial: data with gaps; points missing only at the right edge of the test window, within the right-edge tolerance (plugin section, 60 s by default), are not a gap; points at or after the end of the test window are dropped. empty: the source answered but gave no points. error: the source failed, including a Solomon source without a token. pending: data may still arrive after the report was written; not allowed for a required source: the report is never changed, and the plugin does not wait in post_process, so a required source is reported by what arrived when the tank monitoring ended. unsupported: the source cannot be read in this setup, e.g. a Solomon sensor that may return several series. not_requested: listed but not collected in this run; not allowed for a required source.",
           "enum": [
             "ok",
             "partial",

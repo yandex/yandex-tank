@@ -48,6 +48,7 @@
   "phases": [
     {
       "index": 0,
+      "pool": 0,
       "kind": "line",
       "from_rps": 1000,
       "to_rps": 200000,

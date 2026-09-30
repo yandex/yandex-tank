@@ -371,5 +371,41 @@
     "base": "ok.json",
     "path": "/windows/0/latency_ms/p0.00000000000000000000000000000000000000000000000000000000000000001",
     "value": 0
+  },
+  {
+    "name": "grpc_status_not_read_without_http",
+    "base": "grpc_only.json",
+    "path": "/load/gun/grpc_status",
+    "value": "not_read"
+  },
+  {
+    "name": "phase_names_no_pool",
+    "base": "ok.json",
+    "path": "/phases/0/pool",
+    "value": 1
+  },
+  {
+    "name": "per_second_hole",
+    "base": "ok.json",
+    "path": "/load/per_second/2/ts",
+    "value": 1790577318
+  },
+  {
+    "name": "per_second_short_of_test_window",
+    "base": "ok.json",
+    "path": "/windows/0/end_ts",
+    "value": 1790577321
+  },
+  {
+    "name": "phase_window_shorter_than_second",
+    "base": "ok.json",
+    "path": "/windows/1/end_ts",
+    "value": 1790577315
+  },
+  {
+    "name": "steady_window_outside_test",
+    "base": "ok.json",
+    "path": "/windows/3/end_ts",
+    "value": 1790577321
   }
 ]

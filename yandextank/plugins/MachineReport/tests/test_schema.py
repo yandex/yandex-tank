@@ -113,9 +113,10 @@ def sent_errors(where, sent, net_codes):
 
 
 def report_errors(doc):
-    """Unique window ids and phases, a window per started phase, id number equal to phase_index, quantile ranks,
-    responses and rps equal to net codes without 777, CPU and monitoring for the test and steady windows,
-    load_profile hash."""
+    """Unique window ids and phases, a window per started phase, id number equal to phase_index, pool of a phase
+    naming a pool, every window within the test window and at least a second long, quantile ranks, responses and
+    rps equal to net codes without 777, per_second covering the test window second by second, CPU and monitoring
+    for the test and steady windows, load_profile hash."""
     found = []
     ids = [w['id'] for w in doc['windows']]
     if len(set(ids)) != len(ids):
@@ -123,11 +124,20 @@ def report_errors(doc):
     phases = {int(p['index']): p for p in doc['phases']}
     if len(phases) != len(doc['phases']):
         found.append('phase indexes repeat')
+    pools = len(doc['provenance']['load_profile']['pools'])
+    for index, p in phases.items():
+        if 'pool' in p and int(p['pool']) >= pools:
+            found.append('phase {} names no pool of load_profile'.format(index))
     test = next(w for w in doc['windows'] if w['kind'] == 'test')
+    start, end = int(test['start_ts']), int(test['end_ts'])
     for index, p in phases.items():
         if test['start_ts'] + p['start_offset_s'] < test['end_ts'] and 'phase-{}'.format(index) not in ids:
             found.append('phase {} started but has no window'.format(index))
+    if [int(s['ts']) for s in doc['load']['per_second']] != list(range(start, end)):
+        found.append('per_second does not cover the test window second by second')
     for w in doc['windows']:
+        if not start <= int(w['start_ts']) < int(w['end_ts']) <= end:
+            found.append('window {} is not within the test window or shorter than a second'.format(w['id']))
         found += latency_errors('window ' + w['id'], w)
         found += sent_errors('window ' + w['id'], w['responses'], w['net_codes'])
         for name, case in w.get('cases', {}).items():
