@@ -323,7 +323,9 @@ class StepperWrapper(object):
                 os.makedirs(self.cache_dir)
             stpd = self.cache_dir + '/' + os.path.basename(self.ammo_file) + "_" + hasher.hexdigest() + ".stpd"
         else:
-            stpd = os.path.realpath("ammo.stpd")
+            if not os.path.exists(self.cache_dir):
+                os.makedirs(self.cache_dir)
+            stpd = os.path.join(self.cache_dir, "ammo.stpd")
         self.log.debug("Generated cache file name: %s", stpd)
         return stpd
 
