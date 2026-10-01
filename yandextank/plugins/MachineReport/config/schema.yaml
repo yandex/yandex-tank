@@ -1,0 +1,176 @@
+steady_trim_s:
+  description: seconds cut from both ends of a const phase to get its steady-<n> window
+  type: integer
+  min: 0
+  default: 15
+monitoring_tolerance_s:
+  description: monitoring points missing only at the right edge of the test window within this many seconds do not make a source partial (points arrive late)
+  type: integer
+  min: 0
+  default: 60
+pools:
+  description: per-pool overrides in the order of the generator pools; {} keeps the defaults of a pool
+  type: list
+  default: []
+  schema:
+    type: dict
+    schema:
+      target_protocol:
+        description: what the target of the pool speaks; an HTTP/2 pool without TLS (h2c) is grpc unless set to http here
+        type: string
+        allowed: [http, grpc, other]
+generator:
+  description: facts about the generator the plugin cannot read itself
+  type: dict
+  default: {}
+  schema:
+    dc:
+      description: data center of the generator; otherwise taken from dc_env
+      type: string
+      nullable: true
+      empty: false
+    dc_env:
+      description: environment variables checked in order when dc is not set; the value of the first set one up to the first dot is the data center (sas for sas.cluster.example); none by default, so dc stays null
+      type: list
+      default: []
+      schema:
+        type: string
+        empty: false
+monitoring:
+  description: monitoring sources the report describes, each with a status
+  type: list
+  default: []
+  schema:
+    type: dict
+    schema:
+      id:
+        description: source id in the report; <kind>:<host> by default
+        type: string
+        empty: false
+      kind:
+        type: string
+        required: true
+        allowed: [telegraf, monium, solomon, yasm, yc_monitoring, other]
+      entity:
+        description: what the source measures
+        type: string
+        allowed: [target, generator]
+        default: target
+      host:
+        description: key of the source in tank monitoring data (the host for telegraf, the panel name for solomon)
+        type: string
+        required: true
+        empty: false
+      required:
+        description: the run is not suitable without this source
+        type: boolean
+        default: false
+      metrics:
+        type: list
+        default: []
+        schema:
+          type: dict
+          schema:
+            name:
+              description: metric name in tank monitoring data
+              type: string
+              required: true
+              empty: false
+            unit:
+              type: string
+              required: true
+              allowed: [cores, pct, bytes, bytes_per_s, count, count_per_s, ms, s, none]
+target:
+  description: the service under load
+  type: dict
+  default: {}
+  schema:
+    address:
+      description: target address; the gun target of the first pool by default
+      type: string
+      empty: false
+    hosts:
+      description: target hosts, e.g. pods with CPU models from Perforator passed by a pre-shoot step
+      type: list
+      default: []
+      schema:
+        type: dict
+        schema:
+          host:
+            type: string
+            required: true
+            empty: false
+          dc:
+            type: string
+            nullable: true
+          cpu_model:
+            type: string
+            nullable: true
+          cpu_model_source:
+            type: string
+            allowed: [perforator, telegraf, monium, config, unknown]
+    cpu:
+      description: which monitoring metric is the target CPU (one series for the whole target)
+      type: dict
+      nullable: true
+      default: null
+      schema:
+        source_id:
+          type: string
+          required: true
+          empty: false
+        usage_metric:
+          type: string
+          required: true
+          empty: false
+        throttled_metric:
+          type: string
+          nullable: true
+        limit_cores:
+          type: number
+          nullable: true
+saturation:
+  description: thresholds of the generator saturation signals
+  type: dict
+  default: {}
+  schema:
+    cpu_util_pct:
+      type: number
+      default: 90
+    cpu_throttled_periods_pct:
+      type: number
+      default: 5
+    discarded_shots_pct:
+      type: number
+      default: 1
+    plan_deficit_pct:
+      type: number
+      default: 5
+perforator:
+  description: microscope created before the shooting; the report marks profiling pending
+  type: dict
+  nullable: true
+  default: null
+  schema:
+    microscope_id:
+      type: string
+      required: true
+      empty: false
+    selector:
+      type: string
+      required: true
+      empty: false
+    process_comm:
+      type: string
+      required: true
+      empty: false
+    microscope_window:
+      type: dict
+      required: true
+      schema:
+        start_ts:
+          type: integer
+          required: true
+        end_ts:
+          type: integer
+          required: true

@@ -72,6 +72,7 @@ analytic tools for the results they produce.
         'yandextank.plugins.OpenTSDBUploader': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],
         'yandextank.plugins.JsonReport': ['config/*'],
+        'yandextank.plugins.MachineReport': ['config/*'],
         'yandextank.plugins.Pandora': ['config/*'],
         'yandextank.plugins.Phantom': ['config/*'],
         'yandextank.plugins.RCAssert': ['config/*'],

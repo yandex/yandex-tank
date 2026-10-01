@@ -16,8 +16,10 @@ from fractions import Fraction
 
 import pytest
 
-# The GitHub mirror does not install jsonschema for the tank tests.
-jsonschema = pytest.importorskip('jsonschema')
+try:
+    import jsonschema
+except ImportError:  # the GitHub mirror does not install it for the tank tests: the checks beyond the schemas still run
+    jsonschema = None
 
 ROOT = 'load/projects/yandex-tank/yandextank/plugins/MachineReport'
 SCHEMAS = {
@@ -35,12 +37,9 @@ KEYWORDS = {
     'uniqueItems', 'pattern', 'minLength', 'maxLength', 'minimum', 'maximum',
     'exclusiveMinimum', 'exclusiveMaximum', 'allOf', 'anyOf', 'oneOf', 'not', 'if', 'then', 'else',
 }  # fmt: skip
-# date-time is asserted without optional packages: 3.2.0 checks it only when an RFC 3339 library is installed.
-FORMATS = jsonschema.FormatChecker(())
 RFC3339 = re.compile(r'^\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-]\d{2}:\d{2})$')
 
 
-@FORMATS.checks('date-time')
 def is_date_time(value):
     return not isinstance(value, str) or RFC3339.match(value) is not None
 
@@ -67,14 +66,20 @@ def load(path):
 
 
 def validator(kind):
+    """Draft-07 validator of the schema; None without jsonschema."""
+    if jsonschema is None:
+        return None
     schema = load(source('schema', SCHEMAS[kind]))
     jsonschema.Draft7Validator.check_schema(schema)
-    return jsonschema.Draft7Validator(schema, format_checker=FORMATS)
+    # date-time is asserted without optional packages: 3.2.0 checks it only when an RFC 3339 library is installed
+    formats = jsonschema.FormatChecker(())
+    formats.checks('date-time')(is_date_time)
+    return jsonschema.Draft7Validator(schema, format_checker=formats)
 
 
 def errors(v, kind, doc):
-    """Schema errors plus what JSON Schema cannot say (report.Validate checks the same)."""
-    found = ['{}: {}'.format(list(e.absolute_path), e.message) for e in v.iter_errors(doc)]
+    """Schema errors (none without a validator) plus what JSON Schema cannot say (report.Validate checks the same)."""
+    found = [] if v is None else ['{}: {}'.format(list(e.absolute_path), e.message) for e in v.iter_errors(doc)]
     if kind == 'hist' and not found:
         upper, counts = doc['upper_us'], doc['counts']
         if len(upper) != len(counts):
@@ -219,6 +224,7 @@ def test_valid_fixtures_pass(kind):
         assert not errors(v, kind, doc), name
 
 
+@pytest.mark.skipif(jsonschema is None, reason='most mutations are caught by the schema only')
 @pytest.mark.parametrize('kind', sorted(SCHEMAS))
 def test_invalid_mutations_fail(kind):
     v = validator(kind)

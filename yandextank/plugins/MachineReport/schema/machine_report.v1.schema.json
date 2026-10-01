@@ -399,7 +399,7 @@
                 "string",
                 "null"
               ],
-              "description": "Generator version: pandora from `pandora -version` (Pandora core/<version>); null when the gun has no source yet (phantom, bfg). Informational in comparisons until the calibration (T11)."
+              "description": "Generator version: pandora from `pandora -version` (the pandorax build from `Pandora X - <version>`, else `Pandora core/<version>`); null when the gun has no source yet (phantom, bfg). Informational in comparisons until the calibration (T11)."
             },
             "grpc_status": {
               "description": "How the gRPC status of a response reaches this report. grpc_codes: raw statuses in grpc_codes. http_mapped: the gun maps statuses to HTTP-like codes in http_codes (pandora grpc gun: OK to 200, Unavailable to 503, several statuses to 400), errors are visible but lossy. not_read: the target speaks gRPC, but the gun does not read grpc-status (h2c gun without trailers, LOAD-3823, also an HTTP/2 pool over h2c without the target_protocol override), so a gRPC error with HTTP 200 is invisible and the error share is unknown. not_applicable: no pool speaks gRPC. With several gRPC pools the weakest wins: not_read over http_mapped over grpc_codes, while code_kinds still lists grpc if some pool reports raw statuses. So grpc_codes requires grpc in code_kinds, http_mapped and not_read require http, and grpc in code_kinds requires a gRPC pool.",
