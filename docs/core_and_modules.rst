@@ -322,6 +322,12 @@ Advanced options
 :buffered_seconds:
   Amount of seconds to which delay aggregator, to be sure that everything were read from phout.
 
+:stall_timeout:
+  Stop the test with an error if phantom is still running but no responses came for this long.
+  Raise it for schedules with long pauses or a response ``timeout`` above it; ``0`` disables the check.
+
+  Default: ``10m``.
+
 :additional_libs:
   List separated by whitespaces, will be added to phantom config file in section ``module_setup``
 

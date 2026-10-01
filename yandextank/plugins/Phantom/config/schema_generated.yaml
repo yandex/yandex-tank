@@ -383,6 +383,14 @@ multi:
       ssl:
         description: Enable ssl
         type: boolean
+      stall_timeout:
+        description: Stop the test with an error if phantom is still running but no
+          responses came for this long. Raise it for schedules with long pauses or
+          a response timeout above it. 0 disables the check
+        examples:
+          '0': disabled
+          10m: ''
+        type: string
       tank_type:
         allowed:
         - http
@@ -473,6 +481,15 @@ ssl:
   default: false
   description: Enable ssl
   type: boolean
+stall_timeout:
+  default: 10m
+  description: Stop the test with an error if phantom is still running but no responses
+    came for this long. Raise it for schedules with long pauses or a response timeout
+    above it. 0 disables the check
+  examples:
+    '0': disabled
+    10m: ''
+  type: string
 tank_type:
   allowed:
   - http

@@ -165,6 +165,13 @@ OPTIONS = {
         'default': '',
     },
     'ssl': {'description': 'Enable ssl', 'type': 'boolean', 'default': False},
+    'stall_timeout': {
+        'description': 'Stop the test with an error if phantom is still running but no responses came for this long. '
+        'Raise it for schedules with long pauses or a response timeout above it. 0 disables the check',
+        'type': 'string',
+        'default': '10m',
+        'examples': {'10m': '', '0': 'disabled'},
+    },
     "threads": {
         'description': (
             'Phantom thread count. When not specified, defaults to the container CPU limit (cgroup quota)'

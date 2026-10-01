@@ -11,8 +11,9 @@ from .reader import PhantomReader, PhantomStatsReader, string_to_df
 from .utils import PhantomConfig
 from .widget import PhantomInfoWidget, PhantomProgressBarWidget
 from ..Console import Plugin as ConsolePlugin
+from ...common.const import RetCode
 from ...common.interfaces import GeneratorPlugin
-from ...common.util import FileMultiReader
+from ...common.util import FileMultiReader, expand_to_seconds
 from .log_analyzer import LogAnalyzer
 
 from load.contrib.netort.process import execute
@@ -41,6 +42,8 @@ class Plugin(GeneratorPlugin):
         self.enum_ammo = None
         self.phout_import_mode = None
         self.start_time = None
+        self.last_data_time = None
+        self.stall_timeout = 0
 
     @staticmethod
     def get_key():
@@ -58,6 +61,7 @@ class Plugin(GeneratorPlugin):
         self.affinity = self.get_option('affinity', '')
         self.enum_ammo = self.get_option("enum_ammo", False)
         self.buffered_seconds = int(self.get_option("buffered_seconds", self.buffered_seconds))
+        self.stall_timeout = expand_to_seconds(self.get_option('stall_timeout', '10m'))
 
         self.predefined_phout = self.get_option(PhantomConfig.OPTION_PHOUT, '')
         if not self.get_option(self.OPTION_CONFIG, '') and self.predefined_phout:
@@ -139,7 +143,7 @@ class Plugin(GeneratorPlugin):
         phantom_stderr_file = self.core.mkstemp(".log", "phantom_stdout_stderr_")
         self.core.add_artifact_file(phantom_stderr_file)
         self.process_stderr = open(phantom_stderr_file, 'w')
-        self.start_time = time.time()
+        self.start_time = self.last_data_time = time.time()
         self.process = subprocess.Popen(
             args,
             stderr=self.process_stderr,
@@ -160,6 +164,15 @@ class Plugin(GeneratorPlugin):
                 self.errors.extend(errors)
             return abs(retcode)
         else:
+            # Живой phantom без ответов сам не выйдет, а autostop без данных молчит (LOAD-3836).
+            stalled = time.time() - self.last_data_time
+            if self.stall_timeout and stalled > self.stall_timeout:
+                error = (
+                    'Phantom is alive, but no responses for %d s (phantom.stall_timeout). Stopping the test' % stalled
+                )
+                logger.error(error)
+                self.errors.append(error)
+                return RetCode.ERROR
             info = self.get_info()
             if info:
                 eta = int(info.duration) - (int(time.time()) - int(self.start_time))
@@ -170,8 +183,12 @@ class Plugin(GeneratorPlugin):
         if self.process and self.process.poll() is None:
             logger.info("Terminating phantom process with PID %s", self.process.pid)
             self.process.terminate()
-            if self.process:
-                self.process.communicate()
+            try:
+                self.process.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                logger.warning("Phantom ignored SIGTERM, killing PID %s", self.process.pid)
+                self.process.kill()
+                self.process.wait()
         else:
             logger.info("Seems phantom finished")
         self.phout_finished.set()
@@ -189,6 +206,7 @@ class Plugin(GeneratorPlugin):
         return retcode
 
     def on_aggregated_data(self, data, stat):
+        self.last_data_time = time.time()
         self.processed_ammo_count += data["overall"]["interval_real"]["len"]
         logger.debug("Processed ammo count: %s/", self.processed_ammo_count)
 
