@@ -1,0 +1,14 @@
+machine_report:
+  enabled: true
+  package: yandextank.plugins.MachineReport
+  generator:
+    dc: null
+  target:
+    hosts:
+      - {host: pod-1.example.net, dc: null, cpu_model: null}
+    cpu:
+      source_id: target-cpu
+      usage_metric: cpu_usage
+      throttled_metric: null
+      limit_cores: null
+  perforator: null

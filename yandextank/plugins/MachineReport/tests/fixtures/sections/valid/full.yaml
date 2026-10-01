@@ -1,0 +1,41 @@
+machine_report:
+  enabled: true
+  package: yandextank.plugins.MachineReport
+  steady_trim_s: 0
+  monitoring_tolerance_s: 60
+  pools:
+    - {}
+    - target_protocol: http
+  generator:
+    dc: dc-a
+    dc_env: [NODE_DC, NODE_CLUSTER]
+  monitoring:
+    - kind: telegraf
+      host: localhost
+      entity: generator
+      metrics:
+        - {name: custom:cpu-cpu-total_usage_user, unit: pct}
+    - id: target-cpu
+      kind: solomon
+      host: target_cpu
+      required: true
+      metrics:
+        - {name: cpu_usage, unit: cores}
+        - {name: cpu_throttled, unit: cores}
+  target:
+    address: target.example.net:443
+    hosts:
+      - {host: pod-1.example.net, dc: dc-a, cpu_model: AMD EPYC 7702, cpu_model_source: perforator}
+    cpu:
+      source_id: target-cpu
+      usage_metric: cpu_usage
+      throttled_metric: cpu_throttled
+      limit_cores: 8
+  saturation:
+    cpu_util_pct: 85.5
+    discarded_shots_pct: 1
+  perforator:
+    microscope_id: microscope-1
+    selector: '{service="target"}'
+    process_comm: target
+    microscope_window: {start_ts: 1700000000, end_ts: 1700003600}

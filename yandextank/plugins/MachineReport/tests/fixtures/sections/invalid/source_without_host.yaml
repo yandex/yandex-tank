@@ -1,0 +1,5 @@
+machine_report:
+  enabled: true
+  package: yandextank.plugins.MachineReport
+  monitoring:
+    - kind: telegraf

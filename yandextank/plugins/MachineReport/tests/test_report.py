@@ -647,11 +647,11 @@ def test_config_hash_masks_secrets():
 @pytest.mark.parametrize(
     'dc, dc_env, environ, expected',
     [
-        ('vla', ['NODE_DC'], {'NODE_DC': 'sas'}, 'vla'),
-        (None, ['NODE_DC', 'NODE_CLUSTER'], {'NODE_DC': 'sas', 'NODE_CLUSTER': 'myt.cluster.example'}, 'sas'),
-        (None, ['NODE_DC', 'NODE_CLUSTER'], {'NODE_DC': '', 'NODE_CLUSTER': 'myt.cluster.example'}, 'myt'),
+        ('dc-b', ['NODE_DC'], {'NODE_DC': 'dc-a'}, 'dc-b'),
+        (None, ['NODE_DC', 'NODE_CLUSTER'], {'NODE_DC': 'dc-a', 'NODE_CLUSTER': 'dc-c.cluster.example'}, 'dc-a'),
+        (None, ['NODE_DC', 'NODE_CLUSTER'], {'NODE_DC': '', 'NODE_CLUSTER': 'dc-c.cluster.example'}, 'dc-c'),
         (None, ['NODE_DC'], {}, None),
-        (None, [], {'NODE_DC': 'sas'}, None),  # no names configured: the plugin reads no variables
+        (None, [], {'NODE_DC': 'dc-a'}, None),  # no names configured: the plugin reads no variables
     ],
 )
 def test_generator_dc(dc, dc_env, environ, expected):

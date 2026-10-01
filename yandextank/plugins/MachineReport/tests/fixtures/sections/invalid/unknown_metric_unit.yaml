@@ -1,0 +1,8 @@
+machine_report:
+  enabled: true
+  package: yandextank.plugins.MachineReport
+  monitoring:
+    - kind: telegraf
+      host: localhost
+      metrics:
+        - {name: cpu, unit: percent}

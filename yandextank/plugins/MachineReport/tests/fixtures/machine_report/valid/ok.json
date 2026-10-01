@@ -274,10 +274,10 @@
   "monitoring": {
     "sources": [
       {
-        "id": "monium:load/testing/yandextank-perf-target.perf-target",
+        "id": "monium:project-a/cluster-a/perf-target",
         "kind": "monium",
         "entity": "target",
-        "host": "yandextank-perf-target-target-37.sas.yp-c.yandex.net",
+        "host": "target-1.example",
         "required": true,
         "status": "ok",
         "reason": null,
@@ -343,8 +343,8 @@
     ]
   },
   "generator": {
-    "host": "sas2-7704-tasklet.sas.yp-c.yandex.net",
-    "dc": "sas",
+    "host": "generator-1.example",
+    "dc": "dc-a",
     "cpu_model": "AMD EPYC 7702 64-Core Processor",
     "cores": 8,
     "cpu_limit_cores": 8,
@@ -383,17 +383,17 @@
     }
   },
   "target": {
-    "address": "yandextank-perf-target-target-37.sas.yp-c.yandex.net:80",
+    "address": "target-1.example:80",
     "hosts": [
       {
-        "host": "yandextank-perf-target-target-37.sas.yp-c.yandex.net",
-        "dc": "sas",
+        "host": "target-1.example",
+        "dc": "dc-a",
         "cpu_model": "Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz",
         "cpu_model_source": "perforator"
       }
     ],
     "cpu": {
-      "source_id": "monium:load/testing/yandextank-perf-target.perf-target",
+      "source_id": "monium:project-a/cluster-a/perf-target",
       "limit_cores": 4,
       "windows": [
         {
@@ -422,7 +422,7 @@
   },
   "perforator": {
     "status": "pending",
-    "selector": "{service=\"yandextank-perf-target.target\"}",
+    "selector": "{service=\"perf-target\"}",
     "microscope_window": {
       "start_ts": 1790577015,
       "end_ts": 1790578215

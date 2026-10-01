@@ -9,6 +9,7 @@ import threading
 import types
 
 import pytest
+import yaml
 
 from yandextank.common.interfaces import DummyCollector
 from yandextank.plugins.MachineReport import plugin as machine_report
@@ -144,7 +145,7 @@ def test_lifecycle(tmp_path, monkeypatch):
 
 
 def test_section_values(tmp_path, monkeypatch):
-    monkeypatch.setenv('NODE_CLUSTER', 'vla.cluster.example')
+    monkeypatch.setenv('NODE_CLUSTER', 'dc-b.cluster.example')
     monkeypatch.delenv('NODE_DC', raising=False)
     section = {
         'generator': {'dc_env': ['NODE_DC', 'NODE_CLUSTER']},
@@ -152,7 +153,7 @@ def test_section_values(tmp_path, monkeypatch):
             {'kind': 'telegraf', 'host': 'target-1', 'required': True},
             {'id': 'cpu', 'kind': 'solomon', 'host': 'target_cpu', 'entity': 'target'},
         ],
-        'target': {'address': 'svc:443', 'hosts': [{'host': 'pod-1', 'dc': 'sas', 'cpu_model': 'EPYC'}]},
+        'target': {'address': 'svc:443', 'hosts': [{'host': 'pod-1', 'dc': 'dc-a', 'cpu_model': 'EPYC'}]},
         'perforator': {
             'microscope_id': 'm-1',
             'selector': '{service="svc"}',
@@ -162,7 +163,7 @@ def test_section_values(tmp_path, monkeypatch):
     }
     config = {
         'core': {'aggregator_max_wait': 31},
-        'metaconf': {'firestarter': {'labels': {'series': 's-1', 'run': 'r-1'}, 'dc': 'sas'}},
+        'metaconf': {'firestarter': {'labels': {'series': 's-1', 'run': 'r-1'}, 'dc': 'dc-a'}},
     }
     plugin, core = make(tmp_path, section, config=config)
     plugin.configure()
@@ -182,13 +183,13 @@ def test_section_values(tmp_path, monkeypatch):
     }
     assert doc['target'] == {
         'address': 'svc:443',
-        'hosts': [{'host': 'pod-1', 'dc': 'sas', 'cpu_model': 'EPYC', 'cpu_model_source': 'config'}],
+        'hosts': [{'host': 'pod-1', 'dc': 'dc-a', 'cpu_model': 'EPYC', 'cpu_model_source': 'config'}],
         'cpu': None,
     }
     assert doc['perforator']['status'] == 'pending'
     assert doc['provenance']['labels'] == {'series': 's-1', 'run': 'r-1'}
     assert doc['provenance']['series'] == 's-1'
-    assert doc['generator']['dc'] == 'vla'
+    assert doc['generator']['dc'] == 'dc-b'
 
 
 def test_stopped_and_autostopped(tmp_path):
@@ -720,11 +721,26 @@ def test_section_schema():
         None,
     )
     assert cfg['generator'] == {'dc_env': []}
-    for bad in (
-        {'unknown': 1},
-        {'pools': [{'target_protocol': 'h3'}]},
-        {'monitoring': [{'kind': 'telegraf'}]},
-        {'generator': {'dc_env': ['']}},
-    ):
+
+
+SECTIONS = source('tests', 'fixtures', 'sections')
+
+
+@pytest.mark.parametrize(
+    'path',
+    [
+        os.path.join(verdict, name)
+        for verdict in ('valid', 'invalid')
+        for name in sorted(os.listdir(os.path.join(SECTIONS, verdict)))
+    ],
+)
+def test_section_matrix(path):
+    """Other validators of the section (the config validation of load testing services) check the same files and
+    must reach the same verdict: the directory is the verdict."""
+    with open(os.path.join(SECTIONS, path)) as f:
+        config = yaml.safe_load(f)
+    if path.startswith('valid'):
+        TankConfig([config], with_dynamic_options=False).validate()
+    else:
         with pytest.raises(ValidationError):
-            TankConfig([dict(BASE, machine_report=dict(section, **bad))], with_dynamic_options=False).validate()
+            TankConfig([config], with_dynamic_options=False).validate()

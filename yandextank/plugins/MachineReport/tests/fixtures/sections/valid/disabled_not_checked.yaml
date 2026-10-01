@@ -1,0 +1,5 @@
+# The tank validates enabled plugins only.
+machine_report:
+  enabled: false
+  package: yandextank.plugins.MachineReport
+  steady_trim: 15

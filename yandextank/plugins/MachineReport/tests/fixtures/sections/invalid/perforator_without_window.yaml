@@ -1,0 +1,7 @@
+machine_report:
+  enabled: true
+  package: yandextank.plugins.MachineReport
+  perforator:
+    microscope_id: microscope-1
+    selector: "{service=\"target\"}"
+    process_comm: target

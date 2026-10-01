@@ -30,7 +30,7 @@ generator:
       nullable: true
       empty: false
     dc_env:
-      description: environment variables checked in order when dc is not set; the value of the first set one up to the first dot is the data center (sas for sas.cluster.example); none by default, so dc stays null
+      description: environment variables checked in order when dc is not set; the value of the first set one up to the first dot is the data center (dc-a for dc-a.cluster.example); none by default, so dc stays null
       type: list
       default: []
       schema:

@@ -1178,7 +1178,7 @@ def completeness(sources):
 
 
 def generator_dc(dc, dc_env, environ):
-    """The section dc, then the first set variable of dc_env up to the first dot (sas.<domain> gives sas)."""
+    """The section dc, then the first set variable of dc_env up to the first dot (dc-a.<domain> gives dc-a)."""
     if dc:
         return dc
     for name in dc_env:

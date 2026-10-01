@@ -1,0 +1,6 @@
+machine_report:
+  enabled: true
+  package: yandextank.plugins.MachineReport
+  target:
+    cpu:
+      usage_metric: cpu_usage

@@ -1,0 +1,4 @@
+machine_report:
+  enabled: true
+  package: yandextank.plugins.MachineReport
+  steady_trim_s: -1
