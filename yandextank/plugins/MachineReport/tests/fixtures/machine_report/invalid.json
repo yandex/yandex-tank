@@ -407,5 +407,157 @@
     "base": "ok.json",
     "path": "/windows/3/end_ts",
     "value": 1790577321
+  },
+  {
+    "name": "target_cpu_series_point_at_test_end",
+    "base": "ok.json",
+    "path": "/target/cpu/series/points",
+    "value": [
+      {
+        "ts": 1790577316,
+        "cores": 0.8053
+      },
+      {
+        "ts": 1790577317,
+        "cores": 1.6
+      },
+      {
+        "ts": 1790577318,
+        "cores": 1.5595
+      },
+      {
+        "ts": 1790577319,
+        "cores": 1.6621
+      },
+      {
+        "ts": 1790577320,
+        "cores": 1.6216
+      }
+    ]
+  },
+  {
+    "name": "target_cpu_series_points_closer_than_step",
+    "base": "ok.json",
+    "path": "/target/cpu/series/step_s",
+    "value": 2
+  },
+  {
+    "name": "target_cpu_series_ok_with_gap",
+    "base": "ok.json",
+    "path": "/target/cpu/series/points",
+    "value": [
+      {
+        "ts": 1790577315,
+        "cores": 0.8053
+      },
+      {
+        "ts": 1790577316,
+        "cores": 1.6
+      },
+      {
+        "ts": 1790577318,
+        "cores": 1.6621
+      },
+      {
+        "ts": 1790577319,
+        "cores": 1.6216
+      }
+    ]
+  },
+  {
+    "name": "target_cpu_series_ok_without_points",
+    "base": "ok.json",
+    "path": "/target/cpu/series/points",
+    "value": []
+  },
+  {
+    "name": "target_cpu_series_unavailable_with_points",
+    "base": "ok.json",
+    "path": "/target/cpu/series/status",
+    "value": "unavailable"
+  },
+  {
+    "name": "target_cpu_series_ok_with_reason",
+    "base": "ok.json",
+    "path": "/target/cpu/series/reason",
+    "value": "gaps"
+  },
+  {
+    "name": "target_cpu_series_without_step",
+    "base": "ok.json",
+    "path": "/target/cpu/series/step_s"
+  },
+  {
+    "name": "target_cpu_series_bad_status",
+    "base": "ok.json",
+    "path": "/target/cpu/series/status",
+    "value": "empty"
+  },
+  {
+    "name": "target_cpu_series_negative_cores",
+    "base": "ok.json",
+    "path": "/target/cpu/series/points/1/cores",
+    "value": -0.1
+  },
+  {
+    "name": "target_cpu_series_ok_with_one_point",
+    "base": "ok.json",
+    "path": "/target/cpu/series/points",
+    "value": [
+      {
+        "ts": 1790577315,
+        "cores": 0.8053
+      }
+    ]
+  },
+  {
+    "name": "target_cpu_series_step_below_smallest_difference",
+    "base": "ok.json",
+    "path": "/target/cpu/series",
+    "value": {
+      "status": "partial",
+      "step_s": 1,
+      "points": [
+        {
+          "ts": 1790577315,
+          "cores": 0.8053
+        },
+        {
+          "ts": 1790577317,
+          "cores": 1.5595
+        },
+        {
+          "ts": 1790577319,
+          "cores": 1.6216
+        }
+      ]
+    }
+  },
+  {
+    "name": "target_cpu_series_point_before_test_start",
+    "base": "ok.json",
+    "path": "/target/cpu/series/points",
+    "value": [
+      {
+        "ts": 1790577314,
+        "cores": 0.8053
+      },
+      {
+        "ts": 1790577315,
+        "cores": 1.6
+      },
+      {
+        "ts": 1790577316,
+        "cores": 1.5595
+      },
+      {
+        "ts": 1790577317,
+        "cores": 1.6621
+      },
+      {
+        "ts": 1790577318,
+        "cores": 1.6216
+      }
+    ]
   }
 ]

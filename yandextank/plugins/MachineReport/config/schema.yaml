@@ -129,6 +129,10 @@ target:
         limit_cores:
           type: number
           nullable: true
+        series:
+          description: also write target.cpu.series, the target CPU point by point with the source step (15 s for Monium), for the saturation point on line and step profiles; off by default, then the report has the CPU only by windows
+          type: boolean
+          default: false
 saturation:
   description: thresholds of the generator saturation signals
   type: dict

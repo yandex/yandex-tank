@@ -716,7 +716,10 @@ def build(seconds, hist_lines, ctx):
             cpu=cpu,
             saturation=saturation(ctx['saturation'], snapshots, capacity, rendered, per_second, pools),
         ),
-        'target': dict(ctx['target'], cpu=target_cpu(ctx['target_cpu'], sources, rendered, per_second, ctx['points'])),
+        'target': dict(
+            ctx['target'],
+            cpu=target_cpu(ctx['target_cpu'], sources, rendered, per_second, ctx['points'], ctx['tolerance_s']),
+        ),
         'perforator': ctx['perforator'],
     }
 
@@ -891,10 +894,32 @@ def monitoring(specs, points, windows, start, end, tolerance):
     return sources
 
 
-def target_cpu(conf, sources, windows, per_second, points):
+def cpu_series(points, start, edge):
+    """target.cpu.series of the usage points [(ts, cores)] of the test window [start, E), ascending; edge is
+    E - tolerance. A negative usage is no CPU (a counter reset), it is a gap. ts are cut to integer seconds, the later
+    point of one second wins. ok needs neighbours exactly a step apart, the first point at most two steps after start
+    as for a monitoring source (the real Solomon runs start a whole step after it), and the last at most a step before
+    edge. Points missing after edge with no point after them are late, not a gap."""
+    cores = {int(ts): value for ts, value in points if value >= 0}
+    ts = sorted(cores)
+    if len(ts) < 2:
+        reason = 'fewer than two points in the test window, the step is unknown'
+        return {'status': 'unavailable', 'reason': reason, 'step_s': None, 'points': []}
+    steps = [b - a for a, b in zip(ts, ts[1:])]
+    step = min(steps)
+    gap = max(steps) > step or min(ts[0], edge) - min(start, edge) > 2 * step or edge - ts[-1] > step
+    return {
+        'status': 'partial' if gap else 'ok',
+        'step_s': step,
+        'points': [{'ts': t, 'cores': cores[t]} for t in ts],
+    }
+
+
+def target_cpu(conf, sources, windows, per_second, points, tolerance):
     """CPU of the target from its monitoring source; None without one or when the source gave no usage points.
     CPU per request divides by the mean rps of the window seconds up to the last usage point: points come late, and
-    the rps of the seconds they have not reached yet would lower it on a rising load."""
+    the rps of the seconds they have not reached yet would lower it on a rising load. The series of the usage points
+    is there only with the series option of the section."""
     if not conf:
         return None
     source = next((s for s in sources if s['id'] == conf['source_id'] and s['entity'] == 'target'), None)
@@ -906,13 +931,17 @@ def target_cpu(conf, sources, windows, per_second, points):
         return None
     throttled = {e['window']: e['mean'] for e in metrics.get(conf.get('throttled_metric')) or []}
     name = data_name(source['kind'], conf['usage_metric'])
-    end = next(w['end_ts'] for w in windows if w['kind'] == 'test')
-    last = max(ts for ts, row in points[source['host']].items() if ts < end and _number(row.get(name)))
+    test = next(w for w in windows if w['kind'] == 'test')
+    start, end = test['start_ts'], test['end_ts']
+    used = sorted(
+        (ts, row[name]) for ts, row in points[source['host']].items() if start <= ts < end and _number(row.get(name))
+    )
+    last = used[-1][0]
     rps = {}
     for w in windows:
         span = [s['rps'] for s in per_second if w['start_ts'] <= s['ts'] < min(w['end_ts'], math.floor(last) + 1)]
         rps[w['id']] = sum(span) / len(span) if span else None
-    return {
+    out = {
         'source_id': source['id'],
         'limit_cores': conf.get('limit_cores'),
         'windows': [
@@ -928,6 +957,9 @@ def target_cpu(conf, sources, windows, per_second, points):
             for e in usage
         ],
     }
+    if conf.get('series'):
+        out['series'] = cpu_series(used, start, end - tolerance)
+    return out
 
 
 # Generator CPU

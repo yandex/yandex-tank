@@ -121,7 +121,8 @@ def report_errors(doc):
     """Unique window ids and phases, a window per started phase, id number equal to phase_index, pool of a phase
     naming a pool, every window within the test window and at least a second long, quantile ranks, responses and
     rps equal to net codes without 777, per_second covering the test window second by second, CPU and monitoring
-    for the test and steady windows, load_profile hash."""
+    for the test and steady windows, the target CPU series within the test window at most once per step,
+    load_profile hash."""
     found = []
     ids = [w['id'] for w in doc['windows']]
     if len(set(ids)) != len(ids):
@@ -172,9 +173,31 @@ def report_errors(doc):
         missing = set(derivable) - {e['window'] for e in entries}
         if missing:
             found.append('{} has no entry for {}'.format(where, sorted(missing)))
+    found += series_errors((doc['target']['cpu'] or {}).get('series'), start, end)
     profile = json.dumps(doc['provenance']['load_profile'], sort_keys=True, separators=(',', ':'))
     if hashlib.sha256(profile.encode()).hexdigest() != doc['provenance']['load_profile_sha256']:
         found.append('load_profile_sha256 is not the sha256 of the canonical load_profile')
+    return found
+
+
+def series_errors(series, start, end):
+    """target.cpu.series: ascending ts within the test window, the smallest difference is step_s, exactly step_s
+    apart when ok."""
+    if not series or series['status'] == 'unavailable':
+        return []  # the option is off or there is no series: no points either, the schema keeps that
+    found, step, prev = [], int(series['step_s']), None
+    ts = [int(p['ts']) for p in series['points']]
+    if len(ts) > 1 and min(b - a for a, b in zip(ts, ts[1:])) > step:
+        found.append('target.cpu.series: step_s {} is not the smallest difference of ts'.format(step))
+    for point in series['points']:
+        ts = int(point['ts'])
+        if not start <= ts < end:
+            found.append('target.cpu.series: point {} is outside the test window'.format(ts))
+        if prev is not None and ts - prev < step:
+            found.append('target.cpu.series: points {} and {} are closer than the step {} s'.format(prev, ts, step))
+        elif prev is not None and series['status'] == 'ok' and ts - prev != step:
+            found.append('target.cpu.series: ok with a gap between {} and {}'.format(prev, ts))
+        prev = ts
     return found
 
 

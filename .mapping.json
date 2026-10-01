@@ -208,6 +208,7 @@
   "yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/negative_trim.yaml":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/negative_trim.yaml",
   "yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/perforator_without_window.yaml":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/perforator_without_window.yaml",
   "yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/pools_not_list.yaml":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/pools_not_list.yaml",
+  "yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/series_not_bool.yaml":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/series_not_bool.yaml",
   "yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/source_without_host.yaml":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/source_without_host.yaml",
   "yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/tolerance_as_string.yaml":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/tolerance_as_string.yaml",
   "yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/trim_as_float.yaml":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/sections/invalid/trim_as_float.yaml",

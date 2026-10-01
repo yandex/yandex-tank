@@ -791,6 +791,9 @@
                       }
                     }
                   }
+                },
+                "series": {
+                  "$ref": "#/$defs/targetCpuSeries"
                 }
               }
             }
@@ -1735,6 +1738,92 @@
           },
           "latency_max_ms": {
             "maximum": 300000
+          }
+        }
+      }
+    },
+    "targetCpuSeries": {
+      "description": "Target CPU point by point with the step of the source (15 s for Monium and Solomon), for the saturation point on line and step profiles, which have no steady windows. Written only when the plugin section sets target.cpu.series: true (off by default): without the option there is no series, and that is normal; with it the series is always here while target.cpu is not null. Points are usage_metric of the source target.cpu.source_id as the source delivered them, not resampled to seconds: target monitoring has no per-second precision. ts is cut to an integer second, of two points of one second the later stays; a negative usage is no CPU and no point. Only points with ts within the test window [start_ts, end_ts) are kept, as for the windows of target.cpu; the series is not split by window, a consumer finds the window of a point by its ts. At most one point per step_s seconds of the test window: a one-hour test gives 240 points with Monium (about 8 KB) and at most 3600 at a 1 s step (about 125 KB, less than load.per_second). Ascending ts with the smallest difference exactly step_s, points within the test window and ok without gaps between neighbours are checked by report.Validate.",
+      "type": "object",
+      "required": [
+        "status",
+        "step_s",
+        "points"
+      ],
+      "properties": {
+        "status": {
+          "description": "ok: neighbouring points are exactly step_s apart and cover the test window: the first point at most two steps after start_ts, as for a monitoring source, and the last at most a step before the right-edge tolerance (plugin section, 60 s by default). Points missing within the tolerance with no point after them are late, not a gap; a point after them makes them a gap. partial: points with gaps. unavailable: no series although target.cpu is there, the cause is in reason, e.g. the step is unknown with fewer than two points in the test window.",
+          "enum": [
+            "ok",
+            "partial",
+            "unavailable"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "step_s": {
+          "description": "Step of the source: the smallest difference of ts between neighbouring points; null when unavailable.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "ts",
+              "cores"
+            ],
+            "properties": {
+              "ts": {
+                "description": "ts of the point as the source gives it, cut to an integer second; for Solomon and Monium about the middle of its step.",
+                "type": "integer"
+              },
+              "cores": {
+                "description": "Target CPU usage at the point, in cores.",
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "status": {
+            "const": "unavailable"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "step_s": {
+            "type": "null"
+          },
+          "points": {
+            "maxItems": 0
+          }
+        }
+      },
+      "else": {
+        "not": {
+          "required": [
+            "reason"
+          ]
+        },
+        "properties": {
+          "step_s": {
+            "type": "integer"
+          },
+          "points": {
+            "minItems": 2
           }
         }
       }

@@ -31,6 +31,7 @@ machine_report:
       usage_metric: cpu_usage
       throttled_metric: cpu_throttled
       limit_cores: 8
+      series: true
   saturation:
     cpu_util_pct: 85.5
     discarded_shots_pct: 1

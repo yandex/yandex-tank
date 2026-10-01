@@ -453,6 +453,23 @@ def test_replay_step0_solomon(tmp_path, run):
     assert set(cpu) == {'test', 'phase-0', 'phase-1', 'steady-1'}
     assert cpu['steady-1']['usage_cores_mean'] > 1  # the stand target at 120 rps, not the sidecar with ~0.01
     assert cpu['steady-1']['cpu_ms_per_req'] == pytest.approx(cpu['steady-1']['usage_cores_mean'] * 500)
+    assert 'series' not in doc['target']['cpu']  # the option is off by default
+
+
+@pytest.mark.parametrize('run', sorted(STEP0['solomon']))
+def test_replay_step0_solomon_cpu_series(tmp_path, run):
+    """target.cpu.series over the real chunks of the step-0 runs: the Solomon grid of 15 s covers the test window up
+    to the tolerance, float ts of the panel are written as integer seconds. In bt2-bt4 the first point is a whole
+    step after S, and that is no gap, as for the source."""
+    section = dict(SOLOMON_SECTION, target={'cpu': dict(SOLOMON_SECTION['target']['cpu'], series=True)})
+    doc = replay(tmp_path, section, STEP0['solomon'][run])
+    series = doc['target']['cpu']['series']
+    assert (series['status'], series['step_s'], len(series['points'])) == ('ok', 15, 13)
+    test = next(w for w in doc['windows'] if w['id'] == 'test')
+    assert all(test['start_ts'] <= p['ts'] < test['end_ts'] and type(p['ts']) is int for p in series['points'])
+    assert doc['target']['cpu']['windows'][0]['usage_cores_mean'] == pytest.approx(
+        sum(p['cores'] for p in series['points']) / 13
+    )
 
 
 def test_replay_step0_solomon_report_file(tmp_path):
@@ -640,14 +657,16 @@ def test_target_cpu_metrics_added_to_its_source(tmp_path, caplog):
     ],
 )
 def test_target_cpu_that_is_not_the_whole_target(tmp_path, caplog, change, problem):
-    section, panels = SOLOMON_SECTION, PANELS
+    """The plugin drops target.cpu by the config while its source is ok: the cause is in the tank log only, and the
+    series option gives no series either."""
+    cpu = dict(SOLOMON_SECTION['target']['cpu'], series=True)
+    section, panels = dict(SOLOMON_SECTION, target={'cpu': cpu}), PANELS
     if change is None:  # the mean over pods, not their sum
         query = PANELS['target_cpu']['sensors'][0]['query'].replace('series_sum', 'series_avg')
         sensor = dict(PANELS['target_cpu']['sensors'][0], query=query)
         panels = dict(PANELS, target_cpu=dict(PANELS['target_cpu'], sensors=[sensor]))
     else:
-        target = dict(SOLOMON_SECTION['target'], cpu=dict(SOLOMON_SECTION['target']['cpu'], **change))
-        section = dict(SOLOMON_SECTION, target=target)
+        section = dict(SOLOMON_SECTION, target={'cpu': dict(cpu, **change)})
         if 'usage_metric' in change:
             pct = {'name': change['usage_metric'], 'unit': 'pct'}
             first = dict(SOLOMON_SECTION['monitoring'][0], metrics=[pct])
@@ -656,6 +675,8 @@ def test_target_cpu_that_is_not_the_whole_target(tmp_path, caplog, change, probl
             panels = dict(PANELS, target_cpu=dict(PANELS['target_cpu'], sensors=[sensor]))
     doc = solomon_target(tmp_path, caplog, section, panels)
     assert doc['target']['cpu'] is None
+    if 'usage_metric' not in (change or {}):  # the probe has no pct metric: that source is empty
+        assert doc['monitoring']['sources'][0]['status'] == 'ok'
     assert 'no target CPU: ' + problem in caplog.text if change else problem in caplog.text
 
 

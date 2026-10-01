@@ -1,0 +1,14 @@
+machine_report:
+  enabled: true
+  package: yandextank.plugins.MachineReport
+  monitoring:
+    - id: target-cpu
+      kind: solomon
+      host: target_cpu
+      metrics:
+        - {name: cpu_usage, unit: cores}
+  target:
+    cpu:
+      source_id: target-cpu
+      usage_metric: cpu_usage
+      series: 'yes'

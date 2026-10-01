@@ -417,7 +417,33 @@
           "throttled_cores_mean": 0,
           "cpu_ms_per_req": 13.423
         }
-      ]
+      ],
+      "series": {
+        "status": "ok",
+        "step_s": 1,
+        "points": [
+          {
+            "ts": 1790577315,
+            "cores": 0.8053
+          },
+          {
+            "ts": 1790577316,
+            "cores": 1.6
+          },
+          {
+            "ts": 1790577317,
+            "cores": 1.5595
+          },
+          {
+            "ts": 1790577318,
+            "cores": 1.6621
+          },
+          {
+            "ts": 1790577319,
+            "cores": 1.6216
+          }
+        ]
+      }
     }
   },
   "perforator": {

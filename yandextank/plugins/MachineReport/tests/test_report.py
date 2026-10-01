@@ -2,6 +2,7 @@
 Aggregator, TankAggregator); every report is checked by the schemas and the copy of report.Validate in
 test_schema.py, and its quantiles against numpy.percentile(method='inverted_cdf') over the raw phout rows."""
 
+import functools
 import gzip
 import os
 import time
@@ -912,6 +913,92 @@ def test_target_cpu_per_request_up_to_its_last_point():
     doc = build(rows, pools([line(1, 75, '150s')]), monitoring=monitoring, points={'h': points}, target_cpu=conf)
     test = doc['target']['cpu']['windows'][0]
     assert test['window'] == 'test' and test['cpu_ms_per_req'] == pytest.approx(10, rel=0.02)
+
+
+@functools.lru_cache(maxsize=None)
+def ramp_seconds():
+    """Seconds and hist lines of a test window [T, T + 600), a response a second: aggregated once for all cases."""
+    return summarize(aggregate([[phout((T + s + 0.5, 'a', 1000, 0, 200) for s in range(600))]]))
+
+
+def ramp_cpu(ts, option=True, tolerance=60, values=None):
+    """target.cpu of a 600 s ramp with usage points at T + ts (the value is ts / 1000 unless values {ts: value} give
+    it), checked by the schema and the copy of report.Validate."""
+    conf = {'source_id': 'h', 'usage_metric': 'cpu', 'series': option}
+    if option is None:
+        del conf['series']
+    points = {T + t: {'cpu': (values or {}).get(t, t / 1000)} for t in ts}
+    ctx = context(
+        pools([line(1000, 12000, '600s')]),
+        monitoring=[spec(metrics=('cpu',))],
+        points={'h': points},
+        target_cpu=conf,
+        tolerance_s=tolerance,
+    )
+    doc = report.build(*ramp_seconds(), ctx)
+    assert (window(doc, 'test')['start_ts'], window(doc, 'test')['end_ts']) == (T, T + 600)
+    assert not errors(validator('machine_report'), 'machine_report', doc)
+    return doc['target']['cpu']
+
+
+@pytest.mark.parametrize('option', [None, False])
+def test_target_cpu_series_off(option):
+    assert 'series' not in ramp_cpu(range(7, 600, 15), option)
+
+
+@pytest.mark.parametrize(
+    'ts, tolerance, status',
+    [
+        # Monium points mid-step over the whole window but the last 40 s: late points within the tolerance
+        (range(7, 560, 15), 60, 'ok'),
+        # 45 s between neighbours at a 15 s step
+        ([t for t in range(7, 600, 15) if t not in (202, 217)], 60, 'partial'),
+        # the left edge as for a monitoring source: from S to the first point at most two steps
+        (range(30, 600, 15), 60, 'ok'),
+        (range(31, 600, 15), 60, 'partial'),
+        # the right edge: the last point at most a step before E - tolerance, unless the tolerance is wider
+        (range(0, 526, 15), 60, 'ok'),
+        (range(7, 470, 15), 60, 'partial'),
+        (range(7, 470, 15), 150, 'ok'),
+        # a point after missing ones makes them a gap, in the tolerance too: they are lost, not late
+        ([t for t in range(7, 600, 15) if t not in (547, 562, 577)], 60, 'partial'),
+        # a test shorter than the tolerance: all its points may be late
+        (range(307, 600, 15), 700, 'ok'),
+    ],
+)
+def test_target_cpu_series(ts, tolerance, status):
+    series = ramp_cpu(ts, tolerance=tolerance)['series']
+    assert (series['status'], series['step_s']) == (status, 15) and 'reason' not in series
+    assert series['points'] == [{'ts': T + t, 'cores': t / 1000} for t in ts]
+
+
+def test_target_cpu_series_points_as_delivered():
+    """Points out of the test window are dropped; Solomon ts are floats, written as integer seconds, and the later
+    point of one second wins: the series stays at most one point a step."""
+    series = ramp_cpu([-3, 600, 22.75] + [float(t) for t in range(7, 600, 15)])['series']
+    assert (series['status'], series['step_s']) == ('ok', 15)
+    expected = [{'ts': T + t, 'cores': (22.75 if t == 22 else t) / 1000} for t in range(7, 600, 15)]
+    assert series['points'] == expected and all(type(p['ts']) is int for p in series['points'])
+
+
+@pytest.mark.parametrize('bad', [-0.1, float('nan'), float('inf')])
+def test_target_cpu_series_skips_what_is_no_cpu(bad):
+    """A negative usage (a counter reset) is no CPU and the schema keeps cores from 0, NaN and inf are no numbers:
+    the series has no point there, and that is a gap."""
+    series = ramp_cpu(range(7, 560, 15), values={202: bad})['series']
+    assert (series['status'], series['step_s']) == ('partial', 15)
+    assert [p['ts'] for p in series['points']] == [T + t for t in range(7, 560, 15) if t != 202]
+
+
+@pytest.mark.parametrize('ts, values', [([300], None), ([300, 315], {315: -0.5})])
+def test_target_cpu_series_one_point(ts, values):
+    series = ramp_cpu(ts, values=values)['series']
+    assert series == {
+        'status': 'unavailable',
+        'reason': 'fewer than two points in the test window, the step is unknown',
+        'step_s': None,
+        'points': [],
+    }
 
 
 # Generator CPU
