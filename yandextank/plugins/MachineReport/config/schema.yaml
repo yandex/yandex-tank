@@ -57,7 +57,7 @@ monitoring:
         allowed: [target, generator]
         default: target
       host:
-        description: key of the source in tank monitoring data (the host for telegraf, the panel name for solomon)
+        description: key of the source in tank monitoring data (the host for telegraf, the Solomon panel name for solomon and monium)
         type: string
         required: true
         empty: false
@@ -72,7 +72,7 @@ monitoring:
           type: dict
           schema:
             name:
-              description: metric name in tank monitoring data
+              description: metric name in tank monitoring data; for a Solomon sensor custom:<metric_type>_<metric_name> with '/', '.', '_' of the type and '/', '.' of the name replaced by '-', cut to 100 characters, as the tank does
               type: string
               required: true
               empty: false
@@ -110,7 +110,7 @@ target:
             type: string
             allowed: [perforator, telegraf, monium, config, unknown]
     cpu:
-      description: which monitoring metric is the target CPU (one series for the whole target)
+      description: which monitoring metric is the target CPU, one series for the whole target in cores (for Solomon a sum over all series); otherwise target.cpu is null
       type: dict
       nullable: true
       default: null
@@ -146,6 +146,11 @@ saturation:
     plan_deficit_pct:
       type: number
       default: 5
+    sustain_s:
+      description: a signal value is the highest over this many seconds in a row of a window (all of it when shorter)
+      type: integer
+      min: 1
+      default: 60
 perforator:
   description: microscope created before the shooting; the report marks profiling pending
   type: dict

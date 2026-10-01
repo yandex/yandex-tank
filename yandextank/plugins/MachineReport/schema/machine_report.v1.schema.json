@@ -657,6 +657,7 @@
                     "$ref": "#/$defs/windowId"
                   },
                   "value": {
+                    "description": "The highest value over saturation.sustain_s seconds in a row of the window (the plugin section, 60 s by default; all of the window when shorter): for CPU_UTIL_HIGH the mean usage, for INSTANCES_EXHAUSTED the busy instances held all that time.",
                     "type": "number"
                   },
                   "unit": {
@@ -785,7 +786,7 @@
                         "$ref": "#/$defs/nullableNumber"
                       },
                       "cpu_ms_per_req": {
-                        "description": "CPU milliseconds spent by the target per response: usage_cores_mean * 1000 / rps_mean of the window.",
+                        "description": "CPU milliseconds spent by the target per response: usage_cores_mean * 1000 / the mean rps of the window seconds up to the last usage point (monitoring points come late, and the seconds they have not reached would lower it on a rising load).",
                         "$ref": "#/$defs/nullableNumber"
                       }
                     }
@@ -1574,7 +1575,7 @@
           "type": "boolean"
         },
         "status": {
-          "description": "ok: data for the whole test window. partial: data with gaps; points missing only at the right edge of the test window, within the right-edge tolerance (plugin section, 60 s by default), are not a gap; points at or after the end of the test window are dropped. empty: the source answered but gave no points. error: the source failed, including a Solomon source without a token. pending: data may still arrive after the report was written; not allowed for a required source: the report is never changed, and the plugin does not wait in post_process, so a required source is reported by what arrived when the tank monitoring ended. unsupported: the source cannot be read in this setup, e.g. a Solomon sensor that may return several series. not_requested: listed but not collected in this run; not allowed for a required source.",
+          "description": "ok: data for the whole test window. partial: data with gaps; points missing only at the right edge of the test window, within the right-edge tolerance (plugin section, 60 s by default), are not a gap; points at or after the end of the test window are dropped. empty: no points came from the source (a Solomon token the server rejects looks the same: the tank Solomon plugin only logs the answer). error: the source failed, including a Solomon source without a token. pending: data may still arrive after the report was written; not allowed for a required source: the report is never changed, and the plugin does not wait in post_process, so a required source is reported by what arrived when the tank monitoring ended. unsupported: the source cannot be read in this setup, e.g. a Solomon sensor that may return several series. not_requested: listed but not collected in this run; not allowed for a required source.",
           "enum": [
             "ok",
             "partial",

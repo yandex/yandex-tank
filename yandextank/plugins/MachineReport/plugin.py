@@ -9,19 +9,30 @@ import json
 import logging
 import os
 import socket
+import time
+from collections import defaultdict
 
-from ...common.interfaces import AbstractPlugin, AggregateResultListener
+from ...common.interfaces import AbstractPlugin, AggregateResultListener, DummyCollector, MonitoringDataListener
 from ...version import VERSION as TANK_VERSION
-from ..Phantom.utils import _cgroup_cpu_limit
 from . import report
 
 logger = logging.getLogger(__name__)
 
 CGROUP_ROOT = '/sys/fs/cgroup'
-MONITORING_NOT_READ = 'the plugin version does not read monitoring yet'
+PROC_CGROUP = '/proc/self/cgroup'
+# the tank Solomon plugin is built only outside the open source tank, so it is recognized by its module
+SOLOMON_MODULE = 'yandextank.plugins.Solomon.plugin'
+YC_MODULE = 'yandextank.plugins.YCMonitoring.plugin'
+SATURATION = {
+    'cpu_util_pct': 90,
+    'cpu_throttled_periods_pct': 5,
+    'discarded_shots_pct': 1,
+    'plan_deficit_pct': 5,
+    'sustain_s': 60,
+}
 
 
-class Plugin(AbstractPlugin, AggregateResultListener):
+class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     SECTION = 'machine_report'
 
     def __init__(self, core, cfg, name):
@@ -32,6 +43,16 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         self._seconds = []
         self._no_report = None
         self._done = False
+        self._sources = []
+        # chunk key -> data metric names kept from it; {ts: {name: value}} by chunk key
+        self._wanted = {}
+        self._points = defaultdict(dict)
+        self._cgroup = None
+        self._cpu_source = 'unavailable'
+        self._snapshots = []
+        # snapshots are stamped by the monotonic clock shifted to epoch seconds: a jump of the wall clock would
+        # turn the CPU of an interval into thousands of cores
+        self._epoch = time.time() - time.monotonic()
 
     @staticmethod
     def get_key():
@@ -102,13 +123,86 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             self._read_profile()
         if self._pools is None:
             raise report.NoReport('the generator has no config at the start of the shooting')
-        log_cgroup('start')
+        self._sources = self._monitoring_specs()
+        for s in self._sources:
+            self._wanted.setdefault(s['host'], set()).update(
+                report.data_name(s['kind'], m['name']) for m in s['metrics']
+            )
+        self._cgroup, why = report.find_cgroup(CGROUP_ROOT, PROC_CGROUP, os.getpid())
+        if self._cgroup and report.cgroup_cpu(self._cgroup):
+            self._cpu_source = self._cgroup.source
+        logger.info(
+            'MachineReport: generator CPU from %s (%s), %s: %s',
+            self._cpu_source,
+            why or self._cgroup,
+            PROC_CGROUP,
+            '; '.join((report._read(PROC_CGROUP) or '').split()),
+        )
+        self._sample()
         self._hist = report.HistWriter(os.path.join(self.core.artifacts_dir, report.HIST_FILE + '.part'))
+
+    def _monitoring_specs(self):
+        """Sources of the section with defaults; the metrics of the target CPU are read from its source."""
+        cpu = (self.cfg.get('target') or {}).get('cpu') or {}
+        specs = []
+        for s in self.cfg.get('monitoring') or []:
+            spec = {
+                'id': s.get('id') or '{}:{}'.format(s['kind'], s['host']),
+                'kind': s['kind'],
+                'entity': s.get('entity') or 'target',
+                'host': s['host'],
+                'required': bool(s.get('required')),
+                'metrics': [{'name': m['name'], 'unit': m['unit']} for m in s.get('metrics') or []],
+            }
+            if spec['id'] == cpu.get('source_id'):
+                names = {m['name'] for m in spec['metrics']}
+                for name in (cpu.get('usage_metric'), cpu.get('throttled_metric')):
+                    if name and name not in names:
+                        spec['metrics'].append({'name': name, 'unit': 'cores'})
+            specs.append(spec)
+        return specs
+
+    def _sample(self):
+        """A snapshot of the cgroup CPU counters, at least a second after the previous one: the plugin has no thread
+        of its own, it samples on the callbacks of the core and the aggregator."""
+        if self._cpu_source == 'unavailable':
+            return
+        try:
+            now = self._epoch + time.monotonic()
+            if self._snapshots and now - self._snapshots[-1][0] < 1:
+                return
+            read = report.cgroup_cpu(self._cgroup)
+            if read:
+                self._snapshots.append((now,) + read)
+        except Exception:
+            logger.debug('MachineReport: cannot read the cgroup CPU', exc_info=True)
+
+    def is_test_finished(self):
+        if self._hist is not None:
+            self._sample()
+        return -1
+
+    def monitoring_data(self, data):
+        """Keeps the points of the section sources; a later point of the same chunk key, ts and metric wins. A chunk
+        the panel could not format comes as None: it is skipped, not the chunks after it."""
+        if not self._wanted or self._hist is None:
+            return
+        for chunk in data or []:
+            try:
+                for key, block in chunk['data'].items():
+                    names = self._wanted.get(key)
+                    if names is None:
+                        continue
+                    row = self._points[key].setdefault(chunk['timestamp'], {})
+                    row.update((name, value) for name, value in block['metrics'].items() if name in names)
+            except Exception:
+                logger.warning('MachineReport: a monitoring chunk in an unexpected format: %.200r', chunk)
 
     def on_aggregated_data(self, data, stats):
         if self._hist is None or self._no_report:
             return
         try:
+            self._sample()
             summary, lines = report.summarize_second(data, stats)
             self._hist.write(lines)
             # ~1 MB per hour per case; merge seconds by ts on arrival if day-long runs with many cases matter
@@ -145,7 +239,6 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             raise report.NoReport(self._no_report)
         if self._hist is None:
             raise report.NoReport('the shooting did not start')
-        log_cgroup('end')
         histograms = self._hist.artifact()
         doc = report.build(self._seconds, report.read_hist(self._hist.path), self._context(retcode, histograms))
         text = json.dumps(doc, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
@@ -178,18 +271,6 @@ class Plugin(AbstractPlugin, AggregateResultListener):
         firestarter = (config.get('metaconf') or {}).get('firestarter') or {}
         labels = {str(k): str(v) for k, v in (firestarter.get('labels') or {}).items()}
         section = self.cfg
-        sources = [
-            {
-                'id': s.get('id') or '{}:{}'.format(s['kind'], s['host']),
-                'kind': s['kind'],
-                'entity': s.get('entity') or 'target',
-                'host': s['host'],
-                'required': bool(s.get('required')),
-                'status': 'unsupported',
-                'reason': MONITORING_NOT_READ,
-            }
-            for s in section.get('monitoring') or []
-        ]
         generator = section.get('generator') or {}
         dc = report.generator_dc(generator.get('dc'), generator.get('dc_env') or [], os.environ)
         requested_dc = firestarter.get('dc')
@@ -209,21 +290,24 @@ class Plugin(AbstractPlugin, AggregateResultListener):
                 'run_id': None,
                 'created_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
             },
-            'statuses': {'shooting': self._shooting(retcode), 'completeness': report.completeness(sources)},
+            'statuses': {'shooting': self._shooting(retcode)},
             'gun': {'type': 'pandora', 'version': self._gun_version},
             'autostop_criteria': self._autostop_criteria(),
             'histograms': histograms,
-            'monitoring': sources,
+            'monitoring': [dict(s, **self._config_status(s)) for s in self._sources],
+            'points': self._points,
+            'tolerance_s': section.get('monitoring_tolerance_s', 60),
             'generator': {
                 'host': socket.gethostname() or 'unknown',
                 'dc': dc,
                 'cpu_model': report.cpu_model(),
                 'cores': len(os.sched_getaffinity(0)),
-                'cpu_limit_cores': _cgroup_cpu_limit(CGROUP_ROOT),
-                'cpu': {'source': 'unavailable', 'windows': []},
-                'saturation': {'status': 'unknown', 'signals': []},
+                'cpu_limit_cores': self._cgroup.limit if self._cgroup else None,
             },
+            'cpu': {'source': self._cpu_source, 'snapshots': self._snapshots},
+            'saturation': dict(SATURATION, **(section.get('saturation') or {})),
             'target': self._target(section.get('target') or {}),
+            'target_cpu': self._target_cpu((section.get('target') or {}).get('cpu')),
             'perforator': self._perforator(section.get('perforator')),
         }
 
@@ -260,7 +344,62 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             }
             for h in section.get('hosts') or []
         ]
-        return {'address': address, 'hosts': hosts, 'cpu': None}
+        return {'address': address, 'hosts': hosts}
+
+    def _plugins(self, module):
+        return [p for p in self.core.plugins.values() if type(p).__module__ == module]
+
+    def _panels(self, source):
+        """(Solomon plugin, panel) pairs of a solomon or monium source."""
+        found = [(p, (p.get_option('panels') or {}).get(source['host'])) for p in self._plugins(SOLOMON_MODULE)]
+        return [(p, panel) for p, panel in found if panel is not None]
+
+    def _config_status(self, source):
+        """Status of a source decided by the config: the Solomon panel is missing or is in several Solomon plugins,
+        the monitoring plugin has no token (it silently keeps DummyCollector, nothing in the log), a sensor may
+        return several series, or a metric of the section is no series of the panel."""
+        if source['kind'] == 'yc_monitoring':
+            plugins = self._plugins(YC_MODULE)
+            if plugins and all(isinstance(p.collector, DummyCollector) for p in plugins):
+                return {'status': 'error', 'reason': 'no token: the YCMonitoring plugin read nothing'}
+            return {}
+        if source['kind'] not in report.SOLOMON_KINDS:
+            return {}
+        found = self._panels(source)
+        if not found:
+            reason = 'the tank config has no Solomon panel {}'.format(source['host'])
+            return {'status': 'error' if source['required'] else 'not_requested', 'reason': reason}
+        if len(found) > 1:
+            return {
+                'status': 'error',
+                'reason': 'ambiguous: Solomon panel {} is in several plugins'.format(source['host']),
+            }
+        plugin, panel = found[0]
+        if isinstance(plugin.collector, DummyCollector):
+            return {'status': 'error', 'reason': 'no token: the Solomon plugin read nothing'}
+        problem = report.solomon_problem(panel.get('sensors'), [m['name'] for m in source['metrics']])
+        return {'status': problem[0], 'reason': problem[1]} if problem else {}
+
+    def _target_cpu(self, cpu):
+        """target.cpu of the section, None when its metric cannot be the CPU of the whole target in cores."""
+        if not cpu:
+            return None
+        source = next((s for s in self._sources if s['id'] == cpu['source_id']), None)
+        if source is None:
+            problem = 'no monitoring source {}'.format(cpu['source_id'])
+        else:
+            unit = next(m['unit'] for m in source['metrics'] if m['name'] == cpu['usage_metric'])
+            panels = self._panels(source) if source['kind'] in report.SOLOMON_KINDS else []
+            sensor = report.solomon_sensor(panels[0][1].get('sensors') or [], cpu['usage_metric']) if panels else None
+            query = sensor.get('query') if isinstance(sensor, dict) else None
+            if unit != 'cores':
+                problem = 'metric {} is in {}, not in cores'.format(cpu['usage_metric'], unit)
+            elif isinstance(query, str) and report.aggregation(query) not in (None, 'sum'):
+                problem = 'Solomon query {} does not sum the series of the target'.format(query)
+            else:
+                return cpu
+        logger.warning('MachineReport: no target CPU: %s', problem)
+        return None
 
     @staticmethod
     def _perforator(section):
@@ -273,33 +412,3 @@ class Plugin(AbstractPlugin, AggregateResultListener):
             'microscope_id': section['microscope_id'],
             'process_comm': section['process_comm'],
         }
-
-
-def log_cgroup(stage, root=CGROUP_ROOT):
-    """Logs the cgroup the generator CPU is read from in the next plugin version: its version, paths, quota and
-    throttling counters. Throttling between start and end shows whether the cgroup is the generator's own."""
-    try:
-        if os.path.exists(os.path.join(root, 'cgroup.controllers')):
-            version, stat = 'v2', os.path.join(root, 'cpu.stat')
-        else:
-            version, stat = 'v1', os.path.join(root, 'cpu', 'cpu.stat')
-        try:
-            with open('/proc/self/cgroup') as f:
-                paths = f.read().strip().replace('\n', '; ')
-        except OSError:
-            paths = None
-        try:
-            with open(stat) as f:
-                counters = dict(line.split() for line in f if len(line.split()) == 2)
-        except OSError:
-            version, counters = None, {}
-        logger.info(
-            'MachineReport: cgroup at %s: version %s, paths %s, limit %s cores, %s',
-            stage,
-            version,
-            paths,
-            _cgroup_cpu_limit(root),
-            {k: v for k, v in counters.items() if k.startswith(('nr_', 'throttled', 'usage'))},
-        )
-    except Exception:
-        logger.debug('MachineReport: cannot read cgroup', exc_info=True)

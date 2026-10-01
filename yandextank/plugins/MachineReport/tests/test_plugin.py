@@ -10,12 +10,13 @@ import types
 
 import pytest
 
+from yandextank.common.interfaces import DummyCollector
 from yandextank.plugins.MachineReport import plugin as machine_report
 from yandextank.plugins.MachineReport import report
 from yandextank.validator.validator import TankConfig, ValidationError, load_core_base_cfg, load_plugin_schema
 
-from test_report import T, aggregate, const, once, pandora_pool, phout
-from test_schema import errors, validator
+from test_report import CGROUP_V2, PID, T, aggregate, cgroup, const, once, pandora_pool, phout, tank_cgroup
+from test_schema import errors, load, source, validator
 
 VERSION_STUB = '#!/bin/sh\necho "Pandora core/0.8.3" >&2\n'
 
@@ -49,6 +50,20 @@ class Core(object):
 
     def get_option(self, section, option, default=None):
         return self.config.get_option(section, option, default)
+
+
+@pytest.fixture(autouse=True)
+def no_host_cgroup(tmp_path, monkeypatch):
+    """Tests do not read the cgroup of the machine they run on."""
+    monkeypatch.setattr(machine_report, 'CGROUP_ROOT', str(tmp_path / 'no-cgroup'))
+    monkeypatch.setattr(machine_report, 'PROC_CGROUP', str(tmp_path / 'no-proc-cgroup'))
+
+
+def own_cgroup(tmp_path, monkeypatch, files):
+    root, proc = tank_cgroup(tmp_path, files)
+    monkeypatch.setattr(machine_report, 'CGROUP_ROOT', root)
+    monkeypatch.setattr(machine_report, 'PROC_CGROUP', proc)
+    return root
 
 
 def stub(tmp_path, text=VERSION_STUB, name='pandora'):
@@ -101,9 +116,7 @@ def published(core):
 
 
 def test_lifecycle(tmp_path, monkeypatch):
-    (tmp_path / 'cgroup').mkdir()
-    (tmp_path / 'cgroup' / 'cpu.max').write_text('200000 100000')
-    monkeypatch.setattr(machine_report, 'CGROUP_ROOT', str(tmp_path / 'cgroup'))
+    own_cgroup(tmp_path, monkeypatch, {'cgroup.controllers': '', 'cgroup.procs': str(PID), 'cpu.max': '200000 100000'})
     plugin, core = make(tmp_path)
     plugin.configure()
     assert core.job.listeners == [plugin]
@@ -157,9 +170,10 @@ def test_section_values(tmp_path, monkeypatch):
     shoot(plugin)
     plugin.post_process(0)
     doc = published(core)
+    # telegraf gave no points; there is no Solomon plugin with the panel in the config
     assert [(s['id'], s['status'], s['required']) for s in doc['monitoring']['sources']] == [
-        ('telegraf:target-1', 'unsupported', True),
-        ('cpu', 'unsupported', False),
+        ('telegraf:target-1', 'empty', True),
+        ('cpu', 'not_requested', False),
     ]
     assert doc['statuses']['completeness'] == {
         'status': 'INCOMPLETE',
@@ -350,14 +364,326 @@ def test_pandora_version(tmp_path):
     assert report.pandora_version(str(tmp_path / 'missing')) is None
 
 
-def test_cgroup_log(tmp_path, caplog):
-    (tmp_path / 'cgroup.controllers').write_text('cpu')
-    (tmp_path / 'cpu.max').write_text('200000 100000')
-    (tmp_path / 'cpu.stat').write_text('usage_usec 10\nnr_periods 5\nnr_throttled 2\nthrottled_usec 7\n')
+# Monitoring and generator CPU
+
+STEP0 = load(source('tests', 'fixtures', 'monitoring', 'step0.json'))
+
+
+class Solomon(object):
+    """The tank Solomon plugin as the plugin sees it: by its module, panels and collector."""
+
+    def __init__(self, panels, collector):
+        self.panels, self.collector = panels, collector
+
+    def get_option(self, name, default=None):
+        return self.panels if name == 'panels' else default
+
+
+Solomon.__module__ = machine_report.SOLOMON_MODULE
+
+# the panels of step 0 with the stand selectors replaced
+PANELS = {
+    'target_cpu': {
+        'project': 'load',
+        'sensors': [
+            {
+                'query': 'series_sum({service="__deploy__", cluster="testing", name="cpu.usage.cores", box="target"})',
+                'metric_type': 'target',
+                'metric_name': 'cpu_cores',
+            }
+        ],
+    },
+    'two_named': {
+        'sensors': [
+            {'query': '{name="cpu.usage.cores", box="target|sidecar"}', 'metric_type': 'two', 'metric_name': 'named'}
+        ]
+    },
+    'two_auto': {'sensors': ['{name="cpu.usage.cores", box="target|sidecar"}']},
+}
+SOLOMON_SECTION = {
+    'monitoring': [
+        {
+            'kind': 'solomon',
+            'host': 'target_cpu',
+            'required': True,
+            'metrics': [{'name': 'custom:target_cpu_cores', 'unit': 'cores'}],
+        },
+        {'kind': 'solomon', 'host': 'two_named', 'metrics': [{'name': 'custom:two_named', 'unit': 'cores'}]},
+        {'kind': 'solomon', 'host': 'two_auto'},
+    ],
+    'target': {'cpu': {'source_id': 'solomon:target_cpu', 'usage_metric': 'custom:target_cpu_cores'}},
+    'generator': {'dc': 'dc-a'},
+}
+
+
+def replay(tmp_path, section, run, calls=None, collector=None, panels=PANELS, plugins=None):
+    """The plugin over a shooting of 2 rps on the window [start, end) of a step-0 run (its profile: 30 s, then
+    181 s) with the monitoring calls of the run in between."""
+    gen = generator(tmp_path, [[const(2, '30s'), const(2, '181s')]])
+    solomon = Solomon(panels, object() if collector is None else collector)
+    plugin, core = make(tmp_path, section, gen=gen, plugins=dict(plugins or {}, solomon=solomon))
+    plugin.configure()
+    plugin.start_test()
+    start, end = run['start'], run['end']
+    rows = [(s + 0.1 + 0.5 * i, 'a', 1000, 0, 200) for s in range(start, end) for i in range(2)]
+    for data in aggregate([[phout(rows)]]):
+        plugin.on_aggregated_data(data, {'ts': data['ts'], 'metrics': {'instances': 3, 'reqps': 2}})
+    for call in run['calls'] if calls is None else calls:
+        plugin.monitoring_data(call)
+    plugin.post_process(0)
+    return published(core)
+
+
+def statuses(doc):
+    return [(s['id'], s['status'], s['reason']) for s in doc['monitoring']['sources']]
+
+
+@pytest.mark.parametrize('run', sorted(STEP0['solomon']))
+def test_replay_step0_solomon(tmp_path, run):
+    """Real chunks of the step-0 runs: the series_sum panel covers the test window within the tolerance, the
+    panels that may pass several series are unsupported by their config, whatever their data look like."""
+    doc = replay(tmp_path, SOLOMON_SECTION, STEP0['solomon'][run])
+    target, named, auto = doc['monitoring']['sources']
+    assert (target['status'], target['reason'], target['points']) == ('ok', None, 13)
+    assert (named['status'], auto['status']) == ('unsupported', 'unsupported')
+    assert 'does not aggregate all series' in named['reason'] and 'is a selector' in auto['reason']
+    assert doc['statuses']['completeness'] == {'status': 'PARTIAL', 'blocking': False, 'blocking_sources': []}
+    cpu = {w['window']: w for w in doc['target']['cpu']['windows']}
+    assert set(cpu) == {'test', 'phase-0', 'phase-1', 'steady-1'}
+    assert cpu['steady-1']['usage_cores_mean'] > 1  # the stand target at 120 rps, not the sidecar with ~0.01
+    assert cpu['steady-1']['cpu_ms_per_req'] == pytest.approx(cpu['steady-1']['usage_cores_mean'] * 500)
+
+
+def test_replay_step0_solomon_report_file(tmp_path):
+    """The report of bt1 is a valid fixture (the Go report.Validate checks it too); it stays what the plugin
+    writes, up to the fields of the machine and the moment."""
+    doc = replay(tmp_path, SOLOMON_SECTION, STEP0['solomon']['bt1'])
+    path = source('tests', 'fixtures', 'machine_report', 'valid', 'plugin_solomon_step0.json')
+    if os.environ.get('MACHINE_REPORT_REGEN'):
+        with open(os.environ['MACHINE_REPORT_REGEN'], 'w') as f:
+            json.dump(doc, f, indent=1, ensure_ascii=False)
+
+    def stable(d):
+        d = json.loads(json.dumps(d))
+        for key in ('created_at', 'tank_version', 'plugin_version'):
+            del d['provenance'][key]
+        for key in ('host', 'cpu_model', 'cores'):
+            del d['generator'][key]
+        for key in ('sha256', 'bytes'):
+            del d['artifacts']['histograms'][key]
+        return d
+
+    assert stable(doc) == stable(load(path))
+
+
+def test_replay_step0_solomon_bad_token(tmp_path):
+    """With a wrong token Solomon answers 401 and the listener gets nothing: the required source is empty."""
+    doc = replay(tmp_path, SOLOMON_SECTION, STEP0['solomon']['bt1'], calls=[])
+    target = statuses(doc)[0]
+    assert target[:2] == ('solomon:target_cpu', 'empty') and 'a token Solomon rejects looks the same' in target[2]
+    assert doc['statuses']['completeness'] == {
+        'status': 'INCOMPLETE',
+        'blocking': True,
+        'blocking_sources': ['solomon:target_cpu'],
+    }
+    assert doc['target']['cpu'] is None
+
+
+def test_replay_step0_solomon_no_token(tmp_path):
+    """Without a token the Solomon plugin silently keeps DummyCollector: recognized by the collector type."""
+    doc = replay(tmp_path, SOLOMON_SECTION, STEP0['solomon']['bt1'], collector=DummyCollector())
+    assert [s[1:] for s in statuses(doc)] == [('error', 'no token: the Solomon plugin read nothing')] * 3
+    assert doc['statuses']['completeness']['blocking_sources'] == ['solomon:target_cpu']
+    assert doc['target']['cpu'] is None
+
+
+def test_replay_step0_telegraf(tmp_path):
+    """The localhost panel that YLT adds: one point a second up to 6 s before E."""
+    section = {
+        'monitoring': [
+            {
+                'kind': 'telegraf',
+                'host': 'localhost',
+                'entity': 'generator',
+                'metrics': [
+                    {'name': 'custom:cpu-cpu-total_usage_user', 'unit': 'pct'},
+                    {'name': 'Memory_used', 'unit': 'bytes'},
+                ],
+            }
+        ]
+    }
+    doc = replay(tmp_path, section, STEP0['telegraf'])
+    [localhost] = doc['monitoring']['sources']
+    assert (localhost['status'], localhost['points'], localhost['entity']) == ('ok', 206, 'generator')
+    assert [m['windows'][0]['points'] for m in localhost['metrics']] == [206, 206]
+    assert doc['statuses']['completeness']['status'] == 'COMPLETE'
+    # the tolerance of the section: without one the last 6 s are a gap
+    (tmp_path / 'strict').mkdir()
+    doc = replay(tmp_path / 'strict', dict(section, monitoring_tolerance_s=0), STEP0['telegraf'])
+    assert statuses(doc)[0][1:] == (
+        'partial',
+        'metric custom:cpu-cpu-total_usage_user: a gap of 6 s, over two '
+        'median steps of 1 s; metric Memory_used: a gap of 6 s, over two median steps of 1 s',
+    )
+
+
+def test_monitoring_chunks_glued_and_repeated(tmp_path):
+    """A Solomon panel sends a ts in a chunk per sensor; a repeated point keeps the last value."""
+    section = {
+        'monitoring': [
+            {'kind': 'telegraf', 'host': 'h', 'metrics': [{'name': 'a', 'unit': 'none'}, {'name': 'b', 'unit': 'none'}]}
+        ]
+    }
+    plugin, core = make(tmp_path, section)
+    plugin.configure()
+    plugin.start_test()
+    shoot(plugin)
+
+    def chunk(ts, **metrics):
+        return {'timestamp': ts, 'data': {'h': {'comment': '', 'metrics': metrics}, 'other': {'metrics': {'a': 9}}}}
+
+    plugin.monitoring_data([chunk(T + s, a=1) for s in range(5)] + [chunk(T + s, b=2) for s in range(5)])
+    plugin.monitoring_data([chunk(T + 2, a=3)])
+    plugin.monitoring_data(['not a chunk'])
+    # a chunk the panel could not format comes as None: the chunks after it are kept
+    plugin.monitoring_data([None, chunk(T + 4, b=5)])
+    plugin.post_process(0)
+    [h] = published(core)['monitoring']['sources']
+    assert (h['status'], h['points']) == ('ok', 5)
+    assert [m['windows'][0] for m in h['metrics']] == [
+        {'window': 'test', 'points': 5, 'mean': 1.4, 'min': 1, 'max': 3},
+        {'window': 'test', 'points': 5, 'mean': 2.6, 'min': 2, 'max': 5},
+    ]
+    assert dict(plugin._points) == {'h': {T + s: {'a': 3 if s == 2 else 1, 'b': 5 if s == 4 else 2} for s in range(5)}}
+
+
+@pytest.mark.parametrize(
+    'thresholds, found', [({}, [('CPU_THROTTLED', 'test')]), ({'cpu_throttled_periods_pct': 40}, [])]
+)
+def test_generator_cpu_from_cgroup(tmp_path, monkeypatch, thresholds, found):
+    """Snapshots on the callbacks of the core and the aggregator, at least a second apart, by the monotonic clock:
+    1.5 of 2 cores whatever the wall clock does. Thresholds of the section reach the signals."""
+    root = tmp_path / 'cgroup'
+    own_cgroup(tmp_path, monkeypatch, CGROUP_V2)
+    clock, wall = [T - 1.0], [0.0]
+    monkeypatch.setattr(
+        machine_report, 'time', types.SimpleNamespace(time=lambda: clock[0] + wall[0], monotonic=lambda: clock[0])
+    )
+
+    def counters(t):
+        stat = 'usage_usec {}\nnr_periods {}\nnr_throttled {}\nthrottled_usec {}\n'
+        cgroup(root, {'cpu.stat': stat.format(int(1.5e6 * t), int(10 * t), int(3 * t), int(0.2e6 * t))})
+
+    counters(0)
+    plugin, core = make(tmp_path, {'saturation': thresholds})
+    plugin.configure()
+    plugin.start_test()
+    wall[0] = 3600.0  # the wall clock jumps an hour ahead: snapshots do not see it
+    rows = [(T + s + 0.1 * i, 'a', 1000, 0, 200) for s in range(10) for i in range(10)]
+    for i, data in enumerate(aggregate([[phout(rows)]])):
+        clock[0] = T + i
+        counters(i + 1)
+        plugin.on_aggregated_data(data, {'ts': data['ts'], 'metrics': {'instances': 3, 'reqps': 10}})
+        clock[0] += 0.3  # too soon for another snapshot
+        assert plugin.is_test_finished() == -1
+    clock[0] = T + 10
+    counters(11)
+    plugin.is_test_finished()  # a second later the core callback samples too
+    plugin.post_process(0)
+    generator = published(core)['generator']
+    assert (generator['cpu_limit_cores'], generator['cpu']['source']) == (2.0, 'cgroup_v2')
+    assert len(plugin._snapshots) == 12
+    test = generator['cpu']['windows'][0]
+    assert test['window'] == 'test'
+    assert test['usage_cores_mean'] == pytest.approx(1.5)
+    assert test['util_pct_mean'] == pytest.approx(75)
+    assert test['throttled_periods_pct'] == pytest.approx(30)
+    assert test['throttled_cores_mean'] == pytest.approx(0.2)
+    # 30 % of CFS periods throttled at 75 % of the quota: the generator is short of CPU in bursts
+    assert [(s['code'], s['window']) for s in generator['saturation']['signals']] == found
+
+
+def test_generator_cpu_not_from_a_foreign_cgroup(tmp_path, monkeypatch, caplog):
+    own_cgroup(tmp_path, monkeypatch, dict(CGROUP_V2, **{'cgroup.procs': '1\n'}))
+    plugin, core = make(tmp_path)
+    plugin.configure()
     with caplog.at_level(logging.INFO):
-        machine_report.log_cgroup('start', str(tmp_path))
-        machine_report.log_cgroup('end', str(tmp_path / 'missing'))
-    assert "version v2" in caplog.text and 'limit 2.0 cores' in caplog.text and "'nr_throttled': '2'" in caplog.text
+        plugin.start_test()
+    shoot(plugin)
+    plugin.post_process(0)
+    generator = published(core)['generator']
+    assert (generator['cpu']['source'], generator['cpu_limit_cores']) == ('unavailable', None)
+    assert 'does not list the tank process' in caplog.text and '0::/' in caplog.text
+
+
+def solomon_target(tmp_path, caplog, section=None, panels=PANELS, plugins=None):
+    with caplog.at_level(logging.WARNING):
+        doc = replay(tmp_path, section or SOLOMON_SECTION, STEP0['solomon']['bt1'], panels=panels, plugins=plugins)
+    return doc
+
+
+def test_target_cpu_metrics_added_to_its_source(tmp_path, caplog):
+    """The section names the target CPU metric only in target.cpu: the plugin reads it from the source itself."""
+    monitoring = [dict(SOLOMON_SECTION['monitoring'][0], metrics=[])] + SOLOMON_SECTION['monitoring'][1:]
+    doc = solomon_target(tmp_path, caplog, dict(SOLOMON_SECTION, monitoring=monitoring))
+    assert doc['monitoring']['sources'][0]['status'] == 'ok'
+    assert doc['target']['cpu']['windows'][0]['usage_cores_mean'] > 0
+
+
+@pytest.mark.parametrize(
+    'change, problem',
+    [
+        ({'source_id': 'solomon:typo'}, 'no monitoring source solomon:typo'),
+        ({'usage_metric': 'custom:target_cpu_pct'}, 'metric custom:target_cpu_pct is in pct, not in cores'),
+        (None, 'does not sum the series of the target'),
+    ],
+)
+def test_target_cpu_that_is_not_the_whole_target(tmp_path, caplog, change, problem):
+    section, panels = SOLOMON_SECTION, PANELS
+    if change is None:  # the mean over pods, not their sum
+        query = PANELS['target_cpu']['sensors'][0]['query'].replace('series_sum', 'series_avg')
+        sensor = dict(PANELS['target_cpu']['sensors'][0], query=query)
+        panels = dict(PANELS, target_cpu=dict(PANELS['target_cpu'], sensors=[sensor]))
+    else:
+        target = dict(SOLOMON_SECTION['target'], cpu=dict(SOLOMON_SECTION['target']['cpu'], **change))
+        section = dict(SOLOMON_SECTION, target=target)
+        if 'usage_metric' in change:
+            pct = {'name': change['usage_metric'], 'unit': 'pct'}
+            first = dict(SOLOMON_SECTION['monitoring'][0], metrics=[pct])
+            section['monitoring'] = [first] + SOLOMON_SECTION['monitoring'][1:]
+            sensor = dict(PANELS['target_cpu']['sensors'][0], metric_name='cpu_pct')
+            panels = dict(PANELS, target_cpu=dict(PANELS['target_cpu'], sensors=[sensor]))
+    doc = solomon_target(tmp_path, caplog, section, panels)
+    assert doc['target']['cpu'] is None
+    assert 'no target CPU: ' + problem in caplog.text if change else problem in caplog.text
+
+
+def test_solomon_config_errors(tmp_path, caplog):
+    """A section metric that is no series of the panel and a panel in two Solomon plugins are errors."""
+    monitoring = [
+        dict(SOLOMON_SECTION['monitoring'][0], metrics=[{'name': 'custom:target_cpu.cores', 'unit': 'cores'}])
+    ]
+    doc = solomon_target(tmp_path, caplog, dict(SOLOMON_SECTION, monitoring=monitoring))
+    [(_, status, reason)] = statuses(doc)
+    assert status == 'error' and 'its sensors give custom:target_cpu_cores' in reason
+    (tmp_path / 'two').mkdir()
+    doc = solomon_target(tmp_path / 'two', caplog, plugins={'monium': Solomon(PANELS, object())})
+    assert statuses(doc)[0][1:] == ('error', 'ambiguous: Solomon panel target_cpu is in several plugins')
+
+
+def test_yc_monitoring_without_token(tmp_path):
+    class YC(object):
+        collector = DummyCollector()
+
+    YC.__module__ = machine_report.YC_MODULE
+    section = {'monitoring': [{'kind': 'yc_monitoring', 'host': 'api', 'required': True}]}
+    plugin, core = make(tmp_path, section, plugins={'yc': YC()})
+    plugin.configure()
+    plugin.start_test()
+    shoot(plugin)
+    plugin.post_process(0)
+    doc = published(core)
+    assert statuses(doc) == [('yc_monitoring:api', 'error', 'no token: the YCMonitoring plugin read nothing')]
 
 
 # Inert without the section

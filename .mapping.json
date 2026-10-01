@@ -196,6 +196,8 @@
   "yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/h2c_not_read.json":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/h2c_not_read.json",
   "yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/monitoring_empty_required.json":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/monitoring_empty_required.json",
   "yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/ok.json":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/ok.json",
+  "yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/plugin_solomon_step0.json":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/machine_report/valid/plugin_solomon_step0.json",
+  "yandextank/plugins/MachineReport/tests/fixtures/monitoring/step0.json":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/monitoring/step0.json",
   "yandextank/plugins/MachineReport/tests/fixtures/phout/pandora_line_const_70s.phout.gz":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/phout/pandora_line_const_70s.phout.gz",
   "yandextank/plugins/MachineReport/tests/fixtures/run/hist.v1.jsonl.gz":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/run/hist.v1.jsonl.gz",
   "yandextank/plugins/MachineReport/tests/fixtures/run/phout.log.gz":"load/projects/yandex-tank/yandextank/plugins/MachineReport/tests/fixtures/run/phout.log.gz",

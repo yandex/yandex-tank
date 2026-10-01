@@ -3,6 +3,7 @@ Aggregator, TankAggregator); every report is checked by the schemas and the copy
 test_schema.py, and its quantiles against numpy.percentile(method='inverted_cdf') over the raw phout rows."""
 
 import gzip
+import os
 import time
 from fractions import Fraction
 
@@ -93,23 +94,24 @@ def context(pools, **overrides):
             'run_id': None,
             'created_at': '2026-09-30T00:00:00Z',
         },
-        'statuses': {
-            'shooting': {'status': 'DONE', 'retcode': 0, 'autostop_criterion': None},
-            'completeness': report.completeness([]),
-        },
+        'statuses': {'shooting': {'status': 'DONE', 'retcode': 0, 'autostop_criterion': None}},
         'gun': {'type': 'pandora', 'version': '0.8.3'},
         'autostop_criteria': [],
         'histograms': {'path': report.HIST_FILE, 'format': 'hist.v1', 'sha256': '0' * 64, 'bytes': 0, 'lines': 0},
         'monitoring': [],
-        'generator': {
-            'host': 'generator',
-            'dc': None,
-            'cpu_model': None,
-            'cores': 1,
-            'cpu': {'source': 'unavailable', 'windows': []},
-            'saturation': {'status': 'unknown', 'signals': []},
+        'points': {},
+        'tolerance_s': 60,
+        'generator': {'host': 'generator', 'dc': None, 'cpu_model': None, 'cores': 1},
+        'cpu': {'source': 'unavailable', 'snapshots': []},
+        'saturation': {
+            'cpu_util_pct': 90,
+            'cpu_throttled_periods_pct': 5,
+            'discarded_shots_pct': 1,
+            'plan_deficit_pct': 5,
+            'sustain_s': 60,
         },
-        'target': {'address': 'target:80', 'hosts': [], 'cpu': None},
+        'target': {'address': 'target:80', 'hosts': []},
+        'target_cpu': None,
         'perforator': {'status': 'not_requested'},
     }
     ctx.update(overrides)
@@ -560,7 +562,10 @@ def test_protocols(guns, overrides, protocols, status):
         ([once(10), once(5)], 15),
         ({'type': 'instance_step', 'from': 10, 'to': 100, 'step': 10, 'stepduration': '1s'}, 100),
         ({'type': 'instance_step', 'from': 10, 'to': 95, 'step': 10, 'stepduration': '1s'}, 90),
-        (const(10, '10s'), None),
+        # an instance per shot of the startup schedule, as pandora starts them
+        (const(10, '10s'), 100),
+        ([once(2), line(0, 10, '2s')], 12),
+        ({'type': 'unlimited', 'duration': '10s'}, None),
     ],
 )
 def test_startup_instances(startup, instances):
@@ -657,6 +662,8 @@ def test_completeness():
     source = {'id': 's', 'required': False, 'status': 'ok'}
     assert report.completeness([])['status'] == 'COMPLETE'
     assert report.completeness([dict(source, status='unsupported')])['status'] == 'PARTIAL'
+    # an optional source without its Solomon panel was not requested: the report stays COMPLETE
+    assert report.completeness([source, dict(source, status='not_requested')])['status'] == 'COMPLETE'
     assert report.completeness([dict(source, required=True, status='unsupported')]) == {
         'status': 'INCOMPLETE',
         'blocking': True,
@@ -676,3 +683,447 @@ def test_latency_agrees_with_reference_merge():
         overflow = sum(li['overflow'] for li in lines)
         ps = tuple(int(p) for p in report.QUANTILES)
         assert report.latency_ms(counts, overflow, n) == reference_latency_ms(lines, ps)
+
+
+# Monitoring
+
+
+def spec(host='h', metrics=('m',), kind='telegraf', **fields):
+    return dict(
+        {'id': host, 'kind': kind, 'entity': 'target', 'host': host, 'required': False},
+        metrics=[{'name': m, 'unit': 'none'} for m in metrics],
+        **fields,
+    )
+
+
+def evaluate(points, specs=None, start=0, end=300, tolerance=60):
+    """Sources over points {ts: {metric: value}} of chunk key h in a test window [start, end) with a steady window."""
+    windows = [report._Window('test', 'test', None, start, end), report._Window('steady-0', 'steady', 0, 100, 200)]
+    return report.monitoring(specs or [spec()], {'h': points}, windows, start, end, tolerance)
+
+
+def series(ts, value=1.0):
+    return {t: {'m': value} for t in ts}
+
+
+@pytest.mark.parametrize(
+    'ts, tolerance, status, reason',
+    [
+        (range(300), 60, 'ok', None),
+        # irregular steps 1, 2, 1, 2, 3 s: median 2 s, no gap over 4 s
+        (np.cumsum([1, 2, 1, 2, 3] * 33)[:-1] - 1, 60, 'ok', None),
+        # the Solomon grid of 15 s with the last point 28 s before E, as in step 0
+        (range(3, 273, 15), 60, 'ok', None),
+        # late points at the right edge within the tolerance; without it they are a gap
+        (range(250), 60, 'ok', None),
+        (range(250), 30, 'partial', 'a gap of 21 s, over two median steps of 1 s'),
+        ([t for t in range(300) if not 100 <= t < 140], 60, 'partial', 'a gap of 41 s, over two median steps of 1 s'),
+        (range(10, 300), 60, 'partial', 'a gap of 10 s, over two median steps of 1 s'),
+        ([t for t in range(300) if t not in (100, 101)], 60, 'partial', 'a gap of 3 s, over two median steps of 1 s'),
+        # a late point past E - tolerance: the gap to it lies within the tolerance and does not count
+        (list(range(0, 241, 15)) + [285], 60, 'ok', None),
+        ([150], 60, 'partial', 'one point'),
+    ],
+)
+def test_source_coverage(ts, tolerance, status, reason):
+    [source] = evaluate(series(int(t) for t in ts), tolerance=tolerance)
+    assert (source['status'], source['reason']) == (status, None if reason is None else 'metric m: ' + reason)
+
+
+def test_points_out_of_the_window_dropped():
+    points = series(range(300))
+    points.update(series([-5, 300, 302], value=100.0))  # E + 2: the load is gone or half gone
+    points[10] = {'m': 'n/a'}  # not a number
+    [source] = evaluate(points)
+    assert (source['status'], source['points']) == ('ok', 299)
+    test = source['metrics'][0]['windows'][0]
+    assert test == {'window': 'test', 'points': 299, 'mean': 1.0, 'min': 1.0, 'max': 1.0}
+
+
+def test_metric_values_by_window():
+    [source] = evaluate({t: {'m': float(t), 'other': 0} for t in range(0, 300, 10)})
+    assert source['metrics'] == [
+        {
+            'name': 'm',
+            'unit': 'none',
+            'windows': [
+                {'window': 'test', 'points': 30, 'mean': 145.0, 'min': 0.0, 'max': 290.0},
+                {'window': 'steady-0', 'points': 10, 'mean': 145.0, 'min': 100.0, 'max': 190.0},
+            ],
+        }
+    ]
+
+
+def test_metric_not_received():
+    points = series(range(300))
+    [source] = evaluate(points, [spec(metrics=('m', 'cpu'))])
+    assert (source['status'], source['reason']) == ('partial', 'metric cpu: not received')
+    assert [w['points'] for w in source['metrics'][1]['windows']] == [0, 0]
+    [source] = evaluate(points, [spec(metrics=('cpu',))])
+    assert (source['status'], source['reason'], source['metrics']) == ('empty', 'metric cpu: not received', [])
+    [source] = evaluate({}, [spec(metrics=('cpu',))])
+    assert (source['status'], source['reason']) == ('empty', 'no points in the test window')
+    # a token Solomon rejects gives no points either: the reason says so
+    [source] = evaluate({}, [spec(metrics=('cpu',), kind='solomon')])
+    assert source['status'] == 'empty' and 'token' in source['reason']
+
+
+def test_source_without_metrics_counts_points():
+    [source] = evaluate({t: {} for t in range(300)}, [spec(metrics=())])
+    assert (source['status'], source['points'], source['metrics']) == ('ok', 300, [])
+
+
+@pytest.mark.parametrize(
+    'first, second, clash',
+    [
+        (('m',), ('m', 'n'), True),
+        ((), ('n',), True),  # a source without metrics reads the whole chunk key
+        (('m',), ('n',), False),
+    ],
+)
+def test_ambiguous_sources(first, second, clash):
+    specs = [spec(metrics=first, id='a'), spec(metrics=second, id='b')]
+    sources = evaluate({t: {'m': 1, 'n': 2} for t in range(300)}, specs)
+    if clash:
+        assert [(s['status'], s['reason']) for s in sources] == [
+            ('error', 'ambiguous: source b reads the same metrics of h'),
+            ('error', 'ambiguous: source a reads the same metrics of h'),
+        ]
+    else:
+        assert [s['status'] for s in sources] == ['ok', 'ok']
+
+
+def test_solomon_names_cut_to_100():
+    """The tank Solomon collector cuts custom:<name> to 100 characters: a longer name of the section matches the cut
+    one, and two names equal in the first 100 characters are one metric."""
+    long = 'custom:' + 'cpu-usage-cores_' * 8
+    points = {t: {long[:100]: 1.5} for t in range(300)}
+    [source] = evaluate(points, [spec(metrics=(long,), kind='solomon')])
+    assert (source['status'], source['metrics'][0]['name']) == ('ok', long)
+    sources = evaluate(points, [spec(metrics=(long,), kind='solomon', id='a'), spec(metrics=(long + 'x',), id='b')])
+    assert [s['status'] for s in sources] == ['ok', 'empty']  # telegraf names are not cut: b reads another metric
+    sources = evaluate(
+        points, [spec(metrics=(long,), kind='solomon', id='a'), spec(metrics=(long + 'x',), kind='monium', id='b')]
+    )
+    assert [s['status'] for s in sources] == ['error', 'error']
+    # the YCMonitoring plugin passes its names through convert_name too
+    [source] = evaluate(points, [spec(metrics=(long,), kind='yc_monitoring')])
+    assert source['status'] == 'ok'
+
+
+@pytest.mark.parametrize(
+    'query, single',
+    [
+        ('series_sum({service="svc", name="cpu.usage.cores", host="*"})', True),
+        (' series_avg( {a="b|c"} ) ', True),
+        ('series_max(series_sum({a="(x)"}))', True),
+        ('{service="svc", name="cpu.usage.cores"}', False),
+        ('series_sum("host", {a="b"})', False),  # grouped by host: a series per host
+        ('series_sum( "host", {a="b"})', False),
+        ("series_sum(['host', 'dc'], {a='b'})", False),
+        ('series_sum({a="b"}) + {c="d"}', False),
+        ('series_sum({a="b"}', False),
+        ('group_lines("sum", {a="b"})', True),
+        ("group_lines('avg',{a='b'})", True),
+        ('group_lines("sum", "host", {a="b"})', False),  # the deprecated form grouped by a label
+        ('alias(series_sum({a="b", c="d"}), "cpu")', True),
+        ('series_sum({a="b"}) / 1000', True),
+        ('series_sum({a="b"}) / series_sum({c="d"})', False),
+        ('alias({a="b"}, "cpu")', False),
+    ],
+)
+def test_single_series(query, single):
+    assert report.single_series(query) is single
+
+
+@pytest.mark.parametrize(
+    'query, function',
+    [
+        ('series_sum({a="b"})', 'sum'),
+        ('alias(group_lines("sum", {a="b"}) * 1e-3, "x")', None),
+        ('alias(group_lines("sum", {a="b"}) * 0.001, "x")', 'sum'),
+        ('series_avg({a="b"})', 'avg'),
+        ('series_max(series_sum({a="b"}))', 'max'),
+    ],
+)
+def test_aggregation(query, function):
+    assert report.aggregation(query) == function
+
+
+MONIUM = {'query': 'series_sum({a="b"})', 'metric_type': 'cpu_usage', 'metric_name': 'pod.total/cores'}
+
+
+@pytest.mark.parametrize(
+    'sensors, metrics, problem',
+    [
+        ([{'query': 'series_sum({a="b"})', 'metric_type': 't', 'metric_name': 'n'}], ['custom:t_n'], None),
+        ([], [], ('unsupported', 'no sensors')),
+        (['{a="b"}'], [], ('unsupported', 'is a selector')),
+        ([{'cluster': 'c', 'service': 's'}], [], ('unsupported', 'is a selector')),
+        ([{'query': 'series_sum({a="b"})', 'metric_type': 't'}], [], ('unsupported', 'no explicit metric_type')),
+        ([{'query': '{a="b"}', 'metric_type': 't', 'metric_name': 'n'}], [], ('unsupported', 'does not aggregate')),
+        # the tank puts '-' for '/', '.', '_' of the type and for '/', '.' of the name
+        ([MONIUM], ['custom:cpu-usage_pod-total-cores'], None),
+        (
+            [MONIUM],
+            ['custom:cpu_usage_pod.total/cores'],
+            ('error', 'its sensors give custom:cpu-usage_pod-total-cores'),
+        ),
+    ],
+)
+def test_solomon_problem(sensors, metrics, problem):
+    found = report.solomon_problem(sensors, metrics)
+    assert found is None if problem is None else (found[0] == problem[0] and problem[1] in found[1])
+
+
+def test_target_cpu_from_its_source():
+    rows = [(T + s + 0.1 * i, 'a', 1000, 0, 200) for s in range(60) for i in range(10)]
+    points = {T + s: {'cpu': 1.5, 'throttled': 0.25} for s in range(0, 60, 5)}
+    conf = {'source_id': 'h', 'usage_metric': 'cpu', 'throttled_metric': 'throttled', 'limit_cores': 4}
+    specs = [spec(metrics=('cpu', 'throttled'), required=True)]
+    doc = build(rows, pools([const(10, '60s')]), monitoring=specs, points={'h': points}, target_cpu=conf)
+    assert doc['monitoring']['sources'][0]['status'] == 'ok'
+    cpu = doc['target']['cpu']
+    assert (cpu['source_id'], cpu['limit_cores']) == ('h', 4)
+    assert cpu['windows'][0] == {
+        'window': 'test',
+        'usage_cores_mean': 1.5,
+        'usage_cores_max': 1.5,
+        'throttled_cores_mean': 0.25,
+        'cpu_ms_per_req': 150.0,
+    }
+    assert [w['window'] for w in cpu['windows']] == [w['id'] for w in doc['windows']]
+    # no target CPU when its source is empty or measures the generator
+    doc = build(rows, pools([const(10, '60s')]), monitoring=specs, points={}, target_cpu=conf)
+    assert (doc['target']['cpu'], doc['statuses']['completeness']['status']) == (None, 'INCOMPLETE')
+    generator = [spec(metrics=('cpu',), entity='generator')]
+    doc = build(rows, pools([const(10, '60s')]), monitoring=generator, points={'h': points}, target_cpu=conf)
+    assert doc['target']['cpu'] is None
+
+
+def test_target_cpu_per_request_up_to_its_last_point():
+    """On a rising load CPU points end before E: CPU per request divides by the rps of the seconds they reach, so
+    10 ms a request stays 10 ms (by the rps of the whole window it would be about 6)."""
+    rps = [1 + s // 2 for s in range(150)]
+    rows = [(T + s + (i + 0.5) / n, 'a', 1000, 0, 200) for s, n in enumerate(rps) for i in range(n)]
+    points = {T + t: {'cpu': 0.01 * rps[t]} for t in range(0, 91, 15)}
+    conf = {'source_id': 'h', 'usage_metric': 'cpu'}
+    monitoring = [spec(metrics=('cpu',))]
+    doc = build(rows, pools([line(1, 75, '150s')]), monitoring=monitoring, points={'h': points}, target_cpu=conf)
+    test = doc['target']['cpu']['windows'][0]
+    assert test['window'] == 'test' and test['cpu_ms_per_req'] == pytest.approx(10, rel=0.02)
+
+
+# Generator CPU
+
+PID = os.getpid()
+CGROUP_V1 = {
+    # a tasklet: cpu,cpuacct mounted for the container, its own counters at the root
+    'cpu/cpu.cfs_quota_us': '200000\n',
+    'cpu/cpu.cfs_period_us': '100000\n',
+    'cpu/cpu.stat': 'nr_periods 2246\nnr_throttled 31\nthrottled_time 1520000000\nh_throttled_time 0\nburst_usage 0\n',
+    'cpuacct/cpuacct.usage': '4923062278080\n',
+    'cpuacct/cgroup.procs': '1\n{}\n'.format(PID),
+}
+# /proc/self/cgroup of the tasklet (dev runs of LOAD-3806): the own cgroup at the root of every mount
+TASKLET = '11:pids:/\n9:cpu,cpuacct:/\n1:name=systemd:/\n0::/\n'
+CGROUP_V2 = {
+    'cgroup.controllers': 'cpuset cpu io memory pids\n',
+    'cgroup.procs': '{}\n'.format(PID),
+    'cpu.max': '200000 100000\n',
+    'cpu.stat': 'usage_usec 4923062278\nuser_usec 4100000000\nsystem_usec 823062278\n'
+    'nr_periods 2246\nnr_throttled 31\nthrottled_usec 1520000\nnr_bursts 0\nburst_usec 0\n',
+}
+
+
+def cgroup(root, files):
+    for name, text in files.items():
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+    return str(root)
+
+
+def tank_cgroup(tmp_path, files, lines='0::/\n'):
+    """(mount root, /proc/self/cgroup) of a cgroup mount with files."""
+    proc = tmp_path / 'proc-self-cgroup'
+    proc.write_text(lines)
+    return cgroup(tmp_path / 'cgroup', files), str(proc)
+
+
+def read_cgroup(tmp_path, files, lines='0::/\n'):
+    found, why = report.find_cgroup(*tank_cgroup(tmp_path, files, lines), PID)
+    return (found, why) if found is None else (found, report.cgroup_cpu(found))
+
+
+@pytest.mark.parametrize(
+    'files, lines, expected',
+    [
+        (CGROUP_V1, TASKLET, ('cgroup_v1', 2.0, [4923.06227808, 1.52, 2246, 31])),
+        (CGROUP_V2, '0::/\n', ('cgroup_v2', 2.0, [4923.062278, 1.52, 2246, 31])),
+        # the cpu controller not delegated: usage without throttling, and no quota
+        (
+            {'cgroup.controllers': '', 'cgroup.procs': str(PID), 'cpu.stat': 'usage_usec 5000000\n'},
+            '0::/\n',
+            ('cgroup_v2', None, [5.0, None, None, None]),
+        ),
+        (dict(CGROUP_V1, **{'cpuacct/cpuacct.usage': 'garbage\n'}), TASKLET, ('cgroup_v1', 2.0, None)),
+    ],
+)
+def test_cgroup_cpu(tmp_path, files, lines, expected):
+    found, counters = read_cgroup(tmp_path, files, lines)
+    assert (found.source, found.limit) == expected[:2]
+    assert counters is None if expected[2] is None else list(counters) == pytest.approx(expected[2])
+
+
+def test_cgroup_not_the_tank_one(tmp_path):
+    """A mount that does not list the tank process is not its cgroup: a host mount would pass the CPU of the host."""
+    found, why = read_cgroup(tmp_path, dict(CGROUP_V2, **{'cgroup.procs': '1\n'}))
+    assert found is None and 'does not list the tank process' in why
+    found, why = read_cgroup(tmp_path, CGROUP_V2, '')
+    assert found is None and 'no cpu controller' in why
+
+
+def test_cgroup_under_a_host_mount(tmp_path):
+    """cgroup v2 of the host without a cgroup namespace: the own directory is found by /proc/self/cgroup, the quota
+    is set on its parent, and throttling is counted there."""
+    own = 'system.slice/tank.scope'
+    files = {
+        'cgroup.controllers': 'cpu\n',
+        'cgroup.procs': '1\n',
+        'cpu.stat': 'usage_usec 999000000\n',
+        'system.slice/cpu.max': '100000 100000\n',
+        'system.slice/cpu.stat': 'usage_usec 9000000\nnr_periods 100\nnr_throttled 7\nthrottled_usec 300000\n',
+        own + '/cgroup.procs': '{}\n'.format(PID),
+        own + '/cpu.max': 'max 100000\n',
+        own + '/cpu.stat': 'usage_usec 2000000\nnr_periods 0\nnr_throttled 0\nthrottled_usec 0\n',
+    }
+    found, counters = read_cgroup(tmp_path, files, '0::/' + own + '\n')
+    assert (found.source, found.limit) == ('cgroup_v2', 1.0)
+    assert found.usage.endswith(own) and found.throttling.endswith('system.slice')
+    assert list(counters) == pytest.approx([2.0, 0.3, 100, 7])
+
+
+def test_generator_cpu_by_windows():
+    # 1.5 cores, 0.1 s throttled per second, 10 CFS periods per second with 3 throttled; snapshots over [5, 25]
+    snapshots = [(t + 0.5 * (t % 2), 1.5 * t, 0.1 * t, 10 * t, 3 * t) for t in range(5, 26)]
+    windows = [report._Window('test', 'test', None, 0, 30), report._Window('steady-0', 'steady', 0, 10, 20)]
+    cpu = report.generator_cpu('cgroup_v1', sorted(snapshots), 2, windows)
+    assert cpu['source'] == 'cgroup_v1'
+    test, steady = cpu['windows']
+    assert test['window'] == 'test' and steady['window'] == 'steady-0'
+    for w in (test, steady):
+        assert w['usage_cores_mean'] == pytest.approx(1.5)
+        assert w['util_pct_mean'] == pytest.approx(75)
+        assert w['throttled_periods_pct'] == pytest.approx(30)
+        assert w['throttled_cores_mean'] == pytest.approx(0.1)
+    assert steady['throttled_s'] == pytest.approx(1.0)
+    assert test['usage_cores_max'] >= 1.5 and test['util_pct_max'] == pytest.approx(test['usage_cores_max'] * 50)
+    assert report.generator_cpu('unavailable', snapshots, 2, windows) == {'source': 'unavailable', 'windows': []}
+    # a window without snapshots and counters without a quota
+    empty = report.generator_cpu('cgroup_v2', [(0, 0, 0, 0, 0), (1, 1, 0, 0, 0)], 2, windows[1:])['windows'][0]
+    assert empty['usage_cores_mean'] is None and empty['throttled_periods_pct'] is None
+
+
+def test_generator_cpu_split_at_window_edges():
+    """Snapshots off the window edges: an interval adds to a window by its overlap; 1 core up to 15.5 s, then 2."""
+    snapshots = [(t + 0.5, t + 0.5 if t < 15 else 2 * t - 14.5, 0, 0, 0) for t in range(5, 25)]
+    windows = [report._Window('steady-0', 'steady', 0, 10, 20)]
+    [steady] = report.generator_cpu('cgroup_v2', snapshots, 2, windows)['windows']
+    assert steady['usage_cores_mean'] == pytest.approx(1.45)
+
+
+def test_generator_cpu_without_throttling_counters():
+    snapshots = [(t, 1.5 * t, None, None, None) for t in range(30)]
+    [test] = report.generator_cpu('cgroup_v2', snapshots, 2, [report._Window('test', 'test', None, 0, 30)])['windows']
+    assert test['usage_cores_mean'] == pytest.approx(1.5)
+    assert (test['throttled_s'], test['throttled_cores_mean'], test['throttled_periods_pct']) == (None, None, None)
+
+
+# Saturation
+
+THRESHOLDS = {
+    'cpu_util_pct': 90,
+    'cpu_throttled_periods_pct': 5,
+    'discarded_shots_pct': 1,
+    'plan_deficit_pct': 5,
+    'sustain_s': 60,
+}
+
+
+def signals(doc):
+    return {
+        (s['code'], s['window']): (s['value'], s['unit'], s['threshold'])
+        for s in doc['generator']['saturation']['signals']
+    }
+
+
+def test_saturation_signals():
+    schedule = pools([const(10, '40s')])  # startup once(10): 10 instances
+    rows = [(T + s + 0.1 * i, 'a', 1000, 0, 200) for s in range(40) for i in range(10)]
+    data = aggregate([[phout(rows)]])
+    seconds, lines = summarize(data, instances=5)
+    doc = report.build(seconds, lines, context(schedule))
+    assert doc['generator']['saturation'] == {'status': 'not_saturated', 'signals': []}
+
+    # all instances busy (seconds without instances skipped), 95 % of 2 cores, 60 % of periods throttled
+    seconds, lines = summarize(data, instances=10)
+    seconds[3]['instances'] = None
+    snapshots = [(T + t, 1.9 * t, 0.5 * t, 10 * t, 6 * t) for t in range(41)]
+    cpu = {'source': 'cgroup_v2', 'snapshots': snapshots}
+    doc = report.build(
+        seconds, lines, context(schedule, cpu=cpu, generator=dict(context(schedule)['generator'], cores=2))
+    )
+    assert doc['generator']['saturation']['status'] == 'saturated'
+    found = signals(doc)
+    assert set(found) == {
+        (code, w) for code in ('INSTANCES_EXHAUSTED', 'CPU_UTIL_HIGH', 'CPU_THROTTLED') for w in ('test', 'steady-0')
+    }
+    assert found['INSTANCES_EXHAUSTED', 'test'] == (10, 'count', 10)
+    assert found['CPU_UTIL_HIGH', 'steady-0'] == (pytest.approx(95), 'pct', 90)
+    assert found['CPU_THROTTLED', 'test'] == (pytest.approx(60), 'pct', 5)
+
+    # shots discarded for want of instances: the plan is not met
+    rows = [(T + s + 0.1 * i, 'a', 1000, 0, 200) for s in range(40) for i in range(5)]
+    rows += [(T + s + 0.1 * i + 0.05, 'discarded', 0, 777, 0) for s in range(40) for i in range(5)]
+    seconds, lines = summarize(aggregate([[phout(rows)]]), instances=0)  # expvar off: instances unknown
+    doc = report.build(seconds, lines, context(schedule))
+    assert {code for code, _ in signals(doc)} == {'DISCARDED_SHOTS', 'PLAN_NOT_MET'}
+    assert signals(doc)['DISCARDED_SHOTS', 'test'] == (50, 'pct', 1)
+    assert signals(doc)['PLAN_NOT_MET', 'steady-0'] == (50, 'pct', 5)
+    assert all(s['instances'] is None for s in doc['load']['per_second'])
+
+
+def test_saturation_unknown_without_data():
+    assert report.saturation(THRESHOLDS, [], 1, [], [], []) == {'status': 'unknown', 'signals': []}
+
+
+def const_run(instances=5):
+    """Seconds and hist lines of 10 rps for 150 s."""
+    rows = [(T + s + 0.1 * i, 'a', 1000, 0, 200) for s in range(150) for i in range(10)]
+    return summarize(aggregate([[phout(rows)]]), instances=instances)
+
+
+def test_saturation_at_the_end_of_the_window():
+    """The generator runs out of CPU in the last 60 s: 54 % of the quota on average, 98 % sustained."""
+    seconds, lines = const_run()
+    usage = lambda t: 0.5 * t if t <= 90 else 45 + 1.96 * (t - 90)  # noqa: E731
+    cpu = {'source': 'cgroup_v2', 'snapshots': [(T + t, usage(t), 0, 0, 0) for t in range(151)]}
+    generator = dict(context([])['generator'], cores=2)
+    doc = report.build(seconds, lines, context(pools([const(10, '150s')]), cpu=cpu, generator=generator))
+    assert doc['generator']['cpu']['windows'][0]['util_pct_mean'] == pytest.approx(54.2)
+    assert signals(doc) == {('CPU_UTIL_HIGH', 'test'): (pytest.approx(98), 'pct', 90)}
+
+
+def test_instances_exhausted_held_for_sustain_s():
+    """All 10 instances busy in one second is a pause of the target, 60 s in a row is the generator."""
+    schedule = pools([const(10, '150s')])
+    seconds, lines = const_run()
+    seconds[40]['instances'] = 10
+    doc = report.build(seconds, lines, context(schedule))
+    assert doc['generator']['saturation'] == {'status': 'not_saturated', 'signals': []}
+    for s in seconds[40:101]:
+        s['instances'] = 10
+    seconds[70]['instances'] = None  # unknown seconds are skipped
+    doc = report.build(seconds, lines, context(schedule))
+    assert signals(doc) == {('INSTANCES_EXHAUSTED', w): (10, 'count', 10) for w in ('test', 'steady-0')}
