@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import datetime
 from threading import Event
 
@@ -54,6 +55,8 @@ def test_agregator(phout, expected_rps):
     generator.finished.set()
     while not aggregator.is_aggr_finished():
         aggregator.is_test_finished()
+        # Пустой цикл отбирал GIL у потока агрегации: тест шёл 14-35 с вместо 2.5 (LOAD-3845).
+        time.sleep(0.1)
     aggregator.end_test(1)
     assert abs(listener.avg - expected_rps) < 0.1 * expected_rps
 

@@ -7,7 +7,7 @@ import pytest
 from queue import Queue
 
 from yandextank.common.util import get_test_path
-from conftest import MAX_TS, random_split
+from conftest import random_split
 
 from yandextank.aggregator import TankAggregator
 from yandextank.aggregator.aggregator import Aggregator, DataPoller
@@ -16,6 +16,10 @@ from yandextank.plugins.Phantom.reader import string_to_df
 from load.contrib.netort.data_processing import Drain
 
 AGGR_CONFIG = TankAggregator.load_config()
+
+# Порядку чанков хватает 300 секунд data.csv: агрегация всей 1000 шла 10-16 с на тест, и два таких теста
+# в одном чанке SMALL не укладывались в 60 с на медленном хосте CI (LOAD-3845).
+PIPELINE_TS = 300
 
 
 def _swap_middle_chunks(chunks):
@@ -27,20 +31,18 @@ def _swap_middle_chunks(chunks):
 class TestPipeline(object):
     def test_partially_reversed_data(self, data):
         results_queue = Queue()
-        chunks = list(random_split(data))
+        chunks = list(random_split(data.loc[: PIPELINE_TS - 1]))
         _swap_middle_chunks(chunks)
 
-        # poll_period 0.01, а не 0.1: DataPoller спит этот период на КАЖДЫЙ чанк источника
-        # (aggregator.py::_data_poller), а random_split режет data.csv примерно на 150 чанков —
-        # тест тратил 15 с на сон вместо счёта. Данные лежат в памяти, ждать нечего (LOAD-3675).
+        # poll_period 0.01: данные уже в памяти, DataPoller нечего ждать между чанками (LOAD-3675).
         pipeline = Aggregator(TimeChopper([DataPoller(poll_period=0.01, max_wait=31).poll(chunks)]), AGGR_CONFIG, False)
         drain = Drain(pipeline, results_queue)
         drain.run()
-        assert results_queue.qsize() == MAX_TS
+        assert results_queue.qsize() == PIPELINE_TS
 
     def test_slow_producer(self, data):
         results_queue = Queue()
-        chunks = list(random_split(data))
+        chunks = list(random_split(data.loc[: PIPELINE_TS - 1]))
         _swap_middle_chunks(chunks)
 
         def producer():
@@ -49,15 +51,13 @@ class TestPipeline(object):
                     yield None
                 yield chunk
 
-        # poll_period 0.01, а не 0.1: DataPoller спит этот период на КАЖДЫЙ чанк источника
-        # (aggregator.py::_data_poller), а random_split режет data.csv примерно на 150 чанков —
-        # тест тратил 15 с на сон вместо счёта. Данные лежат в памяти, ждать нечего (LOAD-3675).
+        # poll_period 0.01: данные уже в памяти, DataPoller нечего ждать между чанками (LOAD-3675).
         pipeline = Aggregator(
             TimeChopper([DataPoller(poll_period=0.01, max_wait=31).poll(producer())]), AGGR_CONFIG, False
         )
         drain = Drain(pipeline, results_queue)
         drain.run()
-        assert results_queue.qsize() == MAX_TS
+        assert results_queue.qsize() == PIPELINE_TS
 
     @pytest.mark.parametrize(
         'phout, expected_results',
