@@ -11,10 +11,11 @@ import types
 import pytest
 import yaml
 
-from load.contrib.netort.resource import manager
+from load.contrib.netort.resource import make_resource_manager, manager
 from yandextank.common.interfaces import DummyCollector
 from yandextank.plugins.MachineReport import plugin as machine_report
 from yandextank.plugins.MachineReport import report
+from yandextank.stepper.main import StepperWrapper
 from yandextank.validator.validator import TankConfig, ValidationError, load_core_base_cfg, load_plugin_schema
 
 from test_report import (
@@ -30,6 +31,7 @@ from test_report import (
     stepper_wrapper,
     stpd,
     tank_cgroup,
+    tank_stepper,
 )
 from test_schema import errors, load, source, validator
 
@@ -336,9 +338,11 @@ def phantom(*streams):
     return types.SimpleNamespace(SECTION='phantom', phantom=types.SimpleNamespace(streams=list(streams)))
 
 
-def bfg(schedule, load_type='rps', **options):
+def bfg(schedule, load_type='rps', module=None, **options):
+    """A bfg generator after configure; module: the module of its plugin class, bfg2020 is recognized by it."""
     section = dict({'gun_type': 'custom', 'gun_config': {'module_name': 'gun'}}, **options.pop('section', {}))
-    return types.SimpleNamespace(
+    plugin = type('Plugin', (types.SimpleNamespace,), {'__module__': module}) if module else types.SimpleNamespace
+    return plugin(
         SECTION='bfg',
         stepper_wrapper=stepper_wrapper(schedule, load_type, ammo_type='caseline', **options),
         get_option=lambda name, default=None: section.get(name, default),
@@ -417,20 +421,80 @@ def test_bfg(tmp_path, section, pool):
 
 
 @pytest.mark.parametrize(
-    'section, instances',
+    'module, section, instances',
     [
-        ({}, 4),
-        ({'worker_type': 'green'}, 4000),
-        ({'worker_type': 'green', 'green_threads_per_instance': 10}, 40),
+        (None, {}, 4),
+        (None, {'worker_type': 'green'}, 4000),
+        (None, {'worker_type': 'green', 'green_threads_per_instance': 10}, 40),
+        (machine_report.BFG2020_MODULE, {'worker_type': 'green'}, 4),
+        (machine_report.BFG2020_MODULE, {'worker_type': 'green', 'green_threads_per_instance': 10}, 4),
     ],
 )
-def test_bfg_green_worker_instances(tmp_path, section, instances):
+def test_bfg_green_worker_instances(tmp_path, module, section, instances):
     """The green worker keeps green_threads_per_instance shots in flight in each of its processes: its instances
-    counter grows up to their product, which is the limit the pool shoots with."""
-    plugin, core = make(tmp_path, gen=bfg('const(10,1m)', instances=4, section=section))
+    counter grows up to their product, which is the limit the pool shoots with. bfg2020 starts only processes."""
+    plugin, core = make(tmp_path, gen=bfg('const(10,1m)', module=module, instances=4, section=section))
     assert run(plugin) == 0
     [profile] = published(core)['provenance']['load_profile']['pools']
     assert profile['instances'] == instances
+
+
+def test_bfg2020_unprepared_stepper(tmp_path, caplog):
+    """A bfg2020 whose stepper has not run by prepare_test: no report and a warning, not a traceback."""
+    gen = bfg('const(10,10s)', module=machine_report.BFG2020_MODULE)
+    gen.stepper_wrapper = tank_stepper(tmp_path, 'const(10,10s)', stage=0)
+    plugin, core = make(tmp_path, gen=gen)
+    with caplog.at_level(logging.WARNING):
+        assert run(plugin) == 0
+    assert files(core) == []
+    assert 'MachineReport: no report will be written: the bfg stepper has not run' in caplog.text
+    assert not [r for r in caplog.records if r.levelno >= logging.ERROR]
+
+
+@pytest.mark.parametrize(
+    'options',
+    [
+        {},
+        {'ammofile': 'ammo.txt', 'ammo_type': 'line', 'uris': [], 'cache_dir': None},
+        {'force_stepping': 1},
+    ],
+    ids=['uris', 'local-ammofile', 'force-stepping'],
+)
+def test_bfg2020_configure_prepares_stepper(tmp_path, monkeypatch, caplog, options):
+    """bfg2020 runs the stepper in the tank configure, as the open source Bfg does, and the bfg2020 binary then takes
+    the same stpd from the cache instead of stepping it again."""
+    bfg2020 = pytest.importorskip('yandextank.plugins.Bfg2020.plugin')
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'ammo.txt').write_text('/a\n/b\n')
+    cfg = dict(tank_stepper(tmp_path, 'const(10,10s)', stage=0, loop=1, **options).cfg, bfg_cmd='bfg2020')
+    noop = lambda *a: None  # noqa: E731
+    core = types.SimpleNamespace(
+        config=types.SimpleNamespace(validated={'bfg': cfg}),
+        mkstemp=lambda suffix, prefix: str(tmp_path / (prefix + suffix)),
+        add_artifact_file=noop,
+        artifacts_base_dir=str(tmp_path),
+        resource_manager=manager,
+        publish=noop,
+        interrupted=threading.Event(),
+    )
+    plugin = bfg2020.Plugin(core, cfg, 'bfg')
+    plugin.configure()
+    wrapper = plugin.stepper_wrapper
+    assert os.path.exists(wrapper.stpd) and os.path.exists(wrapper.stpd + '_si.json')
+    assert wrapper.ammo_count == 2
+    assert sum(report.Pool.from_stepper(wrapper, 'bfg', True, False, resource_manager=manager).plan().values()) == 2
+    mtime = os.stat(wrapper.stpd).st_mtime_ns
+    # what /usr/bin/bfg2020 does with the config the plugin wrote (bfg2020/src/cli.py, bfg.py): its own loader and
+    # resource manager, the same working directory
+    with open(plugin.bfg_config_file) as f:
+        binary_cfg = yaml.load(f, Loader=yaml.FullLoader)
+    binary = StepperWrapper(types.SimpleNamespace(resource_manager=make_resource_manager(), publish=noop), binary_cfg)
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        binary.read_config()
+        binary.prepare_stepper()
+    assert 'Using cached stpd-file' in caplog.text and 'Making stpd-file' not in caplog.text
+    assert binary.stpd == wrapper.stpd and os.stat(wrapper.stpd).st_mtime_ns == mtime
 
 
 def test_phantom_ipv6_target(tmp_path):

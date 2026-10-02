@@ -71,7 +71,7 @@ def stepper_wrapper(schedule, load_type='rps', **options):
         ammo_file=None,
         ammo_type='phantom',
         instances=1000,
-        stpd=None,
+        stpd='ammo.stpd',
         use_caching=False,
         ammo_count=10**9,
         steps=[(10, 1)],
@@ -855,9 +855,9 @@ def test_stpd_file(tmp_path):
     assert window(doc, 'test')['start_ts'] == T - 10
 
 
-def tank_stepper(tmp_path, schedule, load_type='rps', **options):
-    """A StepperWrapper of the tank after read_config and prepare_stepper: the stpd and its _si.json are in tmp_path,
-    and the same options again take them from there."""
+def tank_stepper(tmp_path, schedule, load_type='rps', stage=2, **options):
+    """A StepperWrapper of the tank after read_config (stage 1) and prepare_stepper (stage 2): the stpd and its
+    _si.json are in tmp_path, and the same options again take them from there. Stage 0 is a wrapper just created."""
     cfg = {
         'ammofile': '',
         'ammo_type': 'uri',
@@ -879,8 +879,10 @@ def tank_stepper(tmp_path, schedule, load_type='rps', **options):
     cfg.update(options)
     core = types.SimpleNamespace(artifacts_base_dir=str(tmp_path), resource_manager=manager, publish=lambda *a: None)
     wrapper = StepperWrapper(core, cfg)
-    wrapper.read_config()
-    wrapper.prepare_stepper()
+    if stage >= 1:
+        wrapper.read_config()
+    if stage >= 2:
+        wrapper.prepare_stepper()
     return wrapper
 
 
@@ -901,6 +903,16 @@ def test_tank_stepper(tmp_path):
     stpd_file = tank_stepper(tmp_path, closed.stpd, 'stpd_file')
     assert stpd_file.steps == [] and pool(stpd_file).shots == [(0, 80, 0)]
     report.check_pauses([pool(stpd_file)], 31, shared=True)
+
+
+@pytest.mark.parametrize('stage', [0, 1])
+@pytest.mark.parametrize('schedule, load_type', [('const(10,10s)', 'rps'), ('step(1,3,1,40s)', 'instances')])
+def test_unprepared_stepper_no_report(tmp_path, stage, schedule, load_type):
+    """A stepper that has not run, or has only read its config, knows neither the cut of the plan by the ammo, nor
+    the steps, nor the instances of an instances schedule: no report instead of a wrong one."""
+    wrapper = tank_stepper(tmp_path, schedule, load_type, stage=stage, loop=1)
+    with pytest.raises(report.NoReport, match='stepper has not run'):
+        report.Pool.from_stepper(wrapper, 'bfg', True, False)
 
 
 def test_ammo_hash_reads_small_chunks():

@@ -436,6 +436,12 @@ class Pool(object):
         """A pool of a prepared StepperWrapper: the phantom section or one of its multi sections, the bfg section.
         Phases come from the schedule lines the stepper read, by its patterns and classes: its own steps round rps.
         threads: shots an instance keeps in flight at once (green_threads_per_instance of the green bfg worker)."""
+        # only prepare_stepper (read_config for stpd_file) sets stpd: without it cut, steps and instances are unknown
+        if getattr(wrapper, 'stpd', None) is None:
+            raise NoReport(
+                'the {} stepper has not run before prepare_test: the cut of the plan by the ammo, steps and instances '
+                'are unknown'.format(gun)
+            )
         load_type = wrapper.load_profile.load_type
         transport, protocol = ('http1_tls' if tls else 'http1', 'http') if http else ('other', 'other')
         schedule, phases, shots, ammo_sha256, cut = [], [], None, None, None

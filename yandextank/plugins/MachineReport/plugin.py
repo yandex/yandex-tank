@@ -22,6 +22,8 @@ CGROUP_ROOT = '/sys/fs/cgroup'
 PROC_CGROUP = '/proc/self/cgroup'
 # the tank Solomon plugin is built only outside the open source tank, so it is recognized by its module
 SOLOMON_MODULE = 'yandextank.plugins.Solomon.plugin'
+# the bfg2020 tank plugin is not open source either; it shares the bfg section with the open source Bfg
+BFG2020_MODULE = 'yandextank.plugins.Bfg2020.plugin'
 YC_MODULE = 'yandextank.plugins.YCMonitoring.plugin'
 SATURATION = {
     'cpu_util_pct': 90,
@@ -120,8 +122,9 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         elif kind == 'bfg':
             base = str((generator.get_option('gun_config') or {}).get('base_address') or '')
             http = generator.get_option('gun_type') == 'http'
-            # the green worker runs green_threads_per_instance shots at once in each of its instances processes
-            green = generator.get_option('worker_type', '') == 'green'
+            # the green worker runs green_threads_per_instance shots at once in each of its instances processes;
+            # bfg2020 starts only processes and does not read worker_type
+            green = generator.get_option('worker_type', '') == 'green' and type(generator).__module__ != BFG2020_MODULE
             threads = int(generator.get_option('green_threads_per_instance', 1000)) if green else 1
             sources = [(generator.stepper_wrapper, kind, http, base.startswith('https'), threads)]
             address = generator.get_option('address') or base or None
