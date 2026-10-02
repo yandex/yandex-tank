@@ -65,7 +65,7 @@ class LoadPlanBuilder(object):
 
     def add_step(self, step_config):
         def parse_ramp(params):
-            template = re.compile(r'(\d+),\s*([0-9.]+[dhms]?)+\)')
+            template = re.compile(r'(\d+),\s*((?:[0-9.]+[dhms]?)+)\)')
             s_res = template.search(params)
             if s_res:
                 instances, interval = s_res.groups()
@@ -75,7 +75,7 @@ class LoadPlanBuilder(object):
                 raise StepperConfigurationError("Error in step configuration: 'ramp(%s'" % params)
 
         def parse_const(params):
-            template = re.compile(r'(\d+),\s*([0-9.]+[dhms]?)+\)')
+            template = re.compile(r'(\d+),\s*((?:[0-9.]+[dhms]?)+)\)')
             s_res = template.search(params)
             if s_res:
                 instances, interval = s_res.groups()
@@ -95,7 +95,7 @@ class LoadPlanBuilder(object):
                 raise StepperConfigurationError("Error in step configuration: 'start(%s'" % params)
 
         def parse_line(params):
-            template = re.compile(r'(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
+            template = re.compile(r'(\d+),\s*(\d+),\s*((?:[0-9.]+[dhms]?)+)\)')
             s_res = template.search(params)
             if s_res:
                 initial_instances, final_instances, interval = s_res.groups()
@@ -105,7 +105,7 @@ class LoadPlanBuilder(object):
                 raise StepperConfigurationError("Error in step configuration: 'line(%s'" % params)
 
         def parse_wait(params):
-            template = re.compile(r'([0-9.]+[dhms]?)+\)')
+            template = re.compile(r'((?:[0-9.]+[dhms]?)+)\)')
             s_res = template.search(params)
             if s_res:
                 duration = s_res.groups()[0]
@@ -115,7 +115,7 @@ class LoadPlanBuilder(object):
                 raise StepperConfigurationError("Error in step configuration: 'wait(%s'" % params)
 
         def parse_stairway(params):
-            template = re.compile(r'(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+[dhms]?)+\)')
+            template = re.compile(r'(\d+),\s*(\d+),\s*(\d+),\s*((?:[0-9.]+[dhms]?)+)\)')
             s_res = template.search(params)
             if s_res:
                 initial_instances, final_instances, step_size, step_duration = s_res.groups()
