@@ -5,6 +5,7 @@ tank core, so tests drive it without TankCore."""
 import bisect
 import gzip
 import hashlib
+import io
 import json
 import math
 import os
@@ -13,13 +14,19 @@ import subprocess
 from collections import Counter, defaultdict, namedtuple
 from decimal import Decimal
 from fractions import Fraction
+from itertools import chain
 
 import numpy as np
 
+from load.contrib.netort.resource import open_file
 from yandextank.aggregator.aggregator import Worker
+from yandextank.stepper.format import StpdReader
+from yandextank.stepper.instance_plan import LoadPlanBuilder
+from yandextank.stepper.load_plan import Const, Line, Stairway, StepFactory
+from yandextank.stepper.util import parse_duration as stepper_ms
 
 SCHEMA_VERSION = 'machine_report.v1'
-PLUGIN_VERSION = '0.2.0'
+PLUGIN_VERSION = '0.3.0'
 REPORT_FILE = 'report.json'
 HIST_FILE = 'hist.v1.jsonl.gz'
 DISCARDED_TAG = 'discarded'
@@ -39,12 +46,24 @@ class NoReport(Exception):
     """A correct report cannot be built, so none is written; the reason goes to the log."""
 
 
-def file_sha256(path):
+def _stream_sha256(f):
     h = hashlib.sha256()
-    with open(path, 'rb') as f:
-        for chunk in iter(lambda: f.read(1 << 20), b''):
-            h.update(chunk)
+    # small reads: the netort HTTP stream wrapper builds a read of 1000-byte pieces, copying its buffer on each
+    for chunk in iter(lambda: f.read(io.DEFAULT_BUFFER_SIZE), b''):
+        h.update(chunk)
     return h.hexdigest()
+
+
+def file_sha256(path):
+    with open(path, 'rb') as f:
+        return _stream_sha256(f)
+
+
+def opened_sha256(resource_manager, path, use_cache):
+    """sha256 of the bytes the stepper ammo readers get from path: the same netort opener, after download and
+    gunzip; a URL comes from the /tmp cache with use_cache."""
+    with open_file(resource_manager.get_opener(path), use_cache) as f:
+        return _stream_sha256(f)
 
 
 def json_sha256(value, ensure_ascii=True):
@@ -144,8 +163,14 @@ def parse_steps(schedule, allowed=tuple(_STEP_ARGS)):
 
 
 # kind, start and duration in seconds of the schedule; from_rps and to_rps; segments: [(t0, t1, rate0, rate1)]
-# of a linear rate relative to start, None when the rate is unknown (unlimited); impulses: [(t, shots)].
-Phase = namedtuple('Phase', 'kind start duration from_rps to_rps segments impulses')
+# of a linear rate relative to start, None when the rate is unknown (unlimited or instances); impulses: [(t, shots)];
+# from_instances and to_instances of a phase of an instances schedule; holds: the phase keeps its level until the
+# ammo ends, past its duration.
+Phase = namedtuple(
+    'Phase',
+    'kind start duration from_rps to_rps segments impulses from_instances to_instances holds',
+    defaults=(None, None, False),
+)
 
 
 def _phase(kind, args, start):
@@ -166,19 +191,35 @@ def _phase(kind, args, start):
     return Phase(kind, start, args['duration'], None, None, None, [])  # unlimited
 
 
+def _shot_at(t0, t1, r0, r1, i):
+    """Time of shot i of one pandora const or line schedule: as pandora core/schedule, at the root of the cumulative
+    plan, i / r for const."""
+    if r0 == r1:
+        return t0 + i / r0
+    a = (r1 - r0) / (t1 - t0)
+    return t0 + (math.sqrt(2 * a * i + r0 * r0) - r0) / a
+
+
 def _segment_shots(t0, t1, r0, r1):
     """(first, last, widest gap) of the shots of one pandora const or line schedule, seconds; None without shots.
-    As pandora core/schedule: n = int(planned shots), shot i at the root of the cumulative plan, i / r for const."""
+    As pandora core/schedule: n = int(planned shots)."""
     n = math.floor((r0 + r1) * (t1 - t0) / 2)
     if n < 1:
         return None
-    if r0 == r1:
-        at = lambda i: t0 + i / r0  # noqa: E731
-    else:
-        a = (r1 - r0) / (t1 - t0)
-        at = lambda i: t0 + (math.sqrt(2 * a * i + r0 * r0) - r0) / a  # noqa: E731
+    at = lambda i: _shot_at(t0, t1, r0, r1, i)  # noqa: E731
     gap = 0 if n == 1 else max(at(1) - at(0), at(n - 1) - at(n - 2))
     return t0, at(n - 1), gap
+
+
+def _plan_time(phases, k):
+    """Seconds from the schedule start to shot k (from 0) of rps phases, None when they plan no more than k shots."""
+    for phase in phases:
+        for t0, t1, r0, r1 in phase.segments:
+            n = math.floor((r0 + r1) * (t1 - t0) / 2)
+            if k < n:
+                return Fraction(phase.start + _shot_at(t0, t1, r0, r1, k))
+            k -= n
+    return None
 
 
 def _phase_shots(phase):
@@ -191,6 +232,118 @@ def _phase_shots(phase):
         if segment:
             shots.append(segment)
     return shots
+
+
+# Stepper schedules (phantom, bfg). A step is read by copies of the stepper patterns into the stepper classes, so
+# its quirks stay: const(1e3,10s) shoots 3 rps, 1m30s of an instances step is 30 s, step adds its last level.
+
+_DURATION = '({})'.format(StepFactory.DURATION_RE)
+# kind: (class, arguments with the duration, pattern of load_plan.StepFactory)
+_RPS_STEPS = {
+    'const': (Const, 2, re.compile(r'([0-9.]+),\s*' + _DURATION + r'\)')),
+    'line': (Line, 3, re.compile(r'([0-9.]+),\s*([0-9.]+),\s*' + _DURATION + r'\)')),
+    'step': (Stairway, 4, re.compile(r'([0-9.]+),\s*([0-9.]+),\s*([0-9.]+),\s*' + _DURATION + r'\)')),
+}
+_INSTANCES_DURATION = r'([0-9.]+[dhms]?)+\)'
+# kind: (phase kind, pattern of instance_plan.LoadPlanBuilder.add_step); its start(n) fails on int(tuple), so a
+# config with it never gets here
+_INSTANCE_STEPS = {
+    'const': ('const', re.compile(r'(\d+),\s*' + _INSTANCES_DURATION)),
+    'line': ('line', re.compile(r'(\d+),\s*(\d+),\s*' + _INSTANCES_DURATION)),
+    'step': ('step', re.compile(r'(\d+),\s*(\d+),\s*(\d+),\s*' + _INSTANCES_DURATION)),
+    'ramp': ('line', re.compile(r'(\d+),\s*' + _INSTANCES_DURATION)),
+    'wait': ('const', re.compile(_INSTANCES_DURATION)),
+}
+
+
+def _stepper_args(text, patterns):
+    """(kind, matched groups) of a stepper step, split as the stepper splits it."""
+    kind, params = text.split('(')
+    kind = kind.strip()
+    if kind not in patterns:
+        raise NoReport('schedule step {!r} is not supported'.format(text))
+    m = patterns[kind][-1].search(params)
+    if m is None:
+        raise NoReport('schedule step {!r} is not read by the stepper pattern'.format(text))
+    return kind, m.groups()
+
+
+def _stepper_text(kind, numbers, ms):
+    return '{}({})'.format(kind, ','.join(numbers + [decimal_text(Fraction(ms, 1000)) + 's']))
+
+
+def _stepper_phase(kind, obj, start):
+    """Phase of a stepper rps step object. The levels of step are those the stepper shoots: its last one is the
+    maximum, and it goes down when from > to."""
+    duration = Fraction(obj.get_duration(), 1000)
+    if kind == 'const':
+        segments = [(0, duration, exact(obj.rps), exact(obj.rps))]
+    elif kind == 'line':
+        segments = [(0, duration, exact(obj.minrps), exact(obj.maxrps))]
+    else:
+        segments, t = [], Fraction(0)
+        for level in obj.steps:
+            d = Fraction(level.get_duration(), 1000)
+            segments.append((t, t + d, exact(level.rps), exact(level.rps)))
+            t += d
+    return Phase(kind, start, duration, segments[0][2], segments[-1][3], segments, [])
+
+
+def rps_schedule(schedule):
+    """([normalized step], [Phase]) of a stepper rps schedule; a phase starts where the stepper Composite puts it."""
+    texts, phases, start = [], [], Fraction(0)
+    for text in schedule:
+        kind, groups = _stepper_args(text, _RPS_STEPS)
+        cls, arity = _RPS_STEPS[kind][:2]
+        numbers, ms = [float(g) for g in groups[: arity - 1]], stepper_ms(groups[arity - 1])
+        texts.append(_stepper_text(kind, [decimal_text(exact(n)) for n in numbers], ms))
+        phases.append(_stepper_phase(kind, cls(*(numbers + [ms])), start))
+        start += phases[-1].duration
+    return texts, phases
+
+
+def instances_schedule(schedule):
+    """([normalized step], [Phase], [instance start, ms]) of a stepper instances schedule built by its
+    LoadPlanBuilder; the start generators of a step are consumed, create() is never called."""
+    builder, texts, phases, starts = LoadPlanBuilder(), [], [], []
+    for text in schedule:
+        kind, groups = _stepper_args(text, _INSTANCE_STEPS)
+        texts.append(_stepper_text(kind, [str(int(g)) for g in groups[:-1]], stepper_ms(groups[-1])))
+        i0, t0, k = builder.instances, builder.duration, len(builder.generators)
+        builder.add_step(text)
+        new = sorted(chain(*builder.generators[k:]))
+        starts += new
+        phases.append(
+            Phase(
+                _INSTANCE_STEPS[kind][0],
+                Fraction(t0, 1000),
+                Fraction(builder.duration - t0, 1000),
+                None,
+                None,
+                None,
+                [],
+                from_instances=i0 + sum(1 for t in new if t <= t0),
+                to_instances=builder.instances,
+            )
+        )
+    # the wait of the last step is no mark of the stpd: the closed loop keeps the last level until the ammo ends
+    if phases and phases[-1].kind == 'const':
+        phases[-1] = phases[-1]._replace(holds=True)
+    return texts, phases, starts
+
+
+def stpd_shots(path):
+    """(first, last, widest gap) of the marks of an stpd file in seconds, None without marks. A mark not above the
+    highest one so far is skipped: an instances stpd ends with zero marks."""
+    # ponytail: about a microsecond a shot in Python before the shooting; read headers only with seek if it shows
+    first = top = None
+    gap = 0
+    for ts, _, _ in StpdReader(path):
+        if top is None:
+            first = top = ts
+        elif ts > top:
+            gap, top = max(gap, ts - top), ts
+    return None if first is None else (Fraction(first, 1000), Fraction(top, 1000), Fraction(gap, 1000))
 
 
 def _startup_instances(steps):
@@ -228,11 +381,15 @@ def _transport(gun_type, tls):
 
 
 class Pool(object):
-    def __init__(self, profile, phases, grpc_by_default=False):
+    def __init__(self, profile, phases, grpc_by_default=False, shots=None, cut=None):
         self.profile = profile
         self.phases = phases
         # an HTTP/2 pool without TLS taken for gRPC over h2c without an override: the plugin warns about it
         self.grpc_by_default = grpc_by_default
+        # [(first, last, widest gap)] of the planned shots from the schedule start, seconds
+        self.shots = [s for phase in phases for s in _phase_shots(phase)] if shots is None else shots
+        # seconds from the schedule start to the first planned shot the ammo did not reach, None when it reached all
+        self.cut = cut
 
     @classmethod
     def from_pandora(cls, pool, override=None):
@@ -274,24 +431,90 @@ class Pool(object):
         }
         return cls(profile, phases, transport == 'h2c' and gun_type.startswith('http2') and not override)
 
+    @classmethod
+    def from_stepper(cls, wrapper, gun, http, tls, threads=1, override=None, resource_manager=None):
+        """A pool of a prepared StepperWrapper: the phantom section or one of its multi sections, the bfg section.
+        Phases come from the schedule lines the stepper read, by its patterns and classes: its own steps round rps.
+        threads: shots an instance keeps in flight at once (green_threads_per_instance of the green bfg worker)."""
+        load_type = wrapper.load_profile.load_type
+        transport, protocol = ('http1_tls' if tls else 'http1', 'http') if http else ('other', 'other')
+        schedule, phases, shots, ammo_sha256, cut = [], [], None, None, None
+        if load_type == 'stpd_file':
+            # phantom and bfg read the local stpd; its marks are the schedule
+            ammo_sha256 = file_sha256(wrapper.stpd)
+            found = stpd_shots(wrapper.stpd)
+            if found and not wrapper.steps:
+                # the stepper writes no steps for an instances stpd: a closed loop shoots between its starts
+                found = found[:2] + (0,)
+            shots = [found] if found else []
+        else:
+            if wrapper.uris:
+                ammo_sha256 = json_sha256(wrapper.uris, ensure_ascii=False)
+            elif wrapper.ammo_file:
+                ammo_sha256 = opened_sha256(resource_manager, wrapper.ammo_file, wrapper.use_caching)
+            # the stepper ends the stpd with the ammo (loop, ammo_limit), an stpd record a shot
+            if load_type == 'rps':
+                schedule, phases = rps_schedule(wrapper.load_profile.schedule)
+                cut = _plan_time(phases, wrapper.ammo_count)
+                if cut is not None:
+                    last = _plan_time(phases, wrapper.ammo_count - 1)
+                    planned = (s for phase in phases for s in _phase_shots(phase))
+                    shots = [(first, min(end, last), gap) for first, end, gap in planned if first <= last]
+            else:
+                schedule, phases, starts = instances_schedule(wrapper.load_profile.schedule)
+                # a closed loop shoots without pauses from the first start until the ammo ends; when that happens is
+                # unknown, at least after the last start that got an stpd record
+                started = starts[: wrapper.ammo_count]
+                shots = [(Fraction(min(started), 1000), Fraction(max(started), 1000), 0)] if started else []
+        instances = int(wrapper.instances or 0) * threads
+        profile = {
+            'gun': gun,
+            'transport': transport,
+            'target_protocol': (override or {}).get('target_protocol') or protocol,
+            'load_type': load_type,
+            'schedule': schedule,
+            'startup': [],
+            # the limit phantom and bfg shoot with: instances of the config for rps, the total of the schedule for
+            # instances, the stepper info of an stpd file; times threads
+            'instances': instances if instances >= 1 else None,
+            'ammo_type': _profile_string(wrapper.ammo_type, 'ammo type') if wrapper.ammo_type else None,
+            'ammo_sha256': ammo_sha256,
+        }
+        return cls(profile, phases, shots=shots, cut=cut)
+
     @property
     def first_shot(self):
         """Seconds from the schedule start to the first planned shot; None when the pool plans none."""
-        shots = [s for phase in self.phases for s in _phase_shots(phase)]
-        return shots[0][0] if shots else None
+        return self.shots[0][0] if self.shots else None
+
+    @property
+    def last_shot(self):
+        """Seconds from the schedule start to the last planned shot, the last instance start for an instances
+        schedule; None without."""
+        return max((last for _, last, _ in self.shots), default=None)
 
     @property
     def silence(self):
         """The longest planned time between two shots of the pool, seconds. Before the first shot the pool has not
         started, after the last one it has finished: neither is a silence."""
         longest, last = 0, None
-        for first, end, gap in (s for phase in self.phases for s in _phase_shots(phase)):
+        for first, end, gap in self.shots:
             longest = max(longest, gap, 0 if last is None else first - last)
             last = end
         return longest
 
+    @property
+    def end(self):
+        """End of the schedule from its start, seconds; None for instances and stpd_file, which shoot until the ammo
+        ends."""
+        return sum(phase.duration for phase in self.phases) if self.profile['load_type'] == 'rps' else None
+
     def plan(self):
-        """Planned shots per second of the schedule, {second: Fraction}; None for a second with an unknown plan."""
+        """Planned shots per second of the schedule up to the cut, {second: Fraction}; None for a second with an
+        unknown plan and for a schedule not in rps."""
+        if self.profile['load_type'] != 'rps':
+            return None
+        cut = math.inf if self.cut is None else self.cut
         plan = defaultdict(Fraction)
         for phase in self.phases:
             if phase.segments is None:
@@ -307,8 +530,8 @@ class Pool(object):
                 if a == b:
                     continue
                 rate = lambda u: r0 + (r1 - r0) * (u - a) / (b - a)  # noqa: E731
-                for second in range(math.floor(a), math.ceil(b)):
-                    u0, u1 = max(a, second), min(b, second + 1)
+                for second in range(math.floor(a), math.ceil(min(b, cut))):
+                    u0, u1 = max(a, second), min(b, cut, second + 1)
                     if u0 < u1 and plan[second] is not None:
                         plan[second] += (u1 - u0) * (rate(u0) + rate(u1)) / 2
         return plan
@@ -321,15 +544,41 @@ def pandora_pools(pools, overrides=()):
     return [Pool.from_pandora(pool, overrides[i] if i < len(overrides) else None) for i, pool in enumerate(pools)]
 
 
-def check_pauses(pools, max_wait):
+def stepper_pools(sources, overrides=(), resource_manager=None):
+    """Pools of [(StepperWrapper, gun, http, tls)] in config order."""
+    overrides = list(overrides or [])
+    return [
+        Pool.from_stepper(
+            *source, override=overrides[i] if i < len(overrides) else None, resource_manager=resource_manager
+        )
+        for i, source in enumerate(sources)
+    ]
+
+
+def check_pauses(pools, max_wait, shared=False):
     """The tank aggregator drops a pool source silent for core.aggregator_max_wait after its first data until the end
-    of the shooting; the silence before the first data does not count."""
+    of the shooting; the silence before the first data does not count. shared: all pools write one source (the
+    phantom multi sections share a phout), so only a silence of all of them at once drops it; a gap inside a step
+    still counts for its pool, where its shots fall among those of the others is not computed."""
     for i, pool in enumerate(pools):
-        if pool.silence >= max_wait:
+        silence = max((gap for _, _, gap in pool.shots), default=0) if shared else pool.silence
+        if silence >= max_wait:
             raise NoReport(
                 'pool {} plans {:.1f} s without shots, not shorter than core.aggregator_max_wait {} s: the '
-                'aggregator drops the pool after such a silence'.format(i, float(pool.silence), max_wait)
+                'aggregator drops the pool after such a silence'.format(i, float(silence), max_wait)
             )
+    if not shared:
+        return
+    end = None
+    for first, last in sorted((first, last) for p in pools for first, last, _ in p.shots):
+        if end is not None and first - end >= max_wait:
+            raise NoReport(
+                'pools plan {:.1f} s without shots, not shorter than core.aggregator_max_wait {} s: they write one '
+                'aggregator source, which the aggregator drops after such a silence'.format(
+                    float(first - end), max_wait
+                )
+            )
+        end = last if end is None else max(end, last)
 
 
 def grpc_status(pools):
@@ -608,25 +857,42 @@ class _Window(object):
 
 
 def _windows(phases, start, end, trim):
-    """[S, E) of the test, a phase-<n> window for every started phase, a steady-<n> one for a const phase."""
+    """[S, E) of the test, a phase-<n> window for every started phase, a steady-<n> one for a const phase. A phase
+    that holds its level until the ammo ends runs to E."""
     windows = [_Window('test', 'test', None, start, end)]
     for index, (_, phase) in enumerate(phases):
         if start + phase.start < end:
             low = start + math.floor(phase.start)
-            high = max(low + 1, min(end, start + math.ceil(phase.start + phase.duration)))
-            windows.append(_Window('phase-{}'.format(index), 'phase', index, low, high))
+            top = end if phase.holds else min(end, start + math.ceil(phase.start + phase.duration))
+            windows.append(_Window('phase-{}'.format(index), 'phase', index, low, max(low + 1, top)))
         # a const(0) pause has no load to be steady in
-        if phase.kind == 'const' and phase.from_rps > 0:
+        level = phase.from_rps if phase.from_instances is None else phase.from_instances
+        if phase.kind == 'const' and level > 0:
             low = start + math.ceil(phase.start) + trim
-            high = min(end, start + math.floor(phase.start + phase.duration)) - trim
+            high = (end if phase.holds else min(end, start + math.floor(phase.start + phase.duration))) - trim
             if high - low >= 1:
                 windows.append(_Window('steady-{}'.format(index), 'steady', index, low, high))
     return windows
 
 
+def _phase_doc(index, pool, phase):
+    doc = {
+        'index': index,
+        'pool': pool,
+        'kind': phase.kind,
+        'from_rps': None if phase.from_rps is None else json_number(phase.from_rps),
+        'to_rps': None if phase.to_rps is None else json_number(phase.to_rps),
+    }
+    if phase.from_instances is not None:
+        doc.update(from_instances=phase.from_instances, to_instances=phase.to_instances)
+    doc.update(start_offset_s=json_number(phase.start), duration_s=json_number(phase.duration))
+    return doc
+
+
 def build(seconds, hist_lines, ctx):
     """The report from per-second summaries (in any order, a ts may repeat) and the hist.v1 lines written for
-    them. ctx holds pools, trim_s and the sections the plugin knows before the shooting ends."""
+    them. ctx holds pools, trim_s, elapsed_s (the shooting by a monotonic clock) and the sections the plugin knows
+    before the shooting ends."""
     merged = merge_seconds(seconds)
     if not merged:
         raise NoReport('the aggregator delivered no seconds')
@@ -635,10 +901,14 @@ def build(seconds, hist_lines, ctx):
     # S: the schedule start is the first second with data minus the time to the first planned shot
     start = first - math.floor(min((p.first_shot for p in pools if p.first_shot is not None), default=0))
     end = last + 1
-    duration = max(sum(phase.duration for phase in pool.phases) for pool in pools)
-    if end - start > duration + MAX_TAIL_S:
+    # instances and stpd_file shoot until the ammo ends: their bound is the shooting by the clock of the plugin
+    ends = [p.end for p in pools]
+    bound = max(ends) if None not in ends else ctx['elapsed_s']
+    if end - start > bound + MAX_TAIL_S:
         raise NoReport(
-            'data seconds span {} s, the schedule {} s: a stray timestamp'.format(end - start, decimal_text(duration))
+            'data seconds span {} s, the schedule or the shooting {:.0f} s: a stray timestamp'.format(
+                end - start, float(bound)
+            )
         )
     phases = [(i, phase) for i, pool in enumerate(pools) for phase in pool.phases]
     windows = _windows(phases, start, end, ctx['trim_s'])
@@ -662,7 +932,7 @@ def build(seconds, hist_lines, ctx):
     for ts in range(start, end):
         planned = Fraction(0)
         for plan in plans:
-            shots = plan.get(ts - start, 0)
+            shots = None if plan is None else plan.get(ts - start, 0)
             if shots is None:
                 planned = None
                 break
@@ -689,22 +959,11 @@ def build(seconds, hist_lines, ctx):
         'schema_version': SCHEMA_VERSION,
         'provenance': dict(ctx['provenance'], load_profile_sha256=json_sha256(load_profile), load_profile=load_profile),
         'statuses': dict(ctx['statuses'], completeness=completeness(sources)),
-        'phases': [
-            {
-                'index': index,
-                'pool': pool,
-                'kind': phase.kind,
-                'from_rps': None if phase.from_rps is None else json_number(phase.from_rps),
-                'to_rps': None if phase.to_rps is None else json_number(phase.to_rps),
-                'start_offset_s': json_number(phase.start),
-                'duration_s': json_number(phase.duration),
-            }
-            for index, (pool, phase) in enumerate(phases)
-        ],
+        'phases': [_phase_doc(index, pool, phase) for index, (pool, phase) in enumerate(phases)],
         'windows': rendered,
         'load': {
             'gun': dict(ctx['gun'], grpc_status=grpc_status(pools)),
-            # pandora reports a protocol code of every response; the grpc gun maps gRPC statuses to HTTP-like codes
+            # every gun reports a protocol code of a response; the pandora grpc gun maps gRPC statuses to HTTP-like codes
             'code_kinds': ['net', 'http'],
             'autostop_criteria': ctx['autostop_criteria'],
             'per_second': per_second,
@@ -1149,11 +1408,13 @@ def saturation(thresholds, snapshots, capacity, windows, per_second, pools):
     """Signals of the generator being the bottleneck that crossed their thresholds in the test and steady windows.
     A value is the highest over sustain_s seconds in a row of the window (all of it when shorter): a second-long
     burst does not count, and the end of a ramp is not averaged away. The instances threshold is the sum of the
-    startup instances of the pools; seconds without instances are skipped. PLAN_NOT_MET is mostly the share of
-    discarded shots, but it also catches seconds without data: a generator that stalled discards nothing."""
+    instances limits of the pools (pandora: its startup instances), only when all of them shoot rps: an instances or
+    stpd schedule keeps the instances busy by design; seconds without instances are skipped. PLAN_NOT_MET is mostly
+    the share of discarded shots, but it also catches seconds without data: a generator that stalled discards
+    nothing."""
     length = thresholds['sustain_s']
     seconds = {s['ts']: s for s in per_second}
-    limits = [pool.profile['instances'] for pool in pools]
+    limits = [p.profile['instances'] if p.profile['load_type'] == 'rps' else None for p in pools]
     limit = None if None in limits else sum(limits)
     signals, judged = [], False
     for w in windows:

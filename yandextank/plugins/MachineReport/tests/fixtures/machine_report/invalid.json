@@ -385,6 +385,12 @@
     "value": 1
   },
   {
+    "name": "phantom_phase_names_no_pool",
+    "base": "phantom_multi.json",
+    "path": "/phases/1/pool",
+    "value": 9
+  },
+  {
     "name": "per_second_hole",
     "base": "ok.json",
     "path": "/load/per_second/2/ts",

@@ -38,7 +38,10 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
         self._pools = None
+        self._gun_type = None
         self._gun_version = None
+        self._address = None
+        self._started = None
         self._hist = None
         self._seconds = []
         self._no_report = None
@@ -78,7 +81,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             self._no_report = 'the plugin could not subscribe to aggregated data'
 
     def prepare_test(self):
-        # before the shooting: hashing ammo files and running pandora -version must not share its CPU
+        # before the shooting: hashing ammo files, reading an stpd and running pandora -version must not share its CPU
         self._guarded(self._read_profile)
 
     def start_test(self):
@@ -97,16 +100,37 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
             logger.exception('MachineReport: failed to read the load profile, no report will be written')
 
     def _read_profile(self):
+        """Phantom and bfg run the stepper in their configure, which the core calls for every plugin before any
+        prepare_test: their profile is always ready here."""
         generator = self.core.job.generator_plugin
         kind = getattr(generator, 'SECTION', None)
         if kind == 'jmeter':
             raise report.NoReport('a jmeter jmx plan is not expressible as a load profile')
-        if kind != 'pandora':
+        if kind == 'pandora':
+            if generator.config_contents is None:
+                return  # the generator is prepared after this section: start_test reads the profile
+            pools = report.pandora_pools(generator.config_contents['pools'], self.get_option('pools'))
+            targets = [p.get('gun', {}).get('target') for p in generator.config_contents['pools']]
+            address = next((str(t) for t in targets if t), None)
+        elif kind == 'phantom':
+            streams = generator.phantom.streams  # the main section, then multi in config order
+            sources = [(s.stepper_wrapper, kind, s.tank_type == 'http', bool(s.ssl)) for s in streams]
+            host = streams[0].address
+            address = ('[{}]:{}' if ':' in host else '{}:{}').format(host, streams[0].port)
+        elif kind == 'bfg':
+            base = str((generator.get_option('gun_config') or {}).get('base_address') or '')
+            http = generator.get_option('gun_type') == 'http'
+            # the green worker runs green_threads_per_instance shots at once in each of its instances processes
+            green = generator.get_option('worker_type', '') == 'green'
+            threads = int(generator.get_option('green_threads_per_instance', 1000)) if green else 1
+            sources = [(generator.stepper_wrapper, kind, http, base.startswith('https'), threads)]
+            address = generator.get_option('address') or base or None
+        else:
             raise report.NoReport('generator {} is not supported by plugin {}'.format(kind, report.PLUGIN_VERSION))
-        if generator.config_contents is None:
-            return  # the generator is prepared after this section: start_test reads the profile
-        pools = report.pandora_pools(generator.config_contents['pools'], self.get_option('pools'))
-        report.check_pauses(pools, self.core.get_option('core', 'aggregator_max_wait', 31))
+        if kind != 'pandora':
+            pools = report.stepper_pools(sources, self.get_option('pools'), self.core.resource_manager)
+        # all phantom streams write one phout, the aggregator reads it as one source
+        report.check_pauses(pools, self.core.get_option('core', 'aggregator_max_wait', 31), shared=kind != 'pandora')
         for i, pool in enumerate(pools):
             if pool.grpc_by_default:
                 logger.warning(
@@ -115,10 +139,11 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                     i,
                     i,
                 )
-        self._pools = pools
-        self._gun_version = report.pandora_version(generator.pandora_cmd)
+        self._pools, self._gun_type, self._address = pools, kind, address
+        self._gun_version = report.pandora_version(generator.pandora_cmd) if kind == 'pandora' else None
 
     def _open(self):
+        self._started = time.monotonic()
         if self._pools is None:
             self._read_profile()
         if self._pools is None:
@@ -291,7 +316,8 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
                 'created_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
             },
             'statuses': {'shooting': self._shooting(retcode)},
-            'gun': {'type': 'pandora', 'version': self._gun_version},
+            'gun': {'type': self._gun_type, 'version': self._gun_version},
+            'elapsed_s': time.monotonic() - self._started,
             'autostop_criteria': self._autostop_criteria(),
             'histograms': histograms,
             'monitoring': [dict(s, **self._config_status(s)) for s in self._sources],
@@ -331,10 +357,7 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         return {'status': status, 'retcode': retcode, 'autostop_criterion': None}
 
     def _target(self, section):
-        address = section.get('address')
-        if not address:
-            targets = [p.get('gun', {}).get('target') for p in self.core.job.generator_plugin.config_contents['pools']]
-            address = next((str(t) for t in targets if t), 'unknown')
+        address = section.get('address') or self._address or 'unknown'
         hosts = [
             {
                 'host': h['host'],

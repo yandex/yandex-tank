@@ -114,14 +114,14 @@
                     }
                   },
                   "startup": {
-                    "description": "Instances startup schedule (pandora startup, phantom instances), same normalization; empty when not set.",
+                    "description": "Instances startup schedule of pandora, same normalization; empty when not set. Empty for phantom and bfg: they start all instances at once, and their instances schedule is schedule with load_type instances.",
                     "type": "array",
                     "items": {
                       "$ref": "#/$defs/profileString"
                     }
                   },
                   "instances": {
-                    "description": "Instances limit of the generator pool; null when not set.",
+                    "description": "Instances limit of the generator pool: pandora the instances its startup schedule starts, phantom and bfg the instances they shoot with (the instances option for rps, the total of the schedule for instances; times green_threads_per_instance for the green bfg worker); null when not set.",
                     "type": [
                       "integer",
                       "null"

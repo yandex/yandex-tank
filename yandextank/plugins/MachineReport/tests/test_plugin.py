@@ -11,12 +11,26 @@ import types
 import pytest
 import yaml
 
+from load.contrib.netort.resource import manager
 from yandextank.common.interfaces import DummyCollector
 from yandextank.plugins.MachineReport import plugin as machine_report
 from yandextank.plugins.MachineReport import report
 from yandextank.validator.validator import TankConfig, ValidationError, load_core_base_cfg, load_plugin_schema
 
-from test_report import CGROUP_V2, PID, T, aggregate, cgroup, const, once, pandora_pool, phout, tank_cgroup
+from test_report import (
+    CGROUP_V2,
+    PID,
+    T,
+    aggregate,
+    cgroup,
+    const,
+    once,
+    pandora_pool,
+    phout,
+    stepper_wrapper,
+    stpd,
+    tank_cgroup,
+)
 from test_schema import errors, load, source, validator
 
 VERSION_STUB = '#!/bin/sh\necho "Pandora core/0.8.3" >&2\n'
@@ -280,7 +294,7 @@ def test_post_process_without_start(tmp_path, caplog):
     assert 'did not start' in caplog.text
 
 
-@pytest.mark.parametrize('section', ['jmeter', 'phantom', 'bfg'])
+@pytest.mark.parametrize('section', ['jmeter', 'other'])
 def test_other_generators(tmp_path, section):
     plugin, core = make(tmp_path, gen=generator(tmp_path, section=section))
     plugin.configure()
@@ -288,6 +302,152 @@ def test_other_generators(tmp_path, section):
     shoot(plugin)
     assert plugin.post_process(0) == 0
     assert files(core) == []
+
+
+def stable(doc):
+    """A report without the fields of the machine and the moment."""
+    d = json.loads(json.dumps(doc))
+    for key in ('created_at', 'tank_version', 'plugin_version'):
+        del d['provenance'][key]
+    for key in ('host', 'cpu_model', 'cores'):
+        del d['generator'][key]
+    for key in ('sha256', 'bytes'):
+        del d['artifacts']['histograms'][key]
+    return d
+
+
+def same_as_fixture(doc, name):
+    """The report is a valid fixture (the Go report.Validate checks it too) and stays what the plugin writes;
+    MACHINE_REPORT_REGEN=<directory> writes it there."""
+    path = source('tests', 'fixtures', 'machine_report', 'valid', name)
+    if os.environ.get('MACHINE_REPORT_REGEN'):
+        with open(os.path.join(os.environ['MACHINE_REPORT_REGEN'], name), 'w') as f:
+            json.dump(doc, f, indent=1, ensure_ascii=False)
+    assert stable(doc) == stable(load(path))
+
+
+def stream(schedule, load_type='rps', tank_type='http', ssl=0, address='target', port=80, **options):
+    """A phantom stream (the main section or a multi one) after configure: its stepper has run."""
+    wrapper = stepper_wrapper(schedule, load_type, **options)
+    return types.SimpleNamespace(stepper_wrapper=wrapper, tank_type=tank_type, ssl=ssl, address=address, port=port)
+
+
+def phantom(*streams):
+    return types.SimpleNamespace(SECTION='phantom', phantom=types.SimpleNamespace(streams=list(streams)))
+
+
+def bfg(schedule, load_type='rps', **options):
+    section = dict({'gun_type': 'custom', 'gun_config': {'module_name': 'gun'}}, **options.pop('section', {}))
+    return types.SimpleNamespace(
+        SECTION='bfg',
+        stepper_wrapper=stepper_wrapper(schedule, load_type, ammo_type='caseline', **options),
+        get_option=lambda name, default=None: section.get(name, default),
+    )
+
+
+def run(plugin):
+    plugin.configure()
+    plugin.prepare_test()
+    plugin.start_test()
+    shoot(plugin)
+    return plugin.post_process(0)
+
+
+def test_phantom_multi(tmp_path):
+    """The main section and a multi one are two pools in config order; phantom has no version source."""
+    gen = phantom(
+        stream('line(1,10,2s) const(10,1m)'),
+        stream('const(2,1m)', 'instances', tank_type='none', address='other', instances=2),
+    )
+    plugin, core = make(tmp_path, gen=gen)
+    assert run(plugin) == 0
+    assert files(core) == [report.HIST_FILE, report.REPORT_FILE]
+    doc = published(core)
+    assert doc['load']['gun'] == {'type': 'phantom', 'version': None, 'grpc_status': 'not_applicable'}
+    assert [
+        (p['gun'], p['load_type'], p['transport'], p['target_protocol'])
+        for p in doc['provenance']['load_profile']['pools']
+    ] == [
+        ('phantom', 'rps', 'http1', 'http'),
+        ('phantom', 'instances', 'other', 'other'),
+    ]
+    assert [(p['pool'], p['kind']) for p in doc['phases']] == [(0, 'line'), (0, 'const'), (1, 'const')]
+    assert doc['target']['address'] == 'target:80'
+    assert {s['planned_rps'] for s in doc['load']['per_second']} == {None}
+    same_as_fixture(doc, 'phantom_multi.json')
+
+
+def test_phantom_multi_shared_pause(tmp_path, caplog):
+    """Each stream alone passes, together they are silent for 60 s on their one phout: no report, same retcode."""
+    gen = phantom(stream('const(10,60s)'), stream('const(0,120s) const(10,60s)'))
+    plugin, core = make(tmp_path, gen=gen)
+    with caplog.at_level(logging.WARNING):
+        assert run(plugin) == 0
+    assert files(core) == []
+    assert 'aggregator_max_wait' in caplog.text and 'one aggregator source' in caplog.text
+
+
+@pytest.mark.parametrize(
+    'section, pool',
+    [
+        ({}, ('other', 'other', 'unknown')),
+        (
+            {'gun_type': 'http', 'gun_config': {'base_address': 'https://target.example.net'}},
+            ('http1_tls', 'http', 'https://target.example.net'),
+        ),
+        (
+            {'gun_type': 'http', 'gun_config': {'base_address': 'http://target.example.net'}, 'address': 'target:80'},
+            ('http1', 'http', 'target:80'),
+        ),
+    ],
+)
+def test_bfg(tmp_path, section, pool):
+    """bfg is one pool; http by the scheme of base_address, any other gun is other. The ammo file is hashed by the
+    bytes the stepper readers get."""
+    ammo = tmp_path / 'ammo.txt'
+    ammo.write_bytes(b'/\n')
+    plugin, core = make(tmp_path, gen=bfg('const(10,1m)', uris=[], ammo_file=str(ammo), section=section))
+    core.resource_manager = manager
+    assert run(plugin) == 0
+    doc = published(core)
+    [profile] = doc['provenance']['load_profile']['pools']
+    assert (profile['transport'], profile['target_protocol'], doc['target']['address']) == pool
+    assert (profile['gun'], profile['ammo_type'], doc['load']['gun']['type']) == ('bfg', 'caseline', 'bfg')
+    assert profile['ammo_sha256'] == report.file_sha256(str(ammo))
+
+
+@pytest.mark.parametrize(
+    'section, instances',
+    [
+        ({}, 4),
+        ({'worker_type': 'green'}, 4000),
+        ({'worker_type': 'green', 'green_threads_per_instance': 10}, 40),
+    ],
+)
+def test_bfg_green_worker_instances(tmp_path, section, instances):
+    """The green worker keeps green_threads_per_instance shots in flight in each of its processes: its instances
+    counter grows up to their product, which is the limit the pool shoots with."""
+    plugin, core = make(tmp_path, gen=bfg('const(10,1m)', instances=4, section=section))
+    assert run(plugin) == 0
+    [profile] = published(core)['provenance']['load_profile']['pools']
+    assert profile['instances'] == instances
+
+
+def test_phantom_ipv6_target(tmp_path):
+    """The stream keeps an IPv6 address without brackets: the target address puts them back before the port."""
+    plugin, core = make(tmp_path, gen=phantom(stream('const(10,1m)', address='2001:db8::1', port=443)))
+    assert run(plugin) == 0
+    assert published(core)['target']['address'] == '[2001:db8::1]:443'
+
+
+def test_bfg_stpd_file(tmp_path):
+    path = stpd(tmp_path / 'ammo.stpd', [100 * i for i in range(50)])
+    plugin, core = make(tmp_path, gen=bfg(path, 'stpd_file', stpd=path, uris=[], instances=10))
+    assert run(plugin) == 0
+    doc = published(core)
+    assert doc['phases'] == [] and [w['id'] for w in doc['windows']] == ['test']
+    [profile] = doc['provenance']['load_profile']['pools']
+    assert (profile['schedule'], profile['ammo_sha256']) == ([], report.file_sha256(path))
 
 
 def test_pause_not_shorter_than_max_wait(tmp_path, caplog):
@@ -475,23 +635,7 @@ def test_replay_step0_solomon_cpu_series(tmp_path, run):
 def test_replay_step0_solomon_report_file(tmp_path):
     """The report of bt1 is a valid fixture (the Go report.Validate checks it too); it stays what the plugin
     writes, up to the fields of the machine and the moment."""
-    doc = replay(tmp_path, SOLOMON_SECTION, STEP0['solomon']['bt1'])
-    path = source('tests', 'fixtures', 'machine_report', 'valid', 'plugin_solomon_step0.json')
-    if os.environ.get('MACHINE_REPORT_REGEN'):
-        with open(os.environ['MACHINE_REPORT_REGEN'], 'w') as f:
-            json.dump(doc, f, indent=1, ensure_ascii=False)
-
-    def stable(d):
-        d = json.loads(json.dumps(d))
-        for key in ('created_at', 'tank_version', 'plugin_version'):
-            del d['provenance'][key]
-        for key in ('host', 'cpu_model', 'cores'):
-            del d['generator'][key]
-        for key in ('sha256', 'bytes'):
-            del d['artifacts']['histograms'][key]
-        return d
-
-    assert stable(doc) == stable(load(path))
+    same_as_fixture(replay(tmp_path, SOLOMON_SECTION, STEP0['solomon']['bt1']), 'plugin_solomon_step0.json')
 
 
 def test_replay_step0_solomon_bad_token(tmp_path):

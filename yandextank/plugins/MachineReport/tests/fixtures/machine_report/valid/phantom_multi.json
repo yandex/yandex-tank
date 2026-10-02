@@ -1,0 +1,367 @@
+{
+ "schema_version": "machine_report.v1",
+ "provenance": {
+  "plugin_version": "0.3.0",
+  "tank_version": "2.1.19",
+  "config_sha256": "01935ccf6e9e4736805376d4e4ba262e669a83e44898a5e224cec23a171081b9",
+  "labels": {},
+  "series": null,
+  "test_id": null,
+  "tank_job_id": "2026-09-30_12-00-00.000000",
+  "run_id": null,
+  "created_at": "2026-10-01T21:35:35Z",
+  "load_profile_sha256": "168cbf2033d77773a4e6b52b31933cf836311927244f8612785877c519c418f2",
+  "load_profile": {
+   "pools": [
+    {
+     "gun": "phantom",
+     "transport": "http1",
+     "target_protocol": "http",
+     "load_type": "rps",
+     "schedule": [
+      "line(1,10,2s)",
+      "const(10,60s)"
+     ],
+     "startup": [],
+     "instances": 1000,
+     "ammo_type": "phantom",
+     "ammo_sha256": "8068ee95affd9273f0622bdbb25546b6732f99834625a41f309dc768f1a8c41b"
+    },
+    {
+     "gun": "phantom",
+     "transport": "other",
+     "target_protocol": "other",
+     "load_type": "instances",
+     "schedule": [
+      "const(2,60s)"
+     ],
+     "startup": [],
+     "instances": 2,
+     "ammo_type": "phantom",
+     "ammo_sha256": "8068ee95affd9273f0622bdbb25546b6732f99834625a41f309dc768f1a8c41b"
+    }
+   ]
+  }
+ },
+ "statuses": {
+  "shooting": {
+   "status": "DONE",
+   "retcode": 0,
+   "autostop_criterion": null
+  },
+  "completeness": {
+   "status": "COMPLETE",
+   "blocking": false,
+   "blocking_sources": []
+  }
+ },
+ "phases": [
+  {
+   "index": 0,
+   "pool": 0,
+   "kind": "line",
+   "from_rps": 1,
+   "to_rps": 10,
+   "start_offset_s": 0,
+   "duration_s": 2
+  },
+  {
+   "index": 1,
+   "pool": 0,
+   "kind": "const",
+   "from_rps": 10,
+   "to_rps": 10,
+   "start_offset_s": 2,
+   "duration_s": 60
+  },
+  {
+   "index": 2,
+   "pool": 1,
+   "kind": "const",
+   "from_rps": null,
+   "to_rps": null,
+   "from_instances": 2,
+   "to_instances": 2,
+   "start_offset_s": 0,
+   "duration_s": 60
+  }
+ ],
+ "windows": [
+  {
+   "id": "test",
+   "kind": "test",
+   "start_ts": 1790000000,
+   "end_ts": 1790000005,
+   "responses": 50,
+   "rps_mean": 10.0,
+   "latency_ms": {
+    "p50": 1.41,
+    "p75": 1.71,
+    "p90": 1.81,
+    "p95": 1.91,
+    "p98": 1.91,
+    "p99": 1.91,
+    "p100": 1.91
+   },
+   "latency_max_ms": 1.9,
+   "latency_overflow": 0,
+   "net_codes": {
+    "0": 50
+   },
+   "http_codes": {
+    "200": 50
+   },
+   "cases": {
+    "a": {
+     "responses": 50,
+     "latency_ms": {
+      "p50": 1.41,
+      "p75": 1.71,
+      "p90": 1.81,
+      "p95": 1.91,
+      "p98": 1.91,
+      "p99": 1.91,
+      "p100": 1.91
+     },
+     "latency_max_ms": 1.9,
+     "latency_overflow": 0
+    }
+   }
+  },
+  {
+   "id": "phase-0",
+   "kind": "phase",
+   "phase_index": 0,
+   "start_ts": 1790000000,
+   "end_ts": 1790000002,
+   "responses": 20,
+   "rps_mean": 10.0,
+   "latency_ms": {
+    "p50": 1.41,
+    "p75": 1.71,
+    "p90": 1.81,
+    "p95": 1.91,
+    "p98": 1.91,
+    "p99": 1.91,
+    "p100": 1.91
+   },
+   "latency_max_ms": 1.9,
+   "latency_overflow": 0,
+   "net_codes": {
+    "0": 20
+   },
+   "http_codes": {
+    "200": 20
+   },
+   "cases": {
+    "a": {
+     "responses": 20,
+     "latency_ms": {
+      "p50": 1.41,
+      "p75": 1.71,
+      "p90": 1.81,
+      "p95": 1.91,
+      "p98": 1.91,
+      "p99": 1.91,
+      "p100": 1.91
+     },
+     "latency_max_ms": 1.9,
+     "latency_overflow": 0
+    }
+   }
+  },
+  {
+   "id": "phase-1",
+   "kind": "phase",
+   "phase_index": 1,
+   "start_ts": 1790000002,
+   "end_ts": 1790000005,
+   "responses": 30,
+   "rps_mean": 10.0,
+   "latency_ms": {
+    "p50": 1.41,
+    "p75": 1.71,
+    "p90": 1.81,
+    "p95": 1.91,
+    "p98": 1.91,
+    "p99": 1.91,
+    "p100": 1.91
+   },
+   "latency_max_ms": 1.9,
+   "latency_overflow": 0,
+   "net_codes": {
+    "0": 30
+   },
+   "http_codes": {
+    "200": 30
+   },
+   "cases": {
+    "a": {
+     "responses": 30,
+     "latency_ms": {
+      "p50": 1.41,
+      "p75": 1.71,
+      "p90": 1.81,
+      "p95": 1.91,
+      "p98": 1.91,
+      "p99": 1.91,
+      "p100": 1.91
+     },
+     "latency_max_ms": 1.9,
+     "latency_overflow": 0
+    }
+   }
+  },
+  {
+   "id": "phase-2",
+   "kind": "phase",
+   "phase_index": 2,
+   "start_ts": 1790000000,
+   "end_ts": 1790000005,
+   "responses": 50,
+   "rps_mean": 10.0,
+   "latency_ms": {
+    "p50": 1.41,
+    "p75": 1.71,
+    "p90": 1.81,
+    "p95": 1.91,
+    "p98": 1.91,
+    "p99": 1.91,
+    "p100": 1.91
+   },
+   "latency_max_ms": 1.9,
+   "latency_overflow": 0,
+   "net_codes": {
+    "0": 50
+   },
+   "http_codes": {
+    "200": 50
+   },
+   "cases": {
+    "a": {
+     "responses": 50,
+     "latency_ms": {
+      "p50": 1.41,
+      "p75": 1.71,
+      "p90": 1.81,
+      "p95": 1.91,
+      "p98": 1.91,
+      "p99": 1.91,
+      "p100": 1.91
+     },
+     "latency_max_ms": 1.9,
+     "latency_overflow": 0
+    }
+   }
+  }
+ ],
+ "load": {
+  "gun": {
+   "type": "phantom",
+   "version": null,
+   "grpc_status": "not_applicable"
+  },
+  "code_kinds": [
+   "net",
+   "http"
+  ],
+  "autostop_criteria": [],
+  "per_second": [
+   {
+    "ts": 1790000000,
+    "rps": 10,
+    "planned_rps": null,
+    "instances": 3,
+    "net_codes": {
+     "0": 10
+    },
+    "http_codes": {
+     "200": 10
+    }
+   },
+   {
+    "ts": 1790000001,
+    "rps": 10,
+    "planned_rps": null,
+    "instances": 3,
+    "net_codes": {
+     "0": 10
+    },
+    "http_codes": {
+     "200": 10
+    }
+   },
+   {
+    "ts": 1790000002,
+    "rps": 10,
+    "planned_rps": null,
+    "instances": 3,
+    "net_codes": {
+     "0": 10
+    },
+    "http_codes": {
+     "200": 10
+    }
+   },
+   {
+    "ts": 1790000003,
+    "rps": 10,
+    "planned_rps": null,
+    "instances": 3,
+    "net_codes": {
+     "0": 10
+    },
+    "http_codes": {
+     "200": 10
+    }
+   },
+   {
+    "ts": 1790000004,
+    "rps": 10,
+    "planned_rps": null,
+    "instances": 3,
+    "net_codes": {
+     "0": 10
+    },
+    "http_codes": {
+     "200": 10
+    }
+   }
+  ]
+ },
+ "artifacts": {
+  "histograms": {
+   "path": "hist.v1.jsonl.gz",
+   "format": "hist.v1",
+   "sha256": "0d49cb02ae7300cd0e2ae96df188bb10855c896d0a8979ff10666a50d37ce4fe",
+   "bytes": 150,
+   "lines": 10
+  }
+ },
+ "monitoring": {
+  "sources": []
+ },
+ "generator": {
+  "host": "generator-1.example",
+  "dc": null,
+  "cpu_model": "AMD EPYC 7713 64-Core Processor",
+  "cores": 32,
+  "cpu_limit_cores": null,
+  "cpu": {
+   "source": "unavailable",
+   "windows": []
+  },
+  "saturation": {
+   "status": "not_saturated",
+   "signals": []
+  }
+ },
+ "target": {
+  "address": "target:80",
+  "hosts": [],
+  "cpu": null
+ },
+ "perforator": {
+  "status": "not_requested"
+ }
+}

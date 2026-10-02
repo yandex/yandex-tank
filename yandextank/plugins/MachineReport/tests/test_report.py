@@ -6,16 +6,24 @@ import functools
 import gzip
 import os
 import time
+import types
+from collections import Counter
 from fractions import Fraction
+from itertools import chain, islice
 
 import numpy as np
 import pytest
 
+from load.contrib.netort.resource import manager
 from yandextank.aggregator import TankAggregator
 from yandextank.aggregator.aggregator import Aggregator, DataPoller
 from yandextank.aggregator.chopper import TimeChopper
 from yandextank.plugins.MachineReport import report
 from yandextank.plugins.Phantom.reader import string_to_df
+from yandextank.stepper.format import Stpd, StpdReader
+from yandextank.stepper.instance_plan import LoadPlanBuilder
+from yandextank.stepper.load_plan import StepFactory
+from yandextank.stepper.main import LoadProfile, StepperWrapper
 
 from test_quantile import bin_width, hist_line
 from test_quantile import latency_ms as reference_latency_ms
@@ -52,6 +60,35 @@ def pandora_pool(rps, gun=None, ammo=None, startup=None):
 
 def pools(*schedules):
     return report.pandora_pools([pandora_pool(rps) for rps in schedules])
+
+
+def stepper_wrapper(schedule, load_type='rps', **options):
+    """A prepared StepperWrapper as the plugin reads it: the stepper LoadProfile of the schedule line and the options
+    the stepper read. ammo_count: records of its stpd, by default the ammo never ends; steps: empty for an instances
+    stpd."""
+    read = dict(
+        uris=['/'],
+        ammo_file=None,
+        ammo_type='phantom',
+        instances=1000,
+        stpd=None,
+        use_caching=False,
+        ammo_count=10**9,
+        steps=[(10, 1)],
+    )
+    read.update(options)
+    return types.SimpleNamespace(load_profile=LoadProfile(load_type, schedule), **read)
+
+
+def stepper_pool(schedule, load_type='rps', http=True, tls=False, **options):
+    wrapper = stepper_wrapper(schedule, load_type, **options)
+    return report.Pool.from_stepper(wrapper, 'phantom', http, tls, resource_manager=manager)
+
+
+def stpd(path, marks):
+    """An stpd file of shots at marks, ms."""
+    path.write_bytes(b''.join(Stpd([(ts, b'a', b'GET / HTTP/1.0\r\n\r\n') for ts in marks])))
+    return str(path)
 
 
 def phout(rows):
@@ -612,6 +649,323 @@ def test_aggregator_max_wait(schedules, pause):
             check()
     else:
         check()
+
+
+# Stepper schedules (phantom, bfg)
+
+RPS_STEPS = [
+    ('const(10, 1m)', 'const(10,60s)'),
+    ('line(1, 10, 3h2m3s)', 'line(1,10,10923s)'),
+    ('step(5, 50, 2.5, 5m)', 'step(5,50,2.5,300s)'),
+    ('const(2.5,150)', 'const(2.5,150s)'),
+    ('const(100, 1d2h)', 'const(100,93600s)'),
+    # the stepper pattern finds 3: its quirk stays
+    ('const(1e3, 10s)', 'const(3,10s)'),
+]
+INSTANCE_STEPS = [
+    # the stepper keeps the last token of an instances duration only
+    ('const(10, 1m30s)', 'const(10,30s)'),
+    ('wait(5)', 'wait(5s)'),
+    ('ramp(5, 4s)', 'ramp(5,4s)'),
+    ('step(2, 10, 2, 3s)', 'step(2,10,2,3s)'),
+]
+
+
+@pytest.mark.parametrize('step, text', RPS_STEPS)
+def test_stepper_rps_normalization(step, text):
+    """The line the stepper reads and its normalized text shoot the same: a pattern copied from the stepper that
+    drifts from it fails here."""
+    [got], _ = report.rps_schedule([step])
+    assert got == text and report.PROFILE_STRING.match(got)
+    original, normalized = StepFactory.produce(step), StepFactory.produce(text)
+    assert original.get_duration() == normalized.get_duration()
+    assert len(original) == len(normalized)
+    assert list(islice(original, 100000)) == list(islice(normalized, 100000))
+
+
+@pytest.mark.parametrize('step, text', INSTANCE_STEPS)
+def test_stepper_instances_normalization(step, text):
+    [got], _, _ = report.instances_schedule([step])
+    assert got == text and report.PROFILE_STRING.match(got)
+    original, normalized = LoadPlanBuilder(), LoadPlanBuilder()
+    original.add_step(step)
+    normalized.add_step(text)
+    assert original.duration == normalized.duration and original.instances == normalized.instances
+    assert sorted(chain(*original.generators)) == sorted(chain(*normalized.generators))
+
+
+def test_stepper_levels():
+    """Levels of step are the stepper ones: the last one is the maximum, and it goes down when from > to."""
+    [up] = stepper_pool('step(10,25,10,3s)').phases
+    assert (up.kind, up.from_rps, up.to_rps, [s[2] for s in up.segments]) == ('step', 10, 25, [10, 20, 25])
+    [down] = stepper_pool('step(25,10,10,10s)').phases
+    assert [s[2] for s in down.segments] == [25, 15, 10] and down.duration == 30
+
+
+def stepper_seconds(schedule):
+    """Shots per second the stepper plans for a schedule line."""
+    marks, base = [], 0
+    for step in LoadProfile('rps', schedule).schedule:
+        plan = StepFactory.produce(step)
+        marks += [base + ts for ts in plan]
+        base += plan.get_duration()
+    return Counter(ts // 1000 for ts in marks)
+
+
+@pytest.mark.parametrize('schedule', ['const(10,5s) const(4,4s)', 'line(1,10,10s)', 'const(10,5s) line(10,1,9s)'])
+def test_stepper_plan(schedule):
+    """planned_rps of a second is what the stepper shoots: exact for an integer const, within a shot cumulatively
+    for a line."""
+    shot, planned = stepper_seconds(schedule), stepper_pool(schedule).plan()
+    seconds = range(max(max(shot), max(planned)) + 1)
+    drift = np.cumsum([float(planned.get(s, 0)) - shot[s] for s in seconds])
+    assert np.abs(drift).max() <= 1
+    if 'line' not in schedule:
+        assert [planned.get(s, 0) for s in seconds] == [shot[s] for s in seconds]
+    assert len(StepFactory.produce('line(10,1,9s)')) == 49 == int(sum(stepper_pool('line(10,1,9s)').plan().values()))
+
+
+@pytest.mark.parametrize(
+    'schedule, pause',
+    [
+        ('const(0,150s) line(1000,3000,15m)', False),
+        ('const(10,10s) const(0,31s) const(10,10s)', True),
+        ('const(10,10s) step(0,20,10,40s)', True),
+        ('const(0.02,120s)', True),
+    ],
+)
+def test_stepper_pauses(schedule, pause):
+    check = lambda: report.check_pauses([stepper_pool(schedule)], 31)  # noqa: E731
+    if pause:
+        with pytest.raises(report.NoReport):
+            check()
+    else:
+        check()
+
+
+def test_shared_source():
+    """phantom multi sections write one phout: silent all at once for max_wait, the source is dropped. An instances
+    pool shoots all along between its first and last start; when its ammo ends after that is unknown."""
+    a, b = stepper_pool('const(10,60s)'), stepper_pool('const(0,120s) const(10,60s)')
+    report.check_pauses([a, b], 31)
+    with pytest.raises(report.NoReport, match='one aggregator source'):
+        report.check_pauses([a, b], 31, shared=True)
+    report.check_pauses([a, stepper_pool('const(0,30s) const(10,60s)')], 31, shared=True)
+    starts = 'wait(30s) step(1,3,1,30s)'  # instances start at 30, 60 and 90 s
+    report.check_pauses([a, b, stepper_pool(starts, 'instances')], 31, shared=True)
+    for schedule, ammo_count in ((starts, 1), ('wait(30s) const(2,10s)', 10**9)):
+        with pytest.raises(report.NoReport, match='one aggregator source'):
+            report.check_pauses([a, b, stepper_pool(schedule, 'instances', ammo_count=ammo_count)], 31, shared=True)
+
+
+def test_shared_source_pause_between_steps():
+    """A pause between the steps of a pool is no silence while another pool shoots into the same phout; a gap inside
+    a step still counts for its pool."""
+    bursts = stepper_pool('const(10,60s) const(0,60s) const(10,60s)')
+    with pytest.raises(report.NoReport, match='pool 1'):
+        report.check_pauses([stepper_pool('const(100,600s)'), bursts], 31)
+    report.check_pauses([stepper_pool('const(100,600s)'), bursts], 31, shared=True)
+    with pytest.raises(report.NoReport, match='pool 1'):
+        report.check_pauses([stepper_pool('const(100,600s)'), stepper_pool('const(0.02,120s)')], 31, shared=True)
+
+
+def test_ammo_ends_the_stepper_pool():
+    """The stpd ends with the ammo (loop, ammo_limit): an rps pool shoots and plans up to its last record, an instances
+    one starts the instances that got a record."""
+    cut = stepper_pool('const(10,600s)', ammo_count=100)
+    assert (cut.last_shot, sum(cut.plan().values()), cut.end) == (Fraction(99, 10), 100, 600)
+    full = stepper_pool('const(10,600s)', ammo_count=6000)
+    assert (full.last_shot, sum(full.plan().values()), full.cut) == (Fraction(5999, 10), 6000, None)
+    line_cut = stepper_pool('const(1,10s) line(10,20,10s)', ammo_count=20)
+    assert 10 < line_cut.last_shot < 11 and round(sum(line_cut.plan().values())) == 20
+    # multi: the other pools start after the cut one has shot its ammo, the phout is silent
+    late = stepper_pool('const(0,60s) const(10,60s)')
+    with pytest.raises(report.NoReport, match='one aggregator source'):
+        report.check_pauses([cut, late], 31, shared=True)
+    report.check_pauses([full, late], 31, shared=True)
+    uris = stepper_pool('const(10,10m)', 'instances', uris=['/a', '/b', '/c'], ammo_count=3)
+    assert (uris.first_shot, uris.last_shot) == (0, 0)
+    with pytest.raises(report.NoReport, match='one aggregator source'):
+        report.check_pauses([uris, late], 31, shared=True)
+    # planned_rps of the multi is the sum of the plans up to their cuts: no deficit after the ammo of a pool
+    rows = [(T + s + 0.01 * i, 'a', 1000, 0, 200) for s in range(60) for i in range(100 if s < 10 else 90)]
+    doc = build(rows, [stepper_pool('const(10,600s)', ammo_count=100), stepper_pool('const(90,60s)')])
+    assert [s['planned_rps'] for s in doc['load']['per_second']] == [100] * 10 + [90] * 50
+    assert not [s for s in doc['generator']['saturation']['signals'] if s['code'] == 'PLAN_NOT_MET']
+
+
+def test_instances_last_const_holds_until_the_ammo_ends():
+    """The wait of the last const step of an instances schedule is no mark of the stpd: the closed loop keeps its
+    level until the ammo ends, and its windows run to E."""
+    rows = [(T + s + 0.1 * i, 'a', 1000, 0, 200) for s in range(60) for i in range(10)]
+    doc = build(rows, [stepper_pool('const(2,5s) const(4,20s)', 'instances')], trim_s=5, elapsed_s=60)
+    assert [p['duration_s'] for p in doc['phases']] == [5, 20]
+    spans = {w['id']: (w['start_ts'] - T, w['end_ts'] - T) for w in doc['windows']}
+    assert spans == {'test': (0, 60), 'phase-0': (0, 5), 'phase-1': (5, 60), 'steady-1': (10, 55)}
+    # a ramp at the end keeps its level too, but that level is no line: its window ends with the ramp
+    ramp = build(rows, [stepper_pool('line(1,4,20s)', 'instances')], trim_s=5, elapsed_s=60)
+    assert {w['id']: w['end_ts'] - T for w in ramp['windows']} == {'test': 60, 'phase-0': 20}
+
+
+def test_instances_pool():
+    pool = stepper_pool('wait(5s) line(1,5,4s) step(5,12,3,2s) ramp(3,1s) const(20,3s) wait(2s)', 'instances')
+    assert [p.kind for p in pool.phases] == ['const', 'line', 'step', 'line', 'const', 'const']
+    assert [(p.from_instances, p.to_instances) for p in pool.phases] == [
+        (0, 0),
+        (1, 5),
+        (5, 12),
+        (13, 15),
+        (20, 20),
+        (20, 20),
+    ]
+    assert [p.start for p in pool.phases] == [0, 5, 9, 17, 18, 21]
+    assert (pool.first_shot, pool.silence, pool.plan(), pool.end) == (5, 0, None, None)
+    assert pool.profile['schedule'] == [
+        'wait(5s)',
+        'line(1,5,4s)',
+        'step(5,12,3,2s)',
+        'ramp(3,1s)',
+        'const(20,3s)',
+        'wait(2s)',
+    ]
+    # the same line in rps and in instances
+    rps, instances = stepper_pool('const(10,1m)').profile, stepper_pool('const(10,1m)', 'instances').profile
+    assert rps['schedule'] == instances['schedule'] == ['const(10,60s)']
+    assert report.json_sha256({'pools': [rps]}) != report.json_sha256({'pools': [instances]})
+
+
+def test_stpd_file(tmp_path):
+    marks = [10000 + 100 * i for i in range(30)]
+    pool = stepper_pool('x.stpd', 'stpd_file', stpd=stpd(tmp_path / 'x.stpd', marks), uris=[], instances=10)
+    assert (pool.profile['schedule'], pool.profile['load_type'], pool.profile['instances']) == ([], 'stpd_file', 10)
+    assert pool.profile['ammo_sha256'] == report.file_sha256(str(tmp_path / 'x.stpd'))
+    assert (pool.first_shot, pool.phases, pool.plan(), pool.end) == (10, [], None, None)
+    report.check_pauses([pool], 31)
+    jump = stepper_pool('y.stpd', 'stpd_file', stpd=stpd(tmp_path / 'y.stpd', [0, 1000, 41000]))
+    with pytest.raises(report.NoReport):
+        report.check_pauses([jump], 31)
+    # an instances stpd: the start of every instance, then zero marks
+    closed = stepper_pool('z.stpd', 'stpd_file', stpd=stpd(tmp_path / 'z.stpd', [5000] * 3 + [0] * 50))
+    report.check_pauses([closed], 31)
+    assert (closed.first_shot, closed.silence) == (5, 0)
+    rows = [(T + s + 0.1 * i, 'a', 1000, 0, 200) for s in range(3) for i in range(10)]
+    doc = build(rows, [pool], elapsed_s=10)
+    assert doc['phases'] == [] and [w['id'] for w in doc['windows']] == ['test']
+    assert {s['planned_rps'] for s in doc['load']['per_second']} == {None}
+    assert window(doc, 'test')['start_ts'] == T - 10
+
+
+def tank_stepper(tmp_path, schedule, load_type='rps', **options):
+    """A StepperWrapper of the tank after read_config and prepare_stepper: the stpd and its _si.json are in tmp_path,
+    and the same options again take them from there."""
+    cfg = {
+        'ammofile': '',
+        'ammo_type': 'uri',
+        'loop': -1,
+        'ammo_limit': -1,
+        'load_profile': {'load_type': load_type, 'schedule': schedule},
+        'instances': 1000,
+        'uris': ['/a', '/b'],
+        'headers': [],
+        'header_http': '1.0',
+        'autocases': 0,
+        'enum_ammo': False,
+        'use_caching': True,
+        'file_cache': 8192,
+        'cache_dir': str(tmp_path),
+        'force_stepping': 0,
+        'chosen_cases': '',
+    }
+    cfg.update(options)
+    core = types.SimpleNamespace(artifacts_base_dir=str(tmp_path), resource_manager=manager, publish=lambda *a: None)
+    wrapper = StepperWrapper(core, cfg)
+    wrapper.read_config()
+    wrapper.prepare_stepper()
+    return wrapper
+
+
+def test_tank_stepper(tmp_path):
+    """Pools of the real stepper, built and cached: the ammo ends the stpd where the pool says, the instances limit is
+    the total of the schedule, and an instances stpd shoots between its starts without pauses."""
+    marks = lambda wrapper: [ts for ts, _, _ in StpdReader(wrapper.stpd)]  # noqa: E731
+    pool = lambda wrapper: report.Pool.from_stepper(wrapper, 'phantom', True, False)  # noqa: E731
+    rps = tank_stepper(tmp_path, 'const(10,10s)', loop=1)
+    assert (rps.ammo_count, marks(rps)) == (2, [0, 100])
+    cached = tank_stepper(tmp_path, 'const(10,10s)', loop=1)
+    assert cached.stpd == rps.stpd and cached.ammo_count == 2
+    for p in (pool(rps), pool(cached)):
+        assert (p.last_shot, sum(p.plan().values()), p.profile['instances']) == (Fraction(1, 10), 2, 1000)
+    closed = tank_stepper(tmp_path, 'step(1,3,1,40s)', 'instances', loop=3)
+    assert (closed.ammo_count, closed.instances, marks(closed)) == (6, 3, [0, 40000, 80000, 0, 0, 0])
+    assert (pool(closed).first_shot, pool(closed).last_shot, pool(closed).profile['instances']) == (0, 80, 3)
+    stpd_file = tank_stepper(tmp_path, closed.stpd, 'stpd_file')
+    assert stpd_file.steps == [] and pool(stpd_file).shots == [(0, 80, 0)]
+    report.check_pauses([pool(stpd_file)], 31, shared=True)
+
+
+def test_ammo_hash_reads_small_chunks():
+    """The netort HTTP stream wrapper builds a read of 1000-byte pieces, copying its buffer on each: 1 MB reads cost
+    about 25 ms of CPU per MB before the shooting."""
+
+    class Stream(object):
+        def __init__(self, data):
+            self.data, self.sizes = data, []
+
+        def read(self, size):
+            self.sizes.append(size)
+            chunk, self.data = self.data[:size], self.data[size:]
+            return chunk
+
+    stream = Stream(b'x' * 100000)
+    assert report._stream_sha256(stream) == report.hashlib.sha256(b'x' * 100000).hexdigest()
+    assert max(stream.sizes) <= 8192
+
+
+def test_stepper_ammo_hash(tmp_path):
+    """The bytes the stepper readers get: by content, not path; a gzip file by its decompressed bytes."""
+    content = b'/\n/x\n'
+    paths = [tmp_path / 'a', tmp_path / 'b', tmp_path / 'c.gz']
+    paths[0].write_bytes(content)
+    paths[1].write_bytes(content)
+    paths[2].write_bytes(gzip.compress(content))
+    expected = report.file_sha256(str(paths[0]))
+    assert [report.opened_sha256(manager, str(p), False) for p in paths] == [expected] * 3
+    pool = stepper_pool('const(1,1s)', uris=[], ammo_file=str(paths[2]), ammo_type='uri')
+    assert pool.profile['ammo_sha256'] == expected
+    uris = ['/b', '/é']
+    assert stepper_pool('const(1,1s)', uris=uris).profile['ammo_sha256'] == report.json_sha256(uris, ensure_ascii=False)
+    hashes = {report.json_sha256({'pools': [stepper_pool('const(1,1s)', uris=[u]).profile]}) for u in ('/a', '/b')}
+    assert len(hashes) == 2
+
+
+def test_two_stepper_pools():
+    """An rps and an instances pool through the real aggregation: steady windows of const phases of both, no plan,
+    and no instances threshold, which only rps pools give."""
+    rows = [(T + s + 0.1 * i, 'a', 1000, 0, 200) for s in range(40) for i in range(10)]
+    rps = stepper_pool('line(1,10,10s) const(10,30s)', instances=10)
+    doc = build(rows, [rps, stepper_pool('const(2,40s)', 'instances', instances=2)], trim_s=5, elapsed_s=40)
+    assert [(p['pool'], p['kind'], p.get('from_instances')) for p in doc['phases']] == [
+        (0, 'line', None),
+        (0, 'const', None),
+        (1, 'const', 2),
+    ]
+    assert doc['phases'][2]['from_rps'] is None
+    assert [w['id'] for w in doc['windows'] if w['kind'] == 'steady'] == ['steady-1', 'steady-2']
+    assert {s['planned_rps'] for s in doc['load']['per_second']} == {None}
+    assert not [s for s in doc['generator']['saturation']['signals'] if s['code'] == 'INSTANCES_EXHAUSTED']
+    # the rps pool alone: its instances limit of 10 is held all the shooting
+    alone = build(rows, [rps], trim_s=5)
+    assert [s['window'] for s in alone['generator']['saturation']['signals'] if s['code'] == 'INSTANCES_EXHAUSTED']
+
+
+def test_open_schedule_tail():
+    """instances and stpd_file have no schedule end: the bound of a stray timestamp is the shooting by the clock."""
+    pool = stepper_pool('const(2,10s)', 'instances')
+    rows = [(T, 'a', 1000, 0, 200), (T + 100, 'a', 1000, 0, 200)]
+    assert len(build(rows, [pool], elapsed_s=101)['load']['per_second']) == 101
+    seconds, lines = summarize(aggregate([[phout([(T, 'a', 1000, 0, 200), (T + 1e5, 'a', 1000, 0, 200)])]]))
+    with pytest.raises(report.NoReport, match='stray'):
+        report.build(seconds, lines, context([pool], elapsed_s=101))
 
 
 # Provenance
