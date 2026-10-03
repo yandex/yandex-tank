@@ -1,5 +1,8 @@
+import copy
+
 import pytest
 
+from yandextank.validator import validator
 from yandextank.validator.validator import TankConfig, ValidationError, PatchedValidator
 
 CFG_VER_I_0 = {
@@ -18,17 +21,6 @@ CFG_VER_I_0 = {
         'header_http': '1.1',
         'uris': ['/'],
         'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 10m)'},
-    },
-    'lunapark': {
-        'package': 'yandextank.plugins.DataUploader',
-        'enabled': True,
-        'api_address': 'https://lunapark.test.yandex-team.ru/',
-    },
-    'overload': {
-        'package': 'yandextank.plugins.DataUploader',
-        'enabled': True,
-        'api_address': 'https://overload.yandex.net/',
-        'token_file': 'token.txt',
     },
 }
 
@@ -537,14 +529,6 @@ def test_validate_all_error(config, expected):
                     'phantom',
                     'yandextank.plugins.Phantom',
                 ),
-                (
-                    'lunapark',
-                    'yandextank.plugins.DataUploader',
-                ),
-                (
-                    'overload',
-                    'yandextank.plugins.DataUploader',
-                ),
             },
         )
     ],
@@ -636,3 +620,81 @@ def test_negative_load_scheme_validator(value):
 def test_implicit_plugins_enabling(user_config, expected):
     config = TankConfig([user_config], plugins_implicit_enabling=True).raw_config_dict
     assert config == expected
+
+
+@pytest.mark.parametrize(
+    'section',
+    [
+        {
+            'uploader': {
+                'enabled': True,
+                'package': 'yandextank.plugins.DataUploader',
+                'api_address': 'loadtesting.api.cloud.yandex.net:443',
+                'job_name': 'name',
+                'job_dsc': 'dsc',
+                'ver': '1.0',
+            }
+        },
+        {'uploader': {'enabled': False, 'package': 'yandextank.plugins.DataUploader'}},
+        {'overload': {'enabled': True, 'package': 'yandextank.plugins.Overload', 'token_file': 'token.txt'}},
+        {
+            'neuploader': {
+                'enabled': True,
+                'package': 'yandextank.plugins.NeUploader',
+                'api_address': 'https://example.org/',
+                'db_name': 'test',
+                'meta': {'component': 'api'},
+            }
+        },
+        {'neuploader': {'enabled': False, 'package': 'yandextank.plugins.NeUploader'}},
+        # legacy section name
+        {
+            'meta': {
+                'enabled': True,
+                'package': 'yandextank.plugins.DataUploader',
+                'task': 'LOAD-1',
+                'operator': 'robot',
+                'jobno_file': 'jobno.txt',
+                'ignore_target_lock': True,
+                'job_name': 'name\n',
+            }
+        },
+    ],
+)
+def test_removed_plugin_section_switched_off(section):
+    tank_config = TankConfig(dict(CFG_VER_I_0, **copy.deepcopy(section)))
+    raw_before = copy.deepcopy(tank_config.raw_config_dict)
+    validated, raw = tank_config.validate()
+    [(name, content)] = section.items()
+    assert validated.validated[name] == dict(content, enabled=False)
+    assert {name for name, _, _ in validated.plugins} == {'telegraf', 'phantom'}
+    assert raw == raw_before
+
+
+@pytest.mark.parametrize(
+    'section, enabled_in_raw, package',
+    [
+        ({'uploader': {'job_name': 'name', 'job_dsc': 'dsc'}}, True, 'yandextank.plugins.DataUploader'),
+        ({'uploader': {'enabled': False}}, False, 'yandextank.plugins.DataUploader'),
+        ({'overload': {'enabled': True}}, True, 'yandextank.plugins.DataUploader'),
+        ({'neuploader': {'api_address': 'https://example.org/'}}, True, 'yandextank.plugins.NeUploader'),
+        ({'neuploader': {'enabled': False}}, False, 'yandextank.plugins.NeUploader'),
+    ],
+)
+def test_removed_plugin_section_without_package(monkeypatch, section, enabled_in_raw, package):
+    # the way YLT backend validates user configs: package comes from the stub in the base config
+    monkeypatch.setattr(validator, 'load_local_base_cfgs', lambda: [])
+    tank_config = TankConfig(
+        [dict(copy.deepcopy(section), core={'artifacts_base_dir': './'})],
+        with_dynamic_options=False,
+        skip_unknown_plugins=True,
+        skip_base_cfgs=False,
+        plugins_implicit_enabling=True,
+    )
+    raw_before = copy.deepcopy(tank_config.raw_config_dict)
+    validated, raw = tank_config.validate()
+    [(name, content)] = section.items()
+    assert raw == raw_before
+    assert raw[name] == dict(content, enabled=enabled_in_raw, package=package)
+    assert validated.validated[name]['enabled'] is False
+    assert name not in {name for name, _, _ in validated.plugins}

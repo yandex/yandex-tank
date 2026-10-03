@@ -16,6 +16,9 @@ from yandextank.common.util import read_resource, recursive_dict_update
 
 logger = logging.getLogger(__name__)
 
+# Removed plugins: their enabled sections are switched off in the validated config, raw config is kept as is
+REMOVED_PLUGINS = ['yandextank.plugins.DataUploader', 'yandextank.plugins.Overload', 'yandextank.plugins.NeUploader']
+
 
 class ValidationError(Exception):
     MSG_TEMPLATE = """Validation error:\n{}"""
@@ -274,6 +277,10 @@ class TankConfig(object):
         errors = {}
         results = {}
         for plugin_name, package, config in self.__parse_enabled_plugins():
+            if package in REMOVED_PLUGINS:
+                logger.warning('Section %s: plugin %s removed, section ignored', plugin_name, package)
+                results[plugin_name] = dict(config, enabled=False)
+                continue
             try:
                 schema = load_plugin_schema(package, self.skip_unknown_plugins)
                 results[plugin_name] = (

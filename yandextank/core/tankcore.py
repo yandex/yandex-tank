@@ -22,7 +22,6 @@ from builtins import str
 from yandextank.common.const import RetCode
 from yandextank.common.exceptions import GeneratorNotFound, PluginNotPrepared
 from yandextank.common.interfaces import GeneratorPlugin, MonitoringPlugin, MonitoringDataListener
-from yandextank.plugins.DataUploader.client import LPRequisites
 from yandextank.validator.validator import TankConfig, ValidationError
 from yandextank.aggregator import TankAggregator
 from yandextank.aggregator.aggregator import DataPoller
@@ -86,7 +85,6 @@ class LockError(Exception):
 
 class TankCore(object):
     SECTION = 'core'
-    SECTION_META = 'meta'
     PLUGIN_PREFIX = 'plugin_'
     PID_OPTION = 'pid'
     UUID_OPTION = 'uuid'
@@ -113,7 +111,6 @@ class TankCore(object):
         self._plugins = None
         self._artifacts_dir = None
         self.artifact_files = {}
-        self.artifacts_to_send = []
         self._artifacts_base_dir = None
         self.manual_start = False
         self.scheduled_start = None
@@ -152,11 +149,9 @@ class TankCore(object):
         with open(os.path.join(self.artifacts_dir, CONFIGINITIAL), 'w') as f:
             yaml.dump(self.configinitial, f)
         self.add_artifact_file(error_output)
-        self.add_artifact_to_send(LPRequisites.CONFIGINITIAL, yaml.dump(self.configinitial))
         configinfo = self.config.validated.copy()
         configinfo.setdefault(self.SECTION, {})
         configinfo[self.SECTION][self.API_JOBNO] = self.test_id
-        self.add_artifact_to_send(LPRequisites.CONFIGINFO, yaml.dump(configinfo))
         with open(os.path.join(self.artifacts_dir, VALIDATED_CONF), 'w') as f:
             yaml.dump(configinfo, f)
         logger.info('New test id %s' % self.test_id)
@@ -216,13 +211,6 @@ class TankCore(object):
         generators_counter = 0
         for plugin_name, plugin_path, plugin_cfg in self.config.plugins:
             logger.debug("Loading plugin %s from %s", plugin_name, plugin_path)
-            if plugin_path == "yandextank.plugins.Overload":
-                logger.warning(
-                    "Deprecated plugin name: 'yandextank.plugins.Overload'\n"
-                    "There is a new generic plugin now.\n"
-                    "Correcting to 'yandextank.plugins.DataUploader overload'"
-                )
-                plugin_path = "yandextank.plugins.DataUploader overload"
             try:
                 logger.info("Trying to import plugin %s from path %s", plugin_name, plugin_path)
                 plugin = il.import_module(plugin_path)
@@ -485,10 +473,6 @@ class TankCore(object):
         else:
             raise KeyError("Requested plugin type not found: %s" % plugin_class)
 
-    def get_jobno(self, plugin_name='plugin_lunapark'):
-        uploader_plugin = self.plugins[plugin_name]
-        return uploader_plugin.lp_job.number
-
     def __collect_file(self, filename, keep_original=False):
         """
         Move or copy single file to artifacts dir
@@ -518,9 +502,6 @@ class TankCore(object):
         if filename:
             logger.debug("Adding artifact file to collect (keep=%s): %s", keep_original, filename)
             self.artifact_files[filename] = keep_original
-
-    def add_artifact_to_send(self, lp_requisites, content):
-        self.artifacts_to_send.append((lp_requisites, content))
 
     def apply_shorthand_options(self, options, default_section='DEFAULT'):
         for option_str in options:

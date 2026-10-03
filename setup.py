@@ -55,7 +55,6 @@ analytic tools for the results they produce.
     entry_points={
         'console_scripts': [
             'yandex-tank = yandextank.core.cli:main',
-            'tank-postloader = yandextank.plugins.DataUploader.cli:post_loader',
             'tank-docs-gen = yandextank.validator.docs_gen:main',
         ],
     },
@@ -67,7 +66,6 @@ analytic tools for the results they produce.
         'yandextank.plugins.Autostop': ['config/*'],
         'yandextank.plugins.Bfg': ['config/*'],
         'yandextank.plugins.Console': ['config/*'],
-        'yandextank.plugins.DataUploader': ['config/*'],
         'yandextank.plugins.InfluxUploader': ['config/*'],
         'yandextank.plugins.OpenTSDBUploader': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],

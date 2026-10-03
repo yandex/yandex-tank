@@ -17,12 +17,17 @@ jmeter:
 json_report:
   enabled: true
   package: yandextank.plugins.JsonReport
+# plugin removed; the stub gives package to user sections without one, the validator switches them off
+neuploader:
+  enabled: false
+  package: yandextank.plugins.NeUploader
 offline_report:
   enabled: false
   package: yandextank.plugins.OfflineReport
 opentsdb:
   enabled: false
   package: yandextank.plugins.OpenTSDBUploader
+# plugin removed; the stub gives package to user sections without one, the validator switches them off
 overload:
   enabled: false
   package: yandextank.plugins.DataUploader
@@ -47,6 +52,7 @@ autostop:
 rcassert:
   enabled: true
   package: yandextank.plugins.RCAssert
+# plugin removed; the stub gives package to user sections without one, the validator switches them off
 uploader:
   enabled: false
   package: yandextank.plugins.DataUploader

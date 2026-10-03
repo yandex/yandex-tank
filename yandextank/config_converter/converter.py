@@ -15,6 +15,8 @@ CORE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core'
 ]
 
 DEPRECATED_SECTIONS = ['lunaport', 'aggregator']
+# Removed plugins (Overload maps here via old_plugin_mapper): their sections and options are dropped with a warning
+REMOVED_PLUGINS = ['DataUploader']
 
 
 def old_plugin_mapper(package):
@@ -70,6 +72,13 @@ class UnrecognizedSection(ConversionError):
     pass
 
 
+def is_removed(plugin, section):
+    if plugin in REMOVED_PLUGINS:
+        logger.warning('Section %s: plugin %s removed, section ignored', section, plugin)
+        return True
+    return False
+
+
 def guess_plugin(section):
     for plugin, section_name_pattern in SECTIONS_PATTERNS.items():
         if re.match(section_name_pattern, section):
@@ -98,7 +107,7 @@ def to_bool(value):
 
 
 def is_option_deprecated(plugin, option_name):
-    DEPRECATED = {'Aggregator': ['time_periods', 'precise_cumulative'], 'DataUploader': ['copy_config_to']}
+    DEPRECATED = {'Aggregator': ['time_periods', 'precise_cumulative']}
     if option_name in DEPRECATED.get(plugin, []):
         logger.warning('Deprecated option %s in plugin %s, omitting', option_name, plugin)
         return True
@@ -126,11 +135,6 @@ def old_section_name_mapper(name):
     MAP = {
         'monitoring': 'telegraf',
     }
-    return MAP.get(name, name)
-
-
-def rename(name):
-    MAP = {'meta': 'uploader'}
     return MAP.get(name, name)
 
 
@@ -187,11 +191,9 @@ class Option(object):
             }  # works for json as well
         },
         'Autostop': {'autostop': lambda k, v: {k: re.findall(r'\w+\(.+?\)', v)}},
-        'DataUploader': {'lock_targets': lambda k, v: {k: v.strip().split() if v != 'auto' else v}},
         'core': {'ignore_locks': lambda k, v: {'ignore_lock': to_bool(v)}},
     }
     CONVERTERS_FOR_UNKNOWN = {
-        'DataUploader': lambda k, v: {'meta': {k: v}},
         'JMeter': lambda k, v: {'variables': {k: v}},
     }
 
@@ -275,7 +277,6 @@ class Option(object):
 class Section(object):
     def __init__(self, name, plugin, options, enabled=None):
         self.name = old_section_name_mapper(name)
-        self.new_name = rename(self.name)
         self.plugin = plugin
         self._schema = None
         self.options = [
@@ -362,11 +363,15 @@ def parse_sections(cfg_ini):
     """
     :type cfg_ini: ConfigParser
     """
-    return [
-        Section(section.lower(), guess_plugin(section.lower()), without_defaults(cfg_ini, section))
-        for section in cfg_ini.sections()
-        if not re.match(CORE_SECTION_PATTERN, section.lower()) and section.lower() not in DEPRECATED_SECTIONS
-    ]
+    sections = []
+    for section in cfg_ini.sections():
+        name = section.lower()
+        if re.match(CORE_SECTION_PATTERN, name) or name in DEPRECATED_SECTIONS:
+            continue
+        plugin = guess_plugin(name)
+        if not is_removed(plugin, name):
+            sections.append(Section(name, plugin, without_defaults(cfg_ini, section)))
+    return sections
 
 
 class PluginInstance(object):
@@ -391,7 +396,6 @@ class PluginInstance(object):
             'BatteryHistorian': 'battery_historian',
             'Bfg': 'bfg',
             'Console': 'console',
-            'DataUploader': 'meta',
             'JMeter': 'jmeter',
             'JsonReport': 'json_report',
             'Maven': 'maven',
@@ -406,7 +410,7 @@ class PluginInstance(object):
             'Telegraf': 'telegraf',
             'TipsAndTricks': 'tips',
         }
-        name_map = {'aggregate': 'aggregator', 'overload': 'overload', 'jsonreport': 'json_report'}
+        name_map = {'aggregate': 'aggregator', 'jsonreport': 'json_report'}
         return name_map.get(self.name, package_map.get(self.package.plugin_name, self.name))
 
 
@@ -422,6 +426,7 @@ def enable_sections(sections, core_opts):
         for key, value in core_opts
         if key.startswith(PLUGIN_PREFIX) and value not in DEPRECATED_PLUGINS
     ]
+    plugin_instances = [i for i in plugin_instances if not is_removed(i.plugin_name, i.section_name)]
     enabled_instances = {instance.section_name: instance for instance in plugin_instances if instance.enabled}
     disabled_instances = {instance.section_name: instance for instance in plugin_instances if not instance.enabled}
 
@@ -480,7 +485,7 @@ def convert_ini(ini_file):
 
     ready_sections = enable_sections(combine_sections(parse_sections(cfg_ini)), core_options(cfg_ini))
 
-    plugins_cfg_dict = {section.new_name: section.get_cfg_dict() for section in ready_sections}
+    plugins_cfg_dict = {section.name: section.get_cfg_dict() for section in ready_sections}
 
     plugins_cfg_dict.update(
         {
@@ -506,10 +511,13 @@ def convert_single_option(key, value):
     """
     section_name, option_name = key.strip().split('.', 1)
     if not re.match(CORE_SECTION_PATTERN, section_name):
-        section = Section(section_name, guess_plugin(section_name), [(option_name, value)])
-        return {section.new_name: section.get_cfg_dict()}
+        plugin = guess_plugin(section_name)
+        if is_removed(plugin, section_name):
+            return {}
+        section = Section(section_name, plugin, [(option_name, value)])
+        return {section.name: section.get_cfg_dict()}
     else:
         if option_name.startswith(PLUGIN_PREFIX):
-            return {section.new_name: section.get_cfg_dict() for section in enable_sections([], [(option_name, value)])}
+            return {section.name: section.get_cfg_dict() for section in enable_sections([], [(option_name, value)])}
         else:
             return {'core': Option('core', option_name, value, CORE_SCHEMA).converted}

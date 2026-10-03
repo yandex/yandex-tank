@@ -44,7 +44,6 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{_sysconfdir}/yandex-tank
 %{_sysconfdir}/bash_completion.d/yandex-tank.completion
-%{_bindir}/lunapark
 %{_bindir}/yandex-tank
 %{_libdir}/yandex-tank
 

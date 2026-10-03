@@ -16,6 +16,7 @@ from yandextank.common import monitoring
 from yandextank.common.exceptions import GeneratorNotFound
 from yandextank.common.interfaces import MonitoringPlugin
 from yandextank.common.monitoring import DefaultCollector, MonitoringPanel
+from yandextank.config_converter.converter import convert_ini
 from yandextank.core import TankCore
 from yandextank.core.tankcore import Job
 from yandextank.core.tankworker import parse_options, TankInfo
@@ -63,23 +64,6 @@ CFG1 = {
         'phantom_path': './phantom_mock.sh',
         'connection_test': False,
     },
-    'lunapark': {
-        'package': 'yandextank.plugins.DataUploader',
-        'enabled': True,
-        'api_address': 'https://lunapark.test.yandex-team.ru/',
-        'task': 'LOAD-204',
-        'ignore_target_lock': True,
-        # В сборке сети нет, а по умолчанию аплоадер ждёт её 10 попыток по 60 с
-        # (maintenance_attempts x maintenance_timeout) — это и есть те 600 с,
-        # из-за которых тест не влезал в SMALL-чанк (LOAD-3541).
-        'maintenance_attempts': 1,
-        'maintenance_timeout': 1,
-        'network_attempts': 1,
-        'network_timeout': 1,
-        'api_attempts': 1,
-        'api_timeout': 1,
-        'connection_timeout': 1,
-    },
 }
 
 CFG2 = {
@@ -97,15 +81,15 @@ CFG2 = {
         'load_profile': {'load_type': 'rps', 'schedule': 'line(1, 10, 1m)'},
         'connection_test': False,
     },
-    'lunapark': {
-        'package': 'yandextank.plugins.DataUploader',
-        'enabled': True,
-        'api_address': 'https://lunapark.test.yandex-team.ru/',
-        'task': 'LOAD-204',
-        'ignore_target_lock': True,
-    },
     'shellexec': {'enabled': False},
 }
+
+# sections of the removed DataUploader plugin are switched off by the validator
+CFG_REMOVED_PLUGINS = dict(
+    CFG2,
+    uploader={'package': 'yandextank.plugins.DataUploader', 'enabled': True, 'job_name': 'name'},
+    overload={'package': 'yandextank.plugins.Overload', 'enabled': True},
+)
 
 CFG_LARGE_STEPPER = {
     "version": "1.8.36",
@@ -141,13 +125,6 @@ CFG_WITHOUT_GEN = {
     "version": "1.8.36",
     "core": {'operator': 'fomars', 'artifacts_base_dir': TMPDIR, 'artifacts_dir': TMPDIR},
     'phantom': {'package': 'yandextank.plugins.Phantom', 'enabled': False},
-    'lunapark': {
-        'package': 'yandextank.plugins.DataUploader',
-        'enabled': True,
-        'api_address': 'https://lunapark.test.yandex-team.ru/',
-        'task': 'LOAD-204',
-        'ignore_target_lock': True,
-    },
 }
 
 CFG_MULTI = load_yaml(PATH, 'test_multi_cfg.yaml')
@@ -172,7 +149,6 @@ def setup_module(module):
             {
                 'plugin_telegraf',
                 'plugin_phantom',
-                'plugin_lunapark',
                 'plugin_rcheck',
                 'plugin_shellexec',
                 'plugin_autostop',
@@ -185,7 +161,17 @@ def setup_module(module):
             CFG2,
             {
                 'plugin_phantom',
-                'plugin_lunapark',
+                'plugin_rcheck',
+                'plugin_autostop',
+                'plugin_console',
+                'plugin_rcassert',
+                'plugin_json_report',
+            },
+        ),
+        (
+            CFG_REMOVED_PLUGINS,
+            {
+                'plugin_phantom',
                 'plugin_rcheck',
                 'plugin_autostop',
                 'plugin_console',
@@ -341,22 +327,21 @@ def test_plugins_end_test_monitoring_stop_duration():
                 'meta.component = air_tickets_search [imbalance]',
                 'meta.jenkinsjob = https://jenkins-load.yandex-team.ru/job/air_tickets_search/',
             ],
+            # options of the removed DataUploader plugin are dropped
             [
-                {'uploader': {'package': 'yandextank.plugins.DataUploader', 'task': 'LOAD-204'}},
+                {},
                 {'phantom': {'package': 'yandextank.plugins.Phantom', 'ammofile': 'air-tickets-search-ammo.log'}},
-                {
-                    'uploader': {
-                        'package': 'yandextank.plugins.DataUploader',
-                        'component': 'air_tickets_search [imbalance]',
-                    }
-                },
-                {
-                    'uploader': {
-                        'package': 'yandextank.plugins.DataUploader',
-                        'meta': {'jenkinsjob': 'https://jenkins-load.yandex-team.ru/job/air_tickets_search/'},
-                    }
-                },
+                {},
+                {},
             ],
+        ),
+        (
+            [
+                'uploader.job_name=name',
+                'overload.token_file=token.txt',
+                'tank.plugin_uploader=yandextank.plugins.DataUploader',
+            ],
+            [{}, {}, {}],
         ),
         #     with converting/type-casting
         (
@@ -378,13 +363,32 @@ def test_parse_options(options, expected):
     assert parse_options(options) == expected
 
 
+def test_convert_ini_drops_removed_plugin_sections(tmp_path):
+    ini = tmp_path / 'load.ini'
+    ini.write_text(
+        '[tank]\n'
+        'plugin_uploader=yandextank.plugins.DataUploader\n'
+        'plugin_overload=yandextank.plugins.Overload\n'
+        '[meta]\n'
+        'task=LOAD-204\n'
+        'job_name=name\n'
+        '[overload]\n'
+        'token_file=token.txt\n'
+        '[phantom]\n'
+        'address=localhost\n'
+    )
+    assert convert_ini(str(ini)) == {
+        'phantom': {'package': 'yandextank.plugins.Phantom', 'address': 'localhost'},
+        'core': {},
+    }
+
+
 def teardown_module(module):
     for pattern in ['monitoring_*.xml', 'agent_*', '*.log', '*.stpd_si.json', '*.stpd', '*.conf']:
         for path in glob.glob(pattern):
             os.remove(path)
     try:
         shutil.rmtree('logs/')
-        shutil.rmtree('lunapark/')
     except OSError:
         pass
     os.chdir(original_working_dir)

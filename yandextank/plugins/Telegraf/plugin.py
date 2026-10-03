@@ -13,7 +13,6 @@ import yaml
 from copy import deepcopy
 
 import pkg_resources
-from yandextank.plugins.DataUploader.client import LPRequisites
 from ...common.interfaces import MonitoringDataListener, AbstractInfoWidget, MonitoringPlugin
 from ...common.util import expand_to_seconds, read_resource
 from ..Autostop import Plugin as AutostopPlugin, AbstractCriterion
@@ -32,7 +31,6 @@ class Plugin(MonitoringPlugin):
 
     def __init__(self, core, cfg, name):
         super(Plugin, self).__init__(core, cfg, name)
-        self.jobno = None
         self.default_target = None
         self.default_config_path = pkg_resources.resource_filename(
             'yandextank.plugins.Telegraf', "config/monitoring_default_config.xml"
@@ -149,9 +147,6 @@ class Plugin(MonitoringPlugin):
             self.monitoring = None
             self.die_on_fail = False
             return
-
-        with open(self.config) as f:
-            self.core.add_artifact_to_send(LPRequisites.MONITORING, str(f.read()))
 
         # FIXME [legacy] backward compatibility with Monitoring module
         # configuration below.
