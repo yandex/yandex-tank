@@ -142,6 +142,9 @@ class DefaultCollector(MonitoringCollectorProtocol):
     def run_sensor(self, sensor: MonitoringSensorProtocol):
         while not self.stop_event.wait(self.poll_interval):
             sensor.fetch_metrics()
+        # stop() sets stop_event a grace period after the test end: lagging sources (Solomon ~30 s) have the tail
+        # of the test by now, and the last regular fetch may have run right at the end
+        sensor.fetch_metrics()
 
     def run_panel(self, panel: MonitoringPanel):
         try:
