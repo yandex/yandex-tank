@@ -706,38 +706,6 @@ Pandora
 --------------------
 *\- additional resources you need to download before test. Default:* ``[]``
 
-NeUploader
-==========
-
-``api_address`` (string)
-------------------------
-*\- luna back url. Default:* ``https://back.luna.yandex-team.ru/``
-
-``db_name`` (string)
---------------------
-*\- luna db name. Default:* ``luna``
-
-``max_df_len`` (integer)
-------------------------
-*\- (no description). Default:* ``10000``
-
-``meta`` (dict)
----------------
-*\- (no description).*
-
-:keysrules:
- :forbidden:
-  - name
-  - raw
-  - aggregate
-  - group
-  - host
-  - type
-
-``test_name`` (string)
-----------------------
-*\- test name.*
-
 Phantom
 =======
 

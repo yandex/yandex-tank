@@ -554,6 +554,13 @@ def test_get_plugins(config, expected):
     assert {(name, pack) for name, pack, cfg in validated.plugins} == expected
 
 
+def test_disabled_section_of_removed_plugin():
+    # full configs saved from older tank versions still carry this section; the Platform plugin is gone
+    config = {'core': {}, 'platform': {'enabled': False, 'package': 'yandextank.plugins.Platform'}}
+    validated, _ = TankConfig(config).validate()
+    assert validated.plugins == []
+
+
 @pytest.mark.parametrize(
     'value',
     [

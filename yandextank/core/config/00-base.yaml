@@ -32,9 +32,6 @@ pandora:
 phantom:
   enabled: false
   package: yandextank.plugins.Phantom
-platform:
-  enabled: false
-  package: yandextank.plugins.Platform
 shellexec:
   enabled: true
   package: yandextank.plugins.ShellExec
