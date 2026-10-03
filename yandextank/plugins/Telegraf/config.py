@@ -127,7 +127,9 @@ class ConfigManager(object):
         for metric in host.metrics:
             metric_name = str(metric.name).lower()
             if metric_name in defaults:
-                for key in tuple(defaults[metric_name].keys()):
+                # Только известные ключи, а не все атрибуты метрики: telegraf не стартует на лишнем поле,
+                # а старый формат мониторинга несёт measure="..." (LOAD-3878).
+                for key in dict.fromkeys((*defaults[metric_name], *defaults_boolean)):
                     if key != 'name' and key not in defaults_boolean:
                         value = metric.get(key, None)
                         if value:

@@ -1,5 +1,6 @@
 from yandextank.common.util import get_test_path
 from yandextank.plugins.Telegraf.config import ConfigManager, AgentConfig
+from yandextank.plugins.Telegraf.config_parser import Host, Metric
 import os
 import json
 import pytest
@@ -97,6 +98,15 @@ class TestAgentConfig(object):
         assert string_arrays_equal(
             '["vda1","sda1","sda2","sda3","ahalai-mahalai"]', cfg_parser.get('[inputs.diskio]', 'devices')
         )
+
+    def test_fieldpass_without_default(self):
+        """fieldpass reaches collector config even if metric defaults lack it; unknown attributes don't"""
+        host = Host('somehost.yandex.tld', [Metric('CPU', '', {'fieldpass': '["usage_idle"]', 'measure': 'idle'})], {})
+        agent_config = AgentConfig(ConfigManager().get_host_config(host, None), False)
+        cfg_parser = RawConfigParser(strict=False)
+        cfg_parser.read(agent_config.create_collector_config('.'))
+        assert cfg_parser.get('[inputs.cpu]', 'fieldpass') == '["usage_idle"]'
+        assert not cfg_parser.has_option('[inputs.cpu]', 'measure')
 
     @pytest.mark.parametrize('test_file', ['telegraf_mon.xml', 'telegraf_mon.yaml', 'telegraf_global_inputs.yaml'])
     def test_create_custom_exec_script(self, test_file):
