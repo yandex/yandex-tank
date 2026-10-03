@@ -1,3 +1,4 @@
+import copy
 import glob
 import logging
 import os
@@ -244,6 +245,26 @@ def test_start_test(config):
     core.plugins_prepare_test()
     core.plugins_start_test()
     core.plugins_end_test(1)
+
+
+def test_yasm_section_is_noop(caplog):
+    # Голован выключен (LOAD-3874), но 200+ конфигов в Аркадии ещё держат секцию yasm.
+    # В OPENSOURCE-сборке (экспорт на GitHub) плагина YASM нет.
+    pytest.importorskip('yandextank.plugins.YASM')
+    config = copy.deepcopy(CFG_MULTI)
+    config['yasm'] = {
+        'enabled': True,
+        'package': 'yandextank.plugins.YASM',
+        'panels': {'backend': {'host': 'ASEARCH', 'tags': 'itype=balancer;prj=some', 'signals': ['some_signal']}},
+        'timeout': 10,
+    }
+    core = TankCore([config], threading.Event(), TankInfo({}))
+    core.plugins_configure()
+    core.plugins_prepare_test()
+    core.plugins_start_test()
+    core.plugins_end_test(1)
+    assert not isinstance(core.plugins['plugin_yasm'], MonitoringPlugin)
+    assert 'Голован выключен' in caplog.text
 
 
 class _EndTestRecorder:
