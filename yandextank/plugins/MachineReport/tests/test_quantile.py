@@ -84,7 +84,8 @@ def test_bound_against_inverted_cdf():
             values = np.round(np.exp(rng.normal(np.log(20000), 1.5, n)))
             seconds = np.array_split(values, min(n, 4))
             lines = [hist_line(s) for s in seconds if len(s)]
-            for p in (50, 75, 90, 95, 98, 99, 100):
+            ps = (50, 75, 90, 95, 98, 99, 100)
+            refs = np.percentile(values, ps, method='inverted_cdf')  # один вызов на выборку вместо семи
+            for p, ref in zip(ps, refs):
                 got = merged_quantile(lines, p)
-                ref = np.percentile(values, p, method='inverted_cdf')
                 assert 0 <= got - ref <= bin_width(ref), (n, p, got, ref)

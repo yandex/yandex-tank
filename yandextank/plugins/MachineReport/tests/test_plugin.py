@@ -1,6 +1,7 @@
 """The MachineReport plugin in the tank lifecycle: files it writes, what it never breaks, and that it stays inert
 without its section."""
 
+import functools
 import gzip
 import json
 import logging
@@ -641,6 +642,17 @@ SOLOMON_SECTION = {
 }
 
 
+@functools.lru_cache(maxsize=None)
+def shooting_seconds(start, end):
+    """Агрегированные секунды обстрела 2 rps на [start, end).
+
+    Агрегатор танка стоит на таком обстреле около 1.2 с, а кейсы replay различаются не обстрелом, а секцией
+    и данными мониторинга: считаем его один раз на окно (LOAD-3863).
+    """
+    rows = [(s + 0.1 + 0.5 * i, 'a', 1000, 0, 200) for s in range(start, end) for i in range(2)]
+    return list(aggregate([[phout(rows)]]))
+
+
 def replay(tmp_path, section, run, calls=None, collector=None, panels=PANELS, plugins=None):
     """The plugin over a shooting of 2 rps on the window [start, end) of a step-0 run (its profile: 30 s, then
     181 s) with the monitoring calls of the run in between."""
@@ -650,8 +662,7 @@ def replay(tmp_path, section, run, calls=None, collector=None, panels=PANELS, pl
     plugin.configure()
     plugin.start_test()
     start, end = run['start'], run['end']
-    rows = [(s + 0.1 + 0.5 * i, 'a', 1000, 0, 200) for s in range(start, end) for i in range(2)]
-    for data in aggregate([[phout(rows)]]):
+    for data in shooting_seconds(start, end):
         plugin.on_aggregated_data(data, {'ts': data['ts'], 'metrics': {'instances': 3, 'reqps': 2}})
     for call in run['calls'] if calls is None else calls:
         plugin.monitoring_data(call)

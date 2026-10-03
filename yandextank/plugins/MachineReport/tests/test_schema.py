@@ -7,6 +7,7 @@ The Go test in load/projects/ai_analysis/report runs the same fixtures through a
 2020-12 validator.
 """
 
+import functools
 import hashlib
 import json
 import math
@@ -65,8 +66,12 @@ def load(path):
         return json.load(f)
 
 
+@functools.lru_cache(maxsize=None)
 def validator(kind):
-    """Draft-07 validator of the schema; None without jsonschema."""
+    """Draft-07 validator of the schema; None without jsonschema.
+
+    Кэш: check_schema на 62-КБ схеме стоил около секунды на каждый вызов, а зовут её из каждого кейса.
+    """
     if jsonschema is None:
         return None
     schema = load(source('schema', SCHEMAS[kind]))
