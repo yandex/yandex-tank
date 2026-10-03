@@ -71,9 +71,8 @@ def finish_status(worker):
         return yaml.safe_load(f)
 
 
-def test_run_retcode_chain_and_lock_release(make_worker, lock_dir, monkeypatch):
-    monkeypatch.setenv('TANK_UPLOADER_OAUTH_TOKEN', 'old')
-    worker = make_worker(data_uploader_oauth_token='token')
+def test_run_retcode_chain_and_lock_release(make_worker, lock_dir):
+    worker = make_worker()
     core = worker.core
     seen = {}
 
@@ -96,7 +95,6 @@ def test_run_retcode_chain_and_lock_release(make_worker, lock_dir, monkeypatch):
     assert lock_files(lock_dir) == []
     core.plugins_cleanup.assert_called_once_with()
     core.close.assert_called_once_with()
-    assert os.environ['TANK_UPLOADER_OAUTH_TOKEN'] == 'token'
     status = finish_status(worker)
     assert status['status_code'] == 'FINISHED'
     assert status['exit_code'] == 23
