@@ -1,7 +1,6 @@
 from setuptools import setup, find_packages
 from yandextank.version import VERSION
 
-
 setup(
     package_dir={"": "."},
     name='yandextank',
@@ -35,7 +34,7 @@ analytic tools for the results they produce.
         'watchdog<=6.0.0',
     ],
     setup_requires=[],
-    tests_require=['pytest>=7.4.4', 'flake8', 'pytest-benchmark', 'zipp==0.5.1', 'mock'],
+    tests_require=['pytest>=7.4.4', 'flake8', 'pytest-benchmark', 'zipp==0.5.1'],
     license='LGPLv2',
     classifiers=[
         'Development Status :: 5 - Production/Stable',

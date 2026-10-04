@@ -7,7 +7,7 @@ import time
 import pytest
 import requests
 import yatest.common
-from mock import MagicMock, patch
+from unittest.mock import MagicMock, patch
 from threading import Thread
 
 from library.python.port_manager import PortManager

@@ -2,7 +2,7 @@ import logging
 
 import pytest
 import requests
-from mock import MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from yandextank.plugins.Pandora.reader import PandoraStatsPoller, PandoraStatsReader
 

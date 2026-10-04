@@ -18,10 +18,7 @@ import re
 
 import psutil
 
-try:
-    import pathlib
-except ImportError:
-    import pathlib2 as pathlib
+import pathlib
 
 from retrying import retry
 
