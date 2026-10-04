@@ -845,50 +845,8 @@ Artifact uploaders
   Graphite uploader are not currently supported in the last Yandex.Tank version.
   If you want one of them, use 1.7 branch.
 
-InfluxDB
-========
-
-InfluxDB uploader.
-
-yaml file section: **influx**
-
-Options
--------
-
-:address:
-  (Optional) InfluxDB address. (Default: 'localhost')
-:port:
-  (Optional) InfluxDB port. (Default: 8086)
-:database:
-  (Optional) InfluxDB database. (Default: 'mydb')
-:username:
-  (Optional) InfluxDB user name. (Default: 'root')
-:password:
-  (Optional) InfluxDB password. (Default: 'root')
-:labeled:
-  (Optional) Send per-label (ammo tags) stats to influxdb. (Default: false)
-:histograms:
-  (Optional) Send response time histograms to influxdb. (Default: false)
-:prefix_measurement:
-  (Optional) Add prefix to measurement name. (Default: '')
-:tank_tag:
-  (Optional) Tank tag. (Default: 'unknown')
-:custom_tags:
-  (Optional) Dict of custom tags, added to every sample row.
-
-Example:
-
-.. code-block:: yaml
-
-  influx:
-    enabled: true
-    address: yourhost.tld
-    database: yourbase
-    tank_tag: 'mytank'
-    prefix_measurement: 'your_test_prefix_'
-    labeled: true
-    histograms: true
-
+  InfluxDB and OpenTSDB uploaders are removed in version 2.3.0. An enabled ``influx`` or ``opentsdb`` section
+  is switched off with a warning.
 
 ***********
 Handy tools

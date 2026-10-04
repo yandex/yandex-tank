@@ -17,7 +17,14 @@ from yandextank.common.util import read_resource, recursive_dict_update
 logger = logging.getLogger(__name__)
 
 # Removed plugins: their enabled sections are switched off in the validated config, raw config is kept as is
-REMOVED_PLUGINS = ['yandextank.plugins.DataUploader', 'yandextank.plugins.Overload', 'yandextank.plugins.NeUploader']
+REMOVED_PLUGINS = [
+    'yandextank.plugins.DataUploader',
+    'yandextank.plugins.Overload',
+    'yandextank.plugins.NeUploader',
+    'yandextank.plugins.InfluxUploader',
+    'yandextank.plugins.OpenTSDBUploader',
+    'yandextank.plugins.YCMonitoring',
+]
 
 
 class ValidationError(Exception):

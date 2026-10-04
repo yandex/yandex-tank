@@ -50,7 +50,7 @@ monitoring:
       kind:
         type: string
         required: true
-        allowed: [telegraf, monium, solomon, yasm, yc_monitoring, other]
+        allowed: [telegraf, monium, solomon, yasm, other]
       entity:
         description: what the source measures
         type: string

@@ -647,6 +647,28 @@ def test_implicit_plugins_enabling(user_config, expected):
             }
         },
         {'neuploader': {'enabled': False, 'package': 'yandextank.plugins.NeUploader'}},
+        {
+            'influx': {
+                'enabled': True,
+                'package': 'yandextank.plugins.InfluxUploader',
+                'address': 'influx.example.org',
+                'database': 'tank',
+            }
+        },
+        {
+            'opentsdb': {
+                'enabled': True,
+                'package': 'yandextank.plugins.OpenTSDBUploader',
+                'address': 'tsdb.example.org',
+            }
+        },
+        {
+            'yc_monitoring': {
+                'enabled': True,
+                'package': 'yandextank.plugins.YCMonitoring',
+                'panels': {'cpu': {'queries': ['"cpu_usage"{service="compute"}']}},
+            }
+        },
         # legacy section name
         {
             'meta': {
@@ -679,6 +701,8 @@ def test_removed_plugin_section_switched_off(section):
         ({'overload': {'enabled': True}}, True, 'yandextank.plugins.DataUploader'),
         ({'neuploader': {'api_address': 'https://example.org/'}}, True, 'yandextank.plugins.NeUploader'),
         ({'neuploader': {'enabled': False}}, False, 'yandextank.plugins.NeUploader'),
+        ({'influx': {'address': 'influx.example.org'}}, True, 'yandextank.plugins.InfluxUploader'),
+        ({'opentsdb': {'address': 'tsdb.example.org'}}, True, 'yandextank.plugins.OpenTSDBUploader'),
     ],
 )
 def test_removed_plugin_section_without_package(monkeypatch, section, enabled_in_raw, package):

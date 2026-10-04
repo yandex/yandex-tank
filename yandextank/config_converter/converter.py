@@ -16,7 +16,7 @@ CORE_SCHEMA = load_yaml_schema(pkg_resources.resource_filename('yandextank.core'
 
 DEPRECATED_SECTIONS = ['lunaport', 'aggregator']
 # Removed plugins (Overload maps here via old_plugin_mapper): their sections and options are dropped with a warning
-REMOVED_PLUGINS = ['DataUploader']
+REMOVED_PLUGINS = ['DataUploader', 'InfluxUploader', 'OpenTSDBUploader', 'YCMonitoring']
 
 
 def old_plugin_mapper(package):

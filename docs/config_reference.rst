@@ -50,57 +50,6 @@ Core
 --------------------
 *\- (no description).*
 
-OpenTSDBUploader
-================
-
-``address`` (string)
---------------------
-*\- (no description). Default:* ``localhost``
-
-``chunk_size`` (integer)
-------------------------
-*\- (no description). Default:* ``4096``
-
-``custom_tags`` (dict)
-----------------------
-*\- (no description). Default:* ``{}``
-
-``histograms`` (boolean)
-------------------------
-*\- (no description). Default:* ``False``
-
-``labeled`` (boolean)
----------------------
-*\- (no description). Default:* ``False``
-
-``password`` (string)
----------------------
-*\- (no description). Default:* ``root``
-
-``port`` (integer)
-------------------
-*\- (no description). Default:* ``4242``
-
-``prefix_metric`` (string)
---------------------------
-*\- (no description). Default:* ``""``
-
-``ssl`` (boolean)
------------------
-*\- (no description). Default:* ``True``
-
-``tank_tag`` (string)
----------------------
-*\- (no description). Default:* ``unknown``
-
-``username`` (string)
----------------------
-*\- (no description). Default:* ``root``
-
-``verify_ssl`` (boolean)
-------------------------
-*\- (no description). Default:* ``True``
-
 Bfg
 ===
 
@@ -466,53 +415,6 @@ ShellExec
 ``start`` (string)
 ------------------
 *\- shell command to execute on start. Default:* ``""``
-
-InfluxUploader
-==============
-
-``address`` (string)
---------------------
-*\- (no description). Default:* ``localhost``
-
-``chunk_size`` (integer)
-------------------------
-*\- (no description). Default:* ``500000``
-
-``custom_tags`` (dict)
-----------------------
-*\- (no description). Default:* ``{}``
-
-``database`` (string)
----------------------
-*\- (no description). Default:* ``mydb``
-
-``histograms`` (boolean)
-------------------------
-*\- (no description). Default:* ``False``
-
-``labeled`` (boolean)
----------------------
-*\- (no description). Default:* ``False``
-
-``password`` (string)
----------------------
-*\- (no description). Default:* ``root``
-
-``port`` (integer)
-------------------
-*\- (no description). Default:* ``8086``
-
-``prefix_measurement`` (string)
--------------------------------
-*\- (no description). Default:* ``""``
-
-``tank_tag`` (string)
----------------------
-*\- (no description). Default:* ``unknown``
-
-``username`` (string)
----------------------
-*\- (no description). Default:* ``root``
 
 Pandora
 =======

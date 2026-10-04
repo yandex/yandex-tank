@@ -84,11 +84,14 @@ CFG2 = {
     'shellexec': {'enabled': False},
 }
 
-# sections of the removed DataUploader plugin are switched off by the validator
+# sections of removed plugins are switched off by the validator
 CFG_REMOVED_PLUGINS = dict(
     CFG2,
     uploader={'package': 'yandextank.plugins.DataUploader', 'enabled': True, 'job_name': 'name'},
     overload={'package': 'yandextank.plugins.Overload', 'enabled': True},
+    influx={'package': 'yandextank.plugins.InfluxUploader', 'enabled': True, 'address': 'influx.example.org'},
+    opentsdb={'package': 'yandextank.plugins.OpenTSDBUploader', 'enabled': True, 'address': 'tsdb.example.org'},
+    yc_monitoring={'package': 'yandextank.plugins.YCMonitoring', 'enabled': True, 'panels': {}},
 )
 
 CFG_LARGE_STEPPER = {
@@ -343,6 +346,14 @@ def test_plugins_end_test_monitoring_stop_duration():
             ],
             [{}, {}, {}],
         ),
+        (
+            [
+                'influx.address=influx.example.org',
+                'opentsdb.address=tsdb.example.org',
+                'tank.plugin_yc=yandextank.plugins.YCMonitoring',
+            ],
+            [{}, {}, {}],
+        ),
         #     with converting/type-casting
         (
             ['phantom.rps_schedule = line(10,100,10m)', 'phantom.instances=200', 'phantom.connection_test=0'],
@@ -369,6 +380,11 @@ def test_convert_ini_drops_removed_plugin_sections(tmp_path):
         '[tank]\n'
         'plugin_uploader=yandextank.plugins.DataUploader\n'
         'plugin_overload=yandextank.plugins.Overload\n'
+        'plugin_yc=yandextank.plugins.YCMonitoring\n'
+        '[influx]\n'
+        'address=influx.example.org\n'
+        '[opentsdb]\n'
+        'address=tsdb.example.org\n'
         '[meta]\n'
         'task=LOAD-204\n'
         'job_name=name\n'

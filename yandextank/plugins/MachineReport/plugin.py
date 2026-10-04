@@ -24,7 +24,6 @@ PROC_CGROUP = '/proc/self/cgroup'
 SOLOMON_MODULE = 'yandextank.plugins.Solomon.plugin'
 # the bfg2020 tank plugin is not open source either; it shares the bfg section with the open source Bfg
 BFG2020_MODULE = 'yandextank.plugins.Bfg2020.plugin'
-YC_MODULE = 'yandextank.plugins.YCMonitoring.plugin'
 SATURATION = {
     'cpu_util_pct': 90,
     'cpu_throttled_periods_pct': 5,
@@ -384,11 +383,6 @@ class Plugin(AbstractPlugin, AggregateResultListener, MonitoringDataListener):
         """Status of a source decided by the config: the Solomon panel is missing or is in several Solomon plugins,
         the monitoring plugin has no token (it silently keeps DummyCollector, nothing in the log), a sensor may
         return several series, or a metric of the section is no series of the panel."""
-        if source['kind'] == 'yc_monitoring':
-            plugins = self._plugins(YC_MODULE)
-            if plugins and all(isinstance(p.collector, DummyCollector) for p in plugins):
-                return {'status': 'error', 'reason': 'no token: the YCMonitoring plugin read nothing'}
-            return {}
         if source['kind'] not in report.SOLOMON_KINDS:
             return {}
         found = self._panels(source)

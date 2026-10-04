@@ -993,8 +993,7 @@ def build(seconds, hist_lines, ctx):
 
 # both come through the tank Solomon plugin: the source host is the name of its panel
 SOLOMON_KINDS = ('solomon', 'monium')
-# yandextank.common.monitoring.convert_name cuts the metric names of these plugins to this length
-CUT_KINDS = SOLOMON_KINDS + ('yc_monitoring',)
+# yandextank.common.monitoring.convert_name cuts their metric names to this length
 SOLOMON_NAME_LEN = 100
 # an aggregation over all series; a quoted label or a label list before the selector groups by it and gives a series
 # per value (group_lines with a label is the deprecated form of that)
@@ -1006,7 +1005,7 @@ _SCALED = re.compile(r'(.*?)\s*[*/]\s*\d+(?:\.\d*)?\s*$', re.S)
 
 def data_name(kind, name):
     """Name of a section metric in tank monitoring data."""
-    return name[:SOLOMON_NAME_LEN] if kind in CUT_KINDS else name
+    return name[:SOLOMON_NAME_LEN] if kind in SOLOMON_KINDS else name
 
 
 def aggregation(query):

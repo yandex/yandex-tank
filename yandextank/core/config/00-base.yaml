@@ -8,6 +8,7 @@ bfg:
 console:
   enabled: true
   package: yandextank.plugins.Console
+# plugin removed; the stub gives package to user sections without one, the validator switches them off
 influx:
   enabled: false
   package: yandextank.plugins.InfluxUploader
@@ -24,6 +25,7 @@ neuploader:
 offline_report:
   enabled: false
   package: yandextank.plugins.OfflineReport
+# plugin removed; the stub gives package to user sections without one, the validator switches them off
 opentsdb:
   enabled: false
   package: yandextank.plugins.OpenTSDBUploader

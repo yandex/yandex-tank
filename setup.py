@@ -26,7 +26,6 @@ analytic tools for the results they produce.
         'pip>=24.0',
         'pyyaml>=5.4',
         'cerberus>=1.3.5',
-        'influxdb>=5.3.1',
         'retrying>=1.3.4',
         'pytest-runner',
         'pyserial',
@@ -66,8 +65,6 @@ analytic tools for the results they produce.
         'yandextank.plugins.Autostop': ['config/*'],
         'yandextank.plugins.Bfg': ['config/*'],
         'yandextank.plugins.Console': ['config/*'],
-        'yandextank.plugins.InfluxUploader': ['config/*'],
-        'yandextank.plugins.OpenTSDBUploader': ['config/*'],
         'yandextank.plugins.JMeter': ['config/*'],
         'yandextank.plugins.JsonReport': ['config/*'],
         'yandextank.plugins.MachineReport': ['config/*'],
@@ -78,6 +75,5 @@ analytic tools for the results they produce.
         'yandextank.plugins.ShellExec': ['config/*'],
         'yandextank.plugins.ShootExec': ['config/*'],
         'yandextank.plugins.Telegraf': ['config/*', 'agent/*'],
-        'yandextank.plugins.YCMonitoring': ['config/*'],
     },
 )

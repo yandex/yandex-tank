@@ -912,21 +912,6 @@ def test_solomon_config_errors(tmp_path, caplog):
     assert statuses(doc)[0][1:] == ('error', 'ambiguous: Solomon panel target_cpu is in several plugins')
 
 
-def test_yc_monitoring_without_token(tmp_path):
-    class YC(object):
-        collector = DummyCollector()
-
-    YC.__module__ = machine_report.YC_MODULE
-    section = {'monitoring': [{'kind': 'yc_monitoring', 'host': 'api', 'required': True}]}
-    plugin, core = make(tmp_path, section, plugins={'yc': YC()})
-    plugin.configure()
-    plugin.start_test()
-    shoot(plugin)
-    plugin.post_process(0)
-    doc = published(core)
-    assert statuses(doc) == [('yc_monitoring:api', 'error', 'no token: the YCMonitoring plugin read nothing')]
-
-
 # Inert without the section
 
 BASE = {'core': {'artifacts_base_dir': './'}}

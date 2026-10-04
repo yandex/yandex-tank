@@ -1173,9 +1173,6 @@ def test_solomon_names_cut_to_100():
         points, [spec(metrics=(long,), kind='solomon', id='a'), spec(metrics=(long + 'x',), kind='monium', id='b')]
     )
     assert [s['status'] for s in sources] == ['error', 'error']
-    # the YCMonitoring plugin passes its names through convert_name too
-    [source] = evaluate(points, [spec(metrics=(long,), kind='yc_monitoring')])
-    assert source['status'] == 'ok'
 
 
 @pytest.mark.parametrize(
