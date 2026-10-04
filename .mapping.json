@@ -150,7 +150,6 @@
   "yandextank/plugins/Console/plugin.py":"load/projects/yandex-tank/yandextank/plugins/Console/plugin.py",
   "yandextank/plugins/Console/screen.py":"load/projects/yandex-tank/yandextank/plugins/Console/screen.py",
   "yandextank/plugins/Console/tests/test_spark.py":"load/projects/yandex-tank/yandextank/plugins/Console/tests/test_spark.py",
-  "yandextank/plugins/DataUploader/proto":"load/projects/yandex-tank/yandextank/plugins/DataUploader/proto",
   "yandextank/plugins/InfluxUploader/__init__.py":"load/projects/yandex-tank/yandextank/plugins/InfluxUploader/__init__.py",
   "yandextank/plugins/InfluxUploader/config/schema.yaml":"load/projects/yandex-tank/yandextank/plugins/InfluxUploader/config/schema.yaml",
   "yandextank/plugins/InfluxUploader/decoder.py":"load/projects/yandex-tank/yandextank/plugins/InfluxUploader/decoder.py",
