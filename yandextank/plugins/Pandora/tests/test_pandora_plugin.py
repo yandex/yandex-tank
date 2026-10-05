@@ -1,5 +1,6 @@
 from contextlib import nullcontext
 import fcntl
+import logging
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 import os
 import time
@@ -13,6 +14,7 @@ from threading import Thread
 from library.python.port_manager import PortManager
 from yandextank.plugins.Pandora import Plugin
 from yandextank.plugins.Pandora.plugin import check_idle_gaps
+from yandextank.plugins.Pandora.output_log_reader import PandoraOutputReader
 
 # https://raw.githubusercontent.com/yandex/yandex-tank/develop/README.md
 
@@ -381,6 +383,30 @@ def test_log_line_contains_no_error(line):
     assert not Plugin.check_log_line_contains_error(line)
 
 
+def test_crashed_process_does_not_repeat_forwarded_output(tmp_path, caplog):
+    output = tmp_path / 'pandora.log'
+    output.write_text('ERROR boom\n')
+    core = MagicMock()
+    core.test_id = 'test-1'
+    plugin = Plugin(core, {}, 'pandora')
+    plugin.process_stderr_file = str(output)
+    plugin.process = MagicMock()
+    plugin.process.poll.return_value = 2
+    plugin.errors = []
+    event_logger = logging.getLogger('yandextank.plugins.Pandora.plugin')
+    plugin.output_event_reader = PandoraOutputReader(str(output), plugin.process, event_logger)
+
+    with caplog.at_level(logging.INFO, logger=event_logger.name):
+        plugin.output_event_reader.start()
+        plugin.output_event_reader.stop()
+        assert plugin.is_test_finished() == 2
+        assert plugin.end_test(2) == 2
+
+    assert [record.getMessage() for record in caplog.records].count('ERROR boom') == 1
+    assert plugin.errors == ['ERROR boom']
+    assert output.read_text() == 'ERROR boom\n'
+
+
 @pytest.mark.parametrize(
     'output, expected',
     [
@@ -513,6 +539,54 @@ def test_legacy_start_keeps_existing_cli_and_port(tmp_path):
     plugin.process_stderr.close()
 
 
+def test_output_reader_failure_does_not_abort_pandora_start(tmp_path, caplog):
+    plugin = Plugin(MagicMock(), {}, 'pandora')
+    plugin.pandora_cmd = 'pandora'
+    plugin.pandora_config_file = 'config.yaml'
+    plugin.affinity = ''
+    output = tmp_path / 'pandora.log'
+    plugin.core.mkstemp.return_value = str(output)
+    process = MagicMock()
+    process.poll.return_value = 0
+
+    with patch('yandextank.plugins.Pandora.plugin.subprocess.Popen', return_value=process):
+        with patch('yandextank.plugins.Pandora.plugin.PandoraOutputReader.start', side_effect=RuntimeError):
+            plugin.start_test()
+
+    assert plugin.output_event_reader is None
+    assert output.exists()
+    plugin.errors = []
+    plugin.process_stderr.write('ERROR fallback line\n')
+    plugin.process_stderr.flush()
+    process.poll.return_value = 2
+    with caplog.at_level(logging.INFO, logger='yandextank.plugins.Pandora.plugin'):
+        assert plugin.is_test_finished() == 2
+        assert plugin.is_test_finished() == 2
+    fallback_records = [record for record in caplog.records if record.getMessage() == 'ERROR fallback line']
+    assert len(fallback_records) == 1
+    assert fallback_records[0].source == 'pandora'
+    plugin.process_stderr.close()
+
+
+def test_crash_tail_falls_back_when_reader_cannot_open_artifact(tmp_path, caplog):
+    output = tmp_path / 'pandora.log'
+    output.write_text('FATAL fallback line\n')
+    plugin = Plugin(MagicMock(), {}, 'pandora')
+    plugin.process_stderr_file = str(output)
+    plugin.process = MagicMock()
+    plugin.process.poll.return_value = 2
+    plugin.errors = []
+    plugin.output_event_reader = MagicMock(failed=True, consumed_offset=0)
+
+    with caplog.at_level(logging.INFO, logger='yandextank.plugins.Pandora.plugin'):
+        assert plugin.is_test_finished() == 2
+
+    fallback_records = [record for record in caplog.records if record.getMessage() == 'FATAL fallback line']
+    assert len(fallback_records) == 1
+    assert fallback_records[0].source == 'pandora'
+    plugin.output_event_reader.stop.assert_called_once()
+
+
 def test_managed_announcement_timeout_keeps_pipe_until_test_ends(tmp_path):
     plugin = Plugin(MagicMock(), {}, 'pandora')
     plugin.pandora_cmd = 'pandora'
@@ -634,3 +708,51 @@ def test_idle_gap_in_the_middle_rejected(schedule):
 def test_no_idle_gap_does_not_touch_max_wait():
     # Без паузы max_wait не сравнивается: чужие тесты мокают core, и get_option отдаёт Mock.
     check_idle_gaps(0, [LINE, LINE], MagicMock())
+
+
+def test_end_test_forwards_output_written_while_terminating(tmp_path, caplog):
+    output = tmp_path / 'pandora.log'
+    output.touch()
+    plugin = Plugin(MagicMock(), {}, 'pandora')
+    plugin.process_stderr_file = str(output)
+    plugin.process_stderr = None
+    process = MagicMock()
+    process.poll.return_value = None
+
+    def finish_after_signal(timeout):
+        assert timeout == 0.2
+        with output.open('a') as artifact:
+            artifact.write('ERROR shutdown failure\n')
+        process.poll.return_value = 0
+        return 0
+
+    process.wait.side_effect = finish_after_signal
+    plugin.process = process
+    event_logger = logging.getLogger('yandextank.plugins.Pandora.plugin')
+    plugin.output_event_reader = PandoraOutputReader(str(output), process, event_logger)
+
+    with caplog.at_level(logging.INFO, logger=event_logger.name):
+        plugin.output_event_reader.start()
+        assert plugin.end_test(0) == 0
+
+    process.terminate.assert_called_once()
+    assert [record.getMessage() for record in caplog.records].count('ERROR shutdown failure') == 1
+
+
+def test_crash_fallback_reads_only_unconsumed_output(tmp_path, caplog):
+    output = tmp_path / 'pandora.log'
+    consumed = 'ERROR already forwarded\n'
+    output.write_text(consumed + 'FATAL late failure\n')
+    plugin = Plugin(MagicMock(), {}, 'pandora')
+    plugin.process_stderr_file = str(output)
+    plugin.process = MagicMock()
+    plugin.process.poll.return_value = 2
+    plugin.errors = []
+    plugin.output_event_reader = MagicMock(failed=True, consumed_offset=len(consumed.encode()))
+
+    with caplog.at_level(logging.INFO, logger='yandextank.plugins.Pandora.plugin'):
+        assert plugin.is_test_finished() == 2
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert 'ERROR already forwarded' not in messages
+    assert messages.count('FATAL late failure') == 1

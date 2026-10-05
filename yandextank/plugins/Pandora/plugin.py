@@ -15,13 +15,14 @@ import yaml
 
 from load.contrib.netort.resource import TempDownloaderOpenerProtocol
 from yandextank.plugins.Pandora.sample_reader import SampleReader, SampleWatcher
+from yandextank.plugins.Pandora.output_log_reader import PandoraOutputReader, tail_lines_after
 
 from .reader import PandoraStatsReader
 from ..Console import Plugin as ConsolePlugin
 from ..Console import screen as ConsoleScreen
 from ..Phantom import PhantomReader, string_to_df
 from ...common.interfaces import AbstractInfoWidget, GeneratorPlugin
-from ...common.util import expand_to_seconds, tail_lines, FileMultiReader
+from ...common.util import expand_to_seconds, FileMultiReader
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,8 @@ class Plugin(GeneratorPlugin):
         self.__schedule = None
         self.ammofile = None
         self.process_stderr_file = None
+        self.output_event_reader: PandoraOutputReader | None = None
+        self._reported_crash_tail = False
         self.resources = []
         self.sample_readers: list[SampleReader] = []
         self.sample_watcher: SampleWatcher | None = None
@@ -392,6 +395,18 @@ class Plugin(GeneratorPlugin):
         finally:
             if control:
                 os.close(control[1])
+        self.output_event_reader = PandoraOutputReader(
+            self.process_stderr_file,
+            self.process,
+            logger,
+        )
+        try:
+            self.output_event_reader.start()
+        except RuntimeError:
+            logger.warning(
+                'Unable to start Pandora output event reader; output remains in %s', self.process_stderr_file
+            )
+            self.output_event_reader = None
         if control:
             try:
                 port = self._read_managed_port(control[0])
@@ -419,12 +434,19 @@ class Plugin(GeneratorPlugin):
             self.output_finished.set()
             return retcode
         elif retcode is not None and retcode != 0:
-            lines_amount = 20
-            logger.info('Pandora finished with retcode %s. Last %s logs of Pandora log:', retcode, lines_amount)
+            if self.output_event_reader is not None:
+                self.output_event_reader.stop()
+            if (self.output_event_reader is None or self.output_event_reader.failed) and not self._reported_crash_tail:
+                self._reported_crash_tail = True
+                logger.info('Pandora finished with retcode %s; last output from %s:', retcode, self.process_stderr_file)
+                consumed_offset = (
+                    self.output_event_reader.consumed_offset if self.output_event_reader is not None else 0
+                )
+                for logline in tail_lines_after(self.process_stderr_file, consumed_offset, 20):
+                    logger.info(logline.strip('\n'), extra={'source': 'pandora'})
+            else:
+                logger.info('Pandora finished with retcode %s; full output is in %s', retcode, self.process_stderr_file)
             self.output_finished.set()
-            last_log_contents = tail_lines(self.process_stderr_file, lines_amount)
-            for logline in last_log_contents:
-                logger.info(logline.strip('\n'))
             with open(self.process_stderr_file) as stderr:
                 for line in stderr:
                     if self.check_log_line_contains_error(line):
@@ -441,11 +463,17 @@ class Plugin(GeneratorPlugin):
         if self.process and self.process.poll() is None:
             logger.warning('Terminating worker process with PID %s', self.process.pid)
             self.process.terminate()
+            try:
+                self.process.wait(timeout=0.2)
+            except subprocess.TimeoutExpired:
+                pass
             if self.process_stderr:
                 self.process_stderr.close()
         else:
             logger.info('Seems Pandora subprocess finished')
         self.output_finished.set()
+        if self.output_event_reader is not None:
+            self.output_event_reader.stop()
         if self._managed_control_fd is not None:
             os.close(self._managed_control_fd)
             self._managed_control_fd = None
