@@ -99,7 +99,11 @@ class Line(object):
         get list of constant load parts (we have no constant load at all, but tank will think so),
         with parts durations (float)
         '''
-        int_rps = range(int(self.minrps), int(self.maxrps) + 1)
+        if self.minrps <= self.maxrps:
+            int_rps = list(range(int(self.minrps), int(self.maxrps) + 1))
+        else:
+            int_rps = list(range(int(self.maxrps), int(self.minrps) + 1))
+            int_rps.reverse()
         step_duration = float(self.duration) / len(int_rps)
         rps_list = [(rps, int(step_duration)) for rps in int_rps]
         return rps_list
