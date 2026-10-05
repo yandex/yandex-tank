@@ -21,6 +21,18 @@ class TestLine(object):
         assert len(rps_list) == 11
         assert rps_list[-1][0] == 100
 
+    @pytest.mark.parametrize(
+        "min_rps, max_rps, expected",
+        [
+            (1, 5, [1, 2, 3, 4, 5]),
+            (5, 1, [5, 4, 3, 2, 1]),
+            (5, 5, [5]),
+        ],
+    )
+    def test_get_float_rps_list(self, min_rps, max_rps, expected):
+        rps_list = Line(min_rps, max_rps, 2000).get_float_rps_list()
+        assert [rps for rps, _ in rps_list] == expected
+
 
 @pytest.mark.parametrize(
     "rps, duration, rps_list", [(100, 3000, [(100, 3)]), (0, 3000, [(0, 3)]), (100, 0, [(100, 0)])]
