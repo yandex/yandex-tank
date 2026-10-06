@@ -3,6 +3,7 @@ import time
 import pandas as pd
 
 from conftest import MAX_TS, random_split
+from yandextank.aggregator import aggregator
 from yandextank.aggregator.aggregator import DataPoller
 from yandextank.aggregator.chopper import TimeChopper
 
@@ -45,3 +46,15 @@ def test_pool_silent_longer_than_max_wait():
         rows += len(data)
     assert rows == 5
     assert events.index(now - 100) < events.index('late')
+
+
+def test_poller_sleeps_only_without_data(monkeypatch):
+    # Сон после каждого чанка давал не больше 1/poll_period чанков в секунду на ступень (LOAD-3937).
+    slept = []
+    monkeypatch.setattr(aggregator.time, 'sleep', slept.append)
+    chunks = [[i] for i in range(100)]
+    poller = DataPoller(poll_period=0.5, max_wait=1)
+    # Пустой список — секунда без новой статистики у Bfg и Pandora: после него поллер спит.
+    assert list(poller.poll(iter(chunks + [[]] + [None] * 5))) == chunks + [[]]
+    # Спит пустую итерацию и тишину после данных, тишину — не дольше max_wait.
+    assert slept == [0.5, 0.5, 0.5]

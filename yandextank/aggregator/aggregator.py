@@ -135,6 +135,10 @@ def _data_poller(source, poll_period, max_wait):
             started = True
             wait_counter = 0
             yield chunk
+            # Сон после чанка ограничивал ступень 1/poll_period чанками в секунду (LOAD-3937). Пустой список —
+            # секунда без новой статистики у Bfg и Pandora: на нём спим, иначе поллер крутится вхолостую.
+            if len(chunk):
+                continue
         elif not started:
             # Пул pandora может начинаться с ops: 0 дольше max_wait: тишину считаем от первых данных,
             # а None отдаём наружу, чтобы TimeChopper не ждал этот источник (конец — StopIteration ридера).

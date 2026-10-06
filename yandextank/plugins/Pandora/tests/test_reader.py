@@ -132,6 +132,14 @@ def test_managed_reader_can_use_zero_fallback_without_polling_foreign_port():
         reader.close()
 
 
+def test_zero_fallback_gives_each_second_once():
+    # Заглушка на каждый вызов без сна в DataPoller завалила бы агрегатор дублями секунд (LOAD-3937).
+    reader = PandoraStatsReader(False, None)
+    with patch('yandextank.plugins.Pandora.reader.time') as time_mock:
+        time_mock.time.side_effect = [100.2, 100.7, 103.1]
+        assert [[d['ts'] for d in next(reader)] for _ in range(3)] == [[99], [], [100, 101, 102]]
+
+
 def test_run_fills_seconds_skipped_by_stalled_poller():
     # the poller overslept 101..103: without filling, these seconds wait for stats until test end
     poller = PandoraStatsPoller(1234)

@@ -86,6 +86,7 @@ class PandoraStatsReader(object):
         self.port = port
         self.poller = PandoraStatsPoller(port)
         self.started = False
+        self._fallback_ts = None
 
     def set_port(self, port):
         self.port = port
@@ -98,7 +99,11 @@ class PandoraStatsReader(object):
         if not self.expvar:
             if self.closed:
                 raise StopIteration
-            return [{'ts': int(time.time() - 1), 'metrics': {'instances': 0, 'reqps': 0}}]
+            # Каждую секунду один раз, а не элемент на вызов: DataPoller не спит после данных (LOAD-3937).
+            ts = int(time.time() - 1)
+            first = ts if self._fallback_ts is None else self._fallback_ts + 1
+            self._fallback_ts = ts
+            return [{'ts': t, 'metrics': {'instances': 0, 'reqps': 0}} for t in range(first, ts + 1)]
         else:
             if self.closed:
                 raise StopIteration()
