@@ -138,6 +138,12 @@ class TestStairway(object):
         assert len(load_plan) == expected_len
         assert len([ts for ts in load_plan if ts >= threshold]) == len_above_threshold
 
+    def test_zero_increment_raises(self):
+        from yandextank.stepper.module_exceptions import StepperConfigurationError
+
+        with pytest.raises(StepperConfigurationError):
+            Stairway(2, 10, 0, 3000)
+
 
 class TestCreate(object):
     @pytest.mark.parametrize(
