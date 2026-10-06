@@ -6,6 +6,7 @@ import re
 from itertools import chain, groupby
 from builtins import range
 from . import info
+from .module_exceptions import StepperConfigurationError
 from .util import parse_duration, solve_quadratic, proper_round
 
 
@@ -146,6 +147,11 @@ class Stairway(Composite):
         self.duration = step_duration
         if maxrps < minrps:
             increment = -increment
+        if increment == 0:
+            raise StepperConfigurationError(
+                "step() increment must be non-zero (got step(%s, %s, %s, ...))"
+                % (minrps, maxrps, increment)
+            )
         n_steps = int((maxrps - minrps) / increment)
         steps = [Const(minrps + i * increment, step_duration) for i in range(0, n_steps + 1)]
         if increment > 0:
