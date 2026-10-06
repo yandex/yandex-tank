@@ -351,6 +351,29 @@ def test_eof_without_newline_is_forwarded(tmp_path):
     assert [record.getMessage() for record in collector.records] == ['INFO final line']
 
 
+def test_output_written_between_eof_and_exit_is_forwarded(tmp_path):
+    output = tmp_path / 'pandora.log'
+    output.write_bytes(b'INFO par')
+    process = Mock()
+
+    def write_last_lines_and_exit():
+        # Pandora дописала вывод и вышла после того, как ридер увидел EOF, но до poll().
+        with output.open('ab') as artifact:
+            artifact.write(b'tial\nFATAL shutdown failure\n')
+        process.poll.side_effect = None
+        return 0
+
+    process.poll.side_effect = write_last_lines_and_exit
+    process.poll.return_value = 0
+    logger, collector = make_logger()
+    reader = PandoraOutputReader(str(output), process, logger)
+
+    reader._run()
+
+    assert [record.getMessage() for record in collector.records] == ['INFO partial', 'FATAL shutdown failure']
+    assert reader.consumed_offset == output.stat().st_size
+
+
 def test_truncated_line_does_not_hide_following_line(tmp_path):
     output = tmp_path / 'pandora.log'
     output.write_bytes(b'INFO ' + b'x' * (MAX_EVENT_MESSAGE_BYTES + 20) + b'\nINFO next\n')

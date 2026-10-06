@@ -136,6 +136,7 @@ class PandoraOutputReader:
     def _run(self):
         pending = b''
         truncated = False
+        exited = False
         try:
             with open(self._path, 'rb') as output:
                 while True:
@@ -165,9 +166,13 @@ class PandoraOutputReader:
                             pending = line
                         continue
 
-                    if self._process.poll() is not None:
+                    if exited:
                         self._emit(pending)
                         break
+                    if self._process.poll() is not None:
+                        # Pandora могла дописать вывод между readline() и poll(): дочитываем до EOF.
+                        exited = True
+                        continue
                     if self._stop.is_set():
                         time.sleep(0.05)
                     else:
