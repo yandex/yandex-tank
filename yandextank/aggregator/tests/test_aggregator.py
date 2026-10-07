@@ -73,3 +73,55 @@ def test_aggregator_max_timeout(phout):
     assert termination_lag < 1
     assert termination_lag > 0.2
     generator.finished.set()
+
+
+class BrokenReaderMock(object):
+    """Ридер данных падает, как JMeter на тексте в числовой колонке (LOAD-3946), а статистика ждёт данных."""
+
+    def __init__(self):
+        self.stats_closed = False
+
+    def _reader(self):
+        raise ValueError("invalid literal for int() with base 10: 'YA04_wait_for_acquire'")
+        yield
+
+    def _stats_reader(self):
+        while not self.stats_closed:
+            yield None
+
+    def get_reader(self):
+        return self._reader()
+
+    def get_stats_reader(self):
+        return self
+
+    def __iter__(self):
+        return self._stats_reader()
+
+    def close(self):
+        self.stats_closed = True
+
+    def end_test(self, retcode):
+        return retcode
+
+
+def test_source_error_finishes_test():
+    # max_wait 31 с: раньше стрельба стояла, пока поллер статистики не дождётся тишины (LOAD-3947).
+    generator = BrokenReaderMock()
+    aggregator = TankAggregator(generator, DataPoller(poll_period=0.01, max_wait=31))
+    aggregator.start_test()
+    try:
+        deadline = time.monotonic() + 5
+        retcode = aggregator.is_test_finished()
+        while retcode < 0 and time.monotonic() < deadline:
+            time.sleep(0.05)
+            retcode = aggregator.is_test_finished()
+        assert retcode == 1
+        assert len(aggregator.errors) == 1
+        assert aggregator.errors[0].startswith('Data source failed: ValueError(')
+        assert 'YA04_wait_for_acquire' in aggregator.errors[0]
+    finally:
+        retcode = aggregator.end_test(0)
+    # Ошибка источника не даёт кончить стрельбу успехом и не дублируется в итоге.
+    assert retcode == 1
+    assert len(aggregator.errors) == 1

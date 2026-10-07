@@ -123,8 +123,21 @@ class TankAggregator(object):
     def is_aggr_finished(self):
         return self.drain._finished.is_set() and self.stats_drain._finished.is_set()
 
+    def _report_source_errors(self):
+        """Падение источника — в ошибки ядра сразу, а не через max_wait поллера соседнего дрейна (LOAD-3947)."""
+        failed = False
+        for name, drain in (('Data', self.drain), ('Stats', self.stats_drain)):
+            if drain is not None and drain.error is not None:
+                failed = True
+                error = f'{name} source failed: {drain.error!r}'
+                if error not in self.errors:
+                    self.errors.append(error)
+        return failed
+
     def is_test_finished(self):
         self._collect_data()
+        if self._report_source_errors() and not self.ignore_aggregation_finish:
+            return 1
         if self.is_aggr_finished() and not self.ignore_aggregation_finish:
             self.errors.append('TankAggregator finished his work before test finish.')
             return 1
@@ -152,6 +165,8 @@ class TankAggregator(object):
             self.stats_drain.close()
         logger.info('Collecting remaining data')
         self._collect_data(end=True)
+        if self._report_source_errors() and not retcode:
+            retcode = 1
         return retcode
 
     def add_result_listener(self, listener):
