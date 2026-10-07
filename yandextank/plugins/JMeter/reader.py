@@ -154,7 +154,7 @@ class JMeterStatAggregator(object):
 
 class JMeterReader(object):
     def __init__(self, filename, poller: DataPoller):
-        self.buffer = ""
+        self.buffer = b""
         self.stat_buffer = ""
         self.jtl_file = filename
         self.jmeter_finished = False
@@ -181,9 +181,10 @@ class JMeterReader(object):
     def _read_jtl_chunk(self, jtl):
         data = jtl.read(1024 * 1024 * 10)
         if data:
-            parts = data.rsplit('\n', 1)
+            parts = data.rsplit(b'\n', 1)
             if len(parts) > 1:
-                ready_chunk = self.buffer + parts[0] + '\n'
+                # Декодируем только целые строки: UTF-8-символ на конце файла может быть дописан наполовину.
+                ready_chunk = (self.buffer + parts[0] + b'\n').decode('utf-8', errors='replace')
                 self.buffer = parts[1]
                 df = string_to_df(ready_chunk)
                 self.stat_queue.put(df)
@@ -193,11 +194,10 @@ class JMeterReader(object):
         else:
             if self.jmeter_finished:
                 self.agg_finished = True
-            jtl.readline()
         return None
 
     def __iter__(self):
-        with open(self.jtl_file, 'r') as jtl:
+        with open(self.jtl_file, 'rb') as jtl:
             while not self.closed:
                 yield self._read_jtl_chunk(jtl)
             yield self._read_jtl_chunk(jtl)

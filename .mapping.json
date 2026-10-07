@@ -157,6 +157,7 @@
   "yandextank/plugins/JMeter/config/schema.yaml":"load/projects/yandex-tank/yandextank/plugins/JMeter/config/schema.yaml",
   "yandextank/plugins/JMeter/plugin.py":"load/projects/yandex-tank/yandextank/plugins/JMeter/plugin.py",
   "yandextank/plugins/JMeter/reader.py":"load/projects/yandex-tank/yandextank/plugins/JMeter/reader.py",
+  "yandextank/plugins/JMeter/tests/test_reader.py":"load/projects/yandex-tank/yandextank/plugins/JMeter/tests/test_reader.py",
   "yandextank/plugins/JsonReport/__init__.py":"load/projects/yandex-tank/yandextank/plugins/JsonReport/__init__.py",
   "yandextank/plugins/JsonReport/config/schema.yaml":"load/projects/yandex-tank/yandextank/plugins/JsonReport/config/schema.yaml",
   "yandextank/plugins/JsonReport/plugin.py":"load/projects/yandex-tank/yandextank/plugins/JsonReport/plugin.py",
