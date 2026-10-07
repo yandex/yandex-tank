@@ -1,0 +1,16 @@
+core:
+  affinity: ''
+  aggregator_max_termination_timeout: 60
+  aggregator_max_wait: 31
+  ammo_validation: inform
+  api_jobno: 2026-10-02_14-28-01.363543
+  artifacts_base_dir: ./logs
+  cmdline: /private/tmp/ytank-venv/lib/python3.14/site-packages/pytest/__main__.py
+    yandextank/stepper/tests/test_instance_plan.py -q
+  debug: false
+  ignore_lock: false
+  lock_dir: /var/lock/
+  pid: 32729
+  skip_generator_check: false
+  taskset_path: taskset
+  uuid: 93385b2c-01ac-4e32-a369-2ffd34fedc86

@@ -49,7 +49,7 @@ class AbstractGun(AbstractPlugin):
             if data_item["proto_code"] == 200:
                 data_item["proto_code"] = 500
             if data_item["net_code"] == 0:
-                data_item["net_code"] == 1
+                data_item["net_code"] = 1
             raise
         finally:
             if data_item.get("interval_real") is None:
