@@ -275,7 +275,12 @@ class AccessLogReader(Reader):
 
 
 def _parse_header(header):
-    return dict([(h.strip().decode('utf8') for h in header.split(b':', 1))])
+    key, sep, value = header.partition(b':')
+    if not sep:
+        raise AmmoFileError(
+            "Malformed header line (expected 'Header: value'): %r" % header
+        )
+    return {key.strip().decode('utf8'): value.strip().decode('utf8')}
 
 
 class UriReader(Reader):
