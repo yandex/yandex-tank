@@ -43,9 +43,12 @@ class __Enumerator(object):
         self.number = int(0)
 
     def __call__(self, missile):
-        marker = b"%s#%d" % (self.marker(missile), self.number)
+        marker = self.marker(missile)
+        if isinstance(marker, str):
+            marker = marker.encode('utf8')
+        result = b"%s#%d" % (marker, self.number)
         self.number += 1
-        return marker
+        return result
 
 
 def get_marker(marker_type, enum_ammo=False):
