@@ -9,6 +9,7 @@ import termios
 import time
 import bisect
 from collections import defaultdict
+import math
 import pandas as pd
 
 from ...common import util
@@ -636,6 +637,8 @@ class PercentilesBlock(AbstractBlock):
 
     def __calc_percentiles(self):
         def hist_to_quant(histogram, quant):
+            if histogram.empty:
+                return [math.nan] * len(quant)
             cumulative = histogram.cumsum()
             total = cumulative.max()
             positions = cumulative.searchsorted([float(i) / 100 * total for i in quant])
